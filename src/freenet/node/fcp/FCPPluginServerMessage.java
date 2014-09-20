@@ -6,7 +6,6 @@ package freenet.node.fcp;
 import com.db4o.ObjectContainer;
 
 import freenet.node.Node;
-import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.PluginManager;
 import freenet.support.SimpleFieldSet;
