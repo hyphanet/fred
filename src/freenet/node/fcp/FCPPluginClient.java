@@ -17,6 +17,7 @@ import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage.ClientPermissions;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.PrioritizedMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
@@ -69,13 +70,11 @@ import freenet.support.io.NativeThread;
  * - The {@link FCPPluginClientMessage} uses {@link FCPConnectionHandler#getPluginClient(String)} to
  *   obtain the FCPPluginClient which wants to send.<br/>
  * - The {@link FCPPluginClientMessage} uses {@link FCPPluginClient#send(SendDirection,
- *   FredPluginFCPMessageHandler.FCPPluginMessage)} or
- *   {@link FCPPluginClient#sendSynchronous(SendDirection,
- *   FredPluginFCPMessageHandler.FCPPluginMessage, long)}
- *   to send the message to the server plugin.<br/>
+ *   FCPPluginMessage)} or {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage,
+ *   long)} to send the message to the server plugin.<br/>
  * - The FCP server plugin handles the message at
- *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
- *   FredPluginFCPMessageHandler.FCPPluginMessage)}.<br/>
+ *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
+ *   <br/>
  * - As each FCPPluginClient object exists for the lifetime of a network connection, the FCP server
  *   plugin may store the ID of the FCPPluginClient and query it via
  *   {@link PluginRespirator#getPluginClientByID(UUID)}. It can use this to send messages to the
@@ -90,9 +89,8 @@ import freenet.support.io.NativeThread;
  * - The client plugin uses the send functions of the FCPPluginClient. Those are the same as with
  *   networked FCP connections.<br/>
  * - The FCP server plugin handles the message at
- *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
- *   FredPluginFCPMessageHandler.FCPPluginMessage)}. That is the same handler as with networked FCP
- *   connections.<br/>
+ *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
+ *   That is the same handler as with networked FCP connections.<br/>
  * - The client plugin keeps a strong reference to the FCPPluginClient in memory as long as it wants
  *   to keep the connection open.<br/>
  * - Same as with networked FCP connections, the FCP server plugin can store the ID of the
@@ -203,15 +201,14 @@ public final class FCPPluginClient {
      */
     private final class SynchronousSend {
         /**
-         * {@link FCPPluginClient#send(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage)}
-         * shall call {@link Condition#signal()} upon this once the reply message has been stored to
+         * {@link FCPPluginClient#send(SendDirection, FCPPluginMessage)} shall call
+         * {@link Condition#signal()} upon this once the reply message has been stored to
          * {@link #reply} to wake up the sleeping {@link FCPPluginClient#sendSynchronous(
-         * SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage, long)} thread which is
-         * waiting for the reply to arrive.
+         * SendDirection, FCPPluginMessage, long)} thread which is waiting for the reply to arrive.
          */
         private final Condition completionSignal;
         
-        public FredPluginFCPMessageHandler.FCPPluginMessage reply = null;
+        public FCPPluginMessage reply = null;
         
         public SynchronousSend(Condition completionSignal) {
             this.completionSignal = completionSignal;
@@ -220,26 +217,25 @@ public final class FCPPluginClient {
 
     /**
      * For each message sent with the <i>blocking</i> send function
-     * {@link #sendSynchronous(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage, long)}
-     * this contains a {@link SynchronousSend} object which shall be used to signal the completion
-     * of the synchronous send to the blocking sendSynchronous() thread. Signaling the completion
-     * tells the blocking sendSynchronous() function that the remote side has sent a reply message
-     * to acknowledge that the original message was processed and sendSynchronous() may return now.
+     * {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)} this contains a
+     * {@link SynchronousSend} object which shall be used to signal the completion of the
+     * synchronous send to the blocking sendSynchronous() thread. Signaling the completion tells the
+     * blocking sendSynchronous() function that the remote side has sent a reply message to
+     * acknowledge that the original message was processed and sendSynchronous() may return now.
      * In addition, the reply is added to the SynchronousSend object so that sendSynchronous() can
      * return it to the caller.<br><br>
      * 
-     * The key is the identifier
-     * {@link FredPluginFCPMessageHandler.FCPPluginMessage#identifier} of the original message
-     * which was sent by sendSynchronous().<br><br>
+     * The key is the identifier {@link FCPPluginMessage#identifier} of the original message which
+     * was sent by sendSynchronous().<br><br>
      * 
      * An entry shall be added by sendSynchronous() when a new synchronous send is started, and then
      * it shall wait for the Condition {@link SynchronousSend#completionSignal} to be signaled.<br>
      * When the reply message is received, the node will always dispatch it via
-     * {@link #send(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage)}. Thus, that
-     * function is obliged to check this map for whether there is an entry for each received
-     * reply. If it contains one for the identifier of a given reply, send() shall store the reply
-     * message in it, and then call {@link Condition#signal()} upon its Condition to cause the
-     * blocking sendSynchronous() functions to return.<br>
+     * {@link #send(SendDirection, FCPPluginMessage)}. Thus, that function is obliged to check this
+     * map for whether there is an entry for each received reply. If it contains one for the
+     * identifier of a given reply, send() shall store the reply message in it, and then call
+     * {@link Condition#signal()} upon its Condition to cause the blocking sendSynchronous()
+     * functions to return.<br>
      * The sendSynchronous() shall take the job of removing the entry from this map.<br><br>
      * 
      * Thread safety is to be guaranteed by the {@link #synchronousSendsLock}.<br><br>
@@ -460,12 +456,12 @@ public final class FCPPluginClient {
     /**
      * Can be used by both server and client implementations to send messages to each other.<br>
      * The messages sent by this function will be delivered to the message handler
-     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
-     * FredPluginFCPMessageHandler.FCPPluginMessage)} of the remote side.<br><br>
+     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}
+     * of the remote side.<br><br>
      * 
      * This is an <b>asynchronous</b>, non-blocking send function.<br>
      * This has the following differences to the blocking send {@link #sendSynchronous(
-     * SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage, long)}:<br>
+     * SendDirection, FCPPluginMessage, long)}:<br>
      * - It may return <b>before</b> the message has been sent.<br>
      *   The message sending happens in another thread so this function can return immediately.<br>
      *   In opposite to that, a synchronousSend() would wait for a reply to arrive, so once it
@@ -489,8 +485,7 @@ public final class FCPPluginClient {
      *   You <b>must</b> consider this FCPPluginClient as dead then and create a fresh one.<br>
      * - You can only be sure that a message has been delivered if your message handler receives
      *   a reply message with the same value of
-     *   {@link FredPluginFCPMessageHandler.FCPPluginMessage#identifier} as the original message.
-     *   <br>
+     *   {@link FCPPluginMessage#identifier} as the original message.<br>
      * - You <b>can</b> send many messages in parallel by calling this many times in a row.<br>
      *   But you <b>must not</b> call this too often in a row to prevent excessive threads creation.
      *   <br><br>
@@ -510,14 +505,13 @@ public final class FCPPluginClient {
      *            While you <b>can</b> use this to send messages to yourself, be careful not to
      *            cause thread deadlocks with this. The function will call your message
      *            handler function of {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(
-     *            FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} in <b>a
-     *            different thread</b>, so it should not cause deadlocks on its own, but you might
-     *            produce deadlocks with your own thread synchronization measures.<br><br>
+     *            FCPPluginClient, FCPPluginMessage)} in <b>a different thread</b>, so it should not
+     *            cause deadlocks on its own, but you might produce deadlocks with your own thread
+     *            synchronization measures.<br><br>
      * 
      * @param message
      *            You <b>must not</b> send the same message twice: This can break
-     *            {@link #sendSynchronous(SendDirection,
-     *            FredPluginFCPMessageHandler.FCPPluginMessage, long)}.<br>
+     *            {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)}.<br>
      *            To ensure this, always construct a fresh FCPPluginMessage object when re-sending
      *            a message. If you use the constructor which allows specifying your own identifier,
      *            always generate a fresh, random identifier.<br><br>
@@ -531,16 +525,13 @@ public final class FCPPluginClient {
      *             connection is alive. Messages are sent asynchronously, so it can happen that a
      *             closed connection is not detected before this function returns.<br/>
      *             If you need to know whether the send succeeded, use
-     *             {@link #sendSynchronous(SendDirection,
-     *             FredPluginFCPMessageHandler.FCPPluginMessage, long)}.
-     *             </p>
-     * @see #sendSynchronous(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage, long)
+     *             {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)}.</p>
+     * @see #sendSynchronous(SendDirection, FCPPluginMessage, long)
      *          You may instead use the blocking sendSynchronous() if your thread needs to know
      *          whether messages arrived, to ensure a certain order of arrival, or to know
      *          the reply to a message.
      */
-    public void send(final SendDirection direction,
-            final FredPluginFCPMessageHandler.FCPPluginMessage message)
+    public void send(final SendDirection direction, final FCPPluginMessage message)
                 throws IOException {
         
         // True if the target server or client message handler is running in this VM.
@@ -660,7 +651,7 @@ public final class FCPPluginClient {
         final Runnable messageDispatcher = new PrioRunnable() {
             @Override
             public void run() {
-                FredPluginFCPMessageHandler.FCPPluginMessage reply = null;
+                FCPPluginMessage reply = null;
                 
                 try {
                     reply = messageHandler.handlePluginFCPMessage(FCPPluginClient.this, message);
@@ -683,9 +674,8 @@ public final class FCPPluginClient {
                         // reply with success=false to indicate the error to the remote side.
                         // This allows eventually waiting sendSynchronous() calls to fail quickly
                         // instead of having to wait for the timeout because no reply arrives.
-                        reply = FredPluginFCPMessageHandler.FCPPluginMessage.constructReplyMessage(
-                            message, null, null, false, "InternalError",
-                            errorMessage + "; RuntimeException = " + e.toString());
+                        reply = FCPPluginMessage.constructReplyMessage(message, null, null, false,
+                            "InternalError", errorMessage + "; RuntimeException = " + e.toString());
                     }
                 }
                 
@@ -707,7 +697,7 @@ public final class FCPPluginClient {
                     // waiting remote sendSynchronous() threads to return.
                     // (We don't if the message was a reply, replying to replies is disallowed.)
                     if(!message.isReplyMessage()) {
-                        reply = FredPluginFCPMessageHandler.FCPPluginMessage.constructReplyMessage(
+                        reply = FCPPluginMessage.constructReplyMessage(
                             message, null, null, true, null, null);
                     }
                 }
@@ -752,16 +742,16 @@ public final class FCPPluginClient {
      * Can be used by both server and client implementations to send messages in a blocking
      * manner to each other.<br>
      * The messages sent by this function will be delivered to the message handler
-     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
-     * FredPluginFCPMessageHandler.FCPPluginMessage)} of the remote side.<br><br>
+     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}
+     * of the remote side.<br><br>
      * 
      * This has the following differences to a regular non-synchronous
-     * {@link #send(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage)}:<br>
+     * {@link #send(SendDirection, FCPPluginMessage)}:<br>
      * - It will <b>wait</b> for a reply message of the remote side before returning.<br>
      *   A regular send() would instead queue the message for sending, and then return immediately.
      * - The reply message will be <b>returned to the calling thread</b> instead of being passed to
      *   the message handler {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(
-     *   FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} in another thread.<br>
+     *   FCPPluginClient, FCPPluginMessage)} in another thread.<br>
      *   NOTICE: It is possible that the reply message <b>is</b> passed to the message handler
      *   upon certain error conditions, for example if the timeout you specify when calling this
      *   function expires before the reply arrives. This is not guaranteed though.<br>
@@ -794,9 +784,8 @@ public final class FCPPluginClient {
      * ATTENTION: This function can only work properly as long the message which you passed to this
      * function does contain a message identifier which does not collide with one of another
      * message.<br>
-     * To ensure this, you <b>must</b> use the constructor
-     * {@link FredPluginFCPMessageHandler.FCPPluginMessage#construct(SimpleFieldSet, Bucket)} and do
-     * not call this function twice upon the same message.<br>
+     * To ensure this, you <b>must</b> use the constructor {@link FCPPluginMessage#construct(
+     * SimpleFieldSet, Bucket)} and do not call this function twice upon the same message.<br>
      * If you do not follow this rule and use colliding message identifiers, there might be side
      * effects such as:<br>
      * - This function might return the reply to the colliding message instead of the reply to
@@ -828,14 +817,13 @@ public final class FCPPluginClient {
      *            While you <b>can</b> use this to send messages to yourself, be careful not to
      *            cause thread deadlocks with this. The function will call your message
      *            handler function of {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(
-     *            FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} in <b>a
-     *            different thread</b>, so it should not cause deadlocks on its own, but you might
-     *            produce deadlocks with your own thread synchronization measures.<br><br>
+     *            FCPPluginClient, FCPPluginMessage)} in <b>a different thread</b>, so it should not
+     *            cause deadlocks on its own, but you might produce deadlocks with your own thread
+     *            synchronization measures.<br><br>
      * 
      * @param message
      *            <b>Must be</b> constructed using
-     *            {@link FredPluginFCPMessageHandler.FCPPluginMessage#construct(SimpleFieldSet,
-     *            Bucket)}.<br><br>
+     *            {@link FCPPluginMessage#construct(SimpleFieldSet, Bucket)}.<br><br>
      * 
      *            Must <b>not</b> be a reply message: This function needs determine when the remote
      *            side has finished processing the message so it knows when to return. That requires
@@ -858,15 +846,14 @@ public final class FCPPluginClient {
      *            remote side even if this function has thrown, and you might receive an off-thread
      *            reply to the message in the {@link FredPluginFCPMessageHandler}.<br><br>
      * 
-     * @return The reply {@link FredPluginFCPMessageHandler.FCPPluginMessage} which the remote
-     *         partner sent to your message.<br><br>
+     * @return The reply {@link FCPPluginMessage} which the remote partner sent to your message.
+     *         <br><br>
      * 
-     *         It's field {@link FredPluginFCPMessageHandler.FCPPluginMessage#success} will be
-     *         set to false if the message was delivered but the remote message handler indicated
-     *         that the FCP operation you initiated failed.<br>
-     *         The fields {@link FredPluginFCPMessageHandler.FCPPluginMessage#errorCode} and
-     *         {@link FredPluginFCPMessageHandler.FCPPluginMessage#errorMessage} might indicate
-     *         the type of the error.<br><br>
+     *         It's field {@link FCPPluginMessage#success} will be set to false if the message was
+     *         delivered but the remote message handler indicated that the FCP operation you
+     *         initiated failed.<br>
+     *         The fields {@link FCPPluginMessage#errorCode} and
+     *         {@link FCPPluginMessage#errorMessage} might indicate the type of the error.<br><br>
      * 
      *         This can be used to decide to retry certain operations. A practical example
      *         would be a user trying to create an account at an FCP server application:<br>
@@ -905,12 +892,12 @@ public final class FCPPluginClient {
      * @see FCPPluginClient#synchronousSends
      *          An overview of how synchronous sends and especially their threading work internally
      *          is provided at the map which stores them.
-     * @see #send(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage)
+     * @see #send(SendDirection, FCPPluginMessage)
      *          The non-blocking, asynchronous send() should be used instead of this whenever
      *          possible.
      */
-    public FredPluginFCPMessageHandler.FCPPluginMessage sendSynchronous(SendDirection direction,
-            FredPluginFCPMessageHandler.FCPPluginMessage message, long timeoutNanoSeconds)
+    public FCPPluginMessage sendSynchronous(SendDirection direction, FCPPluginMessage message,
+            long timeoutNanoSeconds)
                 throws IOException, InterruptedException {
         
         if(message.isReplyMessage()) {
