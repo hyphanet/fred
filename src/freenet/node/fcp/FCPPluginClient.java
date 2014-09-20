@@ -60,8 +60,8 @@ import freenet.support.io.NativeThread;
  * <p>1. The server is running in the node, the client is not - also called networked FCP
  * connections:<br/>
  * - The client connects to the node via network and sends FCP message of type
- *   <a href="https://wiki.freenetproject.org/FCPv2/FCPPluginMessage">
- *   freenet.node.fcp.FCPPluginMessage</a><br/>
+ *   <a href="https://wiki.freenetproject.org/FCPv2/FCPPluginMessage">FCPPluginMessage</a>, which
+ *   is internally represented by class {@link FCPPluginClientMessage}.<br/>
  * - The {@link FCPServer} creates a {@link FCPConnectionHandler} whose
  *   {@link FCPConnectionInputHandler} receives the FCP message.<br/>
  * - The {@link FCPConnectionInputHandler} uses {@link FCPMessage#create(String, SimpleFieldSet)}
