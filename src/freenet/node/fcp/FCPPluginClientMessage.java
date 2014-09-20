@@ -10,7 +10,6 @@ import com.db4o.ObjectContainer;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.fcp.FCPPluginClient.SendDirection;
-import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginTalker;
@@ -86,27 +85,27 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
      * this "Success" field. This will hopefully prevent implementors of custom clients from not
      * specifying reply messages as replies - they would be more likely to do that with "Success"
      * because that name doesn't indicate any relation with replys. When adding this, make sure to
-     * also add it to the {@link FredPluginFCPMessageHandler.FCPPluginMessage} and
-     * {@link FCPPluginServerMessage}. Addendum: To differentiate properly between the name of the
+     * also add it to the {@link FCPPluginMessage} and {@link FCPPluginServerMessage}.
+     * Addendum: To differentiate properly between the name of the
      * "FCPPluginReply" FCP message (represented by class {@link FCPPluginServerMessage}), which is
      * used for any server-to-client messages, including NON-reply ones, we should probably use
      * "IsAnswer" or something else which is a different word than reply.
      * (We cannot rename the "FCPPluginReply" message for backwards compatibility, see JavaDoc at
      * class {@link FCPPluginServerMessage}.)
      * This addendum of course also applies to using "answer" instead of reply at
-     * {@link FredPluginFCPMessageHandler.FCPPluginMessage}
+     * {@link FCPPluginMessage}
      * 
-     * @see FredPluginFCPMessageHandler.FCPPluginMessage#success
+     * @see FCPPluginMessage#success
      */
     private final Boolean success;
 
     /**
-     * @see FredPluginFCPMessageHandler.FCPPluginMessage#errorCode
+     * @see FCPPluginMessage#errorCode
      */
     private final String errorCode;
 
     /**
-     * @see FredPluginFCPMessageHandler.FCPPluginMessage#errorMessage
+     * @see FCPPluginMessage#errorMessage
      */
     private final String errorMessage;
 
@@ -208,8 +207,7 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
         }
         
         if(client != null) {
-            FredPluginFCPMessageHandler.FCPPluginMessage message
-            = FredPluginFCPMessageHandler.FCPPluginMessage.constructRawMessage(
+            FCPPluginMessage message = FCPPluginMessage.constructRawMessage(
                 client.computePermissions(), identifier, plugparams, this.bucket, success,
                 errorCode, errorMessage);
             
