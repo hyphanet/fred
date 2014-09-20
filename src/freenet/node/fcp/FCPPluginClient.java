@@ -757,28 +757,28 @@ public final class FCPPluginClient {
             synchronousSendsLock.readLock().unlock();
         }
         
-            synchronousSendsLock.writeLock().lock();
-            try {
-                SynchronousSend synchronousSend = synchronousSends.get(message.identifier);
-                if(synchronousSend == null) {
-                    // The waiting sendSynchronous() has probably returned already because its
-                    // timeout expired.
-                    // So by returning false, we ask the caller to deliver the message to the
-                    // regular message handling interface to make sure that it is not lost.
-                    return false;
-                }
-                
-                    assert(synchronousSend.reply == null)
-                    : "One identifier should not be used for multiple messages or replies";
-
-                    synchronousSend.reply = message;
-                    // Wake up the waiting synchronousSend() thread
-                    synchronousSend.completionSignal.signal();
-
-                    return true;
-            } finally {
-                synchronousSendsLock.writeLock().unlock();
+        synchronousSendsLock.writeLock().lock();
+        try {
+            SynchronousSend synchronousSend = synchronousSends.get(message.identifier);
+            if(synchronousSend == null) {
+                // The waiting sendSynchronous() has probably returned already because its
+                // timeout expired.
+                // So by returning false, we ask the caller to deliver the message to the
+                // regular message handling interface to make sure that it is not lost.
+                return false;
             }
+
+            assert(synchronousSend.reply == null)
+                : "One identifier should not be used for multiple messages or replies";
+
+            synchronousSend.reply = message;
+            // Wake up the waiting synchronousSend() thread
+            synchronousSend.completionSignal.signal();
+
+            return true;
+        } finally {
+            synchronousSendsLock.writeLock().unlock();
+        }
     }
 
     /**
