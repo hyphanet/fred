@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import freenet.pluginmanager.FredPluginFCPMessageHandler;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
@@ -25,7 +25,7 @@ import freenet.support.io.NativeThread;
  * The normal flow of plugin FCP is that clients send messages to a server plugin, and the server
  * plugin immediately sends a reply via the {@link FCPPluginClient} which was passed to its message
  * handling function {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
- * FredPluginFCPMessageHandler.FCPPluginMessage)}.<br/>
+ * FCPPluginMessage)}.<br/>
  * This might not be sufficient for certain usecases: The reply to a message might take quite some
  * time to compute, possibly hours. Then a reference to the original client needs to be stored in
  * the plugin's database, not memory.<br/>
