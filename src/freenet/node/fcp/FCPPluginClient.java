@@ -732,7 +732,11 @@ public final class FCPPluginClient {
         // We do this through the Map FCPPluginClient.synchronousSends, which is guarded by.
         // FCPPluginClient.synchronousSendsLock. Also see the JavaDoc of the Map for an overview of
         // this mechanism.
-        if(message.isReplyMessage()) {
+        
+        if(!message.isReplyMessage()) {
+            return false;
+        }
+
             // Since the JavaDoc of sendSynchronous() tells people to use it not very often due to
             // the impact upon thread count, we assume that the percentage of messages which pass
             // through here for which there is an actual sendSynchronous() thread waiting is small.
@@ -781,8 +785,6 @@ public final class FCPPluginClient {
             // We just continue this function and deliver the message to the regular message
             // handling interface to make sure that it is not lost. This is also documented
             // at sendSynchronous()
-        }
-
     }
 
     /**
