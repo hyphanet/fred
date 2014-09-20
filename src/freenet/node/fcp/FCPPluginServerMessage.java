@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.node.Node;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.PluginManager;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -60,17 +61,17 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
      * the original messages succeeded.<br>
      * For non-reply messages, this is null.
      * 
-     * @see FredPluginFCPMessageHandler.FCPPluginMessage#success
+     * @see FCPPluginMessage#success
      */
     private final Boolean success;
 
     /**
-     * @see FredPluginFCPMessageHandler.FCPPluginMessage#errorCode
+     * @see FCPPluginMessage#errorCode
      */
     private final String errorCode;
 
     /**
-     * @see FredPluginFCPMessageHandler.FCPPluginMessage#errorMessage
+     * @see FCPPluginMessage#errorMessage
      */
     private final String errorMessage;
 
@@ -80,9 +81,9 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
      * 
      *             <b>ATTENTION:</b> Upon removal of this constructor, you should remove the
      *             backend constructor so the only remaining constructor is the one which consumes
-     *             a {@link FredPluginFCPMessageHandler.FCPPluginMessage}. Then you should remove
-     *             all the member variables from this class which duplicate the members of that
-     *             class, and instead store a reference to an object of the other class.
+     *             a {@link FCPPluginMessage}. Then you should remove all the member variables from
+     *             this class which duplicate the members of that class, and instead store a
+     *             reference to an object of the other class.
      */
     @Deprecated
     public FCPPluginServerMessage(String pluginname, String identifier2, SimpleFieldSet fs,
@@ -94,8 +95,7 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
      * @param pluginname The class name of the plugin which is sending the reply. Must not be null.
      *                   See {@link PluginManager#getPluginInfoByClassName(String)}.
      */
-    public FCPPluginServerMessage(String pluginname,
-            FredPluginFCPMessageHandler.FCPPluginMessage reply) {
+    public FCPPluginServerMessage(String pluginname, FCPPluginMessage reply) {
         
         this(pluginname, reply.identifier, reply.parameters, reply.data, reply.success,
             reply.errorCode, reply.errorMessage);
@@ -104,8 +104,8 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
     }
 
     /**
-     * The parameters match the member variables of
-     * {@link FredPluginFCPMessageHandler.FCPPluginMessage}, and thus their JavaDoc applies.
+     * The parameters match the member variables of {@link FCPPluginMessage}, and thus their JavaDoc
+     * applies.
      */
     public FCPPluginServerMessage(String pluginname, String identifier2, SimpleFieldSet fs,
             Bucket bucket2, Boolean success, String errorCode, String errorMessage) {
