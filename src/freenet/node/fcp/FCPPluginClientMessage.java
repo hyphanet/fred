@@ -30,8 +30,14 @@ import freenet.support.SimpleFieldSet;
  * Also notice that class {@link FCPPluginClient} consumes only objects of type
  * {@link FCPPluginMessage}, not of this class here: As the external representation to both server
  * and client, it does not care whether a message is from the server or the client, and is
- * only interested in the external representation {@link FCPPluginMessage} of the message.
+ * only interested in the external representation {@link FCPPluginMessage} of the message.<br><br>
  * 
+ * ATTENTION: The on-network name of this message is different: It is {@value #NAME}. The class
+ * previously had the same name but it was decided to rename it to fix the name clash with the
+ * aforementioned external representation class {@link FCPPluginMessage}. To stay backward
+ * compatible, it was decided to keep the raw network message name as is.<br>
+ * TODO FIXME: Would it technically be possible to add a second name to the on-network data so we
+ * can get rid of the old name after a transition period?<br><br>
  * 
  * @link FCPPluginClient FCPPluginClient gives an overview of the code paths which messages take.
  * @author saces
@@ -53,6 +59,12 @@ import freenet.support.SimpleFieldSet;
  */
 public class FCPPluginClientMessage extends DataCarryingMessage {
 	
+    /**
+     * On-network format name of the message.
+     * 
+     * ATTENTION: This one is different to the class name. For an explanation, see the class-level
+     * JavaDoc {@link FCPPluginClientMessage}.
+     */
 	public static final String NAME = "FCPPluginMessage";
 	
 	public static final String PARAM_PREFIX = "Param";
