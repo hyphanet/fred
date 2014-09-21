@@ -497,8 +497,6 @@ public final class FCPPluginClient {
      * of the message handling functions first as it puts additional constraints on the usage
      * of the FCPPluginClient they receive.
      * 
-     * <br><br>FIXME: This has gotten too large, split it up.
-     * 
      * @param direction
      *            Whether to send the message to the server or the client message handler.<br><br>
      * 
