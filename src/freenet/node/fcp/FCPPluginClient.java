@@ -764,7 +764,7 @@ public final class FCPPluginClient {
                     // The remote partner has disconnected, which can happen during normal
                     // operation.
                     // There is nothing we can do to get the IOException out to the caller of the
-                    // initial send() which triggered the above send() of the reply.
+                    // initial send() of the original message which triggered the reply sending.
                     // - We are in a different thread, the initial send() has returned already.
                     // So we just log it, because it still might indicate problems if we try to
                     // send after disconnection.
