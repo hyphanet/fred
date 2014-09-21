@@ -721,7 +721,7 @@ public final class FCPPluginClient {
                         + " RuntimeException. See JavaDoc of its member interfaces for how signal"
                         + " errors properly."
                         + " Client = " + FCPPluginClient.this + "; SendDirection = " + direction
-                        + " message = " + message;
+                        + "; message = " + message;
                     
                     Logger.error(messageHandler, errorMessage, e);
                     
