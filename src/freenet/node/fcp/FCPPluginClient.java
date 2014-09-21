@@ -543,7 +543,7 @@ public final class FCPPluginClient {
             (direction == SendDirection.ToClient && client != null);
         
         // The message will be dispatched to this handler in a thread. What is is will be decided
-        // according to messageHandlerCanExecuteLocally now.
+        // according to messageHandlerExistsLocally now.
         final FredPluginFCPMessageHandler messageHandler;
         
         if(!messageHandlerExistsLocally) {
