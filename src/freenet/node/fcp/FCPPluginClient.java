@@ -576,94 +576,7 @@ public final class FCPPluginClient {
             throw new IOException("The server plugin has been unloaded.");
         }
         
-        final Runnable messageDispatcher = new PrioRunnable() {
-            @Override
-            public void run() {
-                FCPPluginMessage reply = null;
-                
-                try {
-                    reply = messageHandler.handlePluginFCPMessage(FCPPluginClient.this, message);
-                } catch(RuntimeException e) {
-                    // The message handler is a server or client implementation, and thus as third
-                    // party code might have bugs. So we need to catch any RuntimeException here.
-                    // Notice that this is not normal mode of operation: Instead of throwing,
-                    // the JavaDoc requests message handlers to return a reply with success=false.
-                    
-                    String errorMessage = "FredPluginFCPMessageHandler threw"
-                        + " RuntimeException. See JavaDoc of its member interfaces for how signal"
-                        + " errors properly."
-                        + " Client = " + this + "; SendDirection = " + direction
-                        + " message = " + message;
-                    
-                    Logger.error(messageHandler, errorMessage, e);
-                    
-                    if(!message.isReplyMessage()) {
-                        // If the original message was not a reply already, we are allowed to send a
-                        // reply with success=false to indicate the error to the remote side.
-                        // This allows eventually waiting sendSynchronous() calls to fail quickly
-                        // instead of having to wait for the timeout because no reply arrives.
-                        reply = FCPPluginMessage.constructReplyMessage(message, null, null, false,
-                            "InternalError", errorMessage + "; RuntimeException = " + e.toString());
-                    }
-                }
-                
-                if(reply != null) {
-                    // Replying to replies is disallowed to prevent infinite bouncing.
-                    if(message.isReplyMessage()) {
-                        Logger.error(messageHandler, "FredPluginFCPMessageHandler tried to send a"
-                            + " reply to a reply. Discarding it. See JavaDoc of its member"
-                            + " interfaces for how to do this properly."
-                            + " Client = " + this + "; SendDirection = " + direction
-                            + " message = " + reply);
-                        
-                        reply = null;
-                    }
-                } else if(reply == null) {
-                    // The message handler succeeded in processing the message but does not have
-                    // anything to say as reply.
-                    // We send an empty "Success" reply nevertheless to to trigger eventually
-                    // waiting remote sendSynchronous() threads to return.
-                    // (We don't if the message was a reply, replying to replies is disallowed.)
-                    if(!message.isReplyMessage()) {
-                        reply = FCPPluginMessage.constructReplyMessage(
-                            message, null, null, true, null, null);
-                    }
-                }
-                
-                try {
-                    send(direction.invert(), reply);
-                } catch (IOException e) {
-                    // The remote partner has disconnected, which can happen during normal
-                    // operation.
-                    // There is nothing we can do to get the IOException out to the caller of the
-                    // initial send() which triggered the above send() of the reply.
-                    // - We are in a different thread, the initial send() has returned already.
-                    // So we just log it, because it still might indicate problems if we try to
-                    // send after disconnection.
-                    // We log it marked as from the messageHandler instead of the FCPPluginClient:
-                    // The messageHandler will be an object of the server or client plugin,
-                    // from a class contained in it. So there is a chance that the developer
-                    // has logging enabled for that class, and thus we log it marked as from that.
-                    
-                    Logger.warning(messageHandler, "Sending reply from FredPluginFCPMessageHandler"
-                        + " failed, the connection was closed already."
-                        + " Client = " + this + "; SendDirection = " + direction
-                        + " message = " + reply, e);
-                }
-            }
-
-            @Override
-            public int getPriority() {
-                NativeThread.PriorityLevel priority
-                    = (messageHandler instanceof PrioritizedMessageHandler) ?
-                        ((PrioritizedMessageHandler)messageHandler).getPriority()
-                        : NativeThread.PriorityLevel.NORM_PRIORITY;
-                
-                return priority.value;
-            }
-        };
-        
-        executor.execute(messageDispatcher, toStringShort());
+        dispatchMessageLocallyToMessageHandler(messageHandler, direction, message);
     }
     
     /**
@@ -791,6 +704,94 @@ public final class FCPPluginClient {
             final FredPluginFCPMessageHandler messageHandler, final SendDirection direction,
             final FCPPluginMessage message) {
         
+        final Runnable messageDispatcher = new PrioRunnable() {
+            @Override
+            public void run() {
+                FCPPluginMessage reply = null;
+                
+                try {
+                    reply = messageHandler.handlePluginFCPMessage(FCPPluginClient.this, message);
+                } catch(RuntimeException e) {
+                    // The message handler is a server or client implementation, and thus as third
+                    // party code might have bugs. So we need to catch any RuntimeException here.
+                    // Notice that this is not normal mode of operation: Instead of throwing,
+                    // the JavaDoc requests message handlers to return a reply with success=false.
+                    
+                    String errorMessage = "FredPluginFCPMessageHandler threw"
+                        + " RuntimeException. See JavaDoc of its member interfaces for how signal"
+                        + " errors properly."
+                        + " Client = " + this + "; SendDirection = " + direction
+                        + " message = " + message;
+                    
+                    Logger.error(messageHandler, errorMessage, e);
+                    
+                    if(!message.isReplyMessage()) {
+                        // If the original message was not a reply already, we are allowed to send a
+                        // reply with success=false to indicate the error to the remote side.
+                        // This allows eventually waiting sendSynchronous() calls to fail quickly
+                        // instead of having to wait for the timeout because no reply arrives.
+                        reply = FCPPluginMessage.constructReplyMessage(message, null, null, false,
+                            "InternalError", errorMessage + "; RuntimeException = " + e.toString());
+                    }
+                }
+                
+                if(reply != null) {
+                    // Replying to replies is disallowed to prevent infinite bouncing.
+                    if(message.isReplyMessage()) {
+                        Logger.error(messageHandler, "FredPluginFCPMessageHandler tried to send a"
+                            + " reply to a reply. Discarding it. See JavaDoc of its member"
+                            + " interfaces for how to do this properly."
+                            + " Client = " + this + "; SendDirection = " + direction
+                            + " message = " + reply);
+                        
+                        reply = null;
+                    }
+                } else if(reply == null) {
+                    // The message handler succeeded in processing the message but does not have
+                    // anything to say as reply.
+                    // We send an empty "Success" reply nevertheless to to trigger eventually
+                    // waiting remote sendSynchronous() threads to return.
+                    // (We don't if the message was a reply, replying to replies is disallowed.)
+                    if(!message.isReplyMessage()) {
+                        reply = FCPPluginMessage.constructReplyMessage(
+                            message, null, null, true, null, null);
+                    }
+                }
+                
+                try {
+                    send(direction.invert(), reply);
+                } catch (IOException e) {
+                    // The remote partner has disconnected, which can happen during normal
+                    // operation.
+                    // There is nothing we can do to get the IOException out to the caller of the
+                    // initial send() which triggered the above send() of the reply.
+                    // - We are in a different thread, the initial send() has returned already.
+                    // So we just log it, because it still might indicate problems if we try to
+                    // send after disconnection.
+                    // We log it marked as from the messageHandler instead of the FCPPluginClient:
+                    // The messageHandler will be an object of the server or client plugin,
+                    // from a class contained in it. So there is a chance that the developer
+                    // has logging enabled for that class, and thus we log it marked as from that.
+                    
+                    Logger.warning(messageHandler, "Sending reply from FredPluginFCPMessageHandler"
+                        + " failed, the connection was closed already."
+                        + " Client = " + this + "; SendDirection = " + direction
+                        + " message = " + reply, e);
+                }
+            }
+
+            @Override
+            public int getPriority() {
+                NativeThread.PriorityLevel priority
+                    = (messageHandler instanceof PrioritizedMessageHandler) ?
+                        ((PrioritizedMessageHandler)messageHandler).getPriority()
+                        : NativeThread.PriorityLevel.NORM_PRIORITY;
+                
+                return priority.value;
+            }
+        };
+        
+        executor.execute(messageDispatcher, toStringShort());
     }
 
     /**
