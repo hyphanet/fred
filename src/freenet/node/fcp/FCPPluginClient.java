@@ -741,7 +741,7 @@ public final class FCPPluginClient {
                         Logger.error(messageHandler, "FredPluginFCPMessageHandler tried to send a"
                             + " reply to a reply. Discarding it. See JavaDoc of its member"
                             + " interfaces for how to do this properly."
-                            + " Client = " + this + "; SendDirection = " + direction
+                            + " Client = " + FCPPluginClient.this + "; SendDirection = " + direction
                             + " message = " + reply);
                         
                         reply = null;
@@ -775,7 +775,7 @@ public final class FCPPluginClient {
                     
                     Logger.warning(messageHandler, "Sending reply from FredPluginFCPMessageHandler"
                         + " failed, the connection was closed already."
-                        + " Client = " + this + "; SendDirection = " + direction
+                        + " Client = " + FCPPluginClient.this + "; SendDirection = " + direction
                         + " message = " + reply, e);
                 }
             }
