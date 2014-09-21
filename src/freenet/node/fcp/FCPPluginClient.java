@@ -720,7 +720,7 @@ public final class FCPPluginClient {
                     String errorMessage = "FredPluginFCPMessageHandler threw"
                         + " RuntimeException. See JavaDoc of its member interfaces for how signal"
                         + " errors properly."
-                        + " Client = " + this + "; SendDirection = " + direction
+                        + " Client = " + FCPPluginClient.this + "; SendDirection = " + direction
                         + " message = " + message;
                     
                     Logger.error(messageHandler, errorMessage, e);
