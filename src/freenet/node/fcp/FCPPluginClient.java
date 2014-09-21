@@ -781,6 +781,19 @@ public final class FCPPluginClient {
     }
 
     /**
+     * Backend for {@link #send(SendDirection, FCPPluginMessage)} to dispatch messages to a
+     * {@link FredPluginFCPMessageHandler}.
+     * 
+     * This shall only be called for messages for which it was determined that the message handler
+     * is a plugin running in the local VM.
+     */
+    private void dispatchMessageLocallyToMessageHandler(
+            final FredPluginFCPMessageHandler messageHandler, final SendDirection direction,
+            final FCPPluginMessage message) {
+        
+    }
+
+    /**
      * Can be used by both server and client implementations to send messages in a blocking
      * manner to each other.<br>
      * The messages sent by this function will be delivered to the message handler
