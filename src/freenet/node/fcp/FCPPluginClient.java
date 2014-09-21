@@ -540,10 +540,6 @@ public final class FCPPluginClient {
             (direction == SendDirection.ToServer) ||
             (direction == SendDirection.ToClient && client != null);
         
-        // The message will be dispatched to this handler in a thread. What is is will be decided
-        // according to messageHandlerExistsLocally now.
-        final FredPluginFCPMessageHandler messageHandler;
-        
         if(!messageHandlerExistsLocally) {
             dispatchMessageByNetwork(direction, message);
             return;
@@ -552,7 +548,6 @@ public final class FCPPluginClient {
         assert(direction == SendDirection.ToServer ? server != null : client != null)
             : "We already decided that the message handler exists locally. "
             + "We should have only decided so if the handler is not null.";
-        
         
         // Since the message handler is determined to be local at this point, we now must check
         // whether it is a blocking sendSynchronous() thread instead of a regular
@@ -563,8 +558,12 @@ public final class FCPPluginClient {
         // sendSynchronous() is waiting for.
         if(maybeDispatchMessageLocallyToSendSynchronousThread(direction, message))
             return;
-
-        messageHandler = (direction == SendDirection.ToServer) ? server.get() : client;
+        
+        // We now know that the message handler is not attached by network, and that it is not a
+        // sendSynchronous() thread. So it must be a FredPluginFCPMessageHandler, and we determine
+        // what it is and dispatch the message to it.
+        final FredPluginFCPMessageHandler messageHandler
+            = (direction == SendDirection.ToServer) ? server.get() : client;
 
         if(messageHandler == null) {
             // server is a WeakReference which can be nulled if the server plugin was unloaded.
@@ -698,6 +697,8 @@ public final class FCPPluginClient {
      * 
      * This shall only be called for messages for which it was determined that the message handler
      * is a plugin running in the local VM.<br><br>
+     * 
+     * The message will be dispatched in a separate thread so this function can return quickly.
      */
     private void dispatchMessageLocallyToMessageHandler(
             final FredPluginFCPMessageHandler messageHandler, final SendDirection direction,
