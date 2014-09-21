@@ -579,7 +579,7 @@ public final class FCPPluginClient {
     
     /**
      * Backend for {@link #send(SendDirection, FCPPluginMessage)} to dispatch messages which need
-     * to be transported by network.
+     * to be transported by network.<br><br>
      * 
      * This shall only be called for messages for which it was determined that the message handler
      * is not a plugin running in the local VM.
@@ -615,6 +615,7 @@ public final class FCPPluginClient {
     /**
      * Backend for {@link #send(SendDirection, FCPPluginMessage)} to dispatch messages to a thread
      * waiting in {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)} for the message.
+     * <br><br>
      * 
      * This shall only be called for messages for which it was determined that the message handler
      * is a plugin running in the local VM.
@@ -693,10 +694,10 @@ public final class FCPPluginClient {
 
     /**
      * Backend for {@link #send(SendDirection, FCPPluginMessage)} to dispatch messages to a
-     * {@link FredPluginFCPMessageHandler}.
+     * {@link FredPluginFCPMessageHandler}.<br><br>
      * 
      * This shall only be called for messages for which it was determined that the message handler
-     * is a plugin running in the local VM.
+     * is a plugin running in the local VM.<br><br>
      */
     private void dispatchMessageLocallyToMessageHandler(
             final FredPluginFCPMessageHandler messageHandler, final SendDirection direction,
