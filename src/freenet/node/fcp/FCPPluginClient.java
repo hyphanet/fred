@@ -721,8 +721,7 @@ public final class FCPPluginClient {
      *          is provided at the map which stores them.
      */
     private boolean maybeDispatchMessageLocallyToSendSynchronousThread(final SendDirection direction,
-            final FCPPluginMessage message)
-                throws IOException {
+            final FCPPluginMessage message) {
         // Since the message handler is determined to be local at this point, we now must check
         // whether it is a blocking sendSynchronous() thread instead of a regular
         // FredPluginFCPMessageHandler.
