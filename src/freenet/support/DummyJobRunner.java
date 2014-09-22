@@ -54,7 +54,7 @@ public class DummyJobRunner implements PersistentJobRunner {
     }
 
     @Override
-    public boolean hasStarted() {
+    public boolean hasLoaded() {
         return true;
     }
 

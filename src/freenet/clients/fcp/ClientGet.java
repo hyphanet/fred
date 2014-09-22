@@ -654,7 +654,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 	
 	private void handleCompatibilityMode(final SplitfileCompatibilityModeEvent ce, ClientContext context) {
-	    if(persistence == Persistence.FOREVER && context.jobRunner.hasStarted()) {
+	    if(persistence == Persistence.FOREVER && context.jobRunner.hasLoaded()) {
 	        try {
 	            context.jobRunner.queue(new PersistentJob() {
 	                

@@ -144,7 +144,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 deleteFile(dir, baseName, false, true);
                 deleteFile(dir, baseName, true, false);
                 deleteFile(dir, baseName, true, true);
-            } else if(!hasStarted()) {
+            } else if(!hasLoaded()) {
                 // Some serialization failures cause us to fail only at the point of scheduling the request.
                 // So if that happens we need to retry with serialization turned off.
                 // The requests that loaded fine already will not be affected as we check for duplicates.

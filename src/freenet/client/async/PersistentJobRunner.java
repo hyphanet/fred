@@ -59,7 +59,7 @@ public interface PersistentJobRunner {
     void setCheckpointASAP();
 
     /** Has the queue started yet? */
-    boolean hasStarted();
+    boolean hasLoaded();
     
     interface CheckpointLock {
         /** The job is finished, unlock, allow a checkpoint if necessary.

@@ -39,6 +39,8 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     private boolean loading = false;
     /** Is checkpointing enabled at the moment? */
     private boolean enableCheckpointing = false;
+    /** Have we loaded from disk at least once, regardless of enableCheckpointing? */
+    private boolean loaded = false;
     /** True if checkpoint is in progress */
     private boolean writing = false;
     /** True if we should reject all new jobs */
@@ -293,6 +295,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         synchronized(sync) {
             loading = true;
             enableCheckpointing = true;
+            loaded = true;
             updateLastCheckpointed();
             if(!mustCheckpoint) return;
             writing = true;
@@ -393,9 +396,9 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
     }
     
-    public boolean hasStarted() {
+    public boolean hasLoaded() {
         synchronized(sync) {
-            return enableCheckpointing;
+            return loaded;
         }
     }
     
