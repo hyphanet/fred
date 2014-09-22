@@ -27,6 +27,7 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.Metadata.DocumentType;
 import freenet.client.Metadata.SimpleManifestComposer;
+import freenet.client.async.BaseManifestPutter.PutHandler;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -73,6 +74,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
 	private boolean cancelled;
 	private boolean finished;
 	private final boolean persistent;
+	/** See ContainerBuilder._rootDir. */
 	private final HashMap<String, Object> origMetadata;
 	private final ARCHIVE_TYPE archiveType;
 	private final FreenetURI targetURI;
@@ -378,7 +380,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
         resumeMetadata(origMetadata, context);
         // Do not call start(). start() immediately transitions to another state.
     }
-
+    
     @SuppressWarnings("unchecked")
     private void resumeMetadata(Map<String, Object> map, ClientContext context) throws ResumeFailedException {
         Map<String, Object> manifestElements = (Map<String, Object>)map;
@@ -390,6 +392,11 @@ public class ContainerInserter implements ClientPutState, Serializable {
                 e.onResume(context);
             } else if(o instanceof Metadata) {
                 // Ignore
+            } else if(o instanceof PutHandler) {
+                PutHandler handler = (PutHandler) o;
+                handler.onResume(context);
+            } else if(o instanceof ManifestElement) {
+                ((ManifestElement)o).onResume(context);
             } else throw new IllegalArgumentException("Unknown manifest element: "+o);
         }
     }

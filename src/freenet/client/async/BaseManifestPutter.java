@@ -352,7 +352,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 
 	// Only implements PutCompletionCallback for the final metadata insert
-	private abstract class PutHandler extends BaseClientPutter implements PutCompletionCallback {
+	abstract class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 
         private static final long serialVersionUID = 1L;
 
@@ -1410,10 +1410,15 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				currentDir.put("", ph);
 		}
 	}
-
+	
 	protected final class ContainerBuilder extends ManifestBuilder {
 
         private static final long serialVersionUID = 1L;
+        /** Tree containing the status of the insert. Can have ManifestElement's (original files to
+         * insert or bundle inside a container), HashMap's (more subdirs), Metadata (to be put into 
+         * a container as metadata for e.g. an external file), a ContainerPutHandler or an 
+         * ArchivePutHandler (for containers that are part of the structure, and external containers 
+         * for overflow, respectively). */
         private final HashMap<String, Object> _rootDir;
 		private final PutHandler selfHandle;
 
