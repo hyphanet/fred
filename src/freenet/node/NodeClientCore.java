@@ -467,7 +467,7 @@ public class NodeClientCore implements Persistable {
         }
         
         try {
-            initStorage(databaseKey, container);
+            initStorage(databaseKey);
         } catch (MasterKeysWrongPasswordException e) {
             System.err.println("Cannot load persistent requests, awaiting password ...");
             node.setDatabaseAwaitingPassword();
@@ -501,7 +501,7 @@ public class NodeClientCore implements Persistable {
                 if(clientLayerPersister.hasLoaded()) {
                     // May need to change filenames for client.dat* or even create them.
                     try {
-                        initStorage(NodeClientCore.this.node.getDatabaseKey(), container);
+                        initStorage(NodeClientCore.this.node.getDatabaseKey());
                     } catch (MasterKeysWrongPasswordException e) {
                         NodeClientCore.this.node.setDatabaseAwaitingPassword();
                     }
@@ -721,7 +721,7 @@ public class NodeClientCore implements Persistable {
 	boolean lateInitDatabase(long nodeDBHandle, ObjectContainer container, DatabaseKey databaseKey) throws NodeInitException {
 		System.out.println("Late database initialisation: starting middle phase");
 		try {
-		    initStorage(databaseKey, container);
+		    initStorage(databaseKey);
 		} catch (MasterKeysWrongPasswordException e) {
 		    Logger.error(this, "Impossible: can't load even though have key? "+(databaseKey != null));
 		    return true;
@@ -738,7 +738,7 @@ public class NodeClientCore implements Persistable {
 	 * @param databaseKey The encryption key.
 	 * @throws MasterKeysWrongPasswordException If it needs an encryption key.
 	 */
-	private void initStorage(DatabaseKey databaseKey, ObjectContainer container) throws MasterKeysWrongPasswordException {
+	private void initStorage(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException {
 	    clientLayerPersister.setFilesAndLoad(node.nodeDir.dir(), "client.dat", 
 	            node.wantEncryptedDatabase(), node.wantNoPersistentDatabase(), databaseKey, clientContext, requestStarters, random);
 	}
