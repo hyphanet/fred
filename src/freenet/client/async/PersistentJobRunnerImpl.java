@@ -297,7 +297,6 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             enableCheckpointing = true;
             loaded = true;
             updateLastCheckpointed();
-            if(!mustCheckpoint) return;
             writing = true;
         }
         checkpointOffThread();
