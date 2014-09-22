@@ -220,7 +220,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     
     public void delayedCheckpoint() {
         synchronized(sync) {
-            if(killed) return;
+            if(killed || !started) return;
             if(willCheck) return;
             ticker.queueTimedJob(new PrioRunnable() {
                 
@@ -231,7 +231,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                         if(!(mustCheckpoint || 
                                 System.currentTimeMillis() - lastCheckpointed > checkpointInterval))
                             return;
-                        if(killed) return;
+                        if(killed || !started) return;
                         if(runningJobs != 0) return;
                         writing = true;
                     }
@@ -254,6 +254,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             @Override
             public void run() {
                 synchronized(sync) {
+                    if(!started) return;
                     if(killed) return;
                 }
                 checkpoint(false);
@@ -269,6 +270,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
 
     public void setCheckpointASAP() {
         synchronized(sync) {
+            if(!started) return;
             mustCheckpoint = true;
             if(runningJobs != 0) return;
         }
@@ -316,6 +318,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     public void waitForIdleAndCheckpoint() {
         synchronized(sync) {
             while(runningJobs > 0 || writing) {
+                if(!started) return;
                 System.out.println("Waiting to shutdown: "+runningJobs+" running"+(writing ? " (writing)" : ""));
                 try {
                     sync.wait();
@@ -332,6 +335,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     public void waitAndCheckpoint() throws PersistenceDisabledException {
         synchronized(sync) {
             while(runningJobs > 0 || writing) {
+                if(!started) return;
                 if(killed) throw new PersistenceDisabledException();
                 Logger.error(this, "Waiting for "+runningJobs+" to finish (writing="+writing+") to checkpoint...");
                 try {
@@ -358,6 +362,18 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
     }
     
+    public void waitForNotWriting() {
+        synchronized(sync) {
+            while(writing) {
+                try {
+                    sync.wait();
+                } catch (InterruptedException e) {
+                    // Ignore.
+                }
+            }
+        }
+    }
+
     public void killAndWaitForNotRunning() {
         synchronized(sync) {
             killed = true;
@@ -410,5 +426,10 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         };
     }
 
+    public void disableWrite() {
+        synchronized(sync) {
+            started = false;
+        }
+    }
 
 }
