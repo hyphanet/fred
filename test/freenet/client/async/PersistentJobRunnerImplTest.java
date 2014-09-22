@@ -19,7 +19,7 @@ public class PersistentJobRunnerImplTest extends TestCase {
         jobRunner = new JobRunner(exec, ticker, 1000);
         context = new ClientContext(0, null, exec, null, null, null, null, null, null, null, null, ticker, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         jobRunner.start(context);
-        jobRunner.onStarted();
+        jobRunner.onStarted(false);
         exec.waitForIdle();
         jobRunner.grabHasCheckpointed();
     }

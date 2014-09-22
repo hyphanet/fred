@@ -163,9 +163,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     innerSetFilesAndLoad(true, dir, baseName, writeEncrypted, encryptionKey, context, 
                             requestStarters, random);
                 }
-                onStarted();
+                onStarted(noWrite);
             } else {
                 innerSetFilesOnly(dir, baseName, writeEncrypted, encryptionKey);
+                onStarted(false);
             }
         }
     }
@@ -315,7 +316,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             salt = new byte[32];
             random.nextBytes(salt);
             requestStarters.setGlobalSalt(salt);
-            onStarted();
+            onStarted(false);
             return false;
         }
     }

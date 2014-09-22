@@ -291,10 +291,11 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
     }
     
-    protected void onStarted() {
+    protected void onStarted(boolean noWrite) {
         synchronized(sync) {
             loading = true;
-            enableCheckpointing = true;
+            if(!noWrite)
+                enableCheckpointing = true;
             loaded = true;
             updateLastCheckpointed();
             writing = true;
