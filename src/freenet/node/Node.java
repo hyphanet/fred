@@ -2852,9 +2852,6 @@ public class Node implements TimeSkewDetectorCallback {
 	private ObjectContainer openCryptDatabase(DatabaseKey databaseKey) throws IOException {
 
 		ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(databaseKey), dbFileCrypt.toString());
-		synchronized(this) {
-			databaseAwaitingPassword = false;
-		}
 		return database;
 	}
 
@@ -4740,7 +4737,8 @@ public class Node implements TimeSkewDetectorCallback {
 			if(!clientCacheAwaitingPassword) {
 				if(!inFirstTimeWizard) wantClientCache = true;
 			}
-			wantDatabase = db == null;
+			wantDatabase = databaseAwaitingPassword;
+			databaseAwaitingPassword = false;
 		}
 		if(wantClientCache)
 			activatePasswordedClientCache(keys);
