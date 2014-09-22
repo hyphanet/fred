@@ -386,32 +386,15 @@ public class Node implements TimeSkewDetectorCallback {
 				String suffix = getStoreSuffix();
 				if (val.equals("salt-hash")) {
 					byte[] key;
-					synchronized(Node.this) {
-						key = cachedClientCacheKey;
-						cachedClientCacheKey = null;
-					}
-					if(key == null) {
-						MasterKeys keys = null;
-						try {
-							if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-								key = new byte[32];
-								random.nextBytes(key);
-							} else {
-								keys = MasterKeys.read(masterKeysFile, random, "");
-								key = keys.clientCacheMasterKey;
-								keys.clearAllNotClientCacheKey();
-							}
-						} catch (MasterKeysWrongPasswordException e1) {
-							setClientCacheAwaitingPassword();
-							synchronized(Node.this) {
-								clientCacheType = val;
-							}
-							throw new InvalidConfigValueException("You must enter the password");
-						} catch (MasterKeysFileSizeException e1) {
-							throw new InvalidConfigValueException("Master keys file corrupted (too " + e1.sizeToString() + ")");
-						} catch (IOException e1) {
-							throw new InvalidConfigValueException("Master keys file cannot be accessed: "+e1);
-						}
+                    try {
+                        synchronized(Node.this) {
+                            if(keys == null) throw new MasterKeysWrongPasswordException();
+                            key = keys.clientCacheMasterKey;
+                            clientCacheType = val;
+                        }
+                    } catch (MasterKeysWrongPasswordException e1) {
+                        setClientCacheAwaitingPassword();
+                        throw new InvalidConfigValueException("You must enter the password");
 					}
 					try {
 						initSaltHashClientCacheFS(suffix, true, key);
@@ -421,8 +404,6 @@ public class Node implements TimeSkewDetectorCallback {
 						e.printStackTrace();
 						// FIXME l10n both on the NodeInitException and the wrapper message
 						throw new InvalidConfigValueException("Unable to create new store: "+e);
-					} finally {
-						MasterKeys.clear(key);
 					}
 				} else if(val.equals("ram")) {
 					initRAMClientCacheFS();
@@ -481,6 +462,10 @@ public class Node implements TimeSkewDetectorCallback {
 	/** Encryption key for client.dat.crypt or client.dat.bak.crypt (and also the old node.db4o.
 	 * crypt) */
 	private DatabaseKey databaseKey;
+	
+	/** Encryption keys, if loaded, null if waiting for a password. We must be able to write them, 
+	 * and they're all used elsewhere anyway, so there's no point trying not to keep them in memory. */
+	private MasterKeys keys;
 
 	/** Stats */
 	public final NodeStats nodeStats;
@@ -575,9 +560,6 @@ public class Node implements TimeSkewDetectorCallback {
 	long maxClientCacheKeys;
 	/** Maximum size of the client cache. Kept to avoid rounding problems. */
 	private long maxTotalClientCacheSize;
-
-	/** Cached client cache key if the user is in the first-time wizard */
-	private byte[] cachedClientCacheKey;
 
 	/** The CHK datacache. Short term cache which stores everything that passes
 	 * through this node. */
@@ -1219,30 +1201,23 @@ public class Node implements TimeSkewDetectorCallback {
 
         byte[] clientCacheKey = null;
         
-        MasterKeys keys = null;
         MasterSecret persistentSecret = null;
         for(int i=0;i<2; i++) {
 
             try {
                 if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-                    clientCacheKey = new byte[32];
-                    random.nextBytes(clientCacheKey);
-                    databaseKey = DatabaseKey.createRandom(random);
-                    persistentSecret = new MasterSecret();
+                    keys = MasterKeys.createRandom(random);
                 } else {
                     keys = MasterKeys.read(masterKeysFile, random, "");
-                    clientCacheKey = keys.clientCacheMasterKey;
-                    persistentSecret = keys.getPersistentMasterSecret();
-                    if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
-                        System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
-                        securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
-                        databaseKey = keys.createDatabaseKey(random);
-                        break;
-                    } else {
-                        databaseKey = keys.createDatabaseKey(random);
-                        break;
-                    }
                 }
+                clientCacheKey = keys.clientCacheMasterKey;
+                persistentSecret = keys.getPersistentMasterSecret();
+                databaseKey = keys.createDatabaseKey(random);
+                if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
+                    System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
+                    securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
+                }
+                break;
             } catch (MasterKeysWrongPasswordException e) {
                 break;
             } catch (MasterKeysFileSizeException e) {
@@ -1250,8 +1225,6 @@ public class Node implements TimeSkewDetectorCallback {
                 masterKeysFile.delete();
             } catch (IOException e) {
                 break;
-            } finally {
-                MasterKeys.clear(clientCacheKey);
             }
         }
 
@@ -2276,12 +2249,8 @@ public class Node implements TimeSkewDetectorCallback {
 		        System.err.println("Cannot open client-cache, it is passworded");
 		        setClientCacheAwaitingPassword();
 		    } else {
-		        try {
-		            initSaltHashClientCacheFS(suffix, false, clientCacheKey);
-		            startedClientCache = true;
-		        } finally {
-		            MasterKeys.clear(clientCacheKey);
-		        }
+		        initSaltHashClientCacheFS(suffix, false, clientCacheKey);
+		        startedClientCache = true;
 		    }
 		} else if(clientCacheType.equals("none")) {
 			initNoClientCacheFS();
@@ -2306,8 +2275,6 @@ public class Node implements TimeSkewDetectorCallback {
 				System.err.println("Unable to load database: "+e2);
 				e2.printStackTrace();
 			}
-			if(keys != null)
-			    keys.clearAll();
 		}
 
 		nodeConfig.register("useSlashdotCache", true, sortOrder++, true, false, "Node.useSlashdotCache", "Node.useSlashdotCacheLong", new BooleanCallback() {
@@ -4729,12 +4696,13 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM)
 			Logger.error(this, "Setting password while physical threat level is at MAXIMUM???");
-		MasterKeys keys = MasterKeys.read(masterKeysFile, random, password);
-		try {
-			setPasswordInner(keys, inFirstTimeWizard);
-		} finally {
-			keys.clearAll();
+		MasterKeys k;
+		synchronized(this) {
+		    if(keys != null)
+		        keys = MasterKeys.read(masterKeysFile, random, password);
+		    k = keys;
 		}
+		setPasswordInner(k, inFirstTimeWizard);
 	}
 
 	private void setPasswordInner(MasterKeys keys, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
@@ -4744,21 +4712,8 @@ public class Node implements TimeSkewDetectorCallback {
 		synchronized(this) {
 			enteredPassword = true;
 			if(!clientCacheAwaitingPassword) {
-				if(inFirstTimeWizard) {
-					cachedClientCacheKey = keys.clientCacheMasterKey.clone();
-					// Wipe it if haven't specified datastore size in 10 minutes.
-					ticker.queueTimedJob(new Runnable() {
-						@Override
-						public void run() {
-							synchronized(Node.this) {
-								MasterKeys.clear(cachedClientCacheKey);
-								cachedClientCacheKey = null;
-							}
-						}
-
-					}, MINUTES.toMillis(10));
-				}
-			} else wantClientCache = true;
+				if(!inFirstTimeWizard) wantClientCache = true;
+			}
 			wantDatabase = db == null;
 		}
 		if(wantClientCache)
@@ -4801,10 +4756,8 @@ public class Node implements TimeSkewDetectorCallback {
 		if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM)
 			Logger.error(this, "Changing password while physical threat level is at MAXIMUM???");
 		if(masterKeysFile.exists()) {
-			MasterKeys keys = MasterKeys.read(masterKeysFile, random, oldPassword);
 			keys.changePassword(masterKeysFile, newPassword, random);
 			setPasswordInner(keys, inFirstTimeWizard);
-			keys.clearAll();
 		} else {
 			setMasterPassword(newPassword, inFirstTimeWizard);
 		}

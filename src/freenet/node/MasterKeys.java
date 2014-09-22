@@ -13,6 +13,7 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Random;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.MasterSecret;
@@ -43,8 +44,21 @@ public class MasterKeys {
 		this.flags = flags;
 		this.tempfilesMasterSecret = tempfilesMasterSecret;
 	}
+	
+    /** Create a MasterKeys with random keys.
+     * @param random A secure RNG. Not specifically a SecureRandom because we want to be able to 
+     * use this in tests. */
+    public static MasterKeys createRandom(Random random) {
+        byte[] clientCacheKey = new byte[32];
+        random.nextBytes(clientCacheKey);
+        byte[] databaseKey = new byte[32];
+        random.nextBytes(databaseKey);
+        byte[] tempfilesMasterSecret = new byte[64];
+        random.nextBytes(tempfilesMasterSecret);
+        return new MasterKeys(clientCacheKey, databaseKey, tempfilesMasterSecret, 0);
+    }
 
-	void clearClientCacheKeys() {
+    void clearClientCacheKeys() {
 		clear(clientCacheMasterKey);
 	}
 
@@ -170,13 +184,7 @@ public class MasterKeys {
 			}
 		}
 		System.err.println("Creating new master keys file");
-        byte[] clientCacheKey = new byte[32];
-        hardRandom.nextBytes(clientCacheKey);
-        byte[] databaseKey = new byte[32];
-        hardRandom.nextBytes(databaseKey);
-        byte[] tempfilesMasterSecret = new byte[64];
-        hardRandom.nextBytes(tempfilesMasterSecret);
-		MasterKeys ret = new MasterKeys(clientCacheKey, databaseKey, tempfilesMasterSecret, 0);
+		MasterKeys ret = createRandom(hardRandom);
 		ret.write(masterKeysFile, password, hardRandom);
 		return ret;
 	}
@@ -339,26 +347,6 @@ public class MasterKeys {
 		FileUtil.secureDelete(masterKeysFile);
 	}
 
-	public void clearAllNotClientCacheKey() {
-		clear(databaseKey);
-        clear(tempfilesMasterSecret);
-	}
-
-	public void clearAllNotDatabaseKey() {
-		clear(clientCacheMasterKey);
-        clear(tempfilesMasterSecret);
-	}
-
-	public void clearAll() {
-		clear(clientCacheMasterKey);
-		clear(databaseKey);
-		clear(tempfilesMasterSecret);
-	}
-
-	public void clearAllNotClientCacheKeyOrDatabaseKey() {
-		// Do nothing. For now.
-	}
-	
 	public DatabaseKey createDatabaseKey(RandomSource random) {
 	    return new DatabaseKey(databaseKey, random);
 	}
