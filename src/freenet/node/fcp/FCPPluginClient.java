@@ -75,7 +75,7 @@ import freenet.support.io.NativeThread;
  *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
  *   <br/>
  * - As each FCPPluginClient object exists for the lifetime of a network connection, the FCP server
- *   plugin may store the ID of the FCPPluginClient and query it via
+ *   plugin may store the UUID of the FCPPluginClient and query it via
  *   {@link PluginRespirator#getPluginClientByID(UUID)}. It can use this to send messages to the
  *   client application on its own, that is not triggered by any client messages.<br/>
  * </p>
@@ -92,7 +92,7 @@ import freenet.support.io.NativeThread;
  *   That is the same handler as with networked FCP connections.<br/>
  * - The client plugin keeps a strong reference to the FCPPluginClient in memory as long as it wants
  *   to keep the connection open.<br/>
- * - Same as with networked FCP connections, the FCP server plugin can store the ID of the
+ * - Same as with networked FCP connections, the FCP server plugin can store the UUID of the
  *   FCPPluginClient and in the future re-obtain the client by
  *   {@link PluginRespirator#getPluginClientByID(UUID)}. It can use this to send messages to the
  *   client application on its own, that is not triggered by any client messages. <br/>
@@ -109,9 +109,9 @@ import freenet.support.io.NativeThread;
  * single FCPPluginClient with the plugin of that name as connection partner. This is enforced by
  * {@link FCPConnectionHandler#getPluginClient(String)}. In other words: One
  * {@link FCPConnectionHandler} can only have one connection to a certain plugin.<br/>
- * The reason for this is the following: Certain plugins might need to store the ID of a client in
+ * The reason for this is the following: Certain plugins might need to store the UUID of a client in
  * their database so they are able to send data to the client if an event of interest to the client
- * happens in the future. Therefore, the {@link FCPConnectionHandler} needs to store clients by ID.
+ * happens in the future. Therefore, the {@link FCPConnectionHandler} has to store clients by UUID.
  * To prevent excessive growth of that table, we need to re-use existing clients. One client per
  * pluginName per {@link FCPConnectionHandler} is the re-use.<br/>
  * If you  nevertheless need multiple clients to a plugin, you have to create multiple FCP
