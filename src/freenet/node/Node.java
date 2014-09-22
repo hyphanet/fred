@@ -2079,6 +2079,22 @@ public class Node implements TimeSkewDetectorCallback {
 							clientCore.alerts.register(new SimpleUserAlert(true, NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFileTitle"), NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFile"), NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFileTitle"), UserAlert.CRITICAL_ERROR));
 						}
 					}
+					if(oldLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM && newLevel != PHYSICAL_THREAT_LEVEL.HIGH) {
+					    // Not passworded.
+					    // Create the master.keys.
+					    // Keys must exist.
+					    try {
+					        MasterKeys keys;
+					        synchronized(this) {
+					            keys = Node.this.keys;
+					        }
+                            keys.changePassword(masterKeysFile, "", random);
+                        } catch (IOException e) {
+                            Logger.error(this, "Unable to create encryption keys file: "+masterKeysFile+" : "+e, e);
+                            System.err.println("Unable to create encryption keys file: "+masterKeysFile+" : "+e);
+                            e.printStackTrace();
+                        }
+					}
 				}
 
 			});
