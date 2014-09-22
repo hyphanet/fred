@@ -337,8 +337,8 @@ public interface FredPluginFCPMessageHandler {
          *   exited this function; maybe even triggered by events at your plugin, not by client
          *   messages.<br/>
          * Then you should:<br/>
-         * - Obtain the UUID of the client via {@link FCPPluginClient#getID()}, store it, and exit
-         *   this message handling function.<br/>
+         * - Obtain the UUID of the client via {@link FCPPluginClient#getID()}, store the UUID,
+         *   and exit this message handling function.<br/>
          * - Compute your reply in another thread.</br>
          * - Once you're ready to send the reply, use
          *   {@link PluginRespirator#getPluginClientByID(java.util.UUID)} to obtain the client.<br/>
