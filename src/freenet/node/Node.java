@@ -2642,12 +2642,12 @@ public class Node implements TimeSkewDetectorCallback {
 		if(db != null) {
 			db.commit();
 			if(logMINOR) Logger.minor(this, "COMMITTED");
-			try {
-				if(!clientCore.lateInitDatabase(nodeDBHandle, db, databaseKey))
-					failLateInitDatabase();
-			} catch (NodeInitException e) {
-				failLateInitDatabase();
-			}
+		}
+		try {
+		    if(!clientCore.lateInitDatabase(nodeDBHandle, db, databaseKey))
+		        failLateInitDatabase();
+		} catch (NodeInitException e) {
+		    failLateInitDatabase();
 		}
 	}
 
