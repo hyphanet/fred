@@ -329,12 +329,13 @@ public interface FredPluginFCPMessageHandler {
          * <br/>
          * You <b>must not</b> keep a hard reference to the passed {@link FCPPluginClient} object
          * outside of the scope of this function: This would prevent client plugins from being
-         * unloaded.</p>
+         * unloaded. See below for how to keep a reference to a client.</p>
          * 
          * <p>If you ...<br/>
          * - Need a long time to compute a reply.<br/>
-         * - Want send messages to the client after having exited this function; maybe even
-         *   triggered by events at your plugin, not by client messages.<br/>
+         * - Keep a reference to the client because you want send messages to the client after having
+         *   exited this function; maybe even triggered by events at your plugin, not by client
+         *   messages.<br/>
          * Then you should:<br/>
          * - Obtain the UUID of the client via {@link FCPPluginClient#getID()}, store it, and exit
          *   this message handling function.<br/>
