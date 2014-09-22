@@ -1226,6 +1226,7 @@ public class Node implements TimeSkewDetectorCallback {
                     clientCacheKey = new byte[32];
                     random.nextBytes(clientCacheKey);
                     databaseKey = DatabaseKey.createRandom(random);
+                    persistentSecret = new MasterSecret();
                 } else {
                     keys = MasterKeys.read(masterKeysFile, random, "");
                     clientCacheKey = keys.clientCacheMasterKey;
