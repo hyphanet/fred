@@ -195,7 +195,11 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     private void checkpoint(boolean shutdown) {
         if(logMINOR) Logger.minor(this, "Writing checkpoint...");
         synchronized(sync) {
-            if(!enableCheckpointing) return;
+            if(!enableCheckpointing) {
+                writing = false;
+                sync.notifyAll();
+                return;
+            }
         }
         synchronized(serializeCheckpoints) {
             try {
@@ -256,8 +260,11 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             @Override
             public void run() {
                 synchronized(sync) {
-                    if(!enableCheckpointing) return;
-                    if(killed) return;
+                    if(killed || !enableCheckpointing) {
+                        writing = false;
+                        sync.notifyAll();
+                        return;
+                    }
                 }
                 checkpoint(false);
             }
