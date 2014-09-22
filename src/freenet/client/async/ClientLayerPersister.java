@@ -133,6 +133,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     public void setFilesAndLoad(File dir, String baseName, boolean writeEncrypted, boolean noWrite, 
             DatabaseKey encryptionKey, ClientContext context, RequestStarterGroup requestStarters, 
             Random random) throws MasterKeysWrongPasswordException {
+        if(noWrite)
+            super.disableWrite();
         synchronized(serializeCheckpoints) {
             this.dir = dir;
             this.baseName = baseName;
