@@ -499,6 +499,7 @@ public class NodeClientCore implements Persistable {
 					persistentRAFFactory.setEncryption(true);
 				}
                 if(clientLayerPersister.hasLoaded()) {
+                    // May need to change filenames for client.dat* or even create them.
                     try {
                         initStorage(NodeClientCore.this.node.getDatabaseKey(), container);
                     } catch (MasterKeysWrongPasswordException e) {
