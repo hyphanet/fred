@@ -391,7 +391,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
 
     public boolean isKilledOrNotLoaded() {
         synchronized(sync) {
-            return killed || !enableCheckpointing;
+            return killed || !loaded;
         }
     }
     
