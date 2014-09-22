@@ -4730,7 +4730,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private void setPasswordInner(MasterKeys keys, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
-        clientCore.setupMasterSecret(keys.getPersistentMasterSecret());
+	    MasterSecret secret = keys.getPersistentMasterSecret();
+        clientCore.setupMasterSecret(secret);
 		boolean wantClientCache = false;
 		boolean wantDatabase = false;
 		synchronized(this) {
