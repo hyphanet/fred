@@ -2764,6 +2764,14 @@ public class Node implements TimeSkewDetectorCallback {
 
 		try {
 			if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+			    if(dbFile.exists())
+			        FileUtil.secureDelete(dbFile);
+			    if(dbFileCrypt.exists())
+			        FileUtil.secureDelete(dbFileCrypt);
+                if(dbFileBackup.exists())
+                    FileUtil.secureDelete(dbFile);
+                if(dbFileCryptBackup.exists())
+                    FileUtil.secureDelete(dbFileCrypt);
 			    return; // No need to migrate
 			} else if(dbFile.exists()) {
 				// Just open it.
