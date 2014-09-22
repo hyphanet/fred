@@ -66,7 +66,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             if(!loading) throw new PersistenceDisabledException();
             if(killed) throw new PersistenceDisabledException();
             if(context == null) throw new IllegalStateException();
-            if(mustCheckpoint) {
+            if(mustCheckpoint && enableCheckpointing) {
                 if(logDEBUG) Logger.debug(this, "Queueing job "+job);
                 queuedJobs.add(new QueuedJob(job, threadPriority));
             } else {
