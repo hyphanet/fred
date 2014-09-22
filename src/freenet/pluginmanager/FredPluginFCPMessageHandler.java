@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import java.io.IOException;
 import java.util.UUID;
 
 import freenet.node.fcp.FCPPluginClient;
@@ -340,6 +341,15 @@ public interface FredPluginFCPMessageHandler {
          * - Compute your reply in another thread.</br>
          * - Once you're ready to send the reply, use
          *   {@link PluginRespirator#getPluginClientByID(java.util.UUID)} to obtain the client.<br/>
+         * - If you keep client UUID for longer than sending a single reply, you should periodically
+         *   send messages to the client to check whether it is still alive to prevent excessive
+         *   growth of your client UUID database. If the client has disconnected, you will then get
+         *   an {@link IOException} by {@link PluginRespirator#getPluginClientByID(UUID)} or
+         *   {@link FCPPluginClient#send(FCPPluginClient.SendDirection, FCPPluginMessage)}. Then
+         *   you shall remove it from your database.<br>
+         *   Consider discarding client UUIDs upon IOException as the disconnection mechanism:
+         *   There are no explicit disconnection functions. Clients can come and go as they please.
+         *   <br>
          * </p>
          * 
          * @param client

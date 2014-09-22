@@ -101,7 +101,13 @@ import freenet.support.io.NativeThread;
  *   {@link FCPPluginClient} objects, getting rid of all strong references to a
  *   {@link FCPPluginClient} is sufficient as a disconnection mechanism.<br/>
  *   Thus, an intra-node client connection is considered as disconnected once the FCPPluginClient is
- *   not strongly referenced by the client plugin anymore.<br/>
+ *   not strongly referenced by the client plugin anymore. If a server plugin then tries to obtain
+ *   the client by its UUID again (via the aforementioned
+ *   {@link PluginRespirator#getPluginClientByID(UUID)}, the get will fail. So if the server
+ *   plugin stores client UUIDs, it needs no special disconnection mechanism except for periodically
+ *   trying to send a message to each client. Once obtaining the client by its UUID fails, or
+ *   sending the message fails, the server can opportunistically purge the UUID from its database.
+ *   <br/>
  * </p></p>
  * 
  * <h2>Object lifecycle</h2>

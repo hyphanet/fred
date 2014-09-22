@@ -159,6 +159,11 @@ public class PluginRespirator {
      * . If they did not keep a hard reference and only stored the ID, the {@link FCPPluginClient}
      * would be garbage collected and thus considered as disconnected.
      * 
+     * Before you use this function, you <b>should definitely</b> also read the JavaDoc of
+     * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(
+     * FCPPluginClient, FCPPluginMessage)} for full instructions on how to handle the lifecycle of
+     * client connections and their disconnection.
+     * 
      * @see FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(
      *      FCPPluginClient, FCPPluginMessage)
      *          The message handler at FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
@@ -168,6 +173,8 @@ public class PluginRespirator {
      * @return The client if it is still connected.
      * @throws IOException
      *             If there has been no client with the given ID or if it has disconnected already.
+     *             <br>If this happens, you should consider the client UUID as invalid forever and
+     *             discard it.
      */
     public FCPPluginClient getPluginClientByID(UUID clientID) throws IOException {
         return node.clientCore.getFCPServer().getPluginClient(clientID);
