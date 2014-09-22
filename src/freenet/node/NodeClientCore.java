@@ -175,6 +175,9 @@ public class NodeClientCore implements Persistable {
 	private boolean alwaysCommit;
 	private final PluginStores pluginStores;
 	private final UserAlert migratingAlert;
+	
+	private boolean finishedInitStorage;
+	private boolean finishingInitStorage;
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, DatabaseKey databaseKey, final ObjectContainer container, MasterSecret persistentSecret) throws NodeInitException {
 		this.node = node;
@@ -746,98 +749,116 @@ public class NodeClientCore implements Persistable {
 	
 	/** Must only be called after we have loaded master.keys */
 	private void finishInitStorage(ObjectContainer container) {
-	    if(container != null) {
-	        CheckpointLock lock = null;
-	        boolean success;
-	        FCPPersistentRoot oldRoot;
-	        try {
-	            lock = clientLayerPersister.lock();
-	            oldRoot = FCPPersistentRoot.load(node.nodeDBHandle, container);
-	            success = migrateGlobalQueueFromOldDatabase(container, oldRoot);
-	            System.out.println(success ? "Successfully migrated global queue" : "Tried to migrate global queue, may have lost some requests");
-	        } catch (PersistenceDisabledException e) {
-	            Logger.error(this, "Cannot migrate as persistence disabled...");
-	            // Try again next time...
-	            return; // Don't GC persistent-temp.
-	        } catch (Throwable t) {
-                // Paranoia. Have seen something like this... make it more obvious and make plugins still work...
-	            System.err.println("Unable to migrate from old database: "+t);
-	            t.printStackTrace();
-	            Logger.error(this, "Failed migrating from old database: "+t, t);
-	            return; // Something went seriously wrong, likely a bug. Don't delete.
-            } finally {
-	            if(lock != null)
-	                lock.unlock(false, NativeThread.currentThread().getPriority());
-	        }
-            
-            // The global queue is the important bit. Write the progress so far.
-            System.out.println("Writing migrated global queue");
-            try {
-                clientLayerPersister.waitAndCheckpoint();
-            } catch (PersistenceDisabledException e1) {
-                // Shutting down?
-                return;
-            }
-            
-            try {
-                lock = clientLayerPersister.lock();
-                success = migrateApplicationQueuesFromOldDatabase(container, oldRoot);
-                if(success)
-                    System.out.println("Successfully loaded any old per-application queues");
-                else
-                    System.out.println("Failed to load some per-application queues");
-            } catch (PersistenceDisabledException e) {
-                Logger.error(this, "Cannot migrate as persistence disabled...");
-                // Try again next time...
-                return; // Don't GC persistent-temp.
-            } catch (Throwable t) {
-                // Paranoia. Have seen something like this... make it more obvious and make plugins still work...
-                System.err.println("Unable to migrate from old database: "+t);
-                t.printStackTrace();
-                Logger.error(this, "Failed migrating from old database: "+t, t);
-                return; // Something went seriously wrong, likely a bug. Don't delete.
-            } finally {
-                if(lock != null)
-                    lock.unlock(false, NativeThread.currentThread().getPriority());
-            }
-            
-            System.out.println("Writing migrated application queues");
-            // Write now as well.
-            try {
-                clientLayerPersister.waitAndCheckpoint();
-            } catch (PersistenceDisabledException e1) {
-                // Shutting down?
-                return;
-            }
-            
-            if(success) {
-                System.out.println("Migrated all requests successfully.");
-                Logger.error(this, "Migrated all requests successfully.");
-            } else {
-                System.out.println("Migrated some requests. You may have lost some downloads.");
-                Logger.error(this, "Migrated some requests. You may have lost some downloads.");
-            }
-            try {
-                container.close();
-            } catch (Throwable t) {
-                // Ignore. We don't care.
-            }
-            if(node.dbFile.exists()) {
-                System.out.println("Deleting database file "+node.dbFile);
-                node.dbFile.delete();
-            }
-            if(node.dbFileCrypt.exists()) {
-                try {
-                    FileUtil.secureDelete(node.dbFileCrypt);
-                } catch (IOException e) {
-                    System.err.println("Unable to delete your old database file: "+node.dbFileCrypt);
-                    System.err.println("Please delete the file manually. Until you do Freenet will attempt to re-import the downloads in it every time it starts up.");
-                }
-            }
-            System.out.println("Migration completed");
-            alerts.unregister(migratingAlert);
+	    boolean success = false;
+	    synchronized(this) {
+	        if(finishedInitStorage || finishingInitStorage) return;
+	        finishingInitStorage = true;
 	    }
-	    persistentTempBucketFactory.completedInit(); // Only GC persistent-temp after a successful load.
+	    try {
+	        if(container != null) {
+	            migrate(container);
+	        }
+	        persistentTempBucketFactory.completedInit(); // Only GC persistent-temp after a successful load.
+	        success = true;
+	    } finally {
+	        synchronized(this) {
+	            finishingInitStorage = false;
+	            if(success)
+	                finishedInitStorage = true;
+	        }
+	    }
+    }
+
+    private void migrate(ObjectContainer container) {
+        CheckpointLock lock = null;
+        boolean success;
+        FCPPersistentRoot oldRoot;
+        try {
+            lock = clientLayerPersister.lock();
+            oldRoot = FCPPersistentRoot.load(node.nodeDBHandle, container);
+            success = migrateGlobalQueueFromOldDatabase(container, oldRoot);
+            System.out.println(success ? "Successfully migrated global queue" : "Tried to migrate global queue, may have lost some requests");
+        } catch (PersistenceDisabledException e) {
+            Logger.error(this, "Cannot migrate as persistence disabled...");
+            // Try again next time...
+            return; // Don't GC persistent-temp.
+        } catch (Throwable t) {
+            // Paranoia. Have seen something like this... make it more obvious and make plugins still work...
+            System.err.println("Unable to migrate from old database: "+t);
+            t.printStackTrace();
+            Logger.error(this, "Failed migrating from old database: "+t, t);
+            return; // Something went seriously wrong, likely a bug. Don't delete.
+        } finally {
+            if(lock != null)
+                lock.unlock(false, NativeThread.currentThread().getPriority());
+        }
+        
+        // The global queue is the important bit. Write the progress so far.
+        System.out.println("Writing migrated global queue");
+        try {
+            clientLayerPersister.waitAndCheckpoint();
+        } catch (PersistenceDisabledException e1) {
+            // Shutting down?
+            return;
+        }
+        
+        try {
+            lock = clientLayerPersister.lock();
+            success = migrateApplicationQueuesFromOldDatabase(container, oldRoot);
+            if(success)
+                System.out.println("Successfully loaded any old per-application queues");
+            else
+                System.out.println("Failed to load some per-application queues");
+        } catch (PersistenceDisabledException e) {
+            Logger.error(this, "Cannot migrate as persistence disabled...");
+            // Try again next time...
+            return; // Don't GC persistent-temp.
+        } catch (Throwable t) {
+            // Paranoia. Have seen something like this... make it more obvious and make plugins still work...
+            System.err.println("Unable to migrate from old database: "+t);
+            t.printStackTrace();
+            Logger.error(this, "Failed migrating from old database: "+t, t);
+            return; // Something went seriously wrong, likely a bug. Don't delete.
+        } finally {
+            if(lock != null)
+                lock.unlock(false, NativeThread.currentThread().getPriority());
+        }
+        
+        System.out.println("Writing migrated application queues");
+        // Write now as well.
+        try {
+            clientLayerPersister.waitAndCheckpoint();
+        } catch (PersistenceDisabledException e1) {
+            // Shutting down?
+            return;
+        }
+        
+        if(success) {
+            System.out.println("Migrated all requests successfully.");
+            Logger.error(this, "Migrated all requests successfully.");
+        } else {
+            System.out.println("Migrated some requests. You may have lost some downloads.");
+            Logger.error(this, "Migrated some requests. You may have lost some downloads.");
+        }
+        try {
+            container.close();
+        } catch (Throwable t) {
+            // Ignore. We don't care.
+        }
+        if(node.dbFile.exists()) {
+            System.out.println("Deleting database file "+node.dbFile);
+            node.dbFile.delete();
+        }
+        if(node.dbFileCrypt.exists()) {
+            try {
+                FileUtil.secureDelete(node.dbFileCrypt);
+            } catch (IOException e) {
+                System.err.println("Unable to delete your old database file: "+node.dbFileCrypt);
+                System.err.println("Please delete the file manually. Until you do Freenet will attempt to re-import the downloads in it every time it starts up.");
+            }
+        }
+        System.out.println("Migration completed");
+        alerts.unregister(migratingAlert);
     }
 
     private boolean migrateGlobalQueueFromOldDatabase(ObjectContainer container, FCPPersistentRoot oldRoot) {
