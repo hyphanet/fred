@@ -151,13 +151,13 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 if(logMINOR) Logger.minor(this, "Writing because asked to");
             }
             runningJobs--;
+            if(runningJobs == 0)
+                // Even if not going to checkpoint indirectly, somebody might be waiting, need to notify.
+                sync.notifyAll();
             if(!enableCheckpointing) {
                 if(logMINOR) Logger.minor(this, "Not enableCheckpointing yet");
                 return;
             }
-            if(runningJobs == 0)
-                // Even if not going to checkpoint indirectly, somebody might be waiting, need to notify.
-                sync.notifyAll();
             if(!mustCheckpoint) {
                 if(System.currentTimeMillis() - lastCheckpointed > checkpointInterval) {
                     mustCheckpoint = true;
