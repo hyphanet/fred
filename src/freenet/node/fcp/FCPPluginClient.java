@@ -392,6 +392,9 @@ public final class FCPPluginClient {
     }
     
     /**
+     * FIXME: Rename to getUUID() because we should use a consistent naming everywhere. Also,
+     * review any JavaDoc references to this for whether they talk about "ID" and change that too.
+     * 
      * @see #id
      */
     public UUID getID() {
