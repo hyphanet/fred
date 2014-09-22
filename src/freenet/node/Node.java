@@ -2093,7 +2093,10 @@ public class Node implements TimeSkewDetectorCallback {
 							databaseAwaitingPassword = false;
 						}
 						try {
-							killMasterKeysFile();
+                            killMasterKeysFile();
+						    clientCore.clientLayerPersister.disableWrite();
+						    clientCore.clientLayerPersister.waitForNotWriting();
+                            clientCore.clientLayerPersister.deleteAllFiles();
 						} catch (IOException e) {
 							masterKeysFile.delete();
 							Logger.error(this, "Unable to securely delete "+masterKeysFile);

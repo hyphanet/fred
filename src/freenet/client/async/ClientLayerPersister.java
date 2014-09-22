@@ -739,12 +739,25 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
 
     public void panic() {
         killAndWaitForNotWriting();
+        deleteAllFiles();
+    }
+    
+    public void deleteAllFiles() {
         synchronized(serializeCheckpoints) {
             deleteFile(dir, baseName, false, false);
             deleteFile(dir, baseName, false, true);
             deleteFile(dir, baseName, true, false);
             deleteFile(dir, baseName, true, true);
         }
+    }
+
+    public void disableWrite() {
+        synchronized(serializeCheckpoints) {
+            writeToFilename = null;
+            writeToBackupFilename = null;
+            writeToBucket = null;
+        }
+        super.disableWrite();
     }
 
 }
