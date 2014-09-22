@@ -465,19 +465,21 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	final File dbFile;
-	final File dbFileCrypt;
+	final File dbFile; // FIXME remove
+	final File dbFileCrypt; // FIXME remove
 	/** db4o database for node and client layer.
 	 * Other databases can be created for the datastore (since its usage
 	 * patterns and content are completely different), or for plugins (for
-	 * security reasons). */
+	 * security reasons). FIXME remove. */
 	public ObjectContainer db;
 	private volatile boolean hasPanicked;
 	/** A fixed random number which identifies the top-level objects belonging to
 	 * this node, as opposed to any others that might be stored in the same database
-	 * (e.g. because of many-nodes-in-one-VM). */
+	 * (e.g. because of many-nodes-in-one-VM). FIXME remove when db4o back compaibility is removed. */
 	public long nodeDBHandle;
 
+	/** Encryption key for client.dat.crypt or client.dat.bak.crypt (and also the old node.db4o.
+	 * crypt) */
 	private DatabaseKey databaseKey;
 
 	/** Stats */
