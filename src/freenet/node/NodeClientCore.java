@@ -176,7 +176,7 @@ public class NodeClientCore implements Persistable {
 	private final PluginStores pluginStores;
 	private final UserAlert migratingAlert;
 
-	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, DatabaseKey databaseKey, final ObjectContainer container, MasterKeys keys) throws NodeInitException {
+	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, DatabaseKey databaseKey, final ObjectContainer container, MasterSecret persistentSecret) throws NodeInitException {
 		this.node = node;
 		this.tracker = node.tracker;
 		this.nodeStats = node.nodeStats;
@@ -462,8 +462,9 @@ public class NodeClientCore implements Persistable {
 		
         clientContext.init(requestStarters, alerts);
         
-        if(keys != null)
-            setupMasterSecret(keys);
+        if(persistentSecret != null) {
+            setupMasterSecret(persistentSecret);
+        }
         
         try {
             initStorage(databaseKey, container);
@@ -1988,8 +1989,7 @@ public class NodeClientCore implements Persistable {
         return fcpPersistentRoot.getPersistentRequests();
     }
 
-    public void setupMasterSecret(MasterKeys keys) {
-        MasterSecret persistentSecret = keys.getPersistentMasterSecret();
+    public void setupMasterSecret(MasterSecret persistentSecret) {
         if(clientContext.getPersistentMasterSecret() == null)
             clientContext.setPersistentMasterSecret(persistentSecret);
         persistentTempBucketFactory.setMasterSecret(persistentSecret);

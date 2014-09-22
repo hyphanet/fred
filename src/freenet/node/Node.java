@@ -66,6 +66,7 @@ import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.ECDH;
+import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
 import freenet.io.comm.DMT;
@@ -1217,6 +1218,7 @@ public class Node implements TimeSkewDetectorCallback {
         byte[] clientCacheKey = null;
         
         MasterKeys keys = null;
+        MasterSecret persistentSecret = null;
         for(int i=0;i<2; i++) {
 
             try {
@@ -1227,6 +1229,7 @@ public class Node implements TimeSkewDetectorCallback {
                 } else {
                     keys = MasterKeys.read(masterKeysFile, random, "");
                     clientCacheKey = keys.clientCacheMasterKey;
+                    persistentSecret = keys.getPersistentMasterSecret();
                     if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
                         System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
                         securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
@@ -1675,7 +1678,7 @@ public class Node implements TimeSkewDetectorCallback {
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, lastVersion);
 
 		// clientCore needs new load management and other settings from stats.
-		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, databaseKey, db, keys);
+		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, databaseKey, db, persistentSecret);
 		toadlets.setCore(clientCore);
 
 		if (JVMVersion.isTooOld()) {
@@ -4729,7 +4732,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private void setPasswordInner(MasterKeys keys, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
-        clientCore.setupMasterSecret(keys);
+        clientCore.setupMasterSecret(keys.getPersistentMasterSecret());
 		boolean wantClientCache = false;
 		boolean wantDatabase = false;
 		synchronized(this) {
