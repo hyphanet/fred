@@ -729,7 +729,8 @@ public class NodeClientCore implements Persistable {
 		// Don't actually start the database thread yet, messy concurrency issues.
 		fcpServer.load(this.fcpPersistentRoot);
 		System.out.println("Late database initialisation completed.");
-		finishInitStorage(container);
+		if(databaseKey != null)
+		    finishInitStorage(container);
 		return true;
 	}
 
@@ -743,6 +744,7 @@ public class NodeClientCore implements Persistable {
 	            node.wantEncryptedDatabase(), node.wantNoPersistentDatabase(), databaseKey, clientContext, requestStarters, random);
 	}
 	
+	/** Must only be called after we have loaded master.keys */
 	private void finishInitStorage(ObjectContainer container) {
 	    if(container != null) {
 	        CheckpointLock lock = null;
@@ -924,17 +926,16 @@ public class NodeClientCore implements Persistable {
 			@Override
 			public void run() {
 				Logger.normal(this, "Resuming persistent requests");
-				try {
-				    finishInitStorage(container);
-				} catch (Throwable t) {
-				    Logger.error(this, "Failed to migrate and/or cleanup persistent temp buckets: "+t, t);
-				    System.err.println("Failed to migrate and/or cleanup persistent temp buckets: "+t);
-				    t.printStackTrace();
-				    // Start the rest of the node anyway ...
+				if(node.getDatabaseKey() != null) {
+				    try {
+				        finishInitStorage(container);
+				    } catch (Throwable t) {
+				        Logger.error(this, "Failed to migrate and/or cleanup persistent temp buckets: "+t, t);
+				        System.err.println("Failed to migrate and/or cleanup persistent temp buckets: "+t);
+				        t.printStackTrace();
+				        // Start the rest of the node anyway ...
+				    }
 				}
-				// FIXME most of the work is done after this point on splitfile starter threads.
-				// So do we want to make a fuss?
-				// FIXME but a better solution is real request resuming.
 				Logger.normal(this, "Completed startup: All persistent requests resumed or restarted");
 				alerts.unregister(startingUpAlert);
 			}
