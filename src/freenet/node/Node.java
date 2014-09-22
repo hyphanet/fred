@@ -4736,6 +4736,7 @@ public class Node implements TimeSkewDetectorCallback {
 		boolean wantDatabase = false;
 		synchronized(this) {
 			enteredPassword = true;
+			wantClientCache = clientCacheAwaitingPassword;
 			if(!clientCacheAwaitingPassword) {
 				if(!inFirstTimeWizard) wantClientCache = true;
 			}
