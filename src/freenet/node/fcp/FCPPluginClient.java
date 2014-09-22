@@ -70,8 +70,7 @@ import freenet.support.io.NativeThread;
  * - The {@link FCPPluginClientMessage} uses {@link FCPConnectionHandler#getPluginClient(String)} to
  *   obtain the FCPPluginClient which wants to send.<br/>
  * - The {@link FCPPluginClientMessage} uses {@link FCPPluginClient#send(SendDirection,
- *   FCPPluginMessage)} or {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage,
- *   long)} to send the message to the server plugin.<br/>
+ *   FCPPluginMessage)} to send the message to the server plugin.<br/>
  * - The FCP server plugin handles the message at
  *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
  *   <br/>
