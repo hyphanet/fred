@@ -4708,20 +4708,19 @@ public class Node implements TimeSkewDetectorCallback {
 		return false;
 	}
 
-	private boolean enteredPassword;
-
+	/** Can be called to decrypt client.dat* etc, or can be called when switching from another 
+	 * security level to HIGH. */
 	public void setMasterPassword(String password, boolean inFirstTimeWizard) throws AlreadySetPasswordException, MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
-		synchronized(this) {
-			if(enteredPassword)
-				throw new AlreadySetPasswordException();
-		}
-		if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM)
-			Logger.error(this, "Setting password while physical threat level is at MAXIMUM???");
 		MasterKeys k;
 		synchronized(this) {
 		    if(keys == null) {
+		        // Decrypting.
 		        keys = MasterKeys.read(masterKeysFile, random, password);
 		        databaseKey = keys.createDatabaseKey(random);
+		    } else {
+		        // Setting password when changing to HIGH from another mode.
+		        keys.changePassword(masterKeysFile, password, random);
+		        return;
 		    }
 		    k = keys;
 		}
@@ -4734,7 +4733,6 @@ public class Node implements TimeSkewDetectorCallback {
 		boolean wantClientCache = false;
 		boolean wantDatabase = false;
 		synchronized(this) {
-			enteredPassword = true;
 			wantClientCache = clientCacheAwaitingPassword;
 			if(!clientCacheAwaitingPassword) {
 				if(!inFirstTimeWizard) wantClientCache = true;
