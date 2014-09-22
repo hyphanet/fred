@@ -390,7 +390,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
                 e.onResume(context);
             } else if(o instanceof Metadata) {
                 // Ignore
-            } else throw new IllegalArgumentException();
+            } else throw new IllegalArgumentException("Unknown manifest element: "+o);
         }
     }
 
