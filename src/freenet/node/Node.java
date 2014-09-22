@@ -4719,8 +4719,10 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.error(this, "Setting password while physical threat level is at MAXIMUM???");
 		MasterKeys k;
 		synchronized(this) {
-		    if(keys == null)
+		    if(keys == null) {
 		        keys = MasterKeys.read(masterKeysFile, random, password);
+		        databaseKey = keys.createDatabaseKey(random);
+		    }
 		    k = keys;
 		}
 		setPasswordInner(k, inFirstTimeWizard);
