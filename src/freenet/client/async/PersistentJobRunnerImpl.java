@@ -344,6 +344,9 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
      * @throws PersistenceDisabledException */
     public void waitAndCheckpoint() throws PersistenceDisabledException {
         synchronized(sync) {
+            if(!enableCheckpointing) return;
+            // Set flag to ensure further jobs are queued, we want to write soon!
+            mustCheckpoint = true;
             while(runningJobs > 0) {
                 if(!enableCheckpointing) return;
                 if(killed) throw new PersistenceDisabledException();
