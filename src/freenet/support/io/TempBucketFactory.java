@@ -889,8 +889,6 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 
 	}
 
-	// FIXME encrypt (and pad) RAF's.
-	
 	@Override
     public LockableRandomAccessBuffer makeRAF(long size) throws IOException {
 	    if(size < 0) throw new IllegalArgumentException();
