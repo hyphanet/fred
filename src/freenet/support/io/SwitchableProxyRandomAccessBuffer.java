@@ -94,6 +94,15 @@ abstract class SwitchableProxyRandomAccessBuffer implements LockableRandomAccess
         afterFreeUnderlying();
     }
     
+    public boolean hasBeenFreed() {
+        try {
+            lock.readLock().lock();
+            return underlying == null;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
     /** Called after freeing underlying. */ 
     protected void afterFreeUnderlying() {
         // Do nothing.

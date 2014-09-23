@@ -859,6 +859,19 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
             throw new UnsupportedOperationException();
         }
         
+        @Override
+        protected void finalize() throws Throwable {
+            if(original != null) return; // TempBucket's responsibility if there was one.
+            // If it's been converted to a TempRandomAccessBuffer, finalize() will only be called 
+            // if *neither* object is reachable.
+            if (!hasBeenFreed()) {
+//              if (TRACE_BUCKET_LEAKS)
+//                  Logger.error(this, "TempRandomAccessThing not freed, size=" + size() +" : "+this, tracer);
+                free();
+            }
+            super.finalize();
+        }
+
 	}
 
 	// FIXME encrypt (and pad) RAF's.
