@@ -27,7 +27,7 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
 	}
 	
 	protected PersistentTempFileBucket(long id, FilenameGenerator generator, PersistentFileTracker tracker, boolean deleteOnFree) {
-		super(id, generator, deleteOnFree);
+		super(id, generator, deleteOnFree, false);
 		this.tracker = tracker;
 	}
 	
