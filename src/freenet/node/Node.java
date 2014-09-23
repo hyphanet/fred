@@ -2691,10 +2691,6 @@ public class Node implements TimeSkewDetectorCallback {
 		 * used 73MB out of the 128MB limit (117MB used). This memory was not reclaimed despite constant garbage collection.
 		 * This is unacceptable, hence btree freespace. */
 		dbConfig.freespace().useBTreeSystem();
-		dbConfig.objectClass(freenet.client.async.InsertCompressor.class).objectField("nodeDBHandle").indexed(true);
-		dbConfig.objectClass(freenet.clients.fcp.PersistentRequestClient.class).objectField("name").indexed(true);
-		dbConfig.objectClass(freenet.client.FetchException.class).cascadeOnDelete(true);
-		dbConfig.objectClass(PluginStore.class).cascadeOnDelete(true);
 		/*
 		 * HashMap: don't enable cascade on update/delete/activate, db4o handles this
 		 * internally through the TMap translator.
