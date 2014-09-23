@@ -168,8 +168,16 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
 
         readLock.lock();
         try{
-            cipherRead.seekTo(fileOffset);
+            //cipherRead.seekTo(fileOffset);
+            // seekTo() does reset() and then skip(). So it always skips from 0. 
+            // This is ridiculously slow for big tempfiles.
+            // FIXME REVIEW CRYPTO: Is this safe? It should be, we're using the published skip() API...
+            long position = cipherRead.getPosition();
+            long delta = fileOffset - position;
+            cipherRead.skip(delta);
+            assert(cipherRead.getPosition() == fileOffset);
             cipherRead.processBytes(cipherText, 0, length, buf, bufOffset);
+            assert(cipherRead.getPosition() == fileOffset+length);
         }finally{
             readLock.unlock();
         }
@@ -196,8 +204,16 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
 
         writeLock.lock();
         try{
-            cipherWrite.seekTo(fileOffset);
+            //cipherWrite.seekTo(fileOffset)
+            // seekTo() does reset() and then skip(). So it always skips from 0. 
+            // This is ridiculously slow for big tempfiles.
+            // FIXME REVIEW CRYPTO: Is this safe? It should be, we're using the published skip() API...
+            long position = cipherWrite.getPosition();
+            long delta = fileOffset - position;
+            cipherWrite.skip(delta);
+            assert(cipherWrite.getPosition() == fileOffset);
             cipherWrite.processBytes(buf, bufOffset, length, cipherText, 0);
+            assert(cipherWrite.getPosition() == fileOffset+length);
         }finally{
             writeLock.unlock();
         }
