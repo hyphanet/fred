@@ -49,10 +49,17 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
 	private static final String NAME = "FCPPluginReply";
 	
 	public static final String PARAM_PREFIX = "Param";
-	
+
+    /** @see FCPPluginMessage#data */
 	private final long dataLength;
+
+    /** @see FCPPluginClient#getServerPluginName() */
 	private final String plugname;
+
+    /** @see FCPPluginMessage#identifier */
 	private final String identifier;
+
+    /** @see FCPPluginMessage#parameters */
 	private final SimpleFieldSet plugparams;
 
     /** @see FCPPluginMessage#success */
