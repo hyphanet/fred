@@ -80,21 +80,6 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
      * the original messages succeeded.<br>
      * For non-reply messages, this is null.
      * 
-     * FIXME: To make the distinction between reply and non-reply messages even clearer, maybe have
-     * an "IsReply" field instead of implicitly assuming messages to be replies if they contain
-     * this "Success" field. This will hopefully prevent implementors of custom clients from not
-     * specifying reply messages as replies - they would be more likely to do that with "Success"
-     * because that name doesn't indicate any relation with replys. When adding this, make sure to
-     * also add it to the {@link FCPPluginMessage} and {@link FCPPluginServerMessage}.
-     * Addendum: To differentiate properly between the name of the
-     * "FCPPluginReply" FCP message (represented by class {@link FCPPluginServerMessage}), which is
-     * used for any server-to-client messages, including NON-reply ones, we should probably use
-     * "IsAnswer" or something else which is a different word than reply.
-     * (We cannot rename the "FCPPluginReply" message for backwards compatibility, see JavaDoc at
-     * class {@link FCPPluginServerMessage}.)
-     * This addendum of course also applies to using "answer" instead of reply at
-     * {@link FCPPluginMessage}
-     * 
      * @see FCPPluginMessage#success
      */
     private final Boolean success;
