@@ -28,6 +28,7 @@ import freenet.crypt.ChecksumFailedException;
 import freenet.node.DatabaseKey;
 import freenet.node.MasterKeysWrongPasswordException;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.NodeInitException;
 import freenet.node.RequestStarterGroup;
 import freenet.support.Executor;
@@ -84,6 +85,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     
     static final long INTERVAL = MINUTES.toMillis(10);
     private final Node node; // Needed for bandwidth stats putter
+    private final NodeClientCore clientCore;
     private final PersistentTempBucketFactory persistentTempFactory;
     /** Needed for temporary storage when writing objects. Some of them might be big, e.g. site 
      * inserts. */
@@ -114,11 +116,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
      * @param persistentTempFactory Only passed in so that we can call its pre- and post- commit
      * hooks. We don't explicitly save it; it must be populated lazily in onResume() like 
      * everything else. */
-    public ClientLayerPersister(Executor executor, Ticker ticker, Node node,
+    public ClientLayerPersister(Executor executor, Ticker ticker, Node node, NodeClientCore core,
             PersistentTempBucketFactory persistentTempFactory, TempBucketFactory tempBucketFactory,
             PersistentStatsPutter stats) {
         super(executor, ticker, INTERVAL);
         this.node = node;
+        this.clientCore = core;
         this.persistentTempFactory = persistentTempFactory;
         this.tempBucketFactory = tempBucketFactory;
         this.checker = new CRCChecksumChecker();
@@ -705,7 +708,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
 
     private ClientRequest[] getRequests() {
-        return node.clientCore.getPersistentRequests();
+        return clientCore.getPersistentRequests();
     }
 
     public boolean newSalt() {
