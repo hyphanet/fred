@@ -549,10 +549,12 @@ public class SplitFileInserterStorage {
         if (persistent) {
             // Padding is initialized to random already.
             for (SplitFileInserterSegmentStorage segment : segments) {
+                if(logMINOR) Logger.minor(this, "Clearing status for "+segment);
                 segment.storeStatus(true);
             }
             if (crossSegments != null) {
                 for (SplitFileInserterCrossSegmentStorage segment : crossSegments) {
+                    if(logMINOR) Logger.minor(this, "Clearing status for "+segment);
                     segment.storeStatus();
                 }
             }
