@@ -462,8 +462,16 @@ class SingleFileInserter implements ClientPutState, Serializable {
 				}
 				hashes = hasher.getResults();
 			}
-			CompressionOutput output = new CompressionOutput(data, null, hashes);
-			onCompressed(output, context);
+			final CompressionOutput output = new CompressionOutput(data, null, hashes);
+			context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
+
+                @Override
+                public boolean run(ClientContext context) {
+                    onCompressed(output, context);
+                    return true;
+                }
+			    
+			});
 		}
 	}
 	
