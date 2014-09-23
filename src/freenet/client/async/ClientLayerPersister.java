@@ -332,7 +332,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
      */
     private Bucket makeBucket(File dir, String baseName, boolean backup, DatabaseKey encryptionKey) {
         File filename = makeFilename(dir, baseName, backup, encryptionKey != null);
-        Bucket bucket = new FileBucket(filename, false, false, false, false, false);
+        Bucket bucket = new FileBucket(filename, false, false, false, false);
         if(encryptionKey != null)
             bucket = encryptionKey.createEncryptedBucketForClientLayer(bucket);
         return bucket;

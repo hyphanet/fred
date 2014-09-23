@@ -64,7 +64,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 		ctx.dontEnterImplicitArchives = false;
 		ctx.maxNonSplitfileRetries = -1;
 		ctx.maxSplitfileBlockRetries = -1;
-		blobBucket = new FileBucket(saveTo, false, false, false, false, false);
+		blobBucket = new FileBucket(saveTo, false, false, false, false);
 		if(blobBucket.size() > 0) {
 			fetched = true;
 			cg = null;
@@ -86,7 +86,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 			tempFile = tmp;
 			cg = new ClientGetter(this,  
 					uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					null, new BinaryBlobWriter(new FileBucket(tempFile, false, false, false, false, false)));
+					null, new BinaryBlobWriter(new FileBucket(tempFile, false, false, false, false)));
 			fetched = false;
 		}
 	}

@@ -117,7 +117,7 @@ public class FilterMessage extends DataCarryingMessage {
 				}
 			}
 			dataLength = -1;
-			this.bucket = new FileBucket(file, true, false, false, false, false);
+			this.bucket = new FileBucket(file, true, false, false, false);
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Illegal DataSource value", identifier, false);
 		}

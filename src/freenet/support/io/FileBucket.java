@@ -24,7 +24,6 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
     private static final long serialVersionUID = 1L;
     protected final File file;
 	protected boolean readOnly;
-	protected boolean deleteOnFinalize;
 	protected boolean deleteOnFree;
 	protected final boolean deleteOnExit;
 	protected final boolean createFileOnly;
@@ -52,7 +51,7 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 	 * @param deleteOnFinalize If true, delete the file on finalization. Reversible.
 	 * @param deleteOnExit If true, delete the file on a clean exit of the JVM. Irreversible - use with care!
 	 */
-	public FileBucket(File file, boolean readOnly, boolean createFileOnly, boolean deleteOnFinalize, boolean deleteOnExit, boolean deleteOnFree) {
+	public FileBucket(File file, boolean readOnly, boolean createFileOnly, boolean deleteOnExit, boolean deleteOnFree) {
 		super(file, deleteOnExit);
 		if(file == null) throw new NullPointerException();
 		File origFile = file;
@@ -63,7 +62,6 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 		this.readOnly = readOnly;
 		this.createFileOnly = createFileOnly;
 		this.file = file;
-		this.deleteOnFinalize = deleteOnFinalize;
 		this.deleteOnFree = deleteOnFree;
 		this.deleteOnExit = deleteOnExit;
 		// Useful for finding temp file leaks.
@@ -99,15 +97,6 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 		readOnly = true;
 	}
 
-	/**
-	 * Turn off "delete file on finalize" flag.
-	 * Note that if you have already set delete file on exit, there is little that you
-	 * can do to recover it! Delete file on finalize, on the other hand, is reversible.
-	 */
-	public synchronized void dontDeleteOnFinalize() {
-		deleteOnFinalize = false;
-	}
-
 	@Override
 	protected boolean createFileOnly() {
 		return createFileOnly;
@@ -119,11 +108,6 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 	}
 
 	@Override
-	protected boolean deleteOnFinalize() {
-		return deleteOnFinalize;
-	}
-
-	@Override
 	protected boolean deleteOnFree() {
 		return deleteOnFree;
 	}
@@ -132,7 +116,7 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 	public RandomAccessBucket createShadow() {
 		String fnam = file.getPath();
 		File newFile = new File(fnam);
-		return new FileBucket(newFile, true, false, false, false, false);
+		return new FileBucket(newFile, true, false, false, false);
 	}
 
     @Override
@@ -155,7 +139,6 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
         dos.writeInt(VERSION);
         dos.writeUTF(file.toString());
         dos.writeBoolean(readOnly);
-        dos.writeBoolean(deleteOnFinalize);
         dos.writeBoolean(deleteOnFree);
         if(deleteOnExit) throw new IllegalStateException("Must not free on exit if persistent");
         dos.writeBoolean(createFileOnly);
@@ -167,7 +150,6 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
         if(version != VERSION) throw new StorageFormatException("Bad version");
         file = new File(dis.readUTF());
         readOnly = dis.readBoolean();
-        deleteOnFinalize = dis.readBoolean();
         deleteOnFree = dis.readBoolean();
         deleteOnExit = false;
         createFileOnly = dis.readBoolean();
@@ -179,7 +161,6 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
         int result = 1;
         result = prime * result + (createFileOnly ? 1231 : 1237);
         result = prime * result + (deleteOnExit ? 1231 : 1237);
-        result = prime * result + (deleteOnFinalize ? 1231 : 1237);
         result = prime * result + (deleteOnFree ? 1231 : 1237);
         result = prime * result + ((file == null) ? 0 : file.hashCode());
         result = prime * result + (readOnly ? 1231 : 1237);
@@ -202,9 +183,6 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
             return false;
         }
         if (deleteOnExit != other.deleteOnExit) {
-            return false;
-        }
-        if (deleteOnFinalize != other.deleteOnFinalize) {
             return false;
         }
         if (deleteOnFree != other.deleteOnFree) {

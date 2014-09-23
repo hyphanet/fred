@@ -970,7 +970,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	}
 
 	void processRevocationBlob(final File temp, PeerNode source) {
-		processRevocationBlob(new FileBucket(temp, true, false, false, false, true), source.userToString(), false);
+		processRevocationBlob(new FileBucket(temp, true, false, false, true), source.userToString(), false);
 	}
 	
 	/**
@@ -1478,7 +1478,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		try {
 			f = File.createTempFile("main-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
 			f.deleteOnExit();
-			b = new FileBucket(f, false, false, true, true, true);
+			b = new FileBucket(f, false, false, true, true);
 		} catch(IOException e) {
 			Logger.error(this, "Cannot share main jar from " + toString + " with our peers because cannot write the cleaned version to disk: " + e, e);
 			System.err.println("Cannot share main jar from " + toString + " with our peers because cannot write the cleaned version to disk: " + e);

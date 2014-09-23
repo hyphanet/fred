@@ -783,8 +783,8 @@ final public class FileUtil {
 	public static boolean copyFile(File copyFrom, File copyTo) {
 		copyTo.delete();
 		boolean executable = copyFrom.canExecute();
-		FileBucket outBucket = new FileBucket(copyTo, false, true, false, false, false);
-		FileBucket inBucket = new FileBucket(copyFrom, true, false, false, false, false);
+		FileBucket outBucket = new FileBucket(copyTo, false, true, false, false);
+		FileBucket inBucket = new FileBucket(copyFrom, true, false, false, false);
 		try {
 			BucketTools.copy(inBucket, outBucket);
 			if(executable) {

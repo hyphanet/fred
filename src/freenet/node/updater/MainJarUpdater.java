@@ -137,7 +137,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			}
 			getter = new ClientGetter(this,  
 					chk, myCtx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					new FileBucket(tempFile, false, false, false, false, false), null, null);
+					new FileBucket(tempFile, false, false, false, false), null, null);
 			myCtx.eventProducer.addEventListener(this);
 			this.cb = cb;
 			this.filename = filename;

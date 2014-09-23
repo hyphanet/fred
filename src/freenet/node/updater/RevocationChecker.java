@@ -88,7 +88,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		if(blobFile.exists()) {
 			ArrayBucket bucket = new ArrayBucket();
 			try {
-				BucketTools.copy(new FileBucket(blobFile, true, false, false, false, true), bucket);
+				BucketTools.copy(new FileBucket(blobFile, true, false, false, true), bucket);
 				// Allow to free if bogus.
 				manager.uom.processRevocationBlob(bucket, "disk", true);
 			} catch (IOException e) {
@@ -251,7 +251,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			}
 			System.out.println("Unexpected blob file in revocation checker: "+tmpBlob);
 		}
-		FileBucket fb = new FileBucket(blobFile, false, false, false, false, false);
+		FileBucket fb = new FileBucket(blobFile, false, false, false, false);
 		try {
 			BucketTools.copy(tmpBlob, fb);
 		} catch (IOException e) {
@@ -352,7 +352,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		}
 		File f = getBlobFile();
 		if(f == null) return null;
-		return new FileBucket(f, true, false, false, false, false);
+		return new FileBucket(f, true, false, false, false);
 	}
 	
 	public RandomAccessBuffer getBlobThing() {

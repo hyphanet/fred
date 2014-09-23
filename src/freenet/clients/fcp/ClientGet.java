@@ -186,7 +186,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			    if(targetFile.exists())
 			        throw new IOException("Target filename exists already: "+targetFile);
 			}
-			ret = new FileBucket(returnFilename, false, true, false, false, false);
+			ret = new FileBucket(returnFilename, false, true, false, false);
 			if(filterData) {
 				String name = returnFilename.getName();
 				int idx = name.lastIndexOf('.');
@@ -246,7 +246,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to download to "+targetFile, identifier, global);
 			else if(!(handler.allowDDAFrom(targetFile, true)))
 				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to download to " + targetFile + ". You might need to do a " + TestDDARequestMessage.NAME + " first.", identifier, global);
-			ret = new FileBucket(targetFile, false, true, false, false, false);
+			ret = new FileBucket(targetFile, false, true, false, false);
 			if(fctx.filterData) {
 				String name = targetFile.getName();
 				int idx = name.lastIndexOf('.');
@@ -845,7 +845,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	            return returnBucketDirect;
 	        }
 	    } else if(returnType == ReturnType.DISK) {
-	        return new FileBucket(targetFile, readOnly, false, false, false, false);
+	        return new FileBucket(targetFile, readOnly, false, false, false);
 	    } else {
 	        return null;
 	    }

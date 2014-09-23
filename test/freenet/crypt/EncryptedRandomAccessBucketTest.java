@@ -162,7 +162,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         byte[] buf = new byte[4096];
         Random r = new Random(1267612);
         r.nextBytes(buf);
-        FileBucket fb = new FileBucket(tempFile, false, false, false, false, true);
+        FileBucket fb = new FileBucket(tempFile, false, false, false, true);
         EncryptedRandomAccessBucket erab = new EncryptedRandomAccessBucket(types[0], fb, secret);
         OutputStream os = erab.getOutputStream();
         os.write(buf, 0, buf.length);
@@ -198,7 +198,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         byte[] buf = new byte[4096];
         Random r = new Random(1267612);
         r.nextBytes(buf);
-        FileBucket fb = new FileBucket(tempFile, false, false, false, false, true);
+        FileBucket fb = new FileBucket(tempFile, false, false, false, true);
         EncryptedRandomAccessBucket erab = new EncryptedRandomAccessBucket(types[0], fb, secret);
         OutputStream os = erab.getOutputStream();
         os.write(buf, 0, buf.length);

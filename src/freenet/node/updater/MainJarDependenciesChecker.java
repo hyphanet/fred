@@ -1508,7 +1508,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             }
             File restartFreenet = new File(RESTART_SCRIPT_NAME);
             restartFreenet.delete();
-            FileBucket fb = new FileBucket(restartFreenet, false, true, false, false, false);
+            FileBucket fb = new FileBucket(restartFreenet, false, true, false, false);
             OutputStream os = null;
             try {
                 os = new BufferedOutputStream(fb.getOutputStream());

@@ -8,7 +8,6 @@ import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
-import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
 
 public class PersistentTempFileBucket extends TempFileBucket implements Serializable {
@@ -27,18 +26,12 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
 	}
 	
 	protected PersistentTempFileBucket(long id, FilenameGenerator generator, PersistentFileTracker tracker, boolean deleteOnFree) {
-		super(id, generator, deleteOnFree, false);
+		super(id, generator, deleteOnFree);
 		this.tracker = tracker;
 	}
 	
 	protected PersistentTempFileBucket() {
 	    // For serialization.
-	}
-	
-    @Override
-	protected boolean deleteOnFinalize() {
-		// Do not delete on finalize
-		return false;
 	}
 	
 	@Override

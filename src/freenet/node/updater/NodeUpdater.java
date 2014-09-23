@@ -218,7 +218,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					uri = uri.sskForUSK();
 					cg = new ClientGetter(this,  
 						uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-						null, new BinaryBlobWriter(new FileBucket(tempBlobFile, false, false, false, false, false)), null);
+						null, new BinaryBlobWriter(new FileBucket(tempBlobFile, false, false, false, false)), null);
 					toStart = cg;
 				} else {
 					System.err.println("Already fetching "+jarName() + " fetch for " + fetchingVersion + " want "+availableVersion);
@@ -251,7 +251,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	RandomAccessBucket getBlobBucket(int availableVersion) {
 		File f = getBlobFile(availableVersion);
 		if(f == null) return null;
-		return new FileBucket(f, true, false, false, false, false);
+		return new FileBucket(f, true, false, false, false);
 	}
 	
 	@Override

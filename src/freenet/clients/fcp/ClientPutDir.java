@@ -159,7 +159,7 @@ public class ClientPutDir extends ClientPutBase {
 
 			if (f.exists() && f.canRead()) {
 				if(f.isFile()) {
-					FileBucket bucket = new FileBucket(f, true, false, false, false, false);
+					FileBucket bucket = new FileBucket(f, true, false, false, false);
 					if(logMINOR)
 						Logger.minor(this, "Add file : " + f.getAbsolutePath());
 					

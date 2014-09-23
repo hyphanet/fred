@@ -44,7 +44,7 @@ public class DiskDirPutFile extends DirPutFile {
 
 	@Override
 	public RandomAccessBucket getData() {
-		return new FileBucket(file, true, false, false, false, false);
+		return new FileBucket(file, true, false, false, false);
 	}
 
 	public File getFile() {

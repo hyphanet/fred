@@ -59,7 +59,7 @@ public class PluginStores {
     private Bucket makePluginStoreBucket(String storeIdentifier, boolean isEncrypted, boolean backup) 
     throws FileNotFoundException {
         File f = getPluginStoreFile(storeIdentifier, isEncrypted, backup);
-        Bucket bucket = new FileBucket(f, false, true, false, false, false);
+        Bucket bucket = new FileBucket(f, false, true, false, false);
         if(isEncrypted) {
             byte[] key = node.getPluginStoreKey(storeIdentifier);
             if(key != null) {
@@ -76,7 +76,7 @@ public class PluginStores {
     throws FileNotFoundException {
         File f = getPluginStoreFile(storeIdentifier, isEncrypted, backup);
         if(!f.exists()) return null;
-        Bucket bucket = new FileBucket(f, false, false, false, false, false);
+        Bucket bucket = new FileBucket(f, false, false, false, false);
         if(isEncrypted) {
             byte[] key = node.getPluginStoreKey(storeIdentifier);
             if(key != null) {

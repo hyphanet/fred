@@ -74,7 +74,7 @@ public class StaticToadlet extends Toadlet {
 				return;
 			}
 			try {
-				FileBucket fb = new FileBucket(from, true, false, false, false, false);
+				FileBucket fb = new FileBucket(from, true, false, false, false);
 				ctx.sendReplyHeadersStatic(200, "OK", null, DefaultMIMETypes.guessMIMEType(path, false), fb.size(), new Date(System.currentTimeMillis() - 1000)); // Already expired, we want it to reload it.
 				ctx.writeData(fb);
 				return;

@@ -151,8 +151,6 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 	
 	protected abstract boolean deleteOnExit();
 	
-	protected abstract boolean deleteOnFinalize();
-	
 	protected abstract boolean deleteOnFree();
 
 	/**
@@ -332,13 +330,6 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 		getFile().delete();
 	}
 
-	@Override
-	protected void finalize() throws Throwable {
-		if(deleteOnFinalize())
-			free(true);
-                super.finalize();
-	}
-
 	/**
 	 * Return directory used for temp files.
 	 */
@@ -510,7 +501,6 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 	
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
-        if(deleteOnFinalize()) throw new IllegalStateException("Cannot persist buckets which delete on finalize");
         dos.writeInt(MAGIC);
         dos.writeInt(VERSION);
         dos.writeBoolean(freed);

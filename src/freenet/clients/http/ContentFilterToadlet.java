@@ -214,7 +214,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
 	                mimeType = DefaultMIMETypes.guessMIMEType(filename, false);
 	            }
 	            File file = new File(filename);
-	            bucket = new FileBucket(file, true, false, false, false, false);
+	            bucket = new FileBucket(file, true, false, false, false);
             } else {
                 HTTPUploadedFile file = request.getUploadedFile("filename");
                 if (file == null) {

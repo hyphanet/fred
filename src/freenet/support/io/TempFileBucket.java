@@ -30,7 +30,6 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	protected transient FilenameGenerator generator;
 	private boolean readOnly;
 	private final boolean deleteOnFree;
-	private final boolean deleteOnFinalize;
 	private File file;
 	private transient boolean resumed;
 
@@ -52,7 +51,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		// deleteOnExit -> files get stuck in a big HashSet, whether or not
 		// they are deleted. This grows without bound, it's a major memory
 		// leak.
-		this(id, generator, true, true);
+		this(id, generator, true);
 		this.file = generator.getFilename(id);
 	}
 	
@@ -66,12 +65,11 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	 */
 	protected TempFileBucket(
 		long id,
-		FilenameGenerator generator, boolean deleteOnFree, boolean deleteOnFinalize) {
+		FilenameGenerator generator, boolean deleteOnFree) {
 		super(generator.getFilename(id), false);
 		this.filenameID = id;
 		this.generator = generator;
 		this.deleteOnFree = deleteOnFree;
-		this.deleteOnFinalize = deleteOnFinalize;
 		this.file = generator.getFilename(id);
 
             if (logDEBUG) {
@@ -82,14 +80,8 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	protected TempFileBucket() {
 	    // For serialization.
 	    deleteOnFree = false;
-	    deleteOnFinalize = false;
 	}
 
-    @Override
-	protected boolean deleteOnFinalize() {
-        return deleteOnFinalize;
-	}
-	
 	@Override
 	protected boolean createFileOnly() {
 		return false;
@@ -126,7 +118,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 
 	@Override
 	public RandomAccessBucket createShadow() {
-		TempFileBucket ret = new TempFileBucket(filenameID, generator, false, false);
+		TempFileBucket ret = new TempFileBucket(filenameID, generator, false);
 		ret.setReadOnly();
 		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
 		return ret;
@@ -192,7 +184,6 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
         dos.writeLong(filenameID);
         dos.writeBoolean(readOnly);
         dos.writeBoolean(deleteOnFree);
-        dos.writeBoolean(deleteOnFinalize);
         dos.writeUTF(file.toString());
     }
     
@@ -208,7 +199,6 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
         if(filenameID == -1) throw new StorageFormatException("Bad filename ID");
         readOnly = dis.readBoolean();
         deleteOnFree = dis.readBoolean();
-        deleteOnFinalize = dis.readBoolean();
         file = new File(dis.readUTF());
     }
 

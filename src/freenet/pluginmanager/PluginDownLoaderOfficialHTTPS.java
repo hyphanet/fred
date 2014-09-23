@@ -127,7 +127,7 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 		
 		try {
 			try {
-				bucket = new FileBucket(certFile, false, false, false, false, false);
+				bucket = new FileBucket(certFile, false, false, false, false);
 				os = bucket.getOutputStream();
 				writeCerts(os);
 				// If this fails, we need the whole fetch to fail.
