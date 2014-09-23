@@ -167,6 +167,7 @@ final class FCPPluginClientTracker extends NativeThread {
      */
     @Override
     public void realRun() {
+        while(true) {
         try {
             FCPPluginClientWeakReference disconnectedClient
                 = (FCPPluginClientWeakReference)disconnectedClientsQueue.remove();
@@ -197,6 +198,7 @@ final class FCPPluginClientTracker extends NativeThread {
             throw new RuntimeException(e);
         } catch(Throwable t) {
             Logger.error(this, "Error in thread " + getName(), t);
+        }
         }
     }
 
