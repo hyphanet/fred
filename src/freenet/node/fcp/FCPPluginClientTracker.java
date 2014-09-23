@@ -168,37 +168,37 @@ final class FCPPluginClientTracker extends NativeThread {
     @Override
     public void realRun() {
         while(true) {
-        try {
-            FCPPluginClientWeakReference disconnectedClient
-                = (FCPPluginClientWeakReference)disconnectedClientsQueue.remove();
-            
-            clientsByIDLock.writeLock().lock();
             try {
-                FCPPluginClientWeakReference removedFromTree
+                FCPPluginClientWeakReference disconnectedClient
+                = (FCPPluginClientWeakReference)disconnectedClientsQueue.remove();
+
+                clientsByIDLock.writeLock().lock();
+                try {
+                    FCPPluginClientWeakReference removedFromTree
                     = clientsByID.remove(disconnectedClient.clientID);
-                
-                assert(disconnectedClient == removedFromTree);
-                if(logMINOR) {
-                    Logger.minor(this, "Garbage-collecting disconnected client: " +
-                        "remaining clients = " + clientsByID.size() +
-                        "; client ID = " + disconnectedClient.clientID);
+
+                    assert(disconnectedClient == removedFromTree);
+                    if(logMINOR) {
+                        Logger.minor(this, "Garbage-collecting disconnected client: " +
+                            "remaining clients = " + clientsByID.size() +
+                            "; client ID = " + disconnectedClient.clientID);
+                    }
+                } finally {
+                    clientsByIDLock.writeLock().unlock();
                 }
-            } finally {
-                clientsByIDLock.writeLock().unlock();
+            } catch(InterruptedException e) {
+                // We did setDaemon(true), which causes the JVM to exit even if the thread is still
+                // running: Daemon threads are force terminated during shutdown.
+                // Thus, this thread does not need an exit mechanism, it can be an infinite loop. So
+                // nothing should try to terminate it by InterruptedException. If it does happen
+                // nevertheless, we honor it by exiting the thread, because interrupt requests
+                // should never be ignored, but log it as an error.
+                Logger.error(this,
+                    "Thread interruption requested even though this is a daemon thread!", e);
+                throw new RuntimeException(e);
+            } catch(Throwable t) {
+                Logger.error(this, "Error in thread " + getName(), t);
             }
-        } catch(InterruptedException e) {
-            // We did setDaemon(true), which causes the JVM to exit even if the thread is still
-            // running: Daemon threads are force terminated during shutdown.
-            // Thus, this thread does not need an exit mechanism, it can be an infinite loop. So
-            // nothing should try to terminate it by InterruptedException. If it does happen
-            // nevertheless, we honor it by exiting the thread, because interrupt requests should
-            // never be ignored, but log it as an error.
-            Logger.error(this, "Thread interruption requested even though this is a daemon thread!",
-                e);
-            throw new RuntimeException(e);
-        } catch(Throwable t) {
-            Logger.error(this, "Error in thread " + getName(), t);
-        }
         }
     }
 
