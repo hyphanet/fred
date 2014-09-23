@@ -151,14 +151,16 @@ class SingleFileInserter implements ClientPutState, Serializable {
 	}
 
 	void onCompressed(CompressionOutput output, ClientContext context) {
-		if(started) {
-			Logger.error(this, "Already started, not starting again", new Exception("error"));
-			return;
-		}
-		if(cancelled) {
-			Logger.error(this, "Already cancelled, not starting");
-			return;
-		}
+	    synchronized(this) {
+	        if(started) {
+	            Logger.error(this, "Already started, not starting again", new Exception("error"));
+	            return;
+	        }
+	        if(cancelled) {
+	            Logger.error(this, "Already cancelled, not starting");
+	            return;
+	        }
+	    }
 		try {
 			onCompressedInner(output, context);
 		} catch (InsertException e) {
@@ -266,7 +268,9 @@ class SingleFileInserter implements ClientPutState, Serializable {
 				bi.schedule(context);
 				if(!isUSK)
 					cb.onBlockSetFinished(this, context);
-				started = true;
+				synchronized(this) {
+				    started = true;
+				}
 				if(persistent) {
 					block.nullData();
 					block = null;
@@ -327,7 +331,9 @@ class SingleFileInserter implements ClientPutState, Serializable {
 					cb.onBlockSetFinished(this, context);
 				// Deleting origHashes is fine, we are done with them.
 			}
-			started = true;
+			synchronized(this) {
+			    started = true;
+			}
 			if(persistent) {
 				block.nullData();
 				block = null;
@@ -378,7 +384,9 @@ class SingleFileInserter implements ClientPutState, Serializable {
 				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+sh+" for "+this);
 			cb.onTransition(this, sh, context);
 			sfi.schedule(context);
-			started = true;
+			synchronized(this) {
+			    started = true;
+			}
 			// SplitHandler will need this.origHashes.
 		}
 	}
@@ -1043,11 +1051,11 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		}
 	}
 	
-	boolean cancelled() {
+	synchronized boolean cancelled() {
 		return cancelled;
 	}
 	
-	boolean started() {
+	synchronized boolean started() {
 		return started;
 	}
 	
@@ -1055,13 +1063,17 @@ class SingleFileInserter implements ClientPutState, Serializable {
 
     @Override
     public final void onResume(ClientContext context) throws InsertException, ResumeFailedException {
-        if(resumed) return;
-        resumed = true;
+        synchronized(this) {
+            if(resumed) return;
+            resumed = true;
+        }
         if(block != null && block.getData() != null)
             block.getData().onResume(context);
         if(cb != null && cb != parent)
             cb.onResume(context);
-        if(started || cancelled) return;
+        synchronized(this) {
+            if(started || cancelled) return;
+        }
         tryCompress(context);
     }
 
