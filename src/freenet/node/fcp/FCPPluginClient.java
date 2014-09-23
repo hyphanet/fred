@@ -771,6 +771,12 @@ public final class FCPPluginClient {
                     }
                 }
                 
+                // We already tried to set a reply if one is needed. If it is still null now, then
+                // we do not have to send one for sure, so we can return.
+                if(reply == null) {
+                    return;
+                }
+                
                 try {
                     send(direction.invert(), reply);
                 } catch (IOException e) {
