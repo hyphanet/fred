@@ -302,6 +302,7 @@ public class SplitFileInserterSegmentStorage {
 
     void clearKeys() throws IOException {
         // Just write 0's. Not valid.
+        // FIXME optimise (write the whole lot at once).
         byte[] buf = new byte[keyLength];
         for(int i=0;i<totalBlockCount;i++) {
             parent.innerWriteSegmentKey(segNo, i, buf);
