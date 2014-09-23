@@ -783,11 +783,18 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 	     */
 	    private final TempBucket original;
 	    
+	    /** For debugging leaks if TRACE_BUCKET_LEAKS is enabled */
+	    private final Throwable tracer;
+	    
 	    TempRandomAccessBuffer(int size, long time) throws IOException {
 	        super(new ByteArrayRandomAccessBuffer(size), size);
 	        creationTime = time;
 	        hasMigrated = false;
 	        original = null;
+            if (TRACE_BUCKET_LEAKS)
+                tracer = new Throwable();
+            else
+                tracer = null;
 	    }
 
         public TempRandomAccessBuffer(byte[] initialContents, int offset, int size, long time, boolean readOnly) throws IOException {
@@ -795,6 +802,10 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
             creationTime = time;
             hasMigrated = false;
             original = null;
+            if (TRACE_BUCKET_LEAKS)
+                tracer = new Throwable();
+            else
+                tracer = null;
         }
 
         public TempRandomAccessBuffer(LockableRandomAccessBuffer underlying, long creationTime, boolean migrated, TempBucket tempBucket) throws IOException {
@@ -802,6 +813,10 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
             this.creationTime = creationTime;
             this.hasMigrated = hasFreedRAM = migrated;
             this.original = tempBucket;
+            if (TRACE_BUCKET_LEAKS)
+                tracer = new Throwable();
+            else
+                tracer = null;
         }
 
         @Override
@@ -865,8 +880,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
             // If it's been converted to a TempRandomAccessBuffer, finalize() will only be called 
             // if *neither* object is reachable.
             if (!hasBeenFreed()) {
-//              if (TRACE_BUCKET_LEAKS)
-//                  Logger.error(this, "TempRandomAccessThing not freed, size=" + size() +" : "+this, tracer);
+                if (TRACE_BUCKET_LEAKS)
+                    Logger.error(this, "TempRandomAccessThing not freed, size=" + size() +" : "+this, tracer);
                 free();
             }
             super.finalize();
