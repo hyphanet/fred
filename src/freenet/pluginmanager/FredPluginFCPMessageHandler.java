@@ -111,9 +111,8 @@ public interface FredPluginFCPMessageHandler {
         public final Bucket data;
         
         /**
-         * For a message which is a reply to another message, true or false depending on whether the
-         * reply indicates success or failure of the processing of the original message.
-         * 
+         * For messages which are a reply to another message, this true if the operation requested
+         * by the original messages succeeded.<br>
          * For non-reply messages, this is null.
          */
         public final Boolean success;

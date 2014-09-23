@@ -76,10 +76,6 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
 	private final SimpleFieldSet plugparams;
 
     /**
-     * For messages which are a reply to another message, this true if the operation requested by
-     * the original messages succeeded.<br>
-     * For non-reply messages, this is null.
-     * 
      * @see FCPPluginMessage#success
      */
     private final Boolean success;
