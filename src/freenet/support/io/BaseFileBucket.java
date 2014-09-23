@@ -472,11 +472,11 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 		File file = getFile();
 		if ((deleteOnFree() || forceFree) && file.exists()) {
 			Logger.debug(this,
-				"Deleting bucket " + file.getName(), new Exception("debug"));
+				"Deleting bucket " + file, new Exception("debug"));
 			deleteFile();
 			if (file.exists())
 				Logger.error(this,
-					"Delete failed on bucket " + file.getName(), new Exception("debug"));
+					"Delete failed on bucket " + file, new Exception("debug"));
 		}
 	}
 	
