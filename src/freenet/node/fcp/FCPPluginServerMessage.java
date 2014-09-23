@@ -31,7 +31,7 @@ import freenet.support.api.Bucket;
  * misconception that it would be reply only, and also to make the name symmetrical to class
  * {@link FCPPluginClientMessage}. To stay backward compatible, it was decided to keep the raw
  * network message name as is. <br>
- * TODO FIXME: Would it technically be possible to add a second name to the on-network data so we
+ * TODO: Would it technically be possible to add a second name to the on-network data so we
  * can get rid of the old name after a transition period?<br><br>
  * 
  * @link FCPPluginClient FCPPluginClient gives an overview of the code paths which messages take.
