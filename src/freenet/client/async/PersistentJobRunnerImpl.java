@@ -340,20 +340,33 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         checkpoint(true);
     }
     
-    /** Checkpoint on-thread ASAP. Similar to waitForIdleAndCheckpoint. Does check for killed.
+    /** Wait until a checkpoint has been completed, or if the job runner becomes idle, do it here.
      * @throws PersistenceDisabledException */
     public void waitAndCheckpoint() throws PersistenceDisabledException {
         synchronized(sync) {
-            while(runningJobs > 0 || writing) {
+            while(runningJobs > 0) {
                 if(!enableCheckpointing) return;
                 if(killed) throw new PersistenceDisabledException();
-                Logger.error(this, "Waiting for "+runningJobs+" to finish (writing="+writing+") to checkpoint...");
+                Logger.error(this, "Waiting for "+runningJobs+" to finish before checkpoint");
                 try {
                     sync.wait();
                 } catch (InterruptedException e) {
                     // Ignore.
                 }
             }
+            if(writing) {
+                while(writing) {
+                    if(!enableCheckpointing) return;
+                    if(killed) throw new PersistenceDisabledException();
+                    try {
+                        sync.wait();
+                    } catch (InterruptedException e) {
+                        // Ignore.
+                    }
+                }
+                return;
+            }
+            writing = true;
         }
         checkpoint(true);
     }
