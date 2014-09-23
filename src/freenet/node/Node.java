@@ -1206,13 +1206,13 @@ public class Node implements TimeSkewDetectorCallback {
 
             try {
                 if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-                    keys = MasterKeys.createRandom(random);
+                    keys = MasterKeys.createRandom(secureRandom);
                 } else {
-                    keys = MasterKeys.read(masterKeysFile, random, "");
+                    keys = MasterKeys.read(masterKeysFile, secureRandom, "");
                 }
                 clientCacheKey = keys.clientCacheMasterKey;
                 persistentSecret = keys.getPersistentMasterSecret();
-                databaseKey = keys.createDatabaseKey(random);
+                databaseKey = keys.createDatabaseKey(secureRandom);
                 if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
                     System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
                     securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
@@ -2088,7 +2088,7 @@ public class Node implements TimeSkewDetectorCallback {
 					        synchronized(this) {
 					            keys = Node.this.keys;
 					        }
-                            keys.changePassword(masterKeysFile, "", random);
+                            keys.changePassword(masterKeysFile, "", secureRandom);
                         } catch (IOException e) {
                             Logger.error(this, "Unable to create encryption keys file: "+masterKeysFile+" : "+e, e);
                             System.err.println("Unable to create encryption keys file: "+masterKeysFile+" : "+e);
@@ -4711,11 +4711,11 @@ public class Node implements TimeSkewDetectorCallback {
 		synchronized(this) {
 		    if(keys == null) {
 		        // Decrypting.
-		        keys = MasterKeys.read(masterKeysFile, random, password);
-		        databaseKey = keys.createDatabaseKey(random);
+		        keys = MasterKeys.read(masterKeysFile, secureRandom, password);
+		        databaseKey = keys.createDatabaseKey(secureRandom);
 		    } else {
 		        // Setting password when changing to HIGH from another mode.
-		        keys.changePassword(masterKeysFile, password, random);
+		        keys.changePassword(masterKeysFile, password, secureRandom);
 		        return;
 		    }
 		    k = keys;
@@ -4736,7 +4736,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(wantClientCache)
 			activatePasswordedClientCache(keys);
 		if(wantDatabase)
-			lateSetupDatabase(keys.createDatabaseKey(random));
+			lateSetupDatabase(keys.createDatabaseKey(secureRandom));
 	}
 
 
@@ -4773,7 +4773,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM)
 			Logger.error(this, "Changing password while physical threat level is at MAXIMUM???");
 		if(masterKeysFile.exists()) {
-			keys.changePassword(masterKeysFile, newPassword, random);
+			keys.changePassword(masterKeysFile, newPassword, secureRandom);
 			setPasswordInner(keys, inFirstTimeWizard);
 		} else {
 			setMasterPassword(newPassword, inFirstTimeWizard);

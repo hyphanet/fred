@@ -74,7 +74,7 @@ public class MasterKeys {
 	 * FIXME make this configurable. FIXME Have a look at real password to key functions. */
 	static int ITERATE_TIME = 1000;
 
-	public static MasterKeys read(File masterKeysFile, RandomSource hardRandom, String password) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
+	public static MasterKeys read(File masterKeysFile, Random hardRandom, String password) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 		System.err.println("Trying to read master keys file...");
 		if(masterKeysFile != null && masterKeysFile.exists()) {
 			// Try to read the keys
@@ -189,7 +189,7 @@ public class MasterKeys {
 		return ret;
 	}
 
-	private static MasterKeys readOldFormat(DataInputStream dis, int length, RandomSource hardRandom,
+	private static MasterKeys readOldFormat(DataInputStream dis, int length, Random hardRandom,
             String password) throws IOException, MasterKeysWrongPasswordException {
         byte[] salt = new byte[32];
         dis.readFully(salt);
@@ -257,12 +257,12 @@ public class MasterKeys {
 		Arrays.fill(buf, (byte)0x00);
 	}
 
-	public void changePassword(File masterKeysFile, String newPassword, RandomSource hardRandom) throws IOException {
+	public void changePassword(File masterKeysFile, String newPassword, Random hardRandom) throws IOException {
 		System.err.println("Writing new master.keys file");
 		write(masterKeysFile, newPassword, hardRandom);
 	}
 	
-	private void write(File masterKeysFile, String newPassword, RandomSource hardRandom) throws IOException {
+	private void write(File masterKeysFile, String newPassword, Random hardRandom) throws IOException {
 		// Write it to a byte[], check size, then replace in-place atomically
 
 		// New IV, new salt, same client cache key, same database key
@@ -347,7 +347,7 @@ public class MasterKeys {
 		FileUtil.secureDelete(masterKeysFile);
 	}
 
-	public DatabaseKey createDatabaseKey(RandomSource random) {
+	public DatabaseKey createDatabaseKey(Random random) {
 	    return new DatabaseKey(databaseKey, random);
 	}
 

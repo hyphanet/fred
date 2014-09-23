@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Random;
 
 import org.bouncycastle.util.Arrays;
 
@@ -15,9 +16,9 @@ import freenet.support.api.Bucket;
 public class DatabaseKey {
     
     private final byte[] databaseKey;
-    private final RandomSource random;
+    private final Random random;
     
-    DatabaseKey(byte[] key, RandomSource random) {
+    DatabaseKey(byte[] key, Random random) {
         this.databaseKey = Arrays.copyOf(key, key.length);
         this.random = random;
     }
