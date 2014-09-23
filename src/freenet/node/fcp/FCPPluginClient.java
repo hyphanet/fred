@@ -56,7 +56,13 @@ import freenet.support.io.NativeThread;
  * 
  * <h2>Code path of sending messages</h2>
  * <p>There are two possible code paths for client connections, depending upon the location of the
- * client. The server is always running inside the node.
+ * client. The server is always running inside the node.<br><br>
+ * 
+ * NOTICE: These two code paths only apply to asynchronous, non-blocking messages. For blocking,
+ * synchronous messages sent by {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)},
+ * there is an overview at {@link #synchronousSends}. The overview was left out here because they
+ * re built on top of regular messages, so the code paths mentioned here mostly apply.<br><br>
+ * 
  * The two possible paths are:<br/>
  * <p>1. The server is running in the node, the client is not - also called networked FCP
  * connections:<br/>
