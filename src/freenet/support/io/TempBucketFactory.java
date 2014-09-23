@@ -473,10 +473,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 		
 		@Override
 		protected void finalize() throws Throwable {
-		    synchronized(this) {
-		        // If it's been toRandomAccessThing()'ed, then the Bucket being finalized doesn't matter.
-		        if(currentBucket instanceof RAFBucket) return;
-		    }
+		    // If it's been converted to a TempRandomAccessBuffer, finalize() will only be called 
+		    // if *neither* object is reachable.
 			if (!hasBeenFreed) {
 				if (TRACE_BUCKET_LEAKS)
 					Logger.error(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this, tracer);
@@ -508,7 +506,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
                 if(os != null) throw new IOException("Can't migrate with open OutputStream's");
                 if(!tbis.isEmpty()) throw new IOException("Can't migrate with open InputStream's");
                 setReadOnly();
-                TempRandomAccessBuffer raf = new TempRandomAccessBuffer(currentBucket.toRandomAccessThing(), creationTime, !isRAMBucket());
+                TempRandomAccessBuffer raf = new TempRandomAccessBuffer(currentBucket.toRandomAccessThing(), creationTime, !isRAMBucket(), this);
                 if(isRAMBucket()) {
                     synchronized(ramBucketQueue) {
                         // No change in space usage.
@@ -779,23 +777,31 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 	    protected boolean hasMigrated = false;
 	    private boolean hasFreedRAM = false;
 	    private final long creationTime;
+	    /** Kept in RAM so that finalizer is called on the TempBucket when *both* the 
+	     * TempRandomAccessBuffer *and* the TempBucket are no longer reachable, in which case we
+	     * will free from the TempBucket. If this is null, then the TempRAB can free in finalizer. 
+	     */
+	    private final TempBucket original;
 	    
 	    TempRandomAccessBuffer(int size, long time) throws IOException {
 	        super(new ByteArrayRandomAccessBuffer(size), size);
 	        creationTime = time;
 	        hasMigrated = false;
+	        original = null;
 	    }
 
         public TempRandomAccessBuffer(byte[] initialContents, int offset, int size, long time, boolean readOnly) throws IOException {
             super(new ByteArrayRandomAccessBuffer(initialContents, offset, size, readOnly), size);
             creationTime = time;
             hasMigrated = false;
+            original = null;
         }
 
-        public TempRandomAccessBuffer(LockableRandomAccessBuffer underlying, long creationTime, boolean migrated) throws IOException {
+        public TempRandomAccessBuffer(LockableRandomAccessBuffer underlying, long creationTime, boolean migrated, TempBucket tempBucket) throws IOException {
             super(underlying, underlying.size());
             this.creationTime = creationTime;
             this.hasMigrated = hasFreedRAM = migrated;
+            this.original = tempBucket;
         }
 
         @Override
