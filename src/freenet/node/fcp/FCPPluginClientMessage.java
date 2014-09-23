@@ -75,19 +75,13 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
 	
 	private final SimpleFieldSet plugparams;
 
-    /**
-     * @see FCPPluginMessage#success
-     */
+    /** @see FCPPluginMessage#success */
     private final Boolean success;
 
-    /**
-     * @see FCPPluginMessage#errorCode
-     */
+    /** @see FCPPluginMessage#errorCode */
     private final String errorCode;
 
-    /**
-     * @see FCPPluginMessage#errorMessage
-     */
+    /** @see FCPPluginMessage#errorMessage */
     private final String errorMessage;
 
     FCPPluginClientMessage(SimpleFieldSet fs) throws MessageInvalidException {

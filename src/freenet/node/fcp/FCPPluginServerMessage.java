@@ -55,19 +55,13 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
 	private final String identifier;
 	private final SimpleFieldSet plugparams;
 
-    /**
-     * @see FCPPluginMessage#success
-     */
+    /** @see FCPPluginMessage#success */
     private final Boolean success;
 
-    /**
-     * @see FCPPluginMessage#errorCode
-     */
+    /** @see FCPPluginMessage#errorCode */
     private final String errorCode;
 
-    /**
-     * @see FCPPluginMessage#errorMessage
-     */
+    /** @see FCPPluginMessage#errorMessage */
     private final String errorMessage;
 
     /**
