@@ -229,6 +229,11 @@ public interface FredPluginFCPMessageHandler {
          * See the JavaDoc of the member variables with the same name as the parameters for an
          * explanation of the parameters.
          * 
+         * FIXME: The experience with the WOT FCP code is that non-error messages will be
+         * constructed in much more places than error messages. So it will be annoying to have
+         * to pass success=true, errorCode=null, errorMessage=null in all those places. Therefore,
+         * please add a factory function for success=true replies. 
+         * 
          * @throws IllegalStateException
          *             If the original message was a reply message already.<br>
          *             Replies often shall only indicate success / failure instead of triggering
