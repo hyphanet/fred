@@ -164,6 +164,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         if(logMINOR)
             Logger.minor(this, "Created "+(persistent?"persistent" : "transient")+" download for "+
                     thisKey+" on "+raf+" for "+this);
+        lastNotifiedStoreFetch = System.currentTimeMillis();
     }
     
     protected SplitFileFetcher() {
@@ -309,10 +310,35 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
     public boolean hasFinished() {
         return failed || succeeded;
     }
+    
+    /** Incremented whenever we fetch a block from the store */
+    private int storeFetchCounter;
+    /** Time when we last passed through a block fetch from the store */
+    private long lastNotifiedStoreFetch;
+    static final int STORE_NOTIFY_BLOCKS = 100;
+    static final long STORE_NOTIFY_INTERVAL = 200;
 
     @Override
     public void onFetchedBlock() {
-        parent.completedBlock(!getter.hasQueued(), context);
+        boolean dontNotify = true;
+        if(getter.hasQueued()) {
+            dontNotify = false;
+        } else {
+            synchronized(this) {
+                if(storeFetchCounter++ == STORE_NOTIFY_BLOCKS) {
+                    storeFetchCounter = 0;
+                    dontNotify = false;
+                    lastNotifiedStoreFetch = System.currentTimeMillis();
+                } else {
+                    long now = System.currentTimeMillis();
+                    if(now - lastNotifiedStoreFetch >= STORE_NOTIFY_INTERVAL) {
+                        dontNotify = false;
+                        lastNotifiedStoreFetch = now;
+                    }
+                }
+            }
+        }
+        parent.completedBlock(dontNotify, context);
     }
 
     @Override
@@ -417,6 +443,9 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
             raf.free();
             throw e;
         }
+        synchronized(this) {
+            lastNotifiedStoreFetch = System.currentTimeMillis();
+        }
         getter = new SplitFileFetcherGet(this, storage);
         try {
             if(storage.start(resumed))
@@ -483,6 +512,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         this.wantBinaryBlob = getter.collectingBinaryBlob();
         // onResume() will do the rest.
         Logger.normal(this, "Resumed splitfile download for "+this);
+        lastNotifiedStoreFetch = System.currentTimeMillis();
     }
 
     @Override
