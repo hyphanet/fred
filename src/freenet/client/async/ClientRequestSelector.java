@@ -282,6 +282,8 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			if(offeredKeys.getWakeupTime(context, now) == 0)
 				return new SelectorReturn(offeredKeys);
 		}
+		if(maxPrio >= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS)
+		    maxPrio = RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS;
 		long l = choosePriority(fuzz, random, maxPrio, context, now);
 		if(l > Integer.MAX_VALUE) {
 			if(logMINOR) Logger.minor(this, "No priority available for the next "+TimeUtil.formatTime(l - now));
@@ -298,8 +300,6 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			return null;
 		}
 		long wakeupTime = Long.MAX_VALUE;
-		if(maxPrio >= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS)
-			maxPrio = RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS;
 outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
 			SectoredRandomGrabArray chosenTracker = priorities[choosenPriorityClass];
