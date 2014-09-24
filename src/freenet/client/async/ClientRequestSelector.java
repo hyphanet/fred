@@ -126,7 +126,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	 * @return The priority chosen or the time at which a priority will have requests to send.
 	 * LOCKING: Synchronized because we may create new priorities. Both the cooldown queue and the 
 	 * RGA hierarchy, rooted at the priorities, use ClientRequestSelector lock. */
-	private synchronized long choosePriority(int fuzz, RandomSource random, short maxPrio, ClientContext context, long now){
+	private synchronized long choosePriority(int fuzz, RandomSource random, ClientContext context, long now){
 		SectoredRandomGrabArray result = null;
 		
 		long wakeupTime = Long.MAX_VALUE;
@@ -152,7 +152,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			        result = null;
 				}
 			}
-			if(priority > maxPrio) {
+			if(priority > RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS) {
 				fuzz++;
 				continue; // Don't return because first round may be higher with soft scheduling
 			}
@@ -174,10 +174,10 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	 * running), so we may need to try repeatedly. FIXME this is only necessary because many 
 	 * classes only update their cooldown status when choosing a block to send, e.g. 
 	 * SplitFileInserter. */
-	ChosenBlock chooseRequest(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, short maxPrio, boolean realTime, ClientContext context) {
+	ChosenBlock chooseRequest(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, boolean realTime, ClientContext context) {
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
-			SelectorReturn r = chooseRequestInner(fuzz, random, offeredKeys, starter, maxPrio, realTime, context, now);
+			SelectorReturn r = chooseRequestInner(fuzz, random, offeredKeys, starter, realTime, context, now);
 			SendableRequest req = null;
 			if(r != null && r.req != null) req = r.req;
 			if(req == null) continue;
@@ -274,7 +274,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	 * most of the time.
 	 * @return Either a chosen request or the time at which we should try again if all priorities 
 	 * are waiting for requests to finish / cooldown periods to expire. */
-	SelectorReturn chooseRequestInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, short maxPrio, boolean realTime, ClientContext context, long now) {
+	SelectorReturn chooseRequestInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, boolean realTime, ClientContext context, long now) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		boolean tryOfferedKeys = offeredKeys != null && random.nextBoolean();
@@ -282,9 +282,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			if(offeredKeys.getWakeupTime(context, now) == 0)
 				return new SelectorReturn(offeredKeys);
 		}
-		if(maxPrio >= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS)
-		    maxPrio = RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS;
-		long l = choosePriority(fuzz, random, maxPrio, context, now);
+		long l = choosePriority(fuzz, random, context, now);
 		if(l > Integer.MAX_VALUE) {
 			if(logMINOR) Logger.minor(this, "No priority available for the next "+TimeUtil.formatTime(l - now));
 			return null;
@@ -300,7 +298,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			return null;
 		}
 		long wakeupTime = Long.MAX_VALUE;
-outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
+outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
 			SectoredRandomGrabArray chosenTracker = priorities[choosenPriorityClass];
 			if(chosenTracker == null) {

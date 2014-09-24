@@ -236,7 +236,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	        fuzz = -1;
 	    else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 	        fuzz = 0;
-	    return selector.chooseRequest(fuzz, random, offeredKeys, starter, Short.MAX_VALUE, isRTScheduler, clientContext);
+	    return selector.chooseRequest(fuzz, random, offeredKeys, starter, isRTScheduler, clientContext);
 	}
 	
 	/**
