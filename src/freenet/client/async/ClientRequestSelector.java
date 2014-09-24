@@ -724,7 +724,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
             throw new IllegalArgumentException("Request isInsert="+req.isInsert()+" but my isInsertScheduler="+isInsertScheduler+"!!");
         short prio = req.getPriorityClass();
         if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest()+" ssk="+this.isSSKScheduler+" insert="+this.isInsertScheduler);
-        addToGrabArray(prio, req.getClient(), req.getClientRequest().getSchedulerGroup(), req, context);
+        addToGrabArray(prio, req.getClient(), req.getSchedulerGroup(), req, context);
         if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio);
     }
     

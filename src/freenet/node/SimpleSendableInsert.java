@@ -7,6 +7,7 @@ import freenet.client.InsertException;
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.client.async.ClientRequestSchedulerGroup;
 import freenet.client.async.ClientRequester;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientKey;
@@ -120,6 +121,11 @@ public class SimpleSendableInsert extends SendableInsert {
 	@Override
 	public ClientRequester getClientRequest() {
 		return null;
+	}
+
+	@Override
+    public ClientRequestSchedulerGroup getSchedulerGroup() {
+	    return null;
 	}
 
 	@Override
