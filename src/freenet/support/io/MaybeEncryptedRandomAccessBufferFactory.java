@@ -9,7 +9,7 @@ import freenet.support.Logger;
 import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.LockableRandomAccessBufferFactory;
 
-/** Wraps another RandomAccessThingFactory to enable encryption if currently turned on. */
+/** Wraps another LockableRandomAccessBufferFactory to enable encryption if currently turned on. */
 public class MaybeEncryptedRandomAccessBufferFactory implements LockableRandomAccessBufferFactory {
     
     public MaybeEncryptedRandomAccessBufferFactory(LockableRandomAccessBufferFactory factory, boolean encrypt) {
