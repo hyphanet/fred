@@ -862,7 +862,8 @@ public final class FCPPluginClient {
      * function does contain a message identifier which does not collide with one of another
      * message.<br>
      * To ensure this, you <b>must</b> use the constructor {@link FCPPluginMessage#construct(
-     * SimpleFieldSet, Bucket)} and do not call this function twice upon the same message.<br>
+     * SimpleFieldSet, Bucket)} (or one of its shortcuts) and do not call this function twice upon
+     * the same message.<br>
      * If you do not follow this rule and use colliding message identifiers, there might be side
      * effects such as:<br>
      * - This function might return the reply to the colliding message instead of the reply to

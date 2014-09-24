@@ -200,10 +200,13 @@ public interface FredPluginFCPMessageHandler {
          * <br>
          * If you are replying to a message, notably when returning a message in the message
          * handling function, use {@link #constructReplyMessage(FCPPluginMessage, SimpleFieldSet,
-         * Bucket, boolean, String, String)} instead.<br><br>
+         * Bucket, boolean, String, String)} (or one of its shortcuts) instead.<br><br>
          * 
          * See the JavaDoc of the member variables with the same name as the parameters for an
-         * explanation of the parameters.
+         * explanation of the parameters.<br><br>
+         * 
+         * There is a shortcut to this constructor for typical choice of parameters:<br>
+         * {@link #construct()}.
          */
         public static FCPPluginMessage construct(SimpleFieldSet parameters, Bucket data) {
             // Notice: While the specification of FCP formally allows the client to freely chose the
@@ -236,12 +239,11 @@ public interface FredPluginFCPMessageHandler {
          * FCPPluginMessage)}.<br><br>
          * 
          * See the JavaDoc of the member variables with the same name as the parameters for an
-         * explanation of the parameters.
+         * explanation of the parameters.<br><br>
          * 
-         * FIXME: The experience with the WOT FCP code is that non-error messages will be
-         * constructed in much more places than error messages. So it will be annoying to have
-         * to pass success=true, errorCode=null, errorMessage=null in all those places. Therefore,
-         * please add a factory function for success=true replies. 
+         * There are shortcuts to this constructor for typical choice of parameters:<br>
+         * {@link #constructSuccessReply(FCPPluginMessage)}.<br>
+         * {@link #constructErrorReply(FCPPluginMessage, String, String)}.<br>
          * 
          * @throws IllegalStateException
          *             If the original message was a reply message already.<br>
@@ -305,10 +307,6 @@ public interface FredPluginFCPMessageHandler {
          * 
          * You <b>must not</b> use this for constructing outgoing messages in server or client
          * implementations.<br>
-         * There, use {@link #construct(SimpleFieldSet, Bucket)} and
-         * {@link #constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean, String,
-         * String)}.<br>
-         * <br>
          * 
          * This function is typically to construct incoming messages for passing them to the message
          * handling function
@@ -419,7 +417,7 @@ public interface FredPluginFCPMessageHandler {
          * 
          *         You <b>must</b> construct this by using the constructor
          *         {@link FCPPluginMessage#constructReplyMessage(FCPPluginMessage, SimpleFieldSet,
-         *         Bucket, boolean, String, String)} to ensure that the
+         *         Bucket, boolean, String, String)} (or one of its shortcuts) to ensure that the
          *         {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
          * 
          *         You <b>must</b> return null if the original message was a reply message as
@@ -484,7 +482,7 @@ public interface FredPluginFCPMessageHandler {
          * 
          *         You <b>must</b> construct this by using the constructor
          *         {@link FCPPluginMessage#constructReplyMessage(FCPPluginMessage, SimpleFieldSet,
-         *         Bucket, boolean, String, String)} to ensure that the
+         *         Bucket, boolean, String, String)} (or one of its shortcuts) to ensure that the
          *         {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
          * 
          *         You <b>must</b> return null if the original message was a reply message as
