@@ -302,12 +302,12 @@ public class ClientContext {
         return persistent ? jobRunner : dummyJobRunner;
     }
 
-    public FileRandomAccessBufferFactory getFileRandomAccessThingFactory(boolean persistent) {
+    public FileRandomAccessBufferFactory getFileRandomAccessBufferFactory(boolean persistent) {
         return persistent ? fileRAFPersistent : fileRAFTransient;
                  
     }
 
-    public LockableRandomAccessBufferFactory getRandomAccessThingFactory(boolean persistent) {
+    public LockableRandomAccessBufferFactory getRandomAccessBufferFactory(boolean persistent) {
         return persistent ? persistentRAFFactory : tempBucketFactory;
     }
 	
