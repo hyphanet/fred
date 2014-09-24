@@ -18,7 +18,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
-public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue, PutCompletionCallback {
+public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue, PutCompletionCallback, ClientRequestSchedulerGroup {
 
 	final int maxRunning;
 	int counter;
@@ -201,6 +201,11 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
     @Override
     protected ClientBaseCallback getCallback() {
         return null;
+    }
+
+    @Override
+    public ClientRequestSchedulerGroup getSchedulerGroup() {
+        return this;
     }
 
 }

@@ -56,7 +56,7 @@ import freenet.support.io.ResumeFailedException;
  * WARNING: Changing non-transient members on classes that are Serializable can result in 
  * restarting downloads or losing uploads.
  */
-public abstract class BaseManifestPutter extends ManifestPutter {
+public abstract class BaseManifestPutter extends ManifestPutter implements ClientRequestSchedulerGroup {
 
     private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;
@@ -119,6 +119,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			
 			super.onSuccess(state, context);
 		}
+
 	}
 
 	/**
@@ -704,6 +705,11 @@ public abstract class BaseManifestPutter extends ManifestPutter {
         @Override
         public short getPriorityClass() {
             return BaseManifestPutter.this.getPriorityClass();
+        }
+        
+        @Override
+        public ClientRequestSchedulerGroup getSchedulerGroup() {
+            return BaseManifestPutter.this;
         }
 
 	}
@@ -1607,5 +1613,10 @@ public abstract class BaseManifestPutter extends ManifestPutter {
         }
         if(rootMetaPutHandler != null)
             rootMetaPutHandler.onResume(context);
+    }
+    
+    @Override
+    public ClientRequestSchedulerGroup getSchedulerGroup() {
+        return this;
     }
 }

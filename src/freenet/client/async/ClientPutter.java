@@ -26,7 +26,7 @@ import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.ResumeFailedException;
 
 /** A high level insert. */
-public class ClientPutter extends BaseClientPutter implements PutCompletionCallback {
+public class ClientPutter extends BaseClientPutter implements PutCompletionCallback, ClientRequestSchedulerGroup {
 
     private static final long serialVersionUID = 1L;
     /** Callback for when the insert completes. */
@@ -569,6 +569,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
         }
         if(state != null)
             state.onShutdown(context);
+    }
+
+    @Override
+    public ClientRequestSchedulerGroup getSchedulerGroup() {
+        return this;
     }
 
 }

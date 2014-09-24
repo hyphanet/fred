@@ -393,4 +393,7 @@ public abstract class ClientRequester implements Serializable {
         return false;
     }
 
+    /** Get the ClientRequestSchedulerGroup. Usually but not always this will just be "return this". */
+    public abstract ClientRequestSchedulerGroup getSchedulerGroup();
+
 }

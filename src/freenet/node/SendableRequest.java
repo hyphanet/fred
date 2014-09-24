@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.client.async.ClientRequestSchedulerGroup;
 import freenet.client.async.ClientRequester;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -175,6 +176,10 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
         RandomGrabArray parent = getParentGrabArray();
         if(parent == null) return;
         parent.clearWakeupTime(context);
+    }
+
+    public ClientRequestSchedulerGroup getSchedulerGroup() {
+        return getClientRequest().getSchedulerGroup();
     }
 
 }

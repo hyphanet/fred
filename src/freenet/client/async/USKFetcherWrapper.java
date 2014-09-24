@@ -18,7 +18,7 @@ import freenet.support.io.ResumeFailedException;
 /**
  * Wrapper for a backgrounded USKFetcher.
  */
-public class USKFetcherWrapper extends BaseClientGetter {
+public class USKFetcherWrapper extends BaseClientGetter implements ClientRequestSchedulerGroup {
 
 	final USK usk;
 	
@@ -127,6 +127,11 @@ public class USKFetcherWrapper extends BaseClientGetter {
     @Override
     protected ClientBaseCallback getCallback() {
         return null;
+    }
+
+    @Override
+    public ClientRequestSchedulerGroup getSchedulerGroup() {
+        return this;
     }
 
 }

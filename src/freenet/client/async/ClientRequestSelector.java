@@ -70,11 +70,11 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	final ClientRequestScheduler sched;
 	
 	// Root: SRGA of SRGAs (for a priority), descend by RequestClient.
-	// Layer 1: SRGA of RGAs (for a RequestClient), descend by ClientRequester.
-	// Layer 2: RGAs (for a ClientRequester), contain SendableRequest's.
+	// Layer 1: SRGA of RGAs (for a RequestClient), descend by ClientRequestSchedulerGroup.
+	// Layer 2: RGAs (for a ClientRequestSchedulerGroup), contain SendableRequest's.
 	// Layer 3: SendableRequest's.
 	
-	static class ClientRequestRGANode extends SectoredRandomGrabArraySimple<RequestClient,ClientRequester> {
+	static class ClientRequestRGANode extends SectoredRandomGrabArraySimple<RequestClient,ClientRequestSchedulerGroup> {
 
         public ClientRequestRGANode(RequestClient object, RemoveRandomParent parent,
                 ClientRequestSelector root) {
@@ -368,7 +368,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
 					// Remove it.
 					ClientRequestRGANode clientGrabber = chosenTracker.getGrabber(req.getClient());
 					if(clientGrabber != null) {
-						RandomGrabArray baseRGA = clientGrabber.getGrabber(req.getClientRequest());
+						RandomGrabArray baseRGA = clientGrabber.getGrabber(req.getSchedulerGroup());
 						if(baseRGA != null) {
 							// Must synchronize to avoid nasty race conditions with cooldown.
 							synchronized(this) {
@@ -599,7 +599,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
      * @param context The client context object, which contains links to all the important objects
      * that are not persisted in the database, e.g. executors, temporary filename generator, etc.
      */
-    void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, ClientContext context) {
+    void addToGrabArray(short priorityClass, RequestClient client, ClientRequestSchedulerGroup cr, SendableRequest req, ClientContext context) {
         if((priorityClass > RequestStarter.PAUSED_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
             throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.PAUSED_PRIORITY_CLASS+" (least important)");
         // Client
@@ -637,6 +637,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
             Logger.error(this, "Changing priority from "+oldPrio+" to "+newPrio+" for "+request);
             return;
         }
+        ClientRequestSchedulerGroup group = request.getSchedulerGroup();
         synchronized(this) {
             // First by priority
             RequestClientRGANode clientGrabber = priorities[oldPrio];
@@ -651,19 +652,19 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
                 if(logMINOR) Logger.minor(this, "Changing priority but request not running "+request, new Exception("debug"));
                 return;
             }
-            RandomGrabArrayWithObject<ClientRequester> rga = requestGrabber.getGrabber(request);
+            RandomGrabArrayWithObject<ClientRequestSchedulerGroup> rga = requestGrabber.getGrabber(group);
             if(rga == null) {
                 if(logMINOR) Logger.minor(this, "Changing priority but request not running "+request, new Exception("debug"));
                 return;
             }
             requestGrabber.maybeRemove(rga, context);
             requestGrabber = makeSRGAForClient(newPrio, client, context);
-            if(requestGrabber.getGrabber(request) != null) {
-                Logger.error(this, "RGA already exists for "+request+" : "+requestGrabber.getGrabber(request)+
+            if(requestGrabber.getGrabber(group) != null) {
+                Logger.error(this, "RGA already exists for "+request+" : "+requestGrabber.getGrabber(group)+
                         " but want to insert "+rga, new Exception("error"));
                 requestGrabber.maybeRemove(rga, context);
             }
-            requestGrabber.addGrabber(request, rga, context);
+            requestGrabber.addGrabber(group, rga, context);
         }
     }
 
@@ -682,7 +683,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
                         ClientRequestRGANode requestGrabber = prio.getGrabber(client);
                         System.out.println("SRGA for client: "+requestGrabber);
                         for(int l=0;l<requestGrabber.size();l++) {
-                            ClientRequester cr = requestGrabber.getClient(l);
+                            ClientRequestSchedulerGroup cr = requestGrabber.getClient(l);
                             System.out.println("Request "+l+" : "+cr);
                             RandomGrabArray rga = requestGrabber.getGrabber(cr);
                             System.out.println("Queued SendableRequests: "+rga.size()+" on "+rga);
@@ -723,7 +724,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
             throw new IllegalArgumentException("Request isInsert="+req.isInsert()+" but my isInsertScheduler="+isInsertScheduler+"!!");
         short prio = req.getPriorityClass();
         if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest()+" ssk="+this.isSSKScheduler+" insert="+this.isInsertScheduler);
-        addToGrabArray(prio, req.getClient(), req.getClientRequest(), req, context);
+        addToGrabArray(prio, req.getClient(), req.getClientRequest().getSchedulerGroup(), req, context);
         if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio);
     }
     
