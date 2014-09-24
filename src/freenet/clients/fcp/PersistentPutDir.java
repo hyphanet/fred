@@ -8,6 +8,7 @@ import java.util.HashMap;
 import freenet.client.InsertContext;
 import freenet.client.async.BaseManifestPutter;
 import freenet.clients.fcp.ClientRequest.Persistence;
+import freenet.crypt.EncryptedRandomAccessBucket;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.HexUtil;
@@ -121,7 +122,7 @@ public class PersistentPutDir extends FCPMessage {
 				} else if(data instanceof FileBucket) {
 					subset.putSingle("UploadFrom", "disk");
 					subset.putSingle("Filename", ((FileBucket)data).getFile().getPath());
-				} else if (data instanceof PaddedEphemerallyEncryptedBucket || data instanceof NullBucket || data instanceof PersistentTempFileBucket || data instanceof TempBucketFactory.TempBucket) {
+				} else if (data instanceof PaddedEphemerallyEncryptedBucket || data instanceof NullBucket || data instanceof PersistentTempFileBucket || data instanceof TempBucketFactory.TempBucket || data instanceof EncryptedRandomAccessBucket) {
 					subset.putSingle("UploadFrom", "direct");
 				} else {
 					throw new IllegalStateException("Don't know what to do with bucket: "+data);
