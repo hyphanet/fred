@@ -986,7 +986,7 @@ public final class FCPPluginClient {
         
         assert(timeoutNanoSeconds > 0) : "Timeout should not be negative";
         
-        assert(timeoutNanoSeconds < TimeUnit.MINUTES.toNanos(1))
+        assert(timeoutNanoSeconds < TimeUnit.MINUTES.toNanos(10))
             : "Please use sane timeouts to prevent thread congestion";
         
         
