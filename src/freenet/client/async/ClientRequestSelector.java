@@ -29,6 +29,7 @@ import freenet.support.RandomGrabArray;
 import freenet.support.RandomGrabArrayWithClient;
 import freenet.support.RemoveRandom.RemoveRandomReturn;
 import freenet.support.SectoredRandomGrabArray;
+import freenet.support.SectoredRandomGrabArraySimple;
 import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.TimeUtil;
 
@@ -74,7 +75,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
      * SectoredRandomGrabArray's // round-robin by RequestClient, then by SendableRequest
      * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
      */
-    protected SectoredRandomGrabArray<RequestClient>[] priorities;
+    protected SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>>[] priorities;
     
     protected final Deque<BaseSendableGet>recentSuccesses;
     
@@ -129,7 +130,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	 * LOCKING: Synchronized because we may create new priorities. Both the cooldown queue and the 
 	 * RGA hierarchy, rooted at the priorities, use ClientRequestSelector lock. */
 	private synchronized long choosePriority(int fuzz, RandomSource random, ClientContext context, long now){
-		SectoredRandomGrabArray<RequestClient> result = null;
+	    SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>> result = null;
 		
 		long wakeupTime = Long.MAX_VALUE;
 		
@@ -302,7 +303,8 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		long wakeupTime = Long.MAX_VALUE;
 outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
-			SectoredRandomGrabArray<RequestClient> chosenTracker = priorities[choosenPriorityClass];
+			SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>> 
+			    chosenTracker = priorities[choosenPriorityClass];
 			if(chosenTracker == null) {
 				if(logMINOR) Logger.minor(this, "No requests to run: chosen priority empty");
 				continue; // Try next priority
@@ -347,7 +349,8 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
 					// maybe we should ask people to report that error if seen
 					Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+ ')');
 					// Remove it.
-					SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester> clientGrabber = (SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester>) chosenTracker.getGrabber(req.getClient());
+					SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester,RandomGrabArrayWithClient<ClientRequester>> clientGrabber = 
+					    chosenTracker.getGrabber(req.getClient());
 					if(clientGrabber != null) {
 						RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
 						if(baseRGA != null) {
@@ -585,24 +588,25 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
             throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.PAUSED_PRIORITY_CLASS+" (least important)");
         // Client
         synchronized(this) {
-            SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester> requestGrabber = makeSRGAForClient(priorityClass, client, context);
+            SectoredRandomGrabArraySimple<RequestClient,ClientRequester> requestGrabber = makeSRGAForClient(priorityClass, client, context);
             requestGrabber.add(cr, req, context);
         }
         sched.wakeStarter();
     }
 
-    private SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester> makeSRGAForClient(short priorityClass,
+    private SectoredRandomGrabArraySimple<RequestClient,ClientRequester> makeSRGAForClient(short priorityClass,
             RequestClient client, ClientContext context) {
-        SectoredRandomGrabArray<RequestClient> clientGrabber = priorities[priorityClass];
+        SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>>
+            clientGrabber = priorities[priorityClass];
         if(clientGrabber == null) {
-            clientGrabber = new SectoredRandomGrabArray<RequestClient>(null, this);
+            clientGrabber = new SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>>(null, this);
             priorities[priorityClass] = clientGrabber;
             if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
         }
         // Request
-        SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester> requestGrabber = (SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester>) clientGrabber.getGrabber(client);
+        SectoredRandomGrabArraySimple<RequestClient,ClientRequester> requestGrabber = clientGrabber.getGrabber(client);
         if(requestGrabber == null) {
-            requestGrabber = new SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester>(client, clientGrabber, this);
+            requestGrabber = new SectoredRandomGrabArraySimple<RequestClient,ClientRequester>(client, clientGrabber, this);
             if(logMINOR)
                 Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
             clientGrabber.addGrabber(client, requestGrabber, context);
@@ -620,14 +624,15 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
         }
         synchronized(this) {
             // First by priority
-            SectoredRandomGrabArray<RequestClient> clientGrabber = priorities[oldPrio];
+            SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>>
+                clientGrabber = priorities[oldPrio];
             if(clientGrabber == null) {
                 // Normal as most of the schedulers aren't relevant to any given insert/request.
                 if(logMINOR) Logger.minor(this, "Changing priority but request not running "+request, new Exception("debug"));
                 return;
             }
             // Then by RequestClient
-            SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester> requestGrabber = (SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester>) clientGrabber.getGrabber(client);
+            SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester,RandomGrabArrayWithClient<ClientRequester>> requestGrabber = clientGrabber.getGrabber(client);
             if(requestGrabber == null) {
                 if(logMINOR) Logger.minor(this, "Changing priority but request not running "+request, new Exception("debug"));
                 return;
@@ -651,7 +656,8 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
     public synchronized long countQueuedRequests(ClientContext context) {
         long total = 0;
         for(int i=0;i<priorities.length;i++) {
-            SectoredRandomGrabArray<RequestClient> prio = priorities[i];
+            SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>>
+                prio = priorities[i];
             if(prio == null || prio.isEmpty())
                 System.out.println("Priority "+i+" : empty");
             else {
@@ -660,7 +666,8 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
                     for(int k=0;k<prio.size();k++) {
                         RequestClient client = prio.getClient(k);
                         System.out.println("Client "+k+" : "+client);
-                        SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester> requestGrabber = (SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester>) prio.getGrabber(client);
+                        SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester,RandomGrabArrayWithClient<ClientRequester>> 
+                            requestGrabber = prio.getGrabber(client);
                         System.out.println("SRGA for client: "+requestGrabber);
                         for(int l=0;l<requestGrabber.size();l++) {
                             ClientRequester cr = requestGrabber.getClient(l);
