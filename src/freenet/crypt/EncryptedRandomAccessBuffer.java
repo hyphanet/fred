@@ -73,10 +73,10 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
      * @throws GeneralSecurityException
      */
     public EncryptedRandomAccessBuffer(EncryptedRandomAccessBufferType type, 
-            LockableRandomAccessBuffer underlyingThing, MasterSecret masterKey, boolean newFile) throws IOException, 
+            LockableRandomAccessBuffer underlying, MasterSecret masterKey, boolean newFile) throws IOException, 
             GeneralSecurityException{
         this.type = type;
-        this.underlyingBuffer = underlyingThing;
+        this.underlyingBuffer = underlying;
         
         setup(masterKey, newFile);
     }
