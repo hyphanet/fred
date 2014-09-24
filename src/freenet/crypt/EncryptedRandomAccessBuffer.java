@@ -39,7 +39,7 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
     private final ReentrantLock readLock = new ReentrantLock();
     private final ReentrantLock writeLock = new ReentrantLock();
     private final EncryptedRandomAccessBufferType type;
-    private final LockableRandomAccessBuffer underlyingThing;
+    private final LockableRandomAccessBuffer underlyingBuffer;
     
     private transient SkippingStreamCipher cipherRead;
     private transient SkippingStreamCipher cipherWrite;
@@ -59,12 +59,12 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
     private static final int VERSION_AND_MAGIC_LENGTH = 12;
     
     /**
-     * Creates an instance of EncryptedRandomAccessBuffer wrapping underlyingThing. Keys for key 
+     * Creates an instance of EncryptedRandomAccessBuffer wrapping underlyingBuffer. Keys for key 
      * encryption and MAC generation are derived from the MasterSecret. If this is a new ERAT then
      * keys are generated and the footer is written to the end of the underlying RAT. Otherwise the
      * footer is read from the underlying RAT. 
      * @param type The algorithms to be used for the ERAT
-     * @param underlyingThing The underlying RAT that will be storing the data. Must be larger than
+     * @param underlyingBuffer The underlying RAT that will be storing the data. Must be larger than
      * the footer size specified in type. 
      * @param masterKey The MasterSecret that will be used to derive various keys. 
      * @param newFile If true, treat it as a new file, and writer a header. If false, the ERAT must 
@@ -76,7 +76,7 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
             LockableRandomAccessBuffer underlyingThing, MasterSecret masterKey, boolean newFile) throws IOException, 
             GeneralSecurityException{
         this.type = type;
-        this.underlyingThing = underlyingThing;
+        this.underlyingBuffer = underlyingThing;
         
         setup(masterKey, newFile);
     }
@@ -92,14 +92,14 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
         this.headerMacKey = masterSecret.deriveKey(type.macKey);
         
         
-        if(underlyingThing.size() < type.headerLen){
+        if(underlyingBuffer.size() < type.headerLen){
             throw new IOException("Underlying RandomAccessBuffer is not long enough to include the "
                     + "footer.");
         }
         
         byte[] header = new byte[VERSION_AND_MAGIC_LENGTH];
         int offset = 0;
-        underlyingThing.pread(type.headerLen-VERSION_AND_MAGIC_LENGTH, header, offset, 
+        underlyingBuffer.pread(type.headerLen-VERSION_AND_MAGIC_LENGTH, header, offset, 
                 VERSION_AND_MAGIC_LENGTH);
         
         int readVersion = ByteBuffer.wrap(header, offset, 4).getInt();
@@ -143,7 +143,7 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
 
     @Override
     public long size() {
-        return underlyingThing.size()-type.headerLen;
+        return underlyingBuffer.size()-type.headerLen;
     }
 
     /**
@@ -164,7 +164,7 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
         }
         
         byte[] cipherText = new byte[length];
-        underlyingThing.pread(fileOffset+type.headerLen, cipherText, 0, length);
+        underlyingBuffer.pread(fileOffset+type.headerLen, cipherText, 0, length);
 
         readLock.lock();
         try{
@@ -217,21 +217,21 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
         }finally{
             writeLock.unlock();
         }
-        underlyingThing.pwrite(fileOffset+type.headerLen, cipherText, 0, length);
+        underlyingBuffer.pwrite(fileOffset+type.headerLen, cipherText, 0, length);
     }
     
     @Override
     public void  close() {
         if(!isClosed){
             isClosed = true;
-            underlyingThing.close();
+            underlyingBuffer.close();
         }
     }
     
     @Override
     public void free() {
         close();
-        underlyingThing.free();
+        underlyingBuffer.free();
     }
 
     /**
@@ -283,7 +283,7 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
         byte[] magic = ByteBuffer.allocate(8).putLong(END_MAGIC).array();
         System.arraycopy(magic, 0, header, offset, magic.length);
         
-        underlyingThing.pwrite(0, header, 0, header.length);
+        underlyingBuffer.pwrite(0, header, 0, header.length);
     }
     
     /**
@@ -300,7 +300,7 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
         }
         byte[] footer = new byte[type.headerLen-VERSION_AND_MAGIC_LENGTH];
         int offset = 0;
-        underlyingThing.pread(0, footer, offset, type.headerLen-VERSION_AND_MAGIC_LENGTH);
+        underlyingBuffer.pread(0, footer, offset, type.headerLen-VERSION_AND_MAGIC_LENGTH);
         
         headerEncIV = new byte[type.encryptType.ivSize];
         System.arraycopy(footer, offset, headerEncIV, 0, headerEncIV.length);
@@ -346,14 +346,14 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
 
     @Override
     public RAFLock lockOpen() throws IOException {
-        return underlyingThing.lockOpen();
+        return underlyingBuffer.lockOpen();
     }
     
     public static final int MAGIC = 0x39ea94c2;
 
     @Override
     public void onResume(ClientContext context) throws ResumeFailedException {
-        underlyingThing.onResume(context);
+        underlyingBuffer.onResume(context);
         try {
             setup(context.getPersistentMasterSecret(), false);
         } catch (IOException e) {
@@ -369,7 +369,7 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
     public void storeTo(DataOutputStream dos) throws IOException {
         dos.writeInt(MAGIC);
         dos.writeInt(type.bitmask);
-        underlyingThing.storeTo(dos);
+        underlyingBuffer.storeTo(dos);
     }
 
     public static LockableRandomAccessBuffer create(DataInputStream dis, FilenameGenerator fg, PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
@@ -391,7 +391,7 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
         final int prime = 31;
         int result = 1;
         result = prime * result + ((type == null) ? 0 : type.hashCode());
-        result = prime * result + ((underlyingThing == null) ? 0 : underlyingThing.hashCode());
+        result = prime * result + ((underlyingBuffer == null) ? 0 : underlyingBuffer.hashCode());
         return result;
     }
 
@@ -410,7 +410,7 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
         if (type != other.type) {
             return false;
         }
-        return underlyingThing.equals(other.underlyingThing);
+        return underlyingBuffer.equals(other.underlyingBuffer);
     }
     
 }
