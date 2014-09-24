@@ -26,7 +26,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.RandomGrabArray;
-import freenet.support.RandomGrabArrayWithClient;
+import freenet.support.RandomGrabArrayWithObject;
 import freenet.support.RemoveRandom.RemoveRandomReturn;
 import freenet.support.RemoveRandomParent;
 import freenet.support.SectoredRandomGrabArray;
@@ -651,7 +651,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
                 if(logMINOR) Logger.minor(this, "Changing priority but request not running "+request, new Exception("debug"));
                 return;
             }
-            RandomGrabArrayWithClient<ClientRequester> rga = requestGrabber.getGrabber(request);
+            RandomGrabArrayWithObject<ClientRequester> rga = requestGrabber.getGrabber(request);
             if(rga == null) {
                 if(logMINOR) Logger.minor(this, "Changing priority but request not running "+request, new Exception("debug"));
                 return;

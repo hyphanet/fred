@@ -7,7 +7,7 @@ import freenet.client.async.ClientRequestSelector;
  * Then we have SRGAs containing SRGAs.
  * @author toad
  */
-public class SectoredRandomGrabArraySimple<MyType,ChildType> extends SectoredRandomGrabArrayWithObject<MyType, ChildType, RandomGrabArrayWithClient<ChildType>> {
+public class SectoredRandomGrabArraySimple<MyType,ChildType> extends SectoredRandomGrabArrayWithObject<MyType, ChildType, RandomGrabArrayWithObject<ChildType>> {
 
     private static volatile boolean logMINOR;
     
@@ -20,18 +20,18 @@ public class SectoredRandomGrabArraySimple<MyType,ChildType> extends SectoredRan
         super(object, parent, root);
     }
 
-    /** Add directly to a RandomGrabArrayWithClient under us. */
+    /** Add directly to a RandomGrabArrayWithObject under us. */
     public void add(ChildType client, RandomGrabArrayItem item, ClientContext context) {
         synchronized(root) {
-        RandomGrabArrayWithClient<ChildType> rga;
+        RandomGrabArrayWithObject<ChildType> rga;
         int clientIndex = haveClient(client);
         if(clientIndex == -1) {
             if(logMINOR)
                 Logger.minor(this, "Adding new RGAWithClient for "+client+" on "+this+" for "+item);
-            rga = new RandomGrabArrayWithClient<ChildType>(client, this, root);
+            rga = new RandomGrabArrayWithObject<ChildType>(client, this, root);
             addElement(client, rga);
         } else {
-            rga = (RandomGrabArrayWithClient<ChildType>) grabArrays[clientIndex];
+            rga = (RandomGrabArrayWithObject<ChildType>) grabArrays[clientIndex];
         }
         if(logMINOR)
             Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);
