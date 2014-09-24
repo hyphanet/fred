@@ -17,7 +17,10 @@ abstract class ArchiveStoreItem extends DoublyLinkedListImpl.Item<ArchiveStoreIt
 	ArchiveStoreItem(ArchiveKey key, ArchiveStoreContext context) {
 		this.key = key;
 		this.context = context;
-		context.addItem(this);
+	}
+	
+	protected void addToContext() {
+	    context.addItem(this);
 	}
 
 	/** Delete any stored data on disk etc. 

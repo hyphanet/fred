@@ -636,6 +636,7 @@ outerZIP:		while(true) {
 	 */
 	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error, boolean tooBig) {
 		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error, tooBig);
+		element.addToContext();
 		if(logMINOR) Logger.minor(this, "Adding error element: "+element+" for "+key+ ' ' +name);
 		ArchiveStoreItem oldItem;
 		synchronized (this) {
@@ -662,6 +663,7 @@ outerZIP:		while(true) {
 	 */
 	private ArchiveStoreItem addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, Bucket temp, MutableBoolean gotElement, String callbackName, ArchiveExtractCallback callback, ClientContext context) throws ArchiveFailureException {
 		RealArchiveStoreItem element = new RealArchiveStoreItem(ctx, key, name, temp);
+		element.addToContext();
 		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" size "+element.spaceUsed()+" )");
 		ArchiveStoreItem oldItem;
 		// Let it throw, if it does something is drastically wrong

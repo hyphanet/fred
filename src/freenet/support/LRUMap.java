@@ -64,14 +64,16 @@ public class LRUMap<K, V> {
      *       recently used position, but doesn't add
      *       a duplicate entry in the queue.
      */
-    public final synchronized void push(K key, V value) {
+    public final synchronized V push(K key, V value) {
     	if(key == null)
     		throw new NullPointerException();
+    	V old = null;
         QItem<K,V> insert = hash.get(key);
         if (insert == null) {
             insert = new QItem<K, V>(key, value);
             hash.put(key,insert);
         } else {
+            old = insert.value;
         	insert.value = value;
             list.remove(insert);
         }
@@ -79,6 +81,7 @@ public class LRUMap<K, V> {
         	Logger.minor(this, "Pushed "+insert+" ( "+key+ ' ' +value+" )");
 
         list.unshift(insert);
+        return old;
     } 
 
     /**

@@ -449,6 +449,7 @@ public class NodeUpdateManager {
 				e.printStackTrace();
 			} finally {
 				Closer.close(fos);
+				Closer.close(result.asBucket());
 			}
 		}
 
