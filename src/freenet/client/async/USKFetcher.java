@@ -752,6 +752,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					Logger.error(this, "Unable to turn lastRequestData into byte[]: caught I/O exception: "+e, e);
 					data = null;
 				}
+				lastRequestData.free();
 			}
 			for(USKFetcherCallback c: cb) {
 				try {
@@ -1066,6 +1067,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		DBRAttempt[] atts;
 		uskManager.onFinished(this);
 		SendableGet storeChecker;
+		Bucket data;
 		synchronized(this) {
 			if(cancelled) Logger.error(this, "Already cancelled "+this);
 			if(completed) Logger.error(this, "Already completed "+this);
@@ -1079,6 +1081,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			dbrAttempts.clear();
 			storeChecker = runningStoreChecker;
 			runningStoreChecker = null;
+			data = lastRequestData;
+			lastRequestData = null;
 		}
 		for(USKAttempt attempt: attempts)
 			attempt.cancel(container, context);
@@ -1089,6 +1093,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(storeChecker != null)
 			// Remove from the store checker queue.
 			storeChecker.unregister(container, context, storeChecker.getPriorityClass(container));
+		if(data != null)
+		    data.free();
 	}
 
 	/** Set of interested USKCallbacks. Note that we don't actually
