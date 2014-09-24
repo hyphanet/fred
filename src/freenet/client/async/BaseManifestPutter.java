@@ -699,6 +699,12 @@ public abstract class BaseManifestPutter extends ManifestPutter {
         protected ClientBaseCallback getCallback() {
             return cb;
         }
+        
+        /** What is our priority class? */
+        @Override
+        public short getPriorityClass() {
+            return BaseManifestPutter.this.getPriorityClass();
+        }
 
 	}
 
