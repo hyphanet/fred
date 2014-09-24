@@ -298,8 +298,8 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			return null;
 		}
 		long wakeupTime = Long.MAX_VALUE;
-		if(maxPrio >= RequestStarter.PAUSED_PRIORITY_CLASS)
-			maxPrio = RequestStarter.PAUSED_PRIORITY_CLASS;
+		if(maxPrio >= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS)
+			maxPrio = RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS;
 outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
 			SectoredRandomGrabArray chosenTracker = priorities[choosenPriorityClass];

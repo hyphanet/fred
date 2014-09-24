@@ -58,6 +58,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	
 	public static final short NUMBER_OF_PRIORITY_CLASSES = PAUSED_PRIORITY_CLASS - MAXIMUM_PRIORITY_CLASS + 1; // include 0 and max !!
 	
+    public static final short MINIMUM_FETCHABLE_PRIORITY_CLASS = PREFETCH_PRIORITY_CLASS;
+    
 	/** If true, local requests are subject to shouldRejectRequest(). If false, they are only subject to the token
 	 * buckets and the thread limit. FIXME make configurable. */
 	static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
