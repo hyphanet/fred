@@ -255,6 +255,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				Closer.close(output);
 				if(dbrsFinished)
 					onDBRsFinished(context);
+				Closer.close(data);
 			}
 		}
 		private void innerSuccess(Bucket bucket, ObjectContainer container,
