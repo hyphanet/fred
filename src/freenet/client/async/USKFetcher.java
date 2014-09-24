@@ -1190,28 +1190,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		watchingKeys.updateSubscriberHints(hints, uskManager.lookupLatestSlot(origUSK));
 	}
 
-	public synchronized boolean hasLastData() {
-		return this.lastRequestData != null;
-	}
-
-	public synchronized boolean lastContentWasMetadata() {
-		return this.lastWasMetadata;
-	}
-
-	public synchronized short lastCompressionCodec() {
-		return this.lastCompressionCodec;
-	}
-
-	public synchronized Bucket getLastData() {
-		return this.lastRequestData;
-	}
-
-	public synchronized void freeLastData() {
-		if(lastRequestData == null) return;
-		lastRequestData.free(); // USKFetcher's cannot be persistent, so no need to removeFrom()
-		lastRequestData = null;
-	}
-
 	@Override
 	public long getToken() {
 		return -1;
