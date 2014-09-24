@@ -59,7 +59,7 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
     /** @see FCPPluginMessage#identifier */
 	private final String identifier;
 
-    /** @see FCPPluginMessage#parameters */
+    /** @see FCPPluginMessage#params */
 	private final SimpleFieldSet plugparams;
 
     /** @see FCPPluginMessage#success */
@@ -93,7 +93,7 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
      */
     public FCPPluginServerMessage(String pluginname, FCPPluginMessage reply) {
         
-        this(pluginname, reply.identifier, reply.parameters, reply.data, reply.success,
+        this(pluginname, reply.identifier, reply.params, reply.data, reply.success,
             reply.errorCode, reply.errorMessage);
         
         assert(pluginname != null);

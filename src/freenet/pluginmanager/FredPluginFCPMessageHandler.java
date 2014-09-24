@@ -102,7 +102,7 @@ public interface FredPluginFCPMessageHandler {
          * Part 1 of the actual message: Human-readable parameters. Shall be small amount of data.
          * Can be null for data-only or success-indicator messages.
          */
-        public final SimpleFieldSet parameters;
+        public final SimpleFieldSet params;
         
         /**
          * Part 2 of the actual message: Non-human readable, large size bulk data. Can be null if no
@@ -163,17 +163,17 @@ public interface FredPluginFCPMessageHandler {
          * explanation of the parameters.
          */
         private FCPPluginMessage(ClientPermissions permissions, String identifier,
-                SimpleFieldSet parameters, Bucket data, Boolean success, String errorCode,
+                SimpleFieldSet params, Bucket data, Boolean success, String errorCode,
                 String errorMessage) {
             
             // See JavaDoc of member variables with the same name for reasons of the requirements
             assert(permissions != null || permissions == null);
             assert(identifier != null);
-            assert(parameters != null || parameters == null);
+            assert(params != null || params == null);
             assert(data != null || data == null);
             assert(success != null || success == null);
             
-            assert(parameters != null || data != null || success != null)
+            assert(params != null || data != null || success != null)
                 : "Messages should not be empty";
             
             assert(errorCode == null || (success != null && success == false))
@@ -184,7 +184,7 @@ public interface FredPluginFCPMessageHandler {
             
             this.permissions = permissions;
             this.identifier = identifier;
-            this.parameters = parameters;
+            this.params = params;
             this.data = data;
             this.success = success;
             this.errorCode = errorCode;
@@ -208,7 +208,7 @@ public interface FredPluginFCPMessageHandler {
          * There is a shortcut to this constructor for typical choice of parameters:<br>
          * {@link #construct()}.
          */
-        public static FCPPluginMessage construct(SimpleFieldSet parameters, Bucket data) {
+        public static FCPPluginMessage construct(SimpleFieldSet params, Bucket data) {
             // Notice: While the specification of FCP formally allows the client to freely chose the
             // ID, we hereby restrict it to be a random UUID instead of allowing the client
             // (or server) to chose it. This is to prevent accidental collisions with the IDs of
@@ -216,7 +216,7 @@ public interface FredPluginFCPMessageHandler {
             // collisions are *bad*: They can break the "ACK" mechanism of the "success" variable.
             // This would in turn break things such as the sendSynchronous() functions of
             // FCPPluginClient.
-            return new FCPPluginMessage(null, UUID.randomUUID().toString(), parameters, data,
+            return new FCPPluginMessage(null, UUID.randomUUID().toString(), params, data,
                 // success, errorCode, errorMessage are null since non-reply messages must not
                 // indicate errors
                 null, null, null);
@@ -224,7 +224,7 @@ public interface FredPluginFCPMessageHandler {
 
         /**
          * Same as {@link #construct(SimpleFieldSet, Bucket)} with the missing parameters being:<br>
-         * <code>SimpleFieldSet parameters = new SimpleFieldSet(shortLived = true);<br>
+         * <code>SimpleFieldSet params = new SimpleFieldSet(shortLived = true);<br>
          * Bucket data = null;</code>
          */
         public static FCPPluginMessage construct() {
@@ -258,7 +258,7 @@ public interface FredPluginFCPMessageHandler {
          *             explains how you can nevertheless send a reply to reply messages.
          */
         public static FCPPluginMessage constructReplyMessage(FCPPluginMessage originalMessage,
-                SimpleFieldSet parameters, Bucket data, boolean success, String errorCode,
+                SimpleFieldSet params, Bucket data, boolean success, String errorCode,
                 String errorMessage) {
             
             if(originalMessage.isReplyMessage()) {
@@ -267,14 +267,14 @@ public interface FredPluginFCPMessageHandler {
             }
             
             return new FCPPluginMessage(null, originalMessage.identifier,
-                parameters, data, success, errorCode, errorMessage);
+                params, data, success, errorCode, errorMessage);
         }
 
         /**
          * Same as {@link #constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean,
          * String, String)} with the missing parameters being:<br>
          * <code>
-         * SimpleFieldSet parameters = new SimpleFieldSet(shortLived = true);<br>
+         * SimpleFieldSet params = new SimpleFieldSet(shortLived = true);<br>
          * Bucket data = null;<br>
          * boolean success = true;<br>
          * errorCode = null;<br>
@@ -290,7 +290,7 @@ public interface FredPluginFCPMessageHandler {
          * Same as {@link #constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean,
          * String, String)} with the missing parameters being:<br>
          * <code>
-         * SimpleFieldSet parameters = new SimpleFieldSet(shortLived = true);<br>
+         * SimpleFieldSet params = new SimpleFieldSet(shortLived = true);<br>
          * Bucket data = null;<br>
          * boolean success = false;<br>
          * </code>
@@ -317,10 +317,10 @@ public interface FredPluginFCPMessageHandler {
          * explanation of the parameters.<br>
          */
         public static FCPPluginMessage constructRawMessage(ClientPermissions permissions,
-                String identifier, SimpleFieldSet parameters, Bucket data, Boolean success,
+                String identifier, SimpleFieldSet params, Bucket data, Boolean success,
                 String errorCode, String errorMessage) {
             
-            return new FCPPluginMessage(permissions, identifier, parameters, data, success,
+            return new FCPPluginMessage(permissions, identifier, params, data, success,
                 errorCode, errorMessage);
         }
 
@@ -329,7 +329,7 @@ public interface FredPluginFCPMessageHandler {
             return super.toString() +
                 " (permissions: " + permissions +
                 "; identifier: " + identifier +
-                "; parameters: " + parameters +
+                "; params: " + params +
                 "; data: " + data +
                 "; success: " + success +
                 "; errorCode: " + errorCode +

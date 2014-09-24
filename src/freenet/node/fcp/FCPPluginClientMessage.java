@@ -77,7 +77,7 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
     /** @see FCPPluginMessage#data */
 	private final long dataLength;
 
-    /** @see FCPPluginMessage#parameters */
+    /** @see FCPPluginMessage#params */
 	private final SimpleFieldSet plugparams;
 
     /** @see FCPPluginMessage#success */
