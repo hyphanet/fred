@@ -1,11 +1,11 @@
 package freenet.support;
 
-public interface RemoveRandomWithObject extends RemoveRandom {
+public interface RemoveRandomWithObject<T> extends RemoveRandom {
 
-	public Object getObject();
+	public T getObject();
 
 	public boolean isEmpty();
 
-	public void setObject(Object client);
+	public void setObject(T client);
 
 }

@@ -2,24 +2,24 @@ package freenet.support;
 
 import freenet.client.async.ClientRequestSelector;
 
-public class RandomGrabArrayWithClient extends RandomGrabArray implements RemoveRandomWithObject {
+public class RandomGrabArrayWithClient<T> extends RandomGrabArray implements RemoveRandomWithObject<T> {
 
-	private Object client;
+	private T client;
 	
-	public RandomGrabArrayWithClient(Object client, RemoveRandomParent parent, ClientRequestSelector root) {
+	public RandomGrabArrayWithClient(T client, RemoveRandomParent parent, ClientRequestSelector root) {
 		super(parent, root);
 		this.client = client;
 	}
 
 	@Override
-	public final Object getObject() {
+	public final T getObject() {
 	    synchronized(root) {
 	        return client;
 	    }
 	}
 
 	@Override
-	public void setObject(Object client) {
+	public void setObject(T client) {
 	    synchronized(root) {
 	        this.client = client;
 	    }
