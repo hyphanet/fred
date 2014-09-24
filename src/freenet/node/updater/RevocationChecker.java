@@ -355,7 +355,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		return new FileBucket(f, true, false, false, false);
 	}
 	
-	public RandomAccessBuffer getBlobThing() {
+	public RandomAccessBuffer getBlobBuffer() {
 		if(!manager.isBlown()) return null;
 		synchronized(this) {
 			if(blobBucket != null) {

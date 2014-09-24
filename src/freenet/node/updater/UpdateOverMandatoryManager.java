@@ -698,7 +698,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	public boolean handleRequestRevocation(Message m, final PeerNode source) {
 		// Do we have the data?
 
-		final RandomAccessBuffer data = updateManager.revocationChecker.getBlobThing();
+		final RandomAccessBuffer data = updateManager.revocationChecker.getBlobBuffer();
 
 		if(data == null) {
 			Logger.normal(this, "Peer " + source + " asked us for the blob file for the revocation key but we don't have it!");
