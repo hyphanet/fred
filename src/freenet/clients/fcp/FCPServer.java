@@ -54,7 +54,7 @@ import freenet.support.io.NoFreeBucket;
  */
 public class FCPServer implements Runnable, DownloadCache {
 
-	PersistentRequestRoot persistentRoot;
+	private final PersistentRequestRoot persistentRoot;
 	private static boolean logMINOR;
 	public final static int DEFAULT_FCP_PORT = 9481;
 	NetworkInterface networkInterface;
@@ -76,7 +76,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	private boolean neverDropAMessage;
 	private int maxMessageQueueLength;
 
-	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed, boolean neverDropAMessage, int maxMessageQueueLength) throws IOException, InvalidConfigValueException {
+	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed, boolean neverDropAMessage, int maxMessageQueueLength, PersistentRequestRoot persistentRoot) throws IOException, InvalidConfigValueException {
 		this.bindTo = ipToBindTo;
 		this.allowedHosts=allowedHosts;
 		this.allowedHostsFullAccess = new AllowedHosts(allowedHostsFullAccess);
@@ -89,6 +89,8 @@ public class FCPServer implements Runnable, DownloadCache {
 		this.neverDropAMessage = neverDropAMessage;
 		this.maxMessageQueueLength = maxMessageQueueLength;
 		rebootClientsByName = new WeakHashMap<String, PersistentRequestClient>();
+		this.persistentRoot = persistentRoot;
+        globalForeverClient = persistentRoot.globalForeverClient;
 
 		globalRebootClient = new PersistentRequestClient("Global Queue", null, true, null, Persistence.REBOOT, null);
 		globalRebootClient.setRequestStatusCache(new RequestStatusCache());
@@ -97,10 +99,8 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	}
 
-	public void load(PersistentRequestRoot root) {
-		persistentRoot = root;
-		root.setRequestStatusCache(new RequestStatusCache());
-		globalForeverClient = persistentRoot.globalForeverClient;
+	public void load() {
+		persistentRoot.setRequestStatusCache(new RequestStatusCache());
 	}
 
 	private void maybeGetNetworkInterface() {
@@ -403,7 +403,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 
-	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config) throws IOException, InvalidConfigValueException {
+	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config, PersistentRequestRoot root) throws IOException, InvalidConfigValueException {
 		SubConfig fcpConfig = new SubConfig("fcp", config);
 		short sortOrder = 0;
 		fcpConfig.register("enabled", true, sortOrder++, true, false, "FcpServer.isEnabled", "FcpServer.isEnabledLong", new FCPEnabledCallback(core));
@@ -426,7 +426,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			ssl = fcpConfig.getBoolean("ssl");
 		}
 
-		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"), fcpConfig.getBoolean("neverDropAMessage"), fcpConfig.getInt("maxMessageQueueLength"));
+		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"), fcpConfig.getBoolean("neverDropAMessage"), fcpConfig.getInt("maxMessageQueueLength"), root);
 
 		if(fcp != null) {
 			cb4.server = fcp;

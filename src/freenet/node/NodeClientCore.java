@@ -604,10 +604,10 @@ public class NodeClientCore implements Persistable {
 
 		// FCP (including persistent requests so needs to start before FProxy)
 		try {
-			fcpServer = FCPServer.maybeCreate(node, this, node.config);
+			fcpServer = FCPServer.maybeCreate(node, this, node.config, fcpPersistentRoot);
 			clientContext.setDownloadCache(fcpServer);
 			if(!killedDatabase())
-				fcpServer.load(this.fcpPersistentRoot);
+				fcpServer.load();
 		} catch(IOException e) {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: " + e);
 		} catch(InvalidConfigValueException e) {
@@ -730,7 +730,7 @@ public class NodeClientCore implements Persistable {
 		    return true;
 		}
 		// Don't actually start the database thread yet, messy concurrency issues.
-		fcpServer.load(this.fcpPersistentRoot);
+		fcpServer.load();
 		System.out.println("Late database initialisation completed.");
 		if(databaseKey != null)
 		    finishInitStorage(container);
