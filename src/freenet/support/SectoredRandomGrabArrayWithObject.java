@@ -29,5 +29,5 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
 	        object = client;
 	    }
 	}
-	
+
 }

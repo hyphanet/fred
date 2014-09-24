@@ -95,11 +95,6 @@ class KeyListenerTracker implements KeySalter {
 		return Math.max(0, retryCount-MIN_RETRY_COUNT);
 	}
 
-	void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr, boolean dontComplain) {
-		if(cr != null || persistent()) // Client request null is only legal for transient requests
-			cr.removeFromRequests(req, dontComplain);
-	}
-	
 	public void addPendingKeys(KeyListener listener) {
 		if(listener == null) throw new NullPointerException();
 		synchronized (this) {

@@ -89,9 +89,6 @@ public class DatastoreChecker implements PrioRunnable {
 		if(logMINOR) Logger.minor(this, "Queueing transient request "+getter+" priority "+prio+" keys "+checkKeys.length);
 		// FIXME check using store.probablyInStore
 		ArrayList<Key> finalKeysToCheck = new ArrayList<Key>(checkKeys.length);
-		// Add it to the list of requests running here, so that priority changes while the data is on the store checker queue will work.
-		ClientRequester requestor = getter.getClientRequest();
-		requestor.addToRequests(getter);
 		synchronized(this) {
 			for(Key key : checkKeys) {
 				finalKeysToCheck.add(key);

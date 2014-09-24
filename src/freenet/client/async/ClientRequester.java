@@ -49,9 +49,6 @@ public abstract class ClientRequester implements Serializable {
 	 * persistent, and also we round-robin between different RequestClient's
 	 * in scheduling within a given priority class and retry count. */
 	protected transient RequestClient client;
-	/** The set of queued low-level requests or inserts for this request or
-	 * insert. */
-	protected transient SendableRequestSet requests;
 
 	/** What is our priority class? */
 	public short getPriorityClass() {
@@ -65,7 +62,6 @@ public abstract class ClientRequester implements Serializable {
 		realTimeFlag = false;
 		creationTime = 0;
 		hashCode = 0;
-		requests = null;
 	}
 
 	protected ClientRequester(short priorityClass, ClientBaseCallback cb) {
@@ -75,7 +71,6 @@ public abstract class ClientRequester implements Serializable {
 		if(client == null)
 			throw new NullPointerException();
 		hashCode = super.hashCode(); // the old object id will do fine, as long as we ensure it doesn't change!
-		requests = new SendableRequestSet();
 		synchronized(allRequesters) {
 			if(!persistent())
 				allRequesters.put(this, dumbValue);
@@ -336,28 +331,6 @@ public abstract class ClientRequester implements Serializable {
 		return client.persistent();
 	}
 
-	/** Add a low-level request to the list of requests belonging to this high-level request (request here
-	 * includes inserts). */
-	public void addToRequests(SendableRequest req) {
-		requests.addRequest(req);
-	}
-
-	/** Get all known low-level requests belonging to this high-level request.
-	 * @param container The database, must be non-null if this is a persistent request or persistent insert.
-	 */
-	public SendableRequest[] getSendableRequests() {
-		SendableRequest[] reqs = requests.listRequests();
-		return reqs;
-	}
-
-	/** Remove a low-level request or insert from the list of known requests belonging to this 
-	 * high-level request or insert. */
-	public void removeFromRequests(SendableRequest req, boolean dontComplain) {
-		if(!requests.removeRequest(req) && !dontComplain) {
-			Logger.error(this, "Not in request list for "+this+": "+req);
-		}
-	}
-
 	private static WeakHashMap<ClientRequester,Object> allRequesters = new WeakHashMap<ClientRequester,Object>();
 	private static Object dumbValue = new Object();
 	public final long creationTime;
@@ -405,7 +378,6 @@ public abstract class ClientRequester implements Serializable {
         ClientBaseCallback cb = getCallback();
         client = cb.getRequestClient();
         assert(client.persistent());
-        requests = new SendableRequestSet();
         if(sentToNetwork)
             innerToNetwork(context);
     }

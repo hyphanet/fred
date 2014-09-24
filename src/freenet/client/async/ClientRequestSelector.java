@@ -26,6 +26,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.RandomGrabArray;
+import freenet.support.RandomGrabArrayWithClient;
 import freenet.support.RemoveRandom.RemoveRandomReturn;
 import freenet.support.SectoredRandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithObject;
@@ -583,24 +584,67 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
             throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.PAUSED_PRIORITY_CLASS+" (least important)");
         // Client
         synchronized(this) {
-            SectoredRandomGrabArray clientGrabber = priorities[priorityClass];
-            if(clientGrabber == null) {
-                clientGrabber = new SectoredRandomGrabArray(null, this);
-                priorities[priorityClass] = clientGrabber;
-                if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
-            }
-            // Request
-            SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
-            if(requestGrabber == null) {
-                requestGrabber = new SectoredRandomGrabArrayWithObject(client, clientGrabber, this);
-                if(logMINOR)
-                    Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
-                clientGrabber.addGrabber(client, requestGrabber, context);
-                clientGrabber.clearWakeupTime(context);
-            }
+            SectoredRandomGrabArrayWithObject requestGrabber = makeSRGAForClient(priorityClass, client, context);
             requestGrabber.add(cr, req, context);
         }
         sched.wakeStarter();
+    }
+
+    private SectoredRandomGrabArrayWithObject makeSRGAForClient(short priorityClass,
+            RequestClient client, ClientContext context) {
+        SectoredRandomGrabArray clientGrabber = priorities[priorityClass];
+        if(clientGrabber == null) {
+            clientGrabber = new SectoredRandomGrabArray(null, this);
+            priorities[priorityClass] = clientGrabber;
+            if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
+        }
+        // Request
+        SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
+        if(requestGrabber == null) {
+            requestGrabber = new SectoredRandomGrabArrayWithObject(client, clientGrabber, this);
+            if(logMINOR)
+                Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
+            clientGrabber.addGrabber(client, requestGrabber, context);
+            clientGrabber.clearWakeupTime(context);
+        }
+        return requestGrabber;
+    }
+    
+    public void reregisterAll(ClientRequester request, RequestScheduler lock, ClientContext context, short oldPrio) {
+        RequestClient client = request.getClient();
+        short newPrio = request.getPriorityClass();
+        if(newPrio == oldPrio) {
+            Logger.error(this, "Changing priority from "+oldPrio+" to "+newPrio+" for "+request);
+            return;
+        }
+        synchronized(this) {
+            // First by priority
+            SectoredRandomGrabArray clientGrabber = priorities[oldPrio];
+            if(clientGrabber == null) {
+                // Normal as most of the schedulers aren't relevant to any given insert/request.
+                if(logMINOR) Logger.minor(this, "Changing priority but request not running "+request, new Exception("debug"));
+                return;
+            }
+            // Then by RequestClient
+            SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
+            if(requestGrabber == null) {
+                if(logMINOR) Logger.minor(this, "Changing priority but request not running "+request, new Exception("debug"));
+                return;
+            }
+            RandomGrabArrayWithClient rga = (RandomGrabArrayWithClient) requestGrabber.getGrabber(request);
+            if(rga == null) {
+                if(logMINOR) Logger.minor(this, "Changing priority but request not running "+request, new Exception("debug"));
+                return;
+            }
+            requestGrabber.maybeRemove(rga, context);
+            requestGrabber = makeSRGAForClient(newPrio, client, context);
+            if(requestGrabber.getGrabber(request) != null) {
+                Logger.error(this, "RGA already exists for "+request+" : "+requestGrabber.getGrabber(request)+
+                        " but want to insert "+rga, new Exception("error"));
+                requestGrabber.maybeRemove(rga, context);
+            }
+            requestGrabber.addGrabber(request, rga, context);
+        }
     }
 
     public synchronized long countQueuedRequests(ClientContext context) {
@@ -659,52 +703,8 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
             throw new IllegalArgumentException("Request isInsert="+req.isInsert()+" but my isInsertScheduler="+isInsertScheduler+"!!");
         short prio = req.getPriorityClass();
         if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest()+" ssk="+this.isSSKScheduler+" insert="+this.isInsertScheduler);
-        addToRequestsByClientRequest(req.getClientRequest(), req);
         addToGrabArray(prio, req.getClient(), req.getClientRequest(), req, context);
         if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio);
-    }
-    
-    protected void addToRequestsByClientRequest(ClientRequester clientRequest, SendableRequest req) {
-        if(clientRequest != null) {
-            // If the request goes through the datastore checker (SendableGet's unless they have the don't check store flag) it will have already been registered.
-            // That does not matter.
-            clientRequest.addToRequests(req);
-        }
-    }
-    
-    public void reregisterAll(ClientRequester request, RequestScheduler lock, ClientContext context, short oldPrio) {
-        SendableRequest[] reqs = getSendableRequests(request);
-        
-        if(reqs == null) return;
-        for(int i=0;i<reqs.length;i++) {
-            SendableRequest req = reqs[i];
-            if(req == null) {
-                // We will get rid of SendableRequestSet soon, so this is low priority.
-                Logger.error(this, "Request "+i+" is null reregistering for "+request);
-                continue;
-            }
-            boolean isInsert = req.isInsert();
-            // FIXME call getSendableRequests() and do the sorting in ClientRequestScheduler.reregisterAll().
-            if(isInsert != isInsertScheduler || req.isSSK() != isSSKScheduler) {
-                continue;
-            }
-            // Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
-            req.unregister(context, oldPrio);
-            //Remove from the starterQueue
-            // Then can do innerRegister() (not register()).
-            innerRegister(req, context, null);
-        }
-    }
-
-    /**
-     * Get SendableRequest's for a given ClientRequester.
-     * Note that this will return all kinds of requests, so the caller will have
-     * to filter them according to isInsert and isSSKScheduler.
-     */
-    protected SendableRequest[] getSendableRequests(ClientRequester request) {
-        if(request != null)
-            return request.getSendableRequests();
-        else return null;
     }
     
     public void succeeded(BaseSendableGet succeeded) {
