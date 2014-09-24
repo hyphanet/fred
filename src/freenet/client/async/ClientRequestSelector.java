@@ -454,9 +454,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS,
 		
 		RequestStarter.PREFETCH_PRIORITY_CLASS, 
-		RequestStarter.PREFETCH_PRIORITY_CLASS,
-		
-		RequestStarter.MINIMUM_PRIORITY_CLASS
+		RequestStarter.PREFETCH_PRIORITY_CLASS
 	};
 	private static final short[] prioritySelector = {
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
@@ -464,8 +462,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
 		RequestStarter.UPDATE_PRIORITY_CLASS,
 		RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS,
-		RequestStarter.PREFETCH_PRIORITY_CLASS,
-		RequestStarter.MINIMUM_PRIORITY_CLASS
+		RequestStarter.PREFETCH_PRIORITY_CLASS
 	};
 
 	/**
