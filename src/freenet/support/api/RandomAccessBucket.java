@@ -18,7 +18,7 @@ public interface RandomAccessBucket extends Bucket {
      * the data. Freeing the Bucket is unnecessary if you free the LockableRandomAccessBuffer. 
      * Both the parent Bucket and the return value will be made read only.
      * @throws IOException */
-    public LockableRandomAccessBuffer toRandomAccessThing() throws IOException;
+    public LockableRandomAccessBuffer toRandomAccessBuffer() throws IOException;
     
     @Override
     public RandomAccessBucket createShadow();

@@ -133,7 +133,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
             assertTrue(Arrays.equals(Arrays.copyOfRange(buf, 0, readBytes), Arrays.copyOfRange(data, moved, moved+readBytes)));
             moved += readBytes;
         }
-        LockableRandomAccessBuffer raf = bucket.toRandomAccessThing();
+        LockableRandomAccessBuffer raf = bucket.toRandomAccessBuffer();
         assertEquals(length, raf.size());
         RAFBucket wrapped = new RAFBucket(raf);
         assertTrue(BucketTools.equalBuckets(bucket, wrapped));

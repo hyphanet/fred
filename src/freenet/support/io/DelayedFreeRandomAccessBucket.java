@@ -160,12 +160,12 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
     }
 
     @Override
-    public LockableRandomAccessBuffer toRandomAccessThing() throws IOException {
+    public LockableRandomAccessBuffer toRandomAccessBuffer() throws IOException {
         synchronized(this) {
             if(freed) throw new IOException("Already freed");
         }
         setReadOnly();
-        return new DelayedFreeRandomAccessBuffer(bucket.toRandomAccessThing(), factory);
+        return new DelayedFreeRandomAccessBuffer(bucket.toRandomAccessBuffer(), factory);
     }
 
 }

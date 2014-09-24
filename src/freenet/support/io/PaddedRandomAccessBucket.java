@@ -292,13 +292,13 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
     }
 
     @Override
-    public LockableRandomAccessBuffer toRandomAccessThing() throws IOException {
+    public LockableRandomAccessBuffer toRandomAccessBuffer() throws IOException {
         synchronized(this) {
             if(outputStreamOpen) throw new IOException("Must close first");
             readOnly = true;
         }
         underlying.setReadOnly();
-        LockableRandomAccessBuffer u = underlying.toRandomAccessThing();
+        LockableRandomAccessBuffer u = underlying.toRandomAccessBuffer();
         return new PaddedRandomAccessBuffer(u, size);
     }
 

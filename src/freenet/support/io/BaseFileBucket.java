@@ -516,7 +516,7 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
     }
     
     @Override
-    public LockableRandomAccessBuffer toRandomAccessThing() throws IOException {
+    public LockableRandomAccessBuffer toRandomAccessBuffer() throws IOException {
         if(freed) throw new IOException("Already freed");
         setReadOnly();
         long size = size();

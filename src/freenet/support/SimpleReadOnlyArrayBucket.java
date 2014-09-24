@@ -103,7 +103,7 @@ public class SimpleReadOnlyArrayBucket implements Bucket, RandomAccessBucket {
     }
 
     @Override
-    public LockableRandomAccessBuffer toRandomAccessThing() throws IOException {
+    public LockableRandomAccessBuffer toRandomAccessBuffer() throws IOException {
         ByteArrayRandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(buf, offset, length, true);
         raf.setReadOnly();
         return raf;

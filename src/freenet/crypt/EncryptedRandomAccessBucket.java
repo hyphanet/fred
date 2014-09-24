@@ -344,11 +344,11 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
     }
 
     @Override
-    public LockableRandomAccessBuffer toRandomAccessThing() throws IOException {
+    public LockableRandomAccessBuffer toRandomAccessBuffer() throws IOException {
         if(underlying.size() < type.headerLen)
             throw new IOException("Converting empty bucket");
         underlying.setReadOnly();
-        LockableRandomAccessBuffer r = underlying.toRandomAccessThing();
+        LockableRandomAccessBuffer r = underlying.toRandomAccessBuffer();
         try {
             return new EncryptedRandomAccessBuffer(type, r, masterKey, false);
         } catch (GeneralSecurityException e) {

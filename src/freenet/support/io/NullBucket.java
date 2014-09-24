@@ -93,7 +93,7 @@ public class NullBucket implements Bucket, Serializable, RandomAccessBucket {
     }
 
     @Override
-    public LockableRandomAccessBuffer toRandomAccessThing() throws IOException {
+    public LockableRandomAccessBuffer toRandomAccessBuffer() throws IOException {
         return new NullRandomAccessBuffer(length);
     }
 }

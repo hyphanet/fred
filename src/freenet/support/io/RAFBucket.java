@@ -94,7 +94,7 @@ public class RAFBucket implements Bucket, RandomAccessBucket {
     }
 
     @Override
-    public LockableRandomAccessBuffer toRandomAccessThing() {
+    public LockableRandomAccessBuffer toRandomAccessBuffer() {
         return underlying;
     }
 

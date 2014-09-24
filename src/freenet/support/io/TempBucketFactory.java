@@ -500,13 +500,13 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
         }
 
         @Override
-        public LockableRandomAccessBuffer toRandomAccessThing() throws IOException {
+        public LockableRandomAccessBuffer toRandomAccessBuffer() throws IOException {
             synchronized(this) {
                 if(hasBeenFreed) throw new IOException("Already freed");
                 if(os != null) throw new IOException("Can't migrate with open OutputStream's");
                 if(!tbis.isEmpty()) throw new IOException("Can't migrate with open InputStream's");
                 setReadOnly();
-                TempRandomAccessBuffer raf = new TempRandomAccessBuffer(currentBucket.toRandomAccessThing(), creationTime, !isRAMBucket(), this);
+                TempRandomAccessBuffer raf = new TempRandomAccessBuffer(currentBucket.toRandomAccessBuffer(), creationTime, !isRAMBucket(), this);
                 if(isRAMBucket()) {
                     synchronized(ramBucketQueue) {
                         // No change in space usage.

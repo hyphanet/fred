@@ -347,7 +347,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		// metadata insert has finished too, tell the master callback.
 		LockableRandomAccessBuffer dataRAF;
         try {
-            dataRAF = data.toRandomAccessThing();
+            dataRAF = data.toRandomAccessBuffer();
         } catch (IOException e) {
             throw new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null);
         }
