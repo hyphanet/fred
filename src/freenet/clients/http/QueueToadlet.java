@@ -1219,7 +1219,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		    return sendEmptyQueuePage(ctx, pageMaker);
 		}
 
-		short lowestQueuedPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
+		short lowestQueuedPrio = RequestStarter.PAUSED_PRIORITY_CLASS;
 
 		long totalQueuedDownloadSize = 0;
 		long totalQueuedUploadSize = 0;

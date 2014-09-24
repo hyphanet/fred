@@ -474,7 +474,7 @@ public abstract class ClientRequest implements Serializable {
         startupTime = dis.readLong();
         priorityClass = dis.readShort();
         if(priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS || 
-                priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS)
+                priorityClass > RequestStarter.PAUSED_PRIORITY_CLASS)
             throw new StorageFormatException("Bogus priority");
         if(dis.readBoolean())
             clientToken = dis.readUTF();

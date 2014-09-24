@@ -1149,8 +1149,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		// FIXME should this be synchronized? IMHO it doesn't matter that much if we get the priority
 		// wrong for a few requests... also, we avoid any possible deadlock this way if the callbacks
 		// take locks...
-		short normalPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
-		short progressPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
+		short normalPrio = RequestStarter.PAUSED_PRIORITY_CLASS;
+		short progressPrio = RequestStarter.PAUSED_PRIORITY_CLASS;
 		USKCallback[] localCallbacks;
 		USKFetcherCallback[] fetcherCallbacks;
 		synchronized(this) {

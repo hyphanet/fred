@@ -298,8 +298,8 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			return null;
 		}
 		long wakeupTime = Long.MAX_VALUE;
-		if(maxPrio >= RequestStarter.MINIMUM_PRIORITY_CLASS)
-			maxPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
+		if(maxPrio >= RequestStarter.PAUSED_PRIORITY_CLASS)
+			maxPrio = RequestStarter.PAUSED_PRIORITY_CLASS;
 outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
 			SectoredRandomGrabArray chosenTracker = priorities[choosenPriorityClass];
@@ -581,8 +581,8 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
      * that are not persisted in the database, e.g. executors, temporary filename generator, etc.
      */
     void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, ClientContext context) {
-        if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
-            throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
+        if((priorityClass > RequestStarter.PAUSED_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
+            throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.PAUSED_PRIORITY_CLASS+" (least important)");
         // Client
         synchronized(this) {
             SectoredRandomGrabArray clientGrabber = priorities[priorityClass];
