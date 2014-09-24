@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Queue;
@@ -24,20 +25,17 @@ import freenet.crypt.EncryptedRandomAccessBucket;
 import freenet.crypt.EncryptedRandomAccessBuffer;
 import freenet.crypt.EncryptedRandomAccessBufferType;
 import freenet.crypt.MasterSecret;
-import freenet.crypt.RandomSource;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.LockableRandomAccessBufferFactory;
 import freenet.support.api.RandomAccessBucket;
-
-import java.util.ArrayList;
 
 /**
  * Temporary Bucket Factory
