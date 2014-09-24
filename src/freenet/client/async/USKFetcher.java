@@ -742,17 +742,19 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			uskManager.onFinished(this);
 			context.getSskFetchScheduler(realTimeFlag).schedTransient.removePendingKeys((KeyListener)this);
 			long ed = uskManager.lookupLatestSlot(origUSK);
-			byte[] data;
-			if(lastRequestData == null)
-				data = null;
-			else {
-				try {
-					data = BucketTools.toByteArray(lastRequestData);
-				} catch (IOException e) {
-					Logger.error(this, "Unable to turn lastRequestData into byte[]: caught I/O exception: "+e, e);
-					data = null;
-				}
-				lastRequestData.free();
+            byte[] data;
+			synchronized(this) {
+			    if(lastRequestData == null)
+			        data = null;
+			    else {
+			        try {
+			            data = BucketTools.toByteArray(lastRequestData);
+			        } catch (IOException e) {
+			            Logger.error(this, "Unable to turn lastRequestData into byte[]: caught I/O exception: "+e, e);
+			            data = null;
+			        }
+			        lastRequestData.free();
+			    }
 			}
 			for(USKFetcherCallback c: cb) {
 				try {
@@ -1302,9 +1304,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		for(USKAttempt attempt: attempts) {
 			// Look up on each iteration since scheduling can cause new editions to be found sometimes.
 			long lastEd = uskManager.lookupLatestSlot(origUSK);
-			// FIXME not sure this condition works, test it!
-			if(keepLastData && lastRequestData == null && lastEd == origUSK.suggestedEdition)
-				lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
+			synchronized(USKFetcher.this) {
+	            // FIXME not sure this condition works, test it!
+			    if(keepLastData && lastRequestData == null && lastEd == origUSK.suggestedEdition)
+			        lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
+			}
 			if(attempt == null) continue;
 			if(attempt.number > lastEd)
 				attempt.schedule(null, context);
@@ -1465,9 +1469,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			for(USKAttempt attempt: attempts) {
 				long lastEd = uskManager.lookupLatestSlot(origUSK);
-				// FIXME not sure this condition works, test it!
-				if(keepLastData && lastRequestData == null && lastEd == origUSK.suggestedEdition)
-					lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
+				synchronized(USKFetcher.this) {
+	                // FIXME not sure this condition works, test it!
+				    if(keepLastData && lastRequestData == null && lastEd == origUSK.suggestedEdition)
+				        lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
+				}
 				if(attempt == null) continue;
 				if(attempt.number > lastEd)
 					attempt.schedule(container, context);
