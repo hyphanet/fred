@@ -28,9 +28,9 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.RandomGrabArray;
 import freenet.support.RandomGrabArrayWithClient;
 import freenet.support.RemoveRandom.RemoveRandomReturn;
+import freenet.support.RemoveRandomParent;
 import freenet.support.SectoredRandomGrabArray;
 import freenet.support.SectoredRandomGrabArraySimple;
-import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.TimeUtil;
 
 /** The global request queue. Both transient and persistent requests are kept on this in-RAM 
@@ -74,14 +74,30 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	// Layer 2: RGAs (for a ClientRequester), contain SendableRequest's.
 	// Layer 3: SendableRequest's.
 	
+	static class ClientRequestRGANode extends SectoredRandomGrabArraySimple<RequestClient,ClientRequester> {
+
+        public ClientRequestRGANode(RequestClient object, RemoveRandomParent parent,
+                ClientRequestSelector root) {
+            super(object, parent, root);
+        }
+	    
+	}
+	
+	static class RequestClientRGANode extends SectoredRandomGrabArray<RequestClient,ClientRequestRGANode> {
+
+        public RequestClientRGANode(RemoveRandomParent parent, ClientRequestSelector root) {
+            super(parent, root);
+        }
+	    
+	}
+	
 	/**
      * The base of the tree.
      */
-    protected SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>>[] priorities;
+    protected RequestClientRGANode[] priorities;
     
     protected final Deque<BaseSendableGet>recentSuccesses;
     
-	@SuppressWarnings("unchecked")
     ClientRequestSelector(boolean isInsertScheduler, boolean isSSKScheduler, boolean isRTScheduler, ClientRequestScheduler sched) {
 		this.sched = sched;
 		this.isInsertScheduler = isInsertScheduler;
@@ -97,7 +113,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			runningInserts = new HashSet<SendableRequestItemKey>();
 			recentSuccesses = null;
 		}
-		priorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
+		priorities = new RequestClientRGANode[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 	}
 	
 	private static volatile boolean logMINOR;
@@ -132,7 +148,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	 * LOCKING: Synchronized because we may create new priorities. Both the cooldown queue and the 
 	 * RGA hierarchy, rooted at the priorities, use ClientRequestSelector lock. */
 	private synchronized long choosePriority(int fuzz, RandomSource random, ClientContext context, long now){
-	    SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>> result = null;
+	    RequestClientRGANode result = null;
 		
 		long wakeupTime = Long.MAX_VALUE;
 		
@@ -305,8 +321,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		long wakeupTime = Long.MAX_VALUE;
 outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
-			SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>> 
-			    chosenTracker = priorities[choosenPriorityClass];
+			RequestClientRGANode chosenTracker = priorities[choosenPriorityClass];
 			if(chosenTracker == null) {
 				if(logMINOR) Logger.minor(this, "No requests to run: chosen priority empty");
 				continue; // Try next priority
@@ -351,10 +366,9 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
 					// maybe we should ask people to report that error if seen
 					Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+ ')');
 					// Remove it.
-					SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester,RandomGrabArrayWithClient<ClientRequester>> clientGrabber = 
-					    chosenTracker.getGrabber(req.getClient());
+					ClientRequestRGANode clientGrabber = chosenTracker.getGrabber(req.getClient());
 					if(clientGrabber != null) {
-						RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
+						RandomGrabArray baseRGA = clientGrabber.getGrabber(req.getClientRequest());
 						if(baseRGA != null) {
 							// Must synchronize to avoid nasty race conditions with cooldown.
 							synchronized(this) {
@@ -590,25 +604,24 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
             throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.PAUSED_PRIORITY_CLASS+" (least important)");
         // Client
         synchronized(this) {
-            SectoredRandomGrabArraySimple<RequestClient,ClientRequester> requestGrabber = makeSRGAForClient(priorityClass, client, context);
+            ClientRequestRGANode requestGrabber = makeSRGAForClient(priorityClass, client, context);
             requestGrabber.add(cr, req, context);
         }
         sched.wakeStarter();
     }
 
-    private SectoredRandomGrabArraySimple<RequestClient,ClientRequester> makeSRGAForClient(short priorityClass,
+    private ClientRequestRGANode makeSRGAForClient(short priorityClass,
             RequestClient client, ClientContext context) {
-        SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>>
-            clientGrabber = priorities[priorityClass];
+        RequestClientRGANode clientGrabber = priorities[priorityClass];
         if(clientGrabber == null) {
-            clientGrabber = new SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>>(null, this);
+            clientGrabber = new RequestClientRGANode(null, this);
             priorities[priorityClass] = clientGrabber;
             if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
         }
         // Request
-        SectoredRandomGrabArraySimple<RequestClient,ClientRequester> requestGrabber = clientGrabber.getGrabber(client);
+        ClientRequestRGANode requestGrabber = clientGrabber.getGrabber(client);
         if(requestGrabber == null) {
-            requestGrabber = new SectoredRandomGrabArraySimple<RequestClient,ClientRequester>(client, clientGrabber, this);
+            requestGrabber = new ClientRequestRGANode(client, clientGrabber, this);
             if(logMINOR)
                 Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
             clientGrabber.addGrabber(client, requestGrabber, context);
@@ -626,20 +639,19 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
         }
         synchronized(this) {
             // First by priority
-            SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>>
-                clientGrabber = priorities[oldPrio];
+            RequestClientRGANode clientGrabber = priorities[oldPrio];
             if(clientGrabber == null) {
                 // Normal as most of the schedulers aren't relevant to any given insert/request.
                 if(logMINOR) Logger.minor(this, "Changing priority but request not running "+request, new Exception("debug"));
                 return;
             }
             // Then by RequestClient
-            SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester,RandomGrabArrayWithClient<ClientRequester>> requestGrabber = clientGrabber.getGrabber(client);
+            ClientRequestRGANode requestGrabber = clientGrabber.getGrabber(client);
             if(requestGrabber == null) {
                 if(logMINOR) Logger.minor(this, "Changing priority but request not running "+request, new Exception("debug"));
                 return;
             }
-            RandomGrabArrayWithClient<ClientRequester> rga = (RandomGrabArrayWithClient<ClientRequester>) requestGrabber.getGrabber(request);
+            RandomGrabArrayWithClient<ClientRequester> rga = requestGrabber.getGrabber(request);
             if(rga == null) {
                 if(logMINOR) Logger.minor(this, "Changing priority but request not running "+request, new Exception("debug"));
                 return;
@@ -658,8 +670,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
     public synchronized long countQueuedRequests(ClientContext context) {
         long total = 0;
         for(int i=0;i<priorities.length;i++) {
-            SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>>
-                prio = priorities[i];
+            RequestClientRGANode prio = priorities[i];
             if(prio == null || prio.isEmpty())
                 System.out.println("Priority "+i+" : empty");
             else {
@@ -668,13 +679,12 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
                     for(int k=0;k<prio.size();k++) {
                         RequestClient client = prio.getClient(k);
                         System.out.println("Client "+k+" : "+client);
-                        SectoredRandomGrabArrayWithObject<RequestClient,ClientRequester,RandomGrabArrayWithClient<ClientRequester>> 
-                            requestGrabber = prio.getGrabber(client);
+                        ClientRequestRGANode requestGrabber = prio.getGrabber(client);
                         System.out.println("SRGA for client: "+requestGrabber);
                         for(int l=0;l<requestGrabber.size();l++) {
                             ClientRequester cr = requestGrabber.getClient(l);
                             System.out.println("Request "+l+" : "+cr);
-                            RandomGrabArray rga = (RandomGrabArray) requestGrabber.getGrabber(cr);
+                            RandomGrabArray rga = requestGrabber.getGrabber(cr);
                             System.out.println("Queued SendableRequests: "+rga.size()+" on "+rga);
                             long sendable = 0;
                             long all = 0;
