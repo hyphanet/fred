@@ -69,11 +69,13 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	
 	final ClientRequestScheduler sched;
 	
+	// Root: SRGA of SRGAs (for a priority), descend by RequestClient.
+	// Layer 1: SRGA of RGAs (for a RequestClient), descend by ClientRequester.
+	// Layer 2: RGAs (for a ClientRequester), contain SendableRequest's.
+	// Layer 3: SendableRequest's.
+	
 	/**
      * The base of the tree.
-     * array (by priority) -> // one element per possible priority
-     * SectoredRandomGrabArray's // round-robin by RequestClient, then by SendableRequest
-     * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
      */
     protected SectoredRandomGrabArray<RequestClient,SectoredRandomGrabArraySimple<RequestClient,ClientRequester>>[] priorities;
     
