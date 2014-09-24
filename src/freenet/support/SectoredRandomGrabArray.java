@@ -25,7 +25,7 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 		Logger.registerClass(SectoredRandomGrabArray.class);
 	}
 
-	protected C[] grabArrays;
+	protected RemoveRandomWithObject<T>[] grabArrays;
 	private T[] grabClients;
 	private RemoveRandomParent parent;
 	protected final ClientRequestSelector root;
@@ -33,7 +33,7 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 	
 	public SectoredRandomGrabArray(RemoveRandomParent parent, ClientRequestSelector root) {
 		grabClients = (T[]) new Object[0];
-		grabArrays = (C[]) new RemoveRandomWithObject[0];
+		grabArrays = new RemoveRandomWithObject[0];
 		this.parent = parent;
 		this.root = root;
 	}
@@ -66,7 +66,7 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 	    synchronized(root) {
 		int idx = haveClient(client);
 		if(idx == -1) return null;
-		else return grabArrays[idx];
+		else return (C) grabArrays[idx];
 	    }
 	}
 	
