@@ -218,7 +218,16 @@ public interface FredPluginFCPMessageHandler {
                 // indicate errors
                 null, null, null);
         }
-        
+
+        /**
+         * Same as {@link #construct(SimpleFieldSet, Bucket)} with the missing parameters being:<br>
+         * <code>SimpleFieldSet parameters = new SimpleFieldSet(shortLived = true);<br>
+         * Bucket data = null;</code>
+         */
+        public static FCPPluginMessage construct() {
+            return construct(new SimpleFieldSet(true), null);
+        }
+
         /**
          * For being used by server or client to construct outgoing messages which are a reply to an
          * original message.<br>
@@ -258,7 +267,39 @@ public interface FredPluginFCPMessageHandler {
             return new FCPPluginMessage(null, originalMessage.identifier,
                 parameters, data, success, errorCode, errorMessage);
         }
-        
+
+        /**
+         * Same as {@link #constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean,
+         * String, String)} with the missing parameters being:<br>
+         * <code>
+         * SimpleFieldSet parameters = new SimpleFieldSet(shortLived = true);<br>
+         * Bucket data = null;<br>
+         * boolean success = true;<br>
+         * errorCode = null;<br>
+         * errorMessage = null;<br>
+         * </code>
+         */
+        public static FCPPluginMessage constructSuccessReply(FCPPluginMessage originalMessage) {
+            return constructReplyMessage(
+                originalMessage, new SimpleFieldSet(true), null, true, null, null);
+        }
+
+        /**
+         * Same as {@link #constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean,
+         * String, String)} with the missing parameters being:<br>
+         * <code>
+         * SimpleFieldSet parameters = new SimpleFieldSet(shortLived = true);<br>
+         * Bucket data = null;<br>
+         * boolean success = false;<br>
+         * </code>
+         */
+        public static FCPPluginMessage constructErrorReply(FCPPluginMessage originalMessage,
+                String errorCode, String errorMessage) {
+            
+            return constructReplyMessage(
+                originalMessage, new SimpleFieldSet(true), null, false, errorCode, errorMessage);
+        }
+
         /**
          * Only for being used by internal network code.<br><br>
          * 
