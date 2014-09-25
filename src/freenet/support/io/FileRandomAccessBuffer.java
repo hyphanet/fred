@@ -49,7 +49,7 @@ public class FileRandomAccessBuffer implements LockableRandomAccessBuffer, Seria
 			throws IOException {
 	    if(fileOffset < 0) throw new IllegalArgumentException();
         if(fileOffset + length > this.length)
-            throw new IOException("Length limit exceeded");
+            throw new IOException("Length limit exceeded reading "+length+" bytes from "+fileOffset+" of "+this.length);
         // FIXME Use NIO (which has proper pread, with concurrency)! This is absurd!
 		synchronized(this) {
 			raf.seek(fileOffset);
@@ -62,7 +62,7 @@ public class FileRandomAccessBuffer implements LockableRandomAccessBuffer, Seria
 			throws IOException {
         if(fileOffset < 0) throw new IllegalArgumentException();
 	    if(fileOffset + length > this.length)
-	        throw new IOException("Length limit exceeded");
+            throw new IOException("Length limit exceeded writing "+length+" bytes from "+fileOffset+" of "+this.length);
 	    if(readOnly) throw new IOException("Read only");
         // FIXME Use NIO (which has proper pwrite, with concurrency)! This is absurd!
 		synchronized(this) {
