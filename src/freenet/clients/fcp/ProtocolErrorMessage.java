@@ -141,6 +141,8 @@ public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 		    return "Not supported for that return type";
 		case IO_ERROR:
 		    return "Disk I/O error";
+		case PERSISTENCE_DISABLED:
+		    return "Persistence disabled (e.g. encrypted queue waiting for password?)";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";
