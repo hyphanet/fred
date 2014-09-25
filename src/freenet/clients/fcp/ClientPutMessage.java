@@ -11,6 +11,7 @@ import java.util.Map;
 
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.clients.fcp.ClientPutBase.UploadFrom;
 import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
@@ -326,8 +327,9 @@ public class ClientPutMessage extends DataCarryingMessage {
 	}
 
 	@Override
-	RandomAccessBucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException {
+	RandomAccessBucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException, PersistenceDisabledException {
 		if(persistence == Persistence.FOREVER) {
+		    if(server.core.killedDatabase()) throw new PersistenceDisabledException();
 			return server.core.persistentTempBucketFactory.makeBucket(length);
 		} else {
 			return super.createBucket(bf, length, server);

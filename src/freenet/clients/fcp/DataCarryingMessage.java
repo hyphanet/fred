@@ -7,12 +7,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import freenet.client.async.PersistenceDisabledException;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.FileUtil;
 import freenet.support.io.NullBucket;
+import freenet.support.io.NullOutputStream;
 
 
 public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
@@ -22,7 +25,7 @@ public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
      * may not be. FIXME split up into two classes? */
 	protected Bucket bucket;
 	
-	RandomAccessBucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException {
+	RandomAccessBucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException, PersistenceDisabledException {
 		return bf.makeBucket(length);
 	}
 	
@@ -49,7 +52,10 @@ public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
 		} catch (IOException e) {
 			Logger.error(this, "Bucket error: "+e, e);
 			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, e.toString(), getIdentifier(), isGlobal());
-		}
+		} catch (PersistenceDisabledException e) {
+            Logger.error(this, "Bucket error: "+e, e);
+            throw new MessageInvalidException(ProtocolErrorMessage.PERSISTENCE_DISABLED, null, getIdentifier(), isGlobal());
+        }
 		BucketTools.copyFrom(tempBucket, is, len);
 		this.bucket = tempBucket;
 	}
