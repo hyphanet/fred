@@ -91,10 +91,8 @@ public class FCPServer implements Runnable, DownloadCache {
 		rebootClientsByName = new WeakHashMap<String, PersistentRequestClient>();
 		this.persistentRoot = persistentRoot;
         globalForeverClient = persistentRoot.globalForeverClient;
-        globalForeverClient.setRequestStatusCache(new RequestStatusCache());
 
 		globalRebootClient = new PersistentRequestClient("Global Queue", null, true, null, Persistence.REBOOT, null);
-		globalRebootClient.setRequestStatusCache(new RequestStatusCache());
 
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 

@@ -49,6 +49,10 @@ public class PersistentRequestClient {
 			this.root = root;
 		} else
 			this.root = null;
+		if(isGlobalQueue)
+		    statusCache = new RequestStatusCache();
+		else
+		    statusCache = null;
 	}
 	
 	/** The persistent root object, null if persistence is PERSIST_REBOOT */
@@ -75,7 +79,7 @@ public class PersistentRequestClient {
 	private RequestClient lowLevelClientRT;
 	private transient List<RequestCompletionCallback> completionCallbacks;
 	/** The cache where ClientRequests report their progress */
-	private transient RequestStatusCache statusCache;
+	private transient final RequestStatusCache statusCache;
 	/** Connection mode */
 	final Persistence persistence;
 	        
@@ -494,11 +498,6 @@ public class PersistentRequestClient {
 
 	public RequestStatusCache getRequestStatusCache() {
 		return statusCache;
-	}
-	
-	public void setRequestStatusCache(RequestStatusCache cache) {
-		statusCache = cache;
-		updateRequestStatusCache(cache);
 	}
 	
 	public void updateRequestStatusCache() {
