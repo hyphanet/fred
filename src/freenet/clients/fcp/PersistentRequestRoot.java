@@ -39,10 +39,6 @@ public class PersistentRequestRoot {
 		clients = new TreeMap<String, PersistentRequestClient>();
 	}
 	
-	void setRequestStatusCache(RequestStatusCache cache) {
-        globalForeverClient.setRequestStatusCache(cache);
-	}
-
 	public PersistentRequestClient registerForeverClient(final String name, FCPConnectionHandler handler) {
 		if(logMINOR) Logger.minor(this, "Registering forever-client for "+name);
 		PersistentRequestClient client;

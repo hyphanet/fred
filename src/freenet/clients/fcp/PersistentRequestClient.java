@@ -498,6 +498,14 @@ public class PersistentRequestClient {
 	
 	public void setRequestStatusCache(RequestStatusCache cache) {
 		statusCache = cache;
+		updateRequestStatusCache(cache);
+	}
+	
+	public void updateRequestStatusCache() {
+	    updateRequestStatusCache(statusCache);
+	}
+	
+	private void updateRequestStatusCache(RequestStatusCache cache) {
 		if(persistence == Persistence.FOREVER) {
 			System.out.println("Loading cache of request statuses...");
 			ArrayList<RequestStatus> statuses = new ArrayList<RequestStatus>();
