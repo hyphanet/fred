@@ -2278,7 +2278,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(!startedClientCache)
 			initRAMClientCacheFS();
 		
-		if(db == null && databaseKey != null)  {
+		if(clientCore.killedDatabase() && databaseKey != null)  {
 			try {
 				lateSetupDatabase(databaseKey);
 			} catch (MasterKeysWrongPasswordException e2) {
@@ -2634,7 +2634,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void lateSetupDatabase(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
-		if(db != null) return;
+	    if(!clientCore.killedDatabase()) return;
 		System.out.println("Starting late database initialisation");
 		setupDatabase(databaseKey);
 		nodeDBHandle = darknetCrypto.getNodeHandle(db);
