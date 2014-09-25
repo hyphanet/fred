@@ -2019,4 +2019,8 @@ public class NodeClientCore implements Persistable {
         persistentRAFFactory.setMasterSecret(persistentSecret);
     }
 
+    public boolean loadedDatabase() {
+        return clientLayerPersister.hasLoaded();
+    }
+
 }
