@@ -956,7 +956,7 @@ public class DarknetPeerNode extends PeerNode {
 			final File dest = node.clientCore.downloadsDir().file(baseFilename+".part");
 			destination = node.clientCore.downloadsDir().file(baseFilename);
 			try {
-				data = new FileRandomAccessBuffer(dest, false);
+				data = new FileRandomAccessBuffer(dest, size, false);
 			} catch (IOException e) {
 				// Impossible
 				throw new Error("Impossible: FileNotFoundException opening with RAF with rw! "+e, e);

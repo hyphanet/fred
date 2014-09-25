@@ -874,7 +874,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		FileRandomAccessBuffer raf;
 		try {
-			raf = new FileRandomAccessBuffer(temp, false);
+			raf = new FileRandomAccessBuffer(temp, length, false);
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
 			updateManager.blow("Internal error after fetching the revocation certificate from our peer, maybe out of disk space, file disappeared "+temp+" : " + e, true);
@@ -1388,7 +1388,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		FileRandomAccessBuffer raf;
 		try {
-			raf = new FileRandomAccessBuffer(temp, false);
+			raf = new FileRandomAccessBuffer(temp, length, false);
 		} catch(IOException e) {
 			Logger.error(this, "Peer " + source + " sending us a main jar binary blob, but we " +
 					((e instanceof FileNotFoundException) ? "lost the temp file " : "cannot read the temp file ") + temp + " : " + e, e);
@@ -1915,7 +1915,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						long uid = updateManager.node.fastWeakRandom.nextLong();
 						fetchFrom.sendAsync(DMT.createUOMFetchDependency(uid, expectedHash, size), null, updateManager.ctr);
 						tmp = FileUtil.createTempFile(saveTo.getName(), NodeUpdateManager.TEMP_FILE_SUFFIX, saveTo.getParentFile());
-						raf = new FileRandomAccessBuffer(tmp, false);
+						raf = new FileRandomAccessBuffer(tmp, size, false);
 						PartiallyReceivedBulk prb = 
 							new PartiallyReceivedBulk(updateManager.node.getUSM(), size,
 								Node.PACKET_SIZE, raf, false);
