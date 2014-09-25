@@ -45,7 +45,8 @@ public class RequestStatusCache {
 			requestsByIdentifier.put(status.getIdentifier(), status);
 		if(logMINOR) Logger.minor(this, "Starting download "+status.getIdentifier());
 		if(old == status) return;
-		assert(old == null);
+		if(old != null)
+		    downloads.remove(old);
 		downloads.add(status);
 		downloadsByURI.put(status.getURI(), status);
 	}
@@ -55,7 +56,8 @@ public class RequestStatusCache {
 			requestsByIdentifier.put(status.getIdentifier(), status);
 		if(old == status) return;
 		if(logMINOR) Logger.minor(this, "Starting upload "+status.getIdentifier());
-		assert(old == null);
+		if(old != null)
+		    uploads.remove(old);
 		uploads.add(status);
 		FreenetURI uri = status.getURI();
 		if(uri != null)
