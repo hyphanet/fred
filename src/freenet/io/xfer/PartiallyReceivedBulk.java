@@ -73,6 +73,7 @@ public class PartiallyReceivedBulk {
 			blocksReceived.setAllOnes();
 			blocksReceivedCount = this.blocks;
 		}
+		assert(raf.size() >= size);
 	}
 
 	/**
