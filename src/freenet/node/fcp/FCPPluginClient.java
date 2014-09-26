@@ -927,8 +927,9 @@ public final class FCPPluginClient {
      * @return The reply {@link FCPPluginMessage} which the remote partner sent to your message.
      *         <br><br>
      * 
-     *         It's field {@link FCPPluginMessage#success} will be set to false if the message was
-     *         delivered but the remote message handler indicated that the FCP operation you
+     *         <b>ATTENTION</b>: Even if this function did not throw, the reply might indicate an
+     *         error with the field {link FCPPluginMessage#success}: This can happen if the message
+     *         was delivered but the remote message handler indicated that the FCP operation you
      *         initiated failed.<br>
      *         The fields {@link FCPPluginMessage#errorCode} and
      *         {@link FCPPluginMessage#errorMessage} might indicate the type of the error.<br><br>
