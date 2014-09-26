@@ -189,14 +189,23 @@ public class OpennetManager {
 	public static final boolean ENABLE_PEERS_PER_KB_OUTPUT = true;
 	/** Constant for scaling peers: we multiply bandwidth in kB/sec by this
 	 * and then take the square root. 12 gives 11 at 10K, 15 at 20K, 19 at
-	 * 30K, 26 at 60K, 34 at 100K, 40 at 140K. */
+	 * 30K, 26 at 60K, 34 at 100K, 40 at 140K, 100 at 2500K. 
+	 * 212 at 30mbit/s (the mean upload in Japan in 2014) and 
+	 * 363 at 88mbit/s (the mean upload in Hong Kong in 2014).*/
 	public static final double SCALING_CONSTANT = 12.0;
-	/** Minimum number of peers */
+	/** Minimum number of peers. Do not reduce this: As a rough
+	 * estimate, with the current 5 hops, this just gives one binary
+	 * decision per imagined distance level.*/
 	public static final int MIN_PEERS_FOR_SCALING = 10;
-	/** Maximum number of peers. */
-	public static final int MAX_PEERS_FOR_SCALING = 100;
+	/** Maximum number of peers. The upper level of this is 2% of the
+	 * network size * 1.42. Above that number of peers, fast nodes
+	 * will not be able to find enough peers with a distance of less
+	 * than 0.01 which are needed for LinkLengthClass.SHORT. Currently
+	 * we have about 5k users at all times, so we have about 100 nodes
+	 * with a distance of less than 0.01.*/
+	public static final int MAX_PEERS_FOR_SCALING = 140;
 	/** Maximum number of peers for purposes of FOAF attack/sanity check */
-	public static final int PANIC_MAX_PEERS = 110;
+	public static final int PANIC_MAX_PEERS = 150;
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */
 	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = DAYS.toMillis(31);
 
