@@ -14,6 +14,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.node.Node;
+import freenet.node.NodeStarter;
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
@@ -402,7 +403,22 @@ public final class FCPPluginClient {
      * ONLY for being used in unit tests.<br>
      * This is similar to intra-node connections in regular operation: Both the server and client
      * are running in the same VM. You must implement both the server and client side message in
-     * the unit test and pass them to this constructor.
+     * the unit test and pass them to this constructor.<br><br>
+     * 
+     * Notice: Some server plugins might use {@link PluginRespirator#getPluginClientByID(UUID)} to
+     * obtain FCPPluginClient objects. So they likely won't work with clients created by this
+     * because it doesn't create a PluginRespirator. To get a {@link PluginRespirator} available in
+     * unit tests, you might want to use
+     * {@link NodeStarter#createTestNode(freenet.node.NodeStarter.TestNodeParameters)} instead 
+     * of this constructor:<br>
+     * - The test node can be used to load the plugin as a JAR.<br>
+     * - As loading a plugin by JAR is the same mode of operation as with a regular node,
+     *   there will be a PluginRespirator available to it.<br>
+     * - {@link PluginRespirator#connecToOtherPlugin(String, ClientSideFCPMessageHandler)} can then
+     *   be used for obtaining a FCPPluginClient instead of this constructor. This also is a
+     *   function which is used in regular mode of operation.<br>
+     * - The aforementioned {@link PluginRespirator#getPluginClientByID(UUID)} will then work for
+     *   FCPPluginClients obtained through the connectToOtherPlugin().
      */
     public static FCPPluginClient constructForUnitTest(ServerSideFCPMessageHandler server,
         ClientSideFCPMessageHandler client) {
