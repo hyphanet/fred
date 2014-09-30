@@ -336,6 +336,10 @@ public class NodeStarter implements WrapperListener {
 		return random;
 	}
 
+    /**
+     * @deprecated Use {@link #createTestNode(TestNodeParameters)} instead
+     */
+    @Deprecated
 	public static Node createTestNode(int port, int opennetPort, String testName, boolean disableProbabilisticHTLs,
 	                                  short maxHTL, int dropProb, RandomSource random,
 	                                  Executor executor, int threadLimit, long storeSize, boolean ramStore,
@@ -349,29 +353,101 @@ public class NodeStarter implements WrapperListener {
 		    longPingTimes, useSlashdotCache, ipAddressOverride, false);
 	}
 
-	/**
+    /**
+     * TODO FIXME: Someone who understands all the parameters please add sane defaults. 
+     */
+    public static final class TestNodeParameters {
+        /** The UDP port number. Each test node must have a different port number. */
+        public int port;
+        /** The UDP opennet port number. Each test node must have a different port number. */
+        public int opennetPort;
+        public String testName;
+        public boolean disableProbabilisticHTLs;
+        public short maxHTL;
+        public int dropProb;
+        public RandomSource random;
+        public Executor executor;
+        public int threadLimit;
+        public long storeSize;
+        public boolean ramStore;
+        public boolean enableSwapping;
+        public boolean enableARKs;
+        public boolean enableULPRs;
+        public boolean enablePerNodeFailureTables;
+        public boolean enableSwapQueueing;
+        public boolean enablePacketCoalescing;
+        public int outputBandwidthLimit;
+        public boolean enableFOAF;
+        public boolean connectToSeednodes;
+        public boolean longPingTimes;
+        public boolean useSlashdotCache;
+        public String ipAddressOverride;
+        public boolean enableFCP;
+    }
+
+    /**
+     * Create a test node.
+     * @param port The node port number. Each test node must have a different port
+     * number.
+     * @param testName The test name.
+     * @throws NodeInitException If the node cannot start up for some reason, most
+     * likely a config problem.
+     * @deprecated Use {@link #createTestNode(TestNodeParameters)} instead
+     */
+    @Deprecated
+    public static Node createTestNode(int port, int opennetPort, String testName,
+            boolean disableProbabilisticHTLs, short maxHTL, int dropProb, RandomSource random,
+            Executor executor, int threadLimit, long storeSize, boolean ramStore,
+            boolean enableSwapping, boolean enableARKs, boolean enableULPRs,
+            boolean enablePerNodeFailureTables, boolean enableSwapQueueing,
+            boolean enablePacketCoalescing, int outputBandwidthLimit, boolean enableFOAF,
+            boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache,
+            String ipAddressOverride, boolean enableFCP)
+                throws NodeInitException {
+
+        TestNodeParameters params = new TestNodeParameters();
+        params.port = port;
+        params.opennetPort = opennetPort;
+        params.testName = testName;
+        params.disableProbabilisticHTLs = disableProbabilisticHTLs;
+        params.maxHTL = maxHTL;
+        params.dropProb = dropProb;
+        params.random = random;
+        params.executor = executor;
+        params.threadLimit = threadLimit;
+        params.storeSize = storeSize;
+        params.ramStore = ramStore;
+        params.enableSwapping = enableSwapping;
+        params.enableARKs = enableARKs;
+        params.enableULPRs = enableULPRs;
+        params.enablePerNodeFailureTables = enablePerNodeFailureTables;
+        params.enableSwapQueueing = enableSwapQueueing;
+        params.enablePacketCoalescing = enablePacketCoalescing;
+        params.outputBandwidthLimit = outputBandwidthLimit;
+        params.enableFOAF = enableFOAF;
+        params.connectToSeednodes = connectToSeednodes;
+        params.longPingTimes = longPingTimes;
+        params.useSlashdotCache = useSlashdotCache;
+        params.ipAddressOverride = ipAddressOverride;
+        params.enableFCP = enableFCP;
+            
+        return createTestNode(params);
+    }
+
+    /**
 	 * Create a test node.
-	 * @param port The node port number. Each test node must have a different port
-	 * number.
-	 * @param testName The test name.
 	 * @throws NodeInitException If the node cannot start up for some reason, most
 	 * likely a config problem.
 	 */
-	public static Node createTestNode(int port, int opennetPort, String testName, boolean disableProbabilisticHTLs,
-		short maxHTL, int dropProb, RandomSource random,
-		Executor executor, int threadLimit, long storeSize, boolean ramStore,
-		boolean enableSwapping, boolean enableARKs, boolean enableULPRs, boolean enablePerNodeFailureTables,
-		boolean enableSwapQueueing, boolean enablePacketCoalescing,
-		int outputBandwidthLimit, boolean enableFOAF,
-		boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache, String ipAddressOverride, boolean enableFCP) throws NodeInitException {
+    public static Node createTestNode(TestNodeParameters params) throws NodeInitException {
 		
 		synchronized(NodeStarter.class) {
 			if((!isStarted) || (!isTestingVM)) 
 				throw new IllegalStateException("Call globalTestInit() first!"); 
 		}
 
-		File baseDir = new File(testName);
-		File portDir = new File(baseDir, Integer.toString(port));
+        File baseDir = new File(params.testName);
+        File portDir = new File(baseDir, Integer.toString(params.port));
 		if((!portDir.mkdir()) && ((!portDir.exists()) || (!portDir.isDirectory()))) {
 			System.err.println("Cannot create directory for test");
 			System.exit(NodeInitException.EXIT_TEST_ERROR);
@@ -379,8 +455,8 @@ public class NodeStarter implements WrapperListener {
 
 		// Set up config for testing
 		SimpleFieldSet configFS = new SimpleFieldSet(false); // only happens once in entire simulation
-		if(outputBandwidthLimit > 0) {
-			configFS.put("node.outputBandwidthLimit", outputBandwidthLimit);
+        if(params.outputBandwidthLimit > 0) {
+            configFS.put("node.outputBandwidthLimit", params.outputBandwidthLimit);
 			configFS.put("node.throttleLocalTraffic", true);
 		} else {
 			// Even with throttleLocalTraffic=false, requests still count in NodeStats.
@@ -388,11 +464,11 @@ public class NodeStarter implements WrapperListener {
 			configFS.put("node.outputBandwidthLimit", 16 * 1024 * 1024);
 			configFS.put("node.throttleLocalTraffic", false);
 		}
-		configFS.put("node.useSlashdotCache", useSlashdotCache);
-		configFS.put("node.listenPort", port);
-		configFS.put("node.disableProbabilisticHTLs", disableProbabilisticHTLs);
+        configFS.put("node.useSlashdotCache", params.useSlashdotCache);
+        configFS.put("node.listenPort", params.port);
+        configFS.put("node.disableProbabilisticHTLs", params.disableProbabilisticHTLs);
 		configFS.put("fproxy.enabled", false);
-		configFS.put("fcp.enabled", enableFCP);
+        configFS.put("fcp.enabled", params.enableFCP);
 		configFS.put("fcp.port", 9481);
 		configFS.put("fcp.ssl", false);
 		configFS.put("console.enabled", false);
@@ -406,36 +482,36 @@ public class NodeStarter implements WrapperListener {
 		configFS.putSingle("node.install.userDir", portDir.toString());
 		configFS.putSingle("node.install.runDir", portDir.toString());
 		configFS.putSingle("node.install.cfgDir", portDir.toString());
-		configFS.put("node.maxHTL", maxHTL);
-		configFS.put("node.testingDropPacketsEvery", dropProb);
+        configFS.put("node.maxHTL", params.maxHTL);
+        configFS.put("node.testingDropPacketsEvery", params.dropProb);
 		configFS.put("node.alwaysAllowLocalAddresses", true);
 		configFS.put("node.includeLocalAddressesInNoderefs", true);
 		configFS.put("node.enableARKs", false);
-		configFS.put("node.load.threadLimit", threadLimit);
-		if(ramStore)
+        configFS.put("node.load.threadLimit", params.threadLimit);
+        if(params.ramStore)
 			configFS.putSingle("node.storeType", "ram");
-		configFS.put("node.storeSize", storeSize);
+        configFS.put("node.storeSize", params.storeSize);
 		configFS.put("node.disableHangCheckers", true);
-		configFS.put("node.enableSwapping", enableSwapping);
-		configFS.put("node.enableSwapQueueing", enableSwapQueueing);
-		configFS.put("node.enableARKs", enableARKs);
-		configFS.put("node.enableULPRDataPropagation", enableULPRs);
-		configFS.put("node.enablePerNodeFailureTables", enablePerNodeFailureTables);
-		configFS.put("node.enablePacketCoalescing", enablePacketCoalescing);
-		configFS.put("node.publishOurPeersLocation", enableFOAF);
-		configFS.put("node.routeAccordingToOurPeersLocation", enableFOAF);
-		configFS.put("node.opennet.enabled", opennetPort > 0);
-		configFS.put("node.opennet.listenPort", opennetPort);
+        configFS.put("node.enableSwapping", params.enableSwapping);
+        configFS.put("node.enableSwapQueueing", params.enableSwapQueueing);
+        configFS.put("node.enableARKs", params.enableARKs);
+        configFS.put("node.enableULPRDataPropagation", params.enableULPRs);
+        configFS.put("node.enablePerNodeFailureTables", params.enablePerNodeFailureTables);
+        configFS.put("node.enablePacketCoalescing", params.enablePacketCoalescing);
+        configFS.put("node.publishOurPeersLocation", params.enableFOAF);
+        configFS.put("node.routeAccordingToOurPeersLocation", params.enableFOAF);
+        configFS.put("node.opennet.enabled", params.opennetPort > 0);
+        configFS.put("node.opennet.listenPort", params.opennetPort);
 		configFS.put("node.opennet.alwaysAllowLocalAddresses", true);
 		configFS.put("node.opennet.oneConnectionPerIP", false);
 		configFS.put("node.opennet.assumeNATed", true);
-		configFS.put("node.opennet.connectToSeednodes", connectToSeednodes);
+        configFS.put("node.opennet.connectToSeednodes", params.connectToSeednodes);
 		configFS.put("node.encryptTempBuckets", false);
 		configFS.put("node.encryptPersistentTempBuckets", false);
 		configFS.put("node.enableRoutedPing", true);
-		if(ipAddressOverride != null)
-			configFS.putSingle("node.ipAddressOverride", ipAddressOverride);
-		if(longPingTimes) {
+        if(params.ipAddressOverride != null)
+            configFS.putSingle("node.ipAddressOverride", params.ipAddressOverride);
+        if(params.longPingTimes) {
 			configFS.put("node.maxPingTime", 100000);
 			configFS.put("node.subMaxPingTime", 50000);
 		}
@@ -449,7 +525,7 @@ public class NodeStarter implements WrapperListener {
 
 		PersistentConfig config = new PersistentConfig(configFS);
 
-		Node node = new Node(config, random, random, null, null, executor);
+        Node node = new Node(config, params.random, params.random, null, null, params.executor);
 
 		//All testing environments connect the nodes as they want, even if the old setup is restored, it is not desired.
 		node.peers.removeAllPeers();
