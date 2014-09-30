@@ -27,6 +27,7 @@ import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
@@ -395,6 +396,20 @@ public final class FCPPluginClient {
         
         return new FCPPluginClient(executor,
             serverPluginName, serverPluginManager.getPluginFCPServer(serverPluginName), client);
+    }
+    
+    /**
+     * ONLY for being used in unit tests.<br>
+     * This is similar to intra-node connections in regular operation: Both the server and client
+     * are running in the same VM. You must implement both the server and client side message in
+     * the unit test and pass them to this constructor.
+     */
+    public static FCPPluginClient constructForUnitTest(ServerSideFCPMessageHandler server,
+        ClientSideFCPMessageHandler client) {
+        
+        assert(server != null);
+        assert(client != null);
+        return new FCPPluginClient(new PooledExecutor(), server.toString(), server, client);
     }
     
     /**
