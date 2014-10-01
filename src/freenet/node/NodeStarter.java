@@ -383,8 +383,6 @@ public class NodeStarter implements WrapperListener {
         public boolean useSlashdotCache;
         public String ipAddressOverride;
         public boolean enableFCP;
-        /** Whether to enable the standard Freenet user interface = the web interface */
-        public boolean enableFProxy = false;
     }
 
     /**
@@ -469,7 +467,7 @@ public class NodeStarter implements WrapperListener {
         configFS.put("node.useSlashdotCache", params.useSlashdotCache);
         configFS.put("node.listenPort", params.port);
         configFS.put("node.disableProbabilisticHTLs", params.disableProbabilisticHTLs);
-        configFS.put("fproxy.enabled", params.enableFProxy);
+		configFS.put("fproxy.enabled", false);
         configFS.put("fcp.enabled", params.enableFCP);
 		configFS.put("fcp.port", 9481);
 		configFS.put("fcp.ssl", false);
