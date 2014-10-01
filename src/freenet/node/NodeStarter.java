@@ -267,12 +267,33 @@ public class NodeStarter implements WrapperListener {
 
 	static SemiOrderedShutdownHook shutdownHook;
 
+    /**
+     * @see #globalTestInit(String, boolean, LogLevel, String, boolean, RandomSource)
+     * @deprecated Instead use {@link #globalTestInit(String, boolean, LogLevel, String, boolean,
+     *             RandomSource)}.
+     */
+    public static RandomSource globalTestInit(String testName, boolean enablePlug,
+            LogLevel logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
+
+        return globalTestInit(testName, enablePlug, logThreshold, details, noDNS, null);
+    }
+
 	/**
 	 * VM-specific init.
 	 * Not Node-specific; many nodes may be created later.
 	 * @param testName The name of the test instance.
+     * @param RandomSource
+     *            The random number generator of the Node. Null for the default of {@link Yarrow}.
+     *            <br>You might want to use a {@link DummyRandomSource} in unit tests:<br>
+     *            - Unlike Yarrow, it won't block startup waiting for entropy.<br>
+     *            - It allows you to specify a seed which you then can print to stdout so randomized
+     *               unit tests are reproducible.<br>
+     *            - It should be a lot faster than Yarrow.<br> 
 	 */
-	public static RandomSource globalTestInit(String testName, boolean enablePlug, LogLevel logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
+    public static RandomSource globalTestInit(String testName, boolean enablePlug,
+            LogLevel logThreshold, String details, boolean noDNS, RandomSource randomSource)
+                throws InvalidThresholdException {
+
 		synchronized(NodeStarter.class) {
 			if(isStarted) throw new IllegalStateException();
 			isStarted = true;
@@ -293,7 +314,7 @@ public class NodeStarter implements WrapperListener {
 		java.security.Security.setProperty("networkaddress.cache.negative.ttl", "0");
 
 		// Setup RNG
-		RandomSource random = new Yarrow();
+        RandomSource random = randomSource != null ? randomSource : new Yarrow();
 
 		DiffieHellman.init(random);
 
