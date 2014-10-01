@@ -8,6 +8,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.UUID;
 
 import org.tanukisoftware.wrapper.WrapperListener;
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -361,7 +362,15 @@ public class NodeStarter implements WrapperListener {
         public int port;
         /** The UDP opennet port number. Each test node must have a different port number. */
         public int opennetPort;
-        public String testName;
+        /** The directory where the test node will put all its data.<br>
+         *  {@link NodeStarter#createTestNode(TestNodeParameters)} will NOT fail if this exists.<br>
+         *  A subdirectory with the {@link #port} as name will be created in it. If the directory
+         *  with the port as name already exists, createTestNode() may fail via
+         *  {@link System#exit(int)}, but this is not guaranteed as the behavior of
+         *  {@link File#mkdir()} is undefined for existing directories.<br>
+         *  As a conclusion, to ensure that tests do not resume upon the data of previous test runs,
+         *  you should make sure that the directory does not exist before creating a Node. s*/
+        public File baseDirectory = new File("freenet-test-node-" + UUID.randomUUID().toString());
         public boolean disableProbabilisticHTLs;
         public short maxHTL;
         public int dropProb;
@@ -408,7 +417,7 @@ public class NodeStarter implements WrapperListener {
         TestNodeParameters params = new TestNodeParameters();
         params.port = port;
         params.opennetPort = opennetPort;
-        params.testName = testName;
+        params.baseDirectory = new File(testName);
         params.disableProbabilisticHTLs = disableProbabilisticHTLs;
         params.maxHTL = maxHTL;
         params.dropProb = dropProb;
@@ -446,7 +455,7 @@ public class NodeStarter implements WrapperListener {
 				throw new IllegalStateException("Call globalTestInit() first!"); 
 		}
 
-        File baseDir = new File(params.testName);
+        File baseDir = params.baseDirectory;
         File portDir = new File(baseDir, Integer.toString(params.port));
 		if((!portDir.mkdir()) && ((!portDir.exists()) || (!portDir.isDirectory()))) {
 			System.err.println("Cannot create directory for test");
