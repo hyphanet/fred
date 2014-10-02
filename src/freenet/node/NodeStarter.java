@@ -268,20 +268,28 @@ public class NodeStarter implements WrapperListener {
 	static SemiOrderedShutdownHook shutdownHook;
 
     /**
-     * @see #globalTestInit(String, boolean, LogLevel, String, boolean, RandomSource)
-     * @deprecated Instead use {@link #globalTestInit(String, boolean, LogLevel, String, boolean,
+     * @see #globalTestInit(File, boolean, LogLevel, String, boolean, RandomSource)
+     * @deprecated Instead use {@link #globalTestInit(File, boolean, LogLevel, String, boolean,
      *             RandomSource)}.
      */
     public static RandomSource globalTestInit(String testName, boolean enablePlug,
             LogLevel logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
 
-        return globalTestInit(testName, enablePlug, logThreshold, details, noDNS, null);
+        return globalTestInit(new File(testName), enablePlug, logThreshold, details, noDNS, null);
     }
 
 	/**
 	 * VM-specific init.
 	 * Not Node-specific; many nodes may be created later.
-	 * @param testName The name of the test instance.
+     * @param baseDirectory
+     *            The directory in which the test data will be placed. Will be created automatically
+     *            if it does not exist. You should use the same one in
+     *            {@link TestNodeParameters#baseDirectory} afterwards for each individual test node
+     *            as long as it has a distinct port. See its JavaDoc.<br>
+     *            The function will NOT fail if the directory exists already. You should make sure
+     *            on your own to delete this before and after tests to ensure a clean state. Notice
+     *            that JUnit provides a mechanism for automatic creation and deletion of test
+     *            directories (TemporaryFolder).
      * @param RandomSource
      *            The random number generator of the Node. Null for the default of {@link Yarrow}.
      *            <br>You might want to use a {@link DummyRandomSource} in unit tests:<br>
@@ -290,7 +298,7 @@ public class NodeStarter implements WrapperListener {
      *               unit tests are reproducible.<br>
      *            - It should be a lot faster than Yarrow.<br> 
 	 */
-    public static RandomSource globalTestInit(String testName, boolean enablePlug,
+    public static RandomSource globalTestInit(File baseDirectory, boolean enablePlug,
             LogLevel logThreshold, String details, boolean noDNS, RandomSource randomSource)
                 throws InvalidThresholdException {
 
@@ -300,8 +308,9 @@ public class NodeStarter implements WrapperListener {
 			isTestingVM = true;
 		}
 
-		File dir = new File(testName);
-		if((!dir.mkdir()) && ((!dir.exists()) || (!dir.isDirectory()))) {
+        if((!baseDirectory.mkdir()) && ((!baseDirectory.exists())
+            || (!baseDirectory.isDirectory()))) {
+
 			System.err.println("Cannot create directory for test");
 			System.exit(NodeInitException.EXIT_TEST_ERROR);
 		}
@@ -388,7 +397,13 @@ public class NodeStarter implements WrapperListener {
          *  {@link NodeStarter#createTestNode(TestNodeParameters)} will NOT fail if this exists.
          *  You should make sure on your own to delete this before and after tests to ensure
          *  a clean state. Notice that JUnit provides a mechanism for automatic creation
-         *  and deletion of test directories (TemporaryFolder). */
+         *  and deletion of test directories (TemporaryFolder).<br>
+         *  Notice that a subdirectory with the name being the port number of the node will be
+         *  created there, and all data of the node will be put into it. So you can and should use
+         *  the same baseDirectory when calling {@link NodeStarter#globalTestInit(File, boolean,
+         *  LogLevel, String, boolean, RandomSource)} (which you have to do once for each Java VM):
+         *  Each one will start with a fresh empty subdirectory for as long as each of them uses a
+         *  unique port number. */
         public File baseDirectory = new File("freenet-test-node-" + UUID.randomUUID().toString());
         public boolean disableProbabilisticHTLs;
         public short maxHTL;
