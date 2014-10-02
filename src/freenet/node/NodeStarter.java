@@ -383,14 +383,12 @@ public class NodeStarter implements WrapperListener {
         public int port;
         /** The UDP opennet port number. Each test node must have a different port number. */
         public int opennetPort;
-        /** The directory where the test node will put all its data.<br>
-         *  {@link NodeStarter#createTestNode(TestNodeParameters)} will NOT fail if this exists.<br>
-         *  A subdirectory with the {@link #port} as name will be created in it. If the directory
-         *  with the port as name already exists, createTestNode() may fail via
-         *  {@link System#exit(int)}, but this is not guaranteed as the behavior of
-         *  {@link File#mkdir()} is undefined for existing directories.<br>
-         *  As a conclusion, to ensure that tests do not resume upon the data of previous test runs,
-         *  you should make sure that the directory does not exist before creating a Node. s*/
+        /** The directory where the test node will put all its data. <br>
+         *  Will be created automatically if it does not exist.<br>
+         *  {@link NodeStarter#createTestNode(TestNodeParameters)} will NOT fail if this exists.
+         *  You should make sure on your own to delete this before and after tests to ensure
+         *  a clean state. Notice that JUnit provides a mechanism for automatic creation
+         *  and deletion of test directories (TemporaryFolder). */
         public File baseDirectory = new File("freenet-test-node-" + UUID.randomUUID().toString());
         public boolean disableProbabilisticHTLs;
         public short maxHTL;
