@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -49,7 +49,7 @@ public class PacketThrottle {
     private float _windowSize = 2;
     private final int PACKET_SIZE;
     private boolean slowStart = true;
-    
+
     public PacketThrottle(int packetSize) {
         PACKET_SIZE = packetSize;
     }
@@ -73,7 +73,7 @@ public class PacketThrottle {
      * Notify the throttle that a packet was transmitted successfully. We will increase the window size.
      * @param maxWindowSize The maximum window size. This should be at least twice the largest window
      * size actually seen in flight at any time so far. We will ensure that the throttle's window size
-     * does not get bigger than this. This works even for new packet format, and solves some of the 
+     * does not get bigger than this. This works even for new packet format, and solves some of the
      * problems that RFC 2861 does.
      */
     public synchronized void notifyOfPacketAcknowledged(double maxWindowSize) {
@@ -103,7 +103,7 @@ public class PacketThrottle {
         if(logMINOR)
             Logger.minor(this, "notifyOfPacketAcked(): "+this);
     }
-    
+
     /** Only used for diagnostics. We actually maintain a real window size. So we don't
      * need lots of sanity checking here. */
     public synchronized long getDelay() {
@@ -135,7 +135,7 @@ public class PacketThrottle {
         //1000 ms/sec
         return ((PACKET_SIZE * 1000.0 / getDelay()));
     }
-    
+
     public synchronized void maybeDisconnected() {
         notifyAll();
     }

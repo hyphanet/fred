@@ -1105,7 +1105,7 @@ public class PluginManager {
      * @param ignoreOld If true, ignore any old cached copies of the plugin,
      * and download a new version anyway. This is especially important on Windows,
      * where we will not usually be able to delete the file after determining
-     * that it is too old. 
+     * that it is too old.
      * @return An instanciated object of the plugin
      * @throws PluginNotFoundException
      *             If anything goes wrong.
@@ -1580,7 +1580,7 @@ public class PluginManager {
         public void setDownloading() {
             this.pluginProgress = PROGRESS_STATE.DOWNLOADING;
         }
-        
+
         public boolean isOfficialPlugin() {
             return loader.isOfficialPluginLoader();
         }
@@ -1592,7 +1592,7 @@ public class PluginManager {
             } else return pluginName;
         }
     }
-    
+
     static String getOfficialPluginLocalisedName(String pluginName) {
         return l10n("pluginName."+pluginName);
     }

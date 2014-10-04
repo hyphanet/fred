@@ -46,31 +46,31 @@ public class DSAPrivateKey extends CryptoKey {
     public String keyType() {
         return "DSA.s";
     }
-    
+
     public BigInteger getX() {
         return x;
     }
-    
+
     public static CryptoKey read(InputStream i, DSAGroup g) throws IOException {
         return new DSAPrivateKey(Util.readMPI(i), g);
     }
-    
+
     @Override
     public String toLongString() {
         return "x="+HexUtil.biToHex(x);
     }
-    
+
     // what?  why is DSAGroup passed in?
     //public static CryptoKey readFromField(DSAGroup group, String field) {
     //    //BigInteger x=Util.byteArrayToMPI(Util.hexToBytes(field));
     //    return new DSAPrivateKey(new BigInteger(field, 16));
     //}
-    
+
     @Override
     public byte[] asBytes() {
         return Util.MPIbytes(x);
     }
-    
+
     @Override
     public byte[] fingerprint() {
         return fingerprint(new BigInteger[] {x});
@@ -93,7 +93,7 @@ public class DSAPrivateKey extends CryptoKey {
         container.delete(x);
         container.delete(this);
     }
-    
+
 //    public static void main(String[] args) throws Exception {
 //        Yarrow y=new Yarrow();
 //        DSAPrivateKey p=new DSAPrivateKey(Global.DSAgroupC, y);

@@ -7,13 +7,13 @@ import freenet.l10n.BaseL10n.LANGUAGE;
 
 /**
  * Interface that has to be implemented for plugins that wants to use
- * PageMaker.addNavigationLink(..) 
- * 
+ * PageMaker.addNavigationLink(..)
+ *
  * @author saces
  */
 public interface FredPluginL10n {
 
     public String getString(String key);
-    
+
     public void setLanguage(LANGUAGE newLanguage);
 }

@@ -20,9 +20,9 @@ import freenet.support.Logger;
 
 /**
  * Cipher Manager
- * 
+ *
  * Manage all kind of digestion and encryption in store
- * 
+ *
  * @author sdiz
  */
 public class CipherManager {
@@ -44,7 +44,7 @@ public class CipherManager {
 
     /**
      * Get salt
-     * 
+     *
      * @return salt
      */
     byte[] getDiskSalt() {
@@ -64,7 +64,7 @@ public class CipherManager {
 
     /**
      * Get digested routing key
-     * 
+     *
      * @param plainKey
      * @return
      */
@@ -114,7 +114,7 @@ public class CipherManager {
 
     /**
      * Verify and decrypt this entry
-     * 
+     *
      * @param routingKey
      * @return <code>true</code> if the <code>routeKey</code> match and the entry is decrypted.
      */

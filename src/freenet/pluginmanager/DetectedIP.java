@@ -7,7 +7,7 @@ import java.net.InetAddress;
 
 /**
  * Class returned by a FredPluginIPDetector.
- * 
+ *
  * Indicates:
  * - Whether there is no UDP connectivity at all.
  * - Whether there is full inbound IP connectivity.
@@ -27,7 +27,7 @@ public class DetectedIP {
     /** Full cone NAT. Once we have sent a packet out on a port, any node anywhere can send us
      * a packet on that port. The nicest option, but very rare unfortunately. */
     public static final short FULL_CONE_NAT = 3;
-    /** Restricted cone NAT. Once we have sent a packet out to a specific IP, it can send us 
+    /** Restricted cone NAT. Once we have sent a packet out to a specific IP, it can send us
      * packets on the port we just used. */
     public static final short RESTRICTED_CONE_NAT = 4;
     /** Port restricted cone NAT. Once we have sent a packet to a specific IP+Port, that IP+Port
@@ -40,13 +40,13 @@ public class DetectedIP {
     public static final short SYMMETRIC_UDP_FIREWALL = 7;
     /** No UDP connectivity at all */
     public static final short NO_UDP = 8;
-    
+
     public DetectedIP(InetAddress addr, short type) {
         this.publicAddress = addr;
         this.natType = type;
         this.mtu = 1500;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if(!(o instanceof DetectedIP)) {
@@ -55,12 +55,12 @@ public class DetectedIP {
         DetectedIP d = (DetectedIP)o;
         return ((d.natType == natType) && d.publicAddress.equals(publicAddress));
     }
-    
+
     @Override
     public int hashCode() {
         return publicAddress.hashCode() ^ natType;
     }
-    
+
     @Override
     public String toString() {
         return publicAddress.toString()+":"+natType+":"+mtu;

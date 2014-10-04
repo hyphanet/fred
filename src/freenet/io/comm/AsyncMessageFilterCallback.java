@@ -15,15 +15,15 @@ public interface AsyncMessageFilterCallback {
      * @param m The message which matched the filter.
      */
     void onMatched(Message m);
-    
+
     /**
      * Check whether the filter should be removed. Note that USM locks may be held by the caller
-     * when this is called: the implementation should not do anything that might cause USM-related 
+     * when this is called: the implementation should not do anything that might cause USM-related
      * locks to be taken or messages to be sent.
      * @return True if the filter should be immediately timed out.
      */
     boolean shouldTimeout();
-    
+
     /**
      * Called when the filter times out and is removed from the list of filters to match.
      */

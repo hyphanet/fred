@@ -25,7 +25,7 @@ public abstract class BaseClientKey {
             return USK.create(origURI);
         throw new MalformedURLException("Unknown keytype from "+origURI);
     }
-    
+
     public abstract FreenetURI getURI();
 
 }

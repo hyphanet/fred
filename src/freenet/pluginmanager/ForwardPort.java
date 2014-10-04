@@ -21,7 +21,7 @@ public class ForwardPort {
     // It would be complicated: Different interfaces may be on different LANs,
     // and an IGD is normally on only one LAN.
     private final int hashCode;
-    
+
     public ForwardPort(String name, boolean isIP6, int protocol, int portNumber) {
         this.name = name;
         this.isIP6 = isIP6;
@@ -29,12 +29,12 @@ public class ForwardPort {
         this.portNumber = portNumber;
         hashCode = name.hashCode() | (isIP6 ? 1 : 0) | protocol | portNumber;
     }
-    
+
     @Override
     public int hashCode() {
         return hashCode;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if(o == this) return true;

@@ -6,11 +6,11 @@ package freenet.crypt;
 import net.i2p.util.NativeBigInteger;
 
 /**
- * This class contains global public keys used by Freenet.  These 
- * include the Diffie-Hellman key exchange modulus, DSA groups, and 
+ * This class contains global public keys used by Freenet.  These
+ * include the Diffie-Hellman key exchange modulus, DSA groups, and
  * any other future values
  *
- * @author Scott 
+ * @author Scott
  */
 public final class Global {
 
@@ -31,9 +31,9 @@ public final class Global {
     public static final int GROUP_INDEX_BIG_A = 1;
     public static final DHGroup /* -- Diffie-Hellman Group A ----------------------------
          * For use in internode symmetric-cipher key exchange
-         * 
+         *
          * Diffie-Hellman KE modulus (|p|=1024, g=2)
-         * 
+         *
          * Taken from the IPsec standard
          */ DHgroupA = new DHGroup(
         new NativeBigInteger(

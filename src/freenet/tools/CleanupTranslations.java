@@ -19,7 +19,7 @@ public class CleanupTranslations {
 
     /**
      * @param args
-     * @throws IOException 
+     * @throws IOException
      */
     public static void main(String[] args) throws IOException, LoggerHook.InvalidThresholdException {
         Logger.setupStdoutLogging(Logger.LogLevel.ERROR, "");

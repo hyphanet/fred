@@ -23,7 +23,7 @@ import freenet.support.SimpleFieldSet;
  */
 public class DSAGroup extends CryptoKey {
     private static final long serialVersionUID = -1;
-    
+
     protected static final int Q_BIT_LENGTH = 256;
 
     private final BigInteger p, q, g;
@@ -125,7 +125,7 @@ public class DSAGroup extends CryptoKey {
     public int hashCode() {
         return p.hashCode() ^ q.hashCode() ^ g.hashCode();
     }
-    
+
     public SimpleFieldSet asFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet(true);
         fs.putSingle("p", Base64.encode(p.toByteArray()));
@@ -146,14 +146,14 @@ public class DSAGroup extends CryptoKey {
         if(dg.equals(Global.DSAgroupBigA)) return Global.DSAgroupBigA;
         return dg;
     }
-    
+
     @Override
     public String toString() {
         if(this == Global.DSAgroupBigA)
             return "Global.DSAgroupBigA";
         else return super.toString();
     }
-    
+
     @Override
     public String toLongString() {
         if(this == Global.DSAgroupBigA)
@@ -173,7 +173,7 @@ public class DSAGroup extends CryptoKey {
         container.delete(g);
         container.delete(this);
     }
-    
+
     public boolean objectCanDeactivate(ObjectContainer container) {
         if(this == Global.DSAgroupBigA) return false;
         return true;

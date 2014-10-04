@@ -4,7 +4,7 @@ import freenet.support.Logger;
 
 /**
  * Methods to handle a specific plugin (= set it up and start it)
- * 
+ *
  * @author cyberdo
  */
 public class PluginHandler {
@@ -13,9 +13,9 @@ public class PluginHandler {
      * Will get all needed info from the plugin, put it into the Wrapper. Then
      * the Pluginstarter will be greated, and the plugin fedto it, starting the
      * plugin.
-     * 
+     *
      * the pluginInfoWrapper will then be returned
-     * 
+     *
      * @param plug
      */
     public static void startPlugin(PluginManager pm, PluginInfoWrapper pi) {
@@ -48,16 +48,16 @@ public class PluginHandler {
             Thread.currentThread().setContextClassLoader(oldClassLoader);
         }
     }
-    
+
     private static class PluginStarter implements Runnable {
         private PluginManager pm = null;
         final PluginInfoWrapper pi;
-        
+
         public PluginStarter(PluginManager pm, PluginInfoWrapper pi) {
             this.pm = pm;
             this.pi = pi;
         }
-        
+
         @Override
         public void run() {
                 try {
@@ -71,6 +71,6 @@ public class PluginHandler {
                 pi.unregister(pm, false); // If not already unregistered
                 pm.removePlugin(pi);
         }
-        
+
     }
 }

@@ -5,18 +5,18 @@ package freenet.pluginmanager;
 
 /**
  * 302 error code.
- * 
+ *
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 public class RedirectPluginHTTPException extends PluginHTTPException {
     private static final long serialVersionUID = -1;
-    
+
     public static final short code = 302; // Found
     public final String newLocation;
 
     /**
      * Creates a new redirect exception.
-     * 
+     *
      * @param message
      *            The message to put in the reply
      * @param newLocation
@@ -29,7 +29,7 @@ public class RedirectPluginHTTPException extends PluginHTTPException {
 
     /**
      * Creates a new redirect exception.
-     * 
+     *
      * @param message
      *            The message to put in the reply
      * @param location

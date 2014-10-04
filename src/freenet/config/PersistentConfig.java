@@ -16,7 +16,7 @@ public class PersistentConfig extends Config {
     public PersistentConfig(SimpleFieldSet initialContents) {
         this.origConfigFileContents = initialContents;
     }
-    
+
     /**
      * Finished initialization. So any remaining options must be invalid.
      */
@@ -36,11 +36,11 @@ public class PersistentConfig extends Config {
     public SimpleFieldSet exportFieldSet() {
         return exportFieldSet(false);
     }
-    
+
     public SimpleFieldSet exportFieldSet(boolean withDefaults) {
         return exportFieldSet(Config.RequestType.CURRENT_SETTINGS, withDefaults);
     }
-    
+
     public SimpleFieldSet exportFieldSet(Config.RequestType configRequestType, boolean withDefaults) {
         SimpleFieldSet fs = new SimpleFieldSet(true);
         SubConfig[] configs;
@@ -52,9 +52,9 @@ public class PersistentConfig extends Config {
             SimpleFieldSet scfs = current.exportFieldSet(configRequestType, withDefaults);
             fs.tput(current.prefix, scfs);
         }
-        return fs; 
+        return fs;
     }
-    
+
     @Override
     public void onRegister(SubConfig config, Option<?> o) {
         String val, name;
@@ -73,10 +73,10 @@ public class PersistentConfig extends Config {
             Logger.error(this, "Could not parse config option "+name+": "+e, e);
         }
     }
-        
+
     /**
      * Return a copy of the SFS as read by the config framework.
-     * 
+     *
      * @return a SFS or null if initialization is finished.
      */
     public synchronized SimpleFieldSet getSimpleFieldSet() {

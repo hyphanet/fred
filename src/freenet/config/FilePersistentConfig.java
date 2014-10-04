@@ -175,7 +175,7 @@ public class FilePersistentConfig extends PersistentConfig {
             Closer.close(fos);
         }
     }
-    
+
     public void finishedInit() {
         super.finishedInit();
         if(writeOnFinished) {

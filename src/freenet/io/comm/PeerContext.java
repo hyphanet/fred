@@ -31,7 +31,7 @@ public interface PeerContext {
     /** Peer version, if this is supported, else -1 */
     int getVersionNumber();
 
-    /** Send a message to the node 
+    /** Send a message to the node
      * @return */
     public MessageItem sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException;
 

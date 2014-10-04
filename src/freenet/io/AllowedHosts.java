@@ -25,9 +25,9 @@ import freenet.support.Logger;
 
 /** Implementation of allowedHosts */
 public class AllowedHosts {
-    
+
     protected final List<AddressMatcher> addressMatchers = new ArrayList<AddressMatcher>();
-    
+
     public AllowedHosts(String allowedHosts) {
         setAllowedHosts(allowedHosts);
     }
@@ -35,7 +35,7 @@ public class AllowedHosts {
     /**
      * Sets the list of allowed hosts to <code>allowedHosts</code>. The new
      * list is in effect immediately after this method has finished.
-     * 
+     *
      * @param allowedHosts
      *            The new list of allowed hosts s
      */

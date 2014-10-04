@@ -26,18 +26,18 @@ import java.util.regex.Pattern;
  * <li>IPv4 abridged (a.b.d or a.d)</li>
  * <li>IPv6 unabridged (a:b:c:d:e:f:g:h)</li>
  * </ul>
- * 
+ *
  * @author David Roden &lt;droden@gmail.com&gt;
  * @version $Id$
  */
 public class AddressIdentifier {
     public static final Pattern ipv4Pattern, ipv6Pattern, ipv6PatternWithPercentScopeID, ipv6ISATAPPattern;
-    
+
     static {
         String byteRegex = "(?>2[0-4][0-9]|25[0-5]|[01]?[0-9]?[0-9]?)";
         String ipv4AddressRegex = byteRegex + "\\.(?>" + byteRegex + "\\.)?(?>" + byteRegex + "\\.)?" + byteRegex;
         ipv4Pattern = Pattern.compile(ipv4AddressRegex);
-        
+
         String wordRegex = "(?>[0-9a-fA-F]{1,4})";
         String percentScopeIDRegex = "(?>%[0-9]{1,3})?";
         String ipv6AddressRegex = wordRegex + "?:" + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex;
@@ -46,20 +46,20 @@ public class AddressIdentifier {
         ipv6PatternWithPercentScopeID = Pattern.compile(ipv6AddressRegex + percentScopeIDRegex);
         ipv6ISATAPPattern = Pattern.compile(ipv6ISATAPAddressRegex);
     }
-    
+
     public enum AddressType {
         OTHER, IPv4, IPv6;
     }
 
     /**
      * Tries to detemine the address type of the given address.
-     * 
+     *
      * REDFLAG: IPv6 percent scope ID's could cause problems with URI's.
-     * Should not be exploitable as we don't do anything important with 
-     * URI's with hosts in anyway. In particular we MUST NOT do anything 
+     * Should not be exploitable as we don't do anything important with
+     * URI's with hosts in anyway. In particular we MUST NOT do anything
      * with hosts from URI's from untrusted sources e.g. content filter.
      * But then that would be completely stupid, so we don't.
-     * 
+     *
      * @param address
      *            The address to determine the type of
      * @return {@link AddressType#OTHER} if <code>address</code> is a
@@ -72,7 +72,7 @@ public class AddressIdentifier {
 
     /**
      * Tries to detemine the address type of the given address.
-     * 
+     *
      * @param address
      *            The address to determine the type of
      * @param allowIPv6PercentScopeID

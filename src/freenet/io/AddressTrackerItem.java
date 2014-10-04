@@ -30,13 +30,13 @@ public class AddressTrackerItem {
     private long timeFirstReceivedPacket;
     /** The time at which the first packet was sent to this address. */
     private long timeFirstSentPacket;
-    /** The earliest time, before timeFirstReceivedPacket, at which we know for 
-     * certain that there was no packet received. This is typically the startup 
-     * time of the server socket. It may be later if the cache has to be 
+    /** The earliest time, before timeFirstReceivedPacket, at which we know for
+     * certain that there was no packet received. This is typically the startup
+     * time of the server socket. It may be later if the cache has to be
      * flushed. */
     private long timeDefinitelyNoPacketsReceived;
-    /** The earliest time, before timeFirstSentPacket, at which we know for 
-     * certain that there was no packet sent. This is typically the startup 
+    /** The earliest time, before timeFirstSentPacket, at which we know for
+     * certain that there was no packet sent. This is typically the startup
      * time of the node. It may be later if the cache has to be flushed. */
     private long timeDefinitelyNoPacketsSent;
     /** The time at which we received the most recent packet */
@@ -52,7 +52,7 @@ public class AddressTrackerItem {
     private long[] gapLengthRecvTimes;
     private static final long GAP_THRESHOLD = AddressTracker.MAYBE_TUNNEL_LENGTH;
     static final boolean INCLUDE_RECEIVED_PACKETS = true;
-    
+
     public AddressTrackerItem(long timeDefinitelyNoPacketsReceived, long timeDefinitelyNoPacketsSent) {
         timeFirstReceivedPacket = -1;
         timeFirstSentPacket = -1;
@@ -65,7 +65,7 @@ public class AddressTrackerItem {
         gapLengths = new long[TRACK_GAPS];
         gapLengthRecvTimes = new long[TRACK_GAPS];
     }
-    
+
     public AddressTrackerItem(SimpleFieldSet fs) throws FSParseException {
         timeFirstReceivedPacket = fs.getLong("TimeFirstReceivedPacket");
         timeFirstSentPacket = fs.getLong("TimeFirstSentPacket");
@@ -95,7 +95,7 @@ public class AddressTrackerItem {
             timeFirstSentPacket = now;
         timeLastSentPacket = now;
     }
-    
+
     public synchronized void receivedPacket(long now) {
         packetsReceived++;
         if(timeFirstReceivedPacket < 0)
@@ -125,11 +125,11 @@ public class AddressTrackerItem {
             gapLengthRecvTimes[0] = now;
         }
     }
-    
+
     public synchronized boolean hasLongTunnel(long horizon) {
         return gapLengthRecvTimes[0] > System.currentTimeMillis() - horizon;
     }
-    
+
     public long longestGap(long horizon, long now) {
         long longestGap = -1;
         for(int i=0;i<TRACK_GAPS;i++) {
@@ -147,7 +147,7 @@ public class AddressTrackerItem {
             this.receivedPacketAt = receivedPacketAt;
         }
     }
-    
+
     public synchronized Gap[] getGaps() {
         Gap[] gaps = new Gap[TRACK_GAPS];
         for(int i=0;i<TRACK_GAPS;i++) {
@@ -155,45 +155,45 @@ public class AddressTrackerItem {
         }
         return gaps;
     }
-    
+
     public synchronized long firstReceivedPacket() {
         return timeFirstReceivedPacket;
     }
-    
+
     public synchronized long firstSentPacket() {
         return timeFirstSentPacket;
     }
-    
+
     public synchronized long lastReceivedPacket() {
         return timeLastReceivedPacket;
     }
-    
+
     public synchronized long lastSentPacket() {
         return timeLastSentPacket;
     }
-    
+
     public synchronized long timeDefinitelyNoPacketsSent() {
         return timeDefinitelyNoPacketsSent;
     }
-    
+
     public synchronized long timeDefinitelyNoPacketsReceived() {
         return timeDefinitelyNoPacketsReceived;
     }
-    
+
     public synchronized long packetsSent() {
         return packetsSent;
     }
-    
+
     public synchronized long packetsReceived() {
         return packetsReceived;
     }
-    
+
     public synchronized boolean weSentFirst() {
         if(timeFirstReceivedPacket == -1) return true;
         if(timeFirstSentPacket == -1) return false;
-        return timeFirstSentPacket < timeFirstReceivedPacket; 
+        return timeFirstSentPacket < timeFirstReceivedPacket;
     }
-    
+
     public synchronized long timeFromStartupToFirstSentPacket() {
         if(packetsSent == 0) return -1;
         return timeFirstSentPacket - timeDefinitelyNoPacketsSent;

@@ -9,20 +9,20 @@ import java.io.OutputStream;
 
 /**
  * Control mechanism for the Periodic Cipher Feed Back mode.  This is
- * a CFB variant used apparently by a number of programs, including PGP. 
+ * a CFB variant used apparently by a number of programs, including PGP.
  * Thanks to Hal for suggesting it.
- * 
+ *
  * http://www.streamsec.com/pcfb1.pdf
- * 
- * NOTE: This is identical to CFB if block size = key size. As of Freenet 0.7, 
- * we use it with block size = key size. Which is not recommended, but is as 
+ *
+ * NOTE: This is identical to CFB if block size = key size. As of Freenet 0.7,
+ * we use it with block size = key size. Which is not recommended, but is as
  * safe as CFB. We will get rid of this eventually, and move to 128-bit block
  * size (i.e. standard AES) with a more standard mode (e.g. CTR or CBC).
  *
  * @author Scott
  */
 public class PCFBMode {
-    
+
     /** The underlying block cipher. */
     protected final BlockCipher c;
     /** The register, with which data is XOR'ed */
@@ -30,12 +30,12 @@ public class PCFBMode {
     /** When this reaches the end of the register, we refillBuffer() i.e. re-encrypt the
      * register. */
     protected int registerPointer;
-    
+
     /** Create the PCFB with no IV. The caller must either:
-     * a) Call reset() with a proper IV, or 
+     * a) Call reset() with a proper IV, or
      * b) Accept the initial IV of all zero's. (We will still encrypt this before using it).
-     * If the key is random and never reused, for instance if it is a one time key or 
-     * derived from a hash, b) may be acceptable. It is used in some parts of Freenet. 
+     * If the key is random and never reused, for instance if it is a one time key or
+     * derived from a hash, b) may be acceptable. It is used in some parts of Freenet.
      * However, it is very bad practice cryptographically, and we should get rid of it.
      * NOTE THAT IV:KEY PAIRS *MUST* BE UNIQUE! If two instances use the same key with the
      * same empty IV, the bad guys will be able to XOR the two ciphertexts to get the XOR
@@ -50,20 +50,20 @@ public class PCFBMode {
     public static PCFBMode create(BlockCipher c) {
         return new PCFBMode(c);
     }
-    
+
     public static PCFBMode create(BlockCipher c, byte[] iv) {
         return create(c, iv, 0);
     }
-    
+
     /** Create the PCFB with an IV. The register pointer will be set to the end of the IV,
      * so refillBuffer() will be called prior to any encryption. IV's *must* be unique for
-     * a given key. IT IS STRONGLY RECOMMENDED TO USE THIS CONSTRUCTOR, THE OTHER ONE WILL 
-     * BE REMOVED EVENTUALLY. 
+     * a given key. IT IS STRONGLY RECOMMENDED TO USE THIS CONSTRUCTOR, THE OTHER ONE WILL
+     * BE REMOVED EVENTUALLY.
      * @param offset */
     public static PCFBMode create(BlockCipher c, byte[] iv, int offset) {
         return new PCFBMode(c, iv, offset);
     }
-    
+
     protected PCFBMode(BlockCipher c) {
         this.c = c;
         feedback_register = new byte[c.getBlockSize() >> 3];
@@ -83,7 +83,7 @@ public class PCFBMode {
         System.arraycopy(iv, 0, feedback_register, 0, feedback_register.length);
         registerPointer = feedback_register.length;
     }
-    
+
     /**
      * Resets the PCFBMode to an initial IV
      * @param iv The buffer containing the IV.
@@ -96,7 +96,7 @@ public class PCFBMode {
 
     /**
      * Writes the initialization vector to the stream.  Though the IV
-     * is transmitted in the clear, this gives the attacker no additional 
+     * is transmitted in the clear, this gives the attacker no additional
      * information because the registerPointer is set so that the encrypted
      * buffer is empty.  This causes an immediate encryption of the IV,
      * thus invalidating any information that the attacker had.
@@ -105,9 +105,9 @@ public class PCFBMode {
         rs.nextBytes(feedback_register);
         out.write(feedback_register);
     }
-    
+
     /**
-     * Reads the initialization vector from the given stream.  
+     * Reads the initialization vector from the given stream.
      */
     public void readIV(InputStream in) throws IOException {
         //for (int i=0; i<feedback_register.length; i++) {
@@ -133,7 +133,7 @@ public class PCFBMode {
     /**
      * Deciphers one byte of data, by XOR'ing the ciphertext byte with
      * one byte from the encrypted buffer.  Then places the received
-     * byte in the feedback register.  If no bytes are available in 
+     * byte in the feedback register.  If no bytes are available in
      * the encrypted buffer, the feedback register is encrypted, providing
      * block_size/8 new bytes for decryption
      */
@@ -187,8 +187,8 @@ public class PCFBMode {
 
     /**
      * Enciphers one byte of data, by XOR'ing the plaintext byte with
-     * one byte from the encrypted buffer.  Then places the enciphered 
-     * byte in the feedback register.  If no bytes are available in 
+     * one byte from the encrypted buffer.  Then places the enciphered
+     * byte in the feedback register.  If no bytes are available in
      * the encrypted buffer, the feedback register is encrypted, providing
      * block_size/8 new bytes for encryption
      */
@@ -229,7 +229,7 @@ public class PCFBMode {
         }
         return buf;
     }
-        
+
     // Refills the encrypted buffer with data.
     //private synchronized void refillBuffer() {
     protected void refillBuffer() {

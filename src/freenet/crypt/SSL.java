@@ -220,10 +220,10 @@ public class SSL {
                     Constructor<?> x500NameCtor = x500NameClazz.getConstructor(String.class, String.class,
                             String.class, String.class, String.class, String.class);
                     Object x500Name = x500NameCtor.newInstance("Freenet", "Freenet", "Freenet", "", "", "");
-                    
+
                     Method certAndKeyGenGenerate = certAndKeyGenClazz.getMethod("generate", int.class);
                     certAndKeyGenGenerate.invoke(keypair, 2048);
-                    
+
                     Method certAndKeyGetPrivateKey = certAndKeyGenClazz.getMethod("getPrivateKey");
                     PrivateKey privKey = (PrivateKey) certAndKeyGetPrivateKey.invoke(keypair);
 

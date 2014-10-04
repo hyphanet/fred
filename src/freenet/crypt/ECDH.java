@@ -25,14 +25,14 @@ public class ECDH {
 
     public final Curves curve;
     private final KeyPair key;
-    
+
     public enum Curves {
         // rfc5903 or rfc6460: it's NIST's random/prime curves : suite B
         // Order matters. Append to the list, do not re-order.
         P256("secp256r1", 91, 32),
         P384("secp384r1", 120, 48),
         P521("secp521r1", 158, 66);
-        
+
         public final ECGenParameterSpec spec;
         private KeyPairGenerator keygenCached;
         protected final Provider kgProvider;
@@ -42,7 +42,7 @@ public class ECDH {
         public final int modulusSize;
         /** Expected size of the derived secret (in bytes) */
         public final int derivedSecretSize;
-        
+
         /** Verify KeyPairGenerator and KeyFactory work correctly */
         static private KeyPair selftest(KeyPairGenerator kg, KeyFactory kf, int modulusSize)
             throws InvalidKeySpecException
@@ -136,7 +136,7 @@ public class ECDH {
             Logger.normal(this, name +": using "+kfProvider+" for KeyFactory(EC)");
             Logger.normal(this, name +": using "+kaProvider+" for KeyAgreement(ECDH)");
         }
-        
+
         private synchronized KeyPairGenerator getKeyPairGenerator() {
             if(keygenCached != null) return keygenCached;
             KeyPairGenerator kg = null;
@@ -153,16 +153,16 @@ public class ECDH {
             keygenCached = kg;
             return kg;
         }
-        
+
         public synchronized KeyPair generateKeyPair() {
             return getKeyPairGenerator().generateKeyPair();
         }
-        
+
         public String toString() {
             return spec.getName();
         }
     }
-    
+
     /**
      * Initialize the ECDH Exchange: this will draw some entropy
      * @param curve
@@ -171,12 +171,12 @@ public class ECDH {
         this.curve = curve;
         this.key = curve.generateKeyPair();
     }
-    
+
     /**
      * Completes the ECDH exchange: this is CPU intensive
      * @param pubkey
      * @return a SecretKey or null if it fails
-     * 
+     *
      * **THE OUTPUT SHOULD ALWAYS GO THROUGH A KDF**
      */
     public byte[] getAgreedSecret(ECPublicKey pubkey) {
@@ -196,11 +196,11 @@ public class ECDH {
         }
         return null;
     }
-    
+
     public ECPublicKey getPublicKey() {
         return (ECPublicKey) key.getPublic();
     }
-    
+
     /**
      * Returns an ECPublicKey from bytes obtained using ECPublicKey.getEncoded()
      * @param data
@@ -212,7 +212,7 @@ public class ECDH {
             X509EncodedKeySpec ks = new X509EncodedKeySpec(data);
             KeyFactory kf = KeyFactory.getInstance("EC", curve.kfProvider);
             remotePublicKey = (ECPublicKey)kf.generatePublic(ks);
-            
+
         } catch (NoSuchAlgorithmException e) {
             Logger.error(ECDH.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
             e.printStackTrace();
@@ -220,7 +220,7 @@ public class ECDH {
             Logger.error(ECDH.class, "InvalidKeySpecException : "+e.getMessage(), e);
             e.printStackTrace();
         }
-        
+
         return remotePublicKey;
     }
 

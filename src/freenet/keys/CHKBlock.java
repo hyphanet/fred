@@ -13,7 +13,7 @@ import freenet.support.Fields;
 
 /**
  * @author amphibian
- * 
+ *
  * CHK plus data. When fed a ClientCHK, can decode into the original
  * data for a client.
  */
@@ -29,12 +29,12 @@ public class CHKBlock implements KeyBlock {
     public static final int DATA_LENGTH = 32768;
     /* Maximum length of compressed payload */
     public static final int MAX_COMPRESSED_DATA_LENGTH = DATA_LENGTH - 4;
-    
+
     @Override
     public String toString() {
         return super.toString()+": chk="+chk;
     }
-    
+
     /**
      * @return The header for this key. DO NOT MODIFY THIS DATA!
      */
@@ -48,11 +48,11 @@ public class CHKBlock implements KeyBlock {
     public byte[] getData() {
         return data;
     }
-    
+
     public static CHKBlock construct(byte[] data, byte[] header, byte cryptoAlgorithm) throws CHKVerifyException {
         return new CHKBlock(data, header, null, true, cryptoAlgorithm);
      }
-    
+
     public CHKBlock(byte[] data2, byte[] header2, NodeCHK key) throws CHKVerifyException {
         this(data2, header2, key, key.cryptoAlgorithm);
     }
@@ -60,7 +60,7 @@ public class CHKBlock implements KeyBlock {
     public CHKBlock(byte[] data2, byte[] header2, NodeCHK key, byte cryptoAlgorithm) throws CHKVerifyException {
         this(data2, header2, key, true, cryptoAlgorithm);
     }
-    
+
     public CHKBlock(byte[] data2, byte[] header2, NodeCHK key, boolean verify, byte cryptoAlgorithm) throws CHKVerifyException {
         data = data2;
         headers = header2;
@@ -73,13 +73,13 @@ public class CHKBlock implements KeyBlock {
             hashCode = key.hashCode() ^ Fields.hashCode(data) ^ Fields.hashCode(headers) ^ cryptoAlgorithm;
             return;
         }
-        
+
         // Minimal verification
         // Check the hash
         if(hashIdentifier != HASH_SHA256)
             throw new CHKVerifyException("Hash not SHA-256");
         MessageDigest md = SHA256.getMessageDigest();
-        
+
         md.update(headers);
         md.update(data);
         byte[] hash = md.digest();
@@ -126,12 +126,12 @@ public class CHKBlock implements KeyBlock {
     public byte[] getRoutingKey() {
         return getKey().getRoutingKey();
     }
-    
+
     @Override
     public int hashCode() {
         return hashCode;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if(!(o instanceof CHKBlock)) return false;
@@ -142,17 +142,17 @@ public class CHKBlock implements KeyBlock {
         if(hashIdentifier != block.hashIdentifier) return false;
         return true;
     }
-    
+
     public boolean objectCanNew(ObjectContainer container) {
         /* Storing an SSKBlock is not supported. There are some complications, so lets
          * not implement this since we don't actually use the functionality atm.
-         * 
+         *
          * The major problems are:
          * - In both CHKBlock and SSKBlock, who is responsible for deleting the node keys? We
          *   have to have them in the objects.
          * - In SSKBlock, who is responsible for deleting the DSAPublicKey? And the DSAGroup?
          *   A group might be unique or might be shared between very many SSKs...
-         * 
+         *
          * Especially in the second case, we don't want to just copy every time even for
          * transient uses ... the best solution may be to copy in objectCanNew(), but even
          * then callers to the relevant getter methods may be a worry.

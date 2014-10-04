@@ -23,21 +23,21 @@ import freenet.support.SimpleFieldSet;
 
 public class InetAddressAddressTrackerItem extends AddressTrackerItem {
 
-    public InetAddressAddressTrackerItem(long timeDefinitelyNoPacketsReceived, 
+    public InetAddressAddressTrackerItem(long timeDefinitelyNoPacketsReceived,
             long timeDefinitelyNoPacketsSent, InetAddress addr) {
         super(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent);
         this.addr = addr;
     }
 
     public final InetAddress addr;
-    
+
     @Override
     public SimpleFieldSet toFieldSet() {
         SimpleFieldSet fs = super.toFieldSet();
         fs.putOverwrite("Address", addr.getHostAddress());
         return fs;
     }
-    
+
     public InetAddressAddressTrackerItem(SimpleFieldSet fs) throws FSParseException {
         super(fs);
         try {

@@ -39,10 +39,10 @@ public class DiffieHellman {
     private static Object precalcerWaitObj = new Object();
 
     private static NativeThread precalcThread;
-    
+
     public static final BigInteger MIN_EXPONENTIAL_VALUE = new BigInteger("2").pow(24);
     public static final BigInteger MAX_EXPONENTIAL_VALUE = group.getP().subtract(MIN_EXPONENTIAL_VALUE);
-    
+
     static {
         precalcThread = new PrecalcBufferFill();
     }
@@ -127,27 +127,27 @@ public class DiffieHellman {
     private static NativeBigInteger[] genParams() {
         NativeBigInteger params[] = new NativeBigInteger[2];
         // Don't need NativeBigInteger?
-        
+
         do {
             params[0] = new NativeBigInteger(256, r);
             params[1] = (NativeBigInteger) group.getG().modPow(params[0], group.getP());
         } while(!DiffieHellman.checkDHExponentialValidity(DiffieHellman.class, params[1]));
-        
+
         return params;
     }
-    
+
     /**
      * Check the validity of a DH exponential
-     * 
+     *
      * @param a BigInteger: The exponential to test
      * @return a boolean: whether the DH exponential provided is acceptable or not
-     * 
+     *
      * @see http://securitytracker.com/alerts/2005/Aug/1014739.html
      * @see http://www.it.iitb.ac.in/~praj/acads/netsec/FinalReport.pdf
      */
     public static boolean checkDHExponentialValidity(Class<?> caller, BigInteger exponential) {
         int onesCount=0, zerosCount=0;
-        
+
         // Ensure that we have at least 16 bits of each gender
         for(int i=0; i < exponential.bitLength(); i++)
             if(exponential.testBit(i))
@@ -158,7 +158,7 @@ public class DiffieHellman {
             Logger.error(caller, "The provided exponential contains "+zerosCount+" zeros and "+onesCount+" ones wich is unacceptable!");
             return false;
         }
-        
+
         // Ensure that g^x > 2^24
         if(MIN_EXPONENTIAL_VALUE.compareTo(exponential) > -1) {
             Logger.error(caller, "The provided exponential is smaller than 2^24 which is unacceptable!");
@@ -169,7 +169,7 @@ public class DiffieHellman {
             Logger.error(DiffieHellman.class, "The provided exponential is bigger than (p - 2^24) which is unacceptable!");
             return false;
         }
-        
+
         return true;
     }
 

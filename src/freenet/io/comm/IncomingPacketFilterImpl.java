@@ -43,10 +43,10 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
         if(context == null) return false;
         return !context.isConnected();
     }
-    
+
     private static final AtomicLong successfullyDecodedPackets = new AtomicLong();
     private static final AtomicLong failedDecodePackets = new AtomicLong();
-    
+
     public static long[] getDecodedPackets() {
         if(!logMINOR) return null;
         long decoded = successfullyDecodedPackets.get();
@@ -72,7 +72,7 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
         if(decoded == DECODED.DECODED) {
             if(logMINOR) successfullyDecodedPackets.incrementAndGet();
         } else if(decoded == DECODED.NOT_DECODED) {
-            
+
             for(PeerNode pn : crypto.getPeerNodes()) {
                 if(pn == opn) continue;
                 if(pn.handleReceivedPacket(buf, offset, length, now, peer)) {
@@ -80,7 +80,7 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
                     return DECODED.DECODED;
                 }
             }
-            
+
             if(logMINOR) failedDecodePackets.incrementAndGet();
         }
         return decoded;

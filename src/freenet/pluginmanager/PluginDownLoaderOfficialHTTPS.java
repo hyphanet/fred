@@ -27,7 +27,7 @@ import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 
 public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
-    
+
     private static final String certurlOld = "freenet/clients/http/staticfiles/startssl.pem";
     private static final String certurlNew = "freenet/clients/http/staticfiles/globalsign-intermediate-2012.pem";
     private static final String[] certURLs = new String[] { certurlOld, certurlNew };
@@ -52,19 +52,19 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
             URLConnection urlConnection = sha1url.openConnection();
             urlConnection.setUseCaches(false);
             urlConnection.setAllowUserInteraction(false);
-            
+
             InputStream is = openConnectionCheckRedirects(urlConnection);
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        
+
             byte[] buffer = new byte[1024];
             int read;
-        
+
             while ((read = is.read(buffer)) != -1) {
                 bos.write(buffer, 0, read);
             }
-            
+
             return new String(bos.toByteArray(), "ISO-8859-1").split(" ")[0];
-    
+
         } catch (MalformedURLException e) {
             throw new PluginNotFoundException("impossible: "+e,e);
         } catch (IOException e) {
@@ -80,7 +80,7 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
         try {
             TMP_KEYSTORE = File.createTempFile("keystore", ".tmp");
             TMP_KEYSTORE.deleteOnExit();
-            
+
             KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(null, new char[0]);
 
@@ -108,30 +108,30 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
         }
 
         System.setProperty("javax.net.ssl.trustStore", TMP_KEYSTORE.toString());
-        
+
         return super.getInputStream(progress);
     }
 
     private InputStream getCert() throws IOException {
-        
+
         // normal the file should be here,
         // left by installer or update script
         File certFile = new File(certfile).getAbsoluteFile();
-        
+
         if (certFile.exists()) {
             return new FileInputStream(certFile);
         }
-        
+
         Bucket bucket;
         OutputStream os = null;
-        
+
         try {
             try {
                 bucket = new FileBucket(certFile, false, false, false, false, false);
                 os = bucket.getOutputStream();
                 writeCerts(os);
                 // If this fails, we need the whole fetch to fail.
-                os.close(); os = null; 
+                os.close(); os = null;
             } finally {
                 Closer.close(os);
             }
@@ -166,7 +166,7 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
             }
         }
     }
-    
+
     /** For the benefit mainly of the Windows updater script.
      * It uses startssl.pem */
     public static void writeCertsTo(File file) throws IOException {
@@ -178,5 +178,5 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
     public boolean isOfficialPluginLoader() {
         return true;
     }
-    
+
 }

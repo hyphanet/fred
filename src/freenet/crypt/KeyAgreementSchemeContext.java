@@ -20,14 +20,14 @@ public abstract class KeyAgreementSchemeContext {
     public synchronized long lastUsedTime() {
         return lastUsedTime;
     }
-      
+
     public void setECDSASignature(byte[] sig) {
         this.ecdsaSig = sig;
     }
-    
+
     public void setDSASignature(byte[] sig) {
         this.dsaSig = sig;
     }
-    
+
     public abstract byte[] getPublicKeyNetworkFormat();
 }

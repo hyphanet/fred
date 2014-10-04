@@ -19,13 +19,13 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.TempBucketFactory;
 
-/** Short-term cache. Used to cache all blocks retrieved in the last 30 minutes (on low 
+/** Short-term cache. Used to cache all blocks retrieved in the last 30 minutes (on low
  * security levels), or just to cache data fetched through ULPRs (on higher security levels).
  * - Strict LRU.
  * - Size limit.
  * - Strictly enforced time limit.
  * - Blocks are encrypted, and kept in temp files.
- * 
+ *
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
@@ -40,37 +40,37 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
             }
         });
     }
-    
+
     private class DiskBlock {
         Bucket data;
         long lastAccessed;
     }
-    
+
     private final TempBucketFactory bf;
-    
+
     private long maxLifetime;
-    
+
     private final long purgePeriod;
-    
+
     // PURGING OLD DATA:
     // Every X period? I don't think it matters if we're a few minutes out, and it's probably easiest that way...
-    
+
     private final Ticker ticker;
-    
+
     private final LRUMap<ByteArrayWrapper, DiskBlock> blocksByRoutingKey;
-    
+
     private final StoreCallback<T> callback;
-    
+
     private int maxKeys;
-    
+
     private long hits;
     private long misses;
     private long writes;
-    
+
     private final int headerSize;
     private final int dataSize;
     private final int fullKeySize;
-    
+
     public SlashdotStore(StoreCallback<T> callback, int maxKeys, long maxLifetime, long purgePeriod, Ticker ticker, TempBucketFactory tbf) {
         this.callback = callback;
         this.blocksByRoutingKey = LRUMap.createSafeMap(ByteArrayWrapper.FAST_COMPARATOR);
@@ -97,7 +97,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
         };
         ticker.queueTimedJob(purgeOldData, maxLifetime + purgePeriod);
     }
-    
+
     /**
      * @param meta IGNORED!
      */
@@ -184,7 +184,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
     public void put(T block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock) throws IOException, KeyCollisionException {
         byte[] routingkey = block.getRoutingKey();
         byte[] fullKey = block.getFullKey();
-        
+
         Bucket bucket = bf.makeBucket(fullKeySize + dataSize + headerSize);
         OutputStream os = bucket.getOutputStream();
         try {
@@ -194,7 +194,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
         } finally {
         os.close();
         }
-        
+
         DiskBlock stored = new DiskBlock();
         stored.data = bucket;
         purgeOldData(new ByteArrayWrapper(routingkey), stored);
@@ -214,7 +214,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
                     purgeOldData();
                     // Don't re-schedule
                 }
-                
+
             }, 0);
         }
     }
@@ -227,7 +227,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
     protected void purgeOldData() {
         purgeOldData(null, null);
     }
-    
+
     protected void purgeOldData(ByteArrayWrapper key, DiskBlock addFirst) {
         List<DiskBlock> blocks = null;
         synchronized(this) {
@@ -259,7 +259,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
     public synchronized void setLifetime(Long val) {
         maxLifetime = val;
     }
-    
+
     @Override
     public StoreAccessStats getSessionAccessStats() {
         return new StoreAccessStats() {
@@ -283,7 +283,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
             public long writes() {
                 return writes;
             }
-            
+
         };
     }
 

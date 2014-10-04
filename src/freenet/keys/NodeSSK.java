@@ -25,12 +25,12 @@ import freenet.support.Logger;
  * { pubkey, cryptokey, filename } -> document, basically.
  * To insert you need the private key corresponding to pubkey.
  * KSKs are implemented via SSKs.
- * 
+ *
  * This is just the key, so we have the hash of the pubkey, the entire cryptokey,
  * and the entire filename.
  */
 public class NodeSSK extends Key {
-    
+
     /** Crypto algorithm */
     final byte cryptoAlgorithm;
     /** Public key hash */
@@ -40,25 +40,25 @@ public class NodeSSK extends Key {
     /** The signature key, if we know it */
     transient DSAPublicKey pubKey;
     final int hashCode;
-    
+
     public static final int SSK_VERSION = 1;
-    
+
     public static final int PUBKEY_HASH_SIZE = 32;
     public static final int E_H_DOCNAME_SIZE = 32;
     public static final byte BASE_TYPE = 2;
     public static final int FULL_KEY_LENGTH = 66;
     public static final int ROUTING_KEY_LENGTH = 32;
-    
+
     @Override
     public String toString() {
         return super.toString()+":pkh="+HexUtil.bytesToHex(pubKeyHash)+":ehd="+HexUtil.bytesToHex(encryptedHashedDocname);
     }
-    
+
     @Override
     public Key archivalCopy() {
         return new ArchiveNodeSSK(pubKeyHash, encryptedHashedDocname, cryptoAlgorithm);
     }
-    
+
     public NodeSSK(byte[] pkHash, byte[] ehDocname, byte cryptoAlgorithm) {
         super(makeRoutingKey(pkHash, ehDocname));
         this.encryptedHashedDocname = ehDocname;
@@ -71,7 +71,7 @@ public class NodeSSK extends Key {
             throw new IllegalArgumentException("pubKeyHash must be "+PUBKEY_HASH_SIZE+" bytes");
         hashCode = Fields.hashCode(pkHash) ^ Fields.hashCode(ehDocname);
     }
-    
+
     public NodeSSK(byte[] pkHash, byte[] ehDocname, DSAPublicKey pubKey, byte cryptoAlgorithm) throws SSKVerifyException {
         super(makeRoutingKey(pkHash, ehDocname));
         this.encryptedHashedDocname = ehDocname;
@@ -89,7 +89,7 @@ public class NodeSSK extends Key {
             throw new IllegalArgumentException("pubKeyHash must be "+PUBKEY_HASH_SIZE+" bytes");
         hashCode = Fields.hashCode(pkHash) ^ Fields.hashCode(ehDocname);
     }
-    
+
     private NodeSSK(NodeSSK key) {
         super(key);
         this.cryptoAlgorithm = key.cryptoAlgorithm;
@@ -98,7 +98,7 @@ public class NodeSSK extends Key {
         this.encryptedHashedDocname = key.encryptedHashedDocname.clone();
         this.hashCode = key.hashCode;
     }
-    
+
     @Override
     public Key cloneKey() {
         return new NodeSSK(this);
@@ -113,7 +113,7 @@ public class NodeSSK extends Key {
         SHA256.returnMessageDigest(md256);
         return key;
     }
-    
+
     @Override
     public void write(DataOutput _index) throws IOException {
         _index.writeShort(getType());
@@ -149,7 +149,7 @@ public class NodeSSK extends Key {
     public boolean hasPubKey() {
         return pubKey != null;
     }
-    
+
     /**
      * @return The public key, *if* we know it. Otherwise null.
      */
@@ -172,7 +172,7 @@ public class NodeSSK extends Key {
                         // same hash, yet different keys!
                         Logger.error(this, "Found SHA-256 collision or something... WTF?");
                         throw new SSKVerifyException("Invalid new pubkey: "+pubKey2+" old pubkey: "+pubKey);
-                    } 
+                    }
                     // Valid key, assign.
                 } else {
                     throw new SSKVerifyException("New pubkey has invalid hash");
@@ -193,18 +193,18 @@ public class NodeSSK extends Key {
         // cachedNormalizedDouble and pubKey could be negative/null.
         return true;
     }
-    
+
     @Override
     public int hashCode() {
         return hashCode;
     }
-    
+
     // Not just the routing key, enough data to reconstruct the key (excluding any pubkey needed)
     @Override
     public byte[] getKeyBytes() {
         return encryptedHashedDocname;
     }
-    
+
     @Override
     public byte[] getFullKey() {
         byte[] buf = new byte[FULL_KEY_LENGTH];
@@ -250,7 +250,7 @@ public class NodeSSK extends Key {
         if(result != 0) return result;
         return Fields.compareBytes(pubKeyHash, key.pubKeyHash);
     }
-    
+
     @Override
     public void removeFrom(ObjectContainer container) {
         super.removeFrom(container);
@@ -263,16 +263,16 @@ final class ArchiveNodeSSK extends NodeSSK {
     public ArchiveNodeSSK(byte[] pubKeyHash, byte[] encryptedHashedDocname, byte cryptoAlgorithm) {
         super(pubKeyHash, encryptedHashedDocname, cryptoAlgorithm);
     }
-    
+
     @Override
     public void setPubKey(DSAPublicKey pubKey2) throws SSKVerifyException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public boolean grabPubkey(GetPubkey pubkeyCache, boolean canReadClientCache, boolean forULPR, BlockMetadata meta) {
         throw new UnsupportedOperationException();
     }
-    
+
 }
 

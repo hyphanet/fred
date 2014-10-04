@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -66,7 +66,7 @@ public class MessageCore {
     private static final long MAX_FILTER_REMOVE_TIME = SECONDS.toMillis(1);
     private static final long MIN_FILTER_REMOVE_TIME = MILLISECONDS.toMillis(100);
     private long startedTime;
-    
+
     public synchronized long getStartedTime() {
         return startedTime;
     }
@@ -110,10 +110,10 @@ public class MessageCore {
                     ticker.queueTimedJob(this, Math.max(MIN_FILTER_REMOVE_TIME, System.currentTimeMillis() - nextRun));
                 }
             }
-            
+
         }, MIN_FILTER_REMOVE_TIME);
     }
-    
+
     /**
      * Remove timed out filters.
      */
@@ -131,7 +131,7 @@ public class MessageCore {
                     if(logMINOR)
                         Logger.minor(this, "Removing "+f);
                     i.remove();
-                    if(timedOutFilters == null) 
+                    if(timedOutFilters == null)
                         timedOutFilters = new HashSet<MessageFilter>();
                     if(!timedOutFilters.add(f))
                         Logger.error(this, "Filter "+f+" is in filter list twice!");
@@ -150,21 +150,21 @@ public class MessageCore {
                     if(f.hasCallback() && nextTimeout > f.getTimeout())
                         nextTimeout = f.getTimeout();
                 }
-                // Do not break after finding a non-timed-out filter because some filters may 
+                // Do not break after finding a non-timed-out filter because some filters may
                 // be timed out because their client callbacks say they should be.
                 // Also simplifies the logic significantly, we've had some major bugs here.
-                
+
                 // See also the end of waitFor() for another weird case.
             }
         }
-        
+
         if(timedOutFilters != null) {
             for(MessageFilter f : timedOutFilters) {
                 f.setMessage(null);
                 f.onTimedOut(_executor);
             }
         }
-        
+
         long tEnd = System.currentTimeMillis();
         if(tEnd - tStart > 50) {
             if(tEnd - tStart > 3000)
@@ -248,7 +248,7 @@ public class MessageCore {
             /** Check filters and then add to _unmatched is ATOMIC
              * It has to be atomic, because otherwise we can get a
              * race condition that results in timeouts on MFs.
-             * 
+             *
              * Specifically:
              * - Thread A receives packet
              * - Thread A checks filters. It doesn't match any.
@@ -259,7 +259,7 @@ public class MessageCore {
              * - Thread B sleeps.
              * - Thread A returns from Dispatcher. Which didn't match.
              * - Thread A adds to _unmatched.
-             * 
+             *
              * OOPS!
              * The only way to fix this is to have checking the
              * filters and unmatched be a single atomic operation.
@@ -319,7 +319,7 @@ public class MessageCore {
                 if(logMINOR) Logger.minor(this, "checkFilters took "+(dT)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
         }
     }
-    
+
     /** IncomingPacketFilter should call this when a node is disconnected. */
     public void onDisconnect(PeerContext ctx) {
         ArrayList<MessageFilter> droppedFilters = null; // rare operation, we can waste objects for better locking
@@ -341,7 +341,7 @@ public class MessageCore {
             }
         }
     }
-    
+
     /** IncomingPacketFilter should call this when a node connects with a new boot ID */
     public void onRestart(PeerContext ctx) {
         ArrayList<MessageFilter> droppedFilters = null; // rare operation, we can waste objects for better locking
@@ -524,7 +524,7 @@ public class MessageCore {
         // Unlock to wait on filter
         // Waiting on the filter won't release the outer lock
         // So we have to release it here
-        if(ret == null) {    
+        if(ret == null) {
             if(logMINOR) Logger.minor(this, "Waiting...");
             synchronized (filter) {
                 try {
@@ -545,15 +545,15 @@ public class MessageCore {
             }
             if(logMINOR) Logger.minor(this, "Returning "+ret+" from "+filter);
         }
-        
+
         // More tricky locking ...
-        
+
         synchronized(_filters) {
             // Some nasty race conditions can happen here.
             // E.g. the filter can be matched and yet we timeout at the same time.
             // Hence we need to be absolutely sure that when we remove it it hasn't been matched.
             // Note also that the locking does work here - the filter lock is taken last, and
-            // _filters protects both the unwanted messages (above), the filter list, and 
+            // _filters protects both the unwanted messages (above), the filter list, and
             // is taken when a match is found too.
             if(ret == null) {
                 // Check again.
@@ -570,7 +570,7 @@ public class MessageCore {
             _filters.remove(filter);
             // A filter being waitFor()'ed cannot have any callbacks, so we don't need to call onMatched().
         }
-        
+
         // Probably get rid...
 //        if (Dijjer.getDijjer().getDumpMessageWaitTimes() != null) {
 //            Dijjer.getDijjer().getDumpMessageWaitTimes().println(filter.toString() + "\t" + filter.getInitialTimeout() + "\t"
@@ -608,7 +608,7 @@ public class MessageCore {
             return _unclaimed.size();
         }
     }
-    
+
     public Map<String, Integer> getUnclaimedFIFOMessageCounts() {
         Map<String, Integer> messageCounts = new HashMap<String, Integer>();
         synchronized(_filters) {

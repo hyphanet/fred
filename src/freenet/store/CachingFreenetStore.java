@@ -16,17 +16,17 @@ import freenet.support.io.NativeThread;
 
 /**
  * CachingFreenetStore
- * 
+ *
  * @author Simon Vocella <voxsim@gmail.com>
- * 
+ *
  */
 public class CachingFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
     private static volatile boolean logMINOR;
-    
+
     private long size;
     private boolean startJob;
     private boolean shuttingDown; /* If this flag is true, we don't accept puts anymore */
-    
+
     private final long maxSize;
     private final long period;
     private final TreeMap<ByteArrayWrapper, Block<T>> blocksByRoutingKey;
@@ -35,9 +35,9 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
     private final Ticker ticker;
     private final boolean collisionPossible;
     private final ReadWriteLock configLock = new ReentrantReadWriteLock();
-    
+
     static { Logger.registerClass(CachingFreenetStore.class); }
-    
+
     private final static class Block<T> {
         T block;
         byte[] data;
@@ -60,9 +60,9 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
         this.startJob = false;
         this.collisionPossible = callback.collisionPossible();
         this.shuttingDown = false;
-        
+
         callback.setStore(this);
-        
+
         shutdownHook.addEarlyJob(new NativeThread("Close CachingFreenetStore", NativeThread.HIGH_PRIORITY, true) {
             @Override
             public void realRun() {
@@ -74,19 +74,19 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
     @Override
     public T fetch(byte[] routingKey, byte[] fullKey,
             boolean dontPromote, boolean canReadClientCache,
-            boolean canReadSlashdotCache, boolean ignoreOldBlocks, BlockMetadata meta) 
+            boolean canReadSlashdotCache, boolean ignoreOldBlocks, BlockMetadata meta)
             throws IOException {
         ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
-        
+
         Block<T> block = null;
-        
+
         configLock.readLock().lock();
         try {
             block = blocksByRoutingKey.get(key);
         } finally {
             configLock.readLock().unlock();
         }
-        
+
         if(block != null) {
             try {
                 return this.callback.construct(block.data, block.header, routingKey, block.block.getFullKey(), canReadClientCache, canReadSlashdotCache, meta, null);
@@ -94,8 +94,8 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
                 Logger.error(this, "Error in fetching for CachingFreenetStore: "+e, e);
             }
         }
-        
-        return backDatastore.fetch(routingKey, fullKey, dontPromote, canReadClientCache, canReadSlashdotCache, ignoreOldBlocks, meta);    
+
+        return backDatastore.fetch(routingKey, fullKey, dontPromote, canReadClientCache, canReadSlashdotCache, ignoreOldBlocks, meta);
     }
 
     @Override
@@ -127,14 +127,14 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
     public boolean probablyInStore(byte[] routingKey) {
         ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
         Block<T> block = null;
-        
+
         configLock.readLock().lock();
         try {
             block = blocksByRoutingKey.get(key);
         } finally {
             configLock.readLock().unlock();
         }
-        
+
         return block != null || backDatastore.probablyInStore(routingKey);
     }
 
@@ -144,27 +144,27 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
             KeyCollisionException {
         byte[] routingKey = block.getRoutingKey();
         final ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
-        
+
         Block<T> storeBlock = new Block<T>();
         storeBlock.block = block;
         storeBlock.data = data;
         storeBlock.header = header;
         storeBlock.overwrite = overwrite;
         storeBlock.isOldBlock = isOldBlock;
-        
-        long sizeBlock = data.length+header.length+block.getFullKey().length+routingKey.length;    
+
+        long sizeBlock = data.length+header.length+block.getFullKey().length+routingKey.length;
         boolean cacheIt = true;
-        
+
         //Case cache it
         configLock.writeLock().lock();
-        
+
         try {
             if(sizeBlock < maxSize && !shuttingDown) {
                 Block<T> previousBlock = blocksByRoutingKey.get(key);
-            
+
                 if(!collisionPossible || overwrite) {
                     blocksByRoutingKey.put(key, storeBlock);
-                    
+
                     if(previousBlock == null) {
                         size += sizeBlock;
                     }
@@ -175,7 +175,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
                             return;
                         throw new KeyCollisionException();
                     }
-                    
+
                     //Is probablyInStore()? If so, remove it from blocksByRoutingKey, and set a flag so we don't call put()
                     if(backDatastore.probablyInStore(routingKey)) {
                         cacheIt = false;
@@ -184,7 +184,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
                         size += sizeBlock;
                     }
                 }
-                
+
                 //Check max size
                 if(size > maxSize) {
                     pushAll();
@@ -212,14 +212,14 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
         } finally {
             configLock.writeLock().unlock();
         }
-        
+
         //Case don't cache it
         if(!cacheIt) {
             backDatastore.put(block, data, header, overwrite, isOldBlock);
             return;
         }
     }
-    
+
     private void pushAll() {
         configLock.writeLock().lock();
         try
@@ -270,7 +270,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
     public void setUserAlertManager(UserAlertManager userAlertManager) {
         this.backDatastore.setUserAlertManager(userAlertManager);
     }
-    
+
     @Override
     public FreenetStore<T> getUnderlyingStore() {
         return this.backDatastore;

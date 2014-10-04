@@ -5,5 +5,5 @@ public interface SlowAsyncMessageFilterCallback extends
         AsyncMessageFilterCallback {
 
     public int getPriority();
-    
+
 }

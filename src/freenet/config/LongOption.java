@@ -16,7 +16,7 @@ public class LongOption extends Option<Long> {
         this(conf, optionName, Fields.parseLong(defaultValueString), sortOrder, expert, forceWrite, shortDesc,
                 longDesc, cb, isSize);
     }
-    
+
     public LongOption(SubConfig conf, String optionName, Long defaultValue, int sortOrder, boolean expert,
             boolean forceWrite, String shortDesc, String longDesc, LongCallback cb, boolean isSize) {
         super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.NUMBER);
@@ -35,7 +35,7 @@ public class LongOption extends Option<Long> {
         }
         return x;
     }
-    
+
     private String l10n(String key, String pattern, String value) {
         return NodeL10n.getBase().getString("LongOption." + key, pattern, value);
     }

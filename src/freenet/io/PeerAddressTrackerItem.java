@@ -23,15 +23,15 @@ import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
 
 public class PeerAddressTrackerItem extends AddressTrackerItem {
-    
+
     public final Peer peer;
 
-    public PeerAddressTrackerItem(long timeDefinitelyNoPacketsReceived, 
+    public PeerAddressTrackerItem(long timeDefinitelyNoPacketsReceived,
             long timeDefinitelyNoPacketsSent, Peer peer) {
         super(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent);
         this.peer = peer;
     }
-    
+
     public PeerAddressTrackerItem(SimpleFieldSet fs) throws FSParseException {
         super(fs);
         try {

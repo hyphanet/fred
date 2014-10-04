@@ -12,16 +12,16 @@ public class MultiHashOutputStream extends FilterOutputStream {
 
     // Bit flags for generateHashes
     private Digester[] digesters;
-    
+
     class Digester {
         HashType hashType;
         MessageDigest digest;
-        
+
         Digester(HashType hashType) throws NoSuchAlgorithmException {
             this.hashType= hashType;
             digest = hashType.get();
         }
-        
+
         HashResult getResult() {
             HashResult result = new HashResult(hashType, digest.digest());
             hashType.recycle(digest);
@@ -29,7 +29,7 @@ public class MultiHashOutputStream extends FilterOutputStream {
             return result;
         }
     }
-    
+
     public MultiHashOutputStream(OutputStream proxy, long generateHashes) {
         super(proxy);
         ArrayList<Digester> digesters = new ArrayList<Digester>();
@@ -44,7 +44,7 @@ public class MultiHashOutputStream extends FilterOutputStream {
         }
         this.digesters = digesters.toArray(new Digester[digesters.size()]);
     }
-    
+
     @Override
     public void write(int arg0) throws java.io.IOException {
         out.write(arg0);
@@ -58,14 +58,14 @@ public class MultiHashOutputStream extends FilterOutputStream {
         for(Digester d : digesters)
             d.digest.update(arg0);
     }
-    
+
     @Override
     public void write(byte[] arg0, int arg1, int arg2) throws java.io.IOException {
         out.write(arg0, arg1, arg2);
         for(Digester d : digesters)
             d.digest.update(arg0, arg1, arg2);
     }
-    
+
     public HashResult[] getResults() {
         HashResult[] results = new HashResult[digesters.length];
         for(int i=0;i<digesters.length;i++)

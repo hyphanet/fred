@@ -7,9 +7,9 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 
 public class SimpleGetPubkey implements GetPubkey {
-    
+
     final PubkeyStore store;
-    
+
     public SimpleGetPubkey(PubkeyStore store) {
         this.store = store;
     }

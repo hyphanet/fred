@@ -16,10 +16,10 @@ public abstract class RandomSource extends Random {
     /**
      * Returns a 32 bit random floating point number. With this method, all possible float values
      * are approximately as likely to occur.
-     * 
+     *
      * This method may return <tt>NaN</tt>, <tt>+Inf</tt>, <tt>-Inf</tt> or other weird
      * stuff. If you don't know what they are, this method is not for you.
-     * 
+     *
      * @see RandomSource#nextFloat()
      */
     // FIXME this method is unused, do you *really* want this method?
@@ -30,10 +30,10 @@ public abstract class RandomSource extends Random {
     /**
      * Returns a 64 bit random double. With this method, all possible double values are
      * approximately as likely to occur.
-     * 
+     *
      * This method may return <tt>NaN</tt>, <tt>+Inf</tt>, <tt>-Inf</tt> or other weird
      * stuff. If you don't know what they are, this method is not for you.
-     * 
+     *
      * @see RandomSource#nextDouble()
      */
     // FIXME this method is unused, do you *really* want this method?
@@ -49,7 +49,7 @@ public abstract class RandomSource extends Random {
      * Accepts entropy in the form of timing data from a source
      */
     public abstract int acceptTimerEntropy(EntropySource timer);
-    
+
     /**
      * Accept entropy from a source with a bias
      * @param bias Value by which we multiply the entropy before counting it.
@@ -67,7 +67,7 @@ public abstract class RandomSource extends Random {
      * Must be <= 1.0.
      */
     public abstract int acceptEntropyBytes(EntropySource myPacketDataSource, byte[] buf, int offset, int length, double bias);
-    
+
     /**
      * If entropy estimation is supported, this method will block
      * until the specified number of bits of entropy are available.  If
@@ -80,7 +80,7 @@ public abstract class RandomSource extends Random {
      * do so when this method is called
      */
     public abstract void close();
-    
+
     @Override
     protected synchronized int next(int bits) {
         return super.next(bits);

@@ -30,13 +30,13 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 {
 //    Debugging methods and variables
 //    ...........................................................................
-    
+
     static {
         Logger.registerClass(Rijndael_Algorithm.class);
     }
     private static boolean logMINOR;
     private static boolean logDEBUG;
-    
+
     static final String ALGORITHM = "Rijndael";
     static final double VERSION = 0.1;
     static final String FULL_NAME = ALGORITHM + " ver. " + VERSION;
@@ -57,7 +57,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
     private static void trace(boolean in, String s) {
         if (TRACE && logDEBUG) Logger.debug(Rijndael_Algorithm.class, (in?"==> ":"<== ")+NAME+ '.' +s);
     }
-    
+
 //    Constants and variables
 //    ...........................................................................
 
@@ -503,37 +503,37 @@ final class Rijndael_Algorithm // implicit no-argument constructor
         result[ 1] = (byte)(S[(t1 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[ 2] = (byte)(S[(t3 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[ 3] = (byte)(S[ t4         & 0xFF] ^  tt        );
-        tt = Ker[1];             
+        tt = Ker[1];
         result[ 4] = (byte)(S[(t1 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[ 5] = (byte)(S[(t2 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[ 6] = (byte)(S[(t4 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[ 7] = (byte)(S[ t5         & 0xFF] ^  tt        );
-        tt = Ker[2];             
+        tt = Ker[2];
         result[ 8] = (byte)(S[(t2 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[ 9] = (byte)(S[(t3 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[10] = (byte)(S[(t5 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[11] = (byte)(S[ t6         & 0xFF] ^  tt        );
-        tt = Ker[3];             
+        tt = Ker[3];
         result[12] = (byte)(S[(t3 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[13] = (byte)(S[(t4 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[14] = (byte)(S[(t6 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[15] = (byte)(S[ t7         & 0xFF] ^  tt        );
-        tt = Ker[4];             
+        tt = Ker[4];
         result[16] = (byte)(S[(t4 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[17] = (byte)(S[(t5 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[18] = (byte)(S[(t7 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[19] = (byte)(S[ t0         & 0xFF] ^  tt        );
-        tt = Ker[5];             
+        tt = Ker[5];
         result[20] = (byte)(S[(t5 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[21] = (byte)(S[(t6 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[22] = (byte)(S[(t0 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[23] = (byte)(S[ t1         & 0xFF] ^  tt        );
-        tt = Ker[6];             
+        tt = Ker[6];
         result[24] = (byte)(S[(t6 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[25] = (byte)(S[(t7 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[26] = (byte)(S[(t1 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[27] = (byte)(S[ t2         & 0xFF] ^  tt        );
-        tt = Ker[7];             
+        tt = Ker[7];
         result[28] = (byte)(S[(t7 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[29] = (byte)(S[(t0 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[30] = (byte)(S[(t2 >>>  8) & 0xFF] ^ (tt >>>  8));
@@ -742,37 +742,37 @@ final class Rijndael_Algorithm // implicit no-argument constructor
         result[ 1] = (byte)(Si[(t7 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[ 2] = (byte)(Si[(t5 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[ 3] = (byte)(Si[ t4         & 0xFF] ^  tt        );
-        tt = Kdr[1];              
+        tt = Kdr[1];
         result[ 4] = (byte)(Si[(t1 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[ 5] = (byte)(Si[(t0 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[ 6] = (byte)(Si[(t6 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[ 7] = (byte)(Si[ t5         & 0xFF] ^  tt        );
-        tt = Kdr[2];              
+        tt = Kdr[2];
         result[ 8] = (byte)(Si[(t2 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[ 9] = (byte)(Si[(t1 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[10] = (byte)(Si[(t7 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[11] = (byte)(Si[ t6         & 0xFF] ^  tt        );
-        tt = Kdr[3];              
+        tt = Kdr[3];
         result[12] = (byte)(Si[(t3 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[13] = (byte)(Si[(t2 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[14] = (byte)(Si[(t0 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[15] = (byte)(Si[ t7         & 0xFF] ^  tt        );
-        tt = Kdr[4];              
+        tt = Kdr[4];
         result[16] = (byte)(Si[(t4 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[17] = (byte)(Si[(t3 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[18] = (byte)(Si[(t1 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[19] = (byte)(Si[ t0         & 0xFF] ^  tt        );
-        tt = Kdr[5];              
+        tt = Kdr[5];
         result[20] = (byte)(Si[(t5 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[21] = (byte)(Si[(t4 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[22] = (byte)(Si[(t2 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[23] = (byte)(Si[ t1         & 0xFF] ^  tt        );
-        tt = Kdr[6];              
+        tt = Kdr[6];
         result[24] = (byte)(Si[(t6 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[25] = (byte)(Si[(t5 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[26] = (byte)(Si[(t3 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[27] = (byte)(Si[ t2         & 0xFF] ^  tt        );
-        tt = Kdr[7];              
+        tt = Kdr[7];
         result[28] = (byte)(Si[(t7 >>> 24) & 0xFF] ^ (tt >>> 24));
         result[29] = (byte)(Si[(t6 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[30] = (byte)(Si[(t4 >>>  8) & 0xFF] ^ (tt >>>  8));

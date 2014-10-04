@@ -30,17 +30,17 @@ public class DSA {
 
     // FIXME DSAgroupBigA is 256 bits long and therefore cannot accomodate
     // all SHA-256 output's. Therefore we chop it down to 255 bits.
-    
+
     static final BigInteger SIGNATURE_MASK =
         Util.TWO.pow(255).subtract(BigInteger.ONE);
-    
+
     /**
      * Returns a DSA signature given a group, private key (x), a random nonce
      * (k), and the hash of the message (m).
      */
     static DSASignature sign(DSAGroup g,
             DSAPrivateKey x,
-            BigInteger k, 
+            BigInteger k,
             BigInteger m,
             RandomSource random) {
         if(k.signum() == -1) throw new IllegalArgumentException();
@@ -53,7 +53,7 @@ public class DSA {
 
         BigInteger kInv=k.modInverse(g.getQ());
         return sign(g, x, r, kInv, m, random);
-    } 
+    }
 
     public static DSASignature sign(DSAGroup g, DSAPrivateKey x, BigInteger m,
             RandomSource r) {
@@ -62,12 +62,12 @@ public class DSA {
     }
 
     /**
-     * Returns a DSA signature given a group, private key (x), 
+     * Returns a DSA signature given a group, private key (x),
      * the precalculated values of r and k^-1, and the hash
      * of the message (m)
      */
     static DSASignature sign(DSAGroup g, DSAPrivateKey x,
-            BigInteger r, BigInteger kInv, 
+            BigInteger r, BigInteger kInv,
             BigInteger m, RandomSource random) {
         BigInteger s1=m.add(x.getX().multiply(r)).mod(g.getQ());
         BigInteger s=kInv.multiply(s1).mod(g.getQ());
@@ -81,7 +81,7 @@ public class DSA {
     private static BigInteger generateK(DSAGroup g, Random r){
             if(g.getQ().bitLength() < DSAGroup.Q_BIT_LENGTH)
             throw new IllegalArgumentException("Q is too short! (" + g.getQ().bitLength() + '<' + DSAGroup.Q_BIT_LENGTH + ')');
-        
+
             BigInteger k;
         do {
             k=new NativeBigInteger(DSAGroup.Q_BIT_LENGTH, r);

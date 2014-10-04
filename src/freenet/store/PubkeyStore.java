@@ -29,9 +29,9 @@ public class PubkeyStore extends StoreCallback<DSAPublicKey> {
     public DSAPublicKey fetch(byte[] hash, boolean dontPromote, boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
         return store.fetch(hash, null, dontPromote, false, false, ignoreOldBlocks, meta);
     }
-    
+
     final private static byte[] empty = new byte[0];
-    
+
     public void put(byte[] hash, DSAPublicKey key, boolean isOldBlock) throws IOException {
         try {
             store.put(key, key.asPaddedBytes(), empty, false, isOldBlock);
@@ -39,7 +39,7 @@ public class PubkeyStore extends StoreCallback<DSAPublicKey> {
             Logger.error(this, "Impossible for PubkeyStore: "+e, e);
         }
     }
-    
+
     @Override
     public int dataLength() {
         return DSAPublicKey.PADDED_SIZE;

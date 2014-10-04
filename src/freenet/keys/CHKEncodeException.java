@@ -5,7 +5,7 @@ package freenet.keys;
 
 /**
  * @author amphibian
- * 
+ *
  * Exception thrown when a CHK encoding fails.
  * Specifically, it is thrown when the data is too big to encode.
  */

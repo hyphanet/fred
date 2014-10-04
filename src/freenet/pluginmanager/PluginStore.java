@@ -36,11 +36,11 @@ public class PluginStore {
     public final HashMap<String, byte[]> bytesArrays = new HashMap<String, byte[]>();
     public final HashMap<String, String> strings = new HashMap<String, String>();
     public final HashMap<String, String[]> stringsArrays = new HashMap<String, String[]>();
-    
+
     public PluginStore() {
         // Default constructor. See below for constructor from SFS.
     }
-    
+
     public byte[] exportStore() {
         Configuration conf = Db4o.newConfiguration();
         MemoryIoAdapter mia = new MemoryIoAdapter();
@@ -71,7 +71,7 @@ public class PluginStore {
             return null;
         }
     }
-    
+
     public SimpleFieldSet exportStoreAsSFS() {
         SimpleFieldSet fs = new SimpleFieldSet(true, true);
         for(Map.Entry<String, PluginStore> entry : subStores.entrySet()) {
@@ -115,7 +115,7 @@ public class PluginStore {
         }
         return fs;
     }
-    
+
     public PluginStore(SimpleFieldSet sfs) throws IllegalBase64Exception, FSParseException {
         SimpleFieldSet group = sfs.subset("substore");
         if(group != null) {
@@ -200,7 +200,7 @@ public class PluginStore {
     private static final String encode(String s) {
         return Base64.encodeUTF8(s);
     }
-    
+
     private static final String decode(String s) throws IllegalBase64Exception {
         return Base64.decodeUTF8(s);
     }

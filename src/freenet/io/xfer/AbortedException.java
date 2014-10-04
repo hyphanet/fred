@@ -9,7 +9,7 @@ package freenet.io.xfer;
  */
 public class AbortedException extends Exception {
     private static final long serialVersionUID = -1;
-    
+
     public AbortedException(String msg) {
         super(msg);
     }

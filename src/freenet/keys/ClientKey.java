@@ -14,11 +14,11 @@ import com.db4o.ObjectContainer;
 public abstract class ClientKey extends BaseClientKey {
 
     /**
-     * @return a NodeCHK corresponding to this key. Basically keep the 
+     * @return a NodeCHK corresponding to this key. Basically keep the
      * routingKey and lose everything else.
      */
     public abstract Key getNodeKey(boolean cloneKey);
-    
+
     public Key getNodeKey() {
         return getNodeKey(true);
     }

@@ -38,19 +38,19 @@ import freenet.support.math.MersenneTwister;
 
 /**
  * @author amphibian
- * 
+ *
  * Client CHKBlock - provides functions for decoding, holds a client-key.
  */
 public class ClientCHKBlock implements ClientKeyBlock {
 
     final ClientCHK key;
     private final CHKBlock block;
-    
+
     @Override
     public String toString() {
         return super.toString()+",key="+key;
     }
-    
+
     /**
      * Construct from data retrieved, and a key.
      * Do not do full decode. Verify what can be verified without doing
@@ -73,7 +73,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
 
     /**
      * Decode into RAM, if short.
-     * @throws CHKDecodeException 
+     * @throws CHKDecodeException
      */
     @Override
     public byte[] memoryDecode() throws CHKDecodeException {
@@ -94,7 +94,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
     public Bucket decode(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
         return decode(bf, maxLength, dontCompress, false);
     }
-    
+
     // forceNoJCA for unit tests.
     Bucket decode(BucketFactory bf, int maxLength, boolean dontCompress, boolean forceNoJCA) throws CHKDecodeException, IOException {
         if(key.cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
@@ -110,7 +110,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
             throw new UnsupportedOperationException();
     }
 
-    
+
     /**
      * Decode the CHK and recover the original data
      * @return the original data
@@ -154,10 +154,10 @@ public class ClientCHKBlock implements ClientKeyBlock {
         if((size > 32768) || (size < 0)) {
             throw new CHKDecodeException("Invalid size: "+size);
         }
-        return Key.decompress(dontCompress ? false : key.isCompressed(), dbuf, size, bf, 
+        return Key.decompress(dontCompress ? false : key.isCompressed(), dbuf, size, bf,
                 Math.min(maxLength, CHKBlock.MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
     }
-    
+
     private static final Provider hmacProvider;
     static private long benchmark(Mac hmac) throws GeneralSecurityException
     {
@@ -230,7 +230,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
             System.out.println(algo + ": using " + hmacProvider);
             Logger.normal(clazz, algo + ": using " + hmacProvider);
         } catch(GeneralSecurityException e) {
-            // impossible 
+            // impossible
             throw new Error(e);
         }
     }
@@ -267,7 +267,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
         if(!Arrays.equals(hash, hashCheck)) {
             throw new CHKDecodeException("HMAC is wrong, wrong decryption key?");
         }
-        return Key.decompress(dontCompress ? false : key.isCompressed(), plaintext, size, bf, 
+        return Key.decompress(dontCompress ? false : key.isCompressed(), plaintext, size, bf,
                 Math.min(maxLength, CHKBlock.MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
         } catch(GeneralSecurityException e) {
             throw new CHKDecodeException("Problem with JCA, should be impossible!", e);
@@ -321,7 +321,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
         } catch(GeneralSecurityException e) {
             throw new CHKDecodeException("Problem with JCA, should be impossible!", e);
         }
-        return Key.decompress(dontCompress ? false : key.isCompressed(), plaintext, size, bf, 
+        return Key.decompress(dontCompress ? false : key.isCompressed(), plaintext, size, bf,
                 Math.min(maxLength, CHKBlock.MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
     }
 
@@ -349,7 +349,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
                 return encodeNew(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm, KeyBlock.HASH_SHA256);
             }
     }
-    
+
     /**
      * Encode a Bucket of data to a CHKBlock.
      * @param sourceData The bucket of data to encode. Can be arbitrarily large.
@@ -357,12 +357,12 @@ public class ClientCHKBlock implements ClientKeyBlock {
      * @param dontCompress If set, don't even try to compress.
      * @param alreadyCompressedCodec If !dontCompress, and this is >=0, then the
      * data is already compressed, and this is the algorithm.
-     * @param compressorDescriptor 
-     * @param cryptoAlgorithm 
-     * @param cryptoKey 
+     * @param compressorDescriptor
+     * @param cryptoAlgorithm
+     * @param cryptoKey
      * @throws CHKEncodeException
      * @throws IOException If there is an error reading from the Bucket.
-     * @throws InvalidCompressionCodecException 
+     * @throws InvalidCompressionCodecException
      */
     static public ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, String compressorDescriptor, boolean pre1254, byte[] cryptoKey, byte cryptoAlgorithm) throws CHKEncodeException, IOException {
         return encode(sourceData, asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor, pre1254, cryptoKey, cryptoAlgorithm, false);
@@ -383,7 +383,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
             throw new CHKEncodeException(e2.getMessage(), e2);
         }
         // Now do the actual encode
-        
+
         MessageDigest md256 = SHA256.getMessageDigest();
         // First pad it
         int dataLength = finalData.length;
@@ -418,13 +418,13 @@ public class ClientCHKBlock implements ClientKeyBlock {
                     return encodeNew(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm, KeyBlock.HASH_SHA256);
         }
     }
-    
+
     /**
      * Format:
      * [0-1]: Block hash algorithm
      * [2-34]: HMAC (with cryptokey) of data + length bytes.
      * [35-36]: Length bytes.
-     * Encryption: CTR with IV = 1st 16 bytes of the hash. (It has to be 
+     * Encryption: CTR with IV = 1st 16 bytes of the hash. (It has to be
      * deterministic as this is a CHK and we need to be able to reinsert them
      * easily):
      * - Data
@@ -448,7 +448,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
         // FIXME And yes we should check on insert for multiple identical keys.
         Mac hmac = Mac.getInstance("HmacSHA256", hmacProvider);
         hmac.init(new SecretKeySpec(encKey, "HmacSHA256"));
-        byte[] tmpLen = new byte[] { 
+        byte[] tmpLen = new byte[] {
                 (byte)(dataLength >> 8), (byte)(dataLength & 0xff)
             };
         hmac.update(data);
@@ -476,16 +476,16 @@ public class ClientCHKBlock implements ClientKeyBlock {
             System.arraycopy(tmp, 0, cdata, moved, tmp.length-2);
             System.arraycopy(tmp, tmp.length-2,    header, hash.length+2, 2);
         }
-        
+
         // Now calculate the final hash
         md256.update(header);
         byte[] finalHash = md256.digest(cdata);
-        
+
         SHA256.returnMessageDigest(md256);
-        
+
         // Now convert it into a ClientCHK
         ClientCHK finalKey = new ClientCHK(finalHash, encKey, asMetadata, cryptoAlgorithm, compressionAlgorithm);
-        
+
         try {
             return new ClientCHKBlock(cdata, header, finalKey, false);
         } catch (CHKVerifyException e3) {
@@ -496,7 +496,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
             throw new CHKEncodeException("Problem with JCA, should be impossible!", e);
         }
     }
-    
+
     /**
      * Encode using Freenet's built in crypto. FIXME remove once Java 1.7
      * is mandatory. Note that we assume that HMAC SHA256 is available; the
@@ -522,7 +522,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
         // FIXME And yes we should check on insert for multiple identical keys.
         Mac hmac = Mac.getInstance("HmacSHA256", hmacProvider);
         hmac.init(new SecretKeySpec(encKey, "HmacSHA256"));
-        byte[] tmpLen = new byte[] { 
+        byte[] tmpLen = new byte[] {
                 (byte)(dataLength >> 8), (byte)(dataLength & 0xff)
             };
         hmac.update(data);
@@ -550,16 +550,16 @@ public class ClientCHKBlock implements ClientKeyBlock {
         byte[] cdata = new byte[data.length];
         ctr.processBytes(data, 0, data.length, cdata, 0);
         ctr.processBytes(tmpLen, 0, 2, header, hash.length+2);
-        
+
         // Now calculate the final hash
         md256.update(header);
         byte[] finalHash = md256.digest(cdata);
-        
+
         SHA256.returnMessageDigest(md256);
-        
+
         // Now convert it into a ClientCHK
         ClientCHK finalKey = new ClientCHK(finalHash, encKey, asMetadata, cryptoAlgorithm, compressionAlgorithm);
-        
+
         try {
             return new ClientCHKBlock(cdata, header, finalKey, false);
         } catch (CHKVerifyException e3) {
@@ -570,7 +570,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
             throw new CHKEncodeException("Problem with JCA, should be impossible!", e);
         }
     }
-    
+
     @SuppressWarnings("deprecation") // FIXME Back compatibility, using dubious ciphers; remove eventually.
     public static ClientCHKBlock innerEncode(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm) {
         if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
@@ -587,7 +587,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
         header[plainIV.length+3] = (byte)(dataLength & 0xff);
         // GRRR, java 1.4 does not have any symmetric crypto
         // despite exposing asymmetric and hashes!
-        
+
         // Now encrypt the header, then the data, using the same PCFB instance
         BlockCipher cipher;
         try {
@@ -597,7 +597,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
             throw new Error(e);
         }
         cipher.initialize(encKey);
-        
+
         // FIXME CRYPTO plainIV, the hash of the crypto key, is encrypted with a null IV.
         // In other words, it is XORed with E(0).
         // For splitfiles we reuse the same decryption key for multiple blocks; it is derived from the overall hash,
@@ -606,20 +606,20 @@ public class ClientCHKBlock implements ClientKeyBlock {
         // And the following 32 bytes are always XORed with the same value.
         // Ouch!
         // Those bytes being 2 bytes for the length, followed by the first 30 bytes of the data.
-        
+
         PCFBMode pcfb = PCFBMode.create(cipher);
         pcfb.blockEncipher(header, 2, header.length-2);
         pcfb.blockEncipher(data, 0, data.length);
-        
+
         // Now calculate the final hash
         md256.update(header);
         byte[] finalHash = md256.digest(data);
-        
+
         SHA256.returnMessageDigest(md256);
-        
+
         // Now convert it into a ClientCHK
         key = new ClientCHK(finalHash, encKey, asMetadata, cryptoAlgorithm, compressionAlgorithm);
-        
+
         try {
             return new ClientCHKBlock(data, header, key, false);
         } catch (CHKVerifyException e3) {
@@ -627,7 +627,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
             throw new Error(e3);
         }
     }
-    
+
     /**
      * Encode a block of data to a CHKBlock.
      * @param sourceData The data to encode.
@@ -636,7 +636,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
      * @param alreadyCompressedCodec If !dontCompress, and this is >=0, then the
      * data is already compressed, and this is the algorithm.
      * @param compressorDescriptor Should be null, or list of compressors to try.
-     * @throws InvalidCompressionCodecException 
+     * @throws InvalidCompressionCodecException
      */
     static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, int sourceLength, String compressorDescriptor, boolean pre1254) throws CHKEncodeException, InvalidCompressionCodecException {
         try {
@@ -666,7 +666,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
     public int hashCode() {
         return key.hashCode;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if(!(o instanceof ClientCHKBlock)) return false;

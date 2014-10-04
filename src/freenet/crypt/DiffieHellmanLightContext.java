@@ -24,7 +24,7 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
         sb.append(HexUtil.toHexString(myExponent));
         sb.append(", myExponential=");
         sb.append(HexUtil.toHexString(myExponential));
-        
+
         return sb.toString();
     }
 
@@ -34,7 +34,7 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
         this.group = group;
         this.lastUsedTime = System.currentTimeMillis();
     }
-    
+
     /*
      * Calling the following is costy; avoid
      */
@@ -51,7 +51,7 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
             Logger.minor(this, "Peer's exponential: "+HexUtil.toHexString(peerExponential));
             Logger.minor(this, "g^ir mod p = " + HexUtil.toHexString(sharedSecret));
         }
-        
+
         return sharedSecret.toByteArray();
     }
 
@@ -59,7 +59,7 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
     public byte[] getPublicKeyNetworkFormat() {
         return stripBigIntegerToNetworkFormat(myExponential);
     }
-    
+
     private byte[] stripBigIntegerToNetworkFormat(BigInteger exponential) {
         byte[] data = exponential.toByteArray();
         int targetLength = DiffieHellman.modulusLengthInBytes();

@@ -16,7 +16,7 @@ public class IntOption extends Option<Integer> {
         this(conf, optionName, Fields.parseInt(defaultValueString), sortOrder, expert, forceWrite, shortDesc, longDesc,
                 cb, isSize);
     }
-    
+
     public IntOption(SubConfig conf, String optionName, Integer defaultValue, int sortOrder, boolean expert,
             boolean forceWrite, String shortDesc, String longDesc, IntCallback cb, boolean isSize) {
         super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.NUMBER);

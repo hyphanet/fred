@@ -58,7 +58,7 @@ public class AddressTracker {
 
     /** Maximum number of Item's of either type */
     private int MAX_ITEMS = DEFAULT_MAX_ITEMS;
-    
+
     static final int DEFAULT_MAX_ITEMS = 1000;
     static final int SEED_MAX_ITEMS = 10000;
 
@@ -230,7 +230,7 @@ public class AddressTracker {
         MAYBE_PORT_FORWARDED,
         DEFINITELY_PORT_FORWARDED
     }
-    
+
     /** If the minimum gap is at least this, we might be port forwarded.
      * RFC 4787 requires at least 2 minutes, but many NATs have shorter timeouts. */
     public final static long MAYBE_TUNNEL_LENGTH = MINUTES.toMillis(5) + SECONDS.toMillis(1);

@@ -25,7 +25,7 @@ import freenet.support.io.FileUtil;
 public class WrapperConfig {
 
     private static HashMap<String, String> overrides = new HashMap<String, String>();
-    
+
     public static String getWrapperProperty(String name) {
         synchronized(WrapperConfig.class) {
             String override = overrides.get(name);
@@ -34,7 +34,7 @@ public class WrapperConfig {
         }
         return WrapperManager.getProperties().getProperty(name, null);
     }
-    
+
     public static boolean canChangeProperties() {
         if(!WrapperManager.isControlledByNativeWrapper()) {
             Logger.normal(WrapperConfig.class, "Cannot alter properties: not running under wrapper");
@@ -68,31 +68,31 @@ public class WrapperConfig {
      */
     public static synchronized boolean setWrapperProperty(String name, String value) {
         // Some of this copied from UpdateDeployContext, hence no GPL header on this file as none there.
-        
+
         File oldConfig = new File("wrapper.conf");
         File newConfig = new File("wrapper.conf.new");
-        
+
         FileInputStream fis = null;
         FileOutputStream fos = null;
-        
+
         try {
-        
+
             fis = new FileInputStream(oldConfig);
             BufferedInputStream bis = new BufferedInputStream(fis);
             InputStreamReader isr = new InputStreamReader(bis);
             BufferedReader br = new BufferedReader(isr);
-            
+
             fos = new FileOutputStream(newConfig);
             OutputStreamWriter osw = new OutputStreamWriter(fos);
             BufferedWriter bw = new BufferedWriter(osw);
-            
+
             String line;
-            
+
             boolean written = false;
             boolean writtenReload = false;
-            
+
             while((line = br.readLine()) != null) {
-                
+
                 if(line.startsWith(name+"=")) {
                     bw.write(name+'='+value+'\n');
                     written = true;
@@ -101,7 +101,7 @@ public class WrapperConfig {
                 } else {
                     bw.write(line+'\n');
                 }
-            
+
             }
             br.close();
             fis = null;
@@ -124,7 +124,7 @@ public class WrapperConfig {
             Closer.close(fis);
             Closer.close(fos);
         }
-        
+
         if(!newConfig.renameTo(oldConfig)) {
             File oldOldConfig = new File("wrapper.conf.old");
             if(oldOldConfig.exists() && !oldOldConfig.delete())
@@ -157,5 +157,5 @@ public class WrapperConfig {
         overrides.put(name, value);
         return true;
     }
-    
+
 }

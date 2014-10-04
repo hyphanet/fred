@@ -29,17 +29,17 @@ public abstract class Option<T> {
     protected final String longDesc;
     /** The configCallback associated to the Option */
     protected final ConfigCallback<T> cb;
-    
+
     protected T defaultValue;
     protected T currentValue;
-    
+
     public static enum DataType {
         STRING, NUMBER, BOOLEAN, STRING_ARRAY
     };
-    
+
     /** Data type : used to make it possible to make user inputs more friendly in FCP apps */
     final DataType dataType;
-    
+
     Option(SubConfig config, String name, ConfigCallback<T> cb, int sortOrder, boolean expert, boolean forceWrite,
             String shortDesc, String longDesc, DataType dataType) {
         this.config = config;
@@ -62,7 +62,7 @@ public abstract class Option<T> {
         set(x);
     }
 
-    protected abstract T parseString(String val) throws InvalidConfigValueException; 
+    protected abstract T parseString(String val) throws InvalidConfigValueException;
     protected abstract String toString(T val);
     protected String toDisplayString(T val) {
         return toString(val);
@@ -77,7 +77,7 @@ public abstract class Option<T> {
             throw e;
         }
     }
-    
+
     /**
      * Get the current value of the option as a string.
      */
@@ -95,7 +95,7 @@ public abstract class Option<T> {
     /** Set to a value from the config file; this is not passed on to the callback, as we
      * expect the client-side initialization to check the value. The callback is not valid
      * until the client calls finishedInitialization().
-     * @throws InvalidConfigValueException 
+     * @throws InvalidConfigValueException
      */
     public final void setInitialValue(String val) throws InvalidConfigValueException {
         currentValue = parseString(val);
@@ -107,38 +107,38 @@ public abstract class Option<T> {
     public void forceUpdate() throws InvalidConfigValueException, NodeNeedRestartException {
         setValue(getValueString());
     }
-    
+
     public String getName(){
         return name;
     }
-    
-    /** Used in alt="" to label a box with the option name used in the config file. 
+
+    /** Used in alt="" to label a box with the option name used in the config file.
      * FIXME get rid of said alt=""? Not much use for most users. See caller. */
     public String getShortDesc(){
         return shortDesc;
     }
-    
+
     /** Not used outside the class. */
     private String getLongDesc(){
         return longDesc;
     }
-    
+
     public boolean isExpert(){
         return expert;
     }
-    
+
     public boolean isForcedWrite(){
         return forceWrite;
     }
-    
+
     public int getSortOrder(){
         return sortOrder;
     }
-    
+
     public DataType getDataType() {
         return dataType;
     }
-    
+
     public String getDataTypeStr() {
         switch(dataType) {
         case STRING:
@@ -163,7 +163,7 @@ public abstract class Option<T> {
         else
             return currentValue;
     }
-    
+
     /**
      * Is this option set to the default?
      */
@@ -179,7 +179,7 @@ public abstract class Option<T> {
     public final void setDefault() {
         currentValue = defaultValue;
     }
-    
+
     public final String getDefault() {
         return toString(defaultValue);
     }
@@ -192,17 +192,17 @@ public abstract class Option<T> {
     public String getLocalisedShortDesc(BaseL10n l10n) {
         return l10n.getString(getShortDesc(), "default", getDefault());
     }
-    
+
     /** Get the localised short description */
     public String getLocalisedShortDesc() {
         return getLocalisedShortDesc(NodeL10n.getBase());
     }
-    
+
     /** Useful for plugins as can pass own BaseL10n in */
     public String getLocalisedLongDesc(BaseL10n l10n) {
         return l10n.getString(getLongDesc(), "default", getDefault());
     }
-    
+
     /** Get the localised long description */
     public String getLocalisedLongDesc() {
         return getLocalisedLongDesc(NodeL10n.getBase());
@@ -214,7 +214,7 @@ public abstract class Option<T> {
                 .getHTMLNode(getShortDesc(), new String[] { "default" } , new String[] { getDefault() }) : new HTMLNode("#",
                 plugin.getString(getShortDesc()));
     }
-    
+
     public HTMLNode getShortDescNode() {
         return getShortDescNode(null);
     }
@@ -225,9 +225,9 @@ public abstract class Option<T> {
                 .getHTMLNode(getLongDesc(), new String[] { "default" } , new String[] { getDefault() }) : new HTMLNode("#",
                 plugin.getString(getLongDesc()));
     }
-    
+
     public HTMLNode getLongDescNode() {
         return getLongDescNode(null);
     }
-    
+
 }

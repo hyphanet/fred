@@ -15,7 +15,7 @@ import freenet.support.HexUtil;
 public class DSASignature implements CryptoElement, java.io.Serializable {
     private static final long serialVersionUID = -1;
     private final BigInteger r, s;
-    private String toStringCached; //toString() cache 
+    private String toStringCached; //toString() cache
 
     public DSASignature(InputStream in) throws IOException {
         r=Util.readMPI(in);
@@ -24,7 +24,7 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
     }
 
     /**
-     * Parses a DSA Signature pair from a string, where r and s are 
+     * Parses a DSA Signature pair from a string, where r and s are
      * in unsigned hex-strings, separated by a comma
      */
     public DSASignature(String sig) throws NumberFormatException {
@@ -94,5 +94,5 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
             return data;
         } else throw new IllegalArgumentException("Length is much shorter: "+data.length+" but target length = "+length);
     }
-          
+
 }

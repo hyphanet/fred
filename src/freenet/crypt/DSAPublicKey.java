@@ -28,12 +28,12 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
      * get rid of db4o. */
     private final DSAGroup group;
     private byte[] fingerprint = null;
-    
+
     private static final DSAGroup group(DSAGroup g) {
         if(g == null) return Global.DSAgroupBigA;
         else return g;
     }
-    
+
     public DSAPublicKey(DSAGroup g, BigInteger y) {
         if(y.signum() != 1)
             throw new IllegalArgumentException();
@@ -125,7 +125,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 //        group.writeForWire(out);
 //    }
 //
-//    public void writeWithoutGroup(OutputStream out) 
+//    public void writeWithoutGroup(OutputStream out)
 //    throws IOException {
 //        write(out, getClass().getName());
 //        Util.writeMPI(y, out);

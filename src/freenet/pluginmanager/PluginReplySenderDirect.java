@@ -13,7 +13,7 @@ import freenet.support.api.Bucket;
  * @author xor (xor@freenetproject.org)
  */
 public class PluginReplySenderDirect extends PluginReplySender {
-    
+
     private final Node node;
     private final FredPluginTalker target;
 
@@ -28,7 +28,7 @@ public class PluginReplySenderDirect extends PluginReplySender {
 
     @Override
     public void send(final SimpleFieldSet params, final Bucket bucket) {
-        
+
         node.executor.execute(new Runnable() {
 
             @Override

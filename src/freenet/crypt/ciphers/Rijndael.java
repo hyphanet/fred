@@ -14,7 +14,7 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.support.Logger;
 
 /*
-  This code is part of the Java Adaptive Network Client by Ian Clarke. 
+  This code is part of the Java Adaptive Network Client by Ian Clarke.
   It is distributed under the GNU Public Licence (GPL) version 2.  See
   http://www.gnu.org/ for further details of the GPL.
  */
@@ -28,11 +28,11 @@ public class Rijndael implements BlockCipher {
     private final int keysize, blocksize;
 
     public static final Provider AesCtrProvider = getAesCtrProvider();
-    
+
     public static String getProviderName() {
         return AesCtrProvider != null ? AesCtrProvider.getName() : null;
     }
-    
+
     static private long benchmark(Cipher cipher, SecretKeySpec key, IvParameterSpec IV) throws GeneralSecurityException
     {
         long times = Long.MAX_VALUE;
@@ -61,7 +61,7 @@ public class Rijndael implements BlockCipher {
         return times;
     }
 
-    /** @return null if JCA is crippled (restricted to 128-bit) so we need 
+    /** @return null if JCA is crippled (restricted to 128-bit) so we need
      * to use this class. */
     private static Provider getAesCtrProvider() {
         try {
@@ -117,7 +117,7 @@ public class Rijndael implements BlockCipher {
             return null;
         }
     }
-    
+
     /**
      * Create a Rijndael instance.
      * @param keysize The key size.

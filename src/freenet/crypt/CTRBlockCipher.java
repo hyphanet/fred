@@ -1,5 +1,5 @@
-/** Copied from Bouncycastle v147/SICBlockCipher.java. Unfortunately we can't use their 
- * JCE without sorting out the policy files issues. Bouncycastle is MIT X licensed i.e. 
+/** Copied from Bouncycastle v147/SICBlockCipher.java. Unfortunately we can't use their
+ * JCE without sorting out the policy files issues. Bouncycastle is MIT X licensed i.e.
  * GPL compatible. */
 package freenet.crypt;
 
@@ -11,14 +11,14 @@ public class CTRBlockCipher
 {
     /** Block cipher */
     private final BlockCipher     cipher;
-    /** Block size in bytes. 
+    /** Block size in bytes.
      * Equal to IV.length = counter.length = counterOut.length. */
     private final int             blockSize;
-    
-    /** Initialization vector, equal to the initial value of the plaintext 
+
+    /** Initialization vector, equal to the initial value of the plaintext
      * counter. */
     private final byte[]          IV;
-    /** The plaintext block counter. This is incremented (from [31] 
+    /** The plaintext block counter. This is incremented (from [31]
      * backwards) after each block encryption. */
     private final byte[]          counter;
     /** The ciphertext block counter. This is the result of encrypting the
@@ -28,7 +28,7 @@ public class CTRBlockCipher
 
     /** Offset within the current block. */
     private int blockOffset;
-    
+
     /**
      * Basic constructor.
      *
@@ -59,7 +59,7 @@ public class CTRBlockCipher
      * given IV!
      * @param iv The initialization vector. This is the initial value of
      * the plaintext counter. The plaintext is XORed with a sequence of
-     * bytes consisting of the encryption of successive values of the counter. 
+     * bytes consisting of the encryption of successive values of the counter.
      * @throws IllegalArgumentException If the IV length is wrong.
      */
     public void init(byte[] iv, int offset, int length)
@@ -71,7 +71,7 @@ public class CTRBlockCipher
         System.arraycopy(IV, 0, counter, 0, counter.length);
         processBlock();
     }
-    
+
     public void init(byte[] iv)
         throws IllegalArgumentException
     {
@@ -82,7 +82,7 @@ public class CTRBlockCipher
     {
         return cipher.getBlockSize();
     }
-    
+
     public byte processByte(byte in) {
         if(blockOffset == counterOut.length) {
             processBlock();
@@ -136,7 +136,7 @@ public class CTRBlockCipher
         // the counter to counterOut and then encrypt in-place.
         System.arraycopy(counter, 0, counterOut, 0, counter.length);
         cipher.encipher(counterOut, counterOut);
-        
+
         // Now increment counter.
         for (int i = counter.length; i-- > 0 && (++counter[i]) == (byte)0;) {
             /* nothing here */

@@ -19,10 +19,10 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 
 /**
  * Client level CHK. Can be converted into a FreenetURI, can be used to decrypt
- * a CHKBlock, can be produced by a CHKBlock. 
+ * a CHKBlock, can be produced by a CHKBlock.
  */
 public class ClientCHK extends ClientKey {
-    
+
     /** Lazily constructed: the NodeCHK */
     transient NodeCHK nodeKey;
     /** Routing key */
@@ -36,14 +36,14 @@ public class ClientCHK extends ClientKey {
     /** Compression algorithm, negative means uncompressed */
     final short compressionAlgorithm;
     final int hashCode;
-    
+
     /* We use EXTRA_LENGTH above for consistency, rather than dis.read etc. Some code depends on this
      * being accurate. Change those uses if you like. */
     /** The length of the "extra" bytes in the key */
     public static final short EXTRA_LENGTH = 5;
     /** The length of the decryption key */
     public static final short CRYPTO_KEY_LENGTH = 32;
-    
+
     private ClientCHK(ClientCHK key) {
         this.routingKey = key.routingKey.clone();
         this.nodeKey = null;
@@ -54,7 +54,7 @@ public class ClientCHK extends ClientKey {
         if(routingKey == null) throw new NullPointerException();
         hashCode = Fields.hashCode(routingKey) ^ Fields.hashCode(routingKey) ^ compressionAlgorithm;
     }
-    
+
     /**
      * @param routingKey The routing key. This is the overall hash of the
      * header and content of the key.
@@ -64,10 +64,10 @@ public class ClientCHK extends ClientKey {
      * @param isControlDocument True if the document is a Control Document.
      * These carry metadata, whereas ordinary keys carry data, and have no
      * type.
-     * @param algo The encryption algorithm's identifier. See ALGO_* for 
+     * @param algo The encryption algorithm's identifier. See ALGO_* for
      * values.
      */
-    public ClientCHK(byte[] routingKey, byte[] encKey,  
+    public ClientCHK(byte[] routingKey, byte[] encKey,
             boolean isControlDocument, byte algo, short compressionAlgorithm) {
         this.routingKey = routingKey;
         this.cryptoKey = encKey;
@@ -91,7 +91,7 @@ public class ClientCHK extends ClientKey {
         compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
         hashCode = Fields.hashCode(routingKey) ^ Fields.hashCode(cryptoKey) ^ compressionAlgorithm;
     }
-    
+
     /**
      * Create from a URI.
      */
@@ -115,7 +115,7 @@ public class ClientCHK extends ClientKey {
     /**
      * Create from a raw binary CHK. This expresses the key information
      * in as few bytes as possible.
-     * @throws IOException 
+     * @throws IOException
      */
     private ClientCHK(DataInputStream dis) throws IOException {
         byte[] extra = new byte[EXTRA_LENGTH];
@@ -142,13 +142,13 @@ public class ClientCHK extends ClientKey {
         dos.write(routingKey);
         dos.write(cryptoKey);
     }
-    
+
     static byte[] lastExtra;
-    
+
     public byte[] getExtra() {
         return getExtra(cryptoAlgorithm, compressionAlgorithm, controlDocument);
     }
-    
+
     public static byte[] getExtra(byte cryptoAlgorithm, short compressionAlgorithm, boolean controlDocument) {
         byte[] extra = new byte[EXTRA_LENGTH];
         extra[0] = (byte) (cryptoAlgorithm >> 8);
@@ -162,11 +162,11 @@ public class ClientCHK extends ClientKey {
         lastExtra = extra;
         return extra;
     }
-    
+
     public static byte getCryptoAlgorithmFromExtra(byte[] extra) {
         return extra[1];
     }
-    
+
     static HashSet<ByteArrayWrapper> standardExtras = new HashSet<ByteArrayWrapper>();
     static {
         for(byte cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256; cryptoAlgorithm <= Key.ALGO_AES_CTR_256_SHA256; cryptoAlgorithm++) {
@@ -176,14 +176,14 @@ public class ClientCHK extends ClientKey {
             }
         }
     }
-    
+
     public static byte[] internExtra(byte[] extra) {
         for(ByteArrayWrapper baw : standardExtras) {
             if(Arrays.equals(baw.get(), extra)) return baw.get();
         }
         return extra;
     }
-    
+
     @Override
     public String toString() {
         return super.toString()+ ':' +Base64.encode(routingKey)+ ',' +
@@ -204,7 +204,7 @@ public class ClientCHK extends ClientKey {
             nodeKey = new NodeCHK(routingKey, cryptoAlgorithm);
         return nodeKey;
     }
-    
+
     /**
      * @return URI form of this key.
      */
@@ -239,12 +239,12 @@ public class ClientCHK extends ClientKey {
     public void removeFrom(ObjectContainer container) {
         container.delete(this);
     }
-    
+
     @Override
     public int hashCode() {
         return hashCode;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if(!(o instanceof ClientCHK)) return false;
@@ -260,11 +260,11 @@ public class ClientCHK extends ClientKey {
     public byte[] getRoutingKey() {
         return routingKey;
     }
-    
+
     public byte[] getCryptoKey() {
         return cryptoKey;
     }
-    
+
     public boolean objectCanNew(ObjectContainer container) {
         if(routingKey == null)
             throw new NullPointerException("Storing a ClientCHK with no routingKey!: stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this));

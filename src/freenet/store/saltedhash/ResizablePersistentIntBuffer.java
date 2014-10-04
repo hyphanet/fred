@@ -15,15 +15,15 @@ import freenet.support.Ticker;
 
 /** A large resizable block of int's, which is persisted to disk with a specific policy,
  * which is either to write it on shutdown, immediately, or every X millis.
- * 
+ *
  * It would be better to do this with ByteBuffer's and an IntBuffer view, unfortunately
- * it is not possible to subclass ByteBuffer's! Also, ideally we'd memory map, but there 
+ * it is not possible to subclass ByteBuffer's! Also, ideally we'd memory map, but there
  * is no way to unmap, and it is likely there will never be, so resizing would be very
  * messy and expensive.
  * @author toad
  */
 public class ResizablePersistentIntBuffer {
-    
+
     private final File filename;
     private final RandomAccessFile raf;
     private final FileChannel channel;
@@ -46,24 +46,24 @@ public class ResizablePersistentIntBuffer {
     private boolean dirty;
     /** Is the writer job scheduled? Protected by (this). */
     private boolean scheduled;
-    /** Is the writer job running? So we can wait for it to complete on shutdown e.g. 
+    /** Is the writer job running? So we can wait for it to complete on shutdown e.g.
      * Protected by (this). */
     private boolean writing;
     private boolean closed;
-    
+
     public static synchronized void setPersistenceTime(int val) {
         globalPersistenceTime = val;
     }
-    
+
     public static synchronized int getPersistenceTime() {
         return globalPersistenceTime;
     }
-    
+
     /** Create the buffer. Open the file, creating if necessary, read in the data, and set
      * its size.
      * @param f The filename.
      * @param size The expected size in ints (i.e. multiply by four to get bytes).
-     * @throws IOException 
+     * @throws IOException
      */
     public ResizablePersistentIntBuffer(File f, int size) throws IOException {
         this.filename = f;
@@ -81,8 +81,8 @@ public class ResizablePersistentIntBuffer {
             raf.setLength(expectedLength);
         channel = raf.getChannel();
     }
-    
-    /** Should be called during startup to fill in an appropriate default value e.g. if the store 
+
+    /** Should be called during startup to fill in an appropriate default value e.g. if the store
      * is completely new. */
     public void fill(int value) {
         for(int i=0;i<buffer.length;i++)
@@ -101,7 +101,7 @@ public class ResizablePersistentIntBuffer {
             read += data.length;
         }
     }
-    
+
     public void start(Ticker ticker) {
         synchronized(this) {
             this.ticker = ticker;
@@ -123,7 +123,7 @@ public class ResizablePersistentIntBuffer {
             lock.readLock().unlock();
         }
     }
-    
+
     public void put(int offset, int value) throws IOException {
         put(offset, value, false);
     }
@@ -158,7 +158,7 @@ public class ResizablePersistentIntBuffer {
             lock.readLock().unlock();
         }
     }
-    
+
     private Runnable writer = new Runnable() {
 
         public void run() {
@@ -188,9 +188,9 @@ public class ResizablePersistentIntBuffer {
             }
             Logger.normal(this, "Written slot cache "+ResizablePersistentIntBuffer.this);
         }
-        
+
     };
-    
+
     public void shutdown() {
         lock.writeLock().lock();
         try {
@@ -227,9 +227,9 @@ public class ResizablePersistentIntBuffer {
         } finally {
             lock.writeLock().unlock();
         }
-        
+
     }
-    
+
     public void abort() {
         lock.writeLock().lock();
         try {
@@ -258,7 +258,7 @@ public class ResizablePersistentIntBuffer {
             written += toWrite;
         }
     }
-    
+
     public void resize(int size) {
         lock.writeLock().lock();
         try {
@@ -313,7 +313,7 @@ public class ResizablePersistentIntBuffer {
     public boolean isNew() {
         return isNew;
     }
-    
+
     public String toString() {
         return filename.getPath();
     }
@@ -323,9 +323,9 @@ public class ResizablePersistentIntBuffer {
         for(int i=0;i<buffer.length;i++)
             if(buffer[i] == key) buffer[i] = value;
     }
-    
+
     public int size() {
         return size;
     }
-    
+
 }

@@ -17,7 +17,7 @@ import freenet.support.Logger;
 
 /**
  * @author amphibian
- * 
+ *
  * Node-level CHK. Does not have enough information to decode the payload.
  * But can verify that it is intact. Just has the routingKey.
  */
@@ -25,26 +25,26 @@ public class NodeCHK extends Key {
 
     /** 32 bytes for hash, 2 bytes for type */
     public static final short FULL_KEY_LENGTH = 34;
-    
+
     public NodeCHK(byte[] routingKey2, byte cryptoAlgorithm) {
         super(routingKey2);
         if(routingKey2.length != KEY_LENGTH)
             throw new IllegalArgumentException("Wrong length: "+routingKey2.length+" should be "+KEY_LENGTH);
         this.cryptoAlgorithm = cryptoAlgorithm;
     }
-    
+
     private NodeCHK(NodeCHK key) {
         super(key);
         this.cryptoAlgorithm = key.cryptoAlgorithm;
     }
-    
+
     @Override
     public Key cloneKey() {
         return new NodeCHK(this);
     }
 
     public static final int KEY_LENGTH = 32;
-    
+
     /** Crypto algorithm */
     final byte cryptoAlgorithm;
 
@@ -65,7 +65,7 @@ public class NodeCHK extends Key {
         _index.writeShort(getType());
         _index.write(routingKey);
     }
-    
+
     public static Key readCHK(DataInput raf, byte algo) throws IOException {
         byte[] buf = new byte[KEY_LENGTH];
         raf.readFully(buf);
@@ -81,17 +81,17 @@ public class NodeCHK extends Key {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode(){
         return super.hashCode();
     }
-    
+
     @Override
     public short getType() {
         return (short) ((BASE_TYPE << 8) + (cryptoAlgorithm & 0xFF));
     }
-    
+
     @Override
     public byte[] getRoutingKey(){
         return routingKey;
@@ -106,7 +106,7 @@ public class NodeCHK extends Key {
         System.arraycopy(routingKey, 0, buf, 2, routingKey.length);
         return buf;
     }
-    
+
     public static byte cryptoAlgorithmFromFullKey(byte[] fullKey) {
         return fullKey[1];
     }

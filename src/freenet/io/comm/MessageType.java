@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -44,7 +44,7 @@ public class MessageType {
     public MessageType(String name, short priority) {
         this(name, priority, false, false);
     }
-    
+
     public MessageType(String name, short priority, boolean internal, boolean isLossyPacketMessage) {
         _name = name;
         this.priority = priority;
@@ -61,7 +61,7 @@ public class MessageType {
     public void unregister() {
         _specs.remove(Integer.valueOf(_name.hashCode()));
     }
-    
+
     public void addLinkedListField(String name, Class<?> parameter) {
         _linkedListTypes.put(name, parameter);
         addField(name, LinkedList.class);
@@ -71,7 +71,7 @@ public class MessageType {
         _fields.put(name, type);
         _orderedFields.addLast(name);
     }
-    
+
     public void addRoutedToNodeMessageFields() {
         addField(DMT.UID, Long.class);
         addField(DMT.TARGET_LOCATION, Double.class);
@@ -112,7 +112,7 @@ public class MessageType {
     public int hashCode() {
         return _name.hashCode();
     }
-    
+
     public static MessageType getSpec(Integer specID, boolean dontLog) {
         MessageType id = _specs.get(specID);
         if (id == null) {
@@ -133,7 +133,7 @@ public class MessageType {
     public LinkedList<String> getOrderedFields() {
         return _orderedFields;
     }
-    
+
     public Map<String, Class<?>> getLinkedListTypes() {
         return _linkedListTypes;
     }
@@ -146,9 +146,9 @@ public class MessageType {
     public boolean isInternalOnly() {
         return internalOnly;
     }
-    
+
     /** @return The default priority for the message type. Messages's don't necessarily
-     * use this: Message.boostPriority() can increase it for a realtime message, for 
+     * use this: Message.boostPriority() can increase it for a realtime message, for
      * instance. */
     public short getDefaultPriority() {
         return priority;

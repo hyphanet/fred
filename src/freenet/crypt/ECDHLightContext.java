@@ -9,7 +9,7 @@ public class ECDHLightContext extends KeyAgreementSchemeContext {
     static { Logger.registerClass(ECDHLightContext.class); }
     private static volatile boolean logMINOR;
     private static volatile boolean logDEBUG;
-    
+
     public final ECDH ecdh;
 
     @Override
@@ -23,7 +23,7 @@ public class ECDHLightContext extends KeyAgreementSchemeContext {
         this.ecdh = new ECDH(curve);
         this.lastUsedTime = System.currentTimeMillis();
     }
-    
+
     public ECPublicKey getPublicKey() {
         return ecdh.getPublicKey();
     }

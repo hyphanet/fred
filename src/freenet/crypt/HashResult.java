@@ -18,7 +18,7 @@ public class HashResult implements Comparable<HashResult>, Cloneable {
     private final byte[] result;
     /** Cached HashType.values(). Never modify or pass this array to outside code! */
     private static final HashType[] HashType_values = HashType.values();
-    
+
     public HashResult(HashType hashType, byte[] bs) {
         this.type = hashType;
         this.result = bs;
@@ -132,7 +132,7 @@ public class HashResult implements Comparable<HashResult>, Cloneable {
         }
         return out;
     }
-    
+
     @Override
     public HashResult clone() {
         try {

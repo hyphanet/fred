@@ -15,13 +15,13 @@ import freenet.support.io.FileUtil;
 /**
  * IoAdapter proxy using Rijndael (256 bit key, 256 bit block) in CTR mode.
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
- * 
+ *
  * FIXME: URGENT CRYPTO CODE REVIEW!!!
- * 
+ *
  * FIXME CRYPTO first problem with this is key = IV. We should pass a separate IV in.
  */
 public class EncryptingIoAdapter extends IoAdapter {
-    
+
     private final IoAdapter baseAdapter;
     private final RandomSource random;
     private final byte[] key;
@@ -29,7 +29,7 @@ public class EncryptingIoAdapter extends IoAdapter {
     private long position;
     private byte[] blockOutput;
     private long blockPosition;
-    
+
     static final int BLOCK_SIZE_BYTES = 32;
 
     /**

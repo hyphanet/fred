@@ -39,14 +39,14 @@ import freenet.support.Logger.LogLevel;
 
 /**
  * A Message which can be read from and written to a DatagramPacket.
- * 
- * SECURITY REDFLAG WARNING: Messages should normally be recreated rather 
+ *
+ * SECURITY REDFLAG WARNING: Messages should normally be recreated rather
  * than passed on. Messages can contain sub-messages, these are used to
  * avoid having to add whole new message types every time we add one field
- * to a message... Passing on a message as-is means it includes the 
+ * to a message... Passing on a message as-is means it includes the
  * sub-messages, which could lead to e.g. labelling, communication between
  * colluding nodes along a request route, and just wasting bytes.
- * 
+ *
  * FIXME we should get rid of sub-messages.
  *
  * @author ian
@@ -77,12 +77,12 @@ public class Message {
     short priority;
     private boolean needsLoadRT;
     private boolean needsLoadBulk;
-    
+
     public static Message decodeMessageFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
         ByteBufferInputStream bb = new ByteBufferInputStream(buf, offset, length);
         return decodeMessage(bb, peer, length + overhead, true, false, false);
     }
-    
+
     public static Message decodeMessageLax(byte[] buf, PeerContext peer, int overhead) {
         ByteBufferInputStream bb = new ByteBufferInputStream(buf);
         return decodeMessage(bb, peer, buf.length + overhead, true, false, true);
@@ -226,7 +226,7 @@ public class Message {
     public Object getObject(String key) {
         return _payload.get(key);
     }
-    
+
     public byte[] getShortBufferBytes(String key) {
         ShortBuffer buffer = (ShortBuffer) getObject(key);
         return buffer.getData();
@@ -401,7 +401,7 @@ public class Message {
     public short getPriority() {
         return priority;
     }
-    
+
     public void boostPriority() {
         priority--;
     }
@@ -409,15 +409,15 @@ public class Message {
     public boolean needsLoadRT() {
         return needsLoadRT;
     }
-    
+
     public boolean needsLoadBulk() {
         return needsLoadBulk;
     }
-    
+
     public void setNeedsLoadRT() {
         needsLoadRT = true;
     }
-    
+
     public void setNeedsLoadBulk() {
         needsLoadBulk = true;
     }

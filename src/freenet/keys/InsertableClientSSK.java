@@ -35,18 +35,18 @@ import freenet.support.compress.InvalidCompressionCodecException;
 public class InsertableClientSSK extends ClientSSK {
 
     public final DSAPrivateKey privKey;
-    
+
     private static boolean logMINOR;
     static {
         Logger.registerClass(InsertableClientSSK.class);
     }
-    
+
     public InsertableClientSSK(String docName, byte[] pubKeyHash, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] cryptoKey, byte cryptoAlgorithm) throws MalformedURLException {
         super(docName, pubKeyHash, getExtraBytes(cryptoAlgorithm), pubKey, cryptoKey);
         if(pubKey == null) throw new NullPointerException();
         this.privKey = privKey;
     }
-    
+
     public static InsertableClientSSK create(FreenetURI uri) throws MalformedURLException {
         if(uri.getKeyType().equalsIgnoreCase("KSK"))
             return ClientKSK.create(uri);
@@ -55,7 +55,7 @@ public class InsertableClientSSK extends ClientSSK {
             throw new MalformedURLException("Insertable SSK URIs must have a private key!: "+uri);
         if(uri.getCryptoKey() == null)
             throw new MalformedURLException("Insertable SSK URIs must have a private key!: "+uri);
-        
+
         byte keyType;
 
         byte[] extra = uri.getExtra();
@@ -75,9 +75,9 @@ public class InsertableClientSSK extends ClientSSK {
         else {
             throw new MalformedURLException("Not a valid SSK insert URI type: "+uri.getKeyType());
         }
-        
-        // Allow docName="" for SSKs. E.g. GenerateSSK returns these; we want to be consistent. 
-        // However, we recommend that you not use this, especially not for a freesite, as 
+
+        // Allow docName="" for SSKs. E.g. GenerateSSK returns these; we want to be consistent.
+        // However, we recommend that you not use this, especially not for a freesite, as
         // SSK@blah,blah,blah//filename is confusing for clients, browsers etc.
         if(uri.getDocName() == null)
             throw new MalformedURLException("SSK URIs must have a document name (to avoid ambiguity)");
@@ -87,7 +87,7 @@ public class InsertableClientSSK extends ClientSSK {
         byte[] pkHash = pubKey.asBytesHash();
         return new InsertableClientSSK(uri.getDocName(), pkHash, pubKey, privKey, uri.getCryptoKey(), keyType);
     }
-    
+
     public ClientSSKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, RandomSource r, String compressordescriptor, boolean pre1254) throws SSKEncodeException, IOException, InvalidCompressionCodecException {
         byte[] compressedData;
         short compressionAlgo;
@@ -220,7 +220,7 @@ public class InsertableClientSSK extends ClientSSK {
         DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
         try {
             byte[] pkHash = SHA256.digest(pubKey.asBytes());
-            return new InsertableClientSSK(docName, pkHash, pubKey, privKey, ckey, 
+            return new InsertableClientSSK(docName, pkHash, pubKey, privKey, ckey,
                     Key.ALGO_AES_PCFB_256_SHA256);
         } catch (MalformedURLException e) {
             throw new Error(e);
@@ -240,12 +240,12 @@ public class InsertableClientSSK extends ClientSSK {
     public DSAGroup getCryptoGroup() {
         return Global.DSAgroupBigA;
     }
-    
+
     @Override
     public void removeFrom(ObjectContainer container) {
         container.activate(privKey, 5);
         privKey.removeFrom(container);
         super.removeFrom(container);
     }
-    
+
 }

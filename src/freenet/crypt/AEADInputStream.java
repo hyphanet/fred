@@ -14,24 +14,24 @@ import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 public class AEADInputStream extends FilterInputStream {
-    
+
     private static final int MAC_SIZE_BITS = AEADOutputStream.MAC_SIZE_BITS;
     private final AEADBlockCipher cipher;
     private boolean finished;
-    
-    /** Create a decrypting, authenticating InputStream. IMPORTANT: We only authenticate when 
+
+    /** Create a decrypting, authenticating InputStream. IMPORTANT: We only authenticate when
      * closing the stream, so do NOT use Closer.close() etc and swallow IOException's on close(),
-     * as that's what we will throw if authentication fails. We will read the nonce from the 
+     * as that's what we will throw if authentication fails. We will read the nonce from the
      * stream; it functions similarly to an IV.
-     * @param is The underlying InputStream. 
+     * @param is The underlying InputStream.
      * @param key The encryption key.
-     * @param nonce The nonce. This serves the function of an IV. As a nonce, this MUST be unique. 
-     * We will write it to the stream so the other side can pick it up, like an IV. 
+     * @param nonce The nonce. This serves the function of an IV. As a nonce, this MUST be unique.
+     * We will write it to the stream so the other side can pick it up, like an IV.
      * @param mainCipher The BlockCipher for encrypting data. E.g. AES; not a block mode. This will
      * be used for encrypting a fairly large amount of data so could be any of the 3 BC AES impl's.
      * @param hashCipher The BlockCipher for the final hash. E.g. AES, not a block mode. This will
      * not be used very much so should be e.g. an AESLightEngine. */
-    public AEADInputStream(InputStream is, byte[] key, BlockCipher hashCipher, 
+    public AEADInputStream(InputStream is, byte[] key, BlockCipher hashCipher,
             BlockCipher mainCipher) throws IOException {
         super(is);
         byte[] nonce = new byte[mainCipher.getBlockSize()];
@@ -44,29 +44,29 @@ public class AEADInputStream extends FilterInputStream {
         excessEnd = 0;
         excessPtr = 0;
     }
-    
+
     public final int getIVSize() {
         return cipher.getUnderlyingCipher().getBlockSize() / 8;
     }
-    
+
     private final byte[] onebyte = new byte[1];
-    
+
     private final byte[] excess;
     private int excessEnd;
     private int excessPtr;
-    
+
     @Override
     public int read() throws IOException {
         int length = read(onebyte);
         if(length <= 0) return -1;
         else return onebyte[0];
     }
-    
+
     @Override
     public int read(byte[] buf) throws IOException {
         return read(buf, 0, buf.length);
     }
-    
+
     @Override
     public int read(byte[] buf, int offset, int length) throws IOException {
         if(length < 0) return -1;
@@ -122,17 +122,17 @@ public class AEADInputStream extends FilterInputStream {
             }
         }
     }
-    
+
     @Override
     public int available() throws IOException {
         int excess = excessEnd - excessPtr;
         if(excess > 0) return excess;
         if(finished) return 0;
-        // FIXME Not very accurate as may include the MAC - or it may not, this is not the full 
+        // FIXME Not very accurate as may include the MAC - or it may not, this is not the full
         // length of the stream. Maybe we should return 0?
         return in.available();
     }
-    
+
     @Override
     public long skip(long n) throws IOException {
         // FIXME unit test skip()
@@ -165,7 +165,7 @@ public class AEADInputStream extends FilterInputStream {
         }
         return skipped;
     }
-    
+
     @Override
     public void close() throws IOException {
         if(!finished)
@@ -173,22 +173,22 @@ public class AEADInputStream extends FilterInputStream {
             skip(Long.MAX_VALUE);
         in.close();
     }
-    
+
     @Override
     public boolean markSupported() {
         return false;
     }
-    
+
     @Override
     public void mark(int readlimit) {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public void reset() throws IOException {
         throw new IOException("Mark/reset not supported");
     }
-    
+
     public static AEADInputStream createAES(InputStream is, byte[] key) throws IOException {
         AESEngine mainCipher = new AESEngine();
         AESLightEngine hashCipher = new AESLightEngine();

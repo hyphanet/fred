@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -87,7 +87,7 @@ public final class MessageFilter {
         if(_or != null)
             _or.onStartWaiting(waitFor);
     }
-    
+
     /**
      * Set whether the timeout is relative to the creation of the filter, or the start of
      * waitFor().
@@ -98,7 +98,7 @@ public final class MessageFilter {
         _timeoutFromWait = !b;
         return this;
     }
-    
+
     /**
      * This filter will expire after the specificed amount of time. Note also that where two or more filters match the
      * same message, the one with the nearer expiry time will get priority
@@ -119,7 +119,7 @@ public final class MessageFilter {
         _initialTimeout = 0;
         return this;
     }
-    
+
     public MessageFilter setType(MessageType type) {
         _type = type;
         return this;
@@ -131,7 +131,7 @@ public final class MessageFilter {
             _oldBootID = source.getBootID();
         return this;
     }
-    
+
     /**
      Returns the source that this filter (or chain) matches
      */
@@ -193,25 +193,25 @@ public final class MessageFilter {
         _ctr = ctr;
         return this;
     }
-    
+
     enum MATCHED {
         MATCHED,
         TIMED_OUT,
         TIMED_OUT_AND_MATCHED,
         NONE
     }
-    
+
     public MATCHED match(Message m, long now) {
         return match(m, false, now);
     }
-    
+
     public MATCHED match(Message m, boolean noTimeout, long now) {
         if(_or != null) {
             MATCHED matched = _or.match(m, noTimeout, now);
             if(matched != MATCHED.NONE)
                 return matched; // Filter is matched once only. That includes timeouts.
         }
-        
+
         if ((_type != null) && (!_type.equals(m.getSpec()))) {
             // Timeout immediately, but don't check the callback, so we still need the periodic check.
             if(_timeout < now)
@@ -254,13 +254,13 @@ public final class MessageFilter {
     public PeerContext droppedConnection() {
         return _droppedConnection;
     }
-    
+
     boolean reallyTimedOut(long time) {
         if(_callback != null && _callback.shouldTimeout())
             _timeout = -1; // timeout immediately
         return _timeout < time;
     }
-    
+
     /**
      * @param time The current time in milliseconds.
      * @return True if the filter has timed out, or if it has been matched already. Caller will
@@ -289,7 +289,7 @@ public final class MessageFilter {
     public long getInitialTimeout() {
         return _initialTimeout;
     }
-    
+
     public long getTimeout() {
         return _timeout;
     }
@@ -315,19 +315,19 @@ public final class MessageFilter {
     public void clearOr() {
         _or = null;
     }
-    
+
     public boolean matchesDroppedConnection(PeerContext ctx) {
         if(_source == ctx) return true;
         if(_or != null) return _or.matchesDroppedConnection(ctx);
         return false;
     }
-    
+
     public boolean matchesRestartedConnection(PeerContext ctx) {
         if(_source == ctx) return true;
         if(_or != null) return _or.matchesRestartedConnection(ctx);
         return false;
     }
-    
+
     /**
      * Notify because of a dropped connection.
      * Caller must verify _matchesDroppedConnection and _source.
@@ -355,7 +355,7 @@ public final class MessageFilter {
                     public int getPriority() {
                         return ((SlowAsyncMessageFilterCallback)cb).getPriority();
                     }
-                    
+
                 });
             } else {
                 cb.onDisconnect(ctx);
@@ -390,7 +390,7 @@ public final class MessageFilter {
                     public int getPriority() {
                         return ((SlowAsyncMessageFilterCallback)cb).getPriority();
                     }
-                    
+
                 });
             } else {
                 cb.onRestarted(ctx);
@@ -427,7 +427,7 @@ public final class MessageFilter {
                     public int getPriority() {
                         return ((SlowAsyncMessageFilterCallback)cb).getPriority();
                     }
-                    
+
                 }, "Slow callback for "+cb);
             else
                 cb.onMatched(msg);
@@ -458,7 +458,7 @@ public final class MessageFilter {
                     public int getPriority() {
                         return ((SlowAsyncMessageFilterCallback)cb).getPriority();
                     }
-                    
+
                 });
             } else
                 cb.onTimeout();

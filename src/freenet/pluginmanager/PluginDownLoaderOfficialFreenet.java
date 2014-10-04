@@ -21,14 +21,14 @@ public class PluginDownLoaderOfficialFreenet extends PluginDownLoaderFreenet {
             return node.nodeUpdater.getURI().setDocName(source).setSuggestedEdition(desc.minimumVersion).sskForUSK();
         }
     }
-    
+
     @Override
     String getPluginName(String source) throws PluginNotFoundException {
         return source + ".jar";
     }
-    
+
     public boolean isOfficialPluginLoader() {
         return true;
     }
-    
+
 }

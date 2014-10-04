@@ -22,20 +22,20 @@ import freenet.support.transport.ip.IPUtil;
  * Long-term InetAddress. If created with an IP address, then the IP address is primary.
  * If created with a name, then the name is primary, and the IP address can change.
  * Most code ripped from Peer.
- * 
- * Propagates the IP address on equals() but not the hostname. This does not change 
+ *
+ * Propagates the IP address on equals() but not the hostname. This does not change
  * hashCode() because it only happens if hostname is set, and in that case, hashCode()
- * is based on the hostname and not on the IP address. So it is safe to put 
+ * is based on the hostname and not on the IP address. So it is safe to put
  * FreenetInetAddress's into hashtables: neither equals() nor getAddress() will change
  * its hashCode.
- * 
+ *
  * BUT a FreenetInetAddress with IP 1.2.3.4 and no hostname is *NOT* equal to one with
  * the IP address and no name. So if you want to match on only the IP address, you need
  * to either call dropHostname() first (after which neither propagation nor getAddress()
  * will change the hashcode), or just use InetAddress's.
- * 
+ *
  * FIXME reconsider whether we need this. The lazy lookup is useful but not THAT useful,
- * and we have a regular lookup task now anyway. Over-complex, could lead to odd bugs, 
+ * and we have a regular lookup task now anyway. Over-complex, could lead to odd bugs,
  * although not if used correctly as explained above.
  * @author amphibian
  */
@@ -195,7 +195,7 @@ public class FreenetInetAddress {
         // we're created with a hostname so delay the lookup of the address
         // until it's needed to work better with dynamic DNS hostnames
     }
-    
+
     public boolean laxEquals(FreenetInetAddress addr) {
         if(hostname != null) {
             if(addr.hostname == null) {
@@ -222,7 +222,7 @@ public class FreenetInetAddress {
         // His hostname might not be null. Not a problem.
         return _address.equals(addr._address);
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if(!(o instanceof FreenetInetAddress)) {
@@ -253,7 +253,7 @@ public class FreenetInetAddress {
         if(!_address.equals(addr._address)) {
             return false;
         }
-        
+
         return true;
     }
 
@@ -283,7 +283,7 @@ public class FreenetInetAddress {
             //Logger.minor(this, "Addresses do not match: mine="+getHostName(_address)+" his="+getHostName(addr._address));
             return false;
         }
-        
+
         return true;
     }
 
@@ -326,7 +326,7 @@ public class FreenetInetAddress {
             return _address;
         } else {
             if(logMINOR) Logger.minor(this, "Looking up '"+hostname+"' in DNS", new Exception("debug"));
-            /* 
+            /*
              * Peers are constructed from an address once a
              * handshake has been completed, so this lookup
              * will only be performed during a handshake
@@ -365,7 +365,7 @@ public class FreenetInetAddress {
             return _address.hashCode(); // Can be null, but if so, hostname will be non-null.
         }
     }
-    
+
     @Override
     public String toString() {
         if(hostname != null) {
@@ -374,7 +374,7 @@ public class FreenetInetAddress {
             return _address.getHostAddress();
         }
     }
-    
+
     public String toStringPrefNumeric() {
         if(_address != null)
             return _address.getHostAddress();
@@ -421,13 +421,13 @@ public class FreenetInetAddress {
                 if(a != null)
                     return IPUtil.isValidAddress(a, allowLocalAddresses);
             }
-            return defaultVal;    
+            return defaultVal;
         }
     }
 
     /**
      * Get a new <code>FreenetInetAddress</code> with host name removed.
-     * 
+     *
      * @return a new <code>FreenetInetAddress</code> with host name removed; or {@code null} if no
      *         known ip address is associated with this object. You may want to do a
      *         <code>getAddress(true)</code> before calling this.

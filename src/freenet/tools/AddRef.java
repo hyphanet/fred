@@ -33,7 +33,7 @@ public class AddRef {
         final File reference = new File(args[0]);
         if((reference == null) || !(reference.isFile()) || !(reference.canRead())){
             System.err.println("Please provide a file name as the first argument.");
-            System.exit(-1);    
+            System.exit(-1);
         }
 
         new AddRef(reference);
@@ -70,7 +70,7 @@ public class AddRef {
             } catch(MessageInvalidException me){
                 me.printStackTrace();
             }
-            
+
             try{
                 sfs = SimpleFieldSet.readFrom(reference, false, true);
                 fcpm = FCPMessage.create(AddPeer.NAME, sfs);

@@ -11,4 +11,4 @@ public class EntropySource {
     public long lastVal;
     public int lastDelta, lastDelta2;
 }
-    
+

@@ -31,7 +31,7 @@ import java.util.StringTokenizer;
  * <li>IP address and network mask (<code>192.168.1.2/255.255.255.0</code>)</li>
  * <li>IP address and network mask bits (<code>192.168.1.2/24</code>)</li>
  * </ul>
- * 
+ *
  * @author David Roden &lt;droden@gmail.com&gt;
  * @version $Id$
  */
@@ -45,7 +45,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
     /**
      * Creates a new address matcher that matches InetAddress objects to the
      * address specification given by <code>cidrHostname</code>.
-     * 
+     *
      * @param cidrHostname
      *            The address range this matcher matches
      */
@@ -75,7 +75,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
      * Converts a dotted IP address (a.b.c.d) to a 32-bit value. The first octet
      * will be in bits 24 to 31, the second in bits 16 to 23, the third in bits
      * 8 to 15, and the fourth in bits 0 to 7.
-     * 
+     *
      * @param address
      *            The address to convert
      * @return The IP address as 32-bit value
@@ -93,7 +93,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
 
     /**
      * Checks whether the given address matches this matcher's address.
-     * 
+     *
      * @param inetAddress
      *            The address to match to this matcher
      * @return <code>true</code> if <code>inetAddress</code> matches the
@@ -109,7 +109,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
     /**
      * Shortcut method for creating a new Inet4AddressMatcher and matching
      * <code>address</code> to it.
-     * 
+     *
      * @param cidrHostname
      *            The host specification to match
      * @param address

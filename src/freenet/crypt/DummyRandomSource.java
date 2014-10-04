@@ -5,7 +5,7 @@ package freenet.crypt;
 
 /**
  * @author amphibian
- * 
+ *
  * Not a real RNG at all, just a simple PRNG. Use it for e.g. simulations.
  */
 public class DummyRandomSource extends RandomSource {

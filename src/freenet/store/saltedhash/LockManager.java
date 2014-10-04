@@ -15,9 +15,9 @@ import freenet.support.Logger.LogLevel;
 
 /**
  * Lock Manager
- * 
+ *
  * Handle locking/unlocking of individual offsets.
- * 
+ *
  * @author sdiz
  */
 public class LockManager {
@@ -32,7 +32,7 @@ public class LockManager {
 
     /**
      * Lock the entry
-     * 
+     *
      * This lock is <strong>not</strong> re-entrance. No threads except Cleaner should hold more
      * then one lock at a time (or deadlock may occur).
      */

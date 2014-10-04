@@ -91,7 +91,7 @@ public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T
             public long writes() {
                 return 0;
             }
-            
+
         };
     }
 
@@ -109,7 +109,7 @@ public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T
     public void setUserAlertManager(UserAlertManager userAlertManager) {
         // Do nothing
     }
-    
+
     @Override
     public FreenetStore<T> getUnderlyingStore() {
         return this;

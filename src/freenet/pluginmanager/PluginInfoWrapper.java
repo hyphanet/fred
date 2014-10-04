@@ -44,7 +44,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
     private HashSet<String> toadletLinks = new HashSet<String>();
     private volatile boolean stopping = false;
     private volatile boolean unregistered = false;
-    
+
     public PluginInfoWrapper(Node node, FredPlugin plug, String filename, boolean isOfficial) throws IOException {
         this.plug = plug;
         className = plug.getClass().toString();
@@ -85,24 +85,24 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
         thread = ps;
         thread.setName(threadName);
     }
-    
+
     @Override
     public String toString() {
         return "ID: \"" +threadName + "\", Name: "+ className +", Started: " + (new Date(start)).toString();
     }
-    
+
     public String getThreadName() {
         return threadName;
     }
-    
+
     public long getStarted() {
         return start;
     }
-    
+
     public String getPluginClassName(){
         return plug.getClass().getName();
     }
-    
+
     public String getPluginVersion() {
         if (isVersionedPlugin) {
             return ((FredPluginVersioned)plug).getVersion();
@@ -110,23 +110,23 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
             return NodeL10n.getBase().getString("PproxyToadlet.noVersion");
         }
     }
-    
+
     public synchronized String[] getPluginToadletSymlinks(){
         return toadletLinks.toArray(new String[0]);
     }
-    
+
     public synchronized boolean addPluginToadletSymlink(String linkfrom){
         if (toadletLinks.size() < 1)
             toadletLinks = new HashSet<String>();
         return toadletLinks.add(linkfrom);
     }
-    
+
     public synchronized boolean removePluginToadletSymlink(String linkfrom){
         if (toadletLinks.size() < 1)
             return false;
         return toadletLinks.remove(linkfrom);
     }
-    
+
     public void startShutdownPlugin(PluginManager manager, boolean reloading) {
         unregister(manager, reloading);
         // TODO add a timeout for plug.terminate() too
@@ -162,7 +162,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
                 }
             }
         }
-        
+
         // Close the jar file, so we may delete / reload it
         ClassLoader cl = plug.getClass().getClassLoader();
         if (cl instanceof JarClassLoader) {
@@ -170,7 +170,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
         }
         return success;
     }
-    
+
     /**
      * Tell the plugin to quit. Interrupt it if it's a thread-based plugin which
      * might be sleeping. Then call removePlugin() on it on the manager - either
@@ -186,7 +186,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
         // always remove plugin
         manager.removePlugin(this);
     }
-    
+
     /**
      * Unregister the plugin from any user interface or other callbacks it may be
      * registered with. Call this before manager.removePlugin(): the plugin becomes
@@ -207,7 +207,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
     public String getFilename() {
         return filename;
     }
-    
+
     public boolean isBandwidthIndicator() {
         return isBandwidthIndicator;
     }
@@ -219,7 +219,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
     public boolean isIPDetectorPlugin() {
         return isIPDetectorPlugin;
     }
-    
+
     public boolean isPortForwardPlugin() {
         return isPortForwardPlugin;
     }
@@ -227,11 +227,11 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
     public boolean isMultiplePlugin() {
         return isMultiplePlugin;
     }
-    
+
     public boolean isFCPPlugin() {
         return isFCPPlugin;
     }
-    
+
     public boolean isThemedPlugin() {
         return isThemedPlugin;
     }
@@ -243,7 +243,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
     public boolean isBaseL10nPlugin() {
         return isBaseL10nPlugin;
     }
-    
+
     public boolean isConfigurablePlugin() {
         return isConfigurablePlugin;
     }
