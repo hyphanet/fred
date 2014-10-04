@@ -30,115 +30,115 @@ import freenet.support.SimpleFieldSet;
  * </ul>
  */
 public class ProbeRequest extends FCPMessage {
-	public static final String NAME = "ProbeRequest";
+    public static final String NAME = "ProbeRequest";
 
-	private final String identifier;
-	private final Type type;
-	private final byte htl;
+    private final String identifier;
+    private final Type type;
+    private final byte htl;
 
-	public ProbeRequest(SimpleFieldSet fs) throws MessageInvalidException {
-		/* If not defined in the field set Identifier will be null. As adding a null value to the field set does
-		 * not actually add something under the key, it will also be omitted in the response messages.
-		 */
-		this.identifier = fs.get(IDENTIFIER);
+    public ProbeRequest(SimpleFieldSet fs) throws MessageInvalidException {
+        /* If not defined in the field set Identifier will be null. As adding a null value to the field set does
+         * not actually add something under the key, it will also be omitted in the response messages.
+         */
+        this.identifier = fs.get(IDENTIFIER);
 
-		try {
-			this.type =  Type.valueOf(fs.get(TYPE));
+        try {
+            this.type =  Type.valueOf(fs.get(TYPE));
 
-			//If HTL is not specified default to MAX_HTL.
-			this.htl = fs.get(HTL) == null ? Probe.MAX_HTL : fs.getByte(HTL);
+            //If HTL is not specified default to MAX_HTL.
+            this.htl = fs.get(HTL) == null ? Probe.MAX_HTL : fs.getByte(HTL);
 
-			if (this.htl < 0) {
-				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE,
-				                                  "hopsToLive cannot be negative.", null, false);
-			}
+            if (this.htl < 0) {
+                throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE,
+                                                  "hopsToLive cannot be negative.", null, false);
+            }
 
-		} catch (IllegalArgumentException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unrecognized parse probe type \"" + fs.get(TYPE) + "\": " + e, null, false);
-		} catch (FSParseException e) {
-			//Getting a String from a SimpleFieldSet does not throw - it can at worst return null.
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unable to parse hopsToLive \"" + fs.get(HTL) + "\": " + e, null, false);
-		}
-	}
+        } catch (IllegalArgumentException e) {
+            throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unrecognized parse probe type \"" + fs.get(TYPE) + "\": " + e, null, false);
+        } catch (FSParseException e) {
+            //Getting a String from a SimpleFieldSet does not throw - it can at worst return null.
+            throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unable to parse hopsToLive \"" + fs.get(HTL) + "\": " + e, null, false);
+        }
+    }
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet(true);
-	}
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        return new SimpleFieldSet(true);
+    }
 
-	@Override
-	public String getName() {
-		return NAME;
-	}
+    @Override
+    public String getName() {
+        return NAME;
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public void run(final FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		if(!handler.hasFullAccess()) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Probe requires full access.", identifier, false);
-		}
+    @Override
+    public void run(final FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+        if(!handler.hasFullAccess()) {
+            throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Probe requires full access.", identifier, false);
+        }
 
-		Listener listener = new Listener() {
-			@Override
-			public void onError(Error error, Byte code, boolean local) {
-				handler.outputHandler.queue(new ProbeError(identifier, error, code, local));
-			}
+        Listener listener = new Listener() {
+            @Override
+            public void onError(Error error, Byte code, boolean local) {
+                handler.outputHandler.queue(new ProbeError(identifier, error, code, local));
+            }
 
-			@Override
-			public void onRefused() {
-				handler.outputHandler.queue(new ProbeRefused(identifier));
-			}
+            @Override
+            public void onRefused() {
+                handler.outputHandler.queue(new ProbeRefused(identifier));
+            }
 
-			@Override
-			public void onOutputBandwidth(float outputBandwidth) {
-				handler.outputHandler.queue(new ProbeBandwidth(identifier, outputBandwidth));
-			}
+            @Override
+            public void onOutputBandwidth(float outputBandwidth) {
+                handler.outputHandler.queue(new ProbeBandwidth(identifier, outputBandwidth));
+            }
 
-			@Override
-			public void onBuild(int build) {
-				handler.outputHandler.queue(new ProbeBuild(identifier, build));
-			}
+            @Override
+            public void onBuild(int build) {
+                handler.outputHandler.queue(new ProbeBuild(identifier, build));
+            }
 
-			@Override
-			public void onIdentifier(long probeIdentifier, byte percentageUptime) {
-				handler.outputHandler.queue(new ProbeIdentifier(identifier, probeIdentifier, percentageUptime));
-			}
+            @Override
+            public void onIdentifier(long probeIdentifier, byte percentageUptime) {
+                handler.outputHandler.queue(new ProbeIdentifier(identifier, probeIdentifier, percentageUptime));
+            }
 
-			@Override
-			public void onLinkLengths(float[] linkLengths) {
-				handler.outputHandler.queue(new ProbeLinkLengths(identifier, linkLengths));
-			}
+            @Override
+            public void onLinkLengths(float[] linkLengths) {
+                handler.outputHandler.queue(new ProbeLinkLengths(identifier, linkLengths));
+            }
 
-			@Override
-			public void onLocation(float location) {
-				handler.outputHandler.queue(new ProbeLocation(identifier, location));
-			}
+            @Override
+            public void onLocation(float location) {
+                handler.outputHandler.queue(new ProbeLocation(identifier, location));
+            }
 
-			@Override
-			public void onStoreSize(float storeSize) {
-				handler.outputHandler.queue(new ProbeStoreSize(identifier, storeSize));
-			}
+            @Override
+            public void onStoreSize(float storeSize) {
+                handler.outputHandler.queue(new ProbeStoreSize(identifier, storeSize));
+            }
 
-			@Override
-			public void onUptime(float uptimePercent) {
-				handler.outputHandler.queue(new ProbeUptime(identifier, uptimePercent));
-			}
+            @Override
+            public void onUptime(float uptimePercent) {
+                handler.outputHandler.queue(new ProbeUptime(identifier, uptimePercent));
+            }
 
-			@Override
-			public void onRejectStats(byte[] stats) {
-				handler.outputHandler.queue(new ProbeRejectStats(identifier, stats));
-			}
+            @Override
+            public void onRejectStats(byte[] stats) {
+                handler.outputHandler.queue(new ProbeRejectStats(identifier, stats));
+            }
 
-			@Override
-			public void onOverallBulkOutputCapacity(
-					byte bandwidthClassForCapacityUsage, float capacityUsage) {
-				handler.outputHandler.queue(new ProbeOverallBulkOutputCapacityUsage(identifier, bandwidthClassForCapacityUsage, capacityUsage));
-			}
-		};
-		node.startProbe(htl, node.random.nextLong(), type, listener);
-	}
+            @Override
+            public void onOverallBulkOutputCapacity(
+                    byte bandwidthClassForCapacityUsage, float capacityUsage) {
+                handler.outputHandler.queue(new ProbeOverallBulkOutputCapacityUsage(identifier, bandwidthClassForCapacityUsage, capacityUsage));
+            }
+        };
+        node.startProbe(htl, node.random.nextLong(), type, listener);
+    }
 }

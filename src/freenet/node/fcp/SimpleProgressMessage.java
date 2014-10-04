@@ -11,79 +11,79 @@ import freenet.support.SimpleFieldSet;
 
 public class SimpleProgressMessage extends FCPMessage {
 
-	private final String ident;
-	private final boolean global;
-	private final SplitfileProgressEvent event;
-	
-	public SimpleProgressMessage(String identifier, boolean global, SplitfileProgressEvent event) {
-		this.ident = identifier;
-		this.event = event;
-		this.global = global;
-	}
+    private final String ident;
+    private final boolean global;
+    private final SplitfileProgressEvent event;
+    
+    public SimpleProgressMessage(String identifier, boolean global, SplitfileProgressEvent event) {
+        this.ident = identifier;
+        this.event = event;
+        this.global = global;
+    }
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("Total", event.totalBlocks);
-		fs.put("Required", event.minSuccessfulBlocks);
-		fs.put("Failed", event.failedBlocks);
-		fs.put("FatallyFailed", event.fatallyFailedBlocks);
-		fs.put("Succeeded",event.succeedBlocks);
-		fs.put("FinalizedTotal", event.finalizedTotal);
-		if(event.minSuccessFetchBlocks != 0)
-			fs.put("MinSuccessFetchBlocks", event.minSuccessFetchBlocks);
-		fs.putSingle("Identifier", ident);
-		fs.put("Global", global);
-		return fs;
-	}
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet fs = new SimpleFieldSet(true);
+        fs.put("Total", event.totalBlocks);
+        fs.put("Required", event.minSuccessfulBlocks);
+        fs.put("Failed", event.failedBlocks);
+        fs.put("FatallyFailed", event.fatallyFailedBlocks);
+        fs.put("Succeeded",event.succeedBlocks);
+        fs.put("FinalizedTotal", event.finalizedTotal);
+        if(event.minSuccessFetchBlocks != 0)
+            fs.put("MinSuccessFetchBlocks", event.minSuccessFetchBlocks);
+        fs.putSingle("Identifier", ident);
+        fs.put("Global", global);
+        return fs;
+    }
 
-	@Override
-	public String getName() {
-		return "SimpleProgress";
-	}
+    @Override
+    public String getName() {
+        return "SimpleProgress";
+    }
 
-	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "SimpleProgress goes from server to client not the other way around", ident, global);
-	}
+    @Override
+    public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+        throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "SimpleProgress goes from server to client not the other way around", ident, global);
+    }
 
-	public double getFraction() {
-		return (double) event.succeedBlocks / (double) event.totalBlocks;
-	}
-	
-	public double getMinBlocks() {
-		return event.minSuccessfulBlocks;
-	}
-	
-	public double getTotalBlocks(){
-		return event.totalBlocks;
-	}
-	
-	public double getFetchedBlocks(){
-		return event.succeedBlocks;
-	}
-	
-	public double getFailedBlocks(){
-		return event.failedBlocks;
-	}
-	
-	public double getFatalyFailedBlocks(){
-		return event.fatallyFailedBlocks;
-	}
+    public double getFraction() {
+        return (double) event.succeedBlocks / (double) event.totalBlocks;
+    }
+    
+    public double getMinBlocks() {
+        return event.minSuccessfulBlocks;
+    }
+    
+    public double getTotalBlocks(){
+        return event.totalBlocks;
+    }
+    
+    public double getFetchedBlocks(){
+        return event.succeedBlocks;
+    }
+    
+    public double getFailedBlocks(){
+        return event.failedBlocks;
+    }
+    
+    public double getFatalyFailedBlocks(){
+        return event.fatallyFailedBlocks;
+    }
 
-	public boolean isTotalFinalized() {
-		return event.finalizedTotal;
-	}
+    public boolean isTotalFinalized() {
+        return event.finalizedTotal;
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.activate(event, 1);
-		event.removeFrom(container);
-		container.delete(this);
-	}
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        container.activate(event, 1);
+        event.removeFrom(container);
+        container.delete(this);
+    }
 
-	SplitfileProgressEvent getEvent() {
-		return event;
-	}
+    SplitfileProgressEvent getEvent() {
+        return event;
+    }
 
 }

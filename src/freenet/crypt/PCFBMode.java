@@ -23,7 +23,7 @@ import java.io.OutputStream;
  */
 public class PCFBMode {
     
-	/** The underlying block cipher. */
+    /** The underlying block cipher. */
     protected final BlockCipher c;
     /** The register, with which data is XOR'ed */
     protected final byte[] feedback_register;
@@ -48,11 +48,11 @@ public class PCFBMode {
      */
     @Deprecated
     public static PCFBMode create(BlockCipher c) {
-    	return new PCFBMode(c);
+        return new PCFBMode(c);
     }
     
     public static PCFBMode create(BlockCipher c, byte[] iv) {
-    	return create(c, iv, 0);
+        return create(c, iv, 0);
     }
     
     /** Create the PCFB with an IV. The register pointer will be set to the end of the IV,
@@ -61,7 +61,7 @@ public class PCFBMode {
      * BE REMOVED EVENTUALLY. 
      * @param offset */
     public static PCFBMode create(BlockCipher c, byte[] iv, int offset) {
-    	return new PCFBMode(c, iv, offset);
+        return new PCFBMode(c, iv, offset);
     }
     
     protected PCFBMode(BlockCipher c) {
@@ -126,9 +126,9 @@ public class PCFBMode {
     /**
      * returns the length of the IV for a PCFB created with a specific cipher.
      */
-	public static int lengthIV(BlockCipher c) {
-		return c.getBlockSize() >> 3;
-	}
+    public static int lengthIV(BlockCipher c) {
+        return c.getBlockSize() >> 3;
+    }
 
     /**
      * Deciphers one byte of data, by XOR'ing the ciphertext byte with
@@ -150,38 +150,38 @@ public class PCFBMode {
      */
     //public synchronized byte[] blockDecipher(byte[] buf, int off, int len) {
     public byte[] blockDecipher(byte[] buf, int off, int len) {
-		final int feedback_length = feedback_register.length;
-		if (registerPointer != 0) {
-			/* handle first incomplete feedback run */
-			int l = Math.min(feedback_length - registerPointer, len);
-			len -= l;
-			while(l-- > 0) {
+        final int feedback_length = feedback_register.length;
+        if (registerPointer != 0) {
+            /* handle first incomplete feedback run */
+            int l = Math.min(feedback_length - registerPointer, len);
+            len -= l;
+            while(l-- > 0) {
                 byte b = buf[off];
                 buf[off++] ^= feedback_register[registerPointer];
                 feedback_register[registerPointer++] = b;
             }
-			if (len == 0) return buf;
-			refillBuffer();
-		}
-		// assert(registerPointer == 0);
-        while (len > feedback_length) {
-			/* consume full blocks */
-			// note: we skip *last* full block to avoid extra refillBuffer()
-			len -= feedback_length;
-			while (registerPointer < feedback_length) {
-                byte b = buf[off];
-                buf[off++] ^= feedback_register[registerPointer];
-                feedback_register[registerPointer++] = b;
-            }
-			refillBuffer();
+            if (len == 0) return buf;
+            refillBuffer();
         }
-		// assert(registerPointer == 0 && len <= feedback_length);
-		while (len-- > 0) {
-			/* handle final block */
-			byte b = buf[off];
-			buf[off++] ^= feedback_register[registerPointer];
-			feedback_register[registerPointer++] = b;
-		}
+        // assert(registerPointer == 0);
+        while (len > feedback_length) {
+            /* consume full blocks */
+            // note: we skip *last* full block to avoid extra refillBuffer()
+            len -= feedback_length;
+            while (registerPointer < feedback_length) {
+                byte b = buf[off];
+                buf[off++] ^= feedback_register[registerPointer];
+                feedback_register[registerPointer++] = b;
+            }
+            refillBuffer();
+        }
+        // assert(registerPointer == 0 && len <= feedback_length);
+        while (len-- > 0) {
+            /* handle final block */
+            byte b = buf[off];
+            buf[off++] ^= feedback_register[registerPointer];
+            feedback_register[registerPointer++] = b;
+        }
         return buf;
     }
 
@@ -204,29 +204,29 @@ public class PCFBMode {
      */
     //public synchronized byte[] blockEncipher(byte[] buf, int off, int len) {
     public byte[] blockEncipher(byte[] buf, int off, int len) {
-		final int feedback_length = feedback_register.length;
-		if (registerPointer != 0) {
-			/* handle first incomplete feedback run */
-			int l = Math.min(feedback_length - registerPointer, len);
-			for(len -= l; l-- > 0; off++)
+        final int feedback_length = feedback_register.length;
+        if (registerPointer != 0) {
+            /* handle first incomplete feedback run */
+            int l = Math.min(feedback_length - registerPointer, len);
+            for(len -= l; l-- > 0; off++)
                 buf[off] = (feedback_register[registerPointer++] ^= buf[off]);
-			if (len == 0) return buf;
-			refillBuffer();
-		}
-		// assert(registerPointer == 0);
+            if (len == 0) return buf;
+            refillBuffer();
+        }
+        // assert(registerPointer == 0);
         while (len > feedback_length) {
-			/* consume full blocks */
-			// note: we skip *last* full block to avoid extra refillBuffer()
-			len -= feedback_length;
-			for (; registerPointer < feedback_length; off++)
+            /* consume full blocks */
+            // note: we skip *last* full block to avoid extra refillBuffer()
+            len -= feedback_length;
+            for (; registerPointer < feedback_length; off++)
                 buf[off] = (feedback_register[registerPointer++] ^= buf[off]);
             refillBuffer();
         }
-		// assert(registerPointer == 0 && len <= feedback_length);
-		for (; len-- > 0; off++) {
-			/* handle final partial block */
-			buf[off] = (feedback_register[registerPointer++] ^= buf[off]);
-		}
+        // assert(registerPointer == 0 && len <= feedback_length);
+        for (; len-- > 0; off++) {
+            /* handle final partial block */
+            buf[off] = (feedback_register[registerPointer++] ^= buf[off]);
+        }
         return buf;
     }
         

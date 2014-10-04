@@ -17,17 +17,17 @@ import freenet.support.api.Bucket;
  */
 public interface FECCallback {
 
-	/**
-	 * The implementor MUST copy the data manually from the arrays on the FECJob, because
-	 * db4o persists arrays as inline values, so WE CANNOT UPDATE THE ARRAY!!
-	 * @param container
-	 * @param context
-	 * @param job
-	 */
-	public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlocks, SplitfileBlock[] checkBlocks);
+    /**
+     * The implementor MUST copy the data manually from the arrays on the FECJob, because
+     * db4o persists arrays as inline values, so WE CANNOT UPDATE THE ARRAY!!
+     * @param container
+     * @param context
+     * @param job
+     */
+    public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlocks, SplitfileBlock[] checkBlocks);
 
-	public void onDecodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlocks, SplitfileBlock[] checkBlocks);
+    public void onDecodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlocks, SplitfileBlock[] checkBlocks);
 
-	/** Something broke. */
-	public void onFailed(Throwable t, ObjectContainer container, ClientContext context);
+    /** Something broke. */
+    public void onFailed(Throwable t, ObjectContainer container, ClientContext context);
 }

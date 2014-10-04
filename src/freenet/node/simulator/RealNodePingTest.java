@@ -31,13 +31,13 @@ import freenet.support.LoggerHook.InvalidThresholdException;
  *   received, (by both sides), and their sequence numbers.
  */
 public class RealNodePingTest {
-	
-	public static final int DARKNET_PORT1 = RealNodeBusyNetworkTest.DARKNET_PORT_END;
-	public static final int DARKNET_PORT2 = RealNodeBusyNetworkTest.DARKNET_PORT_END+1;
-	public static final int DARKNET_PORT_END = DARKNET_PORT2+1;
-	
-	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
-	static final FRIEND_VISIBILITY visibility = FRIEND_VISIBILITY.NO;
+    
+    public static final int DARKNET_PORT1 = RealNodeBusyNetworkTest.DARKNET_PORT_END;
+    public static final int DARKNET_PORT2 = RealNodeBusyNetworkTest.DARKNET_PORT_END+1;
+    public static final int DARKNET_PORT_END = DARKNET_PORT2+1;
+    
+    static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
+    static final FRIEND_VISIBILITY visibility = FRIEND_VISIBILITY.NO;
 
     public static void main(String[] args) throws FSParseException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, NodeInitException, InvalidThresholdException {
         RandomSource random = NodeStarter.globalTestInit("pingtest", false, LogLevel.ERROR, "", true);

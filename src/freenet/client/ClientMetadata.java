@@ -13,72 +13,72 @@ import com.db4o.ObjectContainer;
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class ClientMetadata implements Cloneable {
-	
-	/** The document MIME type */
-	private String mimeType;
+    
+    /** The document MIME type */
+    private String mimeType;
 
-	public ClientMetadata(){
-		mimeType = null;
-	}
+    public ClientMetadata(){
+        mimeType = null;
+    }
 
-	public ClientMetadata(String mime) {
-		mimeType = (mime == null) ? null : mime.intern();
-	}
-	
-	/** Get the document MIME type. Will always be a valid MIME type, unless there
-	 * has been an error; if it is unknown, will return application/octet-stream. */
-	public String getMIMEType() {
-		if((mimeType == null) || (mimeType.length() == 0))
-			return DefaultMIMETypes.DEFAULT_MIME_TYPE;
-		return mimeType;
-	}
+    public ClientMetadata(String mime) {
+        mimeType = (mime == null) ? null : mime.intern();
+    }
+    
+    /** Get the document MIME type. Will always be a valid MIME type, unless there
+     * has been an error; if it is unknown, will return application/octet-stream. */
+    public String getMIMEType() {
+        if((mimeType == null) || (mimeType.length() == 0))
+            return DefaultMIMETypes.DEFAULT_MIME_TYPE;
+        return mimeType;
+    }
 
-	/**
-	 * Merge the given ClientMetadata, without overwriting our
-	 * existing information.
-	 */
-	public void mergeNoOverwrite(ClientMetadata clientMetadata) {
-		if((mimeType == null) || mimeType.equals(""))
-			mimeType = clientMetadata.mimeType;
-	}
+    /**
+     * Merge the given ClientMetadata, without overwriting our
+     * existing information.
+     */
+    public void mergeNoOverwrite(ClientMetadata clientMetadata) {
+        if((mimeType == null) || mimeType.equals(""))
+            mimeType = clientMetadata.mimeType;
+    }
 
-	/** Is there no MIME type? */
-	public boolean isTrivial() {
-		return ((mimeType == null) || mimeType.equals(""));
-	}
-	
-	@Override
-	public ClientMetadata clone() {
-		try {
-			return (ClientMetadata) super.clone();
-		} catch (CloneNotSupportedException e) {
-			throw new Error(e);
-		}
-	}
-	
-	@Override
-	public String toString() {
-		return getMIMEType();
-	}
+    /** Is there no MIME type? */
+    public boolean isTrivial() {
+        return ((mimeType == null) || mimeType.equals(""));
+    }
+    
+    @Override
+    public ClientMetadata clone() {
+        try {
+            return (ClientMetadata) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new Error(e);
+        }
+    }
+    
+    @Override
+    public String toString() {
+        return getMIMEType();
+    }
 
-	/** Clear the MIME type. */
-	public void clear() {
-		mimeType = null;
-	}
+    /** Clear the MIME type. */
+    public void clear() {
+        mimeType = null;
+    }
 
-	/** Return the MIME type minus any type parameters (e.g. charset, see 
-	 * the RFCs defining the MIME type for details). */
-	public String getMIMETypeNoParams() {
-		String s = mimeType;
-		if(s == null) return null;
-		int i = s.indexOf(';');
-		if(i > -1) {
-			s = s.substring(i);
-		}
-		return s;
-	}
+    /** Return the MIME type minus any type parameters (e.g. charset, see 
+     * the RFCs defining the MIME type for details). */
+    public String getMIMETypeNoParams() {
+        String s = mimeType;
+        if(s == null) return null;
+        int i = s.indexOf(';');
+        if(i > -1) {
+            s = s.substring(i);
+        }
+        return s;
+    }
 
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
+    public void removeFrom(ObjectContainer container) {
+        container.delete(this);
+    }
 }

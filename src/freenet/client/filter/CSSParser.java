@@ -23,17 +23,17 @@ import java.io.Writer;
  */
 class CSSParser extends CSSTokenizerFilter {
 
-	final FilterCallback cb;
-	
-	CSSParser(
-		Reader r,
-		Writer w,
-		boolean paranoidStringCheck,
-		FilterCallback cb,
-		String charset,
-		boolean stopAtDetectedCharset, boolean isInline) {
-		super(r, w, cb, charset, stopAtDetectedCharset, isInline);
-		this.cb = cb;
-	}
+    final FilterCallback cb;
+    
+    CSSParser(
+        Reader r,
+        Writer w,
+        boolean paranoidStringCheck,
+        FilterCallback cb,
+        String charset,
+        boolean stopAtDetectedCharset, boolean isInline) {
+        super(r, w, cb, charset, stopAtDetectedCharset, isInline);
+        this.cb = cb;
+    }
 
 }

@@ -67,8 +67,8 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         String name = "realNodeRequestInsertTest";
         File wd = new File(name);
         if(!FileUtil.removeAll(wd)) {
-        	System.err.println("Mass delete failed, test may not be accurate.");
-        	System.exit(EXIT_CANNOT_DELETE_OLD_DATA);
+            System.err.println("Mass delete failed, test may not be accurate.");
+            System.exit(EXIT_CANNOT_DELETE_OLD_DATA);
         }
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
@@ -85,7 +85,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] =
-            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, false, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, (CHKBlock.DATA_LENGTH+CHKBlock.TOTAL_HEADERS_LENGTH)*100, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, 8000, ENABLE_FOAF, false, true, false, null);
+                NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, false, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, (CHKBlock.DATA_LENGTH+CHKBlock.TOTAL_HEADERS_LENGTH)*100, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, 8000, ENABLE_FOAF, false, true, false, null);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
 
@@ -109,7 +109,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
 
         HighLevelSimpleClient[] clients = new HighLevelSimpleClient[nodes.length];
         for(int i=0;i<clients.length;i++) {
-        	clients[i] = nodes[i].clientCore.makeClient(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, false, false);
+            clients[i] = nodes[i].clientCore.makeClient(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, false, false);
         }
 
         // Insert 100 keys into random nodes
@@ -118,7 +118,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
 
         String baseString = System.currentTimeMillis() + " ";
         for(int i=0;i<INSERT_KEYS;i++) {
-        	System.err.println("Inserting "+i+" of "+INSERT_KEYS);
+            System.err.println("Inserting "+i+" of "+INSERT_KEYS);
             int node1 = random.nextInt(NUMBER_OF_NODES);
             Node randomNode = nodes[node1];
             String dataString = baseString + i;
@@ -135,41 +135,41 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             Logger.normal(RealNodeRequestInsertTest.class,"CHK: "+chk.getURI());
             Logger.minor(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
             // Insert it.
-			try {
-				randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
-				Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
-				Logger.minor(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
-			} catch (freenet.node.LowLevelPutException putEx) {
-				Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
-				System.err.println("Insert failed: "+ putEx);
-				System.exit(EXIT_INSERT_FAILED);
-			}
+            try {
+                randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
+                Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
+                Logger.minor(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
+            } catch (freenet.node.LowLevelPutException putEx) {
+                Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
+                System.err.println("Insert failed: "+ putEx);
+                System.exit(EXIT_INSERT_FAILED);
+            }
         }
 
         // Now queue requests for each key on every node.
         for(int i=0;i<INSERT_KEYS;i++) {
-        	ClientCHK key = keys[i];
-        	System.err.println("Queueing requests for "+i+" of "+INSERT_KEYS);
-        	for(int j=0;j<nodes.length;j++) {
-        		clients[j].prefetch(key.getURI(), DAYS.toMillis(1), 32768, null);
-        	}
-        	long totalRunningRequests = 0;
-        	for(int j=0;j<nodes.length;j++) {
-        		totalRunningRequests += nodes[j].clientCore.countTransientQueuedRequests();
-        	}
-        	System.err.println("Running requests: "+totalRunningRequests);
+            ClientCHK key = keys[i];
+            System.err.println("Queueing requests for "+i+" of "+INSERT_KEYS);
+            for(int j=0;j<nodes.length;j++) {
+                clients[j].prefetch(key.getURI(), DAYS.toMillis(1), 32768, null);
+            }
+            long totalRunningRequests = 0;
+            for(int j=0;j<nodes.length;j++) {
+                totalRunningRequests += nodes[j].clientCore.countTransientQueuedRequests();
+            }
+            System.err.println("Running requests: "+totalRunningRequests);
         }
 
         // Now wait until finished. How???
 
         while(true) {
-        	long totalRunningRequests = 0;
-        	for(int i=0;i<nodes.length;i++) {
-        		totalRunningRequests += nodes[i].clientCore.countTransientQueuedRequests();
-        	}
-        	System.err.println("Running requests: "+totalRunningRequests);
-        	if(totalRunningRequests == 0) break;
-        	Thread.sleep(1000);
+            long totalRunningRequests = 0;
+            for(int i=0;i<nodes.length;i++) {
+                totalRunningRequests += nodes[i].clientCore.countTransientQueuedRequests();
+            }
+            System.err.println("Running requests: "+totalRunningRequests);
+            if(totalRunningRequests == 0) break;
+            Thread.sleep(1000);
         }
         System.exit(0);
     }

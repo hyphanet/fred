@@ -19,36 +19,36 @@ import java.io.File;
  */
 public class NodeL10n {
 
-	private static BaseL10n b;
+    private static BaseL10n b;
 
-	/**
-	 * Initialize the Node localization with the node's default language, and
-	 * overrides in the working directory.
-	 */
-	public NodeL10n() {
-		this(LANGUAGE.getDefault(), new File("."));
-	}
+    /**
+     * Initialize the Node localization with the node's default language, and
+     * overrides in the working directory.
+     */
+    public NodeL10n() {
+        this(LANGUAGE.getDefault(), new File("."));
+    }
 
-	/**
-	 * Initialize the Node localization. You must also call that constructor
-	 * if you want to change the language.
-	 * @param lang Language to use.
-	 * @see LANGUAGE.mapToLanguage(String)
-	 */
-	public NodeL10n(final LANGUAGE lang, File overrideDir) {
-		NodeL10n.b = new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties",
-		  overrideDir.getPath()+File.separator+"freenet.l10n.${lang}.override.properties", lang);
-	}
+    /**
+     * Initialize the Node localization. You must also call that constructor
+     * if you want to change the language.
+     * @param lang Language to use.
+     * @see LANGUAGE.mapToLanguage(String)
+     */
+    public NodeL10n(final LANGUAGE lang, File overrideDir) {
+        NodeL10n.b = new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties",
+          overrideDir.getPath()+File.separator+"freenet.l10n.${lang}.override.properties", lang);
+    }
 
-	/**
-	 * Get the BaseL10n used to localize the node.
-	 * @return BaseL10n.
-	 * @see BaseL10n
-	 */
-	public static BaseL10n getBase() {
-		if(b==null){
-			new NodeL10n();
-		}
-		return b;
-	}
+    /**
+     * Get the BaseL10n used to localize the node.
+     * @return BaseL10n.
+     * @see BaseL10n
+     */
+    public static BaseL10n getBase() {
+        if(b==null){
+            new NodeL10n();
+        }
+        return b;
+    }
 }

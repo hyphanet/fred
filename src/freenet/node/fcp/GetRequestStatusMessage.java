@@ -14,68 +14,68 @@ import freenet.support.io.NativeThread;
 
 public class GetRequestStatusMessage extends FCPMessage {
 
-	final String identifier;
-	final boolean global;
-	final boolean onlyData;
-	final static String NAME = "GetRequestStatus";
-	
-	public GetRequestStatusMessage(SimpleFieldSet fs) {
-		this.identifier = fs.get("Identifier");
-		this.global = fs.getBoolean("Global", false);
-		this.onlyData = fs.getBoolean("OnlyData", false);
-	}
+    final String identifier;
+    final boolean global;
+    final boolean onlyData;
+    final static String NAME = "GetRequestStatus";
+    
+    public GetRequestStatusMessage(SimpleFieldSet fs) {
+        this.identifier = fs.get("Identifier");
+        this.global = fs.getBoolean("Global", false);
+        this.onlyData = fs.getBoolean("OnlyData", false);
+    }
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.putSingle("Identifier", identifier);
-		return fs;
-	}
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet fs = new SimpleFieldSet(true);
+        fs.putSingle("Identifier", identifier);
+        return fs;
+    }
 
-	@Override
-	public String getName() {
-		return NAME;
-	}
+    @Override
+    public String getName() {
+        return NAME;
+    }
 
-	@Override
-	public void run(final FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		ClientRequest req = handler.getRebootRequest(global, handler, identifier);
-		if(req == null) {
-			if(node.clientCore.killedDatabase()) {
-				// Ignore.
-				return;
-			}
-			try {
-				node.clientCore.clientContext.jobRunner.queue(new DBJob() {
+    @Override
+    public void run(final FCPConnectionHandler handler, Node node)
+            throws MessageInvalidException {
+        ClientRequest req = handler.getRebootRequest(global, handler, identifier);
+        if(req == null) {
+            if(node.clientCore.killedDatabase()) {
+                // Ignore.
+                return;
+            }
+            try {
+                node.clientCore.clientContext.jobRunner.queue(new DBJob() {
 
-					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
-						container.activate(req, 1);
-						if(req == null) {
-							ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-							handler.outputHandler.queue(msg);
-						} else {
-							req.sendPendingMessages(handler.outputHandler, true, true, onlyData, container);
-						}
-						container.deactivate(req, 1);
-						return false;
-					}
-					
-				}, NativeThread.NORM_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
-				ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-				handler.outputHandler.queue(msg);
-			}
-		} else {
-			req.sendPendingMessages(handler.outputHandler, true, true, onlyData, null);
-		}
-	}
+                    @Override
+                    public boolean run(ObjectContainer container, ClientContext context) {
+                        ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
+                        container.activate(req, 1);
+                        if(req == null) {
+                            ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
+                            handler.outputHandler.queue(msg);
+                        } else {
+                            req.sendPendingMessages(handler.outputHandler, true, true, onlyData, container);
+                        }
+                        container.deactivate(req, 1);
+                        return false;
+                    }
+                    
+                }, NativeThread.NORM_PRIORITY, false);
+            } catch (DatabaseDisabledException e) {
+                ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
+                handler.outputHandler.queue(msg);
+            }
+        } else {
+            req.sendPendingMessages(handler.outputHandler, true, true, onlyData, null);
+        }
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        container.delete(this);
+    }
 
 }

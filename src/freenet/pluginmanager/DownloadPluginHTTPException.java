@@ -9,17 +9,17 @@ package freenet.pluginmanager;
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 public class DownloadPluginHTTPException extends PluginHTTPException {
-	private static final long serialVersionUID = -1;
-	
-	public static final short CODE = 200; // Found
-	public final String filename;
-	public final String mimeType;
-	public final byte[] data;
+    private static final long serialVersionUID = -1;
+    
+    public static final short CODE = 200; // Found
+    public final String filename;
+    public final String mimeType;
+    public final byte[] data;
 
-	public DownloadPluginHTTPException(byte[] data, String filename, String mimeType) {
-		super("Ok", "none");
-		this.data = data;
-		this.filename = filename;
-		this.mimeType = mimeType;
-	}
+    public DownloadPluginHTTPException(byte[] data, String filename, String mimeType) {
+        super("Ok", "none");
+        this.data = data;
+        this.filename = filename;
+        this.mimeType = mimeType;
+    }
 }

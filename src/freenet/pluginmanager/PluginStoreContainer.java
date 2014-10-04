@@ -9,7 +9,7 @@ package freenet.pluginmanager;
  * @author Artefact2
  */
 public class PluginStoreContainer {
-	public PluginStore pluginStore;
-	public long nodeDBHandle;
-	public String storeIdentifier;
+    public PluginStore pluginStore;
+    public long nodeDBHandle;
+    public String storeIdentifier;
 }

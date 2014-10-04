@@ -9,24 +9,24 @@ package freenet.support;
  * @author Artefact2
  */
 public class UptimeContainer {
-	public long creationTime = 0;
-	public long totalUptime = 0;
+    public long creationTime = 0;
+    public long totalUptime = 0;
 
-	@Override
-	public boolean equals(Object o) {
-		if(o == null) return false;
-	if(o.getClass() == UptimeContainer.class) {
-		UptimeContainer oB = (UptimeContainer) o;
-		return (oB.creationTime == this.creationTime) &&
-			(oB.totalUptime == this.totalUptime);
-		} else return false;
-	}
+    @Override
+    public boolean equals(Object o) {
+        if(o == null) return false;
+    if(o.getClass() == UptimeContainer.class) {
+        UptimeContainer oB = (UptimeContainer) o;
+        return (oB.creationTime == this.creationTime) &&
+            (oB.totalUptime == this.totalUptime);
+        } else return false;
+    }
 
-	@Override
-	public int hashCode() {
-		int hash = 7;
-		hash = 29 * hash + (int) (this.creationTime ^ (this.creationTime >>> 32));
-		hash = 29 * hash + (int) (this.totalUptime ^ (this.totalUptime >>> 32));
-		return hash;
-	}
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 29 * hash + (int) (this.creationTime ^ (this.creationTime >>> 32));
+        hash = 29 * hash + (int) (this.totalUptime ^ (this.totalUptime >>> 32));
+        return hash;
+    }
 }

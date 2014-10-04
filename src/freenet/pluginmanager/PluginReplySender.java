@@ -10,56 +10,56 @@ import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 
 public abstract class PluginReplySender {
-	
-	final String pluginname;
+    
+    final String pluginname;
     
     /**
      * Identifier of the connection to the client. Randomly chosen for each connection.
      */
     final String clientIdentifier;
-	
-	/**
+    
+    /**
      * Specified by the client through FCP via the "Identifier" field.
      * As the client can specify this freely, it is not sufficient as an ID. Thats why there also is another {@link #clientIdentifier}.
-	 */
-	final String clientSideIdentifier;
+     */
+    final String clientSideIdentifier;
     
-	
+    
     /**
      * @param clientIdentifier Identifier of the particular network connection to the client. Should be a random UUID chosen for each network connection.
      * @param clientSideIdentifier Specified by the client through FCP via the "Identifier" field. As the client can specify this freely, it is not sufficient
      *                             as an ID. Thats why there also is another parameter clientIdentifier.
      */
-	public PluginReplySender(String pluginname2, String clientIdentifier, String clientSideIdentifier) {
-		pluginname = pluginname2;
-		this.clientIdentifier = clientIdentifier;
-		this.clientSideIdentifier = clientSideIdentifier;
-	}
-	
-	public String getPluginName() {
-		return pluginname;
-	}
-	
-	/**
+    public PluginReplySender(String pluginname2, String clientIdentifier, String clientSideIdentifier) {
+        pluginname = pluginname2;
+        this.clientIdentifier = clientIdentifier;
+        this.clientSideIdentifier = clientSideIdentifier;
+    }
+    
+    public String getPluginName() {
+        return pluginname;
+    }
+    
+    /**
      * @return An identifier of the connection specified by the client through FCP via the "Identifier" field.
      *         As the client can specify this freely, it is not sufficient as an ID. Thats why there also is {@link #getConnectionIdentifier()}.
-	 */
-	public String getIdentifier() {
-		return clientSideIdentifier;
-	}
+     */
+    public String getIdentifier() {
+        return clientSideIdentifier;
+    }
 
-	public void send(SimpleFieldSet params) throws PluginNotFoundException {
-		send(params, (Bucket)null);
-	}
-	
-	public void send(SimpleFieldSet params, byte[] data) throws PluginNotFoundException {
-		if (data == null)
-			send(params, (Bucket)null);
-		else
-			send(params, new ArrayBucket(data));
-	}
-	
-	public abstract void send(SimpleFieldSet params, Bucket bucket) throws PluginNotFoundException;
+    public void send(SimpleFieldSet params) throws PluginNotFoundException {
+        send(params, (Bucket)null);
+    }
+    
+    public void send(SimpleFieldSet params, byte[] data) throws PluginNotFoundException {
+        if (data == null)
+            send(params, (Bucket)null);
+        else
+            send(params, new ArrayBucket(data));
+    }
+    
+    public abstract void send(SimpleFieldSet params, Bucket bucket) throws PluginNotFoundException;
 
     /**
      * <p>Gets an unique identifier of the connection to the client.</p>

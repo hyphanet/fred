@@ -7,13 +7,13 @@ import java.io.IOException;
 
 
 public interface BucketFactory {
-	/**
-	 * Create a bucket.
-	 * @param size The maximum size of the data, or -1 if we don't know.
-	 * Some buckets will throw IOException if you go over this length.
-	 * @return
-	 * @throws IOException
-	 */
+    /**
+     * Create a bucket.
+     * @param size The maximum size of the data, or -1 if we don't know.
+     * Some buckets will throw IOException if you go over this length.
+     * @return
+     * @throws IOException
+     */
     public Bucket makeBucket(long size) throws IOException;
 }
 

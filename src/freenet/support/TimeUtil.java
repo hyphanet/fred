@@ -38,25 +38,25 @@ import java.util.TimeZone;
  */
 public class TimeUtil {
 
-	public static final TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
+    public static final TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
 
-	/**
-	 * It converts a given time interval into a 
-	 * week/day/hour/second.milliseconds string.
-	 * @param timeInterval interval to convert
-	 * @param maxTerms the terms number to display
-	 * (e.g. 2 means "h" and "m" if the time could be expressed in hour,
-	 * 3 means "h","m","s" in the same example).
-	 * The maximum terms number available is 6
-	 * @param withSecondFractions if true it displays seconds.milliseconds
-	 * @return the formatted String
-	 */
+    /**
+     * It converts a given time interval into a 
+     * week/day/hour/second.milliseconds string.
+     * @param timeInterval interval to convert
+     * @param maxTerms the terms number to display
+     * (e.g. 2 means "h" and "m" if the time could be expressed in hour,
+     * 3 means "h","m","s" in the same example).
+     * The maximum terms number available is 6
+     * @param withSecondFractions if true it displays seconds.milliseconds
+     * @return the formatted String
+     */
     public static String formatTime(long timeInterval, int maxTerms, boolean withSecondFractions) {
         
-    	if (maxTerms > 6 )
-        	throw new IllegalArgumentException();
+        if (maxTerms > 6 )
+            throw new IllegalArgumentException();
         
-    	StringBuilder sb = new StringBuilder(64);
+        StringBuilder sb = new StringBuilder(64);
         long l = timeInterval;
         int termCount = 0;
         //
@@ -71,8 +71,8 @@ public class TimeUtil {
             return sb.toString();
         }
         //
-		long weeks = DAYS.convert(l, MILLISECONDS) / 7;
-		if (weeks > 0) {
+        long weeks = DAYS.convert(l, MILLISECONDS) / 7;
+        if (weeks > 0) {
             sb.append(weeks).append('w');
             termCount++;
             l = l - DAYS.toMillis(7 * weeks);
@@ -138,36 +138,36 @@ public class TimeUtil {
         return formatTime(timeInterval, maxTerms, false);
     }
 
-	/**
-	 * Helper to format time HTTP conform
-	 * @param time
-	 * @return
-	 */
-	public static String makeHTTPDate(long time) {
-		// For HTTP, GMT == UTC
-		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
-		sdf.setTimeZone(TZ_UTC);
-		return sdf.format(new Date(time));
-	}
-	
+    /**
+     * Helper to format time HTTP conform
+     * @param time
+     * @return
+     */
+    public static String makeHTTPDate(long time) {
+        // For HTTP, GMT == UTC
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
+        sdf.setTimeZone(TZ_UTC);
+        return sdf.format(new Date(time));
+    }
+    
 // FIXME: For me it returns a parsed time with 2 hours difference, so it seems to parse localtime. WHY?
-	
-//	public static Date parseHTTPDate(String date) throws ParseException {
-//		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
-//		sdf.setTimeZone(TZ_UTC);
-//		return sdf.parse(date);
-//	}
+    
+//    public static Date parseHTTPDate(String date) throws ParseException {
+//        SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
+//        sdf.setTimeZone(TZ_UTC);
+//        return sdf.parse(date);
+//    }
 
-	
-	/**
-	 * @return Returns the passed date with the same year/month/day but with the time set to 00:00:00.000
-	 */
-	public static Date setTimeToZero(final Date date) {
-		// We need to cut off the hour/minutes/seconds
-		final GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-		calendar.setTimeInMillis(date.getTime()); // We must not use setTime(date) in case the date is not UTC.
-		calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), 0, 0, 0);
-		calendar.set(Calendar.MILLISECOND, 0);
-		return calendar.getTime();
-	}
+    
+    /**
+     * @return Returns the passed date with the same year/month/day but with the time set to 00:00:00.000
+     */
+    public static Date setTimeToZero(final Date date) {
+        // We need to cut off the hour/minutes/seconds
+        final GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        calendar.setTimeInMillis(date.getTime()); // We must not use setTime(date) in case the date is not UTC.
+        calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), 0, 0, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
+    }
 }

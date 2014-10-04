@@ -10,50 +10,50 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
     static { Logger.registerClass(DiffieHellmanLightContext.class); }
     private static volatile boolean logMINOR;
 
-	/** My exponent.*/
-	public final NativeBigInteger myExponent;
-	/** My exponential. This is group.g ^ myExponent mod group.p */
-	public final NativeBigInteger myExponential;
-	public final DHGroup group;
+    /** My exponent.*/
+    public final NativeBigInteger myExponent;
+    /** My exponential. This is group.g ^ myExponent mod group.p */
+    public final NativeBigInteger myExponential;
+    public final DHGroup group;
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(super.toString());
-		sb.append(": myExponent=");
-		sb.append(HexUtil.toHexString(myExponent));
-		sb.append(", myExponential=");
-		sb.append(HexUtil.toHexString(myExponential));
-		
-		return sb.toString();
-	}
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.toString());
+        sb.append(": myExponent=");
+        sb.append(HexUtil.toHexString(myExponent));
+        sb.append(", myExponential=");
+        sb.append(HexUtil.toHexString(myExponential));
+        
+        return sb.toString();
+    }
 
-	public DiffieHellmanLightContext(DHGroup group, NativeBigInteger myExponent, NativeBigInteger myExponential) {
-		this.myExponent = myExponent;
-		this.myExponential = myExponential;
+    public DiffieHellmanLightContext(DHGroup group, NativeBigInteger myExponent, NativeBigInteger myExponential) {
+        this.myExponent = myExponent;
+        this.myExponential = myExponential;
         this.group = group;
-		this.lastUsedTime = System.currentTimeMillis();
-	}
-	
-	/*
-	 * Calling the following is costy; avoid
-	 */
-	public byte[] getHMACKey(NativeBigInteger peerExponential) {
-		lastUsedTime = System.currentTimeMillis();
-		BigInteger P = group.getP();
-		NativeBigInteger sharedSecret =
-			(NativeBigInteger) peerExponential.modPow(myExponent, P);
+        this.lastUsedTime = System.currentTimeMillis();
+    }
+    
+    /*
+     * Calling the following is costy; avoid
+     */
+    public byte[] getHMACKey(NativeBigInteger peerExponential) {
+        lastUsedTime = System.currentTimeMillis();
+        BigInteger P = group.getP();
+        NativeBigInteger sharedSecret =
+            (NativeBigInteger) peerExponential.modPow(myExponent, P);
 
-		if(logMINOR) {
-			Logger.minor(this, "P: "+HexUtil.biToHex(P));
-			Logger.minor(this, "My exponent: "+HexUtil.toHexString(myExponent));
-			Logger.minor(this, "My exponential: "+HexUtil.toHexString(myExponential));
-			Logger.minor(this, "Peer's exponential: "+HexUtil.toHexString(peerExponential));
-			Logger.minor(this, "g^ir mod p = " + HexUtil.toHexString(sharedSecret));
-		}
-		
-		return sharedSecret.toByteArray();
-	}
+        if(logMINOR) {
+            Logger.minor(this, "P: "+HexUtil.biToHex(P));
+            Logger.minor(this, "My exponent: "+HexUtil.toHexString(myExponent));
+            Logger.minor(this, "My exponential: "+HexUtil.toHexString(myExponential));
+            Logger.minor(this, "Peer's exponential: "+HexUtil.toHexString(peerExponential));
+            Logger.minor(this, "g^ir mod p = " + HexUtil.toHexString(sharedSecret));
+        }
+        
+        return sharedSecret.toByteArray();
+    }
 
     @Override
     public byte[] getPublicKeyNetworkFormat() {

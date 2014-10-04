@@ -10,18 +10,18 @@ import freenet.node.SendableGet;
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class DatastoreCheckerItem {
-	
-	final long nodeDBHandle;
-	final SendableGet getter;
-	final short prio;
-	long chosenBy;
-	final BlockSet blocks;
-	
-	DatastoreCheckerItem(SendableGet getter, long nodeDBHandle, short prio, BlockSet blocks) {
-		this.getter = getter;
-		this.nodeDBHandle = nodeDBHandle;
-		this.prio = prio;
-		this.blocks = blocks;
-	}
+    
+    final long nodeDBHandle;
+    final SendableGet getter;
+    final short prio;
+    long chosenBy;
+    final BlockSet blocks;
+    
+    DatastoreCheckerItem(SendableGet getter, long nodeDBHandle, short prio, BlockSet blocks) {
+        this.getter = getter;
+        this.nodeDBHandle = nodeDBHandle;
+        this.prio = prio;
+        this.blocks = blocks;
+    }
 
 }

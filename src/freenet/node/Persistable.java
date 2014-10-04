@@ -10,6 +10,6 @@ import freenet.support.SimpleFieldSet;
  */
 public interface Persistable {
 
-	SimpleFieldSet persistThrottlesToFieldSet();
+    SimpleFieldSet persistThrottlesToFieldSet();
 
 }

@@ -183,7 +183,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
                         HTMLNode.link(basePath+key.toString()+"?type=text/plain&force="+getForceValue(key,now)+extrasNoMime),
                         HTMLNode.STRONG
                 });
-                // 	FIXME: is this safe? See bug #131
+                //     FIXME: is this safe? See bug #131
                 option = optionList.addChild("li");
                 NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openPossRSSForceDisk", new String[] { "link", "bold" },
                         new HTMLNode[] {

@@ -11,11 +11,11 @@ package freenet.client.filter;
  * catcher.
  */
 public class CommentException extends Exception {
-	
-	private static final long serialVersionUID = 1L;
+    
+    private static final long serialVersionUID = 1L;
 
-	public CommentException(String msg) {
-		super(msg);
-	}
+    public CommentException(String msg) {
+        super(msg);
+    }
 
 }

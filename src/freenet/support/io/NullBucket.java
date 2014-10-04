@@ -48,37 +48,37 @@ public class NullBucket implements Bucket {
     /** Returns the name of this NullBucket. */
     @Override
     public String getName() {
-    	return "President George W. NullBucket";
+        return "President George W. NullBucket";
     }
 
-	@Override
-	public boolean isReadOnly() {
-		return false;
-	}
+    @Override
+    public boolean isReadOnly() {
+        return false;
+    }
 
-	@Override
-	public void setReadOnly() {
-		// Do nothing
-	}
+    @Override
+    public void setReadOnly() {
+        // Do nothing
+    }
 
-	@Override
-	public void free() {
-		// Do nothing
-	}
+    @Override
+    public void free() {
+        // Do nothing
+    }
 
-	@Override
-	public void storeTo(ObjectContainer container) {
-		container.store(this);
-	}
+    @Override
+    public void storeTo(ObjectContainer container) {
+        container.store(this);
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        container.delete(this);
+    }
 
-	@Override
-	public Bucket createShadow() {
-		return new NullBucket();
-	}
+    @Override
+    public Bucket createShadow() {
+        return new NullBucket();
+    }
 }
 

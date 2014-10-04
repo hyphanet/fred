@@ -17,29 +17,29 @@ package freenet.support.CPUInformation;
 
 public interface CPUInfo
 {
-	/**
-	 * @return A string indicating the vendor of the CPU.
-	 */
-	public String getVendor();
-	/**
-	 * @return A string detailing what type of CPU that is present in the machine. I.e. 'Pentium IV' etc.
-	 * @throws UnknownCPUException If for any reson the retrieval of the requested information
-	 * failed. The message encapsulated in the execption indicates the 
-	 * cause of the failure.
-	 */
-	public String getCPUModelString() throws UnknownCPUException;
-	
-	/**
-	 * @return true iff the CPU support the MMX instruction set.
-	 */
-	public boolean hasMMX();
-	/**
-	 * @return true iff the CPU support the SSE instruction set.
-	 */
-	public boolean hasSSE();
-	/**
-	 * @return true iff the CPU support the SSE2 instruction set.
-	 */
-	public boolean hasSSE2();
-	
+    /**
+     * @return A string indicating the vendor of the CPU.
+     */
+    public String getVendor();
+    /**
+     * @return A string detailing what type of CPU that is present in the machine. I.e. 'Pentium IV' etc.
+     * @throws UnknownCPUException If for any reson the retrieval of the requested information
+     * failed. The message encapsulated in the execption indicates the 
+     * cause of the failure.
+     */
+    public String getCPUModelString() throws UnknownCPUException;
+    
+    /**
+     * @return true iff the CPU support the MMX instruction set.
+     */
+    public boolean hasMMX();
+    /**
+     * @return true iff the CPU support the SSE instruction set.
+     */
+    public boolean hasSSE();
+    /**
+     * @return true iff the CPU support the SSE2 instruction set.
+     */
+    public boolean hasSSE2();
+    
 }

@@ -9,7 +9,7 @@ package freenet.crypt;
  */
 public class CTRBlockCipher
 {
-	/** Block cipher */
+    /** Block cipher */
     private final BlockCipher     cipher;
     /** Block size in bytes. 
      * Equal to IV.length = counter.length = counterOut.length. */
@@ -41,7 +41,7 @@ public class CTRBlockCipher
         this.IV = new byte[blockSize];
         this.counter = new byte[blockSize];
         this.counterOut = new byte[blockSize];
-		this.blockOffset = IV.length;
+        this.blockOffset = IV.length;
     }
 
 
@@ -65,9 +65,9 @@ public class CTRBlockCipher
     public void init(byte[] iv, int offset, int length)
         throws IllegalArgumentException
     {
-    	if(length != IV.length)
-    		throw new IllegalArgumentException();
-    	System.arraycopy(iv, offset, IV, 0, IV.length);
+        if(length != IV.length)
+            throw new IllegalArgumentException();
+        System.arraycopy(iv, offset, IV, 0, IV.length);
         System.arraycopy(IV, 0, counter, 0, counter.length);
         processBlock();
     }
@@ -75,7 +75,7 @@ public class CTRBlockCipher
     public void init(byte[] iv)
         throws IllegalArgumentException
     {
-	init(iv, 0, iv.length);
+    init(iv, 0, iv.length);
     }
 
     public int getBlockSize()
@@ -84,10 +84,10 @@ public class CTRBlockCipher
     }
     
     public byte processByte(byte in) {
-    	if(blockOffset == counterOut.length) {
-    		processBlock();
-    	}
-    	return (byte) (in ^ counterOut[blockOffset++]);
+        if(blockOffset == counterOut.length) {
+            processBlock();
+        }
+        return (byte) (in ^ counterOut[blockOffset++]);
     }
 
     /**
@@ -99,49 +99,49 @@ public class CTRBlockCipher
      * @param offsetOut The offset within the output data array to the first byte.
      */
     public void processBytes(byte[] input, int offsetIn, int length, byte[] output, int offsetOut) {
-    	// XOR the plaintext with counterOut until we run out of blockOffset,
-    	// then processBlock() to get a new counterOut.
+        // XOR the plaintext with counterOut until we run out of blockOffset,
+        // then processBlock() to get a new counterOut.
 
-		if (blockOffset != 0) {
-			/* handle first partially consumed block */
-			int len = Math.min(blockSize - blockOffset, length);
-			length -= len;
-			while(len-- > 0)
-				output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
-    		if(length == 0) return;
-    		processBlock();
-		}
-		assert(blockOffset == 0);
-		while(length > blockSize) {
-			/* consume full blocks */
-			// note: we skip *last* full block to avoid extra processBlock()
-			length -= blockSize;
-			while (blockOffset < blockSize)
-				output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
-			processBlock();
-		}
-		assert(blockOffset == 0 && length <= blockSize);
-		if (length == 0) return;
-		while (length-- > 0) {
-			/* handle final block */
-			output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
-		}
+        if (blockOffset != 0) {
+            /* handle first partially consumed block */
+            int len = Math.min(blockSize - blockOffset, length);
+            length -= len;
+            while(len-- > 0)
+                output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
+            if(length == 0) return;
+            processBlock();
+        }
+        assert(blockOffset == 0);
+        while(length > blockSize) {
+            /* consume full blocks */
+            // note: we skip *last* full block to avoid extra processBlock()
+            length -= blockSize;
+            while (blockOffset < blockSize)
+                output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
+            processBlock();
+        }
+        assert(blockOffset == 0 && length <= blockSize);
+        if (length == 0) return;
+        while (length-- > 0) {
+            /* handle final block */
+            output[offsetOut++] = (byte) (input[offsetIn++] ^ counterOut[blockOffset++]);
+        }
     }
 
     /** Encrypt counter to counterOut, and then increment counter. */
     private void processBlock()
           throws IllegalStateException
     {
-    	// Our ciphers clobber the input array, so it is essential to copy
-    	// the counter to counterOut and then encrypt in-place.
-    	System.arraycopy(counter, 0, counterOut, 0, counter.length);
-    	cipher.encipher(counterOut, counterOut);
-    	
-    	// Now increment counter.
+        // Our ciphers clobber the input array, so it is essential to copy
+        // the counter to counterOut and then encrypt in-place.
+        System.arraycopy(counter, 0, counterOut, 0, counter.length);
+        cipher.encipher(counterOut, counterOut);
+        
+        // Now increment counter.
         for (int i = counter.length; i-- > 0 && (++counter[i]) == (byte)0;) {
-			/* nothing here */
-		}
-		blockOffset = 0;
+            /* nothing here */
+        }
+        blockOffset = 0;
     }
 
 }

@@ -92,80 +92,80 @@ public class TextModeClientInterface implements Runnable {
     }
     
     public TextModeClientInterface(TextModeClientInterfaceServer server, InputStream in, OutputStream out) {
-    	this.n = server.n;
-    	this.core = server.n.clientCore;
-    	this.r = server.r;
+        this.n = server.n;
+        this.core = server.n.clientCore;
+        this.r = server.r;
         client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true, false);
-    	this.downloadsDir = server.downloadsDir;
-    	this.in = in;
+        this.downloadsDir = server.downloadsDir;
+        this.in = in;
         try {
-        	w = new OutputStreamWriter(out, ENCODING);
-			client.addEventHook(new EventDumper(new BufferedWriter(new OutputStreamWriter(out, ENCODING)), false));
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
-	}
+            w = new OutputStreamWriter(out, ENCODING);
+            client.addEventHook(new EventDumper(new BufferedWriter(new OutputStreamWriter(out, ENCODING)), false));
+        } catch (UnsupportedEncodingException e) {
+            throw new Error(e);
+        }
+    }
 
     public TextModeClientInterface(Node n, NodeClientCore core, HighLevelSimpleClient c, File downloadDir, InputStream in, OutputStream out) {
-    	this.n = n;
-    	this.r = n.random;
-    	this.core = core;
-    	this.client = c;
-    	this.downloadsDir = downloadDir;
-    	this.in = in;
+        this.n = n;
+        this.r = n.random;
+        this.core = core;
+        this.client = c;
+        this.downloadsDir = downloadDir;
+        this.in = in;
         try {
-        	w = new OutputStreamWriter(out, ENCODING);
-			client.addEventHook(new EventDumper(new BufferedWriter(new OutputStreamWriter(out, ENCODING)), false));
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
+            w = new OutputStreamWriter(out, ENCODING);
+            client.addEventHook(new EventDumper(new BufferedWriter(new OutputStreamWriter(out, ENCODING)), false));
+        } catch (UnsupportedEncodingException e) {
+            throw new Error(e);
+        }
     }
     
     @Override
     public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
-    	try {
-    		realRun();
-    	} catch (IOException e) {
+        freenet.support.Logger.OSThread.logPID(this);
+        try {
+            realRun();
+        } catch (IOException e) {
             if(logMINOR) Logger.minor(this, "Caught "+e, e);
         } catch (Throwable t) {
-    		Logger.error(this, "Caught "+t, t);
-    	}
+            Logger.error(this, "Caught "+t, t);
+        }
     }
-	
-	public void realRun() throws IOException {
-		printHeader(w);
-
-		BufferedReader reader = new BufferedReader(new InputStreamReader(in, ENCODING));
-		while(true) {
-			try {
-				w.write("TMCI> ");
-				w.flush();
-				if(processLine(reader)) {
-					reader.close();
-					return;
-				}
-			} catch (SocketException e) {
-				Logger.error(this, "Socket error: "+e, e);
-				return;
-			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t, t);
-				System.out.println("Caught: "+t);
-				StringWriter sw = new StringWriter();
-				t.printStackTrace(new PrintWriter(sw));
-				try {
-					w.write(sw.toString());
-				} catch (IOException e) {
-					Logger.error(this, "Socket error: "+e, e);
-					return;
-				}
-			}
-		}
-	}
     
-	private void printHeader(Writer sw) throws IOException {
-    	StringBuilder sb = new StringBuilder();
-    	
+    public void realRun() throws IOException {
+        printHeader(w);
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in, ENCODING));
+        while(true) {
+            try {
+                w.write("TMCI> ");
+                w.flush();
+                if(processLine(reader)) {
+                    reader.close();
+                    return;
+                }
+            } catch (SocketException e) {
+                Logger.error(this, "Socket error: "+e, e);
+                return;
+            } catch (Throwable t) {
+                Logger.error(this, "Caught "+t, t);
+                System.out.println("Caught: "+t);
+                StringWriter sw = new StringWriter();
+                t.printStackTrace(new PrintWriter(sw));
+                try {
+                    w.write(sw.toString());
+                } catch (IOException e) {
+                    Logger.error(this, "Socket error: "+e, e);
+                    return;
+                }
+            }
+        }
+    }
+    
+    private void printHeader(Writer sw) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        
         sb.append("Trivial Text Mode Client Interface\r\n");
         sb.append("---------------------------------------\r\n");
         sb.append("Freenet 0.7.5 Build #").append(Version.buildNumber()).append(" r" + Version.cvsRevision() + "\r\n");
@@ -215,17 +215,17 @@ public class TextModeClientInterface implements Runnable {
         sb.append("SHUTDOWN - exit the program\r\n");
         sb.append("ANNOUNCE[:<location>] - announce to the specified location\r\n");
         if(n.isUsingWrapper())
-        	sb.append("RESTART - restart the program\r\n");
+            sb.append("RESTART - restart the program\r\n");
         if(core != null && core.directTMCI != this) {
           sb.append("QUIT - close the socket\r\n");
         }
         if(Node.isTestnetEnabled()) {
-        	sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\r\n");
+            sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\r\n");
         }
         sw.write(sb.toString());
     }
 
-	/**
+    /**
      * Process a single command.
      * @throws IOException If we could not write the data to stdout.
      */
@@ -243,7 +243,7 @@ public class TextModeClientInterface implements Runnable {
         if(line == null) return true;
         String uline = line.toUpperCase();
         if(logMINOR)
-        	Logger.minor(this, "Command: "+line);
+            Logger.minor(this, "Command: "+line);
         if(uline.startsWith("GET:")) {
             // Should have a key next
             String key = line.substring("GET:".length()).trim();
@@ -254,111 +254,111 @@ public class TextModeClientInterface implements Runnable {
                 Logger.normal(this, "Key: "+uri);
             } catch (MalformedURLException e2) {
                 outsb.append("Malformed URI: ").append(key).append(" : ").append(e2);
-		outsb.append("\r\n");
-		w.write(outsb.toString());
-		w.flush();
+        outsb.append("\r\n");
+        w.write(outsb.toString());
+        w.flush();
                 return false;
             }
             try {
-				FetchResult result = client.fetch(uri);
-				ClientMetadata cm = result.getMetadata();
+                FetchResult result = client.fetch(uri);
+                ClientMetadata cm = result.getMetadata();
                 outsb.append("Content MIME type: ").append(cm.getMIMEType());
-				Bucket data = result.asBucket();
-				// FIXME limit it above
-				if(data.size() > 32*1024) {
-					System.err.println("Data is more than 32K: "+data.size());
-					outsb.append("Data is more than 32K: ").append(data.size());
-					outsb.append("\r\n");
-					w.write(outsb.toString());
-					w.flush();
-					return false;
-				}
-				byte[] dataBytes = BucketTools.toByteArray(data);
-				boolean evil = false;
-				for(byte b: dataBytes) {
-					// Look for escape codes
-					if(b == '\n') continue;
-					if(b == '\r') continue;
-					if(b < 32) evil = true;
-				}
-				if(evil) {
-					System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
-					outsb.append("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
-					outsb.append("\r\n");
-					w.write(outsb.toString());
-					w.flush();
-					return false;
-				}
-				outsb.append("Data:\r\n");
-				outsb.append(new String(dataBytes, ENCODING));
-			} catch (FetchException e) {
+                Bucket data = result.asBucket();
+                // FIXME limit it above
+                if(data.size() > 32*1024) {
+                    System.err.println("Data is more than 32K: "+data.size());
+                    outsb.append("Data is more than 32K: ").append(data.size());
+                    outsb.append("\r\n");
+                    w.write(outsb.toString());
+                    w.flush();
+                    return false;
+                }
+                byte[] dataBytes = BucketTools.toByteArray(data);
+                boolean evil = false;
+                for(byte b: dataBytes) {
+                    // Look for escape codes
+                    if(b == '\n') continue;
+                    if(b == '\r') continue;
+                    if(b < 32) evil = true;
+                }
+                if(evil) {
+                    System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
+                    outsb.append("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
+                    outsb.append("\r\n");
+                    w.write(outsb.toString());
+                    w.flush();
+                    return false;
+                }
+                outsb.append("Data:\r\n");
+                outsb.append(new String(dataBytes, ENCODING));
+            } catch (FetchException e) {
                 outsb.append("Error: ").append(e.getMessage()).append("\r\n");
-            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
-            		outsb.append(e.errorCodes.toVerboseString());
-            	}
-            	if(e.newURI != null)
+                if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
+                    outsb.append(e.errorCodes.toVerboseString());
+                }
+                if(e.newURI != null)
                     outsb.append("Permanent redirect: ").append(e.newURI).append("\r\n");
-			}
+            }
         } else if(uline.startsWith("DUMP:")) {
-	            // Should have a key next
-	            String key = line.substring("DUMP:".length()).trim();
-	            Logger.normal(this, "Key: "+key);
-	            FreenetURI uri;
-	            try {
-	                uri = new FreenetURI(key);
-	                Logger.normal(this, "Key: "+uri);
-	            } catch (MalformedURLException e2) {
-	                outsb.append("Malformed URI: ").append(key).append(" : ").append(e2);
-			outsb.append("\r\n");
-			w.write(outsb.toString());
-			w.flush();
-	                return false;
-	            }
-	            try {
-	            	FetchContext context = client.getFetchContext();
-	        		FetchWaiter fw = new FetchWaiter();
-	        		ClientGetter get = new ClientGetter(fw, uri, context, RequestStarter.INTERACTIVE_PRIORITY_CLASS, (RequestClient)client, null, null, null);
-	        		get.setMetaSnoop(new DumperSnoopMetadata());
-	            	get.start(null, n.clientCore.clientContext);
-					FetchResult result = fw.waitForCompletion();
-					ClientMetadata cm = result.getMetadata();
-	                outsb.append("Content MIME type: ").append(cm.getMIMEType());
-					Bucket data = result.asBucket();
-					// FIXME limit it above
-					if(data.size() > 32*1024) {
-						System.err.println("Data is more than 32K: "+data.size());
-						outsb.append("Data is more than 32K: ").append(data.size());
-						outsb.append("\r\n");
-						w.write(outsb.toString());
-						w.flush();
-						return false;
-					}
-					byte[] dataBytes = BucketTools.toByteArray(data);
-					boolean evil = false;
-					for(byte b: dataBytes) {
-						// Look for escape codes
-						if(b == '\n') continue;
-						if(b == '\r') continue;
-						if(b < 32) evil = true;
-					}
-					if(evil) {
-						System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
-						outsb.append("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
-						outsb.append("\r\n");
-						w.write(outsb.toString());
-						w.flush();
-						return false;
-					}
-					outsb.append("Data:\r\n");
-					outsb.append(new String(dataBytes, ENCODING));
-				} catch (FetchException e) {
-	                outsb.append("Error: ").append(e.getMessage()).append("\r\n");
-	            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
-	            		outsb.append(e.errorCodes.toVerboseString());
-	            	}
-	            	if(e.newURI != null)
-	                    outsb.append("Permanent redirect: ").append(e.newURI).append("\r\n");
-				}
+                // Should have a key next
+                String key = line.substring("DUMP:".length()).trim();
+                Logger.normal(this, "Key: "+key);
+                FreenetURI uri;
+                try {
+                    uri = new FreenetURI(key);
+                    Logger.normal(this, "Key: "+uri);
+                } catch (MalformedURLException e2) {
+                    outsb.append("Malformed URI: ").append(key).append(" : ").append(e2);
+            outsb.append("\r\n");
+            w.write(outsb.toString());
+            w.flush();
+                    return false;
+                }
+                try {
+                    FetchContext context = client.getFetchContext();
+                    FetchWaiter fw = new FetchWaiter();
+                    ClientGetter get = new ClientGetter(fw, uri, context, RequestStarter.INTERACTIVE_PRIORITY_CLASS, (RequestClient)client, null, null, null);
+                    get.setMetaSnoop(new DumperSnoopMetadata());
+                    get.start(null, n.clientCore.clientContext);
+                    FetchResult result = fw.waitForCompletion();
+                    ClientMetadata cm = result.getMetadata();
+                    outsb.append("Content MIME type: ").append(cm.getMIMEType());
+                    Bucket data = result.asBucket();
+                    // FIXME limit it above
+                    if(data.size() > 32*1024) {
+                        System.err.println("Data is more than 32K: "+data.size());
+                        outsb.append("Data is more than 32K: ").append(data.size());
+                        outsb.append("\r\n");
+                        w.write(outsb.toString());
+                        w.flush();
+                        return false;
+                    }
+                    byte[] dataBytes = BucketTools.toByteArray(data);
+                    boolean evil = false;
+                    for(byte b: dataBytes) {
+                        // Look for escape codes
+                        if(b == '\n') continue;
+                        if(b == '\r') continue;
+                        if(b < 32) evil = true;
+                    }
+                    if(evil) {
+                        System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
+                        outsb.append("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
+                        outsb.append("\r\n");
+                        w.write(outsb.toString());
+                        w.flush();
+                        return false;
+                    }
+                    outsb.append("Data:\r\n");
+                    outsb.append(new String(dataBytes, ENCODING));
+                } catch (FetchException e) {
+                    outsb.append("Error: ").append(e.getMessage()).append("\r\n");
+                    if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
+                        outsb.append(e.errorCodes.toVerboseString());
+                    }
+                    if(e.newURI != null)
+                        outsb.append("Permanent redirect: ").append(e.newURI).append("\r\n");
+                }
         } else if(uline.startsWith("GETFILE:")) {
             // Should have a key next
             String key = line.substring("GETFILE:".length()).trim();
@@ -368,17 +368,17 @@ public class TextModeClientInterface implements Runnable {
                 uri = new FreenetURI(key);
             } catch (MalformedURLException e2) {
                 outsb.append("Malformed URI: ").append(key).append(" : ").append(e2);
-		outsb.append("\r\n");
-		w.write(outsb.toString());
-		w.flush();
+        outsb.append("\r\n");
+        w.write(outsb.toString());
+        w.flush();
                 return false;
             }
             try {
-            	long startTime = System.currentTimeMillis();
-				FetchResult result = client.fetch(uri);
-				ClientMetadata cm = result.getMetadata();
+                long startTime = System.currentTimeMillis();
+                FetchResult result = client.fetch(uri);
+                ClientMetadata cm = result.getMetadata();
                 outsb.append("Content MIME type: ").append(cm.getMIMEType());
-				Bucket data = result.asBucket();
+                Bucket data = result.asBucket();
                 // Now calculate filename
                 String fnam = uri.getDocName();
                 fnam = sanitize(fnam);
@@ -386,7 +386,7 @@ public class TextModeClientInterface implements Runnable {
                     fnam = "freenet-download-"+HexUtil.bytesToHex(BucketTools.hash(data), 0, 10);
                     String ext = DefaultMIMETypes.getExtension(cm.getMIMEType());
                     if((ext != null) && !ext.equals(""))
-                    	fnam += '.' + ext;
+                        fnam += '.' + ext;
                 }
                 File f = new File(downloadsDir, fnam);
                 if(f.exists()) {
@@ -413,137 +413,137 @@ public class TextModeClientInterface implements Runnable {
                 long sz = data.size();
                 double rate = 1000.0 * sz / (endTime-startTime);
                 outsb.append("Download rate: ").append(rate).append(" bytes / second");
-			} catch (FetchException e) {
+            } catch (FetchException e) {
                 outsb.append("Error: ").append(e.getMessage());
-            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
-            		outsb.append(e.errorCodes.toVerboseString());
-            	}
-            	if(e.newURI != null)
+                if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
+                    outsb.append(e.errorCodes.toVerboseString());
+                }
+                if(e.newURI != null)
                     outsb.append("Permanent redirect: ").append(e.newURI).append("\r\n");
-			}
+            }
     } else if(uline.startsWith("UPDATE")) {
-    	outsb.append("starting the update process");
-    	// FIXME run on separate thread
-    	n.ticker.queueTimedJob(new Runnable() {
-    		@Override
-    		public void run() {
-    		    freenet.support.Logger.OSThread.logPID(this);
-    			n.getNodeUpdater().arm();
-    		}
-    	}, 0);
-    	outsb.append("\r\n");
-    	w.write(outsb.toString());
-    	w.flush();
-    	return false;
+        outsb.append("starting the update process");
+        // FIXME run on separate thread
+        n.ticker.queueTimedJob(new Runnable() {
+            @Override
+            public void run() {
+                freenet.support.Logger.OSThread.logPID(this);
+                n.getNodeUpdater().arm();
+            }
+        }, 0);
+        outsb.append("\r\n");
+        w.write(outsb.toString());
+        w.flush();
+        return false;
     }else if(uline.startsWith("FILTER:")) {
-    	line = line.substring("FILTER:".length()).trim();
-    	outsb.append("Here is the result:\r\n");
-    	
-    	final String content = readLines(reader, false);
-    	final Bucket input = new ArrayBucket(content.getBytes("UTF-8"));
-    	final Bucket output = new ArrayBucket();
-    	InputStream inputStream = null;
-    	OutputStream outputStream = null;
-    	BufferedInputStream bis = null;
-    	try {
-    		inputStream = input.getInputStream();
-    		outputStream = output.getOutputStream();
-    		ContentFilter.filter(inputStream, outputStream, "text/html", new URI("http://127.0.0.1:8888/"), null, null, null, core.getLinkFilterExceptionProvider());
-    		inputStream.close();
-			inputStream = null;
-    		outputStream.close();
-			outputStream = null;
+        line = line.substring("FILTER:".length()).trim();
+        outsb.append("Here is the result:\r\n");
+        
+        final String content = readLines(reader, false);
+        final Bucket input = new ArrayBucket(content.getBytes("UTF-8"));
+        final Bucket output = new ArrayBucket();
+        InputStream inputStream = null;
+        OutputStream outputStream = null;
+        BufferedInputStream bis = null;
+        try {
+            inputStream = input.getInputStream();
+            outputStream = output.getOutputStream();
+            ContentFilter.filter(inputStream, outputStream, "text/html", new URI("http://127.0.0.1:8888/"), null, null, null, core.getLinkFilterExceptionProvider());
+            inputStream.close();
+            inputStream = null;
+            outputStream.close();
+            outputStream = null;
 
-    		bis = new BufferedInputStream(output.getInputStream());
-    		while(bis.available() > 0){
-    			outsb.append((char)bis.read());
-    		}
-    	} catch (IOException e) {
-    		outsb.append("Bucket error?: " + e.getMessage());
-    		Logger.error(this, "Bucket error?: " + e, e);
-    	} catch (URISyntaxException e) {
-    		outsb.append("Internal error: " + e.getMessage());
-    		Logger.error(this, "Internal error: " + e, e);
-    	} finally {
-			Closer.close(inputStream);
-			Closer.close(outputStream);
-			Closer.close(bis);
-    		input.free();
-    		output.free();
-    	}
-    	outsb.append("\r\n");
+            bis = new BufferedInputStream(output.getInputStream());
+            while(bis.available() > 0){
+                outsb.append((char)bis.read());
+            }
+        } catch (IOException e) {
+            outsb.append("Bucket error?: " + e.getMessage());
+            Logger.error(this, "Bucket error?: " + e, e);
+        } catch (URISyntaxException e) {
+            outsb.append("Internal error: " + e.getMessage());
+            Logger.error(this, "Internal error: " + e, e);
+        } finally {
+            Closer.close(inputStream);
+            Closer.close(outputStream);
+            Closer.close(bis);
+            input.free();
+            output.free();
+        }
+        outsb.append("\r\n");
     }else if(uline.startsWith("BLOW")) {
-    	n.getNodeUpdater().blow("caught an  IOException : (Incompetent Operator) :p", true);
-    	outsb.append("\r\n");
-    	w.write(outsb.toString());
-    	w.flush();
-    	return false;
-	} else if(uline.startsWith("SHUTDOWN")) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Shutting node down.\r\n");
-		w.write(sb.toString());
-		w.flush();
-		n.exit("Shutdown from console");
-	} else if(uline.startsWith("RESTART")) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Restarting the node.\r\n");
-		w.write(sb.toString());
-		w.flush();
-		n.getNodeStarter().restart();
-	} else if(uline.startsWith("QUIT") && (core.directTMCI == this)) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("QUIT command not available in console mode.\r\n");
-		w.write(sb.toString());
-		w.flush();
-		return false;
+        n.getNodeUpdater().blow("caught an  IOException : (Incompetent Operator) :p", true);
+        outsb.append("\r\n");
+        w.write(outsb.toString());
+        w.flush();
+        return false;
+    } else if(uline.startsWith("SHUTDOWN")) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Shutting node down.\r\n");
+        w.write(sb.toString());
+        w.flush();
+        n.exit("Shutdown from console");
+    } else if(uline.startsWith("RESTART")) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Restarting the node.\r\n");
+        w.write(sb.toString());
+        w.flush();
+        n.getNodeStarter().restart();
+    } else if(uline.startsWith("QUIT") && (core.directTMCI == this)) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("QUIT command not available in console mode.\r\n");
+        w.write(sb.toString());
+        w.flush();
+        return false;
         } else if(uline.startsWith("QUIT")) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Closing connection.\r\n");
-		w.write(sb.toString());
-		w.flush();
-		return true;
+        StringBuilder sb = new StringBuilder();
+        sb.append("Closing connection.\r\n");
+        w.write(sb.toString());
+        w.flush();
+        return true;
         } else if(uline.startsWith("MEMSTAT")) {
-		Runtime rt = Runtime.getRuntime();
-		float freeMemory = rt.freeMemory();
-		float totalMemory = rt.totalMemory();
-		float maxMemory = rt.maxMemory();
+        Runtime rt = Runtime.getRuntime();
+        float freeMemory = rt.freeMemory();
+        float totalMemory = rt.totalMemory();
+        float maxMemory = rt.maxMemory();
 
-		long usedJavaMem = (long)(totalMemory - freeMemory);
-		long allocatedJavaMem = (long)totalMemory;
-		long maxJavaMem = (long)maxMemory;
-		int availableCpus = rt.availableProcessors();
-		NumberFormat thousendPoint = NumberFormat.getInstance();
+        long usedJavaMem = (long)(totalMemory - freeMemory);
+        long allocatedJavaMem = (long)totalMemory;
+        long maxJavaMem = (long)maxMemory;
+        int availableCpus = rt.availableProcessors();
+        NumberFormat thousendPoint = NumberFormat.getInstance();
 
-		ThreadGroup tg = Thread.currentThread().getThreadGroup();
-		while(tg.getParent() != null) tg = tg.getParent();
-		int threadCount = tg.activeCount();
+        ThreadGroup tg = Thread.currentThread().getThreadGroup();
+        while(tg.getParent() != null) tg = tg.getParent();
+        int threadCount = tg.activeCount();
 
-		StringBuilder sb = new StringBuilder();
-		sb.append("Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem, true)+"\r\n");
-		sb.append("Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem, true)+"\r\n");
-		sb.append("Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true)+"\r\n");
-		sb.append("Running threads:\u00a0" + thousendPoint.format(threadCount)+"\r\n");
-		sb.append("Available CPUs:\u00a0" + availableCpus+"\r\n");
-		sb.append("Java Version:\u00a0" + System.getProperty("java.version")+"\r\n");
-		sb.append("JVM Vendor:\u00a0" + System.getProperty("java.vendor")+"\r\n");
-		sb.append("JVM Version:\u00a0" + System.getProperty("java.version")+"\r\n");
-		sb.append("OS Name:\u00a0" + System.getProperty("os.name")+"\r\n");
-		sb.append("OS Version:\u00a0" + System.getProperty("os.version")+"\r\n");
-		sb.append("OS Architecture:\u00a0" + System.getProperty("os.arch")+"\r\n");
-		w.write(sb.toString());
-		w.flush();
-		return false;
-	} else if(uline.startsWith("HELP")) {
-		printHeader(w);
-		outsb.append("\r\n");
-		w.write(outsb.toString());
-		w.flush();
-		return false;
+        StringBuilder sb = new StringBuilder();
+        sb.append("Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem, true)+"\r\n");
+        sb.append("Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem, true)+"\r\n");
+        sb.append("Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true)+"\r\n");
+        sb.append("Running threads:\u00a0" + thousendPoint.format(threadCount)+"\r\n");
+        sb.append("Available CPUs:\u00a0" + availableCpus+"\r\n");
+        sb.append("Java Version:\u00a0" + System.getProperty("java.version")+"\r\n");
+        sb.append("JVM Vendor:\u00a0" + System.getProperty("java.vendor")+"\r\n");
+        sb.append("JVM Version:\u00a0" + System.getProperty("java.version")+"\r\n");
+        sb.append("OS Name:\u00a0" + System.getProperty("os.name")+"\r\n");
+        sb.append("OS Version:\u00a0" + System.getProperty("os.version")+"\r\n");
+        sb.append("OS Architecture:\u00a0" + System.getProperty("os.arch")+"\r\n");
+        w.write(sb.toString());
+        w.flush();
+        return false;
+    } else if(uline.startsWith("HELP")) {
+        printHeader(w);
+        outsb.append("\r\n");
+        w.write(outsb.toString());
+        w.flush();
+        return false;
         } else if(uline.startsWith("PUT:") || (getCHKOnly = uline.startsWith("GETCHK:"))) {
-        	if(getCHKOnly)
-        		line = line.substring(("GETCHK:").length()).trim();
-        	else
-        		line = line.substring("PUT:".length()).trim();
+            if(getCHKOnly)
+                line = line.substring(("GETCHK:").length()).trim();
+            else
+                line = line.substring("PUT:".length()).trim();
             String content;
             if(line.length() > 0) {
                 // Single line insert
@@ -559,138 +559,138 @@ public class TextModeClientInterface implements Runnable {
 
             FreenetURI uri;
             try {
-            	uri = client.insert(block, getCHKOnly, null);
+                uri = client.insert(block, getCHKOnly, null);
             } catch (InsertException e) {
                 outsb.append("Error: ").append(e.getMessage());
-            	if(e.uri != null)
+                if(e.uri != null)
                     outsb.append("URI would have been: ").append(e.uri);
-            	int mode = e.getMode();
-            	if((mode == InsertException.FATAL_ERRORS_IN_BLOCKS) || (mode == InsertException.TOO_MANY_RETRIES_IN_BLOCKS)) {
+                int mode = e.getMode();
+                if((mode == InsertException.FATAL_ERRORS_IN_BLOCKS) || (mode == InsertException.TOO_MANY_RETRIES_IN_BLOCKS)) {
                     outsb.append("Splitfile-specific error:\n").append(e.errorCodes.toVerboseString());
-            	}
-		outsb.append("\r\n");
-		w.write(outsb.toString());
-		w.flush();
-            	return false;
+                }
+        outsb.append("\r\n");
+        w.write(outsb.toString());
+        w.flush();
+                return false;
             }
 
             outsb.append("URI: ").append(uri);
             ////////////////////////////////////////////////////////////////////////////////
         } else if(uline.startsWith("PUTDIR:") || (uline.startsWith("PUTSSKDIR")) || (getCHKOnly = uline.startsWith("GETCHKDIR:"))) {
-        	// TODO: Check for errors?
-        	boolean ssk = false;
-        	if(uline.startsWith("PUTDIR:"))
-        		line = line.substring("PUTDIR:".length());
-        	else if(uline.startsWith("PUTSSKDIR:")) {
-        		line = line.substring("PUTSSKDIR:".length());
-        		ssk = true;
-        	} else if(uline.startsWith("GETCHKDIR:"))
-        		line = line.substring(("GETCHKDIR:").length());
-        	else {
-        		System.err.println("Impossible");
-        		outsb.append("Impossible");
-        	}
-        	
-        	line = line.trim();
-        	
-        	if(line.length() < 1) {
-        		printHeader(w);
-			outsb.append("\r\n");
-			w.write(outsb.toString());
-			w.flush();
-        		return false;
-        	}
-        	
-        	String defaultFile = null;
-        	
-        	FreenetURI insertURI = FreenetURI.EMPTY_CHK_URI;
-        	
-        	// set default file?
-        	if (line.matches("^.*#.*$")) {
-        		String[] split = line.split("#");
-        		if(ssk) {
-        			insertURI = new FreenetURI(split[0]);
-        			line = split[1];
-        			if(split.length > 2)
-        				defaultFile = split[2];
-        		} else {
-        			defaultFile = split[1];
-        			line = split[0];
-        		}
-        	}
-        	
-        	HashMap<String, Object> bucketsByName =
-        		makeBucketsByName(line);
-        	
-        	if(defaultFile == null) {
-        		String[] defaultFiles = 
-        			new String[] { "index.html", "index.htm", "default.html", "default.htm" };
-        		for(String file: defaultFiles) {
-        			if(bucketsByName.containsKey(file)) {
-        				defaultFile = file;
-        				break;
-        			}        				
-        		}
-        	}
-        	
-        	FreenetURI uri;
-			try {
-				uri = client.insertManifest(insertURI, bucketsByName, defaultFile);
-				uri = uri.addMetaStrings(new String[] { "" });
-	        	outsb.append("=======================================================");
+            // TODO: Check for errors?
+            boolean ssk = false;
+            if(uline.startsWith("PUTDIR:"))
+                line = line.substring("PUTDIR:".length());
+            else if(uline.startsWith("PUTSSKDIR:")) {
+                line = line.substring("PUTSSKDIR:".length());
+                ssk = true;
+            } else if(uline.startsWith("GETCHKDIR:"))
+                line = line.substring(("GETCHKDIR:").length());
+            else {
+                System.err.println("Impossible");
+                outsb.append("Impossible");
+            }
+            
+            line = line.trim();
+            
+            if(line.length() < 1) {
+                printHeader(w);
+            outsb.append("\r\n");
+            w.write(outsb.toString());
+            w.flush();
+                return false;
+            }
+            
+            String defaultFile = null;
+            
+            FreenetURI insertURI = FreenetURI.EMPTY_CHK_URI;
+            
+            // set default file?
+            if (line.matches("^.*#.*$")) {
+                String[] split = line.split("#");
+                if(ssk) {
+                    insertURI = new FreenetURI(split[0]);
+                    line = split[1];
+                    if(split.length > 2)
+                        defaultFile = split[2];
+                } else {
+                    defaultFile = split[1];
+                    line = split[0];
+                }
+            }
+            
+            HashMap<String, Object> bucketsByName =
+                makeBucketsByName(line);
+            
+            if(defaultFile == null) {
+                String[] defaultFiles = 
+                    new String[] { "index.html", "index.htm", "default.html", "default.htm" };
+                for(String file: defaultFiles) {
+                    if(bucketsByName.containsKey(file)) {
+                        defaultFile = file;
+                        break;
+                    }                        
+                }
+            }
+            
+            FreenetURI uri;
+            try {
+                uri = client.insertManifest(insertURI, bucketsByName, defaultFile);
+                uri = uri.addMetaStrings(new String[] { "" });
+                outsb.append("=======================================================");
                 outsb.append("URI: ").append(uri);
-	        	outsb.append("=======================================================");
-			} catch (InsertException e) {
+                outsb.append("=======================================================");
+            } catch (InsertException e) {
                 outsb.append("Finished insert but: ").append(e.getMessage());
-            	if(e.uri != null) {
-            		uri = e.uri;
-    				uri = uri.addMetaStrings(new String[] { "" });
+                if(e.uri != null) {
+                    uri = e.uri;
+                    uri = uri.addMetaStrings(new String[] { "" });
                     outsb.append("URI would have been: ").append(uri);
-            	}
-            	if(e.errorCodes != null) {
-            		outsb.append("Splitfile errors breakdown:");
-            		outsb.append(e.errorCodes.toVerboseString());
-            	}
-            	Logger.error(this, "Caught "+e, e);
-			}
+                }
+                if(e.errorCodes != null) {
+                    outsb.append("Splitfile errors breakdown:");
+                    outsb.append(e.errorCodes.toVerboseString());
+                }
+                Logger.error(this, "Caught "+e, e);
+            }
             
         } else if(uline.startsWith("PUTFILE:") || (getCHKOnly = uline.startsWith("GETCHKFILE:"))) {
             // Just insert to local store
-        	if(getCHKOnly) {
-        		line = line.substring(("GETCHKFILE:").length()).trim();
-        	} else {
-        		line = line.substring("PUTFILE:".length()).trim();
-        	}
+            if(getCHKOnly) {
+                line = line.substring(("GETCHKFILE:").length()).trim();
+            } else {
+                line = line.substring("PUTFILE:".length()).trim();
+            }
             String mimeType = DefaultMIMETypes.guessMIMEType(line, false);
             if (line.indexOf('#') > -1) {
-            	String[] splittedLine = line.split("#");
-            	line = splittedLine[0];
-            	mimeType = splittedLine[1];
+                String[] splittedLine = line.split("#");
+                line = splittedLine[0];
+                mimeType = splittedLine[1];
             }
             File f = new File(line);
             outsb.append("Attempting to read file ").append(line);
             long startTime = System.currentTimeMillis();
             try {
-            	if(!(f.exists() && f.canRead())) {
-            		throw new FileNotFoundException();
-            	}
-            	
-            	// Guess MIME type
+                if(!(f.exists() && f.canRead())) {
+                    throw new FileNotFoundException();
+                }
+                
+                // Guess MIME type
                 outsb.append(" using MIME type: ").append(mimeType).append("\r\n");
-            	if(mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
-            		mimeType = ""; // don't need to override it
-            	
-            	FileBucket fb = new FileBucket(f, true, false, false, false, false);
-            	InsertBlock block = new InsertBlock(fb, new ClientMetadata(mimeType), FreenetURI.EMPTY_CHK_URI);
+                if(mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
+                    mimeType = ""; // don't need to override it
+                
+                FileBucket fb = new FileBucket(f, true, false, false, false, false);
+                InsertBlock block = new InsertBlock(fb, new ClientMetadata(mimeType), FreenetURI.EMPTY_CHK_URI);
 
-            	startTime = System.currentTimeMillis();
-            	FreenetURI uri = client.insert(block, getCHKOnly, f.getName());
-            	
-            	// FIXME depends on CHK's still being renamable
+                startTime = System.currentTimeMillis();
+                FreenetURI uri = client.insert(block, getCHKOnly, f.getName());
+                
+                // FIXME depends on CHK's still being renamable
                 //uri = uri.setDocName(f.getName());
 
                 outsb.append("URI: ").append(uri).append("\r\n");
-            	long endTime = System.currentTimeMillis();
+                long endTime = System.currentTimeMillis();
                 long sz = f.length();
                 double rate = 1000.0 * sz / (endTime-startTime);
                 outsb.append("Upload rate: ").append(rate).append(" bytes / second\r\n");
@@ -698,66 +698,66 @@ public class TextModeClientInterface implements Runnable {
                 outsb.append("File not found");
             } catch (InsertException e) {
                 outsb.append("Finished insert but: ").append(e.getMessage());
-            	if(e.uri != null) {
+                if(e.uri != null) {
                     outsb.append("URI would have been: ").append(e.uri);
-                	long endTime = System.currentTimeMillis();
+                    long endTime = System.currentTimeMillis();
                     long sz = f.length();
                     double rate = 1000.0 * sz / (endTime-startTime);
                     outsb.append("Upload rate: ").append(rate).append(" bytes / second");
-            	}
-            	if(e.errorCodes != null) {
-            		outsb.append("Splitfile errors breakdown:");
-            		outsb.append(e.errorCodes.toVerboseString());
-            	}
+                }
+                if(e.errorCodes != null) {
+                    outsb.append("Splitfile errors breakdown:");
+                    outsb.append(e.errorCodes.toVerboseString());
+                }
             } catch (Throwable t) {
                 outsb.append("Insert threw: ").append(t);
                 t.printStackTrace();
             }
         } else if(uline.startsWith("MAKESSK")) {
-        	InsertableClientSSK key = InsertableClientSSK.createRandom(r, "");
+            InsertableClientSSK key = InsertableClientSSK.createRandom(r, "");
             outsb.append("Insert URI: ").append(key.getInsertURI().toString(false, false)).append("\r\n");
             outsb.append("Request URI: ").append(key.getURI().toString(false, false)).append("\r\n");
-        	FreenetURI insertURI = key.getInsertURI().setDocName("testsite");
-        	String fixedInsertURI = insertURI.toString(false, false);
+            FreenetURI insertURI = key.getInsertURI().setDocName("testsite");
+            String fixedInsertURI = insertURI.toString(false, false);
             outsb.append("Note that you MUST add a filename to the end of the above URLs e.g.:\r\n").append(fixedInsertURI).append("\r\n");
             outsb.append("Normally you will then do PUTSSKDIR:<insert URI>#<directory to upload>, for example:\r\nPUTSSKDIR:").append(fixedInsertURI).append("#directoryToUpload/\r\n");
             outsb.append("This will then produce a manifest site containing all the files, the default document can be accessed at\r\n").append(key.getURI().toString(false, false)).append("testsite/");
         } else if(uline.startsWith("PUTSSK:")) {
-        	String cmd = line.substring("PUTSSK:".length());
-        	cmd = cmd.trim();
-        	if(cmd.indexOf(';') <= 0) {
-        		outsb.append("No target URI provided.");
-        		outsb.append("PUTSSK:<insert uri>;<url to redirect to>");
-			outsb.append("\r\n");
-			w.write(outsb.toString());
-			w.flush();
-        		return false;
-        	}
-        	String[] split = cmd.split(";");
-        	String insertURI = split[0];
-        	String targetURI = split[1];
+            String cmd = line.substring("PUTSSK:".length());
+            cmd = cmd.trim();
+            if(cmd.indexOf(';') <= 0) {
+                outsb.append("No target URI provided.");
+                outsb.append("PUTSSK:<insert uri>;<url to redirect to>");
+            outsb.append("\r\n");
+            w.write(outsb.toString());
+            w.flush();
+                return false;
+            }
+            String[] split = cmd.split(";");
+            String insertURI = split[0];
+            String targetURI = split[1];
             outsb.append("Insert URI: ").append(insertURI);
             outsb.append("Target URI: ").append(targetURI);
-        	FreenetURI insert = new FreenetURI(insertURI);
-        	FreenetURI target = new FreenetURI(targetURI);
-        	try {
-				FreenetURI result = client.insertRedirect(insert, target);
+            FreenetURI insert = new FreenetURI(insertURI);
+            FreenetURI target = new FreenetURI(targetURI);
+            try {
+                FreenetURI result = client.insertRedirect(insert, target);
                 outsb.append("Successfully inserted to fetch URI: ").append(result);
-			} catch (InsertException e) {
+            } catch (InsertException e) {
                 outsb.append("Finished insert but: ").append(e.getMessage());
-            	Logger.normal(this, "Error: "+e, e);
-            	if(e.uri != null) {
+                Logger.normal(this, "Error: "+e, e);
+                if(e.uri != null) {
                     outsb.append("URI would have been: ").append(e.uri);
-            	}
-			}
-        	
+                }
+            }
+            
         } else if(uline.startsWith("STATUS")) {
-        	outsb.append("DARKNET:\n");
+            outsb.append("DARKNET:\n");
             SimpleFieldSet fs = n.exportDarknetPublicFieldSet();
             outsb.append(fs.toString());
             if(n.isOpennetEnabled()) {
-            	outsb.append("OPENNET:\n");
-            	fs = n.exportOpennetPublicFieldSet();
+                outsb.append("OPENNET:\n");
+                fs = n.exportOpennetPublicFieldSet();
                 outsb.append(fs.toString());
             }
             outsb.append(n.getStatus());
@@ -775,16 +775,16 @@ public class TextModeClientInterface implements Runnable {
             String content = null;
             if(key.length() > 0) {
                 // Filename
-            	BufferedReader in;
+                BufferedReader in;
                 outsb.append("Trying to add peer to node by noderef in ").append(key).append("\r\n");
                 File f = new File(key);
                 if (f.isFile()) {
-                	outsb.append("Given string seems to be a file, loading...\r\n");
-                	in = new BufferedReader(new InputStreamReader(new FileInputStream(f), ENCODING));
+                    outsb.append("Given string seems to be a file, loading...\r\n");
+                    in = new BufferedReader(new InputStreamReader(new FileInputStream(f), ENCODING));
                     content = readLines(in, true);
                     in.close();
                 } else {
-                	outsb.append("Given string seems to be an URL, loading...\r\n");
+                    outsb.append("Given string seems to be an URL, loading...\r\n");
                     URL url = new URL(key);
                     content = AddPeer.getReferenceFromURL(url).toString();
                 }
@@ -801,229 +801,229 @@ public class TextModeClientInterface implements Runnable {
             outsb.append("New name: ").append(key);
             
             try{
-            	n.setName(key);
+                n.setName(key);
                 if(logMINOR)
-                	Logger.minor(this, "Setting node.name to "+key);
+                    Logger.minor(this, "Setting node.name to "+key);
             }catch(Exception e){
-            	Logger.error(this, "Error setting node's name", e);
-    		}
+                Logger.error(this, "Error setting node's name", e);
+            }
             core.storeConfig();
         } else if(uline.startsWith("DISABLEPEER:")) {
-        	String nodeIdentifier = (line.substring("DISABLEPEER:".length())).trim();
-        	if(!havePeer(nodeIdentifier)) {
-        		w.write(("no peer for "+nodeIdentifier+"\r\n"));
-        		w.flush();
-        		return false;
-        	}
-        	if(disablePeer(nodeIdentifier)) {
+            String nodeIdentifier = (line.substring("DISABLEPEER:".length())).trim();
+            if(!havePeer(nodeIdentifier)) {
+                w.write(("no peer for "+nodeIdentifier+"\r\n"));
+                w.flush();
+                return false;
+            }
+            if(disablePeer(nodeIdentifier)) {
                 outsb.append("disable succeeded for ").append(nodeIdentifier);
-        	} else {
+            } else {
                 outsb.append("disable failed for ").append(nodeIdentifier);
-        	}
-        	outsb.append("\r\n");
+            }
+            outsb.append("\r\n");
         } else if(uline.startsWith("ENABLEPEER:")) {
-        	String nodeIdentifier = (line.substring("ENABLEPEER:".length())).trim();
-        	if(!havePeer(nodeIdentifier)) {
-        		w.write(("no peer for "+nodeIdentifier+"\r\n"));
-        		w.flush();
-        		return false;
-        	}
-        	if(enablePeer(nodeIdentifier)) {
+            String nodeIdentifier = (line.substring("ENABLEPEER:".length())).trim();
+            if(!havePeer(nodeIdentifier)) {
+                w.write(("no peer for "+nodeIdentifier+"\r\n"));
+                w.flush();
+                return false;
+            }
+            if(enablePeer(nodeIdentifier)) {
                 outsb.append("enable succeeded for ").append(nodeIdentifier);
-        	} else {
+            } else {
                 outsb.append("enable failed for ").append(nodeIdentifier);
-        	}
-        	outsb.append("\r\n");
-		} else if(uline.startsWith("SETPEERLISTENONLY:")) {
-			String nodeIdentifier = (line.substring("SETPEERLISTENONLY:".length())).trim();
-        	if(!havePeer(nodeIdentifier)) {
-        		w.write(("no peer for "+nodeIdentifier+"\r\n"));
-        		w.flush();
-        		return false;
-        	}
-			PeerNode pn = n.getPeerNode(nodeIdentifier);
-        	if(pn == null) {
-        		w.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n"));
-        		w.flush();
-        		return false;
-        	}
-			if(!(pn instanceof DarknetPeerNode)) {
-				w.write(("Error: "+nodeIdentifier+" identifies a non-darknet peer and this command is only available for darknet peers\r\n\r\n"));
-				w.flush();
-				return false;
-			}
-			DarknetPeerNode dpn = (DarknetPeerNode) pn;
-			dpn.setListenOnly(true);
+            }
+            outsb.append("\r\n");
+        } else if(uline.startsWith("SETPEERLISTENONLY:")) {
+            String nodeIdentifier = (line.substring("SETPEERLISTENONLY:".length())).trim();
+            if(!havePeer(nodeIdentifier)) {
+                w.write(("no peer for "+nodeIdentifier+"\r\n"));
+                w.flush();
+                return false;
+            }
+            PeerNode pn = n.getPeerNode(nodeIdentifier);
+            if(pn == null) {
+                w.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n"));
+                w.flush();
+                return false;
+            }
+            if(!(pn instanceof DarknetPeerNode)) {
+                w.write(("Error: "+nodeIdentifier+" identifies a non-darknet peer and this command is only available for darknet peers\r\n\r\n"));
+                w.flush();
+                return false;
+            }
+            DarknetPeerNode dpn = (DarknetPeerNode) pn;
+            dpn.setListenOnly(true);
             outsb.append("set ListenOnly suceeded for ").append(nodeIdentifier).append("\r\n");
-		} else if(uline.startsWith("UNSETPEERLISTENONLY:")) {
-			String nodeIdentifier = (line.substring("UNSETPEERLISTENONLY:".length())).trim();
-        	if(!havePeer(nodeIdentifier)) {
-        		w.write(("no peer for "+nodeIdentifier+"\r\n"));
-        		w.flush();
-        		return false;
-        	}
-			PeerNode pn = n.getPeerNode(nodeIdentifier);
-        	if(pn == null) {
-        		w.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n"));
-        		w.flush();
-        		return false;
-        	}
-			if(!(pn instanceof DarknetPeerNode)) {
-				w.write(("Error: "+nodeIdentifier+" identifies a non-darknet peer and this command is only available for darknet peers\r\n\r\n"));
-				w.flush();
-				return false;
-			}
-			DarknetPeerNode dpn = (DarknetPeerNode) pn;
-			dpn.setListenOnly(false);
+        } else if(uline.startsWith("UNSETPEERLISTENONLY:")) {
+            String nodeIdentifier = (line.substring("UNSETPEERLISTENONLY:".length())).trim();
+            if(!havePeer(nodeIdentifier)) {
+                w.write(("no peer for "+nodeIdentifier+"\r\n"));
+                w.flush();
+                return false;
+            }
+            PeerNode pn = n.getPeerNode(nodeIdentifier);
+            if(pn == null) {
+                w.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n"));
+                w.flush();
+                return false;
+            }
+            if(!(pn instanceof DarknetPeerNode)) {
+                w.write(("Error: "+nodeIdentifier+" identifies a non-darknet peer and this command is only available for darknet peers\r\n\r\n"));
+                w.flush();
+                return false;
+            }
+            DarknetPeerNode dpn = (DarknetPeerNode) pn;
+            dpn.setListenOnly(false);
             outsb.append("unset ListenOnly suceeded for ").append(nodeIdentifier).append("\r\n");
         } else if(uline.startsWith("HAVEPEER:")) {
-        	String nodeIdentifier = (line.substring("HAVEPEER:".length())).trim();
-        	if(havePeer(nodeIdentifier)) {
+            String nodeIdentifier = (line.substring("HAVEPEER:".length())).trim();
+            if(havePeer(nodeIdentifier)) {
                 outsb.append("true for ").append(nodeIdentifier);
-        	} else {
+            } else {
                 outsb.append("false for ").append(nodeIdentifier);
-        	}
-        	outsb.append("\r\n");
+            }
+            outsb.append("\r\n");
         } else if(uline.startsWith("REMOVEPEER:") || uline.startsWith("DISCONNECT:")) {
-        	String nodeIdentifier = null;
-        	if(uline.startsWith("DISCONNECT:")) {
-        		nodeIdentifier = line.substring("DISCONNECT:".length());
-        	} else {
-        		nodeIdentifier = line.substring("REMOVEPEER:".length());
-        	}
-        	if(removePeer(nodeIdentifier)) {
+            String nodeIdentifier = null;
+            if(uline.startsWith("DISCONNECT:")) {
+                nodeIdentifier = line.substring("DISCONNECT:".length());
+            } else {
+                nodeIdentifier = line.substring("REMOVEPEER:".length());
+            }
+            if(removePeer(nodeIdentifier)) {
                 outsb.append("peer removed for ").append(nodeIdentifier);
-        	} else {
+            } else {
                 outsb.append("peer removal failed for ").append(nodeIdentifier);
-        	}
-        	outsb.append("\r\n");
+            }
+            outsb.append("\r\n");
         } else if(uline.startsWith("PEER:")) {
-        	String nodeIdentifier = (line.substring("PEER:".length())).trim();
-        	if(!havePeer(nodeIdentifier)) {
-        		w.write(("no peer for "+nodeIdentifier+"\r\n"));
-        		w.flush();
-        		return false;
-        	}
-        	PeerNode pn = n.getPeerNode(nodeIdentifier);
-        	if(pn == null) {
-        		w.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n"));
-        		w.flush();
-        		return false;
-        	}
-        	SimpleFieldSet fs = pn.exportFieldSet();
-        	outsb.append(fs.toString());
+            String nodeIdentifier = (line.substring("PEER:".length())).trim();
+            if(!havePeer(nodeIdentifier)) {
+                w.write(("no peer for "+nodeIdentifier+"\r\n"));
+                w.flush();
+                return false;
+            }
+            PeerNode pn = n.getPeerNode(nodeIdentifier);
+            if(pn == null) {
+                w.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n"));
+                w.flush();
+                return false;
+            }
+            SimpleFieldSet fs = pn.exportFieldSet();
+            outsb.append(fs.toString());
         } else if(uline.startsWith("PEERWMD:")) {
-        	String nodeIdentifier = (line.substring("PEERWMD:".length())).trim();
-        	if(!havePeer(nodeIdentifier)) {
-        		w.write(("no peer for "+nodeIdentifier+"\r\n"));
-        		w.flush();
-        		return false;
-        	}
-        	PeerNode pn = n.getPeerNode(nodeIdentifier);
-        	if(pn == null) {
-        		w.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n"));
-        		w.flush();
-        		return false;
-        	}
-        	SimpleFieldSet fs = pn.exportFieldSet();
-        	SimpleFieldSet meta = pn.exportMetadataFieldSet(System.currentTimeMillis());
-        	if(!meta.isEmpty())
-        	 	fs.put("metadata", meta);
-        	outsb.append(fs.toString());
+            String nodeIdentifier = (line.substring("PEERWMD:".length())).trim();
+            if(!havePeer(nodeIdentifier)) {
+                w.write(("no peer for "+nodeIdentifier+"\r\n"));
+                w.flush();
+                return false;
+            }
+            PeerNode pn = n.getPeerNode(nodeIdentifier);
+            if(pn == null) {
+                w.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n"));
+                w.flush();
+                return false;
+            }
+            SimpleFieldSet fs = pn.exportFieldSet();
+            SimpleFieldSet meta = pn.exportMetadataFieldSet(System.currentTimeMillis());
+            if(!meta.isEmpty())
+                 fs.put("metadata", meta);
+            outsb.append(fs.toString());
         } else if(uline.startsWith("PEERS")) {
-        	outsb.append(n.getTMCIPeerList());
-        	outsb.append("PEERS done.\r\n");
+            outsb.append(n.getTMCIPeerList());
+            outsb.append("PEERS done.\r\n");
         } else if(uline.startsWith("PLUGLOAD")) {
-        	if(uline.startsWith("PLUGLOAD:O:")) {
-        		String name = line.substring("PLUGLOAD:O:".length()).trim();
-        		n.pluginManager.startPluginOfficial(name, true, false, false);
-        	} else if(uline.startsWith("PLUGLOAD:F:")) {
-        		String name = line.substring("PLUGLOAD:F:".length()).trim();
-        		n.pluginManager.startPluginFile(name, true);
-        	} else if(uline.startsWith("PLUGLOAD:U:")) {
-        		String name = line.substring("PLUGLOAD:U:".length()).trim();
-        		n.pluginManager.startPluginURL(name, true);
-        	} else if(uline.startsWith("PLUGLOAD:K:")) {
-        		String name = line.substring("PLUGLOAD:K:".length()).trim();
-        		n.pluginManager.startPluginFreenet(name, true);
-        	} else {
-        		outsb.append("  PLUGLOAD:O: pluginName         - Load official plugin from freenetproject.org\r\n");
-        		outsb.append("  PLUGLOAD:F: file://<filename>  - Load plugin from file\r\n");
-        		outsb.append("  PLUGLOAD:U: http://...         - Load plugin from online file\r\n");
-        		outsb.append("  PLUGLOAD:K: freenet key        - Load plugin from freenet uri\r\n");
-        	}
+            if(uline.startsWith("PLUGLOAD:O:")) {
+                String name = line.substring("PLUGLOAD:O:".length()).trim();
+                n.pluginManager.startPluginOfficial(name, true, false, false);
+            } else if(uline.startsWith("PLUGLOAD:F:")) {
+                String name = line.substring("PLUGLOAD:F:".length()).trim();
+                n.pluginManager.startPluginFile(name, true);
+            } else if(uline.startsWith("PLUGLOAD:U:")) {
+                String name = line.substring("PLUGLOAD:U:".length()).trim();
+                n.pluginManager.startPluginURL(name, true);
+            } else if(uline.startsWith("PLUGLOAD:K:")) {
+                String name = line.substring("PLUGLOAD:K:".length()).trim();
+                n.pluginManager.startPluginFreenet(name, true);
+            } else {
+                outsb.append("  PLUGLOAD:O: pluginName         - Load official plugin from freenetproject.org\r\n");
+                outsb.append("  PLUGLOAD:F: file://<filename>  - Load plugin from file\r\n");
+                outsb.append("  PLUGLOAD:U: http://...         - Load plugin from online file\r\n");
+                outsb.append("  PLUGLOAD:K: freenet key        - Load plugin from freenet uri\r\n");
+            }
         } else if(uline.startsWith("PLUGLIST")) {
-        	outsb.append(n.pluginManager.dumpPlugins());
+            outsb.append(n.pluginManager.dumpPlugins());
         } else if(uline.startsWith("PLUGKILL:")) {
-        	n.pluginManager.killPlugin(line.substring("PLUGKILL:".length()).trim(), MINUTES.toMillis(1), false);
+            n.pluginManager.killPlugin(line.substring("PLUGKILL:".length()).trim(), MINUTES.toMillis(1), false);
         } else if(uline.startsWith("ANNOUNCE")) {
-        	OpennetManager om = n.getOpennet();
-        	if(om == null) {
-        		outsb.append("OPENNET DISABLED, cannot announce.");
-        		return false;
-        	}
-        	uline = uline.substring("ANNOUNCE".length());
-        	final double target;
-        	if(uline.charAt(0) == ':') {
-        		target = Double.parseDouble(uline.substring(1));
-        	} else {
-        		target = n.random.nextDouble();
-        	}
-        	om.announce(target, new AnnouncementCallback() {
-        		private void write(String msg) {
-        			try {
-        				w.write(("ANNOUNCE:"+target+":"+msg+"\r\n"));
-        				w.flush();
-        			} catch (IOException e) {
-        				// Ignore
-        			}
-        		}
-				@Override
-				public void addedNode(PeerNode pn) {
-					write("Added node "+pn.shortToString());
-				}
+            OpennetManager om = n.getOpennet();
+            if(om == null) {
+                outsb.append("OPENNET DISABLED, cannot announce.");
+                return false;
+            }
+            uline = uline.substring("ANNOUNCE".length());
+            final double target;
+            if(uline.charAt(0) == ':') {
+                target = Double.parseDouble(uline.substring(1));
+            } else {
+                target = n.random.nextDouble();
+            }
+            om.announce(target, new AnnouncementCallback() {
+                private void write(String msg) {
+                    try {
+                        w.write(("ANNOUNCE:"+target+":"+msg+"\r\n"));
+                        w.flush();
+                    } catch (IOException e) {
+                        // Ignore
+                    }
+                }
+                @Override
+                public void addedNode(PeerNode pn) {
+                    write("Added node "+pn.shortToString());
+                }
 
-				@Override
-				public void bogusNoderef(String reason) {
-					write("Bogus noderef: "+reason);
-				}
+                @Override
+                public void bogusNoderef(String reason) {
+                    write("Bogus noderef: "+reason);
+                }
 
-				@Override
-				public void completed() {
-					write("Completed announcement.");
-				}
+                @Override
+                public void completed() {
+                    write("Completed announcement.");
+                }
 
-				@Override
-				public void nodeFailed(PeerNode pn, String reason) {
-					write("Node failed: "+pn+" "+reason);
-				}
+                @Override
+                public void nodeFailed(PeerNode pn, String reason) {
+                    write("Node failed: "+pn+" "+reason);
+                }
 
-				@Override
-				public void noMoreNodes() {
-					write("Route Not Found");
-				}
-				
-				@Override
-				public void nodeNotWanted() {
-					write("Hop doesn't want me.");
-				}
-				@Override
-				public void nodeNotAdded() {
-					write("Node not added as we don't want it for some reason.");
-				}
-				@Override
-				public void acceptedSomewhere() {
-					write("Announcement accepted by some node.");
-				}
-				@Override
-				public void relayedNoderef() {
-					write("Announcement returned a noderef that we relayed downstream. THIS SHOULD NOT HAPPEN!");
-				}
-        		
-        	});
+                @Override
+                public void noMoreNodes() {
+                    write("Route Not Found");
+                }
+                
+                @Override
+                public void nodeNotWanted() {
+                    write("Hop doesn't want me.");
+                }
+                @Override
+                public void nodeNotAdded() {
+                    write("Node not added as we don't want it for some reason.");
+                }
+                @Override
+                public void acceptedSomewhere() {
+                    write("Announcement accepted by some node.");
+                }
+                @Override
+                public void relayedNoderef() {
+                    write("Announcement returned a noderef that we relayed downstream. THIS SHOULD NOT HAPPEN!");
+                }
+                
+            });
         } else {
-        	if(uline.length() > 0)
-        		printHeader(w);
+            if(uline.length() > 0)
+                printHeader(w);
         }
         outsb.append("\r\n");
         w.write(outsb.toString());
@@ -1031,41 +1031,41 @@ public class TextModeClientInterface implements Runnable {
         return false;
     }
 
-	/**
+    /**
      * Create a map of String -> Bucket for every file in a directory
      * and its subdirs.
      */
     private HashMap<String, Object> makeBucketsByName(String directory) {
-    	
-    	if (!directory.endsWith("/"))
-    		directory = directory + '/';
-    	File thisdir = new File(directory);
-    	
-    	System.out.println("Listing dir: "+thisdir);
-    	
-    	HashMap<String, Object> ret = new HashMap<String, Object>();
-    	
-    	File filelist[] = thisdir.listFiles();
-    	if(filelist == null)
-    		throw new IllegalArgumentException("No such directory");
-    	for(int i = 0 ; i < filelist.length ; i++) {
+        
+        if (!directory.endsWith("/"))
+            directory = directory + '/';
+        File thisdir = new File(directory);
+        
+        System.out.println("Listing dir: "+thisdir);
+        
+        HashMap<String, Object> ret = new HashMap<String, Object>();
+        
+        File filelist[] = thisdir.listFiles();
+        if(filelist == null)
+            throw new IllegalArgumentException("No such directory");
+        for(int i = 0 ; i < filelist.length ; i++) {
                 //   Skip unreadable files and dirs
-		//   Skip files nonexistant (dangling symlinks) - check last 
-	        if (filelist[i].canRead() && filelist[i].exists()) {   	 
-    		if (filelist[i].isFile()) {
-    			File f = filelist[i];
-    			
-    			FileBucket bucket = new FileBucket(f, true, false, false, false, false);
-    			
-    			ret.put(f.getName(), bucket);
-    		} else if(filelist[i].isDirectory()) {
-    			HashMap<String, Object> subdir = makeBucketsByName(directory + filelist[i].getName());
-    			ret.put(filelist[i].getName(), subdir);
-    		}
-		}
-    	}
-    	return ret;
-	}
+        //   Skip files nonexistant (dangling symlinks) - check last 
+            if (filelist[i].canRead() && filelist[i].exists()) {        
+            if (filelist[i].isFile()) {
+                File f = filelist[i];
+                
+                FileBucket bucket = new FileBucket(f, true, false, false, false, false);
+                
+                ret.put(f.getName(), bucket);
+            } else if(filelist[i].isDirectory()) {
+                HashMap<String, Object> subdir = makeBucketsByName(directory + filelist[i].getName());
+                ret.put(filelist[i].getName(), subdir);
+            }
+        }
+        }
+        return ret;
+    }
 
     /**
      * @return A block of text, input from stdin, ending with a
@@ -1162,79 +1162,79 @@ public class TextModeClientInterface implements Runnable {
             Logger.error(this, "Did not parse: "+e1, e1);
             return;
         } catch (ReferenceSignatureVerificationException e1) {
-        	System.err.println("Did not parse: "+e1);
+            System.err.println("Did not parse: "+e1);
             Logger.error(this, "Did not parse: "+e1, e1);
             return;
-		}
+        }
         if(n.peers.addPeer(pn))
             System.out.println("Added peer: "+pn);
         n.peers.writePeersDarknetUrgent();
     }
 
-	/**
-	 * Disable connecting to a peer given its ip and port, name or identity, as a String
-	 * Report peer success as boolean
-	 */
-	private boolean disablePeer(String nodeIdentifier) {
-		for(DarknetPeerNode pn: n.peers.getDarknetPeers())
-		{
-			Peer peer = pn.getPeer();
-			String nodeIpAndPort = "";
-			if(peer != null) {
-				nodeIpAndPort = peer.toString();
-			}
-			String name = pn.myName;
-			String identity = pn.getIdentityString();
-			if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
-				pn.disablePeer();
-				return true;
-			}
-		}
-		return false;
-	}
+    /**
+     * Disable connecting to a peer given its ip and port, name or identity, as a String
+     * Report peer success as boolean
+     */
+    private boolean disablePeer(String nodeIdentifier) {
+        for(DarknetPeerNode pn: n.peers.getDarknetPeers())
+        {
+            Peer peer = pn.getPeer();
+            String nodeIpAndPort = "";
+            if(peer != null) {
+                nodeIpAndPort = peer.toString();
+            }
+            String name = pn.myName;
+            String identity = pn.getIdentityString();
+            if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
+                pn.disablePeer();
+                return true;
+            }
+        }
+        return false;
+    }
 
-	/**
-	 * Enable connecting to a peer given its ip and port, name or identity, as a String
-	 * Report peer success as boolean
-	 */
-	private boolean enablePeer(String nodeIdentifier) {
-		for(DarknetPeerNode pn: n.peers.getDarknetPeers())
-		{
-			Peer peer = pn.getPeer();
-			String nodeIpAndPort = "";
-			if(peer != null) {
-				nodeIpAndPort = peer.toString();
-			}
-			String name = pn.myName;
-			String identity = pn.getIdentityString();
-			if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
-				pn.enablePeer();
-				return true;
-			}
-		}
-		return false;
-	}
+    /**
+     * Enable connecting to a peer given its ip and port, name or identity, as a String
+     * Report peer success as boolean
+     */
+    private boolean enablePeer(String nodeIdentifier) {
+        for(DarknetPeerNode pn: n.peers.getDarknetPeers())
+        {
+            Peer peer = pn.getPeer();
+            String nodeIpAndPort = "";
+            if(peer != null) {
+                nodeIpAndPort = peer.toString();
+            }
+            String name = pn.myName;
+            String identity = pn.getIdentityString();
+            if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
+                pn.enablePeer();
+                return true;
+            }
+        }
+        return false;
+    }
     
     /**
      * Check for a peer of the node given its ip and port, name or identity, as a String
      * Report peer existence as boolean
      */
     private boolean havePeer(String nodeIdentifier) {
-    	for(DarknetPeerNode pn: n.peers.getDarknetPeers())
-    	{
-    		Peer peer = pn.getPeer();
-    		String nodeIpAndPort = "";
-    		if(peer != null) {
-    			nodeIpAndPort = peer.toString();
-    		}
-    		String name = pn.myName;
-    		String identity = pn.getIdentityString();
-    		if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
-    		{
-    			return true;
-    		}
-    	}
-    	return false;
+        for(DarknetPeerNode pn: n.peers.getDarknetPeers())
+        {
+            Peer peer = pn.getPeer();
+            String nodeIpAndPort = "";
+            if(peer != null) {
+                nodeIpAndPort = peer.toString();
+            }
+            String name = pn.myName;
+            String identity = pn.getIdentityString();
+            if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
+            {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**
@@ -1242,28 +1242,28 @@ public class TextModeClientInterface implements Runnable {
      * Report peer removal successfulness as boolean
      */
     private boolean removePeer(String nodeIdentifier) {
-    	System.out.println("Removing peer from node for: "+nodeIdentifier);
-    	for(DarknetPeerNode pn: n.peers.getDarknetPeers())
-    	{
-    		Peer peer = pn.getPeer();
-    		String nodeIpAndPort = "";
-    		if(peer != null) {
-        		nodeIpAndPort = peer.toString();
-    		}
-    		String name = pn.myName;
-    		String identity = pn.getIdentityString();
-    		if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
-    		{
-    			n.removePeerConnection(pn);
-    			return true;
-    		}
-    	}
-    	System.out.println("No node in peers list for: "+nodeIdentifier);
-    	return false;
+        System.out.println("Removing peer from node for: "+nodeIdentifier);
+        for(DarknetPeerNode pn: n.peers.getDarknetPeers())
+        {
+            Peer peer = pn.getPeer();
+            String nodeIpAndPort = "";
+            if(peer != null) {
+                nodeIpAndPort = peer.toString();
+            }
+            String name = pn.myName;
+            String identity = pn.getIdentityString();
+            if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
+            {
+                n.removePeerConnection(pn);
+                return true;
+            }
+        }
+        System.out.println("No node in peers list for: "+nodeIdentifier);
+        return false;
     }
 
     private String sanitize(String fnam) {
-    	if(fnam == null) return "";
+        if(fnam == null) return "";
         StringBuilder sb = new StringBuilder(fnam.length());
         for(int i=0;i<fnam.length();i++) {
             char c = fnam.charAt(i);

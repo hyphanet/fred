@@ -7,7 +7,7 @@ import java.util.NoSuchElementException;
   * @author tavin
   */
 public final class LimitedEnumeration<T> implements Enumeration<T> {
-	private T next;
+    private T next;
     
     public LimitedEnumeration() {
         next = null;

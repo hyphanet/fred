@@ -10,17 +10,17 @@ package freenet.node.fcp;
  * ProtocolError.
  */
 public class MessageInvalidException extends Exception {
-	private static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -1;
 
-	final int protocolCode;
-	public final String ident;
-	public final boolean global;
-	
-	public MessageInvalidException(int protocolCode, String extra, String ident, boolean global) {
-		super(extra);
-		this.protocolCode = protocolCode;
-		this.ident = ident;
-		this.global = global;
-	}
+    final int protocolCode;
+    public final String ident;
+    public final boolean global;
+    
+    public MessageInvalidException(int protocolCode, String extra, String ident, boolean global) {
+        super(extra);
+        this.protocolCode = protocolCode;
+        this.ident = ident;
+        this.global = global;
+    }
 
 }

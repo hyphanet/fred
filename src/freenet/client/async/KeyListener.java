@@ -19,77 +19,77 @@ import freenet.node.SendableGet;
  * in SplitFileFetcherKeyListener.
  */
 public interface KeyListener {
-	
-	/**
-	 * Fast guess at whether we want a key or not. Usually implemented by a 
-	 * bloom filter.
-	 * LOCKING: Should avoid external locking if possible. Will be called
-	 * within the CRSBase lock.
-	 * @return True if we probably want the key. False if we definitely don't
-	 * want it.
-	 */
-	public boolean probablyWantKey(Key key, byte[] saltedKey);
-	
-	/**
-	 * Do we want the key? This is called by the ULPR code, because fetching the
-	 * key will involve significant work. tripPendingKey() on the other hand
-	 * will go straight to handleBlock().
-	 * @return -1 if we don't want the key, otherwise the priority of the request
-	 * interested in the key.
-	 */
-	public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context);
+    
+    /**
+     * Fast guess at whether we want a key or not. Usually implemented by a 
+     * bloom filter.
+     * LOCKING: Should avoid external locking if possible. Will be called
+     * within the CRSBase lock.
+     * @return True if we probably want the key. False if we definitely don't
+     * want it.
+     */
+    public boolean probablyWantKey(Key key, byte[] saltedKey);
+    
+    /**
+     * Do we want the key? This is called by the ULPR code, because fetching the
+     * key will involve significant work. tripPendingKey() on the other hand
+     * will go straight to handleBlock().
+     * @return -1 if we don't want the key, otherwise the priority of the request
+     * interested in the key.
+     */
+    public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context);
 
-	/**
-	 * Find the requests related to a specific key, used in retrying after cooldown.
-	 * Caller should call probablyWantKey() first.
-	 */
-	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context);
-	
-	/**
-	 * Handle the found data, if we really want it.
-	 */
-	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found, ObjectContainer container, ClientContext context);
-	
-	/**
-	 * Is this related to a persistent request?
-	 */
-	boolean persistent();
+    /**
+     * Find the requests related to a specific key, used in retrying after cooldown.
+     * Caller should call probablyWantKey() first.
+     */
+    public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context);
+    
+    /**
+     * Handle the found data, if we really want it.
+     */
+    public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found, ObjectContainer container, ClientContext context);
+    
+    /**
+     * Is this related to a persistent request?
+     */
+    boolean persistent();
 
-	/**
-	 * Priority of the associated request.
-	 * LOCKING: Should avoid external locking if possible. Will be called
-	 * within the CRSBase lock.
-	 * @param container Database handle.
-	 */
-	short getPriorityClass(ObjectContainer container);
+    /**
+     * Priority of the associated request.
+     * LOCKING: Should avoid external locking if possible. Will be called
+     * within the CRSBase lock.
+     * @param container Database handle.
+     */
+    short getPriorityClass(ObjectContainer container);
 
-	public long countKeys();
+    public long countKeys();
 
-	/**
-	 * @return The parent HasKeyListener. This does mean it will be pinned in
-	 * RAM, but it can be deactivated so it's not a big deal.
-	 * LOCKING: Should avoid external locking if possible. Will be called
-	 * within the CRSBase lock.
-	 */
-	public HasKeyListener getHasKeyListener();
+    /**
+     * @return The parent HasKeyListener. This does mean it will be pinned in
+     * RAM, but it can be deactivated so it's not a big deal.
+     * LOCKING: Should avoid external locking if possible. Will be called
+     * within the CRSBase lock.
+     */
+    public HasKeyListener getHasKeyListener();
 
-	/**
-	 * Deactivate the request once it has been removed.
-	 */
-	public void onRemove();
-	
-	/**
-	 * Has the request finished? If every key has been found, or enough keys have
-	 * been found, return true so that the caller can remove it from the list.
-	 */
-	public boolean isEmpty();
+    /**
+     * Deactivate the request once it has been removed.
+     */
+    public void onRemove();
+    
+    /**
+     * Has the request finished? If every key has been found, or enough keys have
+     * been found, return true so that the caller can remove it from the list.
+     */
+    public boolean isEmpty();
 
-	public boolean isSSK();
+    public boolean isSSK();
 
-	/**
-	 * Should this be on the bulk or the real-time scheduler? The actual listener itself
-	 * of course is neither, but it is usually associated with a request...
-	 */
-	public boolean isRealTime();
+    /**
+     * Should this be on the bulk or the real-time scheduler? The actual listener itself
+     * of course is neither, but it is usually associated with a request...
+     */
+    public boolean isRealTime();
 
 }

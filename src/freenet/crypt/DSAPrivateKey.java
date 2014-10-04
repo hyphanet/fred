@@ -18,14 +18,14 @@ import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;
 
 public class DSAPrivateKey extends CryptoKey {
-	private static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -1;
 
     private final BigInteger x;
 
     public DSAPrivateKey(BigInteger x, DSAGroup g) {
         this.x = x;
         if(x.signum() != 1 || x.compareTo(g.getQ()) > -1 || x.compareTo(BigInteger.ZERO) < 1)
-        	throw new IllegalArgumentException();
+            throw new IllegalArgumentException();
     }
 
     // this is dangerous...  better to force people to construct the
@@ -43,7 +43,7 @@ public class DSAPrivateKey extends CryptoKey {
     }
 
     @Override
-	public String keyType() {
+    public String keyType() {
         return "DSA.s";
     }
     
@@ -67,32 +67,32 @@ public class DSAPrivateKey extends CryptoKey {
     //}
     
     @Override
-	public byte[] asBytes() {
+    public byte[] asBytes() {
         return Util.MPIbytes(x);
     }
     
     @Override
-	public byte[] fingerprint() {
+    public byte[] fingerprint() {
         return fingerprint(new BigInteger[] {x});
     }
 
-	public SimpleFieldSet asFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.putSingle("x", Base64.encode(x.toByteArray()));
-		return fs;
-	}
+    public SimpleFieldSet asFieldSet() {
+        SimpleFieldSet fs = new SimpleFieldSet(true);
+        fs.putSingle("x", Base64.encode(x.toByteArray()));
+        return fs;
+    }
 
-	public static DSAPrivateKey create(SimpleFieldSet fs, DSAGroup group) throws IllegalBase64Exception {
-		NativeBigInteger y = new NativeBigInteger(1, Base64.decode(fs.get("x")));
-		if(y.bitLength() > 512)
-			throw new IllegalBase64Exception("Probably a pubkey");
-		return new DSAPrivateKey(y, group);
-	}
+    public static DSAPrivateKey create(SimpleFieldSet fs, DSAGroup group) throws IllegalBase64Exception {
+        NativeBigInteger y = new NativeBigInteger(1, Base64.decode(fs.get("x")));
+        if(y.bitLength() > 512)
+            throw new IllegalBase64Exception("Probably a pubkey");
+        return new DSAPrivateKey(y, group);
+    }
 
-	public void removeFrom(ObjectContainer container) {
-		container.delete(x);
-		container.delete(this);
-	}
+    public void removeFrom(ObjectContainer container) {
+        container.delete(x);
+        container.delete(this);
+    }
     
 //    public static void main(String[] args) throws Exception {
 //        Yarrow y=new Yarrow();

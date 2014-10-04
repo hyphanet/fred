@@ -10,93 +10,93 @@ import freenet.support.HTMLNode;
  */
 public class ProxyUserAlert extends AbstractUserAlert {
 
-	private UserAlert alert;
-	private final UserAlertManager uam;
-	private final boolean autoRegister;
-	
-	public ProxyUserAlert(UserAlertManager uam, boolean autoRegister) {
-		this.uam = uam;
-		this.autoRegister = autoRegister;
-	}
-	
-	public void setAlert(UserAlert a) {
-		UserAlert old = alert;
-		alert = a;
-		if(autoRegister) {
-			if(old == null && alert != null)
-				uam.register(this);
-		}
-		if(autoRegister) {
-			if(alert == null)
-				uam.unregister(this);
-		}
-	}
-	
-	@Override
-	public boolean userCanDismiss() {
-		return alert.userCanDismiss();
-	}
+    private UserAlert alert;
+    private final UserAlertManager uam;
+    private final boolean autoRegister;
+    
+    public ProxyUserAlert(UserAlertManager uam, boolean autoRegister) {
+        this.uam = uam;
+        this.autoRegister = autoRegister;
+    }
+    
+    public void setAlert(UserAlert a) {
+        UserAlert old = alert;
+        alert = a;
+        if(autoRegister) {
+            if(old == null && alert != null)
+                uam.register(this);
+        }
+        if(autoRegister) {
+            if(alert == null)
+                uam.unregister(this);
+        }
+    }
+    
+    @Override
+    public boolean userCanDismiss() {
+        return alert.userCanDismiss();
+    }
 
-	@Override
-	public String getTitle() {
-		return alert.getTitle();
-	}
+    @Override
+    public String getTitle() {
+        return alert.getTitle();
+    }
 
-	@Override
-	public String getText() {
-		return alert.getText();
-	}
+    @Override
+    public String getText() {
+        return alert.getText();
+    }
 
-	@Override
-	public HTMLNode getHTMLText() {
-		return alert.getHTMLText();
-	}
+    @Override
+    public HTMLNode getHTMLText() {
+        return alert.getHTMLText();
+    }
 
-	@Override
-	public short getPriorityClass() {
-		return alert.getPriorityClass();
-	}
+    @Override
+    public short getPriorityClass() {
+        return alert.getPriorityClass();
+    }
 
-	@Override
-	public boolean isValid() {
-		return alert != null && alert.isValid();
-	}
+    @Override
+    public boolean isValid() {
+        return alert != null && alert.isValid();
+    }
 
-	@Override
-	public void isValid(boolean validity) {
-		if(alert != null)
-			alert.isValid(validity);
-	}
+    @Override
+    public void isValid(boolean validity) {
+        if(alert != null)
+            alert.isValid(validity);
+    }
 
-	@Override
-	public String dismissButtonText() {
-		return alert.dismissButtonText();
-	}
+    @Override
+    public String dismissButtonText() {
+        return alert.dismissButtonText();
+    }
 
-	@Override
-	public boolean shouldUnregisterOnDismiss() {
-		return alert.shouldUnregisterOnDismiss();
-	}
+    @Override
+    public boolean shouldUnregisterOnDismiss() {
+        return alert.shouldUnregisterOnDismiss();
+    }
 
-	@Override
-	public void onDismiss() {
-		if(alert != null) alert.onDismiss();
-	}
+    @Override
+    public void onDismiss() {
+        if(alert != null) alert.onDismiss();
+    }
 
-	@Override
-	public String anchor() {
-		return "anchor:"+Integer.toString(hashCode());
-	}
+    @Override
+    public String anchor() {
+        return "anchor:"+Integer.toString(hashCode());
+    }
 
-	@Override
-	public String getShortText() {
-		return alert.getShortText();
-	}
+    @Override
+    public String getShortText() {
+        return alert.getShortText();
+    }
 
-	@Override
-	public boolean isEventNotification() {
-		if(alert == null) return false;
-		return alert.isEventNotification();
-	}
+    @Override
+    public boolean isEventNotification() {
+        if(alert == null) return false;
+        return alert.isEventNotification();
+    }
 
 }

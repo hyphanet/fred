@@ -10,13 +10,13 @@ import freenet.support.api.BucketFactory;
 
 public class ArrayBucketFactory implements BucketFactory {
 
-	@Override
-	public Bucket makeBucket(long size) throws IOException {
-		return new ArrayBucket();
-	}
+    @Override
+    public Bucket makeBucket(long size) throws IOException {
+        return new ArrayBucket();
+    }
 
-	public void freeBucket(Bucket b) throws IOException {
-		b.free();
-	}
+    public void freeBucket(Bucket b) throws IOException {
+        b.free();
+    }
 
 }

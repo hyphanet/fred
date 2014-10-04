@@ -10,40 +10,40 @@ import freenet.support.SimpleFieldSet;
  * @author toad
  */
 public class EnterFiniteCooldown extends FCPMessage {
-	
-	final String identifier;
-	final boolean global;
-	final long wakeupTime;
+    
+    final String identifier;
+    final boolean global;
+    final long wakeupTime;
 
-	EnterFiniteCooldown(String identifier, boolean global, long wakeupTime) {
-		this.identifier = identifier;
-		this.global = global;
-		this.wakeupTime = wakeupTime;
-	}
-	
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(false);
-		fs.putOverwrite("Identifier", identifier);
-		fs.put("Global", global);
-		fs.put("WakeupTime", wakeupTime);
-		return fs;
-	}
+    EnterFiniteCooldown(String identifier, boolean global, long wakeupTime) {
+        this.identifier = identifier;
+        this.global = global;
+        this.wakeupTime = wakeupTime;
+    }
+    
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet fs = new SimpleFieldSet(false);
+        fs.putOverwrite("Identifier", identifier);
+        fs.put("Global", global);
+        fs.put("WakeupTime", wakeupTime);
+        return fs;
+    }
 
-	@Override
-	public String getName() {
-		return "EnterFiniteCooldown";
-	}
+    @Override
+    public String getName() {
+        return "EnterFiniteCooldown";
+    }
 
-	@Override
-	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		// Not supported
-	}
+    @Override
+    public void run(FCPConnectionHandler handler, Node node)
+            throws MessageInvalidException {
+        // Not supported
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
-	
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        container.delete(this);
+    }
+    
 }

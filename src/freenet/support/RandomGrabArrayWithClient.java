@@ -4,21 +4,21 @@ import com.db4o.ObjectContainer;
 
 public class RandomGrabArrayWithClient extends RandomGrabArray implements RemoveRandomWithObject {
 
-	private Object client;
-	
-	public RandomGrabArrayWithClient(Object client, boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
-		super(persistent, container, parent);
-		this.client = client;
-	}
+    private Object client;
+    
+    public RandomGrabArrayWithClient(Object client, boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
+        super(persistent, container, parent);
+        this.client = client;
+    }
 
-	@Override
-	public final Object getObject() {
-		return client;
-	}
+    @Override
+    public final Object getObject() {
+        return client;
+    }
 
-	@Override
-	public void setObject(Object client, ObjectContainer container) {
-		this.client = client;
-		if(persistent) container.store(this);
-	}
+    @Override
+    public void setObject(Object client, ObjectContainer container) {
+        this.client = client;
+        if(persistent) container.store(this);
+    }
 }

@@ -18,12 +18,12 @@ public class Loader {
      * @param name The name of the class to load.
      **/
     static public Class<?> load(String name) throws ClassNotFoundException {
-		Class<?> c = classes.get(name);
-	if(c==null) {
-	    c=Class.forName(name);
-	    classes.put(name, c);
-	}
-	return c;
+        Class<?> c = classes.get(name);
+    if(c==null) {
+        c=Class.forName(name);
+        classes.put(name, c);
+    }
+    return c;
     }
 
     /**
@@ -31,10 +31,10 @@ public class Loader {
      * @param classname  Name of class to instantiate.
      **/
     public static Object getInstance(String classname) 
-	throws InvocationTargetException, NoSuchMethodException, 
-	       InstantiationException, IllegalAccessException,
-	       ClassNotFoundException {
-	return getInstance(classname,new Class[] {}, new Object[] {});
+    throws InvocationTargetException, NoSuchMethodException, 
+           InstantiationException, IllegalAccessException,
+           ClassNotFoundException {
+    return getInstance(classname,new Class[] {}, new Object[] {});
 
     }
 
@@ -46,11 +46,11 @@ public class Loader {
      *                   it's ok to wrap primitives.
      **/
     public static Object getInstance(String classname, Class<?>[] argtypes, 
-				     Object[] args) 
-	throws InvocationTargetException, NoSuchMethodException, 
-	       InstantiationException, IllegalAccessException,
-	       ClassNotFoundException {
-	return getInstance(load(classname),argtypes,args);
+                     Object[] args) 
+    throws InvocationTargetException, NoSuchMethodException, 
+           InstantiationException, IllegalAccessException,
+           ClassNotFoundException {
+    return getInstance(load(classname),argtypes,args);
     }
 
     /**
@@ -61,11 +61,11 @@ public class Loader {
      *                   it's ok to wrap primitives.
      **/
     public static Object getInstance(Class<?> c, Class<?>[] argtypes, 
-				     Object[] args) 
-	throws InvocationTargetException, NoSuchMethodException, 
-	       InstantiationException, IllegalAccessException {
-	Constructor<?> con = c.getConstructor(argtypes);
-	return con.newInstance(args);
+                     Object[] args) 
+    throws InvocationTargetException, NoSuchMethodException, 
+           InstantiationException, IllegalAccessException {
+    Constructor<?> con = c.getConstructor(argtypes);
+    return con.newInstance(args);
     }
 }
 

@@ -14,13 +14,13 @@ import freenet.support.api.Bucket;
  *
  */
 public interface FredPluginTalker {
-	
-	/**
-	 * @param pluginname - reply from
-	 * @param indentifier - identifer from your call
-	 * @param params parameters passed back
-	 * @param data a bucket of data passed back, can be null
-	 */
-	void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data);
-	
+    
+    /**
+     * @param pluginname - reply from
+     * @param indentifier - identifer from your call
+     * @param params parameters passed back
+     * @param data a bucket of data passed back, can be null
+     */
+    void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data);
+    
 }

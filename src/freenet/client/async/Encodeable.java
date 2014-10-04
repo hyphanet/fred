@@ -4,11 +4,11 @@ import com.db4o.ObjectContainer;
 
 public interface Encodeable {
 
-	/** Attempt to encode the block, if necessary */
-	public void tryEncode(ObjectContainer container, ClientContext context);
+    /** Attempt to encode the block, if necessary */
+    public void tryEncode(ObjectContainer container, ClientContext context);
 
-	public boolean persistent();
+    public boolean persistent();
 
-	public short getPriorityClass(ObjectContainer container);
-	
+    public short getPriorityClass(ObjectContainer container);
+    
 }

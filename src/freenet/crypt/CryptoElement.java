@@ -14,6 +14,6 @@ public interface CryptoElement {
 
     //public String writeAsField();
 
-	public String toLongString();
+    public String toLongString();
 
 }

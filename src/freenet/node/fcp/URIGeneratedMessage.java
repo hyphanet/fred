@@ -11,41 +11,41 @@ import freenet.support.SimpleFieldSet;
 
 public class URIGeneratedMessage extends FCPMessage {
 
-	private final FreenetURI uri;
-	private final String identifier;
-	private final boolean global;
-	
-	public URIGeneratedMessage(FreenetURI uri, String identifier, boolean global) {
-		this.uri = uri;
-		this.identifier = identifier;
-		this.global = global;
-	}
+    private final FreenetURI uri;
+    private final String identifier;
+    private final boolean global;
+    
+    public URIGeneratedMessage(FreenetURI uri, String identifier, boolean global) {
+        this.uri = uri;
+        this.identifier = identifier;
+        this.global = global;
+    }
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.putSingle("URI", uri.toString());
-		fs.putSingle("Identifier", identifier);
-		fs.put("Global", global);
-		return fs;
-	}
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet fs = new SimpleFieldSet(true);
+        fs.putSingle("URI", uri.toString());
+        fs.putSingle("Identifier", identifier);
+        fs.put("Global", global);
+        return fs;
+    }
 
-	@Override
-	public String getName() {
-		return "URIGenerated";
-	}
+    @Override
+    public String getName() {
+        return "URIGenerated";
+    }
 
-	@Override
-	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "URIGenerated goes from server to client not the other way around", identifier, false);
-	}
+    @Override
+    public void run(FCPConnectionHandler handler, Node node)
+            throws MessageInvalidException {
+        throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "URIGenerated goes from server to client not the other way around", identifier, false);
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.activate(uri, 5);
-		uri.removeFrom(container);
-		container.delete(this);
-	}
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        container.activate(uri, 5);
+        uri.removeFrom(container);
+        container.delete(this);
+    }
 
 }

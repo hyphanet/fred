@@ -36,7 +36,7 @@ public interface ClientEventProducer {
      */
     boolean removeEventListener(ClientEventListener cel);
 
-	void removeFrom(ObjectContainer container);
+    void removeFrom(ObjectContainer container);
 }
 
 

@@ -36,111 +36,111 @@ import java.util.StringTokenizer;
  * @version $Id$
  */
 public class Inet4AddressMatcher implements AddressMatcher {
-	/** The address of this matcher */
-	private int address;
+    /** The address of this matcher */
+    private int address;
 
-	/** The network mask of this matcher */
-	private int networkMask;
+    /** The network mask of this matcher */
+    private int networkMask;
 
-	/**
-	 * Creates a new address matcher that matches InetAddress objects to the
-	 * address specification given by <code>cidrHostname</code>.
-	 * 
-	 * @param cidrHostname
-	 *            The address range this matcher matches
-	 */
-	public Inet4AddressMatcher(String cidrHostname) {
-		int slashPosition = cidrHostname.indexOf('/');
-		if (slashPosition == -1) {
-			address = convertToBytes(cidrHostname);
-			networkMask = 0xffffffff;
-		} else {
-			address = convertToBytes(cidrHostname.substring(0, slashPosition));
-			String maskPart = cidrHostname.substring(slashPosition + 1);
-			if (maskPart.indexOf('.') == -1) {
-				int bits = Integer.parseInt(maskPart);
-				if (bits > 32 || bits < 0)
-					throw new IllegalArgumentException("Mask bits out of range: " + bits + " (" + maskPart + ")");
-				networkMask = 0xffffffff << (32 - bits);
-				if (Integer.parseInt(maskPart) == 0) {
-					networkMask = 0;
-				}
-			} else {
-				networkMask = convertToBytes(maskPart);
-			}
-		}
-	}
+    /**
+     * Creates a new address matcher that matches InetAddress objects to the
+     * address specification given by <code>cidrHostname</code>.
+     * 
+     * @param cidrHostname
+     *            The address range this matcher matches
+     */
+    public Inet4AddressMatcher(String cidrHostname) {
+        int slashPosition = cidrHostname.indexOf('/');
+        if (slashPosition == -1) {
+            address = convertToBytes(cidrHostname);
+            networkMask = 0xffffffff;
+        } else {
+            address = convertToBytes(cidrHostname.substring(0, slashPosition));
+            String maskPart = cidrHostname.substring(slashPosition + 1);
+            if (maskPart.indexOf('.') == -1) {
+                int bits = Integer.parseInt(maskPart);
+                if (bits > 32 || bits < 0)
+                    throw new IllegalArgumentException("Mask bits out of range: " + bits + " (" + maskPart + ")");
+                networkMask = 0xffffffff << (32 - bits);
+                if (Integer.parseInt(maskPart) == 0) {
+                    networkMask = 0;
+                }
+            } else {
+                networkMask = convertToBytes(maskPart);
+            }
+        }
+    }
 
-	/**
-	 * Converts a dotted IP address (a.b.c.d) to a 32-bit value. The first octet
-	 * will be in bits 24 to 31, the second in bits 16 to 23, the third in bits
-	 * 8 to 15, and the fourth in bits 0 to 7.
-	 * 
-	 * @param address
-	 *            The address to convert
-	 * @return The IP address as 32-bit value
-	 * @throws NumberFormatException
-	 *             if a part of the string can not be parsed using
-	 *             {@link Integer#parseInt(java.lang.String)}
-	 * @throws java.util.NoSuchElementException
-	 *             if <code>address</code> contains less than 3 dots
-	 */
-	public static int convertToBytes(String address) {
-		StringTokenizer addressTokens = new StringTokenizer(address, ".");
-		int bytes = Integer.parseInt(addressTokens.nextToken()) << 24 | Integer.parseInt(addressTokens.nextToken()) << 16 | Integer.parseInt(addressTokens.nextToken()) << 8 | Integer.parseInt(addressTokens.nextToken());
-		return bytes;
-	}
+    /**
+     * Converts a dotted IP address (a.b.c.d) to a 32-bit value. The first octet
+     * will be in bits 24 to 31, the second in bits 16 to 23, the third in bits
+     * 8 to 15, and the fourth in bits 0 to 7.
+     * 
+     * @param address
+     *            The address to convert
+     * @return The IP address as 32-bit value
+     * @throws NumberFormatException
+     *             if a part of the string can not be parsed using
+     *             {@link Integer#parseInt(java.lang.String)}
+     * @throws java.util.NoSuchElementException
+     *             if <code>address</code> contains less than 3 dots
+     */
+    public static int convertToBytes(String address) {
+        StringTokenizer addressTokens = new StringTokenizer(address, ".");
+        int bytes = Integer.parseInt(addressTokens.nextToken()) << 24 | Integer.parseInt(addressTokens.nextToken()) << 16 | Integer.parseInt(addressTokens.nextToken()) << 8 | Integer.parseInt(addressTokens.nextToken());
+        return bytes;
+    }
 
-	/**
-	 * Checks whether the given address matches this matcher's address.
-	 * 
-	 * @param inetAddress
-	 *            The address to match to this matcher
-	 * @return <code>true</code> if <code>inetAddress</code> matches the
-	 *         specification of this matcher, <code>false</code> otherwise
-	 */
-	@Override
-	public boolean matches(InetAddress inetAddress) {
-		if (!(inetAddress instanceof Inet4Address)) return false;
-		int matchAddress = convertToBytes(inetAddress.getHostAddress());
-		return (matchAddress & networkMask) == (address & networkMask);
-	}
+    /**
+     * Checks whether the given address matches this matcher's address.
+     * 
+     * @param inetAddress
+     *            The address to match to this matcher
+     * @return <code>true</code> if <code>inetAddress</code> matches the
+     *         specification of this matcher, <code>false</code> otherwise
+     */
+    @Override
+    public boolean matches(InetAddress inetAddress) {
+        if (!(inetAddress instanceof Inet4Address)) return false;
+        int matchAddress = convertToBytes(inetAddress.getHostAddress());
+        return (matchAddress & networkMask) == (address & networkMask);
+    }
 
-	/**
-	 * Shortcut method for creating a new Inet4AddressMatcher and matching
-	 * <code>address</code> to it.
-	 * 
-	 * @param cidrHostname
-	 *            The host specification to match
-	 * @param address
-	 *            The address to match
-	 * @return <code>true</code> if <code>address</code> matches the
-	 *         specification in <code>cidrHostname</code>, <code>false</code>
-	 *         otherwise
-	 * @see #Inet4AddressMatcher(String)
-	 * @see #matches(InetAddress)
-	 */
-	public static boolean matches(String cidrHostname, InetAddress address) {
-		return new Inet4AddressMatcher(cidrHostname).matches(address);
-	}
+    /**
+     * Shortcut method for creating a new Inet4AddressMatcher and matching
+     * <code>address</code> to it.
+     * 
+     * @param cidrHostname
+     *            The host specification to match
+     * @param address
+     *            The address to match
+     * @return <code>true</code> if <code>address</code> matches the
+     *         specification in <code>cidrHostname</code>, <code>false</code>
+     *         otherwise
+     * @see #Inet4AddressMatcher(String)
+     * @see #matches(InetAddress)
+     */
+    public static boolean matches(String cidrHostname, InetAddress address) {
+        return new Inet4AddressMatcher(cidrHostname).matches(address);
+    }
 
-	@Override
-	public String getHumanRepresentation() {
-		if(networkMask == -1)
-			return convertToString(address);
-		else
-			return convertToString(address)+'/'+convertToString(networkMask);
-	}
+    @Override
+    public String getHumanRepresentation() {
+        if(networkMask == -1)
+            return convertToString(address);
+        else
+            return convertToString(address)+'/'+convertToString(networkMask);
+    }
 
-	private String convertToString(int addr) {
-		StringBuilder sb = new StringBuilder();
-		for(int i=0;i<4;i++) {
-			int x = addr >>> 24;
-			addr = addr << 8;
-			if(i != 0) sb.append('.');
-			sb.append(x);
-		}
-		return sb.toString();
-	}
+    private String convertToString(int addr) {
+        StringBuilder sb = new StringBuilder();
+        for(int i=0;i<4;i++) {
+            int x = addr >>> 24;
+            addr = addr << 8;
+            if(i != 0) sb.append('.');
+            sb.append(x);
+        }
+        return sb.toString();
+    }
 
 }

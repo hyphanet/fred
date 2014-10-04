@@ -18,53 +18,53 @@ import freenet.support.Logger.LogLevel;
  * @author toad
  */
 class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
-	
-	private boolean logMINOR;
-	
-	protected final Deque<BaseSendableGet>recentSuccesses;
-	
-	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched, boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random) {
-		super(forInserts, forSSKs, forRT, random);
-		this.sched = sched;
-		if(!forInserts)
-			recentSuccesses = new ArrayDeque<BaseSendableGet>();
-		else
-			recentSuccesses = null;
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-	}
+    
+    private boolean logMINOR;
+    
+    protected final Deque<BaseSendableGet>recentSuccesses;
+    
+    ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched, boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random) {
+        super(forInserts, forSSKs, forRT, random);
+        this.sched = sched;
+        if(!forInserts)
+            recentSuccesses = new ArrayDeque<BaseSendableGet>();
+        else
+            recentSuccesses = null;
+        logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+    }
 
-	@Override
-	boolean persistent() {
-		return false;
-	}
+    @Override
+    boolean persistent() {
+        return false;
+    }
 
-	ObjectContainer container() {
-		return null;
-	}
+    ObjectContainer container() {
+        return null;
+    }
 
-	@Override
-	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
-		// Do nothing.
-		// FIXME: Keep a list of recently succeeded ClientRequester's.
-		if(isInsertScheduler) return;
-		if(persistent()) {
-			container.activate(succeeded, 1);
-		}
-		if(succeeded.isCancelled(container)) return;
-		// Don't bother with getCooldownTime at this point.
-			if(logMINOR)
-				Logger.minor(this, "Recording successful fetch from "+succeeded);
-		synchronized(recentSuccesses) {
-			while(recentSuccesses.size() >= 8)
-				recentSuccesses.pollFirst();
-			recentSuccesses.add(succeeded);
-		}
-	}
+    @Override
+    public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
+        // Do nothing.
+        // FIXME: Keep a list of recently succeeded ClientRequester's.
+        if(isInsertScheduler) return;
+        if(persistent()) {
+            container.activate(succeeded, 1);
+        }
+        if(succeeded.isCancelled(container)) return;
+        // Don't bother with getCooldownTime at this point.
+            if(logMINOR)
+                Logger.minor(this, "Recording successful fetch from "+succeeded);
+        synchronized(recentSuccesses) {
+            while(recentSuccesses.size() >= 8)
+                recentSuccesses.pollFirst();
+            recentSuccesses.add(succeeded);
+        }
+    }
 
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing ClientRequestSchedulerNonPersistent in database", new Exception("error"));
-		return false;
-	}
-	
-	
+    public boolean objectCanNew(ObjectContainer container) {
+        Logger.error(this, "Not storing ClientRequestSchedulerNonPersistent in database", new Exception("error"));
+        return false;
+    }
+    
+    
 }

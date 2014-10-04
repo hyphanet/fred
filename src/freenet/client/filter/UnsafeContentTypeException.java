@@ -15,52 +15,52 @@ import freenet.client.FetchException;
  * Base class for UnknownContentTypeException and KnownUnsafeContentTypeException.
  */
 public abstract class UnsafeContentTypeException extends IOException {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	/**
-	 * Get the contents of the error page.
-	 */
-	@Override
-	public abstract String getMessage();
+    /**
+     * Get the contents of the error page.
+     */
+    @Override
+    public abstract String getMessage();
 
-	/**
-	 * Get additional details about the failure
-	 */
-	public List<String> details() {
-		return null;
-	}
+    /**
+     * Get additional details about the failure
+     */
+    public List<String> details() {
+        return null;
+    }
 
-	/**
-	 * Get the title of the error page.
-	 */
-	public abstract String getHTMLEncodedTitle();
-	
-	/**
-	 * Get the raw title of the error page. (May be unsafe for HTML).
-	 */
-	public abstract String getRawTitle();
-	/**
-	 * Get the title of the Exception
-	 */
-	@Override
-	public String toString() {
-		return getRawTitle();
-	}
+    /**
+     * Get the title of the error page.
+     */
+    public abstract String getHTMLEncodedTitle();
+    
+    /**
+     * Get the raw title of the error page. (May be unsafe for HTML).
+     */
+    public abstract String getRawTitle();
+    /**
+     * Get the title of the Exception
+     */
+    @Override
+    public String toString() {
+        return getRawTitle();
+    }
 
-	/**
-	 * Returns the error code that a FetchException may be instantiated with
-	 * Subclasses of this exception may override this method to provide more 
-	 * detailed error messages.
-	 */
-	public int getFetchErrorCode() {
-		return FetchException.CONTENT_VALIDATION_FAILED;
-	}
+    /**
+     * Returns the error code that a FetchException may be instantiated with
+     * Subclasses of this exception may override this method to provide more 
+     * detailed error messages.
+     */
+    public int getFetchErrorCode() {
+        return FetchException.CONTENT_VALIDATION_FAILED;
+    }
 
-	public FetchException recreateFetchException(FetchException e, String mime) {
-		return new FetchException(getFetchErrorCode(), e.expectedSize, this, mime);
-	}
-	
-	public FetchException createFetchException(String mime, long expectedSize) {
-		return new FetchException(getFetchErrorCode(), expectedSize, this, mime);
-	}
+    public FetchException recreateFetchException(FetchException e, String mime) {
+        return new FetchException(getFetchErrorCode(), e.expectedSize, this, mime);
+    }
+    
+    public FetchException createFetchException(String mime, long expectedSize) {
+        return new FetchException(getFetchErrorCode(), expectedSize, this, mime);
+    }
 }

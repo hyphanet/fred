@@ -8,18 +8,18 @@ package freenet.clients.http;
  * If thrown, something wrong with http range
  */
 public class HTTPRangeException extends Exception {
-	private static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -1;
 
-	public HTTPRangeException(Throwable cause) {
-		super(cause);
-	}
+    public HTTPRangeException(Throwable cause) {
+        super(cause);
+    }
 
-	public HTTPRangeException(String msg) {
-		super(msg);
-	}
+    public HTTPRangeException(String msg) {
+        super(msg);
+    }
 
-	@Override
-	public final synchronized Throwable fillInStackTrace() {
-		return null;
-	}
+    @Override
+    public final synchronized Throwable fillInStackTrace() {
+        return null;
+    }
 }

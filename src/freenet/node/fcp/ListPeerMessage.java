@@ -11,48 +11,48 @@ import freenet.support.SimpleFieldSet;
 
 public class ListPeerMessage extends FCPMessage {
 
-	static final String NAME = "ListPeer";
-	
-	final SimpleFieldSet fs;
-	final String identifier;
-	
-	public ListPeerMessage(SimpleFieldSet fs) {
-		this.fs = fs;
-		this.identifier = fs.get("Identifier");
-		fs.removeValue("Identifier");
-	}
+    static final String NAME = "ListPeer";
+    
+    final SimpleFieldSet fs;
+    final String identifier;
+    
+    public ListPeerMessage(SimpleFieldSet fs) {
+        this.fs = fs;
+        this.identifier = fs.get("Identifier");
+        fs.removeValue("Identifier");
+    }
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet(true);
-	}
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        return new SimpleFieldSet(true);
+    }
 
-	@Override
-	public String getName() {
-		return NAME;
-	}
+    @Override
+    public String getName() {
+        return NAME;
+    }
 
-	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		if(!handler.hasFullAccess()) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ListPeer requires full access", identifier, false);
-		}
-		String nodeIdentifier = fs.get("NodeIdentifier");
-		if( nodeIdentifier == null ) {
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", identifier, false);
-		}
-		PeerNode pn = node.getPeerNode(nodeIdentifier);
-		if(pn == null) {
-			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier, identifier);
-			handler.outputHandler.queue(msg);
-			return;
-		}
-		handler.outputHandler.queue(new PeerMessage(pn, true, true, identifier));
-	}
+    @Override
+    public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+        if(!handler.hasFullAccess()) {
+            throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ListPeer requires full access", identifier, false);
+        }
+        String nodeIdentifier = fs.get("NodeIdentifier");
+        if( nodeIdentifier == null ) {
+            throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", identifier, false);
+        }
+        PeerNode pn = node.getPeerNode(nodeIdentifier);
+        if(pn == null) {
+            FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier, identifier);
+            handler.outputHandler.queue(msg);
+            return;
+        }
+        handler.outputHandler.queue(new PeerMessage(pn, true, true, identifier));
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        throw new UnsupportedOperationException();
+    }
 
 }

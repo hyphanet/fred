@@ -30,38 +30,38 @@ import freenet.support.Executor;
  * @author ET
  */
 public class SSLNetworkInterface extends NetworkInterface {
-	
-	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindableIP6) throws IOException {
-		NetworkInterface iface = new SSLNetworkInterface(port, allowedHosts, executor);
-		String[] failedBind = iface.setBindTo(bindTo, ignoreUnbindableIP6);
-		if(failedBind != null) {
-			System.err.println("Could not bind to some of the interfaces specified for port "+port+" : "+Arrays.toString(failedBind));
-		}
-		return iface;
-	}
+    
+    public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindableIP6) throws IOException {
+        NetworkInterface iface = new SSLNetworkInterface(port, allowedHosts, executor);
+        String[] failedBind = iface.setBindTo(bindTo, ignoreUnbindableIP6);
+        if(failedBind != null) {
+            System.err.println("Could not bind to some of the interfaces specified for port "+port+" : "+Arrays.toString(failedBind));
+        }
+        return iface;
+    }
 
-	/**
-	 * See {@link NetworkInterface}
-	 */
-	protected SSLNetworkInterface(int port, String allowedHosts, Executor executor) throws IOException {
-		super(port, allowedHosts, executor);
-	}
+    /**
+     * See {@link NetworkInterface}
+     */
+    protected SSLNetworkInterface(int port, String allowedHosts, Executor executor) throws IOException {
+        super(port, allowedHosts, executor);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected ServerSocket createServerSocket() throws IOException {
-		SSLServerSocket serverSocket = (SSLServerSocket) SSL.createServerSocket();
-		serverSocket.setNeedClientAuth(false);
-		serverSocket.setUseClientMode(false);
-		serverSocket.setWantClientAuth(false);
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected ServerSocket createServerSocket() throws IOException {
+        SSLServerSocket serverSocket = (SSLServerSocket) SSL.createServerSocket();
+        serverSocket.setNeedClientAuth(false);
+        serverSocket.setUseClientMode(false);
+        serverSocket.setWantClientAuth(false);
 
-		serverSocket.setEnabledCipherSuites(new String[] {
-		    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA", // We want PFS (DHE)
-		    // "TLS_RSA_WITH_AES_256_CBC_SHA",
-		});
+        serverSocket.setEnabledCipherSuites(new String[] {
+            "TLS_DHE_RSA_WITH_AES_256_CBC_SHA", // We want PFS (DHE)
+            // "TLS_RSA_WITH_AES_256_CBC_SHA",
+        });
 
-		return serverSocket;
-	}
+        return serverSocket;
+    }
 }

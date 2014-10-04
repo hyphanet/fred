@@ -10,7 +10,7 @@ public class CountedInputStream extends FilterInputStream {
 
     public CountedInputStream(InputStream in) {
         super(in);
-	if(in == null) throw new IllegalStateException("null fed to CountedInputStream");
+    if(in == null) throw new IllegalStateException("null fed to CountedInputStream");
     }
 
     public final long count() {
@@ -18,7 +18,7 @@ public class CountedInputStream extends FilterInputStream {
     }
 
     @Override
-	public int read() throws IOException {
+    public int read() throws IOException {
         int ret = super.read();
         if (ret != -1)
             ++count;
@@ -26,7 +26,7 @@ public class CountedInputStream extends FilterInputStream {
     }
 
     @Override
-	public int read(byte[] buf, int off, int len) throws IOException {
+    public int read(byte[] buf, int off, int len) throws IOException {
         int ret = in.read(buf, off, len);
         if (ret != -1)
             count += ret;
@@ -34,7 +34,7 @@ public class CountedInputStream extends FilterInputStream {
     }
     
     @Override
-	public int read(byte[] buf) throws IOException {
+    public int read(byte[] buf) throws IOException {
         int ret = in.read(buf);
         if (ret != -1)
             count += ret;
@@ -42,10 +42,10 @@ public class CountedInputStream extends FilterInputStream {
     }
     
     @Override
-	public long skip(long n) throws IOException {
-    	long l = in.skip(n);
-    	if(l > 0) count += l;
-    	return l;
+    public long skip(long n) throws IOException {
+        long l = in.skip(n);
+        if(l > 0) count += l;
+        return l;
     }
 }
 

@@ -34,208 +34,208 @@ import freenet.support.io.TempBucketFactory;
  * @author xor
  */
 public abstract class TransferThread implements PrioRunnable, ClientGetCallback, ClientPutCallback {
-	
-	private final String mName;
-	protected final Node mNode;
-	protected final HighLevelSimpleClient mClient;
-	protected final ClientContext mClientContext;
-	protected final TempBucketFactory mTBF;
-	
-	private TrivialTicker mTicker;
-	
-	private final Collection<ClientGetter> mFetches = createFetchStorage();
-	private final Collection<BaseClientPutter> mInserts = createInsertStorage();
-	
-	public TransferThread(Node myNode, HighLevelSimpleClient myClient, String myName) {
-		mNode = myNode;
-		mClient = myClient;
-		mClientContext = mNode.clientCore.clientContext;
-		mTBF = mNode.clientCore.tempBucketFactory;
-		mName = myName;
-		
-		mTicker = new TrivialTicker(mNode.executor);
-	}
-	
-	/**
-	 * Tells this TransferThread to start it's execution. You have to call this after constructing an object of an implementing class - it must not
-	 * be called in the constructors of implementing classes.
-	 */
-	public void start() {
-		Logger.debug(this, "Starting...");
-		mTicker.queueTimedJob(this, mName, getStartupDelay(), false, true);
-	}
-	
-	/** Specify the priority of this thread. Priorities to return can be found in class NativeThread. */
-	@Override
-	public abstract int getPriority();
+    
+    private final String mName;
+    protected final Node mNode;
+    protected final HighLevelSimpleClient mClient;
+    protected final ClientContext mClientContext;
+    protected final TempBucketFactory mTBF;
+    
+    private TrivialTicker mTicker;
+    
+    private final Collection<ClientGetter> mFetches = createFetchStorage();
+    private final Collection<BaseClientPutter> mInserts = createInsertStorage();
+    
+    public TransferThread(Node myNode, HighLevelSimpleClient myClient, String myName) {
+        mNode = myNode;
+        mClient = myClient;
+        mClientContext = mNode.clientCore.clientContext;
+        mTBF = mNode.clientCore.tempBucketFactory;
+        mName = myName;
+        
+        mTicker = new TrivialTicker(mNode.executor);
+    }
+    
+    /**
+     * Tells this TransferThread to start it's execution. You have to call this after constructing an object of an implementing class - it must not
+     * be called in the constructors of implementing classes.
+     */
+    public void start() {
+        Logger.debug(this, "Starting...");
+        mTicker.queueTimedJob(this, mName, getStartupDelay(), false, true);
+    }
+    
+    /** Specify the priority of this thread. Priorities to return can be found in class NativeThread. */
+    @Override
+    public abstract int getPriority();
 
-	@Override
-	public void run() {
-		long sleepTime = SECONDS.toMillis(1);
-		try {
-			Logger.debug(this, "Loop running...");
-			iterate();
-			sleepTime = getSleepTime();
-		}
-		catch(Exception e) {
-			Logger.error(this, "Error in iterate() or getSleepTime() probably", e);
-		}
-		finally {
-			Logger.debug(this, "Loop finished. Sleeping for " + MINUTES.convert(sleepTime, MILLISECONDS) + " minutes.");
-			mTicker.queueTimedJob(this, mName, sleepTime, false, true);
-		}
-	}
-	
-	/**
-	 * Wakes up the thread so that iterate() is called.
-	 */
-	public void nextIteration() {
-		mTicker.rescheduleTimedJob(this, mName, 0);
-	}
-	
-	protected void abortAllTransfers() {
-		Logger.debug(this, "Trying to stop all fetches & inserts...");
-		
-		abortFetches();
-		abortInserts();
-	}
-	
-	protected void abortFetches() {
-		Logger.debug(this, "Trying to stop all fetches...");
-		if(mFetches != null) synchronized(mFetches) {
-			ClientGetter[] fetches = mFetches.toArray(new ClientGetter[mFetches.size()]);
-			int fcounter = 0;
-			for(ClientGetter fetch : fetches) {
-				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
-				fetch.cancel(null, mNode.clientCore.clientContext);
-				++fcounter;
-			}
-			
-			Logger.debug(this, "Stopped " + fcounter + " current fetches.");
-		}
-	}
-	
-	protected void abortInserts() {
-		Logger.debug(this, "Trying to stop all inserts...");
-		if(mInserts != null) synchronized(mInserts) {
-			BaseClientPutter[] inserts = mInserts.toArray(new BaseClientPutter[mInserts.size()]);
-			int icounter = 0;
-			for(BaseClientPutter insert : inserts) {
-				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
-				insert.cancel(null, mNode.clientCore.clientContext);
-				++icounter;
-			}
-			Logger.debug(this, "Stopped " + icounter + " current inserts.");
-		}
-	}
-	
-	protected void addFetch(ClientGetter g) {
-		synchronized(mFetches) {
-			mFetches.add(g);
-		}
-	}
-	
-	protected void removeFetch(ClientGetter g) {
-		synchronized(mFetches) {
-			mFetches.remove(g);
-		}
-		Logger.debug(this, "Removed request for " + g.getURI());
-	}
-	
-	protected void addInsert(BaseClientPutter p) {
-		synchronized(mInserts) {
-			mInserts.add(p);
-		}
-	}
-	
-	protected void removeInsert(BaseClientPutter p) {
-		synchronized(mInserts) {
-			mInserts.remove(p);
-		}
-		Logger.debug(this, "Removed insert for " + p.getURI());
-	}
-	
-	protected int fetchCount() {
-		synchronized(mFetches) {
-			return mFetches.size();
-		}
-	}
-	
-	protected int insertCount() {
-		synchronized(mInserts) {
-			return mInserts.size();
-		}
-	}
-	
-	public void terminate() {
-		Logger.debug(this, "Terminating...");
-		mTicker.shutdown();
-		try {
-			abortAllTransfers();
-		}
-		catch(RuntimeException e) {
-			Logger.error(this, "Aborting all transfers failed", e);
-		}
-		Logger.debug(this, "Terminated.");
-	}
-	
-	
-	protected abstract Collection<ClientGetter> createFetchStorage();
-	
-	protected abstract Collection<BaseClientPutter> createInsertStorage();
-	
-	protected abstract long getStartupDelay();
+    @Override
+    public void run() {
+        long sleepTime = SECONDS.toMillis(1);
+        try {
+            Logger.debug(this, "Loop running...");
+            iterate();
+            sleepTime = getSleepTime();
+        }
+        catch(Exception e) {
+            Logger.error(this, "Error in iterate() or getSleepTime() probably", e);
+        }
+        finally {
+            Logger.debug(this, "Loop finished. Sleeping for " + MINUTES.convert(sleepTime, MILLISECONDS) + " minutes.");
+            mTicker.queueTimedJob(this, mName, sleepTime, false, true);
+        }
+    }
+    
+    /**
+     * Wakes up the thread so that iterate() is called.
+     */
+    public void nextIteration() {
+        mTicker.rescheduleTimedJob(this, mName, 0);
+    }
+    
+    protected void abortAllTransfers() {
+        Logger.debug(this, "Trying to stop all fetches & inserts...");
+        
+        abortFetches();
+        abortInserts();
+    }
+    
+    protected void abortFetches() {
+        Logger.debug(this, "Trying to stop all fetches...");
+        if(mFetches != null) synchronized(mFetches) {
+            ClientGetter[] fetches = mFetches.toArray(new ClientGetter[mFetches.size()]);
+            int fcounter = 0;
+            for(ClientGetter fetch : fetches) {
+                /* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
+                fetch.cancel(null, mNode.clientCore.clientContext);
+                ++fcounter;
+            }
+            
+            Logger.debug(this, "Stopped " + fcounter + " current fetches.");
+        }
+    }
+    
+    protected void abortInserts() {
+        Logger.debug(this, "Trying to stop all inserts...");
+        if(mInserts != null) synchronized(mInserts) {
+            BaseClientPutter[] inserts = mInserts.toArray(new BaseClientPutter[mInserts.size()]);
+            int icounter = 0;
+            for(BaseClientPutter insert : inserts) {
+                /* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
+                insert.cancel(null, mNode.clientCore.clientContext);
+                ++icounter;
+            }
+            Logger.debug(this, "Stopped " + icounter + " current inserts.");
+        }
+    }
+    
+    protected void addFetch(ClientGetter g) {
+        synchronized(mFetches) {
+            mFetches.add(g);
+        }
+    }
+    
+    protected void removeFetch(ClientGetter g) {
+        synchronized(mFetches) {
+            mFetches.remove(g);
+        }
+        Logger.debug(this, "Removed request for " + g.getURI());
+    }
+    
+    protected void addInsert(BaseClientPutter p) {
+        synchronized(mInserts) {
+            mInserts.add(p);
+        }
+    }
+    
+    protected void removeInsert(BaseClientPutter p) {
+        synchronized(mInserts) {
+            mInserts.remove(p);
+        }
+        Logger.debug(this, "Removed insert for " + p.getURI());
+    }
+    
+    protected int fetchCount() {
+        synchronized(mFetches) {
+            return mFetches.size();
+        }
+    }
+    
+    protected int insertCount() {
+        synchronized(mInserts) {
+            return mInserts.size();
+        }
+    }
+    
+    public void terminate() {
+        Logger.debug(this, "Terminating...");
+        mTicker.shutdown();
+        try {
+            abortAllTransfers();
+        }
+        catch(RuntimeException e) {
+            Logger.error(this, "Aborting all transfers failed", e);
+        }
+        Logger.debug(this, "Terminated.");
+    }
+    
+    
+    protected abstract Collection<ClientGetter> createFetchStorage();
+    
+    protected abstract Collection<BaseClientPutter> createInsertStorage();
+    
+    protected abstract long getStartupDelay();
 
-	protected abstract long getSleepTime();
-	
-	/**
-	 * Called by the TransferThread after getStartupDelay() milliseconds for the first time and then after each getSleepTime() milliseconds.
-	 */
-	protected abstract void iterate();
+    protected abstract long getSleepTime();
+    
+    /**
+     * Called by the TransferThread after getStartupDelay() milliseconds for the first time and then after each getSleepTime() milliseconds.
+     */
+    protected abstract void iterate();
 
-	
-	/* Fetches */
-	
-	/**
-	 * You have to do "finally { removeFetch() }" when using this function.
-	 */
-	@Override
-	public abstract void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container);
+    
+    /* Fetches */
+    
+    /**
+     * You have to do "finally { removeFetch() }" when using this function.
+     */
+    @Override
+    public abstract void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container);
 
-	/**
-	 * You have to do "finally { removeFetch() }" when using this function.
-	 */
-	@Override
-	public abstract void onFailure(FetchException e, ClientGetter state, ObjectContainer container);
+    /**
+     * You have to do "finally { removeFetch() }" when using this function.
+     */
+    @Override
+    public abstract void onFailure(FetchException e, ClientGetter state, ObjectContainer container);
 
-	/* Inserts */
-	
-	/**
-	 * You have to do "finally { removeInsert() }" when using this function.
-	 */
-	@Override
-	public abstract void onSuccess(BaseClientPutter state, ObjectContainer container);
+    /* Inserts */
+    
+    /**
+     * You have to do "finally { removeInsert() }" when using this function.
+     */
+    @Override
+    public abstract void onSuccess(BaseClientPutter state, ObjectContainer container);
 
-	/**
-	 * You have to do "finally { removeInsert() }" when using this function.
-	 */
-	@Override
-	public abstract void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container);
+    /**
+     * You have to do "finally { removeInsert() }" when using this function.
+     */
+    @Override
+    public abstract void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container);
 
-	@Override
-	public abstract void onFetchable(BaseClientPutter state, ObjectContainer container);
+    @Override
+    public abstract void onFetchable(BaseClientPutter state, ObjectContainer container);
 
-	@Override
-	public abstract void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container);
+    @Override
+    public abstract void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container);
 
-	/** Called when freenet.async thinks that the request should be serialized to
-	 * disk, if it is a persistent request. */
-	@Override
-	public abstract void onMajorProgress(ObjectContainer container);
+    /** Called when freenet.async thinks that the request should be serialized to
+     * disk, if it is a persistent request. */
+    @Override
+    public abstract void onMajorProgress(ObjectContainer container);
 
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing TransferThread in database", new Exception("error"));
-		return false;
-	}
-	
+    public boolean objectCanNew(ObjectContainer container) {
+        Logger.error(this, "Not storing TransferThread in database", new Exception("error"));
+        return false;
+    }
+    
 }

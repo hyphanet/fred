@@ -52,8 +52,8 @@ public class ECDH {
             PrivateKey pk = key.getPrivate();
             byte [] pubkey = pub.getEncoded();
             byte [] pkey = pk.getEncoded();
-			if(pubkey.length > modulusSize || pubkey.length == 0)
-				throw new Error("Unexpected pubkey length: "+pubkey.length+"!="+modulusSize);
+            if(pubkey.length > modulusSize || pubkey.length == 0)
+                throw new Error("Unexpected pubkey length: "+pubkey.length+"!="+modulusSize);
             PublicKey pub2 = kf.generatePublic(
                     new X509EncodedKeySpec(pubkey)
                     );
@@ -62,83 +62,83 @@ public class ECDH {
             PrivateKey pk2 = kf.generatePrivate(
                     new PKCS8EncodedKeySpec(pkey)
                     );
-			/*
+            /*
             if(!Arrays.equals(pk2.getEncoded(), pkey))
                 throw new Error("Pubkey encoding mismatch");
-			*/
+            */
             return key;
         }
 
-		static private void selftest_genSecret(KeyPair key, KeyAgreement ka)
-			throws InvalidKeyException
-		{
-			ka.init(key.getPrivate());
+        static private void selftest_genSecret(KeyPair key, KeyAgreement ka)
+            throws InvalidKeyException
+        {
+            ka.init(key.getPrivate());
             ka.doPhase(key.getPublic(), true);
             ka.generateSecret();
-		}
+        }
 
         private Curves(String name, int modulusSize, int derivedSecretSize) {
             this.spec = new ECGenParameterSpec(name);
             KeyAgreement ka = null;
-			KeyFactory kf = null;
+            KeyFactory kf = null;
             KeyPairGenerator kg = null;
-			// Ensure providers loaded
-			JceLoader.BouncyCastle.toString();
-			try {
-				KeyPair key = null;
-				try {
-					/* check if default EC keys work correctly */
-					kg = KeyPairGenerator.getInstance("EC");
-					kf = KeyFactory.getInstance("EC");
-					kg.initialize(this.spec);
-					key = selftest(kg, kf, modulusSize);
-				} catch(Throwable e) {
-					/* we don't care why we fail, just fallback */
-					Logger.warning(this, "default KeyPairGenerator provider ("+(kg != null ? kg.getProvider() : null)+") is broken, falling back to BouncyCastle", e);
-					kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
-					kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
-					kg.initialize(this.spec);
-					key = selftest(kg, kf, modulusSize);
-				}
-				try {
-					/* check default KeyAgreement compatible with kf/kg */
-					ka = KeyAgreement.getInstance("ECDH");
-					selftest_genSecret(key, ka);
-				} catch(Throwable e) {
-					/* we don't care why we fail, just fallback */
-					Logger.warning(this, "default KeyAgreement provider ("+(ka != null ? ka.getProvider() : null)+") is broken or incompatible with KeyPairGenerator, falling back to BouncyCastle", e);
-					kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
-					kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
-					kg.initialize(this.spec);
-					ka = KeyAgreement.getInstance("ECDH", JceLoader.BouncyCastle);
-					selftest_genSecret(key, ka);
-				}
-			} catch(NoSuchAlgorithmException e) {
-				System.out.println(e);
-				e.printStackTrace(System.out);
-			} catch(InvalidKeySpecException e) {
-				System.out.println(e);
-				e.printStackTrace(System.out);
-			} catch(InvalidKeyException e) {
-				System.out.println(e);
-				e.printStackTrace(System.out);
-			} catch(InvalidAlgorithmParameterException e) {
-				System.out.println(e);
-				e.printStackTrace(System.out);
-			}
-			this.modulusSize = modulusSize;
-			this.derivedSecretSize = derivedSecretSize;
+            // Ensure providers loaded
+            JceLoader.BouncyCastle.toString();
+            try {
+                KeyPair key = null;
+                try {
+                    /* check if default EC keys work correctly */
+                    kg = KeyPairGenerator.getInstance("EC");
+                    kf = KeyFactory.getInstance("EC");
+                    kg.initialize(this.spec);
+                    key = selftest(kg, kf, modulusSize);
+                } catch(Throwable e) {
+                    /* we don't care why we fail, just fallback */
+                    Logger.warning(this, "default KeyPairGenerator provider ("+(kg != null ? kg.getProvider() : null)+") is broken, falling back to BouncyCastle", e);
+                    kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
+                    kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
+                    kg.initialize(this.spec);
+                    key = selftest(kg, kf, modulusSize);
+                }
+                try {
+                    /* check default KeyAgreement compatible with kf/kg */
+                    ka = KeyAgreement.getInstance("ECDH");
+                    selftest_genSecret(key, ka);
+                } catch(Throwable e) {
+                    /* we don't care why we fail, just fallback */
+                    Logger.warning(this, "default KeyAgreement provider ("+(ka != null ? ka.getProvider() : null)+") is broken or incompatible with KeyPairGenerator, falling back to BouncyCastle", e);
+                    kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
+                    kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
+                    kg.initialize(this.spec);
+                    ka = KeyAgreement.getInstance("ECDH", JceLoader.BouncyCastle);
+                    selftest_genSecret(key, ka);
+                }
+            } catch(NoSuchAlgorithmException e) {
+                System.out.println(e);
+                e.printStackTrace(System.out);
+            } catch(InvalidKeySpecException e) {
+                System.out.println(e);
+                e.printStackTrace(System.out);
+            } catch(InvalidKeyException e) {
+                System.out.println(e);
+                e.printStackTrace(System.out);
+            } catch(InvalidAlgorithmParameterException e) {
+                System.out.println(e);
+                e.printStackTrace(System.out);
+            }
+            this.modulusSize = modulusSize;
+            this.derivedSecretSize = derivedSecretSize;
 
-			this.kgProvider = kg.getProvider();
-			this.kfProvider = kf.getProvider();
-			this.kaProvider = ka.getProvider();
-			Logger.normal(this, name +": using "+kgProvider+" for KeyPairGenerator(EC)");
-			Logger.normal(this, name +": using "+kfProvider+" for KeyFactory(EC)");
-			Logger.normal(this, name +": using "+kaProvider+" for KeyAgreement(ECDH)");
-		}
+            this.kgProvider = kg.getProvider();
+            this.kfProvider = kf.getProvider();
+            this.kaProvider = ka.getProvider();
+            Logger.normal(this, name +": using "+kgProvider+" for KeyPairGenerator(EC)");
+            Logger.normal(this, name +": using "+kfProvider+" for KeyFactory(EC)");
+            Logger.normal(this, name +": using "+kaProvider+" for KeyAgreement(ECDH)");
+        }
         
         private synchronized KeyPairGenerator getKeyPairGenerator() {
-        	if(keygenCached != null) return keygenCached;
+            if(keygenCached != null) return keygenCached;
             KeyPairGenerator kg = null;
             try {
                 kg = KeyPairGenerator.getInstance("EC", kgProvider);
@@ -234,26 +234,26 @@ public class ECDH {
      * after fproxy has started, with a warning timer, allows us to tell
      * the user what is going on if it takes a while. */
     public static void blockingInit() {
-    	Curves.P256.getKeyPairGenerator();
-    	// Not used at present.
-    	// Anyway Bouncycastle uses a single PRNG.
-    	// If these use separate PRNGs, we need to init them explicitly.
-    	//Curves.P384.getKeyPairGenerator();
-    	//Curves.P521.getKeyPairGenerator();
+        Curves.P256.getKeyPairGenerator();
+        // Not used at present.
+        // Anyway Bouncycastle uses a single PRNG.
+        // If these use separate PRNGs, we need to init them explicitly.
+        //Curves.P384.getKeyPairGenerator();
+        //Curves.P521.getKeyPairGenerator();
     }
 
     /** Return the public key as a byte[] in network format */
-	public byte[] getPublicKeyNetworkFormat() {
+    public byte[] getPublicKeyNetworkFormat() {
         byte[] ret = getPublicKey().getEncoded();
         if(ret.length == curve.modulusSize) {
-        	return ret;
+            return ret;
         } else if(ret.length > curve.modulusSize) {
-        	throw new IllegalStateException("Encoded public key too long: should be "+curve.modulusSize+" bytes but is "+ret.length);
+            throw new IllegalStateException("Encoded public key too long: should be "+curve.modulusSize+" bytes but is "+ret.length);
         } else {
-        	Logger.warning(this, "Padding public key from "+ret.length+" to "+curve.modulusSize+" bytes");
-        	byte[] out = new byte[curve.modulusSize];
-        	System.arraycopy(ret, 0, out, 0, ret.length);
-        	return ret;
+            Logger.warning(this, "Padding public key from "+ret.length+" to "+curve.modulusSize+" bytes");
+            byte[] out = new byte[curve.modulusSize];
+            System.arraycopy(ret, 0, out, 0, ret.length);
+            return ret;
         }
-	}
+    }
 }

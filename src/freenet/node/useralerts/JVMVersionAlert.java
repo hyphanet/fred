@@ -9,31 +9,31 @@ import freenet.support.JVMVersion;
  */
 public class JVMVersionAlert extends AbstractUserAlert {
 
-	public JVMVersionAlert() {
+    public JVMVersionAlert() {
         super(true, null, null, null, null, UserAlert.ERROR, true,
               NodeL10n.getBase().getString("UserAlert.hide"), true, null);
-	}
+    }
 
-	@Override
-	public String getTitle() {
-		return NodeL10n.getBase().getString("JavaEOLAlert.title");
-	}
+    @Override
+    public String getTitle() {
+        return NodeL10n.getBase().getString("JavaEOLAlert.title");
+    }
 
-	@Override
-	public String getText() {
-		return NodeL10n.getBase().getString("JavaEOLAlert.body",
-		                                    new String[] {"current", "new"},
-		                                    new String[] {JVMVersion.getCurrent(),
-		                                                  JVMVersion.REQUIRED});
-	}
+    @Override
+    public String getText() {
+        return NodeL10n.getBase().getString("JavaEOLAlert.body",
+                                            new String[] {"current", "new"},
+                                            new String[] {JVMVersion.getCurrent(),
+                                                          JVMVersion.REQUIRED});
+    }
 
-	@Override
-	public String getShortText() {
-		return getTitle();
-	}
+    @Override
+    public String getShortText() {
+        return getTitle();
+    }
 
-	@Override
-	public HTMLNode getHTMLText() {
-		return new HTMLNode("div", getText());
-	}
+    @Override
+    public HTMLNode getHTMLText() {
+        return new HTMLNode("div", getText());
+    }
 }

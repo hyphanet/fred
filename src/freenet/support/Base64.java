@@ -97,7 +97,7 @@ public class Base64
    * yourself using the 0-arg String.getBytes() which is not deterministic.
    */
   public static String encodeStandardUTF8(String in) {
-	  return encodeStandard(in.getBytes(UTF8));
+      return encodeStandard(in.getBytes(UTF8));
   }
 
   /**

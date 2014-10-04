@@ -209,12 +209,12 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             String filename;
             Bucket bucket;
             if (localFile) {
-            	filename = request.getPartAsStringFailsafe("filename", QueueToadlet.MAX_FILENAME_LENGTH);
-	            if (mimeType.length() == 0) {
-	                mimeType = DefaultMIMETypes.guessMIMEType(filename, false);
-	            }
-	            File file = new File(filename);
-	            bucket = new FileBucket(file, true, false, false, false, false);
+                filename = request.getPartAsStringFailsafe("filename", QueueToadlet.MAX_FILENAME_LENGTH);
+                if (mimeType.length() == 0) {
+                    mimeType = DefaultMIMETypes.guessMIMEType(filename, false);
+                }
+                File file = new File(filename);
+                bucket = new FileBucket(file, true, false, false, false, false);
             } else {
                 HTTPUploadedFile file = request.getUploadedFile("filename");
                 if (file == null) {
@@ -297,7 +297,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         }
 
         if (unsafe) {
-        	sendErrorPage(ctx, 200, l10n("errorUnsafeContentTitle"), l10n("errorUnsafeContent"));
+            sendErrorPage(ctx, 200, l10n("errorUnsafeContentTitle"), l10n("errorUnsafeContent"));
         } else {
             if (resultHandling == ResultHandling.DISPLAY) {
                 ctx.sendReplyHeaders(200, "OK", null, resultMimeType, resultBucket.size());

@@ -16,16 +16,16 @@ public class BookmarkCategory extends Bookmark {
     }
 
     public BookmarkCategory(SimpleFieldSet sfs) throws FSParseException {
-	String aName = sfs.get("Name");
-	if(aName == null) throw new FSParseException("No Name!");
-	setName(aName);
+    String aName = sfs.get("Name");
+    if(aName == null) throw new FSParseException("No Name!");
+    setName(aName);
     }
 
     protected synchronized Bookmark addBookmark(Bookmark b) {
         if (b == null) {
             return null;
         }
-	// Overwrite any existing bookmark
+    // Overwrite any existing bookmark
         int x = bookmarks.indexOf(b);
         if (x >= 0) {
             return bookmarks.get(x);
@@ -95,7 +95,7 @@ public class BookmarkCategory extends Bookmark {
     }
 
     public synchronized List<BookmarkCategory> getAllSubCategories() {
-    	List<BookmarkCategory> categories = getSubCategories();
+        List<BookmarkCategory> categories = getSubCategories();
         for (BookmarkCategory cat: getSubCategories()) {
             categories.addAll(cat.getAllSubCategories());
         }
@@ -127,10 +127,10 @@ public class BookmarkCategory extends Bookmark {
     }
 
     @Override
-	public synchronized SimpleFieldSet getSimpleFieldSet() {
+    public synchronized SimpleFieldSet getSimpleFieldSet() {
         SimpleFieldSet sfs = new SimpleFieldSet(true);
-	sfs.putSingle("Name", name);
-	sfs.put("Content", BookmarkManager.toSimpleFieldSet(this));
+    sfs.putSingle("Name", name);
+    sfs.put("Content", BookmarkManager.toSimpleFieldSet(this));
         return sfs;
     }
     // Don't override equals(), two categories are equal if they have the same name and description.
