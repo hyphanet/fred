@@ -14,7 +14,7 @@ public class MergeSFS {
 
 	/**
 	 * @param args
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public static void main(String[] args) throws IOException {
 		if (args.length < 2 || args.length > 3) {
