@@ -62,7 +62,7 @@ public abstract class Option<T> {
 		set(x);
 	}
 
-	protected abstract T parseString(String val) throws InvalidConfigValueException; 
+	protected abstract T parseString(String val) throws InvalidConfigValueException;
 	protected abstract String toString(T val);
 	protected String toDisplayString(T val) {
 		return toString(val);
@@ -95,7 +95,7 @@ public abstract class Option<T> {
 	/** Set to a value from the config file; this is not passed on to the callback, as we
 	 * expect the client-side initialization to check the value. The callback is not valid
 	 * until the client calls finishedInitialization().
-	 * @throws InvalidConfigValueException 
+	 * @throws InvalidConfigValueException
 	 */
 	public final void setInitialValue(String val) throws InvalidConfigValueException {
 		currentValue = parseString(val);
@@ -112,7 +112,7 @@ public abstract class Option<T> {
 		return name;
 	}
 	
-	/** Used in alt="" to label a box with the option name used in the config file. 
+	/** Used in alt="" to label a box with the option name used in the config file.
 	 * FIXME get rid of said alt=""? Not much use for most users. See caller. */
 	public String getShortDesc(){
 		return shortDesc;

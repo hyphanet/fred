@@ -11,7 +11,7 @@ import freenet.support.api.StringArrCallback;
 public class StringArrOption extends Option<String[]> {
     public static final String delimiter = ";";
 	
-	public StringArrOption(SubConfig conf, String optionName, String[] defaultValue, int sortOrder, 
+	public StringArrOption(SubConfig conf, String optionName, String[] defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringArrCallback cb) {
 		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.STRING_ARRAY);
 		this.defaultValue = (defaultValue==null)?new String[0]:defaultValue;

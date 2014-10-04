@@ -11,7 +11,7 @@ public abstract class ConfigCallback<T> {
 
 	/**
 	 * Set the config variable to a new value.
-	 * 
+	 *
 	 * @param val
 	 *            The new value.
 	 * @throws InvalidConfigOptionException
@@ -21,5 +21,5 @@ public abstract class ConfigCallback<T> {
 	
 	public boolean isReadOnly() {
 		return false;
-	} 
+	}
 }

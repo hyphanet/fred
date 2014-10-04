@@ -30,7 +30,7 @@ public class Config {
 		}
 	}
 	
-	/** Write current config to disk 
+	/** Write current config to disk
 	 * @throws IOException */
 	public void store() {
 		// Do nothing
