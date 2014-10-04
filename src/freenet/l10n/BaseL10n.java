@@ -56,7 +56,7 @@ public class BaseL10n {
 		SWEDISH("sv", "Svenska", "swe", new String[] { "WINDOWS041D", "WINDOWS081D"}),
 		CHINESE("zh-cn", "中文(简体)", "chn", new String[] { "WINDOWS0804", "WINDOWS1004" }),
 		// simplified chinese, used on mainland, Singapore and Malaysia
-		CHINESE_TAIWAN("zh-tw", "中文(繁體)", "zh-tw", new String[] { "WINDOWS0404", "WINDOWS0C04", "WINDOWS1404" }), 
+		CHINESE_TAIWAN("zh-tw", "中文(繁體)", "zh-tw", new String[] { "WINDOWS0404", "WINDOWS0C04", "WINDOWS1404" }),
 		// traditional chinese, used in Taiwan, Hong Kong and Macau
 		RUSSIAN("ru", "Русский", "rus", new String[] { "WINDOWS0419" }), // Just one variant for russian. Belorussian is separate, code page 423, speakers may or may not speak russian, I'm not including it.
 		JAPANESE("ja", "日本語", "jpn", new String[] { "WINDOWS0411" }),
@@ -560,18 +560,18 @@ public class BaseL10n {
 	/**
 	 * Loads an L10n string, replaces variables such as ${link} or ${bold} in it with {@link HTMLNode}s
 	 * and adds the result to the given HTMLNode.
-	 * 
-	 * This is *much* safer than the deprecated {@link #addL10nSubstitution(HTMLNode, String, String[], String[])}. 
+	 *
+	 * This is *much* safer than the deprecated {@link #addL10nSubstitution(HTMLNode, String, String[], String[])}.
 	 * Callers won't accidentally pass in unencoded strings and cause vulnerabilities.
 	 * Callers should try to reuse parameters if possible.
 	 * We automatically close each tag: When a pattern ${name} is matched, we search for
 	 * ${/name}. If we find it, we make the tag enclose everything between the two; if we
 	 * can't find it, we just add it with no children. It is not possible to create an
 	 * HTMLNode representing a tag closure, so callers will need to change their code to
-	 * not pass in /link or similar, and in some cases will need to change the l10n 
+	 * not pass in /link or similar, and in some cases will need to change the l10n
 	 * strings themselves to always close the tag properly, rather than using a generic
 	 * /link for multiple links as we use in some places.
-	 * 
+	 *
 	 * <p><b>Examples</b>:
 	 * <p>TranslationLookup.string=This is a ${link}link${/link} about ${text}.</p>
 	 * <p>
@@ -584,11 +584,11 @@ public class BaseL10n {
 	 * <code>addL10nSubstitution(html, "TranslationLookup.string", new String[] { "bold" },
 	 *   new HTMLNode[] { HTMLNode.STRONG });</code>
 	 * </p>
-	 * 
+	 *
 	 * @param node The {@link HTMLNode} to which the L10n should be added after substitution was done.
-	 * @param key The key of the L10n string which shall be used. 
+	 * @param key The key of the L10n string which shall be used.
 	 * @param patterns Specifies things such as ${link} which shall be replaced in the L10n string with {@link HTMLNode}s.
-	 * @param values For each entry in the previous array parameter, this array specifies the {@link HTMLNode} with which it shall be replaced. 
+	 * @param values For each entry in the previous array parameter, this array specifies the {@link HTMLNode} with which it shall be replaced.
 	 */
 	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, HTMLNode[] values) {
 		String value = getString(key);
