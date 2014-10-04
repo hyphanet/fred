@@ -10,15 +10,15 @@ import freenet.support.HTMLNode;
  */
 public class InfoboxNode {
 
-	/** The top of the tree. Use this to add the box to a parent HTMLNode, or if it's a page, to
-	 * render the whole page as HTML. */
-	public final HTMLNode outer;
-	/** The inside of the box. Use this to add content inside the box. */
-	public final HTMLNode content;
+    /** The top of the tree. Use this to add the box to a parent HTMLNode, or if it's a page, to
+     * render the whole page as HTML. */
+    public final HTMLNode outer;
+    /** The inside of the box. Use this to add content inside the box. */
+    public final HTMLNode content;
 
-	InfoboxNode(HTMLNode box, HTMLNode content) {
-		this.outer = box;
-		this.content = content;
-	}
+    InfoboxNode(HTMLNode box, HTMLNode content) {
+        this.outer = box;
+        this.content = content;
+    }
 
 }

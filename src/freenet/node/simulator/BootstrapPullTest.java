@@ -34,31 +34,31 @@ import freenet.support.io.LineReadingInputStream;
  */
 public class BootstrapPullTest {
 
-	public static int TEST_SIZE = 1024*1024;
+    public static int TEST_SIZE = 1024*1024;
 
-	public static int EXIT_NO_SEEDNODES = 257;
-	public static int EXIT_FAILED_TARGET = 258;
-	public static int EXIT_INSERT_FAILED = 259;
-	public static int EXIT_FETCH_FAILED = 260;
-	public static int EXIT_INSERTER_PROBLEM = 261;
-	public static int EXIT_THREW_SOMETHING = 262;
+    public static int EXIT_NO_SEEDNODES = 257;
+    public static int EXIT_FAILED_TARGET = 258;
+    public static int EXIT_INSERT_FAILED = 259;
+    public static int EXIT_FETCH_FAILED = 260;
+    public static int EXIT_INSERTER_PROBLEM = 261;
+    public static int EXIT_THREW_SOMETHING = 262;
 
-	public static int DARKNET_PORT = 5000;
-	public static int OPENNET_PORT = 5001;
+    public static int DARKNET_PORT = 5000;
+    public static int OPENNET_PORT = 5001;
 
-	/**
-	 * @param args
-	 * @throws InvalidThresholdException
-	 * @throws IOException
-	 * @throws NodeInitException
-	 * @throws InterruptedException
-	 */
-	public static void main(String[] args) throws InvalidThresholdException, IOException, NodeInitException, InterruptedException {
-		Node secondNode = null;
-		try {
-		String ipOverride = null;
-		if(args.length > 0)
-			ipOverride = args[0];
+    /**
+     * @param args
+     * @throws InvalidThresholdException
+     * @throws IOException
+     * @throws NodeInitException
+     * @throws InterruptedException
+     */
+    public static void main(String[] args) throws InvalidThresholdException, IOException, NodeInitException, InterruptedException {
+        Node secondNode = null;
+        try {
+        String ipOverride = null;
+        if(args.length > 0)
+            ipOverride = args[0];
         File dir = new File("bootstrap-pull-test");
         FileUtil.removeAll(dir);
         RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, LogLevel.ERROR, "", false);
@@ -67,8 +67,8 @@ public class BootstrapPullTest {
         MersenneTwister fastRandom = new MersenneTwister(seed);
         File seednodes = new File("seednodes.fref");
         if(!seednodes.exists() || seednodes.length() == 0 || !seednodes.canRead()) {
-        	System.err.println("Unable to read seednodes.fref, it doesn't exist, or is empty");
-        	System.exit(EXIT_NO_SEEDNODES);
+            System.err.println("Unable to read seednodes.fref, it doesn't exist, or is empty");
+            System.exit(EXIT_NO_SEEDNODES);
         }
         File secondInnerDir = new File(dir, Integer.toString(DARKNET_PORT));
         secondInnerDir.mkdir();
@@ -82,10 +82,10 @@ public class BootstrapPullTest {
         OutputStream os = new FileOutputStream(dataFile);
         byte[] buf = new byte[4096];
         for(long written = 0; written < TEST_SIZE;) {
-        	fastRandom.nextBytes(buf);
-        	int toWrite = (int) Math.min(TEST_SIZE - written, buf.length);
-        	os.write(buf, 0, toWrite);
-        	written += toWrite;
+            fastRandom.nextBytes(buf);
+            int toWrite = (int) Math.min(TEST_SIZE - written, buf.length);
+            os.write(buf, 0, toWrite);
+            written += toWrite;
         }
         os.close();
 
@@ -102,38 +102,38 @@ public class BootstrapPullTest {
         secondNode = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, dir.getPath(), false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, false, false, ipOverride);
         secondNode.start(true);
 
-		if (!TestUtil.waitForNodes(secondNode)) {
-			secondNode.park();
-			System.exit(EXIT_FAILED_TARGET);
-		}
+        if (!TestUtil.waitForNodes(secondNode)) {
+            secondNode.park();
+            System.exit(EXIT_FAILED_TARGET);
+        }
 
         // Fetch the data
         long startFetchTime = System.currentTimeMillis();
         HighLevelSimpleClient client = secondNode.clientCore.makeClient((short)0, false, false);
         try {
-			client.fetch(uri);
-		} catch (FetchException e) {
-			System.err.println("FETCH FAILED: "+e);
-			e.printStackTrace();
-			System.exit(EXIT_FETCH_FAILED);
-			return;
-		}
-		long endFetchTime = System.currentTimeMillis();
-		System.out.println("RESULT: Fetch took "+(endFetchTime-startFetchTime)+"ms ("+TimeUtil.formatTime(endFetchTime-startFetchTime)+") of "+uri+" .");
-		secondNode.park();
-		System.exit(0);
-	    } catch (Throwable t) {
-	    	System.err.println("CAUGHT: "+t);
-	    	t.printStackTrace();
-	    	try {
-	    		if(secondNode != null)
-	    			secondNode.park();
-	    	} catch (Throwable t1) {}
-	    	System.exit(EXIT_THREW_SOMETHING);
-	    }
-	}
+            client.fetch(uri);
+        } catch (FetchException e) {
+            System.err.println("FETCH FAILED: "+e);
+            e.printStackTrace();
+            System.exit(EXIT_FETCH_FAILED);
+            return;
+        }
+        long endFetchTime = System.currentTimeMillis();
+        System.out.println("RESULT: Fetch took "+(endFetchTime-startFetchTime)+"ms ("+TimeUtil.formatTime(endFetchTime-startFetchTime)+") of "+uri+" .");
+        secondNode.park();
+        System.exit(0);
+        } catch (Throwable t) {
+            System.err.println("CAUGHT: "+t);
+            t.printStackTrace();
+            try {
+                if(secondNode != null)
+                    secondNode.park();
+            } catch (Throwable t1) {}
+            System.exit(EXIT_THREW_SOMETHING);
+        }
+    }
 
-	private static FreenetURI insertData(File dataFile) throws IOException {
+    private static FreenetURI insertData(File dataFile) throws IOException {
         long startInsertTime = System.currentTimeMillis();
         InetAddress localhost = InetAddress.getByName("127.0.0.1");
         Socket sock = new Socket(localhost, 9481);
@@ -144,40 +144,40 @@ public class BootstrapPullTest {
         OutputStreamWriter osw = new OutputStreamWriter(sockOS, "UTF-8");
         osw.write("ClientHello\nExpectedVersion=0.7\nName=BootstrapPullTest-"+System.currentTimeMillis()+"\nEnd\n");
         osw.flush();
-       	String name = lis.readLine(65536, 128, true);
-       	SimpleFieldSet fs = new SimpleFieldSet(lis, 65536, 128, true, false, true);
-       	if(!name.equals("NodeHello")) {
-       		System.err.println("No NodeHello from insertor node!");
-       		System.exit(EXIT_INSERTER_PROBLEM);
-       	}
-       	System.out.println("Connected to "+sock);
-       	osw.write("ClientPut\nIdentifier=test-insert\nURI=CHK@\nVerbosity=1023\nUploadFrom=direct\nMaxRetries=-1\nDataLength="+TEST_SIZE+"\nData\n");
-       	osw.flush();
-       	InputStream is = new FileInputStream(dataFile);
-       	FileUtil.copy(is, sockOS, TEST_SIZE);
-       	System.out.println("Sent data");
-       	while(true) {
-           	name = lis.readLine(65536, 128, true);
-           	fs = new SimpleFieldSet(lis, 65536, 128, true, false, true);
-       		System.out.println("Got FCP message: \n"+name);
-       		System.out.print(fs.toOrderedString());
-       		if(name.equals("ProtocolError")) {
-       			System.err.println("Protocol error when inserting data.");
-       			System.exit(EXIT_INSERTER_PROBLEM);
-       		}
-       		if(name.equals("PutFailed")) {
-       			System.err.println("Insert failed");
-       			System.exit(EXIT_INSERT_FAILED);
-       		}
-       		if(name.equals("PutSuccessful")) {
-       	        long endInsertTime = System.currentTimeMillis();
-       			FreenetURI uri = new FreenetURI(fs.get("URI"));
-       	        System.out.println("RESULT: Insert took "+(endInsertTime-startInsertTime)+"ms ("+TimeUtil.formatTime(endInsertTime-startInsertTime)+") to "+uri+" .");
-       			sockOS.close();
-       			sockIS.close();
-       			sock.close();
-       			return uri;
-       		}
-       	}
-	}
+           String name = lis.readLine(65536, 128, true);
+           SimpleFieldSet fs = new SimpleFieldSet(lis, 65536, 128, true, false, true);
+           if(!name.equals("NodeHello")) {
+               System.err.println("No NodeHello from insertor node!");
+               System.exit(EXIT_INSERTER_PROBLEM);
+           }
+           System.out.println("Connected to "+sock);
+           osw.write("ClientPut\nIdentifier=test-insert\nURI=CHK@\nVerbosity=1023\nUploadFrom=direct\nMaxRetries=-1\nDataLength="+TEST_SIZE+"\nData\n");
+           osw.flush();
+           InputStream is = new FileInputStream(dataFile);
+           FileUtil.copy(is, sockOS, TEST_SIZE);
+           System.out.println("Sent data");
+           while(true) {
+               name = lis.readLine(65536, 128, true);
+               fs = new SimpleFieldSet(lis, 65536, 128, true, false, true);
+               System.out.println("Got FCP message: \n"+name);
+               System.out.print(fs.toOrderedString());
+               if(name.equals("ProtocolError")) {
+                   System.err.println("Protocol error when inserting data.");
+                   System.exit(EXIT_INSERTER_PROBLEM);
+               }
+               if(name.equals("PutFailed")) {
+                   System.err.println("Insert failed");
+                   System.exit(EXIT_INSERT_FAILED);
+               }
+               if(name.equals("PutSuccessful")) {
+                   long endInsertTime = System.currentTimeMillis();
+                   FreenetURI uri = new FreenetURI(fs.get("URI"));
+                   System.out.println("RESULT: Insert took "+(endInsertTime-startInsertTime)+"ms ("+TimeUtil.formatTime(endInsertTime-startInsertTime)+") to "+uri+" .");
+                   sockOS.close();
+                   sockIS.close();
+                   sock.close();
+                   return uri;
+               }
+           }
+    }
 }

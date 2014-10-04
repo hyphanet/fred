@@ -15,77 +15,77 @@ import freenet.node.SendableRequestSender;
  */
 public abstract class ChosenBlock {
 
-	/** The token indicating the key within the request to be fetched/inserted.
-	 * Meaning is entirely defined by the request. */
-	public transient final SendableRequestItem token;
-	/** The key to be fetched, null if not a BaseSendableGet */
-	public transient final Key key;
-	/** The client-layer key to be fetched, null if not a SendableGet */
-	public transient final ClientKey ckey;
-	public transient final boolean localRequestOnly;
-	public transient final boolean ignoreStore;
-	public transient final boolean canWriteClientCache;
-	public transient final boolean forkOnCacheable;
-	public transient final boolean realTimeFlag;
-	private transient ClientKey generatedKey;
-	
-	public ChosenBlock(SendableRequestItem token, Key key, ClientKey ckey, boolean localRequestOnly, boolean ignoreStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean realTimeFlag, RequestScheduler sched) {
-		this.token = token;
-		if(token == null) throw new NullPointerException();
-		this.key = key;
-		this.ckey = ckey;
-		this.localRequestOnly = localRequestOnly;
-		this.ignoreStore = ignoreStore;
-		this.canWriteClientCache = canWriteClientCache;
-		this.forkOnCacheable = forkOnCacheable;
-		this.realTimeFlag = realTimeFlag;
-	}
+    /** The token indicating the key within the request to be fetched/inserted.
+     * Meaning is entirely defined by the request. */
+    public transient final SendableRequestItem token;
+    /** The key to be fetched, null if not a BaseSendableGet */
+    public transient final Key key;
+    /** The client-layer key to be fetched, null if not a SendableGet */
+    public transient final ClientKey ckey;
+    public transient final boolean localRequestOnly;
+    public transient final boolean ignoreStore;
+    public transient final boolean canWriteClientCache;
+    public transient final boolean forkOnCacheable;
+    public transient final boolean realTimeFlag;
+    private transient ClientKey generatedKey;
+    
+    public ChosenBlock(SendableRequestItem token, Key key, ClientKey ckey, boolean localRequestOnly, boolean ignoreStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean realTimeFlag, RequestScheduler sched) {
+        this.token = token;
+        if(token == null) throw new NullPointerException();
+        this.key = key;
+        this.ckey = ckey;
+        this.localRequestOnly = localRequestOnly;
+        this.ignoreStore = ignoreStore;
+        this.canWriteClientCache = canWriteClientCache;
+        this.forkOnCacheable = forkOnCacheable;
+        this.realTimeFlag = realTimeFlag;
+    }
 
-	public abstract boolean isPersistent();
+    public abstract boolean isPersistent();
 
-	public abstract boolean isCancelled();
+    public abstract boolean isCancelled();
 
-	public abstract void onFailure(LowLevelPutException e, ClientContext context);
+    public abstract void onFailure(LowLevelPutException e, ClientContext context);
 
-	public abstract void onInsertSuccess(ClientContext context);
+    public abstract void onInsertSuccess(ClientContext context);
 
-	public abstract void onFailure(LowLevelGetException e, ClientContext context);
+    public abstract void onFailure(LowLevelGetException e, ClientContext context);
 
-	/**
-	 * The actual data delivery goes through CRS.tripPendingKey(). This is just a notification
-	 * for book-keeping purposes. We call the scheduler to tell it that the request succeeded,
-	 * so that it can be rescheduled soon for more requests.
-	 * @param context Might be useful.
-	 */
-	public abstract void onFetchSuccess(ClientContext context);
+    /**
+     * The actual data delivery goes through CRS.tripPendingKey(). This is just a notification
+     * for book-keeping purposes. We call the scheduler to tell it that the request succeeded,
+     * so that it can be rescheduled soon for more requests.
+     * @param context Might be useful.
+     */
+    public abstract void onFetchSuccess(ClientContext context);
 
-	public abstract short getPriority();
-	
-	private boolean sendIsBlocking;
+    public abstract short getPriority();
+    
+    private boolean sendIsBlocking;
 
-	public boolean send(NodeClientCore core, RequestScheduler sched) {
-		ClientContext context = sched.getContext();
-		SendableRequestSender sender = getSender(context);
-		sendIsBlocking = sender.sendIsBlocking();
-		return sender.send(core, sched, context, this);
-	}
-	
-	public abstract SendableRequestSender getSender(ClientContext context);
-	
-	public void onDumped() {
-		token.dump();
-	}
-	
-	public ClientKey getGeneratedKey() {
-		return generatedKey;
-	}
-	
-	public void setGeneratedKey(ClientKey key) {
-		generatedKey = key;
-	}
+    public boolean send(NodeClientCore core, RequestScheduler sched) {
+        ClientContext context = sched.getContext();
+        SendableRequestSender sender = getSender(context);
+        sendIsBlocking = sender.sendIsBlocking();
+        return sender.send(core, sched, context, this);
+    }
+    
+    public abstract SendableRequestSender getSender(ClientContext context);
+    
+    public void onDumped() {
+        token.dump();
+    }
+    
+    public ClientKey getGeneratedKey() {
+        return generatedKey;
+    }
+    
+    public void setGeneratedKey(ClientKey key) {
+        generatedKey = key;
+    }
 
-	/** Call this after send() */
-	public boolean sendIsBlocking() {
-		return sendIsBlocking;
-	}
+    /** Call this after send() */
+    public boolean sendIsBlocking() {
+        return sendIsBlocking;
+    }
 }

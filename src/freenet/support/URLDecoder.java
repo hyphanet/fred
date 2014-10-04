@@ -22,76 +22,76 @@ public class URLDecoder
 {
     // test harness
     public static void main(String[] args) throws URLEncodedFormatException {
-	for (String arg: args) {
-	    System.out.println(arg + " -> " + decode(arg, false));
-	}
+    for (String arg: args) {
+        System.out.println(arg + " -> " + decode(arg, false));
+    }
     }
 
     /**
-	 * Decodes a URLEncoder format string.
-	 *
-	 * @param s String to be translated.
-	 * @param tolerant If true, be tolerant of bogus escapes; bogus escapes are treated as
-	 * just plain characters. Not recommended; a hack to allow users to paste in URLs 
-	 * containing %'s.
-	 * @return the translated String.
-	 *
-	 **/
-	public static String decode(String s, boolean tolerant) throws URLEncodedFormatException {
-		if (s.length() == 0)
-			return "";
-		int len = s.length();
-		ByteArrayOutputStream decodedBytes = new ByteArrayOutputStream();
-		boolean hasDecodedSomething = false;
+     * Decodes a URLEncoder format string.
+     *
+     * @param s String to be translated.
+     * @param tolerant If true, be tolerant of bogus escapes; bogus escapes are treated as
+     * just plain characters. Not recommended; a hack to allow users to paste in URLs 
+     * containing %'s.
+     * @return the translated String.
+     *
+     **/
+    public static String decode(String s, boolean tolerant) throws URLEncodedFormatException {
+        if (s.length() == 0)
+            return "";
+        int len = s.length();
+        ByteArrayOutputStream decodedBytes = new ByteArrayOutputStream();
+        boolean hasDecodedSomething = false;
 
-		for (int i = 0; i < len; i++) {
-			char c = s.charAt(i);
-			if (c == '%') {
-				if (i >= len - 2) {
-					throw new URLEncodedFormatException(s);
-				}
-				char[] hexChars = new char[2];
+        for (int i = 0; i < len; i++) {
+            char c = s.charAt(i);
+            if (c == '%') {
+                if (i >= len - 2) {
+                    throw new URLEncodedFormatException(s);
+                }
+                char[] hexChars = new char[2];
 
-				hexChars[0] = s.charAt(++i);
-				hexChars[1] = s.charAt(++i);
+                hexChars[0] = s.charAt(++i);
+                hexChars[1] = s.charAt(++i);
 
-				String hexval = new String(hexChars);
-				try {
-					long read = Fields.hexToLong(hexval);
-					if (read == 0)
-						throw new URLEncodedFormatException("Can't encode" + " 00");
-					decodedBytes.write((int) read);
-					hasDecodedSomething = true;
-				} catch (NumberFormatException nfe) {
-					// Not encoded?
-					if(tolerant && !hasDecodedSomething) {
-						try {
-							byte[] buf = ('%'+hexval).getBytes("UTF-8");
-							decodedBytes.write(buf, 0, buf.length);
-							continue;
-						} catch (UnsupportedEncodingException e) {
-							throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-						}
-					}
-					
-					throw new URLEncodedFormatException("Not a two character hex % escape: "+hexval+" in "+s);
-				}
-			} else {
-				try {
-					byte[] encoded = String.valueOf(c).getBytes("UTF-8");
-					decodedBytes.write(encoded, 0, encoded.length);
-				} catch (UnsupportedEncodingException e) {
-					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-				}
-			}
-		}
-		try {
-			decodedBytes.close();
-			return new String(decodedBytes.toByteArray(), "utf-8");
-		} catch (IOException ioe1) {
-			/* if this throws something's wrong */
-		}
-		throw new URLEncodedFormatException(s);
-	}
+                String hexval = new String(hexChars);
+                try {
+                    long read = Fields.hexToLong(hexval);
+                    if (read == 0)
+                        throw new URLEncodedFormatException("Can't encode" + " 00");
+                    decodedBytes.write((int) read);
+                    hasDecodedSomething = true;
+                } catch (NumberFormatException nfe) {
+                    // Not encoded?
+                    if(tolerant && !hasDecodedSomething) {
+                        try {
+                            byte[] buf = ('%'+hexval).getBytes("UTF-8");
+                            decodedBytes.write(buf, 0, buf.length);
+                            continue;
+                        } catch (UnsupportedEncodingException e) {
+                            throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+                        }
+                    }
+                    
+                    throw new URLEncodedFormatException("Not a two character hex % escape: "+hexval+" in "+s);
+                }
+            } else {
+                try {
+                    byte[] encoded = String.valueOf(c).getBytes("UTF-8");
+                    decodedBytes.write(encoded, 0, encoded.length);
+                } catch (UnsupportedEncodingException e) {
+                    throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+                }
+            }
+        }
+        try {
+            decodedBytes.close();
+            return new String(decodedBytes.toByteArray(), "utf-8");
+        } catch (IOException ioe1) {
+            /* if this throws something's wrong */
+        }
+        throw new URLEncodedFormatException(s);
+    }
 
 }

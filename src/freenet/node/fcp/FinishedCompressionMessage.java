@@ -12,60 +12,60 @@ import freenet.support.compress.Compressor;
 
 public class FinishedCompressionMessage extends FCPMessage {
 
-	final String identifier;
-	final boolean global;
-	final int codec;
-	final long origSize;
-	final long compressedSize;
+    final String identifier;
+    final boolean global;
+    final int codec;
+    final long origSize;
+    final long compressedSize;
 
-	/**
-	 * zero arg c'tor for db4o on jamvm
-	 */
-	@SuppressWarnings("unused")
-	private FinishedCompressionMessage() {
-		origSize = 0;
-		identifier = null;
-		global = false;
-		compressedSize = 0;
-		codec = 0;
-	}
+    /**
+     * zero arg c'tor for db4o on jamvm
+     */
+    @SuppressWarnings("unused")
+    private FinishedCompressionMessage() {
+        origSize = 0;
+        identifier = null;
+        global = false;
+        compressedSize = 0;
+        codec = 0;
+    }
 
-	public FinishedCompressionMessage(String identifier, boolean global, FinishedCompressionEvent event) {
-		this.identifier = identifier;
-		this.codec = event.codec;
-		this.compressedSize = event.compressedSize;
-		this.origSize = event.originalSize;
-		this.global = global;
-	}
+    public FinishedCompressionMessage(String identifier, boolean global, FinishedCompressionEvent event) {
+        this.identifier = identifier;
+        this.codec = event.codec;
+        this.compressedSize = event.compressedSize;
+        this.origSize = event.originalSize;
+        this.global = global;
+    }
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.putSingle("Identifier", identifier);
-		fs.put("Codec", codec);
-		if(codec != -1)
-			fs.putSingle("Codec.Name", Compressor.COMPRESSOR_TYPE.getCompressorByMetadataID((short)codec).name());
-		else
-			fs.putSingle("Codec.Name", "NONE");
-		fs.put("OriginalSize", origSize);
-		fs.put("CompressedSize", compressedSize);
-		fs.put("Global", global);
-		return fs;
-	}
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet fs = new SimpleFieldSet(true);
+        fs.putSingle("Identifier", identifier);
+        fs.put("Codec", codec);
+        if(codec != -1)
+            fs.putSingle("Codec.Name", Compressor.COMPRESSOR_TYPE.getCompressorByMetadataID((short)codec).name());
+        else
+            fs.putSingle("Codec.Name", "NONE");
+        fs.put("OriginalSize", origSize);
+        fs.put("CompressedSize", compressedSize);
+        fs.put("Global", global);
+        return fs;
+    }
 
-	@Override
-	public String getName() {
-		return "FinishedCompression";
-	}
+    @Override
+    public String getName() {
+        return "FinishedCompression";
+    }
 
-	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "FinishedCompression goes from server to client not the other way around", identifier, global);
-	}
+    @Override
+    public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+        throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "FinishedCompression goes from server to client not the other way around", identifier, global);
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        container.delete(this);
+    }
 
 }

@@ -13,25 +13,25 @@ import freenet.support.Logger;
  */
 public class USKManagerPersistent {
 
-	static void init(USKManager manager, ObjectContainer container, final ClientContext context) {
-		ObjectSet<USKFetcherTag> set = container.query(new Predicate<USKFetcherTag>() {
-			final private static long serialVersionUID = 9150637337019063048L;
-			@Override
-			public boolean match(USKFetcherTag tag) {
-				if(tag.nodeDBHandle != context.nodeDBHandle) return false;
-				if(tag.isFinished()) return false;
-				return true;
-			}
-		});
-		while(set.hasNext()) {
-			try {
-				set.next().start(manager, context, container);
-			} catch (Throwable t) {
-				Logger.error(USKManagerPersistent.class, "USKFetcherTag failed to start - partially removed??? : "+t, t);
-				System.err.println("USKFetcherTag failed to start - partially removed??? : "+t);
-				t.printStackTrace();
-			}
-		}
-	}
+    static void init(USKManager manager, ObjectContainer container, final ClientContext context) {
+        ObjectSet<USKFetcherTag> set = container.query(new Predicate<USKFetcherTag>() {
+            final private static long serialVersionUID = 9150637337019063048L;
+            @Override
+            public boolean match(USKFetcherTag tag) {
+                if(tag.nodeDBHandle != context.nodeDBHandle) return false;
+                if(tag.isFinished()) return false;
+                return true;
+            }
+        });
+        while(set.hasNext()) {
+            try {
+                set.next().start(manager, context, container);
+            } catch (Throwable t) {
+                Logger.error(USKManagerPersistent.class, "USKFetcherTag failed to start - partially removed??? : "+t, t);
+                System.err.println("USKFetcherTag failed to start - partially removed??? : "+t);
+                t.printStackTrace();
+            }
+        }
+    }
 
 }

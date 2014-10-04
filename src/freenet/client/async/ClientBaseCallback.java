@@ -10,9 +10,9 @@ import com.db4o.ObjectContainer;
  * GlobalPersistentClient, implement this somewhere.
  */
 public interface ClientBaseCallback {
-	/**
-	 * Called when freenet.async thinks that the request should be serialized to disk, if it is a
-	 * persistent request.
-	 */
-	public void onMajorProgress(ObjectContainer container);
+    /**
+     * Called when freenet.async thinks that the request should be serialized to disk, if it is a
+     * persistent request.
+     */
+    public void onMajorProgress(ObjectContainer container);
 }

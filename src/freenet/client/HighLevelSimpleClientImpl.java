@@ -38,370 +38,370 @@ import freenet.support.io.PersistentFileTracker;
 
 public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, RequestClient, Cloneable {
 
-	private final short priorityClass;
-	private final BucketFactory bucketFactory;
-	private final BucketFactory persistentBucketFactory;
-	private final PersistentFileTracker persistentFileTracker;
-	private final NodeClientCore core;
-	/** One CEP for all requests and inserts */
-	private final ClientEventProducer eventProducer;
-	private long curMaxLength;
-	private long curMaxTempLength;
-	private int curMaxMetadataLength;
-	private final RandomSource random;
-	private final boolean realTimeFlag;
-	static final int MAX_RECURSION = 10;
-	static final int MAX_ARCHIVE_RESTARTS = 2;
-	static final int MAX_ARCHIVE_LEVELS = 10;
-	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
-	// COOLDOWN_RETRIES-1 so we don't have to wait on the cooldown queue; HLSC is designed
-	// for interactive requests mostly.
-	/** Number of retries allowed per block in a splitfile. */
-	static final int SPLITFILE_BLOCK_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES-1);
-	/** Number of retries allowed on non-splitfile fetches. */
-	static final int NON_SPLITFILE_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES-1);
-	static final int USK_RETRIES = RequestScheduler.COOLDOWN_RETRIES - 1;
-	/** Whether to fetch splitfiles. Don't turn this off! */
-	static final boolean FETCH_SPLITFILES = true;
-	/** Whether to follow redirects etc. If false, we only fetch a plain block of data.
-	 * Don't turn this off either! */
-	static final boolean FOLLOW_REDIRECTS = true;
-	/** If set, only check the local datastore, don't send an actual request out.
-	 * Don't turn this off either. */
-	static final boolean LOCAL_REQUESTS_ONLY = false;
-	/** By default, write to the client cache. Turn this off if you are fetching big stuff. */
-	static final boolean CAN_WRITE_CLIENT_CACHE = true;
-	/** By default, don't write local inserts to the client cache. */
-	static final boolean CAN_WRITE_CLIENT_CACHE_INSERTS = false;
-	/** Number of retries on inserts */
-	static final int INSERT_RETRIES = 10;
-	/** Number of RNFs on insert that make a success, or -1 on large networks */
-	static final int CONSECUTIVE_RNFS_ASSUME_SUCCESS = 2;
-	// going by memory usage only; 4kB per stripe
-	static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 1024;
-	static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 1536;
-	// For scaling purposes, 128 data 128 check blocks i.e. one check block per data block.
-	public static final int SPLITFILE_SCALING_BLOCKS_PER_SEGMENT = 128;
-	/* The number of data blocks in a segment depends on how many segments there are.
-	 * FECCodec.standardOnionCheckBlocks will automatically reduce check blocks to compensate for more than half data blocks. */
-	public static final int SPLITFILE_BLOCKS_PER_SEGMENT = 136;
-	public static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
-	public static final int EXTRA_INSERTS_SINGLE_BLOCK = 2;
-	public static final int EXTRA_INSERTS_SPLITFILE_HEADER = 2;
-	/*Whether or not to filter fetched content*/
-	static final boolean FILTER_DATA = false;
+    private final short priorityClass;
+    private final BucketFactory bucketFactory;
+    private final BucketFactory persistentBucketFactory;
+    private final PersistentFileTracker persistentFileTracker;
+    private final NodeClientCore core;
+    /** One CEP for all requests and inserts */
+    private final ClientEventProducer eventProducer;
+    private long curMaxLength;
+    private long curMaxTempLength;
+    private int curMaxMetadataLength;
+    private final RandomSource random;
+    private final boolean realTimeFlag;
+    static final int MAX_RECURSION = 10;
+    static final int MAX_ARCHIVE_RESTARTS = 2;
+    static final int MAX_ARCHIVE_LEVELS = 10;
+    static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
+    // COOLDOWN_RETRIES-1 so we don't have to wait on the cooldown queue; HLSC is designed
+    // for interactive requests mostly.
+    /** Number of retries allowed per block in a splitfile. */
+    static final int SPLITFILE_BLOCK_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES-1);
+    /** Number of retries allowed on non-splitfile fetches. */
+    static final int NON_SPLITFILE_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES-1);
+    static final int USK_RETRIES = RequestScheduler.COOLDOWN_RETRIES - 1;
+    /** Whether to fetch splitfiles. Don't turn this off! */
+    static final boolean FETCH_SPLITFILES = true;
+    /** Whether to follow redirects etc. If false, we only fetch a plain block of data.
+     * Don't turn this off either! */
+    static final boolean FOLLOW_REDIRECTS = true;
+    /** If set, only check the local datastore, don't send an actual request out.
+     * Don't turn this off either. */
+    static final boolean LOCAL_REQUESTS_ONLY = false;
+    /** By default, write to the client cache. Turn this off if you are fetching big stuff. */
+    static final boolean CAN_WRITE_CLIENT_CACHE = true;
+    /** By default, don't write local inserts to the client cache. */
+    static final boolean CAN_WRITE_CLIENT_CACHE_INSERTS = false;
+    /** Number of retries on inserts */
+    static final int INSERT_RETRIES = 10;
+    /** Number of RNFs on insert that make a success, or -1 on large networks */
+    static final int CONSECUTIVE_RNFS_ASSUME_SUCCESS = 2;
+    // going by memory usage only; 4kB per stripe
+    static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 1024;
+    static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 1536;
+    // For scaling purposes, 128 data 128 check blocks i.e. one check block per data block.
+    public static final int SPLITFILE_SCALING_BLOCKS_PER_SEGMENT = 128;
+    /* The number of data blocks in a segment depends on how many segments there are.
+     * FECCodec.standardOnionCheckBlocks will automatically reduce check blocks to compensate for more than half data blocks. */
+    public static final int SPLITFILE_BLOCKS_PER_SEGMENT = 136;
+    public static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
+    public static final int EXTRA_INSERTS_SINGLE_BLOCK = 2;
+    public static final int EXTRA_INSERTS_SPLITFILE_HEADER = 2;
+    /*Whether or not to filter fetched content*/
+    static final boolean FILTER_DATA = false;
 
-	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
-		this.core = node;
-		this.priorityClass = priorityClass;
-		bucketFactory = bf;
-		this.persistentFileTracker = node.persistentTempBucketFactory;
-		random = r;
-		this.eventProducer = new SimpleEventProducer();
-		eventProducer.addEventListener(new EventLogger(LogLevel.MINOR, false));
-		curMaxLength = Long.MAX_VALUE;
-		curMaxTempLength = Long.MAX_VALUE;
-		curMaxMetadataLength = 1024 * 1024;
-		this.persistentBucketFactory = node.persistentTempBucketFactory;
-		this.realTimeFlag = realTimeFlag;
-	}
+    public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
+        this.core = node;
+        this.priorityClass = priorityClass;
+        bucketFactory = bf;
+        this.persistentFileTracker = node.persistentTempBucketFactory;
+        random = r;
+        this.eventProducer = new SimpleEventProducer();
+        eventProducer.addEventListener(new EventLogger(LogLevel.MINOR, false));
+        curMaxLength = Long.MAX_VALUE;
+        curMaxTempLength = Long.MAX_VALUE;
+        curMaxMetadataLength = 1024 * 1024;
+        this.persistentBucketFactory = node.persistentTempBucketFactory;
+        this.realTimeFlag = realTimeFlag;
+    }
 
-	public HighLevelSimpleClientImpl(HighLevelSimpleClientImpl hlsc) {
-		this.eventProducer = new SimpleEventProducer();
-		this.priorityClass = hlsc.priorityClass;
-		this.bucketFactory = hlsc.bucketFactory;
-		this.persistentBucketFactory = hlsc.persistentBucketFactory;
-		this.persistentFileTracker = hlsc.persistentFileTracker;
-		this.core = hlsc.core;
-		this.curMaxLength = hlsc.curMaxLength;
-		this.curMaxMetadataLength = hlsc.curMaxMetadataLength;
-		this.curMaxTempLength = hlsc.curMaxTempLength;
-		this.random = hlsc.random;
-		this.realTimeFlag = hlsc.realTimeFlag;
-	}
+    public HighLevelSimpleClientImpl(HighLevelSimpleClientImpl hlsc) {
+        this.eventProducer = new SimpleEventProducer();
+        this.priorityClass = hlsc.priorityClass;
+        this.bucketFactory = hlsc.bucketFactory;
+        this.persistentBucketFactory = hlsc.persistentBucketFactory;
+        this.persistentFileTracker = hlsc.persistentFileTracker;
+        this.core = hlsc.core;
+        this.curMaxLength = hlsc.curMaxLength;
+        this.curMaxMetadataLength = hlsc.curMaxMetadataLength;
+        this.curMaxTempLength = hlsc.curMaxTempLength;
+        this.random = hlsc.random;
+        this.realTimeFlag = hlsc.realTimeFlag;
+    }
 
-	@Override
-	public HighLevelSimpleClientImpl clone() {
-		// Cloneable shuts up findbugs, but we need a new SimpleEventProducer().
-		return new HighLevelSimpleClientImpl(this);
-	}
+    @Override
+    public HighLevelSimpleClientImpl clone() {
+        // Cloneable shuts up findbugs, but we need a new SimpleEventProducer().
+        return new HighLevelSimpleClientImpl(this);
+    }
 
-	@Override
-	public void setMaxLength(long maxLength) {
-		curMaxLength = maxLength;
-	}
+    @Override
+    public void setMaxLength(long maxLength) {
+        curMaxLength = maxLength;
+    }
 
-	@Override
-	public void setMaxIntermediateLength(long maxIntermediateLength) {
-		curMaxTempLength = maxIntermediateLength;
-	}
+    @Override
+    public void setMaxIntermediateLength(long maxIntermediateLength) {
+        curMaxTempLength = maxIntermediateLength;
+    }
 
-	/**
-	 * Fetch a key. Either returns the data, or throws an exception.
-	 */
-	@Override
-	public FetchResult fetch(FreenetURI uri) throws FetchException {
-		if(uri == null) throw new NullPointerException();
-		FetchContext context = getFetchContext();
-		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, this, null, null, null);
-		try {
-			core.clientContext.start(get);
-		} catch (DatabaseDisabledException e) {
-			// Impossible
-		}
-		return fw.waitForCompletion();
-	}
+    /**
+     * Fetch a key. Either returns the data, or throws an exception.
+     */
+    @Override
+    public FetchResult fetch(FreenetURI uri) throws FetchException {
+        if(uri == null) throw new NullPointerException();
+        FetchContext context = getFetchContext();
+        FetchWaiter fw = new FetchWaiter();
+        ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, this, null, null, null);
+        try {
+            core.clientContext.start(get);
+        } catch (DatabaseDisabledException e) {
+            // Impossible
+        }
+        return fw.waitForCompletion();
+    }
 
-	/**
-	 * Fetch a key. Either returns the data, or throws an exception.
-	 */
-	@Override
-	public FetchResult fetchFromMetadata(Bucket initialMetadata) throws FetchException {
-		if(initialMetadata == null) throw new NullPointerException();
-		FetchContext context = getFetchContext();
-		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, FreenetURI.EMPTY_CHK_URI, context, priorityClass, this, null, null, initialMetadata);
-		try {
-			core.clientContext.start(get);
-		} catch (DatabaseDisabledException e) {
-			// Impossible
-		}
-		return fw.waitForCompletion();
-	}
+    /**
+     * Fetch a key. Either returns the data, or throws an exception.
+     */
+    @Override
+    public FetchResult fetchFromMetadata(Bucket initialMetadata) throws FetchException {
+        if(initialMetadata == null) throw new NullPointerException();
+        FetchContext context = getFetchContext();
+        FetchWaiter fw = new FetchWaiter();
+        ClientGetter get = new ClientGetter(fw, FreenetURI.EMPTY_CHK_URI, context, priorityClass, this, null, null, initialMetadata);
+        try {
+            core.clientContext.start(get);
+        } catch (DatabaseDisabledException e) {
+            // Impossible
+        }
+        return fw.waitForCompletion();
+    }
 
-	@Override
-	public FetchResult fetch(FreenetURI uri, long overrideMaxSize) throws FetchException {
-		return fetch(uri, overrideMaxSize, this);
-	}
+    @Override
+    public FetchResult fetch(FreenetURI uri, long overrideMaxSize) throws FetchException {
+        return fetch(uri, overrideMaxSize, this);
+    }
 
-	@Override
-	public FetchResult fetch(FreenetURI uri, long overrideMaxSize, RequestClient clientContext) throws FetchException {
-		if(uri == null) throw new NullPointerException();
-		FetchWaiter fw = new FetchWaiter();
-		FetchContext context = getFetchContext(overrideMaxSize);
-		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, clientContext, null, null, null);
-		try {
-			core.clientContext.start(get);
-		} catch (DatabaseDisabledException e) {
-			// Impossible
-		}
-		return fw.waitForCompletion();
-	}
+    @Override
+    public FetchResult fetch(FreenetURI uri, long overrideMaxSize, RequestClient clientContext) throws FetchException {
+        if(uri == null) throw new NullPointerException();
+        FetchWaiter fw = new FetchWaiter();
+        FetchContext context = getFetchContext(overrideMaxSize);
+        ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, clientContext, null, null, null);
+        try {
+            core.clientContext.start(get);
+        } catch (DatabaseDisabledException e) {
+            // Impossible
+        }
+        return fw.waitForCompletion();
+    }
 
-	@Override
-	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx) throws FetchException {
-		return fetch(uri, maxSize, clientContext, callback, fctx, priorityClass);
-	}
+    @Override
+    public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx) throws FetchException {
+        return fetch(uri, maxSize, clientContext, callback, fctx, priorityClass);
+    }
 
-	@Override
-	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
-		return fetch(uri, clientContext, callback, fctx, prio);
-	}
-	
-	@Override
-	public ClientGetter fetch(FreenetURI uri, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
-		if(uri == null) throw new NullPointerException();
-		ClientGetter get = new ClientGetter(callback, uri, fctx, prio, clientContext, null, null, null);
-		try {
-			core.clientContext.start(get);
-		} catch (DatabaseDisabledException e) {
-			// Impossible
-		}
-		return get;
-	}
+    @Override
+    public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
+        return fetch(uri, clientContext, callback, fctx, prio);
+    }
+    
+    @Override
+    public ClientGetter fetch(FreenetURI uri, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
+        if(uri == null) throw new NullPointerException();
+        ClientGetter get = new ClientGetter(callback, uri, fctx, prio, clientContext, null, null, null);
+        try {
+            core.clientContext.start(get);
+        } catch (DatabaseDisabledException e) {
+            // Impossible
+        }
+        return get;
+    }
 
-	@Override
-	public ClientGetter fetchFromMetadata(Bucket initialMetadata, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
-		if(initialMetadata == null) throw new NullPointerException();
-		ClientGetter get = new ClientGetter(callback, FreenetURI.EMPTY_CHK_URI, fctx, prio, clientContext, null, null, initialMetadata);
-		try {
-			core.clientContext.start(get);
-		} catch (DatabaseDisabledException e) {
-			// Impossible
-		}
-		return get;
-	}
+    @Override
+    public ClientGetter fetchFromMetadata(Bucket initialMetadata, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
+        if(initialMetadata == null) throw new NullPointerException();
+        ClientGetter get = new ClientGetter(callback, FreenetURI.EMPTY_CHK_URI, fctx, prio, clientContext, null, null, initialMetadata);
+        try {
+            core.clientContext.start(get);
+        } catch (DatabaseDisabledException e) {
+            // Impossible
+        }
+        return get;
+    }
 
-	@Override
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InsertException {
-		return insert(insert, getCHKOnly, filenameHint, priorityClass);
-	}
-	
-	@Override
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, short priority) throws InsertException {
-		return insert(insert, getCHKOnly, filenameHint, false, priority);
-	}
+    @Override
+    public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InsertException {
+        return insert(insert, getCHKOnly, filenameHint, priorityClass);
+    }
+    
+    @Override
+    public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, short priority) throws InsertException {
+        return insert(insert, getCHKOnly, filenameHint, false, priority);
+    }
 
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority) throws InsertException {
-		InsertContext context = getInsertContext(true);
-		return insert(insert, getCHKOnly, filenameHint, isMetadata, priority, context);
-	}
-	
-	@Override
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, short priority, InsertContext ctx) throws InsertException {
-		return insert(insert, getCHKOnly, filenameHint, false, priority, ctx);
-	}
-	
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority, InsertContext ctx) throws InsertException {
-		return insert(insert, getCHKOnly, filenameHint, isMetadata, priority, ctx, null);
-	}
-	
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority, InsertContext ctx, byte[] forceCryptoKey) throws InsertException {
-		PutWaiter pw = new PutWaiter();
-		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata,
-				ctx, priority,
-				getCHKOnly, isMetadata, this, filenameHint, false, core.clientContext, forceCryptoKey, -1);
-		try {
-			core.clientContext.start(put, false);
-		} catch (DatabaseDisabledException e) {
-			// Impossible
-		}
-		return pw.waitForCompletion();
-	}
+    public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority) throws InsertException {
+        InsertContext context = getInsertContext(true);
+        return insert(insert, getCHKOnly, filenameHint, isMetadata, priority, context);
+    }
+    
+    @Override
+    public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, short priority, InsertContext ctx) throws InsertException {
+        return insert(insert, getCHKOnly, filenameHint, false, priority, ctx);
+    }
+    
+    public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority, InsertContext ctx) throws InsertException {
+        return insert(insert, getCHKOnly, filenameHint, isMetadata, priority, ctx, null);
+    }
+    
+    public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority, InsertContext ctx, byte[] forceCryptoKey) throws InsertException {
+        PutWaiter pw = new PutWaiter();
+        ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata,
+                ctx, priority,
+                getCHKOnly, isMetadata, this, filenameHint, false, core.clientContext, forceCryptoKey, -1);
+        try {
+            core.clientContext.start(put, false);
+        } catch (DatabaseDisabledException e) {
+            // Impossible
+        }
+        return pw.waitForCompletion();
+    }
 
-	@Override
-	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException {
-		return insert(insert, getCHKOnly, filenameHint, isMetadata, ctx, cb, priorityClass);
-	}
-	
-	@Override
-	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb, short priority) throws InsertException {
-		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata,
-				ctx, priority,
-				getCHKOnly, isMetadata, this, filenameHint, false, core.clientContext, null, -1);
-		try {
-			core.clientContext.start(put, false);
-		} catch (DatabaseDisabledException e) {
-			// Impossible
-		}
-		return put;
-	}
+    @Override
+    public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException {
+        return insert(insert, getCHKOnly, filenameHint, isMetadata, ctx, cb, priorityClass);
+    }
+    
+    @Override
+    public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb, short priority) throws InsertException {
+        ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata,
+                ctx, priority,
+                getCHKOnly, isMetadata, this, filenameHint, false, core.clientContext, null, -1);
+        try {
+            core.clientContext.start(put, false);
+        } catch (DatabaseDisabledException e) {
+            // Impossible
+        }
+        return put;
+    }
 
-	@Override
-	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI targetURI) throws InsertException {
-		Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, new ClientMetadata());
-		Bucket b;
-		try {
-			b = BucketTools.makeImmutableBucket(bucketFactory, m.writeToByteArray());
-		} catch (IOException e) {
-			Logger.error(this, "Bucket error: "+e, e);
-			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
-		} catch (MetadataUnresolvedException e) {
-			Logger.error(this, "Impossible error: "+e, e);
-			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
-		}
+    @Override
+    public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI targetURI) throws InsertException {
+        Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, new ClientMetadata());
+        Bucket b;
+        try {
+            b = BucketTools.makeImmutableBucket(bucketFactory, m.writeToByteArray());
+        } catch (IOException e) {
+            Logger.error(this, "Bucket error: "+e, e);
+            throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
+        } catch (MetadataUnresolvedException e) {
+            Logger.error(this, "Impossible error: "+e, e);
+            throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
+        }
 
-		InsertBlock block = new InsertBlock(b, null, insertURI);
-		return insert(block, false, null, true, priorityClass);
-	}
+        InsertBlock block = new InsertBlock(b, null, insertURI);
+        return insert(block, false, null, true, priorityClass);
+    }
 
-	@Override
-	public FreenetURI insertManifest(FreenetURI insertURI, HashMap<String, Object> bucketsByName, String defaultName) throws InsertException {
-		return insertManifest(insertURI, bucketsByName, defaultName, priorityClass);
-	}
+    @Override
+    public FreenetURI insertManifest(FreenetURI insertURI, HashMap<String, Object> bucketsByName, String defaultName) throws InsertException {
+        return insertManifest(insertURI, bucketsByName, defaultName, priorityClass);
+    }
 
-	@Override
-	public FreenetURI insertManifest(FreenetURI insertURI, HashMap<String, Object> bucketsByName, String defaultName, short priorityClass) throws InsertException {
-		return insertManifest(insertURI, bucketsByName, defaultName, priorityClass, null);
-	}
-	
-	@Override
-	public FreenetURI insertManifest(FreenetURI insertURI, HashMap<String, Object> bucketsByName, String defaultName, short priorityClass, byte[] forceCryptoKey) throws InsertException {
-		PutWaiter pw = new PutWaiter();
-		SimpleManifestPutter putter =
-			new SimpleManifestPutter(pw, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, this, false, false, forceCryptoKey, null, core.clientContext);
-		try {
-			core.clientContext.start(putter);
-		} catch (DatabaseDisabledException e) {
-			// Impossible
-		}
-		return pw.waitForCompletion();
-	}
+    @Override
+    public FreenetURI insertManifest(FreenetURI insertURI, HashMap<String, Object> bucketsByName, String defaultName, short priorityClass) throws InsertException {
+        return insertManifest(insertURI, bucketsByName, defaultName, priorityClass, null);
+    }
+    
+    @Override
+    public FreenetURI insertManifest(FreenetURI insertURI, HashMap<String, Object> bucketsByName, String defaultName, short priorityClass, byte[] forceCryptoKey) throws InsertException {
+        PutWaiter pw = new PutWaiter();
+        SimpleManifestPutter putter =
+            new SimpleManifestPutter(pw, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, this, false, false, forceCryptoKey, null, core.clientContext);
+        try {
+            core.clientContext.start(putter);
+        } catch (DatabaseDisabledException e) {
+            // Impossible
+        }
+        return pw.waitForCompletion();
+    }
 
-	@Override
-	public void addEventHook(ClientEventListener listener) {
-		eventProducer.addEventListener(listener);
-	}
+    @Override
+    public void addEventHook(ClientEventListener listener) {
+        eventProducer.addEventListener(listener);
+    }
 
-	@Override
-	public FetchContext getFetchContext() {
-		return getFetchContext(-1);
-	}
+    @Override
+    public FetchContext getFetchContext() {
+        return getFetchContext(-1);
+    }
 
-	@Override
-	public FetchContext getFetchContext(long overrideMaxSize) {
-		long maxLength = curMaxLength;
-		long maxTempLength = curMaxTempLength;
-		if(overrideMaxSize >= 0) {
-			maxLength = overrideMaxSize;
-			maxTempLength = overrideMaxSize;
-		}
-		return
-			new FetchContext(maxLength, maxTempLength, curMaxMetadataLength,
-				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES,
-				SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES, USK_RETRIES,
-				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
-				FILTER_DATA, MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				bucketFactory, eventProducer,
-				false, CAN_WRITE_CLIENT_CACHE, null, null);
-	}
+    @Override
+    public FetchContext getFetchContext(long overrideMaxSize) {
+        long maxLength = curMaxLength;
+        long maxTempLength = curMaxTempLength;
+        if(overrideMaxSize >= 0) {
+            maxLength = overrideMaxSize;
+            maxTempLength = overrideMaxSize;
+        }
+        return
+            new FetchContext(maxLength, maxTempLength, curMaxMetadataLength,
+                MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES,
+                SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES, USK_RETRIES,
+                FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
+                FILTER_DATA, MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
+                bucketFactory, eventProducer,
+                false, CAN_WRITE_CLIENT_CACHE, null, null);
+    }
 
-	@Override
-	public InsertContext getInsertContext(boolean forceNonPersistent) {
-		return new InsertContext(
-				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
-				SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-				eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, EXTRA_INSERTS_SINGLE_BLOCK, EXTRA_INSERTS_SPLITFILE_HEADER, InsertContext.CompatibilityMode.COMPAT_CURRENT);
-	}
+    @Override
+    public InsertContext getInsertContext(boolean forceNonPersistent) {
+        return new InsertContext(
+                INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
+                SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
+                eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, EXTRA_INSERTS_SINGLE_BLOCK, EXTRA_INSERTS_SPLITFILE_HEADER, InsertContext.CompatibilityMode.COMPAT_CURRENT);
+    }
 
-	@Override
-	public FreenetURI[] generateKeyPair(String docName) {
-		InsertableClientSSK key = InsertableClientSSK.createRandom(random, docName);
-		return new FreenetURI[] { key.getInsertURI(), key.getURI() };
-	}
+    @Override
+    public FreenetURI[] generateKeyPair(String docName) {
+        InsertableClientSSK key = InsertableClientSSK.createRandom(random, docName);
+        return new FreenetURI[] { key.getInsertURI(), key.getURI() };
+    }
 
-	private final ClientGetCallback nullCallback = new NullClientCallback();
+    private final ClientGetCallback nullCallback = new NullClientCallback();
 
-	@Override
-	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set<String> allowedTypes) {
-		prefetch(uri, timeout, maxSize, allowedTypes, RequestStarter.PREFETCH_PRIORITY_CLASS);
-	}
+    @Override
+    public void prefetch(FreenetURI uri, long timeout, long maxSize, Set<String> allowedTypes) {
+        prefetch(uri, timeout, maxSize, allowedTypes, RequestStarter.PREFETCH_PRIORITY_CLASS);
+    }
 
-	@Override
-	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set<String> allowedTypes, short prio) {
-		FetchContext ctx = getFetchContext(maxSize);
-		ctx.allowedMIMETypes = allowedTypes;
-		final ClientGetter get = new ClientGetter(nullCallback, uri, ctx, prio, this, new NullBucket(), null, null);
-		core.getTicker().queueTimedJob(new Runnable() {
-			@Override
-			public void run() {
-				get.cancel(null, core.clientContext);
-			}
+    @Override
+    public void prefetch(FreenetURI uri, long timeout, long maxSize, Set<String> allowedTypes, short prio) {
+        FetchContext ctx = getFetchContext(maxSize);
+        ctx.allowedMIMETypes = allowedTypes;
+        final ClientGetter get = new ClientGetter(nullCallback, uri, ctx, prio, this, new NullBucket(), null, null);
+        core.getTicker().queueTimedJob(new Runnable() {
+            @Override
+            public void run() {
+                get.cancel(null, core.clientContext);
+            }
 
-		}, timeout);
-		try {
-			core.clientContext.start(get);
-		} catch (FetchException e) {
-			// Ignore
-		} catch (DatabaseDisabledException e) {
-			// Impossible
-		}
-	}
+        }, timeout);
+        try {
+            core.clientContext.start(get);
+        } catch (FetchException e) {
+            // Ignore
+        } catch (DatabaseDisabledException e) {
+            // Impossible
+        }
+    }
 
-	@Override
-	public boolean persistent() {
-		return false;
-	}
+    @Override
+    public boolean persistent() {
+        return false;
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public boolean realTimeFlag() {
-		return realTimeFlag;
-	}
+    @Override
+    public boolean realTimeFlag() {
+        return realTimeFlag;
+    }
 
 }

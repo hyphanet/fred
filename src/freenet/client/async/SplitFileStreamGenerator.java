@@ -18,47 +18,47 @@ import freenet.support.io.Closer;
  * stream.*/
 public class SplitFileStreamGenerator implements StreamGenerator {
 
-	private final SplitFileFetcherSegment[] segments;
-	private final long length;
-	private final int crossCheckBlocks;
+    private final SplitFileFetcherSegment[] segments;
+    private final long length;
+    private final int crossCheckBlocks;
 
         private static volatile boolean logMINOR;
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+            @Override
+            public void shouldUpdate(){
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
 
-	SplitFileStreamGenerator(SplitFileFetcherSegment[] segments, long length, int crossCheckBlocks) {
-		this.segments = segments;
-		this.length = length;
-		this.crossCheckBlocks = crossCheckBlocks;
-	}
+    SplitFileStreamGenerator(SplitFileFetcherSegment[] segments, long length, int crossCheckBlocks) {
+        this.segments = segments;
+        this.length = length;
+        this.crossCheckBlocks = crossCheckBlocks;
+    }
 
-	@Override
-	public void writeTo(OutputStream os, ObjectContainer container,
-			ClientContext context) throws IOException {
-		try {
-			if(logMINOR) Logger.minor(this, "Generating Stream", new Exception("debug"));
-			long bytesWritten = 0;
-			for(SplitFileFetcherSegment segment : segments) {
-				long max = (length < 0 ? 0 : (length - bytesWritten));
-				bytesWritten += segment.writeDecodedDataTo(os, max, container);
-				if(crossCheckBlocks == 0) segment.fetcherHalfFinished(container);
-			}
-			if(logMINOR) Logger.minor(this, "Stream completely generated", new Exception("debug"));
-			os.close();
-		} finally {
-			Closer.close(os);
-		}
-	}
+    @Override
+    public void writeTo(OutputStream os, ObjectContainer container,
+            ClientContext context) throws IOException {
+        try {
+            if(logMINOR) Logger.minor(this, "Generating Stream", new Exception("debug"));
+            long bytesWritten = 0;
+            for(SplitFileFetcherSegment segment : segments) {
+                long max = (length < 0 ? 0 : (length - bytesWritten));
+                bytesWritten += segment.writeDecodedDataTo(os, max, container);
+                if(crossCheckBlocks == 0) segment.fetcherHalfFinished(container);
+            }
+            if(logMINOR) Logger.minor(this, "Stream completely generated", new Exception("debug"));
+            os.close();
+        } finally {
+            Closer.close(os);
+        }
+    }
 
-	@Override
-	public long size() {
-		return length;
-	}
+    @Override
+    public long size() {
+        return length;
+    }
 
 }

@@ -14,25 +14,25 @@ import freenet.support.SimpleFieldSet;
  */
 public class CloseConnectionDuplicateClientNameMessage extends FCPMessage {
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet(true);
-	}
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        return new SimpleFieldSet(true);
+    }
 
-	@Override
-	public String getName() {
-		return "CloseConnectionDuplicateClientName";
-	}
+    @Override
+    public String getName() {
+        return "CloseConnectionDuplicateClientName";
+    }
 
-	@Override
-	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "CloseConnectionDuplicateClientName goes from server to client not the other way around", null, false);
-	}
+    @Override
+    public void run(FCPConnectionHandler handler, Node node)
+            throws MessageInvalidException {
+        throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "CloseConnectionDuplicateClientName goes from server to client not the other way around", null, false);
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        container.delete(this);
+    }
 
 }

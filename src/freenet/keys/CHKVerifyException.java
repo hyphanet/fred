@@ -5,11 +5,11 @@ package freenet.keys;
 
 /**
  * @author amphibian
- * 
+ *
  * Exception thrown when a CHK doesn't verify.
  */
 public class CHKVerifyException extends KeyVerifyException {
-	private static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -1;
 
     public CHKVerifyException() {
         super();

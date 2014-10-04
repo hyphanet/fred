@@ -25,13 +25,13 @@ import freenet.support.io.FileUtil;
 import freenet.support.io.TrivialPaddedBucket;
 
 public class PluginStores {
-    
+
     final Node node;
     private final ProgramDirectory pluginStoresDir;
-    
+
     public PluginStores(Node node, SubConfig installConfig) throws NodeInitException {
         this.node = node;
-        pluginStoresDir = node.setupProgramDir(installConfig, "pluginStoresDir", "plugin-data", 
+        pluginStoresDir = node.setupProgramDir(installConfig, "pluginStoresDir", "plugin-data",
                 "NodeClientCore.pluginStoresDir", "NodeClientCore.pluginStoresDir", null, null);
         if(!pluginStoresDir.dir().mkdirs()) {
             System.err.println("Unable to create folder for plugin data: "+pluginStoresDir.dir());
@@ -59,8 +59,8 @@ public class PluginStores {
             migratePluginStores(container, psc);
         }
     }
-    
-    /** Migrate a single PluginStore from the database to on disk 
+
+    /** Migrate a single PluginStore from the database to on disk
      * @throws IOException */
     public void migratePluginStores(ObjectContainer container, PluginStoreContainer psc) {
         try {
@@ -86,7 +86,7 @@ public class PluginStores {
             os.close();
         }
     }
-    
+
     private File getPluginStoreFile(String storeIdentifier, boolean encrypted, boolean backup) {
         String filename = storeIdentifier;
         filename += ".data";
@@ -97,7 +97,7 @@ public class PluginStores {
         return pluginStoresDir.file(filename);
     }
 
-    private Bucket makePluginStoreBucket(String storeIdentifier, boolean isEncrypted, boolean backup) 
+    private Bucket makePluginStoreBucket(String storeIdentifier, boolean isEncrypted, boolean backup)
     throws FileNotFoundException {
         File f = getPluginStoreFile(storeIdentifier, isEncrypted, backup);
         Bucket bucket = new FileBucket(f, false, true, false, false, false);
@@ -112,8 +112,8 @@ public class PluginStores {
         }
         return bucket;
     }
-    
-    private Bucket findPluginStoreBucket(String storeIdentifier, boolean isEncrypted, boolean backup) 
+
+    private Bucket findPluginStoreBucket(String storeIdentifier, boolean isEncrypted, boolean backup)
     throws FileNotFoundException {
         File f = getPluginStoreFile(storeIdentifier, isEncrypted, backup);
         if(!f.exists()) return null;
@@ -142,7 +142,7 @@ public class PluginStores {
         store = loadPluginStore(storeIdentifier, isEncrypted, true);
         return store;
     }
-    
+
     private PluginStore loadPluginStore(String storeIdentifier, boolean isEncrypted, boolean backup) {
         Bucket bucket;
         try {

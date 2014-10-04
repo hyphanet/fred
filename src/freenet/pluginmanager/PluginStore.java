@@ -23,99 +23,99 @@ import freenet.support.SimpleFieldSet;
  * @author Artefact2
  */
 public class PluginStore {
-	public final HashMap<String, PluginStore> subStores = new HashMap<String, PluginStore>();
-	public final HashMap<String, Long> longs = new HashMap<String, Long>();
-	public final HashMap<String, long[]> longsArrays = new HashMap<String, long[]>();
-	public final HashMap<String, Integer> integers = new HashMap<String, Integer>();
-	public final HashMap<String, int[]> integersArrays = new HashMap<String, int[]>();
-	public final HashMap<String, Short> shorts = new HashMap<String, Short>();
-	public final HashMap<String, short[]> shortsArrays = new HashMap<String, short[]>();
-	public final HashMap<String, Boolean> booleans = new HashMap<String, Boolean>();
-	public final HashMap<String, boolean[]> booleansArrays = new HashMap<String, boolean[]>();
-	public final HashMap<String, Byte> bytes = new HashMap<String, Byte>();
-	public final HashMap<String, byte[]> bytesArrays = new HashMap<String, byte[]>();
-	public final HashMap<String, String> strings = new HashMap<String, String>();
-	public final HashMap<String, String[]> stringsArrays = new HashMap<String, String[]>();
-	
-	public PluginStore() {
-	    // Default constructor. See below for constructor from SFS.
-	}
-	
-	public byte[] exportStore() {
-		Configuration conf = Db4o.newConfiguration();
-		MemoryIoAdapter mia = new MemoryIoAdapter();
-		conf.io(mia);
-		ObjectContainer o = Db4o.openFile(conf, "Export");
-		PluginStoreContainer psc = new PluginStoreContainer();
-		psc.pluginStore = this;
-		o.ext().store(psc, Integer.MAX_VALUE);
-		o.commit();
-		o.close();
-		return mia.get("Export");
-	}
+    public final HashMap<String, PluginStore> subStores = new HashMap<String, PluginStore>();
+    public final HashMap<String, Long> longs = new HashMap<String, Long>();
+    public final HashMap<String, long[]> longsArrays = new HashMap<String, long[]>();
+    public final HashMap<String, Integer> integers = new HashMap<String, Integer>();
+    public final HashMap<String, int[]> integersArrays = new HashMap<String, int[]>();
+    public final HashMap<String, Short> shorts = new HashMap<String, Short>();
+    public final HashMap<String, short[]> shortsArrays = new HashMap<String, short[]>();
+    public final HashMap<String, Boolean> booleans = new HashMap<String, Boolean>();
+    public final HashMap<String, boolean[]> booleansArrays = new HashMap<String, boolean[]>();
+    public final HashMap<String, Byte> bytes = new HashMap<String, Byte>();
+    public final HashMap<String, byte[]> bytesArrays = new HashMap<String, byte[]>();
+    public final HashMap<String, String> strings = new HashMap<String, String>();
+    public final HashMap<String, String[]> stringsArrays = new HashMap<String, String[]>();
 
-	public static PluginStore importStore(byte[] exportedStore) {
-		Configuration conf = Db4o.newConfiguration();
-		MemoryIoAdapter mia = new MemoryIoAdapter();
-		conf.io(mia);
-		mia.put("Import", exportedStore);
-		ObjectContainer o = Db4o.openFile(conf, "Import");
-		ObjectSet<PluginStoreContainer> query = o.query(PluginStoreContainer.class);
-		if(query.size() > 0) {
-			o.activate(query.get(0), Integer.MAX_VALUE);
-			PluginStore ret = ((PluginStoreContainer) query.get(0)).pluginStore;
-			o.close();
-			return ret;
-		} else {
-			o.close();
-			return null;
-		}
-	}
-	
-	public SimpleFieldSet exportStoreAsSFS() {
-	    SimpleFieldSet fs = new SimpleFieldSet(true, true);
-	    for(Map.Entry<String, PluginStore> entry : subStores.entrySet()) {
-	        fs.put("substore."+encode(entry.getKey()), entry.getValue().exportStoreAsSFS());
-	    }
-	    for(Map.Entry<String, Long> entry : longs.entrySet()) {
-	        fs.put("long."+encode(entry.getKey()), entry.getValue());
-	    }
-	    for(Map.Entry<String, long[]> entry : longsArrays.entrySet()) {
-	        fs.put("longs."+encode(entry.getKey()), entry.getValue());
-	    }
-	    for(Map.Entry<String, Integer> entry : integers.entrySet()) {
-	        fs.put("integer."+encode(entry.getKey()), entry.getValue());
-	    }
-	    for(Map.Entry<String, int[]> entry : integersArrays.entrySet()) {
-	        fs.put("integers."+encode(entry.getKey()), entry.getValue());
-	    }
-	    for(Map.Entry<String, Short> entry : shorts.entrySet()) {
-	        fs.put("short."+encode(entry.getKey()), entry.getValue());
-	    }
-	    for(Map.Entry<String, short[]> entry : shortsArrays.entrySet()) {
-	        fs.put("shorts."+encode(entry.getKey()), entry.getValue());
-	    }
-	    for(Map.Entry<String, Byte> entry : bytes.entrySet()) {
-	        fs.put("byte."+encode(entry.getKey()), entry.getValue());
-	    }
-	    for(Map.Entry<String, byte[]> entry : bytesArrays.entrySet()) {
-	        fs.put("bytes."+encode(entry.getKey()), entry.getValue());
-	    }
+    public PluginStore() {
+        // Default constructor. See below for constructor from SFS.
+    }
+
+    public byte[] exportStore() {
+        Configuration conf = Db4o.newConfiguration();
+        MemoryIoAdapter mia = new MemoryIoAdapter();
+        conf.io(mia);
+        ObjectContainer o = Db4o.openFile(conf, "Export");
+        PluginStoreContainer psc = new PluginStoreContainer();
+        psc.pluginStore = this;
+        o.ext().store(psc, Integer.MAX_VALUE);
+        o.commit();
+        o.close();
+        return mia.get("Export");
+    }
+
+    public static PluginStore importStore(byte[] exportedStore) {
+        Configuration conf = Db4o.newConfiguration();
+        MemoryIoAdapter mia = new MemoryIoAdapter();
+        conf.io(mia);
+        mia.put("Import", exportedStore);
+        ObjectContainer o = Db4o.openFile(conf, "Import");
+        ObjectSet<PluginStoreContainer> query = o.query(PluginStoreContainer.class);
+        if(query.size() > 0) {
+            o.activate(query.get(0), Integer.MAX_VALUE);
+            PluginStore ret = ((PluginStoreContainer) query.get(0)).pluginStore;
+            o.close();
+            return ret;
+        } else {
+            o.close();
+            return null;
+        }
+    }
+
+    public SimpleFieldSet exportStoreAsSFS() {
+        SimpleFieldSet fs = new SimpleFieldSet(true, true);
+        for(Map.Entry<String, PluginStore> entry : subStores.entrySet()) {
+            fs.put("substore."+encode(entry.getKey()), entry.getValue().exportStoreAsSFS());
+        }
+        for(Map.Entry<String, Long> entry : longs.entrySet()) {
+            fs.put("long."+encode(entry.getKey()), entry.getValue());
+        }
+        for(Map.Entry<String, long[]> entry : longsArrays.entrySet()) {
+            fs.put("longs."+encode(entry.getKey()), entry.getValue());
+        }
+        for(Map.Entry<String, Integer> entry : integers.entrySet()) {
+            fs.put("integer."+encode(entry.getKey()), entry.getValue());
+        }
+        for(Map.Entry<String, int[]> entry : integersArrays.entrySet()) {
+            fs.put("integers."+encode(entry.getKey()), entry.getValue());
+        }
+        for(Map.Entry<String, Short> entry : shorts.entrySet()) {
+            fs.put("short."+encode(entry.getKey()), entry.getValue());
+        }
+        for(Map.Entry<String, short[]> entry : shortsArrays.entrySet()) {
+            fs.put("shorts."+encode(entry.getKey()), entry.getValue());
+        }
+        for(Map.Entry<String, Byte> entry : bytes.entrySet()) {
+            fs.put("byte."+encode(entry.getKey()), entry.getValue());
+        }
+        for(Map.Entry<String, byte[]> entry : bytesArrays.entrySet()) {
+            fs.put("bytes."+encode(entry.getKey()), entry.getValue());
+        }
         for(Map.Entry<String, Boolean> entry : booleans.entrySet()) {
             fs.put("boolean."+encode(entry.getKey()), entry.getValue());
         }
         for(Map.Entry<String, boolean[]> entry : booleansArrays.entrySet()) {
             fs.put("booleans."+encode(entry.getKey()), entry.getValue());
         }
-	    for(Map.Entry<String, String> entry : strings.entrySet()) {
-	        fs.putSingle("string."+encode(entry.getKey()), entry.getValue());
-	    }
-	    for(Map.Entry<String, String[]> entry : stringsArrays.entrySet()) {
-	        fs.putEncoded("strings."+encode(entry.getKey()), entry.getValue());
-	    }
-	    return fs;
-	}
-	
+        for(Map.Entry<String, String> entry : strings.entrySet()) {
+            fs.putSingle("string."+encode(entry.getKey()), entry.getValue());
+        }
+        for(Map.Entry<String, String[]> entry : stringsArrays.entrySet()) {
+            fs.putEncoded("strings."+encode(entry.getKey()), entry.getValue());
+        }
+        return fs;
+    }
+
     public PluginStore(SimpleFieldSet sfs) throws IllegalBase64Exception, FSParseException {
         SimpleFieldSet group = sfs.subset("substore");
         if(group != null) {
@@ -197,13 +197,13 @@ public class PluginStore {
         }
     }
 
-	private static final String encode(String s) {
-	    return Base64.encodeUTF8(s);
-	}
-	
-	private static final String decode(String s) throws IllegalBase64Exception {
-	    return Base64.decodeUTF8(s);
-	}
+    private static final String encode(String s) {
+        return Base64.encodeUTF8(s);
+    }
+
+    private static final String decode(String s) throws IllegalBase64Exception {
+        return Base64.decodeUTF8(s);
+    }
 
     public void removeFrom(ObjectContainer container) {
         for(PluginStore s : subStores.values()) {

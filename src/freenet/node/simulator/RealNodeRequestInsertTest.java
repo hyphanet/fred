@@ -73,12 +73,12 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     public static final int DARKNET_PORT_BASE = 10000;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
-	public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException {
+    public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException {
         String name = "realNodeRequestInsertTest";
         File wd = new File(name);
         if(!FileUtil.removeAll(wd)) {
-        	System.err.println("Mass delete failed, test may not be accurate.");
-        	System.exit(EXIT_CANNOT_DELETE_OLD_DATA);
+            System.err.println("Mass delete failed, test may not be accurate.");
+            System.exit(EXIT_CANNOT_DELETE_OLD_DATA);
         }
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
@@ -96,7 +96,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, DISABLE_PROBABILISTIC_HTLS, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, BWLIMIT, ENABLE_FOAF, false, true, USE_SLASHDOT_CACHE, null);
+                NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, DISABLE_PROBABILISTIC_HTLS, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, BWLIMIT, ENABLE_FOAF, false, true, USE_SLASHDOT_CACHE, null);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         
@@ -124,10 +124,10 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         
         while(true) {
             try {
-    			waitForAllConnected(nodes);
-    			int status = tester.insertRequestTest();
-    			if(status == -1) continue;
-    			System.exit(status);
+                waitForAllConnected(nodes);
+                int status = tester.insertRequestTest();
+                if(status == -1) continue;
+                System.exit(status);
             } catch (Throwable t) {
                 Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
             }
@@ -135,32 +135,32 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     }
 
     public RealNodeRequestInsertTest(Node[] nodes, DummyRandomSource random, int targetSuccesses) {
-    	this.nodes = nodes;
-    	this.random = random;
-    	this.targetSuccesses = targetSuccesses;
-	}
+        this.nodes = nodes;
+        this.random = random;
+        this.targetSuccesses = targetSuccesses;
+    }
 
     private final Node[] nodes;
     private final RandomSource random;
     private int requestNumber = 0;
     private RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
     private String baseString = System.currentTimeMillis() + " ";
-	private int insertAttempts = 0;
-	private int fetchSuccesses = 0;
-	private final int targetSuccesses;
+    private int insertAttempts = 0;
+    private int fetchSuccesses = 0;
+    private final int targetSuccesses;
 
-	/**
-	 * @param nodes
-	 * @param random
-	 * @return -1 to continue or an exit code (0 or positive for an error).
-	 * @throws CHKEncodeException
-	 * @throws InvalidCompressionCodecException
-	 * @throws SSKEncodeException
-	 * @throws IOException
-	 * @throws KeyDecodeException
-	 */
-	int insertRequestTest() throws CHKEncodeException, InvalidCompressionCodecException, SSKEncodeException, IOException, KeyDecodeException {
-		
+    /**
+     * @param nodes
+     * @param random
+     * @return -1 to continue or an exit code (0 or positive for an error).
+     * @throws CHKEncodeException
+     * @throws InvalidCompressionCodecException
+     * @throws SSKEncodeException
+     * @throws IOException
+     * @throws KeyDecodeException
+     */
+    int insertRequestTest() throws CHKEncodeException, InvalidCompressionCodecException, SSKEncodeException, IOException, KeyDecodeException {
+        
         requestNumber++;
         try {
             Thread.sleep(100);
@@ -180,18 +180,18 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         ClientKey fetchKey;
         ClientKeyBlock block;
         
-    	byte[] buf = dataString.getBytes("UTF-8");
+        byte[] buf = dataString.getBytes("UTF-8");
         if(isSSK) {
-        	testKey = new FreenetURI("KSK", dataString);
-        	
-        	insertKey = InsertableClientSSK.create(testKey);
-        	fetchKey = ClientKSK.create(testKey);
-        	
-        	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, false);
+            testKey = new FreenetURI("KSK", dataString);
+            
+            insertKey = InsertableClientSSK.create(testKey);
+            fetchKey = ClientKSK.create(testKey);
+            
+            block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, false);
         } else {
-        	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, false);
-        	insertKey = fetchKey = block.getClientKey();
-        	testKey = insertKey.getURI();
+            block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, false);
+            insertKey = fetchKey = block.getClientKey();
+            testKey = insertKey.getURI();
         }
         
         System.err.println();
@@ -202,15 +202,15 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(block.memoryDecode(), "UTF-8"));
         Logger.normal(RealNodeRequestInsertTest.class,"Insert Key: "+insertKey.getURI());
         Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: "+fetchKey.getURI());
-		try {
-			insertAttempts++;
-			randomNode.clientCore.realPut(block.getBlock(), false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
-			Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
-		} catch (freenet.node.LowLevelPutException putEx) {
-			Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
-			System.err.println("Insert failed: "+ putEx);
-			return EXIT_INSERT_FAILED;
-		}
+        try {
+            insertAttempts++;
+            randomNode.clientCore.realPut(block.getBlock(), false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
+            Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
+        } catch (freenet.node.LowLevelPutException putEx) {
+            Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
+            System.err.println("Insert failed: "+ putEx);
+            return EXIT_INSERT_FAILED;
+        }
         // Pick random node to request from
         int node2;
         do {
@@ -218,12 +218,12 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         } while(node2 == node1);
         Node fetchNode = nodes[node2];
         try {
-        	block = fetchNode.clientCore.realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
+            block = fetchNode.clientCore.realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
         } catch (LowLevelGetException e) {
-        	block = null;
+            block = null;
         }
         if(block == null) {
-			int percentSuccess=100*fetchSuccesses/insertAttempts;
+            int percentSuccess=100*fetchSuccesses/insertAttempts;
             Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
             System.err.println("Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
             requestsAvg.report(0.0);
@@ -231,13 +231,13 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             byte[] results = block.memoryDecode();
             requestsAvg.report(1.0);
             if(Arrays.equals(results, data)) {
-				fetchSuccesses++;
-				int percentSuccess=100*fetchSuccesses/insertAttempts;
+                fetchSuccesses++;
+                int percentSuccess=100*fetchSuccesses/insertAttempts;
                 Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" from node "+node2+" succeeded ("+percentSuccess+"%): "+new String(results));
                 System.err.println("Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): \""+new String(results)+'\"');
                 if(fetchSuccesses == targetSuccesses) {
-                	System.err.println("Succeeded, "+targetSuccesses+" successful fetches");
-                	return 0;
+                    System.err.println("Succeeded, "+targetSuccesses+" successful fetches");
+                    return 0;
                 }
             } else {
                 Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
@@ -249,21 +249,21 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         int totalRunningUIDsAlt = 0;
         List<Long> runningUIDsList = new ArrayList<Long>();
         for(int i=0;i<nodes.length;i++) {
-        	load.append(i);
-        	load.append(':');
-        	nodes[i].tracker.addRunningUIDs(runningUIDsList);
-        	int runningUIDsAlt = nodes[i].tracker.getTotalRunningUIDsAlt();
-        	totalRunningUIDsAlt += runningUIDsAlt;
-        	load.append(totalRunningUIDsAlt);
-        	if(i != nodes.length-1)
-        		load.append(' ');
+            load.append(i);
+            load.append(':');
+            nodes[i].tracker.addRunningUIDs(runningUIDsList);
+            int runningUIDsAlt = nodes[i].tracker.getTotalRunningUIDsAlt();
+            totalRunningUIDsAlt += runningUIDsAlt;
+            load.append(totalRunningUIDsAlt);
+            if(i != nodes.length-1)
+                load.append(' ');
         }
         System.err.println(load.toString());
         if(totalRunningUIDsAlt != 0)
-        	System.err.println("Still running UIDs (alt): "+totalRunningUIDsAlt);
+            System.err.println("Still running UIDs (alt): "+totalRunningUIDsAlt);
         if(!runningUIDsList.isEmpty()) {
-        	System.err.println("List of running UIDs: "+Arrays.toString(runningUIDsList.toArray()));
+            System.err.println("List of running UIDs: "+Arrays.toString(runningUIDsList.toArray()));
         }
         return -1;
-	}
+    }
 }

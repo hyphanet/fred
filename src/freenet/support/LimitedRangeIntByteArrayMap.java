@@ -17,16 +17,16 @@ import freenet.support.Logger.LogLevel;
  */
 public class LimitedRangeIntByteArrayMap {
 
-	private static volatile boolean logMINOR;
+    private static volatile boolean logMINOR;
 
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+            @Override
+            public void shouldUpdate(){
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
     private final HashMap<Integer, LimitedRangeIntByteArrayMapElement> contents;
     private int minValue;
     private int maxValue;
@@ -71,22 +71,22 @@ public class LimitedRangeIntByteArrayMap {
         else return -1;
     }
     
-	public short getPriority(int index, short defaultValue) {
+    public short getPriority(int index, short defaultValue) {
         Integer i = index;
         LimitedRangeIntByteArrayMapElement wrapper = contents.get(i);
         if(wrapper != null)
             return wrapper.priority;
         else return defaultValue;
-	}
-	
+    }
+    
     /**
      * Get the time at which an index was re-added last.
      */
     public synchronized long getReaddedTime(int index) {
-    	LimitedRangeIntByteArrayMapElement wrapper = contents.get(index);
-    	if(wrapper != null)
-    		return wrapper.reputTime;
-    	else return -1;
+        LimitedRangeIntByteArrayMapElement wrapper = contents.get(index);
+        if(wrapper != null)
+            return wrapper.reputTime;
+        else return -1;
     }
     
     /**
@@ -95,7 +95,7 @@ public class LimitedRangeIntByteArrayMap {
      * of range.
      */
     public synchronized boolean add(int index, byte[] data, AsyncMessageCallback[] callbacks, short priority) {
-    	if(logMINOR) Logger.minor(this, toString()+" add "+index);
+        if(logMINOR) Logger.minor(this, toString()+" add "+index);
         if(maxValue == -1) {
             minValue = index;
             maxValue = index;
@@ -112,11 +112,11 @@ public class LimitedRangeIntByteArrayMap {
         }
         if(data == null) throw new NullPointerException();
         Integer idx = index;
-		LimitedRangeIntByteArrayMapElement le = contents.get(idx);
+        LimitedRangeIntByteArrayMapElement le = contents.get(idx);
         if(le == null)
-        	contents.put(idx, new LimitedRangeIntByteArrayMapElement(idx, data, callbacks, priority));
+            contents.put(idx, new LimitedRangeIntByteArrayMapElement(idx, data, callbacks, priority));
         else
-        	le.reput();
+            le.reput();
         notifyAll();
         return true;
     }
@@ -143,19 +143,19 @@ public class LimitedRangeIntByteArrayMap {
         while(true) {
             wait();
             if(flag != oldFlag) {
-            	if(logMINOR) Logger.minor(this, "Interrupted");
-            	throw new InterruptedException();
+                if(logMINOR) Logger.minor(this, "Interrupted");
+                throw new InterruptedException();
             }
             if((index - minValue < maxRange) || (minValue == -1)) {
-            	if(logMINOR) Logger.minor(this, "index="+index+", minValue="+minValue+", maxRange="+maxRange+" - returning");
-            	return;
+                if(logMINOR) Logger.minor(this, "index="+index+", minValue="+minValue+", maxRange="+maxRange+" - returning");
+                return;
             }
         }
     }
     
     public boolean wouldBlock(int index) {
-    	if(minValue == -1) return false;
-    	return (index - minValue >= maxRange);
+        if(minValue == -1) return false;
+        return (index - minValue >= maxRange);
     }
     
     /**
@@ -173,7 +173,7 @@ public class LimitedRangeIntByteArrayMap {
      * @return true if we removed something.
      */
     public synchronized boolean remove(int index) {
-    	if(logMINOR) Logger.minor(this, "Removing "+index+" - min="+minValue+" max="+maxValue);
+        if(logMINOR) Logger.minor(this, "Removing "+index+" - min="+minValue+" max="+maxValue);
         if (contents.remove(index) != null) {
             if((index > minValue) && (index < maxValue)) return true;
             if(contents.size() == 0) {
@@ -221,7 +221,7 @@ public class LimitedRangeIntByteArrayMap {
         byte[][] output = new byte[len][];
         int count = 0;
         for (LimitedRangeIntByteArrayMapElement o : contents.values()) {
-			output[count++] = o.data;
+            output[count++] = o.data;
         }
         clear();
         return output;
@@ -231,7 +231,7 @@ public class LimitedRangeIntByteArrayMap {
         int len = contents.size();
         LimitedRangeIntByteArrayMapElement[] output = new LimitedRangeIntByteArrayMapElement[len];
         int count = 0;
-		for(LimitedRangeIntByteArrayMapElement e: contents.values()) {
+        for(LimitedRangeIntByteArrayMapElement e: contents.values()) {
             output[count++] = e;
         }
         clear();

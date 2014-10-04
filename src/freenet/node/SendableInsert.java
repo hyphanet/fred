@@ -19,56 +19,56 @@ import freenet.support.io.NativeThread;
  */
 public abstract class SendableInsert extends SendableRequest {
 
-	/**
-	 * zero arg c'tor for db4o on jamvm
-	 */
-	protected SendableInsert() {
-	}
+    /**
+     * zero arg c'tor for db4o on jamvm
+     */
+    protected SendableInsert() {
+    }
 
-	public SendableInsert(boolean persistent, boolean realTimeFlag) {
-		super(persistent, realTimeFlag);
-	}
-	
-	/** Called when we successfully insert the data */
-	public abstract void onSuccess(Object keyNum, ObjectContainer container, ClientContext context);
-	
-	/** Called when we don't! */
-	public abstract void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context);
+    public SendableInsert(boolean persistent, boolean realTimeFlag) {
+        super(persistent, realTimeFlag);
+    }
+    
+    /** Called when we successfully insert the data */
+    public abstract void onSuccess(Object keyNum, ObjectContainer container, ClientContext context);
+    
+    /** Called when we don't! */
+    public abstract void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context);
 
-	@Override
-	public void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
-		Logger.error(this, "Internal error on "+this+" : "+t, t);
-		sched.callFailure(this, new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, t.getMessage(), t), NativeThread.MAX_PRIORITY, persistent);
-	}
+    @Override
+    public void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
+        Logger.error(this, "Internal error on "+this+" : "+t, t);
+        sched.callFailure(this, new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, t.getMessage(), t), NativeThread.MAX_PRIORITY, persistent);
+    }
 
-	@Override
-	public final boolean isInsert() {
-		return true;
-	}
-	
-	@Override
-	public ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context) {
-		if(isSSK())
-			return context.getSskInsertScheduler(realTimeFlag);
-		else
-			return context.getChkInsertScheduler(realTimeFlag);
-	}
+    @Override
+    public final boolean isInsert() {
+        return true;
+    }
+    
+    @Override
+    public ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context) {
+        if(isSSK())
+            return context.getSskInsertScheduler(realTimeFlag);
+        else
+            return context.getChkInsertScheduler(realTimeFlag);
+    }
 
-	public abstract boolean canWriteClientCache(ObjectContainer container);
-	
-	public abstract boolean localRequestOnly(ObjectContainer container);
+    public abstract boolean canWriteClientCache(ObjectContainer container);
+    
+    public abstract boolean localRequestOnly(ObjectContainer container);
 
-	public abstract boolean forkOnCacheable(ObjectContainer container);
+    public abstract boolean forkOnCacheable(ObjectContainer container);
 
-	/** Encoded a key */
-	public abstract void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context);
-	
-	public abstract boolean isEmpty(ObjectContainer container);
-	
-	@Override
-	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
-		if(isEmpty(container)) return -1;
-		return 0;
-	}
+    /** Encoded a key */
+    public abstract void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context);
+    
+    public abstract boolean isEmpty(ObjectContainer container);
+    
+    @Override
+    public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
+        if(isEmpty(container)) return -1;
+        return 0;
+    }
 
 }

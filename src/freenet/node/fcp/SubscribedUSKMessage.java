@@ -20,38 +20,38 @@ import freenet.support.SimpleFieldSet;
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 public class SubscribedUSKMessage extends FCPMessage {
-	public static final String name = "SubscribedUSK";
-	
-	public final SubscribeUSKMessage message;
-	
-	SubscribedUSKMessage(SubscribeUSKMessage m) {
-		this.message = m;
-	}
-	
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.putSingle("Identifier", message.identifier);
-		sfs.putSingle("URI", message.key.getURI().toString());
-		sfs.put("DontPoll", message.dontPoll);
-		
-		return sfs;
-	}
+    public static final String name = "SubscribedUSK";
+    
+    public final SubscribeUSKMessage message;
+    
+    SubscribedUSKMessage(SubscribeUSKMessage m) {
+        this.message = m;
+    }
+    
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putSingle("Identifier", message.identifier);
+        sfs.putSingle("URI", message.key.getURI().toString());
+        sfs.put("DontPoll", message.dontPoll);
+        
+        return sfs;
+    }
 
-	@Override
-	public String getName() {
-		return name;
-	}
+    @Override
+    public String getName() {
+        return name;
+    }
 
-	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, name + " goes from server to client not the other way around", name, false);
-	}
+    @Override
+    public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+        throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, name + " goes from server to client not the other way around", name, false);
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.activate(message, 1);
-		message.removeFrom(container);	// FIXME this is throwing UnsupportedOperationException
-		container.delete(this);
-	}
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        container.activate(message, 1);
+        message.removeFrom(container);    // FIXME this is throwing UnsupportedOperationException
+        container.delete(this);
+    }
 }

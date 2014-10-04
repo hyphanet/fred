@@ -20,7 +20,7 @@ public class LimitedRangeIntByteArrayMapElement {
     public final short priority;
     long reputTime;
     
-	public void reput() {
-		this.reputTime = System.currentTimeMillis();
-	}
+    public void reput() {
+        this.reputTime = System.currentTimeMillis();
+    }
 }

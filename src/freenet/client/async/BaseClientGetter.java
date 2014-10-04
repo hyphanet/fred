@@ -6,10 +6,10 @@ package freenet.client.async;
 import freenet.node.RequestClient;
 
 public abstract class BaseClientGetter extends ClientRequester implements
-		GetCompletionCallback {
-	
-	protected BaseClientGetter(short priorityClass, RequestClient client) {
-		super(priorityClass, client);
-	}
+        GetCompletionCallback {
+    
+    protected BaseClientGetter(short priorityClass, RequestClient client) {
+        super(priorityClass, client);
+    }
 
 }

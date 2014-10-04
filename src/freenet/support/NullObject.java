@@ -10,7 +10,7 @@ package freenet.support;
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS/
 public class NullObject {
-	
-	// Nothing
+    
+    // Nothing
 
 }

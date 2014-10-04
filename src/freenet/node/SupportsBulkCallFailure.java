@@ -9,7 +9,7 @@ import freenet.client.async.ClientContext;
  * @author toad
  */
 public interface SupportsBulkCallFailure {
-	
-	/** Process a whole batch of failures at once. */
-	public abstract void onFailure(BulkCallFailureItem[] items, ObjectContainer container, ClientContext context);
+    
+    /** Process a whole batch of failures at once. */
+    public abstract void onFailure(BulkCallFailureItem[] items, ObjectContainer container, ClientContext context);
 }

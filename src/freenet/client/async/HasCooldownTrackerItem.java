@@ -6,7 +6,7 @@ package freenet.client.async;
  */
 public interface HasCooldownTrackerItem {
 
-	/** Construct a new CooldownTrackerItem. Called inside CooldownTracker lock. */
-	CooldownTrackerItem makeCooldownTrackerItem();
+    /** Construct a new CooldownTrackerItem. Called inside CooldownTracker lock. */
+    CooldownTrackerItem makeCooldownTrackerItem();
 
 }

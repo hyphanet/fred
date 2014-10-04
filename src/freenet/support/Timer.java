@@ -29,123 +29,123 @@ import java.util.concurrent.TimeUnit;
  * @author zidel
  */
 public final class Timer {
-	private final long startTime;
-	private final boolean isSubTimer;
+    private final long startTime;
+    private final boolean isSubTimer;
 
-	private final List<Timer> subTimers = new LinkedList<Timer>();
+    private final List<Timer> subTimers = new LinkedList<Timer>();
 
-	private String logMessage;
-	private boolean logAtWarning = false;
+    private String logMessage;
+    private boolean logAtWarning = false;
 
-	private Timer(boolean isSubTimer) {
-		startTime = System.nanoTime();
-		this.isSubTimer = isSubTimer;
-	}
+    private Timer(boolean isSubTimer) {
+        startTime = System.nanoTime();
+        this.isSubTimer = isSubTimer;
+    }
 
-	/** Create a Timer */
-	public static Timer start() {
-		return new Timer(false);
-	}
+    /** Create a Timer */
+    public static Timer start() {
+        return new Timer(false);
+    }
 
-	/** Get time elapsed since the Timer was created */
-	public long getTime() {
-		long cur = System.nanoTime();
-		return Math.abs(cur - startTime);
-	}
+    /** Get time elapsed since the Timer was created */
+    public long getTime() {
+        long cur = System.nanoTime();
+        return Math.abs(cur - startTime);
+    }
 
-	public void log(Class<?> c, String message) {
-		long time = getTime();
-		logMessage = message + ": " + time + "ns";
+    public void log(Class<?> c, String message) {
+        long time = getTime();
+        logMessage = message + ": " + time + "ns";
 
-		if(!isSubTimer) {
-			log(c);
-		}
-	}
+        if(!isSubTimer) {
+            log(c);
+        }
+    }
 
-	public void log(Object o, String message) {
-		long time = getTime();
-		logMessage = message + ": " + time + "ns";
+    public void log(Object o, String message) {
+        long time = getTime();
+        logMessage = message + ": " + time + "ns";
 
-		if(!isSubTimer) {
-			log(o);
-		}
-	}
+        if(!isSubTimer) {
+            log(o);
+        }
+    }
 
-	/** Log the time taken since construction. If it exceeds a threshold given, log at warning 
-	 * level rather than minor.
-	 * @param c The class to log as.
-	 * @param warningThreshold The threshold i.e. minimum amount of time to log at WARNING.
-	 * @param unit The unit of time the threshold is measured in.
-	 * @param message Message to log.
-	 */
-	public void log(Class<?> c, long warningThreshold, TimeUnit unit, String message) {
-		long time = getTime();
-		logMessage = message + ": " + time + "ns";
+    /** Log the time taken since construction. If it exceeds a threshold given, log at warning 
+     * level rather than minor.
+     * @param c The class to log as.
+     * @param warningThreshold The threshold i.e. minimum amount of time to log at WARNING.
+     * @param unit The unit of time the threshold is measured in.
+     * @param message Message to log.
+     */
+    public void log(Class<?> c, long warningThreshold, TimeUnit unit, String message) {
+        long time = getTime();
+        logMessage = message + ": " + time + "ns";
 
-		if(time >= unit.toNanos(warningThreshold)) {
-			logAtWarning = true;
-		}
+        if(time >= unit.toNanos(warningThreshold)) {
+            logAtWarning = true;
+        }
 
-		if(!isSubTimer) {
-			log(c);
-		}
-	}
+        if(!isSubTimer) {
+            log(c);
+        }
+    }
 
-	/** Log the time taken since construction. If it exceeds a threshold given, log at warning 
-	 * level rather than minor.
-	 * @param c The object to log.
-	 * @param warningThreshold The threshold i.e. minimum amount of time to log at WARNING.
-	 * @param unit The unit of time the threshold is measured in.
-	 * @param message Message to log.
-	 */
-	public void log(Object o, long warningThreshold, TimeUnit unit, String message) {
-		long time = getTime();
-		logMessage = message + ": " + time + "ns";
+    /** Log the time taken since construction. If it exceeds a threshold given, log at warning 
+     * level rather than minor.
+     * @param c The object to log.
+     * @param warningThreshold The threshold i.e. minimum amount of time to log at WARNING.
+     * @param unit The unit of time the threshold is measured in.
+     * @param message Message to log.
+     */
+    public void log(Object o, long warningThreshold, TimeUnit unit, String message) {
+        long time = getTime();
+        logMessage = message + ": " + time + "ns";
 
-		if(time >= unit.toNanos(warningThreshold)) {
-			logAtWarning = true;
-		}
+        if(time >= unit.toNanos(warningThreshold)) {
+            logAtWarning = true;
+        }
 
-		if(!isSubTimer) {
-			log(o);
-		}
-	}
+        if(!isSubTimer) {
+            log(o);
+        }
+    }
 
-	/** Create a sub-timer. If the parent exceeds its time limit, the sub-timers will also be 
-	 * logged at warning level, whether or not they have exceeded their own thresholds. */
-	public Timer startSubTimer() {
-		Timer t = new Timer(true);
-		subTimers.add(t);
-		return t;
-	}
+    /** Create a sub-timer. If the parent exceeds its time limit, the sub-timers will also be 
+     * logged at warning level, whether or not they have exceeded their own thresholds. */
+    public Timer startSubTimer() {
+        Timer t = new Timer(true);
+        subTimers.add(t);
+        return t;
+    }
 
-	private void log(Class<?> c) {
-		for(Timer t : subTimers) {
-			if(logAtWarning) {
-				t.logAtWarning = true;
-			}
-			t.log(c);
-		}
+    private void log(Class<?> c) {
+        for(Timer t : subTimers) {
+            if(logAtWarning) {
+                t.logAtWarning = true;
+            }
+            t.log(c);
+        }
 
-		if(logAtWarning) {
-			Logger.warning(c, logMessage);
-		} else {
-			Logger.minor(c, logMessage);
-		}
-	}
+        if(logAtWarning) {
+            Logger.warning(c, logMessage);
+        } else {
+            Logger.minor(c, logMessage);
+        }
+    }
 
-	private void log(Object o) {
-		for(Timer t : subTimers) {
-			if(logAtWarning) {
-				t.logAtWarning = true;
-			}
-			t.log(o);
-		}
+    private void log(Object o) {
+        for(Timer t : subTimers) {
+            if(logAtWarning) {
+                t.logAtWarning = true;
+            }
+            t.log(o);
+        }
 
-		if(logAtWarning) {
-			Logger.warning(o, logMessage);
-		} else {
-			Logger.minor(o, logMessage);
-		}
-	}
+        if(logAtWarning) {
+            Logger.warning(o, logMessage);
+        } else {
+            Logger.minor(o, logMessage);
+        }
+    }
 }

@@ -7,13 +7,13 @@ package freenet.node;
  * key class for checking quickly whether something is queued you will need real equals() and 
  * hashCode() methods. */
 public interface SendableRequestItemKey {
-	
-	/** You must implement this! */
-	@Override
-	public boolean equals(Object o);
-	
-	@Override
-	/** You must implement this! */
-	public int hashCode();
+    
+    /** You must implement this! */
+    @Override
+    public boolean equals(Object o);
+    
+    @Override
+    /** You must implement this! */
+    public int hashCode();
 
 }

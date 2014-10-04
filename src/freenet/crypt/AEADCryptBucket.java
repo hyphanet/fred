@@ -10,18 +10,18 @@ import com.db4o.ObjectContainer;
 import freenet.node.NodeStarter;
 import freenet.support.api.Bucket;
 
-/** Encrypted and authenticated Bucket implementation using AES cipher and OCB mode. Warning: 
- * Avoid using Closer.close() on InputStream's opened on this Bucket. The MAC is only checked when 
+/** Encrypted and authenticated Bucket implementation using AES cipher and OCB mode. Warning:
+ * Avoid using Closer.close() on InputStream's opened on this Bucket. The MAC is only checked when
  * the end of the bucket is reached, which may be in read() or may be in close().
  * @author toad
  */
 public class AEADCryptBucket implements Bucket {
-    
+
     private final Bucket underlying;
     private final byte[] key;
     private boolean readOnly;
     static final int OVERHEAD = AEADOutputStream.AES_OVERHEAD;
-    
+
     public AEADCryptBucket(Bucket underlying, byte[] key) {
         this.underlying = underlying;
         this.key = Arrays.copyOf(key, key.length);
@@ -79,7 +79,7 @@ public class AEADCryptBucket implements Bucket {
         underlying.removeFrom(container);
         container.delete(this);
     }
-    
+
     @Override
     public Bucket createShadow() {
         Bucket undershadow = underlying.createShadow();

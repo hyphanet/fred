@@ -4,14 +4,14 @@
 package freenet.io.comm;
 
 public class IncomingPacketFilterException extends Exception {
-	private static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -1;
 
-	public IncomingPacketFilterException(String string) {
-		super(string);
-	}
+    public IncomingPacketFilterException(String string) {
+        super(string);
+    }
 
-	public IncomingPacketFilterException() {
-		super();
-	}
+    public IncomingPacketFilterException() {
+        super();
+    }
 
 }

@@ -13,35 +13,35 @@ import freenet.support.Logger;
  */
 public class TransientSendableRequestSet implements SendableRequestSet {
 
-	private final HashSet<SendableRequest> set;
-	
-	TransientSendableRequestSet() {
-		set = new HashSet<SendableRequest>();
-	}
-	
-	@Override
-	public synchronized boolean addRequest(SendableRequest req, ObjectContainer container) {
-		return set.add(req);
-	}
+    private final HashSet<SendableRequest> set;
+    
+    TransientSendableRequestSet() {
+        set = new HashSet<SendableRequest>();
+    }
+    
+    @Override
+    public synchronized boolean addRequest(SendableRequest req, ObjectContainer container) {
+        return set.add(req);
+    }
 
-	@Override
-	public synchronized SendableRequest[] listRequests(ObjectContainer container) {
-		return set.toArray(new SendableRequest[set.size()]);
-	}
+    @Override
+    public synchronized SendableRequest[] listRequests(ObjectContainer container) {
+        return set.toArray(new SendableRequest[set.size()]);
+    }
 
-	@Override
-	public synchronized boolean removeRequest(SendableRequest req, ObjectContainer container) {
-		return set.remove(req);
-	}
+    @Override
+    public synchronized boolean removeRequest(SendableRequest req, ObjectContainer container) {
+        return set.remove(req);
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-	
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing TransientSendableRequestSet in database", new Exception("error"));
-		return false;
-	}
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        throw new UnsupportedOperationException();
+    }
+    
+    public boolean objectCanNew(ObjectContainer container) {
+        Logger.error(this, "Not storing TransientSendableRequestSet in database", new Exception("error"));
+        return false;
+    }
 
 }

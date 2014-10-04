@@ -25,19 +25,19 @@ import freenet.support.Logger.LogLevel;
  */
 public final class TimeDecayingRunningAverage implements RunningAverage, Cloneable {
 
-	private static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -1;
     static final int MAGIC = 0x5ff4ac94;
     
     @Override
-	public final TimeDecayingRunningAverage clone() {
-    	// Override clone to synchronize, as per comments in RunningAverage.
-    	// Implement Cloneable to shut up findbugs.
-    	synchronized(this) {
-    		return new TimeDecayingRunningAverage(this);
-    	}
+    public final TimeDecayingRunningAverage clone() {
+        // Override clone to synchronize, as per comments in RunningAverage.
+        // Implement Cloneable to shut up findbugs.
+        synchronized(this) {
+            return new TimeDecayingRunningAverage(this);
+        }
     }
     
-	double curValue;
+    double curValue;
     final double halfLife;
     long lastReportTime;
     long createdTime;
@@ -50,15 +50,15 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
     private final TimeSkewDetectorCallback timeSkewCallback;
     
     @Override
-	public String toString() {
-		long now = System.currentTimeMillis();
-		synchronized(this) {
-		return super.toString() + ": currentValue="+curValue+", halfLife="+halfLife+
-			", lastReportTime="+(now - lastReportTime)+
-			"ms ago, createdTime="+(now - createdTime)+
-			"ms ago, totalReports="+totalReports+", started="+started+
-			", defaultValue="+defaultValue+", min="+minReport+", max="+maxReport;
-		}
+    public String toString() {
+        long now = System.currentTimeMillis();
+        synchronized(this) {
+        return super.toString() + ": currentValue="+curValue+", halfLife="+halfLife+
+            ", lastReportTime="+(now - lastReportTime)+
+            "ms ago, createdTime="+(now - createdTime)+
+            "ms ago, totalReports="+totalReports+", started="+started+
+            ", defaultValue="+defaultValue+", min="+minReport+", max="+maxReport;
+        }
     }
     
     /**
@@ -71,7 +71,7 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
      */
     public TimeDecayingRunningAverage(double defaultValue, long halfLife,
             double min, double max, TimeSkewDetectorCallback callback) {
-    	curValue = defaultValue;
+        curValue = defaultValue;
         this.defaultValue = defaultValue;
         started = false;
         this.halfLife = halfLife;
@@ -81,8 +81,8 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
         totalReports = 0;
         logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
         if(logDEBUG)
-        	Logger.debug(this, "Created "+this,
-        			new Exception("debug"));
+            Logger.debug(this, "Created "+this,
+                    new Exception("debug"));
         this.timeSkewCallback = callback;
     }
     
@@ -97,7 +97,7 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
      */
     public TimeDecayingRunningAverage(double defaultValue, long halfLife,
             double min, double max, SimpleFieldSet fs, TimeSkewDetectorCallback callback) {
-    	curValue = defaultValue;
+        curValue = defaultValue;
         this.defaultValue = defaultValue;
         started = false;
         this.halfLife = halfLife;
@@ -108,22 +108,22 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
         totalReports = 0;
         logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
         if(logDEBUG)
-        	Logger.debug(this, "Created "+this,
-        			new Exception("debug"));
+            Logger.debug(this, "Created "+this,
+                    new Exception("debug"));
         if(fs != null) {
-        	started = fs.getBoolean("Started", false);
-        	if(started) {
-        		curValue = fs.getDouble("CurrentValue", curValue);
-        		if(curValue > maxReport || curValue < minReport || Double.isNaN(curValue)) {
-        			curValue = defaultValue;
-        			totalReports = 0;
-        			createdTime = System.currentTimeMillis();
-        		} else {
-        			totalReports = fs.getLong("TotalReports", 0);
-            		long uptime = fs.getLong("Uptime", 0);
-            		createdTime = System.currentTimeMillis() - uptime;
-        		}
-        	}
+            started = fs.getBoolean("Started", false);
+            if(started) {
+                curValue = fs.getDouble("CurrentValue", curValue);
+                if(curValue > maxReport || curValue < minReport || Double.isNaN(curValue)) {
+                    curValue = defaultValue;
+                    totalReports = 0;
+                    createdTime = System.currentTimeMillis();
+                } else {
+                    totalReports = fs.getLong("TotalReports", 0);
+                    long uptime = fs.getLong("Uptime", 0);
+                    createdTime = System.currentTimeMillis() - uptime;
+                }
+            }
         }
         this.timeSkewCallback = callback;
     }
@@ -184,7 +184,7 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
      */
     @Override
     public synchronized double currentValue() {
-    	return curValue;
+        return curValue;
     }
 
     /**
@@ -193,75 +193,75 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
      */
     @Override
     public void report(double d) {
-		synchronized(this) {
-			// Must synchronize first to achieve serialization.
-			long now = System.currentTimeMillis();
-			if(d < minReport) {
-				Logger.error(this, "Impossible: "+d+" on "+this, new Exception("error"));
-				return;
-			}
-			if(d > maxReport) {
-				Logger.error(this, "Impossible: "+d+" on "+this, new Exception("error"));
-				return;
-			}
-			if(Double.isInfinite(d) || Double.isNaN(d)) {
-				Logger.error(this, "Reported infinity or NaN to "+this+" : "+d, new Exception("error"));
-				return;
-			}
-			totalReports++;
-			if(!started) {
-				curValue = d;
-				started = true;
-				if(logDEBUG)
-					Logger.debug(this, "Reported "+d+" on "+this+" when just started");
-			} else if(lastReportTime != -1) { // might be just serialized in
-				long thisInterval =
-					 now - lastReportTime;
-				long uptime = now - createdTime;
-				if(thisInterval < 0) {
-					Logger.error(this, "Clock (reporting) went back in time, ignoring report: "+now+" was "+lastReportTime+" (back "+(-thisInterval)+"ms)");
-					lastReportTime = now;
-					if(timeSkewCallback != null)
-						timeSkewCallback.setTimeSkewDetectedUserAlert();
-					return;
-				}
-				double thisHalfLife = halfLife;
-				if(uptime < 0) {
-					Logger.error(this, "Clock (uptime) went back in time, ignoring report: "+now+" was "+createdTime+" (back "+(-uptime)+"ms)");
-					if(timeSkewCallback != null)
-						timeSkewCallback.setTimeSkewDetectedUserAlert();
-					return;
-				// Disable sensitivity hack.
-				// Excessive sensitivity at start isn't necessarily a good thing.
-				// In particular it makes the average inconsistent - 20 reports of 0 at 1s intervals have a *different* effect to 10 reports of 0 at 2s intervals!
-				// Also it increases the impact of startup spikes, which then take a long time to recover from.
-				//} else {
-					//double oneFourthOfUptime = uptime / 4D;
-					//if(oneFourthOfUptime < thisHalfLife) thisHalfLife = oneFourthOfUptime;
-				}
-				
-				if(thisHalfLife == 0) thisHalfLife = 1;
-				double changeFactor =
-					Math.pow(0.5, (thisInterval) / thisHalfLife);
-				double oldCurValue = curValue;
-				curValue = curValue * changeFactor /* close to 1.0 if short interval, close to 0.0 if long interval */ 
-					+ (1.0 - changeFactor) * d;
-				// FIXME remove when stop getting reports of wierd output values
-				if(curValue < minReport || curValue > maxReport) {
-					Logger.error(this, "curValue="+curValue+" was "+oldCurValue+" - out of range");
-					curValue = oldCurValue;
-				}
-				if(logDEBUG)
-					Logger.debug(this, "Reported "+d+" on "+this+": thisInterval="+thisInterval+
-							", halfLife="+halfLife+", uptime="+uptime+", thisHalfLife="+thisHalfLife+
-							", changeFactor="+changeFactor+", oldCurValue="+oldCurValue+
-							", currentValue="+currentValue()+
-							", thisInterval="+thisInterval+", thisHalfLife="+thisHalfLife+
-							", uptime="+uptime+", changeFactor="+changeFactor);
-			}
-			lastReportTime = now;
-		}
-	}
+        synchronized(this) {
+            // Must synchronize first to achieve serialization.
+            long now = System.currentTimeMillis();
+            if(d < minReport) {
+                Logger.error(this, "Impossible: "+d+" on "+this, new Exception("error"));
+                return;
+            }
+            if(d > maxReport) {
+                Logger.error(this, "Impossible: "+d+" on "+this, new Exception("error"));
+                return;
+            }
+            if(Double.isInfinite(d) || Double.isNaN(d)) {
+                Logger.error(this, "Reported infinity or NaN to "+this+" : "+d, new Exception("error"));
+                return;
+            }
+            totalReports++;
+            if(!started) {
+                curValue = d;
+                started = true;
+                if(logDEBUG)
+                    Logger.debug(this, "Reported "+d+" on "+this+" when just started");
+            } else if(lastReportTime != -1) { // might be just serialized in
+                long thisInterval =
+                     now - lastReportTime;
+                long uptime = now - createdTime;
+                if(thisInterval < 0) {
+                    Logger.error(this, "Clock (reporting) went back in time, ignoring report: "+now+" was "+lastReportTime+" (back "+(-thisInterval)+"ms)");
+                    lastReportTime = now;
+                    if(timeSkewCallback != null)
+                        timeSkewCallback.setTimeSkewDetectedUserAlert();
+                    return;
+                }
+                double thisHalfLife = halfLife;
+                if(uptime < 0) {
+                    Logger.error(this, "Clock (uptime) went back in time, ignoring report: "+now+" was "+createdTime+" (back "+(-uptime)+"ms)");
+                    if(timeSkewCallback != null)
+                        timeSkewCallback.setTimeSkewDetectedUserAlert();
+                    return;
+                // Disable sensitivity hack.
+                // Excessive sensitivity at start isn't necessarily a good thing.
+                // In particular it makes the average inconsistent - 20 reports of 0 at 1s intervals have a *different* effect to 10 reports of 0 at 2s intervals!
+                // Also it increases the impact of startup spikes, which then take a long time to recover from.
+                //} else {
+                    //double oneFourthOfUptime = uptime / 4D;
+                    //if(oneFourthOfUptime < thisHalfLife) thisHalfLife = oneFourthOfUptime;
+                }
+                
+                if(thisHalfLife == 0) thisHalfLife = 1;
+                double changeFactor =
+                    Math.pow(0.5, (thisInterval) / thisHalfLife);
+                double oldCurValue = curValue;
+                curValue = curValue * changeFactor /* close to 1.0 if short interval, close to 0.0 if long interval */ 
+                    + (1.0 - changeFactor) * d;
+                // FIXME remove when stop getting reports of wierd output values
+                if(curValue < minReport || curValue > maxReport) {
+                    Logger.error(this, "curValue="+curValue+" was "+oldCurValue+" - out of range");
+                    curValue = oldCurValue;
+                }
+                if(logDEBUG)
+                    Logger.debug(this, "Reported "+d+" on "+this+": thisInterval="+thisInterval+
+                            ", halfLife="+halfLife+", uptime="+uptime+", thisHalfLife="+thisHalfLife+
+                            ", changeFactor="+changeFactor+", oldCurValue="+oldCurValue+
+                            ", currentValue="+currentValue()+
+                            ", thisInterval="+thisInterval+", thisHalfLife="+thisHalfLife+
+                            ", uptime="+uptime+", changeFactor="+changeFactor);
+            }
+            lastReportTime = now;
+        }
+    }
 
         /**
          *
@@ -283,16 +283,16 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
      * @throws IOException
      */
     public void writeDataTo(DataOutputStream out) throws IOException {
-		long now = System.currentTimeMillis();
-		synchronized(this) {
-			out.writeInt(MAGIC);
-			out.writeInt(1);
-			out.writeDouble(curValue);
-			out.writeBoolean(started);
-			out.writeLong(totalReports);
-			out.writeLong(now - createdTime);
-		}
-	}
+        long now = System.currentTimeMillis();
+        synchronized(this) {
+            out.writeInt(MAGIC);
+            out.writeInt(1);
+            out.writeDouble(curValue);
+            out.writeBoolean(started);
+            out.writeLong(totalReports);
+            out.writeLong(now - createdTime);
+        }
+    }
 
     /**
      *
@@ -312,8 +312,8 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
      * @return
      */
     public synchronized long lastReportTime() {
-		return lastReportTime;
-	}
+        return lastReportTime;
+    }
 
     /**
      *
@@ -321,12 +321,12 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
      * @return
      */
     public synchronized SimpleFieldSet exportFieldSet(boolean shortLived) {
-		SimpleFieldSet fs = new SimpleFieldSet(shortLived);
-		fs.putSingle("Type", "TimeDecayingRunningAverage");
-		fs.put("CurrentValue", curValue);
-		fs.put("Started", started);
-		fs.put("TotalReports", totalReports);
-		fs.put("Uptime", System.currentTimeMillis() - createdTime);
-		return fs;
-	}
+        SimpleFieldSet fs = new SimpleFieldSet(shortLived);
+        fs.putSingle("Type", "TimeDecayingRunningAverage");
+        fs.put("CurrentValue", curValue);
+        fs.put("Started", started);
+        fs.put("TotalReports", totalReports);
+        fs.put("Uptime", System.currentTimeMillis() - createdTime);
+        return fs;
+    }
 }

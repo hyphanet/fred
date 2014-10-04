@@ -16,44 +16,44 @@ import freenet.support.SimpleFieldSet;
  */
 public class ClientHelloMessage extends FCPMessage {
 
-	public final static String NAME = "ClientHello";
-	String clientName;
-	String clientExpectedVersion;
-	
-	public ClientHelloMessage(SimpleFieldSet fs) throws MessageInvalidException {
-		clientName = fs.get("Name");
-		clientExpectedVersion = fs.get("ExpectedVersion");
-		if(clientName == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "ClientHello must contain a Name field", null, false);
-		if(clientExpectedVersion == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "ClientHello must contain a ExpectedVersion field", null, false);
-		// FIXME check the expected version
-	}
+    public final static String NAME = "ClientHello";
+    String clientName;
+    String clientExpectedVersion;
+    
+    public ClientHelloMessage(SimpleFieldSet fs) throws MessageInvalidException {
+        clientName = fs.get("Name");
+        clientExpectedVersion = fs.get("ExpectedVersion");
+        if(clientName == null)
+            throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "ClientHello must contain a Name field", null, false);
+        if(clientExpectedVersion == null)
+            throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "ClientHello must contain a ExpectedVersion field", null, false);
+        // FIXME check the expected version
+    }
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.putSingle("Name", clientName);
-		sfs.putSingle("ExpectedVersion", clientExpectedVersion);
-		return sfs;
-	}
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putSingle("Name", clientName);
+        sfs.putSingle("ExpectedVersion", clientExpectedVersion);
+        return sfs;
+    }
 
-	@Override
-	public String getName() {
-		return NAME;
-	}
+    @Override
+    public String getName() {
+        return NAME;
+    }
 
-	@Override
-	public void run(FCPConnectionHandler handler, Node node) {
-		// We know the Hello is valid.
-		FCPMessage msg = new NodeHelloMessage(handler.connectionIdentifier);
-		handler.outputHandler.queue(msg);
-		handler.setClientName(clientName);
-	}
+    @Override
+    public void run(FCPConnectionHandler handler, Node node) {
+        // We know the Hello is valid.
+        FCPMessage msg = new NodeHelloMessage(handler.connectionIdentifier);
+        handler.outputHandler.queue(msg);
+        handler.setClientName(clientName);
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        container.delete(this);
+    }
 
 }

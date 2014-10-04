@@ -9,33 +9,33 @@ import freenet.node.SendableRequest;
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class RegisterMe {
-	final SendableRequest nonGetRequest;
-	final ClientRequestSchedulerCore core;
-	final long addedTime;
-	final short priority;
-	/**
-	 * Only set if the key is on the queue.
-	 */
-	final long bootID;
-	private final int hashCode;
-	public final BlockSet blocks;
-	
-	RegisterMe(SendableRequest nonGetRequest, short prio, ClientRequestSchedulerCore core, BlockSet blocks, long bootID) {
-		this.bootID = bootID;
-		this.core = core;
-		this.nonGetRequest = nonGetRequest;
-		priority = prio;
-		addedTime = System.currentTimeMillis();
-		this.blocks = blocks;
-		int hash = core.hashCode();
-		hash ^= nonGetRequest.hashCode();
-		hash *= prio;
-		hashCode = hash;
-	}
-	
-	@Override
-	public int hashCode() {
-		return hashCode;
-	}
+    final SendableRequest nonGetRequest;
+    final ClientRequestSchedulerCore core;
+    final long addedTime;
+    final short priority;
+    /**
+     * Only set if the key is on the queue.
+     */
+    final long bootID;
+    private final int hashCode;
+    public final BlockSet blocks;
+    
+    RegisterMe(SendableRequest nonGetRequest, short prio, ClientRequestSchedulerCore core, BlockSet blocks, long bootID) {
+        this.bootID = bootID;
+        this.core = core;
+        this.nonGetRequest = nonGetRequest;
+        priority = prio;
+        addedTime = System.currentTimeMillis();
+        this.blocks = blocks;
+        int hash = core.hashCode();
+        hash ^= nonGetRequest.hashCode();
+        hash *= prio;
+        hashCode = hash;
+    }
+    
+    @Override
+    public int hashCode() {
+        return hashCode;
+    }
 }
 

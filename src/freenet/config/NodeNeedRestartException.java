@@ -10,8 +10,8 @@ package freenet.config;
  */
 @SuppressWarnings("serial")
 public class NodeNeedRestartException extends ConfigException {
-	public NodeNeedRestartException(String msg) {
-		super(msg);
-	}
+    public NodeNeedRestartException(String msg) {
+        super(msg);
+    }
 
 }
