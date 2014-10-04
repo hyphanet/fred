@@ -18,36 +18,36 @@ import freenet.pluginmanager.FredPluginBaseL10n;
  */
 public class PluginL10n {
 
-	private BaseL10n b;
+    private BaseL10n b;
 
-	/**
-	 * Create a new PluginL10n object using the node's selected
-	 * language.
-	 * @param plugin Plugin to use.
-	 */
-	public PluginL10n(FredPluginBaseL10n plugin) {
-		this(plugin, NodeL10n.getBase().getSelectedLanguage());
-	}
+    /**
+     * Create a new PluginL10n object using the node's selected
+     * language.
+     * @param plugin Plugin to use.
+     */
+    public PluginL10n(FredPluginBaseL10n plugin) {
+        this(plugin, NodeL10n.getBase().getSelectedLanguage());
+    }
 
-	/**
-	 * Create a new PluginL10n object.
-	 *
-	 * Note : you should call this once in your main plugin class, then
-	 * store it somewhere static.
-	 * @param plugin Plugin to use.
-	 * @param lang Language to use.
-	 */
-	public PluginL10n(FredPluginBaseL10n plugin, final LANGUAGE lang) {
-		this.b = new BaseL10n(plugin.getL10nFilesBasePath(),
-				plugin.getL10nFilesMask(), plugin.getL10nOverrideFilesMask()
-				, lang, plugin.getPluginClassLoader());
-	}
+    /**
+     * Create a new PluginL10n object.
+     *
+     * Note : you should call this once in your main plugin class, then
+     * store it somewhere static.
+     * @param plugin Plugin to use.
+     * @param lang Language to use.
+     */
+    public PluginL10n(FredPluginBaseL10n plugin, final LANGUAGE lang) {
+        this.b = new BaseL10n(plugin.getL10nFilesBasePath(),
+                plugin.getL10nFilesMask(), plugin.getL10nOverrideFilesMask()
+                , lang, plugin.getPluginClassLoader());
+    }
 
-	/**
-	 * Get the BaseL10n object used by this Plugin.
-	 * @return BaseL10n
-	 */
-	public BaseL10n getBase() {
-		return this.b;
-	}
+    /**
+     * Get the BaseL10n object used by this Plugin.
+     * @return BaseL10n
+     */
+    public BaseL10n getBase() {
+        return this.b;
+    }
 }
