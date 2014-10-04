@@ -128,7 +128,7 @@ public class NativeBigInteger extends BigInteger {
     private static String resolveCPUType() {
 
         try {
-            
+
             String _os_arch = System.getProperty("os.arch").toLowerCase();
 
             if(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")
@@ -136,17 +136,17 @@ public class NativeBigInteger extends BigInteger {
                     && System.getProperty("sun.arch.data.model").equals("64"))
             {
                 return JBIGI_OPTIMIZATION_X86_64;
-                
+
             } else if(_os_arch.matches("(arm)"))
             {
                 System.out.println("Detected ARM!");
                 return JBIGI_OPTIMIZATION_ARM;
-                
+
             } else if(_os_arch.matches("(ppc)"))
             {
                 System.out.println("Detected PowerPC!");
                 return JBIGI_OPTIMIZATION_PPC;
-                
+
             } else {
                 CPUInfo c = CPUID.getInfo();
                 if(c instanceof AMDCPUInfo) {
