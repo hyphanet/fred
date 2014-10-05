@@ -297,6 +297,8 @@ public class NodeStarter implements WrapperListener {
      *            - It allows you to specify a seed which you then can print to stdout so randomized
      *               unit tests are reproducible.<br>
      *            - It should be a lot faster than Yarrow.<br> 
+     * @return If you passed a {@link RandomSource}, the same one is returned. Otherwise, a new
+     *         {@link Yarrow} is returned.
 	 */
     public static RandomSource globalTestInit(File baseDirectory, boolean enablePlug,
             LogLevel logThreshold, String details, boolean noDNS, RandomSource randomSource)
