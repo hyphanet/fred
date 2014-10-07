@@ -194,8 +194,8 @@ public class OpennetManager {
 	 * 363 at 88mbit/s (the mean upload in Hong Kong in 2014).*/
 	public static final double SCALING_CONSTANT = 12.0;
 	/** Minimum number of peers. Do not reduce this: As a rough
-	 * estimate, with the current 5 hops, this just gives one binary
-	 * decision per imagined distance level.*/
+	 * estimate, with the current 5 hops, this gives just one binary
+	 * decision per hop on average.*/
 	public static final int MIN_PEERS_FOR_SCALING = 10;
 	/** Maximum number of peers. The upper level of this is 2% of the
 	 * network size * 1.42. Above that number of peers, fast nodes
