@@ -102,7 +102,7 @@ public class PluginRespirator {
     /**
      * Get a PluginTalker so you can talk with other plugins.
      * 
-     * @deprecated Use {@link #connecToOtherPlugin(String,
+     * @deprecated Use {@link #connectToOtherPlugin(String,
      *             FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} instead.
      */
     @Deprecated
@@ -140,7 +140,7 @@ public class PluginRespirator {
      *         reconnected once the server plugin is loaded again, you must obtain a fresh client
      *         from this function: Existing clients will stay disconnected.
      */
-    public FCPPluginClient connecToOtherPlugin(String pluginName,
+    public FCPPluginClient connectToOtherPlugin(String pluginName,
             FredPluginFCPMessageHandler.ClientSideFCPMessageHandler messageHandler)
                 throws PluginNotFoundException {
         
@@ -155,9 +155,10 @@ public class PluginRespirator {
      * 
      * <b>Must not</b> be used by client plugins: They shall instead keep a hard reference to the
      * {@link FCPPluginClient} in memory after they have received it from
-     * {@link #connecToOtherPlugin(String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}
-     * . If they did not keep a hard reference and only stored the ID, the {@link FCPPluginClient}
-     * would be garbage collected and thus considered as disconnected.
+     * {@link #connectToOtherPlugin(String,
+     * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}. If they did not keep a hard
+     * reference and only stored the ID, the {@link FCPPluginClient} would be garbage collected and
+     * thus considered as disconnected.
      * 
      * Before you use this function, you <b>should definitely</b> also read the JavaDoc of
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(

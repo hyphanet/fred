@@ -526,7 +526,7 @@ public class FCPServer implements Runnable, DownloadCache {
      * have to take care of keeping a strong reference to them while they are in use.</p>
      * 
      * <p>You should probably instead use the frontend function:
-     * {@link PluginRespirator#connecToOtherPlugin(String,
+     * {@link PluginRespirator#connectToOtherPlugin(String,
      * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}.</p>
      * 
      * @see FCPPluginClient

@@ -89,7 +89,7 @@ import freenet.support.io.NativeThread;
  * </p>
  * <p>2. The server and the client are running in the same node, also called intra-node FCP
  * connections:</br>
- * - The client plugin uses {@link PluginRespirator#connecToOtherPlugin(String,
+ * - The client plugin uses {@link PluginRespirator#connectToOtherPlugin(String,
  *   FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} to try to create a connection.<br/>
  * - The {@link PluginRespirator} uses {@link FCPServer#createPluginClientForIntraNodeFCP(String,
  *   FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} to get a FCPPluginClient.<br/>
@@ -414,7 +414,7 @@ public final class FCPPluginClient {
      * - The test node can be used to load the plugin as a JAR.<br>
      * - As loading a plugin by JAR is the same mode of operation as with a regular node,
      *   there will be a PluginRespirator available to it.<br>
-     * - {@link PluginRespirator#connecToOtherPlugin(String, ClientSideFCPMessageHandler)} can then
+     * - {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)} can then
      *   be used for obtaining a FCPPluginClient instead of this constructor. This also is a
      *   function which is used in regular mode of operation.<br>
      * - The aforementioned {@link PluginRespirator#getPluginClientByID(UUID)} will then work for

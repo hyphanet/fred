@@ -40,7 +40,7 @@ import freenet.support.io.NativeThread;
  * client. The server cannot connect to a client on its own.
  * 
  * @author xor (xor@freenetproject.org)
- * @see PluginRespirator#connecToOtherPlugin(String,
+ * @see PluginRespirator#connectToOtherPlugin(String,
  *      FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)
  *          PluginRespirator provides the function to connect to a FCP server plugin.
  * @see FCPPluginClient
