@@ -436,7 +436,16 @@ public interface FredPluginFCPMessageHandler {
          *         Consider the whole of this as a remote procedure call process: A non-reply
          *         message is the procedure call, a reply message is the procedure result. When
          *         receiving the result, the procedure call is finished, and shouldn't contain
-         *         further replies.
+         *         further replies.<br><br>
+         *         
+         *         You <b>should/<b> always return a reply if you're allowed to (= if the original
+         *         message was not a reply already), even if you have nothing to say:<br>
+         *         This allows the remote side to detect whether its requested operation succeeded
+         *         or failed (because reply messages always have to specify success/failure).<br>
+         *         Notice: Even upon failure, a reply is better than saying nothing because it
+         *         allows {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage,
+         *         long)} to fail fast instead of having to wait for timeout.<br><br>
+         *         
          * @throws RuntimeException
          *             You <b>must not</b> throw. Please instead return a reply with
          *             {@link FCPPluginMessage#success} set to false, and optionally describe the
@@ -501,7 +510,16 @@ public interface FredPluginFCPMessageHandler {
          *         Consider the whole of this as a remote procedure call process: A non-reply
          *         message is the procedure call, a reply message is the procedure result. When
          *         receiving the result, the procedure call is finished, and shouldn't contain
-         *         further replies.
+         *         further replies.<br><br>
+         *         
+         *         You <b>should/<b> always return a reply if you're allowed to (= if the original
+         *         message was not a reply already), even if you have nothing to say:<br>
+         *         This allows the remote side to detect whether its requested operation succeeded
+         *         or failed (because reply messages always have to specify success/failure).<br>
+         *         Notice: Even upon failure, a reply is better than saying nothing because it
+         *         allows {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage,
+         *         long)} to fail fast instead of having to wait for timeout.<br><br>
+         *         
          * @throws RuntimeException
          *             You <b>must not</b> throw. Please instead return a reply with
          *             {@link FCPPluginMessage#success} set to false, and optionally describe the
