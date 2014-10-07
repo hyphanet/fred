@@ -1,6 +1,7 @@
 package freenet.pluginmanager;
 
 import java.io.IOException;
+import java.lang.ref.ReferenceQueue;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -113,6 +114,29 @@ public class PluginRespirator {
     /**
      * <p>Creates a FCP connection with another plugin running in the same node.</p>
      * 
+     * <h1>Disconnecting properly</h1>
+     * <p>The formally correct mechanism disconnecting a {@link FCPPluginClient} is to null out the
+     * strong reference to it. The node internally keeps a {@link ReferenceQueue} which allows it
+     * to detect the strong reference being nulled, which in turn makes the node clean up its
+     * internal structures.<br>
+     * While this does seem like you do not have to take care about disconnection at all, you
+     * <b>must</b> make sure to not keep an excessive amount of {@link FCPPluginClient} objects
+     * strongly referenced to ensure that this mechanism works.<br>
+     * Also, you <b>should</b> make sure to periodically try to send a message over the
+     * {@link FCPPluginClient} and check whether you receive a reply to check whether the connection
+     * still is alive: There is no other mechanism of indicating a closed connection to you than not
+     * getting back any reply to messages you send. So if your plugin does send messages very
+     * infrequently, and thus might keep a reference to a dead FCPPluginClient for a long time,
+     * it might be indicated to create a loop which sends "ping" messages periodically via
+     * {@link FCPPluginClient#sendSynchronous(FCPPluginClient.SendDirection, FCPPluginMessage,
+     * long)}. The synchronous nature of that function means that you will know for sure whether a
+     * reply was received, and also allows you to specify a ping timeout as its timeout for how long
+     * it will wait for a reply. (Don't forget to add an additional {@link Thread#sleep(long)} after
+     * sendSynchronous() for the case where the ping did NOT timeout). Whether a server plugin
+     * supports a special "ping" message or requires you to use another type of message as implicit
+     * ping is left up to the implementation of the server plugin.</p>
+     * 
+     * <h1>Performance</h1>
      * <p>While you are formally connecting via FCP, there is no actual network connection being
      * created. The FCP messages are passed-through directly as Java objects. Therefore, this
      * mechanism should be somewhat efficient.</p>
