@@ -141,13 +141,13 @@ public class PluginRespirator {
      * created. The FCP messages are passed-through directly as Java objects. Therefore, this
      * mechanism should be somewhat efficient.</p>
      * 
-     * <p>(Plugins should communicate via FCP instead of passing objects of their own Java classes
+     * <p>Plugins should communicate via FCP instead of passing objects of their own Java classes
      * even if they are running within the same node because this encourages implementation of FCP
      * servers, which in turn allows people to write alternative user interfaces for plugins.<br/>
      * Also, this will allow future changes to the node to make it able to run each plugin within
      * its own node and only connect them via real networked FCP connections. This could be used for
      * load balancing of plugins across multiple machines, CPU usage monitoring and other nice
-     * stuff.)</p>
+     * stuff.</p>
      * 
      * @param pluginName
      *            The name of the main class of the plugin - that is the class which implements
