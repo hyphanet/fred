@@ -339,7 +339,8 @@ public interface FredPluginFCPMessageHandler {
                 "; success: " + success +
                 "; errorCode: " + errorCode +
                 "; errorMessage: " + errorMessage + 
-                "; params: " + params.toOrderedString() + ")"; // At the end because it contains \n
+                // At the end because a SimpleFieldSet usually contains multiple line breaks.
+                "; params: " + '\n' + params.toOrderedString();
         }
     }
 
