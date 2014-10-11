@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 import freenet.node.fcp.FCPPluginClient;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
@@ -38,6 +39,14 @@ import freenet.support.io.NativeThread;
  * they like to.<br>
  * The only restriction upon this is that the opening and closing of connections is dictated by the
  * client. The server cannot connect to a client on its own.
+ * 
+ * <h1>Debugging</h1><br>
+ * 
+ * You can configure the {@link Logger} to log "freenet.node.fcp.FCPPluginClient:MINOR" to cause
+ * logging of all sent and received messages.<br>
+ * This is usually done on the Freenet web interface at Configuration / Logs / Detailed priority 
+ * thresholds.<br>
+ * <br>
  * 
  * @author xor (xor@freenetproject.org)
  * @see PluginRespirator#connectToOtherPlugin(String,
