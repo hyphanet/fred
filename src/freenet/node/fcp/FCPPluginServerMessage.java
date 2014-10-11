@@ -88,13 +88,14 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
     }
 
     /**
-     * @param pluginname The class name of the plugin which is sending the reply. Must not be null.
+     * @param pluginname The class name of the plugin which is sending the message.<br>
+     *                   Must not be null.<br>
      *                   See {@link PluginManager#getPluginInfoByClassName(String)}.
      */
-    public FCPPluginServerMessage(String pluginname, FCPPluginMessage reply) {
+    public FCPPluginServerMessage(String pluginname, FCPPluginMessage message) {
         
-        this(pluginname, reply.identifier, reply.params, reply.data, reply.success,
-            reply.errorCode, reply.errorMessage);
+        this(pluginname, message.identifier, message.params, message.data, message.success,
+            message.errorCode, message.errorMessage);
         
         assert(pluginname != null);
     }
