@@ -51,6 +51,14 @@ import freenet.support.io.NativeThread;
  * - {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}<br>
  * - {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}<br><br>
  * 
+ * <h1>Debugging</h1><br>
+ * 
+ * You can configure the {@link Logger} to log "freenet.node.fcp.FCPPluginClient:MINOR" to cause
+ * logging of all sent and received messages.<br>
+ * This is usually done on the Freenet web interface at Configuration / Logs / Detailed priority 
+ * thresholds.<br>
+ * <br>
+ * 
  * <h1>Internals</h1><br>
  * 
  * This section is not interesting to server or client implementations. You might want to read it
@@ -147,6 +155,18 @@ import freenet.support.io.NativeThread;
  * @author xor (xor@freenetproject.org)
  */
 public final class FCPPluginClient {
+
+    /** Automatically set to true by {@link Logger} if the log level is set to
+     *  {@link LogLevel#MINOR} for this class.
+     *  Used as performance optimization to prevent construction of the log strings if it is not
+     *  necessary. */
+    private static transient volatile boolean logMINOR = false;
+    
+    static {
+        // Necessary for automatic setting of logDEBUG and logMINOR
+        Logger.registerClass(FCPPluginClient.class);
+    }
+
 
     /**
      * Unique identifier among all FCPPluginClients.
@@ -573,6 +593,10 @@ public final class FCPPluginClient {
      */
     public void send(final SendDirection direction, final FCPPluginMessage message)
                 throws IOException {
+        
+        if(logMINOR) {
+            Logger.debug(this, "send(): direction = " + direction + "; " + "message = " + message);
+        }
         
         // True if the target server or client message handler is running in this VM.
         // This means that we can call its message handling function in a thread instead of
