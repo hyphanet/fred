@@ -339,7 +339,7 @@ public interface FredPluginFCPMessageHandler {
                 "; success: " + success +
                 "; errorCode: " + errorCode +
                 "; errorMessage: " + errorMessage + 
-                "; params: " + params + ")"; // At the end because it contains line breaks.
+                "; params: " + params.toOrderedString() + ")"; // At the end because it contains \n
         }
     }
 
