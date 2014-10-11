@@ -335,11 +335,11 @@ public interface FredPluginFCPMessageHandler {
             return super.toString() +
                 " (permissions: " + permissions +
                 "; identifier: " + identifier +
-                "; params: " + params +
                 "; data: " + data +
                 "; success: " + success +
                 "; errorCode: " + errorCode +
-                "; errorMessage: " + errorMessage + ")";
+                "; errorMessage: " + errorMessage + 
+                "; params: " + params + ")"; // At the end because it contains line breaks.
         }
     }
 
