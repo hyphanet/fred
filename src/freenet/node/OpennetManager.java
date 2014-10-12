@@ -96,6 +96,8 @@ public class OpennetManager {
 	static final double LONG_DISTANCE = 0.01;
 	/** This proportion of the routing table consists of "long links". */
 	static final double LONG_PROPORTION = 0.3;
+	/** The proportion of the routing table which consists of "short links". */
+	public static final double SHORT_PROPORTION = 1.0 - LONG_PROPORTION;
 	
     enum LinkLengthClass {
         /** Shorter than LONG_DISTANCE */
@@ -198,8 +200,6 @@ public class OpennetManager {
 	 * of requests complete in 5 hops, this gives just one binary decision per hop on average.
 	 */
 	public static final int MIN_PEERS_FOR_SCALING = 10;
-	/** The inverse of the proportion of short peers. */
-	public static final int PEER_NUMBER_UPSCALING = (int) (1.0 / (1.0 - LONG_PROPORTION));
 	/** The maximum possible distance between two nodes in the wrapping [0,1) location space. */
 	public static final double MAX_DISTANCE = 0.5;
 	/** The fraction of nodes which are only a short distance away. */
@@ -219,7 +219,7 @@ public class OpennetManager {
 	 * @see freenet.node.OpennetManager.LinkLengthClass
 	 */
 	public static final int MAX_PEERS_FOR_SCALING =
-		AVAILABLE_SHORT_DISTANCE_NODES * PEER_NUMBER_UPSCALING;
+		(int) (AVAILABLE_SHORT_DISTANCE_NODES / SHORT_PROPORTION);
 	/** Maximum number of peers for purposes of FOAF attack/sanity check */
 	public static final int PANIC_MAX_PEERS = MAX_PEERS_FOR_SCALING + 10;
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */
