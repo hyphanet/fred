@@ -197,15 +197,31 @@ public class OpennetManager {
 	 * estimate, with the current 5 hops, this gives just one binary
 	 * decision per hop on average.*/
 	public static final int MIN_PEERS_FOR_SCALING = 10;
+	/** The inverse of the proportion of short peers. With 70% short
+	 * connections it’s roughly 1.42.**/
+	public static final int PEER_NUMBER_UPSCALING = 
+		(int) (1.0 / (1.0 - LONG_PROPORTION));
+	/** The maximum possible distance between two nodes in the folded
+	 * [0,1) space.**/
+	public static final double MAX_DISTANCE = 0.5;
+	/** The estimated average number of nodes which are active at any
+	 * given time.**/
+	public static final int LAST_NETWORK_SIZE_ESTIMATE = 5000;
+	/** The estimated number of nodes which are a short distance away
+	 * from the node.**/
+	public static final int AVAILABLE_SHORT_DISTANCE_NODES = 
+		(int) (LAST_NETWORK_SIZE_ESTIMATE
+		       * (LONG_DISTANCE / MAX_DISTANCE));
 	/** Maximum number of peers. The upper level of this is 2% of the
 	 * network size * 1.42. Above that number of peers, fast nodes
 	 * will not be able to find enough peers with a distance of less
 	 * than 0.01 which are needed for LinkLengthClass.SHORT. Currently
 	 * we have about 5k users at all times, so we have about 100 nodes
-	 * with a distance of less than 0.01.*/
-	public static final int MAX_PEERS_FOR_SCALING = 140;
+	 * with a distance of less than 0.01. Currently 142. **/
+	public static final int MAX_PEERS_FOR_SCALING = 
+		AVAILABLE_SHORT_DISTANCE_NODES * PEER_NUMBER_UPSCALING;
 	/** Maximum number of peers for purposes of FOAF attack/sanity check */
-	public static final int PANIC_MAX_PEERS = 150;
+	public static final int PANIC_MAX_PEERS = MAX_PEERS_FOR_SCALING + 10;
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */
 	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = DAYS.toMillis(31);
 
