@@ -606,6 +606,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 
 	/** Initialize oldLogFiles */
 	public void findOldLogFiles(GregorianCalendar gc) {
+		gc = (GregorianCalendar) gc.clone();
 		File currentFilename = new File(getHourLogName(gc, -1, true));
 		System.out.println("Finding old log files. New log file is "+currentFilename);
 		File numericSameDateFilename;
