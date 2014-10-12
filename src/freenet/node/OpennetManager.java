@@ -204,14 +204,16 @@ public class OpennetManager {
 	/** The maximum possible distance between two nodes in the folded
 	 * [0,1) space.**/
 	public static final double MAX_DISTANCE = 0.5;
+	/** The fraction of nodes which are only a short distance away. **/
+	public static final double SHORT_NODES_FRACTION = 
+		LONG_DISTANCE / MAX_DISTANCE; 
 	/** The estimated average number of nodes which are active at any
 	 * given time.**/
 	public static final int LAST_NETWORK_SIZE_ESTIMATE = 5000;
 	/** The estimated number of nodes which are a short distance away
 	 * from the node.**/
 	public static final int AVAILABLE_SHORT_DISTANCE_NODES = 
-		(int) (LAST_NETWORK_SIZE_ESTIMATE
-		       * (LONG_DISTANCE / MAX_DISTANCE));
+		(int) (LAST_NETWORK_SIZE_ESTIMATE * SHORT_NODES_FRACTION);
 	/** Maximum number of peers. The upper level of this is 2% of the
 	 * network size * 1.42. Above that number of peers, fast nodes
 	 * will not be able to find enough peers with a distance of less
