@@ -48,7 +48,7 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
      */
 	private static final String NAME = "FCPPluginReply";
 	
-	public static final String PARAM_PREFIX = "Param";
+    public static final String PARAM_PREFIX = "Replies";
 
     /** @see FCPPluginMessage#data */
 	private final long dataLength;
@@ -152,7 +152,7 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
 		sfs.putSingle("Identifier", identifier);
 		if (dataLength() > 0)
 			sfs.put("DataLength", dataLength());
-		sfs.put("Replies", plugparams);
+        sfs.put(PARAM_PREFIX, plugparams);
         if(success != null) {
             sfs.put("Success", success);
             
