@@ -163,6 +163,12 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
 		return NAME;
 	}
 
+    protected FCPPluginMessage constructFCPPluginMessage(FCPPluginClient client) {
+        return FCPPluginMessage.constructRawMessage(
+            client.computePermissions(), identifier, plugparams, this.bucket, success,
+            errorCode, errorMessage);
+    }
+
 	@Override
 	public void run(final FCPConnectionHandler handler, final Node node) throws MessageInvalidException {
         // There are 2 code paths for deploying plugin messages:
@@ -187,9 +193,7 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
         }
         
         if(client != null) {
-            FCPPluginMessage message = FCPPluginMessage.constructRawMessage(
-                client.computePermissions(), identifier, plugparams, this.bucket, success,
-                errorCode, errorMessage);
+            FCPPluginMessage message = constructFCPPluginMessage(client);
             
             // Call this here instead of in the above try{} because the above
             // handler.getPluginClient() might also throw IOException in the future and we don't
