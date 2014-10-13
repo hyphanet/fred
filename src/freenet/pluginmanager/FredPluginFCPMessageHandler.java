@@ -79,7 +79,9 @@ public interface FredPluginFCPMessageHandler {
         
         /**
          * The permissions of the client which sent the messages. Null for server-to-client and
-         * outgoing messages.
+         * outgoing messages.<br>
+         * Will be set by the {@link FCPPluginClient} before delivery of the message. Thus, you
+         * can pass null for this in all constructors.
          */
         public final ClientPermissions permissions;
         

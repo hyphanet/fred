@@ -166,10 +166,9 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
 		return NAME;
 	}
 
-    protected FCPPluginMessage constructFCPPluginMessage(FCPPluginClient client) {
-        return FCPPluginMessage.constructRawMessage(
-            client.computePermissions(), identifier, plugparams, this.bucket, success,
-            errorCode, errorMessage);
+    protected FCPPluginMessage constructFCPPluginMessage() {
+        return FCPPluginMessage.constructRawMessage(null, identifier, plugparams, this.bucket,
+            success, errorCode, errorMessage);
     }
 
 	@Override
@@ -196,7 +195,7 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
         }
         
         if(client != null) {
-            FCPPluginMessage message = constructFCPPluginMessage(client);
+            FCPPluginMessage message = constructFCPPluginMessage();
             
             // Call this here instead of in the above try{} because the above
             // handler.getPluginClient() might also throw IOException in the future and we don't

@@ -8,9 +8,7 @@ import java.util.ArrayList;
 
 import junit.framework.TestCase;
 import freenet.node.FSParseException;
-import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
-import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -31,26 +29,6 @@ import freenet.support.SimpleFieldSet;
  * See {@link FCPPluginClient} for an overview of the architecture. 
  */
 public final class FCPPluginMessageEncodeDecodeTest extends TestCase {
-    
-    /** The message decoder needs a {@link FCPPluginClient} which it can specify as the source
-     *  of the message, so we create a fake one. */
-    FCPPluginClient mockClient =
-        FCPPluginClient.constructForUnitTest(
-            new ServerSideFCPMessageHandler() {
-                @Override
-                public FCPPluginMessage handlePluginFCPMessage(
-                        FCPPluginClient client, FCPPluginMessage message) {
-                    throw new UnsupportedOperationException("Should not be called.");
-                }
-            }
-            ,
-            new ClientSideFCPMessageHandler() {
-                @Override
-                public FCPPluginMessage handlePluginFCPMessage(
-                        FCPPluginClient client, FCPPluginMessage message) {
-                    throw new UnsupportedOperationException("Should not be called.");
-                }
-            });
 
     /**
      * Creates different interesting types of {@link FCPPluginMessage}, whose actual encoding and
@@ -122,9 +100,10 @@ public final class FCPPluginMessageEncodeDecodeTest extends TestCase {
         }
         
         FCPPluginMessage decodedMessage
-            = new FCPPluginClientMessage(encodedMessage).constructFCPPluginMessage(mockClient);
+            = new FCPPluginClientMessage(encodedMessage).constructFCPPluginMessage();
  
-        assertEquals(decodedMessage.permissions, mockClient.computePermissions());
+        // Permissions are set by the FCPPluginClient when the message is actually delivered.
+        assertEquals(null, decodedMessage.permissions);
         
         assertEquals(decodedMessage.identifier, message.identifier);
         
