@@ -117,8 +117,11 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
 			dataLength = -1;
 		}
 		
-		plugparams = fs.subset(PARAM_PREFIX);
-        
+        SimpleFieldSet maybePlugparams = fs.subset(PARAM_PREFIX);
+        // subset() will return null if the subset is empty. To make server code more robust, we
+        // hand out an empty mock SimpleFieldSet in that case.
+        plugparams = maybePlugparams != null ? maybePlugparams : new SimpleFieldSet(true);
+
         if(fs.get("Success") != null) {
             try {
                 success = fs.getBoolean("Success");
