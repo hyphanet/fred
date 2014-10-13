@@ -152,7 +152,12 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
 		sfs.putSingle("Identifier", identifier);
 		if (dataLength() > 0)
 			sfs.put("DataLength", dataLength());
-        sfs.put(PARAM_PREFIX, plugparams);
+
+        // The sfs.put() would throw IllegalArgumentException if plugparams.isEmpty() == true.
+        if(plugparams != null && !plugparams.isEmpty()) {
+            sfs.put(PARAM_PREFIX, plugparams);
+        }
+
         if(success != null) {
             sfs.put("Success", success);
             
