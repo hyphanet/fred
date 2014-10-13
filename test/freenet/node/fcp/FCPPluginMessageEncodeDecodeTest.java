@@ -105,15 +105,14 @@ public final class FCPPluginMessageEncodeDecodeTest extends TestCase {
         // Permissions are set by the FCPPluginClient when the message is actually delivered.
         assertEquals(null, decodedMessage.permissions);
         
-        assertEquals(decodedMessage.identifier, message.identifier);
+        assertEquals(message.identifier, decodedMessage.identifier);
         
         // SimpleFieldSet offers no equals(). But its designed to be human readable, so we can
         // just encode them into Strings and compare those.
         if(message.params == null) {
             assertEquals(null, decodedMessage.params);
         } else {
-            assertEquals(decodedMessage.params.toOrderedString(), 
-                message.params.toOrderedString());
+            assertEquals(message.params.toOrderedString(), decodedMessage.params.toOrderedString());
         }
         
         if(message.data == null) {
@@ -124,11 +123,11 @@ public final class FCPPluginMessageEncodeDecodeTest extends TestCase {
             throw new UnsupportedOperationException("TODO: Implement");
         }
         
-        assertEquals(decodedMessage.success, message.success);
+        assertEquals(message.success, decodedMessage.success);
         
-        assertEquals(decodedMessage.errorCode, message.errorCode);
+        assertEquals(message.errorCode, decodedMessage.errorCode);
         
-        assertEquals(decodedMessage.errorMessage, message.errorMessage);
+        assertEquals(message.errorMessage, decodedMessage.errorMessage);
     }
 
 }
