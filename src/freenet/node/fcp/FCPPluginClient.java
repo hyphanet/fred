@@ -57,7 +57,12 @@ import freenet.support.io.NativeThread;
  * logging of all sent and received messages.<br>
  * This is usually done on the Freenet web interface at Configuration / Logs / Detailed priority 
  * thresholds.<br>
- * <br>
+ * ATTENTION: The log entries will appear at the time when the messages were queued for sending, not
+ * when they were delivered. Delivery usually happens in a separate thread. Thus, the relative order
+ * of arrival of messages can be different to the order of their appearance in the log file.<br>
+ * If you need to know the order of arrival, add logging to your message handler. Also don't forget
+ * that {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)} will not deliver replies
+ * to the message handler but only return them instead.<br><br>
  * 
  * <h1>Internals</h1><br>
  * 
