@@ -592,6 +592,18 @@ public final class FCPPluginClient {
      *          the reply to a message.
      */
     public void send(final SendDirection direction, FCPPluginMessage message) throws IOException {
+        // We first have to compute the message.permissions field ourselves - we shall ignore what
+        // caller said for security.
+        ClientPermissions currentPermissions = (direction == SendDirection.ToClient) ?
+             null // Server-to-client messages do not have permissions.
+             : computePermissions();
+
+        // We set the permissions by creating a fresh FCPPluginMessage object so the caller cannot
+        // overwrite what we compute.
+        message = FCPPluginMessage.constructRawMessage(currentPermissions, message.identifier,
+            message.params, message.data, message.success, message.errorCode, message.errorMessage);
+
+        // Now that the message is completely initialized, we can dump it to the logfile.
         if(logMINOR) {
             Logger.debug(this, "send(): direction = " + direction + "; " + "message = " + message);
         }
@@ -612,19 +624,6 @@ public final class FCPPluginClient {
         assert(direction == SendDirection.ToServer ? server != null : client != null)
             : "We already decided that the message handler exists locally. "
             + "We should have only decided so if the handler is not null.";
-        
-        
-        // We now have to compute the message.permissions field ourselves - we shall ignore what the
-        // caller said for security.
-        ClientPermissions currentPermissions = (direction == SendDirection.ToClient) ?
-             null // Server-to-client messages do not have permissions.
-             : computePermissions();
-
-        // We set the permissions by creating a fresh FCPPluginMessage object so the caller cannot
-        // overwrite what we compute.
-        message = FCPPluginMessage.constructRawMessage(currentPermissions, message.identifier,
-            message.params, message.data, message.success, message.errorCode, message.errorMessage);
-
         
         // Since the message handler is determined to be local at this point, we now must check
         // whether it is a blocking sendSynchronous() thread instead of a regular
