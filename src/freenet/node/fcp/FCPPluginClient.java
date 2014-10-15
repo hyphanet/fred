@@ -1044,6 +1044,8 @@ public final class FCPPluginClient {
      *             is requested to be unloaded, not the complete node? If not, this class should
      *             store a list of all threads which are executing this function, and call
      *             interrupt() upon them during shutdown.
+     *             FIXME: Please use the MINOR logging to do test runs to check whether the
+     *             synchronousSends table does not leak.
      * @see FCPPluginClient#synchronousSends
      *          An overview of how synchronous sends and especially their threading work internally
      *          is provided at the map which stores them.
@@ -1089,6 +1091,11 @@ public final class FCPPluginClient {
             
             synchronousSends.put(message.identifier, synchronousSend);
             
+            if(logMINOR) {
+                Logger.minor(this, "sendSynchronous(): Started for identifier " + message.identifier
+                                 + "; synchronousSends table size: " + synchronousSends.size());
+            }
+            
             send(direction, message);
             
             // Message is sent, now we wait for the reply message to be put into the SynchronousSend
@@ -1131,6 +1138,11 @@ public final class FCPPluginClient {
             // We MUST always remove the SynchronousSend object which we added to the map,
             // otherwise it will leak memory eternally.
             synchronousSends.remove(message.identifier);
+            
+            if(logMINOR) {
+                Logger.minor(this, "sendSynchronous(): Done for identifier " + message.identifier
+                                 + "; synchronousSends table size: " + synchronousSends.size());
+            }
             
             synchronousSendsLock.writeLock().unlock();
         }
