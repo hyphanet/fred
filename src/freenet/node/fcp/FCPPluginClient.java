@@ -53,7 +53,7 @@ import freenet.support.io.NativeThread;
  * 
  * <h1>Debugging</h1><br>
  * 
- * You can configure the {@link Logger} to log "freenet.node.fcp.FCPPluginClient:MINOR" to cause
+ * You can configure the {@link Logger} to log "freenet.node.fcp.FCPPluginClient:DEBUG" to cause
  * logging of all sent and received messages.<br>
  * This is usually done on the Freenet web interface at Configuration / Logs / Detailed priority 
  * thresholds.<br>
@@ -160,6 +160,12 @@ import freenet.support.io.NativeThread;
  * @author xor (xor@freenetproject.org)
  */
 public final class FCPPluginClient {
+    
+    /** Automatically set to true by {@link Logger} if the log level is set to
+     *  {@link LogLevel#DEBUG} for this class.
+     *  Used as performance optimization to prevent construction of the log strings if it is not
+     *  necessary. */
+    private static transient volatile boolean logDEBUG = false;
 
     /** Automatically set to true by {@link Logger} if the log level is set to
      *  {@link LogLevel#MINOR} for this class.
@@ -609,7 +615,7 @@ public final class FCPPluginClient {
             message.params, message.data, message.success, message.errorCode, message.errorMessage);
 
         // Now that the message is completely initialized, we can dump it to the logfile.
-        if(logMINOR) {
+        if(logDEBUG) {
             Logger.debug(this, "send(): direction = " + direction + "; " + "message = " + message);
         }
         

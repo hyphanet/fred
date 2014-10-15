@@ -43,7 +43,7 @@ import freenet.support.io.NativeThread;
  * 
  * <h1>Debugging</h1><br>
  * 
- * You can configure the {@link Logger} to log "freenet.node.fcp.FCPPluginClient:MINOR" to cause
+ * You can configure the {@link Logger} to log "freenet.node.fcp.FCPPluginClient:DEBUG" to cause
  * logging of all sent and received messages.<br>
  * This is usually done on the Freenet web interface at Configuration / Logs / Detailed priority 
  * thresholds.<br>
