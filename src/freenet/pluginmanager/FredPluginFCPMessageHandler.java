@@ -456,7 +456,7 @@ public interface FredPluginFCPMessageHandler {
          *         receiving the result, the procedure call is finished, and shouldn't contain
          *         further replies.<br><br>
          *         
-         *         You <b>should/<b> always return a reply if you're allowed to (= if the original
+         *         You <b>should</b> always return a reply if you're allowed to (= if the original
          *         message was not a reply already), even if you have nothing to say:<br>
          *         This allows the remote side to detect whether its requested operation succeeded
          *         or failed (because reply messages always have to specify success/failure).<br>
@@ -530,7 +530,7 @@ public interface FredPluginFCPMessageHandler {
          *         receiving the result, the procedure call is finished, and shouldn't contain
          *         further replies.<br><br>
          *         
-         *         You <b>should/<b> always return a reply if you're allowed to (= if the original
+         *         You <b>should</b> always return a reply if you're allowed to (= if the original
          *         message was not a reply already), even if you have nothing to say:<br>
          *         This allows the remote side to detect whether its requested operation succeeded
          *         or failed (because reply messages always have to specify success/failure).<br>
