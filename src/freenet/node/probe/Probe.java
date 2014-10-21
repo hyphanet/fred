@@ -641,7 +641,7 @@ public class Probe implements ByteCounter {
 			for (PeerNode peer : peers) {
 				Location peerLoc = peer.getLocation();
 				if (peerLoc.isValid()) {
-					linkLengths[i++] = (float)randomNoise(Location.distance(myLoc, peerLoc), 0.01);
+					linkLengths[i++] = (float)randomNoise(myLoc.distance(peerLoc), 0.01);
 				}
 			}
 			linkLengths = java.util.Arrays.copyOf(linkLengths, i);

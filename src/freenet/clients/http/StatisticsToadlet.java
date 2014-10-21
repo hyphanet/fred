@@ -1526,15 +1526,15 @@ public class StatisticsToadlet extends Toadlet {
 			if (!pns.isRoutable()) continue;
 
 			Location peerLoc = pns.getLocation();
-			if (!Location.isValid(peerLoc)) continue;
+			if (!peerLoc.isValid()) continue;
 
 			Location[] foafLocs = pns.getPeersLocation();
 			if (foafLocs == null) continue;
 			
 			for (Location foafLoc : foafLocs) {
-				if (!Location.isValid(foafLoc)) continue;
+				if (!foafLoc.isValid()) continue;
 				
-				int idx = (int)Math.floor(Location.distance(peerLoc, foafLoc) * HISTOGRAM_LENGTH / 0.5);
+				int idx = (int)Math.floor(peerLoc.distance(foafLoc) * HISTOGRAM_LENGTH / 0.5);
 				peersLinkHistogram[idx]++;
 				peersLinkCount++;
 			}
@@ -1595,7 +1595,7 @@ public class StatisticsToadlet extends Toadlet {
 					peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(foafLocation, false, 0.9), "disconnected" }, ".");
 				}
 			}
-			peerDistance = Location.distance( myLocation, peerLocation );
+			peerDistance = myLocation.distance(peerLocation);
 			histogramIndex = (int) (Math.floor(peerDistance * HISTOGRAM_LENGTH * 2));
 			if (peerNodeStatus.isConnected()) {
 				histogramConnected[histogramIndex]++;

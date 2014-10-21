@@ -62,7 +62,7 @@ public class HourlyStatsRecord {
 		if (!location.isValid())
 			throw new IllegalArgumentException("Invalid location.");
 		htl = Math.min(htl, node.maxHTL());
-		double rawDist = Location.distance(node.getLocation(), location);
+		double rawDist = node.getLocation().distance(location);
 		if (rawDist <= 0.0) rawDist = Double.MIN_VALUE;
 		double logDist = Math.log(rawDist) / Math.log(2.0);
 		assert logDist < (-1.0 + 0x1.0p-1022/* Double.MIN_NORMAL */);

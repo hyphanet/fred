@@ -3254,7 +3254,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return node.lm.getLocation().distance(avgLocation());
 			}
 
 			@Override
@@ -3288,7 +3288,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return node.lm.getLocation().distance(avgLocation());
 			}
 
 			@Override
@@ -3322,7 +3322,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return node.lm.getLocation().distance(avgLocation());
 			}
 
 			@Override
@@ -3356,7 +3356,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return node.lm.getLocation().distance(avgLocation());
 			}
 
 			@Override
@@ -3390,7 +3390,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return node.lm.getLocation().distance(avgLocation());
 			}
 
 			@Override
@@ -3424,7 +3424,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return node.lm.getLocation().distance(avgLocation());
 			}
 
 			@Override
@@ -3458,7 +3458,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return node.lm.getLocation().distance(avgLocation());
 			}
 
 			@Override
@@ -3492,7 +3492,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return node.lm.getLocation().distance(avgLocation());
 			}
 
 			@Override

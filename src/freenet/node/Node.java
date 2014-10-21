@@ -4253,7 +4253,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private void store(CHKBlock block, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		try {
-			double loc = block.getKey().toNormalizedDouble();
+			Location loc = Location.fromKey(block.getKey());
 			if (canWriteClientCache) {
 				chkClientcache.put(block, false);
 				nodeStats.avgClientCacheCHKLocation.report(loc);
@@ -4303,7 +4303,7 @@ public class Node implements TimeSkewDetectorCallback {
 		try {
 			// Store the pubkey before storing the data, otherwise we can get a race condition and
 			// end up deleting the SSK data.
-			double loc = block.getKey().toNormalizedDouble();
+			Location loc = Location.fromKey(block.getKey());
 			getPubKey.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), deep, canWriteClientCache, canWriteDatastore, forULPR || useSlashdotCache, writeLocalToDatastore);
 			if(canWriteClientCache) {
 				sskClientcache.put(block, overwrite, false);
