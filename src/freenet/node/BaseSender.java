@@ -41,7 +41,7 @@ public abstract class BaseSender implements ByteCounter {
     final Key key;
     /** The source of this request if any - purely so we can avoid routing to it */
     final PeerNode source;
-    final double target;
+    final Location target;
     final boolean isSSK;
     protected final short origHTL;
     final Node node;
@@ -59,7 +59,7 @@ public abstract class BaseSender implements ByteCounter {
     	this.realTimeFlag = realTimeFlag;
     	this.node = node;
     	this.source = source;
-        target = key.toNormalizedDouble();
+        target = Location.fromKey(key);
         this.isSSK = key instanceof NodeSSK;
         assert(isSSK || key instanceof NodeCHK);
         this.htl = htl;
@@ -169,7 +169,7 @@ public abstract class BaseSender implements ByteCounter {
 			 * Don't use sendAsync().
 			 */
         	next.sendSync(req, this, realTimeFlag);
-        	next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag, source, nodesRoutedTo);
+        	next.reportRoutedTo(Location.fromKey(key), source == null, realTimeFlag, source, nodesRoutedTo);
 			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
         } catch (NotConnectedException e) {
         	Logger.minor(this, "Not connected");
@@ -502,7 +502,7 @@ loadWaiterLoop:
     			 * Don't use sendAsync().
     			 */
     			if(logMINOR) Logger.minor(this, "Sending "+req+" to "+next);
-    			next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag, source, nodesRoutedTo);
+    			next.reportRoutedTo(Location.fromKey(key), source == null, realTimeFlag, source, nodesRoutedTo);
     			next.sendSync(req, this, realTimeFlag);
     		} catch (NotConnectedException e) {
     			Logger.minor(this, "Not connected");

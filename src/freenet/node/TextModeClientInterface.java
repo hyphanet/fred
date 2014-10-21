@@ -963,11 +963,11 @@ public class TextModeClientInterface implements Runnable {
         		return false;
         	}
         	uline = uline.substring("ANNOUNCE".length());
-        	final double target;
+        	final Location target;
         	if(uline.charAt(0) == ':') {
-        		target = Double.parseDouble(uline.substring(1));
+        		target = Location.fromString(uline.substring(1));
         	} else {
-        		target = n.random.nextDouble();
+        		target = Location.random(n.random);
         	}
         	om.announce(target, new AnnouncementCallback() {
         		private void write(String msg) {

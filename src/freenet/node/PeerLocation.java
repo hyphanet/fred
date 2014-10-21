@@ -7,38 +7,38 @@ import freenet.support.Logger;
 public class PeerLocation {
 	
 	/** Current location in the keyspace, or -1 if it is unknown */
-	private double currentLocation;
+	private Location currentLocation;
 	/** Current locations of our peer's peers */
-	private double[] currentPeersLocation;
+	private Location[] currentPeersLocation;
 	/** Time the location was set */
 	private long locSetTime;
 
 	PeerLocation(String locationString) {
-		currentLocation = Location.getLocation(locationString);
+		currentLocation = Location.fromString(locationString);
 		locSetTime = System.currentTimeMillis();
 	}
 	
 	public synchronized String toString() {
-		return Double.toString(currentLocation);
+		return currentLocation.toString();
 	}
 
 	/** Should only be called in the constructor */
 	public void setPeerLocations(String[] peerLocationsString) {
 		if(peerLocationsString != null) {
-			double[] peerLocations = new double[peerLocationsString.length];
+			Location[] peerLocations = new Location[peerLocationsString.length];
 			for(int i = 0; i < peerLocationsString.length; i++)
-				peerLocations[i] = Location.getLocation(peerLocationsString[i]);
+				peerLocations[i] = Location.fromString(peerLocationsString[i]);
 			synchronized(this) {
 				currentPeersLocation = peerLocations;
 			}
 		}
 	}
 
-	public synchronized double getLocation() {
+	public synchronized Location getLocation() {
 		return currentLocation;
 	}
 
-	synchronized double[] getPeerLocations() {
+	synchronized Location[] getPeerLocations() {
 		return currentPeersLocation;
 	}
 
@@ -47,7 +47,7 @@ public class PeerLocation {
 	}
 
 	public synchronized boolean isValidLocation() {
-		return Location.isValid(currentLocation);
+		return currentLocation.isValid();
 	}
 
 	public synchronized int getDegree() {
@@ -55,15 +55,15 @@ public class PeerLocation {
 		return currentPeersLocation.length;
 	}
 
-	boolean updateLocation(double newLoc, double[] newLocs) {
-		if(!Location.isValid(newLoc)) {
+	boolean updateLocation(Location newLoc, Location[] newLocs) {
+		if(!newLoc.isValid()) {
 			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
 			// Ignore it
 			return false;
 		}
 
-		for(double currentLoc : newLocs) {
-			if(!Location.isValid(currentLoc)) {
+		for(Location currentLoc : newLocs) {
+			if(!currentLoc.isValid()) {
 				Logger.error(this, "Invalid location update for " + this + " ("+currentLoc+')', new Exception("error"));
 				// Ignore it
 				return false;
@@ -75,7 +75,7 @@ public class PeerLocation {
 		boolean anythingChanged = false;
 
 		synchronized(this) {
-			if(!Location.equals(currentLocation, newLoc))
+			if(!currentLocation.equals(newLoc))
 				anythingChanged = true;
 			currentLocation = newLoc;
 			if(currentPeersLocation == null)
@@ -85,7 +85,7 @@ public class PeerLocation {
 					anythingChanged = true;
 				else {
 					for(int i=0;i<currentPeersLocation.length;i++) {
-						if(!Location.equals(currentPeersLocation[i], newLocs[i])) {
+						if(!currentPeersLocation[i].equals(newLocs[i])) {
 							anythingChanged = true;
 							break;
 						}
@@ -98,9 +98,9 @@ public class PeerLocation {
 		return anythingChanged;
 	}
 
-	synchronized double setLocation(double newLoc) {
-		double oldLoc = currentLocation;
-		if(!Location.equals(newLoc, currentLocation)) {
+	synchronized Location setLocation(Location newLoc) {
+		Location oldLoc = currentLocation;
+		if(!newLoc.equals(currentLocation)) {
 			currentLocation = newLoc;
 			locSetTime = System.currentTimeMillis();
 		}

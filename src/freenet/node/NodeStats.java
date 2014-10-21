@@ -592,7 +592,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		requestInputThrottle =
 			new TokenBucket(Math.max(ibwLimit*60, 32768*20), SECONDS.toNanos(1) / ibwLimit, 0);
 
-		double nodeLoc=node.lm.getLocation();
+		Location nodeLoc=node.lm.getLocation();
 		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
 		this.avgStoreCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreCHKLocation"));
 		this.avgSlashdotCacheCHKLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageSlashdotCacheCHKLocation"));
@@ -3103,7 +3103,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private HourlyStats hourlyStatsRT;
 	private HourlyStats hourlyStatsBulk;
 
-	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, double location, boolean realTime, boolean fromOfferedKey) {
+	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, Location location, boolean realTime, boolean fromOfferedKey) {
 		if(logMINOR) Logger.minor(this, "Remote request: sucess="+success+" htl="+htl+" locally answered="+local+" location of key="+location+" from offered key = "+fromOfferedKey);
 		if(!fromOfferedKey) {
 			if(realTime)
@@ -3238,13 +3238,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats chkStoreStats() {
 		return new StoreLocationStats() {
 			@Override
-			public double avgLocation() {
-				return avgStoreCHKLocation.currentValue();
+			public Location avgLocation() {
+				return avgStoreCHKLocation.currentLocation();
 			}
 
 			@Override
-			public double avgSuccess() {
-				return avgStoreCHKSuccess.currentValue();
+			public Location avgSuccess() {
+				return avgStoreCHKSuccess.currentLocation();
 			}
 
 			@Override
@@ -3272,13 +3272,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats chkCacheStats() {
 		return new StoreLocationStats() {
 			@Override
-			public double avgLocation() {
-				return avgCacheCHKLocation.currentValue();
+			public Location avgLocation() {
+				return avgCacheCHKLocation.currentLocation();
 			}
 
 			@Override
-			public double avgSuccess() {
-				return avgCacheCHKSuccess.currentValue();
+			public Location avgSuccess() {
+				return avgCacheCHKSuccess.currentLocation();
 			}
 
 			@Override
@@ -3306,13 +3306,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats chkSlashDotCacheStats() {
 		return new StoreLocationStats() {
 			@Override
-			public double avgLocation() {
-				return avgSlashdotCacheCHKLocation.currentValue();
+			public Location avgLocation() {
+				return avgSlashdotCacheCHKLocation.currentLocation();
 			}
 
 			@Override
-			public double avgSuccess() {
-				return avgSlashdotCacheCHKSucess.currentValue();
+			public Location avgSuccess() {
+				return avgSlashdotCacheCHKSucess.currentLocation();
 			}
 
 			@Override
@@ -3340,13 +3340,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats chkClientCacheStats() {
 		return new StoreLocationStats() {
 			@Override
-			public double avgLocation() {
-				return avgClientCacheCHKLocation.currentValue();
+			public Location avgLocation() {
+				return avgClientCacheCHKLocation.currentLocation();
 			}
 
 			@Override
-			public double avgSuccess() {
-				return avgClientCacheCHKSuccess.currentValue();
+			public Location avgSuccess() {
+				return avgClientCacheCHKSuccess.currentLocation();
 			}
 
 			@Override
@@ -3374,13 +3374,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats sskStoreStats() {
 		return new StoreLocationStats() {
 			@Override
-			public double avgLocation() {
-				return avgStoreSSKLocation.currentValue();
+			public Location avgLocation() {
+				return avgStoreSSKLocation.currentLocation();
 			}
 
 			@Override
-			public double avgSuccess() {
-				return avgStoreSSKSuccess.currentValue();
+			public Location avgSuccess() {
+				return avgStoreSSKSuccess.currentLocation();
 			}
 
 			@Override
@@ -3408,13 +3408,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats sskCacheStats() {
 		return new StoreLocationStats() {
 			@Override
-			public double avgLocation() {
-				return avgCacheSSKLocation.currentValue();
+			public Location avgLocation() {
+				return avgCacheSSKLocation.currentLocation();
 			}
 
 			@Override
-			public double avgSuccess() {
-				return avgCacheSSKSuccess.currentValue();
+			public Location avgSuccess() {
+				return avgCacheSSKSuccess.currentLocation();
 			}
 
 			@Override
@@ -3442,13 +3442,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats sskSlashDotCacheStats() {
 		return new StoreLocationStats() {
 			@Override
-			public double avgLocation() {
-				return avgSlashdotCacheSSKLocation.currentValue();
+			public Location avgLocation() {
+				return avgSlashdotCacheSSKLocation.currentLocation();
 			}
 
 			@Override
-			public double avgSuccess() {
-				return avgSlashdotCacheSSKSuccess.currentValue();
+			public Location avgSuccess() {
+				return avgSlashdotCacheSSKSuccess.currentLocation();
 			}
 
 			@Override
@@ -3476,13 +3476,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats sskClientCacheStats() {
 		return new StoreLocationStats() {
 			@Override
-			public double avgLocation() {
-				return avgClientCacheSSKLocation.currentValue();
+			public Location avgLocation() {
+				return avgClientCacheSSKLocation.currentLocation();
 			}
 
 			@Override
-			public double avgSuccess() {
-				return avgClientCacheSSKSuccess.currentValue();
+			public Location avgSuccess() {
+				return avgClientCacheSSKSuccess.currentLocation();
 			}
 
 			@Override

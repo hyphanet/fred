@@ -19,15 +19,29 @@ public final class DecayingKeyspaceAverage implements RunningAverage, Cloneable 
 	 */
 	BootstrappingDecayingRunningAverage avg;
 
-        /**
-         *
-         * @param defaultValue
-         * @param maxReports
-         * @param fs
-         */
-        public DecayingKeyspaceAverage(double defaultValue, int maxReports, SimpleFieldSet fs) {
+    /**
+     *
+     * @param defaultValue
+     * @param maxReports
+     * @param fs
+     * @deprecated Use DecayingKeyspaceAverage(Location, int, SimpleFieldSet) instead.
+     */
+    @Deprecated
+    public DecayingKeyspaceAverage(double defaultValue, int maxReports, SimpleFieldSet fs) {
 		avg = new BootstrappingDecayingRunningAverage(defaultValue, -2.0, 2.0, maxReports, fs);
 	}
+
+    /**
+     * Construct a new keyspace average with an initial value.
+     * @param defaultValue The initial value.
+     * @param maxReports The number of reports in the bootstrapping phase, after which decay will start.
+     * @param fs SimpleFieldSet with parameters for BootstrappingDecayingRunningAverage, which will override
+     * all other options set.
+     */
+    public DecayingKeyspaceAverage(Location defaultValue, int maxReports, SimpleFieldSet fs) {
+		avg = new BootstrappingDecayingRunningAverage(defaultValue.toDouble(), -2.0, 2.0, maxReports, fs);
+	}
+
 
         /**
          *
@@ -54,43 +68,80 @@ public final class DecayingKeyspaceAverage implements RunningAverage, Cloneable 
 		return avg.currentValue();
 	}
 
-        /**
-         *
-         * @param d
-         */
-        @Override
-        public synchronized void report(double d) {
-		if((d < 0.0) || (d > 1.0))
-			//Just because we use non-normalized locations doesn't mean we can accept them.
-			throw new IllegalArgumentException("Not a valid normalized key: " + d);
-		double superValue = avg.currentValue();
-		double thisValue = Location.normalize(superValue);
-		double diff = Location.change(thisValue, d);
-		double toAverage = (superValue + diff);
-		/*
-		To gracefully wrap around the 1.0/0.0 threshold we average over (or under) it, and simply normalize the result when reporting a currentValue
-		---example---
-		d=0.2;          //being reported
-		superValue=1.9; //already wrapped once, but at 0.9
-		thisValue=0.9;  //the normalized value of where we are in the keyspace
-		diff = +0.3;    //the diff from the normalized values; Location.change(0.9, 0.2);
-		avg.report(2.2);//to successfully move the average towards the closest route to the given value.
-		 */
-		avg.report(toAverage);
-		double newValue = avg.currentValue();
-		if(newValue < 0.0 || newValue > 1.0)
-			avg.setCurrentValue(Location.normalize(newValue));
-	}
+    /**
+     * Returns the current average location.
+     */
+    public synchronized Location currentLocation() {
+        return Location.fromDouble(avg.currentValue());
+    }
 
-	@Override
-	public synchronized double valueIfReported(double d) {
-		if((d < 0.0) || (d > 1.0))
-			throw new IllegalArgumentException("Not a valid normalized key: " + d);
-		double superValue = avg.currentValue();
-		double thisValue = Location.normalize(superValue);
-		double diff = Location.change(thisValue, d);
-		return Location.normalize(avg.valueIfReported(superValue + diff));
-	}
+    /**
+     * Report a location for inclusion in this average.
+     * @deprecated Included only for conformance to the RunningAverage interface,
+     * you should use report(Location) to report locations instead.
+     * @param d The reported location.
+     */
+    @Override
+    @Deprecated
+    public synchronized void report(double d) {
+        report(Location.fromDouble(d));
+    }
+
+    /**
+     * Report a location for inclusion in this average.
+     * @param l The reported location.
+     */
+    public void report(Location l) {
+        if(!l.isValid()) {
+            //Just because we use non-normalized locations doesn't mean we can accept them.
+            throw new IllegalArgumentException("Not a valid normalized location: " + l);
+        }
+        double superValue = avg.currentValue();
+        Location thisValue = Location.fromDenormalizedDouble(superValue);
+        double diff = thisValue.change(l);
+        double toAverage = superValue + diff;
+        /*
+        To gracefully wrap around the 1.0/0.0 threshold we average over (or under) it, and simply normalize the result when reporting a currentValue
+        ---example---
+        d=0.2;          //being reported
+        superValue=1.9; //already wrapped once, but at 0.9
+        thisValue=0.9;  //the normalized value of where we are in the keyspace
+        diff = +0.3;    //the diff from the normalized values; Location.change(0.9, 0.2);
+        avg.report(2.2);//to successfully move the average towards the closest route to the given value.
+        */
+        avg.report(toAverage);
+        double newValue = avg.currentValue();
+        if(!Location.isValidDouble(newValue)) {
+            avg.setCurrentValue(Location.normalizeDouble(newValue));
+        }
+    }
+
+    /**
+     * Calculate the new value for this average as if the given location was included.
+     * @deprecated Included only for conformance to the RunningAverage interface,
+     * you should use valueIfReported(Location) to report locations instead.
+     * @param d The reported location.
+     */
+    @Override
+    @Deprecated
+    public synchronized double valueIfReported(double d) {
+        return valueIfReported(Location.fromDouble(d));
+    }
+
+    /**
+     * Calculate the new value for this average as if the given location was included.
+     * @param l The reported location.
+     */    
+    public synchronized double valueIfReported(Location l) {
+        if(!l.isValid()) {
+            throw new IllegalArgumentException("Not a valid normalized location: " + l);
+        }
+        double superValue = avg.currentValue();
+        Location thisValue = Location.fromDenormalizedDouble(superValue);
+        double diff = thisValue.change(l);
+        double toAverage = superValue + diff;
+        return Location.normalizeDouble(avg.valueIfReported(superValue + diff));
+    }
 
 	@Override
 	public synchronized long countReports() {

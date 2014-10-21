@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.stats;
 
+import freenet.node.Location;
+
 /**
  * This implementation is used for data stores that have no aggregated stats
  *
@@ -10,12 +12,12 @@ package freenet.node.stats;
  */
 public class NotAvailNodeStoreStats implements StoreLocationStats {
 	@Override
-	public double avgLocation() throws StatsNotAvailableException {
+	public Location avgLocation() throws StatsNotAvailableException {
 		throw new StatsNotAvailableException();
 	}
 
 	@Override
-	public double avgSuccess() throws StatsNotAvailableException {
+	public Location avgSuccess() throws StatsNotAvailableException {
 		throw new StatsNotAvailableException();
 	}
 

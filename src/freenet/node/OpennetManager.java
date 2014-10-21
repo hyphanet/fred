@@ -377,7 +377,7 @@ public class OpennetManager {
 		    // them yet, and we need the location to decide which LRU to put them in ...
 		    // This should only be a problem with old nodes; we will include the location in new 
 		    // path folding noderefs...
-		    if(Location.isValid(opn.getLocation()))
+		    if(opn.getLocation().isValid())
 		        lruQueue(opn).push(opn);
 		    else
 		        node.peers.disconnectAndRemove(opn, false, false, false);
@@ -493,7 +493,7 @@ public class OpennetManager {
 
 	public boolean wantPeer(OpennetPeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking, boolean oldOpennetPeer, ConnectionType connectionType) {
 	    if(nodeToAddNow != null) {
-	        if(!Location.isValid(nodeToAddNow.getLocation())) {
+	        if(!nodeToAddNow.getLocation().isValid()) {
 	            Logger.error(this, "Added opennet node reference must include a valid location", new Exception("error"));
 	            return false;
 	        }
@@ -1041,7 +1041,7 @@ public class OpennetManager {
 	}
 
 	public long startSendAnnouncementRequest(long uid, PeerNode peer, byte[] noderef, ByteCounter ctr,
-			double target, short htl) throws NotConnectedException {
+			Location target, short htl) throws NotConnectedException {
 		long xferUID = node.random.nextLong();
 		Message msg = DMT.createFNPOpennetAnnounceRequest(uid, xferUID, noderef.length,
 				paddedSize(noderef.length), target, htl);
@@ -1291,7 +1291,7 @@ public class OpennetManager {
 	 * @param target The location to announce to. In 0.7 we don't try to prevent nodes from choosing their
 	 * announcement location, because it is easy for them to get the location they want later on anyway,
 	 * and we can do a much more effective announcement this way. */
-	public void announce(double target, AnnouncementCallback cb) {
+	public void announce(Location target, AnnouncementCallback cb) {
 		AnnounceSender sender = new AnnounceSender(target, this, node, cb, null);
 		node.executor.execute(sender, "Announcement to "+target);
 	}

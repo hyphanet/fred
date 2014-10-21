@@ -637,10 +637,10 @@ public class Probe implements ByteCounter {
 			 * assumption that a change of 0.002 is enough to make it still useful for statistics but not
 			 * useful for identification, 0.002 change / 0.2 link length = 0.01 sigma.
 			 */
-			double myLoc = node.getLocation();
+			Location myLoc = node.getLocation();
 			for (PeerNode peer : peers) {
-				double peerLoc = peer.getLocation();
-				if (Location.isValid(peerLoc)) {
+				Location peerLoc = peer.getLocation();
+				if (peerLoc.isValid()) {
 					linkLengths[i++] = (float)randomNoise(Location.distance(myLoc, peerLoc), 0.01);
 				}
 			}
@@ -649,7 +649,7 @@ public class Probe implements ByteCounter {
 			listener.onLinkLengths(linkLengths);
 			break;
 		case LOCATION:
-			listener.onLocation((float)node.getLocation());
+			listener.onLocation((float)node.getLocation().toDouble());
 			break;
 		case STORE_SIZE:
 			/*

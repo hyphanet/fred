@@ -63,7 +63,7 @@ public class RealNodeTest {
 			double div = 1.0 / nodes.length;
 			double loc = 0.0;
 			for (int i=0; i<nodes.length; i++) {
-				nodes[i].setLocation(loc);
+				nodes[i].setLocation(Location.fromDouble(loc));
 				loc += div;
 			}
 		}
@@ -111,9 +111,9 @@ public class RealNodeTest {
 	}
 	
 	static double distance(Node a, Node b) {
-		double aL=a.getLocation();
-		double bL=b.getLocation();
-		return Location.distance(aL, bL);
+		Location aL=a.getLocation();
+		Location bL=b.getLocation();
+		return aL.distance(bL);
 	}
 	
 	static String getPortNumber(PeerNode p) {

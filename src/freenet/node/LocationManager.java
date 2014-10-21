@@ -98,7 +98,7 @@ public class LocationManager implements ByteCounter {
     long timeLastSuccessfullySwapped;
 
     public LocationManager(RandomSource r, Node node) {
-        loc = r.nextDouble();
+        loc = Location.random(r);
         sender = new SwapRequestSender();
         this.r = r;
         this.node = node;
@@ -110,7 +110,7 @@ public class LocationManager implements ByteCounter {
         logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     }
 
-    private double loc;
+    private Location loc;
     private long timeLocSet;
     private double locChangeSession = 0.0;
 
@@ -119,15 +119,15 @@ public class LocationManager implements ByteCounter {
     /**
      * @return The current Location of this node.
      */
-    public synchronized double getLocation() {
+    public synchronized Location getLocation() {
         return loc;
     }
 
     /**
      * @param l
      */
-    public synchronized void setLocation(double l) {
-    	if(!Location.isValid(l)) {
+    public synchronized void setLocation(Location l) {
+    	if(!l.isValid()) {
     		Logger.error(this, "Setting invalid location: "+l, new Exception("error"));
     		return;
     	}
@@ -135,9 +135,9 @@ public class LocationManager implements ByteCounter {
         timeLocSet = System.currentTimeMillis();
     }
 
-    public synchronized void updateLocationChangeSession(double newLoc) {
-    	double oldLoc = loc;
-		double diff = Location.change(oldLoc, newLoc);
+    public synchronized void updateLocationChangeSession(Location newLoc) {
+    	Location oldLoc = loc;
+		double diff = oldLoc.change(newLoc);
 		if(logMINOR) Logger.minor(this, "updateLocationChangeSession: oldLoc: "+oldLoc+" -> newLoc: "+newLoc+" moved: "+diff);
 		this.locChangeSession += diff;
     }
@@ -202,13 +202,13 @@ public class LocationManager implements ByteCounter {
                         if(System.currentTimeMillis() - timeLastSuccessfullySwapped > SECONDS.toMillis(30)) {
                             try {
                                 boolean myFlag = false;
-                                double myLoc = getLocation();
+                                Location myLoc = getLocation();
                                 for(PeerNode pn: node.peers.connectedPeers()) {
                                 	PeerLocation l = pn.location;
                                     if(pn.isRoutable()) {
                                     	synchronized(l) {
-                                    		double ploc = l.getLocation();
-                                    		if(Location.equals(ploc, myLoc)) {
+                                    		Location ploc = l.getLocation();
+                                    		if(ploc.equals(myLoc)) {
                                     			// Don't reset location unless we're SURE there is a problem.
                                     			// If the node has had its location equal to ours for at least 2 minutes, and ours has been likewise...
                                     			long now = System.currentTimeMillis();
@@ -227,7 +227,7 @@ public class LocationManager implements ByteCounter {
                                     }
                                 }
                                 if(myFlag) {
-                                    setLocation(node.random.nextDouble());
+                                    setLocation(Location.random(node.random));
                                     announceLocChange(true, true, true);
                                     node.writeNodeFile();
                                 }
@@ -325,14 +325,14 @@ public class LocationManager implements ByteCounter {
             // Create my side
 
             long random = r.nextLong();
-            double myLoc = getLocation();
+            Location myLoc = getLocation();
             LocationUIDPair[] friendLocsAndUIDs = node.peers.getPeerLocationsAndUIDs();
-            double[] friendLocs = extractLocs(friendLocsAndUIDs);
+            Location[] friendLocs = extractLocs(friendLocsAndUIDs);
             long[] myValueLong = new long[1+1+friendLocs.length];
             myValueLong[0] = random;
-            myValueLong[1] = Double.doubleToLongBits(myLoc);
+            myValueLong[1] = myLoc.toLongBits();
             for(int i=0;i<friendLocs.length;i++)
-                myValueLong[i+2] = Double.doubleToLongBits(friendLocs[i]);
+                myValueLong[i+2] = friendLocs[i].toLongBits();
             byte[] myValue = Fields.longsToBytes(myValueLong);
 
             byte[] myHash = md.digest(myValue);
@@ -386,17 +386,17 @@ public class LocationManager implements ByteCounter {
 
             long hisRandom = hisBufLong[0];
 
-            double hisLoc = Double.longBitsToDouble(hisBufLong[1]);
-            if(!Location.isValid(hisLoc)) {
+            Location hisLoc = Location.fromLongBits(hisBufLong[1]);
+            if(!hisLoc.isValid()) {
                 Logger.error(this, "Bad loc: "+hisLoc+" on "+uid);
                 return;
             }
             registerKnownLocation(hisLoc);
 
-            double[] hisFriendLocs = new double[hisBufLong.length-2];
+            Location[] hisFriendLocs = new Location[hisBufLong.length-2];
             for(int i=0;i<hisFriendLocs.length;i++) {
-                hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
-                if(!Location.isValid(hisFriendLocs[i])) {
+                hisFriendLocs[i] = Location.fromLongBits(hisBufLong[i+2]);
+                if(!hisFriendLocs[i].isValid()) {
                     Logger.error(this, "Bad friend loc: "+hisFriendLocs[i]+" on "+uid);
                     return;
                 }
@@ -435,7 +435,7 @@ public class LocationManager implements ByteCounter {
 
             // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
             if(node.random.nextInt(SWAP_RESET) == 0) {
-                setLocation(node.random.nextDouble());
+                setLocation(Location.random(node.random));
                 announceLocChange(true, true, false);
                 node.writeNodeFile();
             }
@@ -472,14 +472,14 @@ public class LocationManager implements ByteCounter {
                 // We can't lock friends_locations, so lets just
                 // pretend that they're locked
                 long random = r.nextLong();
-                double myLoc = getLocation();
+                Location myLoc = getLocation();
                 LocationUIDPair[] friendLocsAndUIDs = node.peers.getPeerLocationsAndUIDs();
-                double[] friendLocs = extractLocs(friendLocsAndUIDs);
+                Location[] friendLocs = extractLocs(friendLocsAndUIDs);
                 long[] myValueLong = new long[1+1+friendLocs.length];
                 myValueLong[0] = random;
-                myValueLong[1] = Double.doubleToLongBits(myLoc);
+                myValueLong[1] = myLoc.toLongBits();
                 for(int i=0;i<friendLocs.length;i++)
-                    myValueLong[i+2] = Double.doubleToLongBits(friendLocs[i]);
+                    myValueLong[i+2] = friendLocs[i].toLongBits();
                 byte[] myValue = Fields.longsToBytes(myValueLong);
 
                 byte[] myHash = SHA256.digest(myValue);
@@ -588,17 +588,17 @@ public class LocationManager implements ByteCounter {
 
                 long hisRandom = hisBufLong[0];
 
-                double hisLoc = Double.longBitsToDouble(hisBufLong[1]);
-                if(!Location.isValid(hisLoc)) {
+                Location hisLoc = Location.fromLongBits(hisBufLong[1]);
+                if(!hisLoc.isValid()) {
                     Logger.error(this, "Bad loc: "+hisLoc+" on "+uid);
                     return;
                 }
                 registerKnownLocation(hisLoc);
 
-                double[] hisFriendLocs = new double[hisBufLong.length-2];
+                Location[] hisFriendLocs = new Location[hisBufLong.length-2];
                 for(int i=0;i<hisFriendLocs.length;i++) {
-                    hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
-                    if(!Location.isValid(hisFriendLocs[i])) {
+                    hisFriendLocs[i] = Location.fromLongBits(hisBufLong[i+2]);
+                    if(!hisFriendLocs[i].isValid()) {
                         Logger.error(this, "Bad friend loc: "+hisFriendLocs[i]+" on "+uid);
                         return;
                     }
@@ -630,7 +630,7 @@ public class LocationManager implements ByteCounter {
 
                 // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
                 if(node.random.nextInt(SWAP_RESET) == 0) {
-                    setLocation(node.random.nextDouble());
+                    setLocation(Location.random(node.random));
                     announceLocChange(true, true, false);
                     node.writeNodeFile();
                 }
@@ -654,7 +654,7 @@ public class LocationManager implements ByteCounter {
     }
 
     private void announceLocChange(boolean log, boolean randomReset, boolean fromDupLocation) {
-        Message msg = DMT.createFNPLocChangeNotificationNew(getLocation(), node.peers.getPeerLocationDoubles(true));
+        Message msg = DMT.createFNPLocChangeNotificationNew(getLocation(), node.peers.getPeerLocations(true));
         node.peers.localBroadcast(msg, false, true, this);
 	if(log)
 		recordLocChange(randomReset, fromDupLocation);
@@ -767,21 +767,21 @@ public class LocationManager implements ByteCounter {
      * If A <= B, then calculate p = A / B. They then switch with
      * probability p (that is, switch if rand.nextFloat() < p).
      *
-     * @param myLoc My location as a double.
-     * @param friendLocs Locations of my friends as doubles.
-     * @param hisLoc His location as a double
-     * @param hisFriendLocs Locations of his friends as doubles.
+     * @param myLoc My location.
+     * @param friendLocs Locations of my friends.
+     * @param hisLoc His location.
+     * @param hisFriendLocs Locations of his friends.
      * @param rand Shared random number used to decide whether to swap.
      * @return
      */
-    private boolean shouldSwap(double myLoc, double[] friendLocs, double hisLoc, double[] hisFriendLocs, long rand) {
+    private boolean shouldSwap(Location myLoc, Location[] friendLocs, Location hisLoc, Location[] hisFriendLocs, long rand) {
 
         // A = distance from us to all our neighbours, for both nodes,
         // all multiplied together
 
         // Dump
 
-    	if(Math.abs(hisLoc - myLoc) <= Double.MIN_VALUE * 2)
+    	if(hisLoc.equals(myLoc))
     		return false; // Probably swapping with self
 
         StringBuilder sb = new StringBuilder();
@@ -789,14 +789,14 @@ public class LocationManager implements ByteCounter {
         sb.append("my: ").append(myLoc).append(", his: ").append(hisLoc).append(", myFriends: ");
         sb.append(friendLocs.length).append(", hisFriends: ").append(hisFriendLocs.length).append(" mine:\n");
 
-        for(double loc: friendLocs) {
+        for(Location loc: friendLocs) {
             sb.append(loc);
             sb.append(' ');
         }
 
         sb.append("\nhis:\n");
 
-        for(double loc: hisFriendLocs) {
+        for(Location loc: hisFriendLocs) {
             sb.append(loc);
             sb.append(' ');
         }
@@ -804,24 +804,24 @@ public class LocationManager implements ByteCounter {
         if(logMINOR) Logger.minor(this, sb.toString());
 
         double A = 1.0;
-        for(double loc: friendLocs) {
-            if(Math.abs(loc - myLoc) <= Double.MIN_VALUE*2) continue;
-            A *= Location.distance(loc, myLoc);
+        for(Location loc: friendLocs) {
+            if(myLoc.equals(loc)) continue;
+            A *= myLoc.distance(loc);
         }
-        for(double loc: hisFriendLocs) {
-            if(Math.abs(loc - hisLoc) <= Double.MIN_VALUE*2) continue;
-            A *= Location.distance(loc, hisLoc);
+        for(Location loc: hisFriendLocs) {
+            if(hisLoc.equals(loc)) continue;
+            A *= hisLoc.distance(loc);
         }
 
         // B = the same, with our two values swapped
         double B = 1.0;
-        for(double loc: friendLocs) {
-            if(Math.abs(loc - hisLoc) <= Double.MIN_VALUE*2) continue;
-            B *= Location.distance(loc, hisLoc);
+        for(Location loc: friendLocs) {
+            if(hisLoc.equals(loc)) continue;
+            B *= hisLoc.distance(loc);
         }
-        for(double loc: hisFriendLocs) {
-            if(Math.abs(loc - myLoc) <= Double.MIN_VALUE*2) continue;
-            B *= Location.distance(loc, myLoc);
+        for(Location loc: hisFriendLocs) {
+            if(myLoc.equals(loc)) continue;
+            B *= myLoc.distance(loc);
         }
 
         //Logger.normal(this, "A="+A+" B="+B);
@@ -1204,7 +1204,7 @@ public class LocationManager implements ByteCounter {
     }
 
     private void spyOnLocations(Message m, boolean ignoreIfOld) {
-    	spyOnLocations(m, ignoreIfOld, false, -1.0);
+    	spyOnLocations(m, ignoreIfOld, false, Location.INVALID);
     }
 
     /** Spy on locations in somebody else's swap request. Greatly increases the
@@ -1212,7 +1212,7 @@ public class LocationManager implements ByteCounter {
      * @param swappingWithMe True if this node is participating in the swap, false if it is
      * merely spying on somebody else's swap.
      */
-    private void spyOnLocations(Message m, boolean ignoreIfOld, boolean swappingWithMe, double myLoc) {
+    private void spyOnLocations(Message m, boolean ignoreIfOld, boolean swappingWithMe, Location myLoc) {
 
     	long[] uids = null;
 
@@ -1228,10 +1228,10 @@ public class LocationManager implements ByteCounter {
         	return;
         }
 
-        double[] locations = Fields.bytesToDoubles(data, 8, data.length-8);
+        Location[] locations = Location.fromDoubleArray(Fields.bytesToDoubles(data, 8, data.length-8));
 
-        double hisLoc = locations[0];
-        if(!Location.isValid(hisLoc)) {
+        Location hisLoc = locations[0];
+        if(!hisLoc.isValid()) {
         	Logger.error(this, "Invalid hisLoc in swap commit: "+hisLoc, new Exception("error"));
         	return;
         }
@@ -1244,7 +1244,7 @@ public class LocationManager implements ByteCounter {
         	registerKnownLocation(hisLoc);
 
         for(int i=1;i<locations.length;i++) {
-        	double loc = locations[i];
+        	Location loc = locations[i];
         	if(uids != null) {
         		registerKnownLocation(loc, uids[i-1]);
         		registerLink(uids[0], uids[i-1]);
@@ -1324,18 +1324,18 @@ public class LocationManager implements ByteCounter {
 
     private static final long MAX_AGE = DAYS.toMillis(7);
 
-    private final TimeSortedHashtable<Double> knownLocs = new TimeSortedHashtable<Double>();
+    private final TimeSortedHashtable<Location> knownLocs = new TimeSortedHashtable<Location>();
 
-    void registerLocationLink(double d, double t) {
+    void registerLocationLink(Location d, Location t) {
     	if(logMINOR) Logger.minor(this, "Known Link: "+d+ ' ' +t);
     }
 
-    void registerKnownLocation(double d, long uid) {
+    void registerKnownLocation(Location d, long uid) {
     	if(logMINOR) Logger.minor(this, "LOCATION: "+d+" UID: "+uid);
     	registerKnownLocation(d);
     }
 
-    void registerKnownLocation(double d) {
+    void registerKnownLocation(Location d) {
     	if(logMINOR) Logger.minor(this, "Known Location: "+d);
         long now = System.currentTimeMillis();
 
@@ -1365,12 +1365,12 @@ public class LocationManager implements ByteCounter {
      */
     public Object[] getKnownLocations(long timestamp) {
     	synchronized (knownLocs) {
-    		return knownLocs.pairsAfter(timestamp, new Double[knownLocs.size()]);
+    		return knownLocs.pairsAfter(timestamp, new Location[knownLocs.size()]);
     	}
 	}
 
-	static double[] extractLocs(LocationUIDPair[] pairs) {
-		double[] locs = new double[pairs.length];
+	static Location[] extractLocs(LocationUIDPair[] pairs) {
+		Location[] locs = new Location[pairs.length];
 		for(int i=0;i<pairs.length;i++)
 			locs[i] = pairs[i].location;
 		return locs;
@@ -1381,20 +1381,6 @@ public class LocationManager implements ByteCounter {
 		for(int i=0;i<pairs.length;i++)
 			uids[i] = pairs[i].uid;
 		return uids;
-	}
-
-	public static double[] extractLocs(PeerNode[] peers, boolean indicateBackoff) {
-		double[] locs = new double[peers.length];
-		for(int i=0;i<peers.length;i++) {
-			locs[i] = peers[i].getLocation();
-			if(indicateBackoff) {
-				if(peers[i].isRoutingBackedOffEither())
-					locs[i] += 1;
-				else
-					locs[i] = -1 - locs[i];
-			}
-		}
-		return locs;
 	}
 
 	public static long[] extractUIDs(PeerNode[] peers) {

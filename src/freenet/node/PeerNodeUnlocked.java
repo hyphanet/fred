@@ -8,7 +8,7 @@ import freenet.keys.Key;
  * guarantee safety. */
 interface PeerNodeUnlocked {
 	
-	double getLocation();
+	Location getLocation();
 	
 	long getBootID();
 	

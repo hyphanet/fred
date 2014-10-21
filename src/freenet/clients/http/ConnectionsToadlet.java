@@ -29,6 +29,7 @@ import freenet.node.DarknetPeerNode;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.FSParseException;
+import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStats;
@@ -146,9 +147,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 
 		private int compareLocations(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
-			double diff = firstNode.getLocation() - secondNode.getLocation(); // Can occasionally be the same, and we must have a consistent sort order
-			if(Double.MIN_VALUE*2 > Math.abs(diff)) return 0;
-			return diff > 0 ? 1 : -1;
+		    int diff = firstNode.getLocation().compareTo(secondNode.getLocation());
+			if(diff == 0)
+				return 0;
+			else
+				return (diff > 0 ? 1 : -1);
 		}
 
 		/** Default comparison, after taking into account status */
@@ -496,21 +499,21 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// FOAF locations table.
 			if(advancedMode) {
 				//requires a location-to-list/count in-memory transform
-				List<Double> locations=new ArrayList<Double>();
+				List<Location> locations=new ArrayList<Location>();
 				List<List<PeerNodeStatus>> peerGroups=new ArrayList<List<PeerNodeStatus>>();
 				{
 					for (PeerNodeStatus peerNodeStatus : peerNodeStatuses) {
-						double[] peersLoc = peerNodeStatus.getPeersLocation();
+						Location[] peersLoc = peerNodeStatus.getPeersLocation();
 						if (peersLoc!=null) {
-							for (double location : peersLoc) {
+							for (Location location : peersLoc) {
 								int i;
 								int max=locations.size();
 								// FIXME Fix O(n^2): Use Arrays.binarySearch or use a TreeMap.
-								for (i=0; i<max && locations.get(i)<location; i++);
+								for (i=0; i<max && locations.get(i).compareTo(location) < 0; i++);
 								//i now points to the proper location (equal, insertion point, or end-of-list)
 								//maybe better called "reverseGroup"?
 								List<PeerNodeStatus> peerGroup;
-								if (i<max && locations.get(i).doubleValue()==location) {
+								if (i<max && locations.get(i).equals(location)) {
 									peerGroup=peerGroups.get(i);
 								} else {
 									peerGroup=new ArrayList<PeerNodeStatus>();
@@ -550,12 +553,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				}
 				int max=locations.size();
 				for (int i=0; i<max; i++) {
-					double location=locations.get(i);
+					Location location=locations.get(i);
 					List<PeerNodeStatus> peersWithFriend=peerGroups.get(i);
 					boolean isTransitivePeer=false;
 					{
 						for (PeerNodeStatus peerNodeStatus : peerNodeStatuses) {
-							if (location==peerNodeStatus.getLocation()) {
+							if (peerNodeStatus.getLocation().equals(location)) {
 								isTransitivePeer=true;
 								transitiveCount++;
 								break;
@@ -1005,7 +1008,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			HTMLNode locationNode = peerRow.addChild("td", "class", "peer-location");
 			locationNode.addChild("b", String.valueOf(peerNodeStatus.getLocation()));
 			locationNode.addChild("br");
-			double[] peersLoc = peerNodeStatus.getPeersLocation();
+			Location[] peersLoc = peerNodeStatus.getPeersLocation();
 			if(peersLoc != null) {
 				locationNode.addChild("i", "+"+(peersLoc.length)+" friends");
 			}
