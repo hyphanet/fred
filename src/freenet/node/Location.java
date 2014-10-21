@@ -196,7 +196,7 @@ public class Location implements Comparable<Location> {
 	 * @return whether the two locations are considered equal
 	 */
 	private static boolean equals(double a, double b) {
-		return distanceAllowInvalid(a, b) < Double.MIN_VALUE * 2;
+		return distanceAllowInvalid(a, b) < 1e-15;
 	}
 	
 	@Deprecated
@@ -228,6 +228,9 @@ public class Location implements Comparable<Location> {
 	
 	@Override
 	public int compareTo(Location other) {
+	    if (equals(other)) {
+	        return 0;
+	    }
 	    return Double.compare(loc, other.loc);
 	}
 	
