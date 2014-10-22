@@ -224,6 +224,10 @@ public class NodeCrypto {
 		} catch (FSParseException e) {
 			Logger.error(this, "Caught "+e, e);
 			throw new IOException(e.toString());
+		} catch (IllegalArgumentException e) {
+			// DSAPrivateKey is invalid
+			Logger.error(this, "Caught "+e, e);
+			throw new IOException(e.toString());
 		}
 		
 		if(ecdsaP256 == null) {
