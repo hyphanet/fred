@@ -872,9 +872,12 @@ public class Node implements TimeSkewDetectorCallback {
 		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
 		String loc = fs.get("location");
 		Location locD = Location.fromString(loc);
-		if (!locD.isValid())
-			throw new IOException("Invalid location: " + loc);
-		lm.setLocation(locD);
+        try {
+		    lm.setLocation(locD.validated());
+	    }
+	    catch (InvalidLocationException e) {
+	        throw new IOException("Invalid location: " + loc, e);
+	    }
 		myName = fs.get("myName");
 		if(myName == null) {
 			myName = newName();
@@ -4026,7 +4029,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public SSKBlock fetch(NodeSSK key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR, BlockMetadata meta) {
-	    Location loc = Location.fromKey(key);
+	    Location.Valid loc = Location.fromKey(key);
 		double dist=lm.getLocation().distance(loc);
 		if(canReadClientCache) {
 			try {
@@ -4095,7 +4098,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public CHKBlock fetch(NodeCHK key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR, BlockMetadata meta) {
-	    Location loc = Location.fromKey(key);
+	    Location.Valid loc = Location.fromKey(key);
 		double dist=lm.getLocation().distance(loc);
 		if(canReadClientCache) {
 			try {
@@ -4253,7 +4256,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private void store(CHKBlock block, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		try {
-			Location loc = Location.fromKey(block.getKey());
+			Location.Valid loc = Location.fromKey(block.getKey());
 			if (canWriteClientCache) {
 				chkClientcache.put(block, false);
 				nodeStats.avgClientCacheCHKLocation.report(loc);
@@ -4303,7 +4306,7 @@ public class Node implements TimeSkewDetectorCallback {
 		try {
 			// Store the pubkey before storing the data, otherwise we can get a race condition and
 			// end up deleting the SSK data.
-			Location loc = Location.fromKey(block.getKey());
+			Location.Valid loc = Location.fromKey(block.getKey());
 			getPubKey.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), deep, canWriteClientCache, canWriteDatastore, forULPR || useSlashdotCache, writeLocalToDatastore);
 			if(canWriteClientCache) {
 				sskClientcache.put(block, overwrite, false);
@@ -4786,7 +4789,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return !peers.anyConnectedPeers();
 	}
 
-	public Location getLocation() {
+	public Location.Valid getLocation() {
 		return lm.getLocation();
 	}
 
@@ -5095,7 +5098,7 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Warning: does not announce change in location!
 	 */
-	public void setLocation(Location loc) {
+	public void setLocation(Location.Valid loc) {
 		lm.setLocation(loc);
 	}
 
@@ -5329,21 +5332,21 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @return
 	 */
 	public boolean shouldStoreDeep(Key key, PeerNode source, PeerNode[] routedTo) {
-    	Location myLoc = getLocation();
-    	Location target = Location.fromKey(key);
+    	Location.Valid myLoc = getLocation();
+    	Location.Valid target = Location.fromKey(key);
     	double myDist = myLoc.distance(target);
 
     	// First, calculate whether we would have stored it using the old formula.
     	if(logMINOR) Logger.minor(this, "Should store for "+key+" ?");
     	// Don't sink store if any of the nodes we routed to, or our predecessor, is both high-uptime and closer to the target than we are.
     	if(source != null && !source.isLowUptime()) {
-    		if(source.getLocation().distance(target) < myDist) {
+    		if(source.getLocation().assumeValid().distance(target) < myDist) {
     	    	if(logMINOR) Logger.minor(this, "Not storing because source is closer to target for "+key+" : "+source);
     			return false;
     		}
     	}
     	for(PeerNode pn : routedTo) {
-    		if(pn.getLocation().distance(target) < myDist && !pn.isLowUptime()) {
+    		if(pn.getLocation().assumeValid().distance(target) < myDist && !pn.isLowUptime()) {
     	    	if(logMINOR) Logger.minor(this, "Not storing because peer "+pn+" is closer to target for "+key+" his loc "+pn.getLocation()+" my loc "+myLoc+" target is "+target);
     			return false;
     		} else {

@@ -63,7 +63,7 @@ public class RealNodeTest {
 			double div = 1.0 / nodes.length;
 			double loc = 0.0;
 			for (int i=0; i<nodes.length; i++) {
-				nodes[i].setLocation(Location.fromDouble(loc));
+				nodes[i].setLocation(Location.fromDouble(loc).assumeValid());
 				loc += div;
 			}
 		}
@@ -111,8 +111,8 @@ public class RealNodeTest {
 	}
 	
 	static double distance(Node a, Node b) {
-		Location aL=a.getLocation();
-		Location bL=b.getLocation();
+		Location.Valid aL=a.getLocation();
+		Location.Valid bL=b.getLocation();
 		return aL.distance(bL);
 	}
 	

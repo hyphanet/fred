@@ -637,11 +637,11 @@ public class Probe implements ByteCounter {
 			 * assumption that a change of 0.002 is enough to make it still useful for statistics but not
 			 * useful for identification, 0.002 change / 0.2 link length = 0.01 sigma.
 			 */
-			Location myLoc = node.getLocation();
+			Location.Valid myLoc = node.getLocation();
 			for (PeerNode peer : peers) {
 				Location peerLoc = peer.getLocation();
 				if (peerLoc.isValid()) {
-					linkLengths[i++] = (float)randomNoise(myLoc.distance(peerLoc), 0.01);
+					linkLengths[i++] = (float)randomNoise(myLoc.distance(peerLoc.assumeValid()), 0.01);
 				}
 			}
 			linkLengths = java.util.Arrays.copyOf(linkLengths, i);

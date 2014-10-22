@@ -777,7 +777,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 					}
 				};
 			}
-			AnnounceSender sender = new AnnounceSender(target, htl, uid, source, om, node, xferUID, noderefLength, paddedLength, cb);
+			AnnounceSender sender = new AnnounceSender(target.assumeValid(), htl, uid, source, om, node, xferUID, noderefLength, paddedLength, cb);
 			node.executor.execute(sender, "Announcement sender for "+uid);
 			success = true;
 			if(logMINOR) Logger.minor(this, "Accepted announcement from "+source);
@@ -940,6 +940,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 
 	private boolean forward(Message m, long id, PeerNode pn, short htl, Location target, RoutedContext ctx, byte[] targetIdentity) {
 		if(logMINOR) Logger.minor(this, "Should forward");
+		if (!target.isValid()) {
+		    Logger.error(this, "Invalid message target: " + target);
+		    return true;
+		}
 		// Forward
 		m = preForward(m, htl);
 		while(true) {
@@ -949,7 +953,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				next = null;
 			}
 			if(next == null)
-			next = node.peers.closerPeer(pn, ctx.routedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+			next = node.peers.closerPeer(pn, ctx.routedTo, target.assumeValid(), true, node.isAdvancedModeEnabled(), -1, null,
 				        null, htl, 0, pn == null, false, false);
 			if(logMINOR) Logger.minor(this, "Next: "+next+" message: "+m);
 			if(next != null) {

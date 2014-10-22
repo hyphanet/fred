@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.Arrays;
+
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.support.Logger;
@@ -20,7 +22,7 @@ public class Location implements Comparable<Location> {
 	/** Two doubles within this value from eachother are considered equal. */
 	private static final double EPSILON = 1e-15;
 	
-	private final double loc;
+	protected final double loc;
 	private final int hash;
 
     private Location() {
@@ -28,26 +30,102 @@ public class Location implements Comparable<Location> {
     }
 
     private Location(double init) {
-        if (!isValidDouble(init)) {
-            loc = LOCATION_INVALID;
-        }
-        else {
-            loc = init;
-        }
+        loc = init;
         hash = (new Double(loc)).hashCode();
+    }
+    
+    public Valid validated() throws InvalidLocationException {
+        throw new InvalidLocationException("Cannot validate invalid location.");
+    }
+    
+    public Valid assumeValid() {
+        try {
+            return validated();
+        }
+        catch (InvalidLocationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    public Valid normalized() throws InvalidLocationException {
+        if (this == INVALID) {
+            throw new InvalidLocationException("Cannot normalize Location.INVALID.");
+        }
+        if (Double.isInfinite(loc)) {
+            throw new InvalidLocationException("Cannot normalize infinity.");
+        }
+        if (Double.isNaN(loc)) {
+            throw new InvalidLocationException("Cannot normalize NaN.");
+        }
+        return new Valid(normalizeDouble(loc));
+    }
+
+    public static class Valid extends Location {
+        private Valid(double init) throws InvalidLocationException {
+            super(init);
+            if (!isValidDouble(init)) {
+                throw new InvalidLocationException("Not a valid location: " + init);
+            }
+        }
+    
+        @Override
+        public Valid validated() {
+            return this;
+        }
+        
+        @Override
+        public Valid normalized() {
+            return this;
+        }
+        
+        @Override
+        public double toDouble() {
+            return loc;
+        }
+        
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+        
+    	/**
+	     * Distance between this valid location and the given valid location.
+	     * @param other a valid location
+	     * @return the absolute distance between the locations in the circular location space.
+	     */
+        public double distance(Valid other) {
+		    return Math.abs(change(other));
+        }
+        
+	    /**
+	     * Distance to the given location, including direction of the change (positive/negative).
+	     * When this location and the given location are on opposite ends of the keyspace, it will return +0.5.
+	     * @param to   a valid end location
+	     * @return the signed distance from this location to the given location in the circular location space
+	     */	
+	    public double change(Valid to) {
+	        double change = to.loc - loc;
+		    if (change > 0.5) {
+			    return change - 1.0;
+		    }
+		    if (change <= -0.5) {
+			    return change + 1.0;
+		    }
+		    return change;
+	    }
     }
 
     @Override
     public String toString() {
-        return Double.toString(loc);
+        return Double.toString(toDouble());
     }
     
     public double toDouble() {
-        return loc;
+        return LOCATION_INVALID;
     }
 
     public long toLongBits() {
-        return Double.doubleToLongBits(loc);
+        return Double.doubleToLongBits(toDouble());
     }
 
 	/**
@@ -71,68 +149,24 @@ public class Location implements Comparable<Location> {
 	}
 	
 	/**
-	 * Distance between this valid location and the given valid location.
-	 * @param other a valid location
-	 * @return the absolute distance between the locations in the circular location space.
-	 */
-    public double distance(Location other) {
-        if (!isValid() || !other.isValid()) {
-			String errMsg = "Invalid Location! this = " + this + " other = " + other + " Please report this bug!";
-			Logger.error(Location.class, errMsg, new Exception("error"));
-			throw new IllegalArgumentException(errMsg);
-		}
-		return simpleDistance(other);
-    }
-
-	/**
 	 * Distance to potentially invalid locations.
  	 * @param other a valid location
 	 * @return the absolute distance between this location and the given location in the circular location space.
 	 * Invalid locations are considered to be at 2.0, and the result is returned accordingly.
 	 */
 	public double distanceAllowInvalid(Location other) {
-	    if (!isValid() && !other.isValid()) {
-			return 0.0; // Both are out of range so both are equal.
+	    if (this instanceof Valid && other instanceof Valid) {
+	        return ((Valid)this).distance((Valid)other);
 		}
-		if (!isValid()) {
-			return 2.0 - other.loc;
-		}
-		if (!other.isValid()) {
+		if (this instanceof Valid) {
 			return 2.0 - loc;
 		}
-		// Both values are valid.
-		return simpleDistance(other);
+		if (other instanceof Valid) {
+			return 2.0 - other.loc;
+		}
+		return 0.0; // Both are out of range so both are equal.
 	}
 
-	/**
-	 * Distance between this valid location and the given valid location without bounds check.
-	 * The behaviour is undefined for invalid locations.
-	 * @param other a valid location
-	 * @return the absolute distance between this location and the given location in the circular location space.
-	 */
-	public double simpleDistance(Location other) {
-	    return Math.abs(change(other));
-	}
-
-	/**
-	 * Distance to the given location, including direction of the change (positive/negative).
-	 * When this location and the given location are on opposite ends of the keyspace, it will return +0.5.
-	 * The behaviour is undefined for invalid locations.
-	 * @param to   a valid end location
-	 * @return the signed distance from this location to the given location in the circular location space
-	 */	
-	public double change(Location to) {
-	    double change = to.loc - loc;
-		if (change > 0.5) {
-			return change - 1.0;
-		}
-		if (change <= -0.5) {
-			return change + 1.0;
-		}
-		return change;
-	}
-	
-	
 	/**
 	 * Normalize a location represented as double to within the valid range.
 	 * Given an arbitrary double (not bound to [0.0, 1.0)) return the normalized double [0.0, 1.0) which would result in simple
@@ -150,7 +184,7 @@ public class Location implements Comparable<Location> {
 	}
 
 	/**
-	 * Tests for equality with given locations.
+	 * Tests for equality with given location.
 	 * Locations are considered equal if their distance is almost zero (within EPSILON),
 	 * or if both locations are invalid. equals(0.0, 1.0) is true, since their distance is 0.
 	 * @param other any location
@@ -174,7 +208,7 @@ public class Location implements Comparable<Location> {
 	}
 	
 	public boolean isValid() {
-	    return isValidDouble(this.loc);
+	    return false;
 	}
 	
 	@Override
@@ -182,15 +216,25 @@ public class Location implements Comparable<Location> {
 	    if (equals(other)) {
 	        return 0;
 	    }
-	    return Double.compare(loc, other.loc);
+	    return Double.compare(toDouble(), other.toDouble());
 	}
 	
 	public static Location fromDouble(double d) {
-	    return new Location(d);
+	    try {
+	        return new Valid(d);
+        }
+        catch (InvalidLocationException e) {
+            return new Location(d);
+        }
 	}
 	
-	public static Location fromDenormalizedDouble(double d) {
-	    return fromDouble(normalizeDouble(d));
+	public static Valid fromDenormalizedDouble(double d) {
+        try {
+	        return fromDouble(normalizeDouble(d)).validated();
+	    }
+        catch (InvalidLocationException e) {
+            throw new IllegalArgumentException("Location is still invalid after normalization.", e);
+        }
 	}
 	
 	public static Location fromLongBits(long bits) {
@@ -201,8 +245,13 @@ public class Location implements Comparable<Location> {
 	    return fromDouble(getLocation(s));
 	}
 	
-	public static Location random(RandomSource r) {
-	    return fromDouble(r.nextDouble());
+	public static Valid random(RandomSource r) {
+	    try {
+	        return fromDouble(r.nextDouble()).validated();
+        }
+        catch (InvalidLocationException e) {
+            throw new IllegalArgumentException("Random source " + r + " is broken.", e);
+        }
 	}
 	
 	public static Location[] fromDoubleArray(double[] ds) {
@@ -216,13 +265,36 @@ public class Location implements Comparable<Location> {
 	public static double[] toDoubleArray(Location[] ls) {
 	    double[] ret = new double[ls.length];
 	    for (int i = 0; i < ls.length; i++) {
-	        ret[i] = ls[i].loc;
+	        ret[i] = ls[i].toDouble();
 	    }
 	    return ret;
 	}
 	
-	public static Location fromKey(Key k) {
-	    return fromDouble(k.toNormalizedDouble());
+	public static Location.Valid[] validated(Location[] ls) throws InvalidLocationException {
+	    try {
+	        return Arrays.copyOf(ls, ls.length, Valid[].class);
+        }
+        catch (ArrayStoreException e) {
+            throw new InvalidLocationException("Cannot validate invalid location.");
+        }
+	}
+	
+	public static Location.Valid[] assumeValid(Location[] ls) {
+	    try {
+	        return validated(ls);
+        }
+        catch (InvalidLocationException e) {
+            throw new RuntimeException(e);
+        }
+	}
+	
+	public static Location.Valid fromKey(Key k) {
+	    try {
+	        return fromDouble(k.toNormalizedDouble()).validated();
+        }
+        catch (InvalidLocationException e) {
+            throw new IllegalArgumentException("Key " + k + " has no valid location", e);
+        }
 	}
 	
 	public static final Location INVALID = new Location();

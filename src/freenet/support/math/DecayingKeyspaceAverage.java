@@ -4,6 +4,7 @@
 package freenet.support.math;
 
 import freenet.node.Location;
+import freenet.node.InvalidLocationException;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -71,8 +72,8 @@ public final class DecayingKeyspaceAverage implements RunningAverage, Cloneable 
     /**
      * Returns the current average location.
      */
-    public synchronized Location currentLocation() {
-        return Location.fromDouble(avg.currentValue());
+    public synchronized Location.Valid currentLocation() {
+        return Location.fromDouble(avg.currentValue()).assumeValid();
     }
 
     /**
@@ -84,20 +85,21 @@ public final class DecayingKeyspaceAverage implements RunningAverage, Cloneable 
     @Override
     @Deprecated
     public synchronized void report(double d) {
-        report(Location.fromDouble(d));
+        try {
+            report(Location.fromDouble(d).validated());
+        }
+        catch (InvalidLocationException e) {
+            throw new IllegalArgumentException("Not a valid normalized location: " + d, e);
+        }
     }
 
     /**
      * Report a location for inclusion in this average.
      * @param l The reported location.
      */
-    public void report(Location l) {
-        if(!l.isValid()) {
-            //Just because we use non-normalized locations doesn't mean we can accept them.
-            throw new IllegalArgumentException("Not a valid normalized location: " + l);
-        }
+    public void report(Location.Valid l) {
         double superValue = avg.currentValue();
-        Location thisValue = Location.fromDenormalizedDouble(superValue);
+        Location.Valid thisValue = Location.fromDenormalizedDouble(superValue);
         double diff = thisValue.change(l);
         double toAverage = superValue + diff;
         /*
@@ -125,19 +127,21 @@ public final class DecayingKeyspaceAverage implements RunningAverage, Cloneable 
     @Override
     @Deprecated
     public synchronized double valueIfReported(double d) {
-        return valueIfReported(Location.fromDouble(d));
+        try {
+            return valueIfReported(Location.fromDouble(d).validated());
+        }
+        catch (InvalidLocationException e) {
+            throw new IllegalArgumentException("Not a valid normalized location: " + d, e);
+        }
     }
 
     /**
      * Calculate the new value for this average as if the given location was included.
      * @param l The reported location.
      */    
-    public synchronized double valueIfReported(Location l) {
-        if(!l.isValid()) {
-            throw new IllegalArgumentException("Not a valid normalized location: " + l);
-        }
+    public synchronized double valueIfReported(Location.Valid l) {
         double superValue = avg.currentValue();
-        Location thisValue = Location.fromDenormalizedDouble(superValue);
+        Location.Valid thisValue = Location.fromDenormalizedDouble(superValue);
         double diff = thisValue.change(l);
         double toAverage = superValue + diff;
         return Location.normalizeDouble(avg.valueIfReported(superValue + diff));

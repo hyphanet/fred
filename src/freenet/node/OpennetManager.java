@@ -1291,7 +1291,7 @@ public class OpennetManager {
 	 * @param target The location to announce to. In 0.7 we don't try to prevent nodes from choosing their
 	 * announcement location, because it is easy for them to get the location they want later on anyway,
 	 * and we can do a much more effective announcement this way. */
-	public void announce(Location target, AnnouncementCallback cb) {
+	public void announce(Location.Valid target, AnnouncementCallback cb) {
 		AnnounceSender sender = new AnnounceSender(target, this, node, cb, null);
 		node.executor.execute(sender, "Announcement to "+target);
 	}

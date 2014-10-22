@@ -674,7 +674,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 			if(metadata != null) {
 				
-				location.setPeerLocations(fs.getAll("peersLocation"));
+				try {
+				    location.setPeerLocations(fs.getAll("peersLocation"));
+			    }
+			    catch (InvalidLocationException e) {
+			        Logger.error(this, "peersLocation contained invalid peers", e);
+			    }
 				
 				// Don't be tolerant of nonexistant domains; this should be an IP address.
 				Peer p;
@@ -1030,7 +1035,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 	}
 
-	public Location[] getPeersLocation() {
+	public Location.Valid[] getPeersLocation() {
 		return location.getPeerLocations();
 	}
 
@@ -2620,17 +2625,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		String locationString = fs.get("location");
 		if(locationString != null) {
-			Location newLoc = Location.fromString(locationString);
-			if (!newLoc.isValid()) {
-				if(logMINOR)
-					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);
-			} else {
+			try {
+			    Location.Valid newLoc = Location.fromString(locationString).validated();
 				Location oldLoc = location.setLocation(newLoc);
 				if(!oldLoc.equals(newLoc)) {
 					if(!oldLoc.isValid())
 						shouldUpdatePeerCounts = true;
 					changedAnything = true;
 				}
+			}
+			catch (InvalidLocationException e) {
+			    if(logMINOR)
+					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);
 			}
 		}
 		try {
@@ -5640,8 +5646,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return false;
 	}
 
-	public void reportRoutedTo(Location target, boolean isLocal, boolean realTime, PeerNode prev, Set<PeerNode> routedTo) {
-		double distance = getLocation().distance(target);
+	public void reportRoutedTo(Location.Valid target, boolean isLocal, boolean realTime, PeerNode prev, Set<PeerNode> routedTo) {
+		double distance = getLocation().assumeValid().distance(target);
 		
 		Location myLoc = node.getLocation();
 		Location prevLoc;
@@ -5650,9 +5656,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		else
 			prevLoc = Location.INVALID;
 		
-		Location[] peersLocation = getPeersLocation();
+		Location.Valid[] peersLocation = getPeersLocation();
 		if((peersLocation != null) && (shallWeRouteAccordingToOurPeersLocation())) {
-			for(Location l : peersLocation) {
+			for(Location.Valid l : peersLocation) {
 				boolean ignoreLoc = false; // Because we've already been there
 				if(l.equals(myLoc) || l.equals(prevLoc))
 					ignoreLoc = true;

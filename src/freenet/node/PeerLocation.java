@@ -9,7 +9,7 @@ public class PeerLocation {
 	/** Current location in the keyspace, or -1 if it is unknown */
 	private Location currentLocation;
 	/** Current locations of our peer's peers */
-	private Location[] currentPeersLocation;
+	private Location.Valid[] currentPeersLocation;
 	/** Time the location was set */
 	private long locSetTime;
 
@@ -23,11 +23,11 @@ public class PeerLocation {
 	}
 
 	/** Should only be called in the constructor */
-	public void setPeerLocations(String[] peerLocationsString) {
+	public void setPeerLocations(String[] peerLocationsString) throws InvalidLocationException {
 		if(peerLocationsString != null) {
-			Location[] peerLocations = new Location[peerLocationsString.length];
+			Location.Valid[] peerLocations = new Location.Valid[peerLocationsString.length];
 			for(int i = 0; i < peerLocationsString.length; i++)
-				peerLocations[i] = Location.fromString(peerLocationsString[i]);
+				peerLocations[i] = Location.fromString(peerLocationsString[i]).validated();
 			synchronized(this) {
 				currentPeersLocation = peerLocations;
 			}
@@ -38,7 +38,7 @@ public class PeerLocation {
 		return currentLocation;
 	}
 
-	synchronized Location[] getPeerLocations() {
+	synchronized Location.Valid[] getPeerLocations() {
 		return currentPeersLocation;
 	}
 
@@ -56,49 +56,45 @@ public class PeerLocation {
 	}
 
 	boolean updateLocation(Location newLoc, Location[] newLocs) {
-		if(!newLoc.isValid()) {
-			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
-			// Ignore it
-			return false;
-		}
-
-		for(Location currentLoc : newLocs) {
-			if(!currentLoc.isValid()) {
-				Logger.error(this, "Invalid location update for " + this + " ("+currentLoc+')', new Exception("error"));
-				// Ignore it
-				return false;
-			}
-		}
-
-		Arrays.sort(newLocs);
+	    try {
+	        Location.Valid validNewLoc = newLoc.validated();
+	        Location.Valid[] validNewLocs = Location.validated(newLocs);
+	        
+		    Arrays.sort(validNewLocs);
 		
-		boolean anythingChanged = false;
+		    boolean anythingChanged = false;
 
-		synchronized(this) {
-			if(!currentLocation.equals(newLoc))
-				anythingChanged = true;
-			currentLocation = newLoc;
-			if(currentPeersLocation == null)
-				anythingChanged = true;
-			else if(currentPeersLocation != null && !anythingChanged) {
-				if(currentPeersLocation.length != newLocs.length)
-					anythingChanged = true;
-				else {
-					for(int i=0;i<currentPeersLocation.length;i++) {
-						if(!currentPeersLocation[i].equals(newLocs[i])) {
-							anythingChanged = true;
-							break;
-						}
-					}
-				}
-			}
-			currentPeersLocation = newLocs;
-			locSetTime = System.currentTimeMillis();
-		}
-		return anythingChanged;
+		    synchronized(this) {
+			    if(!currentLocation.equals(validNewLoc))
+				    anythingChanged = true;
+			    currentLocation = validNewLoc;
+			    if(currentPeersLocation == null)
+				    anythingChanged = true;
+			    else if(currentPeersLocation != null && !anythingChanged) {
+				    if(currentPeersLocation.length != validNewLocs.length)
+					    anythingChanged = true;
+				    else {
+					    for(int i=0;i<currentPeersLocation.length;i++) {
+						    if(!currentPeersLocation[i].equals(validNewLocs[i])) {
+							    anythingChanged = true;
+							    break;
+						    }
+					    }
+				    }
+			    }
+			    currentPeersLocation = validNewLocs;
+			    locSetTime = System.currentTimeMillis();
+		    }
+		    return anythingChanged;
+	    }
+	    catch (InvalidLocationException e) {
+	        Logger.error(this, "Invalid location update for " + this, e);
+	        // Ignore.
+	        return false;
+	    }
 	}
 
-	synchronized Location setLocation(Location newLoc) {
+	synchronized Location setLocation(Location.Valid newLoc) {
 		Location oldLoc = currentLocation;
 		if(!newLoc.equals(currentLocation)) {
 			currentLocation = newLoc;

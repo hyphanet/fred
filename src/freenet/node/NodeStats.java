@@ -3103,7 +3103,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private HourlyStats hourlyStatsRT;
 	private HourlyStats hourlyStatsBulk;
 
-	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, Location location, boolean realTime, boolean fromOfferedKey) {
+	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, Location.Valid location, boolean realTime, boolean fromOfferedKey) {
 		if(logMINOR) Logger.minor(this, "Remote request: sucess="+success+" htl="+htl+" locally answered="+local+" location of key="+location+" from offered key = "+fromOfferedKey);
 		if(!fromOfferedKey) {
 			if(realTime)
@@ -3238,12 +3238,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats chkStoreStats() {
 		return new StoreLocationStats() {
 			@Override
-			public Location avgLocation() {
+			public Location.Valid avgLocation() {
 				return avgStoreCHKLocation.currentLocation();
 			}
 
 			@Override
-			public Location avgSuccess() {
+			public Location.Valid avgSuccess() {
 				return avgStoreCHKSuccess.currentLocation();
 			}
 
@@ -3272,12 +3272,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats chkCacheStats() {
 		return new StoreLocationStats() {
 			@Override
-			public Location avgLocation() {
+			public Location.Valid avgLocation() {
 				return avgCacheCHKLocation.currentLocation();
 			}
 
 			@Override
-			public Location avgSuccess() {
+			public Location.Valid avgSuccess() {
 				return avgCacheCHKSuccess.currentLocation();
 			}
 
@@ -3306,12 +3306,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats chkSlashDotCacheStats() {
 		return new StoreLocationStats() {
 			@Override
-			public Location avgLocation() {
+			public Location.Valid avgLocation() {
 				return avgSlashdotCacheCHKLocation.currentLocation();
 			}
 
 			@Override
-			public Location avgSuccess() {
+			public Location.Valid avgSuccess() {
 				return avgSlashdotCacheCHKSucess.currentLocation();
 			}
 
@@ -3340,12 +3340,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats chkClientCacheStats() {
 		return new StoreLocationStats() {
 			@Override
-			public Location avgLocation() {
+			public Location.Valid avgLocation() {
 				return avgClientCacheCHKLocation.currentLocation();
 			}
 
 			@Override
-			public Location avgSuccess() {
+			public Location.Valid avgSuccess() {
 				return avgClientCacheCHKSuccess.currentLocation();
 			}
 
@@ -3374,12 +3374,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats sskStoreStats() {
 		return new StoreLocationStats() {
 			@Override
-			public Location avgLocation() {
+			public Location.Valid avgLocation() {
 				return avgStoreSSKLocation.currentLocation();
 			}
 
 			@Override
-			public Location avgSuccess() {
+			public Location.Valid avgSuccess() {
 				return avgStoreSSKSuccess.currentLocation();
 			}
 
@@ -3408,12 +3408,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats sskCacheStats() {
 		return new StoreLocationStats() {
 			@Override
-			public Location avgLocation() {
+			public Location.Valid avgLocation() {
 				return avgCacheSSKLocation.currentLocation();
 			}
 
 			@Override
-			public Location avgSuccess() {
+			public Location.Valid avgSuccess() {
 				return avgCacheSSKSuccess.currentLocation();
 			}
 
@@ -3442,12 +3442,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats sskSlashDotCacheStats() {
 		return new StoreLocationStats() {
 			@Override
-			public Location avgLocation() {
+			public Location.Valid avgLocation() {
 				return avgSlashdotCacheSSKLocation.currentLocation();
 			}
 
 			@Override
-			public Location avgSuccess() {
+			public Location.Valid avgSuccess() {
 				return avgSlashdotCacheSSKSuccess.currentLocation();
 			}
 
@@ -3476,12 +3476,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public StoreLocationStats sskClientCacheStats() {
 		return new StoreLocationStats() {
 			@Override
-			public Location avgLocation() {
+			public Location.Valid avgLocation() {
 				return avgClientCacheSSKLocation.currentLocation();
 			}
 
 			@Override
-			public Location avgSuccess() {
+			public Location.Valid avgSuccess() {
 				return avgClientCacheSSKSuccess.currentLocation();
 			}
 

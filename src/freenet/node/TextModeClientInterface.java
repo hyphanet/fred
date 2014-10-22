@@ -963,9 +963,9 @@ public class TextModeClientInterface implements Runnable {
         		return false;
         	}
         	uline = uline.substring("ANNOUNCE".length());
-        	final Location target;
-        	if(uline.charAt(0) == ':') {
-        		target = Location.fromString(uline.substring(1));
+        	final Location.Valid target;
+        	if(uline.charAt(0) == ':' && Location.fromString(uline.substring(1)).isValid()) {
+        		target = Location.fromString(uline.substring(1)).assumeValid();
         	} else {
         		target = Location.random(n.random);
         	}

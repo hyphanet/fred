@@ -178,7 +178,7 @@ public class StatisticsToadlet extends Toadlet {
 
 		// FIXME! We need some nice images
 		final long now = System.currentTimeMillis();
-		Location myLocation = node.getLocation();
+		Location.Valid myLocation = node.getLocation();
 		final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 
 		if(ctx.isAllowedFullAccess())
@@ -1534,7 +1534,7 @@ public class StatisticsToadlet extends Toadlet {
 			for (Location foafLoc : foafLocs) {
 				if (!foafLoc.isValid()) continue;
 				
-				int idx = (int)Math.floor(peerLoc.distance(foafLoc) * HISTOGRAM_LENGTH / 0.5);
+				int idx = (int)Math.floor(peerLoc.assumeValid().distance(foafLoc.assumeValid()) * HISTOGRAM_LENGTH / 0.5);
 				peersLinkHistogram[idx]++;
 				peersLinkCount++;
 			}
@@ -1554,7 +1554,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 	}
 
-	private void addPeerCircle (HTMLNode circleTable, PeerNodeStatus[] peerNodeStatuses, Location myLocation) {
+	private void addPeerCircle (HTMLNode circleTable, PeerNodeStatus[] peerNodeStatuses, Location.Valid myLocation) {
 		int[] histogramConnected = new int[HISTOGRAM_LENGTH];
 		int[] histogramDisconnected = new int[HISTOGRAM_LENGTH];
 		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
@@ -1595,7 +1595,7 @@ public class StatisticsToadlet extends Toadlet {
 					peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(foafLocation, false, 0.9), "disconnected" }, ".");
 				}
 			}
-			peerDistance = myLocation.distance(peerLocation);
+			peerDistance = myLocation.distance(peerLocation.assumeValid());
 			histogramIndex = (int) (Math.floor(peerDistance * HISTOGRAM_LENGTH * 2));
 			if (peerNodeStatus.isConnected()) {
 				histogramConnected[histogramIndex]++;

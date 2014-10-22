@@ -41,7 +41,7 @@ public abstract class BaseSender implements ByteCounter {
     final Key key;
     /** The source of this request if any - purely so we can avoid routing to it */
     final PeerNode source;
-    final Location target;
+    final Location.Valid target;
     final boolean isSSK;
     protected final short origHTL;
     final Node node;
