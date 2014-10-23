@@ -82,7 +82,14 @@ public class InsertableClientSSK extends ClientSSK {
 		if(uri.getDocName() == null)
 			throw new MalformedURLException("SSK URIs must have a document name (to avoid ambiguity)");
 		DSAGroup g = Global.DSAgroupBigA;
-		DSAPrivateKey privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getRoutingKey()), g);
+		DSAPrivateKey privKey;
+		try {
+			privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getRoutingKey()), g);
+		} catch(IllegalArgumentException e) {
+			// DSAPrivateKey is invalid
+			Logger.error(InsertableClientSSK.class, "Caught "+e, e);
+			throw new MalformedURLException("SSK private key (routing key) is invalid: " + e);
+		}
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
 		byte[] pkHash = pubKey.asBytesHash();
 		return new InsertableClientSSK(uri.getDocName(), pkHash, pubKey, privKey, uri.getCryptoKey(), keyType);

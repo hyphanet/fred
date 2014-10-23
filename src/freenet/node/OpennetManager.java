@@ -96,6 +96,8 @@ public class OpennetManager {
 	static final double LONG_DISTANCE = 0.01;
 	/** This proportion of the routing table consists of "long links". */
 	static final double LONG_PROPORTION = 0.3;
+	/** The proportion of the routing table which consists of "short links". */
+	public static final double SHORT_PROPORTION = 1.0 - LONG_PROPORTION;
 	
     enum LinkLengthClass {
         /** Shorter than LONG_DISTANCE */
@@ -189,14 +191,37 @@ public class OpennetManager {
 	public static final boolean ENABLE_PEERS_PER_KB_OUTPUT = true;
 	/** Constant for scaling peers: we multiply bandwidth in kB/sec by this
 	 * and then take the square root. 12 gives 11 at 10K, 15 at 20K, 19 at
-	 * 30K, 26 at 60K, 34 at 100K, 40 at 140K. */
+	 * 30K, 26 at 60K, 34 at 100K, 40 at 140K, 100 at 2500K.
+	 * 212 at 30mbit/s (the mean upload in Japan in 2014) and
+	 * 363 at 88mbit/s (the mean upload in Hong Kong in 2014).*/
 	public static final double SCALING_CONSTANT = 12.0;
-	/** Minimum number of peers */
+	/**
+	 * Minimum number of peers. Do not reduce this: As a rough estimate, because the vast majority
+	 * of requests complete in 5 hops, this gives just one binary decision per hop on average.
+	 */
 	public static final int MIN_PEERS_FOR_SCALING = 10;
-	/** Maximum number of peers. */
-	public static final int MAX_PEERS_FOR_SCALING = 100;
+	/** The maximum possible distance between two nodes in the wrapping [0,1) location space. */
+	public static final double MAX_DISTANCE = 0.5;
+	/** The fraction of nodes which are only a short distance away. */
+	public static final double SHORT_NODES_FRACTION = LONG_DISTANCE / MAX_DISTANCE;
+	/** The estimated average number of nodes which are active at any given time. */
+	public static final int LAST_NETWORK_SIZE_ESTIMATE = 5000;
+	/** The estimated number of nodes which are a short distance away. */
+	public static final int AVAILABLE_SHORT_DISTANCE_NODES =
+		(int) (LAST_NETWORK_SIZE_ESTIMATE * SHORT_NODES_FRACTION);
+	/**
+	 * Maximum number of peers.
+	 *
+	 * This is limited by the expected availability of nodes with short links to a given location.
+	 * Above that number of peers, fast nodes will not be able to find enough peers with short
+	 * links.
+	 *
+	 * @see freenet.node.OpennetManager.LinkLengthClass
+	 */
+	public static final int MAX_PEERS_FOR_SCALING =
+		(int) (AVAILABLE_SHORT_DISTANCE_NODES / SHORT_PROPORTION);
 	/** Maximum number of peers for purposes of FOAF attack/sanity check */
-	public static final int PANIC_MAX_PEERS = 110;
+	public static final int PANIC_MAX_PEERS = MAX_PEERS_FOR_SCALING + 10;
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */
 	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = DAYS.toMillis(31);
 
