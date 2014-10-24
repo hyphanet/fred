@@ -164,7 +164,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
         private final boolean reversed;
 
         ComparatorByStatus(String sortBy, boolean reversed) {
-            this.cmp = comparatorByName(sortBy);
+            if (sortBy == null) {
+                this.cmp = ZERO;
+            }
+            else {
+                this.cmp = comparatorByName(sortBy);
+            }
             this.reversed = reversed;
         }
 
