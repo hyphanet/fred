@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import freenet.node.fcp.FCPCallFailedException;
 import freenet.node.fcp.FCPConnectionHandler;
 import freenet.node.fcp.FCPPluginReply;
 import freenet.support.SimpleFieldSet;
@@ -34,4 +35,8 @@ public class PluginReplySenderFCP extends PluginReplySender {
 		handler.outputHandler.queue(reply);
 	}
 
+    @Override
+    public void sendSynchronous(SimpleFieldSet params, Bucket bucket) throws FCPCallFailedException {
+        throw new UnsupportedOperationException("FIXME: Implement!");
+    }
 }
