@@ -254,6 +254,14 @@ public class BookmarkItem extends Bookmark {
         }
     }
 
+    public boolean hasUpdated() {
+        return updated;
+    }
+
+    public void clearUpdated() {
+        this.updated = false;
+    }
+
     public boolean hasAnActivelink() {
         return hasAnActivelink;
     }
