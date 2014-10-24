@@ -113,8 +113,10 @@ public final class DecayingKeyspaceAverage implements RunningAverage, Cloneable 
         */
         avg.report(toAverage);
         double newValue = avg.currentValue();
-        if(!Location.isValidDouble(newValue)) {
-            avg.setCurrentValue(Location.normalizeDouble(newValue));
+        Location newLocation = Location.fromDouble(newValue);
+        if(!newLocation.isValid()) {
+            newLocation = Location.fromDenormalizedDouble(newValue);
+            avg.setCurrentValue(newLocation.toDouble());
         }
     }
 
@@ -144,7 +146,7 @@ public final class DecayingKeyspaceAverage implements RunningAverage, Cloneable 
         Location.Valid thisValue = Location.fromDenormalizedDouble(superValue);
         double diff = thisValue.change(l);
         double toAverage = superValue + diff;
-        return Location.normalizeDouble(avg.valueIfReported(superValue + diff));
+        return Location.fromDenormalizedDouble(avg.valueIfReported(superValue + diff)).toDouble();
     }
 
 	@Override
