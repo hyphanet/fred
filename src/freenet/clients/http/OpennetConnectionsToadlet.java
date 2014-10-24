@@ -101,24 +101,33 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 		return true;
 	}
 
-	protected class OpennetComparator extends ComparatorByStatus {
+    protected static class OpennetComparator extends ComparatorByStatus {
+        private static enum ComparatorImpl implements Comparator<PeerNodeStatus> {
+            SUCCESSTIME() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    long t1 = ((OpennetPeerNodeStatus)firstNode).timeLastSuccess;
+                    long t2 = ((OpennetPeerNodeStatus)secondNode).timeLastSuccess;
+                    return Long.compare(t1, t2);
+                }
+            }
+        }
+        
+        OpennetComparator(String sortBy, boolean reversed) {
+            super(sortBy, reversed);
+        }
+        
+        @Override
+        protected Comparator<PeerNodeStatus> comparatorByName(String name) {
+            try {
+                return ComparatorImpl.valueOf(name.toUpperCase());
+            }
+            catch (IllegalArgumentException e) {
+                return super.comparatorByName(name);
+            }
+        }
+    }
 
-		OpennetComparator(String sortBy, boolean reversed) {
-			super(sortBy, reversed);
-		}
-	
-		@Override
-		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy) {
-			if(sortBy.equals("successTime")) {
-				long t1 = ((OpennetPeerNodeStatus)firstNode).timeLastSuccess;
-				long t2 = ((OpennetPeerNodeStatus)secondNode).timeLastSuccess;
-				if(t1 > t2) return reversed ? 1 : -1;
-				else if(t2 > t1) return reversed ? -1 : 1;
-			}
-			return super.customCompare(firstNode, secondNode, sortBy);
-		}
-	}
-	
 	@Override
 	protected Comparator<PeerNodeStatus> comparator(String sortBy, boolean reversed) {
 		return new OpennetComparator(sortBy, reversed);
