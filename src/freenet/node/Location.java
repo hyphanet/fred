@@ -118,10 +118,7 @@ public class Location implements Comparable<Location> {
      */
     @Override
     public boolean equals(Object other) {
-        if (other instanceof Location) {
-            return Math.abs(toDouble() - ((Location)other).toDouble()) < EPSILON;
-        }
-        return false;
+        return (other == INVALID);
     }
 
     @Override
@@ -134,10 +131,7 @@ public class Location implements Comparable<Location> {
      * @see #equals(Object)
      */
     public int compareTo(Location other) {
-        if (equals(other)) {
-            return 0;
-        }
-        return Double.compare(toDouble(), other.toDouble());
+        return (other == INVALID) ? 0 : -1;
     }
     
     @Override
