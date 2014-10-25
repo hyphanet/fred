@@ -5,6 +5,7 @@ package freenet.support.math;
 
 import freenet.node.Location;
 import freenet.node.InvalidLocationException;
+import freenet.node.ValidLocation;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -72,7 +73,7 @@ public final class DecayingKeyspaceAverage implements RunningAverage, Cloneable 
     /**
      * Returns the current average location.
      */
-    public synchronized Location.Valid currentLocation() {
+    public synchronized ValidLocation currentLocation() {
         return Location.fromDouble(avg.currentValue()).assumeValid();
     }
 
@@ -97,9 +98,9 @@ public final class DecayingKeyspaceAverage implements RunningAverage, Cloneable 
      * Report a location for inclusion in this average.
      * @param l The reported location.
      */
-    public void report(Location.Valid l) {
+    public void report(ValidLocation l) {
         double superValue = avg.currentValue();
-        Location.Valid thisValue = Location.fromDenormalizedDouble(superValue);
+        ValidLocation thisValue = ValidLocation.fromDenormalizedDouble(superValue);
         double diff = thisValue.change(l);
         double toAverage = superValue + diff;
         /*
@@ -115,7 +116,7 @@ public final class DecayingKeyspaceAverage implements RunningAverage, Cloneable 
         double newValue = avg.currentValue();
         Location newLocation = Location.fromDouble(newValue);
         if(!newLocation.isValid()) {
-            newLocation = Location.fromDenormalizedDouble(newValue);
+            newLocation = ValidLocation.fromDenormalizedDouble(newValue);
             avg.setCurrentValue(newLocation.toDouble());
         }
     }
@@ -141,12 +142,12 @@ public final class DecayingKeyspaceAverage implements RunningAverage, Cloneable 
      * Calculate the new value for this average as if the given location was included.
      * @param l The reported location.
      */    
-    public synchronized double valueIfReported(Location.Valid l) {
+    public synchronized double valueIfReported(ValidLocation l) {
         double superValue = avg.currentValue();
-        Location.Valid thisValue = Location.fromDenormalizedDouble(superValue);
+        ValidLocation thisValue = ValidLocation.fromDenormalizedDouble(superValue);
         double diff = thisValue.change(l);
         double toAverage = superValue + diff;
-        return Location.fromDenormalizedDouble(avg.valueIfReported(superValue + diff)).toDouble();
+        return ValidLocation.fromDenormalizedDouble(avg.valueIfReported(superValue + diff)).toDouble();
     }
 
 	@Override

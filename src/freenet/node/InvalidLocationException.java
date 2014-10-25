@@ -7,7 +7,7 @@ package freenet.node;
  * A checked exception that is thrown when a {@link Location} is encountered in a place where a
  * valid location was expected.
  *
- * @see Location.Valid
+ * @see ValidLocation
  * @see Location#validated()
  *
  * @author bertm

@@ -728,7 +728,7 @@ public class PeerManager {
 	};
 
 	protected static class LocationUIDPair implements Comparable<LocationUIDPair> {
-		Location.Valid location;
+		ValidLocation location;
 		long uid;
 
 		LocationUIDPair(PeerNode pn) {
@@ -879,7 +879,7 @@ public class PeerManager {
 		return getRandomPeer(null);
 	}
 
-	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, Location.Valid loc, boolean ignoreSelf, boolean calculateMisrouting,
+	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, ValidLocation loc, boolean ignoreSelf, boolean calculateMisrouting,
 	        int minVersion, List<Location> addUnpickedLocsTo, Key key, short outgoingHTL, long ignoreBackoffUnder, boolean isLocal, boolean realTime, boolean excludeMandatoryBackoff) {
 		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, false, System.currentTimeMillis(), excludeMandatoryBackoff);
 	}
@@ -906,7 +906,7 @@ public class PeerManager {
 	 * scheduler is not clever enough to retry immediately when that timeout elapses, and even if it was, it probably
 	 * wouldn't be a good idea due to introducing a round-trip-to-request-originator; FIXME consider this.
 	 */
-	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, Location.Valid target, boolean ignoreSelf,
+	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, ValidLocation target, boolean ignoreSelf,
 	        boolean calculateMisrouting, int minVersion, List<Location> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, long ignoreBackoffUnder, boolean isLocal, boolean realTime,
 	        RecentlyFailedReturn recentlyFailed, boolean ignoreTimeout, long now, boolean newLoadManagement) {
 		
@@ -919,13 +919,13 @@ public class PeerManager {
 		if(logMINOR)
 			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length+" key "+key);
 		
-		Location.Valid myLoc = node.getLocation();
+		ValidLocation myLoc = node.getLocation();
 		
 		double maxDiff = Double.MAX_VALUE;
 		if(!ignoreSelf)
 			maxDiff = myLoc.distance(target);
 		
-		Location prevLoc = Location.INVALID;
+		Location prevLoc = Location.invalid();
 		if(pn != null) prevLoc = pn.getLocation();
 
 		/**
@@ -1029,14 +1029,14 @@ public class PeerManager {
 			}
 			boolean timedOut = timeoutFT > now;
 			//To help avoid odd race conditions, get the location only once and use it for all calculations.
-			Location.Valid loc = p.getLocation().assumeValid(); // p.isRoutable()
+			ValidLocation loc = p.getLocation().assumeValid(); // p.isRoutable()
 			boolean direct = true;
 			double realDiff = loc.distance(target);
 			double diff = realDiff;
 			
-			Location.Valid[] peersLocation = p.getPeersLocation();
+			ValidLocation[] peersLocation = p.getPeersLocation();
 			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
-				for(Location.Valid l : peersLocation) {
+				for(ValidLocation l : peersLocation) {
 					boolean ignoreLoc = false; // Because we've already been there
 					if(myLoc.equals(l) || prevLoc.equals(l))
 						ignoreLoc = true;
@@ -1256,7 +1256,7 @@ public class PeerManager {
 	 * @return The time at which there will be a different best location to route to for this key, or
 	 * Long.MAX_VALUE if we cannot predict a better peer after any amount of time.
 	 */
-	private long checkBackoffsForRecentlyFailed(PeerNode[] peers, PeerNode best, Location.Valid target, double bestDistance, Location myLoc, Location prevLoc, long now, TimedOutNodesList entry, short outgoingHTL) {
+	private long checkBackoffsForRecentlyFailed(PeerNode[] peers, PeerNode best, ValidLocation target, double bestDistance, Location myLoc, Location prevLoc, long now, TimedOutNodesList entry, short outgoingHTL) {
 		long overallWakeup = Long.MAX_VALUE;
 		for(PeerNode p : peers) {
 			if(p == best) continue;
@@ -1265,13 +1265,13 @@ public class PeerManager {
 			// Is it further from the target than what we've chosen?
 			// It probably is, but if there is backoff or failure tables involved it might not be.
 			
-			Location.Valid loc = p.getLocation().assumeValid(); // p.isRoutable() holds here
+			ValidLocation loc = p.getLocation().assumeValid(); // p.isRoutable() holds here
 			double realDiff = loc.distance(target);
 			double diff = realDiff;
 			
-			Location.Valid[] peersLocation = p.getPeersLocation();
+			ValidLocation[] peersLocation = p.getPeersLocation();
 			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
-				for(Location.Valid l : peersLocation) {
+				for(ValidLocation l : peersLocation) {
 					boolean ignoreLoc = false; // Because we've already been there
 					if(myLoc.equals(l) || prevLoc.equals(l))
 						continue;

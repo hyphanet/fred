@@ -36,7 +36,7 @@ public class HourlyStats {
 	  * @param location The routing location of the request
 	  */
 	public synchronized void remoteRequest(boolean ssk, boolean success, boolean local,
-			int htl, Location.Valid location) {
+			int htl, ValidLocation location) {
 		Date now = new Date();
 		currentTime.setTime(now);
 		if (lastHourlyTime.get(Calendar.HOUR_OF_DAY) !=

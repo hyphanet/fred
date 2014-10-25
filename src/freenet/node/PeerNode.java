@@ -1035,7 +1035,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 	}
 
-	public Location.Valid[] getPeersLocation() {
+	public ValidLocation[] getPeersLocation() {
 		return location.getPeerLocations();
 	}
 
@@ -2626,7 +2626,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		String locationString = fs.get("location");
 		if(locationString != null) {
 			try {
-			    Location.Valid newLoc = Location.fromString(locationString).validated();
+			    ValidLocation newLoc = Location.fromString(locationString).validated();
 				Location oldLoc = location.setLocation(newLoc);
 				if(!oldLoc.equals(newLoc)) {
 					if(!oldLoc.isValid())
@@ -5646,7 +5646,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return false;
 	}
 
-	public void reportRoutedTo(Location.Valid target, boolean isLocal, boolean realTime, PeerNode prev, Set<PeerNode> routedTo) {
+	public void reportRoutedTo(ValidLocation target, boolean isLocal, boolean realTime, PeerNode prev, Set<PeerNode> routedTo) {
 		double distance = getLocation().assumeValid().distance(target);
 		
 		Location myLoc = node.getLocation();
@@ -5654,11 +5654,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(prev != null)
 			prevLoc = prev.getLocation();
 		else
-			prevLoc = Location.INVALID;
+			prevLoc = Location.invalid();
 		
-		Location.Valid[] peersLocation = getPeersLocation();
+		ValidLocation[] peersLocation = getPeersLocation();
 		if((peersLocation != null) && (shallWeRouteAccordingToOurPeersLocation())) {
-			for(Location.Valid l : peersLocation) {
+			for(ValidLocation l : peersLocation) {
 				boolean ignoreLoc = false; // Because we've already been there
 				if(l.equals(myLoc) || l.equals(prevLoc))
 					ignoreLoc = true;

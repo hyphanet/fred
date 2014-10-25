@@ -11,6 +11,7 @@ import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStats;
 import freenet.node.PeerNode;
+import freenet.node.ValidLocation;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.support.LogThresholdCallback;
@@ -111,8 +112,8 @@ public class RealNodeTest {
 	}
 	
 	static double distance(Node a, Node b) {
-		Location.Valid aL=a.getLocation();
-		Location.Valid bL=b.getLocation();
+		ValidLocation aL=a.getLocation();
+		ValidLocation bL=b.getLocation();
 		return aL.distance(bL);
 	}
 	

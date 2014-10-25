@@ -55,7 +55,7 @@ public class HourlyStatsRecord {
 	  * @param location The routing location of the request
 	  */
 	public synchronized void remoteRequest(boolean ssk, boolean success, boolean local,
-			int htl, Location.Valid location) {
+			int htl, ValidLocation location) {
 		if (finishedReporting) throw new IllegalStateException(
 				"Attempted to modify completed stats record.");
 		if (htl < 0) throw new IllegalArgumentException("Invalid HTL.");

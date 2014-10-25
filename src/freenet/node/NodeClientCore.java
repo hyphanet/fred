@@ -2112,7 +2112,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 		// slots and CPU. FIXME SECURITY/NETWORK: Reconsider if we ever decide
 		// not to decrement on the originator.
 		short origHTL = node.decrementHTL(null, node.maxHTL());
-		node.peers.closerPeer(null, new HashSet<PeerNode>(), Location.fromKey(key), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis(), node.enableNewLoadManagement(realTime));
+		node.peers.closerPeer(null, new HashSet<PeerNode>(), ValidLocation.fromKey(key), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis(), node.enableNewLoadManagement(realTime));
 		return r.recentlyFailed();
 	}
 

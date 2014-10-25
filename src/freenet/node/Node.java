@@ -4029,7 +4029,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public SSKBlock fetch(NodeSSK key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR, BlockMetadata meta) {
-	    Location.Valid loc = Location.fromKey(key);
+	    ValidLocation loc = ValidLocation.fromKey(key);
 		double dist=lm.getLocation().distance(loc);
 		if(canReadClientCache) {
 			try {
@@ -4098,7 +4098,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public CHKBlock fetch(NodeCHK key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR, BlockMetadata meta) {
-	    Location.Valid loc = Location.fromKey(key);
+	    ValidLocation loc = ValidLocation.fromKey(key);
 		double dist=lm.getLocation().distance(loc);
 		if(canReadClientCache) {
 			try {
@@ -4256,7 +4256,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private void store(CHKBlock block, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		try {
-			Location.Valid loc = Location.fromKey(block.getKey());
+			ValidLocation loc = ValidLocation.fromKey(block.getKey());
 			if (canWriteClientCache) {
 				chkClientcache.put(block, false);
 				nodeStats.avgClientCacheCHKLocation.report(loc);
@@ -4306,7 +4306,7 @@ public class Node implements TimeSkewDetectorCallback {
 		try {
 			// Store the pubkey before storing the data, otherwise we can get a race condition and
 			// end up deleting the SSK data.
-			Location.Valid loc = Location.fromKey(block.getKey());
+			ValidLocation loc = ValidLocation.fromKey(block.getKey());
 			getPubKey.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), deep, canWriteClientCache, canWriteDatastore, forULPR || useSlashdotCache, writeLocalToDatastore);
 			if(canWriteClientCache) {
 				sskClientcache.put(block, overwrite, false);
@@ -4789,7 +4789,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return !peers.anyConnectedPeers();
 	}
 
-	public Location.Valid getLocation() {
+	public ValidLocation getLocation() {
 		return lm.getLocation();
 	}
 
@@ -5098,7 +5098,7 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Warning: does not announce change in location!
 	 */
-	public void setLocation(Location.Valid loc) {
+	public void setLocation(ValidLocation loc) {
 		lm.setLocation(loc);
 	}
 
@@ -5332,8 +5332,8 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @return
 	 */
 	public boolean shouldStoreDeep(Key key, PeerNode source, PeerNode[] routedTo) {
-    	Location.Valid myLoc = getLocation();
-    	Location.Valid target = Location.fromKey(key);
+    	ValidLocation myLoc = getLocation();
+    	ValidLocation target = ValidLocation.fromKey(key);
     	double myDist = myLoc.distance(target);
 
     	// First, calculate whether we would have stored it using the old formula.

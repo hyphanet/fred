@@ -9,7 +9,7 @@ public class PeerLocation {
 	/** Current location in the keyspace, or -1 if it is unknown */
 	private Location currentLocation;
 	/** Current locations of our peer's peers */
-	private Location.Valid[] currentPeersLocation;
+	private ValidLocation[] currentPeersLocation;
 	/** Time the location was set */
 	private long locSetTime;
 
@@ -25,7 +25,7 @@ public class PeerLocation {
 	/** Should only be called in the constructor */
 	public void setPeerLocations(String[] peerLocationsString) throws InvalidLocationException {
 		if(peerLocationsString != null) {
-			Location.Valid[] peerLocations = new Location.Valid[peerLocationsString.length];
+			ValidLocation[] peerLocations = new ValidLocation[peerLocationsString.length];
 			for(int i = 0; i < peerLocationsString.length; i++)
 				peerLocations[i] = Location.fromString(peerLocationsString[i]).validated();
 			synchronized(this) {
@@ -38,7 +38,7 @@ public class PeerLocation {
 		return currentLocation;
 	}
 
-	synchronized Location.Valid[] getPeerLocations() {
+	synchronized ValidLocation[] getPeerLocations() {
 		return currentPeersLocation;
 	}
 
@@ -57,8 +57,8 @@ public class PeerLocation {
 
 	boolean updateLocation(Location newLoc, Location[] newLocs) {
 	    try {
-	        Location.Valid validNewLoc = newLoc.validated();
-	        Location.Valid[] validNewLocs = Location.validated(newLocs);
+	        ValidLocation validNewLoc = newLoc.validated();
+	        ValidLocation[] validNewLocs = ValidLocation.validated(newLocs);
 	        
 		    Arrays.sort(validNewLocs);
 		
@@ -94,7 +94,7 @@ public class PeerLocation {
 	    }
 	}
 
-	synchronized Location setLocation(Location.Valid newLoc) {
+	synchronized Location setLocation(ValidLocation newLoc) {
 		Location oldLoc = currentLocation;
 		if(!newLoc.equals(currentLocation)) {
 			currentLocation = newLoc;

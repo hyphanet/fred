@@ -16,8 +16,8 @@ public class LocationTest extends TestCase {
     private static final double EPSILON = 1e-15;
 
     // Just some valid non corner case locations.
-    private static final Location.Valid VALID_1 = Location.fromDouble(0.2).assumeValid();
-    private static final Location.Valid VALID_2 = Location.fromDouble(0.75).assumeValid();
+    private static final ValidLocation VALID_1 = Location.fromDouble(0.2).assumeValid();
+    private static final ValidLocation VALID_2 = Location.fromDouble(0.75).assumeValid();
         
     // Precalculated distances between valid locations.
     private static final double DIST_12 = 0.45;
@@ -29,8 +29,8 @@ public class LocationTest extends TestCase {
     private static final Location INVALID_2 = Location.fromDouble(1.1);
     
     // Corner case locations.
-    private static final Location.Valid ZERO = Location.fromDouble(0.0).assumeValid();
-    private static final Location.Valid ONE = Location.fromDouble(1.0).assumeValid();
+    private static final ValidLocation ZERO = Location.fromDouble(0.0).assumeValid();
+    private static final ValidLocation ONE = Location.fromDouble(1.0).assumeValid();
 
     @SuppressWarnings("deprecation")
     public void testIsValid() {
@@ -79,10 +79,10 @@ public class LocationTest extends TestCase {
         assertEquals(DIST_12, VALID_2.distance(VALID_1), EPSILON);
         
         // Corner case.
-        assertEquals(0.5, VALID_1.distance(Location.fromDenormalizedDouble(VALID_1.toDouble() + 0.5)), EPSILON);
-        assertEquals(0.5, VALID_1.distance(Location.fromDenormalizedDouble(VALID_1.toDouble() - 0.5)), EPSILON);
-        assertEquals(0.5, VALID_2.distance(Location.fromDenormalizedDouble(VALID_2.toDouble() + 0.5)), EPSILON);
-        assertEquals(0.5, VALID_2.distance(Location.fromDenormalizedDouble(VALID_2.toDouble() - 0.5)), EPSILON);
+        assertEquals(0.5, VALID_1.distance(ValidLocation.fromDenormalizedDouble(VALID_1.toDouble() + 0.5)), EPSILON);
+        assertEquals(0.5, VALID_1.distance(ValidLocation.fromDenormalizedDouble(VALID_1.toDouble() - 0.5)), EPSILON);
+        assertEquals(0.5, VALID_2.distance(ValidLocation.fromDenormalizedDouble(VALID_2.toDouble() + 0.5)), EPSILON);
+        assertEquals(0.5, VALID_2.distance(ValidLocation.fromDenormalizedDouble(VALID_2.toDouble() - 0.5)), EPSILON);
         
         // Identity.
         assertEquals(0.0, VALID_1.distance(VALID_1));
@@ -95,10 +95,10 @@ public class LocationTest extends TestCase {
         assertEquals(CHANGE_21, VALID_2.change(VALID_1), EPSILON);
         
         // Maximal change is always positive.
-        assertEquals(0.5, VALID_1.change(Location.fromDenormalizedDouble(VALID_1.toDouble() + 0.5)), EPSILON);
-        assertEquals(0.5, VALID_1.change(Location.fromDenormalizedDouble(VALID_1.toDouble() - 0.5)), EPSILON);
-        assertEquals(0.5, VALID_2.change(Location.fromDenormalizedDouble(VALID_2.toDouble() + 0.5)), EPSILON);
-        assertEquals(0.5, VALID_2.change(Location.fromDenormalizedDouble(VALID_2.toDouble() - 0.5)), EPSILON);
+        assertEquals(0.5, VALID_1.change(ValidLocation.fromDenormalizedDouble(VALID_1.toDouble() + 0.5)), EPSILON);
+        assertEquals(0.5, VALID_1.change(ValidLocation.fromDenormalizedDouble(VALID_1.toDouble() - 0.5)), EPSILON);
+        assertEquals(0.5, VALID_2.change(ValidLocation.fromDenormalizedDouble(VALID_2.toDouble() + 0.5)), EPSILON);
+        assertEquals(0.5, VALID_2.change(ValidLocation.fromDenormalizedDouble(VALID_2.toDouble() - 0.5)), EPSILON);
 
         // Identity.
         assertEquals(0.0, VALID_1.change(VALID_1));
@@ -108,14 +108,14 @@ public class LocationTest extends TestCase {
     public void testNormalize() {
         // Simple cases.
         for (int i = 0; i < 5; i++) {
-            assertTrue(VALID_1.equals(Location.fromDenormalizedDouble(VALID_1.toDouble() + i)));
-            assertTrue(VALID_1.equals(Location.fromDenormalizedDouble(VALID_1.toDouble() - i)));
-            assertTrue(VALID_2.equals(Location.fromDenormalizedDouble(VALID_2.toDouble() + i)));
-            assertTrue(VALID_2.equals(Location.fromDenormalizedDouble(VALID_2.toDouble() - i)));
+            assertTrue(VALID_1.equals(ValidLocation.fromDenormalizedDouble(VALID_1.toDouble() + i)));
+            assertTrue(VALID_1.equals(ValidLocation.fromDenormalizedDouble(VALID_1.toDouble() - i)));
+            assertTrue(VALID_2.equals(ValidLocation.fromDenormalizedDouble(VALID_2.toDouble() + i)));
+            assertTrue(VALID_2.equals(ValidLocation.fromDenormalizedDouble(VALID_2.toDouble() - i)));
         }
         
         // Corner case.
-        assertTrue(ZERO.equals(Location.fromDenormalizedDouble(1.0)));
+        assertTrue(ZERO.equals(ValidLocation.fromDenormalizedDouble(1.0)));
     }
 }
 

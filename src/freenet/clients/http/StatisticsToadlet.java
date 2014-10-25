@@ -36,6 +36,7 @@ import freenet.node.PeerNodeStatus;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarterGroup;
 import freenet.node.RequestTracker;
+import freenet.node.ValidLocation;
 import freenet.node.Version;
 import freenet.node.stats.DataStoreInstanceType;
 import freenet.node.stats.DataStoreStats;
@@ -178,7 +179,7 @@ public class StatisticsToadlet extends Toadlet {
 
 		// FIXME! We need some nice images
 		final long now = System.currentTimeMillis();
-		Location.Valid myLocation = node.getLocation();
+		ValidLocation myLocation = node.getLocation();
 		final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 
 		if(ctx.isAllowedFullAccess())
@@ -1554,7 +1555,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 	}
 
-	private void addPeerCircle (HTMLNode circleTable, PeerNodeStatus[] peerNodeStatuses, Location.Valid myLocation) {
+	private void addPeerCircle (HTMLNode circleTable, PeerNodeStatus[] peerNodeStatuses, ValidLocation myLocation) {
 		int[] histogramConnected = new int[HISTOGRAM_LENGTH];
 		int[] histogramDisconnected = new int[HISTOGRAM_LENGTH];
 		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
