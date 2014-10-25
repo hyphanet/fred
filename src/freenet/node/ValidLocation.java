@@ -210,5 +210,16 @@ public class ValidLocation extends Location {
         }
         return Arrays.copyOf(ret, i);
     }
+
+    @Override
+    public boolean equals(Object other) {
+        return (other instanceof ValidLocation) && Math.abs(((ValidLocation) other).toDouble() - toDouble()) < EPSILON;
+    }
+
+    @Override
+    public int compareTo(Location other) {
+        return Double.compare(toDouble(), other.toDouble());
+    }
+
 }
 
