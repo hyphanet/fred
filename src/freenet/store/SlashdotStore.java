@@ -229,12 +229,20 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 	}
 	
 	protected void purgeOldData(ByteArrayWrapper key, DiskBlock addFirst) {
+	    if(logDEBUG) Logger.minor(this, "Dumping old data from "+this+(addFirst == null ? "" : " and adding "+addFirst.data));
 		List<DiskBlock> blocks = null;
+		DiskBlock oldBlock;
 		synchronized(this) {
 			long now = System.currentTimeMillis();
 			if(addFirst != null) {
 				addFirst.lastAccessed = now;
-				blocksByRoutingKey.push(key, addFirst);
+				oldBlock = blocksByRoutingKey.push(key, addFirst);
+				if(oldBlock != null) {
+				    Logger.warning(this, "Replacing "+oldBlock+" with "+addFirst+" for "+key);
+	                if(blocks == null) blocks = new ArrayList<DiskBlock>();
+	                if(logDEBUG) Logger.minor(this, "Will dump "+oldBlock);
+	                blocks.add(oldBlock);
+				}
 				writes++;
 			}
 			while(true) {
@@ -242,6 +250,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 				DiskBlock block = blocksByRoutingKey.peekValue();
 				if(now - block.lastAccessed < maxLifetime && blocksByRoutingKey.size() < maxKeys) break;
 				if(blocks == null) blocks = new ArrayList<DiskBlock>();
+				if(logDEBUG) Logger.minor(this, "Will dump "+block);
 				blocks.add(block);
 				blocksByRoutingKey.popValue();
 			}
