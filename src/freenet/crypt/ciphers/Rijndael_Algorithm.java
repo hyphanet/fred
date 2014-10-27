@@ -123,43 +123,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 				{1, 3, 2, 1},
 				{1, 1, 3, 2}
 		};
-		byte[][] AA = new byte[4][8];
-		for (i = 0; i < 4; i++) {
-			for (j = 0; j < 4; j++) AA[i][j] = G[i][j];
-			AA[i][i+4] = 1;
-		}
-		byte pivot, tmp;
-		byte[][] iG = new byte[4][4];
-		for (i = 0; i < 4; i++) {
-			pivot = AA[i][i];
-			if (pivot == 0) {
-				int t = i + 1;
-				while ((AA[t][i] == 0) && (t < 4))
-					t++;
-				if (t == 4)
-					throw new RuntimeException("G matrix is not invertible");
-				else {
-					for (j = 0; j < 8; j++) {
-						tmp = AA[i][j];
-						AA[i][j] = AA[t][j];
-						AA[t][j] = tmp;
-					}
-					pivot = AA[i][i];
-				}
-			}
-			for (j = 0; j < 8; j++)
-				if (AA[i][j] != 0)
-					AA[i][j] = (byte)
-					alog[(255 + log[AA[i][j] & 0xFF] - log[pivot & 0xFF]) % 255];
-			for (int t = 0; t < 4; t++)
-				if (i != t) {
-					for (j = i+1; j < 8; j++)
-						AA[t][j] ^= mul(AA[i][j], AA[t][i]);
-					AA[t][i] = 0;
-				}
-		}
-		for (i = 0; i < 4; i++)
-			for (j = 0; j < 4; j++) iG[i][j] = AA[i][j + 4];
+        byte[][] iG = generateInvertedGMatrix(G);
 
 		int s;
 		for (int t = 0; t < 256; t++) {
@@ -288,6 +252,48 @@ final class Rijndael_Algorithm // implicit no-argument constructor
                 S[i] ^= cox[i][t] << (7-t);
             Si[S[i] & 0xFF] = (byte) i;
         }
+    }
+
+    private static byte[][] generateInvertedGMatrix(byte[][] gMatrix) {
+        byte[][] AA = new byte[4][8];
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) AA[i][j] = gMatrix[i][j];
+            AA[i][i+4] = 1;
+        }
+        byte pivot, tmp;
+        byte[][] iG = new byte[4][4];
+        for (int i = 0; i < 4; i++) {
+            pivot = AA[i][i];
+            if (pivot == 0) {
+                int t = i + 1;
+                while ((AA[t][i] == 0) && (t < 4))
+                    t++;
+                if (t == 4)
+                    throw new RuntimeException("G matrix is not invertible");
+                else {
+                    for (int j = 0; j < 8; j++) {
+                        tmp = AA[i][j];
+                        AA[i][j] = AA[t][j];
+                        AA[t][j] = tmp;
+                    }
+                    pivot = AA[i][i];
+                }
+            }
+            for (int j = 0; j < 8; j++)
+                if (AA[i][j] != 0)
+                    AA[i][j] = (byte)
+                            alog[(255 + log[AA[i][j] & 0xFF] - log[pivot & 0xFF]) % 255];
+            for (int t = 0; t < 4; t++)
+                if (i != t) {
+                    for (int j = i+1; j < 8; j++)
+                        AA[t][j] ^= mul(AA[i][j], AA[t][i]);
+                    AA[t][i] = 0;
+                }
+        }
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++) iG[i][j] = AA[i][j + 4];
+
+        return iG;
     }
 
 	// multiply two elements of GF(2^m)
