@@ -112,47 +112,8 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		// field GF(2^m) (generator = 3)
 		//
         generateLogAndAlogTables(ROOT);
-		byte[][] A = new byte[][] {
-				{1, 1, 1, 1, 1, 0, 0, 0},
-				{0, 1, 1, 1, 1, 1, 0, 0},
-				{0, 0, 1, 1, 1, 1, 1, 0},
-				{0, 0, 0, 1, 1, 1, 1, 1},
-				{1, 0, 0, 0, 1, 1, 1, 1},
-				{1, 1, 0, 0, 0, 1, 1, 1},
-				{1, 1, 1, 0, 0, 0, 1, 1},
-				{1, 1, 1, 1, 0, 0, 0, 1}
-		};
-		byte[] B = new byte[] { 0, 1, 1, 0, 0, 0, 1, 1};
+        generateSBoxes();
 
-		//
-		// substitution box based on F^{-1}(x)
-		//
-		byte[][] box = new byte[256][8];
-		box[1][7] = 1;
-		for (i = 2; i < 256; i++) {
-			j = alog[255 - log[i]];
-			for (int t = 0; t < 8; t++)
-				box[i][t] = (byte)((j >>> (7 - t)) & 0x01);
-		}
-		//
-		// affine transform:  box[i] <- B + A*box[i]
-		//
-		byte[][] cox = new byte[256][8];
-		for (i = 0; i < 256; i++)
-			for (int t = 0; t < 8; t++) {
-				cox[i][t] = B[t];
-				for (j = 0; j < 8; j++)
-					cox[i][t] ^= A[t][j] * box[i][j];
-			}
-		//
-		// S-boxes and inverse S-boxes
-		//
-		for (i = 0; i < 256; i++) {
-			S[i] = (byte)(cox[i][0] << 7);
-			for (int t = 1; t < 8; t++)
-				S[i] ^= cox[i][t] << (7-t);
-			Si[S[i] & 0xFF] = (byte) i;
-		}
 		//
 		// T-boxes
 		//
@@ -283,6 +244,50 @@ final class Rijndael_Algorithm // implicit no-argument constructor
             alog[i] = j;
         }
         for (int i = 1; i < 255; i++) log[alog[i]] = i;
+    }
+
+    private static void generateSBoxes() {
+        byte[][] A = new byte[][] {
+                {1, 1, 1, 1, 1, 0, 0, 0},
+                {0, 1, 1, 1, 1, 1, 0, 0},
+                {0, 0, 1, 1, 1, 1, 1, 0},
+                {0, 0, 0, 1, 1, 1, 1, 1},
+                {1, 0, 0, 0, 1, 1, 1, 1},
+                {1, 1, 0, 0, 0, 1, 1, 1},
+                {1, 1, 1, 0, 0, 0, 1, 1},
+                {1, 1, 1, 1, 0, 0, 0, 1}
+        };
+        byte[] B = new byte[] { 0, 1, 1, 0, 0, 0, 1, 1};
+
+        //
+        // substitution box based on F^{-1}(x)
+        //
+        byte[][] box = new byte[256][8];
+        box[1][7] = 1;
+        for (int i = 2; i < 256; i++) {
+            int j = alog[255 - log[i]];
+            for (int t = 0; t < 8; t++)
+                box[i][t] = (byte)((j >>> (7 - t)) & 0x01);
+        }
+        //
+        // affine transform:  box[i] <- B + A*box[i]
+        //
+        byte[][] cox = new byte[256][8];
+        for (int i = 0; i < 256; i++)
+            for (int t = 0; t < 8; t++) {
+                cox[i][t] = B[t];
+                for (int j = 0; j < 8; j++)
+                    cox[i][t] ^= A[t][j] * box[i][j];
+            }
+        //
+        // S-boxes and inverse S-boxes
+        //
+        for (int i = 0; i < 256; i++) {
+            S[i] = (byte)(cox[i][0] << 7);
+            for (int t = 1; t < 8; t++)
+                S[i] ^= cox[i][t] << (7-t);
+            Si[S[i] & 0xFF] = (byte) i;
+        }
     }
 
 	// multiply two elements of GF(2^m)
