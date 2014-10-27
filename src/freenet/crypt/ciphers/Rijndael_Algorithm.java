@@ -124,26 +124,8 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 				{1, 1, 3, 2}
 		};
         byte[][] iG = generateInvertedGMatrix(G);
+        generateTBoxes(G, iG);
 
-		int s;
-		for (int t = 0; t < 256; t++) {
-			s = S[t];
-			T1[t] = mul4(s, G[0]);
-			T2[t] = mul4(s, G[1]);
-			T3[t] = mul4(s, G[2]);
-			T4[t] = mul4(s, G[3]);
-
-			s = Si[t];
-			T5[t] = mul4(s, iG[0]);
-			T6[t] = mul4(s, iG[1]);
-			T7[t] = mul4(s, iG[2]);
-			T8[t] = mul4(s, iG[3]);
-
-			U1[t] = mul4(t, iG[0]);
-			U2[t] = mul4(t, iG[1]);
-			U3[t] = mul4(t, iG[2]);
-			U4[t] = mul4(t, iG[3]);
-		}
 		//
 		// round constants
 		//
@@ -294,6 +276,27 @@ final class Rijndael_Algorithm // implicit no-argument constructor
             for (int j = 0; j < 4; j++) iG[i][j] = AA[i][j + 4];
 
         return iG;
+    }
+
+    private static void generateTBoxes(byte[][] g, byte[][] iG) {
+        for (int t = 0; t < 256; t++) {
+            int s = S[t];
+            T1[t] = mul4(s, g[0]);
+            T2[t] = mul4(s, g[1]);
+            T3[t] = mul4(s, g[2]);
+            T4[t] = mul4(s, g[3]);
+
+            s = Si[t];
+            T5[t] = mul4(s, iG[0]);
+            T6[t] = mul4(s, iG[1]);
+            T7[t] = mul4(s, iG[2]);
+            T8[t] = mul4(s, iG[3]);
+
+            U1[t] = mul4(t, iG[0]);
+            U2[t] = mul4(t, iG[1]);
+            U3[t] = mul4(t, iG[2]);
+            U4[t] = mul4(t, iG[3]);
+        }
     }
 
 	// multiply two elements of GF(2^m)
