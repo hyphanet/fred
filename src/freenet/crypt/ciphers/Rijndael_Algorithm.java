@@ -111,13 +111,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		// produce log and alog tables, needed for multiplying in the
 		// field GF(2^m) (generator = 3)
 		//
-		alog[0] = 1;
-		for (i = 1; i < 256; i++) {
-			j = (alog[i-1] << 1) ^ alog[i-1];
-			if ((j & 0x100) != 0) j ^= ROOT;
-			alog[i] = j;
-		}
-		for (i = 1; i < 255; i++) log[alog[i]] = i;
+        generateLogAndAlogTables(ROOT);
 		byte[][] A = new byte[][] {
 				{1, 1, 1, 1, 1, 0, 0, 0},
 				{0, 1, 1, 1, 1, 1, 0, 0},
@@ -280,6 +274,16 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			System.out.println();
 		}
 	}
+
+    private static void generateLogAndAlogTables(int ROOT) {
+        alog[0] = 1;
+        for (int i = 1; i < 256; i++) {
+            int j = (alog[i-1] << 1) ^ alog[i-1];
+            if ((j & 0x100) != 0) j ^= ROOT;
+            alog[i] = j;
+        }
+        for (int i = 1; i < 255; i++) log[alog[i]] = i;
+    }
 
 	// multiply two elements of GF(2^m)
 	private static int mul(int a, int b) {
