@@ -133,12 +133,11 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		//
 		// substitution box based on F^{-1}(x)
 		//
-		int t;
 		byte[][] box = new byte[256][8];
 		box[1][7] = 1;
 		for (i = 2; i < 256; i++) {
 			j = alog[255 - log[i]];
-			for (t = 0; t < 8; t++)
+			for (int t = 0; t < 8; t++)
 				box[i][t] = (byte)((j >>> (7 - t)) & 0x01);
 		}
 		//
@@ -146,7 +145,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		//
 		byte[][] cox = new byte[256][8];
 		for (i = 0; i < 256; i++)
-			for (t = 0; t < 8; t++) {
+			for (int t = 0; t < 8; t++) {
 				cox[i][t] = B[t];
 				for (j = 0; j < 8; j++)
 					cox[i][t] ^= A[t][j] * box[i][j];
@@ -156,7 +155,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		//
 		for (i = 0; i < 256; i++) {
 			S[i] = (byte)(cox[i][0] << 7);
-			for (t = 1; t < 8; t++)
+			for (int t = 1; t < 8; t++)
 				S[i] ^= cox[i][t] << (7-t);
 			Si[S[i] & 0xFF] = (byte) i;
 		}
@@ -179,7 +178,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		for (i = 0; i < 4; i++) {
 			pivot = AA[i][i];
 			if (pivot == 0) {
-				t = i + 1;
+				int t = i + 1;
 				while ((AA[t][i] == 0) && (t < 4))
 					t++;
 				if (t == 4)
@@ -197,7 +196,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 				if (AA[i][j] != 0)
 					AA[i][j] = (byte)
 					alog[(255 + log[AA[i][j] & 0xFF] - log[pivot & 0xFF]) % 255];
-			for (t = 0; t < 4; t++)
+			for (int t = 0; t < 4; t++)
 				if (i != t) {
 					for (j = i+1; j < 8; j++)
 						AA[t][j] ^= mul(AA[i][j], AA[t][i]);
@@ -208,7 +207,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			for (j = 0; j < 4; j++) iG[i][j] = AA[i][j + 4];
 
 		int s;
-		for (t = 0; t < 256; t++) {
+		for (int t = 0; t < 256; t++) {
 			s = S[t];
 			T1[t] = mul4(s, G[0]);
 			T2[t] = mul4(s, G[1]);
@@ -231,7 +230,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		//
 		rcon[0] = 1;
 		int r = 1;
-		for (t = 1; t < 30; ) rcon[t++] = (byte)(r = mul(2, r));
+		for (int t = 1; t < 30; ) rcon[t++] = (byte)(r = mul(2, r));
 
 		time = System.currentTimeMillis() - time;
 
