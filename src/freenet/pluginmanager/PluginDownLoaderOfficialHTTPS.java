@@ -27,10 +27,8 @@ import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 
 public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
-	
-	private static final String certurlOld = "freenet/clients/http/staticfiles/startssl.pem";
-	private static final String certurlNew = "freenet/clients/http/staticfiles/globalsign-intermediate-2012.pem";
-	private static final String[] certURLs = new String[] { certurlOld, certurlNew };
+	private static final String certurlNew = "freenet/clients/http/staticfiles/globalsign.pem";
+	private static final String[] certURLs = new String[] { certurlNew };
 	public static final String certfileOld = "startssl.pem";
 	private static final String certfile = "sslcerts.pem";
 
