@@ -1156,7 +1156,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 
 		int offset = matcher.start(1) - 1;
 		String siteName = docName.substring(0, offset);
-		long edition = Long.valueOf(docName.substring(offset + 1, docName.length()));
+		long edition = Long.parseLong(docName.substring(offset + 1, docName.length()));
 
 		return new FreenetURI("USK", siteName, metaStr, routingKey, cryptoKey, extra, edition);
 	}
@@ -1176,7 +1176,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			if (!matcher.matches()) /* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */
 				throw new IllegalStateException();
 
-			return Long.valueOf(docName.substring(matcher.start(1), docName.length()));
+			return Long.parseLong(docName.substring(matcher.start(1), docName.length()));
 		} else
 			throw new IllegalStateException();
 	}

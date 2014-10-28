@@ -1404,7 +1404,7 @@ public class PluginManager {
 					return 0;
 				}
 				try {
-					return Long.valueOf(filename.substring(lastIndexOfDash + 5));
+					return Long.parseLong(filename.substring(lastIndexOfDash + 5));
 				} catch (NumberFormatException nfe1) {
 					return 0;
 				}
