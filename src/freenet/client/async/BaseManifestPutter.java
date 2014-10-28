@@ -1054,15 +1054,14 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		putHandlersTransformMap = new HashMap<PutHandler, HashMap<String, Object>>();
 		putHandlersArchiveTransformMap = new HashMap<ArchivePutHandler, Vector<PutHandler>>();
 		if(defaultName == null)
-			defaultName = findDefaultName(manifestElements, defaultName);
+			defaultName = findDefaultName(manifestElements);
 		makePutHandlers(manifestElements, defaultName);
 		// builders are not longer needed after constructor
 		rootBuilder = null;
 		rootContainerBuilder = null;
 	}
 	
-	private String findDefaultName(HashMap<String, Object> manifestElements,
-			String defaultName) {
+	private String findDefaultName(HashMap<String, Object> manifestElements) {
 		// Find the default name if it has not been set explicitly.
 		for(String name : defaultDefaultNames) {
 			Object o = manifestElements.get(name);
