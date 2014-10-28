@@ -26,7 +26,7 @@ import junit.framework.TestCase;
  */
 public class LRUQueueTest extends TestCase {
 	
-	private final int sampleElemsNumber = 100;
+	private static final int sampleElemsNumber = 100;
 
 	/**
 	 * Creates an array of objects with a specified size

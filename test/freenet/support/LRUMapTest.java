@@ -26,7 +26,7 @@ import junit.framework.TestCase;
  */
 public class LRUMapTest extends TestCase {
 
-	private final int sampleElemsNumber = 100;
+	private static final int sampleElemsNumber = 100;
 	
 	/**
 	 * Creates a double array of objects with a specified size
