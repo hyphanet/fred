@@ -43,7 +43,6 @@ public class UpdateDeployContext {
 
 	File mainJar;
 	int mainClasspathNo;
-	int extClasspathNo;
 	File newMainJar;
 	File backupMainJar;
 	boolean mainJarAbsolute;
