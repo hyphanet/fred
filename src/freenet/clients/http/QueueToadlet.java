@@ -134,6 +134,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private boolean isReversed = false;
 	private final boolean uploads;
 
+    private static final String FETCH_KEY_LIST_LOCATION = "listFetchKeys.txt";
+
 	public QueueToadlet(NodeClientCore core, FCPServer fcp, HighLevelSimpleClient client, boolean uploads) {
 		super(client);
 		this.core = core;
@@ -1063,7 +1065,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		if (requestPath.length() > 0) {
 			if(requestPath.equals("countRequests.html") || requestPath.equals("/countRequests.html")) {
 				countRequests = true;
-			} else if(requestPath.equals("listFetchKeys.txt")) {
+			} else if(requestPath.equals(FETCH_KEY_LIST_LOCATION)) {
 				listFetchKeys = true;
 			}
 		}
@@ -1477,6 +1479,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			navigationContent.addChild("li", l10n("totalQueuedUploads", "size", SizeUtil.formatSize(totalQueuedUploadSize)));
 			includeNavigationBar = true;
 		}
+
+        navigationContent.addChild("li").addChild("a", "href", FETCH_KEY_LIST_LOCATION,
+                                                  l10n("openKeyList"));
 
 		if (includeNavigationBar) {
 			contentNode.addChild(navigationBar);
