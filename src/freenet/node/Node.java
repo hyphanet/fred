@@ -547,6 +547,19 @@ public class Node implements TimeSkewDetectorCallback {
 	private String storeType;
 	private boolean storeUseSlotFilters;
 	private boolean storeSaltHashResizeOnStart;
+	
+	/** Minimum total datastore size */
+	static final long MIN_STORE_SIZE = 32 * 1024 * 1024;
+	/** Default datastore size (must be at least MIN_STORE_SIZE) */
+	static final long DEFAULT_STORE_SIZE = 32 * 1024 * 1024;
+	/** Minimum client cache size */
+	static final long MIN_CLIENT_CACHE_SIZE = 0;
+	/** Default client cache size (must be at least MIN_CLIENT_CACHE_SIZE) */
+	static final long DEFAULT_CLIENT_CACHE_SIZE = 10 * 1024 * 1024;
+	/** Minimum slashdot cache size */
+	static final long MIN_SLASHDOT_CACHE_SIZE = 0;
+	/** Default slashdot cache size (must be at least MIN_SLASHDOT_CACHE_SIZE) */
+	static final long DEFAULT_SLASHDOT_CACHE_SIZE = 10 * 1024 * 1024;
 
 	/** The number of bytes per key total in all the different datastores. All the datastores
 	 * are always the same size in number of keys. */
@@ -1978,7 +1991,7 @@ public class Node implements TimeSkewDetectorCallback {
 		 * Very small initial store size, since the node will preallocate it when starting up for the first time,
 		 * BLOCKING STARTUP, and since everyone goes through the wizard anyway...
 		 */
-		nodeConfig.register("storeSize", "10M", sortOrder++, false, true, "Node.storeSize", "Node.storeSizeLong",
+		nodeConfig.register("storeSize", DEFAULT_STORE_SIZE, sortOrder++, false, true, "Node.storeSize", "Node.storeSizeLong",
 				new LongCallback() {
 
 					@Override
@@ -1988,7 +2001,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 					@Override
 					public void set(Long storeSize) throws InvalidConfigValueException {
-						if((storeSize < 0) || (storeSize < (10 * 1024 * 1024)))
+						if(storeSize < MIN_STORE_SIZE)
 							throw new InvalidConfigValueException(l10n("invalidStoreSize"));
 						long newMaxStoreKeys = storeSize / sizePerKey;
 						if(newMaxStoreKeys == maxTotalKeys) return;
@@ -2027,8 +2040,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxTotalDatastoreSize = nodeConfig.getLong("storeSize");
 
-		if(maxTotalDatastoreSize < 0 || maxTotalDatastoreSize < (32 * 1024 * 1024) && !storeType.equals("ram")) { // totally arbitrary minimum!
-			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Invalid store size");
+		if(maxTotalDatastoreSize < MIN_STORE_SIZE && !storeType.equals("ram")) { // totally arbitrary minimum!
+			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Store size too small");
 		}
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
@@ -2298,7 +2311,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		clientCacheType = nodeConfig.getString("clientCacheType");
 
-		nodeConfig.register("clientCacheSize", "10M", sortOrder++, false, true, "Node.clientCacheSize", "Node.clientCacheSizeLong",
+		nodeConfig.register("clientCacheSize", DEFAULT_CLIENT_CACHE_SIZE, sortOrder++, false, true, "Node.clientCacheSize", "Node.clientCacheSizeLong",
 				new LongCallback() {
 
 					@Override
@@ -2308,7 +2321,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 					@Override
 					public void set(Long storeSize) throws InvalidConfigValueException {
-						if((storeSize < 0))
+						if(storeSize < MIN_CLIENT_CACHE_SIZE)
 							throw new InvalidConfigValueException(l10n("invalidStoreSize"));
 						long newMaxStoreKeys = storeSize / sizePerKey;
 						if(newMaxStoreKeys == maxClientCacheKeys) return;
@@ -2332,8 +2345,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxTotalClientCacheSize = nodeConfig.getLong("clientCacheSize");
 
-		if(maxTotalClientCacheSize < 0) {
-			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Invalid client cache size");
+		if(maxTotalClientCacheSize < MIN_CLIENT_CACHE_SIZE) {
+			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Client cache size too small");
 		}
 
 		maxClientCacheKeys = maxTotalClientCacheSize / sizePerKey;
@@ -2485,7 +2498,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		long slashdotCacheLifetime = nodeConfig.getLong("slashdotCacheLifetime");
 
-		nodeConfig.register("slashdotCacheSize", "10M", sortOrder++, false, true, "Node.slashdotCacheSize", "Node.slashdotCacheSizeLong",
+		nodeConfig.register("slashdotCacheSize", DEFAULT_SLASHDOT_CACHE_SIZE, sortOrder++, false, true, "Node.slashdotCacheSize", "Node.slashdotCacheSizeLong",
 				new LongCallback() {
 
 					@Override
@@ -2495,7 +2508,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 					@Override
 					public void set(Long storeSize) throws InvalidConfigValueException {
-						if((storeSize < 0))
+						if(storeSize < MIN_SLASHDOT_CACHE_SIZE)
 							throw new InvalidConfigValueException(l10n("invalidStoreSize"));
 						int newMaxStoreKeys = (int) Math.min(storeSize / sizePerKey, Integer.MAX_VALUE);
 						if(newMaxStoreKeys == maxSlashdotCacheKeys) return;
@@ -2519,8 +2532,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxSlashdotCacheSize = nodeConfig.getLong("slashdotCacheSize");
 
-		if(maxSlashdotCacheSize < 0) {
-			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Invalid client cache size");
+		if(maxSlashdotCacheSize < MIN_SLASHDOT_CACHE_SIZE) {
+			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Slashdot cache size too small");
 		}
 
 		maxSlashdotCacheKeys = (int) Math.min(maxSlashdotCacheSize / sizePerKey, Integer.MAX_VALUE);
