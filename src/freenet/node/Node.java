@@ -549,17 +549,17 @@ public class Node implements TimeSkewDetectorCallback {
 	private boolean storeSaltHashResizeOnStart;
 	
 	/** Minimum total datastore size */
-	private static final long MIN_STORE_SIZE = 32 * 1024 * 1024;
-	/** Default datastore size (make sure to assign at least MIN_STORE_SIZE!) */
-	private static final long DEFAULT_STORE_SIZE = MIN_STORE_SIZE;
+	static final long MIN_STORE_SIZE = 32 * 1024 * 1024;
+	/** Default datastore size (must be at least MIN_STORE_SIZE) */
+	static final long DEFAULT_STORE_SIZE = 32 * 1024 * 1024;
 	/** Minimum client cache size */
-	private static final long MIN_CLIENT_CACHE_SIZE = 0;
-	/** Default client cache size (make sure to assign at least MIN_CLIENT_CACHE_SIZE!) */
-	private static final long DEFAULT_CLIENT_CACHE_SIZE = 10 * 1024 * 1024;
+	static final long MIN_CLIENT_CACHE_SIZE = 0;
+	/** Default client cache size (must be at least MIN_CLIENT_CACHE_SIZE) */
+	static final long DEFAULT_CLIENT_CACHE_SIZE = 10 * 1024 * 1024;
 	/** Minimum slashdot cache size */
-	private static final long MIN_SLASHDOT_CACHE_SIZE = 0;
-	/** Default slashdot cache size (make sure to assign at least MIN_SLASHDOT_CACHE_SIZE!) */
-	private static final long DEFAULT_SLASHDOT_CACHE_SIZE = 10 * 1024 * 1024;
+	static final long MIN_SLASHDOT_CACHE_SIZE = 0;
+	/** Default slashdot cache size (must be at least MIN_SLASHDOT_CACHE_SIZE) */
+	static final long DEFAULT_SLASHDOT_CACHE_SIZE = 10 * 1024 * 1024;
 
 	/** The number of bytes per key total in all the different datastores. All the datastores
 	 * are always the same size in number of keys. */
