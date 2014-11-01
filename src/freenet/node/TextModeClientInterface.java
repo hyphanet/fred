@@ -77,7 +77,6 @@ public class TextModeClientInterface implements Runnable {
     final File downloadsDir;
     final InputStream in;
     final Writer w;
-    private boolean doneSomething;
     private static final String ENCODING = "UTF-8";
 
     private static volatile boolean logMINOR;

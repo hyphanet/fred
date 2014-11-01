@@ -159,7 +159,7 @@ public class ImageElement extends BaseUpdateableElement {
 				whenJsEnabled.addChild(makeHtmlNodeForParsedTag(originalImg));
 			} else {
 				Map<String, String> attr = originalImg.getAttributesAsMap();
-				String sizePart = new String();
+				String sizePart = "";
 				if (attr.containsKey("width") && attr.containsKey("height")) {
 					sizePart = "&width=" + attr.get("width") + "&height=" + attr.get("height");
 				}

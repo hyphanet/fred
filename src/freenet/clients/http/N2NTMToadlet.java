@@ -53,7 +53,7 @@ public class N2NTMToadlet extends Toadlet {
 			String input_hashcode_string = request.getParam("peernode_hashcode");
 			int input_hashcode = -1;
 			try {
-				input_hashcode = (Integer.valueOf(input_hashcode_string)).intValue();
+				input_hashcode = Integer.parseInt(input_hashcode_string);
 			} catch (NumberFormatException e) {
 				// ignore here, handle below
 			}

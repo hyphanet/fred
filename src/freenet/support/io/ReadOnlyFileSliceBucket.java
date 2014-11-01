@@ -153,7 +153,7 @@ public class ReadOnlyFileSliceBucket implements Bucket {
 
 	@Override
 	public Bucket createShadow() {
-		String fnam = new String(file.getPath());
+		String fnam = file.getPath();
 		File newFile = new File(fnam);
 		return new ReadOnlyFileSliceBucket(newFile, startAt, length);
 	}

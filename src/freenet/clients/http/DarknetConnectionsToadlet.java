@@ -485,7 +485,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			input_hashcode_string = input_hashcode_string.substring(0, input_hashcode_string.length() - ".fref".length());
 			int input_hashcode;
 			try {
-				input_hashcode = (Integer.valueOf(input_hashcode_string)).intValue();
+				input_hashcode = Integer.parseInt(input_hashcode_string);
 			} catch (NumberFormatException e) {
 				// ignore here, handle below
 				return false;
