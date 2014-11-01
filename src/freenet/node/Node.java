@@ -2041,7 +2041,7 @@ public class Node implements TimeSkewDetectorCallback {
 		maxTotalDatastoreSize = nodeConfig.getLong("storeSize");
 
 		if(maxTotalDatastoreSize < MIN_STORE_SIZE && !storeType.equals("ram")) { // totally arbitrary minimum!
-			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Invalid store size");
+			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Store size too small");
 		}
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
@@ -2346,7 +2346,7 @@ public class Node implements TimeSkewDetectorCallback {
 		maxTotalClientCacheSize = nodeConfig.getLong("clientCacheSize");
 
 		if(maxTotalClientCacheSize < MIN_CLIENT_CACHE_SIZE) {
-			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Invalid client cache size");
+			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Client cache size too small");
 		}
 
 		maxClientCacheKeys = maxTotalClientCacheSize / sizePerKey;
@@ -2533,7 +2533,7 @@ public class Node implements TimeSkewDetectorCallback {
 		maxSlashdotCacheSize = nodeConfig.getLong("slashdotCacheSize");
 
 		if(maxSlashdotCacheSize < MIN_SLASHDOT_CACHE_SIZE) {
-			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Invalid slashdot cache size");
+			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Slashdot cache size too small");
 		}
 
 		maxSlashdotCacheKeys = (int) Math.min(maxSlashdotCacheSize / sizePerKey, Integer.MAX_VALUE);
