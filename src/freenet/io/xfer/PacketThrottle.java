@@ -66,20 +66,13 @@ public class PacketThrottle {
         _droppedPackets += numPackets;
         _totalPackets += numPackets;
         _windowSize *= Math.pow(PACKET_DROP_DECREASE_MULTIPLE, numPackets);
-        if(_windowSize < 1.0F) _windowSize = 1.0F;
-		slowStart = false;
-		if(logMINOR)
-			Logger.minor(this, "notifyOfPacketsLost(): "+this);
-    }
-
-    public synchronized void notifyOfPacketLost() {
-		_droppedPackets++;
-		_totalPackets++;
-		_windowSize *= PACKET_DROP_DECREASE_MULTIPLE;
-		if(_windowSize < 1.0F) _windowSize = 1.0F;
-		slowStart = false;
-		if(logMINOR)
-			Logger.minor(this, "notifyOfPacketLost(): "+this);
+        if (_windowSize < 1.0F) {
+            _windowSize = 1.0F;
+        }
+        slowStart = false;
+        if (logMINOR) {
+            Logger.minor(this, "notifyOfPacketsLost(): " + this);
+        }
     }
 
     /**

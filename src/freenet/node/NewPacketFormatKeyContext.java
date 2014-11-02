@@ -103,8 +103,7 @@ public class NewPacketFormatKeyContext {
 		}
 	}
 
-	/** One of our outgoing packets has been acknowledged.
-	 * @return False if we have already acked the packet */
+	/** One of our outgoing packets has been acknowledged. */
 	public void ack(int ack, BasePeerNode pn, SessionKey key) {
 		long rtt;
 		int maxSize;
@@ -289,8 +288,7 @@ public class NewPacketFormatKeyContext {
 			        s.lost();
 					it.remove();
 					bigLostCount++;
-				}
-				else {
+				} else {
 					count++;
 				}
 			}
