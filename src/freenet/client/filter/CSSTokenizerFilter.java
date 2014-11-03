@@ -1878,6 +1878,7 @@ class CSSTokenizerFilter {
 					buffer.deleteCharAt(buffer.length()-1);
 				}
 				if(logDEBUG) Logger.debug(this, "Comment detected: buffer="+buffer);
+				prevc = 0;
 			}
 			if(c == 0)
 				continue; // Strip nulls
@@ -2706,6 +2707,7 @@ class CSSTokenizerFilter {
 					if(prevc=='*')
 					{
 						currentState=stateBeforeComment;
+						c = 0;
 						if(logDEBUG) Logger.debug(this, "Exiting the comment state "+currentState);
 					}
 					break;
