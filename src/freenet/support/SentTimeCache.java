@@ -64,7 +64,6 @@ public class SentTimeCache {
      */
     public synchronized void report(int seqnum, long time) {
         cache.put(seqnum, time);
-        assert(cache.size() <= cache.maxSize);
     }
     
     /**
@@ -93,6 +92,14 @@ public class SentTimeCache {
             return -1;
         }
         return ret;
+    }
+
+    /**
+     * Queries the number of items currently held by this cache. This method is not thread-safe.
+     * @return The number of items in this cache.
+     */
+    int size() {
+        return cache.size();
     }
 }
 
