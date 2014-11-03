@@ -59,14 +59,20 @@ public class PacketThrottle {
 		if(logMINOR) Logger.minor(this, "Set round trip time to "+rtt+" on "+this);
 	}
 
-    public synchronized void notifyOfPacketLost() {
-		_droppedPackets++;
-		_totalPackets++;
-		_windowSize *= PACKET_DROP_DECREASE_MULTIPLE;
-		if(_windowSize < 1.0F) _windowSize = 1.0F;
-		slowStart = false;
-		if(logMINOR)
-			Logger.minor(this, "notifyOfPacketLost(): "+this);
+    public synchronized void notifyOfPacketsLost(int numPackets) {
+        if (numPackets <= 0) {
+            throw new IllegalArgumentException("Reported loss is zero or negative");
+        }
+        _droppedPackets += numPackets;
+        _totalPackets += numPackets;
+        _windowSize *= Math.pow(PACKET_DROP_DECREASE_MULTIPLE, numPackets);
+        if (_windowSize < 1.0F) {
+            _windowSize = 1.0F;
+        }
+        slowStart = false;
+        if (logMINOR) {
+            Logger.minor(this, "notifyOfPacketsLost(): " + this);
+        }
     }
 
     /**
