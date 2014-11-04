@@ -4,12 +4,14 @@
 package freenet.support;
 
 /**
- * Exceptions intended be as lightweight as possible, to make them usable for modifying control
- * flow instead of indicating a program error.
+ * These exceptions are intended to be as lightweight as possible so that they may be used for
+ * normal control flow instead of indicating a program error.
  *
- * This kind of exceptions do not provide stack traces. Subclasses can override this behaviour
+ * This kind of exception does not provide stack traces. Subclasses can override this behaviour
  * (e.g. for debugging) by overriding {@link #shouldFillInStackTrace()}.
  *
+ * @see <a href="https://blogs.oracle.com/jrose/entry/longjumps_considered_inexpensive">
+ *     Optimization: Longjumps Considered Inexpensive</a>
  * @author bertm
  */
 public class LightweightException extends Exception {
@@ -40,12 +42,9 @@ public class LightweightException extends Exception {
         return false;
     }
 
-    // Optimization:
-    // https://blogs.oracle.com/jrose/entry/longjumps_considered_inexpensive
     @Override
     public final Throwable fillInStackTrace() {
-        if (shouldFillInStackTrace())
-        {
+        if (shouldFillInStackTrace()) {
             return super.fillInStackTrace();
         }
         return null;
