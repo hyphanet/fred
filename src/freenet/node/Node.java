@@ -884,10 +884,13 @@ public class Node implements TimeSkewDetectorCallback {
 
 		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
 		String loc = fs.get("location");
-		double locD = Location.getLocation(loc);
-		if (locD == -1.0)
-			throw new IOException("Invalid location: " + loc);
-		lm.setLocation(locD);
+		Location locD = Location.fromString(loc);
+        try {
+		    lm.setLocation(locD.validated());
+	    }
+	    catch (InvalidLocationException e) {
+	        throw new IOException("Invalid location: " + loc, e);
+	    }
 		myName = fs.get("myName");
 		if(myName == null) {
 			myName = newName();
@@ -3868,7 +3871,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @return The number of hops it took to find the node, if it was found.
 	 * Otherwise -1.
 	 */
-	public int routedPing(double loc2, byte[] pubKeyHash) {
+	public int routedPing(Location loc2, byte[] pubKeyHash) {
 		long uid = random.nextLong();
 		int initialX = random.nextInt();
 		Message m = DMT.createFNPRoutedPing(uid, loc2, maxHTL, initialX, pubKeyHash);
@@ -4039,8 +4042,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public SSKBlock fetch(NodeSSK key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR, BlockMetadata meta) {
-		double loc=key.toNormalizedDouble();
-		double dist=Location.distance(lm.getLocation(), loc);
+	    ValidLocation loc = ValidLocation.fromKey(key);
+		double dist=lm.getLocation().distance(loc);
 		if(canReadClientCache) {
 			try {
 				SSKBlock block = sskClientcache.fetch(key, dontPromote || !canWriteClientCache, canReadClientCache, forULPR, false, meta);
@@ -4108,8 +4111,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public CHKBlock fetch(NodeCHK key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR, BlockMetadata meta) {
-		double loc=key.toNormalizedDouble();
-		double dist=Location.distance(lm.getLocation(), loc);
+	    ValidLocation loc = ValidLocation.fromKey(key);
+		double dist=lm.getLocation().distance(loc);
 		if(canReadClientCache) {
 			try {
 				CHKBlock block = chkClientcache.fetch(key, dontPromote || !canWriteClientCache, false, meta);
@@ -4266,7 +4269,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private void store(CHKBlock block, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		try {
-			double loc = block.getKey().toNormalizedDouble();
+			ValidLocation loc = ValidLocation.fromKey(block.getKey());
 			if (canWriteClientCache) {
 				chkClientcache.put(block, false);
 				nodeStats.avgClientCacheCHKLocation.report(loc);
@@ -4316,7 +4319,7 @@ public class Node implements TimeSkewDetectorCallback {
 		try {
 			// Store the pubkey before storing the data, otherwise we can get a race condition and
 			// end up deleting the SSK data.
-			double loc = block.getKey().toNormalizedDouble();
+			ValidLocation loc = ValidLocation.fromKey(block.getKey());
 			getPubKey.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), deep, canWriteClientCache, canWriteDatastore, forULPR || useSlashdotCache, writeLocalToDatastore);
 			if(canWriteClientCache) {
 				sskClientcache.put(block, overwrite, false);
@@ -4799,7 +4802,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return !peers.anyConnectedPeers();
 	}
 
-	public double getLocation() {
+	public ValidLocation getLocation() {
 		return lm.getLocation();
 	}
 
@@ -5108,7 +5111,7 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Warning: does not announce change in location!
 	 */
-	public void setLocation(double loc) {
+	public void setLocation(ValidLocation loc) {
 		lm.setLocation(loc);
 	}
 
@@ -5342,21 +5345,21 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @return
 	 */
 	public boolean shouldStoreDeep(Key key, PeerNode source, PeerNode[] routedTo) {
-    	double myLoc = getLocation();
-    	double target = key.toNormalizedDouble();
-    	double myDist = Location.distance(myLoc, target);
+    	ValidLocation myLoc = getLocation();
+    	ValidLocation target = ValidLocation.fromKey(key);
+    	double myDist = myLoc.distance(target);
 
     	// First, calculate whether we would have stored it using the old formula.
     	if(logMINOR) Logger.minor(this, "Should store for "+key+" ?");
     	// Don't sink store if any of the nodes we routed to, or our predecessor, is both high-uptime and closer to the target than we are.
     	if(source != null && !source.isLowUptime()) {
-    		if(Location.distance(source, target) < myDist) {
+    		if(source.getLocation().assumeValid().distance(target) < myDist) {
     	    	if(logMINOR) Logger.minor(this, "Not storing because source is closer to target for "+key+" : "+source);
     			return false;
     		}
     	}
     	for(PeerNode pn : routedTo) {
-    		if(Location.distance(pn, target) < myDist && !pn.isLowUptime()) {
+    		if(pn.getLocation().assumeValid().distance(target) < myDist && !pn.isLowUptime()) {
     	    	if(logMINOR) Logger.minor(this, "Not storing because peer "+pn+" is closer to target for "+key+" his loc "+pn.getLocation()+" my loc "+myLoc+" target is "+target);
     			return false;
     		} else {

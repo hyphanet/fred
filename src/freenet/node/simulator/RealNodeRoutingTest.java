@@ -7,6 +7,7 @@ import java.io.File;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
+import freenet.node.Location;
 import freenet.node.LocationManager;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
@@ -144,7 +145,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 					while(randomNode2 == randomNode) {
 						randomNode2 = nodes[random.nextInt(nodes.length)];
 					}
-					double loc2 = randomNode2.getLocation();
+					Location loc2 = randomNode2.getLocation();
 					Logger.normal(RealNodeRoutingTest.class, "Pinging " + randomNode2.getDarknetPortNumber() + " @ " + loc2 + " from " + randomNode.getDarknetPortNumber() + " @ " + randomNode.getLocation());
 					
 					int hopsTaken = randomNode.routedPing(loc2, randomNode2.getDarknetPubKeyHash());

@@ -194,9 +194,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			// We claim it in any case
 			return true;
 		} else if(source.isRealConnection() && spec == DMT.FNPLocChangeNotificationNew) {
-			double newLoc = m.getDouble(DMT.LOCATION);
+			Location newLoc = Location.fromDouble(m.getDouble(DMT.LOCATION));
 			ShortBuffer buffer = ((ShortBuffer) m.getObject(DMT.PEER_LOCATIONS));
-			double[] locs = Fields.bytesToDoubles(buffer.getData());
+			Location[] locs = Location.fromDoubleArray(Fields.bytesToDoubles(buffer.getData()));
 			
 			/**
 			 * Do *NOT* remove the sanity check below! 
@@ -630,14 +630,14 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	
 	private boolean handleAnnounceRequest(Message m, PeerNode source) {
 		long uid = m.getLong(DMT.UID);
-		double target = m.getDouble(DMT.TARGET_LOCATION); // FIXME validate
+		Location target = Location.fromDouble(m.getDouble(DMT.TARGET_LOCATION)); // FIXME validate
 		short htl = (short) Math.min(m.getShort(DMT.HTL), node.maxHTL());
 		long xferUID = m.getLong(DMT.TRANSFER_UID);
 		int noderefLength = m.getInt(DMT.NODEREF_LENGTH);
 		int paddedLength = m.getInt(DMT.PADDED_LENGTH);
 
 		// Only accept a valid message. See comments at top of NodeDispatcher, but it's a good idea anyway.
-		if(target < 0.0 || target >= 1.0 || htl <= 0 || 
+		if(!target.isValid() || htl <= 0 || 
 				paddedLength < 0 || paddedLength > OpennetManager.MAX_OPENNET_NODEREF_LENGTH ||
 				noderefLength > paddedLength) {
 			Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
@@ -777,7 +777,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 					}
 				};
 			}
-			AnnounceSender sender = new AnnounceSender(target, htl, uid, source, om, node, xferUID, noderefLength, paddedLength, cb);
+			AnnounceSender sender = new AnnounceSender(target.assumeValid(), htl, uid, source, om, node, xferUID, noderefLength, paddedLength, cb);
 			node.executor.execute(sender, "Announcement sender for "+uid);
 			success = true;
 			if(logMINOR) Logger.minor(this, "Accepted announcement from "+source);
@@ -862,7 +862,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 		} else {
 			// Try routing to the next node
-			forward(rc.msg, id, rc.source, htl, rc.msg.getDouble(DMT.TARGET_LOCATION), rc, rc.identity);
+			Location target = Location.fromDouble(rc.msg.getDouble(DMT.TARGET_LOCATION));
+			forward(rc.msg, id, rc.source, htl, target, rc, rc.identity);
 		}
 		return true;
 	}
@@ -896,9 +897,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			routedContexts.put(lid, ctx);
 		}
 		// source == null => originated locally, keep full htl
-		double target = m.getDouble(DMT.TARGET_LOCATION);
+		Location target = Location.fromDouble(m.getDouble(DMT.TARGET_LOCATION));
 		if(logMINOR) Logger.minor(this, "id "+id+" from "+source+" htl "+htl+" target "+target);
-		if(Math.abs(node.lm.getLocation() - target) <= Double.MIN_VALUE) {
+		if(node.lm.getLocation().equals(target)) {
 			if(logMINOR) Logger.minor(this, "Dispatching "+m.getSpec()+" on "+node.getDarknetPortNumber());
 			// Handle locally
 			// Message type specific processing
@@ -937,8 +938,12 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		return true;
 	}
 
-	private boolean forward(Message m, long id, PeerNode pn, short htl, double target, RoutedContext ctx, byte[] targetIdentity) {
+	private boolean forward(Message m, long id, PeerNode pn, short htl, Location target, RoutedContext ctx, byte[] targetIdentity) {
 		if(logMINOR) Logger.minor(this, "Should forward");
+		if (!target.isValid()) {
+		    Logger.error(this, "Invalid message target: " + target);
+		    return true;
+		}
 		// Forward
 		m = preForward(m, htl);
 		while(true) {
@@ -948,7 +953,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				next = null;
 			}
 			if(next == null)
-			next = node.peers.closerPeer(pn, ctx.routedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+			next = node.peers.closerPeer(pn, ctx.routedTo, target.assumeValid(), true, node.isAdvancedModeEnabled(), -1, null,
 				        null, htl, 0, pn == null, false, false);
 			if(logMINOR) Logger.minor(this, "Next: "+next+" message: "+m);
 			if(next != null) {

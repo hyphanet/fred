@@ -47,12 +47,12 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	private final int paddedLength;
 	private byte[] noderefBuf;
 	private short htl;
-	private double target;
+	private ValidLocation target;
 	private final AnnouncementCallback cb;
 	private final PeerNode onlyNode;
 	private int forwardedRefs;
 
-	public AnnounceSender(double target, short htl, long uid, PeerNode source, OpennetManager om, Node node, long xferUID, int noderefLength, int paddedLength, AnnouncementCallback cb) {
+	public AnnounceSender(ValidLocation target, short htl, long uid, PeerNode source, OpennetManager om, Node node, long xferUID, int noderefLength, int paddedLength, AnnouncementCallback cb) {
 		this.source = source;
 		this.uid = uid;
 		this.om = om;
@@ -65,7 +65,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		this.cb = cb;
 	}
 
-	public AnnounceSender(double target, OpennetManager om, Node node, AnnouncementCallback cb, PeerNode onlyNode) {
+	public AnnounceSender(ValidLocation target, OpennetManager om, Node node, AnnouncementCallback cb, PeerNode onlyNode) {
 		source = null;
 		this.uid = node.random.nextLong();
 		// Prevent it being routed back to us.

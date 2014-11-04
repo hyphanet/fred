@@ -18,6 +18,7 @@ import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
+import freenet.node.ValidLocation;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
@@ -637,11 +638,11 @@ public class Probe implements ByteCounter {
 			 * assumption that a change of 0.002 is enough to make it still useful for statistics but not
 			 * useful for identification, 0.002 change / 0.2 link length = 0.01 sigma.
 			 */
-			double myLoc = node.getLocation();
+			ValidLocation myLoc = node.getLocation();
 			for (PeerNode peer : peers) {
-				double peerLoc = peer.getLocation();
-				if (Location.isValid(peerLoc)) {
-					linkLengths[i++] = (float)randomNoise(Location.distance(myLoc, peerLoc), 0.01);
+				Location peerLoc = peer.getLocation();
+				if (peerLoc.isValid()) {
+					linkLengths[i++] = (float)randomNoise(myLoc.distance(peerLoc.assumeValid()), 0.01);
 				}
 			}
 			linkLengths = java.util.Arrays.copyOf(linkLengths, i);
@@ -649,7 +650,7 @@ public class Probe implements ByteCounter {
 			listener.onLinkLengths(linkLengths);
 			break;
 		case LOCATION:
-			listener.onLocation((float)node.getLocation());
+			listener.onLocation((float)node.getLocation().toDouble());
 			break;
 		case STORE_SIZE:
 			/*

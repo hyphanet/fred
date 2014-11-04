@@ -23,6 +23,7 @@ import freenet.crypt.DSAPublicKey;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
+import freenet.node.Location;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.probe.Error;
 import freenet.node.probe.Type;
@@ -861,7 +862,7 @@ public class DMT {
 		addField(TARGET_LOCATION, Double.class);
 	}};
 
-	public static Message createFNPOpennetAnnounceRequest(long uid, long transferUID, int noderefLength, int paddedLength, double target, short htl) {
+	public static Message createFNPOpennetAnnounceRequest(long uid, long transferUID, int noderefLength, int paddedLength, Location target, short htl) {
 		Message msg = new Message(FNPOpennetAnnounceRequest);
 		msg.set(UID, uid);
 		msg.set(TRANSFER_UID, transferUID);
@@ -869,7 +870,7 @@ public class DMT {
 		msg.set(PADDED_LENGTH, paddedLength);
 		msg.set(HTL, htl);
 		msg.set(NEAREST_LOCATION, 0.0);
-		msg.set(TARGET_LOCATION, target);
+		msg.set(TARGET_LOCATION, target.toDouble());
 		return msg;
 	}
 	
@@ -1045,11 +1046,11 @@ public class DMT {
 		addField(LINEAR_COUNTER, Short.class);
 	}};
 	
-	public static Message createFNPRHProbeReply(long uid, double nearest, double best, short counter, short uniqueCounter, short linearCounter) {
+	public static Message createFNPRHProbeReply(long uid, Location nearest, Location best, short counter, short uniqueCounter, short linearCounter) {
 		Message msg = new Message(FNPRHProbeReply);
 		msg.set(UID, uid);
-		msg.set(NEAREST_LOCATION, nearest);
-		msg.set(BEST_LOCATION, best);
+		msg.set(NEAREST_LOCATION, nearest.toDouble());
+		msg.set(BEST_LOCATION, best.toDouble());
 		msg.set(COUNTER, counter);
 		msg.set(UNIQUE_COUNTER, uniqueCounter);
 		msg.set(LINEAR_COUNTER, linearCounter);
@@ -1342,10 +1343,10 @@ public class DMT {
 		addField(PEER_LOCATIONS, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPLocChangeNotificationNew(double myLocation, double[] locations) {
+	public static Message createFNPLocChangeNotificationNew(Location myLocation, Location[] locations) {
 		Message msg = new Message(FNPLocChangeNotificationNew);
-		ShortBuffer dst = new ShortBuffer(Fields.doublesToBytes(locations));
-		msg.set(LOCATION, myLocation);
+		ShortBuffer dst = new ShortBuffer(Fields.doublesToBytes(Location.toDoubleArray(locations)));
+		msg.set(LOCATION, myLocation.toDouble());
 		msg.set(PEER_LOCATIONS, dst);
 		
 		return msg;
@@ -1357,9 +1358,9 @@ public class DMT {
 		
 	}};
 	
-	public static Message createFNPRoutedPing(long uid, double targetLocation, short htl, int counter, byte[] nodeIdentity) {
+	public static Message createFNPRoutedPing(long uid, Location targetLocation, short htl, int counter, byte[] nodeIdentity) {
 		Message msg = new Message(FNPRoutedPing);
-		msg.setRoutedToNodeFields(uid, targetLocation, htl, nodeIdentity);
+		msg.setRoutedToNodeFields(uid, targetLocation.toDouble(), htl, nodeIdentity);
 		msg.set(COUNTER, counter);
 		return msg;
 	}

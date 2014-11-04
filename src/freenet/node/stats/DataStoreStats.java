@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.stats;
 
+import freenet.node.Location;
+
 /**
  * This interface represents the data we can publish on our stats page for a given instance of a data store.
  *
@@ -17,9 +19,9 @@ public interface DataStoreStats {
 
 	public double utilization();
 
-	double avgLocation() throws StatsNotAvailableException;
+	Location avgLocation() throws StatsNotAvailableException;
 
-	double avgSuccess() throws StatsNotAvailableException;
+	Location avgSuccess() throws StatsNotAvailableException;
 
 	double furthestSuccess() throws StatsNotAvailableException;
 

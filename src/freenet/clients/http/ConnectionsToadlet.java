@@ -29,6 +29,7 @@ import freenet.node.DarknetPeerNode;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.FSParseException;
+import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStats;
@@ -52,110 +53,155 @@ import freenet.support.io.Closer;
 
 /** Base class for DarknetConnectionsToadlet and OpennetConnectionsToadlet */
 public abstract class ConnectionsToadlet extends Toadlet {
-	protected class ComparatorByStatus implements Comparator<PeerNodeStatus> {		
-		protected final String sortBy;
-		protected final boolean reversed;
-		
-		ComparatorByStatus(String sortBy, boolean reversed) {
-			this.sortBy = sortBy;
-			this.reversed = reversed;
-		}
-		
-		@Override
-		public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
-			int result = 0;
-			boolean isSet = true;
-			
-			if(sortBy != null){
-				result = customCompare(firstNode, secondNode, sortBy);
-				isSet = (result != 0);
-				
-			}else
-				isSet=false;
-			
-			if(!isSet){
-				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
-				if (statusDifference != 0) 
-					result = (statusDifference < 0 ? -1 : 1);
-				else
-					result = lastResortCompare(firstNode, secondNode);
-			}
+    protected static class ComparatorByStatus implements Comparator<PeerNodeStatus> {
+        private static final Comparator<PeerNodeStatus> ZERO = new Comparator<PeerNodeStatus>() {
+            @Override
+            public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                return 0;
+            }
+        };
+        private static enum ComparatorImpl implements Comparator<PeerNodeStatus> {
+            ADDRESS() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return firstNode.getPeerAddress().compareToIgnoreCase(
+                               secondNode.getPeerAddress());
+                }
+            },
+            LOCATION() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return firstNode.getLocation().compareTo(secondNode.getLocation());
+                }
+            },
+            VERSION() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return Integer.compare(
+                               Version.getArbitraryBuildNumber(firstNode.getVersion(), -1),
+                               Version.getArbitraryBuildNumber(secondNode.getVersion(), -1)
+                    );
+                }
+            },
+            BACKOFFRT() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return Double.compare(firstNode.getBackedOffPercent(true),
+                                          secondNode.getBackedOffPercent(true));
+                }
+            },
+            BACKOFFBULK() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return Double.compare(firstNode.getBackedOffPercent(false),
+                                          secondNode.getBackedOffPercent(false));
+                }
+            },
+            OVERLOAD_P() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return Double.compare(firstNode.getPReject(), secondNode.getPReject());
+                }
+            },
+            IDLE() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return Long.compare(firstNode.getTimeLastConnectionCompleted(),
+                                        secondNode.getTimeLastConnectionCompleted());
+                }
+            },
+            TIME_ROUTABLE() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return Double.compare(firstNode.getPercentTimeRoutableConnection(),
+                                          secondNode.getPercentTimeRoutableConnection());
+                }
+            },
+            TOTAL_TRAFFIC() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    long total1 = firstNode.getTotalInputBytes()
+                                + firstNode.getTotalOutputBytes();
+                    long total2 = secondNode.getTotalInputBytes()
+                                + secondNode.getTotalOutputBytes();
+                    return Long.compare(total1, total2);
+                }
+            },
+            TOTAL_TRAFFIC_SINCE_STARTUP() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    long total1 = firstNode.getTotalInputSinceStartup()
+                                + firstNode.getTotalOutputSinceStartup();
+                    long total2 = secondNode.getTotalInputSinceStartup()
+                                + secondNode.getTotalOutputSinceStartup();
+                    return Long.compare(total1, total2);
+                }
+            },
+            SELECTION_PERCENTAGE() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return Double.compare(firstNode.getSelectionRate(),
+                                          secondNode.getSelectionRate());
+                }
+            },
+            TIME_DELTA() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return Long.compare(firstNode.getClockDelta(),
+                                        secondNode.getClockDelta());
+                }
+            },
+            UPTIME() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return Integer.compare(firstNode.getReportedUptimePercentage(),
+                                           secondNode.getReportedUptimePercentage());
+                }
+            }
+        }
+        
+        private final Comparator<PeerNodeStatus> cmp;
+        private final boolean reversed;
 
-			if(result == 0){
-				return 0;
-			}else if(reversed){
-				isReversed = true;
-				return result > 0 ? -1 : 1;
-			}else{
-				isReversed = false;
-				return result < 0 ? -1 : 1;
-			}
-		}
-		
-		// xor: check why we do not just return the result of (long1-long2)
-		// j16sdiz: (Long.MAX_VALUE - (-1) ) would overflow and become negative
-		private int compareLongs(long long1, long long2) {
-			int diff = Long.valueOf(long1).compareTo(long2);
-			if(diff == 0)
-				return 0;
-			else
-				return (diff > 0 ? 1 : -1);
-		}
-		
-		private int compareInts(int int1, int int2) {
-			int diff = Integer.valueOf(int1).compareTo(int2);
-			if(diff == 0)
-				return 0;
-			else
-				return (diff > 0 ? 1 : -1);
-		}
+        ComparatorByStatus(String sortBy, boolean reversed) {
+            if (sortBy == null) {
+                this.cmp = ZERO;
+            }
+            else {
+                this.cmp = comparatorByName(sortBy);
+            }
+            this.reversed = reversed;
+        }
 
-		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy2) {
-			if(sortBy.equals("address")){
-				return firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
-			}else if(sortBy.equals("location")){
-				return compareLocations(firstNode, secondNode);
-			}else if(sortBy.equals("version")){
-				return Version.getArbitraryBuildNumber(firstNode.getVersion(), -1) - Version.getArbitraryBuildNumber(secondNode.getVersion(), -1);
-			}else if(sortBy.equals("backoffRT")){
-				return Double.compare(firstNode.getBackedOffPercent(true), secondNode.getBackedOffPercent(true));
-			}else if(sortBy.equals("backoffBulk")){
-				return Double.compare(firstNode.getBackedOffPercent(false), secondNode.getBackedOffPercent(false));
-			}else if(sortBy.equals(("overload_p"))){
-				return Double.compare(firstNode.getPReject(), secondNode.getPReject());
-			}else if(sortBy.equals(("idle"))){
-				return compareLongs(firstNode.getTimeLastConnectionCompleted(), secondNode.getTimeLastConnectionCompleted());
-			}else if(sortBy.equals("time_routable")){
-				return Double.compare(firstNode.getPercentTimeRoutableConnection(), secondNode.getPercentTimeRoutableConnection());
-			}else if(sortBy.equals("total_traffic")){
-				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalOutputBytes();
-				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputBytes();
-				return compareLongs(total1, total2);
-				}else if(sortBy.equals("total_traffic_since_startup")){
-					long total1 = firstNode.getTotalInputSinceStartup()+firstNode.getTotalOutputSinceStartup();
-					long total2 = secondNode.getTotalInputSinceStartup()+secondNode.getTotalOutputSinceStartup();
-					return compareLongs(total1, total2);
-			}else if(sortBy.equals("selection_percentage")){
-				return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
-			}else if(sortBy.equals("time_delta")){
-				return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());
-			}else if(sortBy.equals(("uptime"))){
-				return compareInts(firstNode.getReportedUptimePercentage(), secondNode.getReportedUptimePercentage());
-			}else
-				return 0;
-		}
+        protected Comparator<PeerNodeStatus> comparatorByName(String name) {
+            try {
+                return ComparatorImpl.valueOf(name.toUpperCase());
+            }
+            catch (IllegalArgumentException e) {
+                return ZERO;
+            }
+        }
 
-		private int compareLocations(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
-			double diff = firstNode.getLocation() - secondNode.getLocation(); // Can occasionally be the same, and we must have a consistent sort order
-			if(Double.MIN_VALUE*2 > Math.abs(diff)) return 0;
-			return diff > 0 ? 1 : -1;
-		}
+        /** Default comparison, after taking into account status. */
+        protected Comparator<PeerNodeStatus> lastResortComparator() {
+            return ComparatorImpl.LOCATION;
+        }
 
-		/** Default comparison, after taking into account status */
-		protected int lastResortCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
-			return compareLocations(firstNode, secondNode);
-		}
-	}
+        @Override
+        public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+            int ret = cmp.compare(firstNode, secondNode);
+            if (ret == 0) {
+                ret = Integer.compare(firstNode.getStatusValue(), secondNode.getStatusValue());
+            }
+            if (ret == 0) {
+                ret = lastResortComparator().compare(firstNode, secondNode);
+            }            
+            if (reversed) {
+                ret = -ret;
+            }
+            return ret;
+        }
+    }
 
 	protected final Node node;
 	protected final NodeClientCore core;
@@ -496,21 +542,21 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// FOAF locations table.
 			if(advancedMode) {
 				//requires a location-to-list/count in-memory transform
-				List<Double> locations=new ArrayList<Double>();
+				List<Location> locations=new ArrayList<Location>();
 				List<List<PeerNodeStatus>> peerGroups=new ArrayList<List<PeerNodeStatus>>();
 				{
 					for (PeerNodeStatus peerNodeStatus : peerNodeStatuses) {
-						double[] peersLoc = peerNodeStatus.getPeersLocation();
+						Location[] peersLoc = peerNodeStatus.getPeersLocation();
 						if (peersLoc!=null) {
-							for (double location : peersLoc) {
+							for (Location location : peersLoc) {
 								int i;
 								int max=locations.size();
 								// FIXME Fix O(n^2): Use Arrays.binarySearch or use a TreeMap.
-								for (i=0; i<max && locations.get(i)<location; i++);
+								for (i=0; i<max && locations.get(i).compareTo(location) < 0; i++);
 								//i now points to the proper location (equal, insertion point, or end-of-list)
 								//maybe better called "reverseGroup"?
 								List<PeerNodeStatus> peerGroup;
-								if (i<max && locations.get(i).doubleValue()==location) {
+								if (i<max && locations.get(i).equals(location)) {
 									peerGroup=peerGroups.get(i);
 								} else {
 									peerGroup=new ArrayList<PeerNodeStatus>();
@@ -550,12 +596,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				}
 				int max=locations.size();
 				for (int i=0; i<max; i++) {
-					double location=locations.get(i);
+					Location location=locations.get(i);
 					List<PeerNodeStatus> peersWithFriend=peerGroups.get(i);
 					boolean isTransitivePeer=false;
 					{
 						for (PeerNodeStatus peerNodeStatus : peerNodeStatuses) {
-							if (location==peerNodeStatus.getLocation()) {
+							if (peerNodeStatus.getLocation().equals(location)) {
 								isTransitivePeer=true;
 								transitiveCount++;
 								break;
@@ -1005,7 +1051,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			HTMLNode locationNode = peerRow.addChild("td", "class", "peer-location");
 			locationNode.addChild("b", String.valueOf(peerNodeStatus.getLocation()));
 			locationNode.addChild("br");
-			double[] peersLoc = peerNodeStatus.getPeersLocation();
+			Location[] peersLoc = peerNodeStatus.getPeersLocation();
 			if(peersLoc != null) {
 				locationNode.addChild("i", "+"+(peersLoc.length)+" friends");
 			}

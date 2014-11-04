@@ -31,37 +31,65 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	private static String l10n(String string) {
 		return NodeL10n.getBase().getString("DarknetConnectionsToadlet."+string);
 	}
-	
-	protected class DarknetComparator extends ComparatorByStatus {
 
-		DarknetComparator(String sortBy, boolean reversed) {
-			super(sortBy, reversed);
-		}
-	
-		@Override
-		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy) {
-			if(sortBy.equals("name")) {
-				return ((DarknetPeerNodeStatus)firstNode).getName().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getName());
-			}else if(sortBy.equals("privnote")){
-				return ((DarknetPeerNodeStatus)firstNode).getPrivateDarknetCommentNote().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getPrivateDarknetCommentNote());
-			} else if(sortBy.equals("trust")){
-				return ((DarknetPeerNodeStatus)firstNode).getTrustLevel().compareTo(((DarknetPeerNodeStatus)secondNode).getTrustLevel());
-			} else if(sortBy.equals("visibility")){
-				int ret = ((DarknetPeerNodeStatus)firstNode).getOurVisibility().compareTo(((DarknetPeerNodeStatus)secondNode).getOurVisibility());
-				if(ret != 0) return ret;
-				return ((DarknetPeerNodeStatus)firstNode).getTheirVisibility().compareTo(((DarknetPeerNodeStatus)secondNode).getTheirVisibility());
-			} else
-				return super.customCompare(firstNode, secondNode, sortBy);
-		}
-		
-		/** Default comparison, after taking into account status */
-		@Override
-		protected int lastResortCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
-			return ((DarknetPeerNodeStatus)firstNode).getName().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getName());
-		}
+    protected static class DarknetComparator extends ComparatorByStatus {
+        private static enum ComparatorImpl implements Comparator<PeerNodeStatus> {
+            NAME() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return ((DarknetPeerNodeStatus)firstNode).getName().compareToIgnoreCase(
+                               ((DarknetPeerNodeStatus)secondNode).getName());
+                }
+            },
+            PRIVNOTE() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return ((DarknetPeerNodeStatus)firstNode).getPrivateDarknetCommentNote()
+                               .compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode)
+                               .getPrivateDarknetCommentNote());
+                }
+            },
+            TRUST() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    return ((DarknetPeerNodeStatus)firstNode).getTrustLevel().compareTo(
+                                ((DarknetPeerNodeStatus)secondNode).getTrustLevel());
+                }
+            },
+            VISIBILITY() {
+                @Override
+                public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
+                    int ret = ((DarknetPeerNodeStatus)firstNode).getOurVisibility().compareTo(
+                                  ((DarknetPeerNodeStatus)secondNode).getOurVisibility());
+                    if(ret == 0) {
+                        ret = ((DarknetPeerNodeStatus)firstNode).getTheirVisibility().compareTo(
+                                   ((DarknetPeerNodeStatus)secondNode).getTheirVisibility());
+                    }
+                    return ret;
+                }
+            }
+        }
 
-	}
-	
+        DarknetComparator(String sortBy, boolean reversed) {
+            super(sortBy, reversed);
+        }
+
+        @Override
+        protected Comparator<PeerNodeStatus> comparatorByName(String name) {
+            try {
+                return ComparatorImpl.valueOf(name.toUpperCase());
+            }
+            catch (IllegalArgumentException e) {
+                return super.comparatorByName(name);
+            }
+        }
+
+        @Override
+        protected Comparator<PeerNodeStatus> lastResortComparator() {
+            return ComparatorImpl.NAME;
+        }
+    }
+
 	@Override
 	protected Comparator<PeerNodeStatus> comparator(String sortBy, boolean reversed) {
 		return new DarknetComparator(sortBy, reversed);

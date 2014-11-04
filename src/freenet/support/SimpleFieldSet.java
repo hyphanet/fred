@@ -29,6 +29,7 @@ import java.util.Set;
 import com.db4o.ObjectContainer;
 
 import freenet.node.FSParseException;
+import freenet.node.Location;
 import freenet.support.io.Closer;
 import freenet.support.io.LineReader;
 import freenet.support.io.Readers;
@@ -453,6 +454,10 @@ public class SimpleFieldSet {
 		// Don't use putSingle, avoid intern check (Boolean.toString returns interned strings anyway)
 		put(key, Boolean.toString(b), false, false, false);
 	}
+
+    public void put(String key, Location l) {
+        putSingle(key, String.valueOf(l));
+    }
 
 	public void put(String key, double windowSize) {
 		putSingle(key, Double.toString(windowSize));
@@ -1227,6 +1232,16 @@ public class SimpleFieldSet {
 		}
 	}
 
+    /** Get a location for the given key. This may be at the top level or lower in the tree,
+     * it's just key=value.
+     * @param key The key to fetch.
+     * @return The value of the key as a Location, which is invalid if the key does not exist
+     * or cannot be parsed as a Location.
+     */
+    public Location getLocation(String key) {
+        return Location.fromString(get(key));
+    }
+
 	public void put(String key, int[] value) {
 		removeValue(key);
 		for(int v : value)
@@ -1257,6 +1272,11 @@ public class SimpleFieldSet {
     public void put(String key, boolean[] value) {
         removeValue(key);
         for (boolean v : value) putAppend(key, String.valueOf(v));
+    }
+    
+    public void put(String key, Location[] value) {
+        removeValue(key);
+        for (Location v : value) putAppend(key, String.valueOf(v));
     }
     
 	public int[] getIntArray(String key) {
@@ -1347,6 +1367,17 @@ public class SimpleFieldSet {
                 Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
                 return null;
             }
+        }
+
+        return ret;
+    }
+    
+    public Location[] getLocationArray(String key) {
+        String[] strings = getAll(key);
+        if(strings == null) return null;
+        Location[] ret = new Location[strings.length];
+        for(int i=0;i<strings.length;i++) {
+            ret[i] = Location.fromString(strings[i]);
         }
 
         return ret;

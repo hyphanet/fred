@@ -53,7 +53,7 @@ class FailureTableEntry implements TimedOutNodesList {
 	 * determine whether to let a request through that we would otherwise have
 	 * failed with RecentlyFailed, because the node we would route it to is closer
 	 * to the target than any we've routed to in the past. */
-	double[] requestedLocs;
+	Location[] requestedLocs;
 	long[] requestedBootIDs;
 	long[] requestedTimes;
 	/** Timeouts for each node for purposes of RecentlyFailed. We accept what
@@ -84,7 +84,7 @@ class FailureTableEntry implements TimedOutNodesList {
 
         public static final long[] EMPTY_LONG_ARRAY = new long[0];
         public static final short[] EMPTY_SHORT_ARRAY = new short[0];
-        public static final double[] EMPTY_DOUBLE_ARRAY = new double[0];
+        public static final Location[] EMPTY_LOCATION_ARRAY = new Location[0];
         @SuppressWarnings("unchecked")
         public static final WeakReference<? extends PeerNodeUnlocked>[] EMPTY_WEAK_REFERENCE = new WeakReference[0];
         
@@ -99,7 +99,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		requestorBootIDs = EMPTY_LONG_ARRAY;
 		requestorHTLs = EMPTY_SHORT_ARRAY;
 		requestedNodes = EMPTY_WEAK_REFERENCE;
-		requestedLocs = EMPTY_DOUBLE_ARRAY;
+		requestedLocs = EMPTY_LOCATION_ARRAY;
 		requestedBootIDs = EMPTY_LONG_ARRAY;
 		requestedTimes = EMPTY_LONG_ARRAY;
 		requestedTimeoutsRF = EMPTY_LONG_ARRAY;
@@ -275,7 +275,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		}
 		@SuppressWarnings("unchecked")
 		WeakReference<? extends PeerNodeUnlocked>[] newRequestedNodes = new WeakReference[requestedNodes.length+notIncluded-nulls];
-		double[] newRequestedLocs = new double[requestedNodes.length+notIncluded-nulls];
+		Location[] newRequestedLocs = new Location[requestedNodes.length+notIncluded-nulls];
 		long[] newRequestedBootIDs = new long[requestedNodes.length+notIncluded-nulls];
 		long[] newRequestedTimes = new long[requestedNodes.length+notIncluded-nulls];
 		long[] newRequestedTimeoutsFT = new long[requestedNodes.length+notIncluded-nulls];

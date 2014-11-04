@@ -55,14 +55,12 @@ public class HourlyStatsRecord {
 	  * @param location The routing location of the request
 	  */
 	public synchronized void remoteRequest(boolean ssk, boolean success, boolean local,
-			int htl, double location) {
+			int htl, ValidLocation location) {
 		if (finishedReporting) throw new IllegalStateException(
 				"Attempted to modify completed stats record.");
 		if (htl < 0) throw new IllegalArgumentException("Invalid HTL.");
-		if (location < 0 || location > 1)
-			throw new IllegalArgumentException("Invalid location.");
 		htl = Math.min(htl, node.maxHTL());
-		double rawDist = Location.distance(node.getLocation(), location);
+		double rawDist = node.getLocation().distance(location);
 		if (rawDist <= 0.0) rawDist = Double.MIN_VALUE;
 		double logDist = Math.log(rawDist) / Math.log(2.0);
 		assert logDist < (-1.0 + 0x1.0p-1022/* Double.MIN_NORMAL */);

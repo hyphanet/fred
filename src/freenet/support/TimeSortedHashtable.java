@@ -8,13 +8,13 @@ import java.util.TreeSet;
 /**
  * Variant on LRUMap which provides an efficient how-many-since-time-T operation.
  */
-public class TimeSortedHashtable<T extends Comparable<T>>  {
+public class TimeSortedHashtable<T extends Comparable<? super T>>  {
 	public TimeSortedHashtable() {
 		this.elements = new TreeSet<Element<T>>();
 		this.valueToElement = new HashMap<T, Element<T>>();
 	}
 	
-	private static class Element<T extends Comparable<T>> implements Comparable<Element<T>> {
+	private static class Element<T extends Comparable<? super T>> implements Comparable<Element<T>> {
 		Element(long t, T v) {
 			time = t;
 			value = v;

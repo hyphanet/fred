@@ -728,35 +728,31 @@ public class PeerManager {
 	};
 
 	protected static class LocationUIDPair implements Comparable<LocationUIDPair> {
-		double location;
+		ValidLocation location;
 		long uid;
 
 		LocationUIDPair(PeerNode pn) {
-			location = pn.getLocation();
+			location = pn.getLocation().assumeValid(); // Guaranteed by callers (pn.isRoutable)
 			uid = pn.swapIdentifier;
 		}
 
 		@Override
 		public int compareTo(LocationUIDPair p) {
-			// Compare purely on location, so result is the same as getPeerLocationDoubles()
-			if(p.location > location)
-				return 1;
-			if(p.location < location)
-				return -1;
-			return 0;
+			// Compare purely on location, so result is the same as getPeerLocations()
+			return p.location.compareTo(location);
 		}
 	}
 
 	/**
-	 * @return An array of the current locations (as doubles) of all
-	 * our connected peers or double[0] if Node.shallWePublishOurPeersLocation() is false
+	 * @return An array of the current locations of all our connected peers
+	 * or Location[0] if Node.shallWePublishOurPeersLocation() is false
 	 */
-	public double[] getPeerLocationDoubles(boolean pruneBackedOffPeers) {
-		double[] locs;
+	public Location[] getPeerLocations(boolean pruneBackedOffPeers) {
+		Location[] locs;
 		if(!node.shallWePublishOurPeersLocation())
-			return new double[0];
+			return new Location[0];
 		PeerNode[] conns = connectedPeers();
-		locs = new double[conns.length];
+		locs = new Location[conns.length];
 		int x = 0;
 		for(PeerNode conn: conns) {
 			if(conn.isRoutable()) {
@@ -773,7 +769,7 @@ public class PeerManager {
 			return locs;
 	}
 
-	/** Just like getPeerLocationDoubles, except it also
+	/** Just like getPeerLocations, except it also
 	 * returns the UID for each node. */
 	public LocationUIDPair[] getPeerLocationsAndUIDs() {
 		PeerNode[] conns;
@@ -883,8 +879,8 @@ public class PeerManager {
 		return getRandomPeer(null);
 	}
 
-	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double loc, boolean ignoreSelf, boolean calculateMisrouting,
-	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL, long ignoreBackoffUnder, boolean isLocal, boolean realTime, boolean excludeMandatoryBackoff) {
+	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, ValidLocation loc, boolean ignoreSelf, boolean calculateMisrouting,
+	        int minVersion, List<Location> addUnpickedLocsTo, Key key, short outgoingHTL, long ignoreBackoffUnder, boolean isLocal, boolean realTime, boolean excludeMandatoryBackoff) {
 		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, false, System.currentTimeMillis(), excludeMandatoryBackoff);
 	}
 
@@ -910,8 +906,8 @@ public class PeerManager {
 	 * scheduler is not clever enough to retry immediately when that timeout elapses, and even if it was, it probably
 	 * wouldn't be a good idea due to introducing a round-trip-to-request-originator; FIXME consider this.
 	 */
-	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double target, boolean ignoreSelf,
-	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, long ignoreBackoffUnder, boolean isLocal, boolean realTime,
+	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, ValidLocation target, boolean ignoreSelf,
+	        boolean calculateMisrouting, int minVersion, List<Location> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, long ignoreBackoffUnder, boolean isLocal, boolean realTime,
 	        RecentlyFailedReturn recentlyFailed, boolean ignoreTimeout, long now, boolean newLoadManagement) {
 		
 		int countWaiting = 0;
@@ -923,13 +919,13 @@ public class PeerManager {
 		if(logMINOR)
 			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length+" key "+key);
 		
-		double myLoc = node.getLocation();
+		ValidLocation myLoc = node.getLocation();
 		
 		double maxDiff = Double.MAX_VALUE;
 		if(!ignoreSelf)
-			maxDiff = Location.distance(myLoc, target);
+			maxDiff = myLoc.distance(target);
 		
-		double prevLoc = -1.0;
+		Location prevLoc = Location.invalid();
 		if(pn != null) prevLoc = pn.getLocation();
 
 		/**
@@ -1033,27 +1029,26 @@ public class PeerManager {
 			}
 			boolean timedOut = timeoutFT > now;
 			//To help avoid odd race conditions, get the location only once and use it for all calculations.
-			double loc = p.getLocation();
+			ValidLocation loc = p.getLocation().assumeValid(); // p.isRoutable()
 			boolean direct = true;
-			double realDiff = Location.distance(loc, target);
+			double realDiff = loc.distance(target);
 			double diff = realDiff;
 			
-			double[] peersLocation = p.getPeersLocation();
+			ValidLocation[] peersLocation = p.getPeersLocation();
 			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
-				for(double l : peersLocation) {
+				for(ValidLocation l : peersLocation) {
 					boolean ignoreLoc = false; // Because we've already been there
-					if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
-							Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
+					if(myLoc.equals(l) || prevLoc.equals(l))
 						ignoreLoc = true;
 					else {
 						for(PeerNode cmpPN : routedTo)
-							if(Math.abs(l - cmpPN.getLocation()) < Double.MIN_VALUE * 2) {
+							if(cmpPN.getLocation().equals(l)) {
 								ignoreLoc = true;
 								break;
 							}
 					}
 					if(ignoreLoc) continue;
-					double newDiff = Location.distance(l, target);
+					double newDiff = l.distance(target);
 					if(newDiff < diff) {
 						loc = l;
 						diff = newDiff;
@@ -1072,7 +1067,7 @@ public class PeerManager {
 				continue;
 			}
 			if(logMINOR)
-				Logger.minor(this, "p.loc=" + loc + ", target=" + target + ", d=" + Location.distance(loc, target) + " usedD=" + diff + " timedOut=" + timedOut + " for " + p.getPeer());
+				Logger.minor(this, "p.loc=" + loc + ", target=" + target + ", d=" + loc.distance(target) + " usedD=" + diff + " timedOut=" + timedOut + " for " + p.getPeer());
 			boolean chosen = false;
 			if(diff < closestDistance || (Math.abs(diff - closestDistance) < Double.MIN_VALUE*2 && (direct || realDiff < closestRealDistance))) {
 				closestDistance = diff;
@@ -1112,10 +1107,9 @@ public class PeerManager {
 						leastRecentlyTimedOutBackedOffDistance = diff;
 					}
 			if(addUnpickedLocsTo != null && !chosen) {
-				Double d = new Double(loc);
 				// Here we can directly compare double's because they aren't processed in any way, and are finite and (probably) nonzero.
-				if(!addUnpickedLocsTo.contains(d))
-					addUnpickedLocsTo.add(d);
+				if(!addUnpickedLocsTo.contains(loc))
+					addUnpickedLocsTo.add(loc);
 			}
 		}
 
@@ -1244,7 +1238,7 @@ public class PeerManager {
 			if(addUnpickedLocsTo != null)
 				//Add the location which we did not pick, if it exists.
 				if(closestNotBackedOff != null && closestBackedOff != null)
-					addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
+					addUnpickedLocsTo.add(closestBackedOff.getLocation());
 					
 		}
 		
@@ -1262,7 +1256,7 @@ public class PeerManager {
 	 * @return The time at which there will be a different best location to route to for this key, or
 	 * Long.MAX_VALUE if we cannot predict a better peer after any amount of time.
 	 */
-	private long checkBackoffsForRecentlyFailed(PeerNode[] peers, PeerNode best, double target, double bestDistance, double myLoc, double prevLoc, long now, TimedOutNodesList entry, short outgoingHTL) {
+	private long checkBackoffsForRecentlyFailed(PeerNode[] peers, PeerNode best, ValidLocation target, double bestDistance, Location myLoc, Location prevLoc, long now, TimedOutNodesList entry, short outgoingHTL) {
 		long overallWakeup = Long.MAX_VALUE;
 		for(PeerNode p : peers) {
 			if(p == best) continue;
@@ -1271,21 +1265,20 @@ public class PeerManager {
 			// Is it further from the target than what we've chosen?
 			// It probably is, but if there is backoff or failure tables involved it might not be.
 			
-			double loc = p.getLocation();
-			double realDiff = Location.distance(loc, target);
+			ValidLocation loc = p.getLocation().assumeValid(); // p.isRoutable() holds here
+			double realDiff = loc.distance(target);
 			double diff = realDiff;
 			
-			double[] peersLocation = p.getPeersLocation();
+			ValidLocation[] peersLocation = p.getPeersLocation();
 			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
-				for(double l : peersLocation) {
+				for(ValidLocation l : peersLocation) {
 					boolean ignoreLoc = false; // Because we've already been there
-					if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
-							Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
+					if(myLoc.equals(l) || prevLoc.equals(l))
 						continue;
 					// For purposes of recently failed, we haven't routed anywhere else.
 					// However we do need to check for our location, and the source's location.
 					if(ignoreLoc) continue;
-					double newDiff = Location.distance(l, target);
+					double newDiff = l.distance(target);
 					if(newDiff < diff) {
 						loc = l;
 						diff = newDiff;

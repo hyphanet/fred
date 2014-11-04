@@ -7,38 +7,38 @@ import freenet.support.Logger;
 public class PeerLocation {
 	
 	/** Current location in the keyspace, or -1 if it is unknown */
-	private double currentLocation;
+	private Location currentLocation;
 	/** Current locations of our peer's peers */
-	private double[] currentPeersLocation;
+	private ValidLocation[] currentPeersLocation;
 	/** Time the location was set */
 	private long locSetTime;
 
 	PeerLocation(String locationString) {
-		currentLocation = Location.getLocation(locationString);
+		currentLocation = Location.fromString(locationString);
 		locSetTime = System.currentTimeMillis();
 	}
 	
 	public synchronized String toString() {
-		return Double.toString(currentLocation);
+		return currentLocation.toString();
 	}
 
 	/** Should only be called in the constructor */
-	public void setPeerLocations(String[] peerLocationsString) {
+	public void setPeerLocations(String[] peerLocationsString) throws InvalidLocationException {
 		if(peerLocationsString != null) {
-			double[] peerLocations = new double[peerLocationsString.length];
+			ValidLocation[] peerLocations = new ValidLocation[peerLocationsString.length];
 			for(int i = 0; i < peerLocationsString.length; i++)
-				peerLocations[i] = Location.getLocation(peerLocationsString[i]);
+				peerLocations[i] = Location.fromString(peerLocationsString[i]).validated();
 			synchronized(this) {
 				currentPeersLocation = peerLocations;
 			}
 		}
 	}
 
-	public synchronized double getLocation() {
+	public synchronized Location getLocation() {
 		return currentLocation;
 	}
 
-	synchronized double[] getPeerLocations() {
+	synchronized ValidLocation[] getPeerLocations() {
 		return currentPeersLocation;
 	}
 
@@ -47,7 +47,7 @@ public class PeerLocation {
 	}
 
 	public synchronized boolean isValidLocation() {
-		return Location.isValid(currentLocation);
+		return currentLocation.isValid();
 	}
 
 	public synchronized int getDegree() {
@@ -55,52 +55,48 @@ public class PeerLocation {
 		return currentPeersLocation.length;
 	}
 
-	boolean updateLocation(double newLoc, double[] newLocs) {
-		if(!Location.isValid(newLoc)) {
-			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
-			// Ignore it
-			return false;
-		}
-
-		for(double currentLoc : newLocs) {
-			if(!Location.isValid(currentLoc)) {
-				Logger.error(this, "Invalid location update for " + this + " ("+currentLoc+')', new Exception("error"));
-				// Ignore it
-				return false;
-			}
-		}
-
-		Arrays.sort(newLocs);
+	boolean updateLocation(Location newLoc, Location[] newLocs) {
+	    try {
+	        ValidLocation validNewLoc = newLoc.validated();
+	        ValidLocation[] validNewLocs = ValidLocation.validated(newLocs);
+	        
+		    Arrays.sort(validNewLocs);
 		
-		boolean anythingChanged = false;
+		    boolean anythingChanged = false;
 
-		synchronized(this) {
-			if(!Location.equals(currentLocation, newLoc))
-				anythingChanged = true;
-			currentLocation = newLoc;
-			if(currentPeersLocation == null)
-				anythingChanged = true;
-			else if(currentPeersLocation != null && !anythingChanged) {
-				if(currentPeersLocation.length != newLocs.length)
-					anythingChanged = true;
-				else {
-					for(int i=0;i<currentPeersLocation.length;i++) {
-						if(!Location.equals(currentPeersLocation[i], newLocs[i])) {
-							anythingChanged = true;
-							break;
-						}
-					}
-				}
-			}
-			currentPeersLocation = newLocs;
-			locSetTime = System.currentTimeMillis();
-		}
-		return anythingChanged;
+		    synchronized(this) {
+			    if(!currentLocation.equals(validNewLoc))
+				    anythingChanged = true;
+			    currentLocation = validNewLoc;
+			    if(currentPeersLocation == null)
+				    anythingChanged = true;
+			    else if(currentPeersLocation != null && !anythingChanged) {
+				    if(currentPeersLocation.length != validNewLocs.length)
+					    anythingChanged = true;
+				    else {
+					    for(int i=0;i<currentPeersLocation.length;i++) {
+						    if(!currentPeersLocation[i].equals(validNewLocs[i])) {
+							    anythingChanged = true;
+							    break;
+						    }
+					    }
+				    }
+			    }
+			    currentPeersLocation = validNewLocs;
+			    locSetTime = System.currentTimeMillis();
+		    }
+		    return anythingChanged;
+	    }
+	    catch (InvalidLocationException e) {
+	        Logger.error(this, "Invalid location update for " + this, e);
+	        // Ignore.
+	        return false;
+	    }
 	}
 
-	synchronized double setLocation(double newLoc) {
-		double oldLoc = currentLocation;
-		if(!Location.equals(newLoc, currentLocation)) {
+	synchronized Location setLocation(ValidLocation newLoc) {
+		Location oldLoc = currentLocation;
+		if(!newLoc.equals(currentLocation)) {
 			currentLocation = newLoc;
 			locSetTime = System.currentTimeMillis();
 		}

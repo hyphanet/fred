@@ -674,7 +674,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 			if(metadata != null) {
 				
-				location.setPeerLocations(fs.getAll("peersLocation"));
+				try {
+				    location.setPeerLocations(fs.getAll("peersLocation"));
+			    }
+			    catch (InvalidLocationException e) {
+			        Logger.error(this, "peersLocation contained invalid peers", e);
+			    }
 				
 				// Don't be tolerant of nonexistant domains; this should be an IP address.
 				Peer p;
@@ -1014,7 +1019,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/**
 	* Returns this peer's current keyspace location, or -1 if it is unknown.
 	*/
-	public double getLocation() {
+	public Location getLocation() {
 		return location.getLocation();
 	}
 
@@ -1030,7 +1035,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 	}
 
-	public double[] getPeersLocation() {
+	public ValidLocation[] getPeersLocation() {
 		return location.getPeerLocations();
 	}
 
@@ -1817,7 +1822,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return location.getDegree();
 	}
 
-	public void updateLocation(double newLoc, double[] newLocs) {
+	public void updateLocation(Location newLoc, Location[] newLocs) {
 		boolean anythingChanged = location.updateLocation(newLoc, newLocs);
 		node.peers.updatePMUserAlert();
 		if(anythingChanged)
@@ -2333,7 +2338,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	protected void sendInitialMessages() {
 		loadSender(true).setSendASAP();
 		loadSender(false).setSendASAP();
-		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocationDoubles(true));
+		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocations(true));
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
 		Message dRoutingMsg = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
@@ -2620,17 +2625,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		String locationString = fs.get("location");
 		if(locationString != null) {
-			double newLoc = Location.getLocation(locationString);
-			if (!Location.isValid(newLoc)) {
-				if(logMINOR)
-					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);
-			} else {
-				double oldLoc = location.setLocation(newLoc);
-				if(!Location.equals(oldLoc, newLoc)) {
-					if(!Location.isValid(oldLoc))
+			try {
+			    ValidLocation newLoc = Location.fromString(locationString).validated();
+				Location oldLoc = location.setLocation(newLoc);
+				if(!oldLoc.equals(newLoc)) {
+					if(!oldLoc.isValid())
 						shouldUpdatePeerCounts = true;
 					changedAnything = true;
 				}
+			}
+			catch (InvalidLocationException e) {
+			    if(logMINOR)
+					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);
 			}
 		}
 		try {
@@ -2804,7 +2810,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			fs.put("hadRoutableConnectionCount", hadRoutableConnectionCount);
 		if(routableConnectionCheckCount > 0)
 			fs.put("routableConnectionCheckCount", routableConnectionCheckCount);
-		double[] peerLocs = getPeersLocation();
+		Location[] peerLocs = getPeersLocation();
 		if(peerLocs != null)
 			fs.put("peersLocation", peerLocs);
 		return fs;
@@ -5640,32 +5646,31 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return false;
 	}
 
-	public void reportRoutedTo(double target, boolean isLocal, boolean realTime, PeerNode prev, Set<PeerNode> routedTo) {
-		double distance = Location.distance(target, getLocation());
+	public void reportRoutedTo(ValidLocation target, boolean isLocal, boolean realTime, PeerNode prev, Set<PeerNode> routedTo) {
+		double distance = getLocation().assumeValid().distance(target);
 		
-		double myLoc = node.getLocation();
-		double prevLoc;
+		Location myLoc = node.getLocation();
+		Location prevLoc;
 		if(prev != null)
 			prevLoc = prev.getLocation();
 		else
-			prevLoc = -1.0;
+			prevLoc = Location.invalid();
 		
-		double[] peersLocation = getPeersLocation();
+		ValidLocation[] peersLocation = getPeersLocation();
 		if((peersLocation != null) && (shallWeRouteAccordingToOurPeersLocation())) {
-			for(double l : peersLocation) {
+			for(ValidLocation l : peersLocation) {
 				boolean ignoreLoc = false; // Because we've already been there
-				if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
-						Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
+				if(l.equals(myLoc) || l.equals(prevLoc))
 					ignoreLoc = true;
 				else {
 					for(PeerNode cmpPN : routedTo)
-						if(Math.abs(l - cmpPN.getLocation()) < Double.MIN_VALUE * 2) {
+						if(l.equals(cmpPN.getLocation())) {
 							ignoreLoc = true;
 							break;
 						}
 				}
 				if(ignoreLoc) continue;
-				double newDiff = Location.distance(l, target);
+				double newDiff = l.distance(target);
 				if(newDiff < distance) {
 					distance = newDiff;
 				}

@@ -37,8 +37,8 @@ public class PeerNodeStatus {
 
 	private final String statusCSSName;
 
-	private final double location;
-	private final double[] peersLocation;
+	private final Location location;
+	private final Location[] peersLocation;
 
 	private final String version;
 
@@ -312,11 +312,11 @@ public class PeerNodeStatus {
 	/**
 	 * @return the location
 	 */
-	public double getLocation() {
+	public Location getLocation() {
 		return location;
 	}
 
-	public double[] getPeersLocation() {
+	public Location[] getPeersLocation() {
 		return peersLocation;
 	}
 	

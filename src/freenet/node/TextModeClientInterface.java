@@ -962,11 +962,11 @@ public class TextModeClientInterface implements Runnable {
         		return false;
         	}
         	uline = uline.substring("ANNOUNCE".length());
-        	final double target;
-        	if(uline.charAt(0) == ':') {
-        		target = Double.parseDouble(uline.substring(1));
+        	final ValidLocation target;
+        	if(uline.charAt(0) == ':' && Location.fromString(uline.substring(1)).isValid()) {
+        		target = Location.fromString(uline.substring(1)).assumeValid();
         	} else {
-        		target = n.random.nextDouble();
+        		target = ValidLocation.random(n.random);
         	}
         	om.announce(target, new AnnouncementCallback() {
         		private void write(String msg) {

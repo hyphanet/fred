@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.stats;
 
+import freenet.node.Location;
 import freenet.store.StoreCallback;
 
 /**
@@ -42,7 +43,7 @@ public class StoreCallbackStats implements DataStoreStats {
 	}
 
 	@Override
-	public double avgLocation() throws StatsNotAvailableException {
+	public Location avgLocation() throws StatsNotAvailableException {
 		return nodeStats.avgLocation();
 	}
 
@@ -52,7 +53,7 @@ public class StoreCallbackStats implements DataStoreStats {
 	}
 
 	@Override
-	public double avgSuccess() throws StatsNotAvailableException {
+	public Location avgSuccess() throws StatsNotAvailableException {
 		return nodeStats.avgSuccess();
 	}
 

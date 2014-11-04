@@ -36,6 +36,7 @@ import freenet.node.PeerNodeStatus;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarterGroup;
 import freenet.node.RequestTracker;
+import freenet.node.ValidLocation;
 import freenet.node.Version;
 import freenet.node.stats.DataStoreInstanceType;
 import freenet.node.stats.DataStoreStats;
@@ -178,7 +179,7 @@ public class StatisticsToadlet extends Toadlet {
 
 		// FIXME! We need some nice images
 		final long now = System.currentTimeMillis();
-		double myLocation = node.getLocation();
+		ValidLocation myLocation = node.getLocation();
 		final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 
 		if(ctx.isAllowedFullAccess())
@@ -221,7 +222,7 @@ public class StatisticsToadlet extends Toadlet {
 			//HTMLNode storeSizeInfobox = nextTableCell.addChild("div", "class", "infobox");
              HTMLNode storeSizeInfobox = contentNode.addChild("div","class", "infobox");
 			
-			drawStoreSizeBox(storeSizeInfobox, myLocation, nodeUptimeSeconds);
+			drawStoreSizeBox(storeSizeInfobox, nodeUptimeSeconds);
            
 			
 			if(numberOfConnected + numberOfRoutingBackedOff > 0) {
@@ -759,7 +760,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 	}
 
-	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, double loc, long nodeUptimeSeconds) {
+	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, long nodeUptimeSeconds) {
 		storeSizeInfobox.addChild("div", "class", "infobox-header", l10n("datastore"));
 		HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
 
@@ -844,13 +845,13 @@ public class StatisticsToadlet extends Toadlet {
 			row.addChild("td", thousandPoint.format(sessionAccess.falsePos()) +
 					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.falsePos())+")")));
 			try {
-				row.addChild("td", fix1p4.format(stats.avgLocation()));
+				row.addChild("td", fix1p4.format(stats.avgLocation().toDouble()));
 			} catch (StatsNotAvailableException e) {
 				row.addChild("td", "N/A");
 			}
 
 			try {
-				row.addChild("td", fix1p4.format(stats.avgSuccess()));
+				row.addChild("td", fix1p4.format(stats.avgSuccess().toDouble()));
 			} catch (StatsNotAvailableException e) {
 				row.addChild("td", "N/A");
 			}
@@ -906,7 +907,7 @@ public class StatisticsToadlet extends Toadlet {
 		
 	}
 
-	private void drawSwapStatsBox(HTMLNode locationSwapInfobox, double location, long nodeUptimeSeconds, double swaps, double noSwaps) {
+	private void drawSwapStatsBox(HTMLNode locationSwapInfobox, Location location, long nodeUptimeSeconds, double swaps, double noSwaps) {
 		
 		locationSwapInfobox.addChild("div", "class", "infobox-header", "Location swaps");
 		int startedSwaps = node.getStartedSwaps();
@@ -1410,7 +1411,7 @@ public class StatisticsToadlet extends Toadlet {
 		return max;
 	}
 
-	private void addNodeCircle (HTMLNode circleTable, double myLocation) {
+	private void addNodeCircle (HTMLNode circleTable, Location myLocation) {
 		int[] histogram = new int[HISTOGRAM_LENGTH];
 		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
 			histogram[i] = 0;
@@ -1432,9 +1433,9 @@ public class StatisticsToadlet extends Toadlet {
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875, false, 1.0), "mark" }, "+");
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { "position: absolute; top: " + PEER_CIRCLE_RADIUS + "px; left: " + (PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) + "px", "mark" }, "+");
 		final Object[] knownLocsCopy = stats.getKnownLocations(-1);
-		final Double[] locations = (Double[])knownLocsCopy[0];
+		final Location[] locations = (Location[])knownLocsCopy[0];
 		final Long[] timestamps = (Long[])knownLocsCopy[1];
-		Double location;
+		Location location;
 		Long locationTime;
 		double strength = 1.0;
 		long now = System.currentTimeMillis();
@@ -1448,10 +1449,10 @@ public class StatisticsToadlet extends Toadlet {
 				age = MAX_CIRCLE_AGE_THRESHOLD;
 			}
 			strength = 1 - ((double) age / MAX_CIRCLE_AGE_THRESHOLD );
-			histogramIndex = (int) (Math.floor(location.doubleValue() * HISTOGRAM_LENGTH));
+			histogramIndex = (int) (Math.floor(location.toDouble() * HISTOGRAM_LENGTH));
 			histogram[histogramIndex]++;
 			
-			nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(location.doubleValue(), false, strength), "connected" }, "x");
+			nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(location, false, strength), "connected" }, "x");
 		}
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(myLocation, true, 1.0), "me" }, "x");
 		//
@@ -1468,10 +1469,10 @@ public class StatisticsToadlet extends Toadlet {
 		}
 	}
 	
-	private void addSpecialisation(HTMLNode table, double peerLocation, int[] incomingRequestLocation) {
+	private void addSpecialisation(HTMLNode table, Location peerLocation, int[] incomingRequestLocation) {
 		HTMLNode nodeHistogramLegendTableRow = table.addChild("tr");
 		HTMLNode nodeHistogramGraphTableRow = table.addChild("tr");
-		int myIndex = (int)(peerLocation * incomingRequestLocation.length);
+		int myIndex = (int)(peerLocation.toDouble() * incomingRequestLocation.length);
 		int histogramDiv = simpleHistogramDivisor(incomingRequestLocation);
 		for (int i = 0; i<incomingRequestLocation.length; i++) {
 			HTMLNode nodeHistogramLegendCell = nodeHistogramLegendTableRow.addChild("td");
@@ -1484,11 +1485,11 @@ public class StatisticsToadlet extends Toadlet {
 		}
 	}
 	
-	private void addCombinedSpecialisation(HTMLNode table, double peerLocation, int[] locallyOriginatingRequests, int[] remotelyOriginatingRequests) {
+	private void addCombinedSpecialisation(HTMLNode table, Location peerLocation, int[] locallyOriginatingRequests, int[] remotelyOriginatingRequests) {
 		assert(locallyOriginatingRequests.length == remotelyOriginatingRequests.length);
 		HTMLNode nodeHistogramLegendTableRow = table.addChild("tr");
 		HTMLNode nodeHistogramGraphTableRow = table.addChild("tr");
-		int myIndex = (int)(peerLocation * locallyOriginatingRequests.length);
+		int myIndex = (int)(peerLocation.toDouble() * locallyOriginatingRequests.length);
 		int histogramDiv = combinedHistogramDivisor(locallyOriginatingRequests, remotelyOriginatingRequests);
 		for (int i = 0; i<locallyOriginatingRequests.length; i++) {
 			HTMLNode nodeHistogramLegendCell = nodeHistogramLegendTableRow.addChild("td");
@@ -1525,16 +1526,16 @@ public class StatisticsToadlet extends Toadlet {
 			if (!pns.isSearchable()) continue;
 			if (!pns.isRoutable()) continue;
 
-			double peerLoc = pns.getLocation();
-			if (!Location.isValid(peerLoc)) continue;
+			Location peerLoc = pns.getLocation();
+			if (!peerLoc.isValid()) continue;
 
-			double[] foafLocs = pns.getPeersLocation();
+			Location[] foafLocs = pns.getPeersLocation();
 			if (foafLocs == null) continue;
 			
-			for (double foafLoc : foafLocs) {
-				if (!Location.isValid(foafLoc)) continue;
+			for (Location foafLoc : foafLocs) {
+				if (!foafLoc.isValid()) continue;
 				
-				int idx = (int)Math.floor(Location.distance(peerLoc, foafLoc) * HISTOGRAM_LENGTH / 0.5);
+				int idx = (int)Math.floor(peerLoc.assumeValid().distance(foafLoc.assumeValid()) * HISTOGRAM_LENGTH / 0.5);
 				peersLinkHistogram[idx]++;
 				peersLinkCount++;
 			}
@@ -1554,7 +1555,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 	}
 
-	private void addPeerCircle (HTMLNode circleTable, PeerNodeStatus[] peerNodeStatuses, double myLocation) {
+	private void addPeerCircle (HTMLNode circleTable, PeerNodeStatus[] peerNodeStatuses, ValidLocation myLocation) {
 		int[] histogramConnected = new int[HISTOGRAM_LENGTH];
 		int[] histogramDisconnected = new int[HISTOGRAM_LENGTH];
 		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
@@ -1579,7 +1580,7 @@ public class StatisticsToadlet extends Toadlet {
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { "position: absolute; top: " + PEER_CIRCLE_RADIUS + "px; left: " + (PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) + "px", "mark" }, "+");
 
 		PeerNodeStatus peerNodeStatus;
-		double peerLocation;
+		Location peerLocation;
 		double peerDistance;
 		int histogramIndex;
 		int peerCount = peerNodeStatuses.length;
@@ -1587,15 +1588,15 @@ public class StatisticsToadlet extends Toadlet {
 			peerNodeStatus = peerNodeStatuses[peerIndex];
 			peerLocation = peerNodeStatus.getLocation();
 			if(!peerNodeStatus.isSearchable()) continue;
-			if(peerLocation < 0.0 || peerLocation > 1.0) continue;
-			double[] foafLocations=peerNodeStatus.getPeersLocation();
+			if(!peerLocation.isValid()) continue;
+			Location[] foafLocations=peerNodeStatus.getPeersLocation();
 			if (foafLocations!=null && peerNodeStatus.isRoutable()) {
-				for (double foafLocation : foafLocations) {
+				for (Location foafLocation : foafLocations) {
 					//one grey dot for each "Friend-of-a-friend"
 					peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(foafLocation, false, 0.9), "disconnected" }, ".");
 				}
 			}
-			peerDistance = Location.distance( myLocation, peerLocation );
+			peerDistance = myLocation.distance(peerLocation.assumeValid());
 			histogramIndex = (int) (Math.floor(peerDistance * HISTOGRAM_LENGTH * 2));
 			if (peerNodeStatus.isConnected()) {
 				histogramConnected[histogramIndex]++;
@@ -1622,7 +1623,7 @@ public class StatisticsToadlet extends Toadlet {
 	}
 
 	private String generatePeerCircleStyleString (double peerLocation, boolean offsetMe, double strength) {
-		peerLocation *= Math.PI * 2;
+	    peerLocation *= Math.PI * 2;
 		//
 		int offset = 0;
 		if( offsetMe ) {
@@ -1635,6 +1636,10 @@ public class StatisticsToadlet extends Toadlet {
 		double y = PEER_CIRCLE_RADIUS - Math.cos(peerLocation) * (PEER_CIRCLE_RADIUS - offset);  // no PEER_CIRCLE_ADDITIONAL_FREE_SPACE for y-disposition
 		//
 		return "position: absolute; top: " + fix3p1US.format(y) + "px; left: " + fix3p1US.format(x) + "px";
+	}
+	
+	private String generatePeerCircleStyleString(Location peerLocation, boolean offsetMe, double strength) {
+	    return generatePeerCircleStyleString(peerLocation.toDouble(), offsetMe, strength);
 	}
 
 	@Override

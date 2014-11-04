@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.stats;
 
+import freenet.node.Location;
+
 /**
  * This interface represents aggregated stats for data store
  *
@@ -10,9 +12,9 @@ package freenet.node.stats;
  */
 public interface StoreLocationStats {
 
-	double avgLocation() throws StatsNotAvailableException;
+	Location avgLocation() throws StatsNotAvailableException;
 
-	double avgSuccess() throws StatsNotAvailableException;
+	Location avgSuccess() throws StatsNotAvailableException;
 
 	double furthestSuccess() throws StatsNotAvailableException;
 
