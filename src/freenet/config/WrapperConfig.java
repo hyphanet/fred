@@ -97,6 +97,7 @@ public class WrapperConfig {
 					bw.write(name+'='+value+'\n');
 					written = true;
 				} else if(line.equalsIgnoreCase("wrapper.restart.reload_configuration=TRUE")) {
+					bw.write(line+'\n');
 					writtenReload = true;
 				} else {
 					bw.write(line+'\n');
