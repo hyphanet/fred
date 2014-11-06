@@ -114,10 +114,10 @@ public class NewPacketFormatKeyContext {
 		SentPacket sent;
 		synchronized(sentPackets) {
 			sent = sentPackets.remove(ack);
+			maxSize = (maxSeenInFlight * 2) + 10;
 		}
 		if(sent != null) {
 			rtt = sent.acked(key);
-			maxSize = (maxSeenInFlight * 2) + 10;
 			validAck = true;
 		} else {
 			if(logDEBUG) Logger.debug(this, "Already acked or lost "+ack);
@@ -128,7 +128,6 @@ public class NewPacketFormatKeyContext {
 				return;
 			} else {
 				rtt = ackReceived - packetSent;
-				maxSize = (maxSeenInFlight * 2) + 10;
 			}
 		}
 		
@@ -226,16 +225,15 @@ public class NewPacketFormatKeyContext {
 
 	public void sent(SentPacket sentPacket, int seqNum, int length) {
 	    sentPacket.sent(length);
-	    int inFlight;
 		synchronized(sentPackets) {
 			sentPackets.put(seqNum, sentPacket);
-			inFlight = sentPackets.size();
-		}
-		if(inFlight > maxSeenInFlight) {
-			maxSeenInFlight = inFlight;
-			if (logDEBUG) {
-			    Logger.debug(this, "Max seen in flight new record: " + maxSeenInFlight +
-			                       " for " + this);
+			int inFlight = sentPackets.size();
+			if(inFlight > maxSeenInFlight) {
+				maxSeenInFlight = inFlight;
+				if (logDEBUG) {
+					Logger.debug(this, "Max seen in flight new record: " + maxSeenInFlight +
+							" for " + this);
+				}
 			}
 		}
 	}
