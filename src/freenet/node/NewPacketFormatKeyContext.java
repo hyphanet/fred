@@ -107,7 +107,6 @@ public class NewPacketFormatKeyContext {
 	public void ack(int ack, BasePeerNode pn, SessionKey key) {
 		long rtt;
 		int maxSize;
-		boolean lostBeforeAcked = false;
 		boolean validAck = false;
 		long ackReceived = System.currentTimeMillis();
 		if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack+" from "+pn);
@@ -121,29 +120,26 @@ public class NewPacketFormatKeyContext {
 			validAck = true;
 		} else {
 			if(logDEBUG) Logger.debug(this, "Already acked or lost "+ack);
-			lostBeforeAcked = true;
 			long packetSent = lostSentTimes.queryAndRemove(ack);
 			if(packetSent < 0) {
 				if(logDEBUG) Logger.debug(this, "No time for "+ack+" - maybe acked twice?");
 				return;
-			} else {
-				rtt = ackReceived - packetSent;
 			}
+			rtt = ackReceived - packetSent;
 		}
-		
+
+		if(pn == null)
+			return;
 		int rt = (int) Math.min(rtt, Integer.MAX_VALUE);
-		PacketThrottle throttle = null;
-		if(pn != null) {
-			pn.reportPing(rt);
-			throttle = pn.getThrottle();
-			if(validAck)
-				pn.receivedAck(ackReceived);
-		}
-		if(throttle != null) {
-			throttle.setRoundTripTime(rt);
-			if(!lostBeforeAcked)
-				throttle.notifyOfPacketAcknowledged(maxSize);
-		}
+		pn.reportPing(rt);
+		if(validAck)
+			pn.receivedAck(ackReceived);
+		PacketThrottle throttle = pn.getThrottle();
+		if(throttle == null)
+			return;
+		throttle.setRoundTripTime(rt);
+		if(validAck)
+			throttle.notifyOfPacketAcknowledged(maxSize);
 	}
 
 	/** Queue an ack.
