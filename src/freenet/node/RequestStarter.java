@@ -79,7 +79,13 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	private final boolean isInsert;
 	private final boolean isSSK;
 	final boolean realTime;
-	
+	private long lastDelay;
+	private static final long ALCHEMY_DELAY_WEIGHT = 24; // \
+	private static final long LAST_DEALY_WEIGHT = 75;    //  > Weights to give each of the delays when averaging them together.
+	private static final long TOADS_DELAY_WEIGHT = 1;    // /
+	private static final long MIN_ALCHEMY_DELAY = 5;     // shortest delay between requests, in ms.
+	private static final long MAX_ALCHEMY_DELAY = 500;   // longest delay between requests, in ms.
+
 	static final int MAX_WAITING_FOR_SLOTS = 50;
 	
 	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
@@ -95,6 +101,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		this.isInsert = isInsert;
 		this.isSSK = isSSK;
 		this.realTime = realTime;
+		this.lastDelay = 4000; // start slowly
 	}
 
 	void setScheduler(RequestScheduler sched) {
@@ -141,8 +148,20 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(!req.localRequestOnly) {
 					// Wait
 					long delay;
-					delay = throttle.getDelay();
-					if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
+					long toadsDelay;
+					long adelay;
+					toadsDelay = throttle.getDelay();
+					if (this.isSSK || this.realTime) { // use toads delay
+						delay = toadsDelay;
+						if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
+					} else {
+						// The Alchemy Delay is 1/10th the normal delay, bounded between MIN_ALCHEMY_DELAY and MAX_ALCHEMY_DELAY
+						adelay = Math.min(this.MAX_ALCHEMY_DELAY, Math.max(this.MIN_ALCHEMY_DELAY, (toadsDelay / 10)));
+						// The delay as used is a weighted average of the alchemy delay, the last used delay, and toad's delay
+						delay = (ALCHEMY_DELAY_WEIGHT*adelay + LAST_DEALY_WEIGHT*this.lastDelay + TOADS_DELAY_WEIGHT*toadsDelay) / (ALCHEMY_DELAY_WEIGHT + LAST_DEALY_WEIGHT + TOADS_DELAY_WEIGHT);
+						if(logMINOR) Logger.minor(this, "timestamp="+System.currentTimeMillis()+" toadsDelay="+toadsDelay+" newDelay="+delay+" from "+throttle);
+					}
+					this.lastDelay = delay;
 					long sleepUntil = cycleTime + delay;
 					if(!LOCAL_REQUESTS_COMPETE_FAIRLY) {
 						inputBucket.blockingGrab((int)(Math.max(0, averageInputBytesPerRequest.currentValue())));
