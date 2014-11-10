@@ -1,7 +1,9 @@
 package freenet.support;
 
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
@@ -972,6 +974,15 @@ public abstract class Fields {
 				return -1;
 		}
 		return 0;
+	}
+	
+	/** Copy all of the remaining bytes in the buffer to a byte array.
+	 * @param buf The input buffer. Position will be at the limit when returning.
+	 */
+	public static byte[] copyToArray(ByteBuffer buf) {
+	    byte[] ret = new byte[buf.remaining()];
+	    buf.get(ret);
+	    return ret;
 	}
 
 }
