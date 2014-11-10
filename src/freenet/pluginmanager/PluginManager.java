@@ -33,9 +33,8 @@ import java.util.zip.ZipException;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.fcp.ClientPut;
 import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.Toadlet;
@@ -51,7 +50,6 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
-import freenet.node.fcp.ClientPut;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.OfficialPlugins.OfficialPluginDescription;
@@ -1078,11 +1076,6 @@ public class PluginManager {
 		@Override
 		public boolean persistent() {
 			return false;
-		}
-
-		@Override
-		public void removeFrom(ObjectContainer container) {
-			// Do nothing.
 		}
 
 		@Override

@@ -1,5 +1,9 @@
 package freenet.support.io;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -12,12 +16,15 @@ import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import freenet.client.async.ClientContext;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.api.LockableRandomAccessBuffer;
+import freenet.support.api.RandomAccessBucket;
 
-public abstract class BaseFileBucket implements Bucket {
+public abstract class BaseFileBucket implements RandomAccessBucket {
     private static volatile boolean logMINOR;
     private static volatile boolean logDEBUG;
 
@@ -32,9 +39,6 @@ public abstract class BaseFileBucket implements Bucket {
         });
     }
 
-	// JVM caches File.size() and there is no way to flush the cache, so we
-	// need to track it ourselves
-	protected long length;
 	protected long fileRestartCounter;
 	/** Has the bucket been freed? If so, no further operations may be done */
 	private boolean freed;
@@ -56,8 +60,12 @@ public abstract class BaseFileBucket implements Bucket {
 	 */
 	public BaseFileBucket(File file, boolean deleteOnExit) {
 		if(file == null) throw new NullPointerException();
-		this.length = file.length();
-                maybeSetDeleteOnExit(deleteOnExit, file);
+		maybeSetDeleteOnExit(deleteOnExit, file);
+        assert(!(createFileOnly() && tempFileAlreadyExists())); // Mutually incompatible!
+	}
+	
+	protected BaseFileBucket() {
+	    // For serialization.
 	}
 
         private void maybeSetDeleteOnExit(boolean deleteOnExit, File file) {
@@ -78,7 +86,7 @@ public abstract class BaseFileBucket implements Bucket {
 	}
 
 	@Override
-	public OutputStream getOutputStream() throws IOException {
+	public OutputStream getOutputStreamUnbuffered() throws IOException {
 		synchronized (this) {
 			File file = getFile();
 			if(freed)
@@ -86,19 +94,20 @@ public abstract class BaseFileBucket implements Bucket {
 			if(isReadOnly())
 				throw new IOException("Bucket is read-only: "+this);
 			
-			if(createFileOnly() && file.exists()) {
-				boolean failed = true;
-				if(fileRestartCounter > 0) {
-					file.delete();
-					if(!file.exists()) failed = false;
-				}
-				if(failed) throw new FileExistsException(file);
+			if(createFileOnly() && // Fail if file already exists 
+			        fileRestartCounter == 0 && // Ignore if we're just clobbering our own file after a previous getOutputStream() 
+			        !file.createNewFile()) {
+			    throw new FileExistsException(file);
+			}
+			if(tempFileAlreadyExists() && !(file.exists() && file.canRead() && file.canWrite())) {
+			    throw new FileDoesNotExistException(file);
 			}
 			
 			if(streams != null && !streams.isEmpty())
 				Logger.error(this, "Streams open on "+this+" while opening an output stream!: "+streams, new Exception("debug"));
 			
-			File tempfile = createFileOnly() ? getTempfile() : file;
+			boolean rename = !tempFileAlreadyExists();
+			File tempfile = rename ? getTempfile() : file;
 			long streamNumber = ++fileRestartCounter;
 			
 			FileBucketOutputStream os = 
@@ -110,6 +119,11 @@ public abstract class BaseFileBucket implements Bucket {
 			addStream(os);
 			return os;
 		}
+	}
+	
+	@Override
+	public OutputStream getOutputStream() throws IOException {
+	    return new BufferedOutputStream(getOutputStreamUnbuffered());
 	}
 
 	private synchronized void addStream(Object stream) {
@@ -126,12 +140,16 @@ public abstract class BaseFileBucket implements Bucket {
 		streams.remove(stream);
 		if(streams.isEmpty()) streams = null;
 	}
+	
+	/** If true, then the file is temporary and must already exist, so we will just open it. 
+	 * Otherwise we will create a temporary file and then rename it over the target.
+	 * Incompatible with createFileOnly()! */
+	protected abstract boolean tempFileAlreadyExists();
 
+	/** If true, we will fail if the file already exist. Incompatible with tempFileAlreadyExists()! */
 	protected abstract boolean createFileOnly();
 	
 	protected abstract boolean deleteOnExit();
-	
-	protected abstract boolean deleteOnFinalize();
 	
 	protected abstract boolean deleteOnFree();
 
@@ -145,10 +163,6 @@ public abstract class BaseFileBucket implements Bucket {
 		return f;
 	}
 	
-	protected synchronized void resetLength() {
-		length = 0;
-	}
-
 	/**
 	 * Internal OutputStream impl.
 	 * If createFileOnly is set, we won't overwrite an existing file, and we write to a temp file
@@ -170,7 +184,6 @@ public abstract class BaseFileBucket implements Bucket {
 			if(logMINOR)
 				Logger.minor(FileBucketOutputStream.class, "Writing to "+tempfile+" for "+getFile()+" : "+this);
 			this.tempfile = tempfile;
-			resetLength();
 			this.restartCount = restartCount;
 			closed = false;
 		}
@@ -192,7 +205,6 @@ public abstract class BaseFileBucket implements Bucket {
 			synchronized (BaseFileBucket.this) {
 				confirmWriteSynchronized();
 				super.write(b);
-				length += b.length;
 			}
 		}
 
@@ -201,7 +213,6 @@ public abstract class BaseFileBucket implements Bucket {
 			synchronized (BaseFileBucket.this) {
 				confirmWriteSynchronized();
 				super.write(b, off, len);
-				length += len;
 			}
 		}
 
@@ -210,7 +221,6 @@ public abstract class BaseFileBucket implements Bucket {
 			synchronized (BaseFileBucket.this) {
 				confirmWriteSynchronized();
 				super.write(b);
-				length++;
 			}
 		}
 		
@@ -222,6 +232,7 @@ public abstract class BaseFileBucket implements Bucket {
 				closed = true;
 				file = getFile();
 			}
+			boolean renaming = !tempFileAlreadyExists();
 			removeStream(this);
 			if(logMINOR)
 				Logger.minor(this, "Closing "+BaseFileBucket.this);
@@ -230,25 +241,18 @@ public abstract class BaseFileBucket implements Bucket {
 			} catch (IOException e) {
 				if(logMINOR)
 					Logger.minor(this, "Failed closing "+BaseFileBucket.this+" : "+e, e);
-				if(createFileOnly()) tempfile.delete();
+				if(renaming) tempfile.delete();
 				throw e;
 			}
-			if(createFileOnly()) {
-				if(file.exists()) {
-					if(logMINOR)
-						Logger.minor(this, "File exists creating file for "+this);
-					tempfile.delete();
-					throw new FileExistsException(file);
-				}
-				if(!tempfile.renameTo(file)) {
-					if(logMINOR)
-						Logger.minor(this, "Cannot rename file for "+this);
-					if(file.exists()) throw new FileExistsException(file);
-					tempfile.delete();
-					if(logMINOR)
-						Logger.minor(this, "Deleted, cannot rename file for "+this);
-					throw new IOException("Cannot rename file");
-				}
+			if(renaming) {
+			    // getOutputStream() creates the file as a marker, so DON'T check for its existence, 
+			    // even if createFileOnly() is true.
+			    if(!FileUtil.renameTo(tempfile, file)) {
+			        tempfile.delete();
+			        if(logMINOR)
+			            Logger.minor(this, "Deleted, cannot rename file for "+this);
+			        throw new IOException("Cannot rename file");
+			    }
 			}
 		}
 		
@@ -282,7 +286,7 @@ public abstract class BaseFileBucket implements Bucket {
 	}
 
 	@Override
-	public synchronized InputStream getInputStream() throws IOException {
+	public synchronized InputStream getInputStreamUnbuffered() throws IOException {
 		if(freed)
 			throw new IOException("File already freed: "+this);
 		File file = getFile();
@@ -298,6 +302,10 @@ public abstract class BaseFileBucket implements Bucket {
 			return is;
 		}
 	}
+	
+	public InputStream getInputStream() throws IOException {
+	    return new BufferedInputStream(getInputStreamUnbuffered());
+	}
 
 	/**
 	 * @return the name of the file.
@@ -309,7 +317,7 @@ public abstract class BaseFileBucket implements Bucket {
 
 	@Override
 	public synchronized long size() {
-		return length;
+	    return getFile().length();
 	}
 
 	/**
@@ -320,13 +328,6 @@ public abstract class BaseFileBucket implements Bucket {
 		if(logMINOR)
 			Logger.minor(this, "Deleting "+getFile()+" for "+this, new Exception("debug"));
 		getFile().delete();
-	}
-
-	@Override
-	protected void finalize() throws Throwable {
-		if(deleteOnFinalize())
-			free(true);
-                super.finalize();
 	}
 
 	/**
@@ -410,6 +411,7 @@ public abstract class BaseFileBucket implements Bucket {
 	}
 
 	public synchronized Bucket[] split(int splitSize) {
+	    long length = size();
 		if(length > ((long)Integer.MAX_VALUE) * splitSize)
 			throw new IllegalArgumentException("Way too big!: "+length+" for "+splitSize);
 		int bucketCount = (int) (length / splitSize);
@@ -461,11 +463,11 @@ public abstract class BaseFileBucket implements Bucket {
 		File file = getFile();
 		if ((deleteOnFree() || forceFree) && file.exists()) {
 			Logger.debug(this,
-				"Deleting bucket " + file.getName(), new Exception("debug"));
+				"Deleting bucket " + file, new Exception("debug"));
 			deleteFile();
 			if (file.exists())
 				Logger.error(this,
-					"Delete failed on bucket " + file.getName());
+					"Delete failed on bucket " + file, new Exception("debug"));
 		}
 	}
 	
@@ -488,5 +490,43 @@ public abstract class BaseFileBucket implements Bucket {
 	 * Returns the file object this buckets data is kept in.
 	 */
 	public abstract File getFile();
+
+	@Override
+	public void onResume(ClientContext context) throws ResumeFailedException {
+	    // Do nothing.
+	}
 	
+	public static final int MAGIC = 0xc4b7533d;
+	static final int VERSION = 1;
+	
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeInt(MAGIC);
+        dos.writeInt(VERSION);
+        dos.writeBoolean(freed);
+    }
+	
+    protected BaseFileBucket(DataInputStream dis) throws IOException, StorageFormatException {
+        // Not constructed directly, so we DO need to read the magic value.
+        int magic = dis.readInt();
+        if(magic != MAGIC) throw new StorageFormatException("Bad magic");
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Bad version");
+        freed = dis.readBoolean();
+    }
+    
+    @Override
+    public LockableRandomAccessBuffer toRandomAccessBuffer() throws IOException {
+        if(freed) throw new IOException("Already freed");
+        setReadOnly();
+        long size = size();
+        if(size == 0) throw new IOException("Must not be empty");
+        return new PooledFileRandomAccessBuffer(getFile(), true, size, null, 
+                getPersistentTempID(), deleteOnFree());
+    }
+    
+    protected long getPersistentTempID() {
+        return -1;
+    }
+
 }

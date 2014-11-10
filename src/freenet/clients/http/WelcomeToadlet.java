@@ -15,6 +15,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.clients.http.PageMaker.RenderParameters;
 import freenet.clients.http.bookmark.BookmarkCategory;
 import freenet.clients.http.bookmark.BookmarkItem;
@@ -33,6 +34,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
@@ -181,7 +183,7 @@ public class WelcomeToadlet extends Toadlet {
             }
             ClientMetadata contentType = new ClientMetadata(type);
 
-            Bucket bucket = request.getPart("filename");
+            RandomAccessBucket bucket = request.getPart("filename");
 
             PageNode page = ctx.getPageMaker().getPageNode(l10n("insertedTitle"), ctx);
             HTMLNode pageNode = page.outer;
@@ -209,8 +211,8 @@ public class WelcomeToadlet extends Toadlet {
                 if (e.uri != null) {
                     content.addChild("#", l10n("uriWouldHaveBeen", "uri", e.uri.toString()));
                 }
-                int mode = e.getMode();
-                if ((mode == InsertException.FATAL_ERRORS_IN_BLOCKS) || (mode == InsertException.TOO_MANY_RETRIES_IN_BLOCKS)) {
+                InsertExceptionMode mode = e.getMode();
+                if ((mode == InsertExceptionMode.FATAL_ERRORS_IN_BLOCKS) || (mode == InsertExceptionMode.TOO_MANY_RETRIES_IN_BLOCKS)) {
                     content.addChild("br"); /* TODO */
                     content.addChild("#", l10n("splitfileErrorLabel"));
                     content.addChild("pre", e.errorCodes.toVerboseString());

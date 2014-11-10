@@ -2,103 +2,89 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
-import java.util.Enumeration;
-import java.util.NoSuchElementException;
-import java.util.Vector;
 
-import com.db4o.ObjectContainer;
+import java.io.Serializable;
+import java.util.ArrayList;
 
 import freenet.client.async.ClientContext;
-import freenet.support.Logger;
 
 /**
  * Event handeling for clients. SimpleEventProducer is a simple
  * ClientEventProducer implementation that can be used for others.
- *
+ * 
  * @author oskar
  **/
-public class SimpleEventProducer implements ClientEventProducer {
+public class SimpleEventProducer implements ClientEventProducer, Serializable {
 
-    private Vector<ClientEventListener> listeners;
+    private static final long serialVersionUID = 1L;
+    private ArrayList<ClientEventListener> listeners;
 
     /**
      * Create a new SimpleEventProducer
-     *
+     * 
      **/
     public SimpleEventProducer() {
-	listeners = new Vector<ClientEventListener>();
+        listeners = new ArrayList<ClientEventListener>();
     }
-    
+
     /** Create a new SimpleEventProducer with the given listeners. */
     public SimpleEventProducer(ClientEventListener[] cela) {
-	this();
-	for (int i = 0 ; i < cela.length ; i++)
-	    addEventListener(cela[i]);
+        this();
+        for (int i = 0; i < cela.length; i++)
+            addEventListener(cela[i]);
     }
-    
-	@Override
-    public void addEventListener(ClientEventListener cel) {
-	if(cel != null)
-	    listeners.addElement(cel);
-	else
-	    throw new IllegalArgumentException("Adding a null listener!");
+
+    @Override
+    public synchronized void addEventListener(ClientEventListener cel) {
+        if (cel != null)
+            listeners.add(cel);
+        else
+            throw new IllegalArgumentException("Adding a null listener!");
     }
-    
-	@Override
-    public boolean removeEventListener(ClientEventListener cel) {
-	boolean b = listeners.removeElement(cel);
-	listeners.trimToSize();
-	return b;
+
+    @Override
+    public synchronized boolean removeEventListener(ClientEventListener cel) {
+        boolean b = listeners.remove(cel);
+        listeners.trimToSize();
+        return b;
     }
 
     /**
      * Sends the ClientEvent to all registered listeners of this object.
+     * 
+     * Please do not change SimpleEventProducer to always produce events off-thread, it
+     * is better to run the client layer method that produces the event off-thread, because events 
+     * could be re-ordered, which matters for some events notably SimpleProgressEvent.
+     * See e.g. ClientGetter.innerNotifyClients()),  
      **/
-	@Override
-    public void produceEvent(ClientEvent ce, ObjectContainer container, ClientContext context) {
-    	if(container != null)
-    		container.activate(listeners, 1);
-	for (Enumeration<ClientEventListener> e = listeners.elements() ; 
-	     e.hasMoreElements();) {
+    @Override
+    public void produceEvent(ClientEvent ce, ClientContext context) {
+        // Events are relatively uncommon. Consistency more important than speed.
+        ClientEventListener[] list;
+        synchronized(this) {
+            list = getEventListeners();
+        }
+        for (ClientEventListener cel : list) {
             try {
-            	ClientEventListener cel = e.nextElement();
-            	if(container != null)
-            		container.activate(cel, 1);
-                cel.receive(ce, container, context);
-            } catch (NoSuchElementException ne) {
-		Logger.normal(this, "Concurrent modification in "+
-				"produceEvent!: "+this);
-	    } catch (Exception ue) {
+                cel.receive(ce, context);
+            } catch (Exception ue) {
                 System.err.println("---Unexpected Exception------------------");
                 ue.printStackTrace();
                 System.err.println("-----------------------------------------");
             }
-	}
+        }
     }
-    
+
     /** Returns the listeners as an array. */
-    public ClientEventListener[] getEventListeners() {
-	ClientEventListener[] ret =
-	    new ClientEventListener[listeners.size()];
-	listeners.copyInto(ret);
-	return ret;
+    public synchronized ClientEventListener[] getEventListeners() {
+        ClientEventListener[] ret = new ClientEventListener[listeners.size()];
+        return listeners.toArray(ret);
     }
 
     /** Adds all listeners in the given array. */
-    public void addEventListeners(ClientEventListener[] cela) {
-	for (int i = 0 ; i < cela.length ; i++)
-	    addEventListener(cela[i]);
+    public synchronized void addEventListeners(ClientEventListener[] cela) {
+        for (int i = 0; i < cela.length; i++)
+            addEventListener(cela[i]);
     }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-    	if(container != null)
-    		container.activate(listeners, 1);
-		ClientEventListener[] list = listeners.toArray(new ClientEventListener[listeners.size()]);
-		listeners.clear();
-		container.delete(listeners);
-		for(ClientEventListener l: list)
-			l.onRemoveEventProducer(container);
-		container.delete(this);
-	}
 }

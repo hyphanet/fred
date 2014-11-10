@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
-import freenet.client.async.ManifestElement;
+import freenet.support.api.ManifestElement;
 
 /**
  * Helper class to estaminate the container size,

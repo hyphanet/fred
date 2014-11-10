@@ -6,7 +6,7 @@ import java.io.InputStream;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
-import freenet.support.io.TrivialPaddedBucket;
+import freenet.support.io.PaddedBucket;
 import junit.framework.TestCase;
 
 public class TrivialPaddedBucketTest extends TestCase {
@@ -21,7 +21,7 @@ public class TrivialPaddedBucketTest extends TestCase {
         ArrayBucket input = new ArrayBucket();
         BucketTools.fill(input, length);
         ArrayBucket copy = new ArrayBucket();
-        TrivialPaddedBucket padded = new TrivialPaddedBucket(copy);
+        PaddedBucket padded = new PaddedBucket(copy);
         BucketTools.copy(input, padded);
         assertEquals(padded.size(), input.size());
         assertEquals(copy.size(), expectedLength);

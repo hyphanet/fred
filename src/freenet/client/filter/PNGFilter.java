@@ -336,8 +336,8 @@ public class PNGFilter implements ContentDataFilter {
 		final File fin = new File("/tmp/test.png");
 		final File fout = new File("/tmp/test2.png");
 		fout.delete();
-		final Bucket inputBucket = new FileBucket(fin, true, false, false, false, false);
-		final Bucket outputBucket = new FileBucket(fout, false, true, false, false, false);
+		final Bucket inputBucket = new FileBucket(fin, true, false, false, false);
+		final Bucket outputBucket = new FileBucket(fout, false, true, false, false);
 		InputStream inputStream = null;
 		OutputStream outputStream = null;
 		try {

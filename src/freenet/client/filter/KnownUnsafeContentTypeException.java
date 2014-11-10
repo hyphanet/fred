@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 
@@ -57,8 +58,8 @@ public class KnownUnsafeContentTypeException extends UnsafeContentTypeException 
 	}
 
 	@Override
-	public int getFetchErrorCode() {
-		return FetchException.CONTENT_VALIDATION_BAD_MIME;
+	public FetchExceptionMode getFetchErrorCode() {
+		return FetchExceptionMode.CONTENT_VALIDATION_BAD_MIME;
 	}
 
 }

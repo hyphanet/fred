@@ -2,6 +2,7 @@ package freenet.support;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Random;
@@ -10,8 +11,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.support.math.MersenneTwister;
-
-import com.db4o.ObjectContainer;
 
 public abstract class BloomFilter {
 	protected ByteBuffer filter;
@@ -22,7 +21,7 @@ public abstract class BloomFilter {
 
 	protected transient ReadWriteLock lock = new ReentrantReadWriteLock();
 	
-	public void init(ObjectContainer container) {
+	public void init() {
 		lock = new ReentrantReadWriteLock();
 	}
 
@@ -217,11 +216,6 @@ public abstract class BloomFilter {
                 super.finalize();
 	}
 	
-	public void storeTo(ObjectContainer container) {
-		container.store(filter);
-		container.store(this);
-	}
-	
 	public int getSizeBytes() {
 		return filter.capacity();
 	}
@@ -237,9 +231,19 @@ public abstract class BloomFilter {
 		return x;
 	}
 	
-	public void removeFrom(ObjectContainer container) {
-		container.delete(filter);
-		container.delete(this);
-	}
+    public int copyTo(byte[] buf, int offset) {
+        lock.readLock().lock();
+        try {
+            int capacity = filter.capacity();
+            System.arraycopy(filter.array(), filter.arrayOffset(), buf, offset, capacity);
+            return capacity;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+    
+    public void writeTo(OutputStream cos) throws IOException {
+        cos.write(filter.array(), filter.arrayOffset(), filter.capacity());
+    }
 
 }

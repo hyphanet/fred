@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
-import freenet.node.fcp.FCPConnectionInputHandler;
-import freenet.node.fcp.FCPPluginMessage;
+import freenet.clients.fcp.FCPConnectionInputHandler;
+import freenet.clients.fcp.FCPPluginMessage;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;

@@ -5,11 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
 
 import freenet.config.SubConfig;
 import freenet.crypt.AEADCryptBucket;
@@ -22,7 +17,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
-import freenet.support.io.TrivialPaddedBucket;
+import freenet.support.io.PaddedBucket;
 
 public class PluginStores {
     
@@ -33,45 +28,9 @@ public class PluginStores {
         this.node = node;
         pluginStoresDir = node.setupProgramDir(installConfig, "pluginStoresDir", "plugin-data", 
                 "NodeClientCore.pluginStoresDir", "NodeClientCore.pluginStoresDir", null, null);
-        if(!pluginStoresDir.dir().mkdirs()) {
+        File dir = pluginStoresDir.dir();
+        if(!(dir.mkdirs() || (dir.exists() && dir.isDirectory() && dir.canRead() && dir.canWrite()))) {
             System.err.println("Unable to create folder for plugin data: "+pluginStoresDir.dir());
-        }
-    }
-
-    public void migrateAllPluginStores(ObjectContainer container, long nodeDBHandle) {
-        List<PluginStoreContainer> pscs = new ArrayList<PluginStoreContainer>();
-        ObjectSet<PluginStoreContainer> stores = container.query(PluginStoreContainer.class);
-        for(PluginStoreContainer psc : stores) {
-            if(psc.nodeDBHandle != nodeDBHandle) continue;
-            if(psc.pluginStore == null) {
-                System.err.println("No pluginStore on PSC for "+psc.storeIdentifier);
-                continue;
-            }
-            pscs.add(psc);
-        }
-        if(pscs.isEmpty()) {
-            System.out.println("No plugin stores to migrate.");
-            return;
-        }
-        System.out.println("Plugin stores to migrate: "+pscs.size());
-        for(PluginStoreContainer psc : pscs) {
-            container.activate(psc, Integer.MAX_VALUE);
-            migratePluginStores(container, psc);
-        }
-    }
-    
-    /** Migrate a single PluginStore from the database to on disk 
-     * @throws IOException */
-    public void migratePluginStores(ObjectContainer container, PluginStoreContainer psc) {
-        try {
-            if(psc.pluginStore == null) return;
-            writePluginStore(psc.storeIdentifier, psc.pluginStore);
-            psc.pluginStore.removeFrom(container);
-            container.delete(psc);
-            container.commit();
-            System.out.println("Migrated plugin store for "+psc.storeIdentifier+" from database to disk");
-        } catch (IOException e) {
-            System.err.println("Unable to migrate plugin store for "+psc.storeIdentifier+" from database to disk : "+e);
         }
     }
 
@@ -100,14 +59,14 @@ public class PluginStores {
     private Bucket makePluginStoreBucket(String storeIdentifier, boolean isEncrypted, boolean backup) 
     throws FileNotFoundException {
         File f = getPluginStoreFile(storeIdentifier, isEncrypted, backup);
-        Bucket bucket = new FileBucket(f, false, true, false, false, false);
+        Bucket bucket = new FileBucket(f, false, true, false, false);
         if(isEncrypted) {
             byte[] key = node.getPluginStoreKey(storeIdentifier);
             if(key != null) {
                 // We pad then encrypt, which is wasteful, but we have no way to persist the size.
                 // Unfortunately AEADCryptBucket needs to know the real termination point.
                 bucket = new AEADCryptBucket(bucket, key);
-                bucket = new TrivialPaddedBucket(bucket);
+                bucket = new PaddedBucket(bucket);
             }
         }
         return bucket;
@@ -117,21 +76,21 @@ public class PluginStores {
     throws FileNotFoundException {
         File f = getPluginStoreFile(storeIdentifier, isEncrypted, backup);
         if(!f.exists()) return null;
-        Bucket bucket = new FileBucket(f, false, false, false, false, false);
+        Bucket bucket = new FileBucket(f, false, false, false, false);
         if(isEncrypted) {
             byte[] key = node.getPluginStoreKey(storeIdentifier);
             if(key != null) {
                 // We pad then encrypt, which is wasteful, but we have no way to persist the size.
                 // Unfortunately AEADCryptBucket needs to know the real termination point.
                 bucket = new AEADCryptBucket(bucket, key);
-                bucket = new TrivialPaddedBucket(bucket, bucket.size());
+                bucket = new PaddedBucket(bucket, bucket.size());
             }
         }
         return bucket;
     }
 
     public PluginStore loadPluginStore(String storeIdentifier) {
-        boolean isEncrypted = node.isDatabaseEncrypted();
+        boolean isEncrypted = node.wantEncryptedDatabase();
         PluginStore store = loadPluginStore(storeIdentifier, isEncrypted, false);
         if(store != null) return store;
         store = loadPluginStore(storeIdentifier, isEncrypted, true);
@@ -185,7 +144,7 @@ public class PluginStores {
     }
 
     public void writePluginStore(String storeIdentifier, PluginStore store) throws IOException {
-        boolean isEncrypted = node.isDatabaseEncrypted();
+        boolean isEncrypted = node.wantEncryptedDatabase();
         File backup = getPluginStoreFile(storeIdentifier, isEncrypted, true);
         File main = getPluginStoreFile(storeIdentifier, isEncrypted, false);
         if(backup.exists() && main.exists()) {

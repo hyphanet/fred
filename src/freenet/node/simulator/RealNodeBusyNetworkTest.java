@@ -155,7 +155,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         	}
         	long totalRunningRequests = 0;
         	for(int j=0;j<nodes.length;j++) {
-        		totalRunningRequests += nodes[j].clientCore.countTransientQueuedRequests();
+        		totalRunningRequests += nodes[j].clientCore.countQueuedRequests();
         	}
         	System.err.println("Running requests: "+totalRunningRequests);
         }
@@ -165,7 +165,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         while(true) {
         	long totalRunningRequests = 0;
         	for(int i=0;i<nodes.length;i++) {
-        		totalRunningRequests += nodes[i].clientCore.countTransientQueuedRequests();
+        		totalRunningRequests += nodes[i].clientCore.countQueuedRequests();
         	}
         	System.err.println("Running requests: "+totalRunningRequests);
         	if(totalRunningRequests == 0) break;

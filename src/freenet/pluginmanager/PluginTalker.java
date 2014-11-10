@@ -6,8 +6,8 @@ package freenet.pluginmanager;
 import java.lang.ref.WeakReference;
 import java.util.UUID;
 
+import freenet.clients.fcp.FCPConnectionHandler;
 import freenet.node.Node;
-import freenet.node.fcp.FCPConnectionHandler;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;

@@ -18,6 +18,7 @@ import java.util.TimeZone;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
@@ -30,6 +31,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -117,8 +119,8 @@ public class LongTermMHKTest extends LongTermTest {
 
 			// Create four CHKs
 			
-			Bucket single = randomData(node);
-			Bucket[] mhks = new Bucket[3];
+			RandomAccessBucket single = randomData(node);
+			RandomAccessBucket[] mhks = new RandomAccessBucket[3];
 			
 			for(int i=0;i<mhks.length;i++) mhks[i] = randomData(node);
 			
@@ -150,7 +152,7 @@ public class LongTermMHKTest extends LongTermTest {
 					successes++;
 				} catch (InsertException e) {
 					e.printStackTrace();
-					csvLine.add(FetchException.getShortMessage(e.getMode()));
+					csvLine.add(InsertException.getShortMessage(e.getMode()));
 					csvLine.add("N/A");
 					System.out.println("INSERT FAILED: "+e+" for insert "+i+" for single block");
 				}
@@ -183,7 +185,7 @@ public class LongTermMHKTest extends LongTermTest {
 					successes++;
 				} catch (InsertException e) {
 					e.printStackTrace();
-					csvLine.add(FetchException.getShortMessage(e.getMode()));
+					csvLine.add(InsertException.getShortMessage(e.getMode()));
 					csvLine.add("N/A");
 					System.out.println("INSERT FAILED: "+e+" for MHK #"+i);
 				}
@@ -363,8 +365,8 @@ public class LongTermMHKTest extends LongTermTest {
 						csvLine.add(String.valueOf(t2 - t1));
 						fetched = true;
 					} catch (FetchException e) {
-						if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-								&& e.getMode() != FetchException.DATA_NOT_FOUND)
+						if (e.getMode() != FetchExceptionMode.ALL_DATA_NOT_FOUND
+								&& e.getMode() != FetchExceptionMode.DATA_NOT_FOUND)
 							e.printStackTrace();
 						csvLine.add(FetchException.getShortMessage(e.getMode()));
 						System.err.println("FAILED PULL FOR SINGLE URI: "+e);
@@ -380,8 +382,8 @@ public class LongTermMHKTest extends LongTermTest {
 						System.out.println("PULL-TIME FOR MHK #"+i+":" + (t2 - t1));
 						csvLine.add(String.valueOf(t2 - t1));
 					} catch (FetchException e) {
-						if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-								&& e.getMode() != FetchException.DATA_NOT_FOUND)
+						if (e.getMode() != FetchExceptionMode.ALL_DATA_NOT_FOUND
+								&& e.getMode() != FetchExceptionMode.DATA_NOT_FOUND)
 							e.printStackTrace();
 						csvLine.add(FetchException.getShortMessage(e.getMode()));
 						System.err.println("FAILED PULL FOR MHK #"+i+": "+e);
@@ -412,8 +414,8 @@ public class LongTermMHKTest extends LongTermTest {
 		}
 	}	
 	
-	private static Bucket randomData(Node node) throws IOException {
-		Bucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
+	private static RandomAccessBucket randomData(Node node) throws IOException {
+	    RandomAccessBucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
 		OutputStream os = data.getOutputStream();
 		try {
 		byte[] buf = new byte[4096];

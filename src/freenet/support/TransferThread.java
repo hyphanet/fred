@@ -9,8 +9,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.Collection;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -107,7 +105,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 			int fcounter = 0;
 			for(ClientGetter fetch : fetches) {
 				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
-				fetch.cancel(null, mNode.clientCore.clientContext);
+				fetch.cancel(mNode.clientCore.clientContext);
 				++fcounter;
 			}
 			
@@ -122,7 +120,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 			int icounter = 0;
 			for(BaseClientPutter insert : inserts) {
 				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
-				insert.cancel(null, mNode.clientCore.clientContext);
+				insert.cancel(mNode.clientCore.clientContext);
 				++icounter;
 			}
 			Logger.debug(this, "Stopped " + icounter + " current inserts.");
@@ -200,13 +198,13 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	 * You have to do "finally { removeFetch() }" when using this function.
 	 */
 	@Override
-	public abstract void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container);
+	public abstract void onSuccess(FetchResult result, ClientGetter state);
 
 	/**
 	 * You have to do "finally { removeFetch() }" when using this function.
 	 */
 	@Override
-	public abstract void onFailure(FetchException e, ClientGetter state, ObjectContainer container);
+	public abstract void onFailure(FetchException e, ClientGetter state);
 
 	/* Inserts */
 	
@@ -214,28 +212,18 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	 * You have to do "finally { removeInsert() }" when using this function.
 	 */
 	@Override
-	public abstract void onSuccess(BaseClientPutter state, ObjectContainer container);
+	public abstract void onSuccess(BaseClientPutter state);
 
 	/**
 	 * You have to do "finally { removeInsert() }" when using this function.
 	 */
 	@Override
-	public abstract void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container);
+	public abstract void onFailure(InsertException e, BaseClientPutter state);
 
 	@Override
-	public abstract void onFetchable(BaseClientPutter state, ObjectContainer container);
+	public abstract void onFetchable(BaseClientPutter state);
 
 	@Override
-	public abstract void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container);
+	public abstract void onGeneratedURI(FreenetURI uri, BaseClientPutter state);
 
-	/** Called when freenet.async thinks that the request should be serialized to
-	 * disk, if it is a persistent request. */
-	@Override
-	public abstract void onMajorProgress(ObjectContainer container);
-
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing TransferThread in database", new Exception("error"));
-		return false;
-	}
-	
 }

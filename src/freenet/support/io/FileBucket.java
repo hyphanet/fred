@@ -3,23 +3,27 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
+import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 
 /**
  * A file Bucket is an implementation of Bucket that writes to a file.
  * 
  * @author oskar
  */
-public class FileBucket extends BaseFileBucket implements Bucket {
+public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 
-	protected final File file;
+    private static final long serialVersionUID = 1L;
+    protected final File file;
 	protected boolean readOnly;
-	protected boolean deleteOnFinalize;
 	protected boolean deleteOnFree;
 	protected final boolean deleteOnExit;
 	protected final boolean createFileOnly;
@@ -47,7 +51,7 @@ public class FileBucket extends BaseFileBucket implements Bucket {
 	 * @param deleteOnFinalize If true, delete the file on finalization. Reversible.
 	 * @param deleteOnExit If true, delete the file on a clean exit of the JVM. Irreversible - use with care!
 	 */
-	public FileBucket(File file, boolean readOnly, boolean createFileOnly, boolean deleteOnFinalize, boolean deleteOnExit, boolean deleteOnFree) {
+	public FileBucket(File file, boolean readOnly, boolean createFileOnly, boolean deleteOnExit, boolean deleteOnFree) {
 		super(file, deleteOnExit);
 		if(file == null) throw new NullPointerException();
 		File origFile = file;
@@ -58,7 +62,6 @@ public class FileBucket extends BaseFileBucket implements Bucket {
 		this.readOnly = readOnly;
 		this.createFileOnly = createFileOnly;
 		this.file = file;
-		this.deleteOnFinalize = deleteOnFinalize;
 		this.deleteOnFree = deleteOnFree;
 		this.deleteOnExit = deleteOnExit;
 		// Useful for finding temp file leaks.
@@ -67,8 +70,16 @@ public class FileBucket extends BaseFileBucket implements Bucket {
 		// (new Exception("get stack")).printStackTrace();
 		fileRestartCounter = 0;
 	}
+	
+	protected FileBucket() {
+	    // For serialization.
+	    super();
+	    file = null;
+	    deleteOnExit = false;
+	    createFileOnly = false;
+	}
 
-	/**
+    /**
 	 * Returns the file object this buckets data is kept in.
 	 */
 	@Override
@@ -86,15 +97,6 @@ public class FileBucket extends BaseFileBucket implements Bucket {
 		readOnly = true;
 	}
 
-	/**
-	 * Turn off "delete file on finalize" flag.
-	 * Note that if you have already set delete file on exit, there is little that you
-	 * can do to recover it! Delete file on finalize, on the other hand, is reversible.
-	 */
-	public synchronized void dontDeleteOnFinalize() {
-		deleteOnFinalize = false;
-	}
-
 	@Override
 	protected boolean createFileOnly() {
 		return createFileOnly;
@@ -106,49 +108,98 @@ public class FileBucket extends BaseFileBucket implements Bucket {
 	}
 
 	@Override
-	protected boolean deleteOnFinalize() {
-		return deleteOnFinalize;
-	}
-
-	@Override
 	protected boolean deleteOnFree() {
 		return deleteOnFree;
 	}
 
 	@Override
-	public void storeTo(ObjectContainer container) {
-		container.store(this);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.activate(file, 5);
-		if(logMINOR) Logger.minor(this, "Removing "+this);
-		container.delete(file);
-		container.delete(this);
-	}
-	
-	public void objectOnActivate(ObjectContainer container) {
-		container.activate(file, 5);
-	}
-	
-	// Debugging stuff. If reactivate, add the logging infrastructure and use if(logDEBUG).
-//	public void objectOnNew(ObjectContainer container) {
-//		Logger.minor(this, "Storing "+this, new Exception("debug"));
-//	}
-//	
-//	public void objectOnUpdate(ObjectContainer container) {
-//		Logger.minor(this, "Updating "+this, new Exception("debug"));
-//	}
-//	
-//	public void objectOnDelete(ObjectContainer container) {
-//		Logger.minor(this, "Deleting "+this, new Exception("debug"));
-//	}
-//	
-	@Override
-	public Bucket createShadow() {
+	public RandomAccessBucket createShadow() {
 		String fnam = file.getPath();
 		File newFile = new File(fnam);
-		return new FileBucket(newFile, true, false, false, false, false);
+		return new FileBucket(newFile, true, false, false, false);
 	}
+
+    @Override
+    public void onResume(ClientContext context) throws ResumeFailedException {
+        super.onResume(context);
+    }
+
+    @Override
+    protected boolean tempFileAlreadyExists() {
+        return false;
+    }
+    
+    public static final int MAGIC = 0x8fe6e41b;
+    static final int VERSION = 1;
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeInt(MAGIC);
+        super.storeTo(dos);
+        dos.writeInt(VERSION);
+        dos.writeUTF(file.toString());
+        dos.writeBoolean(readOnly);
+        dos.writeBoolean(deleteOnFree);
+        if(deleteOnExit) throw new IllegalStateException("Must not free on exit if persistent");
+        dos.writeBoolean(createFileOnly);
+    }
+    
+    protected FileBucket(DataInputStream dis) throws IOException, StorageFormatException {
+        super(dis);
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Bad version");
+        file = new File(dis.readUTF());
+        readOnly = dis.readBoolean();
+        deleteOnFree = dis.readBoolean();
+        deleteOnExit = false;
+        createFileOnly = dis.readBoolean();
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (createFileOnly ? 1231 : 1237);
+        result = prime * result + (deleteOnExit ? 1231 : 1237);
+        result = prime * result + (deleteOnFree ? 1231 : 1237);
+        result = prime * result + ((file == null) ? 0 : file.hashCode());
+        result = prime * result + (readOnly ? 1231 : 1237);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        FileBucket other = (FileBucket) obj;
+        if (createFileOnly != other.createFileOnly) {
+            return false;
+        }
+        if (deleteOnExit != other.deleteOnExit) {
+            return false;
+        }
+        if (deleteOnFree != other.deleteOnFree) {
+            return false;
+        }
+        if (file == null) {
+            if (other.file != null) {
+                return false;
+            }
+        } else if (!file.equals(other.file)) {
+            return false;
+        }
+        if (readOnly != other.readOnly) {
+            return false;
+        }
+        return true;
+    }
+
+
 }

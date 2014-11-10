@@ -1,6 +1,6 @@
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
+import java.io.Serializable;
 
 import freenet.client.FetchContext;
 import freenet.keys.USK;
@@ -13,13 +13,14 @@ import freenet.support.io.NativeThread;
  * Not the actual fetcher. Just a tag associating a USK with the client that should be called when
  * the fetch has been done. Can be included in persistent requests. On startup, all USK fetches are
  * restarted, but this remains the same: the actual USKFetcher's are always transient.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  * @author toad
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-class USKFetcherTag implements ClientGetState, USKFetcherCallback {
+class USKFetcherTag implements ClientGetState, USKFetcherCallback, Serializable {
 
-	/** For persistence */
-	public final long nodeDBHandle;
+    private static final long serialVersionUID = 1L;
 	/** The callback */
 	public final USKFetcherCallback callback;
 	/** The original USK */
@@ -43,8 +44,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	private final int hashCode;
 	private final boolean realTimeFlag;
 	
-	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, boolean realTime, ObjectContainer container, FetchContext ctx, boolean keepLastData, long token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
-		this.nodeDBHandle = nodeDBHandle;
+	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, boolean persistent, boolean realTime, FetchContext ctx, boolean keepLastData, long token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
 		this.callback = callback;
 		this.origUSK = origUSK;
 		this.edition = origUSK.suggestedEdition;
@@ -72,7 +72,6 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	 * deleting the USKFetcherCallback and the FetchContext.
 	 * @param usk
 	 * @param callback
-	 * @param nodeDBHandle
 	 * @param persistent
 	 * @param container
 	 * @param ctx
@@ -80,38 +79,32 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	 * @param token
 	 * @return
 	 */
-	public static USKFetcherTag create(USK usk, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, boolean realTime, 
-			ObjectContainer container, FetchContext ctx, boolean keepLast, int token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
-		USKFetcherTag tag = new USKFetcherTag(usk, callback, nodeDBHandle, persistent, realTime, container, ctx, keepLast, token, hasOwnFetchContext, checkStoreOnly);
-		if(persistent) container.store(tag);
+	public static USKFetcherTag create(USK usk, USKFetcherCallback callback, boolean persistent, boolean realTime, 
+			FetchContext ctx, boolean keepLast, int token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
+		USKFetcherTag tag = new USKFetcherTag(usk, callback, persistent, realTime, ctx, keepLast, token, hasOwnFetchContext, checkStoreOnly);
 		return tag;
 	}
 	
-	synchronized void updatedEdition(long ed, ObjectContainer container) {
+	synchronized void updatedEdition(long ed) {
 		if(edition < ed) edition = ed;
-		if(persistent) container.store(this); // Update
 	}
 
-	public void start(USKManager manager, ClientContext context, ObjectContainer container) {
+	public void start(USKManager manager, ClientContext context) {
 		USK usk = origUSK;
-		if(persistent)
-			container.activate(origUSK, 5);
 		if(usk.suggestedEdition < edition)
 			usk = usk.copy(edition);
 		else if(persistent) // Copy it to avoid deactivation issues
 			usk = usk.copy();
-		if(persistent)
-			container.activate(ctx, 1);
 		fetcher = manager.getFetcher(usk, ctx, new USKFetcherWrapper(usk, priority, realTimeFlag ? USKManager.rcRT : USKManager.rcBulk), keepLastData, checkStoreOnly);
 		fetcher.addCallback(this);
-		fetcher.schedule(null, context); // non-persistent
+		fetcher.schedule(context); // non-persistent
 		if(logMINOR) Logger.minor(this, "Starting "+fetcher+" for "+this);
 	}
 
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		USKFetcher f = fetcher;
-		if(f != null) fetcher.cancel(null, context);
+		if(f != null) fetcher.cancel(context);
 		synchronized(this) {
 			if(finished) {
 				if(logMINOR) Logger.minor(this, "Already cancelled "+this);
@@ -129,47 +122,43 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
 	@Override
-	public void schedule(ObjectContainer container, ClientContext context) {
-		start(context.uskManager, context, container);
+	public void schedule(ClientContext context) {
+		start(context.uskManager, context);
 	}
 
 	@Override
-	public void onCancelled(ObjectContainer container, ClientContext context) {
+	public void onCancelled(ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Cancelled on "+this);
 		synchronized(this) {
 			finished = true;
 		}
-		if(persistent && container == null) {
-			// If cancelled externally, and this function is called from USKFetcher,
-			// container may be null even though we are running on the database thread,
-			// resulting in a database leak.
+		if(persistent) {
+		    // This can be called from USKFetcher, in which case we want to run on the 
+		    // PersistentJobRunner.
 			try {
-				context.jobRunner.runBlocking(new DBJob() {
+				context.jobRunner.queue(new PersistentJob() {
 
 					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						container.activate(callback, 1);
+					public boolean run(ClientContext context) {
 						if(callback instanceof USKFetcherTagCallback)
-							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-						callback.onCancelled(container, context);
-						removeFrom(container, context);
-						container.deactivate(callback, 1);
+							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, context);
+						callback.onCancelled(context);
 						return false;
 					}
 					
 				}, NativeThread.HIGH_PRIORITY);
-			} catch (DatabaseDisabledException e) {
+			} catch (PersistenceDisabledException e) {
 				// Impossible.
 			}
 		} else {
 			if(callback instanceof USKFetcherTagCallback)
-				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-			callback.onCancelled(container, context);
+				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, context);
+			callback.onCancelled(context);
 		}
 	}
 
 	@Override
-	public void onFailure(ObjectContainer container, ClientContext context) {
+	public void onFailure(ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Failed on "+this);
 		synchronized(this) {
 			if(finished) {
@@ -179,38 +168,25 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			finished = true;
 		}
 		if(persistent) {
-			if(container != null) {
-				container.activate(callback, 1);
-				if(callback instanceof USKFetcherTagCallback)
-					((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-				callback.onFailure(container, context);
-				container.deactivate(callback, 1);
-				removeFrom(container, context);
-			} else {
 			try {
-				context.jobRunner.queue(new DBJob() {
+				context.jobRunner.queue(new PersistentJob() {
 
 					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						container.activate(USKFetcherTag.this, 1);
-						container.activate(callback, 1);
+					public boolean run(ClientContext context) {
 						if(callback instanceof USKFetcherTagCallback)
-							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-						callback.onFailure(container, context);
-						container.deactivate(callback, 1);
-						removeFrom(container, context);
+							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, context);
+						callback.onFailure(context);
 						return true;
 					}
 					
-				}, NativeThread.HIGH_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
+				}, NativeThread.HIGH_PRIORITY);
+			} catch (PersistenceDisabledException e) {
 				// Impossible.
-			}
 			}
 		} else {
 			if(callback instanceof USKFetcherTagCallback)
-				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-			callback.onFailure(container, context);
+				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, context);
+			callback.onFailure(context);
 		}
 	}
 
@@ -225,7 +201,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
 	@Override
-	public void onFoundEdition(final long l, final USK key, ObjectContainer container, ClientContext context, final boolean metadata, final short codec, final byte[] data, final boolean newKnownGood, final boolean newSlotToo) {
+	public void onFoundEdition(final long l, final USK key, ClientContext context, final boolean metadata, final short codec, final byte[] data, final boolean newKnownGood, final boolean newSlotToo) {
 		if(logMINOR) Logger.minor(this, "Found edition "+l+" on "+this);
 		synchronized(this) {
 			if(fetcher == null) {
@@ -239,37 +215,25 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			fetcher = null;
 		}
 		if(persistent) {
-			if(container != null) {
-				container.activate(callback, 1);
-				if(callback instanceof USKFetcherTagCallback)
-					((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-				callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
-				container.deactivate(callback, 1);
-				removeFrom(container, context);
-			} else {
 			try {
-				context.jobRunner.queue(new DBJob() {
+				context.jobRunner.queue(new PersistentJob() {
 
 					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						container.activate(callback, 1);
+					public boolean run(ClientContext context) {
 						if(callback instanceof USKFetcherTagCallback)
-							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-						callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
-						container.deactivate(callback, 1);
-						removeFrom(container, context);
+							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, context);
+						callback.onFoundEdition(l, key, context, metadata, codec, data, newKnownGood, newSlotToo);
 						return false;
 					}
 					
-				}, NativeThread.HIGH_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
+				}, NativeThread.HIGH_PRIORITY);
+			} catch (PersistenceDisabledException e) {
 				// Impossible.
-			}
 			}
 		} else {
 			if(callback instanceof USKFetcherTagCallback)
-				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-			callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
+				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, context);
+			callback.onFoundEdition(l, key, context, metadata, codec, data, newKnownGood, newSlotToo);
 		}
 	}
 
@@ -291,28 +255,15 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		});
 	}
 	
-	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "Removing "+this);
-		container.activate(origUSK, 5);
-		origUSK.removeFrom(container);
-		if(ownFetchContext) {
-			container.activate(ctx, 1);
-			ctx.removeFrom(container);
-		}
-		container.delete(this);
-	}
+    @Override
+    public void onResume(ClientContext context) {
+        if(finished) return;
+        start(context.uskManager, context);
+    }
+
+    @Override
+    public void onShutdown(ClientContext context) {
+        // Ignore.
+    }
 	
-	public boolean objectCanDeactivate(ObjectContainer container) {
-		return false;
-	}
-	
-//	public void objectOnNew(ObjectContainer container) {
-//		if(logDEBUG) Logger.debug(this, "Storing as new: "+this);
-//	}
-//	
-//	public void objectOnUpdate(ObjectContainer container) {
-//		if(logDEBUG) Logger.debug(this, "Updating: "+this, new Exception("debug"));
-//	}
-//	
 }

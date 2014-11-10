@@ -3,11 +3,10 @@ package freenet.client.async;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-
-import com.db4o.ObjectContainer;
 
 import freenet.keys.ClientCHK;
 import freenet.keys.NodeCHK;
@@ -23,9 +22,10 @@ import freenet.support.Fields;
  * 
  * @author toad
  */
-public class SplitFileSegmentKeys implements Cloneable {
+public class SplitFileSegmentKeys implements Cloneable, Serializable {
 	
-	public final int dataBlocks;
+    private static final long serialVersionUID = 1L;
+    public final int dataBlocks;
 	public final int checkBlocks;
 	/** Modern splitfiles have a common decrypt key */
 	public final byte[] commonDecryptKey;
@@ -56,6 +56,17 @@ public class SplitFileSegmentKeys implements Cloneable {
 			decryptKeys = new byte[ClientCHK.CRYPTO_KEY_LENGTH * (dataBlocks + checkBlocks)];
 			extraBytesForKeys = new byte[EXTRA_BYTES_LENGTH * (dataBlocks + checkBlocks)];
 		}
+	}
+	
+	protected SplitFileSegmentKeys() {
+        // For serialization.
+	    dataBlocks = 0;
+	    checkBlocks = 0;
+	    commonDecryptKey = null;
+	    commonExtraBytes = null;
+	    routingKeys = null;
+	    decryptKeys = null;
+	    extraBytesForKeys = null;
 	}
 
 	public int getBlockNumber(ClientCHK key, boolean[] ignoreSlots) {
@@ -241,6 +252,16 @@ public class SplitFileSegmentKeys implements Cloneable {
 			}
 		}
 	}
+	
+    public static int storedKeysLength(int dataBlocks, int checkBlocks, boolean commonDecryptKey) {
+        // FIXME URGENT Implement a unit test for storedKeysLength() vs writeKeys() vs readKeys().
+        int blocks = dataBlocks + checkBlocks;
+        if(commonDecryptKey) {
+            return blocks * NodeCHK.KEY_LENGTH;
+        } else {
+            return blocks * (EXTRA_BYTES_LENGTH + NodeCHK.KEY_LENGTH*2);
+        }
+    }
 
 	public int getDataBlocks() {
 		return dataBlocks;
@@ -263,10 +284,6 @@ public class SplitFileSegmentKeys implements Cloneable {
 		}
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
-
 	public NodeCHK[] listNodeKeys(boolean[] foundKeys, boolean copy) {
 		ArrayList<NodeCHK> list = new ArrayList<NodeCHK>();
 		for(int i=0;i<dataBlocks+checkBlocks;i++) {
@@ -285,5 +302,50 @@ public class SplitFileSegmentKeys implements Cloneable {
 			throw new Error("Yes it is!");
 		}
 	}
+
+	// Not often used, not very efficient, but overriding equals() requires overriding hashCode().
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + checkBlocks;
+        result = prime * result + Arrays.hashCode(commonDecryptKey);
+        result = prime * result + Arrays.hashCode(commonExtraBytes);
+        result = prime * result + dataBlocks;
+        result = prime * result + Arrays.hashCode(decryptKeys);
+        result = prime * result + Arrays.hashCode(extraBytesForKeys);
+        result = prime * result + Arrays.hashCode(routingKeys);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        SplitFileSegmentKeys other = (SplitFileSegmentKeys) obj;
+        if (checkBlocks != other.checkBlocks)
+            return false;
+        if (!Arrays.equals(commonDecryptKey, other.commonDecryptKey))
+            return false;
+        if (!Arrays.equals(commonExtraBytes, other.commonExtraBytes))
+            return false;
+        if (dataBlocks != other.dataBlocks)
+            return false;
+        if (!Arrays.equals(decryptKeys, other.decryptKeys))
+            return false;
+        if (!Arrays.equals(extraBytesForKeys, other.extraBytesForKeys))
+            return false;
+        if (!Arrays.equals(routingKeys, other.routingKeys))
+            return false;
+        return true;
+    }
+
+    public int totalKeys() {
+        return checkBlocks + dataBlocks;
+    }
 
 }

@@ -1,7 +1,5 @@
 package freenet.node;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.Key;
 
 public interface KeysFetchingLocally {
@@ -22,14 +20,12 @@ public interface KeysFetchingLocally {
 	 * Is this key currently being fetched locally?
 	 * LOCKING: This should be safe just about anywhere, the lock protecting it is always taken last.
 	 */
-	public boolean hasKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container);
+	public boolean hasKey(Key key, BaseSendableGet getterWaiting);
 	
 	/**
-	 * Is this request:token pair being executed? This applies only to
-	 * non-persistent inserts, because persistent requests and inserts are selected 
-	 * on a request level, and requests use hasKey(). Also, activation issues
-	 * with SendableRequest meaning getting a hash code would be problematic!
+	 * Is this request:token pair being executed? FIXME this should be tracked by the inserter 
+	 * itself.
 	 */
-	public boolean hasTransientInsert(SendableInsert insert, SendableRequestItemKey token);
+	public boolean hasInsert(SendableRequestItemKey token);
 
 }

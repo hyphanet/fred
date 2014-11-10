@@ -5,32 +5,34 @@ package freenet.client.async;
 
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.crypt.ChecksumChecker;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
-import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
+import freenet.support.io.ResumeFailedException;
 
 /** A high level insert. */
-public class ClientPutter extends BaseClientPutter implements PutCompletionCallback {
+public class ClientPutter extends BaseClientPutter implements PutCompletionCallback, ClientRequestSchedulerGroup {
 
-	/** Callback for when the insert completes. */
+    private static final long serialVersionUID = 1L;
+    /** Callback for when the insert completes. */
 	final ClientPutCallback client;
 	/** The data to insert. */
-	final Bucket data;
+	final RandomAccessBucket data;
 	/** The URI to insert it to. Can be CHK@. */
 	final FreenetURI targetURI;
 	/** The ClientMetadata i.e. the MIME type and any other client-visible metadata. */
@@ -44,8 +46,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	private ClientPutState currentState;
 	/** Whether the insert has finished. */
 	private boolean finished;
-	/** If true, don't actually insert the data, just figure out what the final key would be. */
-	private final boolean getCHKOnly;
 	/** Are we inserting metadata? */
 	private final boolean isMetadata;
 	private boolean startedStarting;
@@ -81,7 +81,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		targetFilename = null;
 		overrideSplitfileCrypto = null;
 		isMetadata = false;
-		getCHKOnly = false;
 		data = null;
 		ctx = null;
 		cm = null;
@@ -105,17 +104,16 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param clientContext The client object for purposs of round-robin client balancing.
 	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
 	 */
-	public ClientPutter(ClientPutCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
-			short priorityClass, boolean getCHKOnly,
-			boolean isMetadata, RequestClient clientContext, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto,
+	public ClientPutter(ClientPutCallback client, RandomAccessBucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
+			short priorityClass,
+			boolean isMetadata, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto,
 			long metadataThreshold) {
-		super(priorityClass, clientContext);
+		super(priorityClass, client);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
-		this.getCHKOnly = getCHKOnly;
 		this.client = client;
 		this.data = data;
-		this.targetURI = targetURI.clone();
+		this.targetURI = targetURI;
 		this.ctx = ctx;
 		this.finished = false;
 		this.cancelled = false;
@@ -130,31 +128,19 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * layers as soon as we can, rather than waiting for the lower layers. The default behaviour is safer,
 	 * because an attacker can usually only identify the datastream once he has the top block, or once you
 	 * have announced the key.
-	 * @param container The database. If the insert is persistent, this must be non-null, and we must be
-	 * running on the database thread. This is true for all methods taking a container parameter.
 	 * @param context Contains some useful transient fields such as the schedulers.
 	 * @throws InsertException If the insert cannot be started for some reason.
 	 */
-	public void start(boolean earlyEncode, ObjectContainer container, ClientContext context) throws InsertException {
-		start(earlyEncode, false, container, context);
+	public void start(ClientContext context) throws InsertException {
+		start(false, context);
 	}
 
 	/** Start the insert.
-	 * @param earlyEncode If true, try to find the final URI as quickly as possible, and insert the upper
-	 * layers as soon as we can, rather than waiting for the lower layers. The default behaviour is safer,
-	 * because an attacker can usually only identify the datastream once he has the top block, or once you
-	 * have announced the key.
 	 * @param restart If true, restart the insert even though it has completed before.
-	 * @param container The database. If the insert is persistent, this must be non-null, and we must be
-	 * running on the database thread. This is true for all methods taking a container parameter.
 	 * @param context Contains some useful transient fields such as the schedulers.
 	 * @throws InsertException If the insert cannot be started for some reason.
 	 */
-	public boolean start(boolean earlyEncode, boolean restart, ObjectContainer container, ClientContext context) throws InsertException {
-		if(persistent()) {
-			container.activate(ctx, 1);
-			container.activate(client, 1);
-		}
+	public boolean start(boolean restart, ClientContext context) throws InsertException {
 		if(logMINOR)
 			Logger.minor(this, "Starting "+this+" for "+targetURI);
 		byte cryptoAlgorithm;
@@ -169,10 +155,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			// randomised keys. This substantially improves security by making it impossible to identify blocks
 			// even if you know the content. In the user interface, we will offer the option of inserting as a
 			// random SSK to take advantage of this.
-			boolean randomiseSplitfileKeys = randomiseSplitfileKeys(targetURI, ctx, persistent(), container);
+			boolean randomiseSplitfileKeys = randomiseSplitfileKeys(targetURI, ctx, persistent());
 
 			if(data == null)
-				throw new InsertException(InsertException.BUCKET_ERROR, "No data to insert", null);
+				throw new InsertException(InsertExceptionMode.BUCKET_ERROR, "No data to insert", null);
 
 			boolean cancel = false;
 			synchronized(this) {
@@ -182,6 +168,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 						if(logMINOR) Logger.minor(this, "Can't restart, not finished and currentState != null : "+currentState);
 						return false;
 					}
+					if(finished)
+					    startedStarting = false;
 					finished = false;
 				}
 				if(startedStarting) {
@@ -198,7 +186,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				if(overrideSplitfileCrypto != null) {
 					cryptoKey = overrideSplitfileCrypto;
 					if (cryptoKey.length != 32)
-						throw new InsertException(InsertException.INVALID_URI, "overrideSplitfileCryptoKey must be of length 32", null);
+						throw new InsertException(InsertExceptionMode.INVALID_URI, "overrideSplitfileCryptoKey must be of length 32", null);
 				} else if(randomiseSplitfileKeys) {
 					cryptoKey = new byte[32];
 					context.random.nextBytes(cryptoKey);
@@ -208,42 +196,35 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 						ClientMetadata meta = cm;
 						if(meta != null) meta = persistent() ? meta.clone() : meta;
 						currentState =
-							new SingleFileInserter(this, this, new InsertBlock(data, meta, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, realTimeFlag, 
-									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, cryptoKey, metadataThreshold);
+							new SingleFileInserter(this, this, new InsertBlock(data, meta, targetURI), isMetadata, ctx, realTimeFlag, 
+									false, false, null, null, false, targetFilename, false, persistent(), 0, 0, null, cryptoAlgorithm, cryptoKey, metadataThreshold);
 					} else
 						currentState =
-							new BinaryBlobInserter(data, this, getClient(), false, priorityClass, ctx, context, container);
+							new BinaryBlobInserter(data, this, getClient(), false, priorityClass, ctx, context);
 				}
 			}
 			if(cancel) {
-				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
+				onFailure(new InsertException(InsertExceptionMode.CANCELLED), null, context);
 				return false;
 			}
 			synchronized(this) {
 				cancel = cancelled;
 			}
 			if(cancel) {
-				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
-				if(persistent())
-					container.store(this);
+				onFailure(new InsertException(InsertExceptionMode.CANCELLED), null, context);
 				return false;
 			}
 			if(logMINOR)
 				Logger.minor(this, "Starting insert: "+currentState);
 			if(currentState instanceof SingleFileInserter)
-				((SingleFileInserter)currentState).start(container, context);
+				((SingleFileInserter)currentState).start(context);
 			else
-				currentState.schedule(container, context);
+				currentState.schedule(context);
 			synchronized(this) {
 				cancel = cancelled;
 			}
-			if(persistent()) {
-				container.store(this);
-				// It has scheduled, we can safely deactivate it now, so it won't hang around in memory.
-				container.deactivate(currentState, 1);
-			}
 			if(cancel) {
-				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
+				onFailure(new InsertException(InsertExceptionMode.CANCELLED), null, context);
 				return false;
 			}
 		} catch (InsertException e) {
@@ -252,11 +233,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				finished = true;
 				currentState = null;
 			}
-			if(persistent())
-				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(e, this, container);
+				this.client.onFailure(e, this);
 			}
 		} catch (IOException e) {
 			Logger.error(this, "Failed to start insert: "+e, e);
@@ -264,11 +243,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				finished = true;
 				currentState = null;
 			}
-			if(persistent())
-				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), this, container);
+				this.client.onFailure(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), this);
 			}
 		} catch (BinaryBlobFormatException e) {
 			Logger.error(this, "Failed to start insert: "+e, e);
@@ -276,11 +253,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				finished = true;
 				currentState = null;
 			}
-			if(persistent())
-				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(new InsertException(InsertException.BINARY_BLOB_FORMAT_ERROR, e, null), this, container);
+				this.client.onFailure(new InsertException(InsertExceptionMode.BINARY_BLOB_FORMAT_ERROR, e, null), this);
 			}
 		}
 		if(logMINOR)
@@ -288,120 +263,73 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return true;
 	}
 
-	public static boolean randomiseSplitfileKeys(FreenetURI targetURI, InsertContext ctx, boolean persistent, ObjectContainer container) {
+	public static boolean randomiseSplitfileKeys(FreenetURI targetURI, InsertContext ctx, boolean persistent) {
 		// If the top level key is an SSK, all CHK blocks and particularly splitfiles below it should have
 		// randomised keys. This substantially improves security by making it impossible to identify blocks
 		// even if you know the content. In the user interface, we will offer the option of inserting as a
 		// random SSK to take advantage of this.
 		boolean randomiseSplitfileKeys = targetURI.isSSK() || targetURI.isKSK() || targetURI.isUSK();
 		if(randomiseSplitfileKeys) {
-			boolean ctxActive = true;
-			if(persistent) {
-				ctxActive = container.ext().isActive(ctx) || !container.ext().isStored(ctx);
-				if(ctxActive) container.activate(ctx, 1);
-			}
 			CompatibilityMode cmode = ctx.getCompatibilityMode();
 			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal()))
 				randomiseSplitfileKeys = false;
-			if(!ctxActive)
-				container.deactivate(ctx, 1);
 		}
 		return randomiseSplitfileKeys;
 	}
 
 	/** Called when the insert succeeds. */
 	@Override
-	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
-		if(persistent())
-			container.activate(client, 1);
-		ClientPutState oldState;
+	public void onSuccess(ClientPutState state, ClientContext context) {
 		synchronized(this) {
 			finished = true;
-			oldState = currentState;
 			currentState = null;
 		}
-		if(oldState != null && persistent()) {
-			container.activate(oldState, 1);
-			oldState.removeFrom(container, context);
-		}
-		if(state != null && state != oldState && persistent())
-			state.removeFrom(container, context);
 		if(super.failedBlocks > 0 || super.fatallyFailedBlocks > 0 || super.successfulBlocks < super.totalBlocks) {
-			if(persistent()) container.activate(uri, 1);
 			// USK auxiliary inserts are allowed to fail.
 			if(!uri.isUSK())
 				Logger.error(this, "Failed blocks: "+failedBlocks+", Fatally failed blocks: "+fatallyFailedBlocks+
 						", Successful blocks: "+successfulBlocks+", Total blocks: "+totalBlocks+" but success?! on "+this+" from "+state,
 						new Exception("debug"));
 		}
-		if(persistent())
-			container.store(this);
-		client.onSuccess(this, container);
+		client.onSuccess(this);
 	}
 
 	/** Called when the insert fails. */
 	@Override
-	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+	public void onFailure(InsertException e, ClientPutState state, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "onFailure() for "+this+" : "+state+" : "+e, e);
-		if(persistent())
-			container.activate(client, 1);
-		ClientPutState oldState;
 		synchronized(this) {
 			finished = true;
-			oldState = currentState;
 			currentState = null;
 		}
-		if(oldState != null && persistent()) {
-			container.activate(oldState, 1);
-			oldState.removeFrom(container, context);
-		}
-		if(state != null && state != oldState && persistent())
-			state.removeFrom(container, context);
-		if(persistent())
-			container.store(this);
-		client.onFailure(e, this, container);
-	}
-
-	/** Called when significant milestones are passed. */
-	@Override
-	public void onMajorProgress(ObjectContainer container) {
-		if(persistent())
-			container.activate(client, 1);
-		client.onMajorProgress(container);
+		client.onFailure(e, this);
 	}
 
 	/** Called when we know the final URI of the insert. */
 	@Override
-	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
-		if(persistent())
-			container.activate(client, 1);
+	public void onEncode(BaseClientKey key, ClientPutState state, ClientContext context) {
 		FreenetURI u;
 		synchronized(this) {
-			if(this.uri != null) {
-				Logger.error(this, "onEncode() called twice? Already have a uri: "+uri+" for "+this);
-				if(persistent())
-					this.uri.removeFrom(container);
-			}
+		    u = key.getURI(); 
 			if(gotFinalMetadata) {
 				Logger.error(this, "Generated URI *and* sent final metadata??? on "+this+" from "+state);
 			}
-			this.uri = key.getURI();
 			if(targetFilename != null)
-				uri = uri.pushMetaString(targetFilename);
-			u = uri;
+				u = u.pushMetaString(targetFilename);
+			if(this.uri != null) {
+			    if(!this.uri.equals(u)) {
+			        Logger.error(this, "onEncode() called twice with different URIs: "+this.uri+" -> "+u+" for "+this, new Exception("error"));
+			    }
+			    return;
+			}
+            this.uri = u;
 		}
-		if(persistent()) {
-			container.store(this);
-			u = u.clone();
-		}
-		client.onGeneratedURI(uri, this, container);
+		client.onGeneratedURI(u, this);
 	}
 	
 	/** Called when metadataThreshold was specified and metadata is being returned
 	 * instead of a URI. */
-	public void onMetadata(Bucket finalMetadata, ClientPutState state, ObjectContainer container, ClientContext context) {
-		if(persistent())
-			container.activate(client, 1);
+	public void onMetadata(Bucket finalMetadata, ClientPutState state, ClientContext context) {
 		boolean freeIt = false;
 		synchronized(this) {
 			if(uri != null) {
@@ -416,19 +344,15 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		}
 		if(freeIt) {
 			finalMetadata.free();
-			finalMetadata.removeFrom(container);
 			return;
 		}
-		if(persistent()) {
-			container.store(this);
-		}
-		client.onGeneratedMetadata(finalMetadata, this, container);
+		client.onGeneratedMetadata(finalMetadata, this);
 	}
 
 	/** Cancel the insert. Will call onFailure() if it is not already cancelled, so the callback will
 	 * normally be called. */
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Cancelling "+this, new Exception("debug"));
 		ClientPutState oldState = null;
@@ -438,13 +362,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			super.cancel();
 			oldState = currentState;
 		}
-		if(persistent()) {
-			container.store(this);
-			if(oldState != null)
-				container.activate(oldState, 1);
-		}
-		if(oldState != null) oldState.cancel(container, context);
-		onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
+		if(oldState != null) oldState.cancel(context);
+		onFailure(new InsertException(InsertExceptionMode.CANCELLED), null, context);
 	}
 
 	/** Has the insert completed already? */
@@ -483,25 +402,24 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	/** Called when a ClientPutState transitions to a new state. If this is the current state, then we update
 	 * it, but it might also be a subsidiary state, in which case we ignore it. */
 	@Override
-	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
+	public void onTransition(ClientPutState oldState, ClientPutState newState, ClientContext context) {
 		if(newState == null) throw new NullPointerException();
 
-		// onTransition is *not* responsible for removing the old state, the caller is.
 		synchronized (this) {
 			if (currentState == oldState) {
 				currentState = newState;
-				if(persistent())
-					container.store(this);
 				return;
 			}
 		}
-		Logger.error(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState);
+		if(persistent())
+		    context.jobRunner.setCheckpointASAP();
+		Logger.normal(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState);
 	}
 
 	/** Called when we have generated metadata for the insert. This should not happen, because we should
 	 * insert the metadata! */
 	@Override
-	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
+	public void onMetadata(Metadata m, ClientPutState state, ClientContext context) {
 		Logger.error(this, "Got metadata on "+this+" from "+state+" (this means the metadata won't be inserted)");
 	}
 
@@ -514,36 +432,36 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 	
 	@Override
-	public void addBlock(ObjectContainer container) {
+	public void addBlock() {
 		synchronized(this) {
 			minSuccessFetchBlocks++;
 		}
-		super.addBlock(container);
+		super.addBlock();
 	}
 	
 	@Override
-	public void addBlocks(int num, ObjectContainer container) {
+	public void addBlocks(int num) {
 		synchronized(this) {
 			minSuccessFetchBlocks+=num;
 		}
-		super.addBlocks(num, container);
+		super.addBlocks(num);
 	}
 	
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
 	@Override
-	public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
+	public void addMustSucceedBlocks(int blocks) {
 		synchronized(this) {
 			minSuccessFetchBlocks += blocks;
 		}
-		super.addMustSucceedBlocks(blocks, container);
+		super.addMustSucceedBlocks(blocks);
 	}
 
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. 
 	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
 	 * the requestor must fetch. */
 	@Override
-	public void addRedundantBlocks(int blocks, ObjectContainer container) {
-		super.addMustSucceedBlocks(blocks, container);
+	public void addRedundantBlocksInsert(int blocks) {
+		super.addMustSucceedBlocks(blocks);
 	}
 	
 	@Override
@@ -553,37 +471,33 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	@Override
-	public void notifyClients(ObjectContainer container, ClientContext context) {
-		if(persistent())
-			container.activate(ctx, 2);
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.minSuccessFetchBlocks, this.blockSetFinalized), container, context);
+	protected void innerNotifyClients(ClientContext context) {
+	    SplitfileProgressEvent e;
+	    synchronized(this) {
+	        e = new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.minSuccessFetchBlocks, this.blockSetFinalized);
+	    }
+		ctx.eventProducer.produceEvent(e, context);
 	}
 
 	/** Notify listening clients that an insert has been sent to the network. */
 	@Override
-	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
-		if(persistent()) {
-			container.activate(ctx, 1);
-			container.activate(ctx.eventProducer, 1);
-		}
-		ctx.eventProducer.produceEvent(new SendingToNetworkEvent(), container, context);
+	protected void innerToNetwork(ClientContext context) {
+		ctx.eventProducer.produceEvent(new SendingToNetworkEvent(), context);
 	}
 
 	/** Called when we know exactly how many blocks will be needed. */
 	@Override
-	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
+	public void onBlockSetFinished(ClientPutState state, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Set finished", new Exception("debug"));
-		blockSetFinalized(container, context);
+		blockSetFinalized(context);
 	}
 
 	/** Called (sometimes) when enough of the data has been inserted that the file can now be fetched. Not
 	 * very useful unless earlyEncode was enabled. */
 	@Override
-	public void onFetchable(ClientPutState state, ObjectContainer container) {
-		if(persistent())
-			container.activate(client, 1);
-		client.onFetchable(this, container);
+	public void onFetchable(ClientPutState state) {
+		client.onFetchable(this);
 	}
 
 	/** Can we restart the insert? */
@@ -597,48 +511,69 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	/** Restart the insert.
-	 * @param earlyEncode See the description on @link start().
-	 * @param container The database. If the insert is persistent, this must be non-null, and we must be
-	 * running on the database thread. This is true for all places where we pass in an ObjectContainer.
 	 * @return True if the insert restarted successfully.
 	 * @throws InsertException If the insert could not be restarted for some reason.
 	 * */
-	public boolean restart(boolean earlyEncode, ObjectContainer container, ClientContext context) throws InsertException {
-		checkForBrokenClient(container, context);
-		return start(earlyEncode, true, container, context);
+	public boolean restart(ClientContext context) throws InsertException {
+		return start(true, context);
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context) {
 		// Ignore, at the moment
-	}
-
-	/** Remove the ClientPutter from the database. */
-	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		container.activate(cm, 2);
-		cm.removeFrom(container);
-		// This is passed in. We should not remove it, because the caller (ClientPutBase) should remove it.
-//		container.activate(ctx, 1);
-//		ctx.removeFrom(container);
-		container.activate(targetURI, 5);
-		targetURI.removeFrom(container);
-		if(uri != null) {
-			container.activate(uri, 5);
-			uri.removeFrom(container);
-		}
-		super.removeFrom(container, context);
+	    // This exists here because e.g. USKInserter does requests as well as inserts.
+	    // FIXME I'm not sure that's a good enough reason though! Get rid ...
 	}
 
 	@Override
-	public void dump(ObjectContainer container) {
-		container.activate(uri, 5);
+	public void dump() {
 		System.out.println("URI: "+uri);
-		container.activate(client, 1);
 		System.out.println("Client: "+client);
 		System.out.println("Finished: "+finished);
-		container.activate(data, 5);
 		System.out.println("Data: "+data);
 	}
 	
+    public byte[] getClientDetail(ChecksumChecker checker) throws IOException {
+        if(client instanceof PersistentClientCallback) {
+            return getClientDetail((PersistentClientCallback)client, checker);
+        } else
+            return new byte[0];
+    }
+
+    @Override
+    public void innerOnResume(ClientContext context) throws ResumeFailedException {
+        super.innerOnResume(context);
+        if(currentState != null) {
+            try {
+                currentState.onResume(context);
+            } catch (InsertException e) {
+                this.onFailure(e, null, context);
+                return;
+            }
+        }
+        if(data != null)
+            data.onResume(context);
+        notifyClients(context);
+    }
+
+    @Override
+    protected ClientBaseCallback getCallback() {
+        return client;
+    }
+    
+    @Override
+    public void onShutdown(ClientContext context) {
+        ClientPutState state;
+        synchronized(this) {
+            state = currentState;
+        }
+        if(state != null)
+            state.onShutdown(context);
+    }
+
+    @Override
+    public ClientRequestSchedulerGroup getSchedulerGroup() {
+        return this;
+    }
+
 }

@@ -3,30 +3,30 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
-import freenet.node.RequestClient;
-
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
+/** Base class for inserts, including site inserts, at the level of a ClientRequester.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
+ */
 public abstract class BaseClientPutter extends ClientRequester {
 
-	/**
+    private static final long serialVersionUID = 1L;
+
+    /**
 	 * zero arg c'tor for db4o on jamvm
 	 */
 	protected BaseClientPutter() {
 	}
 
-	protected BaseClientPutter(short priorityClass, RequestClient context) {
-		super(priorityClass, context);
+	protected BaseClientPutter(short priorityClass, ClientBaseCallback cb) {
+		super(priorityClass, cb);
 	}
 
-	public abstract void onMajorProgress(ObjectContainer container);
-
-	public void dump(ObjectContainer container) {
+	public void dump() {
 		// Do nothing
 	}
 
-	public abstract void onTransition(ClientPutState from, ClientPutState to, ObjectContainer container);
+	public abstract void onTransition(ClientPutState from, ClientPutState to, ClientContext context);
 
 	public abstract int getMinSuccessFetchBlocks();
 }

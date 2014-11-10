@@ -31,15 +31,18 @@ import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.FetchWaiter;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.DumperSnoopMetadata;
 import freenet.client.events.EventDumper;
 import freenet.client.filter.ContentFilter;
+import freenet.clients.fcp.AddPeer;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
@@ -48,7 +51,6 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
-import freenet.node.fcp.AddPeer;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -292,7 +294,7 @@ public class TextModeClientInterface implements Runnable {
 				outsb.append(new String(dataBytes, ENCODING));
 			} catch (FetchException e) {
                 outsb.append("Error: ").append(e.getMessage()).append("\r\n");
-            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
+            	if((e.getMode() == FetchExceptionMode.SPLITFILE_ERROR) && (e.errorCodes != null)) {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
             	if(e.newURI != null)
@@ -315,10 +317,10 @@ public class TextModeClientInterface implements Runnable {
 	            }
 	            try {
 	            	FetchContext context = client.getFetchContext();
-	        		FetchWaiter fw = new FetchWaiter();
-	        		ClientGetter get = new ClientGetter(fw, uri, context, RequestStarter.INTERACTIVE_PRIORITY_CLASS, (RequestClient)client, null, null, null);
+	        		FetchWaiter fw = new FetchWaiter((RequestClient)client);
+	        		ClientGetter get = new ClientGetter(fw, uri, context, RequestStarter.INTERACTIVE_PRIORITY_CLASS, null, null, null);
 	        		get.setMetaSnoop(new DumperSnoopMetadata());
-	            	get.start(null, n.clientCore.clientContext);
+	            	get.start(n.clientCore.clientContext);
 					FetchResult result = fw.waitForCompletion();
 					ClientMetadata cm = result.getMetadata();
 	                outsb.append("Content MIME type: ").append(cm.getMIMEType());
@@ -352,7 +354,7 @@ public class TextModeClientInterface implements Runnable {
 					outsb.append(new String(dataBytes, ENCODING));
 				} catch (FetchException e) {
 	                outsb.append("Error: ").append(e.getMessage()).append("\r\n");
-	            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
+	            	if((e.getMode() == FetchExceptionMode.SPLITFILE_ERROR) && (e.errorCodes != null)) {
 	            		outsb.append(e.errorCodes.toVerboseString());
 	            	}
 	            	if(e.newURI != null)
@@ -414,7 +416,7 @@ public class TextModeClientInterface implements Runnable {
                 outsb.append("Download rate: ").append(rate).append(" bytes / second");
 			} catch (FetchException e) {
                 outsb.append("Error: ").append(e.getMessage());
-            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
+            	if((e.getMode() == FetchExceptionMode.SPLITFILE_ERROR) && (e.errorCodes != null)) {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
             	if(e.newURI != null)
@@ -443,7 +445,7 @@ public class TextModeClientInterface implements Runnable {
     	final Bucket output = new ArrayBucket();
     	InputStream inputStream = null;
     	OutputStream outputStream = null;
-    	BufferedInputStream bis = null;
+    	InputStream bis = null;
     	try {
     		inputStream = input.getInputStream();
     		outputStream = output.getOutputStream();
@@ -453,7 +455,7 @@ public class TextModeClientInterface implements Runnable {
     		outputStream.close();
 			outputStream = null;
 
-    		bis = new BufferedInputStream(output.getInputStream());
+    		bis = output.getInputStream();
     		while(bis.available() > 0){
     			outsb.append((char)bis.read());
     		}
@@ -563,8 +565,8 @@ public class TextModeClientInterface implements Runnable {
                 outsb.append("Error: ").append(e.getMessage());
             	if(e.uri != null)
                     outsb.append("URI would have been: ").append(e.uri);
-            	int mode = e.getMode();
-            	if((mode == InsertException.FATAL_ERRORS_IN_BLOCKS) || (mode == InsertException.TOO_MANY_RETRIES_IN_BLOCKS)) {
+            	InsertExceptionMode mode = e.getMode();
+            	if((mode == InsertExceptionMode.FATAL_ERRORS_IN_BLOCKS) || (mode == InsertExceptionMode.TOO_MANY_RETRIES_IN_BLOCKS)) {
                     outsb.append("Splitfile-specific error:\n").append(e.errorCodes.toVerboseString());
             	}
 		outsb.append("\r\n");
@@ -679,7 +681,7 @@ public class TextModeClientInterface implements Runnable {
             	if(mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
             		mimeType = ""; // don't need to override it
             	
-            	FileBucket fb = new FileBucket(f, true, false, false, false, false);
+            	FileBucket fb = new FileBucket(f, true, false, false, false);
             	InsertBlock block = new InsertBlock(fb, new ClientMetadata(mimeType), FreenetURI.EMPTY_CHK_URI);
 
             	startTime = System.currentTimeMillis();
@@ -1054,7 +1056,7 @@ public class TextModeClientInterface implements Runnable {
     		if (filelist[i].isFile()) {
     			File f = filelist[i];
     			
-    			FileBucket bucket = new FileBucket(f, true, false, false, false, false);
+    			FileBucket bucket = new FileBucket(f, true, false, false, false);
     			
     			ret.put(f.getName(), bucket);
     		} else if(filelist[i].isDirectory()) {

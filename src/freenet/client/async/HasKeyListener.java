@@ -2,8 +2,6 @@ package freenet.client.async;
 
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 /**
  * Interface to show that we can create a KeyListener callback.
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
@@ -16,15 +14,15 @@ public interface HasKeyListener {
 	 * @return Null if the HasKeyListener is finished/cancelled/etc.
 	 * @throws IOException 
 	 */
-	KeyListener makeKeyListener(ObjectContainer container, ClientContext context, boolean onStartup) throws KeyListenerConstructionException;
+	KeyListener makeKeyListener(ClientContext context, boolean onStartup) throws KeyListenerConstructionException;
 
 	/**
 	 * Is it cancelled?
 	 */
-	boolean isCancelled(ObjectContainer container);
+	boolean isCancelled();
 
 	/**
 	 * Notify that makeKeyListener() failed.
 	 */
-	void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context);
+	void onFailed(KeyListenerConstructionException e, ClientContext context);
 }

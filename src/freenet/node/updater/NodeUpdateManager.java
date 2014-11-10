@@ -11,15 +11,14 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -36,6 +35,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
@@ -393,25 +393,23 @@ public class NodeUpdateManager {
 			context.maxTempLength = maxSize;
 			context.maxOutputLength = maxSize;
 			ClientGetter get = new ClientGetter(this, freenetURI, context,
-					priority, node.nonPersistentClientBulk, null, null, null);
+					priority, null, null, null);
 			try {
 				node.clientCore.clientContext.start(get);
-			} catch (DatabaseDisabledException e) {
+			} catch (PersistenceDisabledException e) {
 				// Impossible
 			} catch (FetchException e) {
-				onFailure(e, null, null);
+				onFailure(e, null);
 			}
 		}
 
 		@Override
-		public void onFailure(FetchException e, ClientGetter state,
-				ObjectContainer container) {
+		public void onFailure(FetchException e, ClientGetter state) {
 			System.err.println("Failed to fetch " + filename + " : " + e);
 		}
 
 		@Override
-		public void onSuccess(FetchResult result, ClientGetter state,
-				ObjectContainer container) {
+		public void onSuccess(FetchResult result, ClientGetter state) {
 			File temp;
 			FileOutputStream fos = null;
 			try {
@@ -455,10 +453,15 @@ public class NodeUpdateManager {
 			}
 		}
 
-		@Override
-		public void onMajorProgress(ObjectContainer container) {
-			// Ignore
-		}
+        @Override
+        public void onResume(ClientContext context) {
+            // Not persistent.
+        }
+
+        @Override
+        public RequestClient getRequestClient() {
+            return node.nonPersistentClientBulk; 
+        }
 
 	}
 
@@ -1831,12 +1834,6 @@ public class NodeUpdateManager {
 
 	protected long getStartedFetchingNextMainJarTimestamp() {
 		return startedFetchingNextMainJar;
-	}
-
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing NodeUpdateManager in database",
-				new Exception("error"));
-		return false;
 	}
 
 	public void disconnected(PeerNode pn) {
