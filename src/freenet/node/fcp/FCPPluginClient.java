@@ -1129,6 +1129,8 @@ public final class FCPPluginClient {
                 // signaled we still need to check whether the semantic condition which would
                 // trigger signaling is *really* met, which we do with this if:
                 if(synchronousSend.reply != null) {
+                    assert(synchronousSend.reply.identifier.equals(message.identifier));
+                    
                     return synchronousSend.reply;
                 }
 
