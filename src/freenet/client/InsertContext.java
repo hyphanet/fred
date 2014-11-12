@@ -86,9 +86,9 @@ public class InsertContext implements Cloneable, Serializable {
 		COMPAT_1255((short)5),
 		/** 1416: New CHK encryption */
 		COMPAT_1416((short)6),
-		/** 1465: Fill in topDontCompress and topCompatibilityMode on splitfiles. Same blocks, but
+		/** 1467: Fill in topDontCompress and topCompatibilityMode on splitfiles. Same blocks, but
 		 * slightly different metadata. */
-		COMPAT_1466((short)7);
+		COMPAT_1467((short)7);
 		
 		/** Code used in metadata for this CompatibilityMode. Hence we can remove old 
 		 * CompatibilityMode's, and it's also convenient. */
@@ -143,7 +143,7 @@ public class InsertContext implements Cloneable, Serializable {
          * new compatibility mode is deployed we may want to keep this at an earlier version to 
          * avoid a period when data inserted with the new/testing builds can't be fetched with 
          * earlier versions. */
-        // FIXME revert to COMPAT_CURRENT after 1466 ships.
+        // FIXME revert to COMPAT_CURRENT after 1467 ships.
         public static final CompatibilityMode COMPAT_DEFAULT = COMPAT_1416;
         
 	}

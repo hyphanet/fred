@@ -567,7 +567,7 @@ public class SplitFileInserterStorage {
         status = Status.NOT_STARTED;
         
         // Include the cross check blocks in the required blocks. The actual number needed may be 
-        // slightly less, but this is consistent with fetching, and also with pre-1466 metadata. 
+        // slightly less, but this is consistent with fetching, and also with pre-1467 metadata. 
         int totalCrossCheckBlocks = crossCheckBlocks * segments.length;
         this.topRequiredBlocks = topRequiredBlocks + totalDataBlocks + totalCrossCheckBlocks;
         this.topTotalBlocks = topTotalBlocks + totalDataBlocks + totalCrossCheckBlocks + totalCheckBlocks;
