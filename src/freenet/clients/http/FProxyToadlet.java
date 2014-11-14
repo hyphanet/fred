@@ -530,7 +530,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 		}else if(ks.equals("/favicon.ico")){
 		    try {
-                throw new RedirectException(StaticToadlet.ROOT_PATH+"favicon.ico");
+                throw new RedirectException(StaticToadlet.ROOT_URL+"favicon.ico");
             } catch (URISyntaxException e) {
                 throw new Error(e);
             }
