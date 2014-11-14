@@ -98,6 +98,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		synchronized(fetchers) {
 			fetchers.clear();
 		}
+        // TODO: Java version check goes here
 		MainJarDependencies deps = dependencies.handle(props, build);
 		if(deps != null) {
 			manager.onDependenciesReady(deps);

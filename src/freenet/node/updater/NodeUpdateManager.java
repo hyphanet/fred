@@ -40,6 +40,7 @@ import freenet.node.RequestStarter;
 import freenet.node.Version;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
 import freenet.node.updater.UpdateDeployContext.UpdateCatastropheException;
+import freenet.node.useralerts.NodeUpdatedUserAlert;
 import freenet.node.useralerts.RevocationKeyFoundUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UpdatedVersionAvailableUserAlert;
@@ -213,7 +214,18 @@ public class NodeUpdateManager {
 	static final String TEMP_BLOB_SUFFIX = ".updater.fblob.tmp";
 	static final String TEMP_FILE_SUFFIX = ".updater.tmp";
 
-	static {
+    /**
+     * Whether an update has been deployed. This is used in notifications about applied upgrades
+     * and is set on update and cleared on user dismissal.
+     */
+    private boolean updated;
+
+    /**
+     * Whether to show notifications when an update has been deployed.
+     */
+    private boolean showUpdateNotifications;
+
+    static {
 		Logger.registerClass(NodeUpdateManager.class);
 	}
 
@@ -362,9 +374,50 @@ public class NodeUpdateManager {
 
 				});
 
-		updateInstallers = updaterConfig.getBoolean("updateInstallers");
+        updateInstallers = updaterConfig.getBoolean("updateInstallers");
+
+        // TODO: description localization -- oh, these are already l10n keys.
+        updaterConfig.register("showUpdateNotifications", true, 7, false, true, "", "",
+                               new BooleanCallback() {
+
+            @Override
+            public Boolean get() {
+                return showUpdateNotifications;
+            }
+
+            @Override
+            public void set(Boolean val) throws InvalidConfigValueException,
+                                                NodeNeedRestartException {
+                showUpdateNotifications = val;
+            }
+        });
+
+        // TODO: A config rewrite that avoids this tedious binding would be great.
+        showUpdateNotifications = updaterConfig.getBoolean("showUpdateNotifications");
+
+        updaterConfig.register("updated", false, 8, true, true, "Whether an update was deployed",
+                            "If this is set an alert describing the update can be displayed if " +
+                                    "not otherwise disabled",
+                            new BooleanCallback() {
+                                @Override
+                                public Boolean get() {
+                                    return updated;
+                                }
+
+                                @Override
+                                public void set(Boolean val) throws InvalidConfigValueException,
+                                                                    NodeNeedRestartException {
+                                    updated = val;
+                                }
+                            });
+
+        updated = updaterConfig.getBoolean("updated");
 
 		updaterConfig.finishedInitialization();
+
+        if (updated && showUpdateNotifications) {
+            node.clientCore.alerts.register(new NodeUpdatedUserAlert());
+        }
 
 		this.revocationChecker = new RevocationChecker(this, new File(
 				node.clientCore.getPersistentTempDir(), "revocation-key.fblob"));
@@ -1163,6 +1216,14 @@ public class NodeUpdateManager {
 		}
 
 		if (writeJars(ctx, deps)) {
+            try {
+                node.config.get("node.updater").set("updated", true);
+                // TODO: Is it acceptable to rely on Node.park() to store the config on shutdown?
+            } catch (InvalidConfigValueException e) {
+                // Not thrown.
+            } catch (NodeNeedRestartException e) {
+                // Not thrown.
+            }
 			restart(ctx);
 			return true;
 		} else {
