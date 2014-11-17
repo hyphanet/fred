@@ -29,12 +29,8 @@ public class WouldBlockException extends IncomingPacketFilterException {
         super();
     }
 
-    // Optimization :
-    // https://blogs.oracle.com/jrose/entry/longjumps_considered_inexpensive
     @Override
-    public final synchronized Throwable fillInStackTrace() {
-        if(logDEBUG)
-            return super.fillInStackTrace();
-        return null;
+    protected boolean shouldFillInStackTrace() {
+        return logDEBUG;
     }
 }

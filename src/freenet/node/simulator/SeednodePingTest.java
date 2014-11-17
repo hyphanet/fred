@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import freenet.crypt.RandomSource;
 import freenet.io.comm.NotConnectedException;
@@ -122,8 +123,8 @@ public class SeednodePingTest extends RealNodeTest {
 			System.out.println(seednode.getIdentityString() + " : "+fate+ " : "+seednode.getPeerNodeStatusString());
 		}
 		System.out.println("TOTALS:");
-		for(FATE fate : totals.keySet()) {
-			System.out.println(fate + " : "+totals.get(fate));
+		for (Entry<FATE, Integer> fateEntry : totals.entrySet()) {
+			System.out.println(fateEntry.getKey() + " : " + fateEntry.getValue());
 		}
 		System.out.println("################## ("+node.peers.countConnectedPeers()+") "+countConnectedSeednodes+'/'+node.peers.countSeednodes());
 		Thread.sleep(SECONDS.toMillis(5));

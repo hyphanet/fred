@@ -1054,15 +1054,14 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		putHandlersTransformMap = new HashMap<PutHandler, HashMap<String, Object>>();
 		putHandlersArchiveTransformMap = new HashMap<ArchivePutHandler, Vector<PutHandler>>();
 		if(defaultName == null)
-			defaultName = findDefaultName(manifestElements, defaultName);
+			defaultName = findDefaultName(manifestElements);
 		makePutHandlers(manifestElements, defaultName);
 		// builders are not longer needed after constructor
 		rootBuilder = null;
 		rootContainerBuilder = null;
 	}
 	
-	private String findDefaultName(HashMap<String, Object> manifestElements,
-			String defaultName) {
+	private String findDefaultName(HashMap<String, Object> manifestElements) {
 		// Find the default name if it has not been set explicitly.
 		for(String name : defaultDefaultNames) {
 			Object o = manifestElements.get(name);
@@ -2022,7 +2021,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		 * calls addItem()? */
 		public void addArchiveItem(ContainerBuilder archive, String name, ManifestElement element, boolean isDefaultDoc) {
 			assert(element.getData() != null);
-			archive.addItem(name, element, false);
+			archive.addItem(name, new ManifestElement(element, name, name), false);
 			PutHandler ph = new JokerPutHandler(BaseManifestPutter.this, selfHandle, name, guessMime(name, element.mimeOverride));
 			putHandlersTransformMap.put(ph, currentDir);
 			perContainerPutHandlersWaitingForMetadata.get(selfHandle).add(ph);

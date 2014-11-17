@@ -946,7 +946,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			} catch (DatabaseDisabledException e) {
 				// Nothing to do
 			}
-		} else schedCore.countNegative();
+		}
 	}
 	
 	/* FIXME SECURITY When/if introduce tunneling or similar mechanism for starting requests

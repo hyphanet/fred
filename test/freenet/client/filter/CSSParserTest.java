@@ -1087,4 +1087,13 @@ public class CSSParserTest extends TestCase {
 	public void testWhitespace() throws IOException, URISyntaxException {
 		assertTrue("value=\""+filter(CSS_COMMA_WHITESPACE)+"\"", CSS_COMMA_WHITESPACE.equals(filter(CSS_COMMA_WHITESPACE)));
 	}
+
+	public void testDoubleCommentStart() throws IOException, URISyntaxException {
+		assertEquals("Double comment start does not crash", filter("/*/*"), "");
+	}
+
+	public void testTripleCommentStart() throws IOException, URISyntaxException {
+		assertEquals("Triple comment start does not crash", filter("/*/*/*"), "");
+	}
+
 }

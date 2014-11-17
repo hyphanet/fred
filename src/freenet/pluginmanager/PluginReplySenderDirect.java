@@ -10,15 +10,18 @@ import freenet.support.api.Bucket;
 
 /**
  * @author saces
- *
+ * @author xor (xor@freenetproject.org)
  */
 public class PluginReplySenderDirect extends PluginReplySender {
 	
 	private final Node node;
 	private final FredPluginTalker target;
 
-	public PluginReplySenderDirect(Node node2, FredPluginTalker target2, String pluginname2, String identifier2) {
-		super(pluginname2, identifier2);
+	/**
+	 * @see PluginReplySender#PluginReplySender(String, String, String)
+	 */
+	public PluginReplySenderDirect(Node node2, FredPluginTalker target2, String pluginname2, String clientIdentifier, String clientSideIdentifier) {
+		super(pluginname2, clientIdentifier, clientSideIdentifier);
 		node = node2;
 		target = target2;
 	}
@@ -32,7 +35,7 @@ public class PluginReplySenderDirect extends PluginReplySender {
 			public void run() {
 
 				try {
-					target.onReply(pluginname, identifier, params, bucket);
+					target.onReply(pluginname, clientSideIdentifier, params, bucket);
 				} catch (Throwable t) {
 					Logger.error(this, "Cought error while handling plugin reply: " + t.getMessage(), t);
 				}

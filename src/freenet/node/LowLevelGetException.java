@@ -3,11 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.support.LightweightException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
-public class LowLevelGetException extends Exception {
+public class LowLevelGetException extends LightweightException {
     private static volatile boolean logDEBUG;
 
     static {
@@ -98,10 +99,7 @@ public class LowLevelGetException extends Exception {
 	}
 
     @Override
-    public final synchronized Throwable fillInStackTrace() {
-        if(logDEBUG || code == INTERNAL_ERROR || code == DECODE_FAILED || code == VERIFY_FAILED)
-            return super.fillInStackTrace();
-        return null;
+    protected boolean shouldFillInStackTrace() {
+        return logDEBUG || code == INTERNAL_ERROR || code == DECODE_FAILED || code == VERIFY_FAILED;
     }
-
 }

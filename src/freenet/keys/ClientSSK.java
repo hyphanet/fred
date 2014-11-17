@@ -44,7 +44,7 @@ public class ClientSSK extends ClientKey {
 	
 	private ClientSSK(ClientSSK key) {
 		this.cryptoAlgorithm = key.cryptoAlgorithm;
-		this.docName = new String(key.docName);
+		this.docName = key.docName;
 		if(key.pubKey != null)
 			this.pubKey = key.pubKey.cloneKey();
 		else

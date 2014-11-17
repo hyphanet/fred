@@ -19,7 +19,7 @@ public class SeedAnnounceTracker {
 		LRUMap.createSafeMap(InetAddressComparator.COMPARATOR);
 	
 	// This should be plenty for now and limits memory usage to something reasonable.
-	final int MAX_SIZE = 100*1000;
+	private static final int MAX_SIZE = 100*1000;
 
 	/** A single IP address's behaviour */
 	private class TrackerItem {

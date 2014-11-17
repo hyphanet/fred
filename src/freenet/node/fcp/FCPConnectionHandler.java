@@ -101,7 +101,7 @@ public class FCPConnectionHandler implements Closeable {
      * @deprecated Use {@link #connectionIdentifierUUID} instead.
      */
     @Deprecated
-    protected final String connectionIdentifier;
+    public final String connectionIdentifier;
 	
 	/** Random UUID unique for each instance of this class */
 	protected final UUID connectionIdentifierUUID;

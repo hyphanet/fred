@@ -437,11 +437,11 @@ public class SimpleFieldSetTest extends TestCase {
 	 */
 	private String sfsReadyString(String[][] aStringPairsArray) {
 		
-		String methodStringToReturn = "";
+		StringBuilder methodStringToReturn = new StringBuilder();
 		for(int i = 0; i < aStringPairsArray.length; i++)
-			methodStringToReturn += aStringPairsArray[i][0]+KEY_VALUE_SEPARATOR+aStringPairsArray[i][1]+'\n';
-		methodStringToReturn += SAMPLE_END_MARKER;
-		return methodStringToReturn;
+			methodStringToReturn.append(aStringPairsArray[i][0]).append(KEY_VALUE_SEPARATOR).append(aStringPairsArray[i][1]).append('\n');
+		methodStringToReturn.append(SAMPLE_END_MARKER);
+		return methodStringToReturn.toString();
 	}
 	
 	/**

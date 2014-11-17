@@ -20,13 +20,15 @@
 package freenet.io.comm;
 
 
+import freenet.support.LightweightException;
+
 /**
  * @author ian
  *
  * To change the template for this generated type comment go to
  * Window - Preferences - Java - Code Generation - Code and Comments
  */
-public class RetrievalException extends Exception {
+public class RetrievalException extends LightweightException {
 	private static final long serialVersionUID = 3257565105301500723L;
 
 	public static final int UNKNOWN = 0;
@@ -107,9 +109,4 @@ public class RetrievalException extends Exception {
 	public String getMessage() {
 		return toString();
 	}
-
-    @Override
-    public final synchronized Throwable fillInStackTrace() {
-        return null;
-    }
 }

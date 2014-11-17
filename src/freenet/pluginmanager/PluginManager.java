@@ -234,8 +234,16 @@ public class PluginManager {
 
 	public void start(Config config) {
 		if(toStart != null)
-			for(String name : toStart)
-				startPluginAuto(name, false);
+			for(final String name : toStart) {
+			    core.getExecutor().execute(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        startPluginAuto(name, false);
+                    }
+			        
+			    });
+			}
 		synchronized(pluginWrappers) {
 			started = true;
 			toStart = null;
@@ -1458,7 +1466,7 @@ public class PluginManager {
 					return 0;
 				}
 				try {
-					return Long.valueOf(filename.substring(lastIndexOfDash + 5));
+					return Long.parseLong(filename.substring(lastIndexOfDash + 5));
 				} catch (NumberFormatException nfe1) {
 					return 0;
 				}
