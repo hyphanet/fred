@@ -963,7 +963,9 @@ public final class FCPPluginClient {
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} or
      * {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}, be sure to read the JavaDoc
      * of the message handling functions first as it puts additional constraints on the usage
-     * of the FCPPluginClient they receive.
+     * of the FCPPluginClient they receive.<br><br>
+     * 
+     * FIXME: Tell user to use {@link Thread#interrupt()} during shutdown.
      * 
      * @param direction
      *            Whether to send the message to the server or the client message handler.<br><br>
