@@ -881,10 +881,15 @@ public final class FCPPluginClient {
 
             @Override
             public int getPriority() {
-                NativeThread.PriorityLevel priority
-                    = (messageHandler instanceof PrioritizedMessageHandler) ?
-                        ((PrioritizedMessageHandler)messageHandler).getPriority(message)
-                        : NativeThread.PriorityLevel.NORM_PRIORITY;
+                NativeThread.PriorityLevel priority = NativeThread.PriorityLevel.NORM_PRIORITY;
+                
+                if(messageHandler instanceof PrioritizedMessageHandler) {
+                    try {
+                        priority = ((PrioritizedMessageHandler)messageHandler).getPriority(message);
+                    } catch(Throwable t) {
+                        Logger.error(messageHandler, "Message handler's getPriority() threw!", t);
+                    }
+                }
                 
                 return priority.value;
             }
