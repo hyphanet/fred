@@ -883,7 +883,7 @@ public final class FCPPluginClient {
             public int getPriority() {
                 NativeThread.PriorityLevel priority
                     = (messageHandler instanceof PrioritizedMessageHandler) ?
-                        ((PrioritizedMessageHandler)messageHandler).getPriority()
+                        ((PrioritizedMessageHandler)messageHandler).getPriority(message)
                         : NativeThread.PriorityLevel.NORM_PRIORITY;
                 
                 return priority.value;
