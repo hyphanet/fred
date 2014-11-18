@@ -836,14 +836,16 @@ public final class FCPPluginClient {
                         reply = null;
                     }
                 } else if(reply == null) {
-                    // The message handler succeeded in processing the message but does not have
-                    // anything to say as reply.
-                    // We send an empty "Success" reply nevertheless to to trigger eventually
-                    // waiting remote sendSynchronous() threads to return.
-                    // (We don't if the message was a reply, replying to replies is disallowed.)
                     if(!message.isReplyMessage()) {
-                        reply = FCPPluginMessage.constructReplyMessage(
-                            message, null, null, true, null, null);
+                        // The message handler did not not ship a reply even though it would have
+                        // been allowed to because the original message was not a reply.
+                        // This shouldn't be done: Not sending a success reply at least will cause
+                        // sendSynchronous() threads to keep waiting for the reply until timeout.
+                        Logger.warning(
+                            messageHandler, "Fred did not receive a reply from the message "
+                                          + "handler even though it was allowed to reply. "
+                                          + "This would cause sendSynchronous() to timeout! "
+                                          + "Original message: " + message);
                     }
                 }
                 
