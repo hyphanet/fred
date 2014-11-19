@@ -248,7 +248,7 @@ public class PluginManager {
                         startPluginAuto(name, false);
                         startingPlugins.release();
                     }
-	
+			        
 			    });
 			}
 
