@@ -330,9 +330,7 @@ public class PluginManager {
 			for(PluginInfoWrapper pi : pluginWrappers) {
 				v.add(pi.getFilename());
 			}
-			for(String s : pluginsFailedLoad.keySet()) {
-				v.add(s);
-			}
+			v.addAll(pluginsFailedLoad.keySet());
 		}
 
 		return v.toArray(new String[v.size()]);
