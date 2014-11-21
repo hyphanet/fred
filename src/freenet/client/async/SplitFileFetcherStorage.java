@@ -317,7 +317,7 @@ public class SplitFileFetcherStorage {
             storedBlocksLength = (long)splitfileDataBlocks * CHKBlock.DATA_LENGTH;
         } else {
             storedCrossCheckBlocksLength = 0;
-            storedBlocksLength = (long)(splitfileDataBlocks + totalCrossCheckBlocks) * CHKBlock.DATA_LENGTH;
+            storedBlocksLength = ((long)splitfileDataBlocks + totalCrossCheckBlocks) * CHKBlock.DATA_LENGTH;
         }
         
         int segmentCount = metadata.getSegmentCount();
