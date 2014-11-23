@@ -9,7 +9,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.security.interfaces.ECPublicKey;
@@ -17,19 +16,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
-import freenet.crypt.DHGroup;
-import freenet.crypt.DSA;
-import freenet.crypt.DSAGroup;
-import freenet.crypt.DSASignature;
-import freenet.crypt.DiffieHellman;
-import freenet.crypt.DiffieHellmanLightContext;
 import freenet.crypt.ECDH;
 import freenet.crypt.ECDHLightContext;
 import freenet.crypt.ECDSA;
 import freenet.crypt.ECDSA.Curves;
-import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.PCFBMode;
@@ -105,16 +96,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	public final static int DH_GENERATION_INTERVAL = 30000; // 30sec
 	/* How big is the FIFO? */
 	public final static int DH_CONTEXT_BUFFER_SIZE = 20;
-	/*
-	* The FIFO itself
-	* Get a lock on dhContextFIFO before touching it!
-	*/
-	private final LinkedList<DiffieHellmanLightContext> dhContextFIFO = new LinkedList<DiffieHellmanLightContext>();
 	/* The element which is about to be prunned from the FIFO */
-	private DiffieHellmanLightContext dhContextToBePrunned = null;
-	private static final DHGroup dhGroupToUse = Global.DHgroupA;
-	private long jfkDHLastGenerationTimestamp = 0;
-	
 	private final LinkedList<ECDHLightContext> ecdhContextFIFO = new LinkedList<ECDHLightContext>();
     private ECDHLightContext ecdhContextToBePrunned;
     private static final ECDH.Curves ecdhCurveToUse = ECDH.Curves.P256;
@@ -178,10 +160,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	public void start() {
 		// Run it directly so that the transient key is set.
 		maybeResetTransientKey();
-		// Fill the DH FIFO on-thread
-		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
-			_fillJFKDHFIFO();
-		}
 		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
 			_fillJFKECDHFIFO();
 		}
@@ -2137,36 +2115,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	public boolean alwaysAllowLocalAddresses() {
 		return crypto.config.alwaysAllowLocalAddresses();
 	}
-
-	private DiffieHellmanLightContext _genLightDiffieHellmanContext() {
-		final DiffieHellmanLightContext ctx = DiffieHellman.generateLightContext(dhGroupToUse);
-		if(logDEBUG) Logger.debug(this, "Signing for DiffieHellman: "+HexUtil.bytesToHex(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup())))+" for "+HexUtil.bytesToHex(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup())));
-		ctx.setDSASignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup()))));
-
-		return ctx;
-	}
     
 	private ECDHLightContext _genECDHLightContext() {
         final ECDHLightContext ctx = new ECDHLightContext(ecdhCurveToUse);
         ctx.setECDSASignature(crypto.ecdsaSign(ctx.getPublicKeyNetworkFormat()));
-        ctx.setDSASignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup()))));
         if(logDEBUG) Logger.debug(this, "ECDSA Signature: "+HexUtil.bytesToHex(ctx.ecdsaSig)+" for "+HexUtil.bytesToHex(ctx.getPublicKeyNetworkFormat()));
         return ctx;
     }
-	
-	private void _fillJFKDHFIFOOffThread() {
-		// do it off-thread
-		node.executor.execute(new PrioRunnable() {
-			@Override
-			public void run() {
-				_fillJFKDHFIFO();
-			}
-			@Override
-			public int getPriority() {
-				return NativeThread.MIN_PRIORITY;
-			}
-		}, "DiffieHellman exponential signing");
-	}
 
     private void _fillJFKECDHFIFOOffThread() {
         // do it off-thread
@@ -2181,26 +2136,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
             }
         }, "ECDH exponential signing");
     }
-    
-	private void _fillJFKDHFIFO() {
-	    synchronized (dhContextFIFO) {
-	        int size = dhContextFIFO.size();
-	        if((size > 0) && (size + 1 > DH_CONTEXT_BUFFER_SIZE)) {
-	            DiffieHellmanLightContext result = null;
-	            long oldestSeen = Long.MAX_VALUE;
-
-				for (DiffieHellmanLightContext tmp: dhContextFIFO) {
-					if(tmp.lifetime < oldestSeen) {
-						oldestSeen = tmp.lifetime;
-						result = tmp;
-					}
-				}
-				dhContextFIFO.remove(dhContextToBePrunned = result);
-			}
-
-			dhContextFIFO.addLast(_genLightDiffieHellmanContext());
-		}
-	}
     
 	private void _fillJFKECDHFIFO() {
         synchronized (ecdhContextFIFO) {
@@ -2220,36 +2155,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
             ecdhContextFIFO.addLast(_genECDHLightContext());
         }
-    }	
-
-	/**
-	 * Change the DH Exponents on a regular basis but at most once every 30sec
-	 *
-	 * @return {@link DiffieHellmanLightContext}
-	 */
-	private DiffieHellmanLightContext getLightDiffieHellmanContext() {
-		final long now = System.currentTimeMillis();
-		DiffieHellmanLightContext result = null;
-
-		synchronized (dhContextFIFO) {
-			result = dhContextFIFO.pollFirst();
-
-			// Shall we replace one element of the queue ?
-			if((jfkDHLastGenerationTimestamp + DH_GENERATION_INTERVAL) < now) {
-				jfkDHLastGenerationTimestamp = now;
-				_fillJFKDHFIFOOffThread();
-			}
-
-            // If we didn't get any, generate on-thread
-            if(result == null)
-                result = _genLightDiffieHellmanContext();
-            
-			dhContextFIFO.addLast(result);
-		}
-
-		if(logMINOR) Logger.minor(this, "getLightDiffieHellmanContext() is serving "+result.hashCode());
-		return result;
-	}
+    }
 	
     /**
      * Change the ECDH key on a regular basis but at most once every 30sec
@@ -2290,29 +2196,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
     	};
     }
 	
-
-	/**
-	 * Used in processJFK[3|4]
-	 * That's O^(n) ... but we have only a few elements and
-	 * we call it only once a round-trip has been done
-	 *
-	 * @param exponential
-	 * @return the corresponding DiffieHellmanLightContext with the right exponent
-	 */
-	private DiffieHellmanLightContext findContextByExponential(BigInteger exponential) {
-		synchronized (dhContextFIFO) {
-			for (DiffieHellmanLightContext result : dhContextFIFO) {
-				if(exponential.equals(result.myExponential)) {
-					return result;
-				}
-			}
-
-			if((dhContextToBePrunned != null) && ((dhContextToBePrunned.myExponential).equals(exponential)))
-				return dhContextToBePrunned;
-		}
-		return null;
-	}
-	
 	 /**
      * Used in processJFK[3|4]
      * That's O^(n) ... but we have only a few elements and
@@ -2334,19 +2217,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         }
         return null;
     }
-
-	/*
-	 * Prepare DH parameters of message2 for them to be signed (useful in message3 to check the sig)
-	 */
-	private byte[] assembleDHParams(byte[] exponential, DSAGroup group) {
-		byte[] _myGroup = group.getP().toByteArray();
-		byte[] toSign = new byte[exponential.length + _myGroup.length];
-
-		System.arraycopy(exponential, 0, toSign, 0, exponential.length);
-		System.arraycopy(_myGroup, 0, toSign, exponential.length, _myGroup.length);
-
-		return toSign;
-	}
 
 	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential, byte[] responderExponential, byte[] id, byte[] sa) {
 		byte[] result = new byte[nonceInitiator.length + nonceResponder.length + initiatorExponential.length + responderExponential.length + id.length + sa.length];
