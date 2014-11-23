@@ -313,7 +313,7 @@ public class SplitFileFetcherStorage {
         int totalCrossCheckBlocks = segmentKeys.length * crossCheckBlocks;
         splitfileDataBlocks -= totalCrossCheckBlocks;
         if(completeViaTruncation) {
-            storedCrossCheckBlocksLength = totalCrossCheckBlocks * CHKBlock.DATA_LENGTH;
+            storedCrossCheckBlocksLength = (long)totalCrossCheckBlocks * CHKBlock.DATA_LENGTH;
             storedBlocksLength = (long)splitfileDataBlocks * CHKBlock.DATA_LENGTH;
         } else {
             storedCrossCheckBlocksLength = 0;
@@ -738,7 +738,7 @@ public class SplitFileFetcherStorage {
             int segmentCount = dis.readInt();
             if(segmentCount < 0) throw new StorageFormatException("Invalid segment count "+segmentCount);
             this.segments = new SplitFileFetcherSegmentStorage[segmentCount];
-            int totalDataBlocks = dis.readInt();
+            long totalDataBlocks = dis.readInt();
             if(totalDataBlocks < 0) 
                 throw new StorageFormatException("Invalid total data blocks "+totalDataBlocks);
             int totalCheckBlocks = dis.readInt();

@@ -67,7 +67,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     /** Create a set of bloom filters for a new download.
      * @throws FetchException */
     public SplitFileFetcherKeyListener(SplitFileFetcherStorageCallback fetcher, SplitFileFetcherStorage storage, 
-            boolean persistent, byte[] localSalt, int origSize, int segBlocks, int segments) 
+            boolean persistent, byte[] localSalt, int origSize, int segBlocks, int segments)
     throws FetchException {
         this.fetcher = fetcher;
         this.storage = storage;
