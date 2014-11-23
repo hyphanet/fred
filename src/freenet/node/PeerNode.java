@@ -13,7 +13,6 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.ref.WeakReference;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -38,10 +37,6 @@ import freenet.client.FetchResult;
 import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
 import freenet.crypt.BlockCipher;
-import freenet.crypt.DSA;
-import freenet.crypt.DSAGroup;
-import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DSASignature;
 import freenet.crypt.ECDSA;
 import freenet.crypt.ECDSA.Curves;
 import freenet.crypt.Global;
@@ -276,7 +271,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	/** Peer node public key; changing this means new noderef */
 	protected final ECPublicKey peerECDSAPubKey;
-    protected final byte[] peerECDSAPubKeyHash;
+    public final byte[] peerECDSAPubKeyHash;
 
 	private boolean isSignatureVerificationSuccessfull;
 	/** Incoming setup key. Used to decrypt incoming auth packets.
@@ -2399,20 +2394,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	static SimpleFieldSet compressedNoderefToFieldSet(byte[] data, int offset, int length) throws FSParseException {
 		if(length <= 5)
 			throw new FSParseException("Too short");
-		// Lookup table for groups.
-		DSAGroup group = null;
 		int firstByte = data[offset];
 		offset++;
 		length--;
-		if((firstByte & 0x2) == 2) {
-			int groupIndex = (data[offset] & 0xff);
-			offset++;
-			length--;
-			group = Global.getGroup(groupIndex);
-			if(group == null) throw new FSParseException("Unknown group number "+groupIndex);
-			if(logMINOR)
-				Logger.minor(PeerNode.class, "DSAGroup set to "+group.fingerprintToString()+ " using the group-index "+groupIndex);
-		}
 		// Is it compressed?
 		if((firstByte & 1) == 1) {
 			try {
@@ -2444,13 +2428,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		BufferedReader br = new BufferedReader(isr);
 		try {
-			SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
-			if(group != null) {
-				SimpleFieldSet sfs = new SimpleFieldSet(true);
-				sfs.put("dsaGroup", group.asFieldSet());
-				fs.putAllOverwrite(sfs);
-			}
-			return fs;
+			return new SimpleFieldSet(br, false, true);
 		} catch(IOException e) {
 			throw (FSParseException)new FSParseException("Impossible: " + e).initCause(e);
 		}

@@ -796,7 +796,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
             Logger.error(this, "Internal error adding reference :" + t.getMessage(), t);
 			return PeerAdditionReturnCodes.INTERNAL_ERROR;
 		}
-		if(Arrays.equals(pn.getPubKeyHash(), node.getDarknetPubKeyHash())) {
+		if(Arrays.equals(pn.peerECDSAPubKeyHash, node.getDarknetPubKeyHash())) {
 			return PeerAdditionReturnCodes.TRY_TO_ADD_SELF;
 		}
 		if(!this.node.addPeerConnection(pn)) {
