@@ -161,6 +161,7 @@ maintainers may prefer to use this instead of build.xml.
 		<available property="lib.contrib.present" classname="freenet.node.ExtVersion" classpathref="lib.path"/>
 		<available property="lib.bouncycastle.present" classname="org.bouncycastle.jce.provider.BouncyCastleProvider" classpathref="lib.path"/>
 		<available property="lib.junit.present" classname="junit.framework.Test" classpathref="libtest.path"/>
+		<available property="lib.hamcrest.present" classname="org.hamcrest.BaseMatcher" classpathref="libtest.path"/>
 		<available property="lib.findbugs.present" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
 		<available property="lib.pmd.present" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
 		<available property="lib.cpd.present" classname="net.sourceforge.pmd.cpd.CPDTask" classpathref="pmd.classpath"/>
@@ -184,6 +185,10 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="libdep-junit" depends="env" unless="lib.junit.present">
 		<fail message="JUnit not available"/>
+	</target>
+
+	<target name="libdep-hamcrest" depends="env" unless="lib.hamcrest.present">
+		<fail message="Hamcrest not available"/>
 	</target>
 
 	<target name="libdep-findbugs" depends="env" unless="lib.findbugs.present">
@@ -305,6 +310,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="unit-build" depends="build" unless="${test.skip}">
 		<antcall target="libdep-junit"/>
+		<antcall target="libdep-hamcrest"/>
 		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" source="1.6" target="1.6" encoding="UTF-8">
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="libtest.path"/>
