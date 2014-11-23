@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Semaphore;
 import java.util.jar.Attributes;
 import java.util.jar.JarException;
 import java.util.jar.JarFile;
@@ -231,21 +232,36 @@ public class PluginManager {
 	private String[] toStart;
 
 	public void start(Config config) {
-		if(toStart != null)
+		if (toStart == null) {
+			synchronized (pluginWrappers) {
+				started = true;
+				return;
+			}
+		}
+
+		final Semaphore startingPlugins = new Semaphore(0);
 			for(final String name : toStart) {
 			    core.getExecutor().execute(new Runnable() {
 
                     @Override
                     public void run() {
                         startPluginAuto(name, false);
+                        startingPlugins.release();
                     }
 			        
 			    });
 			}
+
+		core.getExecutor().execute(new Runnable() {
+			@Override
+			public void run() {
+				startingPlugins.acquireUninterruptibly(toStart.length);
 		synchronized(pluginWrappers) {
 			started = true;
 			toStart = null;
 		}
+			}
+		});
 	}
 
 	public void stop(long maxWaitTime) {
@@ -314,9 +330,7 @@ public class PluginManager {
 			for(PluginInfoWrapper pi : pluginWrappers) {
 				v.add(pi.getFilename());
 			}
-			for(String s : pluginsFailedLoad.keySet()) {
-				v.add(s);
-			}
+			v.addAll(pluginsFailedLoad.keySet());
 		}
 
 		return v.toArray(new String[v.size()]);
