@@ -160,7 +160,7 @@ maintainers may prefer to use this instead of build.xml.
 	<target name="env">
 		<available property="lib.contrib.present" classname="freenet.node.ExtVersion" classpathref="lib.path"/>
 		<available property="lib.bouncycastle.present" classname="org.bouncycastle.crypto.SkippingStreamCipher" classpathref="lib.path"/>
-		<available property="lib.junit.present" classname="junit.framework.Test" classpathref="libtest.path"/>
+		<available property="lib.junit.present" classname="org.junit.runners.JUnit4" classpathref="libtest.path"/>
 		<available property="lib.hamcrest.present" classname="org.hamcrest.BaseMatcher" classpathref="libtest.path"/>
 		<available property="lib.findbugs.present" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
 		<available property="lib.pmd.present" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
@@ -184,7 +184,7 @@ maintainers may prefer to use this instead of build.xml.
 	</target>
 
 	<target name="libdep-junit" depends="env" unless="lib.junit.present">
-		<fail message="JUnit not available"/>
+		<fail message="JUnit4 not available"/>
 	</target>
 
 	<target name="libdep-hamcrest" depends="env" unless="lib.hamcrest.present">
