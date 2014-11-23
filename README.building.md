@@ -1,9 +1,14 @@
 ## Building Freenet from source: Short version
 
-Install junit 4 and Apache ant. For Debian Wheezy these are `junit4` and `ant`.
+Install junit 4, Apache ant and Hamcrest. For Debian Wheezy these are `junit4`, `ant`, `ant-optional` and `libhamcrest-java`.
 
-* `lib/bcprov.jar`: Download Bouncy Castle 1.51: `wget --no-passive-ftp ftp://ftp.bouncycastle.org/pub/release1.51/bcprov-jdk15on-151.jar` or `wget http://www.bouncycastle.org/download/bcprov-jdk15on-151.jar`
-* `lib/freenet/freenet-ext.jar`: Build the `contrib/` submodule or [download](https://downloads.freenetproject.org/alpha/freenet-ext.jar) for convenience.
+Symlink them to your lib/ folder using:
+ln -s /usr/share/java/bcprov-1.51.jar lib/
+ln -s /usr/share/java/junit4.jar lib/
+ln -s /usr/share/java/hamcrest-core.jar lib/
+
+* `lib/bcprov-jdk15on-151.jar`: Download Bouncy Castle 1.51: `wget --no-passive-ftp ftp://ftp.bouncycastle.org/pub/release1.51/bcprov-jdk15on-151.jar` or `wget http://www.bouncycastle.org/download/bcprov-jdk15on-151.jar`
+* `lib/freenet/freenet-ext.jar`: Build the `contrib/` submodule or [download](https://downloads.freenetproject.org/latest/freenet-ext.jar) for convenience.
 
 The dependencies could also be copied from an existing Freenet installation.
 
