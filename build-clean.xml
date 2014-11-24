@@ -289,10 +289,8 @@ maintainers may prefer to use this instead of build.xml.
 				<attribute name="Permissions" value="all-permissions"/>
 				<attribute name="Application-Name" value="Freenet REference Daemon"/>
 
-				<attribute name="Main-Class" value="freenet.node.Node"/>
 				<attribute name="Required-Ext-Version" value="29"/>
 				<attribute name="Recommended-Ext-Version" value="29"/>
-				<attribute name="Class-Path" value="${lib.jars.package}" />
 				<section name="common">
 					<attribute name="Specification-Title" value="Freenet"/>
 					<attribute name="Specification-Version" value="0.7.5"/>
