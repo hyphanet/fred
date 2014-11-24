@@ -180,7 +180,7 @@ maintainers may prefer to use this instead of build.xml.
 	</target>
 
 	<target name="libdep-bc" depends="env" unless="lib.bouncycastle.present">
-		<fail message="Bouncycastle not available (or not recent enough)"/>
+		<fail message="Bouncycastle not available (or not recent enough); try https://downloads.freenetproject.org/latest/${bc.jar}"/>
 	</target>
 
 	<target name="libdep-junit" depends="env" unless="lib.junit.present">
@@ -281,7 +281,7 @@ maintainers may prefer to use this instead of build.xml.
 		<property name="lib.contrib.loc" location="${lib.contrib.dir}" />
 		<property name="lib.loc" location="${lib.dir}" />
 		<pathconvert property="lib.jars.package" refid="lib.path" pathsep=" ">
-			<map from="${lib.contrib.loc}/" to="${lib.contrib.dir.rel}/"/>
+			<map from="${lib.contrib.loc}/" to=""/>
 			<map from="${lib.loc}/" to=""/>
 		</pathconvert>
 		<jar jarfile="${jar.dst}" basedir="${main.make}">
