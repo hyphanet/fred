@@ -13,7 +13,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
