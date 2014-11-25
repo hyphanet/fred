@@ -941,6 +941,14 @@ public final class FCPPluginClient {
      * In addition to only using synchronous calls when absolutely necessary, please make sure to
      * set a timeout parameter which is as small as possible.<br><br>
      * 
+     * <h1>Shutdown</h1>
+     * While remembering that this fucntion can block for a long time, you have to consider that
+     * this class will <b>not</b> call {@link Thread#interrupt()} upon pending calls to this
+     * function during shutdown. You <b>must</b> keep track of threads which are executing this
+     * function on your own, and call {@link Thread#interrupt()} upon them at shutdown of your
+     * plugin. The interruption will then cause the function to throw {@link InterruptedException}
+     * quickly, which your calling threads should obey by exiting to ensure a fast shutdown.<br><br>
+     * 
      * ATTENTION: This function can only work properly as long the message which you passed to this
      * function does contain a message identifier which does not collide with one of another
      * message.<br>
@@ -971,8 +979,6 @@ public final class FCPPluginClient {
      * {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}, be sure to read the JavaDoc
      * of the message handling functions first as it puts additional constraints on the usage
      * of the FCPPluginClient they receive.<br><br>
-     * 
-     * FIXME: Tell user to use {@link Thread#interrupt()} during shutdown.
      * 
      * @param direction
      *            Whether to send the message to the server or the client message handler.<br><br>
@@ -1042,17 +1048,6 @@ public final class FCPPluginClient {
      *             This is a shutdown mechanism: You can use it to abort a call to this function
      *             which is waiting for the timeout to expire.<br><br>
      * 
-     *             If this happens even though you did not interrupt() yourself, you should
-     *             <b>not</b> swallow the InterruptedException, and especially <b>not</b> just loop
-     *             your thread to send the message again.<br>
-     *             Instead, consider it as a shutdown request from Freenet, and honour it by
-     *             terminating your thread quickly.<br><br>
-     * 
-     *             FIXME: Does fred call interrupt() upon all threads from the
-     *             {@link Node#executor} upon shutdown? And does it do that when only a plugin
-     *             is requested to be unloaded, not the complete node? If not, this class should
-     *             store a list of all threads which are executing this function, and call
-     *             interrupt() upon them during shutdown.
      *             FIXME: Please use the MINOR logging to do test runs to check whether the
      *             synchronousSends table does not leak.
      * @see FCPPluginClient#synchronousSends
