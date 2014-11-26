@@ -1163,4 +1163,19 @@ public final class FCPPluginClient {
     public String toStringShort() {
         return "FCPPluginClient for " + serverPluginName;
     }
+
+    /**
+     * ATTENTION: For unit test use only.
+     * 
+     * @return The size of the backend table {@link #synchronousSends} of
+     *         {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)}
+     */
+    int getSendSynchronousCount() {
+        synchronousSendsLock.readLock().lock();
+        try {
+            return synchronousSends.size();
+        } finally {
+            synchronousSendsLock.readLock().unlock();
+        }
+    }
 }
