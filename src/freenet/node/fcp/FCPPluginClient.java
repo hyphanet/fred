@@ -1046,9 +1046,6 @@ public final class FCPPluginClient {
      *             used to execute this function.<br>
      *             This is a shutdown mechanism: You can use it to abort a call to this function
      *             which is waiting for the timeout to expire.<br><br>
-     * 
-     *             FIXME: Please use the MINOR logging to do test runs to check whether the
-     *             synchronousSends table does not leak.
      * @see FCPPluginClient#synchronousSends
      *          An overview of how synchronous sends and especially their threading work internally
      *          is provided at the map which stores them.
