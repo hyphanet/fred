@@ -22,6 +22,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.clients.fcp.AddPeer;
 import freenet.clients.http.geoip.IPConverter;
 import freenet.clients.http.geoip.IPConverter.Country;
+import freenet.darknetapp.DarknetAppServer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.PacketThrottle;
@@ -49,6 +50,10 @@ import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.Closer;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.util.Properties;
 
 /** Base class for DarknetConnectionsToadlet and OpennetConnectionsToadlet */
 public abstract class ConnectionsToadlet extends Toadlet {
@@ -163,7 +168,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	protected final PeerManager peers;
 	protected boolean isReversed = false;
 	protected boolean showTrivialFoafConnections = false;
-
+	private int numPendingPeers = 0;
+        private List<String> pendingPeersNoderefList;
 	public enum PeerAdditionReturnCodes{ OK, WRONG_ENCODING, CANT_PARSE, INTERNAL_ERROR, INVALID_SIGNATURE, TRY_TO_ADD_SELF, ALREADY_IN_REFERENCE}
 
 	protected ConnectionsToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
@@ -620,8 +626,23 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
         if(!ctx.checkFullAccess(this))
             return;
-        
-		if (request.isPartSet("add")) {
+            /**
+            * Handle authorized/ rejected newly received references (from DarknetAppServer)
+            */
+            if (request.isPartSet("addNew")) {
+                    Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
+                    for(int i=1;i<=numPendingPeers;i++) {
+                        boolean noErrorWhileAdding = processAndTryToAddNewNode(request,ctx,results,"auth" + i,"peerPrivateNote"+i,"trust"+i,"visibility"+i,pendingPeersNoderefList.get(i-1),"");
+                        if (!noErrorWhileAdding) return;
+                    }
+                    request.freeParts();
+                    HTMLNode pageNode = buildNodeAdditionResultsPage(ctx,results);;                    
+                    synchronized(node.darknetAppServer) {
+                        node.darknetAppServer.changeNumPendingPeersCount(0);
+                    }
+                    writeHTMLReply(ctx, 500, l10n("reportOfNodeAddition"), pageNode.generate());
+                }
+            else if (request.isPartSet("add")) {
 			// add a new node
 			String urltext = request.getPartAsStringFailsafe("url", 200);
 			urltext = urltext.trim();
@@ -631,123 +652,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				reftext = request.getPartAsStringFailsafe("reffile", Integer.MAX_VALUE);
 				reftext = reftext.trim();
 			}
-			String privateComment = null;
-			if(!isOpennet())
-				privateComment = request.getPartAsStringFailsafe("peerPrivateNote", 250).trim();
-			
-			String trustS = request.getPartAsStringFailsafe("trust", 10);
-			FRIEND_TRUST trust = null;
-			if(trustS != null && !trustS.equals(""))
-				trust = FRIEND_TRUST.valueOf(trustS);
-			
-			String visibilityS = request.getPartAsStringFailsafe("visibility", 10);
-			FRIEND_VISIBILITY visibility = null;
-			if(visibilityS != null && !visibilityS.equals(""))
-				visibility = FRIEND_VISIBILITY.valueOf(visibilityS);
-			
-			if(trust == null && !isOpennet()) {
-				// FIXME: Layering violation. Ideally DarknetPeerNode would do this check.
-				this.sendErrorPage(ctx, 200, l10n("noTrustLevelAddingFriendTitle"), l10n("noTrustLevelAddingFriend"), !isOpennet());
-				return;
-			}
-			
-			if(visibility == null && !isOpennet()) {
-				// FIXME: Layering violation. Ideally DarknetPeerNode would do this check.
-				this.sendErrorPage(ctx, 200, l10n("noVisibilityLevelAddingFriendTitle"), l10n("noVisibilityLevelAddingFriend"), !isOpennet());
-				return;
-			}
-			
-			StringBuilder ref = null;
-			if (urltext.length() > 0) {
-				// fetch reference from a URL
-				BufferedReader in = null;
-				try {
-					URL url = new URL(urltext);
-					ref = AddPeer.getReferenceFromURL(url);
-				} catch (IOException e) {
-					this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), NodeL10n.getBase().getString("DarknetConnectionsToadlet.cantFetchNoderefURL", new String[] { "url" }, new String[] { urltext }), !isOpennet());
-					return;
-				} finally {
-					Closer.close(in);
-				}
-			} else if (reftext.length() > 0) {
-				// read from post data or file upload
-				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
-				ref = new StringBuilder(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));
-			} else {
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("noRefOrURL"), !isOpennet());
-				request.freeParts();
-				return;
-			}
-			ref = new StringBuilder(ref.toString().trim());
-
-			request.freeParts();
-
-			//Split the references string, because the peers are added individually
-			// FIXME split by lines at this point rather than in addNewNode would be more efficient
-			int idx;
-			while((idx = ref.indexOf("\r\n")) > -1) {
-				ref.deleteCharAt(idx);
-			}
-			while((idx = ref.indexOf("\r")) > -1) {
-				// Mac's just use \r
-				ref.setCharAt(idx, '\n');
-			}
-			String[] nodesToAdd=ref.toString().split("\nEnd\n");
-			for(int i=0;i<nodesToAdd.length;i++) {
-				String[] split = nodesToAdd[i].split("\n");
-				StringBuffer sb = new StringBuffer(nodesToAdd[i].length());
-				boolean first = true;
-				for(String s : split) {
-					if(s.equals("End")) break;
-					if(s.indexOf('=') > -1) {
-						if(!first)
-							sb.append('\n');
-					} else {
-						// Try appending it - don't add a newline.
-						// This will make broken refs work sometimes.
-					}
-					sb.append(s);
-					first = false;
-				}
-				nodesToAdd[i] = sb.toString();
-				// Don't need to add a newline at the end, we will do that later.
-			}
-			//The peer's additions results
-			Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
-			for(int i=0;i<nodesToAdd.length;i++){
-				//We need to trim then concat 'End' to the node's reference, this way we have a normal reference(the split() removes the 'End'-s!)
-				PeerAdditionReturnCodes result=addNewNode(nodesToAdd[i].trim().concat("\nEnd"), privateComment, trust, visibility);
-				//Store the result
-				Integer prev = results.get(result);
-				if(prev == null) prev = Integer.valueOf(0);
-				results.put(result, prev+1);
-			}
-			
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
-			
-			//We create a table to show the results
-			HTMLNode detailedStatusBox=new HTMLNode("table");
-			//Header of the table
-			detailedStatusBox.addChild(new HTMLNode("tr")).addChildren(new HTMLNode[]{new HTMLNode("th",l10n("resultName")),new HTMLNode("th",l10n("numOfResults"))});
-			HTMLNode statusBoxTable=detailedStatusBox.addChild(new HTMLNode("tbody"));
-			//Iterate through the return codes
-			for(PeerAdditionReturnCodes returnCode:PeerAdditionReturnCodes.values()){
-				if(results.containsKey(returnCode)){
-					//Add a <tr> and 2 <td> with the name of the code and the number of occasions it happened. If the code is OK, we use green, red elsewhere.
-					statusBoxTable.addChild(new HTMLNode("tr","style","color:"+(returnCode==PeerAdditionReturnCodes.OK?"green":"red"))).addChildren(new HTMLNode[]{new HTMLNode("td",l10n("peerAdditionCode."+returnCode.toString())),new HTMLNode("td",results.get(returnCode).toString())});
-				}
-			}
-
-			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox",l10n("reportOfNodeAddition"), contentNode, "node-added", true);
-			infoboxContent.addChild(detailedStatusBox);
-			if(!isOpennet())
-				infoboxContent.addChild("p").addChild("a", "href", "/addfriend/", l10n("addAnotherFriend"));
-			infoboxContent.addChild("p").addChild("a", "href", path(), l10n("goFriendConnectionStatus"));
-			addHomepageLink(infoboxContent.addChild("p"));
-			
+			            //The peer's additions results
+                        Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
+                        boolean doneAddition = processAndTryToAddNewNode(request,ctx,results,"","peerPrivateNote","trust","visibility",reftext,urltext);
+                        request.freeParts();
+                        if (!doneAddition) return;
+                        HTMLNode pageNode = buildNodeAdditionResultsPage(ctx,results);
 			writeHTMLReply(ctx, 500, l10n("reportOfNodeAddition"), pageNode.generate());
 		} else handleAltPost(uri, request, ctx, logMINOR);
 		
@@ -804,7 +714,131 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		return PeerAdditionReturnCodes.OK;
 	}
+        private boolean processAndTryToAddNewNode(final HTTPRequest request, ToadletContext ctx, Map<PeerAdditionReturnCodes,Integer> results, String authHTMLType, String peerPrivateNoteHTMLType, String trustHTMLType, String visibilityHTMLType, String reftext, String urltext) throws IOException, ToadletContextClosedException {
+            if (authHTMLType.length()>0) {
+                // Check if the user has auhorized or rejected the new node
+                // We do not reach here if authHTMLType is empty (user is trying to add peer directly without using the smartphone app)
+                String auth = request.getPartAsStringFailsafe(authHTMLType, 250).trim(); //"auth" + i
+                if (auth.equals("reject")) return true;
+            }
+            String privateComment = null;
+            if(!isOpennet())
+                    privateComment = request.getPartAsStringFailsafe(peerPrivateNoteHTMLType, 250).trim();
 
+            String trustS = request.getPartAsStringFailsafe(trustHTMLType, 10);
+            FRIEND_TRUST trust = null;
+            if(trustS != null && !trustS.equals(""))
+                    trust = FRIEND_TRUST.valueOf(trustS);
+
+            String visibilityS = request.getPartAsStringFailsafe(visibilityHTMLType, 10);
+            FRIEND_VISIBILITY visibility = null;
+            if(visibilityS != null && !visibilityS.equals(""))
+                    visibility = FRIEND_VISIBILITY.valueOf(visibilityS);
+
+            if(trust == null && !isOpennet()) {
+                    // FIXME: Layering violation. Ideally DarknetPeerNode would do this check.
+                    this.sendErrorPage(ctx, 200, l10n("noTrustLevelAddingFriendTitle"), l10n("noTrustLevelAddingFriend"), !isOpennet());
+                    return false;
+            }
+
+            if(visibility == null && !isOpennet()) {
+                    // FIXME: Layering violation. Ideally DarknetPeerNode would do this check.
+                    this.sendErrorPage(ctx, 200, l10n("noVisibilityLevelAddingFriendTitle"), l10n("noVisibilityLevelAddingFriend"), !isOpennet());
+                    return false;
+            }
+
+            StringBuilder ref = null;
+            if (urltext!=null && urltext.length() > 0) {
+                    // fetch reference from a URL
+                    BufferedReader in = null;
+                    try {
+                            URL url = new URL(urltext);
+                            ref = AddPeer.getReferenceFromURL(url);
+                    } catch (IOException e) {
+                            this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), NodeL10n.getBase().getString("DarknetConnectionsToadlet.cantFetchNoderefURL", new String[] { "url" }, new String[] { urltext }), !isOpennet());
+                            return false;
+                    } finally {
+                            Closer.close(in);
+                    }
+            } else if (reftext!=null && reftext.length() > 0) {
+                    // read from post data or file upload
+                    // this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
+                    ref = new StringBuilder(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));
+            } else {
+                    this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("noRefOrURL"), !isOpennet());
+                    request.freeParts();
+                    return false;
+            }
+            ref = new StringBuilder(ref.toString().trim());
+
+            //Split the references string, because the peers are added individually
+            // FIXME split by lines at this point rather than in addNewNode would be more efficient
+            int idx;
+            while((idx = ref.indexOf("\r\n")) > -1) {
+                    ref.deleteCharAt(idx);
+            }
+            while((idx = ref.indexOf("\r")) > -1) {
+                    // Mac's just use \r
+                    ref.setCharAt(idx, '\n');
+            }
+            String[] nodesToAdd=ref.toString().split("\nEnd\n");
+            for(int i=0;i<nodesToAdd.length;i++) {
+                    String[] split = nodesToAdd[i].split("\n");
+                    StringBuffer sb = new StringBuffer(nodesToAdd[i].length());
+                    boolean first = true;
+                    for(String s : split) {
+                            if(s.equals("End")) break;
+                            if(s.indexOf('=') > -1) {
+                                    if(!first)
+                                            sb.append('\n');
+                            } else {
+                                    // Try appending it - don't add a newline.
+                                    // This will make broken refs work sometimes.
+                            }
+                            sb.append(s);
+                            first = false;
+                    }
+                    nodesToAdd[i] = sb.toString();
+                    // Don't need to add a newline at the end, we will do that later.
+            }
+
+            for(int i=0;i<nodesToAdd.length;i++){
+                    //We need to trim then concat 'End' to the node's reference, this way we have a normal reference(the split() removes the 'End'-s!)
+                    PeerAdditionReturnCodes result=addNewNode(nodesToAdd[i].trim().concat("\nEnd"), privateComment, trust, visibility);
+                    //Store the result
+                    Integer prev = results.get(result);
+                    if(prev == null) prev = Integer.valueOf(0);
+                    results.put(result, prev+1);
+            }
+            return true;
+        }
+        
+        private HTMLNode buildNodeAdditionResultsPage(ToadletContext ctx, Map<PeerAdditionReturnCodes,Integer> results) {
+            PageNode page = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx);
+            HTMLNode pageNode = page.outer;
+            HTMLNode contentNode = page.content;
+
+            //We create a table to show the results
+            HTMLNode detailedStatusBox=new HTMLNode("table");
+            //Header of the table
+            detailedStatusBox.addChild(new HTMLNode("tr")).addChildren(new HTMLNode[]{new HTMLNode("th",l10n("resultName")),new HTMLNode("th",l10n("numOfResults"))});
+            HTMLNode statusBoxTable=detailedStatusBox.addChild(new HTMLNode("tbody"));
+            //Iterate through the return codes
+            for(PeerAdditionReturnCodes returnCode:PeerAdditionReturnCodes.values()){
+                    if(results.containsKey(returnCode)){
+                            //Add a <tr> and 2 <td> with the name of the code and the number of occasions it happened. If the code is OK, we use green, red elsewhere.
+                            statusBoxTable.addChild(new HTMLNode("tr","style","color:"+(returnCode==PeerAdditionReturnCodes.OK?"green":"red"))).addChildren(new HTMLNode[]{new HTMLNode("td",l10n("peerAdditionCode."+returnCode.toString())),new HTMLNode("td",results.get(returnCode).toString())});
+                    }
+            }
+
+            HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox",l10n("reportOfNodeAddition"), contentNode, "node-added", true);
+            infoboxContent.addChild(detailedStatusBox);
+            if(!isOpennet())
+                    infoboxContent.addChild("p").addChild("a", "href", "/addfriend/", l10n("addAnotherFriend"));
+            infoboxContent.addChild("p").addChild("a", "href", path(), l10n("goFriendConnectionStatus"));
+            addHomepageLink(infoboxContent.addChild("p"));
+            return pageNode;
+        }
 	/** Adding a darknet node or an opennet node? */
 	protected abstract boolean isOpennet();
 
@@ -882,7 +916,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		drawAddPeerBox(contentNode, ctx, isOpennet(), path());
 	}
 	
-	protected static void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx, boolean isOpennet, String formTarget) {
+	protected void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx, boolean isOpennet, String formTarget) {
 		// BEGIN PEER ADDITION BOX
 		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		peerAdditionInfobox.addChild("div", "class", "infobox-header", l10n(isOpennet ? "addOpennetPeerTitle" : "addPeerTitle"));
@@ -936,7 +970,59 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", l10n("add") });
 	}
+        /**
+         * An infobox with a form to display all newly received references from darknetAppServer and ask user authorization
+         * Ideally called by drawNodeRefBox i.e."add a friend" page 
+         * Can also be displayed on a separate toadlet if need be
+         */
+        protected void drawNewDarknetPeersAuthBox(HTMLNode contentNode, ToadletContext ctx, boolean isOpennet, String formTarget) {
+            if (isOpennet) return;
+            HTMLNode newPeersInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+            newPeersInfobox.addChild("div", "class", "infobox-header", l10n("newPeersBoxTitle"));
+            HTMLNode peerAdditionContent = newPeersInfobox.addChild("div", "class", "infobox-content");
+            HTMLNode peerAdditionForm = ctx.addFormChild(peerAdditionContent, formTarget, "addPeerForm");
+            synchronized (DarknetAppServer.class) {
+                numPendingPeers = node.darknetAppServer.getNumPendingPeersCount();
+                pendingPeersNoderefList = node.darknetAppServer.getPendingPeersNoderefList();
+                for (int i=1;i<=numPendingPeers;i++) {
+                    String noderef = pendingPeersNoderefList.get(i-1);
+                    if (noderef==null || noderef.isEmpty()) continue;
+                    peerAdditionForm.addChild("b", l10n("peerNodeReference"));
+                    peerAdditionForm.addChild("pre", "id", "reference", noderef + '\n');
+                    peerAdditionForm.addChild("b", l10n("AuthTitle"));
+                    peerAdditionForm.addChild("#", " ");
+                    peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "auth"+i, "authorize" }).addChild("b", l10n("auth"));;
+                    peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "auth"+i, "reject" }).addChild("b", l10n("reject"));;	
+                    peerAdditionForm.addChild("br");
+                    peerAdditionForm.addChild("b", l10n("peerTrustTitle"));
+                    peerAdditionForm.addChild("#", " ");
+                    peerAdditionForm.addChild("#", l10n("peerTrustIntroduction"));
+                    for(FRIEND_TRUST trust : FRIEND_TRUST.valuesBackwards()) { // FIXME reverse order
+                            HTMLNode input = peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "trust"+i, trust.name() });
+                            input.addChild("b", l10n("peerTrust."+trust.name())); // FIXME l10n
+                            input.addChild("#", ": ");
+                            input.addChild("#", l10n("peerTrustExplain."+trust.name()));
+                    }
+                    peerAdditionForm.addChild("br");
 
+                    peerAdditionForm.addChild("b", l10n("peerVisibilityTitle"));
+                    peerAdditionForm.addChild("#", " ");
+                    peerAdditionForm.addChild("#", l10n("peerVisibilityIntroduction"));
+                    for(FRIEND_VISIBILITY trust : FRIEND_VISIBILITY.values()) { // FIXME reverse order
+                            HTMLNode input = peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "visibility"+i, trust.name() });
+                            input.addChild("b", l10n("peerVisibility."+trust.name())); // FIXME l10n
+                            input.addChild("#", ": ");
+                            input.addChild("#", l10n("peerVisibilityExplain."+trust.name()));
+                    }
+                    peerAdditionForm.addChild("br");
+                    peerAdditionForm.addChild("#", (l10n("enterDescription") + ' '));
+                    peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote"+i, "16", "250", "" });
+                    peerAdditionForm.addChild("br");
+                }
+                 peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addNew", l10n("add") });
+            }
+        }
+        
 	protected Comparator<PeerNodeStatus> comparator(String sortBy, boolean reversed) {
 		return new ComparatorByStatus(sortBy, reversed);
 	}

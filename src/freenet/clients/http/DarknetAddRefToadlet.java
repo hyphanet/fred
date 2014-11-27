@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.darknetapp.DarknetAppServer;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.updater.NodeUpdateManager;
@@ -83,8 +84,10 @@ public class DarknetAddRefToadlet extends Toadlet {
 		else
 			NodeL10n.getBase().addL10nSubstitution(p, "DarknetAddRefToadlet.explainInstallerNonWindowsNotYet", new String[] { "link", "shortfilename" }, new HTMLNode[] { HTMLNode.link("/"+node.nodeUpdater.getInstallerNonWindowsURI().toString()), HTMLNode.text(shortFilename) });
 			
-		
-		ConnectionsToadlet.drawAddPeerBox(contentNode, ctx, false, friendsToadlet.path());
+		if (node.darknetAppServer.getNumPendingPeersCount()>0)
+                    friendsToadlet.drawNewDarknetPeersAuthBox(contentNode, ctx, false, friendsToadlet.path());
+                
+		friendsToadlet.drawAddPeerBox(contentNode, ctx, false, friendsToadlet.path());
 		
 		friendsToadlet.drawNoderefBox(contentNode, getNoderef(), pageMaker.advancedMode(request, this.container));
 		

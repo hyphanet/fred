@@ -69,6 +69,7 @@ import freenet.crypt.ECDH;
 import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
+import freenet.darknetapp.DarknetAppServer;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
@@ -740,7 +741,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public final long startupTime;
 
 	private SimpleToadletServer toadlets;
-
+	public final DarknetAppServer darknetAppServer;
 	public final NodeClientCore clientCore;
 
 	// ULPRs, RecentlyFailed, per node failure tables, are all managed by FailureTable.
@@ -1027,6 +1028,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// FProxy config needs to be here too
 		SubConfig fproxyConfig = new SubConfig("fproxy", config);
+		SubConfig darknetAppConfig = new SubConfig("darknetApp",config);
+		//To Start DarknetAppServer
+		darknetAppServer = new DarknetAppServer(darknetAppConfig, this, executor);
+		darknetAppConfig.finishedInitialization();
+		darknetAppServer.start();
 		try {
 			toadlets = new SimpleToadletServer(fproxyConfig, new ArrayBucketFactory(), executor, this);
 			fproxyConfig.finishedInitialization();
@@ -2549,7 +2555,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		registerNodeToNodeMessageListener(N2N_MESSAGE_TYPE_FPROXY, fproxyN2NMListener);
 		registerNodeToNodeMessageListener(Node.N2N_MESSAGE_TYPE_DIFFNODEREF, diffNoderefListener);
-
+                
 		// FIXME this is a hack
 		// toadlet server should start after all initialized
 		// see NodeClientCore line 437
@@ -2558,7 +2564,10 @@ public class Node implements TimeSkewDetectorCallback {
 			toadlets.createFproxy();
 			toadlets.removeStartupToadlet();
 		}
-
+                
+                if (darknetAppServer.isEnabled()) {
+                    darknetAppServer.finishStartup();
+                }
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
 	}
