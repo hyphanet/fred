@@ -337,7 +337,7 @@ public interface FredPluginFCPMessageHandler {
         }
 
         /**
-         * Only for being used by internal network code.<br><br>
+         * ATTENTION: Only for being used by internal network code.<br><br>
          * 
          * You <b>must not</b> use this for constructing outgoing messages in server or client
          * implementations.<br>
