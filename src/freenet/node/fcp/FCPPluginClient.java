@@ -42,9 +42,10 @@ import freenet.support.io.NativeThread;
  * 
  * <h1>How to use this properly</h1><br>
  * 
- * You <b>should definitely</b> read the JavaDoc and code of the following interfaces / classes for
- * a nice overview of how to use this properly from the perspective of your server or client
- * implementation:<br>
+ * You can read the following JavaDoc for a nice overview of how to use this properly from the
+ * perspective of your server or client implementation:<br>
+ * - {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}<br>
+ * - {@link PluginRespirator#getFCPPluginClientByID(UUID)}<br>
  * - {@link FredPluginFCPMessageHandler}<br>
  * - {@link FredPluginFCPMessageHandler.FCPPluginMessage}<br>
  * - {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}<br>
