@@ -420,8 +420,9 @@ public interface FredPluginFCPMessageHandler {
          *   and exit this message handling function.<br/>
          * - Compute your reply in another thread.</br>
          * - Once you're ready to send the reply, use
-         *   {@link PluginRespirator#getFCPPluginClientByID(java.util.UUID)} to obtain the client.
-         *   <br/>
+         *   {@link PluginRespirator#getFCPPluginClientByID(java.util.UUID)} to obtain the
+         *   original {@link FCPPluginClient}, and then send the message using the send functions of
+         *   the FCPPluginClient.<br/>
          * - If you keep client UUID for longer than sending a single reply, you should periodically
          *   send messages to the client to check whether it is still alive to prevent excessive
          *   growth of your client UUID database. If the client has disconnected, you will then get
