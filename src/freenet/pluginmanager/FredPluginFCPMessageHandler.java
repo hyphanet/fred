@@ -174,7 +174,7 @@ public interface FredPluginFCPMessageHandler {
 
         /**
          * @return True if the message is merely a reply to a previous message from your side.<br>
-         *         In that case, you should probably not send another reply message back to prevent
+         *         In that case, you <b>must not</b> send another reply message back to prevent
          *         infinite bouncing of "success!" replies.
          */
         public boolean isReplyMessage() {
