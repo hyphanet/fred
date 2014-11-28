@@ -119,6 +119,13 @@ public class PluginRespirator {
      * null out the strong reference to it. The node internally keeps a {@link ReferenceQueue} which
      * allows it to detect the strong reference being nulled, which in turn makes the node clean up
      * its internal structures.<br>
+     * Thus, you are encouraged to keep the returned {@link FCPPluginClient} it in memory and use it
+     * for as long as you need it. Notice that keeping it in memory won't block unloading of the
+     * server plugin. If the server plugin is unloaded, the send-functions will fail. To get
+     * reconnected once the server plugin is loaded again, you must obtain a fresh client
+     * from this function: Once the connection of an existing client is indicated as closed by
+     * a single call to a send function throwing {@link IOException}, it <b>must be</b> considered
+     * as dead for ever, reconnecting is not possible.<br>
      * While this does seem like you do not have to take care about disconnection at all, you
      * <b>must</b> make sure to not keep an excessive amount of {@link FCPPluginClient} objects
      * strongly referenced to ensure that this mechanism works. Especially notice that a
@@ -155,12 +162,7 @@ public class PluginRespirator {
      *            {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler} interface. Its
      *            purpose is to handle FCP messages which the remote plugin sends back to your
      *            plugin.
-     * @return A {@link FCPPluginClient} representing the connection. <b>You are encouraged to keep
-     *         it in memory and use it for as long as you need it.</b> <br>
-     *         Notice especially that keeping it in memory won't block unloading of the server
-     *         plugin. If the server plugin is unloaded, the send-functions will fail. To get
-     *         reconnected once the server plugin is loaded again, you must obtain a fresh client
-     *         from this function: Existing clients will stay disconnected.
+     * @return A {@link FCPPluginClient} representing the connection.
      */
     public FCPPluginClient connectToOtherPlugin(String pluginName,
             FredPluginFCPMessageHandler.ClientSideFCPMessageHandler messageHandler)
