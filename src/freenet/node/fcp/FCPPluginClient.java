@@ -138,9 +138,9 @@ import freenet.support.io.NativeThread;
  * {@link FCPConnectionHandler} can only have one connection to a certain plugin.<br/>
  * The reason for this is the following: Certain plugins might need to store the UUID of a client in
  * their database so they are able to send data to the client if an event of interest to the client
- * happens in the future. Therefore, the {@link FCPConnectionHandler} has to store clients by UUID.
- * To prevent excessive growth of that table, we need to re-use existing clients. One client per
- * pluginName per {@link FCPConnectionHandler} is the re-use.<br/>
+ * happens in the future. Therefore, the UUID of a client must not change during the lifetime of
+ * the connection. To ensure a permanent UUID of a client, only a single {@link FCPPluginClient} can
+ * exist per server plugin per {@link FCPConnectionHandler}.<br>
  * If you  nevertheless need multiple clients to a plugin, you have to create multiple FCP
  * connections.<br/></p>
  * 
