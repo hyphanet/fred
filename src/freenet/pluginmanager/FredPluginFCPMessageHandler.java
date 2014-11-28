@@ -162,7 +162,7 @@ public interface FredPluginFCPMessageHandler {
          * There, use {@link #errorCode}.
          * For Exceptions which you do not expect, {@link Exception#toString()} will return a
          * sufficient errorMessage (containing the name of the Exception and the localized error
-         * message, or non-localized if there is no translation).
+         * message, or non-localized if there is no translation).<br><br>
          * 
          * (Notice: This may only be non-null if {@link #errorCode} is non-null instead of just
          * if {@link #success} == false to ensure that a developer-friendly error signaling is
