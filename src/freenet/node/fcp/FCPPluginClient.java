@@ -594,8 +594,11 @@ public final class FCPPluginClient {
      *             <p><b>ATTENTION:</b> If this is not thrown, that does NOT mean that the
      *             connection is alive. Messages are sent asynchronously, so it can happen that a
      *             closed connection is not detected before this function returns.<br/>
-     *             If you need to know whether the send succeeded, use
-     *             {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)}.</p>
+     *             The only way of knowing that a send succeeded is by receiving a reply message
+     *             in your {@link FredPluginFCPMessageHandler}.<br>
+     *             If you need to know whether the send succeeded on the same thread which shall
+     *             call the send function, you can also use {@link #sendSynchronous(SendDirection,
+     *             FCPPluginMessage, long)} which will return the reply right away.</p>
      * @see #sendSynchronous(SendDirection, FCPPluginMessage, long)
      *          You may instead use the blocking sendSynchronous() if your thread needs to know
      *          whether messages arrived, to ensure a certain order of arrival, or to know
