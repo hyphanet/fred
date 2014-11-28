@@ -411,9 +411,9 @@ public interface FredPluginFCPMessageHandler {
          * 
          * <p>If you ...<br/>
          * - Need a long time to compute a reply.<br/>
-         * - Keep a reference to the client because you want send messages to the client after having
-         *   exited this function; maybe even triggered by events at your plugin, not by client
-         *   messages.<br/>
+         * - Need to keep a reference to the client because you want to send messages to the client
+         *   after having exited this function; maybe even triggered by events at your plugin, not
+         *   by client messages.<br/>
          * Then you should:<br/>
          * - Obtain the UUID of the client via {@link FCPPluginClient#getID()}, store the UUID,
          *   and exit this message handling function.<br/>
