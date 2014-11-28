@@ -129,9 +129,13 @@ public interface FredPluginFCPMessageHandler {
         public final Bucket data;
         
         /**
-         * For messages which are a reply to another message, this true if the operation requested
-         * by the original messages succeeded.<br>
-         * For non-reply messages, this is null.
+         * For messages which are a reply to another message, this is always non-null. It then
+         * is true if the operation to which this is a reply succeeded, false if it failed.<br>
+         * For non-reply messages, this is always null.<br><br>
+         * 
+         * Notice: Whether this is null or non-null is used to determine the return value of
+         * {@link #isReplyMessage()} - a reply message has success != null, a non-reply message has
+         * success == null.
          */
         public final Boolean success;
 
