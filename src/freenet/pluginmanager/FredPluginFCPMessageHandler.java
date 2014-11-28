@@ -483,12 +483,6 @@ public interface FredPluginFCPMessageHandler {
          *         Notice: Even upon failure, a reply is better than saying nothing because it
          *         allows {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage,
          *         long)} to fail fast instead of having to wait for timeout.<br><br>
-         *         
-         * @throws RuntimeException
-         *             You <b>must not</b> throw. Please instead return a reply with
-         *             {@link FCPPluginMessage#success} set to false, and optionally describe the
-         *             problem via {@link FCPPluginMessage#errorCode} and
-         *             {@link FCPPluginMessage#errorMessage}.
          */
         @Override
         FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message);
@@ -562,12 +556,6 @@ public interface FredPluginFCPMessageHandler {
          *         Notice: Even upon failure, a reply is better than saying nothing because it
          *         allows {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage,
          *         long)} to fail fast instead of having to wait for timeout.<br><br>
-         *         
-         * @throws RuntimeException
-         *             You <b>must not</b> throw. Please instead return a reply with
-         *             {@link FCPPluginMessage#success} set to false, and optionally describe the
-         *             problem via {@link FCPPluginMessage#errorCode} and
-         *             {@link FCPPluginMessage#errorMessage}.
          */
         @Override
         FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message);
