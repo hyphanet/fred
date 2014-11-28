@@ -115,10 +115,10 @@ public class PluginRespirator {
      * <p>Creates a FCP connection with another plugin running in the same node.</p>
      * 
      * <h1>Disconnecting properly</h1>
-     * <p>The formally correct mechanism disconnecting a {@link FCPPluginClient} is to null out the
-     * strong reference to it. The node internally keeps a {@link ReferenceQueue} which allows it
-     * to detect the strong reference being nulled, which in turn makes the node clean up its
-     * internal structures.<br>
+     * <p>The formally correct mechanism of disconnecting the returned {@link FCPPluginClient} is to
+     * null out the strong reference to it. The node internally keeps a {@link ReferenceQueue} which
+     * allows it to detect the strong reference being nulled, which in turn makes the node clean up
+     * its internal structures.<br>
      * While this does seem like you do not have to take care about disconnection at all, you
      * <b>must</b> make sure to not keep an excessive amount of {@link FCPPluginClient} objects
      * strongly referenced to ensure that this mechanism works. Especially notice that a
