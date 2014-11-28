@@ -128,7 +128,7 @@ import freenet.support.io.NativeThread;
  *   plugin stores client UUIDs, it needs no special disconnection mechanism except for periodically
  *   trying to send a message to each client. Once obtaining the client by its UUID fails, or
  *   sending the message fails, the server can opportunistically purge the UUID from its database.
- *   <br/>
+ *   <br/>This mechanism also works for networked FCP.<br>
  * </p></p>
  * 
  * <h2>Object lifecycle</h2>
