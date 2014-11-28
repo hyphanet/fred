@@ -175,14 +175,14 @@ public class PluginRespirator {
     /**
      * Allows FCP server plugins, that is plugins which implement
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}, to obtain an existing client
-     * connection by its ID - if the client is still connected.<br>
+     * connection by its ID - if the client is still connected.<br><br>
      * 
      * <b>Must not</b> be used by client plugins: They shall instead keep a hard reference to the
      * {@link FCPPluginClient} in memory after they have received it from
      * {@link #connectToOtherPlugin(String,
      * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}. If they did not keep a hard
      * reference and only stored the ID, the {@link FCPPluginClient} would be garbage collected and
-     * thus considered as disconnected.
+     * thus considered as disconnected.<br><br>
      * 
      * Before you use this function, you <b>should definitely</b> also read the JavaDoc of
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(
