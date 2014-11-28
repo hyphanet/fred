@@ -223,11 +223,12 @@ public interface FredPluginFCPMessageHandler {
          * Those can then be passed to the send functions of {@link FCPPluginClient} or returned in
          * the message handlers of {@link FredPluginFCPMessageHandler}.<br><br>
          * 
-         * <b>ATTENTION</b>: If you are replying to a message, notably when returning a message in
-         * the message handler interface implementation, you must use {@link #constructReplyMessage(
-         * FCPPluginMessage, SimpleFieldSet, Bucket, boolean, String, String)} (or one of its
-         * shortcuts) instead.<br>
-         * - Messages constructed with this constructor here are <b>not</b> reply messages.<br><br>
+         * <b>ATTENTION</b>: Messages constructed with this constructor here are <b>not</b> reply 
+         * messages.<br>
+         * If you are replying to a message, notably when returning a message in the message handler
+         * interface implementation, you must use {@link #constructReplyMessage(FCPPluginMessage,
+         * SimpleFieldSet, Bucket, boolean, String, String)} (or one of its shortcuts) instead.<br>
+         * <br>
          * 
          * See the JavaDoc of the member variables with the same name as the parameters for an
          * explanation of the parameters.<br><br>
@@ -254,11 +255,11 @@ public interface FredPluginFCPMessageHandler {
          * <code>SimpleFieldSet params = new SimpleFieldSet(shortLived = true);<br>
          * Bucket data = null;</code><br><br>
          * 
-         * <b>ATTENTION</b>: If you are replying to a message, notably when returning a message in
-         * the message handler interface implementation, you must use {@link #constructReplyMessage(
-         * FCPPluginMessage, SimpleFieldSet, Bucket, boolean, String, String)} (or one of its
-         * shortcuts) instead.<br>
-         * - Messages constructed with this constructor here are <b>not</b> reply messages.
+         * <b>ATTENTION</b>: Messages constructed with this constructor here are <b>not</b> reply
+         * messages.<br>
+         * If you are replying to a message, notably when returning a message in the message handler
+         * interface implementation, you must use {@link #constructReplyMessage(FCPPluginMessage,
+         * SimpleFieldSet, Bucket, boolean, String, String)} (or one of its shortcuts) instead.<br>
          */
         public static FCPPluginMessage construct() {
             return construct(new SimpleFieldSet(true), null);
