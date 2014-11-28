@@ -443,12 +443,17 @@ public interface FredPluginFCPMessageHandler {
          *            store a pointer to a certain client.<br/><br/>
          * 
          *            You <b>must not</b> use its send functions for sending back the main reply.
-         *            Instead, use the return value for shipping the reply.<br/>
-         *            You are free to send "out of band" secondary replies using the client.<br/>
-         *            This is to ensure that if the sender of the original message used a
-         *            <i>synchronous</i> send function at {@link FCPPluginClient}, the send function
-         *            will be able to return your reply message: This mechanism only works for
-         *            returned replies, not for out of band replies. <br/><br/>
+         *            Instead, use the return value for shipping the reply. (You are free to send
+         *            "out of band" secondary replies using the client.)<br/>
+         *            The requirement of returning the reply is to ensure that the reply can be
+         *            clearly identified as such, and shipped to the remote side with a clear
+         *            specification to which message it is a reply.<br>
+         *            This is useful for example if the sender of the original message used
+         *            the <i>synchronous</i> send function {@link FCPPluginClient#sendSynchronous(
+         *            SendDirection, FCPPluginMessage, long)}: The function shall wait for the
+         *            reply to the original message, and return it to the caller. This only works if
+         *            replies are properly identified, otherwise it would have to throw an
+         *            {@link IOException} to signal a timeout while waiting for the reply.<br/><br/>
          * @param message
          *            The actual message. See the JavaDoc of its member variables for an explanation
          *            of their meaning.
@@ -517,12 +522,17 @@ public interface FredPluginFCPMessageHandler {
          *            The client which you used to open the connection to the server.<br/><br/>
          * 
          *            You <b>must not</b> use its send functions for sending back the main reply.
-         *            Instead, use the return value for shipping the reply.<br/>
-         *            You are free to send "out of band" secondary replies using the client.<br/>
-         *            This is to ensure that if the sender of the original message used a
-         *            <i>synchronous</i> send function at {@link FCPPluginClient}, the send function
-         *            will be able to return your reply message: This mechanism only works for
-         *            returned replies, not for out of band replies. <br/><br/>
+         *            Instead, use the return value for shipping the reply. (You are free to send
+         *            "out of band" secondary replies using the client.)<br/>
+         *            The requirement of returning the reply is to ensure that the reply can be
+         *            clearly identified as such, and shipped to the remote side with a clear
+         *            specification to which message it is a reply.<br>
+         *            This is useful for example if the sender of the original message used
+         *            the <i>synchronous</i> send function {@link FCPPluginClient#sendSynchronous(
+         *            SendDirection, FCPPluginMessage, long)}: The function shall wait for the
+         *            reply to the original message, and return it to the caller. This only works if
+         *            replies are properly identified, otherwise it would have to throw an
+         *            {@link IOException} to signal a timeout while waiting for the reply.<br/><br/>
          * @param message
          *            The actual message. See the JavaDoc of its member variables for an explanation
          *            of their meaning.
