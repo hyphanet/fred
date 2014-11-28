@@ -145,9 +145,11 @@ import freenet.support.io.NativeThread;
  * connections.<br/></p>
  * 
  * <p>
- * In opposite to {@link FCPClient}, a FCPPluginClient only exists while its parent
- * {@link FCPConnectionHandler} exists. There is no such thing as persistence until restart of fred
- * or even longer.<br/>
+ * In opposite to {@link FCPClient}, a FCPPluginClient is kept in existence by fred only while the
+ * actual client is connected (= in case of networked FCP the parent {@link FCPConnectionHandler}
+ * exists; or in case of non-networked FCP while the FCPPluginClient is strong-referenced by the
+ * client plugin).<br>
+ * There is no such thing as persistence beyond client disconnection.<br/>
  * This was decided to simplify implementation:<br/>
  * - Persistence should be implemented by using the existing persistence framework of
  *   {@link FCPClient}. That would require extending the class though, and it is a complex class.
