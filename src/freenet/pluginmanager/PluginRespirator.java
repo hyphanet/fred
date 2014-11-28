@@ -129,14 +129,10 @@ public class PluginRespirator {
      * still is alive: There is no other mechanism of indicating a closed connection to you than not
      * getting back any reply to messages you send. So if your plugin does send messages very
      * infrequently, and thus might keep a reference to a dead FCPPluginClient for a long time,
-     * it might be indicated to create a loop which sends "ping" messages periodically via
-     * {@link FCPPluginClient#sendSynchronous(FCPPluginClient.SendDirection, FCPPluginMessage,
-     * long)}. The synchronous nature of that function means that you will know for sure whether a
-     * reply was received, and also allows you to specify a ping timeout as its timeout for how long
-     * it will wait for a reply. (Don't forget to add an additional {@link Thread#sleep(long)} after
-     * sendSynchronous() for the case where the ping did NOT timeout). Whether a server plugin
-     * supports a special "ping" message or requires you to use another type of message as implicit
-     * ping is left up to the implementation of the server plugin.</p>
+     * it might be indicated to create a "keepalive-loop" which sends "ping" messages periodically
+     * and reconnects if no "pong" message is received within a sane timeout. Whether a server
+     * plugin supports a special "ping" message or requires you to use another type of message as
+     * implicit ping is left up to the implementation of the server plugin.</p>
      * 
      * <h1>Performance</h1>
      * <p>While you are formally connecting via FCP, there is no actual network connection being
