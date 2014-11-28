@@ -101,7 +101,8 @@ public interface FredPluginFCPMessageHandler {
          * For reply messages, this shall be the same as the identifier of the message to which this
          * is a reply.<br>
          * For non-reply message, this shall be a sufficiently random String to prevent collisions
-         * with any previous message identifiers.<br><br>
+         * with any previous message identifiers. The default is a random {@link UUID}, and
+         * alternate implementations are recommended to use a random UUID as well.<br><br>
          * 
          * <b>Notice:</b> Custom client implementations can chose the identifier freely when sending
          * messages, and thus violate these rules. This is highly discouraged though, as non-unique
