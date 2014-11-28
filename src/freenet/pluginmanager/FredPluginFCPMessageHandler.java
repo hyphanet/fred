@@ -94,9 +94,9 @@ public interface FredPluginFCPMessageHandler {
         /**
          * The unique identifier of the message.<br>
          * Can be used by server and client to track the progress of messages.<br>
-         * This especially applies to the synchronous send functions of {@link FCPPluginClient}
-         * which will wait for a reply with the same identifier as the original message until they
-         * return.<br><br>
+         * This especially applies to {@link FCPPluginClient#sendSynchronous(SendDirection,
+         * FCPPluginMessage, long)} which will wait for a reply with the same identifier as the
+         * original message until it returns.<br><br>
          * 
          * For reply messages, this shall be the same as the identifier of the message to which this
          * is a reply.<br>
