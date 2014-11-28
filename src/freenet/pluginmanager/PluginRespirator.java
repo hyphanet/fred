@@ -132,7 +132,7 @@ public class PluginRespirator {
      * it might be indicated to create a "keepalive-loop" which sends "ping" messages periodically
      * and reconnects if no "pong" message is received within a sane timeout. Whether a server
      * plugin supports a special "ping" message or requires you to use another type of message as
-     * implicit ping is left up to the implementation of the server plugin.</p>
+     * ping is left up to the implementation of the server plugin.</p>
      * 
      * <h1>Performance</h1>
      * <p>While you are formally connecting via FCP, there is no actual network connection being
