@@ -464,8 +464,9 @@ public interface FredPluginFCPMessageHandler {
          *         Bucket, boolean, String, String)} (or one of its shortcuts) to ensure that the
          *         {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
          * 
-         *         You <b>must</b> return null if the original message was a reply message as
-         *         indicated by {@link FCPPluginMessage#isReplyMessage()}<br/>
+         *         Replies to replies are not allowed: You <b>must</b> return null if the original
+         *         message was a reply message already as indicated by
+         *         {@link FCPPluginMessage#isReplyMessage()}.<br>
          *         Replies often shall only indicate success / failure instead of triggering actual
          *         operations, so it could cause infinite bouncing if you reply to them again.<br/>
          *         If you still have to send a message to do further operations, you should create a
@@ -535,8 +536,9 @@ public interface FredPluginFCPMessageHandler {
          *         Bucket, boolean, String, String)} (or one of its shortcuts) to ensure that the
          *         {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
          * 
-         *         You <b>must</b> return null if the original message was a reply message as
-         *         indicated by {@link FCPPluginMessage#isReplyMessage()}<br/>
+         *         Replies to replies are not allowed: You <b>must</b> return null if the original
+         *         message was a reply message already as indicated by
+         *         {@link FCPPluginMessage#isReplyMessage()}.<br>
          *         Replies often shall only indicate success / failure instead of triggering actual
          *         operations, so it could cause infinite bouncing if you reply to them again.<br/>
          *         If you still have to send a message to do further operations, you should create a
