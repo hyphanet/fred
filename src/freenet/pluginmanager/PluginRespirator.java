@@ -121,7 +121,9 @@ public class PluginRespirator {
      * internal structures.<br>
      * While this does seem like you do not have to take care about disconnection at all, you
      * <b>must</b> make sure to not keep an excessive amount of {@link FCPPluginClient} objects
-     * strongly referenced to ensure that this mechanism works.<br>
+     * strongly referenced to ensure that this mechanism works. Especially notice that a
+     * {@link FCPPluginClient} is safe and intended to be used for multiple messages, you should
+     * <b>not</b> obtain a fresh one for every message you send.<br>
      * Also, you <b>should</b> make sure to periodically try to send a message over the
      * {@link FCPPluginClient} and check whether you receive a reply to check whether the connection
      * still is alive: There is no other mechanism of indicating a closed connection to you than not
