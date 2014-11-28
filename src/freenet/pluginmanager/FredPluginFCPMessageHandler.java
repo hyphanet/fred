@@ -423,15 +423,16 @@ public interface FredPluginFCPMessageHandler {
          *   {@link PluginRespirator#getFCPPluginClientByID(java.util.UUID)} to obtain the
          *   original {@link FCPPluginClient}, and then send the message using the send functions of
          *   the FCPPluginClient.<br/>
-         * - If you keep client UUID for longer than sending a single reply, you should periodically
-         *   send messages to the client to check whether it is still alive to prevent excessive
-         *   growth of your client UUID database. If the client has disconnected, you will then get
-         *   an {@link IOException} by {@link PluginRespirator#getFCPPluginClientByID(UUID)} or
-         *   {@link FCPPluginClient#send(FCPPluginClient.SendDirection, FCPPluginMessage)}. Then
-         *   you shall remove it from your database.<br>
-         *   Consider discarding client UUIDs upon IOException as the disconnection mechanism:
-         *   There are no explicit disconnection functions. Clients can come and go as they please.
-         *   <br>
+         * - If you keep client UUID for longer than sending a single reply, make sure to prevent
+         *   excessive growth of your client database upon client disconnection by implementing
+         *   a garbage collection mechanism as follows:<br>
+         *   Periodically send a message to each client and check if you get a reply within a
+         *   reasonable timeout to check whether the connection is still alive. Drop the client
+         *   if not.<br>
+         *   Notice that there is no explicit disconnection mechanism. Clients can come and go as
+         *   they please. The only way to be sure that a client is alive is by checking whether it
+         *   replies to messages. You are encouraged to make a "Ping" message with a "Pong" response
+         *   a requirement for your server's protocol.<br>
          * </p>
          * 
          * @param client
