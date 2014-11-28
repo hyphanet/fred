@@ -76,7 +76,7 @@ import freenet.support.io.NativeThread;
  * NOTICE: These two code paths only apply to asynchronous, non-blocking messages. For blocking,
  * synchronous messages sent by {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)},
  * there is an overview at {@link #synchronousSends}. The overview was left out here because they
- * re built on top of regular messages, so the code paths mentioned here mostly apply.<br><br>
+ * are built on top of regular messages, so the code paths mentioned here mostly apply.<br><br>
  * 
  * The two possible paths are:<br/>
  * <p>1. The server is running in the node, the client is not - also called networked FCP
