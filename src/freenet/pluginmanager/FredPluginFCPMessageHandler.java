@@ -509,8 +509,6 @@ public interface FredPluginFCPMessageHandler {
          * the original {@link FCPPluginClient} in memory.<br/>
          * The purpose of this mechanism is for example to allow the server to tell you about events
          * which happened at its side.<br>
-         * For such messages, the {@link FCPPluginMessage#identifier} will not match any of your
-         * previous messages.
          * 
          * @param client
          *            The client which you used to open the connection to the server.<br/><br/>
