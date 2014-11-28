@@ -201,7 +201,7 @@ public class PluginRespirator {
      *             <br>If this happens, you should consider the client UUID as invalid forever and
      *             discard it.
      */
-    public FCPPluginClient getPluginClientByID(UUID clientID) throws IOException {
+    public FCPPluginClient getFCPPluginClientByID(UUID clientID) throws IOException {
         return node.clientCore.getFCPServer().getPluginClient(clientID);
     }
 
