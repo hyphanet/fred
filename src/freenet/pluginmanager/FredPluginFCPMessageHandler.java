@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import freenet.node.fcp.FCPPluginClient;
 import freenet.node.fcp.FCPPluginClient.SendDirection;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.StringValidityChecker;
