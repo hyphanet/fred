@@ -398,7 +398,7 @@ public interface FredPluginFCPMessageHandler {
      * @see FredPluginFCPMessageHandler
      *          The parent interface FredPluginFCPMessageHandler provides an overview.
      * @see ClientSideFCPMessageHandler
-     *          The interface of the client plugin which handles the messages sent by the server.
+     *          The opposite version of this interface for client plugins
      */
     public interface ServerSideFCPMessageHandler extends FredPluginFCPMessageHandler {
         /**
@@ -494,7 +494,7 @@ public interface FredPluginFCPMessageHandler {
      * @see FredPluginFCPMessageHandler
      *          The parent interface FredPluginFCPMessageHandler provides an overview.
      * @see ServerSideFCPMessageHandler
-     *          The interface of the server plugin which handles the messages sent by the client.
+     *          The opposite version of this interface for server plugins
      */
     public interface ClientSideFCPMessageHandler extends FredPluginFCPMessageHandler {
         /**
