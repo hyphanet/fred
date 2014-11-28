@@ -562,9 +562,14 @@ public interface FredPluginFCPMessageHandler {
     }
     
     /**
-     * Implement this to specify a <b>per-message</b> thread priority of threads which are used to
+     * Implement this to specify a thread priority of threads which are used to
      * execute the message handling function
      * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}
+     * .<br><br>
+     * 
+     * Notice that the priority could even be specified depending on the type of individual messages
+     * as the individual messages are passed to the implementation of this handler. (Of course
+     * you are free to ignore this parameter and return the same priority for all messages.)
      */
     public interface PrioritizedMessageHandler {
         /**
