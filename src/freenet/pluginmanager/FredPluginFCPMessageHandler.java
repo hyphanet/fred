@@ -10,6 +10,7 @@ import freenet.node.fcp.FCPPluginClient;
 import freenet.node.fcp.FCPPluginClient.SendDirection;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.StringValidityChecker;
 import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 
@@ -145,7 +146,7 @@ public interface FredPluginFCPMessageHandler {
          * can parse easily. May also be null in that case, but please try to not do that.<br>
          * For {@link #success} == null or true, this must be null.<br><br>
          * 
-         * The String shall be for programming purposes and thus <b>must</b> be alpha-numeric.<br>
+         * The String shall be for programming purposes and thus <b>should</b> be alpha-numeric.<br>
          * For unclassified errors, such as Exceptions which you do not expect, use "InternalError".
          */
         public final String errorCode;
@@ -200,6 +201,10 @@ public interface FredPluginFCPMessageHandler {
             
             assert(errorCode == null || (success != null && success == false))
                 : "errorCode should only be provided for reply messages which indicate failure.";
+            
+            assert(errorCode == null ||
+                   StringValidityChecker.isLatinLettersAndNumbersOnly(errorCode))
+                : "errorCode should be alpha-numeric";
             
             assert(errorMessage == null || errorCode != null)
                 : "errorCode should always be provided if there is an errorMessage";
