@@ -1025,6 +1025,9 @@ public final class FCPPluginClient {
      *            expires before it was fully transferred. Thus, the message can arrive at the
      *            remote side even if this function has thrown, and you might receive an off-thread
      *            reply to the message in the {@link FredPluginFCPMessageHandler}.<br><br>
+     *            
+     *            Notice: For convenience, use class {@link TimeUnit} to easily convert seconds,
+     *            milliseconds, etc. to nanoseconds.<br><br>
      * 
      * @return The reply {@link FCPPluginMessage} which the remote partner sent to your message.
      *         <br><br>
