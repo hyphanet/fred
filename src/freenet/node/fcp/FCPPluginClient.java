@@ -593,7 +593,7 @@ public final class FCPPluginClient {
      *            always generate a fresh, random identifier.<br>
      *            TODO: Code quality: Add a flag to FCPPluginMessage which marks the message as
      *            sent and use it to log an error if someone tries to send the same message twice.
-     *            <br>
+     *            <br><br>
      * 
      * @throws IOException
      *             If the connection has been closed meanwhile.<br/>
