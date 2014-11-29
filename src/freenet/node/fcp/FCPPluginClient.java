@@ -953,11 +953,10 @@ public final class FCPPluginClient {
      * In addition to only using synchronous calls when absolutely necessary, please make sure to
      * set a timeout parameter which is as small as possible.<br><br>
      * 
-     * <h1>Shutdown</h1>
-     * While remembering that this fucntion can block for a long time, you have to consider that
-     * this class will <b>not</b> call {@link Thread#interrupt()} upon pending calls to this
-     * function during shutdown. You <b>must</b> keep track of threads which are executing this
-     * function on your own, and call {@link Thread#interrupt()} upon them at shutdown of your
+     * ATTENTION: While remembering that this fucntion can block for a long time, you have to
+     * consider that this class will <b>not</b> call {@link Thread#interrupt()} upon pending calls
+     * to this function during shutdown. You <b>must</b> keep track of threads which are executing 
+     * this function on your own, and call {@link Thread#interrupt()} upon them at shutdown of your
      * plugin. The interruption will then cause the function to throw {@link InterruptedException}
      * quickly, which your calling threads should obey by exiting to ensure a fast shutdown.<br><br>
      * 
