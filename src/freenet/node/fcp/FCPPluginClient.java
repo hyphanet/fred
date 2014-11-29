@@ -419,7 +419,6 @@ public final class FCPPluginClient {
      * <p>You <b>must</b> register any newly created clients at
      * {@link FCPPluginClientTracker#registerClient(FCPPluginClient)} before handing them out to
      * client application code.</p>
-     * @param executor TODO
      */
     static FCPPluginClient constructForIntraNodeFCP(Executor executor,
             PluginManager serverPluginManager, String serverPluginName,
