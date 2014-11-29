@@ -515,12 +515,9 @@ public final class FCPPluginClient {
     }
 
     /**
-     * There are two usecases for the send-functions of FCPPluginClient:<br/>
-     * - When the client wants to send a message to the server plugin.<br/>
-     * - When the server plugin processes a message from the client, it might want to send back a
-     *   reply.</br>
-     * 
-     * To prevent us from having to duplicate the send functions, this enum specifies in which
+     * The send functions are fully symmetrical: They work the same way no matter whether client
+     * is sending to server or server is sending to client.<br/>
+     * Thus, to prevent us from having to duplicate the send functions, this enum specifies in which
      * situation we are.
      */
     public static enum SendDirection {
