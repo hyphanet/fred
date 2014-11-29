@@ -1053,7 +1053,7 @@ public final class FCPPluginClient {
      *           explanation of what is wrong with the username.<br>
      * @throws IOException
      *             If the given timeout expired before a reply was received <b>or</b> if the
-     *             connection has been closed meanwhile.<br>
+     *             connection has been closed before even sending the message.<br>
      *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
      *             should then discard it and obtain a fresh one.
      * @throws InterruptedException
