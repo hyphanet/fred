@@ -225,6 +225,7 @@ public final class FCPPluginClient {
      *         a generic class WeakValueMap from that one and use to to power both the existing
      *         class and the one which deals with this variable here.
      * </p>
+     * @see #isDead() Public interface function to check whether the WeakReference is nulled.
      */
     private final WeakReference<ServerSideFCPMessageHandler> server;
 
