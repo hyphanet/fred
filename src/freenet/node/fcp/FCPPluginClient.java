@@ -306,7 +306,7 @@ public final class FCPPluginClient {
      * 
      * TODO: Optimization: We do not need the order of the map, and thus this could be a HashMap
      * instead of a TreeMap. We do not use a HashMap for scalability: Java HashMaps never shrink,
-     * they only grows. As we cannot predict how much parallel synchronous sends server/client
+     * they only grow. As we cannot predict how much parallel synchronous sends server/client
      * implementations will run, we do need a shrinking map. So we use TreeMap. We should use
      * an automatically shrinking HashMap instead once we have one. This is also documented
      * <a href="https://bugs.freenetproject.org/view.php?id=6320">in the bugtracker</a>.
