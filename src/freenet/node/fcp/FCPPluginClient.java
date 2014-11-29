@@ -735,7 +735,7 @@ public final class FCPPluginClient {
         // waiting for a message replying to it to arrive so it can return it to the caller.
         // If the message we are processing here is a reply, it might be the one which a
         // sendSynchronous() is waiting for.
-        // So it is our job to pass the reply to an eventually existing sendSynchronous() thread.
+        // So it is our job to pass the reply to a possibly existing sendSynchronous() thread.
         // We do this through the Map FCPPluginClient.synchronousSends, which is guarded by.
         // FCPPluginClient.synchronousSendsLock. Also see the JavaDoc of the Map for an overview of
         // this mechanism.
@@ -823,8 +823,9 @@ public final class FCPPluginClient {
                     if(!message.isReplyMessage()) {
                         // If the original message was not a reply already, we are allowed to send a
                         // reply with success=false to indicate the error to the remote side.
-                        // This allows eventually waiting sendSynchronous() calls to fail quickly
-                        // instead of having to wait for the timeout because no reply arrives.
+                        // This allows possibly existing, waiting sendSynchronous() calls to fail
+                        // quickly instead of having to wait for the timeout because no reply
+                        // arrives.
                         reply = FCPPluginMessage.constructReplyMessage(message, null, null, false,
                             "InternalError", errorMessage + "; RuntimeException = " + e.toString());
                     }
