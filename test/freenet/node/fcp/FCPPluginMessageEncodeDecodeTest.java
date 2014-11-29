@@ -46,9 +46,9 @@ public final class FCPPluginMessageEncodeDecodeTest extends TestCase {
         // Reply messages, with all possible allowed combinations of errorCode / errorMessage.
         
         messages.add(FCPPluginMessage.constructErrorReply(FCPPluginMessage.construct(),
-                "Test errorCode", "Test errorMessage"));
+                "TestErrorCode", "Test errorMessage"));
         messages.add(FCPPluginMessage.constructErrorReply(FCPPluginMessage.construct(),
-                "Test errorCode", null));
+                "TestErrorCode", null));
         messages.add(FCPPluginMessage.constructErrorReply(FCPPluginMessage.construct(),
                 null, null));
         messages.add(FCPPluginMessage.constructSuccessReply(FCPPluginMessage.construct()));
