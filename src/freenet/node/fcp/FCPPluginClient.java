@@ -556,8 +556,8 @@ public final class FCPPluginClient {
      *   messages arriving at the remote side.<br><br>
      * 
      * ATTENTION: The consequences of this are:<br>
-     * - If the function returned without throwing an {@link IOException} you must <b>not</b>
-     *   assume that the message has been sent.<br>
+     * - Even if the function returned without throwing an {@link IOException} you nevertheless must
+     *   <b>not</b> assume that the message has been sent.<br>
      * - If the function did throw an {@link IOException}, you <b>must</b> assume that the
      *   connection is dead and the message has not been sent.<br>
      *   You <b>must</b> consider this FCPPluginClient as dead then and create a fresh one.<br>
