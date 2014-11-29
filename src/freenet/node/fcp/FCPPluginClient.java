@@ -248,7 +248,7 @@ public final class FCPPluginClient {
      *          An overview of how synchronous sends and especially their threading work internally
      *          is provided at the map which stores them.
      */
-    private final class SynchronousSend {
+    private static final class SynchronousSend {
         /**
          * {@link FCPPluginClient#send(SendDirection, FCPPluginMessage)} shall call
          * {@link Condition#signal()} upon this once the reply message has been stored to
