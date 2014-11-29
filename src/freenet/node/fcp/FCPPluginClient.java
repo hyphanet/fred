@@ -183,6 +183,7 @@ public final class FCPPluginClient {
 
     /**
      * Unique identifier among all FCPPluginClients.
+     * @see #getID()
      */
     private final UUID id = UUID.randomUUID();
 
@@ -462,7 +463,8 @@ public final class FCPPluginClient {
     }
     
     /**
-     * @see #id
+     * @return A unique identifier among all FCPPluginClients.
+     * @see The ID can be used with {@link PluginRespirator#getFCPPluginClientByID(UUID)}.
      */
     public UUID getID() {
         return id;
