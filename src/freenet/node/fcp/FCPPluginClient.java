@@ -281,10 +281,10 @@ public final class FCPPluginClient {
      * it shall wait for the Condition {@link SynchronousSend#completionSignal} to be signaled.<br>
      * When the reply message is received, the node will always dispatch it via
      * {@link #send(SendDirection, FCPPluginMessage)}. Thus, that function is obliged to check this
-     * map for whether there is an entry for each received reply. If it contains one for the
-     * identifier of a given reply, send() shall store the reply message in it, and then call
-     * {@link Condition#signal()} upon its Condition to cause the blocking sendSynchronous()
-     * functions to return.<br>
+     * map for whether there is an entry for each received reply. If it contains a SynchronousSend
+     * for the identifier of a given reply, send() shall store the reply message in it, and then
+     * call {@link Condition#signal()} upon the SynchronousSend's Condition to cause the blocking
+     * sendSynchronous() function to return.<br>
      * The sendSynchronous() shall take the job of removing the entry from this map.<br><br>
      * 
      * Thread safety is to be guaranteed by the {@link #synchronousSendsLock}.<br><br>
