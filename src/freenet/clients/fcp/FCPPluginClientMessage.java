@@ -1,16 +1,15 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node.fcp;
+package freenet.clients.fcp;
 
 import java.io.IOException;
 
 import com.db4o.ObjectContainer;
 
-import freenet.clients.fcp.FCPPluginClient;
-import freenet.clients.fcp.FCPPluginClient.SendDirection;
 import freenet.node.FSParseException;
 import freenet.node.Node;
+import freenet.node.fcp.FCPPluginServerMessage;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginTalker;

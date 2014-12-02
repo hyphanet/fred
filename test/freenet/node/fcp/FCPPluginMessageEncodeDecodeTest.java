@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import junit.framework.TestCase;
 import freenet.clients.fcp.FCPPluginClient;
+import freenet.clients.fcp.FCPPluginClientMessage;
 import freenet.node.FSParseException;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.support.SimpleFieldSet;
