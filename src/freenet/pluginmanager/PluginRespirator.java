@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.client.filter.FilterCallback;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.SessionManager;
@@ -224,7 +224,7 @@ public class PluginRespirator {
 	 * @return PluginStore
 	 * @throws DatabaseDisabledException
 	 */
-	public PluginStore getStore() throws DatabaseDisabledException {
+	public PluginStore getStore() throws PersistenceDisabledException {
 	    synchronized(this) {
 	        if(store != null) return store;
 	        store = stores.loadPluginStore(this.plugin.getClass().getCanonicalName());
@@ -241,7 +241,7 @@ public class PluginRespirator {
 	 * @param storeIdentifier Some string to identify the store, basically the plugin's name.
 	 * @throws DatabaseDisabledException
 	 */
-	public void putStore(final PluginStore store) throws DatabaseDisabledException {
+	public void putStore(final PluginStore store) throws PersistenceDisabledException {
 	    String name = this.plugin.getClass().getCanonicalName();
 	    try {
             stores.writePluginStore(name, store);

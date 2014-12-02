@@ -15,8 +15,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import com.db4o.ObjectContainer;
-
 import freenet.crypt.BlockCipher;
 import freenet.crypt.CTRBlockCipher;
 import freenet.crypt.JceLoader;
@@ -573,6 +571,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
     
     @SuppressWarnings("deprecation") // FIXME Back compatibility, using dubious ciphers; remove eventually.
     public static ClientCHKBlock innerEncode(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm) {
+        data = data.clone(); // Will overwrite otherwise. Callers expect data not to be clobbered.
     	if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
     		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
         byte[] header;
@@ -655,11 +654,6 @@ public class ClientCHKBlock implements ClientKeyBlock {
 	@Override
 	public boolean isMetadata() {
 		return key.isMetadata();
-	}
-
-	public boolean objectCanNew(ObjectContainer container) {
-		// Useful to be able to tell whether it's a CHKBlock or a ClientCHKBlock, so override here too.
-		throw new UnsupportedOperationException("ClientCHKBlock storage in database not supported");
 	}
 
 	@Override

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
@@ -10,12 +11,11 @@ import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
 import java.util.List;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
@@ -29,13 +29,14 @@ import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.Closer;
+import freenet.support.io.InsufficientDiskSpaceException;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**
  * Poll a USK, and when a new slot is found, fetch it. 
  */
-public class USKRetriever extends BaseClientGetter implements USKCallback {
+public class USKRetriever extends BaseClientGetter implements USKCallback, ClientRequestSchedulerGroup {
 
 	/** Context for fetching data */
 	final FetchContext ctx;
@@ -60,8 +61,17 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	public USKRetriever(FetchContext fctx, short prio,  
-			RequestClient client, USKRetrieverCallback cb, USK origUSK) {
-		super(prio, client);
+			final RequestClient client, USKRetrieverCallback cb, USK origUSK) {
+		super(prio, new ClientBaseCallback() {
+            @Override
+            public void onResume(ClientContext context) {
+                throw new IllegalStateException();
+            }
+            @Override
+            public RequestClient getRequestClient() {
+                return client;
+            }
+		});
 		if(client.persistent()) throw new UnsupportedOperationException("USKRetriever cannot be persistent");
 		this.ctx = fctx;
 		this.cb = cb;
@@ -70,7 +80,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+	public void onFoundEdition(long l, USK key, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(l < 0) {
 			Logger.error(this, "Found negative edition: "+l+" for "+key+" !!!");
 			return;
@@ -88,8 +98,8 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		try {
 			SingleFileFetcher getter =
 				(SingleFileFetcher) SingleFileFetcher.create(this, this, uri, ctx, new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels), 
-						ctx.maxNonSplitfileRetries, 0, true, l, true, false, null, context, realTimeFlag, false);
-			getter.schedule(null, context);
+						ctx.maxNonSplitfileRetries, 0, true, l, true, false, context, realTimeFlag, false);
+			getter.schedule(context);
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Impossible: "+e, e);
 		} catch (FetchException e) {
@@ -98,7 +108,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, final ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, final ClientGetState state, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Success on "+this+" from "+state+" : length "+streamGenerator.size()+"mime type "+clientMetadata.getMIMEType());
 		DecompressorThreadManager decompressorManager = null;
@@ -107,13 +117,16 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 		try {
 			finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
+		} catch (InsufficientDiskSpaceException e) {
+            onFailure(new FetchException(FetchExceptionMode.NOT_ENOUGH_DISK_SPACE), state, context);
+            return;
 		} catch (IOException e) {
 			Logger.error(this, "Caught "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+			onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, e), state, context);
 			return;
 		} catch(Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+			onFailure(new FetchException(FetchExceptionMode.INTERNAL_ERROR, t), state, context);
 			return;
 		}
 
@@ -124,31 +137,27 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			// Decompress
 			if(decompressors != null) {
 				if(logMINOR) Logger.minor(this, "Decompressing...");
-				if(persistent()) {
-					container.activate(decompressors, 5);
-					container.activate(ctx, 1);
-				}
 				pipeIn = new PipedInputStream();
 				pipeOut = new PipedOutputStream(pipeIn);
 				decompressorManager = new DecompressorThreadManager(pipeIn, decompressors, maxLen);
 				pipeIn = decompressorManager.execute();
-				ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
+				ClientGetWorkerThread worker = new ClientGetWorkerThread(new BufferedInputStream(pipeIn), output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
 				worker.start();
-				streamGenerator.writeTo(pipeOut, container, context);
+				streamGenerator.writeTo(pipeOut, context);
 				worker.waitFinished();
 				// If this throws, we want the whole request to fail.
 				pipeOut.close(); pipeOut = null;
 			} else {
-					streamGenerator.writeTo(output, container, context);
+					streamGenerator.writeTo(output, context);
 					// If this throws, we want the whole request to fail.
 					output.close(); output = null;
 			}
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+			onFailure(new FetchException(FetchExceptionMode.INTERNAL_ERROR, e), state, context);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+			onFailure(new FetchException(FetchExceptionMode.INTERNAL_ERROR, t), state, context);
 			return;
 		} finally {
 			Closer.close(output);
@@ -174,10 +183,10 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onFailure(FetchException e, ClientGetState state, ClientContext context) {
 		switch(e.mode) {
-		case FetchException.NOT_ENOUGH_PATH_COMPONENTS:
-		case FetchException.PERMANENT_REDIRECT:
+		case NOT_ENOUGH_PATH_COMPONENTS:
+		case PERMANENT_REDIRECT:
 			context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
 			return;
 		}
@@ -185,7 +194,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onBlockSetFinished(ClientGetState state, ClientContext context) {
 		// Ignore
 	}
 
@@ -211,27 +220,27 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void notifyClients(ObjectContainer container, ClientContext context) {
+	protected void innerNotifyClients(ClientContext context) {
 		// Ignore for now
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onExpectedMIME(ClientMetadata meta, ObjectContainer container, ClientContext context) {
+	public void onExpectedMIME(ClientMetadata meta, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
+	public void onExpectedSize(long size, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onFinalizedMetadata(ObjectContainer container) {
+	public void onFinalizedMetadata() {
 		// Ignore
 	}
 
@@ -246,27 +255,27 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		super.cancel();
 	}
 
 	@Override
-	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+	protected void innerToNetwork(ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
+	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ClientContext context) {
 		// Ignore
 	}
 	
 	@Override
-	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
+	public void onHashes(HashResult[] hashes, ClientContext context) {
 		// Ignore
 	}
 	
@@ -299,7 +308,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			p = proxy;
 		}
 		if(f != null)
-			f.cancel(null, manager.getContext());
+			f.cancel(manager.getContext());
 		if(p != null)
 			manager.unsubscribe(origUSK, p);
 	}
@@ -320,5 +329,22 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		if(f == null) throw new IllegalStateException();
 		f.changeUSKPollParameters(time, tries, context);
 	}
+
+    @Override
+    public void innerOnResume(ClientContext context) {
+        Logger.error(this, "Cannot be persistent");
+        // Do nothing. Cannot be persistent.
+    }
+
+    @Override
+    protected ClientBaseCallback getCallback() {
+        // Not persistent.
+        return null;
+    }
+
+    @Override
+    public ClientRequestSchedulerGroup getSchedulerGroup() {
+        return this;
+    }
 	
 }

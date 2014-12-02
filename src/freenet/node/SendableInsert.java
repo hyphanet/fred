@@ -3,13 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import com.db4o.ObjectContainer;
-
+import freenet.client.InsertException;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.keys.ClientKey;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Callback interface for a low level insert, which is immediately sendable. These
@@ -19,24 +19,20 @@ import freenet.support.io.NativeThread;
  */
 public abstract class SendableInsert extends SendableRequest {
 
-	/**
-	 * zero arg c'tor for db4o on jamvm
-	 */
-	protected SendableInsert() {
-	}
+    private static final long serialVersionUID = 1L;
 
 	public SendableInsert(boolean persistent, boolean realTimeFlag) {
 		super(persistent, realTimeFlag);
 	}
 	
 	/** Called when we successfully insert the data */
-	public abstract void onSuccess(Object keyNum, ObjectContainer container, ClientContext context);
+	public abstract void onSuccess(SendableRequestItem keyNum, ClientKey key, ClientContext context);
 	
 	/** Called when we don't! */
-	public abstract void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context);
+	public abstract void onFailure(LowLevelPutException e, SendableRequestItem keyNum, ClientContext context);
 
 	@Override
-	public void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
+	public void internalError(Throwable t, RequestScheduler sched, ClientContext context, boolean persistent) {
 		Logger.error(this, "Internal error on "+this+" : "+t, t);
 		sched.callFailure(this, new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, t.getMessage(), t), NativeThread.MAX_PRIORITY, persistent);
 	}
@@ -47,28 +43,40 @@ public abstract class SendableInsert extends SendableRequest {
 	}
 	
 	@Override
-	public ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context) {
+	public ClientRequestScheduler getScheduler(ClientContext context) {
 		if(isSSK())
 			return context.getSskInsertScheduler(realTimeFlag);
 		else
 			return context.getChkInsertScheduler(realTimeFlag);
 	}
 
-	public abstract boolean canWriteClientCache(ObjectContainer container);
+	public abstract boolean canWriteClientCache();
 	
-	public abstract boolean localRequestOnly(ObjectContainer container);
+	public abstract boolean localRequestOnly();
 
-	public abstract boolean forkOnCacheable(ObjectContainer container);
+	public abstract boolean forkOnCacheable();
 
 	/** Encoded a key */
-	public abstract void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context);
+	public abstract void onEncode(SendableRequestItem token, ClientKey key, ClientContext context);
 	
-	public abstract boolean isEmpty(ObjectContainer container);
+	public abstract boolean isEmpty();
 	
 	@Override
-	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
-		if(isEmpty(container)) return -1;
+	public long getWakeupTime(ClientContext context, long now) {
+		if(isEmpty()) return -1;
 		return 0;
 	}
+	
+	private transient boolean resumed = false;
+	
+	public final void onResume(ClientContext context) throws InsertException, ResumeFailedException {
+	    synchronized(this) {
+	        if(resumed) return;
+	        resumed = true;
+	    }
+	    innerOnResume(context);
+	}
+	
+	protected abstract void innerOnResume(ClientContext context) throws InsertException, ResumeFailedException;
 
 }

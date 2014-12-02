@@ -6,10 +6,9 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Properties;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
@@ -17,14 +16,14 @@ import freenet.client.async.ClientGetter;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.clients.fcp.FCPMessage;
+import freenet.clients.fcp.ClientPut.COMPRESS_STATE;
 import freenet.clients.http.QueueToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
-import freenet.node.fcp.ClientPut.COMPRESS_STATE;
-import freenet.node.fcp.FCPMessage;
 import freenet.node.updater.MainJarDependenciesChecker.AtomicDeployer;
 import freenet.node.updater.MainJarDependenciesChecker.Deployer;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcher;
@@ -38,6 +37,7 @@ import freenet.support.Logger;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
+import freenet.support.io.InsufficientDiskSpaceException;
 
 public class MainJarUpdater extends NodeUpdater implements Deployer {
 	
@@ -125,17 +125,19 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		private final boolean executable;
 		
 		DependencyJarFetcher(File filename, FreenetURI chk, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, boolean essential, boolean executable) throws FetchException {
-			FetchContext myCtx = new FetchContext(dependencyCtx, FetchContext.IDENTICAL_MASK, false, null);
+			FetchContext myCtx = new FetchContext(dependencyCtx, FetchContext.IDENTICAL_MASK);
 			File parent = filename.getParentFile();
 			if(parent == null) parent = new File(".");
 			try {
 				tempFile = File.createTempFile(filename.getName(), NodeUpdateManager.TEMP_FILE_SUFFIX, parent);
+			} catch (InsufficientDiskSpaceException e) {
+			    throw new FetchException(FetchExceptionMode.NOT_ENOUGH_DISK_SPACE);
 			} catch (IOException e) {
-				throw new FetchException(FetchException.BUCKET_ERROR, "Cannot create temp file for "+filename+" in "+parent+" - disk full? permissions problem?");
+				throw new FetchException(FetchExceptionMode.BUCKET_ERROR, "Cannot create temp file for "+filename+" in "+parent+" - disk full? permissions problem?");
 			}
 			getter = new ClientGetter(this,  
 					chk, myCtx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					this, new FileBucket(tempFile, false, false, false, false, false), null, null);
+					new FileBucket(tempFile, false, false, false, false), null, null);
 			myCtx.eventProducer.addEventListener(this);
 			this.cb = cb;
 			this.filename = filename;
@@ -156,16 +158,11 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 
 				@Override
 				public void run() {
-					getter.cancel(null, clientContext);
+					getter.cancel(clientContext);
 					if(f != null) f.cancel();
 				}
 				
 			});
-		}
-		
-		@Override
-		public void onMajorProgress(ObjectContainer container) {
-			// Ignore.
 		}
 		
 		@Override
@@ -179,13 +176,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		}
 		
 		@Override
-		public void removeFrom(ObjectContainer container) {
-			throw new UnsupportedOperationException();
-		}
-		
-		@Override
-		public void onSuccess(FetchResult result, ClientGetter state,
-				ObjectContainer container) {
+		public void onSuccess(FetchResult result, ClientGetter state) {
 			synchronized(this) {
 				if(fetched) {
 					tempFile.delete();
@@ -197,7 +188,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
                 Logger.error(this, "Unable to download dependency "+filename+" : not the expected size or hash!");
                 System.err.println("Download of "+filename+" for update failed because temp file appears to be corrupted!");
                 if(cb != null)
-                    cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, "Downloaded jar from Freenet but failed consistency check: "+tempFile+" length "+tempFile.length()+" "));
+                    cb.onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, "Downloaded jar from Freenet but failed consistency check: "+tempFile+" length "+tempFile.length()+" "));
                 tempFile.delete();
                 return;
             }
@@ -205,7 +196,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				Logger.error(this, "Unable to rename temp file "+tempFile+" to "+filename);
 				System.err.println("Download of "+filename+" for update failed because cannot rename from "+tempFile);
 				if(cb != null)
-				    cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, "Unable to rename temp file "+tempFile+" to "+filename));
+				    cb.onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, "Unable to rename temp file "+tempFile+" to "+filename));
                 tempFile.delete();
 				return;
 			}
@@ -213,8 +204,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		}
 		
 		@Override
-		public void onFailure(FetchException e, ClientGetter state,
-				ObjectContainer container) {
+		public void onFailure(FetchException e, ClientGetter state) {
 			tempFile.delete();
 			synchronized(this) {
 				if(fetched) return;
@@ -223,19 +213,13 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		}
 		
 		@Override
-		public synchronized void receive(ClientEvent ce, ObjectContainer maybeContainer,
-				ClientContext context) {
+		public synchronized void receive(ClientEvent ce, ClientContext context) {
 			if(ce instanceof SplitfileProgressEvent)
 				lastProgress = (SplitfileProgressEvent) ce;
 		}
 		
-		@Override
-		public void onRemoveEventProducer(ObjectContainer container) {
-			// Do nothing.
-		}
-
 		private void start() throws FetchException {
-			getter.start(null, clientContext);
+			getter.start(clientContext);
 		}
 
 		public synchronized HTMLNode renderRow() {
@@ -278,6 +262,16 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				uomFetcher = f;
 			}
 		}
+
+	    @Override
+	    public void onResume(ClientContext context) {
+	        // Do nothing. Not persistent.
+	    }
+
+        @Override
+        public RequestClient getRequestClient() {
+            return this;
+        }
 
 	}
 	

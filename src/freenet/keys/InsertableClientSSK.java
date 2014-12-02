@@ -13,8 +13,6 @@ import net.i2p.util.NativeBigInteger;
 import freenet.support.Logger;
 import freenet.support.math.MersenneTwister;
 
-import com.db4o.ObjectContainer;
-
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
@@ -34,7 +32,9 @@ import freenet.support.compress.InvalidCompressionCodecException;
 /** A ClientSSK that has a private key and therefore can be inserted. */
 public class InsertableClientSSK extends ClientSSK {
 
-	public final DSAPrivateKey privKey;
+    private static final long serialVersionUID = 1L;
+
+    public final DSAPrivateKey privKey;
 	
 	private static boolean logMINOR;
 	static {
@@ -45,6 +45,11 @@ public class InsertableClientSSK extends ClientSSK {
 		super(docName, pubKeyHash, getExtraBytes(cryptoAlgorithm), pubKey, cryptoKey);
 		if(pubKey == null) throw new NullPointerException();
 		this.privKey = privKey;
+	}
+	
+	protected InsertableClientSSK() {
+	    // For serialization.
+	    privKey = null;
 	}
 	
 	public static InsertableClientSSK create(FreenetURI uri) throws MalformedURLException {
@@ -246,13 +251,6 @@ public class InsertableClientSSK extends ClientSSK {
 
 	public DSAGroup getCryptoGroup() {
 		return Global.DSAgroupBigA;
-	}
-	
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.activate(privKey, 5);
-		privKey.removeFrom(container);
-		super.removeFrom(container);
 	}
 	
 }

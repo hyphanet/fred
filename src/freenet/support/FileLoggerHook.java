@@ -279,7 +279,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					int x = gc.get(INTERVAL);
 					gc.set(INTERVAL, (x / INTERVAL_MULTIPLIER) * INTERVAL_MULTIPLIER);
 				}
-				findOldLogFiles(gc);
+				findOldLogFiles((GregorianCalendar)gc.clone());
 				currentFilename = new File(getHourLogName(gc, -1, true));
 				synchronized(logFiles) {
 					if((!logFiles.isEmpty()) && logFiles.getLast().filename.equals(currentFilename)) {

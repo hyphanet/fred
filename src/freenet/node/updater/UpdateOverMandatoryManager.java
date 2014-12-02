@@ -24,10 +24,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -35,11 +34,12 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.BinaryBlobFormatException;
 import freenet.client.async.BinaryBlobWriter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
 import freenet.client.async.ClientPutter;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.SimpleBlockSet;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
@@ -66,13 +66,14 @@ import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.WeakHashSet;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
+import freenet.support.api.RandomAccessBuffer;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.ByteArrayRandomAccessThing;
+import freenet.support.io.ByteArrayRandomAccessBuffer;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
-import freenet.support.io.RandomAccessFileWrapper;
-import freenet.support.io.RandomAccessThing;
+import freenet.support.io.FileRandomAccessBuffer;
 
 /**
  * Co-ordinates update over mandatory. Update over mandatory = updating from your peers, even
@@ -697,7 +698,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	public boolean handleRequestRevocation(Message m, final PeerNode source) {
 		// Do we have the data?
 
-		final RandomAccessThing data = updateManager.revocationChecker.getBlobThing();
+		final RandomAccessBuffer data = updateManager.revocationChecker.getBlobBuffer();
 
 		if(data == null) {
 			Logger.normal(this, "Peer " + source + " asked us for the blob file for the revocation key but we don't have it!");
@@ -709,15 +710,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		final PartiallyReceivedBulk prb;
 		long length;
-		try {
-			length = data.size();
-			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
-				Node.PACKET_SIZE, data, true);
-		} catch(IOException e) {
-			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but we can't determine the file size: " + e, e);
-			data.close();
-			return true;
-		}
+		length = data.size();
+		prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
+		        Node.PACKET_SIZE, data, true);
 
 		final BulkTransmitter bt;
 		try {
@@ -877,13 +872,17 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			return true;
 		}
 
-		RandomAccessFileWrapper raf;
+		FileRandomAccessBuffer raf;
 		try {
-			raf = new RandomAccessFileWrapper(temp, "rw");
+			raf = new FileRandomAccessBuffer(temp, length, false);
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
 			updateManager.blow("Internal error after fetching the revocation certificate from our peer, maybe out of disk space, file disappeared "+temp+" : " + e, true);
 			return true;
+        } catch(IOException e) {
+            Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but now can't read the file due to a disk I/O error: " + e, e);
+            updateManager.blow("Internal error after fetching the revocation certificate from our peer, maybe out of disk space or other disk I/O error, file disappeared "+temp+" : " + e, true);
+            return true;
 		}
 		
 		// It isn't starting, it's transferring.
@@ -971,7 +970,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	}
 
 	void processRevocationBlob(final File temp, PeerNode source) {
-		processRevocationBlob(new FileBucket(temp, true, false, false, false, true), source.userToString(), false);
+		processRevocationBlob(new FileBucket(temp, true, false, false, true), source.userToString(), false);
 	}
 	
 	/**
@@ -984,7 +983,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		DataInputStream dis = null;
 		try {
-			dis = new DataInputStream(new BufferedInputStream(temp.getInputStream()));
+			dis = new DataInputStream(temp.getInputStream());
 			BinaryBlob.readBinaryBlob(dis, blocks, true);
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "Somebody deleted " + temp + " ? We lost the revocation certificate from " + source + "!");
@@ -1037,8 +1036,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		ClientGetCallback myCallback = new ClientGetCallback() {
 
 			@Override
-			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-				if(e.mode == FetchException.CANCELLED) {
+			public void onFailure(FetchException e, ClientGetter state) {
+				if(e.mode == FetchExceptionMode.CANCELLED) {
 					// Eh?
 					Logger.error(this, "Cancelled fetch from store/blob of revocation certificate from " + source);
 					System.err.println("Cancelled fetch from store/blob of revocation certificate from " + source + " to " + temp + " - please report to developers");
@@ -1068,82 +1067,94 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					cleanedBlob.free();
 				}
 			}
-			@Override
-			public void onMajorProgress(ObjectContainer container) {
-				// Ignore
-			}
 
 			@Override
-			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+			public void onSuccess(FetchResult result, ClientGetter state) {
 				System.err.println("Got revocation certificate from " + source);
 				updateManager.revocationChecker.onSuccess(result, state, cleanedBlob);
 				if(!fromDisk)
 					temp.free();
 				insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
 			}
+			
+            @Override
+            public void onResume(ClientContext context) {
+                // Not persistent.
+            }
+            
+            @Override
+            public RequestClient getRequestClient() {
+                return UpdateOverMandatoryManager.this;
+            }
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			updateManager.getRevocationURI(), tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob), null);
+			updateManager.getRevocationURI(), tempContext, (short) 0, null, new BinaryBlobWriter(cleanedBlob), null);
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
 		} catch(FetchException e1) {
 			System.err.println("Failed to decode UOM blob: " + e1);
 			e1.printStackTrace();
-			myCallback.onFailure(e1, cg, null);
-		} catch (DatabaseDisabledException e) {
+			myCallback.onFailure(e1, cg);
+		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
 
 	}
 
-	protected void insertBlob(final Bucket bucket, final String type) {
+	protected void insertBlob(final RandomAccessBucket bucket, final String type) {
 		ClientPutCallback callback = new ClientPutCallback() {
 
 			@Override
-			public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+			public void onFailure(InsertException e, BaseClientPutter state) {
 				Logger.error(this, "Failed to insert "+type+" binary blob: " + e, e);
 			}
 			
 			@Override
-			public void onFetchable(BaseClientPutter state, ObjectContainer container) {
+			public void onFetchable(BaseClientPutter state) {
 				// Ignore
 			}
 			
 			@Override
-			public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
+			public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 				// Ignore
 			}
 			
 			@Override
-			public void onMajorProgress(ObjectContainer container) {
-				// Ignore
-			}
-			
-			@Override
-			public void onSuccess(BaseClientPutter state, ObjectContainer container) {
+			public void onSuccess(BaseClientPutter state) {
 				// All done. Cool.
 				Logger.normal(this, "Inserted "+type+" binary blob");
 			}
 
 			@Override
 			public void onGeneratedMetadata(Bucket metadata,
-					BaseClientPutter state, ObjectContainer container) {
+					BaseClientPutter state) {
 				Logger.error(this, "Got onGeneratedMetadata inserting blob from "+state, new Exception("error"));
 				metadata.free();
 			}
+
+            @Override
+            public void onResume(ClientContext context) {
+                // Not persistent.
+            }
+            
+            @Override
+            public RequestClient getRequestClient() {
+                return UpdateOverMandatoryManager.this;
+            }
+
 		};
 		// We are inserting a binary blob so we don't need to worry about CompatibilityMode etc.
 		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false).getInsertContext(true);
 		ClientPutter putter = new ClientPutter(callback, bucket,
 			FreenetURI.EMPTY_CHK_URI, null, ctx,
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, true, updateManager.node.clientCore.clientContext, null, -1);
+			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, null, true, updateManager.node.clientCore.clientContext, null, -1);
 		try {
-			updateManager.node.clientCore.clientContext.start(putter, false);
+			updateManager.node.clientCore.clientContext.start(putter);
 		} catch(InsertException e1) {
 			Logger.error(this, "Failed to start insert of "+type+" binary blob: " + e1, e1);
-		} catch (DatabaseDisabledException e) {
+		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
 	}
@@ -1166,7 +1177,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		
 		Message msg;
 		final BulkTransmitter bt;
-		final RandomAccessFileWrapper raf;
+		final FileRandomAccessBuffer raf;
 
 		if (source.isOpennet() && updateManager.dontAllowUOM()) {
 			Logger.normal(this, "Peer " + source
@@ -1202,23 +1213,20 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		try {
 			
 			try {
-				raf = new RandomAccessFileWrapper(data, "r");
+				raf = new FileRandomAccessBuffer(data, true);
 			} catch(FileNotFoundException e) {
 				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
 				return;
+            } catch(IOException e) {
+                Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but can't read the file due to a disk I/O error: " + e, e);
+                return;
 			}
 			
 			final PartiallyReceivedBulk prb;
 			long length;
-			try {
-				length = raf.size();
-				prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
-						Node.PACKET_SIZE, raf, true);
-			} catch(IOException e) {
-				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but we can't determine the file size: " + e, e);
-				raf.close();
-				return;
-			}
+			length = raf.size();
+			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
+			        Node.PACKET_SIZE, raf, true);
 			
 			try {
 				bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr, true);
@@ -1378,11 +1386,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			return true;
 		}
 
-		RandomAccessFileWrapper raf;
+		FileRandomAccessBuffer raf;
 		try {
-			raf = new RandomAccessFileWrapper(temp, "rw");
-		} catch(FileNotFoundException e) {
-			Logger.error(this, "Peer " + source + " sending us a main jar binary blob, but we lost the temp file " + temp + " : " + e, e);
+			raf = new FileRandomAccessBuffer(temp, length, false);
+		} catch(IOException e) {
+			Logger.error(this, "Peer " + source + " sending us a main jar binary blob, but we " +
+					((e instanceof FileNotFoundException) ? "lost the temp file " : "cannot read the temp file ") + temp + " : " + e, e);
 			synchronized(this) {
 				this.nodesAskedSendMainJar.remove(source);
 			}
@@ -1469,7 +1478,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		try {
 			f = File.createTempFile("main-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
 			f.deleteOnExit();
-			b = new FileBucket(f, false, false, true, true, true);
+			b = new FileBucket(f, false, false, true, true);
 		} catch(IOException e) {
 			Logger.error(this, "Cannot share main jar from " + toString + " with our peers because cannot write the cleaned version to disk: " + e, e);
 			System.err.println("Cannot share main jar from " + toString + " with our peers because cannot write the cleaned version to disk: " + e);
@@ -1483,8 +1492,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		ClientGetCallback myCallback = new ClientGetCallback() {
 
 			@Override
-			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-				if(e.mode == FetchException.CANCELLED) {
+			public void onFailure(FetchException e, ClientGetter state) {
+				if(e.mode == FetchExceptionMode.CANCELLED) {
 					// Eh?
 					Logger.error(this, "Cancelled fetch from store/blob of main jar (" + version + ") from " + toString);
 					System.err.println("Cancelled fetch from store/blob of main jar (" + version + ") from " + toString + " to " + temp + " - please report to developers");
@@ -1505,12 +1514,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 
 			@Override
-			public void onMajorProgress(ObjectContainer container) {
-				// Ignore
-			}
-
-			@Override
-			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+			public void onSuccess(FetchResult result, ClientGetter state) {
 				System.err.println("Got main jar version " + version + " from " + toString);
 				if(result.size() == 0) {
 					System.err.println("Ignoring because 0 bytes long");
@@ -1526,16 +1530,27 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				temp.delete();
 				insertBlob(mainUpdater.getBlobBucket(version), "main jar");
 			}
+
+            @Override
+            public void onResume(ClientContext context) {
+                // Not persistent.
+            }
+            
+            @Override
+            public RequestClient getRequestClient() {
+                return UpdateOverMandatoryManager.this;
+            }
+
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			uri, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob), null);
+			uri, tempContext, (short) 0, null, new BinaryBlobWriter(cleanedBlob), null);
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
 		} catch(FetchException e1) {
-			myCallback.onFailure(e1, cg, null);
-		} catch (DatabaseDisabledException e) {
+			myCallback.onFailure(e1, cg);
+		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
 
@@ -1606,11 +1621,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		return false;
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-
 	public void disconnected(PeerNode pn) {
 		synchronized(this) {
 			nodesSayKeyRevoked.remove(pn);
@@ -1660,44 +1670,37 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			data = dependencies.get(buf);
 		}
 		boolean fail = !incrementDependencies(source);
-		RandomAccessFileWrapper raf;
+		FileRandomAccessBuffer raf;
 		final BulkTransmitter bt;
 		
 		try {
 			if(data != null)
-				raf = new RandomAccessFileWrapper(data, "r");
+				raf = new FileRandomAccessBuffer(data, true);
 			else {
 				Logger.error(this, "Dependency with hash "+HexUtil.bytesToHex(buf.getData())+" not found!");
 				fail = true;
 				raf = null;
 			}
-		} catch(FileNotFoundException e) {
-			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
+		} catch(IOException e) {
+			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar, we have downloaded it but " +
+			        (e instanceof FileNotFoundException ? "don't have the file" : "can't read the file")+
+			        " even though we did have it when we checked!: " + e, e);
 			raf = null;
 			fail = true;
 		}
 		
 		PartiallyReceivedBulk prb;
-		try {
-			if(raf != null) {
-				long thisLength = raf.size();
-				prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), thisLength,
-						Node.PACKET_SIZE, raf, true);
-				if(length != thisLength) {
-					fail = true;
-				}
-			} else {
-				prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), 0,
-						Node.PACKET_SIZE, new ByteArrayRandomAccessThing(new byte[0]), true);
-				fail = true;
-			}
-		} catch(IOException e) {
-			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar, we have downloaded it but we can't determine the file size: " + e, e);
-			raf.close();
-			fail = true;
-			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), 0,
-					Node.PACKET_SIZE, new ByteArrayRandomAccessThing(new byte[0]), true);
-			fail = true;
+		if(raf != null) {
+		    long thisLength = raf.size();
+		    prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), thisLength,
+		            Node.PACKET_SIZE, raf, true);
+		    if(length != thisLength) {
+		        fail = true;
+		    }
+		} else {
+		    prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), 0,
+		            Node.PACKET_SIZE, new ByteArrayRandomAccessBuffer(new byte[0]), true);
+		    fail = true;
 		}
 		
 		try {
@@ -1713,7 +1716,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			cancelSend(source, uid);
 			decrementDependencies(source);
 		} else {
-			final RandomAccessFileWrapper r = raf;
+			final FileRandomAccessBuffer r = raf;
 			updateManager.node.executor.execute(new Runnable() {
 				
 				@Override
@@ -1906,13 +1909,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				public void run() {
 					boolean failed = false;
 					File tmp = null;
-					RandomAccessFileWrapper raf = null;
+					FileRandomAccessBuffer raf = null;
 					try {
 						System.out.println("Fetching "+saveTo+" from "+fetchFrom);
 						long uid = updateManager.node.fastWeakRandom.nextLong();
 						fetchFrom.sendAsync(DMT.createUOMFetchDependency(uid, expectedHash, size), null, updateManager.ctr);
 						tmp = FileUtil.createTempFile(saveTo.getName(), NodeUpdateManager.TEMP_FILE_SUFFIX, saveTo.getParentFile());
-						raf = new RandomAccessFileWrapper(tmp, "rw");
+						raf = new FileRandomAccessBuffer(tmp, size, false);
 						PartiallyReceivedBulk prb = 
 							new PartiallyReceivedBulk(updateManager.node.getUSM(), size,
 								Node.PACKET_SIZE, raf, false);

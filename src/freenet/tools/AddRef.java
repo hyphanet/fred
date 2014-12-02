@@ -10,11 +10,11 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 
-import freenet.node.fcp.AddPeer;
-import freenet.node.fcp.FCPMessage;
-import freenet.node.fcp.FCPServer;
-import freenet.node.fcp.MessageInvalidException;
-import freenet.node.fcp.NodeHelloMessage;
+import freenet.clients.fcp.AddPeer;
+import freenet.clients.fcp.FCPMessage;
+import freenet.clients.fcp.FCPServer;
+import freenet.clients.fcp.MessageInvalidException;
+import freenet.clients.fcp.NodeHelloMessage;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.LineReadingInputStream;
 

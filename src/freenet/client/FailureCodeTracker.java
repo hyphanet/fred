@@ -3,23 +3,31 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.db4o.ObjectContainer;
-
+import freenet.client.FetchException.FetchExceptionMode;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.StorageFormatException;
 
 /**
  * Essentially a map of integer to incrementible integer.
- * FIXME maybe move this to support, give it a better name? Be careful, it's a persistent object, use the
- * db4o migration tools, or derive it from something in support?
+ * FIXME maybe move this to support, give it a better name?
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
-public class FailureCodeTracker implements Cloneable {
+public class FailureCodeTracker implements Cloneable, Serializable {
 
-	public final boolean insert;
+    private static final long serialVersionUID = 1L;
+    public final boolean insert;
 	private int total;
 	
 	public FailureCodeTracker(boolean insert) {
@@ -42,59 +50,74 @@ public class FailureCodeTracker implements Cloneable {
 			int num = Integer.parseInt(name);
 			int count = Integer.parseInt(f.get("Count"));
 			if(count < 0) throw new IllegalArgumentException("Count < 0");
-			map.put(Integer.valueOf(num), new Item(count));
+			map.put(Integer.valueOf(num), count);
 			total += count;
 		}
 	}
 	
-	private static class Item {
-		Item(int count) {
-			this.x = count;
-		}
-
-		Item() {
-			this.x = 0;
-		}
-
-		int x;
+	protected FailureCodeTracker() {
+	    // For serialization.
+	    this.insert = false;
+	}
+	
+	private HashMap<Integer, Integer> map;
+	
+	public void inc(FetchExceptionMode k) {
+	    if(insert) throw new IllegalStateException();
+	    inc(k.code);
 	}
 
-	private HashMap<Integer, Item> map;
+    public void inc(InsertExceptionMode k) {
+        if(!insert) throw new IllegalStateException();
+        inc(k.code);
+    }
 
 	public synchronized void inc(int k) {
 		if(k == 0) {
 			Logger.error(this, "Can't increment 0, not a valid failure mode", new Exception("error"));
 		}
-		if(map == null) map = new HashMap<Integer, Item>();
+		if(map == null) map = new HashMap<Integer, Integer>();
 		Integer key = k;
-		Item i = map.get(key);
+		Integer i = map.get(key);
 		if(i == null)
-			map.put(key, i = new Item());
-		i.x++;
+			map.put(key, 1);
+		else
+		    map.put(key, i+1);
 		total++;
 	}
+
+    public void inc(FetchExceptionMode k, int val) {
+        if(insert) throw new IllegalStateException();
+        inc(k.code, val);
+    }
+
+    public void inc(InsertExceptionMode k, int val) {
+        if(!insert) throw new IllegalStateException();
+        inc(k.code, val);
+    }
 
 	public synchronized void inc(Integer k, int val) {
 		if(k == 0) {
 			Logger.error(this, "Can't increment 0, not a valid failure mode", new Exception("error"));
 		}
-		if(map == null) map = new HashMap<Integer, Item>();
+		if(map == null) map = new HashMap<Integer, Integer>();
 		Integer key = k;
-		Item i = map.get(key);
+		Integer i = map.get(key);
 		if(i == null)
-			map.put(key, i = new Item());
-		i.x+=val;
+			map.put(key, 1);
+		else
+		    map.put(key, i+val);
 		total += val;
 	}
 	
 	public synchronized String toVerboseString() {
 		if(map == null) return super.toString()+":empty";
 		StringBuilder sb = new StringBuilder();
-		for (Map.Entry<Integer, Item> e : map.entrySet()) {
+		for (Map.Entry<Integer, Integer> e : map.entrySet()) {
 			Integer x = e.getKey();
-			Item val = e.getValue();
-			String s = insert ? InsertException.getMessage(x.intValue()) : FetchException.getMessage(x.intValue());
-			sb.append(val.x);
+			Integer val = e.getValue();
+			String s = getMessage(x);
+			sb.append(val);
 			sb.append('\t');
 			sb.append(s);
 			sb.append('\n');
@@ -102,7 +125,12 @@ public class FailureCodeTracker implements Cloneable {
 		return sb.toString();
 	}
 
-	@Override
+	public String getMessage(Integer x) {
+	    return insert ? InsertException.getMessage(InsertExceptionMode.getByCode(x)) : 
+	        FetchException.getMessage(FetchExceptionMode.getByCode(x));
+    }
+
+    @Override
 	public synchronized String toString() {
 		if(map == null) return super.toString()+":empty";
 		StringBuilder sb = new StringBuilder(super.toString());
@@ -113,15 +141,15 @@ public class FailureCodeTracker implements Cloneable {
 			Integer code = (Integer) (map.keySet().toArray())[0];
 			sb.append(code);
 			sb.append('=');
-			sb.append((map.get(code)).x);
+			sb.append((map.get(code)));
 		} else if(map.size() < 10) {
 			boolean needComma = false;
-			for(Map.Entry<Integer, Item> entry : map.entrySet()) {
+			for(Map.Entry<Integer, Integer> entry : map.entrySet()) {
 				if(needComma)
 					sb.append(',');
 				sb.append(entry.getKey()); // code
 				sb.append('=');
-				sb.append(entry.getValue().x);
+				sb.append(entry.getValue());
 				needComma = true;
 			}
 		} else {
@@ -135,11 +163,11 @@ public class FailureCodeTracker implements Cloneable {
 	 */
 	public synchronized FailureCodeTracker merge(FailureCodeTracker source) {
 		if(source.map == null) return this;
-		if(map == null) map = new HashMap<Integer, Item>();
-		for (Map.Entry<Integer, Item> e : source.map.entrySet()) {
+		if(map == null) map = new HashMap<Integer, Integer>();
+		for (Map.Entry<Integer, Integer> e : source.map.entrySet()) {
 			Integer k = e.getKey();
-			Item item = e.getValue();
-			inc(k, item.x);
+			Integer item = e.getValue();
+			inc(k, item);
 		}
 		return this;
 	}
@@ -150,7 +178,7 @@ public class FailureCodeTracker implements Cloneable {
 			merge(e.errorCodes);
 		}
 		// Increment mode anyway, so we get the splitfile error as well.
-		inc(e.mode);
+		inc(e.mode.code);
 	}
 
 	public synchronized int totalCount() {
@@ -161,24 +189,34 @@ public class FailureCodeTracker implements Cloneable {
 	public synchronized SimpleFieldSet toFieldSet(boolean verbose) {
 		SimpleFieldSet sfs = new SimpleFieldSet(false);
 		if(map != null) {
-		for (Map.Entry<Integer, Item> e : map.entrySet()) {
+		for (Map.Entry<Integer, Integer> e : map.entrySet()) {
 			Integer k = e.getKey();
-			Item item = e.getValue();
+			Integer item = e.getValue();
 			int code = k.intValue();
 			// prefix.num.Description=<code description>
 			// prefix.num.Count=<count>
 			if(verbose)
-				sfs.putSingle(Integer.toString(code)+".Description", 
-						insert ? InsertException.getMessage(code) : FetchException.getMessage(code));
-			sfs.put(Integer.toString(code)+".Count", item.x);
+				sfs.putSingle(Integer.toString(code)+".Description", getMessage(code));
+			sfs.put(Integer.toString(code)+".Count", item);
 		}
 		}
 		return sfs;
 	}
 
 	public synchronized boolean isOneCodeOnly() {
+	    if(map == null) return true;
 		return map.size() == 1;
 	}
+	
+    public FetchExceptionMode getFirstCodeFetch() {
+        if(insert) throw new IllegalStateException();
+        return FetchExceptionMode.getByCode(getFirstCode());
+    }
+
+    public InsertExceptionMode getFirstCodeInsert() {
+        if(!insert) throw new IllegalStateException();
+        return InsertExceptionMode.getByCode(getFirstCode());
+    }
 
 	public synchronized int getFirstCode() {
 		return ((Integer) map.keySet().toArray()[0]).intValue();
@@ -186,13 +224,13 @@ public class FailureCodeTracker implements Cloneable {
 
 	public synchronized boolean isFatal(boolean insert) {
 		if(map == null) return false;
-		for (Map.Entry<Integer, Item> e : map.entrySet()) {
+		for (Map.Entry<Integer, Integer> e : map.entrySet()) {
 			Integer code = e.getKey();
-			if(e.getValue().x == 0) continue;
+			if(e.getValue() == 0) continue;
 			if(insert) {
-				if(InsertException.isFatal(code.intValue())) return true;
+				if(InsertException.isFatal(InsertExceptionMode.getByCode(code))) return true;
 			} else {
-				if(FetchException.isFatal(code.intValue())) return true;
+				if(FetchException.isFatal(FetchExceptionMode.getByCode(code))) return true;
 			}
 		}
 		return false;
@@ -209,30 +247,6 @@ public class FailureCodeTracker implements Cloneable {
 		return map == null || map.isEmpty();
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		Item[] items;
-		Integer[] ints;
-		synchronized(this) {
-			items = map == null ? null : map.values().toArray(new Item[map.size()]);
-			ints = map == null ? null : map.keySet().toArray(new Integer[map.size()]);
-			if(map != null) map.clear();
-		}
-		if(items != null)
-			for(int i=0;i<items.length;i++) {
-				container.delete(items[i]);
-				container.delete(ints[i]);
-			}
-		if(map != null) {
-			container.activate(map, 5);
-			container.delete(map);
-		}
-		container.delete(this);
-	}
-	
-	public void objectOnActivate(ObjectContainer container) {
-		if(map != null) container.activate(map, 5);
-	}
-	
 	/** Copy the FailureCodeTracker. We implement Cloneable to shut up findbugs, but Object.clone() won't
 	 * work because it's a shallow copy, so we implement it with merge(). */
 	@Override
@@ -242,16 +256,73 @@ public class FailureCodeTracker implements Cloneable {
 		return tracker;
 	}
 
-	public void storeTo(ObjectContainer container) {
-		// Must store to at least depth 2 because of map.
-		container.ext().store(this, 5);
-	}
-
 	public synchronized boolean isDataFound() {
-		for(Map.Entry<Integer, Item> entry : map.entrySet()) {
-			if(entry.getValue().x <= 0) continue;
-			if(FetchException.isDataFound(entry.getKey(), null)) return true;
+	    if(!insert) throw new IllegalStateException();
+		for(Map.Entry<Integer, Integer> entry : map.entrySet()) {
+			if(entry.getValue() <= 0) continue;
+			if(FetchException.isDataFound(FetchExceptionMode.getByCode(entry.getKey()), null)) return true;
 		}
 		return false;
 	}
+	
+	private int MAGIC = 0xb605aa08;
+	private int VERSION = 1;
+	
+	/** Get the length of the fixed-size representation produced by writeFixedLengthTo(). */
+	public static int getFixedLength(boolean insert) {
+        int upperLimit = 
+            insert ? InsertException.UPPER_LIMIT_ERROR_CODE : FetchException.UPPER_LIMIT_ERROR_CODE;
+        return 4 + 4 + 4 + 4 * upperLimit;
+	}
+	
+	/** Write a fixed-size representation to a DataOutputStream. This is important for e.g. 
+	 * splitfiles, where we have a fixed part of the disk file to save it to. */
+	public synchronized void writeFixedLengthTo(DataOutputStream dos) throws IOException {
+	    int upperLimit = 
+	        insert ? InsertException.UPPER_LIMIT_ERROR_CODE : FetchException.UPPER_LIMIT_ERROR_CODE;
+	    dos.writeInt(MAGIC);
+	    dos.writeInt(VERSION);
+	    dos.writeInt(upperLimit);
+	    for(int i=0;i<upperLimit;i++)
+	        dos.writeInt(getErrorCount(i));
+	}
+
+	/** Get number of errors of count mode */
+    public synchronized int getErrorCount(int mode) {
+        if(map == null) return 0;
+        Integer item = map.get(mode);
+        return item == null ? 0 : item;
+    }
+    
+    /** Get number of errors of count mode */
+    public synchronized int getErrorCount(InsertExceptionMode mode) {
+        if(!insert) throw new IllegalStateException();
+        return getErrorCount(mode.code);
+    }
+    
+    /** Get number of errors of count mode */
+    public synchronized int getErrorCount(FetchExceptionMode mode) {
+        if(insert) throw new IllegalStateException();
+        return getErrorCount(mode.code);
+    }
+    
+    public FailureCodeTracker(boolean insert, DataInputStream dis) throws IOException, StorageFormatException {
+        this.insert = insert;
+        if(dis.readInt() != MAGIC) 
+            throw new StorageFormatException("Bad magic for FailureCodeTracker");
+        if(dis.readInt() != VERSION)
+            throw new StorageFormatException("Bad version for FailureCodeTracker");
+        int upperLimit = 
+            insert ? InsertException.UPPER_LIMIT_ERROR_CODE : FetchException.UPPER_LIMIT_ERROR_CODE;
+        if(dis.readInt() != upperLimit)
+            throw new StorageFormatException("Bad upper limit for FailureCodeTracker");
+        for(int i=0;i<upperLimit;i++) {
+            int x = dis.readInt();
+            if(x < 0) throw new StorageFormatException("Negative error counts");
+            if(x == 0) continue;
+            if(map == null) map = new HashMap<Integer, Integer>();
+            total += x;
+            map.put(i, x);
+        }
+    }
 }

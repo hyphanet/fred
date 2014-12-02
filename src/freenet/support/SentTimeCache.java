@@ -17,7 +17,7 @@ public class SentTimeCache {
     /**
      * LinkedHashMap with int keys, long values, that has bounded capacity.
      */
-    private class BoundedSentTimeMap extends LinkedHashMap<Integer, Long> {
+    private static class BoundedSentTimeMap extends LinkedHashMap<Integer, Long> {
         private static final long serialVersionUID = 0;
         private final int maxSize;
         
@@ -95,10 +95,10 @@ public class SentTimeCache {
     }
 
     /**
-     * Queries the number of items currently held by this cache. This method is not thread-safe.
+     * Queries the number of items currently held by this cache.
      * @return The number of items in this cache.
      */
-    int size() {
+    synchronized int size() {
         return cache.size();
     }
 }

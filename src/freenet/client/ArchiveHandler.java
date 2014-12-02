@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
@@ -29,7 +27,7 @@ public interface ArchiveHandler {
 	 * @throws MetadataParseException If there was an error parsing intermediary metadata.
 	 */
 	public abstract Bucket getMetadata(ArchiveContext archiveContext,
-			ArchiveManager manager, ObjectContainer container)
+			ArchiveManager manager)
 			throws ArchiveFailureException, ArchiveRestartException,
 			MetadataParseException, FetchException;
 
@@ -45,7 +43,7 @@ public interface ArchiveHandler {
 	 * @throws MetadataParseException 
 	 */
 	public abstract Bucket get(String internalName,
-			ArchiveContext archiveContext, ArchiveManager manager, ObjectContainer container)
+			ArchiveContext archiveContext, ArchiveManager manager)
 			throws ArchiveFailureException, ArchiveRestartException,
 			MetadataParseException, FetchException;
 
@@ -70,29 +68,8 @@ public interface ArchiveHandler {
 	 * @throws ArchiveRestartException
 	 */
 	public abstract void extractToCache(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ArchiveManager manager, 
-			ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException;
-
-	/**
-	 * Unpack a fetched archive on a separate thread for a persistent caller.
-	 * This involves:
-	 * - Add a tag to the database so that it will be restarted on a crash.
-	 * - Run the actual unpack on a separate thread.
-	 * - Copy the data to a persistent bucket.
-	 * - Schedule a database job.
-	 * - Call the callback.
-	 * @param bucket
-	 * @param actx
-	 * @param element
-	 * @param callback
-	 * @param container
-	 * @param context
-	 */
-	public abstract void extractPersistentOffThread(Bucket bucket, boolean freeBucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context);
-	
-	public abstract void activateForExecution(ObjectContainer container);
+			ClientContext context) throws ArchiveFailureException, ArchiveRestartException;
 
 	public abstract ArchiveHandler cloneHandler();
-
-	public abstract void removeFrom(ObjectContainer container);
 	
 }

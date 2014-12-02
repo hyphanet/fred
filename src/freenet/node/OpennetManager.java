@@ -50,7 +50,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeSortedHashtable;
-import freenet.support.io.ByteArrayRandomAccessThing;
+import freenet.support.io.ByteArrayRandomAccessBuffer;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
@@ -1027,7 +1027,7 @@ public class OpennetManager {
 	 * or it restarts.
 	 */
 	private boolean innerSendOpennetRef(long xferUID, byte[] padded, PeerNode peer, ByteCounter ctr, AllSentCallback cb) throws NotConnectedException {
-		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(padded);
+		ByteArrayRandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(padded);
 		raf.setReadOnly();
 		PartiallyReceivedBulk prb =
 			new PartiallyReceivedBulk(node.usm, padded.length, Node.PACKET_SIZE, raf, true);
@@ -1230,7 +1230,7 @@ public class OpennetManager {
 
 	static byte[] innerWaitForOpennetNoderef(long xferUID, int paddedLength, int realLength, PeerNode source, boolean isReply, long uid, boolean sendReject, ByteCounter ctr, Node node) {
 		byte[] buf = new byte[paddedLength];
-		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(buf);
+		ByteArrayRandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(buf);
 		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
 		BulkReceiver br = new BulkReceiver(prb, source, xferUID, ctr);
 		if (logMINOR) {

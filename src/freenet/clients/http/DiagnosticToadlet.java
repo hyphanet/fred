@@ -10,7 +10,12 @@ import java.util.Comparator;
 import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
+import freenet.clients.fcp.DownloadRequestStatus;
+import freenet.clients.fcp.FCPServer;
+import freenet.clients.fcp.RequestStatus;
+import freenet.clients.fcp.UploadDirRequestStatus;
+import freenet.clients.fcp.UploadFileRequestStatus;
 import freenet.config.SubConfig;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
@@ -24,11 +29,6 @@ import freenet.node.PeerManager;
 import freenet.node.PeerNodeStatus;
 import freenet.node.RequestTracker;
 import freenet.node.Version;
-import freenet.node.fcp.DownloadRequestStatus;
-import freenet.node.fcp.FCPServer;
-import freenet.node.fcp.RequestStatus;
-import freenet.node.fcp.UploadDirRequestStatus;
-import freenet.node.fcp.UploadFileRequestStatus;
 import freenet.node.stats.DataStoreInstanceType;
 import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.StatsNotAvailableException;
@@ -73,7 +73,7 @@ public class DiagnosticToadlet extends Toadlet {
         if(!ctx.checkFullAccess(this))
             return;
 
-		node.clientCore.bandwidthStatsPutter.updateData();
+		node.clientCore.bandwidthStatsPutter.updateData(node);
 
 		final SubConfig nodeConfig = node.config.get("node");
 
@@ -404,7 +404,7 @@ public class DiagnosticToadlet extends Toadlet {
 				textBuilder.append("Downloads Queued: ").append(totalQueuedDownload).append(" (").append(totalQueuedDownload).append(")\n");
 				textBuilder.append("Uploads Queued: ").append(totalQueuedUpload).append(" (").append(totalQueuedUpload).append(")\n");
 			}
-		} catch (DatabaseDisabledException e) {
+		} catch (PersistenceDisabledException e) {
 			textBuilder.append("DatabaseDisabledException\n");
 		}
 		textBuilder.append("\n");
@@ -418,14 +418,6 @@ public class DiagnosticToadlet extends Toadlet {
 			textBuilder.append(l10n("waiting")).append(": ").append(String.valueOf(waitingThreadsByPriority[i])).append(" (").append(String.valueOf(i+1)).append(")\n");
 		}
 		textBuilder.append("\n");
-
-		// drawDatabaseJobsBox
-		int[] jobsByPriority = core.clientDatabaseExecutor.getQueuedJobsCountByPriority();
-		for(int i=0; i<jobsByPriority.length; i++) {
-			textBuilder.append(l10n("waiting")).append(": ").append(String.valueOf(i)).append(" (").append(String.valueOf(jobsByPriority[i])).append(")\n");
-		}
-		textBuilder.append("\n");
-		
 		}
 
 		this.writeTextReply(ctx, 200, "OK", textBuilder.toString());

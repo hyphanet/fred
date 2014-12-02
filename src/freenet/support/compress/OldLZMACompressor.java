@@ -3,8 +3,6 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,7 +20,6 @@ import freenet.support.io.Closer;
 import freenet.support.io.CountedInputStream;
 import freenet.support.io.CountedOutputStream;
 
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class OldLZMACompressor implements Compressor {
         private static volatile boolean logMINOR;
 	static {
@@ -61,8 +58,8 @@ public class OldLZMACompressor implements Compressor {
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
-		cis = new CountedInputStream(new BufferedInputStream(is, 32768));
-		cos = new CountedOutputStream(new BufferedOutputStream(os, 32768));
+		cis = new CountedInputStream(is);
+		cos = new CountedOutputStream(os);
 		Encoder encoder = new Encoder();
         encoder.SetEndMarkerMode( true );
         // Dictionary size 1MB, this is equivalent to lzma -4, it uses 16MB to compress and 2MB to decompress.
@@ -88,10 +85,10 @@ public class OldLZMACompressor implements Compressor {
 		if(logMINOR)
 			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
 		CountedInputStream is = null;
-		BufferedOutputStream os = null;
+		OutputStream os = null;
 		try {
-			is = new CountedInputStream(new BufferedInputStream(data.getInputStream(), 32768));
-			os = new BufferedOutputStream(output.getOutputStream(), 32768);
+			is = new CountedInputStream(data.getInputStream());
+			os = output.getOutputStream();
 			decompress(is, os, maxLength, maxCheckSizeLength);
 			if(logMINOR)
 				Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count());

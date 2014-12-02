@@ -1,6 +1,6 @@
 package freenet.keys;
 
-import com.db4o.ObjectContainer;
+import java.io.Serializable;
 
 /**
  * Base class for client keys.
@@ -11,9 +11,11 @@ import com.db4o.ObjectContainer;
  * does not know about, but which are in the URI - usually the second part,
  * after the comma.
  */
-public abstract class ClientKey extends BaseClientKey {
+public abstract class ClientKey extends BaseClientKey implements Serializable {
 
-	/**
+    private static final long serialVersionUID = 1L;
+
+    /**
 	 * @return a NodeCHK corresponding to this key. Basically keep the 
 	 * routingKey and lose everything else.
 	 */
@@ -24,7 +26,9 @@ public abstract class ClientKey extends BaseClientKey {
 	}
 
 	public abstract ClientKey cloneKey();
-
-	public abstract void removeFrom(ObjectContainer container);
+	
+	protected ClientKey() {
+	    // For serialization.
+	}
 
 }

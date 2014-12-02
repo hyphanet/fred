@@ -18,7 +18,6 @@ public class TempFileBucketTest extends BucketTestBase {
 		BaseFileBucket bfb = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator);
 
 		assertTrue("deleteOnFree", bfb.deleteOnFree());
-		assertTrue("deleteOnFinalize", bfb.deleteOnFinalize());
 
 		return bfb;
 	}

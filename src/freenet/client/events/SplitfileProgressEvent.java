@@ -3,14 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
 public class SplitfileProgressEvent implements ClientEvent {
-	private static volatile boolean logMINOR;
+
+    private static volatile boolean logMINOR;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
@@ -42,6 +41,16 @@ public class SplitfileProgressEvent implements ClientEvent {
 		this.minSuccessFetchBlocks = minSuccessFetchBlocks;
 		if(logMINOR)
 			Logger.minor(this, "Created SplitfileProgressEvent: total="+totalBlocks+" succeed="+succeedBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" min success="+minSuccessfulBlocks+" finalized="+finalizedTotal);
+	}
+	
+	protected SplitfileProgressEvent() {
+	    // For serialization.
+	    totalBlocks = 0;
+	    succeedBlocks = 0;
+	    failedBlocks = 0;
+	    fatallyFailedBlocks = 0;
+	    minSuccessFetchBlocks = 0;
+	    finalizedTotal = false;
 	}
 
 	@Override
@@ -81,10 +90,6 @@ public class SplitfileProgressEvent implements ClientEvent {
 	@Override
 	public int getCode() {
 		return CODE;
-	}
-
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
 	}
 
 }

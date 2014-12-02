@@ -21,9 +21,8 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -80,8 +79,10 @@ import freenet.support.io.FileUtil;
  * </p>
  * REDFLAG: Old code has a FieldSet, and the ability to put arbitrary metadata
  * in through name/value pairs. Do we want this?
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializable {
 
     /**
@@ -498,6 +499,17 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		metaStr = null;
 		if (logDEBUG) Logger.minor(this, "Created from components (USK): "+toString(), new Exception("debug"));
 	}
+	
+	protected FreenetURI() {
+	    // For serialization only!
+	    this.metaStr = null;
+	    this.keyType = null;
+	    this.routingKey = null;
+	    this.cryptoKey = null;
+	    this.extra = null;
+	    this.docName = null;
+	    this.suggestedEdition = 0;
+	}
 
 	/** Dump the individual components of the key to System.out. */
 	public void decompose() {
@@ -887,6 +899,15 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		return new FreenetURI(keyType, docName, metaStrings, routingKey, cryptoKey, extra);
 	}
 
+	/** Write either a null or a FreenetURI. */
+	public static void writeFullBinaryKeyWithLength(FreenetURI uri, DataOutputStream dos) 
+	throws IOException {
+	    if(uri == null)
+	        dos.writeShort((short)0);
+	    else
+	        uri.writeFullBinaryKeyWithLength(dos);
+	}
+	
 	/**
 	 * Write a binary representation of this URI, with a short length, so it can be passed over if necessary.
 	 * @param dos The stream to write to.
@@ -1062,7 +1083,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * structure. */
 	public void checkInsertURI() throws InsertException {
 		if(metaStr != null && metaStr.length > 0)
-			throw new InsertException(InsertException.META_STRINGS_NOT_SUPPORTED, this);
+			throw new InsertException(InsertExceptionMode.META_STRINGS_NOT_SUPPORTED, this);
 	}
 
 	/** Throw an InsertException if the argument has any meta-strings. They
@@ -1088,31 +1109,6 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	/** Is this key an SSK? */
 	public boolean isSSK() {
 		return "SSK".equals(keyType);
-	}
-
-	/** Remove from the database. */
-	public void removeFrom(ObjectContainer container) {
-		// All members are inline (arrays, ints etc), treated as values, so we can happily just call delete(this).
-		container.delete(this);
-	}
-
-	public boolean objectCanNew(ObjectContainer container) {
-		if(this == FreenetURI.EMPTY_CHK_URI) {
-			throw new RuntimeException("Storing static CHK@ to database - can't remove it!");
-		}
-		return true;
-	}
-
-	public boolean objectCanUpdate(ObjectContainer container) {
-		if(!container.ext().isActive(this)) {
-			Logger.error(this, "Updating but not active!", new Exception("error"));
-			return false;
-		}
-		return true;
-	}
-
-	public void objectOnDelete(ObjectContainer container) {
-		if(logDEBUG) Logger.debug(this, "Deleting URI", new Exception("debug"));
 	}
 
 	/** Is this key a USK? */

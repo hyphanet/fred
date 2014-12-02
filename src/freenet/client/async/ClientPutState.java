@@ -3,9 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertException;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * ClientPutState
@@ -18,21 +17,25 @@ public interface ClientPutState {
 	public abstract BaseClientPutter getParent();
 
 	/** Cancel the request. */
-	public abstract void cancel(ObjectContainer container, ClientContext context);
+	public abstract void cancel(ClientContext context);
 
 	/** Schedule the request. */
-	public abstract void schedule(ObjectContainer container, ClientContext context) throws InsertException;
+	public abstract void schedule(ClientContext context) throws InsertException;
 	
 	/**
 	 * Get the token, an object which is passed around with the insert and may be
 	 * used by callers.
 	 */
 	public Object getToken();
+	
+    /** Called on restarting the node for a persistent request. The request must re-schedule 
+     * itself. Caller must ensure that it is safe to call this method more than once, as we recurse
+     * through the graph of dependencies.
+     * @throws InsertException 
+     * @throws ResumeFailedException */
+    public void onResume(ClientContext context) throws InsertException, ResumeFailedException;
 
-	/**
-	 * Once the callback has finished with this fetch, it will call removeFrom() to instruct the fetch
-	 * to remove itself and all its subsidiary objects from the database.
-	 * @param container
-	 */
-	public void removeFrom(ObjectContainer container, ClientContext context);
+    /** Called just before the final write of client.dat before the node shuts down. Should write
+     * any dirty data to disk etc. */
+    public void onShutdown(ClientContext context);
 }

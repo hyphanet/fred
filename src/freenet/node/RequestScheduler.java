@@ -5,11 +5,9 @@ package freenet.node;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-import com.db4o.ObjectContainer;
-
-import freenet.client.FECQueue;
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientRequestSelector;
 import freenet.keys.Key;
 
 public interface RequestScheduler {
@@ -30,9 +28,8 @@ public interface RequestScheduler {
 	 * Note: If you don't want your requests to be subject to cooldown (e.g. in fproxy), make 
 	 * your max retry count less than this (and more than -1). */
 	public static final int COOLDOWN_RETRIES = 3;
-	public long countTransientQueuedRequests();
-
-	public void queueFillRequestStarterQueue();
+	
+	public long countQueuedRequests();
 
 	public KeysFetchingLocally fetchingKeys();
 
@@ -42,15 +39,13 @@ public interface RequestScheduler {
 	
 	public void callFailure(SendableInsert insert, LowLevelPutException exception, int prio, boolean persistent);
 	
-	public FECQueue getFECQueue();
-
 	public ClientContext getContext();
 	
 	public boolean addToFetching(Key key);
 
 	public ChosenBlock grabRequest();
 
-	public void removeRunningRequest(SendableRequest request, ObjectContainer container);
+	public void removeRunningRequest(SendableRequest request);
 
 	/**
 	 * This only works for persistent requests, because transient requests are not
@@ -67,13 +62,11 @@ public interface RequestScheduler {
 	 * @param container
 	 * @return
 	 */
-	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container);
+	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent);
 
-	public void start(NodeClientCore core);
+	public boolean addRunningInsert(SendableInsert insert, SendableRequestItemKey token);
 
-	public boolean addTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token);
-
-	public void removeTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token);
+	public void removeRunningInsert(SendableInsert insert, SendableRequestItemKey token);
 
 	public void wakeStarter();
 
@@ -81,5 +74,7 @@ public interface RequestScheduler {
 	 * at a distance this will need to be reconsidered. See the comments on the caller in 
 	 * RequestHandler (onAbort() handler). */
 	public boolean wantKey(Key key);
+
+    public ClientRequestSelector getSelector();
 
 }

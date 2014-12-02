@@ -3,14 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.WeakHashMap;
 
-import org.tanukisoftware.wrapper.WrapperManager;
-
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-
+import freenet.crypt.ChecksumChecker;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.SendableRequest;
@@ -18,6 +17,7 @@ import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.ResumeFailedException;
 
 /** A high level request or insert. This may create any number of low-level requests of inserts,
  * for example a request may follow redirects, download splitfiles and unpack containers, while an
@@ -25,16 +25,18 @@ import freenet.support.Logger.LogLevel;
  * created by a client, has a FetchContext or InsertContext for configuration. Compare to 
  * @see SendableRequest for a low-level request (which may still be multiple actual requests or 
  * inserts).
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public abstract class ClientRequester {
-	private static volatile boolean logMINOR;
+public abstract class ClientRequester implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private static volatile boolean logMINOR;
 	
 	static {
 		Logger.registerClass(ClientRequester.class);
 	}
 
-	public abstract void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container);
+	public abstract void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context);
 	
 	// FIXME move the priority classes from RequestStarter here
 	/** Priority class of the request or insert. */
@@ -46,10 +48,7 @@ public abstract class ClientRequester {
 	/** The RequestClient, used to determine whether this request is 
 	 * persistent, and also we round-robin between different RequestClient's
 	 * in scheduling within a given priority class and retry count. */
-	protected RequestClient client;
-	/** The set of queued low-level requests or inserts for this request or
-	 * insert. */
-	protected final SendableRequestSet requests;
+	protected transient RequestClient client;
 
 	/** What is our priority class? */
 	public short getPriorityClass() {
@@ -57,23 +56,21 @@ public abstract class ClientRequester {
 	}
 
 	/**
-	 * zero arg c'tor for db4o on jamvm
+	 * zero arg c'tor for db4o on jamvm / for serialization.
 	 */
 	protected ClientRequester() {
 		realTimeFlag = false;
 		creationTime = 0;
 		hashCode = 0;
-		requests = null;
 	}
 
-	protected ClientRequester(short priorityClass, RequestClient client) {
+	protected ClientRequester(short priorityClass, ClientBaseCallback cb) {
 		this.priorityClass = priorityClass;
-		this.client = client;
+		this.client = cb.getRequestClient();
 		this.realTimeFlag = client.realTimeFlag();
 		if(client == null)
 			throw new NullPointerException();
 		hashCode = super.hashCode(); // the old object id will do fine, as long as we ensure it doesn't change!
-		requests = persistent() ? new PersistentSendableRequestSet() : new TransientSendableRequestSet();
 		synchronized(allRequesters) {
 			if(!persistent())
 				allRequesters.put(this, dumbValue);
@@ -94,12 +91,10 @@ public abstract class ClientRequester {
 
 	/** Cancel the request. Subclasses must implement to actually tell the
 	 * ClientGetState's or ClientPutState's to cancel.
-	 * @param container The database. Must be non-null if the request or 
-	 * insert is persistent, in which case we must be on the database thread.
 	 * @param context The ClientContext object including essential but 
 	 * non-persistent objects such as the schedulers.
 	 */
-	public abstract void cancel(ObjectContainer container, ClientContext context);
+	public abstract void cancel(ClientContext context);
 
 	/** Is the request or insert cancelled? */
 	public boolean isCancelled() {
@@ -140,6 +135,10 @@ public abstract class ClientRequester {
 	/** Has at least one block been scheduled to be sent to the network? 
 	 * Requests can be satisfied entirely from the datastore sometimes. */
 	protected boolean sentToNetwork;
+	
+    public int getTotalBlocks() {
+        return totalBlocks;
+    }
 
 	protected synchronized void resetBlocks() {
 		totalBlocks = 0;
@@ -158,20 +157,18 @@ public abstract class ClientRequester {
 	 * @param context The ClientContext object including essential but 
 	 * non-persistent objects such as the schedulers.
 	 */
-	public void blockSetFinalized(ObjectContainer container, ClientContext context) {
+	public void blockSetFinalized(ClientContext context) {
 		synchronized(this) {
 			if(blockSetFinalized) return;
 			blockSetFinalized = true;
 		}
 		if(logMINOR)
 			Logger.minor(this, "Finalized set of blocks for "+this, new Exception("debug"));
-		if(persistent())
-			container.store(this);
-		notifyClients(container, context);
+		notifyClients(context);
 	}
 
 	/** Add a block to our estimate of the total. Don't notify clients. */
-	public void addBlock(ObjectContainer container) {
+	public void addBlock() {
 		boolean wasFinalized;
 		synchronized (this) {
 			totalBlocks++;
@@ -186,11 +183,10 @@ public abstract class ClientRequester {
 		}
 		
 		if(logMINOR) Logger.minor(this, "addBlock(): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks);
-		if(persistent()) container.store(this);
 	}
 
 	/** Add several blocks to our estimate of the total. Don't notify clients. */
-	public void addBlocks(int num, ObjectContainer container) {
+	public void addBlocks(int num) {
 		boolean wasFinalized;
 		synchronized (this) {
 			totalBlocks += num;
@@ -205,124 +201,91 @@ public abstract class ClientRequester {
 		}
 		
 		if(logMINOR) Logger.minor(this, "addBlocks("+num+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
-		if(persistent()) container.store(this);
 	}
 
 	/** We completed a block. Count it and notify clients unless dontNotify. */
-	public void completedBlock(boolean dontNotify, ObjectContainer container, ClientContext context) {
+	public void completedBlock(boolean dontNotify, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Completed block ("+dontNotify+ "): total="+totalBlocks+" success="+successfulBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" finalised="+blockSetFinalized+" required="+minSuccessBlocks+" on "+this);
 		synchronized(this) {
 			if(cancelled) return;
 			successfulBlocks++;
 		}
-		if(checkForBrokenClient(container, context)) return;
-		if(persistent()) container.store(this);
 		if(dontNotify) return;
-		notifyClients(container, context);
+		notifyClients(context);
 	}
 	
 	transient static final UserAlert brokenClientAlert = new SimpleUserAlert(true, "Some broken downloads/uploads were cancelled. Please restart them.", "Some downloads/uploads were broken due to a bug (some time before 1287) causing unrecoverable database corruption. They have been cancelled. Please restart them from the Downloads or Uploads page.", "Some downloads/uploads were broken due to a pre-1287 bug, please restart them.", UserAlert.ERROR);
 
-	public boolean checkForBrokenClient(ObjectContainer container,
-			ClientContext context) {
-		if(container != null && client == null) {
-			if(container.ext().isStored(this) && container.ext().isActive(this)) {
-				// Data corruption?!?!?
-				// Obviously broken, possibly associated with a busted FCPClient.
-				// Lets fail it.
-				Logger.error(this, "Stored and active "+this+" but client is null!");
-				if(!isFinished()) {
-					context.postUserAlert(brokenClientAlert);
-					System.err.println("Cancelling download/upload because of bug causing database corruption. The bug has been fixed but the download/upload will be cancelled. You can restart it.");
-				}
-				// REDFLAG this leaks a RequestClient. IMHO this is better than the alternative.
-				this.client = new RequestClient() {
-
-					@Override
-					public boolean persistent() {
-						return true;
-					}
-
-					@Override
-					public void removeFrom(ObjectContainer container) {
-						container.delete(this);
-					}
-
-					@Override
-					public boolean realTimeFlag() {
-						return realTimeFlag;
-					}
-					
-				};
-				container.store(client);
-				container.store(this);
-				if(!isFinished()) {
-					cancel(container, context);
-				}
-				return true;
-			} else if(container.ext().isStored(this) && !container.ext().isActive(this)) {
-				// Definitely a bug, hopefully a simple one.
-				Logger.error(this, "Not active in completedBlock on "+this, new Exception("error"));
-				return true;
-			} else
-				throw new IllegalStateException("Client is null on persistent request "+this);
-		}
-		return false;
-	}
+    /** A block failed. Count it and notify our clients. */
+    public void failedBlock(boolean dontNotify, ClientContext context) {
+        synchronized(this) {
+            failedBlocks++;
+        }
+        if(!dontNotify)
+            notifyClients(context);
+    }
 
 	/** A block failed. Count it and notify our clients. */
-	public void failedBlock(ObjectContainer container, ClientContext context) {
-		synchronized(this) {
-			failedBlocks++;
-		}
-		if(persistent()) container.store(this);
-		notifyClients(container, context);
+	public void failedBlock(ClientContext context) {
+	    failedBlock(false, context);
 	}
 
 	/** A block failed fatally. Count it and notify our clients. */
-	public void fatallyFailedBlock(ObjectContainer container, ClientContext context) {
+	public void fatallyFailedBlock(ClientContext context) {
 		synchronized(this) {
 			fatallyFailedBlocks++;
 		}
-		if(persistent()) container.store(this);
-		notifyClients(container, context);
+		notifyClients(context);
 	}
 
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
-	public synchronized void addMustSucceedBlocks(int blocks, ObjectContainer container) {
+	public synchronized void addMustSucceedBlocks(int blocks) {
 		totalBlocks += blocks;
 		minSuccessBlocks += blocks;
-		if(persistent()) container.store(this);
 		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 
 	/** Insertors should override this. The method is duplicated rather than calling addMustSucceedBlocks to avoid confusing consequences when addMustSucceedBlocks does other things. */
-	public synchronized void addRedundantBlocks(int blocks, ObjectContainer container) {
+	public synchronized void addRedundantBlocksInsert(int blocks) {
 		totalBlocks += blocks;
 		minSuccessBlocks += blocks;
-		if(persistent()) container.store(this);
 		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 	
-	/** Notify clients, usually via a SplitfileProgressEvent, of the current progress. */
-	public abstract void notifyClients(ObjectContainer container, ClientContext context);
+	/** Notify clients by calling innerNotifyClients off-thread. */
+	public final void notifyClients(ClientContext context) {
+	    context.getJobRunner(persistent()).queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                innerNotifyClients(context);
+                return false;
+            }
+	        
+	    });
+	}
+	
+	/** Notify clients, usually via a SplitfileProgressEvent, of the current progress. Called 
+	 * off-thread. Please do not change SimpleEventProducer to always produce events off-thread, it
+	 * is better to deal with that here, because events could be re-ordered, which matters for some
+	 * events notably SimpleProgressEvent. */
+	protected abstract void innerNotifyClients(ClientContext context);
 	
 	/** Called when we first send a request to the network. Ensures that it really is the first time and
 	 * passes on to innerToNetwork().
 	 */
-	public void toNetwork(ObjectContainer container, ClientContext context) {
+	public void toNetwork(ClientContext context) {
 		synchronized(this) {
 			if(sentToNetwork) return;
 			sentToNetwork = true;
-			if(persistent()) container.store(this);
 		}
-		innerToNetwork(container, context);
+		innerToNetwork(context);
 	}
 
 	/** Notify clients that a request has gone to the network, for the first time, i.e. we have finished
 	 * checking the datastore for at least one part of the request. */
-	protected abstract void innerToNetwork(ObjectContainer container, ClientContext context);
+	protected abstract void innerToNetwork(ClientContext context);
 
 	protected void clearCountersOnRestart() {
 		this.blockSetFinalized = false;
@@ -346,18 +309,17 @@ public abstract class ClientRequester {
 	 * @param container The database. If the request is persistent, this must be non-null, and we must
 	 * be running on the database thread; you should schedule a job using the DBJobRunner.
 	 */
-	public void setPriorityClass(short newPriorityClass, ClientContext ctx, ObjectContainer container) {
+	public void setPriorityClass(short newPriorityClass, ClientContext ctx) {
 		short oldPrio;
 		synchronized(this) {
 			oldPrio = priorityClass;
 			this.priorityClass = newPriorityClass;
 		}
 		if(logMINOR) Logger.minor(this, "Changing priority class of "+this+" from "+oldPrio+" to "+newPriorityClass);
-		ctx.getChkFetchScheduler(realTimeFlag).reregisterAll(this, container, oldPrio);
-		ctx.getChkInsertScheduler(realTimeFlag).reregisterAll(this, container, oldPrio);
-		ctx.getSskFetchScheduler(realTimeFlag).reregisterAll(this, container, oldPrio);
-		ctx.getSskInsertScheduler(realTimeFlag).reregisterAll(this, container, oldPrio);
-		if(persistent()) container.store(this);
+		ctx.getChkFetchScheduler(realTimeFlag).reregisterAll(this, oldPrio);
+		ctx.getChkInsertScheduler(realTimeFlag).reregisterAll(this, oldPrio);
+		ctx.getSskFetchScheduler(realTimeFlag).reregisterAll(this, oldPrio);
+		ctx.getSskInsertScheduler(realTimeFlag).reregisterAll(this, oldPrio);
 	}
 
 	public boolean realTimeFlag() {
@@ -369,90 +331,6 @@ public abstract class ClientRequester {
 		return client.persistent();
 	}
 
-	/** Remove this request from the database */
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		container.activate(requests, 1);
-		requests.removeFrom(container);
-		container.delete(this);
-	}
-	
-	/** When the request is activated, so is the request client, because we have to know whether we are
-	 * persistent! */
-	public void objectOnActivate(ObjectContainer container) {
-		container.activate(client, 1);
-	}
-	
-	public boolean objectCanNew(ObjectContainer container) {
-		if(client == null)
-			throw new NullPointerException();
-		return true;
-	}
-
-	public boolean objectCanUpdate(ObjectContainer container) {
-		if(client == null)
-			throw new NullPointerException();
-		return true;
-	}
-
-	/** Add a low-level request to the list of requests belonging to this high-level request (request here
-	 * includes inserts). */
-	public void addToRequests(SendableRequest req, ObjectContainer container) {
-		if(persistent())
-			container.activate(requests, 1);
-		requests.addRequest(req, container);
-		if(persistent())
-			container.deactivate(requests, 1);
-	}
-
-	/** Get all known low-level requests belonging to this high-level request.
-	 * @param container The database, must be non-null if this is a persistent request or persistent insert.
-	 */
-	public SendableRequest[] getSendableRequests(ObjectContainer container) {
-		if(persistent())
-			container.activate(requests, 1);
-		SendableRequest[] reqs = requests.listRequests(container);
-		if(persistent())
-			container.deactivate(requests, 1);
-		return reqs;
-	}
-
-	/** Remove a low-level request or insert from the list of known requests belonging to this 
-	 * high-level request or insert. */
-	public void removeFromRequests(SendableRequest req, ObjectContainer container, boolean dontComplain) {
-		if(persistent())
-			container.activate(requests, 1);
-		if(!requests.removeRequest(req, container) && !dontComplain) {
-			Logger.error(this, "Not in request list for "+this+": "+req);
-		}
-		if(persistent())
-			container.deactivate(requests, 1);
-	}
-
-	/** FIXME get rid. */
-	public static void checkAll(ObjectContainer container,
-			ClientContext clientContext) {
-		ObjectSet<ClientRequester> requesters = container.query(ClientRequester.class);
-		for(ClientRequester req : requesters) {
-			try {
-				if(logMINOR) Logger.minor(req, "Checking "+req);
-				if(req.isCancelled() || req.isFinished()) {
-					if(logMINOR) Logger.minor(req, "Cancelled or finished");
-				} else {
-					if(logMINOR) Logger.minor(req, "Checking for broken client: "+req);
-					if(!req.checkForBrokenClient(container, clientContext))
-						if(logMINOR) Logger.minor(req, "Request is clean.");
-					else {
-						WrapperManager.signalStarting((int) MINUTES.toMillis(5));
-						container.commit();
-					}
-				}
-			} catch (Throwable t) {
-				Logger.error(ClientRequester.class, "Caught error while checking on startup", t);
-			}
-			container.deactivate(req, 1);
-		}
-	}
-
 	private static WeakHashMap<ClientRequester,Object> allRequesters = new WeakHashMap<ClientRequester,Object>();
 	private static Object dumbValue = new Object();
 	public final long creationTime;
@@ -462,4 +340,60 @@ public abstract class ClientRequester {
 			return allRequesters.keySet().toArray(new ClientRequester[0]);
 		}
 	}
+
+    /** @return A byte[] representing the original client, to be written to the file storing a 
+     * persistent download. E.g. for FCP, this will include the Identifier, whether it is on the 
+     * global queue and the client name. 
+     * @param checker Used to checksum and isolate large components where we can recover if they 
+     * fail.
+     * @throws IOException */
+    public byte[] getClientDetail(ChecksumChecker checker) throws IOException {
+        return new byte[0];
+    }
+    
+    protected static byte[] getClientDetail(PersistentClientCallback callback, ChecksumChecker checker) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        callback.getClientDetail(dos, checker);
+        return baos.toByteArray();
+    }
+    
+    private transient boolean resumed = false;
+    
+    /** Called for a persistent request after startup. Should call notifyClients() at the end,
+     * after the callback has been registered etc. 
+     * @throws ResumeFailedException */
+    public final void onResume(ClientContext context) throws ResumeFailedException {
+        synchronized(this) {
+            if(resumed) return;
+            resumed = true;
+        }
+        innerOnResume(context);
+    }
+
+    /** Called by onResume() once and only once after restarting. Must be overridden, and must call
+     * super.innerOnResume(). 
+     * @throws ResumeFailedException */
+    protected void innerOnResume(ClientContext context) throws ResumeFailedException {
+        ClientBaseCallback cb = getCallback();
+        client = cb.getRequestClient();
+        assert(client.persistent());
+        if(sentToNetwork)
+            innerToNetwork(context);
+    }
+
+    protected abstract ClientBaseCallback getCallback();
+
+    /** Called just before the final write when shutting down the node. */
+    public void onShutdown(ClientContext context) {
+        // Do nothing.
+    }
+
+    public boolean isCurrentState(ClientGetState state) {
+        return false;
+    }
+
+    /** Get the ClientRequestSchedulerGroup. Usually but not always this will just be "return this". */
+    public abstract ClientRequestSchedulerGroup getSchedulerGroup();
+
 }
