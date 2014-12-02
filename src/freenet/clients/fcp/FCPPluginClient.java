@@ -18,7 +18,6 @@ import freenet.node.PrioRunnable;
 import freenet.node.fcp.FCPClient;
 import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FCPPluginClientTracker;
-import freenet.node.fcp.FCPPluginServerMessage;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;

@@ -9,7 +9,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.node.FSParseException;
 import freenet.node.Node;
-import freenet.node.fcp.FCPPluginServerMessage;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginTalker;

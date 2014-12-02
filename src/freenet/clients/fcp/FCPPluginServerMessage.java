@@ -1,12 +1,10 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node.fcp;
+package freenet.clients.fcp;
 
 import com.db4o.ObjectContainer;
 
-import freenet.clients.fcp.FCPPluginClient;
-import freenet.clients.fcp.FCPPluginClientMessage;
 import freenet.node.Node;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.PluginManager;
