@@ -33,7 +33,11 @@ import freenet.support.api.Bucket;
  * 
  * @author David &lsquo;Roden&rsquo; &lt;bombe@freenetproject.org&gt;
  * @version $Id$
+ * @deprecated Java 7 has a new language feature which mostly does what this class was for:
+ *             <a href="http://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html">The try with-resources Statement</a>.<br/>
+ *             There are some differences with regards to swallowing Exceptions, please study them carefully when replacing Closer usage with it.
  */
+@Deprecated
 public class Closer {
 	/**
 	 * Closes the given stream.
