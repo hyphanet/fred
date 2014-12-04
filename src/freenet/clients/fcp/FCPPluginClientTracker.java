@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node.fcp;
+package freenet.clients.fcp;
 
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import freenet.clients.fcp.FCPPluginClient;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 import freenet.support.Logger;
