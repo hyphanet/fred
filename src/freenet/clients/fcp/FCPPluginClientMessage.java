@@ -5,8 +5,6 @@ package freenet.clients.fcp;
 
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
@@ -222,11 +220,6 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
 		
 		pt.send(plugparams, this.bucket);
 
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 }

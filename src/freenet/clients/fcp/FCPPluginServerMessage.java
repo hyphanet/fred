@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.Node;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.PluginManager;
@@ -180,11 +178,6 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
 	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, NAME + " goes from server to client not the other way around", null, false);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 }
