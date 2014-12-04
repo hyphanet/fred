@@ -5,6 +5,7 @@ package freenet.clients.fcp;
 
 import java.io.IOException;
 
+import freenet.clients.fcp.FCPPluginClient.SendDirection;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
