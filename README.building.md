@@ -2,13 +2,14 @@
 
 Install junit 4, Apache ant and Hamcrest. For Debian Wheezy these are `junit4`, `ant`, `ant-optional` and `libhamcrest-java`.
 
-Symlink them to your lib/ folder using:
-ln -s /usr/share/java/bcprov-1.51.jar lib/
-ln -s /usr/share/java/junit4.jar lib/
-ln -s /usr/share/java/hamcrest-core.jar lib/
+If sufficient packages are not available, put these jars into the `lib/` directory:
 
-* `lib/bcprov-jdk15on-151.jar`: Download Bouncy Castle 1.51: `wget --no-passive-ftp ftp://ftp.bouncycastle.org/pub/release1.51/bcprov-jdk15on-151.jar` or `wget http://www.bouncycastle.org/download/bcprov-jdk15on-151.jar`
-* `lib/freenet/freenet-ext.jar`: Build the `contrib/` submodule or [download](https://downloads.freenetproject.org/latest/freenet-ext.jar) for convenience.
+* `junit4.jar` and `hamcrest-core.jar`: See the [download instructions](https://github.com/junit-team/junit/wiki/Download-and-Install)
+* `bcprov-jdk15on-151.jar`: Download Bouncy Castle 1.51: `wget --no-passive-ftp ftp://ftp.bouncycastle.org/pub/release1.51/bcprov-jdk15on-151.jar` or `wget http://www.bouncycastle.org/download/bcprov-jdk15on-151.jar`
+
+Freenet also requires in the `lib/freenet/` directory:
+
+* `freenet-ext.jar`: Build the `contrib/` submodule or [download](https://downloads.freenetproject.org/latest/freenet-ext.jar) for convenience.
 
 The dependencies could also be copied from an existing Freenet installation.
 
