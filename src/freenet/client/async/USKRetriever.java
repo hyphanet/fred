@@ -36,7 +36,7 @@ import freenet.support.io.NativeThread;
 /**
  * Poll a USK, and when a new slot is found, fetch it. 
  */
-public class USKRetriever extends BaseClientGetter implements USKCallback, ClientRequestSchedulerGroup {
+public class USKRetriever extends BaseClientGetter implements USKCallback {
 
 	/** Context for fetching data */
 	final FetchContext ctx;
@@ -341,10 +341,4 @@ public class USKRetriever extends BaseClientGetter implements USKCallback, Clien
         // Not persistent.
         return null;
     }
-
-    @Override
-    public ClientRequestSchedulerGroup getSchedulerGroup() {
-        return this;
-    }
-	
 }

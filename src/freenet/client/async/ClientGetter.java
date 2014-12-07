@@ -62,7 +62,7 @@ import freenet.support.io.StorageFormatException;
  * example fetches a key, parses the metadata, and if necessary creates other states to e.g. fetch splitfiles.
  */
 public class ClientGetter extends BaseClientGetter 
-implements WantsCooldownCallback, FileGetCompletionCallback, Serializable, ClientRequestSchedulerGroup {
+implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 
     private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;
@@ -1066,10 +1066,4 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable, Clien
         // Just a plain FileBucket. Not a temporary, not delayed free, etc.
         return ((FileBucket)returnBucket).getFile();
     }
-
-    @Override
-    public ClientRequestSchedulerGroup getSchedulerGroup() {
-        return this;
-    }
-
 }

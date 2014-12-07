@@ -28,7 +28,7 @@ import freenet.support.io.ResumeFailedException;
  * WARNING: Changing non-transient members on classes that are Serializable can result in 
  * restarting downloads or losing uploads.
  */
-public abstract class ClientRequester implements Serializable {
+public abstract class ClientRequester implements Serializable, ClientRequestSchedulerGroup {
     private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;
 	
@@ -393,7 +393,12 @@ public abstract class ClientRequester implements Serializable {
         return false;
     }
 
-    /** Get the ClientRequestSchedulerGroup. Usually but not always this will just be "return this". */
-    public abstract ClientRequestSchedulerGroup getSchedulerGroup();
+    /**
+     * Get the group the request belongs to. For single requests this is the request itself; for
+     * those in a group, such as a site insert, it is a common value between them.
+     */
+    public ClientRequestSchedulerGroup getSchedulerGroup() {
+      return this;
+    }
 
 }
