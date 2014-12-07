@@ -231,6 +231,7 @@ public class MasterKeys {
         // It matches. Now decode it.
         ByteArrayInputStream bais = new ByteArrayInputStream(data);
         dis = new DataInputStream(bais);
+    try {
         // FIXME Fields.longToBytes and dis.readLong may not be compatible, find out if they are.
         byte[] flagsBytes = new byte[8];
         dis.readFully(flagsBytes);
@@ -250,6 +251,9 @@ public class MasterKeys {
         clear(hash);
         SHA256.returnMessageDigest(md);
         return ret;
+    } finally {
+      dis.close();
+    }
     }
 
     public static void clear(byte[] buf) {
@@ -273,6 +277,7 @@ public class MasterKeys {
 		hardRandom.nextBytes(iv);
 		byte[] salt = new byte[32];
 		hardRandom.nextBytes(salt);
+		int hashedStart = salt.length + iv.length + 4 + 8;
 
         byte[] pwd;
         try {
@@ -300,12 +305,16 @@ public class MasterKeys {
         }
 
 		DataOutputStream dos = new DataOutputStream(baos);
+    try {
 		dos.writeInt(VERSION);
 		dos.writeLong(iterations);
 		baos.write(salt);
 		baos.write(iv);
-		int hashedStart = salt.length + iv.length + 4 + 8;
 		dos.writeLong(flags);
+    } finally {
+      dos.close();
+    }
+
 		baos.write(clientCacheMasterKey);
 		baos.write(databaseKey);
 		baos.write(tempfilesMasterSecret);
@@ -331,6 +340,7 @@ public class MasterKeys {
 
 		RandomAccessFile raf = new RandomAccessFile(masterKeysFile, "rw");
 
+    try {
 		raf.seek(0);
 		raf.write(data);
 		long len = raf.length();
@@ -340,7 +350,9 @@ public class MasterKeys {
 			raf.setLength(data.length);
 		}
 		raf.getFD().sync();
+    } finally {
 		raf.close();
+    }
 	}
 
 	public static void killMasterKeys(File masterKeysFile) throws IOException {
