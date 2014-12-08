@@ -15,7 +15,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.node.NodeStarter;
 import freenet.node.PrioRunnable;
-import freenet.node.fcp.FCPClient;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
@@ -35,11 +34,6 @@ import freenet.support.io.NativeThread;
 
 /**
  * <p>An FCP client communicating with a plugin running within fred.</p>
- * 
- * <p>
- * The difference to {@link FCPClient} is that FCPPluginClient provides functions for interacting
- * with plugins only, while {@link FCPClient} provides functions for interacting with the node only.
- * </p>
  * 
  * <h1>How to use this properly</h1><br>
  * 
@@ -146,18 +140,19 @@ import freenet.support.io.NativeThread;
  * connections.<br/></p>
  * 
  * <p>
- * In opposite to {@link FCPClient}, a FCPPluginClient is kept in existence by fred only while the
- * actual client is connected (= in case of networked FCP the parent {@link FCPConnectionHandler}
- * exists; or in case of non-networked FCP while the FCPPluginClient is strong-referenced by the
- * client plugin).<br>
+ * In opposite to {@link PersistentRequestClient}, a FCPPluginClient is kept in existence by fred
+ * only while the actual client is connected (= in case of networked FCP the parent
+ * {@link FCPConnectionHandler} exists; or in case of non-networked FCP while the FCPPluginClient is
+ * strong-referenced by the client plugin).<br>
  * There is no such thing as persistence beyond client disconnection.<br/>
  * This was decided to simplify implementation:<br/>
  * - Persistence should be implemented by using the existing persistence framework of
- *   {@link FCPClient}. That would require extending the class though, and it is a complex class.
- *   The work for extending it was out of scope of the time limit for implementing this class.<br/>
+ *   {@link PersistentRequestClient}. That would require extending the class though, and it is a
+ *   complex class. The work for extending it was out of scope of the time limit for implementing
+ *   this class.<br/>
  * - FCPPluginClient instances need to be created without a network connection for intra-node plugin
- *   connections. If we extended class {@link FCPClient}, a lot of care would have to be taken to
- *   allow it to exist without a network connection - that would even be more work.<br/>
+ *   connections. If we extended class {@link PersistentRequestClient}, a lot of care would have to
+ *   be taken to allow it to exist without a network connection - that would even be more work.<br/>
  * </p>
  * 
  * @author xor (xor@freenetproject.org)
