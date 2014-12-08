@@ -4,11 +4,14 @@
 package freenet.pluginmanager;
 
 import freenet.clients.fcp.FCPConnectionInputHandler;
+import freenet.clients.fcp.FCPPluginClient;
 import freenet.clients.fcp.FCPPluginClientMessage;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 
+/** @deprecated Use the {@link FCPPluginClient} API instead. */
+@Deprecated
 public abstract class PluginReplySender {
 	
 	final String pluginname;
