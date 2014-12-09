@@ -567,7 +567,7 @@ public class SplitFileInserterStorage {
         status = Status.NOT_STARTED;
         
         // Include the cross check blocks in the required blocks. The actual number needed may be 
-        // slightly less, but this is consistent with fetching, and also with pre-1466 metadata. 
+        // slightly less, but this is consistent with fetching, and also with pre-1468 metadata. 
         int totalCrossCheckBlocks = crossCheckBlocks * segments.length;
         this.topRequiredBlocks = topRequiredBlocks + totalDataBlocks + totalCrossCheckBlocks;
         this.topTotalBlocks = topTotalBlocks + totalDataBlocks + totalCrossCheckBlocks + totalCheckBlocks;
@@ -768,7 +768,7 @@ public class SplitFileInserterStorage {
         underlyingOffsetDataSegments = new long[segmentCount];
         is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), 1024*1024);
         dis = new DataInputStream(is);
-        int blocks = 0;
+        long blocks = 0;
         for(int i=0;i<segmentCount;i++) {
             segments[i] = new SplitFileInserterSegmentStorage(this, dis, i, keyLength, 
                     splitfileCryptoAlgorithm, splitfileCryptoKey, random, maxRetries, consecutiveRNFsCountAsSuccess, keysFetching);
@@ -1052,7 +1052,7 @@ public class SplitFileInserterStorage {
             int data = segmentSize;
             int check = codec.getCheckBlocks(data + crossCheckBlocks, cmode);
             for (int i = segmentSize;;) {
-                this.underlyingOffsetDataSegments[segNo] = j * CHKBlock.DATA_LENGTH;
+                this.underlyingOffsetDataSegments[segNo] = (long)j * CHKBlock.DATA_LENGTH;
                 if (i > dataBlocks)
                     i = dataBlocks;
                 if (data > (i - j)) {
