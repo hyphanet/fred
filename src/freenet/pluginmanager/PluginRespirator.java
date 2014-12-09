@@ -172,7 +172,7 @@ public class PluginRespirator {
             FredPluginFCPMessageHandler.ClientSideFCPMessageHandler messageHandler)
                 throws PluginNotFoundException {
         
-        return node.clientCore.getFCPServer().createPluginClientForIntraNodeFCP(pluginName,
+        return node.clientCore.getFCPServer().createFCPPluginClientForIntraNodeFCP(pluginName,
             messageHandler);
     }
 
