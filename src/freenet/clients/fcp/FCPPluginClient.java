@@ -1007,7 +1007,8 @@ public final class FCPPluginClient {
      *            Replies to replies are not allowed though (to prevent infinite bouncing).<br><br>
      * 
      * @param timeoutNanoSeconds
-     *            The function will wait for a reply to arrive for this amount of time.<br><br>
+     *            The function will wait for a reply to arrive for this amount of time.<br>
+     *            Must be greater than 0 and below or equal to 1 minute.<br><br>
      * 
      *            If the timeout expires, an {@link IOException} is thrown.<br>
      *            This FCPPluginClient <b>should be</b> considered as dead once this happens, you
