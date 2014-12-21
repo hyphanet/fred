@@ -26,11 +26,12 @@ maintainers may prefer to use this instead of build.xml.
 	<path id="lib.path">
 		<fileset dir="${lib.contrib.dir}" includes="${lib.contrib.jars}"/>
 		<fileset dir="${lib.dir}" includes="${lib.jars}"/>
-		<fileset dir="/usr/share/java" includes="${lib.jars}"/>
+		<fileset dir="/usr/share/java" includes="${lib.jars}" erroronmissingdir="false"/>
 	</path>
 	<path id="libtest.path">
 		<path refid="lib.path"/>
 		<fileset dir="${lib.dir}" includes="${libtest.jars}"/>
+		<fileset dir="/usr/share/java" includes="${lib.jars}" erroronmissingdir="false"/>
 		<pathelement path="${main.make}"/>
 		<pathelement path="${test.make}"/>
 	</path>
