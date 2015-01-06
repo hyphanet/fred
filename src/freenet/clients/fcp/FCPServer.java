@@ -485,14 +485,14 @@ public class FCPServer implements Runnable, DownloadCache {
      * In other words, you don't have to take care of registering or unregistering clients. You only
      * have to take care of keeping a strong reference to them while they are in use.</p>
      * 
-     * <p>You should probably instead use the frontend function for this:
+     * <p>ATTENTION: Only for internal use by the frontend function
      * {@link FCPConnectionHandler#getPluginClient(String)}.</p>
      * 
      * @see FCPPluginClient
      *          The class JavaDoc of FCPPluginClient explains the code path for both networked and
      *          non-networked FCP.
      */
-    public FCPPluginClient createFCPPluginClientForNetworkedFCP(String serverPluginName,
+    FCPPluginClient createFCPPluginClientForNetworkedFCP(String serverPluginName,
         FCPConnectionHandler messageHandler)
             throws PluginNotFoundException {
         
@@ -516,9 +516,9 @@ public class FCPServer implements Runnable, DownloadCache {
      * In other words, you don't have to take care of registering or unregistering clients. You only
      * have to take care of keeping a strong reference to them while they are in use.</p>
      * 
-     * <p>You should probably instead use the frontend function:
+     * <p>ATTENTION: Only for internal use by the frontend function
      * {@link PluginRespirator#connectToOtherPlugin(String,
-     * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}.</p>
+     * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}. Plugins must use that instead.</p>
      * 
      * @see FCPPluginClient
      *          The class JavaDoc of FCPPluginClient explains the code path for both networked and
