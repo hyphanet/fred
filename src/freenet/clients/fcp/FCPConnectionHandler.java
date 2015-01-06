@@ -166,7 +166,21 @@ public class FCPConnectionHandler implements Closeable {
         // TODO: When getting rid of the non-UUID connectionIdentifier, use UUID.randomUUID();
         this.connectionIdentifierUUID = UUID.nameUUIDFromBytes(identifier);
 	}
-	
+
+    /**
+     * Queues the message for sending at the {@link FCPConnectionOutputHandler}.<br>
+     * <br>
+     * 
+     * ATTENTION: The function will return immediately before even trying to send the message, the
+     * message will be sent asynchronously.<br>
+     * As a consequence, this function not throwing does not give any guarantee whatsoever that the
+     * message will ever be sent.
+     */
+    @SuppressWarnings("deprecation")
+    public final void send(final FCPMessage message) {
+        outputHandler.queue(message);
+    }
+
 	void start() {
 		inputHandler.start();
 		outputHandler.start();
