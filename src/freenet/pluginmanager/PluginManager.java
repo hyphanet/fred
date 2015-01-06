@@ -939,8 +939,8 @@ public class PluginManager {
 	 * @param plugname
 	 * @return the plugin or null if not found
      * @deprecated The {@link FredPluginFCP} API, which this returns, was deprecated to be replaced
-     *             by {@link FredPluginFCPMessageHandler}. The equivalent function for the new API
-     *             is {link #getPluginFCPServer(String)}.
+     *             by {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}. The
+     *             equivalent function for the new API is {link #getPluginFCPServer(String)}.
 	 */
     @Deprecated
 	public FredPluginFCP getFCPPlugin(String plugname) {
