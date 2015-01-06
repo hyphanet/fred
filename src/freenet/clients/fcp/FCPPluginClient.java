@@ -911,9 +911,16 @@ public final class FCPPluginClient {
                 
                 return priority.value;
             }
+
+            /** @return A suitable {@link String} for use as the name of this thread */
+            @Override public String toString() {
+                // Don't use FCPPluginClient.toString() as it would be too long to fit in the thread
+                // list on the Freenet FProxy web interface.
+                return "FCPPluginClient for " + serverPluginName;
+            }
         };
         
-        executor.execute(messageDispatcher, toStringShort());
+        executor.execute(messageDispatcher, messageDispatcher.toString());
     }
 
     /**
@@ -1177,10 +1184,6 @@ public final class FCPPluginClient {
     public String toString() {
         return "FCPPluginClient (ID: " + id + "; server plugin: " + serverPluginName + "; client: "
                    + client + "; clientConnection: " + clientConnection +  ")";
-    }
-
-    public String toStringShort() {
-        return "FCPPluginClient for " + serverPluginName;
     }
 
     /**
