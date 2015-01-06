@@ -939,8 +939,13 @@ public class PluginManager {
 	 * @param plugname
 	 * @return the plugin or null if not found
      * @deprecated The {@link FredPluginFCP} API, which this returns, was deprecated to be replaced
-     *             by {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}. The
-     *             equivalent function for the new API is {link #getPluginFCPServer(String)}.
+     *             by {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}.
+     *             Plugin authors should implement the new interface instead of the old,
+     *             and this codepath to support plugins which implement the old interface should
+     *             be removed one day. No new code will be needed then: The code to use the 
+     *             new interface already exists in its own codepath - the equivalent function for
+     *             the new API is {link #getPluginFCPServer(String)}, and it is already being used
+     *             automatically for plugins which implement it.
 	 */
     @Deprecated
 	public FredPluginFCP getFCPPlugin(String plugname) {
