@@ -55,6 +55,10 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		this.pr = new PluginRespirator(node, this);
 		threadName = 'p' + className.replaceAll("^class ", "") + '_' + hashCode();
 		start = System.currentTimeMillis();
+
+        // TODO: Code quality: Do we really need to cache these values? I don't care about the
+        // memory overhead, but it's the pointless clutter it causes in the member variables, while
+        // the information is right there and always accessible in the runtime type of plug.
 		isBandwidthIndicator = (plug instanceof FredPluginBandwidthIndicator);
 		isPproxyPlugin = (plug instanceof FredPluginHTTP);
 		isThreadlessPlugin = (plug instanceof FredPluginThreadless);
