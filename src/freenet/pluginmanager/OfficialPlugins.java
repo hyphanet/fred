@@ -45,8 +45,8 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@Zgib8xrGxcEuix7AVB4eajton1FpNHbIJeQZgEbHMNU,BQekU261VLSDUBQPOHSMKUF5qxY1v0zjXa33RyoEbYk,AAMC--8/JSTUN.jar");
 			addPlugin("KeyUtils")
 					.inGroup("technical")
-					.minimumVersion(5021)
-					.loadedFrom("CHK@~hS3~oxnvcUZNKW~zdmhh0BJRvQ1NYg9qSiVJt0IPSU,fRRHqSbuZ7dqPo0rYPBuP5NbZPGXtGe-Ug7iGjd~4SY,AAMC--8/KeyExplorer.jar")
+					.minimumVersion(5024)
+					.loadedFrom("CHK@rsRNrCbYJvuCcQa3OC0c9uQh23KtqczNfZSUQfLpiAM,68yt6H-UiG00PWNQWF5uNrhuT5bcWu5CYwP~acTnzEM,AAMC--8/KeyUtils-v5024.jar")
 					.advanced();
 			addPlugin("MDNSDiscovery")
 					.inGroup("connectivity")
