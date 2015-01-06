@@ -711,7 +711,7 @@ public final class FCPPluginClient {
         if (clientConnection.isClosed())
             throw new IOException("Connection to client closed for " + this);
         
-        clientConnection.outputHandler.queue(new FCPPluginServerMessage(serverPluginName, message));
+        clientConnection.send(new FCPPluginServerMessage(serverPluginName, message));
     }
 
     /**
