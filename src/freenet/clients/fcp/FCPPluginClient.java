@@ -643,14 +643,23 @@ public final class FCPPluginClient {
             : "We already decided that the message handler exists locally. "
             + "We should have only decided so if the handler is not null.";
         
-        // Since the message handler is determined to be local at this point, we now must check
-        // whether it is a blocking sendSynchronous() thread instead of a regular
-        // FredPluginFCPMessageHandler.
-        // sendSynchronous() does the following: It sends a message and then blocks its thread
-        // waiting for a message replying to it to arrive so it can return it to the caller.
-        // If the message we are processing here is a reply, it might be the one which a
-        // sendSynchronous() is waiting for.
-        if(maybeDispatchMessageLocallyToSendSynchronousThread(direction, message))
+        // The message handler is determined to be local at this point. There are two possible
+        // types of local message handlers:
+        // 1) An object provided by the server/client which implements FredPluginFCPMessageHandler.
+        //    The message is delivered by executing a callback on that object, with the message
+        //    as parameter.
+        // 2) A call to sendSynchronous() which is blocking because it is waiting for a reply
+        //    to the message it sent so it can return the reply message to the caller.
+        //    The reply message is delivered by passing it to the sendSynchronous() thread through
+        //    an internal table of this class.
+        // 
+        // The following function call checks for whether case 2 applies, and handles it if yes:
+        // If there is such a waiting sendSynchronous() thread, it delivers the message to it, and
+        // returns true, and we are done: By contract, messages are preferably delivered to
+        // sendSynchronous().
+        // If there was no sendSynchronous() thread, it returns false, and we must continue to
+        // handle case 1.
+        if(dispatchMessageLocallyToSendSynchronousThreadIfExisting(direction, message))
             return;
         
         // We now know that the message handler is not attached by network, and that it is not a
@@ -725,8 +734,9 @@ public final class FCPPluginClient {
      *          An overview of how synchronous sends and especially their threading work internally
      *          is provided at the map which stores them.
      */
-    private boolean maybeDispatchMessageLocallyToSendSynchronousThread(final SendDirection direction,
-            final FCPPluginMessage message) {
+    private boolean dispatchMessageLocallyToSendSynchronousThreadIfExisting(
+            final SendDirection direction, final FCPPluginMessage message) {
+
         // Since the message handler is determined to be local at this point, we now must check
         // whether it is a blocking sendSynchronous() thread instead of a regular
         // FredPluginFCPMessageHandler.
