@@ -974,7 +974,7 @@ public class PluginManager {
         
         PluginInfoWrapper piw = getPluginInfoByClassName(pluginClassName);
         if(piw != null && piw.isFCPServerPlugin()) {
-            return (FredPluginFCPMessageHandler.ServerSideFCPMessageHandler)piw.plug;
+            return piw.getFCPServerPlugin();
         } else {
             throw new PluginNotFoundException(pluginClassName);
         }
