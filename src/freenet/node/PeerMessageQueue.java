@@ -866,8 +866,7 @@ public class PeerMessageQueue {
 		addPeerLoadStatsRT.value = true;
 		addPeerLoadStatsBulk.value = true;
 		
-		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
-			if(i < minPriority) continue;
+		for(int i=minPriority;i<DMT.PRIORITY_REALTIME_DATA;i++) {
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
 			MessageItem ret = queuesByPriority[i].addPriorityMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
 			if(ret != null) return ret;
