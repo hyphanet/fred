@@ -884,10 +884,12 @@ public class PeerMessageQueue {
 			tryRealtimeFirst = false;
 		} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty()) {
 			tryRealtimeFirst = true;
-		} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, 0) >= queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, 0)) {
-			tryRealtimeFirst = true;
 		} else {
-			tryRealtimeFirst = false;
+			long rtNextUrgentTime = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, 0);
+			if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, rtNextUrgentTime) >= rtNextUrgentTime)
+				tryRealtimeFirst = true;
+			else
+				tryRealtimeFirst = false;
 		}
 		
 		// FIXME token bucket?
