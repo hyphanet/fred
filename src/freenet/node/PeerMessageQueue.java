@@ -40,6 +40,8 @@ public class PeerMessageQueue {
 	private long cachedNextUrgentTime = Long.MAX_VALUE; // cached getNextUrgentTime; Long.MIN_VALUE if invalid; Long.MAX_VALUE for empty queue (initial value); uses "synchronized(this)" lock
 	private int cachedQueueSize = 0; // lower bound for queue size; -1 if invalid; 0 for empty queue (initial value)
 	private boolean cachedQueueSizeIsComplete = true; // true if cachedQueueSize covers full queue (otherwise cachedQueueSize is only lower bound); ignored when cachedQueueSize is invalid (-1)
+
+	private static final int MESSAGE_OVERHEAD = 2;
 	
 	private boolean mustSendLoadRT;
 	private boolean mustSendLoadBulk;
@@ -429,16 +431,14 @@ public class PeerMessageQueue {
 		public int addSize(int length, int maxSize) {
 			if(itemsNonUrgent != null) {
 				for(MessageItem item : itemsNonUrgent) {
-					int thisLen = item.getLength();
-					length += thisLen;
+					length += item.getLength() + MESSAGE_OVERHEAD;
 					if(length > maxSize) return length;
 				}
 			}
 			if(nonEmptyItemsWithID != null) {
 				for(Items list : nonEmptyItemsWithID) {
 					for(MessageItem item : list.items) {
-						int thisLen = item.getLength();
-						length += thisLen;
+						length += item.getLength() + MESSAGE_OVERHEAD;
 						if(length > maxSize) return length;
 					}
 				}
@@ -744,7 +744,7 @@ public class PeerMessageQueue {
 		for(PrioQueue pq : queuesByPriority) {
 			if(pq.itemsNonUrgent != null) {
 				for(MessageItem it : pq.itemsNonUrgent) {
-					x += it.getLength() + 2;
+					x += it.getLength() + MESSAGE_OVERHEAD;
 					if(x > maxSize)
 						break;
 				}
@@ -752,7 +752,7 @@ public class PeerMessageQueue {
 			if(pq.nonEmptyItemsWithID != null) {
 				for(PrioQueue.Items q : pq.nonEmptyItemsWithID)
 					for(MessageItem it : q.items) {
-						x += it.getLength() + 2;
+						x += it.getLength() + MESSAGE_OVERHEAD;
 						if(x > maxSize)
 							break;
 					}
@@ -767,7 +767,7 @@ public class PeerMessageQueue {
 			if(pq.nonEmptyItemsWithID != null)
 				for(PrioQueue.Items q : pq.nonEmptyItemsWithID)
 					for(MessageItem it : q.items)
-						x += it.getLength() + 2;
+						x += it.getLength() + MESSAGE_OVERHEAD;
 		}
 		return x;
 	}
@@ -780,10 +780,10 @@ public class PeerMessageQueue {
 		cachedNextUrgentTime = Math.min(cachedNextUrgentTime, addMe.submitted + queuesByPriority[prio].timeout); // won't change value if was "invalid" before
 		if (cachedQueueSize >= 0) {
 			// adjust cached value
-			cachedQueueSize += addMe.getLength();
+			cachedQueueSize += addMe.getLength() + MESSAGE_OVERHEAD;
 		} else {
 			// initial estimation (covers only just-added MessageItem)
-			cachedQueueSize = addMe.getLength();
+			cachedQueueSize = addMe.getLength() + MESSAGE_OVERHEAD;
 			cachedQueueSizeIsComplete = false;
 		}
 		if(addMe.sendLoadRT)
@@ -806,10 +806,10 @@ public class PeerMessageQueue {
 		cachedNextUrgentTime = Math.min(cachedNextUrgentTime, addMe.submitted + queuesByPriority[prio].timeout); // won't change value if was invalid before
 		if (cachedQueueSize >= 0) {
 			// adjust cached value
-			cachedQueueSize += addMe.getLength();
+			cachedQueueSize += addMe.getLength() + MESSAGE_OVERHEAD;
 		} else {
 			// initial estimation (covers only just-added MessageItem)
-			cachedQueueSize = addMe.getLength();
+			cachedQueueSize = addMe.getLength() + MESSAGE_OVERHEAD;
 			cachedQueueSizeIsComplete = false;
 		}
 		if(addMe.sendLoadRT)
@@ -993,7 +993,7 @@ public class PeerMessageQueue {
 			}
 			if (cachedQueueSize >= 0 && cachedQueueSizeIsComplete) {
 				// adjust cached queue size
-				cachedQueueSize -= message.getLength();
+				cachedQueueSize -= message.getLength() + MESSAGE_OVERHEAD;
 			} else {
 				// cached size covers only part of queue, removed message might be not included -> invalidate cache
 				cachedQueueSize = -1;
