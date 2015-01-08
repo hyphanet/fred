@@ -42,6 +42,8 @@ public class PeerMessageQueue {
 	private long cachedNextUrgentTime = Long.MAX_VALUE; // -1 if invalid
 	private int cachedQueueSize = 0; // lower bound for queue size, -1 if invalid
 	private boolean cachedQueueSizeIsComplete = true; // true if cachedQueueSize covers full queue; ignored when cachedQueueSize is -1
+
+	private static final int MESSAGE_OVERHEAD = 2;
 	
 	private class PrioQueue {
 		
@@ -428,16 +430,14 @@ public class PeerMessageQueue {
 		public int addSize(int length, int maxSize) {
 			if(itemsNonUrgent != null) {
 				for(MessageItem item : itemsNonUrgent) {
-					int thisLen = item.getLength();
-					length += thisLen;
+					length += item.getLength() + MESSAGE_OVERHEAD;
 					if(length > maxSize) return length;
 				}
 			}
 			if(nonEmptyItemsWithID != null) {
 				for(Items list : nonEmptyItemsWithID) {
 					for(MessageItem item : list.items) {
-						int thisLen = item.getLength();
-						length += thisLen;
+						length += item.getLength() + MESSAGE_OVERHEAD;
 						if(length > maxSize) return length;
 					}
 				}
@@ -743,7 +743,7 @@ public class PeerMessageQueue {
 		for(PrioQueue pq : queuesByPriority) {
 			if(pq.itemsNonUrgent != null) {
 				for(MessageItem it : pq.itemsNonUrgent) {
-					x += it.getLength() + 2;
+					x += it.getLength() + MESSAGE_OVERHEAD;
 					if(x > maxSize)
 						break;
 				}
@@ -751,7 +751,7 @@ public class PeerMessageQueue {
 			if(pq.nonEmptyItemsWithID != null) {
 				for(PrioQueue.Items q : pq.nonEmptyItemsWithID)
 					for(MessageItem it : q.items) {
-						x += it.getLength() + 2;
+						x += it.getLength() + MESSAGE_OVERHEAD;
 						if(x > maxSize)
 							break;
 					}
@@ -766,7 +766,7 @@ public class PeerMessageQueue {
 			if(pq.nonEmptyItemsWithID != null)
 				for(PrioQueue.Items q : pq.nonEmptyItemsWithID)
 					for(MessageItem it : q.items)
-						x += it.getLength() + 2;
+						x += it.getLength() + MESSAGE_OVERHEAD;
 		}
 		return x;
 	}
@@ -777,9 +777,9 @@ public class PeerMessageQueue {
 		queuesByPriority[prio].addLast(addMe);
 		cachedNextUrgentTime = -1; // TODO we can try harder, but with 99.7% cache hit rate there are little point
 		if (cachedQueueSize >= 0)
-			cachedQueueSize += addMe.getLength();
+			cachedQueueSize += addMe.getLength() + MESSAGE_OVERHEAD;
 		else {
-			cachedQueueSize = addMe.getLength();
+			cachedQueueSize = addMe.getLength() + MESSAGE_OVERHEAD;
 			cachedQueueSizeIsComplete = false;
 		}
 		if(addMe.sendLoadRT)
@@ -800,9 +800,9 @@ public class PeerMessageQueue {
 		queuesByPriority[prio].addFirst(addMe);
 		cachedNextUrgentTime = -1; // TODO we can try harder, but with 97% cache hit rate there are little point in added complexity
 		if (cachedQueueSize >= 0)
-			cachedQueueSize += addMe.getLength();
+			cachedQueueSize += addMe.getLength() + MESSAGE_OVERHEAD;
 		else {
-			cachedQueueSize = addMe.getLength();
+			cachedQueueSize = addMe.getLength() + MESSAGE_OVERHEAD;
 			cachedQueueSizeIsComplete = false;
 		}
 		if(addMe.sendLoadRT)
@@ -968,7 +968,7 @@ public class PeerMessageQueue {
 			if(!queuesByPriority[prio].removeMessage(message)) return false;
 			cachedNextUrgentTime = -1;
 			if (cachedQueueSize >= 0 && cachedQueueSizeIsComplete)
-				cachedQueueSize -= message.getLength();
+				cachedQueueSize -= message.getLength() + MESSAGE_OVERHEAD;
 			else
 				cachedQueueSize = -1;
 		}
