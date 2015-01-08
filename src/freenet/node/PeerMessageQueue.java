@@ -38,6 +38,10 @@ public class PeerMessageQueue {
 	
 	private boolean mustSendLoadRT;
 	private boolean mustSendLoadBulk;
+
+	private long cachedNextUrgentTime = Long.MAX_VALUE; // -1 if invalid
+	private int cachedQueueSize = 0; // lower bound for queue size, -1 if invalid
+	private boolean cachedQueueSizeIsComplete = true; // true if cachedQueueSize covers full queue; ignored when cachedQueueSize is -1
 	
 	private class PrioQueue {
 		
@@ -771,6 +775,13 @@ public class PeerMessageQueue {
 		//Assume it goes on the end, both the common case
 		short prio = addMe.getPriority();
 		queuesByPriority[prio].addLast(addMe);
+		cachedNextUrgentTime = -1; // TODO we can try harder, but with 99.7% cache hit rate there are little point
+		if (cachedQueueSize >= 0)
+			cachedQueueSize += addMe.getLength();
+		else {
+			cachedQueueSize = addMe.getLength();
+			cachedQueueSizeIsComplete = false;
+		}
 		if(addMe.sendLoadRT)
 			mustSendLoadRT = true;
 		if(addMe.sendLoadBulk)
@@ -787,6 +798,13 @@ public class PeerMessageQueue {
 		//Assume it goes on the front
 		short prio = addMe.getPriority();
 		queuesByPriority[prio].addFirst(addMe);
+		cachedNextUrgentTime = -1; // TODO we can try harder, but with 97% cache hit rate there are little point in added complexity
+		if (cachedQueueSize >= 0)
+			cachedQueueSize += addMe.getLength();
+		else {
+			cachedQueueSize = addMe.getLength();
+			cachedQueueSizeIsComplete = false;
+		}
 		if(addMe.sendLoadRT)
 			mustSendLoadRT = true;
 		if(addMe.sendLoadBulk)
@@ -803,6 +821,8 @@ public class PeerMessageQueue {
 			ptr = queue.addTo(output, ptr);
 			queue.clear();
 		}
+		cachedNextUrgentTime = -1;
+		cachedQueueSize = -1;
 		return output;
 	}
 
@@ -816,11 +836,14 @@ public class PeerMessageQueue {
 	 * @return The next urgent time, but can be too high if it is less than now.
 	 */
 	public synchronized long getNextUrgentTime(long returnIfBefore) {
+		if (cachedNextUrgentTime >= 0)
+			return cachedNextUrgentTime;
 		long t = Long.MAX_VALUE;
 		for(PrioQueue queue: queuesByPriority) {
 			t = queue.getNextUrgentTime(t, returnIfBefore);
 			if(t <= returnIfBefore) return t; // How much in the past doesn't matter, as long as it's in the past.
 		}
+		cachedNextUrgentTime = t;
 		return t;
 	}
 
@@ -844,11 +867,23 @@ public class PeerMessageQueue {
 	 * messages in this queue is greater than <code>maxSize</code>
 	 */
 	public synchronized boolean mustSendSize(int minSize, int maxSize) {
+		if (cachedQueueSize >= 0) {
+			if(minSize + cachedQueueSize > maxSize)
+				return true;
+			if(cachedQueueSizeIsComplete)
+				return false;
+		}
 		int length = minSize;
 		for(PrioQueue items : queuesByPriority) {
 			length = items.addSize(length, maxSize);
-			if(length > maxSize) return true;
+			if(length > maxSize) {
+				cachedQueueSize = Math.max(cachedQueueSize, length - minSize);
+				cachedQueueSizeIsComplete = false;
+				return true;
+			}
 		}
+		cachedQueueSize = length - minSize;
+		cachedQueueSizeIsComplete = true;
 		return false;
 	}
 
@@ -864,6 +899,11 @@ public class PeerMessageQueue {
 		
 		addPeerLoadStatsRT.value = true;
 		addPeerLoadStatsBulk.value = true;
+
+		long savedNextUrgentTime = cachedNextUrgentTime;
+		int savedQueueSize = cachedQueueSize;
+		cachedNextUrgentTime = -1;
+		cachedQueueSize = -1;
 		
 		for(int i=minPriority;i<DMT.PRIORITY_REALTIME_DATA;i++) {
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
@@ -915,6 +955,9 @@ public class PeerMessageQueue {
 			MessageItem ret = queuesByPriority[i].addPriorityMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
 			if(ret != null) return ret;
 		}
+		// restore cache (was not changed)
+		cachedNextUrgentTime = savedNextUrgentTime;
+		cachedQueueSize = savedQueueSize;
 		// Nothing to send.
 		return null;
 	}
@@ -923,6 +966,11 @@ public class PeerMessageQueue {
 		synchronized(this) {
 			short prio = message.getPriority();
 			if(!queuesByPriority[prio].removeMessage(message)) return false;
+			cachedNextUrgentTime = -1;
+			if (cachedQueueSize >= 0 && cachedQueueSizeIsComplete)
+				cachedQueueSize -= message.getLength();
+			else
+				cachedQueueSize = -1;
 		}
 		message.onFailed();
 		return true;
@@ -932,6 +980,7 @@ public class PeerMessageQueue {
 		for(PrioQueue queue : queuesByPriority) {
 			queue.removeUIDs(list);
 		}
+		/* queue.removeUIDs() only purges emptyItemsWithID; cachedQueueSize and cachedNextUrgentTime remain valid */
 	}
 }
 
