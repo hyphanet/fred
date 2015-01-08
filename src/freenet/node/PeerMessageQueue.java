@@ -739,11 +739,20 @@ public class PeerMessageQueue {
 	 */
 	public synchronized int queueAndEstimateSize(MessageItem item, int maxSize) {
 		enqueuePrioritizedMessageItem(item);
+		if (cachedQueueSize >= 0)
+			if (cachedQueueSizeIsComplete || cachedQueueSize > maxSize)
+				return cachedQueueSize;
 		int x = 0;
 		for(PrioQueue pq : queuesByPriority) {
 			x = pq.addSize(x, maxSize);
-			if (x > maxSize) return x;
+			if (x > maxSize) {
+				cachedQueueSize = Math.max(cachedQueueSize, x);
+				cachedQueueSizeIsComplete = false;
+				return x;
+			}
 		}
+		cachedQueueSize = cachedQueueSize;
+		cachedQueueSizeIsComplete = true;
 		return x;
 	}
 
