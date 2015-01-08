@@ -30,6 +30,7 @@ public class NewPacketFormatKeyContext {
 	public int watchListOffset = 0;
 	
 	private final TreeMap<Integer, Long> acks = new TreeMap<Integer, Long>();
+	private long timeCheckForAcksCached = Long.MAX_VALUE;
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
 	/** Keep this many sent times for lost packets, so we can compute an accurate round trip time if
 	 * they are acked after we had decided they were lost. */
@@ -148,7 +149,10 @@ public class NewPacketFormatKeyContext {
 	public int queueAck(int seqno) {
 		synchronized(acks) {
 			if(!acks.containsKey(seqno)) {
-				acks.put(seqno, System.currentTimeMillis());
+				long now = System.currentTimeMillis();
+				acks.put(seqno, now);
+				// update cached value (won't change if invalid)
+				timeCheckForAcksCached = Math.min(timeCheckForAcksCached, now + MAX_ACK_DELAY);
 				return acks.size();
 			} else return -1;
 		}
@@ -174,6 +178,7 @@ public class NewPacketFormatKeyContext {
 		public void abort() {
 			synchronized(acks) {
 				acks.putAll(moved);
+				timeCheckForAcksCached = Long.MIN_VALUE; // invalidate
 			}
 		}
 	}
@@ -207,6 +212,8 @@ public class NewPacketFormatKeyContext {
 				++numAcks;
 				it.remove();
 			}
+			if (moved != null)
+				timeCheckForAcksCached = Long.MIN_VALUE; // invalidate
 		}
 		if(numAcks == 0)
 			return null;
@@ -301,10 +308,13 @@ public class NewPacketFormatKeyContext {
 	public long timeCheckForAcks() {
 		long ret = Long.MAX_VALUE;
 		synchronized(acks) {
+			if (timeCheckForAcksCached >= 0)
+				return timeCheckForAcksCached;
 			for(Long l : acks.values()) {
 				long timeout = l + MAX_ACK_DELAY;
 				if(ret > timeout) ret = timeout;
 			}
+			timeCheckForAcksCached = ret;
 		}
 		return ret;
 	}
