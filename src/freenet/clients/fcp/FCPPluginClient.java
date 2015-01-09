@@ -470,7 +470,7 @@ public final class FCPPluginClient {
      * The class name of the plugin to which this FCPPluginClient is connected.
      * @see This is for internal usage by {@link FCPConnectionHandler#getPluginClient(String)}.
      */
-    public String getServerPluginName() {
+    String getServerPluginName() {
         return serverPluginName;
     }
     
