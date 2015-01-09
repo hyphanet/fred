@@ -294,7 +294,7 @@ public final class FCPPluginMessage {
      * See the JavaDoc of the member variables with the same name as the parameters for an
      * explanation of the parameters.<br>
      */
-    public static FCPPluginMessage constructRawMessage(ClientPermissions permissions,
+    static FCPPluginMessage constructRawMessage(ClientPermissions permissions,
             String identifier, SimpleFieldSet params, Bucket data, Boolean success,
             String errorCode, String errorMessage) {
         
