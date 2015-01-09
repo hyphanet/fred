@@ -27,8 +27,6 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
-import freenet.support.SimpleFieldSet;
-import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 
 /** @see FCPPluginConnection */
