@@ -11,7 +11,7 @@ import freenet.clients.fcp.FCPPluginClient;
 import freenet.clients.fcp.FCPPluginClientMessage;
 import freenet.clients.fcp.FCPPluginServerMessage;
 import freenet.node.FSParseException;
-import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
+import freenet.pluginmanager.FCPPluginMessage;
 import freenet.support.SimpleFieldSet;
 
 /**

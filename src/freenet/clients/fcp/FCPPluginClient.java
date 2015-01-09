@@ -15,10 +15,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.node.NodeStarter;
 import freenet.node.PrioRunnable;
+import freenet.pluginmanager.FCPPluginMessage;
+import freenet.pluginmanager.FCPPluginMessage.ClientPermissions;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
-import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
-import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage.ClientPermissions;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.PrioritizedMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 import freenet.pluginmanager.PluginManager;
@@ -42,9 +42,9 @@ import freenet.support.io.NativeThread;
  * - {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}<br>
  * - {@link PluginRespirator#getFCPPluginClientByID(UUID)}<br>
  * - {@link FredPluginFCPMessageHandler}<br>
- * - {@link FredPluginFCPMessageHandler.FCPPluginMessage}<br>
  * - {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}<br>
- * - {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}<br><br>
+ * - {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}<br>
+ * - {@link FCPPluginMessage}<br><br>
  * 
  * <h1>Debugging</h1><br>
  * 

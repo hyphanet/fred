@@ -4,7 +4,7 @@
 package freenet.clients.fcp;
 
 import freenet.node.Node;
-import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
+import freenet.pluginmanager.FCPPluginMessage;
 import freenet.pluginmanager.PluginManager;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;

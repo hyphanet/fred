@@ -18,7 +18,6 @@ import freenet.config.SubConfig;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
-import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.support.HTMLNode;
 import freenet.support.URIPreEncoder;
 import freenet.support.api.HTTPRequest;
