@@ -500,7 +500,7 @@ public final class FCPPluginClient {
      *         This is because the user is free to reconfigure IP-address restrictions on the node's
      *         web interface whenever he wants to.
      */
-    private ClientPermissions computePermissions() {
+    private ClientPermissions getCurrentPermissions() {
         if(clientConnection != null) { // Networked FCP
             return clientConnection.hasFullAccess() ?
                 ClientPermissions.ACCESS_FCP_FULL : ClientPermissions.ACCESS_FCP_RESTRICTED;
@@ -614,7 +614,7 @@ public final class FCPPluginClient {
         // caller said for security.
         ClientPermissions currentPermissions = (direction == SendDirection.ToClient) ?
              null // Server-to-client messages do not have permissions.
-             : computePermissions();
+             : getCurrentPermissions();
 
         // We set the permissions by creating a fresh FCPPluginMessage object so the caller cannot
         // overwrite what we compute.
