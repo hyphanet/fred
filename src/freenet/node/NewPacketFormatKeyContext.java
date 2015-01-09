@@ -126,6 +126,10 @@ public class NewPacketFormatKeyContext {
 				 * minimum timestamp (otherwise, minimum value remains same)
 				 */
 				minSentTimeCached = Long.MIN_VALUE;
+			} else {
+				synchronized(NewPacketFormatKeyContext.class) {
+					adjusted_l++;
+				}
 			}
 		}
 		if(sent != null) {
@@ -165,6 +169,10 @@ public class NewPacketFormatKeyContext {
 				acks.put(seqno, now);
 				// one ack added, adjust cached value (won't change if was invalid before)
 				timeCheckForAcksCached = Math.min(timeCheckForAcksCached, now + MAX_ACK_DELAY);
+				if (timeCheckForAcksCached > Long.MIN_VALUE)
+					synchronized(NewPacketFormatKeyContext.class) {
+						adjusted++;
+					}
 				return acks.size();
 			} else return -1;
 		}
@@ -251,6 +259,10 @@ public class NewPacketFormatKeyContext {
 			sentPackets.put(seqNum, sentPacket);
 			/* adjust cache (won't change value if cache was invalid) */
 			minSentTimeCached = Math.min(minSentTimeCached, sentPacket.getSentTime());
+			if (minSentTimeCached > Long.MIN_VALUE)
+				synchronized(NewPacketFormatKeyContext.class) {
+					adjusted_l++;
+				}
 			int inFlight = sentPackets.size();
 			if(inFlight > maxSeenInFlight) {
 				maxSeenInFlight = inFlight;
@@ -262,6 +274,25 @@ public class NewPacketFormatKeyContext {
 		}
 	}
 	
+	private static int calls_l = 0;
+	private static int cached_l = 0;
+	private static int last_calls_l = 0;
+	private static int adjusted_l = 0;
+	private static long last_log_time_l = 0;
+	private static long uncachedtime_l = 0;
+
+	/* must be called with NewPacketFormatKeyContext.class lock */
+	private static void reportCheckForLostPackets(Object o) {
+		if ((calls_l & 0xffff) == 0) {
+			long now = System.currentTimeMillis();
+			if (now - last_log_time_l >= (5*60*1000)) {
+				Logger.warning(o, "checkForLostPackets: calls="+calls_l+String.format(" %.2f calls/s",(calls_l-last_calls_l)*1000.0/(now-last_log_time_l))+" cached="+cached_l+String.format(" cached/calls=%.1f",cached_l*100.0/calls_l)+"%"+" adjusted="+adjusted_l+(calls_l-cached_l>0?" uncachedtime="+(uncachedtime_l/(calls_l-cached_l)):""));
+				last_calls_l = calls_l;
+				last_log_time_l = now;
+			}
+		}
+	}
+
 	public long timeCheckForLostPackets(double averageRTT) {
 		long timeCheck = Long.MAX_VALUE;
 		// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the
@@ -269,14 +300,26 @@ public class NewPacketFormatKeyContext {
 		double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
 		long maxDelay = (long)(avgRtt + MAX_ACK_DELAY * 1.1);
 		synchronized(sentPackets) {
+			synchronized(NewPacketFormatKeyContext.class) {
+				reportCheckForLostPackets(this);
+				calls_l++;
+			}
 			if (minSentTimeCached > Long.MIN_VALUE) {
+				synchronized(NewPacketFormatKeyContext.class) {
+					cached_l++;
+				}
 				timeCheck = minSentTimeCached;
 			} else {
+				long t0 = System.nanoTime();
 				for (SentPacket s : sentPackets.values()) {
 					long t = s.getSentTime();
 					if (t < timeCheck) {
 						timeCheck = t;
 					}
+				}
+				t0 -= System.nanoTime();
+				synchronized(NewPacketFormatKeyContext.class) {
+					uncachedtime_l -= t0;
 				}
 				minSentTimeCached = timeCheck;
 			}
@@ -301,10 +344,21 @@ public class NewPacketFormatKeyContext {
 		final boolean logMINOR = NewPacketFormatKeyContext.logMINOR;
 		
 		synchronized(sentPackets) {
+			synchronized(NewPacketFormatKeyContext.class) {
+				reportCheckForLostPackets(this);
+				calls_l++;
+			}
 			if (minSentTimeCached >= threshold) { // && minSentTimeCached != Long.MIN_VALUE [implied by previous condition]
 				// when minimum of sentPackets[].getSentTime() >= threshold, "s.getSentTime() < threshold" condition is always false, and no sentPackets needs to be removed
+				synchronized(NewPacketFormatKeyContext.class) {
+					cached_l++;
+				}
 				return;
 			}
+			synchronized(NewPacketFormatKeyContext.class) {
+				adjusted_l++;
+			}
+			long t0 = System.nanoTime();
 			bigLostCount = sentPackets.size();
 			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
 			// recompute cache as we scan over all sentPackets anyway
@@ -333,6 +387,10 @@ public class NewPacketFormatKeyContext {
 			}
 			count = sentPackets.size();
 			bigLostCount -= count;
+			t0 -= System.nanoTime();
+			synchronized(NewPacketFormatKeyContext.class) {
+				uncachedtime_l -= t0;
+			}
 		}
 		if(count > 0 && logMINOR)
 			Logger.minor(this, "" + count + " packets in flight with threshold " + maxDelay + "ms");
@@ -345,15 +403,40 @@ public class NewPacketFormatKeyContext {
 		}
 	}
 
+	private static int calls = 0;
+	private static int cached = 0;
+	private static int adjusted = 0;
+	private static int last_calls = 0;
+	private static long last_log_time = 0;
+	private static long uncachedtime = 0;
 	public long timeCheckForAcks() {
 		long ret = Long.MAX_VALUE;
 		synchronized(acks) {
+			synchronized(NewPacketFormatKeyContext.class) {
+				if ((calls & 0xffff) == 0) {
+					long now = System.currentTimeMillis();
+					if (now - last_log_time >= (5*60*1000)) {
+						Logger.warning(this, "timeCheckForAcks: calls="+calls+String.format(" %.2f calls/s",(calls-last_calls)*1000.0/(now-last_log_time))+" cached="+cached+String.format(" cached/calls=%.1f",cached*100.0/calls)+"%"+" adjusted="+adjusted+(calls-cached>0?" uncachedtime="+(uncachedtime/(calls-cached)):""));
+						last_calls = calls;
+						last_log_time = now;
+					}
+				}
+				calls++;
+			}
 			if (timeCheckForAcksCached > Long.MIN_VALUE) {
+				synchronized(NewPacketFormatKeyContext.class) {
+					cached++; // racing
+				}
 				return timeCheckForAcksCached;
 			}
+			long t0 = System.nanoTime();
 			for(Long l : acks.values()) {
 				long timeout = l + MAX_ACK_DELAY;
 				if(ret > timeout) ret = timeout;
+			}
+			t0 -= System.nanoTime();
+			synchronized(NewPacketFormatKeyContext.class) {
+				uncachedtime -= t0; // racing
 			}
 			timeCheckForAcksCached = ret;
 		}
