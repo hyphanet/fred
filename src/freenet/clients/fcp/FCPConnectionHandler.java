@@ -648,7 +648,7 @@ public class FCPConnectionHandler implements Closeable {
         try {
             FCPPluginClient peekOldClient = pluginClientsByServerPluginName.get(serverPluginName);
             
-            if(peekOldClient != null && !peekOldClient.isDead()) {
+            if(peekOldClient != null && !peekOldClient.isServerDead()) {
                 return peekOldClient;
             }
         } finally {
@@ -663,7 +663,7 @@ public class FCPConnectionHandler implements Closeable {
             FCPPluginClient oldClient = pluginClientsByServerPluginName.get(serverPluginName);
             
             if(oldClient != null) {
-                if(!oldClient.isDead()) {
+                if(!oldClient.isServerDead()) {
                     return oldClient;
                 } else {
                     // oldClient.isDead() returned true because the WeakReference to the server has

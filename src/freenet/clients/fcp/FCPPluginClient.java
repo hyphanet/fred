@@ -220,7 +220,7 @@ public final class FCPPluginClient {
      *         a generic class WeakValueMap from that one and use to to power both the existing
      *         class and the one which deals with this variable here.
      * </p>
-     * @see #isDead() Public interface function to check whether the WeakReference is nulled.
+     * @see #isServerDead() Public interface function to check whether the WeakReference is nulled.
      */
     private final WeakReference<ServerSideFCPMessageHandler> server;
 
@@ -486,7 +486,7 @@ public final class FCPPluginClient {
      *         is alive merely an indication, true / server is dead as the definite truth.<br>
      *         If you need to validate a connection to be alive, send periodic pings. </p>
      */
-    public boolean isDead() {
+    public boolean isServerDead() {
         return server.get() == null;
     }
     
