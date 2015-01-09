@@ -810,14 +810,13 @@ public class PeerMessageQueue {
 	 * Get the time at which the next message must be sent. If any message is
 	 * overdue, we will return a value less than now, which may not be completely
 	 * accurate.
-	 * @param t The current next urgent time. The return value will be no greater
-	 * than this.
 	 * @param returnIfBefore The current time. If the next urgent time is less than 
 	 * this we return immediately rather than computing an accurate past value. 
 	 * Set to Long.MAX_VALUE if you want an accurate value.
 	 * @return The next urgent time, but can be too high if it is less than now.
 	 */
-	public synchronized long getNextUrgentTime(long t, long returnIfBefore) {
+	public synchronized long getNextUrgentTime(long returnIfBefore) {
+		long t = Long.MAX_VALUE;
 		for(PrioQueue queue: queuesByPriority) {
 			t = queue.getNextUrgentTime(t, returnIfBefore);
 			if(t <= returnIfBefore) return t; // How much in the past doesn't matter, as long as it's in the past.
@@ -833,7 +832,7 @@ public class PeerMessageQueue {
 	 * <code>now</code>
 	 */
 	public boolean mustSendNow(long now) {
-		return getNextUrgentTime(Long.MAX_VALUE, now) <= now;
+		return getNextUrgentTime(now) <= now;
 	}
 
 	/**
