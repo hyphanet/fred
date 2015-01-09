@@ -15,7 +15,10 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 /**
- * <p>An FCP client communicating with a plugin running within fred.</p>
+ * An FCP connection between:<br>
+ * - a fred plugin which provides its services by a FCP server.<br>
+ * - a client application which uses those services. The client may be a plugin as well, or be
+ *   connected by a networked FCP connection.<br><br>
  * 
  * <h1>How to use this properly</h1><br>
  * 
