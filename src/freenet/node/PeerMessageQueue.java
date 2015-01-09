@@ -819,7 +819,7 @@ public class PeerMessageQueue {
 	 */
 	public synchronized long getNextUrgentTime(long t, long returnIfBefore) {
 		for(PrioQueue queue: queuesByPriority) {
-			t = Math.min(t, queue.getNextUrgentTime(t, returnIfBefore));
+			t = queue.getNextUrgentTime(t, returnIfBefore);
 			if(t <= returnIfBefore) return t; // How much in the past doesn't matter, as long as it's in the past.
 		}
 		return t;
