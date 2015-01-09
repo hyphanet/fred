@@ -729,6 +729,11 @@ public class PeerMessageQueue {
 		}
 	}
 
+	private static int calls_q = 0;
+	private static int cached_q = 0;
+	private static int last_calls_q = 0;
+	private static long last_log_time_q = 0;
+	private static long uncachedtime_q = 0;
 	/**
 	 * Queue a <code>MessageItem</code> and return an estimate of the size of
 	 * this queue. The value returned is the estimated number of bytes
@@ -739,17 +744,42 @@ public class PeerMessageQueue {
 	 */
 	public synchronized int queueAndEstimateSize(MessageItem item, int maxSize) {
 		enqueuePrioritizedMessageItem(item);
+		synchronized(PeerMessageQueue.class) {
+			if ((calls_q & 0xfff) == 0) {
+				long now = System.currentTimeMillis();
+				if (now - last_log_time_q >= (5*60*1000)) {
+					Logger.warning(this, "queueAndEstimateSize: calls="+calls_q+String.format(" %.2f calls/s",(calls_q-last_calls_q)*1000.0/(now-last_log_time_q))+" cached="+cached_q+String.format(" cached/calls=%.1f",cached_q*100.0/calls_q)+"%"+(calls_q-cached_q>0?" uncachedtime="+(uncachedtime_q/(calls_q-cached_q)+" ns"):""));
+					last_calls_q = calls_q;
+					last_log_time_q = now;
+				}
+			}
+			calls_q++;
+		}
 		if (cachedQueueSize >= 0)
+		{
 			if (cachedQueueSizeIsComplete || cachedQueueSize > maxSize)
+			synchronized(PeerMessageQueue.class) {
+				cached_q++;
 				return cachedQueueSize;
+			}
+		}
+		long t0 = System.nanoTime();
 		int x = 0;
 		for(PrioQueue pq : queuesByPriority) {
 			x = pq.addSize(x, maxSize);
 			if (x > maxSize) {
 				cachedQueueSize = Math.max(cachedQueueSize, x);
 				cachedQueueSizeIsComplete = false;
+				t0 -= System.nanoTime();
+				synchronized(PeerMessageQueue.class) {
+					uncachedtime_q -= t0;
+				}
 				return x;
 			}
+		}
+		t0 -= System.nanoTime();
+		synchronized(PeerMessageQueue.class) {
+			uncachedtime_q -= t0;
 		}
 		cachedQueueSize = cachedQueueSize;
 		cachedQueueSizeIsComplete = true;
@@ -786,6 +816,9 @@ public class PeerMessageQueue {
 			cachedQueueSize = addMe.getLength() + MESSAGE_OVERHEAD;
 			cachedQueueSizeIsComplete = false;
 		}
+		synchronized(PeerMessageQueue.class) {
+			adjusted_s++;
+		}
 		if(addMe.sendLoadRT)
 			mustSendLoadRT = true;
 		if(addMe.sendLoadBulk)
@@ -808,6 +841,9 @@ public class PeerMessageQueue {
 		else {
 			cachedQueueSize = addMe.getLength() + MESSAGE_OVERHEAD;
 			cachedQueueSizeIsComplete = false;
+		}
+		synchronized(PeerMessageQueue.class) {
+			adjusted_s++;
 		}
 		if(addMe.sendLoadRT)
 			mustSendLoadRT = true;
@@ -839,13 +875,38 @@ public class PeerMessageQueue {
 	 * Set to Long.MAX_VALUE if you want an accurate value.
 	 * @return The next urgent time, but can be too high if it is less than now.
 	 */
+	private static int calls_u = 0;
+	private static int cached_u = 0;
+	private static int last_calls_u = 0;
+	private static long last_log_time_u = 0;
+	private static long uncachedtime_u = 0;
 	public synchronized long getNextUrgentTime(long returnIfBefore) {
+		synchronized(PeerMessageQueue.class) {
+			if ((calls_u & 0xffff) == 0) {
+				long now = System.currentTimeMillis();
+				if (now - last_log_time_u >= (5*60*1000)) {
+					Logger.warning(this, "getNextUrgentTime: calls="+calls_u+String.format(" %.2f calls/s",(calls_u-last_calls_u)*1000.0/(now-last_log_time_u))+" cached="+cached_u+String.format(" cached/calls=%.1f",cached_u*100.0/calls_u)+"%"+(calls_u-cached_u>0?" uncachedtime="+(uncachedtime_u/(calls_u-cached_u))+" ns":""));
+					last_calls_u = calls_u;
+					last_log_time_u = now;
+				}
+			}
+			calls_u++;
+			cached_u++;
+		}
 		if (cachedNextUrgentTime >= 0)
 			return cachedNextUrgentTime;
+		synchronized(PeerMessageQueue.class) {
+			cached_u--;
+		}
+		long t0 = System.nanoTime();
 		long t = Long.MAX_VALUE;
 		for(PrioQueue queue: queuesByPriority) {
 			t = queue.getNextUrgentTime(t, returnIfBefore);
 			if(t <= returnIfBefore) return t; // How much in the past doesn't matter, as long as it's in the past.
+		}
+		t0 -= System.nanoTime();
+		synchronized(PeerMessageQueue.class) {
+			uncachedtime_u -= t0;
 		}
 		cachedNextUrgentTime = t;
 		return t;
@@ -870,21 +931,53 @@ public class PeerMessageQueue {
 	 * @return <code>true</code> if <code>minSize</code> + the length of all
 	 * messages in this queue is greater than <code>maxSize</code>
 	 */
+	private static int calls_s = 0;
+	private static int cached_s = 0;
+	private static int complete_s = 0;
+	private static long uncachedtime_s = 0;
+	private static long last_log_time_s = 0;
+	private static int last_calls_s = 0;
+	private static int adjusted_s = 0;
 	public synchronized boolean mustSendSize(int minSize, int maxSize) {
+		synchronized(PeerMessageQueue.class) {
+			if ((calls_s & 0xffff) == 0) {
+				long now = System.currentTimeMillis();
+				if (now - last_log_time_s >= (5*60*1000)) {
+					Logger.warning(this, "mustSendSize: calls="+calls_s+String.format(" %.2f calls/s",(calls_s-last_calls_s)*1000.0/(now-last_log_time_s))+" cached="+cached_s+String.format(" cached/calls=%.1f",cached_s*100.0/calls_s)+"%"+" complete="+complete_s+String.format(" complete/calls=%.1f",complete_s*100.0/calls_s)+"%"+" adjusted="+adjusted_s+(calls_s-cached_s>0?" uncachedtime="+(uncachedtime_s/(calls_s-cached_s)+" ns"):""));
+					last_calls_s = calls_s;
+					last_log_time_s = now;
+				}
+			}
+			calls_s++;
+		}
 		if (cachedQueueSize >= 0) {
+			synchronized(PeerMessageQueue.class) {
+				cached_s++;
+				if (cachedQueueSizeIsComplete)
+					complete_s++;
+			}
 			if(minSize + cachedQueueSize > maxSize)
 				return true;
 			if(cachedQueueSizeIsComplete)
 				return false;
 		}
+		long t0 = System.nanoTime();
 		int length = minSize;
 		for(PrioQueue items : queuesByPriority) {
 			length = items.addSize(length, maxSize);
 			if(length > maxSize) {
 				cachedQueueSize = Math.max(cachedQueueSize, length - minSize);
 				cachedQueueSizeIsComplete = false;
+				t0 -= System.nanoTime();
+				synchronized(PeerMessageQueue.class) {
+					uncachedtime_s -= t0;
+				}
 				return true;
 			}
+		}
+		t0 -= System.nanoTime();
+		synchronized(PeerMessageQueue.class) {
+			uncachedtime_s -= t0;
 		}
 		cachedQueueSize = length - minSize;
 		cachedQueueSizeIsComplete = true;
@@ -972,7 +1065,12 @@ public class PeerMessageQueue {
 			if(!queuesByPriority[prio].removeMessage(message)) return false;
 			cachedNextUrgentTime = -1;
 			if (cachedQueueSize >= 0 && cachedQueueSizeIsComplete)
+			{
 				cachedQueueSize -= message.getLength() + MESSAGE_OVERHEAD;
+				synchronized(PeerMessageQueue.class) {
+					adjusted_s++;
+				}
+			}
 			else
 				cachedQueueSize = -1;
 		}
