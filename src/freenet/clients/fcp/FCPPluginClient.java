@@ -25,11 +25,82 @@ import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
 import freenet.support.io.NativeThread;
 
-/** @see FCPPluginConnection */
+/**
+ * <b>Please first read the JavaDoc of the interface {@link FCPPluginConnection} which specifies
+ * this class.</b><br><br>
+ * 
+ * <h1>Internals</h1><br>
+ * 
+ * This section is not interesting to server or client implementations. You might want to read it
+ * if you plan to work on the fred-side implementation of FCP plugin messaging.
+ * 
+ * <h2>Code path of sending messages</h2>
+ * <p>There are two possible code paths for client connections, depending upon the location of the
+ * client. The server is always running inside the node.<br><br>
+ * 
+ * NOTICE: These two code paths only apply to asynchronous, non-blocking messages. For blocking,
+ * synchronous messages sent by {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)},
+ * there is an overview at {@link #synchronousSends}. The overview was left out here because they
+ * are built on top of regular messages, so the code paths mentioned here mostly apply.<br><br>
+ * 
+ * The two possible paths are:<br/>
+ * <p>1. The server is running in the node, the client is not - also called networked FCP
+ * connections:<br/>
+ * - The client connects to the node via network and sends FCP message of type
+ *   <a href="https://wiki.freenetproject.org/FCPv2/FCPPluginMessage">FCPPluginMessage</a> (which
+ *   will be internally represented by class {@link FCPPluginClientMessage}).<br/>
+ * - The {@link FCPServer} creates a {@link FCPConnectionHandler} whose
+ *   {@link FCPConnectionInputHandler} receives the FCP message.<br/>
+ * - The {@link FCPConnectionInputHandler} uses {@link FCPMessage#create(String, SimpleFieldSet)}
+ *   to parse the message and obtain the actual {@link FCPPluginClientMessage}.<br/>
+ * - The {@link FCPPluginClientMessage} uses {@link FCPConnectionHandler#getPluginClient(String)} to
+ *   obtain the FCPPluginClient which wants to send.<br/>
+ * - The {@link FCPPluginClientMessage} uses {@link FCPPluginClient#send(SendDirection,
+ *   FCPPluginMessage)} to send the message to the server plugin.<br/>
+ * - The FCP server plugin handles the message at
+ *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
+ *   <br/>
+ * - As each FCPPluginClient object exists for the lifetime of a network connection, the FCP server
+ *   plugin may store the UUID of the FCPPluginClient and query it via
+ *   {@link PluginRespirator#getFCPPluginClientByID(UUID)}. It can use this to send messages to the
+ *   client application on its own, that is not triggered by any client messages.<br/>
+ * </p>
+ * <p>2. The server and the client are running in the same node, also called intra-node FCP
+ * connections:</br>
+ * - The client plugin uses {@link PluginRespirator#connectToOtherPlugin(String,
+ *   FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} to try to create a connection.<br/>
+ * - The {@link PluginRespirator} uses {@link FCPServer#createFCPPluginClientForIntraNodeFCP(String,
+ *   FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} to get a FCPPluginClient.<br/>
+ * - The client plugin uses the send functions of the FCPPluginClient. Those are the same as with
+ *   networked FCP connections.<br/>
+ * - The FCP server plugin handles the message at
+ *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
+ *   That is the same handler as with networked FCP connections.<br/>
+ * - The client plugin keeps a strong reference to the FCPPluginClient in memory as long as it wants
+ *   to keep the connection open.<br/>
+ * - Same as with networked FCP connections, the FCP server plugin can store the UUID of the
+ *   FCPPluginClient and in the future re-obtain the client by
+ *   {@link PluginRespirator#getFCPPluginClientByID(UUID)}. It can use this to send messages to the
+ *   client application on its own, that is not triggered by any client messages. <br/>
+ * - Once the client plugin is done with the connection, it discards the strong reference to the
+ *   FCPPluginClient. Because the {@link FCPPluginClientTracker} monitors garbage collection of
+ *   {@link FCPPluginClient} objects, getting rid of all strong references to a
+ *   {@link FCPPluginClient} is sufficient as a disconnection mechanism.<br/>
+ *   Thus, an intra-node client connection is considered as disconnected once the FCPPluginClient is
+ *   not strongly referenced by the client plugin anymore. If a server plugin then tries to obtain
+ *   the client by its UUID again (via the aforementioned
+ *   {@link PluginRespirator#getFCPPluginClientByID(UUID)}, the get will fail. So if the server
+ *   plugin stores client UUIDs, it needs no special disconnection mechanism except for periodically
+ *   trying to send a message to each client. Once obtaining the client by its UUID fails, or
+ *   sending the message fails, the server can opportunistically purge the UUID from its database.
+ *   <br/>This mechanism also works for networked FCP.<br>
+ * </p></p>
+ */
 public final class FCPPluginClient implements FCPPluginConnection {
     
     /** Automatically set to true by {@link Logger} if the log level is set to
