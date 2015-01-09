@@ -760,13 +760,22 @@ public class PeerMessageQueue {
 	}
 
 	public synchronized long getMessageQueueLengthBytes() {
+		if (cachedQueueSize>=0 && cachedQueueSizeIsComplete) {
+			return cachedQueueSize;
+		}
 		long x = 0;
 		for(PrioQueue pq : queuesByPriority) {
+			if(pq.itemsNonUrgent != null) {
+				for(MessageItem item : pq.itemsNonUrgent)
+					x += item.getLength() + MESSAGE_OVERHEAD;
+			}
 			if(pq.nonEmptyItemsWithID != null)
 				for(PrioQueue.Items q : pq.nonEmptyItemsWithID)
 					for(MessageItem it : q.items)
 						x += it.getLength() + MESSAGE_OVERHEAD;
 		}
+		cachedQueueSize = x > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int)x;
+		cachedQueueSizeIsComplete = !(x > Integer.MAX_VALUE);
 		return x;
 	}
 
