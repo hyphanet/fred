@@ -13,10 +13,9 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import freenet.clients.fcp.FCPPluginMessage.ClientPermissions;
 import freenet.node.NodeStarter;
 import freenet.node.PrioRunnable;
-import freenet.pluginmanager.FCPPluginMessage;
-import freenet.pluginmanager.FCPPluginMessage.ClientPermissions;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.PrioritizedMessageHandler;

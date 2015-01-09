@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import junit.framework.TestCase;
 import freenet.clients.fcp.FCPPluginClient;
 import freenet.clients.fcp.FCPPluginClient.SendDirection;
-import freenet.pluginmanager.FCPPluginMessage;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 

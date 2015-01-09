@@ -8,7 +8,6 @@ import java.io.IOException;
 import freenet.clients.fcp.FCPPluginClient.SendDirection;
 import freenet.node.FSParseException;
 import freenet.node.Node;
-import freenet.pluginmanager.FCPPluginMessage;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginTalker;
 import freenet.support.SimpleFieldSet;

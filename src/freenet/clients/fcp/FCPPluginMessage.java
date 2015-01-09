@@ -1,12 +1,11 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.pluginmanager;
+package freenet.clients.fcp;
 
 import java.util.UUID;
 
-import freenet.clients.fcp.FCPPluginClient;
-import freenet.clients.fcp.FCPPluginClient.SendDirection;
+import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.StringValidityChecker;
 import freenet.support.api.Bucket;
