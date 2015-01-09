@@ -33,8 +33,8 @@ import freenet.support.api.Bucket;
  * 
  * <h1>Debugging</h1><br>
  * 
- * You can configure the {@link Logger} to log "freenet.clients.fcp.FCPPluginClient:DEBUG" to cause
- * logging of all sent and received messages.<br>
+ * You can configure the {@link Logger} to log "freenet.clients.fcp.FCPPluginConnection:DEBUG" to
+ * cause logging of all sent and received messages.<br>
  * This is usually done on the Freenet web interface at Configuration / Logs / Detailed priority 
  * thresholds.<br>
  * ATTENTION: The log entries will appear at the time when the messages were queued for sending, not
