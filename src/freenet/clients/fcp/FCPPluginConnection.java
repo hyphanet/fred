@@ -107,16 +107,16 @@ public interface FCPPluginConnection {
      * SendDirection, FCPPluginMessage, long)}:<br>
      * - It may return <b>before</b> the message has been sent.<br>
      *   The message sending happens in another thread so this function can return immediately.<br>
-     *   In opposite to that, a synchronousSend() would wait for a reply to arrive, so once it
+     *   In opposite to that, a sendSynchronous() would wait for a reply to arrive, so once it
      *   returns, the message is guaranteed to have been sent.<br>
      * - The reply is delivered to your message handler {@link FredPluginFCPMessageHandler}. It will
      *   not be directly available to the thread which called this function.<br>
-     *   A synchronousSend() would return the reply to the caller.<br>
+     *   A sendSynchronous() would return the reply to the caller.<br>
      * - You have no guarantee whatsoever that the message will be delivered.<br>
-     *   A synchronousSend() will tell you that a reply was received, which guarantees that the
+     *   A sendSynchronous() will tell you that a reply was received, which guarantees that the
      *   message was delivered.<br>
      * - The order of arrival of messages is random.<br>
-     *   A synchronousSend() only returns after the message was delivered already, so by calling
+     *   A sendSynchronous() only returns after the message was delivered already, so by calling
      *   it multiple times in a row on the same thread, you would enforce the order of the
      *   messages arriving at the remote side.<br><br>
      * 
