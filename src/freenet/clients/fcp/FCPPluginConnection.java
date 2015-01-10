@@ -125,7 +125,7 @@ public interface FCPPluginConnection {
      *   <b>not</b> assume that the message has been sent.<br>
      * - If the function did throw an {@link IOException}, you <b>must</b> assume that the
      *   connection is dead and the message has not been sent.<br>
-     *   You <b>must</b> consider this FCPPluginClient as dead then and create a fresh one.<br>
+     *   You <b>must</b> consider this FCPPluginConnection as dead then and create a fresh one.<br>
      * - You can only be sure that a message has been delivered if your message handler receives
      *   a reply message with the same value of
      *   {@link FCPPluginMessage#identifier} as the original message.<br>
@@ -138,7 +138,7 @@ public interface FCPPluginConnection {
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} or
      * {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}, be sure to read the JavaDoc
      * of the message handling functions first as it puts additional constraints on the usage
-     * of the FCPPluginClient they receive.
+     * of the FCPPluginConnection they receive.
      * 
      * @param direction
      *            Whether to send the message to the server or the client message handler.<br><br>
@@ -162,8 +162,8 @@ public interface FCPPluginConnection {
      * 
      * @throws IOException
      *             If the connection has been closed meanwhile.<br/>
-     *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
-     *             should then discard it and obtain a fresh one.
+     *             This FCPPluginConnection <b>should be</b> considered as dead once this happens,
+     *             you should then discard it and obtain a fresh one.
      * 
      *             <p><b>ATTENTION:</b> If this is not thrown, that does NOT mean that the
      *             connection is alive. Messages are sent asynchronously, so it can happen that a
