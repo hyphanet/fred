@@ -262,83 +262,81 @@ public interface FCPPluginConnection {
      * of the FCPPluginConnection they receive.<br><br>
      * 
      * @param direction
-     *            Whether to send the message to the server or the client message handler.<br><br>
+     *     Whether to send the message to the server or the client message handler.<br><br>
      * 
-     *            While you <b>can</b> use this to send messages to yourself, be careful not to
-     *            cause thread deadlocks with this. The function will call your message
-     *            handler function of {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(
-     *            FCPPluginClient, FCPPluginMessage)} in <b>a different thread</b>, so it should not
-     *            cause deadlocks on its own, but you might produce deadlocks with your own thread
-     *            synchronization measures.<br><br>
+     *     While you <b>can</b> use this to send messages to yourself, be careful not to cause
+     *     thread deadlocks with this. The function will call your message handler function of
+     *     {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     *     FCPPluginMessage)} in <b>a different thread</b>, so it should not cause deadlocks on its
+     *     own, but you might produce deadlocks with your own thread synchronization measures.
+     *     <br><br>
      * 
      * @param message
-     *            <b>Must be</b> constructed using
-     *            {@link FCPPluginMessage#construct(SimpleFieldSet, Bucket)} or one of its
-     *            shortcuts.<br><br>
+     *     <b>Must be</b> constructed using {@link FCPPluginMessage#construct(SimpleFieldSet,
+     *     Bucket)} or one of its shortcuts.<br><br>
      * 
-     *            Must <b>not</b> be a reply message: This function needs determine when the remote
-     *            side has finished processing the message so it knows when to return. That requires
-     *            the remote side to send a reply to indicate that the FCP call is finished.
-     *            Replies to replies are not allowed though (to prevent infinite bouncing).<br><br>
+     *     Must <b>not</b> be a reply message: This function needs determine when the remote side
+     *     has finished processing the message so it knows when to return. That requires the remote
+     *     side to send a reply to indicate that the FCP call is finished. Replies to replies are
+     *     not allowed though (to prevent infinite bouncing).<br><br>
      * 
      * @param timeoutNanoSeconds
-     *            The function will wait for a reply to arrive for this amount of time.<br>
-     *            Must be greater than 0 and below or equal to 1 minute.<br><br>
+     *     The function will wait for a reply to arrive for this amount of time.<br>
+     *     Must be greater than 0 and below or equal to 1 minute.<br><br>
      * 
-     *            If the timeout expires, an {@link IOException} is thrown.<br>
-     *            This FCPPluginConnection <b>should be</b> considered as dead once this happens,
-     *            you should then discard it and obtain a fresh one.<br><br>
+     *     If the timeout expires, an {@link IOException} is thrown.<br>
+     *     This FCPPluginConnection <b>should be</b> considered as dead once this happens, you
+     *     should then discard it and obtain a fresh one.<br><br>
      * 
-     *            ATTENTION: The sending of the message is not affected by this timeout, it only
-     *            affects how long we wait for a reply. The sending is done in another thread, so
-     *            if your message is very large, and takes longer to transfer than the timeout
-     *            grants, this function will throw before the message has been sent.<br>
-     *            Additionally, the sending of the message is <b>not</b> terminated if the timeout
-     *            expires before it was fully transferred. Thus, the message can arrive at the
-     *            remote side even if this function has thrown, and you might receive an off-thread
-     *            reply to the message in the {@link FredPluginFCPMessageHandler}.<br><br>
-     *            
-     *            Notice: For convenience, use class {@link TimeUnit} to easily convert seconds,
-     *            milliseconds, etc. to nanoseconds.<br><br>
+     *     ATTENTION: The sending of the message is not affected by this timeout, it only affects
+     *     how long we wait for a reply. The sending is done in another thread, so if your message
+     *     is very large, and takes longer to transfer than the timeout grants, this function will
+     *     throw before the message has been sent.<br>
+     *     Additionally, the sending of the message is <b>not</b> terminated if the timeout expires
+     *     before it was fully transferred. Thus, the message can arrive at the remote side even if
+     *     this function has thrown, and you might receive an off-thread reply to the message in the
+     *     {@link FredPluginFCPMessageHandler}.<br><br>
+     *     
+     *     Notice: For convenience, use class {@link TimeUnit} to easily convert seconds,
+     *     milliseconds, etc. to nanoseconds.<br><br>
      * 
-     * @return The reply {@link FCPPluginMessage} which the remote partner sent to your message.
-     *         <br><br>
+     * @return
+     *     The reply {@link FCPPluginMessage} which the remote partner sent to your message.<br><br>
      * 
-     *         <b>ATTENTION</b>: Even if this function did not throw, the reply might indicate an
-     *         error with the field {link FCPPluginMessage#success}: This can happen if the message
-     *         was delivered but the remote message handler indicated that the FCP operation you
-     *         initiated failed.<br>
-     *         The fields {@link FCPPluginMessage#errorCode} and
-     *         {@link FCPPluginMessage#errorMessage} might indicate the type of the error.<br><br>
+     *     <b>ATTENTION</b>: Even if this function did not throw, the reply might indicate an error
+     *     with the field {link FCPPluginMessage#success}: This can happen if the message was
+     *     delivered but the remote message handler indicated that the FCP operation you initiated
+     *     failed.<br>
+     *     The fields {@link FCPPluginMessage#errorCode} and {@link FCPPluginMessage#errorMessage}
+     *     might indicate the type of the error.<br><br>
      * 
-     *         This can be used to decide to retry certain operations. A practical example
-     *         would be a user trying to create an account at an FCP server application:<br>
-     *         - Your UI would use this function to try to create the account by FCP.<br>
-     *         - The user might type an invalid character in the username.<br>
-     *         - The server could then indicate failure of creating the account by sending a reply
-     *           with success == false.<br>
-     *         - Your UI could detect the problem by success == false at the reply and an errorCode
-     *           of "InvalidUsername". The errorCode can be used to decide to highlight the username
-     *           field with a red color.<br>
-     *         - The UI then could prompt the user to chose a valid username by displaying the
-     *           errorMessage which the server provides to ship a translated, human readable
-     *           explanation of what is wrong with the username.<br>
+     *     This can be used to decide to retry certain operations. A practical example would be a
+     *     user trying to create an account at an FCP server application:<br>
+     *     - Your UI would use this function to try to create the account by FCP.<br>
+     *     - The user might type an invalid character in the username.<br>
+     *     - The server could then indicate failure of creating the account by sending a reply with
+     *       success == false.<br>
+     *     - Your UI could detect the problem by success == false at the reply and an errorCode of
+     *       "InvalidUsername". The errorCode can be used to decide to highlight the username field
+     *       with a red color.<br>
+     *     - The UI then could prompt the user to chose a valid username by displaying the
+     *       errorMessage which the server provides to ship a translated, human readable explanation
+     *       of what is wrong with the username.<br>
      * @throws IOException
-     *             If the given timeout expired before a reply was received <b>or</b> if the
-     *             connection has been closed before even sending the message.<br>
-     *             This FCPPluginConnection <b>should be</b> considered as dead once this happens,
-     *             you should then discard it and obtain a fresh one.
+     *     If the given timeout expired before a reply was received <b>or</b> if the connection has
+     *     been closed before even sending the message.<br>
+     *     This FCPPluginConnection <b>should be</b> considered as dead once this happens, you
+     *     should then discard it and obtain a fresh one.
      * @throws InterruptedException
-     *             If another thread called {@link Thread#interrupt()} upon the thread which you
-     *             used to execute this function.<br>
-     *             This is a shutdown mechanism: You can use it to abort a call to this function
-     *             which is waiting for the timeout to expire.<br><br>
+     *     If another thread called {@link Thread#interrupt()} upon the thread which you used to
+     *     execute this function.<br>
+     *     This is a shutdown mechanism: You can use it to abort a call to this function which is
+     *     waiting for the timeout to expire.<br><br>
      * @see FCPPluginClient#synchronousSends
-     *          An overview of how synchronous sends and especially their threading work internally
-     *          is provided at the map which stores them.
+     *     An overview of how synchronous sends and especially their threading work internally is
+     *     provided at the map which stores them.
      * @see #send(SendDirection, FCPPluginMessage)
-     *          The non-blocking, asynchronous send() should be used instead of this whenever
-     *          possible.
+     *     The non-blocking, asynchronous send() should be used instead of this whenever possible.
      */
     public FCPPluginMessage sendSynchronous(
         SendDirection direction, FCPPluginMessage message, long timeoutNanoSeconds)
