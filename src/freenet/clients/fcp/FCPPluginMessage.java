@@ -31,7 +31,7 @@ public final class FCPPluginMessage {
     /**
      * The permissions of the client which sent the messages. Null for server-to-client and
      * outgoing messages.<br>
-     * Will be set by the {@link FCPPluginClient} before delivery of the message. Thus, you
+     * Will be set by the {@link FCPPluginConnection} before delivery of the message. Thus, you
      * can pass null for this in all constructors.
      */
     public final ClientPermissions permissions;
@@ -39,7 +39,7 @@ public final class FCPPluginMessage {
     /**
      * The unique identifier of the message.<br>
      * Can be used by server and client to track the progress of messages.<br>
-     * This especially applies to {@link FCPPluginClient#sendSynchronous(SendDirection,
+     * This especially applies to {@link FCPPluginConnection#sendSynchronous(SendDirection,
      * FCPPluginMessage, long)} which will wait for a reply with the same identifier as the
      * original message until it returns.<br><br>
      * 
@@ -164,7 +164,7 @@ public final class FCPPluginMessage {
     
     /**
      * For being used by server or client to construct outgoing messages.<br>
-     * Those can then be passed to the send functions of {@link FCPPluginClient} or returned in
+     * Those can then be passed to the send functions of {@link FCPPluginConnection} or returned in
      * the message handlers of {@link FredPluginFCPMessageHandler}.<br><br>
      * 
      * <b>ATTENTION</b>: Messages constructed with this constructor here are <b>not</b> reply 
@@ -187,7 +187,7 @@ public final class FCPPluginMessage {
         // other messages. I cannot think of any usecase of free-choice identifiers. And
         // collisions are *bad*: They can break the "ACK" mechanism of the "success" variable.
         // This would in turn break things such as the sendSynchronous() functions of
-        // FCPPluginClient.
+        // FCPPluginConnection.
         return new FCPPluginMessage(null, UUID.randomUUID().toString(), params, data,
             // success, errorCode, errorMessage are null since non-reply messages must not
             // indicate errors
