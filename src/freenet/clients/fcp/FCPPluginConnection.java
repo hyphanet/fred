@@ -49,31 +49,33 @@ import freenet.support.api.Bucket;
  * 
  * <h2>Object lifecycle</h2>
  * <p>For each {@link #serverPluginName}, a single {@link FCPConnectionHandler} can only have a
- * single FCPPluginClient with the plugin of that name as connection partner. This is enforced by
- * {@link FCPConnectionHandler#getPluginClient(String)}. In other words: One
+ * single FCPPluginConnection with the plugin of that name as connection partner. This is enforced
+ * by {@link FCPConnectionHandler#getPluginClient(String)}. In other words: One
  * {@link FCPConnectionHandler} can only have one connection to a certain plugin.<br/>
- * The reason for this is the following: Certain plugins might need to store the UUID of a client in
- * their database so they are able to send data to the client if an event of interest to the client
- * happens in the future. Therefore, the UUID of a client must not change during the lifetime of
- * the connection. To ensure a permanent UUID of a client, only a single {@link FCPPluginClient} can
- * exist per server plugin per {@link FCPConnectionHandler}.<br>
+ * The reason for this is the following: Certain plugins might need to store the {@link UUID} of a
+ * client in their database so they are able to send data to the client if an event of interest to
+ * the client happens in the future. Therefore, the {@link UUID} of a client must not change during
+ * the lifetime of the connection. To ensure a permanent {@link UUID} of a client, only a single
+ * FCPPluginConnection can exist per server plugin per {@link FCPConnectionHandler}.<br>
  * If you  nevertheless need multiple clients to a plugin, you have to create multiple FCP
  * connections.<br/></p>
  * 
  * <p>
- * In opposite to {@link PersistentRequestClient}, a FCPPluginClient is kept in existence by fred
- * only while the actual client is connected (= in case of networked FCP the parent
- * {@link FCPConnectionHandler} exists; or in case of non-networked FCP while the FCPPluginClient is
- * strong-referenced by the client plugin).<br>
- * There is no such thing as persistence beyond client disconnection.<br/>
+ * In opposite to a FCP connection to fred itself, which is represented by
+ * {@link PersistentRequestClient} and can exist across restarts, a FCPPluginConnection is kept in
+ * existence by fred only while the actual client is connected. In case of networked plugin FCP,
+ * this is while the parent {@link FCPConnectionHandler} exists; or in case of non-networked plugin
+ * FCP, while the FCPPluginConnection is strong-referenced by the client plugin.<br>
+ * There is no such thing as persistence beyond client disconnection / restarts.<br/>
  * This was decided to simplify implementation:<br/>
- * - Persistence should be implemented by using the existing persistence framework of
+ * - Persistence should have been implemented by using the existing persistence framework of
  *   {@link PersistentRequestClient}. That would require extending the class though, and it is a
  *   complex class. The work for extending it was out of scope of the time limit for implementing
  *   this class.<br/>
- * - FCPPluginClient instances need to be created without a network connection for intra-node plugin
- *   connections. If we extended class {@link PersistentRequestClient}, a lot of care would have to
- *   be taken to allow it to exist without a network connection - that would even be more work.<br/>
+ * - FCPPluginConnection instances need to be created without a network connection for intra-node
+ *   plugin connections. If we extended class {@link PersistentRequestClient}, a lot of care would
+ *   have to be taken to allow it to exist without a network connection - that would even be more
+ *   work.<br/>
  * </p>
  * 
  * <h1>Internals</h1><br>
