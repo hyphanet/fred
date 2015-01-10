@@ -361,8 +361,11 @@ public interface FCPPluginConnection {
     public String toString();
 
     /**
-     * The class name of the plugin to which this FCPPluginConnection is connected.
-     * @see This is for internal usage by {@link FCPConnectionHandler#getPluginClient(String)}.
+     * The class name of the FCP server plugin to which this FCPPluginConnection is connected.<br>
+     * This is what was specified for the parameter <code>String pluginName</code> by the client
+     * when connecting by calling
+     * {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}
+     * .
      */
     public String getServerPluginName();
 }
