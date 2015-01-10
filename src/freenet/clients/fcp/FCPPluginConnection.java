@@ -89,7 +89,7 @@ import freenet.support.api.Bucket;
 public interface FCPPluginConnection {
 
     /**
-     * @return A unique identifier among all FCPPluginClients.
+     * @return A unique identifier among all FCPPluginConnections.
      * @see The ID can be used with {@link PluginRespirator#getFCPPluginClientByID(UUID)}.
      */
     public UUID getID();
