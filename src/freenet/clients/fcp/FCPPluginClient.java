@@ -408,11 +408,7 @@ public final class FCPPluginClient implements FCPPluginConnection {
         return id;
     }
     
-    /**
-     * The class name of the plugin to which this FCPPluginClient is connected.
-     * @see This is for internal usage by {@link FCPConnectionHandler#getPluginClient(String)}.
-     */
-    String getServerPluginName() {
+    @Override public String getServerPluginName() {
         return serverPluginName;
     }
     

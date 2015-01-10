@@ -360,4 +360,9 @@ public interface FCPPluginConnection {
     /** @return A verbose String containing the internal state. Useful for debug logs. */
     public String toString();
 
+    /**
+     * The class name of the plugin to which this FCPPluginConnection is connected.
+     * @see This is for internal usage by {@link FCPConnectionHandler#getPluginClient(String)}.
+     */
+    public String getServerPluginName();
 }
