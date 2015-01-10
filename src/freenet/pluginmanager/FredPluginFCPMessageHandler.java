@@ -15,7 +15,7 @@ import freenet.support.io.NativeThread;
 
 /**
  * FCP server or client plugins which transfer FCP messages to each other using a
- * {@link FCPPluginClient} must implement this interface by implementing one of it's child
+ * {@link FCPPluginConnection} must implement this interface by implementing one of it's child
  * interfaces, to provide a function which handles the received messages.<br><br>
  * 
  * For symmetry, the child interfaces {@link ClientSideFCPMessageHandler} and
@@ -33,7 +33,7 @@ import freenet.support.io.NativeThread;
  * counterparts, this new API is as symmetric as possible:<br>
  * Both the message handler and message sender is now one interface / class shared by both server
  * and client, instead of different ones for each - {@link FredPluginFCPMessageHandler} and
- * {@link FCPPluginClient}.<br>
+ * {@link FCPPluginConnection}.<br>
  * With the old interface, the server could only <i>reply</i> to messages of the client, it could
  * not send a message without a previous client message.<br>
  * With this implementation, server and client are free to send messages to each others whenever
@@ -55,25 +55,24 @@ import freenet.support.io.NativeThread;
  * 
  * <br><br><h1>Debugging</h1><br>
  * 
- * You can configure the {@link Logger} to log "freenet.node.fcp.FCPPluginClient:DEBUG" to cause
- * logging of all sent and received messages.<br>
+ * You can configure the {@link Logger} to log "freenet.clients.fcp.FCPPluginConnection:DEBUG" to
+ * cause logging of all sent and received messages.<br>
  * This is usually done on the Freenet web interface at Configuration / Logs / Detailed priority 
  * thresholds.<br>
  * ATTENTION: The log entries will appear at the time when the messages were queued for sending, not
  * when they were delivered. Delivery usually happens in a separate thread. Thus, the relative order
  * of arrival of messages can be different to the order of their appearance in the log file.<br>
  * If you need to know the order of arrival, add logging to your message handler. Also don't forget
- * that {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)} will not deliver replies
- * to the message handler but only return them instead.<br><br>
+ * that {@link FCPPluginConnection#sendSynchronous(SendDirection, FCPPluginMessage, long)} will not
+ * deliver replies to the message handler but only return them instead.<br><br>
  * 
  * @author xor (xor@freenetproject.org)
  * @see PluginRespirator#connectToOtherPlugin(String,
  *      FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)
  *          PluginRespirator provides the function to connect to a FCP server plugin.
- * @see FCPPluginClient
- *          A client will be represented as class FCPPluginClient to the client and server plugin.
- *          It's JavaDoc provides an overview of the internal code paths through which plugin FCP
- *          messages flow.
+ * @see FCPPluginConnection
+ *          A connection will be represented as class FCPPluginConnection to the client and server
+ *          plugin. It's JavaDoc provides an overview of the lifecycle of connections.
  */
 public interface FredPluginFCPMessageHandler {
 
