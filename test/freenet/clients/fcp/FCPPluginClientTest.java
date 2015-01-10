@@ -8,8 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.framework.TestCase;
-import freenet.clients.fcp.FCPPluginClient;
-import freenet.clients.fcp.FCPPluginClient.SendDirection;
+import freenet.clients.fcp.FCPPluginConnection.SendDirection;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 
