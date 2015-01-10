@@ -15,7 +15,7 @@ import freenet.support.io.NativeThread;
 
 /**
  * FCP server or client plugins which transfer FCP messages to each other using a
- * {@link FCPPluginClient} must implement this interface, or even better one of it's child
+ * {@link FCPPluginClient} must implement this interface by implementing one of it's child
  * interfaces, to provide a function which handles the received messages.<br><br>
  * 
  * For symmetry, the child interfaces {@link ClientSideFCPMessageHandler} and
@@ -23,7 +23,7 @@ import freenet.support.io.NativeThread;
  * They exist nevertheless to allow JavaDoc to explain differences in what the server and client are
  * allowed to do.<br>
  * You <b>must</b> follow the restrictions which are explained there.<br>
- * For clarity, you <b>should</b> implement the child interfaces instead of this interface.<br><br>
+ * For clarity, you <b>must</b> implement the child interfaces instead of this interface.<br><br>
  * 
  * If you want to specify the thread priority of the message handling functions, you can
  * additionally implement the member interface {@link PrioritizedMessageHandler}.<br><br>
