@@ -141,42 +141,42 @@ public interface FCPPluginConnection {
      * of the FCPPluginConnection they receive.
      * 
      * @param direction
-     *            Whether to send the message to the server or the client message handler.<br><br>
+     *     Whether to send the message to the server or the client message handler.<br><br>
      * 
-     *            While you <b>can</b> use this to send messages to yourself, be careful not to
-     *            cause thread deadlocks with this. The function will call your message
-     *            handler function of {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(
-     *            FCPPluginClient, FCPPluginMessage)} in <b>a different thread</b>, so it should not
-     *            cause deadlocks on its own, but you might produce deadlocks with your own thread
-     *            synchronization measures.<br><br>
+     *     While you <b>can</b> use this to send messages to yourself, be careful not to cause
+     *     thread deadlocks with this. The function will call your message handler function of
+     *     {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     *     FCPPluginMessage)} in <b>a different thread</b>, so it should not cause deadlocks on its
+     *     own, but you might produce deadlocks with your own thread synchronization measures.
+     *     <br><br>
      * 
      * @param message
-     *            You <b>must not</b> send the same message twice: This can break
-     *            {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)}.<br>
-     *            To ensure this, always construct a fresh FCPPluginMessage object when re-sending
-     *            a message. If you use the constructor which allows specifying your own identifier,
-     *            always generate a fresh, random identifier.<br>
-     *            TODO: Code quality: Add a flag to FCPPluginMessage which marks the message as
-     *            sent and use it to log an error if someone tries to send the same message twice.
-     *            <br><br>
+     *     You <b>must not</b> send the same message twice: This can break {@link #sendSynchronous(
+     *     SendDirection, FCPPluginMessage, long)}.<br>
+     *     To ensure this, always construct a fresh FCPPluginMessage object when re-sending a
+     *     message. If you use the constructor which allows specifying your own identifier, always
+     *     generate a fresh, random identifier.<br>
+     *     TODO: Code quality: Add a flag to FCPPluginMessage which marks the message as sent and
+     *     use it to log an error if someone tries to send the same message twice.
+     *     <br><br>
      * 
      * @throws IOException
-     *             If the connection has been closed meanwhile.<br/>
-     *             This FCPPluginConnection <b>should be</b> considered as dead once this happens,
-     *             you should then discard it and obtain a fresh one.
+     *     If the connection has been closed meanwhile.<br/>
+     *     This FCPPluginConnection <b>should be</b> considered as dead once this happens, you
+     *     should then discard it and obtain a fresh one.
      * 
-     *             <p><b>ATTENTION:</b> If this is not thrown, that does NOT mean that the
-     *             connection is alive. Messages are sent asynchronously, so it can happen that a
-     *             closed connection is not detected before this function returns.<br/>
-     *             The only way of knowing that a send succeeded is by receiving a reply message
-     *             in your {@link FredPluginFCPMessageHandler}.<br>
-     *             If you need to know whether the send succeeded on the same thread which shall
-     *             call the send function, you can also use {@link #sendSynchronous(SendDirection,
-     *             FCPPluginMessage, long)} which will return the reply right away.</p>
+     *     <p><b>ATTENTION:</b> If this is not thrown, that does NOT mean that the connection is
+     *     alive. Messages are sent asynchronously, so it can happen that a closed connection is not
+     *     detected before this function returns.<br/>
+     *     The only way of knowing that a send succeeded is by receiving a reply message in your
+     *     {@link FredPluginFCPMessageHandler}.<br>
+     *     If you need to know whether the send succeeded on the same thread which shall call the
+     *     send function, you can also use {@link #sendSynchronous(SendDirection, FCPPluginMessage,
+     *     long)} which will return the reply right away.</p>
      * @see #sendSynchronous(SendDirection, FCPPluginMessage, long)
-     *          You may instead use the blocking sendSynchronous() if your thread needs to know
-     *          whether messages arrived, to ensure a certain order of arrival, or to know
-     *          the reply to a message.
+     *     You may instead use the blocking sendSynchronous() if your thread needs to know whether
+     *     messages arrived, to ensure a certain order of arrival, or to know the reply to a
+     *     message.
      */
     public void send(SendDirection direction, FCPPluginMessage message) throws IOException;
 
