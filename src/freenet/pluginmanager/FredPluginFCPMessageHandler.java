@@ -67,9 +67,6 @@ import freenet.support.io.NativeThread;
  * deliver replies to the message handler but only return them instead.<br><br>
  * 
  * @author xor (xor@freenetproject.org)
- * @see PluginRespirator#connectToOtherPlugin(String,
- *      FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)
- *          PluginRespirator provides the function to connect to a FCP server plugin.
  * @see FCPPluginConnection
  *          A connection will be represented as class FCPPluginConnection to the client and server
  *          plugin. It's JavaDoc provides an overview of the lifecycle of connections.
