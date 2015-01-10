@@ -23,7 +23,7 @@ import freenet.support.SimpleFieldSet;
  * Consider this class here as an internal representation of FCP plugin messages used solely
  * for parsing client-to-server messages, while the other one is the external representation used
  * for both server and client messages.
- * Also notice that class {@link FCPPluginClient} consumes only objects of type
+ * Also notice that interface {@link FCPPluginConnection} consumes only objects of type
  * {@link FCPPluginMessage}, not of this class here: As the external representation to both server
  * and client, it does not care whether a message is from the server or the client, and is
  * only interested in the external representation {@link FCPPluginMessage} of the message.<br><br>
@@ -35,7 +35,10 @@ import freenet.support.SimpleFieldSet;
  * TODO: Would it technically be possible to add a second name to the on-network data so we
  * can get rid of the old name after a transition period?<br><br>
  * 
- * @link FCPPluginClient FCPPluginClient gives an overview of the code paths which messages take.
+ * @link FCPPluginConnection
+ *     FCPPluginConnection gives an overview of how plugin messaging works in general.
+ * @link FCPPluginClient
+ *     FCPPluginClient gives an overview of the internal code paths which messages take.
  * @author saces
  * @author xor (xor@freenetproject.org)
  * 
@@ -68,7 +71,7 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
     /** @see FCPPluginMessage#identifier */
 	private final String identifier;
 
-    /** @see FCPPluginClient#getServerPluginName() */
+    /** @see FCPPluginConnection#getServerPluginName() */
 	private final String pluginname;
 
     /** @see FCPPluginMessage#data */
@@ -171,8 +174,8 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
 	@Override
 	public void run(final FCPConnectionHandler handler, final Node node) throws MessageInvalidException {
         // There are 2 code paths for deploying plugin messages:
-        // 1. The new class FCPPluginClient. This is only available if the plugin implements the new
-        //    interface FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
+        // 1. The new interface FCPPluginConnection. This is only available if the plugin implements
+        //    the new interface FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
         // 2. The old class PluginTalker. This is available if the plugin implements the old
         //    interface FredPluginFCP.
         // We first try code path 1 by doing FCPConnectionHandler.getPluginClient(): That function
@@ -181,17 +184,17 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
         // also does not implement the old interface and thus is no FCP server at all.
         // If both fail, we finally send a MessageInvalidException.
         
-        FCPPluginClient client = null;
+        FCPPluginConnection clientConnection = null;
         
         try {
-            client = handler.getPluginClient(pluginname);
+            clientConnection = handler.getPluginClient(pluginname);
         } catch (PluginNotFoundException e1) {
             // Do not send an error yet: Allow plugins which only implement the old interface to
             // keep working.
             // TODO: Once we remove class PluginTalker, we should throw here as we do below.
         }
         
-        if(client != null) {
+        if(clientConnection != null) {
             FCPPluginMessage message = constructFCPPluginMessage();
             
             // Call this here instead of in the above try{} because the above
@@ -201,7 +204,7 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
             // support the new interface but was unloaded meanwhile. So we can exit the function
             // then, we don't have to try the old interface.
             try {
-                client.send(SendDirection.ToServer, message);
+                clientConnection.send(SendDirection.ToServer, message);
             } catch (IOException e) {
                 throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_PLUGIN,
                     pluginname + " not found or is not a FCPPlugin", identifier, false);
