@@ -273,7 +273,8 @@ public interface FCPPluginConnection {
      * 
      * @param message
      *            <b>Must be</b> constructed using
-     *            {@link FCPPluginMessage#construct(SimpleFieldSet, Bucket)}.<br><br>
+     *            {@link FCPPluginMessage#construct(SimpleFieldSet, Bucket)} or one of its
+     *            shortcuts.<br><br>
      * 
      *            Must <b>not</b> be a reply message: This function needs determine when the remote
      *            side has finished processing the message so it knows when to return. That requires
