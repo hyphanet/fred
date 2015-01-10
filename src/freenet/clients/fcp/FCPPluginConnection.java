@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import freenet.clients.fcp.FCPPluginClient.SendDirection;
+import freenet.clients.fcp.FCPPluginConnection.SendDirection;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.PluginRespirator;
@@ -93,6 +93,21 @@ public interface FCPPluginConnection {
      * @see The ID can be used with {@link PluginRespirator#getFCPPluginClientByID(UUID)}.
      */
     public UUID getID();
+
+    /**
+     * The send functions are fully symmetrical: They work the same way no matter whether client
+     * is sending to server or server is sending to client.<br/>
+     * Thus, to prevent us from having to duplicate the send functions, this enum specifies in which
+     * situation we are.
+     */
+    public static enum SendDirection {
+        ToServer,
+        ToClient;
+        
+        public final SendDirection invert() {
+            return (this == ToServer) ? ToClient : ToServer;
+        }
+    }
 
     /**
      * Can be used by both server and client implementations to send messages to each other.<br>

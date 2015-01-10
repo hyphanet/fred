@@ -457,21 +457,6 @@ public final class FCPPluginClient implements FCPPluginConnection {
         }
     }
 
-    /**
-     * The send functions are fully symmetrical: They work the same way no matter whether client
-     * is sending to server or server is sending to client.<br/>
-     * Thus, to prevent us from having to duplicate the send functions, this enum specifies in which
-     * situation we are.
-     */
-    public static enum SendDirection {
-        ToServer,
-        ToClient;
-        
-        public final SendDirection invert() {
-            return (this == ToServer) ? ToClient : ToServer;
-        }
-    }
-
     @Override
     public void send(final SendDirection direction, FCPPluginMessage message) throws IOException {
         // We first have to compute the message.permissions field ourselves - we shall ignore what

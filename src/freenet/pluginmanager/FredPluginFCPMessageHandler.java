@@ -6,8 +6,8 @@ package freenet.pluginmanager;
 import java.io.IOException;
 
 import freenet.clients.fcp.FCPPluginClient;
+import freenet.clients.fcp.FCPPluginConnection.SendDirection;
 import freenet.clients.fcp.FCPPluginMessage;
-import freenet.clients.fcp.FCPPluginClient.SendDirection;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
