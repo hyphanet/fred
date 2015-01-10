@@ -41,7 +41,19 @@ import freenet.support.io.NativeThread;
  * The only restriction upon this is that the opening and closing of connections is dictated by the
  * client. The server cannot connect to a client on its own.
  * 
- * <h1>Debugging</h1><br>
+ * <br><br><h1>Implementing a server</h1><br>
+ * 
+ * All you have to do to allow clients to connect to your plugin by FCP is implement the child
+ * interface {@link ServerSideFCPMessageHandler} at your plugin's main class.<br>
+ * Freenet will then automatically detect that the main class implements it, and allow clients to
+ * connect by FCP.
+ * 
+ * <br><br><h1>Implementing a client</h1><br>
+ * 
+ * Use {@link PluginRespirator#connectToOtherPlugin(String,
+ * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} to connect to a FCP server plugin.
+ * 
+ * <br><br><h1>Debugging</h1><br>
  * 
  * You can configure the {@link Logger} to log "freenet.node.fcp.FCPPluginClient:DEBUG" to cause
  * logging of all sent and received messages.<br>
