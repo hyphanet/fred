@@ -245,7 +245,7 @@ public interface FCPPluginConnection {
      *   returned from this function.<br>
      * Please notice that both these side effects can also happen if the remote partner erroneously
      * sends multiple replies to the same message identifier.<br>
-     * As long as the remote side is implemented using FCPPluginClient as well, and uses it
+     * As long as the remote side is implemented using FCPPluginConnection as well, and uses it
      * properly, this shouldn't happen though. Thus in general, you should assume that the reply
      * which this function returns <b>is</b> the right one, and your
      * {@link FredPluginFCPMessageHandler} should just drop reply messages which were not expected
@@ -259,7 +259,7 @@ public interface FCPPluginConnection {
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} or
      * {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}, be sure to read the JavaDoc
      * of the message handling functions first as it puts additional constraints on the usage
-     * of the FCPPluginClient they receive.<br><br>
+     * of the FCPPluginConnection they receive.<br><br>
      * 
      * @param direction
      *            Whether to send the message to the server or the client message handler.<br><br>
@@ -286,8 +286,8 @@ public interface FCPPluginConnection {
      *            Must be greater than 0 and below or equal to 1 minute.<br><br>
      * 
      *            If the timeout expires, an {@link IOException} is thrown.<br>
-     *            This FCPPluginClient <b>should be</b> considered as dead once this happens, you
-     *            should then discard it and obtain a fresh one.<br><br>
+     *            This FCPPluginConnection <b>should be</b> considered as dead once this happens,
+     *            you should then discard it and obtain a fresh one.<br><br>
      * 
      *            ATTENTION: The sending of the message is not affected by this timeout, it only
      *            affects how long we wait for a reply. The sending is done in another thread, so
@@ -326,8 +326,8 @@ public interface FCPPluginConnection {
      * @throws IOException
      *             If the given timeout expired before a reply was received <b>or</b> if the
      *             connection has been closed before even sending the message.<br>
-     *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
-     *             should then discard it and obtain a fresh one.
+     *             This FCPPluginConnection <b>should be</b> considered as dead once this happens,
+     *             you should then discard it and obtain a fresh one.
      * @throws InterruptedException
      *             If another thread called {@link Thread#interrupt()} upon the thread which you
      *             used to execute this function.<br>
