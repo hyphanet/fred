@@ -62,14 +62,14 @@ public final class FCPPluginMessage {
     public final String identifier;
     
     /**
-     * Part 1 of the actual message: Human-readable parameters. Shall be small amount of data.
+     * Part 1 of the actual message: Human-readable parameters. Shall be small amount of data.<br>
      * Can be null for data-only or success-indicator messages.
      */
     public final SimpleFieldSet params;
     
     /**
-     * Part 2 of the actual message: Non-human readable, large size bulk data. Can be null if no
-     * large amount of data is to be transfered.
+     * Part 2 of the actual message: Non-human readable, large size bulk data.<br>
+     * Can be null if no large amount of data is to be transfered.
      */
     public final Bucket data;
     
