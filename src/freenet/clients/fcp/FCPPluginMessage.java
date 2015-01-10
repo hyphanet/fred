@@ -117,9 +117,10 @@ public final class FCPPluginMessage {
     public final String errorMessage;
 
     /**
-     * @return True if the message is merely a reply to a previous message from your side.<br>
-     *         In that case, you <b>must not</b> send another reply message back to prevent
-     *         infinite bouncing of "success!" replies.
+     * @return
+     *     True if the message is merely a reply to a previous message from your side.<br>
+     *     In that case, you <b>must not</b> send another reply message back to prevent infinite
+     *     bouncing of "success!" replies.
      */
     public boolean isReplyMessage() {
         return success != null;
@@ -224,16 +225,14 @@ public final class FCPPluginMessage {
      * {@link #constructErrorReply(FCPPluginMessage, String, String)}.<br>
      * 
      * @throws IllegalStateException
-     *             If the original message was a reply message already.<br>
-     *             Replies often shall only indicate success / failure instead of triggering
-     *             actual operations, so it could cause infinite bouncing if you reply to them
-     *             again.<br>
-     *             Consider the whole of this as a remote procedure call process: A non-reply
-     *             message is the procedure call, a reply message is the procedure result. When
-     *             receiving the result, the procedure call is finished, and thus shouldn't
-     *             cause further replies to be sent.<br>
-     *             <b>Notice</b>: The JavaDoc of the aforementioned message handling function
-     *             explains how you can nevertheless send a reply to reply messages.
+     *     If the original message was a reply message already.<br>
+     *     Replies often shall only indicate success / failure instead of triggering actual
+     *     operations, so it could cause infinite bouncing if you reply to them again.<br>
+     *     Consider the whole of this as a remote procedure call process: A non-reply message is the
+     *     procedure call, a reply message is the procedure result. When receiving the result, the
+     *     procedure call is finished, and thus shouldn't cause further replies to be sent.<br>
+     *     <b>Notice</b>: The JavaDoc of the aforementioned message handling function explains how
+     *     you can nevertheless send a reply to reply messages.
      */
     public static FCPPluginMessage constructReplyMessage(FCPPluginMessage originalMessage,
             SimpleFieldSet params, Bucket data, boolean success, String errorCode,
