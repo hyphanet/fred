@@ -272,6 +272,8 @@ public class NewPacketFormatKeyContext {
 		double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
 		long maxDelay = (long)(avgRtt + MAX_ACK_DELAY * 1.1);
 		long threshold = curTime - maxDelay;
+
+		final boolean logMINOR = NewPacketFormatKeyContext.logMINOR;
 		
 		synchronized(sentPackets) {
 			bigLostCount = sentPackets.size();
