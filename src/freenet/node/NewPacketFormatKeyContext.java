@@ -150,9 +150,10 @@ public class NewPacketFormatKeyContext {
 	public int queueAck(int seqno) {
 		synchronized(acks) {
 			if(!acks.containsKey(seqno)) {
-				acks.put(seqno, System.currentTimeMillis());
-				// invalidate cache
-				timeCheckForAcksCached = Long.MIN_VALUE;
+				long now = System.currentTimeMillis();
+				acks.put(seqno, now);
+				// one ack added, adjust cached value (won't change if was invalid before)
+				timeCheckForAcksCached = Math.min(timeCheckForAcksCached, now + MAX_ACK_DELAY);
 				return acks.size();
 			} else return -1;
 		}
