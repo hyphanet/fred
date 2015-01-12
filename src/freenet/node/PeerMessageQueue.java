@@ -776,9 +776,16 @@ public class PeerMessageQueue {
 		//Assume it goes on the end, both the common case
 		short prio = addMe.getPriority();
 		queuesByPriority[prio].addLast(addMe);
-		/* invalidate cache */
-		cachedNextUrgentTime = Long.MIN_VALUE;
-		cachedQueueSize = -1;
+		/* adjust cache */
+		cachedNextUrgentTime = Math.min(cachedNextUrgentTime, addMe.submitted + queuesByPriority[prio].timeout); // won't change value if was "invalid" before
+		if (cachedQueueSize >= 0) {
+			// adjust cached value
+			cachedQueueSize += addMe.getLength();
+		} else {
+			// initial estimation (covers only just-added MessageItem)
+			cachedQueueSize = addMe.getLength();
+			cachedQueueSizeIsComplete = false;
+		}
 		if(addMe.sendLoadRT)
 			mustSendLoadRT = true;
 		if(addMe.sendLoadBulk)
@@ -795,9 +802,16 @@ public class PeerMessageQueue {
 		//Assume it goes on the front
 		short prio = addMe.getPriority();
 		queuesByPriority[prio].addFirst(addMe);
-		/* invalidate cache */
-		cachedNextUrgentTime = Long.MIN_VALUE;
-		cachedQueueSize = -1;
+		// adjust cache
+		cachedNextUrgentTime = Math.min(cachedNextUrgentTime, addMe.submitted + queuesByPriority[prio].timeout); // won't change value if was invalid before
+		if (cachedQueueSize >= 0) {
+			// adjust cached value
+			cachedQueueSize += addMe.getLength();
+		} else {
+			// initial estimation (covers only just-added MessageItem)
+			cachedQueueSize = addMe.getLength();
+			cachedQueueSizeIsComplete = false;
+		}
 		if(addMe.sendLoadRT)
 			mustSendLoadRT = true;
 		if(addMe.sendLoadBulk)
@@ -903,6 +917,9 @@ public class PeerMessageQueue {
 		addPeerLoadStatsRT.value = true;
 		addPeerLoadStatsBulk.value = true;
 
+		long savedNextUrgentTime = cachedNextUrgentTime;
+		int savedQueueSize = cachedQueueSize;
+
 		/* queuesByPriority is expected to be modified, invalidate cache */
 		cachedNextUrgentTime = Long.MIN_VALUE;
 		cachedQueueSize = -1;
@@ -958,6 +975,9 @@ public class PeerMessageQueue {
 			MessageItem ret = queuesByPriority[i].addPriorityMessages(now, addPeerLoadStatsRT, addPeerLoadStatsBulk);
 			if(ret != null) return ret;
 		}
+		// MessageItem was not removed from queues, restore cache (was not changed)
+		cachedNextUrgentTime = savedNextUrgentTime;
+		cachedQueueSize = savedQueueSize;
 		// Nothing to send.
 		return null;
 	}
@@ -966,8 +986,18 @@ public class PeerMessageQueue {
 		synchronized(this) {
 			short prio = message.getPriority();
 			if(!queuesByPriority[prio].removeMessage(message)) return false;
-			cachedNextUrgentTime = Long.MIN_VALUE;
-			cachedQueueSize = -1;
+			if (cachedNextUrgentTime == message.submitted + queuesByPriority[prio].timeout) {
+				// invalidate cache only if removed message had same urgentTime as cached
+				// TODO investigate if condition is not practically always true (by then, it is more efficient to unconditionally invalidate cache)
+				cachedNextUrgentTime = Long.MIN_VALUE;
+			}
+			if (cachedQueueSize >= 0 && cachedQueueSizeIsComplete) {
+				// adjust cached queue size
+				cachedQueueSize -= message.getLength();
+			} else {
+				// cached size covers only part of queue, removed message might be not included -> invalidate cache
+				cachedQueueSize = -1;
+			}
 		}
 		message.onFailed();
 		return true;
