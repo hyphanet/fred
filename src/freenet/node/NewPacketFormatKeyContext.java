@@ -272,13 +272,13 @@ public class NewPacketFormatKeyContext {
 			if (minSentTimeCached > Long.MIN_VALUE) {
 				timeCheck = minSentTimeCached;
 			} else {
-			for (SentPacket s : sentPackets.values()) {
-				long t = s.getSentTime();
-				if (t < timeCheck) {
-				    timeCheck = t;
-			    }
-			}
-			minSentTimeCached = timeCheck;
+				for (SentPacket s : sentPackets.values()) {
+					long t = s.getSentTime();
+					if (t < timeCheck) {
+						timeCheck = t;
+					}
+				}
+				minSentTimeCached = timeCheck;
 			}
 		}
 		if (timeCheck != Long.MAX_VALUE) {
