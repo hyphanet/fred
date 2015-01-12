@@ -88,12 +88,6 @@ import freenet.support.api.Bucket;
 public interface FCPPluginConnection {
 
     /**
-     * @return A unique identifier among all FCPPluginConnections.
-     * @see The ID can be used with {@link PluginRespirator#getPluginConnectionByID(UUID)}.
-     */
-    public UUID getID();
-
-    /**
      * The send functions are fully symmetrical: They work the same way no matter whether client
      * is sending to server or server is sending to client.<br/>
      * Thus, to prevent us from having to duplicate the send functions, this enum specifies in which
@@ -356,8 +350,11 @@ public interface FCPPluginConnection {
         SendDirection direction, FCPPluginMessage message, long timeoutNanoSeconds)
             throws IOException, InterruptedException;
 
-    /** @return A verbose String containing the internal state. Useful for debug logs. */
-    public String toString();
+    /**
+     * @return A unique identifier among all FCPPluginConnections.
+     * @see The ID can be used with {@link PluginRespirator#getPluginConnectionByID(UUID)}.
+     */
+    public UUID getID();
 
     /**
      * The class name of the FCP server plugin to which this FCPPluginConnection is connected.<br>
@@ -366,4 +363,8 @@ public interface FCPPluginConnection {
      * ClientSideFCPMessageHandler)}.
      */
     public String getServerPluginName();
+
+    /** @return A verbose String containing the internal state. Useful for debug logs. */
+    public String toString();
+
 }
