@@ -27,7 +27,7 @@ import freenet.support.api.Bucket;
  * You can read the following JavaDoc for a nice overview of how to use this properly from the
  * perspective of your server or client implementation:<br>
  * - {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}<br>
- * - {@link PluginRespirator#getFCPPluginClientByID(UUID)}<br>
+ * - {@link PluginRespirator#getPluginConnectionByID(UUID)}<br>
  * - {@link FredPluginFCPMessageHandler}<br>
  * - {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}<br>
  * - {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}<br>
@@ -90,7 +90,7 @@ public interface FCPPluginConnection {
 
     /**
      * @return A unique identifier among all FCPPluginConnections.
-     * @see The ID can be used with {@link PluginRespirator#getFCPPluginClientByID(UUID)}.
+     * @see The ID can be used with {@link PluginRespirator#getPluginConnectionByID(UUID)}.
      */
     public UUID getID();
 

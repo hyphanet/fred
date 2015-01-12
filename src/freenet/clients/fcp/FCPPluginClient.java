@@ -67,7 +67,7 @@ import freenet.support.io.NativeThread;
  *   FCPPluginMessage)}.<br/>
  * - As each FCPPluginClient object exists for the lifetime of a network connection, the FCP server
  *   plugin may store the UUID of the FCPPluginClient and query it via
- *   {@link PluginRespirator#getFCPPluginClientByID(UUID)}. It can use this to send messages to the
+ *   {@link PluginRespirator#getPluginConnectionByID(UUID)}. It can use this to send messages to the
  *   client application on its own, that is not triggered by any client messages.<br/>
  * </p>
  * <p>2. The server and the client are running in the same node, also called intra-node FCP
@@ -85,7 +85,7 @@ import freenet.support.io.NativeThread;
  *   to keep the connection open.<br/>
  * - Same as with networked FCP connections, the FCP server plugin can store the UUID of the
  *   FCPPluginClient and in the future re-obtain the client by
- *   {@link PluginRespirator#getFCPPluginClientByID(UUID)}. It can use this to send messages to the
+ *   {@link PluginRespirator#getPluginConnectionByID(UUID)}. It can use this to send messages to the
  *   client application on its own, that is not triggered by any client messages. <br/>
  * - Once the client plugin is done with the connection, it discards the strong reference to the
  *   FCPPluginClient. Because the {@link FCPPluginClientTracker} monitors garbage collection of
@@ -94,7 +94,7 @@ import freenet.support.io.NativeThread;
  *   Thus, an intra-node client connection is considered as disconnected once the FCPPluginClient is
  *   not strongly referenced by the client plugin anymore. If a server plugin then tries to obtain
  *   the client by its UUID again (via the aforementioned
- *   {@link PluginRespirator#getFCPPluginClientByID(UUID)}, the get will fail. So if the server
+ *   {@link PluginRespirator#getPluginConnectionByID(UUID)}, the get will fail. So if the server
  *   plugin stores client UUIDs, it needs no special disconnection mechanism except for periodically
  *   trying to send a message to each client. Once obtaining the client by its UUID fails, or
  *   sending the message fails, the server can opportunistically purge the UUID from its database.
@@ -380,7 +380,7 @@ public final class FCPPluginClient implements FCPPluginConnection {
      * are running in the same VM. You must implement both the server and client side message in
      * the unit test and pass them to this constructor.<br><br>
      * 
-     * Notice: Some server plugins might use {@link PluginRespirator#getFCPPluginClientByID(UUID)}
+     * Notice: Some server plugins might use {@link PluginRespirator#getPluginConnectionByID(UUID)}
      * to obtain FCPPluginClient objects. So they likely won't work with clients created by this
      * because it doesn't create a PluginRespirator. To get a {@link PluginRespirator} available in
      * unit tests, you might want to use
@@ -392,7 +392,7 @@ public final class FCPPluginClient implements FCPPluginConnection {
      * - {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)} can then
      *   be used for obtaining a FCPPluginClient instead of this constructor. This also is a
      *   function which is used in regular mode of operation.<br>
-     * - The aforementioned {@link PluginRespirator#getFCPPluginClientByID(UUID)} will then work for
+     * - The aforementioned {@link PluginRespirator#getPluginConnectionByID(UUID)} will then work for
      *   FCPPluginClients obtained through the connectToOtherPlugin().
      */
     public static FCPPluginClient constructForUnitTest(ServerSideFCPMessageHandler server,

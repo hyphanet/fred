@@ -205,7 +205,7 @@ public class PluginRespirator {
      *             If this happens, you should consider the connection {@link UUID} as invalid
      *             forever and discard it.
      */
-    public FCPPluginConnection getFCPPluginClientByID(UUID connectionID) throws IOException {
+    public FCPPluginConnection getPluginConnectionByID(UUID connectionID) throws IOException {
         return node.clientCore.getFCPServer().getPluginClient(connectionID);
     }
 

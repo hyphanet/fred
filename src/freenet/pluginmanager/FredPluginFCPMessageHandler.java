@@ -121,9 +121,9 @@ public interface FredPluginFCPMessageHandler {
          *   getID()}, store the {@link UUID}, and exit this message handling function.<br/>
          * - Compute your reply in another thread.</br>
          * - Once you're ready to send the reply, use
-         *   {@link PluginRespirator#getFCPPluginClientByID(java.util.UUID)} to obtain the
-         *   original {@link FCPPluginConnection}, and then send the message using the send
-         *   functions of the {@link FCPPluginConnection}.<br/>
+         *   {@link PluginRespirator#getPluginConnectionByID(UUID)} to obtain the original
+         *   {@link FCPPluginConnection}, and then send the message using the send functions of the
+         *   {@link FCPPluginConnection}.<br/>
          * - If you keep client connection {@link UUID} for longer than sending a single reply, make
          *   sure to prevent excessive growth of your connection database upon client disconnection
          *   by implementing a garbage collection mechanism as follows:<br>
