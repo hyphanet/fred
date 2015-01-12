@@ -112,8 +112,8 @@ public class PluginRespirator {
 	}
 
     /**
-     * <p>Creates a FCP connection with another plugin which implements the
-     * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} interface.<br>
+     * <p>Creates a FCP client connection with another plugin which is a FCP server by implementing
+     * the {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} interface.<br>
      * Currently, the remote plugin must run in the same node, but the fact that FCP is used lays
      * foundation for a future implementation to allow you to connect to other plugins by network,
      * no matter where they are running.</p>
