@@ -4,7 +4,7 @@
 package freenet.pluginmanager;
 
 import freenet.clients.fcp.FCPConnectionHandler;
-import freenet.clients.fcp.FCPPluginClient;
+import freenet.clients.fcp.FCPPluginConnection;
 import freenet.clients.fcp.FCPPluginServerMessage;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -12,7 +12,7 @@ import freenet.support.api.Bucket;
 /**
  * @author saces
  * @author xor (xor@freenetproject.org)
- * @deprecated Use the {@link FCPPluginClient} API instead.
+ * @deprecated Use the {@link FCPPluginConnection} API instead.
  */
 @Deprecated
 public class PluginReplySenderFCP extends PluginReplySender {
