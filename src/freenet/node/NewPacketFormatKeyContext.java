@@ -264,8 +264,8 @@ public class NewPacketFormatKeyContext {
 
 	public void checkForLostPackets(double averageRTT, long curTime, BasePeerNode pn) {
 		//Mark packets as lost
-		int bigLostCount = 0;
-		int count = 0;
+		int bigLostCount;
+		int count;
 		
 		// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the
 		// actual ack delay, we don't need to add it on here.
@@ -274,6 +274,7 @@ public class NewPacketFormatKeyContext {
 		long threshold = curTime - maxDelay;
 		
 		synchronized(sentPackets) {
+			bigLostCount = sentPackets.size();
 			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
 			while(it.hasNext()) {
 				Map.Entry<Integer, SentPacket> e = it.next();
@@ -292,11 +293,10 @@ public class NewPacketFormatKeyContext {
 			        // Mark the packet as lost and remove it from our active packets.
 			        s.lost();
 					it.remove();
-					bigLostCount++;
-				} else {
-					count++;
 				}
 			}
+			count = sentPackets.size();
+			bigLostCount -= count;
 		}
 		if(count > 0 && logMINOR)
 			Logger.minor(this, "" + count + " packets in flight with threshold " + maxDelay + "ms");
