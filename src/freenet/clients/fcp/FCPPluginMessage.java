@@ -214,7 +214,7 @@ public final class FCPPluginMessage {
      * For being used by server or client to construct outgoing messages which are a reply to an
      * original message.<br>
      * Those then can be returned from the message handler
-     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      * FCPPluginMessage)}.<br><br>
      * 
      * See the JavaDoc of the member variables with the same name as the parameters for an
@@ -287,7 +287,7 @@ public final class FCPPluginMessage {
      * 
      * This function is typically to construct incoming messages for passing them to the message
      * handling function
-     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      * FCPPluginMessage)}.<br><br>
      * 
      * See the JavaDoc of the member variables with the same name as the parameters for an

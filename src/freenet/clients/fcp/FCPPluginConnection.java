@@ -113,7 +113,7 @@ public interface FCPPluginConnection {
      * Can be used by both server and client implementations to send messages to each other.<br>
      * The messages sent by this function will be delivered to the remote side at either:
      * - the message handler {@link FredPluginFCPMessageHandler#
-     *   handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.<br>
+     *   handlePluginFCPMessage(FCPPluginConnection, FCPPluginMessage)}.<br>
      * - or, if existing, a thread waiting for a reply message in
      *   {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)}.<br><br>
      * 
@@ -160,7 +160,7 @@ public interface FCPPluginConnection {
      * 
      *     While you <b>can</b> use this to send messages to yourself, be careful not to cause
      *     thread deadlocks with this. The function will call your message handler function of
-     *     {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     *     {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      *     FCPPluginMessage)} in <b>a different thread</b>, so it should not cause deadlocks on its
      *     own, but you might produce deadlocks with your own thread synchronization measures.
      *     <br><br>
@@ -199,8 +199,8 @@ public interface FCPPluginConnection {
      * Can be used by both server and client implementations to send messages in a blocking
      * manner to each other.<br>
      * The messages sent by this function will be delivered to the message handler
-     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}
-     * of the remote side.<br><br>
+     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
+     * FCPPluginMessage)} of the remote side.<br><br>
      * 
      * This has the following differences to a regular non-synchronous
      * {@link #send(SendDirection, FCPPluginMessage)}:<br>
@@ -208,7 +208,7 @@ public interface FCPPluginConnection {
      *   A regular send() would instead queue the message for sending, and then return immediately.
      * - The reply message will be <b>returned to the calling thread</b> instead of being passed to
      *   the message handler {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(
-     *   FCPPluginClient, FCPPluginMessage)} in another thread.<br>
+     *   FCPPluginConnection, FCPPluginMessage)} in another thread.<br>
      *   NOTICE: It is possible that the reply message <b>is</b> passed to the message handler
      *   upon certain error conditions, for example if the timeout you specify when calling this
      *   function expires before the reply arrives. This is not guaranteed though.<br>
@@ -281,7 +281,7 @@ public interface FCPPluginConnection {
      * 
      *     While you <b>can</b> use this to send messages to yourself, be careful not to cause
      *     thread deadlocks with this. The function will call your message handler function of
-     *     {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     *     {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      *     FCPPluginMessage)} in <b>a different thread</b>, so it should not cause deadlocks on its
      *     own, but you might produce deadlocks with your own thread synchronization measures.
      *     <br><br>

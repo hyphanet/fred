@@ -23,13 +23,13 @@ import freenet.support.io.NativeThread;
  * <p>To understand the purpose of this, please consider the following:<br/>
  * The normal flow of plugin FCP is that clients send messages to a server plugin, and the server
  * plugin immediately returns a reply from its message handling function
- * {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
- * <br/>
+ * {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
+ * FCPPluginMessage)}.<br/>
  * This might not be sufficient for certain usecases: The reply to a message might take quite some
- * time to compute, possibly hours. Then a reference to the original client needs to be stored in
- * the plugin's database, not memory.<br/>
- * Thus, this class exists to serve the purpose of allowing plugin servers to query clients by their
- * ID (see {@link FCPPluginClient#getID()}).</p>
+ * time to compute, possibly hours. Then a reference to the original client connection needs to be
+ * stored in the plugin's database, not memory.<br/>
+ * Thus, this class exists to serve the purpose of allowing plugin servers to query client
+ * connections by their ID (see {@link FCPPluginConnection#getID()}).</p>
  * 
  * <p>It is implemented by keeping {@link WeakReference}s to plugin clients, so they only stay in
  * the memory of the tracker as long as they are still connected.</p>
@@ -94,7 +94,7 @@ final class FCPPluginClientTracker extends NativeThread {
      * {@link FCPPluginClientTracker#getClient(UUID)}.
      * 
      * <b>Must</b> be called for any newly created {@link FCPPluginClient} before passing it to
-     * {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     * {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      * FCPPluginMessage)}.
      * 
      * Unregistration is not supported and not necessary.
@@ -121,9 +121,9 @@ final class FCPPluginClientTracker extends NativeThread {
      * The job of keeping the strong references is at the client.
      * 
      * @param clientID
-     *            The ID of{@link FCPPluginClient#getID()} of a client which has already sent a
-     *            message to your plugin via
-     *            {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     *            The ID of {@link FCPPluginConnection#getID()} of a client connection which has
+     *            already sent a message to your plugin via
+     *            {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      *            FCPPluginMessage)}
      * @return The client with the given ID, for as long as it is still connected to the node.
      * @throws IOException

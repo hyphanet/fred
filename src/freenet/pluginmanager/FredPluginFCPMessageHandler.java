@@ -3,9 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
-import java.io.IOException;
-
 import freenet.clients.fcp.FCPPluginClient;
+import freenet.clients.fcp.FCPPluginConnection;
 import freenet.clients.fcp.FCPPluginConnection.SendDirection;
 import freenet.clients.fcp.FCPPluginMessage;
 import freenet.support.Logger;
@@ -78,16 +77,17 @@ public interface FredPluginFCPMessageHandler {
      * 
      * <b>ATTENTION</b>: Please read the different constraints for server and client side message
      * handlers at the child interfaces:<br/>
-     * - {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     * - {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      *   FCPPluginMessage)}<br/>
-     * - {@link ClientSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     * - {@link ClientSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      *   FCPPluginMessage)}<br/>
      * 
      * To stress those different constraints, you should also not implement this interface but one
      * of the child interfaces {@link ServerSideFCPMessageHandler} and
      * {@link ClientSideFCPMessageHandler}.
      */
-    FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message);
+    FCPPluginMessage handlePluginFCPMessage(
+        FCPPluginConnection connection, FCPPluginMessage message);
 
 
     /**
@@ -134,7 +134,7 @@ public interface FredPluginFCPMessageHandler {
          *   a requirement for your server's protocol.<br>
          * </p>
          * 
-         * @param client
+         * @param connection
          *            The client which sent the message.<br/><br/>
          *            You <b>must not</b> keep a hard reference to this object outside of the scope
          *            of this function: This would prevent client plugins from being unloaded. See
@@ -185,7 +185,8 @@ public interface FredPluginFCPMessageHandler {
          *         long)} to fail fast instead of having to wait for timeout.<br><br>
          */
         @Override
-        FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message);
+        FCPPluginMessage handlePluginFCPMessage(
+            FCPPluginConnection connection, FCPPluginMessage message);
     }
 
     /**
@@ -210,7 +211,7 @@ public interface FredPluginFCPMessageHandler {
          * The purpose of this mechanism is for example to allow the server to tell you about events
          * which happened at its side.<br>
          * 
-         * @param client
+         * @param connection
          *            The client which you used to open the connection to the server.<br/><br/>
          * 
          *            You <b>must not</b> use its send functions for sending back the main reply.
@@ -257,14 +258,15 @@ public interface FredPluginFCPMessageHandler {
          *         long)} to fail fast instead of having to wait for timeout.<br><br>
          */
         @Override
-        FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message);
+        FCPPluginMessage handlePluginFCPMessage(
+            FCPPluginConnection connection, FCPPluginMessage message);
     }
     
     /**
      * Implement this to specify a thread priority of threads which are used to
      * execute the message handling function
-     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}
-     * .<br><br>
+     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
+     * FCPPluginMessage)}.<br><br>
      * 
      * Notice that the priority could even be specified depending on the type of individual messages
      * as the individual messages are passed to the implementation of this handler. (Of course

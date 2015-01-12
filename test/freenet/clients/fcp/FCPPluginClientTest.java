@@ -37,7 +37,7 @@ public final class FCPPluginClientTest extends TestCase {
         final FCPPluginClient client = FCPPluginClient.constructForUnitTest(
             new ServerSideFCPMessageHandler() {
                 @Override public FCPPluginMessage handlePluginFCPMessage(
-                        final FCPPluginClient client, final FCPPluginMessage message) {
+                        final FCPPluginConnection connection, final FCPPluginMessage message) {
                     
                     final FCPPluginMessage reply = FCPPluginMessage.constructSuccessReply(message);
                     reply.params.putSingle("replyToThread", message.params.get("thread"));
@@ -46,7 +46,7 @@ public final class FCPPluginClientTest extends TestCase {
             }, 
             new ClientSideFCPMessageHandler() {
                 @Override public FCPPluginMessage handlePluginFCPMessage(
-                        final FCPPluginClient client, final FCPPluginMessage message) {
+                        final FCPPluginConnection connection, final FCPPluginMessage message) {
                     
                     failure.set(true);
                     fail("This test is about sendSynchronous() so the reply messages should not "

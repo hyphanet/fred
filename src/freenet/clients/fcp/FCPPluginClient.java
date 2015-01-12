@@ -63,8 +63,8 @@ import freenet.support.io.NativeThread;
  * - The {@link FCPPluginClientMessage} uses {@link FCPPluginClient#send(SendDirection,
  *   FCPPluginMessage)} to send the message to the server plugin.<br/>
  * - The FCP server plugin handles the message at
- *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
- *   <br/>
+ *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
+ *   FCPPluginMessage)}.<br/>
  * - As each FCPPluginClient object exists for the lifetime of a network connection, the FCP server
  *   plugin may store the UUID of the FCPPluginClient and query it via
  *   {@link PluginRespirator#getFCPPluginClientByID(UUID)}. It can use this to send messages to the
@@ -79,8 +79,8 @@ import freenet.support.io.NativeThread;
  * - The client plugin uses the send functions of the FCPPluginClient. Those are the same as with
  *   networked FCP connections.<br/>
  * - The FCP server plugin handles the message at
- *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
- *   That is the same handler as with networked FCP connections.<br/>
+ *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
+ *   FCPPluginMessage)}. That is the same handler as with networked FCP connections.<br/>
  * - The client plugin keeps a strong reference to the FCPPluginClient in memory as long as it wants
  *   to keep the connection open.<br/>
  * - Same as with networked FCP connections, the FCP server plugin can store the UUID of the

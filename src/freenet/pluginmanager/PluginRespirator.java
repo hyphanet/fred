@@ -11,6 +11,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.filter.FilterCallback;
 import freenet.clients.fcp.FCPPluginClient;
+import freenet.clients.fcp.FCPPluginConnection;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.SessionManager;
 import freenet.clients.http.ToadletContainer;
@@ -189,11 +190,11 @@ public class PluginRespirator {
      * 
      * Before you use this function, you <b>should definitely</b> also read the JavaDoc of
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(
-     * FCPPluginClient, FCPPluginMessage)} for full instructions on how to handle the lifecycle of
-     * client connections and their disconnection.
+     * FCPPluginConnection, FCPPluginMessage)} for full instructions on how to handle the lifecycle
+     * of client connections and their disconnection.
      * 
      * @see FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(
-     *      FCPPluginClient, FCPPluginMessage)
+     *      FCPPluginConnection, FCPPluginMessage)
      *          The message handler at FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
      *          provides an explanation of when to use this.
      * @param clientID
