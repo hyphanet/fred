@@ -10,7 +10,6 @@ import java.util.UUID;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.filter.FilterCallback;
-import freenet.clients.fcp.FCPPluginClient;
 import freenet.clients.fcp.FCPPluginConnection;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.SessionManager;
@@ -179,14 +178,14 @@ public class PluginRespirator {
     /**
      * Allows FCP server plugins, that is plugins which implement
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}, to obtain an existing client
-     * connection by its ID - if the client is still connected.<br><br>
+     * connection by its {@link UUID} - if the client is still connected.<br><br>
      * 
      * <b>Must not</b> be used by client plugins: They shall instead keep a hard reference to the
-     * {@link FCPPluginClient} in memory after they have received it from
+     * {@link FCPPluginConnection} in memory after they have received it from
      * {@link #connectToOtherPlugin(String,
      * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}. If they did not keep a hard
-     * reference and only stored the ID, the {@link FCPPluginClient} would be garbage collected and
-     * thus considered as disconnected.<br><br>
+     * reference and only stored the ID, the {@link FCPPluginConnection} would be garbage collected
+     * and thus considered as disconnected.<br><br>
      * 
      * Before you use this function, you <b>should definitely</b> also read the JavaDoc of
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(
@@ -197,16 +196,17 @@ public class PluginRespirator {
      *      FCPPluginConnection, FCPPluginMessage)
      *          The message handler at FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
      *          provides an explanation of when to use this.
-     * @param clientID
-     *            The ID as obtained by {@link FCPPluginClient#getID()}
-     * @return The client if it is still connected.
+     * @param connectionID
+     *            The connection's {@link UUID} as obtained by {@link FCPPluginConnection#getID()}.
+     * @return The client connection if it is still connected.
      * @throws IOException
-     *             If there has been no client with the given ID or if it has disconnected already.
-     *             <br>If this happens, you should consider the client UUID as invalid forever and
-     *             discard it.
+     *             If there has been no client connection with the given ID or if it has
+     *             disconnected already.<br>
+     *             If this happens, you should consider the connection {@link UUID} as invalid
+     *             forever and discard it.
      */
-    public FCPPluginClient getFCPPluginClientByID(UUID clientID) throws IOException {
-        return node.clientCore.getFCPServer().getPluginClient(clientID);
+    public FCPPluginConnection getFCPPluginClientByID(UUID connectionID) throws IOException {
+        return node.clientCore.getFCPServer().getPluginClient(connectionID);
     }
 
 	/** Get the ToadletContainer, which manages HTTP. You can then register
