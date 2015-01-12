@@ -28,8 +28,10 @@ public class NewPacketFormatKeyContext {
 	/** Index of the packet with the lowest sequence number */
 	public int watchListPointer = 0;
 	public int watchListOffset = 0;
-	
+
+	// WARNING: timeCheckForAcksCached must invalidated or adjusted if acks is altered
 	private final TreeMap<Integer, Long> acks = new TreeMap<Integer, Long>();
+	private long timeCheckForAcksCached = Long.MAX_VALUE; // cached timeCheckForAcks; Long.MIN_VALUE if invalid; Long.MAX_VALUE for empty acks (initial state);  uses "synchronized(acks)" lock
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
 	/** Keep this many sent times for lost packets, so we can compute an accurate round trip time if
 	 * they are acked after we had decided they were lost. */
@@ -149,6 +151,8 @@ public class NewPacketFormatKeyContext {
 		synchronized(acks) {
 			if(!acks.containsKey(seqno)) {
 				acks.put(seqno, System.currentTimeMillis());
+				// invalidate cache
+				timeCheckForAcksCached = Long.MIN_VALUE;
 				return acks.size();
 			} else return -1;
 		}
@@ -174,6 +178,8 @@ public class NewPacketFormatKeyContext {
 		public void abort() {
 			synchronized(acks) {
 				acks.putAll(moved);
+				// several acks added, invalidate cache
+				timeCheckForAcksCached = Long.MIN_VALUE;
 			}
 		}
 	}
@@ -206,6 +212,10 @@ public class NewPacketFormatKeyContext {
 				moved.put(ack, entry.getValue());
 				++numAcks;
 				it.remove();
+			}
+			if (moved != null) {
+				// several acks removed, invalidate cache
+				timeCheckForAcksCached = Long.MIN_VALUE;
 			}
 		}
 		if(numAcks == 0)
@@ -301,10 +311,14 @@ public class NewPacketFormatKeyContext {
 	public long timeCheckForAcks() {
 		long ret = Long.MAX_VALUE;
 		synchronized(acks) {
+			if (timeCheckForAcksCached > Long.MIN_VALUE) {
+				return timeCheckForAcksCached;
+			}
 			for(Long l : acks.values()) {
 				long timeout = l + MAX_ACK_DELAY;
 				if(ret > timeout) ret = timeout;
 			}
+			timeCheckForAcksCached = ret;
 		}
 		return ret;
 	}
