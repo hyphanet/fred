@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import java.util.UUID;
+
 import freenet.clients.fcp.FCPPluginClient;
 import freenet.clients.fcp.FCPPluginConnection;
 import freenet.clients.fcp.FCPPluginConnection.SendDirection;
@@ -105,54 +107,55 @@ public interface FredPluginFCPMessageHandler {
          * <p>Is called to handle messages from your clients.<br/>
          * <b>Must not</b> block for very long and thus must only do small amounts of processing.
          * <br/>
-         * You <b>must not</b> keep a hard reference to the passed {@link FCPPluginClient} object
-         * outside of the scope of this function: This would prevent client plugins from being
-         * unloaded. See below for how to keep a reference to a client.</p>
+         * You <b>must not</b> keep a hard reference to the passed {@link FCPPluginConnection}
+         * object outside of the scope of this function: This would prevent client plugins from
+         * being unloaded. See below for how to keep a reference to a client connection.</p>
          * 
          * <p>If you ...<br/>
          * - Need a long time to compute a reply.<br/>
-         * - Need to keep a reference to the client because you want to send messages to the client
-         *   after having exited this function; maybe even triggered by events at your plugin, not
-         *   by client messages.<br/>
+         * - Need to keep a reference to the client connection because you want to send messages to
+         *   the client after having exited this function; maybe even triggered by events at your
+         *   plugin, not by client messages.<br/>
          * Then you should:<br/>
-         * - Obtain the UUID of the client via {@link FCPPluginClient#getID()}, store the UUID,
-         *   and exit this message handling function.<br/>
+         * - Obtain the {@link UUID} of the client connection via {@link FCPPluginConnection#
+         *   getID()}, store the {@link UUID}, and exit this message handling function.<br/>
          * - Compute your reply in another thread.</br>
          * - Once you're ready to send the reply, use
          *   {@link PluginRespirator#getFCPPluginClientByID(java.util.UUID)} to obtain the
-         *   original {@link FCPPluginClient}, and then send the message using the send functions of
-         *   the FCPPluginClient.<br/>
-         * - If you keep client UUID for longer than sending a single reply, make sure to prevent
-         *   excessive growth of your client database upon client disconnection by implementing
-         *   a garbage collection mechanism as follows:<br>
-         *   Periodically send a message to each client and check if you get a reply within a
-         *   reasonable timeout to check whether the connection is still alive. Drop the client
+         *   original {@link FCPPluginConnection}, and then send the message using the send
+         *   functions of the {@link FCPPluginConnection}.<br/>
+         * - If you keep client connection {@link UUID} for longer than sending a single reply, make
+         *   sure to prevent excessive growth of your connection database upon client disconnection
+         *   by implementing a garbage collection mechanism as follows:<br>
+         *   Periodically send a message at each connection and check if you get a reply within a
+         *   reasonable timeout to check whether the connection is still alive. Drop the connection
          *   if not.<br>
          *   Notice that there is no explicit disconnection mechanism. Clients can come and go as
-         *   they please. The only way to be sure that a client is alive is by checking whether it
-         *   replies to messages. You are encouraged to make a "Ping" message with a "Pong" response
-         *   a requirement for your server's protocol.<br>
+         *   they please. The only way to be sure that a connection is alive is by checking whether
+         *   the client replies to messages. You are encouraged to make a "Ping" message with a
+         *   "Pong" response a requirement for your server's protocol.<br>
          * </p>
          * 
          * @param connection
-         *            The client which sent the message.<br/><br/>
+         *            The connection of the client which sent the message.<br/><br/>
          *            You <b>must not</b> keep a hard reference to this object outside of the scope
          *            of this function: This would prevent client plugins from being unloaded. See
          *            the head of the documentation of this function for an explanation of how to
-         *            store a pointer to a certain client.<br/><br/>
+         *            store a pointer to a certain client connection.<br/><br/>
          * 
          *            You <b>must not</b> use its send functions for sending back the main reply.
          *            Instead, use the return value for shipping the reply. (You are free to send
-         *            "out of band" secondary replies using the client.)<br/>
+         *            "out of band" secondary replies using the connection.)<br/>
          *            The requirement of returning the reply is to ensure that the reply can be
          *            clearly identified as such, and shipped to the remote side with a clear
          *            specification to which message it is a reply.<br>
          *            This is useful for example if the sender of the original message used
-         *            the <i>synchronous</i> send function {@link FCPPluginClient#sendSynchronous(
-         *            SendDirection, FCPPluginMessage, long)}: The function shall wait for the
-         *            reply to the original message, and return it to the caller. This only works if
-         *            replies are properly identified, otherwise it would have to throw an
-         *            {@link IOException} to signal a timeout while waiting for the reply.<br/><br/>
+         *            the <i>synchronous</i> send function {@link FCPPluginConnection#
+         *            sendSynchronous(SendDirection, FCPPluginMessage, long)}: The function shall
+         *            wait for the reply to the original message, and return it to the caller. This
+         *            only works if replies are properly identified, otherwise it would have to
+         *            throw an {@link IOException} to signal a timeout while waiting for the reply.
+         *            <br/><br/>
          * @param message
          *            The actual message. See the JavaDoc of its member variables for an explanation
          *            of their meaning.
@@ -170,8 +173,8 @@ public interface FredPluginFCPMessageHandler {
          *         operations, so it could cause infinite bouncing if you reply to them again.<br/>
          *         If you still have to send a message to do further operations, you should create a
          *         new "dialog" by sending an "out of band" message using the passed
-         *         {@link FCPPluginClient}, as explained in the description of this function.<br/>
-         *         Consider the whole of this as a remote procedure call process: A non-reply
+         *         {@link FCPPluginConnection}, as explained in the description of this function.
+         *         <br>Consider the whole of this as a remote procedure call process: A non-reply
          *         message is the procedure call, a reply message is the procedure result. When
          *         receiving the result, the procedure call is finished, and shouldn't contain
          *         further replies.<br><br>
@@ -179,10 +182,10 @@ public interface FredPluginFCPMessageHandler {
          *         You <b>should</b> always return a reply instead of null if you're allowed to,
          *         even if you have got nothing to say:<br>
          *         This allows the remote side to detect whether its requested operation succeeded
-         *         or failed (because reply messages always have to specify success/failure).<br>
+         *         or failed because reply messages always have to specify success/failure.<br>
          *         Notice: Even upon failure, a reply is better than saying nothing because it
-         *         allows {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage,
-         *         long)} to fail fast instead of having to wait for timeout.<br><br>
+         *         allows {@link FCPPluginConnection#sendSynchronous(SendDirection,
+         *         FCPPluginMessage, long)} to fail fast instead of having to wait for timeout.
          */
         @Override
         FCPPluginMessage handlePluginFCPMessage(
