@@ -381,7 +381,7 @@ public final class FCPPluginClient implements FCPPluginConnection {
      * the unit test and pass them to this constructor.<br><br>
      * 
      * Notice: Some server plugins might use {@link PluginRespirator#getPluginConnectionByID(UUID)}
-     * to obtain FCPPluginClient objects. So they likely won't work with clients created by this
+     * to obtain FCPPluginClient objects. They likely won't work with clients created by this
      * because it doesn't create a PluginRespirator. To get a {@link PluginRespirator} available in
      * unit tests, you might want to use
      * {@link NodeStarter#createTestNode(freenet.node.NodeStarter.TestNodeParameters)} instead 
