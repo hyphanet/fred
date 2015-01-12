@@ -32,7 +32,11 @@ public class NewPacketFormatKeyContext {
 	// WARNING: timeCheckForAcksCached must invalidated or adjusted if acks is altered
 	private final TreeMap<Integer, Long> acks = new TreeMap<Integer, Long>();
 	private long timeCheckForAcksCached = Long.MAX_VALUE; // cached timeCheckForAcks; Long.MIN_VALUE if invalid; Long.MAX_VALUE for empty acks (initial state);  uses "synchronized(acks)" lock
+
+	// WARNING: minSentTimeCached must be invalidated or adjusted if any sentPackets added/removed/changed
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
+	private long minSentTimeCached = Long.MAX_VALUE; // cached minimum time for sentPackets; Long.MIN_VALUE if invalid; Long.MAX_VALUE for empty sentPackets (initial state);  uses "synchronized(sentPackets)" lock
+
 	/** Keep this many sent times for lost packets, so we can compute an accurate round trip time if
 	 * they are acked after we had decided they were lost. */
 	private static final int MAX_LOST_SENT_TIMES = 128;
@@ -116,6 +120,8 @@ public class NewPacketFormatKeyContext {
 		synchronized(sentPackets) {
 			sent = sentPackets.remove(ack);
 			maxSize = (maxSeenInFlight * 2) + 10;
+			/* invalidate cache */
+			minSentTimeCached = Long.MIN_VALUE;
 		}
 		if(sent != null) {
 			rtt = sent.acked(key);
@@ -162,7 +168,11 @@ public class NewPacketFormatKeyContext {
 	public void sent(int sequenceNumber, int length) {
 		synchronized(sentPackets) {
 			SentPacket sentPacket = sentPackets.get(sequenceNumber);
-			if(sentPacket != null) sentPacket.sent(length);
+			if(sentPacket != null) {
+				sentPacket.sent(length);
+				/* sent timestamp was changed, invalidate cache */
+				minSentTimeCached = Long.MIN_VALUE;
+			}
 		}
 	}
 
@@ -234,6 +244,8 @@ public class NewPacketFormatKeyContext {
 	    sentPacket.sent(length);
 		synchronized(sentPackets) {
 			sentPackets.put(seqNum, sentPacket);
+			/* invalidate cache */
+			minSentTimeCached = Long.MIN_VALUE;
 			int inFlight = sentPackets.size();
 			if(inFlight > maxSeenInFlight) {
 				maxSeenInFlight = inFlight;
@@ -252,12 +264,20 @@ public class NewPacketFormatKeyContext {
 		double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
 		long maxDelay = (long)(avgRtt + MAX_ACK_DELAY * 1.1);
 		synchronized(sentPackets) {
+			if (minSentTimeCached > Long.MIN_VALUE) {
+				timeCheck = minSentTimeCached;
+			} else {
 			for (SentPacket s : sentPackets.values()) {
-				long t = s.getSentTime() + maxDelay;
+				long t = s.getSentTime();
 				if (t < timeCheck) {
 				    timeCheck = t;
 			    }
 			}
+			minSentTimeCached = timeCheck;
+			}
+		}
+		if (timeCheck != Long.MAX_VALUE) {
+			timeCheck += maxDelay;
 		}
 		return timeCheck;
 	}
@@ -276,21 +296,28 @@ public class NewPacketFormatKeyContext {
 		final boolean logMINOR = NewPacketFormatKeyContext.logMINOR;
 		
 		synchronized(sentPackets) {
+			if (minSentTimeCached >= threshold) { // && minSentTimeCached != Long.MIN_VALUE [implied by previous condition]
+				// when minimum of sentPackets[].getSentTime() >= threshold, "s.getSentTime() < threshold" condition is always false, and no sentPackets needs to be removed
+				return;
+			}
 			bigLostCount = sentPackets.size();
 			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
+			// sentPackets will be changed, invalidate cached value
+			minSentTimeCached = Long.MIN_VALUE;
 			while(it.hasNext()) {
 				Map.Entry<Integer, SentPacket> e = it.next();
 				SentPacket s = e.getValue();
-				if (s.getSentTime() < threshold) {
+				long t = s.getSentTime();
+				if (t < threshold) {
 					if (logMINOR) {
 						Logger.minor(this, "Assuming packet " + e.getKey() + " has been lost. "
-						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
+						                + "Delay " + (curTime - t) + "ms, "
 						                + "threshold " + threshold + "ms");
 					}
 					// Store the packet sentTime in our lost sent times cache, so we can calculate
 					// RTT if an ack may surface later on.
 					if(!s.messages.isEmpty()) {
-				        lostSentTimes.report(e.getKey(), s.getSentTime());
+				        lostSentTimes.report(e.getKey(), t);
 			        }
 			        // Mark the packet as lost and remove it from our active packets.
 			        s.lost();
@@ -332,6 +359,8 @@ public class NewPacketFormatKeyContext {
 				s.lost();
 			}
 			sentPackets.clear();
+			// reset cache to initial state
+			minSentTimeCached = Long.MAX_VALUE;
 		}
 	}
 }
