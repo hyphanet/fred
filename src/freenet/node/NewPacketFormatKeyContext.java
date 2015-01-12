@@ -120,8 +120,13 @@ public class NewPacketFormatKeyContext {
 		synchronized(sentPackets) {
 			sent = sentPackets.remove(ack);
 			maxSize = (maxSeenInFlight * 2) + 10;
-			/* invalidate cache */
-			minSentTimeCached = Long.MIN_VALUE;
+			if (sent != null && sent.getSentTime() == minSentTimeCached) {
+				/*
+				 * invalidate cache if removed timestamp was same as cached
+				 * minimum timestamp (otherwise, minimum value remains same)
+				 */
+				minSentTimeCached = Long.MIN_VALUE;
+			}
 		}
 		if(sent != null) {
 			rtt = sent.acked(key);
@@ -244,8 +249,8 @@ public class NewPacketFormatKeyContext {
 	    sentPacket.sent(length);
 		synchronized(sentPackets) {
 			sentPackets.put(seqNum, sentPacket);
-			/* invalidate cache */
-			minSentTimeCached = Long.MIN_VALUE;
+			/* adjust cache (won't change value if cache was invalid) */
+			minSentTimeCached = Math.min(minSentTimeCached, sentPacket.getSentTime());
 			int inFlight = sentPackets.size();
 			if(inFlight > maxSeenInFlight) {
 				maxSeenInFlight = inFlight;
@@ -302,8 +307,8 @@ public class NewPacketFormatKeyContext {
 			}
 			bigLostCount = sentPackets.size();
 			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
-			// sentPackets will be changed, invalidate cached value
-			minSentTimeCached = Long.MIN_VALUE;
+			// recompute cache as we scan over all sentPackets anyway
+			minSentTimeCached = Long.MAX_VALUE;
 			while(it.hasNext()) {
 				Map.Entry<Integer, SentPacket> e = it.next();
 				SentPacket s = e.getValue();
@@ -322,6 +327,8 @@ public class NewPacketFormatKeyContext {
 			        // Mark the packet as lost and remove it from our active packets.
 			        s.lost();
 					it.remove();
+				} else {
+					minSentTimeCached = Math.min(minSentTimeCached, t);
 				}
 			}
 			count = sentPackets.size();
