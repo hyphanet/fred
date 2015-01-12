@@ -205,30 +205,31 @@ public interface FredPluginFCPMessageHandler {
     public interface ClientSideFCPMessageHandler extends FredPluginFCPMessageHandler {
         /**
          * Is called to handle messages from the server after you sent a message to it using a
-         * {@link FCPPluginClient}.<br/><br/>
+         * {@link FCPPluginConnection}.<br/><br/>
          * 
          * <b>ATTENTION:</b> The server is free to send messages to you on its own, that is not
          * triggered by any message which you sent.<br/>
          * This can happen for as long as you keep the connection open by having a hard reference to
-         * the original {@link FCPPluginClient} in memory.<br/>
+         * the original {@link FCPPluginConnection} in memory.<br/>
          * The purpose of this mechanism is for example to allow the server to tell you about events
          * which happened at its side.<br>
          * 
          * @param connection
-         *            The client which you used to open the connection to the server.<br/><br/>
+         *            The connection which you had originally established to the server.<br/><br/>
          * 
          *            You <b>must not</b> use its send functions for sending back the main reply.
          *            Instead, use the return value for shipping the reply. (You are free to send
-         *            "out of band" secondary replies using the client.)<br/>
+         *            "out of band" secondary replies using the connection.)<br/>
          *            The requirement of returning the reply is to ensure that the reply can be
          *            clearly identified as such, and shipped to the remote side with a clear
          *            specification to which message it is a reply.<br>
          *            This is useful for example if the sender of the original message used
-         *            the <i>synchronous</i> send function {@link FCPPluginClient#sendSynchronous(
-         *            SendDirection, FCPPluginMessage, long)}: The function shall wait for the
-         *            reply to the original message, and return it to the caller. This only works if
-         *            replies are properly identified, otherwise it would have to throw an
-         *            {@link IOException} to signal a timeout while waiting for the reply.<br/><br/>
+         *            the <i>synchronous</i> send function {@link FCPPluginConnection#
+         *            sendSynchronous(SendDirection, FCPPluginMessage, long)}: The function shall
+         *            wait for the reply to the original message, and return it to the caller. This
+         *            only works if replies are properly identified, otherwise it would have to
+         *            throw an {@link IOException} to signal a timeout while waiting for the reply.
+         *            <br/><br/>
          * @param message
          *            The actual message. See the JavaDoc of its member variables for an explanation
          *            of their meaning.
@@ -246,8 +247,8 @@ public interface FredPluginFCPMessageHandler {
          *         operations, so it could cause infinite bouncing if you reply to them again.<br/>
          *         If you still have to send a message to do further operations, you should create a
          *         new "dialog" by sending an "out of band" message using the passed
-         *         {@link FCPPluginClient}, as explained in the description of this function.<br/>
-         *         Consider the whole of this as a remote procedure call process: A non-reply
+         *         {@link FCPPluginConnection}, as explained in the description of this function.
+         *         <br/>Consider the whole of this as a remote procedure call process: A non-reply
          *         message is the procedure call, a reply message is the procedure result. When
          *         receiving the result, the procedure call is finished, and shouldn't contain
          *         further replies.<br><br>
@@ -255,10 +256,10 @@ public interface FredPluginFCPMessageHandler {
          *         You <b>should</b> always return a reply instead of null if you're allowed to,
          *         even if you have got nothing to say:<br>
          *         This allows the remote side to detect whether its requested operation succeeded
-         *         or failed (because reply messages always have to specify success/failure).<br>
+         *         or failed because reply messages always have to specify success/failure.<br>
          *         Notice: Even upon failure, a reply is better than saying nothing because it
-         *         allows {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage,
-         *         long)} to fail fast instead of having to wait for timeout.<br><br>
+         *         allows {@link FCPPluginConnection#sendSynchronous(SendDirection,
+         *         FCPPluginMessage, long)} to fail fast instead of having to wait for timeout.
          */
         @Override
         FCPPluginMessage handlePluginFCPMessage(
