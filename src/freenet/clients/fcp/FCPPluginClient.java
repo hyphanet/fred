@@ -392,8 +392,8 @@ public final class FCPPluginClient implements FCPPluginConnection {
      * - {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)} can then
      *   be used for obtaining a FCPPluginClient instead of this constructor. This also is a
      *   function which is used in regular mode of operation.<br>
-     * - The aforementioned {@link PluginRespirator#getPluginConnectionByID(UUID)} will then work for
-     *   FCPPluginClients obtained through the connectToOtherPlugin().
+     * - The aforementioned {@link PluginRespirator#getPluginConnectionByID(UUID)} will then work
+     *   for FCPPluginClients obtained through the connectToOtherPlugin().
      */
     public static FCPPluginClient constructForUnitTest(ServerSideFCPMessageHandler server,
         ClientSideFCPMessageHandler client) {
