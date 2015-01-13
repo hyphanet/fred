@@ -300,9 +300,9 @@ public final class FCPPluginClient implements FCPPluginConnection {
      * The client is not running within the node, it is attached by network with the given
      * {@link FCPConnectionHandler} clientConnection.<br/>
      * 
-     * <p>You <b>must</b> register any newly created clients at
-     * {@link FCPPluginClientTracker#registerClient(FCPPluginClient)} before handing them out to
-     * client application code.</p>
+     * <p>You <b>must</b> register any newly created connections at
+     * {@link FCPPluginClientTracker#registerConnection(FCPPluginConnection)} before handing them
+     * out to application code.</p>
      */
     static FCPPluginClient constructForNetworkedFCP(Executor executor,
             PluginManager serverPluginManager, String serverPluginName,
@@ -356,9 +356,9 @@ public final class FCPPluginClient implements FCPPluginConnection {
      * The client message handler is available as the passed {@link ClientSideFCPMessageHandler}
      * client.<br>
      * 
-     * <p>You <b>must</b> register any newly created clients at
-     * {@link FCPPluginClientTracker#registerClient(FCPPluginClient)} before handing them out to
-     * client application code.</p>
+     * <p>You <b>must</b> register any newly created connections at
+     * {@link FCPPluginClientTracker#registerConnection(FCPPluginConnection)} before handing them
+     *  out to application code.</p>
      */
     static FCPPluginClient constructForIntraNodeFCP(Executor executor,
             PluginManager serverPluginManager, String serverPluginName,

@@ -53,102 +53,106 @@ final class FCPPluginClientTracker extends NativeThread {
      * Not a {@link ConcurrentHashMap} because the creation of connections is exposed to the FCP
      * network interface and thus DoS would be possible: Java HashMaps never shrink.
      */
-    private final TreeMap<UUID, FCPPluginClientWeakReference> clientsByID
-        = new TreeMap<UUID, FCPPluginClientWeakReference>();
+    private final TreeMap<UUID, ConnectionWeakReference> connectionsByID
+        = new TreeMap<UUID, ConnectionWeakReference>();
 
     /**
-     * Lock to guard {@link #clientsByID} against concurrent modification.<br>
+     * Lock to guard {@link #connectionsByID} against concurrent modification.<br>
      * A {@link ReadWriteLock} because the suspected usage pattern is mostly reads, very few writes
      * - {@link ReadWriteLock} can do that faster than a regular Lock.<br>
      * (A {@link ReentrantReadWriteLock} because thats the only implementation of
      * {@link ReadWriteLock}.)
      */
-    private final ReadWriteLock clientsByIDLock = new ReentrantReadWriteLock();
+    private final ReadWriteLock connectionsByIDLock = new ReentrantReadWriteLock();
 
     /**
-     * Queue which monitors removed items of {@link #clientsByID}. Monitored in {@link #realRun()}.
+     * Queue which monitors nulled weak references in {@link #connectionsByID}.<br>
+     * Monitored in {@link #realRun()}.
      */
-    private final ReferenceQueue<FCPPluginClient> disconnectedClientsQueue
-        = new ReferenceQueue<FCPPluginClient>();
+    private final ReferenceQueue<FCPPluginConnection> closedConnectionsQueue
+        = new ReferenceQueue<FCPPluginConnection>();
 
-    
+
     /**
-     * We extend class {@link WeakReference} so we can store the ID of the client:<br/>
-     * When using a {@link ReferenceQueue} to get notified about nulled {@link WeakReference}s in
-     * {@link FCPPluginClientTracker#clientsByID}, we need to remove those {@link WeakReference}s
-     * from the {@link TreeMap}. For fast removal, we need their key in the map, which is the client
-     * ID, so we should store it in the {@link WeakReference}.
+     * We extend class {@link WeakReference} so we can store the ID of the connection:<br/>
+     * When using a {@link ReferenceQueue} to get notified about nulled {@link WeakReference}
+     * values in {@link FCPPluginClientTracker#connectionsByID}, we need to remove those values
+     * from the {@link TreeMap}. For fast removal, we need their key in the map, which is the
+     * connection ID, so we should store it in the {@link WeakReference}.
      */
-    private static final class FCPPluginClientWeakReference extends WeakReference<FCPPluginClient> {
-        public final UUID clientID;
+    private static final class ConnectionWeakReference
+            extends WeakReference<FCPPluginConnection> {
 
-        public FCPPluginClientWeakReference(FCPPluginClient referent,
-            ReferenceQueue<FCPPluginClient> referenceQueue) {
+        public final UUID connectionID;
+
+        public ConnectionWeakReference(FCPPluginConnection referent,
+                ReferenceQueue<FCPPluginConnection> referenceQueue) {
             
             super(referent, referenceQueue);
-            clientID = referent.getID();
+            connectionID = referent.getID();
         }
-   
     }
-    
+
     /**
-     * Stores the {@link FCPPluginClient} so in the future it can be obtained by its ID with
-     * {@link FCPPluginClientTracker#getClient(UUID)}.
+     * Stores the {@link FCPPluginConnection} so in the future it can be obtained by its ID with
+     * {@link FCPPluginClientTracker#getConnection(UUID)}.
      * 
-     * <b>Must</b> be called for any newly created {@link FCPPluginClient} before passing it to
+     * <b>Must</b> be called for any newly created {@link FCPPluginConnection} before passing it to
      * {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      * FCPPluginMessage)}.
      * 
      * Unregistration is not supported and not necessary.
      */
-   void registerClient(FCPPluginClient client) {
-        clientsByIDLock.writeLock().lock();
+   void registerConnection(FCPPluginConnection connection) {
+        connectionsByIDLock.writeLock().lock();
         try {
-            // No duplicate checks needed: FCPPluginClient.getID() is a random UUID.
-            clientsByID.put(client.getID(),
-                new FCPPluginClientWeakReference(client, disconnectedClientsQueue));
+            // No duplicate checks needed: FCPPluginConnection.getID() is a random UUID.
+            connectionsByID.put(connection.getID(),
+                new ConnectionWeakReference(connection, closedConnectionsQueue));
         } finally {
-            clientsByIDLock.writeLock().unlock();
+            connectionsByIDLock.writeLock().unlock();
         }
     }
-    
+
     /**
      * For being used by implementors of {@link ServerSideFCPMessageHandler}.<br/>
-     * NOT for being used by clients: If you are a client using a {@link FCPPluginClient} to connect
-     * to a server plugin, you have to keep a reference to the {@link FCPPluginClient} in memory.
+     * NOT for being used by clients: If you are a client using a {@link FCPPluginConnection} to
+     * connect to a server plugin, you have to keep a reference to the {@link FCPPluginConnection}
+     * in memory.
      * <br/>
      * This is necessary because this class only keeps {@link WeakReference}s to the
-     * {@link FCPPluginClient} objects. Once they are not referenced by a strong reference anymore,
-     * they will be garbage collected and thus considered as disconnected.<br/>
+     * {@link FCPPluginConnection} objects. Once they are not referenced by a strong reference,
+     * anymore they will be garbage collected and thus considered as disconnected.<br/>
      * The job of keeping the strong references is at the client.
      * 
-     * @param clientID
-     *            The ID of {@link FCPPluginConnection#getID()} of a client connection which has
-     *            already sent a message to your plugin via
-     *            {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
-     *            FCPPluginMessage)}
-     * @return The client with the given ID, for as long as it is still connected to the node.
+     * @param connectionID
+     *     The value of {@link FCPPluginConnection#getID()} of a client connection which has already
+     *     sent a message to your plugin via
+     *     {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
+     *     FCPPluginMessage)}.
+     * @return
+     *     The client connection with the given ID, for as long as the client is still connected.
      * @throws IOException
-     *             If there has been no client with the given ID or if it has disconnected already.
+     *     If there has been no connection with the given ID or if the client has disconnected.
      */
-    public FCPPluginClient getClient(UUID clientID) throws IOException {
-        FCPPluginClientWeakReference ref = null;
+    public FCPPluginConnection getConnection(UUID connectionID) throws IOException {
+        ConnectionWeakReference ref = null;
         
-        clientsByIDLock.readLock().lock();
+        connectionsByIDLock.readLock().lock();
         try {
-            ref = clientsByID.get(clientID);
+            ref = connectionsByID.get(connectionID);
         } finally {
-            clientsByIDLock.readLock().unlock();
+            connectionsByIDLock.readLock().unlock();
         }
         
-        FCPPluginClient client = ref != null ? ref.get() : null;
+        FCPPluginConnection connection = ref != null ? ref.get() : null;
         
-        if(client == null) {
-            throw new IOException("FCPPluginClient not found, maybe it has disconnected already."
-                + " ClientID: " + clientID);
+        if(connection == null) {
+            throw new IOException("FCPPluginConnection not found, maybe client has disconnected."
+                + " Connection ID: " + connectionID);
         }
         
-        return client;
+        return connection;
     }
 
 
@@ -162,30 +166,30 @@ final class FCPPluginClientTracker extends NativeThread {
     }
 
     /**
-     * Garbage-collection thread: Pools {@link #disconnectedClientsQueue} for clients whose
-     * {@link WeakReference} has been nulled and removes them from the {@link #clientsByID}
+     * Garbage-collection thread: Polls {@link #closedConnectionsQueue} for connections whose
+     * {@link WeakReference} has been nulled and removes them from the {@link #connectionsByID}
      * {@link TreeMap}.
      */
     @Override
     public void realRun() {
         while(true) {
             try {
-                FCPPluginClientWeakReference disconnectedClient
-                = (FCPPluginClientWeakReference)disconnectedClientsQueue.remove();
+                ConnectionWeakReference closedConnection
+                    = (ConnectionWeakReference)closedConnectionsQueue.remove();
 
-                clientsByIDLock.writeLock().lock();
+                connectionsByIDLock.writeLock().lock();
                 try {
-                    FCPPluginClientWeakReference removedFromTree
-                    = clientsByID.remove(disconnectedClient.clientID);
+                    ConnectionWeakReference removedFromTree
+                        = connectionsByID.remove(closedConnection.connectionID);
 
-                    assert(disconnectedClient == removedFromTree);
+                    assert(closedConnection == removedFromTree);
                     if(logMINOR) {
-                        Logger.minor(this, "Garbage-collecting disconnected client: " +
-                            "remaining clients = " + clientsByID.size() +
-                            "; client ID = " + disconnectedClient.clientID);
+                        Logger.minor(this, "Garbage-collecting closed connection: " +
+                            "remaining connections = " + connectionsByID.size() +
+                            "; connection ID = " + closedConnection.connectionID);
                     }
                 } finally {
-                    clientsByIDLock.writeLock().unlock();
+                    connectionsByIDLock.writeLock().unlock();
                 }
             } catch(InterruptedException e) {
                 // We did setDaemon(true), which causes the JVM to exit even if the thread is still

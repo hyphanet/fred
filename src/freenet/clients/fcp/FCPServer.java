@@ -498,7 +498,7 @@ public class FCPServer implements Runnable, DownloadCache {
         
         FCPPluginClient client = FCPPluginClient.constructForNetworkedFCP(node.executor,
             node.pluginManager, serverPluginName, messageHandler);
-        pluginClientTracker.registerClient(client);
+        pluginClientTracker.registerConnection(client);
         return client;
     }
 
@@ -530,12 +530,12 @@ public class FCPServer implements Runnable, DownloadCache {
         
         FCPPluginClient client = FCPPluginClient.constructForIntraNodeFCP(node.executor,
             node.pluginManager, serverPluginName, messageHandler);
-        pluginClientTracker.registerClient(client);
+        pluginClientTracker.registerConnection(client);
         return client;
     }
 
     /**
-     * <p><b>The documentation of {@link FCPPluginClientTracker#getClient(UUID)} applies to this
+     * <p><b>The documentation of {@link FCPPluginClientTracker#getConnection(UUID)} applies to this
      * function.</b></p>
      * 
      * @see FCPPluginClientTracker
@@ -543,7 +543,7 @@ public class FCPServer implements Runnable, DownloadCache {
      *          mechanism.
      */
     public FCPPluginClient getPluginClient(UUID clientID) throws IOException {
-        return pluginClientTracker.getClient(clientID);
+        return pluginClientTracker.getConnection(clientID);
     }
 
 	public PersistentRequestClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
