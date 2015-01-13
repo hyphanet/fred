@@ -17,8 +17,8 @@ import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
 /**
- * <p>Keeps a list of all {@link FCPPluginClient}s which are connected to server plugins running in
- * the node. Allows the server plugins to query a client by its ID.</p>
+ * <p>Keeps a list of all {@link FCPPluginConnection}s which are connected to server plugins running
+ * in the node. Allows the server plugins to query a client connection by its {@link UUID}.</p>
  * 
  * <p>To understand the purpose of this, please consider the following:<br/>
  * The normal flow of plugin FCP is that clients send messages to a server plugin, and the server
@@ -31,8 +31,8 @@ import freenet.support.io.NativeThread;
  * Thus, this class exists to serve the purpose of allowing plugin servers to query client
  * connections by their ID (see {@link FCPPluginConnection#getID()}).</p>
  * 
- * <p>It is implemented by keeping {@link WeakReference}s to plugin clients, so they only stay in
- * the memory of the tracker as long as they are still connected.</p>
+ * <p>It is implemented by keeping {@link WeakReference}s to plugin client connections, so they only
+ * stay in the memory of the tracker as long as they are still connected.</p>
  * 
  * <p>After constructing an object of this class, you must call {@link #start()} to start its
  * garbage collection thread.<br/>
