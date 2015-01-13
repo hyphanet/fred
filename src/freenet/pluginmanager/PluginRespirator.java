@@ -171,7 +171,7 @@ public class PluginRespirator {
             FredPluginFCPMessageHandler.ClientSideFCPMessageHandler messageHandler)
                 throws PluginNotFoundException {
         
-        return node.clientCore.getFCPServer().createFCPPluginClientForIntraNodeFCP(pluginName,
+        return node.clientCore.getFCPServer().createFCPPluginConnectionForIntraNodeFCP(pluginName,
             messageHandler);
     }
 
@@ -206,7 +206,7 @@ public class PluginRespirator {
      *             forever and discard it.
      */
     public FCPPluginConnection getPluginConnectionByID(UUID connectionID) throws IOException {
-        return node.clientCore.getFCPServer().getPluginClient(connectionID);
+        return node.clientCore.getFCPServer().getPluginConnectionByID(connectionID);
     }
 
 	/** Get the ToadletContainer, which manages HTTP. You can then register

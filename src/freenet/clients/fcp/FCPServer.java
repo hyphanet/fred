@@ -71,9 +71,9 @@ public class FCPServer implements Runnable, DownloadCache {
 	String bindTo;
 	private String allowedHosts;
 	AllowedHosts allowedHostsFullAccess;
-    /** Stores {@link FCPPluginClient} objects by ID and automatically garbage collects them so we
-     *  don't have to bloat this class with that. */
-	final FCPPluginConnectionTracker pluginClientTracker;
+    /** Stores {@link FCPPluginConnection} objects by ID and automatically garbage collects them so
+     *  we don't have to bloat this class with that. */
+	final FCPPluginConnectionTracker pluginConnectionTracker;
 	final WeakHashMap<String, PersistentRequestClient> rebootClientsByName;
 	final PersistentRequestClient globalRebootClient;
 	PersistentRequestClient globalForeverClient;
@@ -100,8 +100,8 @@ public class FCPServer implements Runnable, DownloadCache {
 		this.persistentRoot = persistentRoot;
         globalForeverClient = persistentRoot.globalForeverClient;
 
-        pluginClientTracker = new FCPPluginConnectionTracker();
-        // pluginClientTracker.start() is called in maybeStart()
+        pluginConnectionTracker = new FCPPluginConnectionTracker();
+        // pluginConnectionTracker.start() is called in maybeStart()
 
 
 		globalRebootClient = new PersistentRequestClient("Global Queue", null, true, null, Persistence.REBOOT, null);
@@ -154,7 +154,7 @@ public class FCPServer implements Runnable, DownloadCache {
         // We need to start the FCPPluginConnectionTracker no matter whether this.enabled == true:
         // If networked FCP is disabled, plugins might still communicate via non-networked
         // intra-node FCP.
-        pluginClientTracker.start();
+        pluginConnectionTracker.start();
 	}
 
 	@Override
@@ -472,16 +472,17 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
     /**
-     * <p>Creates and registers {@link FCPPluginClient} object for FCP connections which are
-     * attached over the network.<br/>
+     * <p>Creates and registers a {@link FCPPluginClient} object for a FCP connection which is
+     * attached by network.<br/>
      * In other words, the actual client application is NOT a plugin running within the node, it
      * only connected to the node via network.</p>
      * 
      * <p>The object is registered at the backend {@link FCPPluginConnectionTracker} and thus can be
-     * queried from this server by ID via the frontend {@link #getPluginClient(UUID)} as long as
-     * something else keeps a strong reference to it.<br/>
+     * queried from this server by ID via the frontend {@link #getPluginConnectionByID(UUID)} as
+     * long as something else keeps a strong reference to it.<br/>
      * Once it becomes weakly reachable, it will be garbage-collected from the backend
-     * {@link FCPPluginConnectionTracker} and {@link #getPluginClient(UUID)} will not work anymore.
+     * {@link FCPPluginConnectionTracker} and {@link #getPluginConnectionByID(UUID)} will not
+     * return it anymore.
      * <br>In other words, you don't have to take care of registering or unregistering clients.
      * You only have to take care of keeping a strong reference to them while they are in use.</p>
      * 
@@ -492,14 +493,14 @@ public class FCPServer implements Runnable, DownloadCache {
      *          The class JavaDoc of FCPPluginClient explains the code path for both networked and
      *          non-networked FCP.
      */
-    FCPPluginClient createFCPPluginClientForNetworkedFCP(String serverPluginName,
+    final FCPPluginClient createFCPPluginConnectionForNetworkedFCP(String serverPluginName,
         FCPConnectionHandler messageHandler)
             throws PluginNotFoundException {
         
-        FCPPluginClient client = FCPPluginClient.constructForNetworkedFCP(node.executor,
-            node.pluginManager, serverPluginName, messageHandler);
-        pluginClientTracker.registerConnection(client);
-        return client;
+        FCPPluginClient connection = FCPPluginClient.constructForNetworkedFCP(
+            node.executor, node.pluginManager, serverPluginName, messageHandler);
+        pluginConnectionTracker.registerConnection(connection);
+        return connection;
     }
 
     /**
@@ -509,10 +510,11 @@ public class FCPServer implements Runnable, DownloadCache {
      * a plugin running within the node just like the server.</p>
      * 
      * <p>The object is registered at the backend {@link FCPPluginConnectionTracker} and thus can be
-     * queried from this server by ID via the frontend {@link #getPluginClient(UUID)} as long as
-     * something else keeps a strong reference to it.<br/>
+     * queried from this server by ID via the frontend {@link #getPluginConnectionByID(UUID)} as
+     * long as something else keeps a strong reference to it.<br>
      * Once it becomes weakly reachable, it will be garbage-collected from the backend
-     * {@link FCPPluginConnectionTracker} and {@link #getPluginClient(UUID)} will not work anymore.
+     * {@link FCPPluginConnectionTracker} and {@link #getPluginConnectionByID(UUID)} will not
+     * return it anymore.
      * <br>In other words, you don't have to take care of registering or unregistering clients.
      * You only have to take care of keeping a strong reference to them while they are in use.</p>
      * 
@@ -524,14 +526,14 @@ public class FCPServer implements Runnable, DownloadCache {
      *          The class JavaDoc of FCPPluginClient explains the code path for both networked and
      *          non-networked FCP.
      */
-    public FCPPluginClient createFCPPluginClientForIntraNodeFCP(String serverPluginName,
+    public final FCPPluginClient createFCPPluginConnectionForIntraNodeFCP(String serverPluginName,
         ClientSideFCPMessageHandler messageHandler)
             throws PluginNotFoundException {
         
-        FCPPluginClient client = FCPPluginClient.constructForIntraNodeFCP(node.executor,
+        FCPPluginClient connection = FCPPluginClient.constructForIntraNodeFCP(node.executor,
             node.pluginManager, serverPluginName, messageHandler);
-        pluginClientTracker.registerConnection(client);
-        return client;
+        pluginConnectionTracker.registerConnection(connection);
+        return connection;
     }
 
     /**
@@ -541,8 +543,8 @@ public class FCPServer implements Runnable, DownloadCache {
      * @see FCPPluginConnectionTracker
      *     The JavaDoc of FCPPluginConnectionTracker explains the general purpose of this mechanism.
      */
-    public FCPPluginClient getPluginClient(UUID clientID) throws IOException {
-        return pluginClientTracker.getConnection(clientID);
+    public final FCPPluginConnection getPluginConnectionByID(UUID clientID) throws IOException {
+        return pluginConnectionTracker.getConnection(clientID);
     }
 
 	public PersistentRequestClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {

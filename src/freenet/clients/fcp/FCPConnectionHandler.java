@@ -684,7 +684,7 @@ public class FCPConnectionHandler implements Closeable {
             }
 
             FCPPluginClient newClient
-                = server.createFCPPluginClientForNetworkedFCP(serverPluginName, this);
+                = server.createFCPPluginConnectionForNetworkedFCP(serverPluginName, this);
             
             pluginClientsByServerPluginName.put(serverPluginName, newClient);
             

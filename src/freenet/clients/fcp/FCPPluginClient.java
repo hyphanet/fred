@@ -74,8 +74,8 @@ import freenet.support.io.NativeThread;
  * connections:</br>
  * - The client plugin uses {@link PluginRespirator#connectToOtherPlugin(String,
  *   FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} to try to create a connection.<br/>
- * - The {@link PluginRespirator} uses {@link FCPServer#createFCPPluginClientForIntraNodeFCP(String,
- *   FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} to get a FCPPluginClient.<br/>
+ * - The {@link PluginRespirator} uses {@link FCPServer#createFCPPluginConnectionForIntraNodeFCP(
+ *   String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} to get a FCPPluginClient.<br>
  * - The client plugin uses the send functions of the FCPPluginClient. Those are the same as with
  *   networked FCP connections.<br/>
  * - The FCP server plugin handles the message at
