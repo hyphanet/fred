@@ -58,7 +58,7 @@ final class FCPPluginClientTracker extends NativeThread {
 
     /**
      * Lock to guard {@link #clientsByID} against concurrent modification.<br>
-     * A {@link ReadWriteLock} because the usage pattern is mostly reads, very few writes
+     * A {@link ReadWriteLock} because the suspected usage pattern is mostly reads, very few writes
      * - {@link ReadWriteLock} can do that faster than a regular Lock.<br>
      * (A {@link ReentrantReadWriteLock} because thats the only implementation of
      * {@link ReadWriteLock}.)
