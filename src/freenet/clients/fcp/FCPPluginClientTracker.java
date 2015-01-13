@@ -50,9 +50,8 @@ final class FCPPluginClientTracker extends NativeThread {
      * Backend table of {@link WeakReference}s to known client connections. Monitored by a
      * {@link ReferenceQueue} to automatically remove entries for connections which have been GCed.
      * 
-     * Not a {@link ConcurrentHashMap} because the creation of clients is exposed to the FCP network
-     * interface and thus DoS would be possible: Java HashMaps never shrink once they have reached a
-     * certain size.
+     * Not a {@link ConcurrentHashMap} because the creation of connections is exposed to the FCP
+     * network interface and thus DoS would be possible: Java HashMaps never shrink.
      */
     private final TreeMap<UUID, FCPPluginClientWeakReference> clientsByID
         = new TreeMap<UUID, FCPPluginClientWeakReference>();
