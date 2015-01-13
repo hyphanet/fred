@@ -31,8 +31,11 @@ import freenet.support.io.NativeThread;
  * Thus, this class exists to serve the purpose of allowing plugin servers to query client
  * connections by their ID (see {@link FCPPluginConnection#getID()}).</p>
  * 
- * <p>It is implemented by keeping {@link WeakReference}s to plugin client connections, so they only
- * stay in the memory of the tracker as long as they are still connected.</p>
+ * <p>Client connections are considered as closed once the client discards all strong references
+ * to the {@link FCPPluginConnection}. Or in other words: A {@link FCPPluginConnection} is closed
+ * once it becomes weakly reachable.<br>
+ * Thus, this class is implemented by keeping {@link WeakReference}s to plugin client connections,
+ * so they only stay in the memory of the tracker as long as they are still connected.</p>
  * 
  * <p>After constructing an object of this class, you must call {@link #start()} to start its
  * garbage collection thread.<br/>
