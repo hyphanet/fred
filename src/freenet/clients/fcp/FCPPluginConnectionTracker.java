@@ -44,7 +44,7 @@ import freenet.support.io.NativeThread;
  * 
  * @author xor (xor@freenetproject.org)
  */
-final class FCPPluginClientTracker extends NativeThread {
+final class FCPPluginConnectionTracker extends NativeThread {
     
     /**
      * Backend table of {@link WeakReference}s to known client connections. Monitored by a
@@ -76,7 +76,7 @@ final class FCPPluginClientTracker extends NativeThread {
     /**
      * We extend class {@link WeakReference} so we can store the ID of the connection:<br/>
      * When using a {@link ReferenceQueue} to get notified about nulled {@link WeakReference}
-     * values in {@link FCPPluginClientTracker#connectionsByID}, we need to remove those values
+     * values in {@link FCPPluginConnectionTracker#connectionsByID}, we need to remove those values
      * from the {@link TreeMap}. For fast removal, we need their key in the map, which is the
      * connection ID, so we should store it in the {@link WeakReference}.
      */
@@ -95,7 +95,7 @@ final class FCPPluginClientTracker extends NativeThread {
 
     /**
      * Stores the {@link FCPPluginConnection} so in the future it can be obtained by its ID with
-     * {@link FCPPluginClientTracker#getConnection(UUID)}.
+     * {@link #getConnection(UUID)}.
      * 
      * <b>Must</b> be called for any newly created {@link FCPPluginConnection} before passing it to
      * {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
@@ -159,8 +159,8 @@ final class FCPPluginClientTracker extends NativeThread {
     /**
      * You must call {@link #start()} afterwards!
      */
-    public FCPPluginClientTracker() {
-        super("FCPPluginClientTracker Garbage-collector",
+    public FCPPluginConnectionTracker() {
+        super("FCPPluginConnectionTracker Garbage-collector",
             NativeThread.PriorityLevel.MIN_PRIORITY.value, true);
         setDaemon(true);
     }
@@ -212,6 +212,6 @@ final class FCPPluginClientTracker extends NativeThread {
     private static transient volatile boolean logMINOR = false;
     
     static {
-        Logger.registerClass(FCPPluginClientTracker.class);
+        Logger.registerClass(FCPPluginConnectionTracker.class);
     }
 }

@@ -88,7 +88,7 @@ import freenet.support.io.NativeThread;
  *   {@link PluginRespirator#getPluginConnectionByID(UUID)}. It can use this to send messages to the
  *   client application on its own, that is not triggered by any client messages. <br/>
  * - Once the client plugin is done with the connection, it discards the strong reference to the
- *   FCPPluginClient. Because the {@link FCPPluginClientTracker} monitors garbage collection of
+ *   FCPPluginClient. Because the {@link FCPPluginConnectionTracker} monitors garbage collection of
  *   {@link FCPPluginClient} objects, getting rid of all strong references to a
  *   {@link FCPPluginClient} is sufficient as a disconnection mechanism.<br/>
  *   Thus, an intra-node client connection is considered as disconnected once the FCPPluginClient is
@@ -161,9 +161,9 @@ public final class FCPPluginClient implements FCPPluginConnection {
      *   messages to the nulled server plugin - which they probably will do because they did already
      *   in the past.<br/>
      * NOTICE: If you do implement this, make sure to not rewrite the ReferenceQueue polling thread
-     *         but instead base it upon {@link FCPPluginClientTracker}. You should probably extract
-     *         a generic class WeakValueMap from that one and use to to power both the existing
-     *         class and the one which deals with this variable here.
+     *         but instead base it upon {@link FCPPluginConnectionTracker}. You should probably
+     *         extract a generic class WeakValueMap from that one and use to to power both the
+     *         existing class and the one which deals with this variable here.
      * </p>
      * @see #isServerDead() Use isServerDead() to check whether this WeakReference is nulled.
      */
@@ -301,8 +301,8 @@ public final class FCPPluginClient implements FCPPluginConnection {
      * {@link FCPConnectionHandler} clientConnection.<br/>
      * 
      * <p>You <b>must</b> register any newly created connections at
-     * {@link FCPPluginClientTracker#registerConnection(FCPPluginConnection)} before handing them
-     * out to application code.</p>
+     * {@link FCPPluginConnectionTracker#registerConnection(FCPPluginConnection)} before handing
+     * them out to application code.</p>
      */
     static FCPPluginClient constructForNetworkedFCP(Executor executor,
             PluginManager serverPluginManager, String serverPluginName,
@@ -357,8 +357,8 @@ public final class FCPPluginClient implements FCPPluginConnection {
      * client.<br>
      * 
      * <p>You <b>must</b> register any newly created connections at
-     * {@link FCPPluginClientTracker#registerConnection(FCPPluginConnection)} before handing them
-     *  out to application code.</p>
+     * {@link FCPPluginConnectionTracker#registerConnection(FCPPluginConnection)} before handing
+     * them out to application code.</p>
      */
     static FCPPluginClient constructForIntraNodeFCP(Executor executor,
             PluginManager serverPluginManager, String serverPluginName,
