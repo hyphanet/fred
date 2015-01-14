@@ -178,8 +178,8 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
         //    the new interface FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
         // 2. The old class PluginTalker. This is available if the plugin implements the old
         //    interface FredPluginFCP.
-        // We first try code path 1 by doing FCPConnectionHandler.getPluginClient(): That function
-        // will only yield a result if the new interface is implemented.
+        // We first try code path 1 by doing FCPConnectionHandler.getFCPPluginConnection(): That
+        // function will only yield a result if the new interface is implemented.
         // If that fails, we try the old code path of PluginTalker, which will fail if the plugin
         // also does not implement the old interface and thus is no FCP server at all.
         // If both fail, we finally send a MessageInvalidException.
