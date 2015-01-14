@@ -184,17 +184,17 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
         // also does not implement the old interface and thus is no FCP server at all.
         // If both fail, we finally send a MessageInvalidException.
         
-        FCPPluginConnection clientConnection = null;
+        FCPPluginConnection serverConnection = null;
         
         try {
-            clientConnection = handler.getFCPPluginConnection(pluginname);
+            serverConnection = handler.getFCPPluginConnection(pluginname);
         } catch (PluginNotFoundException e1) {
             // Do not send an error yet: Allow plugins which only implement the old interface to
             // keep working.
             // TODO: Once we remove class PluginTalker, we should throw here as we do below.
         }
         
-        if(clientConnection != null) {
+        if(serverConnection != null) {
             FCPPluginMessage message = constructFCPPluginMessage();
             
             // Call this here instead of in the above try{} because the above
@@ -204,7 +204,7 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
             // support the new interface but was unloaded meanwhile. So we can exit the function
             // then, we don't have to try the old interface.
             try {
-                clientConnection.send(SendDirection.ToServer, message);
+                serverConnection.send(SendDirection.ToServer, message);
             } catch (IOException e) {
                 throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_PLUGIN,
                     pluginname + " not found or is not a FCPPlugin", identifier, false);
