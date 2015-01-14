@@ -668,8 +668,15 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
                 FCPPluginMessage reply = null;
                 
                 try {
-                    reply = messageHandler.handlePluginFCPMessage(
-                        FCPPluginConnectionImpl.this, message);
+                    try {
+                        reply = messageHandler.handlePluginFCPMessage(
+                            FCPPluginConnectionImpl.this, message);
+                    } catch(Error e) {
+                        // TODO: Code quality: This is a workaround for Java 6 not having
+                        // "catch(RuntimeException | Error e)". Once we are on Java 7, remove this
+                        // catch() block, and catch both types with the catch() block below.
+                        throw new RuntimeException(e);
+                    }
                 } catch(RuntimeException e) {
                     // The message handler is a server or client implementation, and thus as third
                     // party code might have bugs. So we need to catch any RuntimeException here.
