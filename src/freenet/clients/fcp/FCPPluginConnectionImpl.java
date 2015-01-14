@@ -303,7 +303,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * 
      * <p>You <b>must</b> register any newly created connections at
      * {@link FCPPluginConnectionTracker#registerConnection(FCPPluginConnection)} before handing
-     * them out to application code.</p>
+     * them out to plugin code.</p>
      */
     static FCPPluginConnectionImpl constructForNetworkedFCP(Executor executor,
             PluginManager serverPluginManager, String serverPluginName,
@@ -359,7 +359,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * 
      * <p>You <b>must</b> register any newly created connections at
      * {@link FCPPluginConnectionTracker#registerConnection(FCPPluginConnection)} before handing
-     * them out to application code.</p>
+     * them out to plugin code.</p>
      */
     static FCPPluginConnectionImpl constructForIntraNodeFCP(Executor executor,
             PluginManager serverPluginManager, String serverPluginName,
