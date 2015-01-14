@@ -515,8 +515,8 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
             return;
         
         // We now know that the message handler is not attached by network, and that it is not a
-        // sendSynchronous() thread. So it must be a FredPluginFCPMessageHandler, and we determine
-        // what it is and dispatch the message to it.
+        // sendSynchronous() thread. So the only thing it can be is a FredPluginFCPMessageHandler,
+        // and we now determine whether it is the one of the client or the server.
         final FredPluginFCPMessageHandler messageHandler
             = (direction == SendDirection.ToServer) ? server.get() : client;
 
@@ -528,6 +528,8 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
             throw new IOException("The server plugin has been unloaded.");
         }
         
+        // We now have the right FredPluginFCPMessageHandler, it is still alive, and so we can can
+        // pass the message to it.
         dispatchMessageLocallyToMessageHandler(messageHandler, direction, message);
     }
     
