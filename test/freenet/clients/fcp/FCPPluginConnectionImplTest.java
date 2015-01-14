@@ -12,7 +12,7 @@ import freenet.clients.fcp.FCPPluginConnection.SendDirection;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 
-public final class FCPPluginClientTest extends TestCase {
+public final class FCPPluginConnectionImplTest extends TestCase {
     /**
      * {@link FCPPluginConnectionImpl#sendSynchronous(SendDirection, FCPPluginMessage, long)} is
      * powered by an internal map which keeps track of synchronous sends which are waiting for a
