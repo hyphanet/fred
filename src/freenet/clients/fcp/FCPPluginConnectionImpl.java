@@ -147,7 +147,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * 
      * <p>TODO: Optimization / Memory leak fix: Monitor this with a {@link ReferenceQueue} and if it
      * becomes nulled, remove this FCPPluginConnectionImpl from the map
-     * {@link FCPConnectionHandler#pluginClientsByServerPluginName}.<br/>
+     * {@link FCPConnectionHandler#pluginConnectionsByServerName}.<br/>
      * Currently, it seems not necessary:<br/>
      * - It can only become null if the server plugin is unloaded / reloaded. Plugin unloading /
      *   reloading requires user interaction or auto update and shouldn't happen frequently.<br/>
