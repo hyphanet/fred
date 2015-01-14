@@ -35,7 +35,7 @@ public final class FCPPluginConnectionImplTest extends TestCase {
         // will throw.
         final AtomicBoolean failure = new AtomicBoolean(false);
         
-        final FCPPluginConnectionImpl client = FCPPluginConnectionImpl.constructForUnitTest(
+        final FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForUnitTest(
             new ServerSideFCPMessageHandler() {
                 @Override public FCPPluginMessage handlePluginFCPMessage(
                         final FCPPluginConnection connection, final FCPPluginMessage message) {
@@ -71,7 +71,7 @@ public final class FCPPluginConnectionImplTest extends TestCase {
                 
                 @Override public void run() {
                     try {
-                        final FCPPluginMessage reply = client.sendSynchronous(
+                        final FCPPluginMessage reply = connection.sendSynchronous(
                             SendDirection.ToServer, message, TimeUnit.SECONDS.toNanos(10));
                         
                         if(!threadIndex.equals(reply.params.get("replyToThread"))) {
@@ -104,7 +104,7 @@ public final class FCPPluginConnectionImplTest extends TestCase {
             false, failure.get());
         
         assertEquals("FCPPluginConnectionImpl sendSynchronous() map should not leak",
-            0, client.getSendSynchronousCount());
+            0, connection.getSendSynchronousCount());
     }
 
 }
