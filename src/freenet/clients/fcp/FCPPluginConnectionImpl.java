@@ -59,14 +59,14 @@ import freenet.support.io.NativeThread;
  * - The {@link FCPConnectionInputHandler} uses {@link FCPMessage#create(String, SimpleFieldSet)}
  *   to parse the message and obtain the actual {@link FCPPluginClientMessage}.<br/>
  * - The {@link FCPPluginClientMessage} uses {@link FCPConnectionHandler#getFCPPluginConnection(
- *   String)} to obtain the FCPPluginConnectionImpl to the server.<br/>
- * - The {@link FCPPluginClientMessage} uses {@link FCPPluginConnectionImpl#send(SendDirection,
+ *   String)} to obtain the FCPPluginConnection to the server.<br/>
+ * - The {@link FCPPluginClientMessage} uses {@link FCPPluginConnection#send(SendDirection,
  *   FCPPluginMessage)} to send the message to the server plugin.<br/>
  * - The FCP server plugin handles the message at
  *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
  *   FCPPluginMessage)}.<br/>
- * - As each FCPPluginConnectionImpl object exists for the lifetime of a network connection, the FCP
- *   server plugin may store the UUID of the FCPPluginConnectionImpl and query it via
+ * - As each FCPPluginConnection object exists for the lifetime of a network connection, the FCP
+ *   server plugin may store the UUID of the FCPPluginConnection and query it via
  *   {@link PluginRespirator#getPluginConnectionByID(UUID)}. It can use this to send messages to the
  *   client application on its own, that is not triggered by any client messages.<br/>
  * </p>
@@ -76,29 +76,30 @@ import freenet.support.io.NativeThread;
  *   FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} to try to create a connection.<br/>
  * - The {@link PluginRespirator} uses {@link FCPServer#createFCPPluginConnectionForIntraNodeFCP(
  *   String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} to get a
- *   FCPPluginConnectionImpl.<br>
- * - The client plugin uses the send functions of the FCPPluginConnectionImpl. Those are the same as
+ *   FCPPluginConnection.<br>
+ * - The client plugin uses the send functions of the FCPPluginConnection. Those are the same as
  *   with networked FCP connections.<br/>
  * - The FCP server plugin handles the message at
  *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
  *   FCPPluginMessage)}. That is the same handler as with networked FCP connections.<br/>
- * - The client plugin keeps a strong reference to the FCPPluginConnectionImpl in memory as long as
+ * - The client plugin keeps a strong reference to the FCPPluginConnection in memory as long as
  *   it wants to keep the connection open.<br/>
  * - Same as with networked FCP connections, the FCP server plugin can store the UUID of the
- *   FCPPluginConnectionImpl and in the future re-obtain the connection by
+ *   FCPPluginConnection and in the future re-obtain the connection by
  *   {@link PluginRespirator#getPluginConnectionByID(UUID)}. It can use this to send messages to the
  *   client application on its own, that is not triggered by any client messages. <br/>
  * - Once the client plugin is done with the connection, it discards the strong reference to the
- *   FCPPluginConnectionImpl. Because the {@link FCPPluginConnectionTracker} monitors garbage
- *   collection of {@link FCPPluginConnectionImpl} objects, getting rid of all strong references to
- *   a {@link FCPPluginConnectionImpl} is sufficient as a disconnection mechanism.<br/>
+ *   FCPPluginConnection. Because the {@link FCPPluginConnectionTracker} monitors garbage
+ *   collection of FCPPluginConnection objects, getting rid of all strong references to a
+ *   FCPPluginConnection is sufficient as a disconnection mechanism.<br/>
  *   Thus, an intra-node client connection is considered as disconnected once the
- *   FCPPluginConnectionImpl is not strongly referenced by the client plugin anymore. If a server
- *   plugin then tries to obtain the client by its UUID again (via the aforementioned
+ *   FCPPluginConnection is not strongly referenced by the client plugin anymore. If a server
+ *   plugin then tries to obtain the client connection by its UUID again (via the aforementioned
  *   {@link PluginRespirator#getPluginConnectionByID(UUID)}, the get will fail. So if the server
- *   plugin stores client UUIDs, it needs no special disconnection mechanism except for periodically
- *   trying to send a message to each client. Once obtaining the client by its UUID fails, or
- *   sending the message fails, the server can opportunistically purge the UUID from its database.
+ *   plugin stores connection UUIDs, it needs no special disconnection mechanism except for
+ *   periodically trying to send a message to each client. Once obtaining the client connection by
+ *   its UUID fails, or sending the message fails, the server can opportunistically purge the UUID
+ *   from its database.
  *   <br/>This mechanism also works for networked FCP.<br>
  * </p></p>
  */
@@ -391,10 +392,10 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * - As loading a plugin by JAR is the same mode of operation as with a regular node,
      *   there will be a PluginRespirator available to it.<br>
      * - {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)} can then
-     *   be used for obtaining a FCPPluginConnectionImpl instead of this constructor. This also is the
+     *   be used for obtaining a FCPPluginConnection instead of this constructor. This also is the
      *   function to obtain a FCPPluginConnection which is used in regular mode of operation.<br>
      * - The aforementioned {@link PluginRespirator#getPluginConnectionByID(UUID)} will then work
-     *   for FCPPluginConnectionImpls obtained through the connectToOtherPlugin().
+     *   for FCPPluginConnections obtained through the connectToOtherPlugin().
      */
     public static FCPPluginConnectionImpl constructForUnitTest(ServerSideFCPMessageHandler server,
         ClientSideFCPMessageHandler client) {
