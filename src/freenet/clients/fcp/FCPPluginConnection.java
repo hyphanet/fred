@@ -49,7 +49,7 @@ import freenet.support.api.Bucket;
  * <h2>Object lifecycle</h2>
  * <p>For each {@link #serverPluginName}, a single {@link FCPConnectionHandler} can only have a
  * single FCPPluginConnection with the plugin of that name as connection partner. This is enforced
- * by {@link FCPConnectionHandler#getPluginClient(String)}. In other words: One
+ * by {@link FCPConnectionHandler#getFCPPluginConnection(String)}. In other words: One
  * {@link FCPConnectionHandler} can only have one connection to a certain plugin.<br/>
  * The reason for this is the following: Certain plugins might need to store the {@link UUID} of a
  * client in their database so they are able to send data to the client if an event of interest to

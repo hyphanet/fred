@@ -487,7 +487,7 @@ public class FCPServer implements Runnable, DownloadCache {
      * You only have to take care of keeping a strong reference to them while they are in use.</p>
      * 
      * <p>ATTENTION: Only for internal use by the frontend function
-     * {@link FCPConnectionHandler#getPluginClient(String)}.</p>
+     * {@link FCPConnectionHandler#getFCPPluginConnection(String)}.</p>
      * 
      * @see FCPPluginConnectionImpl
      *     The class JavaDoc of FCPPluginConnectionImpl explains the code path for both

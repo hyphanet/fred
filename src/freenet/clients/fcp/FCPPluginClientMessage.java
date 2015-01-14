@@ -187,7 +187,7 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
         FCPPluginConnection clientConnection = null;
         
         try {
-            clientConnection = handler.getPluginClient(pluginname);
+            clientConnection = handler.getFCPPluginConnection(pluginname);
         } catch (PluginNotFoundException e1) {
             // Do not send an error yet: Allow plugins which only implement the old interface to
             // keep working.

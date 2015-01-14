@@ -58,8 +58,8 @@ import freenet.support.io.NativeThread;
  *   {@link FCPConnectionInputHandler} receives the FCP message.<br/>
  * - The {@link FCPConnectionInputHandler} uses {@link FCPMessage#create(String, SimpleFieldSet)}
  *   to parse the message and obtain the actual {@link FCPPluginClientMessage}.<br/>
- * - The {@link FCPPluginClientMessage} uses {@link FCPConnectionHandler#getPluginClient(String)} to
- *   obtain the FCPPluginConnectionImpl which wants to send.<br/>
+ * - The {@link FCPPluginClientMessage} uses {@link FCPConnectionHandler#getFCPPluginConnection(
+ *   String)} to obtain the FCPPluginConnectionImpl which wants to send.<br/>
  * - The {@link FCPPluginClientMessage} uses {@link FCPPluginConnectionImpl#send(SendDirection,
  *   FCPPluginMessage)} to send the message to the server plugin.<br/>
  * - The FCP server plugin handles the message at
@@ -414,7 +414,8 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
     }
     
     /**
-     * ATTENTION: Only for internal use in {@link FCPConnectionHandler#getPluginClient(String)}.<br>
+     * ATTENTION: Only for internal use in {@link FCPConnectionHandler#getFCPPluginConnection(
+     * String)}.<br>
      * Server / client code should always {@link #send(SendDirection, FCPPluginMessage)} messages
      * to check whether the connection is alive. (To ensure that the implementation of this class
      * could safely be changed to allow the server to be attached by network instead of always
