@@ -59,7 +59,7 @@ import freenet.support.io.NativeThread;
  * - The {@link FCPConnectionInputHandler} uses {@link FCPMessage#create(String, SimpleFieldSet)}
  *   to parse the message and obtain the actual {@link FCPPluginClientMessage}.<br/>
  * - The {@link FCPPluginClientMessage} uses {@link FCPConnectionHandler#getFCPPluginConnection(
- *   String)} to obtain the FCPPluginConnectionImpl which wants to send.<br/>
+ *   String)} to obtain the FCPPluginConnectionImpl to the server.<br/>
  * - The {@link FCPPluginClientMessage} uses {@link FCPPluginConnectionImpl#send(SendDirection,
  *   FCPPluginMessage)} to send the message to the server plugin.<br/>
  * - The FCP server plugin handles the message at
