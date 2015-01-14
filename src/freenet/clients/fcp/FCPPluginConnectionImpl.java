@@ -685,7 +685,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
                     
                     String errorMessage = "FredPluginFCPMessageHandler threw."
                         + " See JavaDoc of its member interfaces for how signal errors properly."
-                        + " Client = " + FCPPluginConnectionImpl.this
+                        + " connection = " + FCPPluginConnectionImpl.this
                         + "; SendDirection = " + direction
                         + "; message = " + message;
                     
@@ -708,7 +708,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
                         Logger.error(messageHandler, "FredPluginFCPMessageHandler tried to send a"
                             + " reply to a reply. Discarding it. See JavaDoc of its member"
                             + " interfaces for how to do this properly."
-                            + " Client = " + FCPPluginConnectionImpl.this
+                            + " connection = " + FCPPluginConnectionImpl.this
                             + "; original message SendDirection = " + direction
                             + "; original message = " + message
                             + "; reply = " + reply);
@@ -753,7 +753,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
                     
                     Logger.warning(messageHandler, "Sending reply from FredPluginFCPMessageHandler"
                         + " failed, the connection was closed already."
-                        + " Client = " + FCPPluginConnectionImpl.this
+                        + " connection = " + FCPPluginConnectionImpl.this
                         + "; original message SendDirection = " + direction
                         + "; original message = " + message
                         + "; reply = " + reply, e);
