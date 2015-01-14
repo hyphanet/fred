@@ -198,11 +198,11 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
             FCPPluginMessage message = constructFCPPluginMessage();
             
             // Call this here instead of in the above try{} because the above
-            // handler.getPluginClient() might also throw IOException in the future and we don't
-            // want to mix that up with the one whose reason is that the plugin does not support the
-            // new interface: In the case of send() throwing, it would indicate that the plugin DOES
-            // support the new interface but was unloaded meanwhile. So we can exit the function
-            // then, we don't have to try the old interface.
+            // handler.getFCPPluginConnection() might also throw IOException in the future and we
+            // don't want to mix that up with the one whose reason is that the plugin does not
+            // support the new interface: In the case of send() throwing, it would indicate that the
+            // plugin DOES support the new interface but was unloaded meanwhile. So we can exit the
+            // function then, we don't have to try the old interface.
             try {
                 serverConnection.send(SendDirection.ToServer, message);
             } catch (IOException e) {
