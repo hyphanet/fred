@@ -683,9 +683,8 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
                     // Notice that this is not normal mode of operation: Instead of throwing,
                     // the JavaDoc requests message handlers to return a reply with success=false.
                     
-                    String errorMessage = "FredPluginFCPMessageHandler threw"
-                        + " RuntimeException. See JavaDoc of its member interfaces for how signal"
-                        + " errors properly."
+                    String errorMessage = "FredPluginFCPMessageHandler threw."
+                        + " See JavaDoc of its member interfaces for how signal errors properly."
                         + " Client = " + FCPPluginConnectionImpl.this
                         + "; SendDirection = " + direction
                         + "; message = " + message;
@@ -699,7 +698,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
                         // quickly instead of having to wait for the timeout because no reply
                         // arrives.
                         reply = FCPPluginMessage.constructReplyMessage(message, null, null, false,
-                            "InternalError", errorMessage + "; RuntimeException = " + e.toString());
+                            "InternalError", errorMessage + "; Throwable = " + e.toString());
                     }
                 }
                 
