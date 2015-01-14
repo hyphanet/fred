@@ -679,7 +679,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
                     }
                 } catch(RuntimeException e) {
                     // The message handler is a server or client implementation, and thus as third
-                    // party code might have bugs. So we need to catch any RuntimeException here.
+                    // party code might have bugs. So we need to catch any undeclared throwables.
                     // Notice that this is not normal mode of operation: Instead of throwing,
                     // the JavaDoc requests message handlers to return a reply with success=false.
                     
