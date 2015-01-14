@@ -391,8 +391,8 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * - As loading a plugin by JAR is the same mode of operation as with a regular node,
      *   there will be a PluginRespirator available to it.<br>
      * - {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)} can then
-     *   be used for obtaining a FCPPluginConnectionImpl instead of this constructor. This also is a
-     *   function which is used in regular mode of operation.<br>
+     *   be used for obtaining a FCPPluginConnectionImpl instead of this constructor. This also is the
+     *   function to obtain a FCPPluginConnection which is used in regular mode of operation.<br>
      * - The aforementioned {@link PluginRespirator#getPluginConnectionByID(UUID)} will then work
      *   for FCPPluginConnectionImpls obtained through the connectToOtherPlugin().
      */
