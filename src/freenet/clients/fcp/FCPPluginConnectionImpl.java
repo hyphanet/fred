@@ -725,7 +725,9 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
                             messageHandler, "Fred did not receive a reply from the message "
                                           + "handler even though it was allowed to reply. "
                                           + "This would cause sendSynchronous() to timeout! "
-                                          + "Original message: " + message);
+                                          + " connection = " + FCPPluginConnectionImpl.this
+                                          + "; SendDirection = " + direction
+                                          + "; message = " + message);
                     }
                 }
                 
