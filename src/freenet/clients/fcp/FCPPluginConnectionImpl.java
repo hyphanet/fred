@@ -144,7 +144,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
     private final String serverPluginName;
 
     /**
-     * The plugin to which this client is connected.
+     * The FCP server plugin to which this connection is connected.
      * 
      * <p>TODO: Optimization / Memory leak fix: Monitor this with a {@link ReferenceQueue} and if it
      * becomes nulled, remove this FCPPluginConnectionImpl from the map
@@ -442,7 +442,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
     }
     
     /**
-     * @return The permission level of this client, depending on things such as its IP address.<br>
+     * @return The permission level of the client, depending on things such as its IP address.<br>
      *         For intra-node connections, it is {@link ClientPermissions#ACCESS_DIRECT}.<br><br>
      * 
      *         <b>ATTENTION:</b> The return value can change at any point in time, so you should
@@ -450,7 +450,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      *         This is because the user is free to reconfigure IP-address restrictions on the node's
      *         web interface whenever he wants to.
      */
-    private ClientPermissions getCurrentPermissions() {
+    private ClientPermissions getCurrentClientPermissions() {
         if(clientConnection != null) { // Networked FCP
             return clientConnection.hasFullAccess() ?
                 ClientPermissions.ACCESS_FCP_FULL : ClientPermissions.ACCESS_FCP_RESTRICTED;
@@ -464,13 +464,13 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
     public void send(final SendDirection direction, FCPPluginMessage message) throws IOException {
         // We first have to compute the message.permissions field ourselves - we shall ignore what
         // caller said for security.
-        ClientPermissions currentPermissions = (direction == SendDirection.ToClient) ?
+        ClientPermissions currentClientPermissions = (direction == SendDirection.ToClient) ?
              null // Server-to-client messages do not have permissions.
-             : getCurrentPermissions();
+             : getCurrentClientPermissions();
 
         // We set the permissions by creating a fresh FCPPluginMessage object so the caller cannot
         // overwrite what we compute.
-        message = FCPPluginMessage.constructRawMessage(currentPermissions, message.identifier,
+        message = FCPPluginMessage.constructRawMessage(currentClientPermissions, message.identifier,
             message.params, message.data, message.success, message.errorCode, message.errorMessage);
 
         // Now that the message is completely initialized, we can dump it to the logfile.
