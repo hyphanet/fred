@@ -123,7 +123,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
 
 
     /**
-     * Unique identifier among all FCPPluginClients.
+     * Unique identifier among all {@link FCPPluginConnection}s and FCPPluginConnectionImpls
      * @see #getID()
      */
     private final UUID id = UUID.randomUUID();
@@ -394,7 +394,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      *   be used for obtaining a FCPPluginConnectionImpl instead of this constructor. This also is a
      *   function which is used in regular mode of operation.<br>
      * - The aforementioned {@link PluginRespirator#getPluginConnectionByID(UUID)} will then work
-     *   for FCPPluginClients obtained through the connectToOtherPlugin().
+     *   for FCPPluginConnectionImpls obtained through the connectToOtherPlugin().
      */
     public static FCPPluginConnectionImpl constructForUnitTest(ServerSideFCPMessageHandler server,
         ClientSideFCPMessageHandler client) {
