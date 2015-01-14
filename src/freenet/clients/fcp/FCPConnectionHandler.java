@@ -79,10 +79,10 @@ public class FCPConnectionHandler implements Closeable {
 	final HashMap<String, ClientRequest> requestsByIdentifier;
 
     /**
-     * {@link FCPPluginClient} indexed by {@link FCPPluginClient#getServerPluginName()}.
+     * {@link FCPPluginConnectionImpl} indexed by {@link FCPPluginConnection#getServerPluginName()}.
      */
-    private final TreeMap<String, FCPPluginClient> pluginClientsByServerPluginName
-        = new TreeMap<String, FCPPluginClient>();
+    private final TreeMap<String, FCPPluginConnectionImpl> pluginClientsByServerPluginName
+        = new TreeMap<String, FCPPluginConnectionImpl>();
 
     /**
      * Lock for {@link #pluginClientsByServerPluginName}.
@@ -625,14 +625,16 @@ public class FCPConnectionHandler implements Closeable {
 	}
 
     /**
-     * @return The {@link FCPPluginClient} for the given serverPluginName (see
-     *         {@link FCPPluginClient#getServerPluginName()}). Atomically creates and stores it if
-     *         there does not exist one yet. This ensures that for each {@link FCPConnectionHandler}
-     *         , there can be only one {@link FCPPluginClient} for a given serverPluginName.
+     * @return The {@link FCPPluginConnectionImpl} for the given serverPluginName (see
+     *         {@link FCPPluginConnection#getServerPluginName()}). Atomically creates and stores it
+     *         if there does not exist one yet. This ensures that for each FCPConnectionHandler,
+     *         there can be only one {@link FCPPluginConnectionImpl} for a given serverPluginName.
      * @throws PluginNotFoundException
      *             If the specified plugin is not loaded or does not provide an FCP server.
      */
-    public FCPPluginClient getPluginClient(String serverPluginName) throws PluginNotFoundException {
+    public FCPPluginConnectionImpl getPluginClient(String serverPluginName)
+            throws PluginNotFoundException {
+
         // The typical usage pattern of this function is that the great majority of calls will
         // return an existing client. Creating a fresh one will typically only happen at the start
         // of a connection and then it will be re-used a lot.
@@ -646,7 +648,8 @@ public class FCPConnectionHandler implements Closeable {
         
         pluginClientsByServerPluginNameLock.readLock().lock();
         try {
-            FCPPluginClient peekOldClient = pluginClientsByServerPluginName.get(serverPluginName);
+            FCPPluginConnectionImpl peekOldClient
+                = pluginClientsByServerPluginName.get(serverPluginName);
             
             if(peekOldClient != null && !peekOldClient.isServerDead()) {
                 return peekOldClient;
@@ -660,7 +663,8 @@ public class FCPConnectionHandler implements Closeable {
         try {
             // Re-check whether there is an existing client since we had to re-acquire the lock
             // meanwhile.
-            FCPPluginClient oldClient = pluginClientsByServerPluginName.get(serverPluginName);
+            FCPPluginConnectionImpl oldClient
+                = pluginClientsByServerPluginName.get(serverPluginName);
             
             if(oldClient != null) {
                 if(!oldClient.isServerDead()) {
@@ -672,7 +676,7 @@ public class FCPConnectionHandler implements Closeable {
                     // affected clients from the pluginClientsByServerPluginName table, so we
                     // opportunistically clean nulled clients from it here.
                     // The reason why this is sufficient memory management is explained at
-                    // FCPPluginClient.server
+                    // FCPPluginConnectionImpl.server
                     // NOTICE: Even if there was automatic disposal of nulled references, we still
                     // would have to manually remove dead ones here: I have observed that it can
                     // take minutes until the JVM flushes a ReferenceQueue. So if we relied upon
@@ -683,7 +687,7 @@ public class FCPConnectionHandler implements Closeable {
                 }
             }
 
-            FCPPluginClient newClient
+            FCPPluginConnectionImpl newClient
                 = server.createFCPPluginConnectionForNetworkedFCP(serverPluginName, this);
             
             pluginClientsByServerPluginName.put(serverPluginName, newClient);

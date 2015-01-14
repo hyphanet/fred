@@ -80,8 +80,8 @@ import freenet.support.api.Bucket;
  * <h1>Internals</h1><br>
  * 
  * If you plan to work on the fred-side implementation of FCP plugin connections, please see the
- * "Internals" section at the implementation {@link FCPPluginClient} of this interface. Notably,
- * the said section provides an overview of the flow of messages.
+ * "Internals" section at the implementation {@link FCPPluginConnectionImpl} of this interface.
+ * Notably, the said section provides an overview of the flow of messages.
  * 
  * @author xor (xor@freenetproject.org)
  */
@@ -340,7 +340,7 @@ public interface FCPPluginConnection {
      *     execute this function.<br>
      *     This is a shutdown mechanism: You can use it to abort a call to this function which is
      *     waiting for the timeout to expire.<br><br>
-     * @see FCPPluginClient#synchronousSends
+     * @see FCPPluginConnectionImpl#synchronousSends
      *     An overview of how synchronous sends and especially their threading work internally is
      *     provided at the map which stores them.
      * @see #send(SendDirection, FCPPluginMessage)

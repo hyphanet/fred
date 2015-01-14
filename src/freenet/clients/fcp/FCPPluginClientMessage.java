@@ -37,8 +37,8 @@ import freenet.support.SimpleFieldSet;
  * 
  * @link FCPPluginConnection
  *     FCPPluginConnection gives an overview of how plugin messaging works in general.
- * @link FCPPluginClient
- *     FCPPluginClient gives an overview of the internal code paths which messages take.
+ * @link FCPPluginConnectionImpl
+ *     FCPPluginConnectionImpl gives an overview of the internal code paths which messages take.
  * @author saces
  * @author xor (xor@freenetproject.org)
  * 

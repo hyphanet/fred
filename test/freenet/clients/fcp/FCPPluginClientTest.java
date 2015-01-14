@@ -14,8 +14,9 @@ import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHan
 
 public final class FCPPluginClientTest extends TestCase {
     /**
-     * {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage, long)} is powered
-     * an internal map which keeps track of synchronous sends which are waiting for a reply.<br>
+     * {@link FCPPluginConnectionImpl#sendSynchronous(SendDirection, FCPPluginMessage, long)} is
+     * powered by an internal map which keeps track of synchronous sends which are waiting for a
+     * reply.<br>
      * As this map is accessed concurrently, one might suspect possible thread safety issues.<br>
      * This test therefore runs 100 sendSynchronous() threads in parallel to trigger race
      * conditions, and thereby checks the following:<br>
@@ -34,7 +35,7 @@ public final class FCPPluginClientTest extends TestCase {
         // will throw.
         final AtomicBoolean failure = new AtomicBoolean(false);
         
-        final FCPPluginClient client = FCPPluginClient.constructForUnitTest(
+        final FCPPluginConnectionImpl client = FCPPluginConnectionImpl.constructForUnitTest(
             new ServerSideFCPMessageHandler() {
                 @Override public FCPPluginMessage handlePluginFCPMessage(
                         final FCPPluginConnection connection, final FCPPluginMessage message) {
@@ -102,7 +103,7 @@ public final class FCPPluginClientTest extends TestCase {
         assertEquals("JUnit failures cannot be passed out of threads, please check stdout/stderr.",
             false, failure.get());
         
-        assertEquals("FCPPluginClient sendSynchronous() map should not leak",
+        assertEquals("FCPPluginConnectionImpl sendSynchronous() map should not leak",
             0, client.getSendSynchronousCount());
     }
 

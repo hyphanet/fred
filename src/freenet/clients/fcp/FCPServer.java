@@ -472,8 +472,8 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
     /**
-     * <p>Creates and registers a {@link FCPPluginClient} object for a FCP connection which is
-     * attached by network.<br/>
+     * <p>Creates and registers a {@link FCPPluginConnectionImpl} object for a FCP connection which
+     * is attached by network.<br/>
      * In other words, the actual client application is NOT a plugin running within the node, it
      * only connected to the node via network.</p>
      * 
@@ -489,23 +489,23 @@ public class FCPServer implements Runnable, DownloadCache {
      * <p>ATTENTION: Only for internal use by the frontend function
      * {@link FCPConnectionHandler#getPluginClient(String)}.</p>
      * 
-     * @see FCPPluginClient
-     *          The class JavaDoc of FCPPluginClient explains the code path for both networked and
-     *          non-networked FCP.
+     * @see FCPPluginConnectionImpl
+     *     The class JavaDoc of FCPPluginConnectionImpl explains the code path for both
+     *     networked and non-networked FCP.
      */
-    final FCPPluginClient createFCPPluginConnectionForNetworkedFCP(String serverPluginName,
+    final FCPPluginConnectionImpl createFCPPluginConnectionForNetworkedFCP(String serverPluginName,
         FCPConnectionHandler messageHandler)
             throws PluginNotFoundException {
         
-        FCPPluginClient connection = FCPPluginClient.constructForNetworkedFCP(
+        FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForNetworkedFCP(
             node.executor, node.pluginManager, serverPluginName, messageHandler);
         pluginConnectionTracker.registerConnection(connection);
         return connection;
     }
 
     /**
-     * <p>Creates and registers a {@link FCPPluginClient} object for FCP connections between plugins
-     * running within the same node.<br/>
+     * <p>Creates and registers a {@link FCPPluginConnectionImpl} object for FCP connections between
+     * plugins running within the same node.<br/>
      * In other words, the actual client application is NOT connected to the node by network, it is
      * a plugin running within the node just like the server.</p>
      * 
@@ -522,16 +522,16 @@ public class FCPServer implements Runnable, DownloadCache {
      * {@link PluginRespirator#connectToOtherPlugin(String,
      * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}. Plugins must use that instead.</p>
      * 
-     * @see FCPPluginClient
-     *          The class JavaDoc of FCPPluginClient explains the code path for both networked and
-     *          non-networked FCP.
+     * @see FCPPluginConnectionImpl
+     *     The class JavaDoc of FCPPluginConnectionImpl explains the code path for both networked
+     *     and non-networked FCP.
      */
-    public final FCPPluginClient createFCPPluginConnectionForIntraNodeFCP(String serverPluginName,
-        ClientSideFCPMessageHandler messageHandler)
-            throws PluginNotFoundException {
+    public final FCPPluginConnectionImpl createFCPPluginConnectionForIntraNodeFCP(
+            String serverPluginName, ClientSideFCPMessageHandler messageHandler)
+                throws PluginNotFoundException {
         
-        FCPPluginClient connection = FCPPluginClient.constructForIntraNodeFCP(node.executor,
-            node.pluginManager, serverPluginName, messageHandler);
+        FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForIntraNodeFCP(
+            node.executor, node.pluginManager, serverPluginName, messageHandler);
         pluginConnectionTracker.registerConnection(connection);
         return connection;
     }
