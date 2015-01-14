@@ -378,8 +378,8 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
     /**
      * ONLY for being used in unit tests.<br>
      * This is similar to intra-node connections in regular operation: Both the server and client
-     * are running in the same VM. You must implement both the server and client side message in
-     * the unit test and pass them to this constructor.<br><br>
+     * are running in the same VM. You must implement both the server and client side message
+     * handler in the unit test and pass them to this constructor.<br><br>
      * 
      * Notice: Some server plugins might use {@link PluginRespirator#getPluginConnectionByID(UUID)}
      * to obtain FCPPluginConnectionImpl objects. They likely won't work with clients created by
