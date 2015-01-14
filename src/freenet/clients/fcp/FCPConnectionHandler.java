@@ -634,7 +634,7 @@ public class FCPConnectionHandler implements Closeable {
      * @throws PluginNotFoundException
      *     If the specified plugin is not loaded or does not provide an FCP server.
      */
-    public FCPPluginConnection getFCPPluginConnection(String serverPluginName)
+    FCPPluginConnection getFCPPluginConnection(String serverPluginName)
             throws PluginNotFoundException {
 
         // The suspected typical usage pattern of this function is that the great majority of calls
