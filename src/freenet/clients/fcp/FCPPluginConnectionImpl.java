@@ -779,7 +779,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
 
             /** @return A suitable {@link String} for use as the name of this thread */
             @Override public String toString() {
-                // Don't use FCPPluginConnectionImpl.toString() as it would be too long to fit in
+                // Don't use FCPPluginConnection.toString() as it would be too long to fit in
                 // the thread list on the Freenet FProxy web interface.
                 return "FCPPluginConnection for " + serverPluginName;
             }
