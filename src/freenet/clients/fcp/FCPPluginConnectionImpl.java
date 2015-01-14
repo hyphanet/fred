@@ -153,7 +153,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      *   reloading requires user interaction or auto update and shouldn't happen frequently.<br/>
      * - It would only leak one WeakReference per plugin per client network connection. That won't
      *   be much until we have very many network connections. The memory usage of having one thread
-     *   per {@link FCPConnectionHandler} to monitor the ReferenceQueue would probably outweight the
+     *   per {@link FCPConnectionHandler} to monitor the ReferenceQueue would probably outweigh the
      *   savings.<br/>
      * - We already opportunistically clean the table at FCPConnectionHandler: If the client
      *   application which is behind the {@link FCPConnectionHandler} tries to send a message using
