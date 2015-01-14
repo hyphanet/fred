@@ -416,10 +416,11 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
     /**
      * ATTENTION: Only for internal use in {@link FCPConnectionHandler#getFCPPluginConnection(
      * String)}.<br>
-     * Server / client code should always {@link #send(SendDirection, FCPPluginMessage)} messages
-     * to check whether the connection is alive. (To ensure that the implementation of this class
-     * could safely be changed to allow the server to be attached by network instead of always
-     * running locally in the same node as it currently is.)
+     * Server / client code should instead always send messages, for example via
+     * {@link #send(SendDirection, FCPPluginMessage)}, to check whether the connection is alive.
+     * This is to ensure that the implementation of this class could safely be changed to allow the
+     * server to be attached by network instead of always running locally in the same node as it
+     * currently is. Also see below.<br>
      * 
      * @return <p>True if the server plugin has been unloaded. Once this returns true, this
      *         FCPPluginConnectionImpl <b>cannot</b> be repaired, even if the server plugin is
@@ -427,7 +428,9 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * 
      *         <p><b>ATTENTION:</b> Future implementations of {@link FCPPluginConnectionImpl} might
      *         allow the server plugin to reside in a different node, and only be attached by
-     *         network. To prepare for that, you <b>must not</b> assume that the connection to the
+     *         network. Due to the unreliability of network connections, then this function will not
+     *         be able to reliably detect whether the server is dead.<br>
+     *         To prepare for that, you <b>must not</b> assume that the connection to the
      *         server is still fine just because this returns false = server is alive. Consider
      *         false / server is alive merely an indication, true / server is dead as the definite
      *         truth.<br>
