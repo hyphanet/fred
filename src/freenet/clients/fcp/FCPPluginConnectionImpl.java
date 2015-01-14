@@ -322,7 +322,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
 
 
     /**
-     * For being used by intra-node connections to a plugin:<br/>
+     * For being used by intra-node connections between two plugins:<br/>
      * Both the server and the client are running within the same node, so objects of their FCP
      * message handling interfaces are available:<br/>
      * The server's message handler is accessible as an implementor of
@@ -349,7 +349,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
     }
 
     /**
-     * For being used by intra-node connections to a plugin:<br/>
+     * For being used by intra-node connections between two plugins:<br/>
      * Both the server and the client are running within the same node, so their FCP interfaces are
      * available:<br/>
      * The server plugin will be queried from given {@link PluginManager} via the given String
