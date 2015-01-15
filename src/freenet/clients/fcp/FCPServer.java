@@ -483,7 +483,7 @@ public class FCPServer implements Runnable, DownloadCache {
      * Once it becomes weakly reachable, it will be garbage-collected from the backend
      * {@link FCPPluginConnectionTracker} and {@link #getPluginConnectionByID(UUID)} will not
      * return it anymore.
-     * <br>In other words, you don't have to take care of registering or unregistering clients.
+     * <br>In other words, you don't have to take care of registering or unregistering connections.
      * You only have to take care of keeping a strong reference to them while they are in use.</p>
      * 
      * <p>ATTENTION: Only for internal use by the frontend function
@@ -515,7 +515,7 @@ public class FCPServer implements Runnable, DownloadCache {
      * Once it becomes weakly reachable, it will be garbage-collected from the backend
      * {@link FCPPluginConnectionTracker} and {@link #getPluginConnectionByID(UUID)} will not
      * return it anymore.
-     * <br>In other words, you don't have to take care of registering or unregistering clients.
+     * <br>In other words, you don't have to take care of registering or unregistering connections.
      * You only have to take care of keeping a strong reference to them while they are in use.</p>
      * 
      * <p>ATTENTION: Only for internal use by the frontend function
@@ -543,8 +543,8 @@ public class FCPServer implements Runnable, DownloadCache {
      * @see FCPPluginConnectionTracker
      *     The JavaDoc of FCPPluginConnectionTracker explains the general purpose of this mechanism.
      */
-    public final FCPPluginConnection getPluginConnectionByID(UUID clientID) throws IOException {
-        return pluginConnectionTracker.getConnection(clientID);
+    public final FCPPluginConnection getPluginConnectionByID(UUID connectionID) throws IOException {
+        return pluginConnectionTracker.getConnection(connectionID);
     }
 
 	public PersistentRequestClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
