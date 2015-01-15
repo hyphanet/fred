@@ -52,12 +52,13 @@ import freenet.support.api.Bucket;
  * by {@link FCPConnectionHandler#getFCPPluginConnection(String)}. In other words: One
  * {@link FCPConnectionHandler} can only have one connection to a certain plugin.<br/>
  * The reason for this is the following: Certain plugins might need to store the {@link UUID} of a
- * client in their database so they are able to send data to the client if an event of interest to
- * the client happens in the future. Therefore, the {@link UUID} of a client must not change during
- * the lifetime of the connection. To ensure a permanent {@link UUID} of a client, only a single
- * FCPPluginConnection can exist per server plugin per {@link FCPConnectionHandler}.<br>
- * If you  nevertheless need multiple clients to a plugin, you have to create multiple FCP
- * connections.<br/></p>
+ * client connection in their database so they are able to send data to the client if an event of
+ * interest to the client happens in the future. Therefore, the {@link UUID} of a connection must
+ * not change during the lifetime of the connection. To ensure a permanent {@link UUID} of a
+ * connection, only a single FCPPluginConnection can exist per server plugin per
+ * {@link FCPConnectionHandler}.<br>
+ * If you nevertheless need multiple connections to a plugin, you have to create multiple network
+ * connections to the FCP server.<br/></p>
  * 
  * <p>
  * In opposite to a FCP connection to fred itself, which is represented by
