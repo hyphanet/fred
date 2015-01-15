@@ -178,7 +178,8 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
     private final ClientSideFCPMessageHandler client;
 
     /**
-     * For networked plugin connections, this is the connection to which this client belongs.
+     * For networked plugin connections, this is the network connection to which this
+     * FCPPluginConnectionImpl belongs.
      * For intra-node connections to plugins, this is null.
      * For each {@link FCPConnectionHandler}, there can only be one FCPPluginConnectionImpl for each
      * {@link #serverPluginName}.
@@ -383,7 +384,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * handler in the unit test and pass them to this constructor.<br><br>
      * 
      * Notice: Some server plugins might use {@link PluginRespirator#getPluginConnectionByID(UUID)}
-     * to obtain FCPPluginConnectionImpl objects. They likely won't work with clients created by
+     * to obtain FCPPluginConnectionImpl objects. They likely won't work with connections created by
      * this because it doesn't create a PluginRespirator. To get a {@link PluginRespirator}
      * available in unit tests, you might want to use
      * {@link NodeStarter#createTestNode(freenet.node.NodeStarter.TestNodeParameters)} instead 
@@ -425,7 +426,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * 
      * @return <p>True if the server plugin has been unloaded. Once this returns true, this
      *         FCPPluginConnectionImpl <b>cannot</b> be repaired, even if the server plugin is
-     *         loaded again. Then you should discard this client and create a fresh one.</p>
+     *         loaded again. Then you should discard this connection and create a fresh one.</p>
      * 
      *         <p><b>ATTENTION:</b> Future implementations of {@link FCPPluginConnection} might
      *         allow the server plugin to reside in a different node, and only be attached by
