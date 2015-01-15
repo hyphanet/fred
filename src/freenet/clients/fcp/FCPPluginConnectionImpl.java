@@ -427,7 +427,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      *         FCPPluginConnectionImpl <b>cannot</b> be repaired, even if the server plugin is
      *         loaded again. Then you should discard this client and create a fresh one.</p>
      * 
-     *         <p><b>ATTENTION:</b> Future implementations of {@link FCPPluginConnectionImpl} might
+     *         <p><b>ATTENTION:</b> Future implementations of {@link FCPPluginConnection} might
      *         allow the server plugin to reside in a different node, and only be attached by
      *         network. Due to the unreliability of network connections, then this function will not
      *         be able to reliably detect whether the server is dead.<br>
