@@ -890,7 +890,8 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
 
     @Override
     public String toString() {
-        return "FCPPluginConnectionImpl (ID: " + id + "; server plugin: " + serverPluginName
+        return "FCPPluginConnectionImpl (ID: " + id + "; server class: " + serverPluginName
+             + "; server: " + (server != null ? server.get() : null)
              + "; client: " + client + "; clientConnection: " + clientConnection +  ")";
     }
 
