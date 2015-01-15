@@ -79,20 +79,21 @@ public class FCPConnectionHandler implements Closeable {
 	final HashMap<String, ClientRequest> requestsByIdentifier;
 
     /**
-     * {@link FCPPluginClient} indexed by {@link FCPPluginClient#getServerPluginName()}.
+     * {@link FCPPluginConnectionImpl} indexed by {@link FCPPluginConnection#getServerPluginName()}.
      */
-    private final TreeMap<String, FCPPluginClient> pluginClientsByServerPluginName
-        = new TreeMap<String, FCPPluginClient>();
+    private final TreeMap<String, FCPPluginConnectionImpl> pluginConnectionsByServerName
+        = new TreeMap<String, FCPPluginConnectionImpl>();
 
     /**
-     * Lock for {@link #pluginClientsByServerPluginName}.
+     * Lock for {@link #pluginConnectionsByServerName}.
      * 
      * A {@link ReadWriteLock} because the usage pattern is mostly reads, very few writes -
      * {@link ReadWriteLock} can do that faster than a regular Lock.
      * (A {@link ReentrantReadWriteLock} because thats the only implementation of
      * {@link ReadWriteLock}.)
      */
-    private final ReadWriteLock pluginClientsByServerPluginNameLock = new ReentrantReadWriteLock();
+    private final ReadWriteLock pluginConnectionsByServerName_Lock
+        = new ReentrantReadWriteLock();
 
     /**
      * 16 random bytes hex-encoded as String. Unique for each instance of this class.
@@ -625,17 +626,20 @@ public class FCPConnectionHandler implements Closeable {
 	}
 
     /**
-     * @return The {@link FCPPluginClient} for the given serverPluginName (see
-     *         {@link FCPPluginClient#getServerPluginName()}). Atomically creates and stores it if
-     *         there does not exist one yet. This ensures that for each {@link FCPConnectionHandler}
-     *         , there can be only one {@link FCPPluginClient} for a given serverPluginName.
+     * @return
+     *     The {@link FCPPluginConnection} for the given serverPluginName (see
+     *     {@link FCPPluginConnection#getServerPluginName()}). Atomically creates and stores it if
+     *     there does not exist one yet. This ensures that for each FCPConnectionHandler, there can
+     *     be only one {@link FCPPluginConnection} for a given serverPluginName.
      * @throws PluginNotFoundException
-     *             If the specified plugin is not loaded or does not provide an FCP server.
+     *     If the specified plugin is not loaded or does not provide an FCP server.
      */
-    public FCPPluginClient getPluginClient(String serverPluginName) throws PluginNotFoundException {
-        // The typical usage pattern of this function is that the great majority of calls will
-        // return an existing client. Creating a fresh one will typically only happen at the start
-        // of a connection and then it will be re-used a lot.
+    FCPPluginConnection getFCPPluginConnection(String serverPluginName)
+            throws PluginNotFoundException {
+
+        // The suspected typical usage pattern of this function is that the great majority of calls
+        // will return an existing FCPPluginConnection. Creating a fresh one will typically only
+        // happen at the start of a connection and then it will be re-used a lot.
         // Therefore, it would cost a lot of performance to use synchronized() and we instead use a
         // ReadWriteLock which is optimal for such patterns.
         //
@@ -644,53 +648,57 @@ public class FCPConnectionHandler implements Closeable {
         // The JavaDoc of ReentrantReadWriteLock specifically recommends this pattern, so it ought
         // to be a safe version of double-checked locking.
         
-        pluginClientsByServerPluginNameLock.readLock().lock();
+        pluginConnectionsByServerName_Lock.readLock().lock();
         try {
-            FCPPluginClient peekOldClient = pluginClientsByServerPluginName.get(serverPluginName);
+            // We use the actual *Impl instead of the interface because the implementation provides
+            // isServerDead(), which the interface does not.
+            FCPPluginConnectionImpl peekOldConnection
+                = pluginConnectionsByServerName.get(serverPluginName);
             
-            if(peekOldClient != null && !peekOldClient.isServerDead()) {
-                return peekOldClient;
+            if(peekOldConnection != null && !peekOldConnection.isServerDead()) {
+                return peekOldConnection;
             }
         } finally {
             // A read-lock cannot be upgraded to a write-lock so we must always unlock
-            pluginClientsByServerPluginNameLock.readLock().unlock();
+            pluginConnectionsByServerName_Lock.readLock().unlock();
         }
 
-        pluginClientsByServerPluginNameLock.writeLock().lock();
+        pluginConnectionsByServerName_Lock.writeLock().lock();
         try {
-            // Re-check whether there is an existing client since we had to re-acquire the lock
+            // Re-check whether there is an existing connection since we had to re-acquire the lock
             // meanwhile.
-            FCPPluginClient oldClient = pluginClientsByServerPluginName.get(serverPluginName);
+            FCPPluginConnectionImpl oldConnection
+                = pluginConnectionsByServerName.get(serverPluginName);
             
-            if(oldClient != null) {
-                if(!oldClient.isServerDead()) {
-                    return oldClient;
+            if(oldConnection != null) {
+                if(!oldConnection.isServerDead()) {
+                    return oldConnection;
                 } else {
-                    // oldClient.isDead() returned true because the WeakReference to the server has
-                    // been nulled because the plugin was unloaded or reloaded.
-                    // The client should be discarded then. We have no ReferenceQueue to discard
-                    // affected clients from the pluginClientsByServerPluginName table, so we
-                    // opportunistically clean nulled clients from it here.
+                    // oldConnection.isDead() returned true because the WeakReference to the server
+                    // has been nulled because the plugin was unloaded or reloaded.
+                    // The connection should be discarded then. We have no ReferenceQueue to discard
+                    // affected connections from the pluginConnectionsByServerName table, so we
+                    // opportunistically clean nulled connections from it here.
                     // The reason why this is sufficient memory management is explained at
-                    // FCPPluginClient.server
+                    // FCPPluginConnectionImpl.server
                     // NOTICE: Even if there was automatic disposal of nulled references, we still
                     // would have to manually remove dead ones here: I have observed that it can
                     // take minutes until the JVM flushes a ReferenceQueue. So if we relied upon
                     // that only, during those minutes a client would be unable to send messages to
                     // a re-loaded server plugin because the continued existence of the dead old
-                    // client would prevent a new one from being created.
-                    pluginClientsByServerPluginName.remove(serverPluginName);
+                    // connection would prevent a new one from being created.
+                    pluginConnectionsByServerName.remove(serverPluginName);
                 }
             }
 
-            FCPPluginClient newClient
-                = server.createFCPPluginClientForNetworkedFCP(serverPluginName, this);
+            FCPPluginConnectionImpl newConnection
+                = server.createFCPPluginConnectionForNetworkedFCP(serverPluginName, this);
             
-            pluginClientsByServerPluginName.put(serverPluginName, newClient);
+            pluginConnectionsByServerName.put(serverPluginName, newConnection);
             
-            return newClient;
+            return newConnection;
         } finally {
-            pluginClientsByServerPluginNameLock.writeLock().unlock();
+            pluginConnectionsByServerName_Lock.writeLock().unlock();
         }
 	}
 

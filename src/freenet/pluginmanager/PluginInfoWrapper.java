@@ -11,7 +11,6 @@ import freenet.config.FilePersistentConfig;
 import freenet.config.SubConfig;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
-import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
 import freenet.support.io.Closer;

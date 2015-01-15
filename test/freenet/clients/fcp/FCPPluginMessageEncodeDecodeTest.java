@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import junit.framework.TestCase;
-import freenet.clients.fcp.FCPPluginClient;
+import freenet.clients.fcp.FCPPluginConnectionImpl;
 import freenet.clients.fcp.FCPPluginClientMessage;
 import freenet.clients.fcp.FCPPluginServerMessage;
 import freenet.node.FSParseException;
@@ -28,7 +28,7 @@ import freenet.support.SimpleFieldSet;
  * messages and no encoder for client messages because the current architecture of plugin FCP is to
  * always have the server plugin run locally in the same node as the FCP code and only allow clients
  * to be attached by network, not server plugins.<br>
- * See {@link FCPPluginClient} for an overview of the architecture. 
+ * See {@link FCPPluginConnectionImpl} for an overview of the architecture. 
  */
 public final class FCPPluginMessageEncodeDecodeTest extends TestCase {
 
@@ -104,7 +104,7 @@ public final class FCPPluginMessageEncodeDecodeTest extends TestCase {
         FCPPluginMessage decodedMessage
             = new FCPPluginClientMessage(encodedMessage).constructFCPPluginMessage();
  
-        // Permissions are set by the FCPPluginClient when the message is actually delivered.
+        // Permissions are set by the FCPPluginConnectionImpl when the message is actually delivered
         assertEquals(null, decodedMessage.permissions);
         
         assertEquals(message.identifier, decodedMessage.identifier);

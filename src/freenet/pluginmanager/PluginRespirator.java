@@ -10,7 +10,7 @@ import java.util.UUID;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.filter.FilterCallback;
-import freenet.clients.fcp.FCPPluginClient;
+import freenet.clients.fcp.FCPPluginConnection;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.SessionManager;
 import freenet.clients.http.ToadletContainer;
@@ -111,51 +111,50 @@ public class PluginRespirator {
 	}
 
     /**
-     * <p>Creates a FCP connection with another plugin which implements the
-     * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} interface.<br>
+     * <p>Creates a FCP client connection with another plugin which is a FCP server (= which
+     * implements interface {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}).<br>
      * Currently, the remote plugin must run in the same node, but the fact that FCP is used lays
      * foundation for a future implementation to allow you to connect to other plugins by network,
      * no matter where they are running.</p>
      * 
      * <h1>Disconnecting properly</h1>
-     * <p>The formally correct mechanism of disconnecting the returned {@link FCPPluginClient} is to
-     * null out the strong reference to it. The node internally keeps a {@link ReferenceQueue} which
-     * allows it to detect the strong reference being nulled, which in turn makes the node clean up
-     * its internal structures.<br>
-     * Thus, you are encouraged to keep the returned {@link FCPPluginClient} it in memory and use it
-     * for as long as you need it. Notice that keeping it in memory won't block unloading of the
+     * <p>The formally correct mechanism of disconnecting the returned {@link FCPPluginConnection}
+     * is to null out the strong reference to it. The node internally keeps a {@link ReferenceQueue}
+     * which allows it to detect the strong reference being nulled, which in turn makes the node
+     * clean up its internal structures.<br>
+     * Thus, you are encouraged to keep the returned {@link FCPPluginConnection} in memory and use
+     * it for as long as you need it. Notice that keeping it in memory won't block unloading of the
      * server plugin. If the server plugin is unloaded, the send-functions will fail. To get
-     * reconnected once the server plugin is loaded again, you must obtain a fresh client
-     * from this function: Once the connection of an existing client is indicated as closed by
-     * a single call to a send function throwing {@link IOException}, it <b>must be</b> considered
-     * as dead for ever, reconnecting is not possible.<br>
+     * reconnected once the server plugin is loaded again, you must obtain a fresh client connection
+     * from this function: Once an existing client connection is indicated as closed by a single
+     * call to a send function throwing {@link IOException}, it <b>must be</b> considered as dead
+     * for ever, reconnecting is not possible.<br>
      * While this does seem like you do not have to take care about disconnection at all, you
-     * <b>must</b> make sure to not keep an excessive amount of {@link FCPPluginClient} objects
+     * <b>must</b> make sure to not keep an excessive amount of {@link FCPPluginConnection} objects
      * strongly referenced to ensure that this mechanism works. Especially notice that a
-     * {@link FCPPluginClient} is safe and intended to be used for multiple messages, you should
+     * {@link FCPPluginConnection} is safe and intended to be used for multiple messages, you should
      * <b>not</b> obtain a fresh one for every message you send.<br>
      * Also, you <b>should</b> make sure to periodically try to send a message over the
-     * {@link FCPPluginClient} and check whether you receive a reply to check whether the connection
-     * still is alive: There is no other mechanism of indicating a closed connection to you than not
-     * getting back any reply to messages you send. So if your plugin does send messages very
-     * infrequently, and thus might keep a reference to a dead FCPPluginClient for a long time,
-     * it might be indicated to create a "keepalive-loop" which sends "ping" messages periodically
-     * and reconnects if no "pong" message is received within a sane timeout. Whether a server
-     * plugin supports a special "ping" message or requires you to use another type of message as
-     * ping is left up to the implementation of the server plugin.</p>
+     * {@link FCPPluginConnection} and check whether you receive a reply to check whether the
+     * connection still is alive: There is no other mechanism of indicating a closed connection to
+     * you than not getting back any reply to messages you send. So if your plugin does send
+     * messages very infrequently, and thus might keep a reference to a dead FCPPluginConnection for
+     * a long time, it might be indicated to create a "keepalive-loop" which sends "ping" messages
+     * periodically and reconnects if no "pong" message is received within a sane timeout. Whether a
+     * server plugin supports a special "ping" message or requires you to use another type of
+     * message as ping is left up to the implementation of the server plugin.</p>
      * 
      * <h1>Performance</h1>
-     * <p>While you are formally connecting via FCP, there is no actual network connection being
+     * <br>While you are formally connecting via FCP, there is no actual network connection being
      * created. The FCP messages are passed-through directly as Java objects. Therefore, this
-     * mechanism should be somewhat efficient.</p>
-     * 
-     * <p>Plugins should communicate via FCP instead of passing objects of their own Java classes
-     * even if they are running within the same node because this encourages implementation of FCP
-     * servers, which in turn allows people to write alternative user interfaces for plugins.<br/>
-     * Also, this will allow future changes to the node to make it able to run each plugin within
-     * its own node and only connect them via real networked FCP connections. This could be used for
-     * load balancing of plugins across multiple machines, CPU usage monitoring and other nice
-     * stuff.</p>
+     * mechanism should be somewhat efficient.<br>
+     * Thus, plugins should communicate via FCP instead of passing objects of their own Java
+     * classes even if they are running within the same node because this encourages implementation
+     * of FCP servers, which in turn allows people to write alternative user interfaces for plugins.
+     * <br/>Also, this will allow future changes to the node to make it able to run each plugin
+     * within its own node and only connect them via real networked FCP connections. This could be
+     * used for load balancing of plugins across multiple machines, CPU usage monitoring, sandboxing
+     * and other nice stuff.</p>
      * 
      * @param pluginName
      *            The name of the main class of the plugin - that is the class which implements
@@ -165,47 +164,49 @@ public class PluginRespirator {
      *            {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler} interface. Its
      *            purpose is to handle FCP messages which the remote plugin sends back to your
      *            plugin.
-     * @return A {@link FCPPluginClient} representing the connection.
+     * @return A {@link FCPPluginConnection} representing the client connection.<br>
+     *         Please do read the whole JavaDoc of this function to know how to use it properly.
      */
-    public FCPPluginClient connectToOtherPlugin(String pluginName,
+    public FCPPluginConnection connectToOtherPlugin(String pluginName,
             FredPluginFCPMessageHandler.ClientSideFCPMessageHandler messageHandler)
                 throws PluginNotFoundException {
         
-        return node.clientCore.getFCPServer().createFCPPluginClientForIntraNodeFCP(pluginName,
+        return node.clientCore.getFCPServer().createFCPPluginConnectionForIntraNodeFCP(pluginName,
             messageHandler);
     }
 
     /**
      * Allows FCP server plugins, that is plugins which implement
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}, to obtain an existing client
-     * connection by its ID - if the client is still connected.<br><br>
+     * connection by its {@link UUID} - if the client is still connected.<br><br>
      * 
      * <b>Must not</b> be used by client plugins: They shall instead keep a hard reference to the
-     * {@link FCPPluginClient} in memory after they have received it from
+     * {@link FCPPluginConnection} in memory after they have received it from
      * {@link #connectToOtherPlugin(String,
      * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}. If they did not keep a hard
-     * reference and only stored the ID, the {@link FCPPluginClient} would be garbage collected and
-     * thus considered as disconnected.<br><br>
+     * reference and only stored the ID, the {@link FCPPluginConnection} would be garbage collected
+     * and thus considered as disconnected.<br><br>
      * 
      * Before you use this function, you <b>should definitely</b> also read the JavaDoc of
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(
-     * FCPPluginClient, FCPPluginMessage)} for full instructions on how to handle the lifecycle of
-     * client connections and their disconnection.
+     * FCPPluginConnection, FCPPluginMessage)} for full instructions on how to handle the lifecycle
+     * of client connections and their disconnection.
      * 
      * @see FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(
-     *      FCPPluginClient, FCPPluginMessage)
+     *      FCPPluginConnection, FCPPluginMessage)
      *          The message handler at FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
      *          provides an explanation of when to use this.
-     * @param clientID
-     *            The ID as obtained by {@link FCPPluginClient#getID()}
-     * @return The client if it is still connected.
+     * @param connectionID
+     *            The connection's {@link UUID} as obtained by {@link FCPPluginConnection#getID()}.
+     * @return The client connection if it is still connected.
      * @throws IOException
-     *             If there has been no client with the given ID or if it has disconnected already.
-     *             <br>If this happens, you should consider the client UUID as invalid forever and
-     *             discard it.
+     *             If there has been no client connection with the given ID or if it has
+     *             disconnected already.<br>
+     *             If this happens, you should consider the connection {@link UUID} as invalid
+     *             forever and discard it.
      */
-    public FCPPluginClient getFCPPluginClientByID(UUID clientID) throws IOException {
-        return node.clientCore.getFCPServer().getPluginClient(clientID);
+    public FCPPluginConnection getPluginConnectionByID(UUID connectionID) throws IOException {
+        return node.clientCore.getFCPServer().getPluginConnectionByID(connectionID);
     }
 
 	/** Get the ToadletContainer, which manages HTTP. You can then register

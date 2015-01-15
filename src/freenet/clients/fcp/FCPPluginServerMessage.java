@@ -31,7 +31,10 @@ import freenet.support.api.Bucket;
  * TODO: Would it technically be possible to add a second name to the on-network data so we
  * can get rid of the old name after a transition period?<br><br>
  * 
- * @link FCPPluginClient FCPPluginClient gives an overview of the code paths which messages take.
+ * @link FCPPluginConnection
+ *     FCPPluginConnection gives an overview of how plugin messaging works in general.
+ * @link FCPPluginConnectionImpl
+ *     FCPPluginConnectionImpl gives an overview of the internal code paths which messages take.
  * @author saces
  * @author xor (xor@freenetproject.org)
  */
@@ -50,7 +53,7 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
     /** @see FCPPluginMessage#data */
 	private final long dataLength;
 
-    /** @see FCPPluginClient#getServerPluginName() */
+    /** @see FCPPluginConnection#getServerPluginName() */
 	private final String plugname;
 
     /** @see FCPPluginMessage#identifier */

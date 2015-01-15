@@ -31,7 +31,7 @@ public final class FCPPluginMessage {
     /**
      * The permissions of the client which sent the messages. Null for server-to-client and
      * outgoing messages.<br>
-     * Will be set by the {@link FCPPluginClient} before delivery of the message. Thus, you
+     * Will be set by the {@link FCPPluginConnection} before delivery of the message. Thus, you
      * can pass null for this in all constructors.
      */
     public final ClientPermissions permissions;
@@ -39,15 +39,15 @@ public final class FCPPluginMessage {
     /**
      * The unique identifier of the message.<br>
      * Can be used by server and client to track the progress of messages.<br>
-     * This especially applies to {@link FCPPluginClient#sendSynchronous(SendDirection,
+     * This especially applies to {@link FCPPluginConnection#sendSynchronous(SendDirection,
      * FCPPluginMessage, long)} which will wait for a reply with the same identifier as the
      * original message until it returns.<br><br>
      * 
      * For reply messages, this shall be the same as the identifier of the message to which this
      * is a reply.<br>
-     * For non-reply message, this shall be a sufficiently random String to prevent collisions
-     * with any previous message identifiers. The default is a random {@link UUID}, and
-     * alternate implementations are recommended to use a random UUID as well.<br><br>
+     * For non-reply message, this shall be a sufficiently random {@link String} to prevent 
+     * collisions with any previous message identifiers. The default is a random {@link UUID}, and
+     * alternate implementations are recommended to use a random {@link UUID} as well.<br><br>
      * 
      * <b>Notice:</b> Custom client implementations can chose the identifier freely when sending
      * messages, and thus violate these rules. This is highly discouraged though, as non-unique
@@ -62,14 +62,14 @@ public final class FCPPluginMessage {
     public final String identifier;
     
     /**
-     * Part 1 of the actual message: Human-readable parameters. Shall be small amount of data.
+     * Part 1 of the actual message: Human-readable parameters. Shall be small amount of data.<br>
      * Can be null for data-only or success-indicator messages.
      */
     public final SimpleFieldSet params;
     
     /**
-     * Part 2 of the actual message: Non-human readable, large size bulk data. Can be null if no
-     * large amount of data is to be transfered.
+     * Part 2 of the actual message: Non-human readable, large size bulk data.<br>
+     * Can be null if no large amount of data is to be transfered.
      */
     public final Bucket data;
     
@@ -117,9 +117,10 @@ public final class FCPPluginMessage {
     public final String errorMessage;
 
     /**
-     * @return True if the message is merely a reply to a previous message from your side.<br>
-     *         In that case, you <b>must not</b> send another reply message back to prevent
-     *         infinite bouncing of "success!" replies.
+     * @return
+     *     True if the message is merely a reply to a previous message from your side.<br>
+     *     In that case, you <b>must not</b> send another reply message back to prevent infinite
+     *     bouncing of "success!" replies.
      */
     public boolean isReplyMessage() {
         return success != null;
@@ -164,7 +165,7 @@ public final class FCPPluginMessage {
     
     /**
      * For being used by server or client to construct outgoing messages.<br>
-     * Those can then be passed to the send functions of {@link FCPPluginClient} or returned in
+     * Those can then be passed to the send functions of {@link FCPPluginConnection} or returned in
      * the message handlers of {@link FredPluginFCPMessageHandler}.<br><br>
      * 
      * <b>ATTENTION</b>: Messages constructed with this constructor here are <b>not</b> reply 
@@ -187,7 +188,7 @@ public final class FCPPluginMessage {
         // other messages. I cannot think of any usecase of free-choice identifiers. And
         // collisions are *bad*: They can break the "ACK" mechanism of the "success" variable.
         // This would in turn break things such as the sendSynchronous() functions of
-        // FCPPluginClient.
+        // FCPPluginConnection.
         return new FCPPluginMessage(null, UUID.randomUUID().toString(), params, data,
             // success, errorCode, errorMessage are null since non-reply messages must not
             // indicate errors
@@ -213,7 +214,7 @@ public final class FCPPluginMessage {
      * For being used by server or client to construct outgoing messages which are a reply to an
      * original message.<br>
      * Those then can be returned from the message handler
-     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      * FCPPluginMessage)}.<br><br>
      * 
      * See the JavaDoc of the member variables with the same name as the parameters for an
@@ -224,16 +225,14 @@ public final class FCPPluginMessage {
      * {@link #constructErrorReply(FCPPluginMessage, String, String)}.<br>
      * 
      * @throws IllegalStateException
-     *             If the original message was a reply message already.<br>
-     *             Replies often shall only indicate success / failure instead of triggering
-     *             actual operations, so it could cause infinite bouncing if you reply to them
-     *             again.<br>
-     *             Consider the whole of this as a remote procedure call process: A non-reply
-     *             message is the procedure call, a reply message is the procedure result. When
-     *             receiving the result, the procedure call is finished, and thus shouldn't
-     *             cause further replies to be sent.<br>
-     *             <b>Notice</b>: The JavaDoc of the aforementioned message handling function
-     *             explains how you can nevertheless send a reply to reply messages.
+     *     If the original message was a reply message already.<br>
+     *     Replies often shall only indicate success / failure instead of triggering actual
+     *     operations, so it could cause infinite bouncing if you reply to them again.<br>
+     *     Consider the whole of this as a remote procedure call process: A non-reply message is the
+     *     procedure call, a reply message is the procedure result. When receiving the result, the
+     *     procedure call is finished, and thus shouldn't cause further replies to be sent.<br>
+     *     <b>Notice</b>: The JavaDoc of the aforementioned message handling function explains how
+     *     you can nevertheless send a reply to reply messages.
      */
     public static FCPPluginMessage constructReplyMessage(FCPPluginMessage originalMessage,
             SimpleFieldSet params, Bucket data, boolean success, String errorCode,
@@ -288,7 +287,7 @@ public final class FCPPluginMessage {
      * 
      * This function is typically to construct incoming messages for passing them to the message
      * handling function
-     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      * FCPPluginMessage)}.<br><br>
      * 
      * See the JavaDoc of the member variables with the same name as the parameters for an

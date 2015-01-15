@@ -8,15 +8,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.framework.TestCase;
-import freenet.clients.fcp.FCPPluginClient;
-import freenet.clients.fcp.FCPPluginClient.SendDirection;
+import freenet.clients.fcp.FCPPluginConnection.SendDirection;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 
-public final class FCPPluginClientTest extends TestCase {
+public final class FCPPluginConnectionImplTest extends TestCase {
     /**
-     * {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage, long)} is powered
-     * an internal map which keeps track of synchronous sends which are waiting for a reply.<br>
+     * {@link FCPPluginConnectionImpl#sendSynchronous(SendDirection, FCPPluginMessage, long)} is
+     * powered by an internal map which keeps track of synchronous sends which are waiting for a
+     * reply.<br>
      * As this map is accessed concurrently, one might suspect possible thread safety issues.<br>
      * This test therefore runs 100 sendSynchronous() threads in parallel to trigger race
      * conditions, and thereby checks the following:<br>
@@ -35,10 +35,10 @@ public final class FCPPluginClientTest extends TestCase {
         // will throw.
         final AtomicBoolean failure = new AtomicBoolean(false);
         
-        final FCPPluginClient client = FCPPluginClient.constructForUnitTest(
+        final FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForUnitTest(
             new ServerSideFCPMessageHandler() {
                 @Override public FCPPluginMessage handlePluginFCPMessage(
-                        final FCPPluginClient client, final FCPPluginMessage message) {
+                        final FCPPluginConnection connection, final FCPPluginMessage message) {
                     
                     final FCPPluginMessage reply = FCPPluginMessage.constructSuccessReply(message);
                     reply.params.putSingle("replyToThread", message.params.get("thread"));
@@ -47,7 +47,7 @@ public final class FCPPluginClientTest extends TestCase {
             }, 
             new ClientSideFCPMessageHandler() {
                 @Override public FCPPluginMessage handlePluginFCPMessage(
-                        final FCPPluginClient client, final FCPPluginMessage message) {
+                        final FCPPluginConnection connection, final FCPPluginMessage message) {
                     
                     failure.set(true);
                     fail("This test is about sendSynchronous() so the reply messages should not "
@@ -71,7 +71,7 @@ public final class FCPPluginClientTest extends TestCase {
                 
                 @Override public void run() {
                     try {
-                        final FCPPluginMessage reply = client.sendSynchronous(
+                        final FCPPluginMessage reply = connection.sendSynchronous(
                             SendDirection.ToServer, message, TimeUnit.SECONDS.toNanos(10));
                         
                         if(!threadIndex.equals(reply.params.get("replyToThread"))) {
@@ -103,8 +103,8 @@ public final class FCPPluginClientTest extends TestCase {
         assertEquals("JUnit failures cannot be passed out of threads, please check stdout/stderr.",
             false, failure.get());
         
-        assertEquals("FCPPluginClient sendSynchronous() map should not leak",
-            0, client.getSendSynchronousCount());
+        assertEquals("FCPPluginConnectionImpl sendSynchronous() map should not leak",
+            0, connection.getSendSynchronousCount());
     }
 
 }
