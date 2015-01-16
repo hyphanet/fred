@@ -889,6 +889,69 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
         }
     }
 
+    /**
+     * Encapsulates a FCPPluginConnectionImpl object and a default {@link SendDirection} to
+     * implement the send functions which don't require a direction parameter:<br>
+     * - {@link FCPPluginConnection#send(FCPPluginMessage)}<br>
+     * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}}<br><br>
+     * 
+     * An adapter is needed instead of storing this as a member variable in FCPPluginConnectionImpl
+     * because a single FCPPluginConnectionImpl object is handed out both to the the server AND the
+     * client which uses, and their default send direction will be different:<br>
+     * A server will want to send to the client by default, but the client will want to default to
+     * sending to the server.<br><br>
+     * 
+     * Is abstract and has two implementing child classes (to implement differing internal
+     * requirements, see {@link #getConnection()}):<br>
+     * - {@link SendToClientAdapter} for default direction {@link SendDirection#ToClient}.<br>
+     * - {@link SendToServerAdapter} for default direction {@link SendDirection#ToServer}.<br>
+     */
+    private abstract static class DefaultSendDirectionAdapter implements FCPPluginConnection {
+        
+        private final SendDirection defaultDirection;
+        
+        DefaultSendDirectionAdapter(SendDirection defaultDirection) {
+            this.defaultDirection = defaultDirection;
+        }
+        
+        /**
+         * Returns the encapsulated backend FCPPluginConnection which shall be used for sending.<br>
+         * <br>
+         * 
+         * Abstract because storage of a FCPPluginConnection object is different for servers and
+         * clients and thus must be implemented in separate child classes:<br>
+         * - Clients may and must store a FCPPluginConnection with a hard reference because a
+         *   connection is considered as closed once there is no more hard reference to it.<br>
+         *   Disconnection is detected by monitoring the FCPluginConnection for garbage collection.
+         *   <br>
+         * - Servers must store a FCPPluginConnection with a {@link WeakReference} (or always query
+         *   it by UUID from the node) to ensure that they will get garbage connected once the
+         *   client decides to disconnect by dropping all strong references.
+         */
+        protected abstract FCPPluginConnection getConnection() throws IOException;
+
+
+        @Override public void send(FCPPluginMessage message) throws IOException {
+            send(defaultDirection, message);
+        }
+
+        @Override public FCPPluginMessage sendSynchronous(FCPPluginMessage message,
+                long timeoutNanoSeconds) throws IOException, InterruptedException {
+            return sendSynchronous(defaultDirection, message, timeoutNanoSeconds);
+        }
+
+        @Override public void send(SendDirection direction, FCPPluginMessage message)
+                throws IOException {
+            getConnection().send(direction, message);
+        }
+
+        @Override public FCPPluginMessage sendSynchronous(SendDirection direction,
+                FCPPluginMessage message, long timeoutNanoSeconds)
+                    throws IOException, InterruptedException {
+            return getConnection().sendSynchronous(direction, message, timeoutNanoSeconds);
+        }
+    }
+
     @Override
     public String toString() {
         return "FCPPluginConnectionImpl (ID: " + id + "; server class: " + serverPluginName
