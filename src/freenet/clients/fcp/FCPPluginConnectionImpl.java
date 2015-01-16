@@ -897,7 +897,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * 
      * An adapter is needed instead of storing this as a member variable in FCPPluginConnectionImpl
      * because a single FCPPluginConnectionImpl object is handed out both to the the server AND the
-     * client which uses, and their default send direction will be different:<br>
+     * client which use it, and their default send direction will be different:<br>
      * A server will want to send to the client by default, but the client will want to default to
      * sending to the server.<br><br>
      * 
