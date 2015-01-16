@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -190,6 +191,31 @@ public interface FCPPluginConnection {
     public void send(SendDirection direction, FCPPluginMessage message) throws IOException;
 
     /**
+     * Same as {@link #send(SendDirection, FCPPluginMessage)} with the {@link SendDirection}
+     * parameter being the default direction.<br>
+     * <b>Please do read its JavaDoc as it contains a very precise specification how to use it and
+     * thereby also this function.</b><br><br>
+     * 
+     * The default direction is determined automatically depending on whether you are a client or
+     * server.<br><br>
+     * 
+     * You are acting as a client, and thus by default send to the server, when you obtain a
+     * FCPPluginConnection...:<br>
+     * - from the return value of
+     *   {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}.<br>
+     * - as parameter to your message handler callback {@link ClientSideFCPMessageHandler#
+     *   handlePluginFCPMessage(FCPPluginConnection, FCPPluginMessage)}.<br><br>
+     * 
+     * You are acting as a server, and thus by default send to the client, when you obtain a
+     * FCPPluginConnection...:<br>
+     * - as parameter to your message handler callback {@link ServerSideFCPMessageHandler#
+     *   handlePluginFCPMessage(FCPPluginConnection, FCPPluginMessage)}.<br>
+     * - from the return value of {@link PluginRespirator#getPluginConnectionByID(UUID)}.<br>
+     */
+    public void send(FCPPluginMessage message) throws IOException;
+
+
+    /**
      * Can be used by both server and client implementations to send messages in a blocking
      * manner to each other.<br>
      * The messages sent by this function will be delivered to the message handler
@@ -350,6 +376,19 @@ public interface FCPPluginConnection {
     public FCPPluginMessage sendSynchronous(
         SendDirection direction, FCPPluginMessage message, long timeoutNanoSeconds)
             throws IOException, InterruptedException;
+
+    /**
+     * Same as {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)} with the
+     * {@link SendDirection} parameter being the default direction.<br>
+     * <b>Please do read its JavaDoc as it contains a very precise specification how to use it and
+     * thereby also this function.</b><br><br>
+     * 
+     * For an explanation of how the default send direction is determined, see
+     * {@link #send(FCPPluginMessage)}.
+     */
+    public FCPPluginMessage sendSynchronous(FCPPluginMessage message, long timeoutNanoSeconds)
+        throws IOException, InterruptedException;
+
 
     /**
      * @return A unique identifier among all FCPPluginConnections.
