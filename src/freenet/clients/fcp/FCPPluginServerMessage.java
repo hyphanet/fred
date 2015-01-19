@@ -53,7 +53,7 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
     /** @see FCPPluginMessage#data */
 	private final long dataLength;
 
-    /** @see FCPPluginConnection#getServerPluginName() */
+	/** @see PluginManager#getPluginFCPServer(String) */
 	private final String plugname;
 
     /** @see FCPPluginMessage#identifier */

@@ -21,6 +21,7 @@ import freenet.client.async.PersistentJob;
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.node.RequestClient;
+import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
@@ -79,7 +80,8 @@ public class FCPConnectionHandler implements Closeable {
 	final HashMap<String, ClientRequest> requestsByIdentifier;
 
     /**
-     * {@link FCPPluginConnectionImpl} indexed by {@link FCPPluginConnection#getServerPluginName()}.
+     * {@link FCPPluginConnectionImpl} indexed by the server plugin name (see
+     * {@link PluginManager#getPluginFCPServer(String)}.
      */
     private final TreeMap<String, FCPPluginConnectionImpl> pluginConnectionsByServerName
         = new TreeMap<String, FCPPluginConnectionImpl>();
@@ -628,7 +630,7 @@ public class FCPConnectionHandler implements Closeable {
     /**
      * @return
      *     The {@link FCPPluginConnection} for the given serverPluginName (see
-     *     {@link FCPPluginConnection#getServerPluginName()}). Atomically creates and stores it if
+     *     {@link PluginManager#getPluginFCPServer(String)}). Atomically creates and stores it if
      *     there does not exist one yet. This ensures that for each FCPConnectionHandler, there can
      *     be only one {@link FCPPluginConnection} for a given serverPluginName.
      * @throws PluginNotFoundException

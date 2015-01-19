@@ -437,11 +437,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
     public UUID getID() {
         return id;
     }
-    
-    @Override public String getServerPluginName() {
-        return serverPluginName;
-    }
-    
+
     /**
      * ATTENTION: Only for internal use in {@link FCPConnectionHandler#getFCPPluginConnection(
      * String)}.<br>

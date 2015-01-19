@@ -396,14 +396,6 @@ public interface FCPPluginConnection {
      */
     public UUID getID();
 
-    /**
-     * The class name of the FCP server plugin to which this FCPPluginConnection is connected.<br>
-     * This is what was specified for the parameter <code>String pluginName</code> by the client
-     * when connecting by calling {@link PluginRespirator#connectToOtherPlugin(String,
-     * ClientSideFCPMessageHandler)}.
-     */
-    public String getServerPluginName();
-
     /** @return A verbose String containing the internal state. Useful for debug logs. */
     public String toString();
 
