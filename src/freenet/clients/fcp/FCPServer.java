@@ -507,7 +507,7 @@ public class FCPServer implements Runnable, DownloadCache {
     }
 
     /**
-     * <p>Creates and registers a {@link FCPPluginConnectionImpl} object for FCP connections between
+     * <p>Creates and registers a {@link FCPPluginConnection} object for FCP connections between
      * plugins running within the same node.<br/>
      * In other words, the actual client application is NOT connected to the node by network, it is
      * a plugin running within the node just like the server.</p>
