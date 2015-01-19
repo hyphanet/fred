@@ -276,7 +276,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * FCPPluginConnectionImpl object with a default {@link SendDirection} to implement the send
      * functions which don't require a direction parameter:<br>
      * - {@link FCPPluginConnection#send(FCPPluginMessage)}<br>
-     * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}}<br><br>
+     * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}<br><br>
      *  
      * For each possible {@link SendDirection}, this map keeps the responsible adapter. */
     private final EnumMap<SendDirection, DefaultSendDirectionAdapter> defaultSendDirectionAdapters
@@ -919,7 +919,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * Encapsulates a FCPPluginConnectionImpl object and a default {@link SendDirection} to
      * implement the send functions which don't require a direction parameter:<br>
      * - {@link FCPPluginConnection#send(FCPPluginMessage)}<br>
-     * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}}<br><br>
+     * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}<br><br>
      * 
      * An adapter is needed instead of storing this as a member variable in FCPPluginConnectionImpl
      * because a single FCPPluginConnectionImpl object is handed out both to the the server AND the
@@ -983,7 +983,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * {@link SendDirection#ToClient} to implement the send functions which don't require a
      * direction parameter:<br>
      * - {@link FCPPluginConnection#send(FCPPluginMessage)}<br>
-     * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}}<br><br>
+     * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}<br><br>
      * 
      * ATTENTION: Must only be used by the server, not by the client: Clients must keep a strong
      * reference to the connection to prevent its garbage collection (= disconnection), but this
@@ -1022,7 +1022,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * {@link SendDirection#ToServer} to implement the send functions which don't require a
      * direction parameter:<br>
      * - {@link FCPPluginConnection#send(FCPPluginMessage)}<br>
-     * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}}<br><br>
+     * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}<br><br>
      * 
      * ATTENTION: Must only be used by the client, not by the server: Client disconnection is
      * implemented by monitoring the garbage collection of their FCPPluginConnectionImpl objects
