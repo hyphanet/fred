@@ -11,6 +11,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.filter.FilterCallback;
 import freenet.clients.fcp.FCPPluginConnection;
+import freenet.clients.fcp.FCPPluginMessage;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.SessionManager;
 import freenet.clients.http.ToadletContainer;
