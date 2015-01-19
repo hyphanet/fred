@@ -6,6 +6,7 @@ package freenet.clients.fcp;
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.EnumMap;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -270,6 +271,17 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      */
     private final ReadWriteLock synchronousSendsLock = new ReentrantReadWriteLock();
 
+    /**
+     * A {@link DefaultSendDirectionAdapter} is an adapter which encapsulates a
+     * FCPPluginConnectionImpl object with a default {@link SendDirection} to implement the send
+     * functions which don't require a direction parameter:<br>
+     * - {@link FCPPluginConnection#send(FCPPluginMessage)}<br>
+     * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}}<br><br>
+     *  
+     * For each possible {@link SendDirection}, this map keeps the responsible adapter. */
+    private final EnumMap<SendDirection, DefaultSendDirectionAdapter> defaultSendDirectionAdapters
+        = new EnumMap<SendDirection, DefaultSendDirectionAdapter>(SendDirection.class);
+
 
     /**
      * For being used by networked FCP connections:<br/>
@@ -278,12 +290,15 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * The client is not running within the node, it is attached by network with a
      * {@link FCPConnectionHandler}.<br/>
      * 
-     * @see #constructForNetworkedFCP(Executor, PluginManager, String, FCPConnectionHandler)
+     * @see #constructForNetworkedFCP(FCPPluginConnectionTracker, Executor, PluginManager, String,
+     *      FCPConnectionHandler)
      *          The public interface to this constructor.
      */
-    private FCPPluginConnectionImpl(Executor executor, String serverPluginName,
-            ServerSideFCPMessageHandler serverPlugin, FCPConnectionHandler clientConnection) {
+    private FCPPluginConnectionImpl(FCPPluginConnectionTracker tracker, Executor executor,
+            String serverPluginName, ServerSideFCPMessageHandler serverPlugin,
+            FCPConnectionHandler clientConnection) {
         
+        assert(tracker != null);
         assert(executor != null);
         assert(serverPlugin != null);
         assert(serverPluginName != null);
@@ -294,6 +309,10 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
         this.server = new WeakReference<ServerSideFCPMessageHandler>(serverPlugin);
         this.client = null;
         this.clientConnection = clientConnection;
+        this.defaultSendDirectionAdapters.put(SendDirection.ToServer,
+                new SendToServerAdapter(this));
+        this.defaultSendDirectionAdapters.put(SendDirection.ToClient,
+                new SendToClientAdapter(tracker, id));
     }
     
     /**
@@ -303,23 +322,24 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * The client is not running within the node, it is attached by network with the given
      * {@link FCPConnectionHandler} clientConnection.<br/>
      * 
-     * <p>You <b>must</b> register any newly created connections at
-     * {@link FCPPluginConnectionTracker#registerConnection(FCPPluginConnection)} before handing
-     * them out to plugin code.</p>
+     * The returned connection is registered at the given {@link FCPPluginConnectionTracker}.
      */
-    static FCPPluginConnectionImpl constructForNetworkedFCP(Executor executor,
-            PluginManager serverPluginManager, String serverPluginName,
-            FCPConnectionHandler clientConnection)
+    static FCPPluginConnectionImpl constructForNetworkedFCP(FCPPluginConnectionTracker tracker,
+            Executor executor, PluginManager serverPluginManager,
+            String serverPluginName, FCPConnectionHandler clientConnection)
                 throws PluginNotFoundException {
         
+        assert(tracker != null);
         assert(executor != null);
         assert(serverPluginManager != null);
         assert(serverPluginName != null);
         assert(clientConnection != null);
         
-        return new FCPPluginConnectionImpl(executor,
+        FCPPluginConnectionImpl result = new FCPPluginConnectionImpl(tracker, executor,
             serverPluginName, serverPluginManager.getPluginFCPServer(serverPluginName),
             clientConnection);
+        tracker.registerConnection(result);
+        return result;
     }
 
 
@@ -332,12 +352,15 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * The client's message handler is accessible as an implementor of
      * {@link ClientSideFCPMessageHandler}.<br>
      * 
-     * @see #constructForIntraNodeFCP(Executor, PluginManager, String, ClientSideFCPMessageHandler)
+     * @see #constructForIntraNodeFCP(FCPPluginConnectionTracker, Executor, PluginManager, String,
+     *      ClientSideFCPMessageHandler)
      *          The public interface to this constructor.
      */
-    private FCPPluginConnectionImpl(Executor executor, String serverPluginName,
-            ServerSideFCPMessageHandler server, ClientSideFCPMessageHandler client) {
+    private FCPPluginConnectionImpl(FCPPluginConnectionTracker tracker, Executor executor,
+            String serverPluginName, ServerSideFCPMessageHandler server,
+            ClientSideFCPMessageHandler client) {
         
+        assert(tracker != null);
         assert(executor != null);
         assert(serverPluginName != null);
         assert(server != null);
@@ -348,6 +371,10 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
         this.server = new WeakReference<ServerSideFCPMessageHandler>(server);
         this.client = client;
         this.clientConnection = null;
+        this.defaultSendDirectionAdapters.put(SendDirection.ToServer,
+                new SendToServerAdapter(this));
+        this.defaultSendDirectionAdapters.put(SendDirection.ToClient,
+                new SendToClientAdapter(tracker, id));
     }
 
     /**
@@ -359,13 +386,11 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * The client message handler is available as the passed {@link ClientSideFCPMessageHandler}
      * client.<br>
      * 
-     * <p>You <b>must</b> register any newly created connections at
-     * {@link FCPPluginConnectionTracker#registerConnection(FCPPluginConnection)} before handing
-     * them out to plugin code.</p>
+     * The returned connection is registered at the given {@link FCPPluginConnectionTracker}.
      */
-    static FCPPluginConnectionImpl constructForIntraNodeFCP(Executor executor,
-            PluginManager serverPluginManager, String serverPluginName,
-            ClientSideFCPMessageHandler client)
+    static FCPPluginConnectionImpl constructForIntraNodeFCP(FCPPluginConnectionTracker tracker,
+            Executor executor, PluginManager serverPluginManager,
+            String serverPluginName, ClientSideFCPMessageHandler client)
                 throws PluginNotFoundException {
         
         assert(executor != null);
@@ -373,8 +398,10 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
         assert(serverPluginName != null);
         assert(client != null);
         
-        return new FCPPluginConnectionImpl(executor,
+        FCPPluginConnectionImpl result = new FCPPluginConnectionImpl(tracker, executor,
             serverPluginName, serverPluginManager.getPluginFCPServer(serverPluginName), client);
+        tracker.registerConnection(result);
+        return result;
     }
     
     /**

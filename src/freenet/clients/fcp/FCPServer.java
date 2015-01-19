@@ -498,8 +498,10 @@ public class FCPServer implements Runnable, DownloadCache {
             throws PluginNotFoundException {
         
         FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForNetworkedFCP(
-            node.executor, node.pluginManager, serverPluginName, messageHandler);
-        pluginConnectionTracker.registerConnection(connection);
+            pluginConnectionTracker, node.executor, node.pluginManager,
+            serverPluginName, messageHandler);
+        // The constructor function already did this for us
+        /* pluginConnectionTracker.registerConnection(connection); */
         return connection;
     }
 
@@ -531,8 +533,10 @@ public class FCPServer implements Runnable, DownloadCache {
                 throws PluginNotFoundException {
         
         FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForIntraNodeFCP(
-            node.executor, node.pluginManager, serverPluginName, messageHandler);
-        pluginConnectionTracker.registerConnection(connection);
+            pluginConnectionTracker, node.executor, node.pluginManager,
+            serverPluginName, messageHandler);
+        // The constructor function already did this for us
+        /* pluginConnectionTracker.registerConnection(connection); */
         return connection;
     }
 
