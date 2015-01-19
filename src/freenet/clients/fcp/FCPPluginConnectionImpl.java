@@ -1067,6 +1067,44 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
         return defaultSendDirectionAdapters.get(direction);
     }
 
+
+    /** 
+     * @throws NoSendDirectionSpecifiedException
+     *     Is always thrown since this function is only implemented for FCPPluginConnectionImpl
+     *     objects which are wrapped inside a {@link DefaultSendDirectionAdapter}.<br>
+     *     Objects of type FCPPluginConnectionImpl will never be handed out directly to the server
+     *     or client application code, they will always be wrapped in such an adapter - so this
+     *     function will work for servers and clients. */
+    @Override public void send(FCPPluginMessage message) {
+        throw new NoSendDirectionSpecifiedException();
+    }
+
+    /** 
+     * @throws NoSendDirectionSpecifiedException
+     *     Is always thrown since this function is only implemented for FCPPluginConnectionImpl
+     *     objects which are wrapped inside a {@link DefaultSendDirectionAdapter}.<br>
+     *     Objects of type FCPPluginConnectionImpl will never be handed out directly to the server
+     *     or client application code, they will always be wrapped in such an adapter - so this
+     *     function will work for servers and clients. */
+    @Override public FCPPluginMessage sendSynchronous(FCPPluginMessage message,
+            long timeoutNanoSeconds) {
+        throw new NoSendDirectionSpecifiedException();
+    }
+
+    /**
+     * @see FCPPluginConnectionImpl#send(FCPPluginMessage)
+     * @see FCPPluginConnectionImpl#sendSynchronous(FCPPluginMessage, long) */
+    @SuppressWarnings("serial")
+    private static final class NoSendDirectionSpecifiedException
+            extends UnsupportedOperationException {
+
+        public NoSendDirectionSpecifiedException() {
+            super("You must obtain a FCPPluginConnectionImpl with a default SendDirection via "
+                + "getDefaultSendDirectionAdapter() before you may use this function!");
+        }
+    }
+
+
     @Override
     public String toString() {
         return "FCPPluginConnectionImpl (ID: " + id + "; server class: " + serverPluginName
