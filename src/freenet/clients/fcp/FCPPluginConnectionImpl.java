@@ -959,9 +959,9 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * - {@link FCPPluginConnection#send(FCPPluginMessage)}<br>
      * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}}<br><br>
      * 
-     * Must only be used by the server, not by the client: Clients must keep a strong reference to
-     * the connection to prevent its garbage collection (= disconnection), but this does not keep
-     * a strong reference.<br>
+     * ATTENTION: Must only be used by the server, not by the client: Clients must keep a strong
+     * reference to the connection to prevent its garbage collection (= disconnection), but this
+     * does not keep a strong reference.<br>
      * See section "Disconnecting properly" at {@link PluginRespirator#connectToOtherPlugin(
      * String, ClientSideFCPMessageHandler)}.
      */
