@@ -27,6 +27,7 @@ import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
 import freenet.clients.fcp.ClientGet.ReturnType;
 import freenet.clients.fcp.ClientRequest.Persistence;
+import freenet.clients.fcp.FCPPluginConnection.SendDirection;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -524,6 +525,10 @@ public class FCPServer implements Runnable, DownloadCache {
      * {@link PluginRespirator#connectToOtherPlugin(String,
      * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}. Plugins must use that instead.</p>
      * 
+     * ATTENTION: Since this function is only to be used by the aforementioned connectToPlugin()
+     * which in turn is only to be used by clients, the returned connection will have a default send
+     * direction of {@link SendDirection#ToServer}.
+     * 
      * @see FCPPluginConnectionImpl
      *     The class JavaDoc of FCPPluginConnectionImpl explains the code path for both networked
      *     and non-networked FCP.
@@ -537,18 +542,27 @@ public class FCPServer implements Runnable, DownloadCache {
             serverPluginName, messageHandler);
         // The constructor function already did this for us
         /* pluginConnectionTracker.registerConnection(connection); */
-        return connection;
+        return connection.getDefaultSendDirectionAdapter(SendDirection.ToServer);
     }
 
     /**
      * <p><b>The documentation of {@link FCPPluginConnectionTracker#getConnection(UUID)} applies to
      * this function.</b></p>
      * 
+     * ATTENTION: Only for internal use by the frontend function
+     * {@link PluginRespirator#getPluginConnectionByID(UUID)}. Plugins must use that instead.<br>
+     * <br>
+     * 
+     * ATTENTION: Since this function is only to be used by the aforementioned
+     * getPluginConnectionByID() which in turn is only to be used by servers, the returned
+     * connection will have a default send direction of {@link SendDirection#ToClient}.
+     * 
      * @see FCPPluginConnectionTracker
      *     The JavaDoc of FCPPluginConnectionTracker explains the general purpose of this mechanism.
      */
     public final FCPPluginConnection getPluginConnectionByID(UUID connectionID) throws IOException {
-        return pluginConnectionTracker.getConnection(connectionID);
+        return pluginConnectionTracker.getConnection(connectionID)
+                                      .getDefaultSendDirectionAdapter(SendDirection.ToClient);
     }
 
 	public PersistentRequestClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
