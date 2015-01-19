@@ -952,6 +952,45 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
         }
     }
 
+    /**
+     * Encapsulates a FCPPluginConnectionImpl object with a default {@link SendDirection} of
+     * {@link SendDirection#ToClient} to implement the send functions which don't require a
+     * direction parameter:<br>
+     * - {@link FCPPluginConnection#send(FCPPluginMessage)}<br>
+     * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}}<br><br>
+     * 
+     * Must only be used by the server, not by the client: Clients must keep a strong reference to
+     * the connection to prevent its garbage collection (= disconnection), but this does not keep
+     * a strong reference.<br>
+     * See section "Disconnecting properly" at {@link PluginRespirator#connectToOtherPlugin(
+     * String, ClientSideFCPMessageHandler)}.
+     */
+    static final class SendToClientAdapter extends DefaultSendDirectionAdapter {
+
+        /** Is used to query the underlying FCPPluginConnectionImpl dynamically by its {@link UUID}
+         *  {@link #id} since this class, being aimed at being used by the server, may not keep a
+         *  strong reference to the connection to ensure that the client owns the power of purging
+         *  all strong references to it to cause disconnection. */
+        private final FCPPluginConnectionTracker tracker;
+        
+        /** The {@link FCPPluginConnection#getID()} of the underlying connection. */
+        private final UUID id;
+
+        SendToClientAdapter(FCPPluginConnectionTracker tracker, UUID connectionID) {
+            super(SendDirection.ToClient);
+            this.tracker = tracker;
+            this.id = connectionID;
+        }
+
+        @Override protected FCPPluginConnection getConnection() throws IOException {
+            return tracker.getConnection(id);
+        }
+
+        @Override public UUID getID() {
+            return id;
+        }
+    }
+
     @Override
     public String toString() {
         return "FCPPluginConnectionImpl (ID: " + id + "; server class: " + serverPluginName
