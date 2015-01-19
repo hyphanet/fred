@@ -71,8 +71,8 @@ public class FCPServer implements Runnable, DownloadCache {
 	String bindTo;
 	private String allowedHosts;
 	AllowedHosts allowedHostsFullAccess;
-    /** Stores {@link FCPPluginConnection} objects by ID and automatically garbage collects them so
-     *  we don't have to bloat this class with that. */
+    /** Stores {@link FCPPluginConnectionImpl} objects by ID and automatically garbage collects them
+     *  so we don't have to bloat this class with that. */
 	final FCPPluginConnectionTracker pluginConnectionTracker;
 	final WeakHashMap<String, PersistentRequestClient> rebootClientsByName;
 	final PersistentRequestClient globalRebootClient;
