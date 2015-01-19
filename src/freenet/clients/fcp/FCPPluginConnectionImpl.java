@@ -991,32 +991,48 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * See section "Disconnecting properly" at {@link PluginRespirator#connectToOtherPlugin(
      * String, ClientSideFCPMessageHandler)}.
      */
-    static final class SendToClientAdapter extends DefaultSendDirectionAdapter {
+    private static final class SendToClientAdapter extends DefaultSendDirectionAdapter {
 
-        /** Is used to query the underlying FCPPluginConnectionImpl dynamically by its {@link UUID}
-         *  {@link #id} since this class, being aimed at being used by the server, may not keep a
-         *  strong reference to the connection to ensure that the client owns the power of purging
-         *  all strong references to it to cause disconnection. */
-        private final FCPPluginConnectionTracker tracker;
-        
-        /** The {@link FCPPluginConnection#getID()} of the underlying connection. */
-        private final UUID id;
+        /**
+         * {@link WeakReference} to the underlying FCPPluginConnectionImpl.<br>
+         * Once this becomes null, the connection is definitely dead - see
+         * {@link FCPPluginConnectionTracker}.<br>
+         * Notice: The ConnectionWeakReference child class of {@link WeakReference} is used because
+         * it also stores the connection ID, which is needed for {@link #getID()}.
+         */
+        private final FCPPluginConnectionTracker.ConnectionWeakReference connectionRef;
 
         /**
          * Please use {@link FCPPluginConnectionImpl#getDefaultSendDirectionAdapter(SendDirection)}
          * whenever possible to reuse adapters instead of creating new ones with this constructor.*/
         SendToClientAdapter(FCPPluginConnectionTracker tracker, UUID connectionID) {
             super(SendDirection.ToClient);
-            this.tracker = tracker;
-            this.id = connectionID;
+
+            // Reuse the WeakReference from the FCPPluginConnectionTracker instead of creating our
+            // own one since it has to keep a WeakReference for every connection anyway, and
+            // WeakReferences might be expensive to maintain for the VM.
+            try {
+                this.connectionRef = tracker.getConnectionWeakReference(connectionID);
+            } catch (IOException e) {
+                // This function should only be used during construction of the underlying
+                // FCPPluginConnectionImpl. While it is being constructed, it should not be
+                // considered as disconnected already, and thus the FCPPluginConnectionTracker
+                // should never throw IOException.
+                throw new RuntimeException("SHOULD NOT HAPPEN: " + e);
+            }
         }
 
         @Override protected FCPPluginConnection getConnection() throws IOException {
-            return tracker.getConnection(id);
+            FCPPluginConnection connection = connectionRef.get();
+            if(connection == null) {
+                throw new IOException("Client has closed the connection. "
+                                    + "Connection ID = " + connectionRef.connectionID);
+            }
+            return connection;
         }
 
         @Override public UUID getID() {
-            return id;
+            return connectionRef.connectionID;
         }
     }
 
