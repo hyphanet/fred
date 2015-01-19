@@ -991,6 +991,39 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
         }
     }
 
+    /**
+     * Encapsulates a FCPPluginConnectionImpl object with a default {@link SendDirection} of
+     * {@link SendDirection#ToServer} to implement the send functions which don't require a
+     * direction parameter:<br>
+     * - {@link FCPPluginConnection#send(FCPPluginMessage)}<br>
+     * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}}<br><br>
+     * 
+     * ATTENTION: Must only be used by the client, not by the server: Client disconnection is
+     * implemented by monitoring the garbage collection of their FCPPluginConnectionImpl objects
+     * - once the connection is not strong referenced anymore, it is considered as closed.
+     * As this class keeps a strong reference to the connection, if servers did use it, they would
+     * prevent client disconnection.<br>
+     * See section "Disconnecting properly" at {@link PluginRespirator#connectToOtherPlugin(
+     * String, ClientSideFCPMessageHandler)}.
+     */
+    private static final class SendToServerAdapter extends DefaultSendDirectionAdapter {
+
+        private final FCPPluginConnection parent;
+
+        SendToServerAdapter(FCPPluginConnectionImpl parent) {
+            super(SendDirection.ToServer);
+            this.parent = parent;
+        }
+
+        @Override protected FCPPluginConnection getConnection() {
+            return parent;
+        }
+
+        @Override public UUID getID() {
+            return parent.getID();
+        }
+    }
+
     @Override
     public String toString() {
         return "FCPPluginConnectionImpl (ID: " + id + "; server class: " + serverPluginName
