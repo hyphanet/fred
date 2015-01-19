@@ -104,7 +104,7 @@ import freenet.support.io.NativeThread;
  *   <br/>This mechanism also works for networked FCP.<br>
  * </p></p>
  */
-public final class FCPPluginConnectionImpl implements FCPPluginConnection {
+final class FCPPluginConnectionImpl implements FCPPluginConnection {
     
     /** Automatically set to true by {@link Logger} if the log level is set to
      *  {@link LogLevel#DEBUG} for this class.
