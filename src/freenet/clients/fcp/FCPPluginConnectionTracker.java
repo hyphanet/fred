@@ -80,7 +80,7 @@ final class FCPPluginConnectionTracker extends NativeThread {
      * from the {@link TreeMap}. For fast removal, we need their key in the map, which is the
      * connection ID, so we should store it in the {@link WeakReference}.
      */
-    private static final class ConnectionWeakReference
+    static final class ConnectionWeakReference
             extends WeakReference<FCPPluginConnection> {
 
         public final UUID connectionID;
@@ -136,23 +136,37 @@ final class FCPPluginConnectionTracker extends NativeThread {
      *     If there has been no connection with the given ID or if the client has disconnected.
      */
     public FCPPluginConnection getConnection(UUID connectionID) throws IOException {
-        ConnectionWeakReference ref = null;
+        ConnectionWeakReference ref = getConnectionWeakReference(connectionID);
+
+        FCPPluginConnection connection = ref.get();
+        
+        if(connection == null) {
+            throw new IOException("Client has closed the connection. "
+                                + "Connection ID = " + connectionID);
+        }
+        
+        return connection;
+    }
+    
+    /**
+     * Same as {@link #getConnection(UUID)} with the only difference of returning a
+     * {@link WeakReference} to the connection instead of the connection itself.<br>
+     * <b>Please do read its JavaDoc to understand when to use this!</b>
+     */
+    ConnectionWeakReference getConnectionWeakReference(UUID connectionID)
+            throws IOException {
         
         connectionsByIDLock.readLock().lock();
         try {
-            ref = connectionsByID.get(connectionID);
+            ConnectionWeakReference ref = connectionsByID.get(connectionID);
+            if(ref != null)
+                return ref;
         } finally {
             connectionsByIDLock.readLock().unlock();
         }
         
-        FCPPluginConnection connection = ref != null ? ref.get() : null;
-        
-        if(connection == null) {
-            throw new IOException("FCPPluginConnection not found, maybe client has disconnected."
-                + " Connection ID: " + connectionID);
-        }
-        
-        return connection;
+        throw new IOException("FCPPluginConnection not found, maybe client has disconnected."
+                            + " Connection ID: " + connectionID);
     }
 
 
