@@ -1002,6 +1002,9 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
         /** The {@link FCPPluginConnection#getID()} of the underlying connection. */
         private final UUID id;
 
+        /**
+         * Please use {@link FCPPluginConnectionImpl#getDefaultSendDirectionAdapter(SendDirection)}
+         * whenever possible to reuse adapters instead of creating new ones with this constructor.*/
         SendToClientAdapter(FCPPluginConnectionTracker tracker, UUID connectionID) {
             super(SendDirection.ToClient);
             this.tracker = tracker;
@@ -1036,6 +1039,9 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
 
         private final FCPPluginConnection parent;
 
+        /**
+         * Please use {@link FCPPluginConnectionImpl#getDefaultSendDirectionAdapter(SendDirection)}
+         * whenever possible to reuse adapters instead of creating new ones with this constructor.*/
         SendToServerAdapter(FCPPluginConnectionImpl parent) {
             super(SendDirection.ToServer);
             this.parent = parent;
@@ -1048,6 +1054,17 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
         @Override public UUID getID() {
             return parent.getID();
         }
+    }
+
+    /**
+     * Returns a {@link DefaultSendDirectionAdapter} (which implements FCPPluginConnection) wrapped
+     * around this FCPPluginConnectionImpl for which the following send functions will then always
+     * send to the {@link SendDirection} which was passed to this function:<br>
+     * - {@link FCPPluginConnection#send(FCPPluginMessage)}<br>
+     * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}<br><br>
+     */
+    public FCPPluginConnection getDefaultSendDirectionAdapter(SendDirection direction) {
+        return defaultSendDirectionAdapters.get(direction);
     }
 
     @Override
