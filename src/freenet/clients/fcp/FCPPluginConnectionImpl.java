@@ -311,6 +311,9 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
         this.clientConnection = clientConnection;
         this.defaultSendDirectionAdapters.put(SendDirection.ToServer,
                 new SendToServerAdapter(this));
+        // new SendToClientAdapter() will need to query this connection from the tracker already.
+        // Thus, we have to register before constructing it.
+        tracker.registerConnection(this);
         this.defaultSendDirectionAdapters.put(SendDirection.ToClient,
                 new SendToClientAdapter(tracker, id));
     }
@@ -335,11 +338,8 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
         assert(serverPluginName != null);
         assert(clientConnection != null);
         
-        FCPPluginConnectionImpl result = new FCPPluginConnectionImpl(tracker, executor,
-            serverPluginName, serverPluginManager.getPluginFCPServer(serverPluginName),
-            clientConnection);
-        tracker.registerConnection(result);
-        return result;
+        return new FCPPluginConnectionImpl(tracker, executor, serverPluginName,
+            serverPluginManager.getPluginFCPServer(serverPluginName), clientConnection);
     }
 
 
@@ -373,6 +373,9 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
         this.clientConnection = null;
         this.defaultSendDirectionAdapters.put(SendDirection.ToServer,
                 new SendToServerAdapter(this));
+        // new SendToClientAdapter() will need to query this connection from the tracker already.
+        // Thus, we have to register before constructing it.
+        tracker.registerConnection(this);
         this.defaultSendDirectionAdapters.put(SendDirection.ToClient,
                 new SendToClientAdapter(tracker, id));
     }
@@ -398,10 +401,8 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
         assert(serverPluginName != null);
         assert(client != null);
         
-        FCPPluginConnectionImpl result = new FCPPluginConnectionImpl(tracker, executor,
-            serverPluginName, serverPluginManager.getPluginFCPServer(serverPluginName), client);
-        tracker.registerConnection(result);
-        return result;
+        return new FCPPluginConnectionImpl(tracker, executor, serverPluginName,
+            serverPluginManager.getPluginFCPServer(serverPluginName), client);
     }
     
     /**
