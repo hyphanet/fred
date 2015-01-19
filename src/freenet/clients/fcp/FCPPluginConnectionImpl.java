@@ -697,7 +697,7 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
                 try {
                     try {
                         reply = messageHandler.handlePluginFCPMessage(
-                            FCPPluginConnectionImpl.this, message);
+                            getDefaultSendDirectionAdapter(direction.invert()), message);
                     } catch(Error e) {
                         // TODO: Code quality: This is a workaround for Java 6 not having
                         // "catch(RuntimeException | Error e)". Once we are on Java 7, remove this
