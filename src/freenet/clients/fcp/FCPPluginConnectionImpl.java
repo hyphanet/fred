@@ -430,7 +430,10 @@ public final class FCPPluginConnectionImpl implements FCPPluginConnection {
         
         assert(server != null);
         assert(client != null);
-        return new FCPPluginConnectionImpl(new PooledExecutor(), server.toString(), server, client);
+        FCPPluginConnectionTracker tracker = new FCPPluginConnectionTracker();
+        tracker.start();
+        return new FCPPluginConnectionImpl(
+            tracker, new PooledExecutor(), server.toString(), server, client);
     }
     
     @Override
