@@ -787,6 +787,18 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
                         
                         reply = null;
                     }
+
+                    if(!reply.identifier.equals(message.identifier)) {
+                        Logger.error(messageHandler, "FredPluginFCPMessageHandler tried to send a"
+                            + " reply with with different identifier than original message."
+                            + " See JavaDoc of its member interfaces for how to do this properly."
+                            + " connection = " + FCPPluginConnectionImpl.this
+                            + "; original message SendDirection = " + direction
+                            + "; original message = " + message
+                            + "; reply = " + reply);
+
+                        reply = null;
+                    }
                 } else if(reply == null) {
                     if(!message.isReplyMessage()) {
                         // The message handler did not not ship a reply even though it would have
