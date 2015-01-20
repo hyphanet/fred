@@ -83,7 +83,7 @@ import freenet.support.api.Bucket;
  * 
  * If you plan to work on the fred-side implementation of FCP plugin connections, please see the
  * "Internals" section at the implementation {@link FCPPluginConnectionImpl} of this interface.
- * Notably, the said section provides an overview of the flow of messages.
+ * Notably, the said section provides an overview of the flow of messages.<br><br>
  * 
  * @author xor (xor@freenetproject.org)
  */
