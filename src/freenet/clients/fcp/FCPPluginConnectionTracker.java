@@ -201,7 +201,10 @@ final class FCPPluginConnectionTracker extends NativeThread {
     /**
      * Garbage-collection thread: Polls {@link #closedConnectionsQueue} for connections whose
      * {@link WeakReference} has been nulled and removes them from the {@link #connectionsByID}
-     * {@link TreeMap}.
+     * {@link TreeMap}.<br><br>
+     * 
+     * Notice: Do not call this function directly. To execute this, call {@link #start()}.
+     * This function is merely public because this class extends {@link NativeThread}.
      */
     @Override
     public void realRun() {
