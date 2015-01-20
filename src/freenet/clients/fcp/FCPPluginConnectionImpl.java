@@ -35,6 +35,20 @@ import freenet.support.io.NativeThread;
  * <b>Please first read the JavaDoc of the interface {@link FCPPluginConnection} which specifies
  * this class.</b><br><br>
  * 
+ * ATTENTION:<br>
+ * Objects of this class shall not be handed out directly to server or client applications.
+ * Instead, only hand out a {@link DefaultSendDirectionAdapter} - which can be obtained by
+ * {@link #getDefaultSendDirectionAdapter(SendDirection)}.<br>
+ * This has two reasons:<br>
+ * - The send functions which do not require a {@link SendDirection} will always throw an exception
+ *   without an adapter ({@link #send(FCPPluginMessage)} and
+ *   {@link #sendSynchronous(FCPPluginMessage, long)}).<br>
+ * - Server plugins must not keep a strong reference to the FCPPluginConnectionImpl
+ *   to ensure that the client disconnection mechanism of monitoring garbage collection works,
+ *   see {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}.
+ *   The adapter prevents servers from keeping a strong reference by internally only keeping a
+ *   {@link WeakReference} to the FCPPluginConnectionImpl.<br>
+ * 
  * <h1>Internals</h1><br>
  * 
  * This section is not interesting to server or client implementations. You might want to read it
@@ -326,6 +340,21 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * {@link FCPConnectionHandler} clientConnection.<br><br>
      * 
      * The returned connection is registered at the given {@link FCPPluginConnectionTracker}.
+     * <br><br>
+     * 
+     * ATTENTION:<br>
+     * Objects of this class shall not be handed out directly to server or client applications.
+     * Instead, only hand out a {@link DefaultSendDirectionAdapter} - which can be obtained by
+     * {@link #getDefaultSendDirectionAdapter(SendDirection)}.<br>
+     * This has two reasons:<br>
+     * - The send functions which do not require a {@link SendDirection} will always throw an 
+     *   exception without an adapter ({@link #send(FCPPluginMessage)} and
+     *   {@link #sendSynchronous(FCPPluginMessage, long)}).<br>
+     * - Server plugins must not keep a strong reference to the FCPPluginConnectionImpl
+     *   to ensure that the client disconnection mechanism of monitoring garbage collection works,
+     *   see {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}.
+     *   The adapter prevents servers from keeping a strong reference by internally only keeping a
+     *   {@link WeakReference} to the FCPPluginConnectionImpl.<br>
      */
     static FCPPluginConnectionImpl constructForNetworkedFCP(FCPPluginConnectionTracker tracker,
             Executor executor, PluginManager serverPluginManager,
@@ -390,6 +419,21 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * client.<br><br>
      * 
      * The returned connection is registered at the given {@link FCPPluginConnectionTracker}.
+     * <br><br>
+     * 
+     * ATTENTION:<br>
+     * Objects of this class shall not be handed out directly to server or client applications.
+     * Instead, only hand out a {@link DefaultSendDirectionAdapter} - which can be obtained by
+     * {@link #getDefaultSendDirectionAdapter(SendDirection)}.<br>
+     * This has two reasons:<br>
+     * - The send functions which do not require a {@link SendDirection} will always throw an
+     *   exception without an adapter ({@link #send(FCPPluginMessage)} and
+     *   {@link #sendSynchronous(FCPPluginMessage, long)}).<br>
+     * - Server plugins must not keep a strong reference to the FCPPluginConnectionImpl
+     *   to ensure that the client disconnection mechanism of monitoring garbage collection works,
+     *   see {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}.
+     *   The adapter prevents servers from keeping a strong reference by internally only keeping a
+     *   {@link WeakReference} to the FCPPluginConnectionImpl.<br>
      */
     static FCPPluginConnectionImpl constructForIntraNodeFCP(FCPPluginConnectionTracker tracker,
             Executor executor, PluginManager serverPluginManager,
@@ -923,15 +967,24 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * - {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}<br><br>
      * 
      * An adapter is needed instead of storing this as a member variable in FCPPluginConnectionImpl
-     * because a single FCPPluginConnectionImpl object is handed out both to the the server AND the
-     * client which use it, and their default send direction will be different:<br>
+     * because a single FCPPluginConnectionImpl object is used by both to the the server AND the
+     * client which it connects, and their default send direction will be different:<br>
      * A server will want to send to the client by default, but the client will want to default to
      * sending to the server.<br><br>
      * 
      * Is abstract and has two implementing child classes (to implement differing internal
      * requirements, see {@link #getConnection()}):<br>
      * - {@link SendToClientAdapter} for default direction {@link SendDirection#ToClient}.<br>
-     * - {@link SendToServerAdapter} for default direction {@link SendDirection#ToServer}.<br>
+     * - {@link SendToServerAdapter} for default direction {@link SendDirection#ToServer}.<br><br>
+     * 
+     * NOTICE: Server plugins must not keep a strong reference to the FCPPluginConnectionImpl
+     * to ensure that the client disconnection mechanism of monitoring garbage collection works.
+     * This class also serves the purpose of preventing servers from keeping a strong reference:<br>
+     * Uses of class FCPPluginConnectionImpl are told by the documentation to never hand out a
+     * FCPPluginConnectionImpl itself to servers, but only give them adapters. Since the
+     * {@link SendToClientAdapter} only keeps a {@link WeakReference} to the
+     * FCPPluginConnectionImpl, by only handing out the adapter, servers are prevented from keeping
+     * a strong reference to the FCPPluginConnectionImpl.
      */
     private abstract static class DefaultSendDirectionAdapter implements FCPPluginConnection {
         
@@ -990,7 +1043,18 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * reference to the connection to prevent its garbage collection (= disconnection), but this
      * does not keep a strong reference.<br>
      * See section "Disconnecting properly" at {@link PluginRespirator#connectToOtherPlugin(
-     * String, ClientSideFCPMessageHandler)}.
+     * String, ClientSideFCPMessageHandler)}.<br><br>
+     * 
+     * NOTICE: Server plugins must not keep a strong reference to the FCPPluginConnectionImpl
+     * to ensure that the client disconnection mechanism of monitoring garbage collection works.
+     * This class also serves the purpose of preventing servers from keeping a strong reference:<br>
+     * Uses of class FCPPluginConnectionImpl are told by the documentation to never hand out a
+     * FCPPluginConnectionImpl itself to servers, but only give them adapters. Since the
+     * SendToClientAdapter only keeps a {@link WeakReference} to the FCPPluginConnectionImpl, by
+     * only handing out the adapter, servers are prevented from keeping a strong reference to the
+     * FCPPluginConnectionImpl.<br>
+     * As a consequence, please do never change this class to keep a strong reference to the
+     * FCPPluginConnectionImpl.
      */
     private static final class SendToClientAdapter extends DefaultSendDirectionAdapter {
 

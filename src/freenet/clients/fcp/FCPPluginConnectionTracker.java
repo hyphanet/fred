@@ -12,7 +12,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import freenet.clients.fcp.FCPPluginConnection.SendDirection;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
@@ -116,19 +119,33 @@ final class FCPPluginConnectionTracker extends NativeThread {
     }
 
     /**
-     * For being used by implementors of {@link ServerSideFCPMessageHandler}.<br/>
-     * NOT for being used by clients: If you are a client using a {@link FCPPluginConnection} to
-     * connect to a server plugin, you have to keep a reference to the {@link FCPPluginConnection}
-     * in memory.
+     * For being indirectly exposed to implementors of server plugins, i.e. implementors of
+     * {@link ServerSideFCPMessageHandler}.<br/>
+     * NOT for being used by clients: Clients using a {@link FCPPluginConnection} to connect to a
+     * server plugin have to keep a reference to the {@link FCPPluginConnection} in memory.
+     * See {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}.
      * <br/>
      * This is necessary because this class only keeps {@link WeakReference}s to the
-     * {@link FCPPluginConnection} objects. Once they are not referenced by a strong reference,
+     * {@link FCPPluginConnection} objects. Once they are not referenced by a strong reference
      * anymore they will be garbage collected and thus considered as disconnected.<br/>
-     * The job of keeping the strong references is at the client.
+     * The job of keeping the strong references is at the client.<br><br>
+     * 
+     * ATTENTION:<br>
+     * The returned FCPPluginConnectionImpl objects class shall not be handed out directly to server
+     * applications. Instead, only hand out a {@link DefaultSendDirectionAdapter} - which can be
+     * obtained by {@link FCPPluginConnectionImpl#getDefaultSendDirectionAdapter(SendDirection)}.
+     * <br>This has two reasons:<br>
+     * - The send functions which do not require a {@link SendDirection} will always throw an
+     *   exception without an adapter ({@link #send(FCPPluginMessage)} and
+     *   {@link #sendSynchronous(FCPPluginMessage, long)}).<br>
+     * - Server plugins must not keep a strong reference to the FCPPluginConnectionImpl
+     *   to ensure that the client disconnection mechanism of monitoring garbage collection works.
+     *   The adapter prevents servers from keeping a strong reference by internally only keeping a
+     *   {@link WeakReference} to the FCPPluginConnectionImpl.<br>
      * 
      * @param connectionID
      *     The value of {@link FCPPluginConnection#getID()} of a client connection which has already
-     *     sent a message to your plugin via
+     *     sent a message to the server plugin via
      *     {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      *     FCPPluginMessage)}.
      * @return
