@@ -323,7 +323,7 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * The server is running within the node, and its message handler will be queried from the
      * {@link PluginManager} via the given String serverPluginName.<br/>
      * The client is not running within the node, it is attached by network with the given
-     * {@link FCPConnectionHandler} clientConnection.<br/>
+     * {@link FCPConnectionHandler} clientConnection.<br><br>
      * 
      * The returned connection is registered at the given {@link FCPPluginConnectionTracker}.
      */
@@ -387,7 +387,7 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * The server plugin will be queried from given {@link PluginManager} via the given String
      * serverPluginName.<br>
      * The client message handler is available as the passed {@link ClientSideFCPMessageHandler}
-     * client.<br>
+     * client.<br><br>
      * 
      * The returned connection is registered at the given {@link FCPPluginConnectionTracker}.
      */
