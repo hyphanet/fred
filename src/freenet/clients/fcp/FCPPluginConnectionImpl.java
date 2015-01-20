@@ -786,9 +786,7 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
                             + "; reply = " + reply);
                         
                         reply = null;
-                    }
-
-                    if(!reply.identifier.equals(message.identifier)) {
+                    } else if(!reply.identifier.equals(message.identifier)) {
                         Logger.error(messageHandler, "FredPluginFCPMessageHandler tried to send a"
                             + " reply with with different identifier than original message."
                             + " See JavaDoc of its member interfaces for how to do this properly."
