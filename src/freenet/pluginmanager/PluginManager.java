@@ -938,14 +938,14 @@ public class PluginManager {
 	 * look for a FCPPlugin with given classname
 	 * @param plugname
 	 * @return the plugin or null if not found
-     * @deprecated The {@link FredPluginFCP} API, which this returns, was deprecated to be replaced
-     *             by {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}.
-     *             Plugin authors should implement the new interface instead of the old,
-     *             and this codepath to support plugins which implement the old interface should
-     *             be removed one day. No new code will be needed then: The code to use the 
-     *             new interface already exists in its own codepath - the equivalent function for
-     *             the new API is {link #getPluginFCPServer(String)}, and it is already being used
-     *             automatically for plugins which implement it.
+     * @deprecated
+     *     The {@link FredPluginFCP} API, which this returns, was deprecated to be replaced by
+     *     {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}. Plugin authors should
+     *     implement the new interface instead of the old, and this codepath to support plugins
+     *     which implement the old interface should be removed one day. No new code will be needed
+     *     then: The code to use the  new interface already exists in its own codepath - the
+     *     equivalent function for the new API is {link #getPluginFCPServer(String)}, and it is
+     *     already being used automatically for plugins which implement it.
 	 */
     @Deprecated
 	public FredPluginFCP getFCPPlugin(String plugname) {
@@ -964,9 +964,9 @@ public class PluginManager {
      * the given class name.
      * 
      * @param pluginClassName
-     *            See {@link #getPluginInfoByClassName(String)}.
+     *     See {@link #getPluginInfoByClassName(String)}.
      * @throws PluginNotFoundException
-     *             If the specified plugin is not loaded or does not provide an FCP server.
+     *     If the specified plugin is not loaded or does not provide an FCP server.
      */
     public FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
             getPluginFCPServer(String pluginClassName)
