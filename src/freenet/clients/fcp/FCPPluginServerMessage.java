@@ -35,8 +35,10 @@ import freenet.support.api.Bucket;
  *     FCPPluginConnection gives an overview of how plugin messaging works in general.
  * @link FCPPluginConnectionImpl
  *     FCPPluginConnectionImpl gives an overview of the internal code paths which messages take.
- * @author saces
- * @author xor (xor@freenetproject.org)
+ * @author
+ *     saces
+ * @author
+ *     xor (xor@freenetproject.org)
  */
 public class FCPPluginServerMessage extends DataCarryingMessage {
 	
@@ -72,14 +74,15 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
     private final String errorMessage;
 
     /**
-     * @deprecated Use {@link #FCPPluginServerMessage(String, String, SimpleFieldSet, Bucket,
-     *             Boolean, String, String)}.<br><br>
+     * @deprecated
+     *     Use {@link #FCPPluginServerMessage(String, String, SimpleFieldSet, Bucket, Boolean,
+     *     String, String)}.<br><br>
      * 
-     *             <b>ATTENTION:</b> Upon removal of this constructor, you should remove the
-     *             backend constructor so the only remaining constructor is the one which consumes
-     *             a {@link FCPPluginMessage}. Then you should remove all the member variables from
-     *             this class which duplicate the members of that class, and instead store a
-     *             reference to an object of the other class.
+     *     <b>ATTENTION:</b> Upon removal of this constructor, you should remove the backend
+     *     constructor so the only remaining constructor is the one which consumes a
+     *     {@link FCPPluginMessage}. Then you should remove all the member variables from this class
+     *     which duplicate the members of that class, and instead store a reference to an object of
+     *     the other class.
      */
     @Deprecated
     public FCPPluginServerMessage(String pluginname, String identifier2, SimpleFieldSet fs,
@@ -88,9 +91,10 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
     }
 
     /**
-     * @param pluginname The class name of the plugin which is sending the message.<br>
-     *                   Must not be null.<br>
-     *                   See {@link PluginManager#getPluginInfoByClassName(String)}.
+     * @param pluginname
+     *     The class name of the plugin which is sending the message.<br>
+     *     Must not be null.<br>
+     *     See {@link PluginManager#getPluginInfoByClassName(String)}.
      */
     public FCPPluginServerMessage(String pluginname, FCPPluginMessage message) {
         
