@@ -160,14 +160,9 @@ public interface FCPPluginConnection {
      * of the FCPPluginConnection they receive.
      * 
      * @param direction
-     *     Whether to send the message to the server or the client message handler.<br><br>
-     * 
-     *     While you <b>can</b> use this to send messages to yourself, be careful not to cause
-     *     thread deadlocks with this. The function will call your message handler function of
-     *     {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
-     *     FCPPluginMessage)} in <b>a different thread</b>, so it should not cause deadlocks on its
-     *     own, but you might produce deadlocks with your own thread synchronization measures.
-     *     <br><br>
+     *     Whether to send the message to the server or the client message handler.<br>
+     *     You <b>can</b> use this to send messages to yourself.<br>
+     *     You may use {@link #send(FCPPluginMessage)} to avoid having to specify this.<br><br>
      * 
      * @param message
      *     You <b>must not</b> send the same message twice: This can break {@link #sendSynchronous(
@@ -306,14 +301,10 @@ public interface FCPPluginConnection {
      * of the FCPPluginConnection they receive.<br><br>
      * 
      * @param direction
-     *     Whether to send the message to the server or the client message handler.<br><br>
-     * 
-     *     While you <b>can</b> use this to send messages to yourself, be careful not to cause
-     *     thread deadlocks with this. The function will call your message handler function of
-     *     {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
-     *     FCPPluginMessage)} in <b>a different thread</b>, so it should not cause deadlocks on its
-     *     own, but you might produce deadlocks with your own thread synchronization measures.
-     *     <br><br>
+     *     Whether to send the message to the server or the client message handler.<br>
+     *     You <b>can</b> use this to send messages to yourself.<br>
+     *     You may use {@link #sendSynchronous(FCPPluginMessage, long)} to avoid having to specify
+     *     this.<br><br>
      * 
      * @param message
      *     <b>Must be</b> constructed using {@link FCPPluginMessage#construct(SimpleFieldSet,
