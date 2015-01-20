@@ -158,16 +158,15 @@ public class PluginRespirator {
      * and other nice stuff.</p>
      * 
      * @param pluginName
-     *            The name of the main class of the plugin - that is the class which implements
-     *            {@link FredPlugin}. See {@link PluginManager#getPluginInfoByClassName(String)}.
+     *     The name of the main class of the plugin - that is the class which implements
+     *     {@link FredPlugin}. See {@link PluginManager#getPluginInfoByClassName(String)}.
      * @param messageHandler
-     *            An object of your plugin which implements the
-     *            {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler} interface. Its
-     *            purpose is to handle FCP messages which the remote plugin sends back to your
-     *            plugin.
-     * @return A {@link FCPPluginConnection} representing the client connection.<br>
-     *         Please do read the whole JavaDoc of this function to know how to use it properly.
-     */
+     *     An object of your plugin which implements the
+     *     {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler} interface. Its purpose is
+     *     to handle FCP messages which the remote plugin sends back to your plugin.
+     * @return
+     *     A {@link FCPPluginConnection} representing the client connection.<br>
+     *     Please do read the whole JavaDoc of this function to know how to use it properly. */
     public FCPPluginConnection connectToOtherPlugin(String pluginName,
             FredPluginFCPMessageHandler.ClientSideFCPMessageHandler messageHandler)
                 throws PluginNotFoundException {
@@ -201,17 +200,17 @@ public class PluginRespirator {
      * 
      * @see FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(
      *      FCPPluginConnection, FCPPluginMessage)
-     *          The message handler at FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
-     *          provides an explanation of when to use this.
+     *     The message handler at FredPluginFCPMessageHandler.ServerSideFCPMessageHandler provides
+     *     an explanation of when to use this.
      * @param connectionID
-     *            The connection's {@link UUID} as obtained by {@link FCPPluginConnection#getID()}.
-     * @return The client connection if it is still connected.
+     *     The connection's {@link UUID} as obtained by {@link FCPPluginConnection#getID()}.
+     * @return
+     *     The client connection if it is still connected.
      * @throws IOException
-     *             If there has been no client connection with the given ID or if it has
-     *             disconnected already.<br>
-     *             If this happens, you should consider the connection {@link UUID} as invalid
-     *             forever and discard it.
-     */
+     *     If there has been no client connection with the given ID or if it has disconnected
+     *     already.<br>
+     *     If this happens, you should consider the connection {@link UUID} as invalid forever and
+     *     discard it. */
     public FCPPluginConnection getPluginConnectionByID(UUID connectionID) throws IOException {
         return node.clientCore.getFCPServer().getPluginConnectionByID(connectionID);
     }
