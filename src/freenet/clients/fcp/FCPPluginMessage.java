@@ -90,7 +90,7 @@ public final class FCPPluginMessage {
      * can parse easily. May also be null in that case, but please try to not do that.<br>
      * For {@link #success} == null or true, this must be null.<br><br>
      * 
-     * The String shall be for programming purposes and thus <b>should</b> be alpha-numeric.<br>
+     * The String shall be for programming purposes and thus <b>must</b> be alpha-numeric.<br>
      * For unclassified errors, such as Exceptions which you do not expect, use "InternalError".
      */
     public final String errorCode;
