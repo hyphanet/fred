@@ -67,10 +67,11 @@ import freenet.support.io.NativeThread;
  * that {@link FCPPluginConnection#sendSynchronous(SendDirection, FCPPluginMessage, long)} will not
  * deliver replies to the message handler but only return them instead.<br><br>
  * 
- * @author xor (xor@freenetproject.org)
+ * @author
+ *     xor (xor@freenetproject.org)
  * @see FCPPluginConnection
- *          A connection will be represented as class FCPPluginConnection to the client and server
- *          plugin. It's JavaDoc provides an overview of the lifecycle of connections.
+ *     A connection will be represented as class FCPPluginConnection to the client and server
+ *     plugin. It's JavaDoc provides an overview of the lifecycle of connections.
  */
 public interface FredPluginFCPMessageHandler {
 
@@ -98,10 +99,9 @@ public interface FredPluginFCPMessageHandler {
      * messages received from the clients.
      * 
      * @see FredPluginFCPMessageHandler
-     *          The parent interface FredPluginFCPMessageHandler provides an overview.
+     *     The parent interface FredPluginFCPMessageHandler provides an overview.
      * @see ClientSideFCPMessageHandler
-     *          The opposite version of this interface for client plugins
-     */
+     *     The opposite version of this interface for client plugins */
     public interface ServerSideFCPMessageHandler extends FredPluginFCPMessageHandler {
         /**
          * <p>Is called to handle messages from your clients.<br/>
@@ -135,52 +135,51 @@ public interface FredPluginFCPMessageHandler {
          * </p>
          * 
          * @param connection
-         *            The connection of the client which sent the message.<br/><br/>
+         *     The connection of the client which sent the message.<br/><br/>
          * 
-         *            You <b>must not</b> use its send functions for sending back the main reply.
-         *            Instead, use the return value for shipping the reply. (You are free to send
-         *            "out of band" secondary replies using the connection.)<br/>
-         *            The requirement of returning the reply is to ensure that the reply can be
-         *            clearly identified as such, and shipped to the remote side with a clear
-         *            specification to which message it is a reply.<br>
-         *            This is useful for example if the sender of the original message used
-         *            the <i>synchronous</i> send function {@link FCPPluginConnection#
-         *            sendSynchronous(SendDirection, FCPPluginMessage, long)}: The function shall
-         *            wait for the reply to the original message, and return it to the caller. This
-         *            only works if replies are properly identified, otherwise it would have to
-         *            throw an {@link IOException} to signal a timeout while waiting for the reply.
-         *            <br/><br/>
+         *     You <b>must not</b> use its send functions for sending back the main reply. Instead,
+         *     use the return value for shipping the reply. (You are free to send "out of band"
+         *     secondary replies using the connection.)<br/>
+         *     The requirement of returning the reply is to ensure that the reply can be clearly
+         *     identified as such, and shipped to the remote side with a clear specification to
+         *     which message it is a reply.<br>
+         *     This is useful for example if the sender of the original message used the
+         *     <i>synchronous</i> send function {@link FCPPluginConnection#sendSynchronous(
+         *     SendDirection, FCPPluginMessage, long)}: The function shall wait for the reply to the
+         *     original message, and return it to the caller. This only works if replies are
+         *     properly identified, otherwise it would have to throw an {@link IOException} to
+         *     signal a timeout while waiting for the reply.<br/><br/>
          * @param message
-         *            The actual message. See the JavaDoc of its member variables for an explanation
-         *            of their meaning.
-         * @return Your reply message, or null if you don't want to reply.<br/><br/>
+         *     The actual message. See the JavaDoc of its member variables for an explanation of
+         *     their meaning.
+         * @return
+         *     Your reply message, or null if you don't want to reply.<br/><br/>
          * 
-         *         You <b>must</b> construct this by using the constructor
-         *         {@link FCPPluginMessage#constructReplyMessage(FCPPluginMessage, SimpleFieldSet,
-         *         Bucket, boolean, String, String)} (or one of its shortcuts) to ensure that the
-         *         {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
+         *     You <b>must</b> construct this by using the constructor {@link FCPPluginMessage#
+         *     constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean, String,
+         *     String)} (or one of its shortcuts) to ensure that the
+         *     {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
          * 
-         *         Replies to replies are not allowed: You <b>must</b> return null if the original
-         *         message was a reply message already as indicated by
-         *         {@link FCPPluginMessage#isReplyMessage()}.<br>
-         *         Replies often shall only indicate success / failure instead of triggering actual
-         *         operations, so it could cause infinite bouncing if you reply to them again.<br/>
-         *         If you still have to send a message to do further operations, you should create a
-         *         new "dialog" by sending an "out of band" message using the passed
-         *         {@link FCPPluginConnection}, as explained in the description of this function.
-         *         <br>Consider the whole of this as a remote procedure call process: A non-reply
-         *         message is the procedure call, a reply message is the procedure result. When
-         *         receiving the result, the procedure call is finished, and shouldn't contain
-         *         further replies.<br><br>
+         *     Replies to replies are not allowed: You <b>must</b> return null if the original
+         *     message was a reply message already as indicated by
+         *     {@link FCPPluginMessage#isReplyMessage()}.<br>
+         *     Replies often shall only indicate success / failure instead of triggering actual
+         *     operations, so it could cause infinite bouncing if you reply to them again.<br/>
+         *     If you still have to send a message to do further operations, you should create a new
+         *     "dialog" by sending an "out of band" message using the passed
+         *     {@link FCPPluginConnection}, as explained in the description of this function.<br>
+         *     Consider the whole of this as a remote procedure call process: A non-reply message is
+         *     the procedure call, a reply message is the procedure result. When receiving the
+         *     result, the procedure call is finished, and shouldn't contain further replies.
+         *     <br><br>
          *         
-         *         You <b>should</b> always return a reply instead of null if you're allowed to,
-         *         even if you have got nothing to say:<br>
-         *         This allows the remote side to detect whether its requested operation succeeded
-         *         or failed because reply messages always have to specify success/failure.<br>
-         *         Notice: Even upon failure, a reply is better than saying nothing because it
-         *         allows {@link FCPPluginConnection#sendSynchronous(SendDirection,
-         *         FCPPluginMessage, long)} to fail fast instead of having to wait for timeout.
-         */
+         *     You <b>should</b> always return a reply instead of null if you're allowed to, even if
+         *     you have got nothing to say:<br>
+         *     This allows the remote side to detect whether its requested operation succeeded or
+         *     failed because reply messages always have to specify success/failure.<br>
+         *     Notice: Even upon failure, a reply is better than saying nothing because it allows
+         *     {@link FCPPluginConnection#sendSynchronous(SendDirection, FCPPluginMessage, long)} to
+         *     fail fast instead of having to wait for timeout. */
         @Override
         FCPPluginMessage handlePluginFCPMessage(
             FCPPluginConnection connection, FCPPluginMessage message);
@@ -192,10 +191,9 @@ public interface FredPluginFCPMessageHandler {
      * messages received from the server.
      * 
      * @see FredPluginFCPMessageHandler
-     *          The parent interface FredPluginFCPMessageHandler provides an overview.
+     *     The parent interface FredPluginFCPMessageHandler provides an overview.
      * @see ServerSideFCPMessageHandler
-     *          The opposite version of this interface for server plugins
-     */
+     *     The opposite version of this interface for server plugins */
     public interface ClientSideFCPMessageHandler extends FredPluginFCPMessageHandler {
         /**
          * Is called to handle messages from the server after you sent a message to it using a
@@ -209,52 +207,51 @@ public interface FredPluginFCPMessageHandler {
          * which happened at its side.<br>
          * 
          * @param connection
-         *            The connection which you had originally established to the server.<br/><br/>
+         *     The connection which you had originally established to the server.<br/><br/>
          * 
-         *            You <b>must not</b> use its send functions for sending back the main reply.
-         *            Instead, use the return value for shipping the reply. (You are free to send
-         *            "out of band" secondary replies using the connection.)<br/>
-         *            The requirement of returning the reply is to ensure that the reply can be
-         *            clearly identified as such, and shipped to the remote side with a clear
-         *            specification to which message it is a reply.<br>
-         *            This is useful for example if the sender of the original message used
-         *            the <i>synchronous</i> send function {@link FCPPluginConnection#
-         *            sendSynchronous(SendDirection, FCPPluginMessage, long)}: The function shall
-         *            wait for the reply to the original message, and return it to the caller. This
-         *            only works if replies are properly identified, otherwise it would have to
-         *            throw an {@link IOException} to signal a timeout while waiting for the reply.
-         *            <br/><br/>
+         *     You <b>must not</b> use its send functions for sending back the main reply. Instead,
+         *     use the return value for shipping the reply. (You are free to send "out of band"
+         *     secondary replies using the connection.)<br/>
+         *     The requirement of returning the reply is to ensure that the reply can be clearly
+         *     identified as such, and shipped to the remote side with a clear specification to
+         *     which message it is a reply.<br>
+         *     This is useful for example if the sender of the original message used the
+         *     <i>synchronous</i> send function {@link FCPPluginConnection#sendSynchronous(
+         *     SendDirection, FCPPluginMessage, long)}: The function shall wait for the reply to the
+         *     original message, and return it to the caller. This only works if replies are
+         *     properly identified, otherwise it would have to throw an {@link IOException} to
+         *     signal a timeout while waiting for the reply.<br/><br/>
          * @param message
-         *            The actual message. See the JavaDoc of its member variables for an explanation
-         *            of their meaning.
-         * @return Your reply message, or null if you don't want to reply.<br/><br/>
+         *     The actual message. See the JavaDoc of its member variables for an explanation of
+         *     their meaning.
+         * @return
+         *     Your reply message, or null if you don't want to reply.<br/><br/>
          * 
-         *         You <b>must</b> construct this by using the constructor
-         *         {@link FCPPluginMessage#constructReplyMessage(FCPPluginMessage, SimpleFieldSet,
-         *         Bucket, boolean, String, String)} (or one of its shortcuts) to ensure that the
-         *         {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
+         *     You <b>must</b> construct this by using the constructor {@link FCPPluginMessage#
+         *     constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean, String,
+         *     String)} (or one of its shortcuts) to ensure that the
+         *     {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
          * 
-         *         Replies to replies are not allowed: You <b>must</b> return null if the original
-         *         message was a reply message already as indicated by
-         *         {@link FCPPluginMessage#isReplyMessage()}.<br>
-         *         Replies often shall only indicate success / failure instead of triggering actual
-         *         operations, so it could cause infinite bouncing if you reply to them again.<br/>
-         *         If you still have to send a message to do further operations, you should create a
-         *         new "dialog" by sending an "out of band" message using the passed
-         *         {@link FCPPluginConnection}, as explained in the description of this function.
-         *         <br/>Consider the whole of this as a remote procedure call process: A non-reply
-         *         message is the procedure call, a reply message is the procedure result. When
-         *         receiving the result, the procedure call is finished, and shouldn't contain
-         *         further replies.<br><br>
+         *     Replies to replies are not allowed: You <b>must</b> return null if the original
+         *     message was a reply message already as indicated by
+         *     {@link FCPPluginMessage#isReplyMessage()}.<br>
+         *     Replies often shall only indicate success / failure instead of triggering actual
+         *     operations, so it could cause infinite bouncing if you reply to them again.<br/>
+         *     If you still have to send a message to do further operations, you should create a new
+         *     "dialog" by sending an "out of band" message using the passed
+         *     {@link FCPPluginConnection}, as explained in the description of this function.<br/>
+         *     Consider the whole of this as a remote procedure call process: A non-reply message is
+         *     the procedure call, a reply message is the procedure result. When receiving the
+         *     result, the procedure call is finished, and shouldn't contain further replies.
+         *     <br><br>
          *         
-         *         You <b>should</b> always return a reply instead of null if you're allowed to,
-         *         even if you have got nothing to say:<br>
-         *         This allows the remote side to detect whether its requested operation succeeded
-         *         or failed because reply messages always have to specify success/failure.<br>
-         *         Notice: Even upon failure, a reply is better than saying nothing because it
-         *         allows {@link FCPPluginConnection#sendSynchronous(SendDirection,
-         *         FCPPluginMessage, long)} to fail fast instead of having to wait for timeout.
-         */
+         *      You <b>should</b> always return a reply instead of null if you're allowed to, even
+         *      if you have got nothing to say:<br>
+         *      This allows the remote side to detect whether its requested operation succeeded or
+         *      failed because reply messages always have to specify success/failure.<br>
+         *      Notice: Even upon failure, a reply is better than saying nothing because it allows
+         *      {@link FCPPluginConnection#sendSynchronous(SendDirection, FCPPluginMessage, long)}
+         *      to fail fast instead of having to wait for timeout. */
         @Override
         FCPPluginMessage handlePluginFCPMessage(
             FCPPluginConnection connection, FCPPluginMessage message);
@@ -271,9 +268,7 @@ public interface FredPluginFCPMessageHandler {
      * you are free to ignore this parameter and return the same priority for all messages.)
      */
     public interface PrioritizedMessageHandler {
-        /**
-         * @see PrioritizedMessageHandler
-         */
+        /** @see PrioritizedMessageHandler */
         public NativeThread.PriorityLevel getPriority(FCPPluginMessage message);
     }
 }
