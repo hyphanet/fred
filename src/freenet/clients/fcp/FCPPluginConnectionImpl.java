@@ -775,6 +775,16 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
                 }
                 
                 if(reply != null) {
+                    // TODO: Performance: The below checks might be converted to assert() or
+                    // be prefixed with if(logMINOR).
+                    // Not doing this now since the FredPluginFCPMessageHandler API which specifies
+                    // those requirements is new and thus quite a few client applications might be
+                    // converted to it soon, and do those beginners mistakes.
+                    // After everyone has gotten used to it, we can move to the more lax checking.
+                    // An alternate solution would be to not use the FCPPluginMessage object
+                    // which was returned by the message handler but always re-construct it to
+                    // follow the standards.
+
                     // Replying to replies is disallowed to prevent infinite bouncing.
                     if(message.isReplyMessage()) {
                         Logger.error(messageHandler, "FredPluginFCPMessageHandler tried to send a"
