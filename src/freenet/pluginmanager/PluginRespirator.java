@@ -179,7 +179,7 @@ public class PluginRespirator {
     /**
      * Allows FCP server plugins, that is plugins which implement
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}, to obtain an existing client
-     * connection by its {@link UUID} - if the client is still connected.<br><br>
+     * {@link FCPPluginConnection} by its {@link UUID} - if the client is still connected.<br><br>
      * 
      * <b>Must not</b> be used by client plugins: They shall instead keep a hard reference to the
      * {@link FCPPluginConnection} in memory after they have received it from
