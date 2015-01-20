@@ -23,8 +23,8 @@ public interface PersistentRandomSource {
      * {@link PersistentRandomSource}.
      * 
      * @param force
-     *            If false, the implementation might decide to ignore this function call if the
-     *            seed file was written to disk a short time ago already.
+     *     If false, the implementation might decide to ignore this function call if the seed file
+     *     was written to disk a short time ago already.
      */
     void write_seed(boolean force);
 
