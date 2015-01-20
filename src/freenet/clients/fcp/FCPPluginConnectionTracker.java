@@ -31,7 +31,8 @@ import freenet.support.io.NativeThread;
  * FCPPluginMessage)}.<br/>
  * This might not be sufficient for certain usecases: The reply to a message might take quite some
  * time to compute, possibly hours. Then a reference to the original client connection needs to be
- * stored in the plugin's database, not memory.<br/>
+ * stored in the plugin's database, not memory. A {@link FCPPluginConnection} cannot be
+ * serialized into a database, but an {@link UUID} can.<br>
  * Thus, this class exists to serve the purpose of allowing plugin servers to query client
  * connections by their ID (see {@link FCPPluginConnection#getID()}).</p>
  * 
