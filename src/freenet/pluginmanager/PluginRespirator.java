@@ -181,6 +181,12 @@ public class PluginRespirator {
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}, to obtain an existing client
      * {@link FCPPluginConnection} by its {@link UUID} - if the client is still connected.<br><br>
      * 
+     * May be used by servers which cannot store objects in memory, for example because they are
+     * using a database: An {@link UUID} can be serialized to disk, serialization would not be
+     * possible for a {@link FCPPluginConnection}.<br>
+     * Servers are however free to instead keep the {@link FCPPluginConnection} in memory, usage
+     * of this function is not mandatory.<br><br>
+     * 
      * <b>Must not</b> be used by client plugins: They shall instead keep a hard reference to the
      * {@link FCPPluginConnection} in memory after they have received it from
      * {@link #connectToOtherPlugin(String,
