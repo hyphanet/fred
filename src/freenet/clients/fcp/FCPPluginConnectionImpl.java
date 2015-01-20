@@ -203,8 +203,8 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
     
     /**
      * @see FCPPluginConnectionImpl#synchronousSends
-     *          An overview of how synchronous sends and especially their threading work internally
-     *          is provided at the map which stores them.
+     *     An overview of how synchronous sends and especially their threading work internally is
+     *     provided at the map which stores them.
      */
     private static final class SynchronousSend {
         /**
@@ -306,7 +306,7 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * 
      * @see #constructForNetworkedFCP(FCPPluginConnectionTracker, Executor, PluginManager, String,
      *      FCPConnectionHandler)
-     *          The public interface to this constructor.
+     *     The public interface to this constructor.
      */
     private FCPPluginConnectionImpl(FCPPluginConnectionTracker tracker, Executor executor,
             String serverPluginName, ServerSideFCPMessageHandler serverPlugin,
@@ -383,7 +383,7 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * 
      * @see #constructForIntraNodeFCP(FCPPluginConnectionTracker, Executor, PluginManager, String,
      *      ClientSideFCPMessageHandler)
-     *          The public interface to this constructor.
+     *     The public interface to this constructor.
      */
     private FCPPluginConnectionImpl(FCPPluginConnectionTracker tracker, Executor executor,
             String serverPluginName, ServerSideFCPMessageHandler server,
@@ -495,32 +495,33 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * server to be attached by network instead of always running locally in the same node as it
      * currently is. Also see below.<br>
      * 
-     * @return <p>True if the server plugin has been unloaded. Once this returns true, this
-     *         FCPPluginConnectionImpl <b>cannot</b> be repaired, even if the server plugin is
-     *         loaded again. Then you should discard this connection and create a fresh one.</p>
+     * @return
+     *     <p>True if the server plugin has been unloaded. Once this returns true, this
+     *     FCPPluginConnectionImpl <b>cannot</b> be repaired, even if the server plugin is loaded
+     *     again. Then you should discard this connection and create a fresh one.</p>
      * 
-     *         <p><b>ATTENTION:</b> Future implementations of {@link FCPPluginConnection} might
-     *         allow the server plugin to reside in a different node, and only be attached by
-     *         network. Due to the unreliability of network connections, then this function will not
-     *         be able to reliably detect whether the server is dead.<br>
-     *         To prepare for that, you <b>must not</b> assume that the connection to the
-     *         server is still fine just because this returns false = server is alive. Consider
-     *         false / server is alive merely an indication, true / server is dead as the definite
-     *         truth.<br>
-     *         If you need to validate a connection to be alive, send periodic pings. </p>
+     *     <p><b>ATTENTION:</b> Future implementations of {@link FCPPluginConnection} might allow
+     *     the server plugin to reside in a different node, and only be attached by network. Due to
+     *     the unreliability of network connections, then this function will not be able to reliably
+     *     detect whether the server is dead.<br>
+     *     To prepare for that, you <b>must not</b> assume that the connection to the server is
+     *     still fine just because this returns false = server is alive. Consider false / server is
+     *     alive merely an indication, true / server is dead as the definite truth.<br>
+     *     If you need to validate a connection to be alive, send periodic pings. </p>
      */
     boolean isServerDead() {
         return server.get() == null;
     }
     
     /**
-     * @return The permission level of the client, depending on things such as its IP address.<br>
-     *         For intra-node connections, it is {@link ClientPermissions#ACCESS_DIRECT}.<br><br>
+     * @return
+     *     The permission level of the client, depending on things such as its IP address.<br>
+     *     For intra-node connections, it is {@link ClientPermissions#ACCESS_DIRECT}.<br><br>
      * 
-     *         <b>ATTENTION:</b> The return value can change at any point in time, so you should
-     *         check this before deploying each FCP message.<br>
-     *         This is because the user is free to reconfigure IP-address restrictions on the node's
-     *         web interface whenever he wants to.
+     *     <b>ATTENTION:</b> The return value can change at any point in time, so you should check
+     *     this before deploying each FCP message.<br>
+     *     This is because the user is free to reconfigure IP-address restrictions on the node's web
+     *     interface whenever he wants to.
      */
     private ClientPermissions getCurrentClientPermissions() {
         if(clientConnection != null) { // Networked FCP
@@ -648,17 +649,17 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * This shall only be called for messages for which it was determined that the message handler
      * is a plugin running in the local VM.
      * 
-     * @return True if there was a thread waiting for the message and the message was dispatched
-     *         to it. You <b>must not</b> dispatch it to the {@link FredPluginFCPMessageHandler}
-     *         then.<br><br>
+     * @return
+     *     True if there was a thread waiting for the message and the message was dispatched to it.
+     *     You <b>must not</b> dispatch it to the {@link FredPluginFCPMessageHandler} then.<br><br>
      * 
-     *         False if there was no thread waiting for the message. You <b>must<b/> dispatch it
-     *         to the {@link FredPluginFCPMessageHandler} then.<br><br>
+     *     False if there was no thread waiting for the message. You <b>must<b/> dispatch it to the
+     *     {@link FredPluginFCPMessageHandler} then.<br><br>
      * 
-     *         (Both these rules are specified in the documentation of sendSynchronous().)
+     *     (Both these rules are specified in the documentation of sendSynchronous().)
      * @see FCPPluginConnectionImpl#synchronousSends
-     *          An overview of how synchronous sends and especially their threading work internally
-     *          is provided at the map which stores them.
+     *     An overview of how synchronous sends and especially their threading work internally is
+     *     provided at the map which stores them.
      */
     private boolean dispatchMessageLocallyToSendSynchronousThreadIfExisting(
             final SendDirection direction, final FCPPluginMessage message) {
@@ -1239,8 +1240,9 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
     /**
      * ATTENTION: For unit test use only.
      * 
-     * @return The size of the backend table {@link #synchronousSends} of
-     *         {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)}
+     * @return 
+     *     The size of the backend table {@link #synchronousSends} of
+     *     {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)}
      */
     int getSendSynchronousCount() {
         synchronousSendsLock.readLock().lock();
