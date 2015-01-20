@@ -1111,6 +1111,15 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
         @Override public UUID getID() {
             return connectionRef.connectionID;
         }
+        
+        @Override public String toString() {
+            String prefix = "SendToClientAdapter for ";
+            try {
+                return prefix + getConnection();
+            } catch(IOException e) {
+                return prefix + " FCPPluginConnectionImpl (" + e.getMessage() + ")";
+            }
+        }
     }
 
     /**
@@ -1146,6 +1155,10 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
 
         @Override public UUID getID() {
             return parent.getID();
+        }
+        
+        @Override public String toString() {
+            return "SendToServerAdapter for " + parent;
         }
     }
 
