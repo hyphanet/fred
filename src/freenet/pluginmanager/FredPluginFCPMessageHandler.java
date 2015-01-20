@@ -106,10 +106,7 @@ public interface FredPluginFCPMessageHandler {
         /**
          * <p>Is called to handle messages from your clients.<br/>
          * <b>Must not</b> block for very long and thus must only do small amounts of processing.
-         * <br/>
-         * You <b>must not</b> keep a hard reference to the passed {@link FCPPluginConnection}
-         * object outside of the scope of this function: This would prevent client plugins from
-         * being unloaded. See below for how to keep a reference to a client connection.</p>
+         * </p>
          * 
          * <p>If you ...<br/>
          * - Need a long time to compute a reply.<br/>
@@ -117,31 +114,28 @@ public interface FredPluginFCPMessageHandler {
          *   the client after having exited this function; maybe even triggered by events at your
          *   plugin, not by client messages.<br/>
          * Then you should:<br/>
-         * - Obtain the {@link UUID} of the client connection via {@link FCPPluginConnection#
-         *   getID()}, store the {@link UUID}, and exit this message handling function.<br/>
+         * - Store the passed {@link FCPPluginConnection}. If you cannot store objects in memory,
+         *   for example because you are using a database, you can get the {@link UUID} of the
+         *   connection via {@link FCPPluginConnection#getID()}, store only that, and then in the
+         *   future get back the connection using
+         *   {@link PluginRespirator#getPluginConnectionByID(UUID)}.<br>
          * - Compute your reply in another thread.</br>
-         * - Once you're ready to send the reply, use
-         *   {@link PluginRespirator#getPluginConnectionByID(UUID)} to obtain the original
-         *   {@link FCPPluginConnection}, and then send the message using the send functions of the
+         * - Once you're ready to send the reply, send the message using the send functions of the
          *   {@link FCPPluginConnection}.<br/>
-         * - If you keep client connection {@link UUID} for longer than sending a single reply, make
-         *   sure to prevent excessive growth of your connection database upon client disconnection
+         * - Notice that there is no explicit disconnection mechanism. Clients can come and go as
+         *   they please. The only way to be sure that a connection is alive is by checking whether
+         *   the client replies to messages.<br>
+         *   Thus, if you store client connections for longer than sending a single reply, make sure
+         *   to prevent excessive growth of your connection database upon client disconnection
          *   by implementing a garbage collection mechanism as follows:<br>
          *   Periodically send a message at each connection and check if you get a reply within a
          *   reasonable timeout to check whether the connection is still alive. Drop the connection
-         *   if not.<br>
-         *   Notice that there is no explicit disconnection mechanism. Clients can come and go as
-         *   they please. The only way to be sure that a connection is alive is by checking whether
-         *   the client replies to messages. You are encouraged to make a "Ping" message with a
-         *   "Pong" response a requirement for your server's protocol.<br>
+         *   if not. You may make a "Ping" message with a "Pong" response a requirement for your
+         *   server's protocol.<br>
          * </p>
          * 
          * @param connection
          *            The connection of the client which sent the message.<br/><br/>
-         *            You <b>must not</b> keep a hard reference to this object outside of the scope
-         *            of this function: This would prevent client plugins from being unloaded. See
-         *            the head of the documentation of this function for an explanation of how to
-         *            store a pointer to a certain client connection.<br/><br/>
          * 
          *            You <b>must not</b> use its send functions for sending back the main reply.
          *            Instead, use the return value for shipping the reply. (You are free to send

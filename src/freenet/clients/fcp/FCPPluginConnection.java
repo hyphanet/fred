@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -46,25 +47,34 @@ import freenet.support.api.Bucket;
  * to the message handler but only return them instead.<br><br>
  * 
  * 
- * <h2>Object lifecycle</h2>
- * <p>For each {@link #serverPluginName}, a single {@link FCPConnectionHandler} can only have a
- * single FCPPluginConnection with the plugin of that name as connection partner. This is enforced
- * by {@link FCPConnectionHandler#getFCPPluginConnection(String)}. In other words: One
- * {@link FCPConnectionHandler} can only have one connection to a certain plugin.<br/>
- * The reason for this is the following: Certain plugins might need to store the {@link UUID} of a
- * client connection in their database so they are able to send data to the client if an event of
- * interest to the client happens in the future. Therefore, the {@link UUID} of a connection must
- * not change during the lifetime of the connection. To ensure a permanent {@link UUID} of a
- * connection, only a single FCPPluginConnection can exist per server plugin per
- * {@link FCPConnectionHandler}.<br>
- * If you nevertheless need multiple connections to a plugin, you have to create multiple network
- * connections to the FCP server.<br/></p>
+ * <h1>Connection lifecycle</h1>
+ * <h2>Intra-node FCP - server and client both running within the same node as plugin</h2>
+ * The client plugin dictates connection and disconnection. Connections are opened by it via
+ * {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}. It keeps
+ * them open by keeping a strong reference to the FCPPluginConnection. Once it does not strongly
+ * reference it anymore, Freenet detects that by monitoring garbage collection, and considers the
+ * connection as closed then. A closed connection is indicated to the server plugin by the send
+ * functions throwing {@link IOException}.<br>
+ * <h2>Networked FCP - server is running in the node as plugin, client connects by network</h2>
+ * The client plugin again dictates connection and disconnection by opening and closing the FCP
+ * network connection as it pleases.<br>
+ * Additionally, a single network connection can only have a single FCPPluginConnection to each
+ * server plugin.<br>
+ * If you nevertheless need multiple connections to a plugin, you have to create multiple
+ * network connections to the FCP server.<br>
+ * (The reason for this is the following: Certain server plugins might need to store the
+ * {@link UUID} of a client connection in their database so they are able to send data to the client
+ * if an event of interest to the client happens in the future. Therefore, the {@link UUID} of a
+ * connection must not change during the lifetime of the connection. To ensure a permanent
+ * {@link UUID} of a connection, only a single FCPPluginConnection can exist per server plugin per
+ * network connection).
  * 
+ * <h2>Persistence</h2>
  * <p>
  * In opposite to a FCP connection to fred itself, which is represented by
  * {@link PersistentRequestClient} and can exist across restarts, a FCPPluginConnection is kept in
  * existence by fred only while the actual client is connected. In case of networked plugin FCP,
- * this is while the parent {@link FCPConnectionHandler} exists; or in case of non-networked plugin
+ * this is while the parent network connection is open; or in case of non-networked plugin
  * FCP, while the FCPPluginConnection is strong-referenced by the client plugin.<br>
  * There is no such thing as persistence beyond client disconnection / restarts.<br/>
  * This was decided to simplify implementation:<br/>
@@ -82,7 +92,7 @@ import freenet.support.api.Bucket;
  * 
  * If you plan to work on the fred-side implementation of FCP plugin connections, please see the
  * "Internals" section at the implementation {@link FCPPluginConnectionImpl} of this interface.
- * Notably, the said section provides an overview of the flow of messages.
+ * Notably, the said section provides an overview of the flow of messages.<br><br>
  * 
  * @author xor (xor@freenetproject.org)
  */
@@ -150,14 +160,9 @@ public interface FCPPluginConnection {
      * of the FCPPluginConnection they receive.
      * 
      * @param direction
-     *     Whether to send the message to the server or the client message handler.<br><br>
-     * 
-     *     While you <b>can</b> use this to send messages to yourself, be careful not to cause
-     *     thread deadlocks with this. The function will call your message handler function of
-     *     {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
-     *     FCPPluginMessage)} in <b>a different thread</b>, so it should not cause deadlocks on its
-     *     own, but you might produce deadlocks with your own thread synchronization measures.
-     *     <br><br>
+     *     Whether to send the message to the server or the client message handler.<br>
+     *     You <b>can</b> use this to send messages to yourself.<br>
+     *     You may use {@link #send(FCPPluginMessage)} to avoid having to specify this.<br><br>
      * 
      * @param message
      *     You <b>must not</b> send the same message twice: This can break {@link #sendSynchronous(
@@ -188,6 +193,31 @@ public interface FCPPluginConnection {
      *     message.
      */
     public void send(SendDirection direction, FCPPluginMessage message) throws IOException;
+
+    /**
+     * Same as {@link #send(SendDirection, FCPPluginMessage)} with the {@link SendDirection}
+     * parameter being the default direction.<br>
+     * <b>Please do read its JavaDoc as it contains a very precise specification how to use it and
+     * thereby also this function.</b><br><br>
+     * 
+     * The default direction is determined automatically depending on whether you are a client or
+     * server.<br><br>
+     * 
+     * You are acting as a client, and thus by default send to the server, when you obtain a
+     * FCPPluginConnection...:<br>
+     * - from the return value of
+     *   {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}.<br>
+     * - as parameter to your message handler callback {@link ClientSideFCPMessageHandler#
+     *   handlePluginFCPMessage(FCPPluginConnection, FCPPluginMessage)}.<br><br>
+     * 
+     * You are acting as a server, and thus by default send to the client, when you obtain a
+     * FCPPluginConnection...:<br>
+     * - as parameter to your message handler callback {@link ServerSideFCPMessageHandler#
+     *   handlePluginFCPMessage(FCPPluginConnection, FCPPluginMessage)}.<br>
+     * - from the return value of {@link PluginRespirator#getPluginConnectionByID(UUID)}.<br>
+     */
+    public void send(FCPPluginMessage message) throws IOException;
+
 
     /**
      * Can be used by both server and client implementations to send messages in a blocking
@@ -271,14 +301,10 @@ public interface FCPPluginConnection {
      * of the FCPPluginConnection they receive.<br><br>
      * 
      * @param direction
-     *     Whether to send the message to the server or the client message handler.<br><br>
-     * 
-     *     While you <b>can</b> use this to send messages to yourself, be careful not to cause
-     *     thread deadlocks with this. The function will call your message handler function of
-     *     {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
-     *     FCPPluginMessage)} in <b>a different thread</b>, so it should not cause deadlocks on its
-     *     own, but you might produce deadlocks with your own thread synchronization measures.
-     *     <br><br>
+     *     Whether to send the message to the server or the client message handler.<br>
+     *     You <b>can</b> use this to send messages to yourself.<br>
+     *     You may use {@link #sendSynchronous(FCPPluginMessage, long)} to avoid having to specify
+     *     this.<br><br>
      * 
      * @param message
      *     <b>Must be</b> constructed using {@link FCPPluginMessage#construct(SimpleFieldSet,
@@ -352,18 +378,23 @@ public interface FCPPluginConnection {
             throws IOException, InterruptedException;
 
     /**
+     * Same as {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)} with the
+     * {@link SendDirection} parameter being the default direction.<br>
+     * <b>Please do read its JavaDoc as it contains a very precise specification how to use it and
+     * thereby also this function.</b><br><br>
+     * 
+     * For an explanation of how the default send direction is determined, see
+     * {@link #send(FCPPluginMessage)}.
+     */
+    public FCPPluginMessage sendSynchronous(FCPPluginMessage message, long timeoutNanoSeconds)
+        throws IOException, InterruptedException;
+
+
+    /**
      * @return A unique identifier among all FCPPluginConnections.
      * @see The ID can be used with {@link PluginRespirator#getPluginConnectionByID(UUID)}.
      */
     public UUID getID();
-
-    /**
-     * The class name of the FCP server plugin to which this FCPPluginConnection is connected.<br>
-     * This is what was specified for the parameter <code>String pluginName</code> by the client
-     * when connecting by calling {@link PluginRespirator#connectToOtherPlugin(String,
-     * ClientSideFCPMessageHandler)}.
-     */
-    public String getServerPluginName();
 
     /** @return A verbose String containing the internal state. Useful for debug logs. */
     public String toString();

@@ -12,13 +12,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import freenet.clients.fcp.FCPPluginConnection.SendDirection;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
 /**
- * <p>Keeps a list of all {@link FCPPluginConnection}s which are connected to server plugins running
- * in the node. Allows the server plugins to query a client connection by its {@link UUID}.</p>
+ * Keeps a list of all {@link FCPPluginConnectionImpl}s which are connected to server plugins
+ * running in the node. Allows the server plugins to query a client connection by its {@link UUID}.
+ * <br><br>
  * 
  * <p>To understand the purpose of this, please consider the following:<br/>
  * The normal flow of plugin FCP is that clients send messages to a server plugin, and the server
@@ -27,7 +31,8 @@ import freenet.support.io.NativeThread;
  * FCPPluginMessage)}.<br/>
  * This might not be sufficient for certain usecases: The reply to a message might take quite some
  * time to compute, possibly hours. Then a reference to the original client connection needs to be
- * stored in the plugin's database, not memory.<br/>
+ * stored in the plugin's database, not memory. A {@link FCPPluginConnection} cannot be
+ * serialized into a database, but an {@link UUID} can.<br>
  * Thus, this class exists to serve the purpose of allowing plugin servers to query client
  * connections by their ID (see {@link FCPPluginConnection#getID()}).</p>
  * 
@@ -69,8 +74,8 @@ final class FCPPluginConnectionTracker extends NativeThread {
      * Queue which monitors nulled weak references in {@link #connectionsByID}.<br>
      * Monitored in {@link #realRun()}.
      */
-    private final ReferenceQueue<FCPPluginConnection> closedConnectionsQueue
-        = new ReferenceQueue<FCPPluginConnection>();
+    private final ReferenceQueue<FCPPluginConnectionImpl> closedConnectionsQueue
+        = new ReferenceQueue<FCPPluginConnectionImpl>();
 
 
     /**
@@ -80,13 +85,13 @@ final class FCPPluginConnectionTracker extends NativeThread {
      * from the {@link TreeMap}. For fast removal, we need their key in the map, which is the
      * connection ID, so we should store it in the {@link WeakReference}.
      */
-    private static final class ConnectionWeakReference
-            extends WeakReference<FCPPluginConnection> {
+    static final class ConnectionWeakReference
+            extends WeakReference<FCPPluginConnectionImpl> {
 
         public final UUID connectionID;
 
-        public ConnectionWeakReference(FCPPluginConnection referent,
-                ReferenceQueue<FCPPluginConnection> referenceQueue) {
+        public ConnectionWeakReference(FCPPluginConnectionImpl referent,
+                ReferenceQueue<FCPPluginConnectionImpl> referenceQueue) {
             
             super(referent, referenceQueue);
             connectionID = referent.getID();
@@ -94,16 +99,16 @@ final class FCPPluginConnectionTracker extends NativeThread {
     }
 
     /**
-     * Stores the {@link FCPPluginConnection} so in the future it can be obtained by its ID with
+     * Stores the {@link FCPPluginConnectionImpl} so in the future it can be obtained by its ID with
      * {@link #getConnection(UUID)}.
      * 
-     * <b>Must</b> be called for any newly created {@link FCPPluginConnection} before passing it to
-     * {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
+     * <b>Must</b> be called for any newly created {@link FCPPluginConnectionImpl} before passing it
+     * to {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      * FCPPluginMessage)}.
      * 
      * Unregistration is not supported and not necessary.
      */
-   void registerConnection(FCPPluginConnection connection) {
+   void registerConnection(FCPPluginConnectionImpl connection) {
         connectionsByIDLock.writeLock().lock();
         try {
             // No duplicate checks needed: FCPPluginConnection.getID() is a random UUID.
@@ -115,19 +120,33 @@ final class FCPPluginConnectionTracker extends NativeThread {
     }
 
     /**
-     * For being used by implementors of {@link ServerSideFCPMessageHandler}.<br/>
-     * NOT for being used by clients: If you are a client using a {@link FCPPluginConnection} to
-     * connect to a server plugin, you have to keep a reference to the {@link FCPPluginConnection}
-     * in memory.
+     * For being indirectly exposed to implementors of server plugins, i.e. implementors of
+     * {@link ServerSideFCPMessageHandler}.<br/>
+     * NOT for being used by clients: Clients using a {@link FCPPluginConnection} to connect to a
+     * server plugin have to keep a reference to the {@link FCPPluginConnection} in memory.
+     * See {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}.
      * <br/>
      * This is necessary because this class only keeps {@link WeakReference}s to the
-     * {@link FCPPluginConnection} objects. Once they are not referenced by a strong reference,
+     * {@link FCPPluginConnection} objects. Once they are not referenced by a strong reference
      * anymore they will be garbage collected and thus considered as disconnected.<br/>
-     * The job of keeping the strong references is at the client.
+     * The job of keeping the strong references is at the client.<br><br>
+     * 
+     * ATTENTION:<br>
+     * The returned FCPPluginConnectionImpl objects class shall not be handed out directly to server
+     * applications. Instead, only hand out a {@link DefaultSendDirectionAdapter} - which can be
+     * obtained by {@link FCPPluginConnectionImpl#getDefaultSendDirectionAdapter(SendDirection)}.
+     * <br>This has two reasons:<br>
+     * - The send functions which do not require a {@link SendDirection} will always throw an
+     *   exception without an adapter ({@link #send(FCPPluginMessage)} and
+     *   {@link #sendSynchronous(FCPPluginMessage, long)}).<br>
+     * - Server plugins must not keep a strong reference to the FCPPluginConnectionImpl
+     *   to ensure that the client disconnection mechanism of monitoring garbage collection works.
+     *   The adapter prevents servers from keeping a strong reference by internally only keeping a
+     *   {@link WeakReference} to the FCPPluginConnectionImpl.<br>
      * 
      * @param connectionID
      *     The value of {@link FCPPluginConnection#getID()} of a client connection which has already
-     *     sent a message to your plugin via
+     *     sent a message to the server plugin via
      *     {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      *     FCPPluginMessage)}.
      * @return
@@ -135,24 +154,38 @@ final class FCPPluginConnectionTracker extends NativeThread {
      * @throws IOException
      *     If there has been no connection with the given ID or if the client has disconnected.
      */
-    public FCPPluginConnection getConnection(UUID connectionID) throws IOException {
-        ConnectionWeakReference ref = null;
+    public FCPPluginConnectionImpl getConnection(UUID connectionID) throws IOException {
+        ConnectionWeakReference ref = getConnectionWeakReference(connectionID);
+
+        FCPPluginConnectionImpl connection = ref.get();
+        
+        if(connection == null) {
+            throw new IOException("Client has closed the connection. "
+                                + "Connection ID = " + connectionID);
+        }
+        
+        return connection;
+    }
+    
+    /**
+     * Same as {@link #getConnection(UUID)} with the only difference of returning a
+     * {@link WeakReference} to the connection instead of the connection itself.<br>
+     * <b>Please do read its JavaDoc to understand when to use this!</b>
+     */
+    ConnectionWeakReference getConnectionWeakReference(UUID connectionID)
+            throws IOException {
         
         connectionsByIDLock.readLock().lock();
         try {
-            ref = connectionsByID.get(connectionID);
+            ConnectionWeakReference ref = connectionsByID.get(connectionID);
+            if(ref != null)
+                return ref;
         } finally {
             connectionsByIDLock.readLock().unlock();
         }
         
-        FCPPluginConnection connection = ref != null ? ref.get() : null;
-        
-        if(connection == null) {
-            throw new IOException("FCPPluginConnection not found, maybe client has disconnected."
-                + " Connection ID: " + connectionID);
-        }
-        
-        return connection;
+        throw new IOException("FCPPluginConnection not found, maybe client has disconnected."
+                            + " Connection ID: " + connectionID);
     }
 
 
@@ -168,7 +201,10 @@ final class FCPPluginConnectionTracker extends NativeThread {
     /**
      * Garbage-collection thread: Polls {@link #closedConnectionsQueue} for connections whose
      * {@link WeakReference} has been nulled and removes them from the {@link #connectionsByID}
-     * {@link TreeMap}.
+     * {@link TreeMap}.<br><br>
+     * 
+     * Notice: Do not call this function directly. To execute this, call {@link #start()}.
+     * This function is merely public because this class extends {@link NativeThread}.
      */
     @Override
     public void realRun() {

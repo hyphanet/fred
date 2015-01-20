@@ -27,6 +27,7 @@ import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
 import freenet.clients.fcp.ClientGet.ReturnType;
 import freenet.clients.fcp.ClientRequest.Persistence;
+import freenet.clients.fcp.FCPPluginConnection.SendDirection;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -71,8 +72,8 @@ public class FCPServer implements Runnable, DownloadCache {
 	String bindTo;
 	private String allowedHosts;
 	AllowedHosts allowedHostsFullAccess;
-    /** Stores {@link FCPPluginConnection} objects by ID and automatically garbage collects them so
-     *  we don't have to bloat this class with that. */
+    /** Stores {@link FCPPluginConnectionImpl} objects by ID and automatically garbage collects them
+     *  so we don't have to bloat this class with that. */
 	final FCPPluginConnectionTracker pluginConnectionTracker;
 	final WeakHashMap<String, PersistentRequestClient> rebootClientsByName;
 	final PersistentRequestClient globalRebootClient;
@@ -498,13 +499,15 @@ public class FCPServer implements Runnable, DownloadCache {
             throws PluginNotFoundException {
         
         FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForNetworkedFCP(
-            node.executor, node.pluginManager, serverPluginName, messageHandler);
-        pluginConnectionTracker.registerConnection(connection);
+            pluginConnectionTracker, node.executor, node.pluginManager,
+            serverPluginName, messageHandler);
+        // The constructor function already did this for us
+        /* pluginConnectionTracker.registerConnection(connection); */
         return connection;
     }
 
     /**
-     * <p>Creates and registers a {@link FCPPluginConnectionImpl} object for FCP connections between
+     * <p>Creates and registers a {@link FCPPluginConnection} object for FCP connections between
      * plugins running within the same node.<br/>
      * In other words, the actual client application is NOT connected to the node by network, it is
      * a plugin running within the node just like the server.</p>
@@ -522,29 +525,44 @@ public class FCPServer implements Runnable, DownloadCache {
      * {@link PluginRespirator#connectToOtherPlugin(String,
      * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}. Plugins must use that instead.</p>
      * 
+     * ATTENTION: Since this function is only to be used by the aforementioned connectToPlugin()
+     * which in turn is only to be used by clients, the returned connection will have a default send
+     * direction of {@link SendDirection#ToServer}.
+     * 
      * @see FCPPluginConnectionImpl
      *     The class JavaDoc of FCPPluginConnectionImpl explains the code path for both networked
      *     and non-networked FCP.
      */
-    public final FCPPluginConnectionImpl createFCPPluginConnectionForIntraNodeFCP(
+    public final FCPPluginConnection createFCPPluginConnectionForIntraNodeFCP(
             String serverPluginName, ClientSideFCPMessageHandler messageHandler)
                 throws PluginNotFoundException {
         
         FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForIntraNodeFCP(
-            node.executor, node.pluginManager, serverPluginName, messageHandler);
-        pluginConnectionTracker.registerConnection(connection);
-        return connection;
+            pluginConnectionTracker, node.executor, node.pluginManager,
+            serverPluginName, messageHandler);
+        // The constructor function already did this for us
+        /* pluginConnectionTracker.registerConnection(connection); */
+        return connection.getDefaultSendDirectionAdapter(SendDirection.ToServer);
     }
 
     /**
      * <p><b>The documentation of {@link FCPPluginConnectionTracker#getConnection(UUID)} applies to
      * this function.</b></p>
      * 
+     * ATTENTION: Only for internal use by the frontend function
+     * {@link PluginRespirator#getPluginConnectionByID(UUID)}. Plugins must use that instead.<br>
+     * <br>
+     * 
+     * ATTENTION: Since this function is only to be used by the aforementioned
+     * getPluginConnectionByID() which in turn is only to be used by servers, the returned
+     * connection will have a default send direction of {@link SendDirection#ToClient}.
+     * 
      * @see FCPPluginConnectionTracker
      *     The JavaDoc of FCPPluginConnectionTracker explains the general purpose of this mechanism.
      */
     public final FCPPluginConnection getPluginConnectionByID(UUID connectionID) throws IOException {
-        return pluginConnectionTracker.getConnection(connectionID);
+        return pluginConnectionTracker.getConnection(connectionID)
+                                      .getDefaultSendDirectionAdapter(SendDirection.ToClient);
     }
 
 	public PersistentRequestClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {

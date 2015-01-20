@@ -21,7 +21,9 @@ import freenet.client.async.PersistentJob;
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.node.RequestClient;
+import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginNotFoundException;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -79,7 +81,16 @@ public class FCPConnectionHandler implements Closeable {
 	final HashMap<String, ClientRequest> requestsByIdentifier;
 
     /**
-     * {@link FCPPluginConnectionImpl} indexed by {@link FCPPluginConnection#getServerPluginName()}.
+     * {@link FCPPluginConnectionImpl} indexed by the server plugin name (see
+     * {@link PluginManager#getPluginFCPServer(String)}.<br><br>
+     * 
+     * This also serves the same purpose as the client which is connected to this would normally
+     * be responsible for if it was running as a plugin in the node (as specified by
+     * {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}):<br>
+     * It keeps strong references to the {@link FCPPluginConnectionImpl} objects, and thereby marks
+     * them as alive.<br>
+     * This in turn causes the {@link FCPPluginConnectionImpl} objects to stay available in the
+     * {@link FCPPluginConnectionTracker}, which allows server plugins to query them by their ID.
      */
     private final TreeMap<String, FCPPluginConnectionImpl> pluginConnectionsByServerName
         = new TreeMap<String, FCPPluginConnectionImpl>();
@@ -628,7 +639,7 @@ public class FCPConnectionHandler implements Closeable {
     /**
      * @return
      *     The {@link FCPPluginConnection} for the given serverPluginName (see
-     *     {@link FCPPluginConnection#getServerPluginName()}). Atomically creates and stores it if
+     *     {@link PluginManager#getPluginFCPServer(String)}). Atomically creates and stores it if
      *     there does not exist one yet. This ensures that for each FCPConnectionHandler, there can
      *     be only one {@link FCPPluginConnection} for a given serverPluginName.
      * @throws PluginNotFoundException
