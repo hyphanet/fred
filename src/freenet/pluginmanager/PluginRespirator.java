@@ -207,8 +207,8 @@ public class PluginRespirator {
      * @return
      *     The client connection if it is still connected.
      * @throws IOException
-     *     If there has been no client connection with the given ID or if it has disconnected
-     *     already.<br>
+     *     If there has been no client connection with the given ID or if the client has
+     *     disconnected already.<br>
      *     If this happens, you should consider the connection {@link UUID} as invalid forever and
      *     discard it. */
     public FCPPluginConnection getPluginConnectionByID(UUID connectionID) throws IOException {
