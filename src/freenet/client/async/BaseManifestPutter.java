@@ -1469,7 +1469,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		public ContainerBuilder makeSubContainer(String name) {
 			ContainerBuilder subCon = new ContainerBuilder(selfHandle, name);
-			currentDir.put(name , subCon.selfHandle);
+			currentDir.put(name, subCon.selfHandle);
 			putHandlersTransformMap.put(subCon.selfHandle, currentDir);
 			perContainerPutHandlersWaitingForMetadata.get(selfHandle).add(subCon.selfHandle);
 			return subCon;
@@ -1556,7 +1556,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
                 manifestEntries.put(name, o);
             } else if(o instanceof Bucket) {
                 RandomAccessBucket data = (RandomAccessBucket) o;
-                manifestEntries.put(name, new ManifestElement(name, data, null,data.size()));
+                manifestEntries.put(name, new ManifestElement(name, data, null, data.size()));
             } else if(o instanceof HashMap) {
                 manifestEntries.put(name, bucketsByNameToManifestEntries(Metadata.forceMap(o)));
             } else
