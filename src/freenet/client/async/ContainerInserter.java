@@ -340,7 +340,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
 				smc.addItem(name, (Metadata)o);
 			} else {
 				ManifestElement element = (ManifestElement) o;
-				String mimeType = element.mimeOverride;
+				String mimeType = element.getMimeType();
 				ClientMetadata cm;
 				if(mimeType == null || mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
 					cm = null;

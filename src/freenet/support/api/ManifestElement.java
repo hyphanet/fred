@@ -6,6 +6,7 @@ package freenet.support.api;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
+import freenet.client.DefaultMIMETypes;
 import freenet.keys.FreenetURI;
 import freenet.support.io.ResumeFailedException;
 
@@ -123,6 +124,15 @@ public class ManifestElement implements Serializable {
 
 	public String getMimeTypeOverride() {
 		return mimeOverride;
+	}
+	/**
+	 * A MIME type to feed into ClientMetadata.
+	 */
+	public String getMimeType() {
+		String mimeType = mimeOverride;
+		if((mimeOverride == null) && (name != null))
+			mimeType = DefaultMIMETypes.guessMIMEType(name, true);
+		return mimeType;
 	}
 
 	public RandomAccessBucket getData() {
