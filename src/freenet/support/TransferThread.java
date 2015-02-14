@@ -29,8 +29,15 @@ import freenet.support.io.TempBucketFactory;
  * When calling <code>start()</code>, the thread will iterate the first time after <code>getStartupDelay()</code> milliseconds.
  * After each iteration, it will sleep for <code>getSleepTime()</code> milliseconds.
  * 
+ * @deprecated
+ *     This class uses {@link TrivialTicker} in a bogus way.
+ *     See <a href="https://bugs.freenetproject.org/view.php?id=6423">issue 6423</a>.<br>
+ *     The Web Of Trust plugin contains a bugfixed version, please use that one instead.<br>
+ *     (The fixed version was not moved to fred because TransferThread is only used by WOT and
+ *     Freetalk, not by fred itself. Thus it should probably be moved to a common library.)
  * @author xor
  */
+@Deprecated
 public abstract class TransferThread implements PrioRunnable, ClientGetCallback, ClientPutCallback {
 	
 	private final String mName;
