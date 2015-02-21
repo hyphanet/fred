@@ -179,7 +179,10 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * NOTICE: If you do implement this, make sure to not rewrite the ReferenceQueue polling thread
      *         but instead base it upon {@link FCPPluginConnectionTracker}. You should probably
      *         extract a generic class WeakValueMap from that one and use to to power both the
-     *         existing class and the one which deals with this variable here.
+     *         existing class and the one which deals with this variable here.<br>
+     *         Also, once you've implemented ReferenceQueue monitoring, remove
+     *         {@link #isServerDead()} as it only was added for the opportunistic cleaning due to
+     *         lack of a ReferenceQueue and is an ugly function besides that.
      * </p>
      * @see #isServerDead() Use isServerDead() to check whether this WeakReference is nulled.
      */
