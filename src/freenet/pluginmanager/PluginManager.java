@@ -880,14 +880,16 @@ public class PluginManager {
 	}
 
 	/**
-	 * look for PluginInfo for a Plugin with given classname
-	 * @param plugname
+     * Look for PluginInfo for a Plugin with given classname or filename.
+     * 
 	 * @return the PluginInfo or null if not found
-     * @deprecated As opposed to its JavaDoc, this function will also return plugins with a matching
-     *             filename, no only class name.
-     *             To fix this ambiguity, instead use either
-     *             {@link #getPluginInfoByClassName(String)} or
-     *             {@link #getPluginInfoByFileName(String)}.
+     * @deprecated
+     *     This function was deprecated because the "or filename" part of the function specification
+     *     was NOT documented before it was deprecated. Thus it is possible that legacy callers of
+     *     the function did wrongly expect or not expect that. When removing this function, please
+     *     review the callers for correctness with regards to that.<br>
+     *     You might replace usage of this function with
+     *     {@link #getPluginInfoByClassName(String)} or {@link #getPluginInfoByFileName(String)}.
 	 */
     @Deprecated
 	public PluginInfoWrapper getPluginInfo(String plugname) {
