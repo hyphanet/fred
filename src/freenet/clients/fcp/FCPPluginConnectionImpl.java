@@ -154,7 +154,6 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
 
     /**
      * The class name of the plugin to which this FCPPluginConnectionImpl is connected.
-     * @see #getServerPluginName()
      */
     private final String serverPluginName;
 
