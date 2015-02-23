@@ -798,7 +798,7 @@ public class OpennetManager {
 	 * How many opennet peers do we have?
 	 * Connected but out of date nodes don't count towards the connection limit. Let them connect for
 	 * long enough to auto-update. They will be disconnected eventually, and then removed:
-	 * @see OpennetPeerNode.shouldDisconnectAndRemoveNow()
+	 * @see OpennetPeerNode#shouldDisconnectAndRemoveNow()
 	 */
 	synchronized public int getSize(LinkLengthClass distance) {
 		int x = 0;

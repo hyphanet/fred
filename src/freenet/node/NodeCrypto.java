@@ -581,7 +581,7 @@ public class NodeCrypto {
 	/** If oneConnectionPerAddress is not set, but there are peers with the same
 	 * IP for which it is set, disconnect them.
 	 * @param peerNode
-	 * @param freenetAddress
+	 * @param address
 	 */
 	public void maybeBootConnection(PeerNode peerNode,
 			FreenetInetAddress address) {

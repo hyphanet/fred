@@ -48,7 +48,7 @@ public class InsertContext implements Cloneable, Serializable {
 	/** a string that contains the codecs to use/try
 	 * if the string is null it defaults to COMPRESSOR_TYPES.Values(),
 	 * so old persistent inserts are not affected after update.
-	 * @see Compressor.COMPRESSOR_TYPES#getCompressorsArray(String compressordescriptor)
+	 * @see freenet.support.compress.Compressor.COMPRESSOR_TYPE#getCompressorsArray(String compressordescriptor, boolean pre1254)
 	 */
 	public String compressorDescriptor;
 	public boolean forkOnCacheable;

@@ -99,7 +99,6 @@ public final class BinaryBlobWriter {
 
 	/**
 	 * finalize the return bucket
-	 * @return
 	 * @throws IOException
 	 * @throws BinaryBlobAlreadyClosedException 
 	 */

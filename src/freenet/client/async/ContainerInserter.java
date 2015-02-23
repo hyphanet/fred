@@ -89,14 +89,19 @@ public class ContainerInserter implements ClientPutState, Serializable {
 	/**
 	 * Insert a bunch of files as single Archive with .metadata
 	 * 
-	 * @param metadata2 
-	 * @param archiveType2 
+	 * @param parent2
+	 * @param cb2
+	 * @param metadata2
 	 * @param targetURI2 The caller need to clone it for persistance
-	 * @param token2 
-	 * @param getCHKOnly2 
-	 * @param earlyEncode2 
-	 * @param ctx2 
-	 * @param reportMetadataOnly2 
+	 * @param ctx2
+	 * @param dontCompress2
+	 * @param reportMetadataOnly2
+	 * @param token2
+	 * @param archiveType2
+	 * @param freeData
+	 * @param forceCryptoKey
+	 * @param cryptoAlgorithm
+	 * @param realTimeFlag
 	 * 
 	 */
 	public ContainerInserter(

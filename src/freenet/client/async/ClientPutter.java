@@ -97,12 +97,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param targetURI
 	 * @param cm
 	 * @param ctx
-	 * @param scheduler
 	 * @param priorityClass
-	 * @param getCHKOnly
 	 * @param isMetadata
-	 * @param clientContext The client object for purposs of round-robin client balancing.
 	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
+	 * @param binaryBlob
+	 * @param context The client object for purposs of round-robin client balancing.
+	 * @param overrideSplitfileCrypto
+	 * @param metadataThreshold
 	 */
 	public ClientPutter(ClientPutCallback client, RandomAccessBucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass,

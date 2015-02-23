@@ -44,7 +44,6 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * What keys are we interested in? For purposes of checking the datastore.
 	 * This is in SendableGet, *not* KeyListener, in order to deal with it in
 	 * smaller chunks.
-	 * @param container Database handle.
 	 */
 	public abstract Key[] listKeys();
 

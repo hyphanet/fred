@@ -1755,7 +1755,7 @@ public class Metadata implements Cloneable, Serializable {
 
 		/**
 		 * Add an item to the manifest
-		 * @param String the item name
+		 * @param name the item name
 		 * @param item
 		 */
 		public void addItem(String name, Metadata item) {

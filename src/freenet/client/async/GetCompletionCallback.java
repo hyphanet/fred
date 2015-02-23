@@ -30,7 +30,7 @@ public interface GetCompletionCallback {
 	 * ClientGetState.
 	 * @param oldState The old ClientGetState.
 	 * @param newState The new ClientGetState.
-	 * @param container The database handle. Must not be used by other threads.
+	 * @param context The database handle. Must not be used by other threads.
 	 */
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context);
 
@@ -38,7 +38,6 @@ public interface GetCompletionCallback {
 	 * which is called for new metadata and gives more information. This might be called 
 	 * much later on for older content.
 	 * @param size The expected size of the final data.
-	 * @param container The database handle. Must not be used by other threads.
 	 * @param context Utility object containing helpers, mostly not persistent, such as the Ticker, temporary storage factories etc.
 	 */
 	public void onExpectedSize(long size, ClientContext context);
@@ -46,9 +45,8 @@ public interface GetCompletionCallback {
 	/**
 	 * Called when we know the MIME type of the final data. Useful for e.g. determining whether it
 	 * is safe to handle etc, although the client can ask for the client layer to handle filtering.
-	 * @param mime The MIME type, possibly including parameters, as a String. 
+	 * @param metadata The MIME type, possibly including parameters, as a String. 
 	 * E.g. "text/html; charset=ISO-8859-1".
-	 * @param container The database handle. Must not be used by other threads.
 	 * @param context Utility object containing helpers, mostly not persistent, such as the Ticker, temporary storage factories etc.
 	 * @throws FetchException The callee can throw a FetchException to terminate the download e.g.
 	 * if they can't handle the MIME type.
@@ -64,7 +62,6 @@ public interface GetCompletionCallback {
 	 * @param compressed The size of the data after compression / before decompression.
 	 * @param blocksReq The number of blocks needed to decode the file.
 	 * @param blocksTotal The total number of blocks available.
-	 * @param container The database handle. Must not be used by other threads.
 	 * @param context Utility object containing helpers, mostly not persistent, such as the Ticker, temporary storage factories etc.
 	 */
 	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ClientContext context);
@@ -80,7 +77,6 @@ public interface GetCompletionCallback {
 	 * the metadata to fetch the file (this can recurse for several levels!)
 	 * @param definitiveAnyway Whether this report is definitive even though it's not from the bottom layer. This is true of recent splitfiles, 
 	 * where we store all the data in the top key.
-	 * @param container The database handle. Must not be used by other threads.
 	 * @param context Utility object containing helpers, mostly not persistent, such as the Ticker, temporary storage factories etc.
 	 */
 	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] customSplitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ClientContext context);
@@ -90,7 +86,6 @@ public interface GetCompletionCallback {
 	 * fetch it, so is guaranteed to be correct. For recent metadata this is known at the top 
 	 * layer/block.
 	 * @param hashes A set of hashes for the final file content.
-	 * @param container The database handle. Must not be used by other threads.
 	 * @param context Utility object containing helpers, mostly not persistent, such as the Ticker, temporary storage factories etc.
 	 */
 	public void onHashes(HashResult[] hashes, ClientContext context);

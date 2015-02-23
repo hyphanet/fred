@@ -84,7 +84,6 @@ public class BulkTransmitter {
 	 * @param prb The PartiallyReceivedBulk containing the file we want to send, or the part of it that we have so far.
 	 * @param peer The peer we want to send it to.
 	 * @param uid The unique identifier for this data transfer
-	 * @param masterThrottle The overall output throttle
 	 * @param noWait If true, don't wait for an FNPBulkReceivedAll, return as soon as we've sent everything.
 	 * @throws DisconnectedException If the peer we are trying to send to becomes disconnected.
 	 */
