@@ -272,8 +272,27 @@ public class BookmarkEditorToadlet extends Toadlet {
 						if(core.node.getDarknetConnections().length > 0 && ("addItem".equals(action) || "share".equals(action))) {
 							form.addChild("br");
 							form.addChild("br");
+							if (core.node.isFProxyJavascriptEnabled()) {
+								StringBuilder jsBuf = new StringBuilder();
+								// copypaste javascript from http://stackoverflow.com/a/7251104/7666
+								jsBuf.append( "  function checkAll(bx) {\n" );
+								jsBuf.append( "    var cbs = document.getElementsByClassName(\"darknet_connections\")[0].getElementsByTagName(\"input\");\n" );
+								jsBuf.append( "	   for(var i=0; i < cbs.length; i++) {\n" );
+								jsBuf.append( "	     if(cbs[i].type == \"checkbox\") {\n" );
+								jsBuf.append( "	       cbs[i].checked = bx.checked;\n" );
+								jsBuf.append( "	     }\n" );
+								jsBuf.append( "    }\n" );
+								jsBuf.append( "  }\n" );
+								form.addChild("script", "type", "text/javascript").addChild("%", jsBuf.toString());
+							}
 							HTMLNode peerTable = form.addChild("table", "class", "darknet_connections");
-							peerTable.addChild("th", "colspan", "2", NodeL10n.getBase().getString("QueueToadlet.recommendToFriends"));
+							if (core.node.isFProxyJavascriptEnabled()) {
+								HTMLNode headerRow = peerTable.addChild("tr");
+								headerRow.addChild("th").addChild("input", new String[] { "type", "onclick" }, new String[] { "checkbox", "checkAll(this)" });
+								headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.recommendToFriends"));
+							} else {
+								peerTable.addChild("tr").addChild("th", "colspan", "2", NodeL10n.getBase().getString("QueueToadlet.recommendToFriends"));
+							}
 							for(DarknetPeerNode peer : core.node.getDarknetConnections()) {
 								HTMLNode peerRow = peerTable.addChild("tr", "class", "darknet_connections_normal");
 								peerRow.addChild("td", "class", "peer-marker").addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "node_" + peer.hashCode() });

@@ -395,6 +395,15 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				jsBuf.append( "    }\n" );
 				jsBuf.append( "    theobj.value=\"update_notes\";\n" );
 				jsBuf.append( "  }\n" );
+				// copypaste javascript from http://stackoverflow.com/a/7251104/7666
+				jsBuf.append( "  function checkAll(bx) {\n" );
+				jsBuf.append( "    var cbs = document.getElementsByClassName(\"darknet_connections\")[0].getElementsByTagName(\"input\");\n" );
+				jsBuf.append( "	   for(var i=0; i < cbs.length; i++) {\n" );
+				jsBuf.append( "	     if(cbs[i].type == \"checkbox\") {\n" );
+				jsBuf.append( "	       cbs[i].checked = bx.checked;\n" );
+				jsBuf.append( "	     }\n" );
+				jsBuf.append( "    }\n" );
+				jsBuf.append( "  }\n" );
 				contentNode.addChild("script", "type", "text/javascript").addChild("%", jsBuf.toString());
 			}
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -431,8 +440,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTable = peerTableInfoboxContent.addChild("table", "class", "darknet_connections");
 				}
 				HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
-				if(enablePeerActions)
-					peerTableHeaderRow.addChild("th");
+				if(enablePeerActions) {
+					if(fProxyJavascriptEnabled) {
+						peerTableHeaderRow.addChild("th").addChild("input", new String[] { "type", "onclick" }, new String[] { "checkbox", "checkAll(this)" });
+					} else {
+						peerTableHeaderRow.addChild("th");
+					}
+				}
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "status")).addChild("#", l10n("statusTitle"));
 				if(hasNameColumn())
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "name")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("nameClickToMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("nameTitle"));
