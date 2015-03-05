@@ -395,16 +395,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				jsBuf.append( "    }\n" );
 				jsBuf.append( "    theobj.value=\"update_notes\";\n" );
 				jsBuf.append( "  }\n" );
-				// copypaste javascript from http://stackoverflow.com/a/7251104/7666
-				jsBuf.append( "  function checkAll(bx) {\n" );
-				jsBuf.append( "    var cbs = document.getElementsByClassName(\"darknet_connections\")[0].getElementsByTagName(\"input\");\n" );
-				jsBuf.append( "	   for(var i=0; i < cbs.length; i++) {\n" );
-				jsBuf.append( "	     if(cbs[i].type == \"checkbox\") {\n" );
-				jsBuf.append( "	       cbs[i].checked = bx.checked;\n" );
-				jsBuf.append( "	     }\n" );
-				jsBuf.append( "    }\n" );
-				jsBuf.append( "  }\n" );
 				contentNode.addChild("script", "type", "text/javascript").addChild("%", jsBuf.toString());
+				contentNode.addChild("script", new String[] {"type", "src"}, new String[] {"text/javascript",  "/static/js/checkall.js"});
 			}
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
@@ -442,7 +434,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
 				if(enablePeerActions) {
 					if(fProxyJavascriptEnabled) {
-						peerTableHeaderRow.addChild("th").addChild("input", new String[] { "type", "onclick" }, new String[] { "checkbox", "checkAll(this)" });
+						peerTableHeaderRow.addChild("th").addChild("input", new String[] { "type", "onclick" }, new String[] { "checkbox", "checkAll(this, 'darknet_connections')" });
 					} else {
 						peerTableHeaderRow.addChild("th");
 					}
