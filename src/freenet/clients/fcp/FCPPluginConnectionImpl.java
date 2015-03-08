@@ -1169,7 +1169,8 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
         private final FCPPluginConnection parent;
 
         /**
-         * Please use {@link FCPPluginConnectionImpl#getDefaultSendDirectionAdapter(SendDirection)}
+         * For CPU performance of not constructing objects for every {@link #send(FCPPluginMessage)}
+         * please use {@link FCPPluginConnectionImpl#getDefaultSendDirectionAdapter(SendDirection)}
          * whenever possible to reuse adapters instead of creating new ones with this constructor.*/
         SendToServerAdapter(FCPPluginConnectionImpl parent) {
             super(SendDirection.ToServer);
