@@ -139,7 +139,7 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
 
 
     /**
-     * Unique identifier among all {@link FCPPluginConnection}s and FCPPluginConnectionImpls
+     * Unique identifier among all {@link FCPPluginConnection}s.
      * @see #getID()
      */
     private final UUID id = UUID.randomUUID();
