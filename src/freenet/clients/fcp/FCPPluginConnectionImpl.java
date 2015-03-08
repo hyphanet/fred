@@ -690,6 +690,11 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
         //  waiter, and if there is, take the write lock to hand the message to it.
         // (The implementation of ReentrantReadWritelock does not allow upgrading a readLock()
         // to a writeLock(), so we must release it in between and re-check afterwards.)
+        // TODO: Performance: If this turns out to be a bottleneck, add a
+        // "Synchronous={True, False}" flag to messages so we only have to check the table if
+        // Synchronous=True, and can return false immediately otherwise. (If Synchronous=True, we
+        // still will have to check the table whether a waiter is existing because it might have
+        // timed out already)
 
         synchronousSendsLock.readLock().lock();
         try {
