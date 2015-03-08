@@ -1106,7 +1106,9 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
         private final FCPPluginConnectionTracker.ConnectionWeakReference connectionRef;
 
         /**
-         * For CPU performance, please use
+         * For CPU performance of not calling
+         * {@link FCPPluginConnectionTracker#getConnectionWeakReference(UUID)} for every
+         * {@link #send(FCPPluginMessage)}, please use
          * {@link FCPPluginConnectionImpl#getDefaultSendDirectionAdapter(SendDirection)}
          * whenever possible to reuse adapters instead of creating new ones with this constructor.*/
         SendToClientAdapter(FCPPluginConnectionTracker tracker, UUID connectionID) {
