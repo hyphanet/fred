@@ -171,6 +171,11 @@ public class PluginRespirator {
             FredPluginFCPMessageHandler.ClientSideFCPMessageHandler messageHandler)
                 throws PluginNotFoundException {
         
+        if(messageHandler == null)
+            throw new NullPointerException("messageHandler must not be null");
+        
+        // pluginName being null will be handled by createFCPPluginConnectionForIntraNodeFCP().
+        
         return node.clientCore.getFCPServer().createFCPPluginConnectionForIntraNodeFCP(pluginName,
             messageHandler);
     }
