@@ -1124,7 +1124,7 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
                 // FCPPluginConnectionImpl. While it is being constructed, it should not be
                 // considered as disconnected already, and thus the FCPPluginConnectionTracker
                 // should never throw IOException.
-                throw new RuntimeException("SHOULD NOT HAPPEN: " + e);
+                throw new RuntimeException("SHOULD NOT HAPPEN: ", e);
             }
         }
 
