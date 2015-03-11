@@ -342,9 +342,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		
 		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
-			if (get().equals(val))
-				return;
-				ts.enableAdvancedMode(val);
+			ts.setAdvancedMode(val);
 		}
 	}
 	private static class FProxyJavascriptEnabledCallback extends BooleanCallback  {
@@ -1081,10 +1079,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			advancedModeEnabled = enabled;
 		}
 		core.node.config.store();
-	}
-	
-	public synchronized void enableAdvancedMode(boolean b){
-		advancedModeEnabled = b;
 	}
 
 	@Override

@@ -394,8 +394,8 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
     }
 
     /**
-     * Get the group the request belongs to. For single requests this is the request itself; for
-     * those in a group, such as a site insert, it is a common value between them.
+     * Get the group the request belongs to. For single requests (the default) this is the request
+     * itself; for those in a group, such as a site insert, it is a common value between them.
      */
     public ClientRequestSchedulerGroup getSchedulerGroup() {
       return this;
