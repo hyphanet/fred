@@ -27,7 +27,7 @@ import freenet.support.io.StorageFormatException;
  */
 public abstract class ClientRequest implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     /** URI to fetch, or target URI to insert to */
 	protected FreenetURI uri;
 	/** Unique request identifier */
@@ -58,9 +58,6 @@ public abstract class ClientRequest implements Serializable {
 	protected final long startupTime;
 	/** Timestamp : completion time */
 	protected long completionTime;
-
-	/** Timestamp: last activity. */
-	protected long lastActivity;
 
 	protected transient RequestClient lowLevelClient;
 	private final int hashCode; // for debugging it is good to have a persistent id
@@ -294,16 +291,6 @@ public abstract class ClientRequest implements Serializable {
 	}
 
 	public abstract boolean hasSucceeded();
-
-	/**
-	 * Returns the time of the request’s last activity, or {@code 0} if there is
-	 * no known last activity.
-	 *
-	 * @return The time of the request’s last activity, or {@code 0}
-	 */
-	public long getLastActivity() {
-		return lastActivity;
-	}
 
 	public abstract boolean canRestart();
 
