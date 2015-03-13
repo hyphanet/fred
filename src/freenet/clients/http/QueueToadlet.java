@@ -2141,7 +2141,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						requestRow.addChild(createReasonCell(clientRequest.getFailureReason(false)));
 						break;
 					case LAST_ACTIVITY:
-						requestRow.addChild(createLastActivityCell(now, clientRequest.getLastActivity()));
+						requestRow.addChild(createLastActivityCell(now, clientRequest.getLastSuccess()));
 						break;
 					case COMPAT_MODE:
 						if(clientRequest instanceof DownloadRequestStatus) {

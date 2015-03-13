@@ -1,5 +1,7 @@
 package freenet.clients.fcp;
 
+import java.util.Date;
+
 import freenet.client.InsertException.InsertExceptionMode;
 import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
@@ -14,12 +16,13 @@ public abstract class UploadRequestStatus extends RequestStatus {
 	private String failureReasonLong;
 	
 	UploadRequestStatus(String identifier, Persistence persistence, boolean started, boolean finished, 
-			boolean success, int total, int min, int fetched, int fatal, int failed,
-			boolean totalFinalized, long last, short prio, // all these passed to parent
-			FreenetURI finalURI, FreenetURI targetURI, 
-			InsertExceptionMode failureCode, String failureReasonShort, String failureReasonLong) {
-		super(identifier, persistence, started, finished, success, total, min, fetched, 
-				fatal, failed, totalFinalized, last, prio);
+			boolean success, int total, int min, int fetched, Date latestSuccess, int fatal,
+			int failed, Date latestFailure, boolean totalFinalized, short prio,
+			// all of the above are passed to parent
+			FreenetURI finalURI, FreenetURI targetURI, InsertExceptionMode failureCode,
+			String failureReasonShort, String failureReasonLong) {
+		super(identifier, persistence, started, finished, success, total, min, fetched,
+		      latestSuccess, fatal, failed, latestFailure, totalFinalized, prio);
 		this.finalURI = finalURI;
 		this.targetURI = targetURI;
 		this.failureCode = failureCode;
