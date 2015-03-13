@@ -652,7 +652,15 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	            minSuccess = finalBlocksRequired;
 	            finalized = true;
 	        }
-	        e = new SplitfileProgressEvent(total, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, minSuccess, 0, finalized);
+	        e = new SplitfileProgressEvent(total,
+	            this.successfulBlocks,
+	            this.latestSuccess,
+	            this.failedBlocks,
+	            this.fatallyFailedBlocks,
+	            this.latestFailure,
+	            minSuccess,
+	            0,
+	            finalized);
 	    }
 	    // Already off-thread.
 		ctx.eventProducer.produceEvent(e, context);
