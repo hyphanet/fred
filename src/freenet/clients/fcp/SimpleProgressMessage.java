@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import java.io.Serializable;
+import java.util.Date;
 
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.node.Node;
@@ -35,7 +35,9 @@ public class SimpleProgressMessage extends FCPMessage {
 		fs.put("Required", event.minSuccessfulBlocks);
 		fs.put("Failed", event.failedBlocks);
 		fs.put("FatallyFailed", event.fatallyFailedBlocks);
+		fs.put("LatestFailure", event.latestFailure != null ? event.latestFailure.getTime() : 0);
 		fs.put("Succeeded",event.succeedBlocks);
+        fs.put("LatestSuccess", event.latestSuccess != null ? event.latestSuccess.getTime() : 0);
 		fs.put("FinalizedTotal", event.finalizedTotal);
 		if(event.minSuccessFetchBlocks != 0)
 			fs.put("MinSuccessFetchBlocks", event.minSuccessFetchBlocks);
@@ -70,6 +72,11 @@ public class SimpleProgressMessage extends FCPMessage {
 		return event.succeedBlocks;
 	}
 	
+	public Date getLatestSuccess() {
+        // clone() because Date is mutable
+	    return event.latestSuccess != null ? (Date)event.latestSuccess.clone() : null;
+	}
+	
 	public double getFailedBlocks(){
 		return event.failedBlocks;
 	}
@@ -77,6 +84,11 @@ public class SimpleProgressMessage extends FCPMessage {
 	public double getFatalyFailedBlocks(){
 		return event.fatallyFailedBlocks;
 	}
+	
+    public Date getLatestFailure() {
+        // clone() because Date is mutable
+        return event.latestFailure != null ? (Date)event.latestFailure.clone() : null;
+    }
 
 	public boolean isTotalFinalized() {
 		return event.finalizedTotal;
