@@ -924,7 +924,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	synchronized RequestStatus getStatus() {
 		boolean totalFinalized = false;
 		int total = 0, min = 0, fetched = 0, fatal = 0, failed = 0;
-		Date latestSuccess = CurrentTimeUTC.get(), latestFailure = null;
+		Date latestSuccess = CurrentTimeUTC.get();
+		Date latestFailure = null;
+		
 		if(progressPending != null) {
 			totalFinalized = progressPending.isTotalFinalized();
 			// FIXME why are these doubles???
