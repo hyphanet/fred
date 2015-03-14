@@ -10,6 +10,7 @@ start with:
 * The [bug tracker](https://bugs.freenetproject.org/my_view_page.php) has tasks.
   List only bugs filed against this repository by selecting "Freenet" in the
   "Project" drop-down in the upper right. Do any of these look interesting?
+* Check the [projects](https://wiki.freenetproject.org/Projects) page.
 * Ask the [development mailing list](https://emu.freenetproject.org/cgi-bin/mailman/listinfo/devl)
   or join us in [IRC](https://freenetproject.org/irc.html) - `#freenet` on
   `chat.freenode.net`.
@@ -29,15 +30,16 @@ From the git commit man page:
 > description. The text up to the first blank line in a commit message is
 > treated as the commit title...
 
-Except for proper nouns, only the first character of the first line may be
-capitalized. It can start with the class / module the change applies to,
+Except for proper nouns, only the first character of the title may be
+capitalized. It may start with the class / module the change applies to,
 followed by a colon, especially if it helps to explain the change and give it
-context. The main part of it is a short imperative description that is at most
-72 characters and does not end with a full stop. The second line must be blank
-for, among other things, git shortlog to display only the title instead of also
-including in the description. If the message contains additional prose
-description on the third and subsequent lines, it is wrapped to 72 characters.
-Long lines that do not split well, such as URLs, are an exception to this.
+context. The main part of it is a short imperative description - a command given
+to the codebase. The title is at most 72 characters and does not end with a
+period. The second line must be blank for, among other things, git shortlog to
+display only the title instead of also including the description. If the message
+contains additional prose description on the third and subsequent lines, it is
+wrapped to 72 characters. Long lines that do not split well, such as URLs, are
+an exception to this.
 
 50 characters on the first line is a soft limit. For more discussion see
 https://git.kernel.org/cgit/git/git.git/tree/Documentation/SubmittingPatches#n87
