@@ -15,6 +15,18 @@ start with:
   or join us in [IRC](https://freenetproject.org/irc.html) - `#freenet` on
   `chat.freenode.net`.
 
+# Code review
+
+Code review helps improve code quality, ensures that multiple people know the
+codebase, and serves as a defense against introducing malicious code. Its goal
+is producing code that is readable, correct, and sufficiently efficient.
+
+Breaking API creates an immense amount of work for developers of other projects,
+so it is *not* something to be done lightly. If you feel you must make a change
+that breaks API and cannot maintain backwards compatibility, please first raise
+the issue with the community - the [mailing list](https://emu.freenetproject.org/cgi-bin/mailman/listinfo/devl)
+and [IRC](https://freenetproject.org/irc.html) are good places to contact us.
+
 # Standards
 
 Before submitting a pull request, please make sure that modified lines meet the
@@ -74,16 +86,3 @@ But this is much easier to review:
 
 See the Git documentation on [history rewriting](http://git-scm.com/book/en/v2/Git-Tools-Rewriting-History)
 for how to do this. `squash` and `fixup` are the relevant actions.
-
-# Code review
-
-Code review reviews code and commits, not their authors. Its goal is producing
-code that is readable, correct, and sufficiently efficient. Except for
-confusingly inefficient code - so much that it impacts readability -
-optimization is to be guided by benchmarks and not what feels faster.
-
-Breaking API creates an immense amount of work for developers of other projects,
-so it is *not* something to be done lightly. If you feel you must make a change
-that breaks API and cannot maintain backwards compatibility, please first raise
-the issue with the community - the [mailing list](https://emu.freenetproject.org/cgi-bin/mailman/listinfo/devl)
-and [IRC](https://freenetproject.org/irc.html) are good places to contact us.
