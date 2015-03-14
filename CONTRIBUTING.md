@@ -54,17 +54,6 @@ For example:
     and alternate solutions decided against, if any, goes here. For some
     changes this might not be necessary.
 
-or
-
-    Reduce hydrocoptic marzul vane side fumbling
-    
-    This change is such that starting the summary with an area of change
-    would not be helpful. The existing marzul vane fittings are prone to
-    side fumbling at sinusoidal depleneration duty cycles over 80%. This
-    hyperfastens the vanes to avoid unilateral boloid shedding which
-    contributes to the side fumbling. Non-reversible tremmy pipes would
-    have had similar effects but added more weight to the casing.
-
 Text editors can be configured to assist in formatting messages this way, and
 git packages sometimes ship with such configuration.
 
