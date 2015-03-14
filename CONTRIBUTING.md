@@ -1,5 +1,3 @@
-# Welcome!
-
 This document assumes you have already [set up a development
 environment](https://wiki.freenetproject.org/Building_from_source) and have made
 a change you want to submit for review. If you'd like an idea for something to
@@ -18,8 +16,9 @@ start with:
 # Code review
 
 Code review helps improve code quality, ensures that multiple people know the
-codebase, and serves as a defense against introducing malicious code. Its goal
-is producing code that is readable, correct, and sufficiently efficient.
+codebase, serves as a defense against introducing malicious code, and makes it
+infeasable to pressure people into contributing malicious code. Its goal is
+producing software that is readable, correct, and sufficiently efficient.
 
 Breaking API creates an immense amount of work for developers of other projects,
 so it is *not* something to be done lightly. If you feel you must make a change
