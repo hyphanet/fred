@@ -54,7 +54,7 @@ contains additional prose description on the third and subsequent lines, it is
 wrapped to 72 characters. Long lines that do not split well, such as URLs, are
 an exception to this.
 
-For more discussion see the [git patch submission documentation](https://git.kernel.org/cgit/git/git.git/tree/Documentation/SubmittingPatches#n87)
+For more discussion see the [git patch submission documentation](https://git.kernel.org/cgit/git/git.git/tree/Documentation/SubmittingPatches#n87).
 
     [Context:] command given to the codebase
 
