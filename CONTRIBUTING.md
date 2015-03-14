@@ -1,3 +1,5 @@
+# Welcome!
+
 This document assumes you have already [set up a development
 environment](https://wiki.freenetproject.org/Building_from_source) and have made
 a change you want to submit for review. If you'd like an idea for something to
