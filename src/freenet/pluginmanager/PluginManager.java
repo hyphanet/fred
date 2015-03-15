@@ -900,7 +900,9 @@ public class PluginManager {
 
 	/**
 	 * @param pluginClassName The name of the main class of the plugin - that is the class which implements {@link FredPlugin}.
-	 * @return The plugin with the given class, or null if no matching plugin was found.
+	 * @return
+	 *     The {@link PluginInfoWrapper} for the plugin with the given class name, or null if no
+	 *     matching plugin was found.
 	 */
 	public PluginInfoWrapper getPluginInfoByClassName(String pluginClassName) {
 		synchronized(pluginWrappers) {
@@ -914,7 +916,9 @@ public class PluginManager {
 
 	/**
 	 * @param pluginFileName The filename of the JAR from which the plugin was loaded.
-	 * @return Null if no matching plugin was found.
+	 * @return
+	 *     The {@link PluginInfoWrapper} for the plugin with the given file name, or null if no
+	 *     matching plugin was found.
 	 */
 	public PluginInfoWrapper getPluginInfoByFileName(String pluginFileName) {
 		synchronized(pluginWrappers) {
