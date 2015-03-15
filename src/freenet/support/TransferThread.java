@@ -32,9 +32,12 @@ import freenet.support.io.TempBucketFactory;
  * @deprecated
  *     This class uses {@link TrivialTicker} in a bogus way.
  *     See <a href="https://bugs.freenetproject.org/view.php?id=6423">issue 6423</a>.<br>
- *     The Web Of Trust plugin contains a bugfixed version, please use that one instead.<br>
- *     (The fixed version was not moved to fred because TransferThread is only used by WOT and
- *     Freetalk, not by fred itself. Thus it should probably be moved to a common library.)
+ *     Also, it was not used by fred itself but only by Web Of Trust and Freetalk, while not being
+ *     part of the fred official plugin API. Thus it should not be contained in fred.<br>
+ *     If you do continue to need this class for a plugin, please move it to a shared library for
+ *     plugins.<br>
+ *     In that case, please use the version of Web Of Trust as it contains fixes for the existing
+ *     bugs of this version here.
  * @author xor
  */
 @Deprecated
