@@ -17,6 +17,14 @@ start with:
 
 # Code review
 
+Once you have a change ready for review, please submit it as a [pull
+request](https://help.github.com/articles/using-pull-requests/#initiating-the-pull-request)
+against the `next` branch. It's usually a good idea to work on a topic / feature
+branch specific to the pull request that starts at `next`. Once you have
+submitted a pull request, people will start reviewing it and providing feedback.
+If you don't hear anything for a while feel free to bring it to the attention of
+people in IRC - we may have missed it.
+
 Code review helps improve code quality, ensures that multiple people know the
 codebase, serves as a defense against introducing malicious code, and makes it
 infeasable to pressure people into contributing malicious code. Its goal is
