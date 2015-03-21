@@ -71,10 +71,8 @@ public abstract class Toadlet {
 	 * @param context Can be used to decide the return value, for example to check session cookies using {@link SessionManager}.
      * @return
      *     The result of {@link #showAsToadlet()}, which is <code>this</code> by default.<br>
-     *     The result of that deprecated function is returned instead of directly returning
-     *     <code>this</code> to keep legacy Toadlet implementations working which aim to override
-     *     the showAsToadlet() mechanism but only override the old function instead of this
-     *     one here.<br><br>
+     *     This behavior is for backwards compatibility with existing code which overrides that
+     *     function.<br><br>
      *     
      *     Override this function to return something else for invisible Toadlets as explained
      *     above.
