@@ -27,7 +27,10 @@ import freenet.support.io.StorageFormatException;
  */
 public abstract class ClientRequest implements Serializable {
 
-    private static final long serialVersionUID = 2L;
+    /**
+     * ATTENTION: When incrementing this, please skip version 2. Version 2 had already temporarily
+     * been used by a development branch. */
+    private static final long serialVersionUID = 1L;
     /** URI to fetch, or target URI to insert to */
 	protected FreenetURI uri;
 	/** Unique request identifier */
