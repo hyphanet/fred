@@ -62,8 +62,6 @@ second line is blank. If the message contains additional prose description on
 the third and subsequent lines, it is wrapped to 72 characters. Long lines that
 do not split well, such as URLs or stack traces, are an exception to this.
 
-For more discussion see the [git patch submission documentation](https://git.kernel.org/cgit/git/git.git/tree/Documentation/SubmittingPatches#n87).
-
     [Context:] command given to the codebase
 
 For example:
@@ -74,8 +72,12 @@ For example:
     and alternate solutions decided against, if any, goes here. For some
     changes this might not be necessary.
 
+For more discussion see the [git patch submission documentation](https://git.kernel.org/cgit/git/git.git/tree/Documentation/SubmittingPatches#n87).
+
 Text editors can be configured to assist in formatting messages this way, and
 git packages sometimes ship with such configuration.
+
+## Commit separation
 
 Each commit in a pull request should represent a logically distinct subset of
 the overall change so that it is easy to review. This means the following is
