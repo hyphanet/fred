@@ -68,7 +68,7 @@ For more discussion see the [git patch submission documentation](https://git.ker
 
 For example:
 
-    FProxy: update default bookmark editions
+    Update default bookmark editions
     
     Additional description of what the change does, why it is a good idea,
     and alternate solutions decided against, if any, goes here. For some
