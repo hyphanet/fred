@@ -20,10 +20,12 @@ start with:
 Once you have a change ready for review, please submit it as a [pull
 request](https://help.github.com/articles/using-pull-requests/#initiating-the-pull-request)
 against the `next` branch. It's usually a good idea to work on a topic / feature
-branch specific to the pull request that starts at `next`. Once you have
+branch that starts at `next` and is specific to the pull request. Once you have
 submitted a pull request, people will start reviewing it and providing feedback.
 If you don't hear anything for a while feel free to bring it to the attention of
-people in IRC - we may have missed it.
+people in [IRC](https://freenetproject.org/irc.html) or the [mailing
+list](https://emu.freenetproject.org/cgi-bin/mailman/listinfo/devl) - we may
+have missed it.
 
 Code review helps improve code quality, ensures that multiple people know the
 codebase, serves as a defense against introducing malicious code, and makes it
@@ -52,15 +54,13 @@ From the git commit man page:
 > treated as the commit title...
 
 Except for proper nouns, only the first character of the title may be
-capitalized. It may start with the class / module the change applies to,
-followed by a colon, especially if it helps to explain the change and give it
-context. The main part of it is a short imperative description - a command given
-to the codebase. The title is at most 72 characters and does not end with a
-period. The second line must be blank for, among other things, git shortlog to
-display only the title instead of also including the description. If the message
-contains additional prose description on the third and subsequent lines, it is
-wrapped to 72 characters. Long lines that do not split well, such as URLs, are
-an exception to this.
+capitalized. It may start with the class / module the change applies to
+followed by a colon if it helps to explain the change and give it context. The
+main part of it is a short imperative description - a command given to the
+codebase. The title is at most 72 characters and does not end with a period. The
+second line is blank. If the message contains additional prose description on
+the third and subsequent lines, it is wrapped to 72 characters. Long lines that
+do not split well, such as URLs or stack traces, are an exception to this.
 
 For more discussion see the [git patch submission documentation](https://git.kernel.org/cgit/git/git.git/tree/Documentation/SubmittingPatches#n87).
 
@@ -86,11 +86,14 @@ appropriate for things in development:
     Fix inverted branch condition in new feature
     Add tests for new feature
     Add exciting new feature
+    Add support needed by new feature
 
 But this is much easier to review:
 
     Add tests for new feature
     Add exciting new feature
+    Add support needed by new feature
 
 See the Git documentation on [history rewriting](http://git-scm.com/book/en/v2/Git-Tools-Rewriting-History)
-for how to do this. `squash` and `fixup` are the relevant actions.
+for how to do this. `squash` and `fixup` are the relevant actions. `git commit`
+has `--fixup` and `--squash` for use with `rebase -i --autosquash`.
