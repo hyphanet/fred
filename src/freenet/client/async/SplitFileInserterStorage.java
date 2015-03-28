@@ -577,12 +577,14 @@ public class SplitFileInserterStorage {
      * @param raf The file the insert was stored to. Caller must resume it before calling constructor.
      * @param originalData The original data to be inserted. Caller must resume it before calling constructor.
      * @param callback The parent callback (e.g. SplitFileInserter).
-     * @param checker The checksum checker to be used.
      * @param random
      * @param memoryLimitedJobRunner
      * @param jobRunner
      * @param ticker
      * @param keysFetching
+     * @param persistentFG
+     * @param persistentFileTracker
+     * @param masterKey
      * @throws IOException 
      * @throws StorageFormatException 
      * @throws ChecksumFailedException 

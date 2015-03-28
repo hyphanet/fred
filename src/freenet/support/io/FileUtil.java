@@ -443,8 +443,9 @@ final public class FileUtil {
 
         /**
          * Like renameTo(), but can move across filesystems, by copying the data.
-         * @param f
-         * @param file
+         * @param orig
+         * @param dest
+         * @param overwrite
          */
     	public static boolean moveTo(File orig, File dest, boolean overwrite) {
             if(orig.equals(dest))
@@ -703,7 +704,7 @@ final public class FileUtil {
 			throw new IOException("Unable to delete file "+file);
 	}
 
-	/** @Deprecated */
+	@Deprecated
     public static void secureDelete(File file, Random random) throws IOException {
         secureDelete(file);
     }

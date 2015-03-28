@@ -59,7 +59,6 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 	/**
 	 * Create a padded encrypted proxy bucket.
 	 * @param bucket The bucket which we are proxying to. Must be empty.
-	 * @param pcfb The encryption mode with which to encipher/decipher the data.
 	 * @param minSize The minimum padded size of the file (after it has been closed).
 	 * @param strongPRNG a strong prng we will key from.
 	 * @param weakPRNG a week prng we will padd from.

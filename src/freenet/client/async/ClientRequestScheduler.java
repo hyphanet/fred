@@ -111,7 +111,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	/**
 	 * Register a group of requests (not inserts): a GotKeyListener and/or one 
 	 * or more SendableGet's.
-	 * @param listener Listens for specific keys. Can be null if the listener
+	 * @param hasListener Listens for specific keys. Can be null if the listener
 	 * is already registered i.e. on retrying.
 	 * @param getters The actual requests to register to the request sender queue.
 	 * @param persistent True if the request is persistent.

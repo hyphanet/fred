@@ -376,11 +376,11 @@ public class BucketTools {
 	 * and the data written to them.
 	 * 
 	 * Note that this method will allocate a buffer of size splitSize.
+	 * @param bf
 	 * @param freeData 
 	 * @param persistent If true, the data is persistent. This method is responsible for ensuring that the returned
 	 * buckets HAVE ALREADY BEEN STORED TO THE DATABASE, using the provided handle. The point? SegmentedBCB's buckets
 	 * have already been stored!!
-	 * @param container Database handle, only needed if persistent = true. 
 	 * @throws IOException If there is an error creating buckets, reading from
 	 * the provided bucket, or writing to created buckets.
 	 */
@@ -436,7 +436,7 @@ public class BucketTools {
 	 * 
 	 * @param oldBucket
 	 * @param blockLength
-	 * @param BucketFactory
+	 * @param bf
 	 * @param length
 	 * 
 	 * @return the paded bucket

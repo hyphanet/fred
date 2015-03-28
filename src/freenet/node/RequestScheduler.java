@@ -17,7 +17,8 @@ public interface RequestScheduler {
 	 * Definition of "succeeded" will vary, but the point is most schedulers will run another
 	 * request from the parentGrabArray in the near future on the theory that if one works,
 	 * another may also work. 
-	 * @param req The request we ran, which must be deleted.
+	 * @param get The request we ran, which must be deleted.
+	 * @param persistent
 	 * */
 	public void succeeded(BaseSendableGet get, boolean persistent);
 
@@ -59,7 +60,6 @@ public interface RequestScheduler {
 	 * @param key
 	 * @param getterWaiting
 	 * @param persistent
-	 * @param container
 	 * @return
 	 */
 	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent);

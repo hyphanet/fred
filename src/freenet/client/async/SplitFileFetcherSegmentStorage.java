@@ -169,13 +169,17 @@ public class SplitFileFetcherSegmentStorage {
     /** Construct from a saved file. Uses the DataInputStream to read static settings, i.e. number 
      * of blocks, does not use the RAF to read block status etc; caller must call readMetadata and
      * readKeys separately for that.
-     * @param splitFileFetcherStorage
-     * @param raf
+     * @param parent
      * @param dis DataInputStream to which the static settings have been saved. Anything else we 
      * will need to read separately from the RandomAccessBuffer.
      * @param segNo The segment number.
+     * @param writeRetries
+     * @param segmentDataOffset
      * @param segmentCrossCheckDataOffset -1 to mean store the cross-check blocks just after the 
      * data and check blocks for this segment. Otherwise the offset.
+     * @param segmentKeysOffset
+     * @param segmentStatusOffset
+     * @param keysFetching
      * @throws IOException 
      * @throws StorageFormatException 
      */

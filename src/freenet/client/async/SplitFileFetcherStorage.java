@@ -225,17 +225,32 @@ public class SplitFileFetcherStorage {
     
     /** Construct a new SplitFileFetcherStorage from metadata. Creates the RandomAccessBuffer and
      * writes the initial data to it. There is another constructor for resuming a download. 
+     * @param metadata
+     * @param fetcher
+     * @param decompressors
+     * @param clientMetadata
+     * @param topDontCompress
+     * @param topCompatibilityMode
+     * @param origFetchContext
+     * @param realTime
+     * @param salt
+     * @param thisKey
+     * @param origKey
+     * @param isFinalFetch
+     * @param clientDetails
+     * @param random
+     * @param tempBucketFactory
+     * @param rafFactory
+     * @param exec
+     * @param ticker
+     * @param memoryLimitedJobRunner
+     * @param checker 
      * @param persistent 
-     * @param topCompatibilityMode 
-     * @param storageFile 
-     * @param clientMetadata2 
-     * @param decompressors2
-     * @param cb This is only provided so we can create appropriate events when constructing, we do
-     * not store it. 
      * @param storageFile If non-null, we will use this file to store the data in. It must already
      * exist, and must be 0 bytes long. We will use it, and then when complete, truncate the file 
      * so it only contains the final data before calling onSuccess(). Also, in this case, 
      * rafFactory must be a DiskSpaceCheckingRandomAccessBufferFactory.
+     * @param diskSpaceCheckingRAFFactory
      * @param keysFetching Must be passed in at this point as we will need it later. However, none
      * of this is persisted directly, so this is not a problem.
      * @throws FetchException If we failed to set up the download due to a problem with the metadata. 

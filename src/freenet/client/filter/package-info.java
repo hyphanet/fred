@@ -22,6 +22,6 @@
  * which is used by fproxy for showing loading images etc.</p>
  * 
  * @see freenet.client.async.ClientGetWorkerThread The driver thread
- * @see freenet.clients.http.FproxyToadlet The major user of this code practically speaking
+ * @see freenet.clients.http.FProxyToadlet The major user of this code practically speaking
  */
 package freenet.client.filter;

@@ -1361,7 +1361,7 @@ public class LocationManager implements ByteCounter {
     /**
      * Method called by Node.getKnownLocations(long timestamp)
      *
-     * @Return an array containing two cells : Locations and their last seen time for a given timestamp.
+     * @return an array containing two cells : Locations and their last seen time for a given timestamp.
      */
     public Object[] getKnownLocations(long timestamp) {
     	synchronized (knownLocs) {

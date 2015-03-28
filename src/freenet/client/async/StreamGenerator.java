@@ -12,7 +12,6 @@ public interface StreamGenerator {
 
 	/** Writes the data.
 	 * @param os Stream to which the data will be written
-	 * @param container
 	 * @param context
 	 * @throws IOException
 	 */

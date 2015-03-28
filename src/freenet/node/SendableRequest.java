@@ -79,7 +79,6 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 	/**
 	 * Get or create a SendableRequestSender for this object. This is a non-persistent
 	 * object used to send the requests. @see SendableGet.getSender().
-	 * @param container A database handle may be necessary for creating it.
 	 * @param context A client context may also be necessary.
 	 * @return
 	 */
@@ -126,7 +125,6 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 	}
 	
 	/** Unregister the request.
-	 * @param container
 	 * @param context
 	 * @param oldPrio If we are changing priorities it can matter what the old priority is.
 	 * However the parent method, SendableRequest, ignores this. In any case, 
