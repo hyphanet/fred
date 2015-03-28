@@ -29,8 +29,6 @@ public interface ClientPutCallback extends ClientBaseCallback {
 	 * caller will not free it.
 	 * @param state The original BaseClientPutter object which was returned by the .insert() method which
 	 * 				started this insert. Can be casted to the return type of that .insert().
-	 * @param container The database handle; if this is a persistent insert, the
-	 * callback will be called on the database thread.
 	 */
 	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state);
 	

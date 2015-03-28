@@ -40,16 +40,16 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 	 * Creates a new FileBucket.
 	 * 
 	 * @param file The File to read and write to.
+	 * @param readOnly If true, any attempt to write to the bucket will result in an IOException.
+	 * Can be set later. Irreversible. @see isReadOnly(), setReadOnly()
 	 * @param createFileOnly If true, create the file if it doesn't exist, but if it does exist,
 	 * throw a FileExistsException on any write operation. This is safe against symlink attacks
 	 * because we write to a temp file and then rename. It is technically possible that the rename
 	 * will clobber an existing file if there is a race condition, but since it will not write over
 	 * a symlink this is probably not dangerous. User-supplied filenames should in any case be
 	 * restricted by higher levels.
-	 * @param readOnly If true, any attempt to write to the bucket will result in an IOException.
-	 * Can be set later. Irreversible. @see isReadOnly(), setReadOnly()
-	 * @param deleteOnFinalize If true, delete the file on finalization. Reversible.
 	 * @param deleteOnExit If true, delete the file on a clean exit of the JVM. Irreversible - use with care!
+	 * @param deleteOnFree If true, delete the file on finalization. Reversible.
 	 */
 	public FileBucket(File file, boolean readOnly, boolean createFileOnly, boolean deleteOnExit, boolean deleteOnFree) {
 		super(file, deleteOnExit);

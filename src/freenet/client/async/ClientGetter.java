@@ -721,7 +721,8 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	/**
 	 * Restart the request.
 	 * @param redirect Use this URI instead of the old one.
-	 * @param container The database. We must be on the database thread! See ClientContext for convenience
+	 * @param filterData
+	 * @param context The database. We must be on the database thread! See ClientContext for convenience
 	 * methods.
 	 * @return True if we successfully restarted, false if we can't restart.
 	 * @throws FetchException If something went wrong.

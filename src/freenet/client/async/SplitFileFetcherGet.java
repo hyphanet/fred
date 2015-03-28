@@ -139,7 +139,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     /**
      * Schedule the fetch.
      * @param context
-     * @param rescheduled If true, don't check the datastore before re-registering the requests to
+     * @param ignoreStore If true, don't check the datastore before re-registering the requests to
      * run. Should be true when rescheduling after a normal cooldown, false after recovering from
      * data corruption (the blocks may still be in the store), false otherwise.
      * @throws KeyListenerConstructionException

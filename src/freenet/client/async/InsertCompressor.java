@@ -265,12 +265,14 @@ public class InsertCompressor implements CompressJob {
 
 	/**
 	 * Create an InsertCompressor, add it to the database, schedule it.
-	 * @param container
-	 * @param context
-	 * @param inserter2
-	 * @param origData2
-	 * @param oneBlockCompressedSize
+	 * @param ctx
+	 * @param inserter
+	 * @param origData
+	 * @param minSize
 	 * @param bf
+	 * @param persistent
+	 * @param generateHashes
+	 * @param pre1254
 	 * @return
 	 */
 	public static InsertCompressor start(ClientContext ctx, SingleFileInserter inserter, 

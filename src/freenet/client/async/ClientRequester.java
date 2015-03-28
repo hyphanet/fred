@@ -152,8 +152,6 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 	
 	/** The set of blocks has been finalised, total will not change any
 	 * more. Notify clients.
-	 * @param container The database. Must be non-null if the request or 
-	 * insert is persistent, in which case we must be on the database thread.
 	 * @param context The ClientContext object including essential but 
 	 * non-persistent objects such as the schedulers.
 	 */
@@ -306,8 +304,6 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 	/** Change the priority class of the request (request includes inserts here).
 	 * @param newPriorityClass The new priority class for the request or insert.
 	 * @param ctx The ClientContext, contains essential transient objects such as the schedulers.
-	 * @param container The database. If the request is persistent, this must be non-null, and we must
-	 * be running on the database thread; you should schedule a job using the DBJobRunner.
 	 */
 	public void setPriorityClass(short newPriorityClass, ClientContext ctx) {
 		short oldPrio;

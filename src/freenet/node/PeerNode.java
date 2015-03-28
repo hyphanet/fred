@@ -3904,7 +3904,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/** Called when a delayed disconnect is occurring. Tell the node that it is being 
 	 * disconnected, but that the process may take a while. After this point, requests
 	 * will not be accepted from the peer nor routed to it. 
-	 * @param dumpMessagesNow If true, immediately dump the message queue, since we are
+	 * @param dumpMessageQueue If true, immediately dump the message queue, since we are
 	 * closing the connection due to some low level trouble e.g. not acknowledging. 
 	 * We will continue to try to send anything already in flight, and it is possible to
 	 * send more messages after this point, for instance the message telling it we are
@@ -4358,8 +4358,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * throttling.
 	 * So it makes sense to send a single packet and round-robin.
 	 * @param now
-	 * @param rpiTemp
-	 * @param rpiTemp
+	 * @param ackOnly
 	 * @throws BlockedTooLongException
 	 */
 	public boolean maybeSendPacket(long now, boolean ackOnly) throws BlockedTooLongException {

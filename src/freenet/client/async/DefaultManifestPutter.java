@@ -75,7 +75,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	/**
 	 * Implements the pack logic.
 	 * @throws TooManyFilesInsertException 
-	 * @see freenet.client.async.BaseManifestPutter#makePutHandlers(java.util.HashMap, java.util.HashMap)
+	 * @see freenet.client.async.BaseManifestPutter#makePutHandlers(java.util.HashMap, String)
 	 */
 	@Override
 	protected void makePutHandlers(HashMap<String,Object> manifestElements, String defaultName) throws TooManyFilesInsertException {

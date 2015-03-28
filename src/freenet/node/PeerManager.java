@@ -160,7 +160,7 @@ public class PeerManager {
 	 * Create a PeerManager by reading a list of peers from
 	 * a file.
 	 * @param node
-	 * @param filename
+	 * @param shutdownHook
 	 */
 	public PeerManager(Node node, SemiOrderedShutdownHook shutdownHook) {
 		Logger.normal(this, "Creating PeerManager");
