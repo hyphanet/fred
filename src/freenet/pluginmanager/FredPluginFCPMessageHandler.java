@@ -15,6 +15,13 @@ import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 
 /**
+ * <i>NOTICE: This API is a rewrite of the whole code for plugin communication. It was added
+ * 2015-03, and for some time after that may change in ways which break backward compatibility.
+ * Thus any suggestions or pull requests for improvement of all involved interfaces and classes
+ * are welcome!<br>
+ * If you would not like to deal with adapting your plugins to possible changes, use the legacy
+ * {@link FredPluginFCP} API meanwhile.</i><br><br>
+ * 
  * FCP server or client plugins which transfer FCP messages to each other using a
  * {@link FCPPluginConnection} must implement this interface by implementing one of it's child
  * interfaces, to provide a function which handles the received messages.<br><br>

@@ -112,6 +112,13 @@ public class PluginRespirator {
 	}
 
     /**
+     * <i>NOTICE: This API is a rewrite of the whole code for plugin communication. It was added
+     * 2015-03, and for some time after that may change in ways which break backward compatibility.
+     * Thus any suggestions or pull requests for improvement of all involved interfaces and classes
+     * are welcome!<br>
+     * If you would not like to deal with adapting your plugins to possible changes, use the legacy
+     * {@link #getPluginTalker(FredPluginTalker, String, String)} API meanwhile.</i><br>
+     * 
      * <p>Creates a FCP client connection with another plugin which is a FCP server (= which
      * implements interface {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}).<br>
      * Currently, the remote plugin must run in the same node, but the fact that FCP is used lays
