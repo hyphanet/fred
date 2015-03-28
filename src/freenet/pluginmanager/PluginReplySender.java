@@ -4,11 +4,14 @@
 package freenet.pluginmanager;
 
 import freenet.clients.fcp.FCPConnectionInputHandler;
-import freenet.clients.fcp.FCPPluginMessage;
+import freenet.clients.fcp.FCPPluginClientMessage;
+import freenet.clients.fcp.FCPPluginConnection;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 
+/** @deprecated Use the {@link FCPPluginConnection} API instead. */
+@Deprecated
 public abstract class PluginReplySender {
 	
 	final String pluginname;
@@ -75,7 +78,9 @@ public abstract class PluginReplySender {
      * 
      * <p>This mechanism is necessary because the {@link FCPConnectionInputHandler} will create a fresh PluginReplySender for each message it receives from
      * the same client. <br/>Therefore, object identity of the PluginReplySender is not sufficient for identifying connections.<br/>
-     * (Actually it creates a fresh {@link FCPPluginMessage} for every processes message, which in turn creates a fresh PluginReplySender).</p>
+     * (Actually it creates a fresh {@link FCPPluginClientMessage} for every processed message,
+     * which in turn creates a fresh {@link PluginTalker}, which then creates a fresh
+     * PluginReplySender).</p>
      */
     public final String getConnectionIdentifier() {
         return clientIdentifier + ":" + clientSideIdentifier;

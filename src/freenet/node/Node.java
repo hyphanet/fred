@@ -36,8 +36,6 @@ import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
 
-import freenet.node.useralerts.JVMVersionAlert;
-import freenet.support.JVMVersion;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.Db4o;
@@ -67,6 +65,7 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.ECDH;
 import freenet.crypt.MasterSecret;
+import freenet.crypt.PersistentRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
 import freenet.io.comm.DMT;
@@ -113,6 +112,7 @@ import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.UpdateDeployContext;
 import freenet.node.updater.UpdateDeployContext.CHANGED;
+import freenet.node.useralerts.JVMVersionAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
@@ -140,6 +140,7 @@ import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
+import freenet.support.JVMVersion;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -4106,9 +4107,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 		config.store();
 
-		// TODO: find a smarter way of doing it not involving any casting
-		Yarrow myRandom = (Yarrow) random;
-		myRandom.write_seed(myRandom.seedfile, true);
+        if(random instanceof PersistentRandomSource) {
+            ((PersistentRandomSource) random).write_seed(true);
+        }
 	}
 
 	public NodeUpdateManager getNodeUpdater(){
