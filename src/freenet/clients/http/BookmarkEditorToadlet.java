@@ -272,8 +272,17 @@ public class BookmarkEditorToadlet extends Toadlet {
 						if(core.node.getDarknetConnections().length > 0 && ("addItem".equals(action) || "share".equals(action))) {
 							form.addChild("br");
 							form.addChild("br");
+							if (core.node.isFProxyJavascriptEnabled()) {
+								form.addChild("script", new String[] {"type", "src"}, new String[] {"text/javascript",  "/static/js/checkall.js"});
+							}
 							HTMLNode peerTable = form.addChild("table", "class", "darknet_connections");
-							peerTable.addChild("th", "colspan", "2", NodeL10n.getBase().getString("QueueToadlet.recommendToFriends"));
+							if (core.node.isFProxyJavascriptEnabled()) {
+								HTMLNode headerRow = peerTable.addChild("tr");
+								headerRow.addChild("th").addChild("input", new String[] { "type", "onclick" }, new String[] { "checkbox", "checkAll(this, 'darknet_connections')" });
+								headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.recommendToFriends"));
+							} else {
+								peerTable.addChild("tr").addChild("th", "colspan", "2", NodeL10n.getBase().getString("QueueToadlet.recommendToFriends"));
+							}
 							for(DarknetPeerNode peer : core.node.getDarknetConnections()) {
 								HTMLNode peerRow = peerTable.addChild("tr", "class", "darknet_connections_normal");
 								peerRow.addChild("td", "class", "peer-marker").addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "node_" + peer.hashCode() });
