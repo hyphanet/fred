@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
 import java.io.DataInputStream;
@@ -5,6 +8,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.security.MessageDigest;
 import java.util.Arrays;
 
 import freenet.support.HexUtil;
@@ -147,6 +151,30 @@ public class HashResult implements Comparable<HashResult>, Cloneable, Serializab
 
 	public String hashAsHex() {
 		return HexUtil.bytesToHex(result);
+	}
+	
+	@Override
+	public boolean equals(Object otherObject){
+	    if(!(otherObject instanceof HashResult)){
+	        return false;
+	    }
+
+	    HashResult otherHash = (HashResult) otherObject;
+	    if(type != otherHash.type){
+	        return false;
+	    }
+
+	    return MessageDigest.isEqual(result, otherHash.result);
+	}
+
+	@Override
+	public int hashCode(){
+	    int hash = 1;
+
+	    hash *= 31 + type.hashCode();
+	    hash *= 31 + result.hashCode();
+
+	    return hash;
 	}
 
 }
