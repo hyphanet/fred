@@ -5,7 +5,7 @@
 	<classpathentry kind="lib" path="/usr/share/java/junit.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="lib" path="lib/freenet/freenet-ext.jar" sourcepath="/Contrib/db4o/src/db4oj"/>
-	<classpathentry kind="lib" path="lib/bcprov.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="lib" path="lib/bcprov-jdk15on-151.jar"/>
 	<classpathentry kind="output" path="build/main/"/>
 </classpath>
