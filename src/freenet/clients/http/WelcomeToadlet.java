@@ -121,10 +121,8 @@ public class WelcomeToadlet extends Toadlet {
     }
 
     public void addSearchBox(HTMLNode contentNode)  {
-        // search box is BELOW bookmarks for now, until we get search
-        // fixed properly.  This function still contains legacy cruft
-        // because we might need that again when Library becomes
-        // usable again.
+        // This function still contains legacy cruft because we might
+        // need that again when Library becomes usable again.
         HTMLNode searchBox = contentNode.addChild("div", "class", "infobox infobox-normal");
         searchBox.addAttribute("id", "search-freenet");
         searchBox.addChild("div", "class", "infobox-header").addChild("span", "class", "search-title-label", NodeL10n.getBase().getString("WelcomeToadlet.searchBoxLabel"));
