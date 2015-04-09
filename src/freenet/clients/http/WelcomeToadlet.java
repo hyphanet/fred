@@ -131,7 +131,7 @@ public class WelcomeToadlet extends Toadlet {
         searchBox.addChild("div", "class", "infobox-header").addChild("span", "class", "search-title-label", NodeL10n.getBase().getString("WelcomeToadlet.searchBoxLabel"));
         HTMLNode searchBoxContent = searchBox.addChild("div", "class", "infobox-content");
         // Search form
-        if(showSearchBox()) {
+        if (showSearchBox()) {
             // FIXME: Remove this once we have a non-broken index.
             searchBoxContent.addChild("span", "class", "search-warning-text", l10n("searchBoxWarningSlow"));
             HTMLNode searchForm = container.addFormChild(searchBoxContent, "/library/", "searchform");
@@ -139,7 +139,7 @@ public class WelcomeToadlet extends Toadlet {
             searchForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", l10n("searchFreenet") });
             // Search must be in a new window so that the user is able to browse the bookmarks.
             searchForm.addAttribute("target", "_blank");
-        } else if(showSearchBoxLoading()) {
+        } else if (showSearchBoxLoading()) {
             // Warn that search plugin is not loaded.
             HTMLNode textSpan = searchBoxContent.addChild("span", "class", "search-not-availible-warning");
             NodeL10n.getBase().addL10nSubstitution(textSpan, "WelcomeToadlet.searchPluginLoading", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/plugins/") });
