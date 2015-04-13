@@ -81,17 +81,23 @@ abstract class SwitchableProxyRandomAccessBuffer implements LockableRandomAccess
 
     @Override
     public void free() {
+        innerFree();
+    }
+    
+    /** @return True unless the buffer has already been freed. */
+    protected boolean innerFree() {
         try {
             // Write lock as we're going to change the underlying pointer.
             lock.writeLock().lock();
             closed = true; // Effectively ...
-            if(underlying == null) return;
+            if(underlying == null) return false;
             underlying.free();
             underlying = null;
         }  finally {
             lock.writeLock().unlock();
         }
         afterFreeUnderlying();
+        return true;
     }
     
     public boolean hasBeenFreed() {
