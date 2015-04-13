@@ -444,18 +444,27 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 
 		@Override
 		public synchronized void free() {
-			if(hasBeenFreed) return;
-			hasBeenFreed = true;
-			
-			Closer.close(os);
-			closeInputStreams(true);
-			currentBucket.free();
-			if(isRAMBucket()) {
-				_hasFreed(currentSize);
-				synchronized(ramBucketQueue) {
-					ramBucketQueue.remove(getReference());
-				}
-			}
+		    Bucket cur;
+		    synchronized(this) {
+		        if(hasBeenFreed) return;
+		        hasBeenFreed = true;
+		        
+		        Closer.close(os);
+		        closeInputStreams(true);
+		        if(isRAMBucket()) {
+		            // If it's in memory we must free before removing from the queue.
+		            currentBucket.free();
+		            _hasFreed(currentSize);
+		            synchronized(ramBucketQueue) {
+		                ramBucketQueue.remove(getReference());
+		            }
+		            return;
+		        } else {
+		            // Better to free outside the lock if it's not in-memory.
+		            cur = currentBucket;
+		        }
+		    }
+		    cur.free();
 		}
 		
 		/** Called only by TempRandomAccessBuffer */
