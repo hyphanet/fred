@@ -843,7 +843,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 
         @Override
         public void free() {
-            super.free();
+            if(!super.innerFree()) return;
             if(logMINOR) Logger.minor(this, "Freed "+this, new Exception("debug"));
             if(original != null) {
                 // Tell the TempBucket to prevent log spam. Don't call free().
