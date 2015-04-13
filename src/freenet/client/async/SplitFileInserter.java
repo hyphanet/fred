@@ -175,6 +175,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
 
     @Override
     public void encodingProgress() {
+        if(ctx.getCHKOnly) return;
         try {
             schedule(context);
         } catch (InsertException e) {
