@@ -457,6 +457,11 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 				}
 			}
 		}
+		
+		/** Called only by TempRandomAccessBuffer */
+		private synchronized void onFreed() {
+            hasBeenFreed = true;
+		}
 
 		@Override
 		public RandomAccessBucket createShadow() {
@@ -832,7 +837,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
             super.free();
             if(logMINOR) Logger.minor(this, "Freed "+this, new Exception("debug"));
             if(original != null) {
-                original.free(); // Set the freed flag to prevent log spam, won't come back here.
+                // Tell the TempBucket to prevent log spam. Don't call free().
+                original.onFreed();
             }
         }
         
