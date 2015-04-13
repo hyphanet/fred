@@ -287,7 +287,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		}
 		if(super.failedBlocks > 0 || super.fatallyFailedBlocks > 0 || super.successfulBlocks < super.totalBlocks) {
 			// USK auxiliary inserts are allowed to fail.
-			if(!uri.isUSK())
+			if((!uri.isUSK()) && !ctx.getCHKOnly)
 				Logger.error(this, "Failed blocks: "+failedBlocks+", Fatally failed blocks: "+fatallyFailedBlocks+
 						", Successful blocks: "+successfulBlocks+", Total blocks: "+totalBlocks+" but success?! on "+this+" from "+state,
 						new Exception("debug"));
