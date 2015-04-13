@@ -18,6 +18,7 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
+import freenet.client.async.ContainerInserter;
 import freenet.client.async.ManifestPutter;
 import freenet.client.async.DefaultManifestPutter;
 import freenet.client.async.TooManyFilesInsertException;
@@ -398,7 +399,7 @@ public class ClientPutDir extends ClientPutBase {
 	
 	@Override
 	public void innerResume(ClientContext context) throws ResumeFailedException {
-	    // Do nothing.
+	    ContainerInserter.resumeMetadata(manifestElements, context);
 	}
 
     @Override
