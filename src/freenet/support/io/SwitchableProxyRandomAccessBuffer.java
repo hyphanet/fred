@@ -103,7 +103,8 @@ abstract class SwitchableProxyRandomAccessBuffer implements LockableRandomAccess
         }
     }
 
-    /** Called after freeing underlying. */ 
+    /** Called after freeing the underlying storage. That includes when migrating, not just when
+     * free() is called! */ 
     protected void afterFreeUnderlying() {
         // Do nothing.
     }
