@@ -775,6 +775,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 	class TempRandomAccessBuffer extends SwitchableProxyRandomAccessBuffer implements Migratable {
 	    
 	    protected boolean hasMigrated = false;
+	    /** If false, there is in-memory storage that needs to be freed. */
 	    private boolean hasFreedRAM = false;
 	    private final long creationTime;
 	    /** Kept in RAM so that finalizer is called on the TempBucket when *both* the 
@@ -827,7 +828,17 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
         }
 
         @Override
+        public void free() {
+            super.free();
+            if(logMINOR) Logger.minor(this, "Freed "+this, new Exception("debug"));
+            if(original != null) {
+                original.free(); // Set the freed flag to prevent log spam, won't come back here.
+            }
+        }
+        
+        @Override
         protected void afterFreeUnderlying() {
+            // Called when the in-RAM storage has been freed.
             synchronized(this) {
                 if(hasFreedRAM) return;
                 hasFreedRAM = true;
