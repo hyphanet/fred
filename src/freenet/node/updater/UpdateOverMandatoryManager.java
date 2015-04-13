@@ -1053,7 +1053,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					if(!fromDisk)
 						temp.free();
 
-					insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
+					insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation", RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 				} else {
 					String message = "Failed to fetch revocation certificate from blob from " +
 						source + " : "+e+
@@ -1074,7 +1074,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				updateManager.revocationChecker.onSuccess(result, state, cleanedBlob);
 				if(!fromDisk)
 					temp.free();
-				insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
+				insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation", RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 			}
 			
             @Override
@@ -1103,7 +1103,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 	}
 
-	protected void insertBlob(final RandomAccessBucket bucket, final String type) {
+	protected void insertBlob(final RandomAccessBucket bucket, final String type, short priority) {
 		ClientPutCallback callback = new ClientPutCallback() {
 
 			@Override
@@ -1149,7 +1149,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false).getInsertContext(true);
 		ClientPutter putter = new ClientPutter(callback, bucket,
 			FreenetURI.EMPTY_CHK_URI, null, ctx,
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, null, true, updateManager.node.clientCore.clientContext, null, -1);
+			priority, false, null, true, updateManager.node.clientCore.clientContext, null, -1);
 		try {
 			updateManager.node.clientCore.clientContext.start(putter);
 		} catch(InsertException e1) {
@@ -1528,7 +1528,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 				mainUpdater.onSuccess(result, state, cleanedBlobFile, version);
 				temp.delete();
-				insertBlob(mainUpdater.getBlobBucket(version), "main jar");
+				
+				insertBlob(mainUpdater.getBlobBucket(version), "main jar",
+				        source == null ? RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 			}
 
             @Override
