@@ -119,6 +119,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob$");
 	private static final Pattern mainTempBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
 	private static final Pattern revocationTempBuildNumberPattern = Pattern.compile("^revocation(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
+	/** If we fetched the main jar locally, there is a 1 in RANDOM_INSERT_BLOB chance of inserting it.
+	 * We always insert it if we downloaded it via UOM. We always reinsert revocations. */
+    protected static final int RANDOM_INSERT_BLOB = 10;
 	private boolean fetchingUOM;
 	
 	private final HashMap<ShortBuffer, File> dependencies;
@@ -1529,8 +1532,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				mainUpdater.onSuccess(result, state, cleanedBlobFile, version);
 				temp.delete();
 				
-				insertBlob(mainUpdater.getBlobBucket(version), "main jar",
-				        source == null ? RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+				maybeInsertMainJar(mainUpdater, source, version);
 			}
 
             @Override
@@ -1558,7 +1560,24 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 	}
 
-	protected boolean removeOldTempFiles() {
+	/** Maybe insert the main jar blob. If so, compute the appropriate priority. */
+	protected void maybeInsertMainJar(NodeUpdater mainUpdater, PeerNode source, int version) {
+	    short priority = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
+	    if(source != null) {
+	        // We got it from another node.
+	        priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+	    } else if(updateManager.node.lastVersion > 0 && 
+	            updateManager.node.lastVersion != version) {
+	        // We just restarted after updating.
+	        priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+	    } else if(updateManager.node.fastWeakRandom.nextInt(RANDOM_INSERT_BLOB) != 0) {
+	        // 1 in RANDOM_INSERT_BLOB chance of inserting anyway at bulk priority.
+	        return;
+	    }
+        insertBlob(mainUpdater.getBlobBucket(version), "main jar", priority);
+    }
+
+    protected boolean removeOldTempFiles() {
 		File oldTempFilesPeerDir = updateManager.node.clientCore.getPersistentTempDir();
 		if(!oldTempFilesPeerDir.exists())
 			return false;
