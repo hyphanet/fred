@@ -1760,4 +1760,17 @@ public class SplitFileInserterStorage {
         this.callback.clearCooldown();
     }
 
+    /** @return -1 if the insert has finished, 0 if has blocks to send, otherwise Long.MAX_VALUE. */
+    public long getWakeupTime(ClientContext context, long now) {
+        // As with the fetcher, it is safe to use the main lock here, cooldown is separate because
+        // it's messy calculating it.
+        // FIXME set the flag when calculating it.
+        if(hasFinished()) 
+            return -1;
+        if(noBlocksToSend())
+            return Long.MAX_VALUE;
+        else
+            return 0;
+    }
+
 }
