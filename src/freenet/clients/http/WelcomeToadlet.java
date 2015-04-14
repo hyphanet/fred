@@ -110,20 +110,20 @@ public class WelcomeToadlet extends Toadlet {
     	return true;
     }
 
-    public boolean showSearchBox()  {
+    public boolean showSearchBox() {
         // Only show it if Library is loaded.
         return (node.pluginManager != null &&
                 node.pluginManager.isPluginLoaded("plugins.Library.Main"));
     }
     
-    public boolean showSearchBoxLoading()  {
+    public boolean showSearchBoxLoading() {
         // Only show it if Library is loaded.
         return (node.pluginManager == null ||
                 (!node.pluginManager.isPluginLoaded("plugins.Library.Main") &&
                  node.pluginManager.isPluginLoadedOrLoadingOrWantLoad("Library")));
     }
 
-    public void addSearchBox(HTMLNode contentNode)  {
+    public void addSearchBox(HTMLNode contentNode) {
         // This function still contains legacy cruft because we might
         // need that again when Library becomes usable again.
         HTMLNode searchBox = contentNode.addChild("div", "class", "infobox infobox-normal");
