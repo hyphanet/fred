@@ -1604,7 +1604,7 @@ public class SplitFileFetcherStorage {
 
             @Override
             public boolean run(ClientContext context) {
-                maybeClearCooldown();
+                maybeClearCooldownInner();
                 fetcher.restartedAfterDataCorruption();
                 return false;
             }
@@ -1650,6 +1650,18 @@ public class SplitFileFetcherStorage {
     /** Called when a segment exits cooldown e.g. due to a request completing and becoming 
      * retryable. Must NOT be called with segment locks held. */
     public void maybeClearCooldown() {
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                maybeClearCooldownInner();
+                return false;
+            }
+            
+        });
+    }
+
+    protected void maybeClearCooldownInner() {
         synchronized(cooldownLock) {
             if(overallCooldownWakeupTime == -1) return;
             if(overallCooldownWakeupTime == 0 || 
