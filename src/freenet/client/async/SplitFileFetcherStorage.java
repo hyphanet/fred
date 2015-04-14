@@ -177,7 +177,12 @@ public class SplitFileFetcherStorage {
     final int cooldownTries;
     /** Cooldown lasts this long for each key. */
     final long cooldownLength;
-    /** Only set if all segments are in cooldown. */
+    /** Separate lock for cooldown operations, which must be serialized. Must be taken *BEFORE*
+     * segment locks. DO NOT TAKE THIS LOCK WHILE HOLDING ANY OTHER LOCK! */
+    private final Object cooldownLock = new Object();
+    /** Only set if all segments are in cooldown. Will be either 0 if not in cooldown, -1 if 
+     * finished, or a time at which the request will become fetchable again. 
+     * LOCKING: Protected by cooldownLock, be careful! */
     private long overallCooldownWakeupTime;
     final CompatibilityMode finalMinCompatMode;
     
@@ -1594,10 +1599,6 @@ public class SplitFileFetcherStorage {
             
         });
     }
-
-    /** Separate lock for cooldown operations, which must be serialized. Must be taken *BEFORE*
-     * segment locks. */
-    private final Object cooldownLock = new Object();
 
     /** Called when a segment goes into overall cooldown. */
     void increaseCooldown(SplitFileFetcherSegmentStorage splitFileFetcherSegmentStorage,
