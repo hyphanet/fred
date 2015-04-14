@@ -218,7 +218,16 @@ public class SplitFileInserterStorage {
 
     private final int overallStatusLength;
     
+    /** Protects cooldown calculations and noBlocksToSend. You MUST NOT take this lock while 
+     * holding any other locks!!!
+     * Cooldown calculation is tricky! Two major issues:
+     * 1. Consistency is essential because if we return Long.MAX_VALUE from getWakeupTime(), the
+     * insert will stall until it is explicitly rescheduled. That's the whole point, in fact.
+     * 2. Calculating the cooldown involves both (this) and segments. So it involves very nasty
+     * nested locking. */
     private final Object cooldownLock = new Object();
+    /** If true, the last chooseBlock() failed, there are no blocks to send. Protected by
+     * cooldownLock. */
     private boolean noBlocksToSend;
     
     /**
