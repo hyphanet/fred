@@ -1149,6 +1149,9 @@ public class SplitFileFetcherStorage {
                     if(succeeded) return false;
                     succeeded = true;
                 }
+                synchronized(cooldownLock) {
+                    overallCooldownWakeupTime = -1;
+                }
                 fetcher.onSuccess();
                 return true;
             }
@@ -1356,6 +1359,9 @@ public class SplitFileFetcherStorage {
             
             @Override
             public boolean run(ClientContext context) {
+                synchronized(cooldownLock) {
+                    overallCooldownWakeupTime = -1;
+                }
                 fetcher.fail(e);
                 return true;
             }
@@ -1377,6 +1383,9 @@ public class SplitFileFetcherStorage {
 
             @Override
             public boolean run(ClientContext context) {
+                synchronized(cooldownLock) {
+                    overallCooldownWakeupTime = -1;
+                }
                 fetcher.failOnDiskError(e);
                 return true;
             }
@@ -1390,6 +1399,9 @@ public class SplitFileFetcherStorage {
 
             @Override
             public boolean run(ClientContext context) {
+                synchronized(cooldownLock) {
+                    overallCooldownWakeupTime = -1;
+                }
                 fetcher.failOnDiskError(e);
                 return true;
             }
@@ -1610,6 +1622,11 @@ public class SplitFileFetcherStorage {
             public boolean run(ClientContext context) {
                 long now = System.currentTimeMillis();
                 long wakeupTime;
+                if(hasFinished()) {
+                    synchronized(cooldownLock) {
+                        overallCooldownWakeupTime = -1;
+                    }
+                }
                 synchronized(cooldownLock) {
                     if(cooldownTime < now) return false;
                     long oldCooldownTime = overallCooldownWakeupTime;
@@ -1634,6 +1651,7 @@ public class SplitFileFetcherStorage {
      * retryable. Must NOT be called with segment locks held. */
     public void maybeClearCooldown() {
         synchronized(cooldownLock) {
+            if(overallCooldownWakeupTime == -1) return;
             if(overallCooldownWakeupTime == 0 || 
                     overallCooldownWakeupTime < System.currentTimeMillis()) return;
             overallCooldownWakeupTime = 0;
@@ -1643,12 +1661,9 @@ public class SplitFileFetcherStorage {
 
     /** Returns -1 if the request is finished, otherwise the wakeup time. */
     public long getCooldownWakeupTime(long now) {
-        // It is OK to use the main lock here.
-        // Cooldown is a separate lock because updating it is tricky.
-        // FIXME maybe set cooldown when finish and avoid this.
-        if(hasFinished()) return -1;
         synchronized(cooldownLock) {
-            if(overallCooldownWakeupTime < now) overallCooldownWakeupTime = 0;
+            if(overallCooldownWakeupTime > 0 && overallCooldownWakeupTime < now) 
+                overallCooldownWakeupTime = 0;
             return overallCooldownWakeupTime;
         }
     }
