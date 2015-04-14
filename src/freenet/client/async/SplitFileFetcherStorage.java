@@ -1640,7 +1640,12 @@ public class SplitFileFetcherStorage {
         fetcher.clearCooldown();
     }
 
+    /** Returns -1 if the request is finished, otherwise the wakeup time. */
     public long getCooldownWakeupTime(long now) {
+        // It is OK to use the main lock here.
+        // Cooldown is a separate lock because updating it is tricky.
+        // FIXME maybe set cooldown when finish and avoid this.
+        if(hasFinished()) return -1;
         synchronized(cooldownLock) {
             if(overallCooldownWakeupTime < now) overallCooldownWakeupTime = 0;
             return overallCooldownWakeupTime;

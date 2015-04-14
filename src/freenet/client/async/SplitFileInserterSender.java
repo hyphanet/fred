@@ -212,6 +212,11 @@ public class SplitFileInserterSender extends SendableInsert {
     
     @Override
     public long getWakeupTime(ClientContext context, long now) {
+        // As with the fetcher, it is safe to use the main lock here, cooldown is separate because
+        // it's messy calculating it.
+        // FIXME set the flag when calculating it.
+        if(storage.hasFinished()) 
+            return -1;
         if(storage.noBlocksToSend())
             return Long.MAX_VALUE;
         else
