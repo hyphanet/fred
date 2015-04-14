@@ -196,7 +196,12 @@ public class SplitFileInserterStorage {
         NOT_STARTED, STARTED, ENCODED_CROSS_SEGMENTS, ENCODED, GENERATING_METADATA, SUCCEEDED, FAILED
     }
 
+    /** The current status of the insert. You must set finished if you set this to SUCCEEDED or 
+     * FAILED. */
     private Status status;
+    /** Set when status is set to SUCCEEDED or FAILED. Never unset. Really status is definitive, 
+     * but this is convenient to avoid locking (this). */
+    private volatile boolean finished;
     private final FailureCodeTracker errors;
     private boolean overallStatusDirty;
     
@@ -1445,6 +1450,7 @@ public class SplitFileInserterStorage {
                         synchronized(this) {
                             status = Status.SUCCEEDED;
                         }
+                        finished = true;
                         callback.onSucceeded(metadata);
                     } catch (IOException e) {
                         InsertException e1 = new InsertException(InsertExceptionMode.BUCKET_ERROR);
@@ -1452,6 +1458,7 @@ public class SplitFileInserterStorage {
                             failing = e1;
                             status = Status.FAILED;
                         }
+                        finished = true;
                         callback.onFailed(e1);
                     } catch (MissingKeyException e) {
                         // Fail here too. If we're getting disk corruption on keys, we're probably 
@@ -1461,6 +1468,7 @@ public class SplitFileInserterStorage {
                             failing = e1;
                             status = Status.FAILED;
                         }
+                        finished = true;
                         callback.onFailed(e1);
                     }
                 } else {
@@ -1485,6 +1493,7 @@ public class SplitFileInserterStorage {
                     return true;
                 }
                 status = Status.FAILED;
+                finished = true;
             }
             if(logMINOR) Logger.minor(this, "Maybe fail returning true with error "+e);
             callback.onFailed(e);
@@ -1571,6 +1580,7 @@ public class SplitFileInserterStorage {
                         if(hasFinished()) return false;
                         status = Status.FAILED;
                     }
+                    finished = true;
                     callback.onFailed(e);
                     return true;
                 } else {
