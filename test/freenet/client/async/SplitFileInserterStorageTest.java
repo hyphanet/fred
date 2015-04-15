@@ -1386,13 +1386,8 @@ public class SplitFileInserterStorageTest extends TestCase {
             assertTrue(allSegmentsEncoding(storage));
         SplitFileInserterSegmentStorage segment = storage.segments[0];
         assertTrue(memoryLimitedJobRunner.getRunningThreads() > 0);
+        data.waitForWaiting(); // Wait until the segments are actually in pread().
         segment.onFailure(0, new InsertException(InsertExceptionMode.INTERNAL_ERROR));
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e1) {
-            // Ignore.
-        }
-        data.waitForWaiting();
         assertFalse(cb.hasFailed()); // Callback must not have been called yet.
         data.proceed(); // Now it will complete encoding, and then report in, and then fail.
         try {
