@@ -32,7 +32,6 @@ import freenet.crypt.MasterSecret;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.node.KeysFetchingLocally;
-import freenet.node.SendableInsert;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
