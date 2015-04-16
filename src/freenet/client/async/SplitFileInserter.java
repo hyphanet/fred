@@ -176,7 +176,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     @Override
     public void encodingProgress() {
         // We've encoded a segment. Start inserting the blocks we have immediately.
-        if(ctx.getCHKOnly) {
+        if (ctx.getCHKOnly) {
             // We are not inserting any blocks. Wait for onHasKeys().
             return;
         }
