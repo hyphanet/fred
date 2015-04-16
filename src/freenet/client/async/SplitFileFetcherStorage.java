@@ -177,7 +177,12 @@ public class SplitFileFetcherStorage {
     final int cooldownTries;
     /** Cooldown lasts this long for each key. */
     final long cooldownLength;
-    /** Only set if all segments are in cooldown. */
+    /** Separate lock for cooldown operations, which must be serialized. Must be taken *BEFORE*
+     * segment locks. DO NOT TAKE THIS LOCK WHILE HOLDING ANY OTHER LOCK! */
+    private final Object cooldownLock = new Object();
+    /** Only set if all segments are in cooldown. Will be either 0 if not in cooldown, -1 if 
+     * finished, or a time at which the request will become fetchable again. 
+     * LOCKING: Protected by cooldownLock, be careful! */
     private long overallCooldownWakeupTime;
     final CompatibilityMode finalMinCompatMode;
     
@@ -1144,6 +1149,9 @@ public class SplitFileFetcherStorage {
                     if(succeeded) return false;
                     succeeded = true;
                 }
+                synchronized(cooldownLock) {
+                    overallCooldownWakeupTime = -1;
+                }
                 fetcher.onSuccess();
                 return true;
             }
@@ -1351,6 +1359,9 @@ public class SplitFileFetcherStorage {
             
             @Override
             public boolean run(ClientContext context) {
+                synchronized(cooldownLock) {
+                    overallCooldownWakeupTime = -1;
+                }
                 fetcher.fail(e);
                 return true;
             }
@@ -1372,6 +1383,9 @@ public class SplitFileFetcherStorage {
 
             @Override
             public boolean run(ClientContext context) {
+                synchronized(cooldownLock) {
+                    overallCooldownWakeupTime = -1;
+                }
                 fetcher.failOnDiskError(e);
                 return true;
             }
@@ -1385,6 +1399,9 @@ public class SplitFileFetcherStorage {
 
             @Override
             public boolean run(ClientContext context) {
+                synchronized(cooldownLock) {
+                    overallCooldownWakeupTime = -1;
+                }
                 fetcher.failOnDiskError(e);
                 return true;
             }
@@ -1587,17 +1604,13 @@ public class SplitFileFetcherStorage {
 
             @Override
             public boolean run(ClientContext context) {
-                maybeClearCooldown();
+                maybeClearCooldownInner();
                 fetcher.restartedAfterDataCorruption();
                 return false;
             }
             
         });
     }
-
-    /** Separate lock for cooldown operations, which must be serialized. Must be taken *BEFORE*
-     * segment locks. */
-    private final Object cooldownLock = new Object();
 
     /** Called when a segment goes into overall cooldown. */
     void increaseCooldown(SplitFileFetcherSegmentStorage splitFileFetcherSegmentStorage,
@@ -1609,6 +1622,11 @@ public class SplitFileFetcherStorage {
             public boolean run(ClientContext context) {
                 long now = System.currentTimeMillis();
                 long wakeupTime;
+                if(hasFinished()) {
+                    synchronized(cooldownLock) {
+                        overallCooldownWakeupTime = -1;
+                    }
+                }
                 synchronized(cooldownLock) {
                     if(cooldownTime < now) return false;
                     long oldCooldownTime = overallCooldownWakeupTime;
@@ -1632,7 +1650,20 @@ public class SplitFileFetcherStorage {
     /** Called when a segment exits cooldown e.g. due to a request completing and becoming 
      * retryable. Must NOT be called with segment locks held. */
     public void maybeClearCooldown() {
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                maybeClearCooldownInner();
+                return false;
+            }
+            
+        });
+    }
+
+    protected void maybeClearCooldownInner() {
         synchronized(cooldownLock) {
+            if(overallCooldownWakeupTime == -1) return;
             if(overallCooldownWakeupTime == 0 || 
                     overallCooldownWakeupTime < System.currentTimeMillis()) return;
             overallCooldownWakeupTime = 0;
@@ -1640,9 +1671,11 @@ public class SplitFileFetcherStorage {
         fetcher.clearCooldown();
     }
 
+    /** Returns -1 if the request is finished, otherwise the wakeup time. */
     public long getCooldownWakeupTime(long now) {
         synchronized(cooldownLock) {
-            if(overallCooldownWakeupTime < now) overallCooldownWakeupTime = 0;
+            if(overallCooldownWakeupTime > 0 && overallCooldownWakeupTime < now) 
+                overallCooldownWakeupTime = 0;
             return overallCooldownWakeupTime;
         }
     }
