@@ -1647,9 +1647,9 @@ public class SplitFileFetcherStorage {
     public long getCooldownWakeupTime(long now) {
         // LOCKING: hasFinished() uses (this), separate from cooldownLock.
         // It is safe to use both here (on the request selection thread), one after the other.
-        if(hasFinished()) return -1;
+        if (hasFinished()) return -1;
         synchronized(cooldownLock) {
-            if(overallCooldownWakeupTime < now) overallCooldownWakeupTime = 0;
+            if (overallCooldownWakeupTime < now) overallCooldownWakeupTime = 0;
             return overallCooldownWakeupTime;
         }
     }
