@@ -1642,9 +1642,8 @@ public class SplitFileFetcherStorage {
 
     /** Returns -1 if the request is finished, otherwise the wakeup time. */
     public long getCooldownWakeupTime(long now) {
-        // It is OK to use the main lock here.
-        // Cooldown is a separate lock because updating it is tricky.
-        // FIXME maybe set cooldown when finish and avoid this.
+        // LOCKING: hasFinished() uses (this), separate from cooldownLock.
+        // It is safe to use both here (on the request selection thread), one after the other.
         if(hasFinished()) return -1;
         synchronized(cooldownLock) {
             if(overallCooldownWakeupTime < now) overallCooldownWakeupTime = 0;
