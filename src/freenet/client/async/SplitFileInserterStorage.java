@@ -1693,7 +1693,9 @@ public class SplitFileInserterStorage {
         }
     }
     
-    /** Choose a block to insert */
+    /** Choose a block to insert.
+     * FIXME make SplitFileInserterSender per-segment, eliminate a lot of unnecessary complexity.
+     */
     public BlockInsert chooseBlock() {
         // FIXME this should probably use SimpleBlockChooser and hence use lowest-retry-count from each segment?
         // Less important for inserts than for requests though...

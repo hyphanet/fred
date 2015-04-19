@@ -1474,6 +1474,9 @@ public class SplitFileFetcherStorage {
     /** Choose a random key which can be fetched at the moment. Must not update any persistent data;
      * it's okay to update caches and other stuff that isn't stored to disk. If we fail etc we 
      * should do it off-thread.
+     * 
+     * FIXME make SplitFileFetcherGet per-segment, eliminate all this unnecessary complexity!
+     * 
      * @return The block number to be fetched, as an integer.
      */
     public MyKey chooseRandomKey() {
