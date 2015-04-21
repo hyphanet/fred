@@ -219,6 +219,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
             @Override
             public boolean run(ClientContext context) {
                 if(logMINOR) Logger.minor(this, "Succeeding on "+SplitFileInserter.this);
+                unregisterSender();
                 if(!(ctx.earlyEncode || ctx.getCHKOnly)) {
                     reportMetadata(metadata);
                 }
@@ -234,6 +235,11 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
         });
     }
 
+    protected void unregisterSender() {
+        if(sender != null)
+            sender.unregister(context, parent.getPriorityClass());
+    }
+
     protected void reportMetadata(Metadata metadata) {
         // Splitfile insert is always reportMetadataOnly, i.e. it always passes the metadata back 
         // to the parent SingleFileInserter, which will write it to a Bucket and probably insert it.
@@ -246,6 +252,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
 
             @Override
             public boolean run(ClientContext context) {
+                unregisterSender();
                 raf.close();
                 raf.free();
                 originalData.close();
