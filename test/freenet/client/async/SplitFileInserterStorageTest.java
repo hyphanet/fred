@@ -1348,7 +1348,6 @@ public class SplitFileInserterStorageTest extends TestCase {
             cb.waitForFinishedEncode();
             assertFalse(true); // Should have failed.
         } catch (InsertException e) {
-            assertTrue(executor.isIdle());
             assertFalse(segment.isEncoding());
             assertEquals(storage.getStatus(), Status.FAILED);
         }
