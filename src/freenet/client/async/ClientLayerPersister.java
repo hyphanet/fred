@@ -233,10 +233,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         if(clientDatExists) {
             innerLoad(loaded, makeBucket(dir, baseName, false, null), noSerialize, context, requestStarters, random);
         }
-        if(clientDatCryptExists && loaded.needsMore()) {
+        if(clientDatCryptExists) {
             innerLoad(loaded, makeBucket(dir, baseName, false, encryptionKey), noSerialize, context, requestStarters, random);
         }
-        if(clientDatBakExists) {
+        if(clientDatBakExists && loaded.needsMore()) {
             innerLoad(loaded, makeBucket(dir, baseName, true, null), noSerialize, context, requestStarters, random);
         }
         if(clientDatBakCryptExists && loaded.needsMore()) {
