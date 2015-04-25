@@ -238,8 +238,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     }
 
     protected void unregisterSender() {
-        if (sender != null)
-            sender.unregister(context, parent.getPriorityClass());
+        sender.unregister(context, parent.getPriorityClass());
     }
 
     protected void reportMetadata(Metadata metadata) {
