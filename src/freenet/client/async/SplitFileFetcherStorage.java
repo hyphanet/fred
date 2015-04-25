@@ -1474,6 +1474,9 @@ public class SplitFileFetcherStorage {
     /** Choose a random key which can be fetched at the moment. Must not update any persistent data;
      * it's okay to update caches and other stuff that isn't stored to disk. If we fail etc we 
      * should do it off-thread.
+     * 
+     * FIXME make SplitFileFetcherGet per-segment, eliminate all this unnecessary complexity!
+     * 
      * @return The block number to be fetched, as an integer.
      */
     public MyKey chooseRandomKey() {
@@ -1640,9 +1643,13 @@ public class SplitFileFetcherStorage {
         fetcher.clearCooldown();
     }
 
+    /** Returns -1 if the request is finished, otherwise the wakeup time. */
     public long getCooldownWakeupTime(long now) {
+        // LOCKING: hasFinished() uses (this), separate from cooldownLock.
+        // It is safe to use both here (on the request selection thread), one after the other.
+        if (hasFinished()) return -1;
         synchronized(cooldownLock) {
-            if(overallCooldownWakeupTime < now) overallCooldownWakeupTime = 0;
+            if (overallCooldownWakeupTime < now) overallCooldownWakeupTime = 0;
             return overallCooldownWakeupTime;
         }
     }

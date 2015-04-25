@@ -1692,7 +1692,9 @@ public class SplitFileInserterStorage {
         }
     }
     
-    /** Choose a block to insert */
+    /** Choose a block to insert.
+     * FIXME make SplitFileInserterSender per-segment, eliminate a lot of unnecessary complexity.
+     */
     public BlockInsert chooseBlock() {
         // FIXME this should probably use SimpleBlockChooser and hence use lowest-retry-count from each segment?
         // Less important for inserts than for requests though...
@@ -1757,6 +1759,18 @@ public class SplitFileInserterStorage {
             noBlocksToSend = false;
         }
         this.callback.clearCooldown();
+    }
+
+    /** @return -1 if the insert has finished, 0 if has blocks to send, otherwise Long.MAX_VALUE. */
+    public long getWakeupTime(ClientContext context, long now) {
+        // LOCKING: hasFinished() uses (this), separate from cooldownLock.
+        // It is safe to use both here (on the request selection thread), one after the other.
+        if (hasFinished()) 
+            return -1;
+        if (noBlocksToSend())
+            return Long.MAX_VALUE;
+        else
+            return 0;
     }
 
 }
