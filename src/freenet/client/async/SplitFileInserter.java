@@ -46,10 +46,12 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     private final boolean freeData;
     /** The RAF that stores check blocks and status info, used and created by storage. */
     private final LockableRandomAccessBuffer raf;
-    /** Stores the state of the insert and does most of the work. */
-    private transient SplitFileInserterStorage storage;
-    /** Actually does the insert */
-    private transient SplitFileInserterSender sender;
+    /** Stores the state of the insert and does most of the work. 
+     * Created in onResume() or in the constructor, so must be volatile. */
+    private transient volatile SplitFileInserterStorage storage;
+    /** Actually does the insert.
+     * Created in onResume() or in the constructor, so must be volatile. */
+    private transient volatile SplitFileInserterSender sender;
     /** Used any time a callback from storage needs us to do something higher level */
     private transient ClientContext context;
     /** Is the insert real-time? */
