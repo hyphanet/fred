@@ -105,6 +105,9 @@ public class SplitFileInserterStorage {
     final SplitFileInserterSegmentStorage[] segments;
     final SplitFileInserterCrossSegmentStorage[] crossSegments;
 
+    /** Index permutation for randomized segment selection. Locking: cooldownLock must be held. */
+    private final int[] segmentIndexPermutation;
+
     final int totalDataBlocks;
     final int totalCheckBlocks;
 
@@ -376,6 +379,7 @@ public class SplitFileInserterStorage {
         segments = makeSegments(segmentSize, segs, totalDataBlocks, crossCheckBlocks,
                 deductBlocksFromSegments, persistent,
                 cmode, random, keysFetching, consecutiveRNFsCountAsSuccess);
+        segmentIndexPermutation = sequence(segments.length);
         for (SplitFileInserterSegmentStorage segment : segments) {
             totalCheckBlocks += segment.checkBlockCount;
             checkTotalDataBlocks += segment.dataBlockCount;
@@ -571,7 +575,7 @@ public class SplitFileInserterStorage {
         this.topRequiredBlocks = topRequiredBlocks + totalDataBlocks + totalCrossCheckBlocks;
         this.topTotalBlocks = topTotalBlocks + totalDataBlocks + totalCrossCheckBlocks + totalCheckBlocks;
     }
-    
+
     /** Create a splitfile insert from stored data.
      * @param raf The file the insert was stored to. Caller must resume it before calling constructor.
      * @param originalData The original data to be inserted. Caller must resume it before calling constructor.
@@ -723,6 +727,7 @@ public class SplitFileInserterStorage {
         dis.close();
         this.hasPaddedLastBlock = (dataLength % CHKBlock.DATA_LENGTH != 0);
         this.segments = new SplitFileInserterSegmentStorage[segmentCount];
+        this.segmentIndexPermutation = sequence(segments.length);
         if(crossCheckBlocks != 0)
             this.crossSegments = new SplitFileInserterCrossSegmentStorage[segmentCount];
         else
@@ -1691,7 +1696,20 @@ public class SplitFileInserterStorage {
             this.startSegmentEncode();
         }
     }
-    
+
+    /**
+     * Creates an integer sequence array.
+     * @param length The length of the resulting array.
+     * @return an array holding values [0, 1, ..., length - 1]
+     */
+    private int[] sequence(int length) {
+        final int[] ret = new int[length];
+        for (int i = 0; i < length; i++) {
+            ret[i] = i;
+        }
+        return ret;
+    }
+
     /** Choose a block to insert.
      * FIXME make SplitFileInserterSender per-segment, eliminate a lot of unnecessary complexity.
      */
@@ -1705,26 +1723,21 @@ public class SplitFileInserterStorage {
         }
         // Generally segments are fairly well balanced, so we can usually pick a random segment 
         // then a random key from it.
-        int segNo = random.nextInt(segments.length);
-        SplitFileInserterSegmentStorage segment = segments[segNo];
-        BlockInsert ret = segment.chooseBlock();
-        if(ret != null) {
-            noBlocksToSend = false;
-            return ret;
-        }
-        // Looks like we are close to completion ...
-        boolean[] tried = new boolean[segments.length];
-        tried[segNo] = true;
-        for(int count=1; count<segments.length; count++) {
-            while(tried[segNo = random.nextInt(segments.length)]);
-            tried[segNo] = true;
-            segment = segments[segNo];
-            ret = segment.chooseBlock();
+        for (int i = 0; i < segments.length; i++) {
+            // Randomly pick one of the remaining segments, using a partial Fisher–Yates shuffle of
+            // all segments indices in segmentIndexPermutation
+            int j = random.nextInt(segments.length - i) + i;
+            int chosen = segmentIndexPermutation[j];
+            segmentIndexPermutation[j] = segmentIndexPermutation[i];
+            segmentIndexPermutation[i] = chosen;
+
+            BlockInsert ret = segments[chosen].chooseBlock();
             if(ret != null) {
                 noBlocksToSend = false;
                 return ret;
             }
         }
+
         noBlocksToSend = true;
         return null;
         }
