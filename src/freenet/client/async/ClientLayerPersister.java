@@ -230,16 +230,16 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
         boolean failedSerialize = false;
         PartialLoad loaded = new PartialLoad();
-        if(clientDatExists) {
+        if (clientDatExists) {
             innerLoad(loaded, makeBucket(dir, baseName, false, null), noSerialize, context, requestStarters, random);
         }
-        if(clientDatCryptExists) {
+        if (clientDatCryptExists) {
             innerLoad(loaded, makeBucket(dir, baseName, false, encryptionKey), noSerialize, context, requestStarters, random);
         }
-        if(clientDatBakExists && loaded.needsMore()) {
+        if (clientDatBakExists && loaded.needsMore()) {
             innerLoad(loaded, makeBucket(dir, baseName, true, null), noSerialize, context, requestStarters, random);
         }
-        if(clientDatBakCryptExists && loaded.needsMore()) {
+        if (clientDatBakCryptExists && loaded.needsMore()) {
             innerLoad(loaded, makeBucket(dir, baseName, true, encryptionKey), noSerialize, context, requestStarters, random);
         }
         
