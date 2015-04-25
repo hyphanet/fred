@@ -74,6 +74,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         Logger.registerClass(SplitFileFetcher.class);
     }
 
+    /** Stores the progress of the download, including the actual data, in a separate file. */
     private transient SplitFileFetcherStorage storage;
     /** Kept here so we can resume from storage */
     private LockableRandomAccessBuffer raf;
@@ -90,6 +91,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
     final long token;
     /** Storage doesn't have a ClientContext so we need one here. */
     private transient ClientContext context;
+    /** Does the actual requests. */
     private transient SplitFileFetcherGet getter;
     private boolean failed;
     private boolean succeeded;
