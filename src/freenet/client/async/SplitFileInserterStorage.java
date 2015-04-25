@@ -1714,32 +1714,35 @@ public class SplitFileInserterStorage {
      * FIXME make SplitFileInserterSender per-segment, eliminate a lot of unnecessary complexity.
      */
     public BlockInsert chooseBlock() {
-        // FIXME this should probably use SimpleBlockChooser and hence use lowest-retry-count from each segment?
+        // FIXME this should probably use SimpleBlockChooser and hence use lowest-retry-count from
+        // each segment?
         // Less important for inserts than for requests though...
         synchronized(cooldownLock) {
-        synchronized(this) {
-            if(status == Status.FAILED || status == Status.SUCCEEDED || 
-                    status == Status.GENERATING_METADATA || failing != null) return null;
-        }
-        // Generally segments are fairly well balanced, so we can usually pick a random segment 
-        // then a random key from it.
-        for (int i = 0; i < segments.length; i++) {
-            // Randomly pick one of the remaining segments, using a partial Fisher–Yates shuffle of
-            // all segments indices in segmentIndexPermutation
-            int j = random.nextInt(segments.length - i) + i;
-            int chosen = segmentIndexPermutation[j];
-            segmentIndexPermutation[j] = segmentIndexPermutation[i];
-            segmentIndexPermutation[i] = chosen;
-
-            BlockInsert ret = segments[chosen].chooseBlock();
-            if(ret != null) {
-                noBlocksToSend = false;
-                return ret;
+            synchronized(this) {
+                if (status == Status.FAILED || status == Status.SUCCEEDED
+                        || status == Status.GENERATING_METADATA || failing != null) {
+                    return null;
+                }
             }
-        }
+            // Generally segments are fairly well balanced, so we can usually pick a random segment
+            // then a random key from it.
+            for (int i = 0; i < segments.length; i++) {
+                // Randomly pick one of the remaining segments, using a partial Fisher–Yates shuffle
+                // of all segments indices in segmentIndexPermutation
+                int j = random.nextInt(segments.length - i) + i;
+                int chosen = segmentIndexPermutation[j];
+                segmentIndexPermutation[j] = segmentIndexPermutation[i];
+                segmentIndexPermutation[i] = chosen;
 
-        noBlocksToSend = true;
-        return null;
+                BlockInsert ret = segments[chosen].chooseBlock();
+                if (ret != null) {
+                    noBlocksToSend = false;
+                    return ret;
+                }
+            }
+
+            noBlocksToSend = true;
+            return null;
         }
     }
     
