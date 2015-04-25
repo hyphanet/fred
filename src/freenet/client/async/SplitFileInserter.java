@@ -46,10 +46,12 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     private final boolean freeData;
     /** The RAF that stores check blocks and status info, used and created by storage. */
     private final LockableRandomAccessBuffer raf;
-    /** Stores the state of the insert and does most of the work. */
-    private transient SplitFileInserterStorage storage;
-    /** Actually does the insert */
-    private transient SplitFileInserterSender sender;
+    /** Stores the state of the insert and does most of the work. 
+     * Created in onResume() or in the constructor, so must be volatile. */
+    private transient volatile SplitFileInserterStorage storage;
+    /** Actually does the insert.
+     * Created in onResume() or in the constructor, so must be volatile. */
+    private transient volatile SplitFileInserterSender sender;
     /** Used any time a callback from storage needs us to do something higher level */
     private transient ClientContext context;
     /** Is the insert real-time? */
@@ -219,6 +221,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
             @Override
             public boolean run(ClientContext context) {
                 if(logMINOR) Logger.minor(this, "Succeeding on "+SplitFileInserter.this);
+                unregisterSender();
                 if(!(ctx.earlyEncode || ctx.getCHKOnly)) {
                     reportMetadata(metadata);
                 }
@@ -234,6 +237,10 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
         });
     }
 
+    protected void unregisterSender() {
+        sender.unregister(context, parent.getPriorityClass());
+    }
+
     protected void reportMetadata(Metadata metadata) {
         // Splitfile insert is always reportMetadataOnly, i.e. it always passes the metadata back 
         // to the parent SingleFileInserter, which will write it to a Bucket and probably insert it.
@@ -246,6 +253,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
 
             @Override
             public boolean run(ClientContext context) {
+                unregisterSender();
                 raf.close();
                 raf.free();
                 originalData.close();
