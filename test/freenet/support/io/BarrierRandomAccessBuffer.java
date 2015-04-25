@@ -49,6 +49,7 @@ public class BarrierRandomAccessBuffer implements LockableRandomAccessBuffer {
                     // Ignore.
                 }
             }
+            waiting--;
         }
     }
     
