@@ -168,11 +168,12 @@ public class DATASTORE_SIZE implements Step {
             // value might need revisiting when hardware or
             // filesystems change.
             long diskIoMax = 20 * oneGiB;
-            if(freeSpace / 100 > oneGiB) { // 100GB+ => 10%
+            if(freeSpace / 50 > oneGiB) { // 50GB+ => 10%, but at least 10GiB
                 // Limited by bloom filters and disk I/O
-                shortSize = Math.min(freeSpace / 10,
-                                     Math.min(diskIoMax,
-                                              bloomFilter128MiBMax));
+                shortSize = Math.max(10 * oneGiB,
+                                     Math.min(freeSpace / 10,
+                                              Math.min(diskIoMax,
+                                                       bloomFilter128MiBMax)));
             }else if(freeSpace / 5 > oneGiB) { // 5GB+ => 20%, min 2GiB
                 shortSize = Math.max(freeSpace / 5, 2 * oneGiB);
             }else if(freeSpace / 2 > oneGiB) { // 2GB+ => 512MiB
