@@ -151,37 +151,37 @@ public class DATASTORE_SIZE implements Step {
 		return slots * Node.sizePerKey;
 	}
 
-	private long canAutoconfigureDatastoreSize() {
-		if(!config.get("node").getOption("storeSize").isDefault())
-			return -1;
+    private long canAutoconfigureDatastoreSize() {
+        if(!config.get("node").getOption("storeSize").isDefault())
+            return -1;
 
-		long freeSpace = core.node.getStoreDir().getUsableSpace();
+        long freeSpace = core.node.getStoreDir().getUsableSpace();
 
-		if(freeSpace <= 0) {
-			return -1;
-		} else {
-			long shortSize;
-			long oneGiB = 1024 * 1024 * 1024L;
-			// Maximum for Freenet: 256GB. That's a 128MiB bloom filter.
-			long bloomFilter128MiBMax = 256 * oneGiB;
-			// Maximum to suggest to keep Disk I/O managable. This
-			// value might need revisiting when hardware or
-			// filesystems change.
-			long diskIoMax = 20 * oneGiB;
-			if(freeSpace / 100 > oneGiB) { // 100GB+ => 10%
-				// Limited by bloom filters and disk I/O
-				shortSize = Math.min(freeSpace / 10,
-				                     Math.min(diskIoMax,
-			                                  bloomFilter128MiBMax));
-			}else if(freeSpace / 5 > oneGiB) { // 5GB+ => 20%, min 2GiB
-				shortSize = Math.max(freeSpace / 5, 2 * oneGiB);
-			}else if(freeSpace / 2 > oneGiB) { // 2GB+ => 512MiB
-				shortSize = 512*1024*1024;
-			}else { // <2GiB => 256MiB
-				shortSize = 256*1024*1024;
-			}
+        if(freeSpace <= 0) {
+            return -1;
+        } else {
+            long shortSize;
+            long oneGiB = 1024 * 1024 * 1024L;
+            // Maximum for Freenet: 256GB. That's a 128MiB bloom filter.
+            long bloomFilter128MiBMax = 256 * oneGiB;
+            // Maximum to suggest to keep Disk I/O managable. This
+            // value might need revisiting when hardware or
+            // filesystems change.
+            long diskIoMax = 20 * oneGiB;
+            if(freeSpace / 100 > oneGiB) { // 100GB+ => 10%
+                // Limited by bloom filters and disk I/O
+                shortSize = Math.min(freeSpace / 10,
+                                     Math.min(diskIoMax,
+                                              bloomFilter128MiBMax));
+            }else if(freeSpace / 5 > oneGiB) { // 5GB+ => 20%, min 2GiB
+                shortSize = Math.max(freeSpace / 5, 2 * oneGiB);
+            }else if(freeSpace / 2 > oneGiB) { // 2GB+ => 512MiB
+                shortSize = 512*1024*1024;
+            }else { // <2GiB => 256MiB
+                shortSize = 256*1024*1024;
+            }
 
-			return shortSize;
-		}
-	}
+            return shortSize;
+        }
+    }
 }
