@@ -246,28 +246,28 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 					continue;
 				}
 				boolean excludeItem = false;
-				long excludeTime = item.getWakeupTime(context, now);
-				if(excludeTime > 0) {
-					// In cooldown, will be wanted later.
+				long itemWakeTime = item.getWakeupTime(context, now);
+				if (itemWakeTime > 0) {
+					// The item is in cooldown, will be wanted later.
 					excludeItem = true;
-					if(wakeupTime > excludeTime) wakeupTime = excludeTime;
-				} else {
-					long itemWakeTime = item.getWakeupTime(context, now);
-					if(itemWakeTime == -1) {
-						if(logMINOR) Logger.minor(this, "Removing "+item+" on "+this);
-						// We are doing compaction here. We don't need to swap with the end; we write valid ones to the target location.
-						reqsReading[offset] = null;
-						item.setParentGrabArray(null);
-						continue;
-					} else if(itemWakeTime > 0) {
-						if(itemWakeTime < wakeupTime) wakeupTime = itemWakeTime;
-						excludeItem = true;
+					if (itemWakeTime < wakeupTime) {
+						wakeupTime = itemWakeTime;
 					}
-					if(!excludeItem) {
-						itemWakeTime = excluding.exclude(item, context, now);
-						if(itemWakeTime > 0) {
-							if(itemWakeTime < wakeupTime) wakeupTime = itemWakeTime;
-							excludeItem = true;
+				} else if (itemWakeTime == -1) {
+					// The item is no longer needed and should be removed.
+					if(logMINOR) {
+						Logger.minor(this, "Removing "+item+" on "+this);
+					}
+					// We are doing compaction here. We don't need to swap with the end; we write valid ones to the target location.
+					reqsReading[offset] = null;
+					item.setParentGrabArray(null);
+					continue;
+				} else {
+					long excludeTime = excluding.exclude(item, context, now);
+					if (excludeTime > 0) {
+						excludeItem = true;
+						if(excludeTime < wakeupTime) {
+							wakeupTime = excludeTime;
 						}
 					}
 				}
