@@ -40,6 +40,7 @@ import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestItemKey;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
+import freenet.support.RandomArrayIterator;
 import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -138,6 +139,9 @@ public class SplitFileFetcherStorage {
     final SplitFileFetcherSegmentStorage[] segments;
     /** The cross-segments. Null if no cross-segments. */
     final SplitFileFetcherCrossSegmentStorage[] crossSegments;
+    /** Random iterator for segment selection. LOCKING: must synchronize on the iterator. */
+    private final RandomArrayIterator<SplitFileFetcherSegmentStorage> randomSegmentIterator;
+
     /** If the splitfile has a common encryption algorithm, this is it. */
     final byte splitfileSingleCryptoAlgorithm;
     /** If the splitfile has a common encryption key, this is it. */
@@ -370,6 +374,7 @@ public class SplitFileFetcherStorage {
                     ", check blocks per segment: "+checkBlocksPerSegment+", segments: "+segmentCount+
                     ", data blocks: "+splitfileDataBlocks+", check blocks: "+splitfileCheckBlocks);
         segments = new SplitFileFetcherSegmentStorage[segmentCount]; // initially null on all entries
+        randomSegmentIterator = new RandomArrayIterator<SplitFileFetcherSegmentStorage>(segments);
         
         long checkLength = 1L * (splitfileDataBlocks - segmentCount * crossCheckBlocks) * CHKBlock.DATA_LENGTH;
         if(checkLength > finalLength) {
@@ -753,6 +758,7 @@ public class SplitFileFetcherStorage {
             int segmentCount = dis.readInt();
             if(segmentCount < 0) throw new StorageFormatException("Invalid segment count "+segmentCount);
             this.segments = new SplitFileFetcherSegmentStorage[segmentCount];
+            randomSegmentIterator = new RandomArrayIterator<SplitFileFetcherSegmentStorage>(segments);
             long totalDataBlocks = dis.readInt();
             if(totalDataBlocks < 0) 
                 throw new StorageFormatException("Invalid total data blocks "+totalDataBlocks);
@@ -1486,25 +1492,17 @@ public class SplitFileFetcherStorage {
         }
         // Generally segments are fairly well balanced, so we can usually pick a random segment 
         // then a random key from it.
-        int segNo = random.nextInt(segments.length);
-        SplitFileFetcherSegmentStorage segment = segments[segNo];
-        int ret = segment.chooseRandomKey();
-        if(ret != -1) return new MyKey(ret, segNo, this);
-        // Looks like we are close to completion ...
-        // FIXME OPT SCALABILITY This is O(n) memory and time with the number of segments. For a 
-        // 4GB splitfile, there would be 512 segments. The alternative is to keep a similar 
-        // structure up to date, which also requires changes to the segment code. Not urgent until
-        // very big splitfiles are common.
         // FIXME OPT SCALABILITY A simpler option might be just to have one SplitFileFetcherGet per
         // segment, like the old code.
-        boolean[] tried = new boolean[segments.length];
-        tried[segNo] = true;
-        for(int count=1; count<segments.length; count++) {
-            while(tried[segNo = random.nextInt(segments.length)]);
-            tried[segNo] = true;
-            segment = segments[segNo];
-            ret = segment.chooseRandomKey();
-            if(ret != -1) return new MyKey(ret, segNo, this);
+        synchronized(randomSegmentIterator) {
+            randomSegmentIterator.reset(random);
+            while (randomSegmentIterator.hasNext()) {
+                SplitFileFetcherSegmentStorage segment = randomSegmentIterator.next();
+                int ret = segment.chooseRandomKey();
+                if (ret != -1) {
+                    return new MyKey(ret, segment.segNo, this);
+                }
+            }
         }
         return null;
     }
