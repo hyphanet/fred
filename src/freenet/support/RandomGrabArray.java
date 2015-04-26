@@ -311,7 +311,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 				return null; // Caller should remove the whole RGA
 			} else if(valid == 0) {
 				if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items total "+index);
-				reduceWakeupTime(wakeupTime, context);
+				setWakeupTime(wakeupTime, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else if(valid == 1) {
 				ret = validItem;
@@ -487,6 +487,25 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
         synchronized(root) {
             if(wakeupTime < now) wakeupTime = 0;
             return wakeupTime;
+        }
+    }
+    
+    /** Set the wakeup time, and update parents recursively if it is reduced. If it is increased
+     * we don't need to bother parents as they will recompute the next time they need to. Only
+     * called by removeRandomExhaustive() i.e. after checking <b>all</b> our 
+     * RandomGrabArrayItem's and finding that none of them are ready to send.
+     * @param wakeupTime
+     * @param context
+     */
+    private void setWakeupTime(long wakeupTime, ClientContext context) {
+        if(logMINOR) Logger.minor(this, "setCooldownTime("+(wakeupTime-System.currentTimeMillis())+") on "+this);
+        synchronized(root) {
+            if(this.wakeupTime > wakeupTime) {
+                this.wakeupTime = wakeupTime; // Set before calling parent.
+                if(parent != null) parent.reduceWakeupTime(wakeupTime, context);
+            } else {
+                this.wakeupTime = wakeupTime;
+            }
         }
     }
 
