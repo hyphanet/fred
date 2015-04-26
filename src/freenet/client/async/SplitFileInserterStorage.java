@@ -35,6 +35,7 @@ import freenet.node.KeysFetchingLocally;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
+import freenet.support.RandomArrayIterator;
 import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -105,8 +106,8 @@ public class SplitFileInserterStorage {
     final SplitFileInserterSegmentStorage[] segments;
     final SplitFileInserterCrossSegmentStorage[] crossSegments;
 
-    /** Index permutation for randomized segment selection. Locking: cooldownLock must be held. */
-    private final int[] segmentIndexPermutation;
+    /** Random iterator for segment selection. LOCKING: cooldownLock must be held. */
+    private final RandomArrayIterator<SplitFileInserterSegmentStorage> randomSegmentIterator;
 
     final int totalDataBlocks;
     final int totalCheckBlocks;
@@ -379,7 +380,7 @@ public class SplitFileInserterStorage {
         segments = makeSegments(segmentSize, segs, totalDataBlocks, crossCheckBlocks,
                 deductBlocksFromSegments, persistent,
                 cmode, random, keysFetching, consecutiveRNFsCountAsSuccess);
-        segmentIndexPermutation = sequence(segments.length);
+        randomSegmentIterator = new RandomArrayIterator<SplitFileInserterSegmentStorage>(segments);
         for (SplitFileInserterSegmentStorage segment : segments) {
             totalCheckBlocks += segment.checkBlockCount;
             checkTotalDataBlocks += segment.dataBlockCount;
@@ -727,7 +728,7 @@ public class SplitFileInserterStorage {
         dis.close();
         this.hasPaddedLastBlock = (dataLength % CHKBlock.DATA_LENGTH != 0);
         this.segments = new SplitFileInserterSegmentStorage[segmentCount];
-        this.segmentIndexPermutation = sequence(segments.length);
+        randomSegmentIterator = new RandomArrayIterator<SplitFileInserterSegmentStorage>(segments);
         if(crossCheckBlocks != 0)
             this.crossSegments = new SplitFileInserterCrossSegmentStorage[segmentCount];
         else
@@ -1697,19 +1698,6 @@ public class SplitFileInserterStorage {
         }
     }
 
-    /**
-     * Creates an integer sequence array.
-     * @param length The length of the resulting array.
-     * @return an array holding values [0, 1, ..., length - 1]
-     */
-    private int[] sequence(int length) {
-        final int[] ret = new int[length];
-        for (int i = 0; i < length; i++) {
-            ret[i] = i;
-        }
-        return ret;
-    }
-
     /** Choose a block to insert.
      * FIXME make SplitFileInserterSender per-segment, eliminate a lot of unnecessary complexity.
      */
@@ -1726,15 +1714,10 @@ public class SplitFileInserterStorage {
             }
             // Generally segments are fairly well balanced, so we can usually pick a random segment
             // then a random key from it.
-            for (int i = 0; i < segments.length; i++) {
-                // Randomly pick one of the remaining segments, using a partial Fisher–Yates shuffle
-                // of all segments indices in segmentIndexPermutation
-                int j = random.nextInt(segments.length - i) + i;
-                int chosen = segmentIndexPermutation[j];
-                segmentIndexPermutation[j] = segmentIndexPermutation[i];
-                segmentIndexPermutation[i] = chosen;
-
-                BlockInsert ret = segments[chosen].chooseBlock();
+            randomSegmentIterator.reset(random);
+            while (randomSegmentIterator.hasNext()) {
+                SplitFileInserterSegmentStorage segment = randomSegmentIterator.next();
+                BlockInsert ret = segment.chooseBlock();
                 if (ret != null) {
                     noBlocksToSend = false;
                     return ret;
