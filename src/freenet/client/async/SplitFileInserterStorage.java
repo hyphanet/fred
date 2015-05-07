@@ -35,6 +35,7 @@ import freenet.node.KeysFetchingLocally;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
+import freenet.support.RandomArrayIterator;
 import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -104,6 +105,9 @@ public class SplitFileInserterStorage {
 
     final SplitFileInserterSegmentStorage[] segments;
     final SplitFileInserterCrossSegmentStorage[] crossSegments;
+
+    /** Random iterator for segment selection. LOCKING: cooldownLock must be held. */
+    private final RandomArrayIterator<SplitFileInserterSegmentStorage> randomSegmentIterator;
 
     final int totalDataBlocks;
     final int totalCheckBlocks;
@@ -376,6 +380,7 @@ public class SplitFileInserterStorage {
         segments = makeSegments(segmentSize, segs, totalDataBlocks, crossCheckBlocks,
                 deductBlocksFromSegments, persistent,
                 cmode, random, keysFetching, consecutiveRNFsCountAsSuccess);
+        randomSegmentIterator = new RandomArrayIterator<SplitFileInserterSegmentStorage>(segments);
         for (SplitFileInserterSegmentStorage segment : segments) {
             totalCheckBlocks += segment.checkBlockCount;
             checkTotalDataBlocks += segment.dataBlockCount;
@@ -571,7 +576,7 @@ public class SplitFileInserterStorage {
         this.topRequiredBlocks = topRequiredBlocks + totalDataBlocks + totalCrossCheckBlocks;
         this.topTotalBlocks = topTotalBlocks + totalDataBlocks + totalCrossCheckBlocks + totalCheckBlocks;
     }
-    
+
     /** Create a splitfile insert from stored data.
      * @param raf The file the insert was stored to. Caller must resume it before calling constructor.
      * @param originalData The original data to be inserted. Caller must resume it before calling constructor.
@@ -723,6 +728,7 @@ public class SplitFileInserterStorage {
         dis.close();
         this.hasPaddedLastBlock = (dataLength % CHKBlock.DATA_LENGTH != 0);
         this.segments = new SplitFileInserterSegmentStorage[segmentCount];
+        randomSegmentIterator = new RandomArrayIterator<SplitFileInserterSegmentStorage>(segments);
         if(crossCheckBlocks != 0)
             this.crossSegments = new SplitFileInserterCrossSegmentStorage[segmentCount];
         else
@@ -1691,42 +1697,35 @@ public class SplitFileInserterStorage {
             this.startSegmentEncode();
         }
     }
-    
+
     /** Choose a block to insert.
      * FIXME make SplitFileInserterSender per-segment, eliminate a lot of unnecessary complexity.
      */
     public BlockInsert chooseBlock() {
-        // FIXME this should probably use SimpleBlockChooser and hence use lowest-retry-count from each segment?
+        // FIXME this should probably use SimpleBlockChooser and hence use lowest-retry-count from
+        // each segment?
         // Less important for inserts than for requests though...
         synchronized(cooldownLock) {
-        synchronized(this) {
-            if(status == Status.FAILED || status == Status.SUCCEEDED || 
-                    status == Status.GENERATING_METADATA || failing != null) return null;
-        }
-        // Generally segments are fairly well balanced, so we can usually pick a random segment 
-        // then a random key from it.
-        int segNo = random.nextInt(segments.length);
-        SplitFileInserterSegmentStorage segment = segments[segNo];
-        BlockInsert ret = segment.chooseBlock();
-        if(ret != null) {
-            noBlocksToSend = false;
-            return ret;
-        }
-        // Looks like we are close to completion ...
-        boolean[] tried = new boolean[segments.length];
-        tried[segNo] = true;
-        for(int count=1; count<segments.length; count++) {
-            while(tried[segNo = random.nextInt(segments.length)]);
-            tried[segNo] = true;
-            segment = segments[segNo];
-            ret = segment.chooseBlock();
-            if(ret != null) {
-                noBlocksToSend = false;
-                return ret;
+            synchronized(this) {
+                if (status == Status.FAILED || status == Status.SUCCEEDED
+                        || status == Status.GENERATING_METADATA || failing != null) {
+                    return null;
+                }
             }
-        }
-        noBlocksToSend = true;
-        return null;
+            // Generally segments are fairly well balanced, so we can usually pick a random segment
+            // then a random key from it.
+            randomSegmentIterator.reset(random);
+            while (randomSegmentIterator.hasNext()) {
+                SplitFileInserterSegmentStorage segment = randomSegmentIterator.next();
+                BlockInsert ret = segment.chooseBlock();
+                if (ret != null) {
+                    noBlocksToSend = false;
+                    return ret;
+                }
+            }
+
+            noBlocksToSend = true;
+            return null;
         }
     }
     
