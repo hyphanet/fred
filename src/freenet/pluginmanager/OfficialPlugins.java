@@ -96,7 +96,7 @@ public class OfficialPlugins {
 			addPlugin("Spider")
 					.inGroup("index")
 					.minimumVersion(51)
-					.loadedFrom("CHK@CcJfB~uOTgbzdpVr8htrhLXs0uNsVW6KFRpEvHGjXDU,BPr2fm9Cq9gj7BQeJdLbkCmcmXRx-e-b6aerDzSK4zk,AAMC--8/Spider.jar")
+					.loadedFrom("CHK@94gCPJEkEXq6Zti4wxDrqr9e~geQS4B3kdIwl4TXzV8,NUlmfjeqja28Lim6m3kTuxGHRSNtQHsbRoIAilxdkJY,AAMC--8/Spider-v52.jar")
 					.advanced();
 			addPlugin("WebOfTrust")
 					.inGroup("communication")
