@@ -71,18 +71,6 @@ public class OfficialPlugins {
 					.essential()
 					.minimumVersion(10003)
 					.loadedFrom("CHK@ICSu1tgnNxJ0bApWkL-fQFswbfi9KPnmWI3Is4eq0iw,Sj1N3zdDHBbL3Uc3~eY4elqWwSP7IR1uHrKVR2-nA0s,AAMC--8/UPnP-10006.jar");
-			addPlugin("XMLLibrarian")
-					.inGroup("index")
-					.minimumVersion(26)
-					.usesXml()
-					.loadedFrom("CHK@TvjyCaG1dx0xIBSJkXSKA1ZT4I~NkRKeQqwC0a0bhFM,JiQe4CRjF1RwhQRFFQzP-ih9t2i0peV0tBCfJAeFCdk,AAIC--8/XMLLibrarian.jar")
-					.deprecated();
-			addPlugin("XMLSpider")
-					.inGroup("index")
-					.minimumVersion(48)
-					.usesXml()
-					.loadedFrom("CHK@ne-aaLuzVZLcHj0YmrclaCXJqxsSb7q-J0eYEiL9V9o,v0EdgDGBhTE9k6GsB44UrQ4ADUq5LCUVknLaE4iSEBk,AAMC--8/XMLSpider.jar")
-					.deprecated();
 			addPlugin("Freereader")
 					.inGroup("index")
 					.minimumVersion(4)
