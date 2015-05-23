@@ -90,9 +90,9 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar");
 			addPlugin("Library")
 					.inGroup("index")
-					.minimumVersion(35)
+					.minimumVersion(36)
 					.usesXml()
-					.loadedFrom("CHK@VhhWe6sT41pPei4SBwxcmRXrJpMfPDXTFhtJ4rFxfsk,MrPki7hU35x2MHvV~8am~CdF-B4xzqxjMwDtqFVYJLQ,AAMC--8/Library.jar");
+					.loadedFrom("CHK@DB~oyn9M5B3Yx1B80qJbp-qp~434cxDERtgnxyhSfZ8,WRc11UVdhU4phf688oledQIV8BrNn3nvR9bVCVB-pM0,AAMC--8/Library-v36.jar");
 			addPlugin("Spider")
 					.inGroup("index")
 					.minimumVersion(52)
