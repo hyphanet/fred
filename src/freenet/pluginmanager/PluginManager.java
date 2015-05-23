@@ -101,6 +101,11 @@ public class PluginManager {
 
 	private boolean alwaysLoadOfficialPluginsFromCentralServer = false;
 
+  private final String[] NoLongerOfficialPluginNames = {
+          "XMLLibrarian",
+          "XMLSpider",
+  };
+
 	static final short PRIO = RequestStarter.INTERACTIVE_PRIORITY_CLASS;
 
 	public PluginManager(Node node, int lastVersion) {
@@ -453,6 +458,9 @@ public class PluginManager {
 					}, 0);
 				}
 			}
+      // If an official plugin has become no longer official failure to load it is okay.
+      // TODO: Remove a no longer official plugin from list of plugins to load on failure.
+      if (!Arrays.asList(NoLongerOfficialPluginNames).contains(filename)) {
 			PluginLoadFailedUserAlert newAlert =
 				new PluginLoadFailedUserAlert(filename,
 						pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, stillTrying, e);
@@ -462,6 +470,7 @@ public class PluginManager {
 			}
 			core.alerts.register(newAlert);
 			core.alerts.unregister(oldAlert);
+      }
 		} catch (UnsupportedClassVersionError e) {
 			Logger.error(this, "Could not load plugin " + filename + " : " + e,
 					e);
