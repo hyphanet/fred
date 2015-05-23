@@ -95,7 +95,7 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@VhhWe6sT41pPei4SBwxcmRXrJpMfPDXTFhtJ4rFxfsk,MrPki7hU35x2MHvV~8am~CdF-B4xzqxjMwDtqFVYJLQ,AAMC--8/Library.jar");
 			addPlugin("Spider")
 					.inGroup("index")
-					.minimumVersion(51)
+					.minimumVersion(52)
 					.loadedFrom("CHK@94gCPJEkEXq6Zti4wxDrqr9e~geQS4B3kdIwl4TXzV8,NUlmfjeqja28Lim6m3kTuxGHRSNtQHsbRoIAilxdkJY,AAMC--8/Spider-v52.jar")
 					.advanced();
 			addPlugin("WebOfTrust")
