@@ -90,19 +90,19 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar");
 			addPlugin("Library")
 					.inGroup("index")
-					.minimumVersion(35)
+					.minimumVersion(36)
 					.usesXml()
-					.loadedFrom("CHK@VhhWe6sT41pPei4SBwxcmRXrJpMfPDXTFhtJ4rFxfsk,MrPki7hU35x2MHvV~8am~CdF-B4xzqxjMwDtqFVYJLQ,AAMC--8/Library.jar");
+					.loadedFrom("CHK@DB~oyn9M5B3Yx1B80qJbp-qp~434cxDERtgnxyhSfZ8,WRc11UVdhU4phf688oledQIV8BrNn3nvR9bVCVB-pM0,AAMC--8/Library-v36.jar");
 			addPlugin("Spider")
 					.inGroup("index")
-					.minimumVersion(51)
+					.minimumVersion(52)
 					.loadedFrom("CHK@94gCPJEkEXq6Zti4wxDrqr9e~geQS4B3kdIwl4TXzV8,NUlmfjeqja28Lim6m3kTuxGHRSNtQHsbRoIAilxdkJY,AAMC--8/Spider-v52.jar")
 					.advanced();
 			addPlugin("WebOfTrust")
 					.inGroup("communication")
-					.minimumVersion(13)
+					.minimumVersion(15)
 					.usesXml()
-					.loadedFrom("CHK@dSfeVmjFX15QVyFCTUQmZItrJi8XnoYpiapxLTxaQeg,wizfFOtkKSBEdjUYgjCUJczjl74r0CjRBfzvaRvKUMo,AAMC--8/WebOfTrust.jar");
+					.loadedFrom("CHK@1FWUqydeyTbxC3fut51QT8VGnokQFYHMoLsqzP4RU60,BM3ibZYejeo2-sC7WklJ9I8ZJysMpO9~l9MZ8NUzP2c,AAMC--8/WebOfTrust-build0015.jar");
 			addPlugin("FlogHelper")
 					.inGroup("communication")
 					.minimumVersion(31)
