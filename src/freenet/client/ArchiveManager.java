@@ -139,9 +139,7 @@ public class ArchiveManager {
 	 * @param maxCachedElements The maximum number of cached elements (an element is a
 	 * file extracted from an archive. It is stored, encrypted and padded, in a single
 	 * file.
-	 * @param cacheDir The directory in which to store cached data.
-	 * @param random A cryptographicaly secure random source
-	 * @param weakRandom A weak and cheap random source
+	 * @param tempBucketFactory
 	 */
 	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchivedFileSize, int maxCachedElements, BucketFactory tempBucketFactory) {
 		maxArchiveHandlers = maxHandlers;

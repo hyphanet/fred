@@ -1348,7 +1348,6 @@ public class SplitFileInserterStorageTest extends TestCase {
             cb.waitForFinishedEncode();
             assertFalse(true); // Should have failed.
         } catch (InsertException e) {
-            assertTrue(executor.isIdle());
             assertFalse(segment.isEncoding());
             assertEquals(storage.getStatus(), Status.FAILED);
         }
@@ -1365,8 +1364,11 @@ public class SplitFileInserterStorageTest extends TestCase {
         Random r = new Random(0xb395f44d);
         testCancelAlt(r, CHKBlock.DATA_LENGTH*128*21);
     }
-    
+
     private void testCancelAlt(Random r, long size) throws IOException, InsertException {
+        // FIXME tricky to wait for "all threads are in pread()", when # threads != # segments.
+        // So just set max threads to 1 (only affects this test).
+        memoryLimitedJobRunner.setMaxThreads(1);
         BarrierRandomAccessBuffer data = new BarrierRandomAccessBuffer(generateData(r, size, smallRAFFactory));
         HashResult[] hashes = getHashes(data);
         data.pause();
@@ -1386,13 +1388,9 @@ public class SplitFileInserterStorageTest extends TestCase {
             assertTrue(allSegmentsEncoding(storage));
         SplitFileInserterSegmentStorage segment = storage.segments[0];
         assertTrue(memoryLimitedJobRunner.getRunningThreads() > 0);
-        segment.onFailure(0, new InsertException(InsertExceptionMode.INTERNAL_ERROR));
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e1) {
-            // Ignore.
-        }
+        // Wait for one segment to be in pread().
         data.waitForWaiting();
+        segment.onFailure(0, new InsertException(InsertExceptionMode.INTERNAL_ERROR));
         assertFalse(cb.hasFailed()); // Callback must not have been called yet.
         data.proceed(); // Now it will complete encoding, and then report in, and then fail.
         try {

@@ -297,7 +297,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		}
 
 		InsertBlock block = new InsertBlock(b, null, insertURI);
-		return insert(block, false, null, true, priorityClass);
+		FreenetURI uri = insert(block, false, null, true, priorityClass);
+		block.free();
+		return uri;
 	}
 
 	@Override

@@ -69,8 +69,13 @@ public abstract class Toadlet {
 	 * this function is necessary.
 	 * 
 	 * @param context Can be used to decide the return value, for example to check session cookies using {@link SessionManager}.
-	 * @return The result of {@link #showAsToadlet()}, which is <code>this</code> by default. Override this function to return something else for invisible
-	 *         Toadlets as explained above.
+     * @return
+     *     The result of {@link #showAsToadlet()}, which is <code>this</code> by default.<br>
+     *     This behavior is for backwards compatibility with existing code which overrides that
+     *     function.<br><br>
+     *     
+     *     Override this function to return something else for invisible Toadlets as explained
+     *     above.
 	 */
 	public Toadlet showAsToadlet(ToadletContext context) {
 	    return showAsToadlet();
@@ -85,7 +90,9 @@ public abstract class Toadlet {
 	 */
 	@Deprecated
 	public Toadlet showAsToadlet() {
-		return this; // DO NOT CHANGE THIS ANYMORE: Otherwise showAsToadlet(ToadletContext) will not follow the contract of its JavaDoc.
+        // DO NOT CHANGE THIS ANYMORE: Otherwise showAsToadlet(ToadletContext) will not follow the
+        // contract of its JavaDoc.
+        return this;
 	}
 	
 	/**

@@ -212,9 +212,6 @@ public class SplitFileInserterSender extends SendableInsert {
     
     @Override
     public long getWakeupTime(ClientContext context, long now) {
-        if(storage.noBlocksToSend())
-            return Long.MAX_VALUE;
-        else
-            return 0;
+        return storage.getWakeupTime(context, now);
     }
 }

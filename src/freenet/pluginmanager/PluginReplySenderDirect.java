@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import freenet.clients.fcp.FCPPluginConnection;
 import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -11,7 +12,9 @@ import freenet.support.api.Bucket;
 /**
  * @author saces
  * @author xor (xor@freenetproject.org)
+ * @deprecated Use the {@link FCPPluginConnection} API instead.
  */
+@Deprecated
 public class PluginReplySenderDirect extends PluginReplySender {
 	
 	private final Node node;

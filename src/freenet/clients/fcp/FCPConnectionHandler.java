@@ -10,6 +10,10 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.PersistenceDisabledException;
@@ -17,6 +21,9 @@ import freenet.client.async.PersistentJob;
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.node.RequestClient;
+import freenet.pluginmanager.PluginManager;
+import freenet.pluginmanager.PluginNotFoundException;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -39,7 +46,7 @@ public class FCPConnectionHandler implements Closeable {
 	
 	public static class DDACheckJob {
 		final File directory, readFilename, writeFilename;
-		final String readContent, writeContent; 
+		final String readContent, writeContent;
 		
 		/**
 		 * null if not requested.
@@ -72,7 +79,44 @@ public class FCPConnectionHandler implements Closeable {
 	private PersistentRequestClient foreverClient;
 	final BucketFactory bf;
 	final HashMap<String, ClientRequest> requestsByIdentifier;
-	public final String connectionIdentifier;
+
+    /**
+     * {@link FCPPluginConnectionImpl} indexed by the server plugin name (see
+     * {@link PluginManager#getPluginFCPServer(String)}.<br><br>
+     * 
+     * This also serves the same purpose as the client which is connected to this would normally
+     * be responsible for if it was running as a plugin in the node (as specified by
+     * {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}):<br>
+     * It keeps strong references to the {@link FCPPluginConnectionImpl} objects, and thereby marks
+     * them as alive.<br>
+     * This in turn causes the {@link FCPPluginConnectionImpl} objects to stay available in the
+     * {@link FCPPluginConnectionTracker}, which allows server plugins to query them by their ID.
+     */
+    private final TreeMap<String, FCPPluginConnectionImpl> pluginConnectionsByServerName
+        = new TreeMap<String, FCPPluginConnectionImpl>();
+
+    /**
+     * Lock for {@link #pluginConnectionsByServerName}.
+     * 
+     * A {@link ReadWriteLock} because the usage pattern is mostly reads, very few writes -
+     * {@link ReadWriteLock} can do that faster than a regular Lock.
+     * (A {@link ReentrantReadWriteLock} because thats the only implementation of
+     * {@link ReadWriteLock}.)
+     */
+    private final ReadWriteLock pluginConnectionsByServerName_Lock
+        = new ReentrantReadWriteLock();
+
+    /**
+     * 16 random bytes hex-encoded as String. Unique for each instance of this class.
+     * 
+     * @deprecated Use {@link #connectionIdentifierUUID} instead.
+     */
+    @Deprecated
+    public final String connectionIdentifier;
+	
+	/** Random UUID unique for each instance of this class */
+	protected final UUID connectionIdentifierUUID;
+	
 	private static volatile boolean logMINOR;
 	private boolean killedDupe;
 
@@ -128,8 +172,27 @@ public class FCPConnectionHandler implements Closeable {
 		byte[] identifier = new byte[16];
 		server.node.random.nextBytes(identifier);
 		this.connectionIdentifier = HexUtil.bytesToHex(identifier);
+		
+        // The random 16-byte identifier was used before we added the UUID. Luckily, UUIDs are also
+        // 16 byetes, so we can re-use the bytes.
+        // TODO: When getting rid of the non-UUID connectionIdentifier, use UUID.randomUUID();
+        this.connectionIdentifierUUID = UUID.nameUUIDFromBytes(identifier);
 	}
-	
+
+    /**
+     * Queues the message for sending at the {@link FCPConnectionOutputHandler}.<br>
+     * <br>
+     * 
+     * ATTENTION: The function will return immediately before even trying to send the message, the
+     * message will be sent asynchronously.<br>
+     * As a consequence, this function not throwing does not give any guarantee whatsoever that the
+     * message will ever be sent.
+     */
+    @SuppressWarnings("deprecation")
+    public final void send(final FCPMessage message) {
+        outputHandler.queue(message);
+    }
+
 	void start() {
 		inputHandler.start();
 		outputHandler.start();
@@ -573,6 +636,83 @@ public class FCPConnectionHandler implements Closeable {
 		return rebootClient;
 	}
 
+    /**
+     * @return
+     *     The {@link FCPPluginConnection} for the given serverPluginName (see
+     *     {@link PluginManager#getPluginFCPServer(String)}). Atomically creates and stores it if
+     *     there does not exist one yet. This ensures that for each FCPConnectionHandler, there can
+     *     be only one {@link FCPPluginConnection} for a given serverPluginName.
+     * @throws PluginNotFoundException
+     *     If the specified plugin is not loaded or does not provide an FCP server.
+     */
+    FCPPluginConnection getFCPPluginConnection(String serverPluginName)
+            throws PluginNotFoundException {
+
+        // The suspected typical usage pattern of this function is that the great majority of calls
+        // will return an existing FCPPluginConnection. Creating a fresh one will typically only
+        // happen at the start of a connection and then it will be re-used a lot.
+        // Therefore, it would cost a lot of performance to use synchronized() and we instead use a
+        // ReadWriteLock which is optimal for such patterns.
+        //
+        // The double-checked locking pattern which this induces is necessary due to the fact that a
+        // read-lock cannot be upgraded to a write lock.
+        // The JavaDoc of ReentrantReadWriteLock specifically recommends this pattern, so it ought
+        // to be a safe version of double-checked locking.
+        
+        pluginConnectionsByServerName_Lock.readLock().lock();
+        try {
+            // We use the actual *Impl instead of the interface because the implementation provides
+            // isServerDead(), which the interface does not.
+            FCPPluginConnectionImpl peekOldConnection
+                = pluginConnectionsByServerName.get(serverPluginName);
+            
+            if(peekOldConnection != null && !peekOldConnection.isServerDead()) {
+                return peekOldConnection;
+            }
+        } finally {
+            // A read-lock cannot be upgraded to a write-lock so we must always unlock
+            pluginConnectionsByServerName_Lock.readLock().unlock();
+        }
+
+        pluginConnectionsByServerName_Lock.writeLock().lock();
+        try {
+            // Re-check whether there is an existing connection since we had to re-acquire the lock
+            // meanwhile.
+            FCPPluginConnectionImpl oldConnection
+                = pluginConnectionsByServerName.get(serverPluginName);
+            
+            if(oldConnection != null) {
+                if(!oldConnection.isServerDead()) {
+                    return oldConnection;
+                } else {
+                    // oldConnection.isDead() returned true because the WeakReference to the server
+                    // has been nulled because the plugin was unloaded or reloaded.
+                    // The connection should be discarded then. We have no ReferenceQueue to discard
+                    // affected connections from the pluginConnectionsByServerName table, so we
+                    // opportunistically clean nulled connections from it here.
+                    // The reason why this is sufficient memory management is explained at
+                    // FCPPluginConnectionImpl.server
+                    // NOTICE: Even if there was automatic disposal of nulled references, we still
+                    // would have to manually remove dead ones here: I have observed that it can
+                    // take minutes until the JVM flushes a ReferenceQueue. So if we relied upon
+                    // that only, during those minutes a client would be unable to send messages to
+                    // a re-loaded server plugin because the continued existence of the dead old
+                    // connection would prevent a new one from being created.
+                    pluginConnectionsByServerName.remove(serverPluginName);
+                }
+            }
+
+            FCPPluginConnectionImpl newConnection
+                = server.createFCPPluginConnectionForNetworkedFCP(serverPluginName, this);
+            
+            pluginConnectionsByServerName.put(serverPluginName, newConnection);
+            
+            return newConnection;
+        } finally {
+            pluginConnectionsByServerName_Lock.writeLock().unlock();
+        }
+	}
+
 	public PersistentRequestClient getForeverClient() {
 		synchronized(this) {
 			if(foreverClient == null) {
@@ -676,7 +816,7 @@ public class FCPConnectionHandler implements Closeable {
 			inTestDirectories.put(directory, result);
 		}
 		
-		if(read && (readFile != null) && readFile.canWrite()){ 
+		if(read && (readFile != null) && readFile.canWrite()){
 			// We don't want to attempt to write before: in case an IOException is raised, we want to inform the
 			// client somehow that the node can't write there... And setting readFile to null means we won't inform
 			// it on the status (as if it hadn't requested us to do the test).

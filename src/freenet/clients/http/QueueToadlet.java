@@ -136,7 +136,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private boolean isReversed = false;
 	private final boolean uploads;
 
-    private static final String FETCH_KEY_LIST_LOCATION = "listFetchKeys.txt";
+    private static final String KEY_LIST_LOCATION = "listKeys.txt";
 
 	public QueueToadlet(NodeClientCore core, FCPServer fcp, HighLevelSimpleClient client, boolean uploads) {
 		super(client);
@@ -875,9 +875,17 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				        new String[]{"id", "name", "row", "cols"},
 				        new String[]{"descB", "description", "3", "70"});
 				form.addChild("br");
-
+				if (core.node.isFProxyJavascriptEnabled()) {
+					form.addChild("script", new String[] {"type", "src"}, new String[] {"text/javascript",  "/static/js/checkall.js"});
+				}
 				HTMLNode peerTable = form.addChild("table", "class", "darknet_connections");
-				peerTable.addChild("th", "colspan", "2", l10n("recommendToFriends"));
+				if (core.node.isFProxyJavascriptEnabled()) {
+					HTMLNode headerRow = peerTable.addChild("tr");
+					headerRow.addChild("th").addChild("input", new String[] { "type", "onclick" }, new String[] { "checkbox", "checkAll(this, 'darknet_connections')" });
+					headerRow.addChild("th", l10n("recommendToFriends"));
+				} else {
+					peerTable.addChild("tr").addChild("th", "colspan", "2", l10n("recommendToFriends"));
+				}
 				for(DarknetPeerNode peer : core.node.getDarknetConnections()) {
 					HTMLNode peerRow = peerTable.addChild("tr", "class", "darknet_connections_normal");
 					peerRow.addChild("td", "class", "peer-marker").addChild("input",
@@ -1062,13 +1070,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		final String requestPath = request.getPath().substring(path().length());
 
 		boolean countRequests = false;
-		boolean listFetchKeys = false;
+		boolean listKeys = false;
 
 		if (requestPath.length() > 0) {
 			if(requestPath.equals("countRequests.html") || requestPath.equals("/countRequests.html")) {
 				countRequests = true;
-			} else if(requestPath.equals(FETCH_KEY_LIST_LOCATION)) {
-				listFetchKeys = true;
+			} else if(requestPath.equals(KEY_LIST_LOCATION)) {
+				listKeys = true;
 			}
 		}
 
@@ -1083,7 +1091,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		final PageMaker pageMaker = ctx.getPageMaker();
 
 		final boolean count = countRequests;
-		final boolean keys = listFetchKeys;
+		final boolean keys = listKeys;
 		
 		if(!(count || keys)) {
 			try {
@@ -1128,7 +1136,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							return false;
 						} else /*if(keys)*/ {
 							try {
-								plainText = makeFetchKeysList(context);
+								plainText = makeKeysList(context, uploads);
 							} catch (PersistenceDisabledException e) {
 								plainText = null;
 							}
@@ -1181,18 +1189,25 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	}
 
-	protected String makeFetchKeysList(ClientContext context) throws PersistenceDisabledException {
+	protected String makeKeysList(ClientContext context, boolean inserts) throws PersistenceDisabledException {
 		RequestStatus[] reqs = fcp.getGlobalRequests();
 
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 
 		for(RequestStatus req: reqs) {
-			if(req instanceof DownloadRequestStatus) {
+			if(!inserts && req instanceof DownloadRequestStatus) {
 				DownloadRequestStatus get = (DownloadRequestStatus)req;
 				FreenetURI uri = get.getURI();
 				sb.append(uri.toString());
 				sb.append("\n");
-			}
+			} else if (inserts && req instanceof UploadRequestStatus) {
+                UploadRequestStatus put = (UploadRequestStatus)req;
+				FreenetURI uri = put.getURI();
+                if (uri != null) {
+                    sb.append(uri.toString());
+                    sb.append("\n");
+                }
+            }
 		}
 		return sb.toString();
 	}
@@ -1492,7 +1507,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			includeNavigationBar = true;
 		}
 
-        navigationContent.addChild("li").addChild("a", "href", FETCH_KEY_LIST_LOCATION,
+        navigationContent.addChild("li").addChild("a", "href", KEY_LIST_LOCATION,
                                                   l10n("openKeyList"));
 
 		if (includeNavigationBar) {

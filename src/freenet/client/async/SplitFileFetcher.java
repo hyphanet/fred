@@ -74,7 +74,9 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         Logger.registerClass(SplitFileFetcher.class);
     }
 
-    private transient SplitFileFetcherStorage storage;
+    /** Stores the progress of the download, including the actual data, in a separate file. 
+     * Created in onResume() or in the constructor, so must be volatile. */
+    private transient volatile SplitFileFetcherStorage storage;
     /** Kept here so we can resume from storage */
     private LockableRandomAccessBuffer raf;
     final ClientRequester parent;
@@ -90,7 +92,9 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
     final long token;
     /** Storage doesn't have a ClientContext so we need one here. */
     private transient ClientContext context;
-    private transient SplitFileFetcherGet getter;
+    /** Does the actual requests. 
+     * Created in onResume() or in the constructor, so must be volatile. */
+    private transient volatile SplitFileFetcherGet getter;
     private boolean failed;
     private boolean succeeded;
     private final boolean wantBinaryBlob;

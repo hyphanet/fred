@@ -40,6 +40,7 @@ import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestItemKey;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
+import freenet.support.RandomArrayIterator;
 import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -138,6 +139,9 @@ public class SplitFileFetcherStorage {
     final SplitFileFetcherSegmentStorage[] segments;
     /** The cross-segments. Null if no cross-segments. */
     final SplitFileFetcherCrossSegmentStorage[] crossSegments;
+    /** Random iterator for segment selection. LOCKING: must synchronize on the iterator. */
+    private final RandomArrayIterator<SplitFileFetcherSegmentStorage> randomSegmentIterator;
+
     /** If the splitfile has a common encryption algorithm, this is it. */
     final byte splitfileSingleCryptoAlgorithm;
     /** If the splitfile has a common encryption key, this is it. */
@@ -225,17 +229,32 @@ public class SplitFileFetcherStorage {
     
     /** Construct a new SplitFileFetcherStorage from metadata. Creates the RandomAccessBuffer and
      * writes the initial data to it. There is another constructor for resuming a download. 
+     * @param metadata
+     * @param fetcher
+     * @param decompressors
+     * @param clientMetadata
+     * @param topDontCompress
+     * @param topCompatibilityMode
+     * @param origFetchContext
+     * @param realTime
+     * @param salt
+     * @param thisKey
+     * @param origKey
+     * @param isFinalFetch
+     * @param clientDetails
+     * @param random
+     * @param tempBucketFactory
+     * @param rafFactory
+     * @param exec
+     * @param ticker
+     * @param memoryLimitedJobRunner
+     * @param checker 
      * @param persistent 
-     * @param topCompatibilityMode 
-     * @param storageFile 
-     * @param clientMetadata2 
-     * @param decompressors2
-     * @param cb This is only provided so we can create appropriate events when constructing, we do
-     * not store it. 
      * @param storageFile If non-null, we will use this file to store the data in. It must already
      * exist, and must be 0 bytes long. We will use it, and then when complete, truncate the file 
      * so it only contains the final data before calling onSuccess(). Also, in this case, 
      * rafFactory must be a DiskSpaceCheckingRandomAccessBufferFactory.
+     * @param diskSpaceCheckingRAFFactory
      * @param keysFetching Must be passed in at this point as we will need it later. However, none
      * of this is persisted directly, so this is not a problem.
      * @throws FetchException If we failed to set up the download due to a problem with the metadata. 
@@ -355,6 +374,7 @@ public class SplitFileFetcherStorage {
                     ", check blocks per segment: "+checkBlocksPerSegment+", segments: "+segmentCount+
                     ", data blocks: "+splitfileDataBlocks+", check blocks: "+splitfileCheckBlocks);
         segments = new SplitFileFetcherSegmentStorage[segmentCount]; // initially null on all entries
+        randomSegmentIterator = new RandomArrayIterator<SplitFileFetcherSegmentStorage>(segments);
         
         long checkLength = 1L * (splitfileDataBlocks - segmentCount * crossCheckBlocks) * CHKBlock.DATA_LENGTH;
         if(checkLength > finalLength) {
@@ -738,6 +758,7 @@ public class SplitFileFetcherStorage {
             int segmentCount = dis.readInt();
             if(segmentCount < 0) throw new StorageFormatException("Invalid segment count "+segmentCount);
             this.segments = new SplitFileFetcherSegmentStorage[segmentCount];
+            randomSegmentIterator = new RandomArrayIterator<SplitFileFetcherSegmentStorage>(segments);
             long totalDataBlocks = dis.readInt();
             if(totalDataBlocks < 0) 
                 throw new StorageFormatException("Invalid total data blocks "+totalDataBlocks);
@@ -1459,6 +1480,9 @@ public class SplitFileFetcherStorage {
     /** Choose a random key which can be fetched at the moment. Must not update any persistent data;
      * it's okay to update caches and other stuff that isn't stored to disk. If we fail etc we 
      * should do it off-thread.
+     * 
+     * FIXME make SplitFileFetcherGet per-segment, eliminate all this unnecessary complexity!
+     * 
      * @return The block number to be fetched, as an integer.
      */
     public MyKey chooseRandomKey() {
@@ -1468,25 +1492,17 @@ public class SplitFileFetcherStorage {
         }
         // Generally segments are fairly well balanced, so we can usually pick a random segment 
         // then a random key from it.
-        int segNo = random.nextInt(segments.length);
-        SplitFileFetcherSegmentStorage segment = segments[segNo];
-        int ret = segment.chooseRandomKey();
-        if(ret != -1) return new MyKey(ret, segNo, this);
-        // Looks like we are close to completion ...
-        // FIXME OPT SCALABILITY This is O(n) memory and time with the number of segments. For a 
-        // 4GB splitfile, there would be 512 segments. The alternative is to keep a similar 
-        // structure up to date, which also requires changes to the segment code. Not urgent until
-        // very big splitfiles are common.
         // FIXME OPT SCALABILITY A simpler option might be just to have one SplitFileFetcherGet per
         // segment, like the old code.
-        boolean[] tried = new boolean[segments.length];
-        tried[segNo] = true;
-        for(int count=1; count<segments.length; count++) {
-            while(tried[segNo = random.nextInt(segments.length)]);
-            tried[segNo] = true;
-            segment = segments[segNo];
-            ret = segment.chooseRandomKey();
-            if(ret != -1) return new MyKey(ret, segNo, this);
+        synchronized(randomSegmentIterator) {
+            randomSegmentIterator.reset(random);
+            while (randomSegmentIterator.hasNext()) {
+                SplitFileFetcherSegmentStorage segment = randomSegmentIterator.next();
+                int ret = segment.chooseRandomKey();
+                if (ret != -1) {
+                    return new MyKey(ret, segment.segNo, this);
+                }
+            }
         }
         return null;
     }
@@ -1625,9 +1641,13 @@ public class SplitFileFetcherStorage {
         fetcher.clearCooldown();
     }
 
+    /** Returns -1 if the request is finished, otherwise the wakeup time. */
     public long getCooldownWakeupTime(long now) {
+        // LOCKING: hasFinished() uses (this), separate from cooldownLock.
+        // It is safe to use both here (on the request selection thread), one after the other.
+        if (hasFinished()) return -1;
         synchronized(cooldownLock) {
-            if(overallCooldownWakeupTime < now) overallCooldownWakeupTime = 0;
+            if (overallCooldownWakeupTime < now) overallCooldownWakeupTime = 0;
             return overallCooldownWakeupTime;
         }
     }

@@ -579,6 +579,9 @@ public class PproxyToadlet extends Toadlet {
 			HTMLNode pluginGroupNode = addOfficialForm.addChild("div", "class", "plugin-group");
 			pluginGroupNode.addChild("div", "class", "plugin-group-title", l10n("pluginGroupTitle", "pluginGroup", groupPlugins.getKey()));
 			for (OfficialPluginDescription pluginDescription : notLoadedPlugins) {
+        if (pluginDescription.unsupported) {
+          continue;
+        }
 				HTMLNode pluginNode = pluginGroupNode.addChild("div", "class", "plugin");
 				HTMLNode option = pluginNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "plugin-name", pluginDescription.name });
 				option.addChild("i", pluginDescription.getLocalisedPluginName());

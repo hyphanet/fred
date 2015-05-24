@@ -76,13 +76,13 @@ public class OfficialPlugins {
 					.minimumVersion(26)
 					.usesXml()
 					.loadedFrom("CHK@TvjyCaG1dx0xIBSJkXSKA1ZT4I~NkRKeQqwC0a0bhFM,JiQe4CRjF1RwhQRFFQzP-ih9t2i0peV0tBCfJAeFCdk,AAIC--8/XMLLibrarian.jar")
-					.deprecated();
+					.unsupported();
 			addPlugin("XMLSpider")
 					.inGroup("index")
 					.minimumVersion(48)
 					.usesXml()
 					.loadedFrom("CHK@ne-aaLuzVZLcHj0YmrclaCXJqxsSb7q-J0eYEiL9V9o,v0EdgDGBhTE9k6GsB44UrQ4ADUq5LCUVknLaE4iSEBk,AAMC--8/XMLSpider.jar")
-					.deprecated();
+					.unsupported();
 			addPlugin("Freereader")
 					.inGroup("index")
 					.minimumVersion(4)
@@ -90,13 +90,13 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar");
 			addPlugin("Library")
 					.inGroup("index")
-					.minimumVersion(35)
+					.minimumVersion(36)
 					.usesXml()
-					.loadedFrom("CHK@VhhWe6sT41pPei4SBwxcmRXrJpMfPDXTFhtJ4rFxfsk,MrPki7hU35x2MHvV~8am~CdF-B4xzqxjMwDtqFVYJLQ,AAMC--8/Library.jar");
+					.loadedFrom("CHK@DB~oyn9M5B3Yx1B80qJbp-qp~434cxDERtgnxyhSfZ8,WRc11UVdhU4phf688oledQIV8BrNn3nvR9bVCVB-pM0,AAMC--8/Library-v36.jar");
 			addPlugin("Spider")
 					.inGroup("index")
-					.minimumVersion(51)
-					.loadedFrom("CHK@CcJfB~uOTgbzdpVr8htrhLXs0uNsVW6KFRpEvHGjXDU,BPr2fm9Cq9gj7BQeJdLbkCmcmXRx-e-b6aerDzSK4zk,AAMC--8/Spider.jar")
+					.minimumVersion(52)
+					.loadedFrom("CHK@94gCPJEkEXq6Zti4wxDrqr9e~geQS4B3kdIwl4TXzV8,NUlmfjeqja28Lim6m3kTuxGHRSNtQHsbRoIAilxdkJY,AAMC--8/Spider-v52.jar")
 					.advanced();
 			addPlugin("WebOfTrust")
 					.inGroup("communication")
@@ -137,6 +137,7 @@ public class OfficialPlugins {
 		private boolean deprecated;
 		private boolean experimental;
 		private boolean advanced;
+    private boolean unsupported;
 
 		private OfficialPluginBuilder(String name) {
 			this.name = name;
@@ -197,12 +198,18 @@ public class OfficialPlugins {
 			return this;
 		}
 
+    public OfficialPluginBuilder unsupported() {
+      unsupported = true;
+      addCurrentPluginDescription();
+      return this;
+    }
+
 		private void addCurrentPluginDescription() {
 			officialPlugins.put(name, createOfficialPluginDescription());
 		}
 
 		private OfficialPluginDescription createOfficialPluginDescription() {
-			return new OfficialPluginDescription(name, group, essential, minimumVersion, recommendedVersion, usesXml, uri, deprecated, experimental, advanced);
+			return new OfficialPluginDescription(name, group, essential, minimumVersion, recommendedVersion, usesXml, uri, deprecated, experimental, advanced, unsupported);
 		}
 
 	}
@@ -250,8 +257,13 @@ public class OfficialPlugins {
 		 * mode even though it's not deprecated nor is it experimental.
 		 */
 		public final boolean advanced;
+    /**
+     * If true, the plugin used to be official, but is no longer supported.
+     * These are not shown even in advanced mode.
+     */
+    public final boolean unsupported;
 
-		OfficialPluginDescription(String name, String group, boolean essential, long minVer, long recVer, boolean usesXML, FreenetURI uri, boolean deprecated, boolean experimental, boolean advanced) {
+		OfficialPluginDescription(String name, String group, boolean essential, long minVer, long recVer, boolean usesXML, FreenetURI uri, boolean deprecated, boolean experimental, boolean advanced, boolean unsupported) {
 			this.name = name;
 			this.group = group;
 			this.essential = essential;
@@ -262,6 +274,7 @@ public class OfficialPlugins {
 			this.deprecated = deprecated;
 			this.experimental = experimental;
 			this.advanced = advanced;
+      this.unsupported = unsupported;
 		}
 
 		public String getLocalisedPluginName() {

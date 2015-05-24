@@ -57,7 +57,6 @@ public interface KeyListener {
 	 * Priority of the associated request.
 	 * LOCKING: Should avoid external locking if possible. Will be called
 	 * within the CRSBase lock.
-	 * @param container Database handle.
 	 */
 	short getPriorityClass();
 

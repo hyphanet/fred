@@ -1,6 +1,6 @@
 /**
  * <p>Client layer (support code: metadata, MIME types, container unpacking etc). 
- * @see freenet.client.async for most of the actual implementation.</p>
+ * @see freenet.client#async for most of the actual implementation.</p>
  * 
  * <h1>Overview of the client layer</h1>
  * <p>The client layer implements high-level requests, i.e. download a whole

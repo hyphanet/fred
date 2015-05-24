@@ -11,8 +11,9 @@ import freenet.support.api.Bucket;
  * other plugins that implements FredPluginFCP
  *  
  * @author saces
- *
+ * @deprecated Use {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler} instead.
  */
+@Deprecated
 public interface FredPluginTalker {
 	
 	/**

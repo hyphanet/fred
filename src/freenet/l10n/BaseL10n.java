@@ -413,7 +413,7 @@ public class BaseL10n {
 
 	/**
 	 * Get a localized string and put it in a HTMLNode for the translation page.
-	 * @param values Values to replace patterns with.
+	 * @param key Key to search for.
 	 * @return HTMLNode
 	 */
 	public HTMLNode getHTMLNode(String key) {

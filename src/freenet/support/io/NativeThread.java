@@ -10,7 +10,7 @@ import freenet.support.Logger;
 /**
  * Do *NOT* forget to call super.run() if you extend it!
  * 
- * @see http://archives.freenetproject.org/thread/20080214.235159.6deed539.en.html
+ * @see <a href="https://emu.freenetproject.org/pipermail/devl/2008-February/028357.html">Devl Mailing List</a>
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 public class NativeThread extends Thread {

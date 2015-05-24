@@ -97,12 +97,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param targetURI
 	 * @param cm
 	 * @param ctx
-	 * @param scheduler
 	 * @param priorityClass
-	 * @param getCHKOnly
 	 * @param isMetadata
-	 * @param clientContext The client object for purposs of round-robin client balancing.
 	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
+	 * @param binaryBlob
+	 * @param context The client object for purposs of round-robin client balancing.
+	 * @param overrideSplitfileCrypto
+	 * @param metadataThreshold
 	 */
 	public ClientPutter(ClientPutCallback client, RandomAccessBucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass,
@@ -286,7 +287,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		}
 		if(super.failedBlocks > 0 || super.fatallyFailedBlocks > 0 || super.successfulBlocks < super.totalBlocks) {
 			// USK auxiliary inserts are allowed to fail.
-			if(!uri.isUSK())
+			// If only generating the key, splitfile may not have reported the blocks as inserted.
+			if (!uri.isUSK() && !ctx.getCHKOnly)
 				Logger.error(this, "Failed blocks: "+failedBlocks+", Fatally failed blocks: "+fatallyFailedBlocks+
 						", Successful blocks: "+successfulBlocks+", Total blocks: "+totalBlocks+" but success?! on "+this+" from "+state,
 						new Exception("debug"));

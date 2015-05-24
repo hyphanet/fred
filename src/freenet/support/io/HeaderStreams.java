@@ -19,7 +19,7 @@ final public class HeaderStreams {
 	private HeaderStreams() {}
 
 	/**
-	** Create an {@InputStream} which transparently attaches an extra header
+	** Create an {@link InputStream} which transparently attaches an extra header
 	** to the underlying stream.
 	*/
 	public static InputStream augInput(final byte[] hd, InputStream s) throws IOException {
@@ -69,7 +69,7 @@ final public class HeaderStreams {
 	}
 
 	/**
-	** Create an {@OutputStream} which transparently swallows the expected
+	** Create an {@link OutputStream} which transparently swallows the expected
 	** header written to the underlying stream.
 	**
 	** The {@code write} methods will throw {@link IOException} if bytes

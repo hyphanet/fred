@@ -297,7 +297,7 @@ public class RequestTracker {
 	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local 
 	 * (that is, count imaginary onward transfers etc depending on the request type).
 	 * @param counter Transfer counts for all requests will be added to this counter object.
-	 * @param counterSourceRestarted Transfer counts for requests whose source restarted (and so 
+	 * @param counterSR Transfer counts for requests whose source restarted (and so 
 	 * are counted as local) will be added to this counter object. */
 	public void countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSR) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);

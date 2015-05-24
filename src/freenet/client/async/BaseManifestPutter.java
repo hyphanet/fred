@@ -51,10 +51,12 @@ import freenet.support.io.ResumeFailedException;
  * <DT>container mode: <DD>the metadata are inside the root container (the final URI points to an archive)
  * <DT>freeform mode: <DD>the metadata are inserted separately.(the final URI points to a SimpleManifest)
  * </DL>
- * @see {@link PlainManifestPutter} and {@link DefaultManifestPutter}</P>
  * 
  * WARNING: Changing non-transient members on classes that are Serializable can result in 
  * restarting downloads or losing uploads.
+ * </P>
+ * @see freenet.client.async.PlainManifestPutter PlainManifestPutter, freenet.client.async.DefaultManifestPutter DefaultManifestPutter
+ * 
  */
 public abstract class BaseManifestPutter extends ManifestPutter {
 

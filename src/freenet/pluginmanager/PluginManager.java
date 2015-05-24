@@ -36,8 +36,8 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.fcp.ClientPut;
-import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.PageMaker.THEME;
+import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.Toadlet;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
@@ -45,8 +45,8 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
-import freenet.l10n.NodeL10n;
 import freenet.l10n.BaseL10n.LANGUAGE;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
@@ -58,9 +58,9 @@ import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SerialExecutor;
 import freenet.support.Ticker;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
@@ -880,13 +880,18 @@ public class PluginManager {
 	}
 
 	/**
-	 * look for PluginInfo for a Plugin with given classname
-	 * @param plugname
+     * Look for PluginInfo for a Plugin with given classname or filename.
+     * 
 	 * @return the PluginInfo or null if not found
-	 * @deprecated As opposed to its JavaDoc, this function will also return plugins with a matching filename, no only class name.
-	 *             To fix this ambiguity, instead use either {@link #getPluginInfoByClassName(String)} or {@link #getPluginInfoByFileName(String)}.
+     * @deprecated
+     *     This function was deprecated because the "or filename" part of the function specification
+     *     was NOT documented before it was deprecated. Thus it is possible that legacy callers of
+     *     the function did wrongly expect or not expect that. When removing this function, please
+     *     review the callers for correctness with regards to that.<br>
+     *     You might replace usage of this function with
+     *     {@link #getPluginInfoByClassName(String)} or {@link #getPluginInfoByFileName(String)}.
 	 */
-	@Deprecated
+    @Deprecated
 	public PluginInfoWrapper getPluginInfo(String plugname) {
 		synchronized(pluginWrappers) {
 			for(int i = 0; i < pluginWrappers.size(); i++) {
@@ -898,43 +903,57 @@ public class PluginManager {
 		return null;
 	}
 
-	/**
-	 * @param pluginClassName The name of the main class of the plugin - that is the class which implements {@link FredPlugin}.
-	 * @return
-	 *     The {@link PluginInfoWrapper} for the plugin with the given class name, or null if no
-	 *     matching plugin was found.
-	 */
-	public PluginInfoWrapper getPluginInfoByClassName(String pluginClassName) {
-		synchronized(pluginWrappers) {
-			for(PluginInfoWrapper piw : pluginWrappers) {
-				if(piw.getPluginClassName().equals(pluginClassName))
-					return piw;
-			}
-		}
-		return null;
-	}
+    /**
+     * @param pluginClassName
+     *     The name of the main class of the plugin - that is the class which implements
+     *     {@link FredPlugin}.
+     * @return
+     *     The {@link PluginInfoWrapper} for the plugin with the given class name, or null if no
+     *     matching plugin was found.
+     */
+    public PluginInfoWrapper getPluginInfoByClassName(String pluginClassName) {
+        synchronized(pluginWrappers) {
+            for(PluginInfoWrapper piw : pluginWrappers) {
+                if(piw.getPluginClassName().equals(pluginClassName)) {
+                    return piw;
+                }
+            }
+        }
+        return null;
+    }
 
-	/**
-	 * @param pluginFileName The filename of the JAR from which the plugin was loaded.
-	 * @return
-	 *     The {@link PluginInfoWrapper} for the plugin with the given file name, or null if no
-	 *     matching plugin was found.
-	 */
-	public PluginInfoWrapper getPluginInfoByFileName(String pluginFileName) {
-		synchronized(pluginWrappers) {
-			for(PluginInfoWrapper piw : pluginWrappers) {
-				if(piw.getFilename().equals(pluginFileName))
-					return piw;
-			}
-		}
-		return null;
-	}
+    /**
+     * @param pluginFileName
+     *     The filename of the JAR from which the plugin was loaded.
+     * @return
+     *     The {@link PluginInfoWrapper} for the plugin with the given file name, or null if no
+     *     matching plugin was found.
+     */
+    public PluginInfoWrapper getPluginInfoByFileName(String pluginFileName) {
+        synchronized(pluginWrappers) {
+            for(PluginInfoWrapper piw : pluginWrappers) {
+                if(piw.getFilename().equals(pluginFileName)) {
+                    return piw;
+                }
+            }
+        }
+        return null;
+    }
 
 	/**
 	 * look for a FCPPlugin with given classname
 	 * @param plugname
 	 * @return the plugin or null if not found
+     * @deprecated
+     *     The {@link FredPluginFCP} API, which this returns, was deprecated to be replaced by
+     *     {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}. Plugin authors should
+     *     implement the new interface instead of the old, and this codepath to support plugins
+     *     which implement the old interface should be removed one day. No new code will be needed
+     *     then: The code to use the  new interface already exists in its own codepath - the
+     *     equivalent function for the new API is {link #getPluginFCPServer(String)}, and it is
+     *     already being used automatically for plugins which implement it.
 	 */
+    @Deprecated
 	public FredPluginFCP getFCPPlugin(String plugname) {
 		synchronized(pluginWrappers) {
 			for(int i = 0; i < pluginWrappers.size(); i++) {
@@ -945,6 +964,27 @@ public class PluginManager {
 		}
 		return null;
 	}
+
+    /**
+     * Get the {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} of the plugin with
+     * the given class name.
+     * 
+     * @param pluginClassName
+     *     See {@link #getPluginInfoByClassName(String)}.
+     * @throws PluginNotFoundException
+     *     If the specified plugin is not loaded or does not provide an FCP server.
+     */
+    public FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
+            getPluginFCPServer(String pluginClassName)
+                throws PluginNotFoundException{
+        
+        PluginInfoWrapper piw = getPluginInfoByClassName(pluginClassName);
+        if(piw != null && piw.isFCPServerPlugin()) {
+            return piw.getFCPServerPlugin();
+        } else {
+            throw new PluginNotFoundException(pluginClassName);
+        }
+    }
 
 	/**
 	 * look for a Plugin with given classname
