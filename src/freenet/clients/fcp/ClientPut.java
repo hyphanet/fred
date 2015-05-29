@@ -521,6 +521,7 @@ public class ClientPut extends ClientPutBase {
 		if(fnam != null) fnam = new File(fnam.getPath());
 		
 		int total=0, min=0, fetched=0, fatal=0, failed=0;
+		// See ClientRequester.getLatestSuccess() for why this defaults to current time.
 		Date latestSuccess = CurrentTimeUTC.get();
 		Date latestFailure = null;
 		boolean totalFinalized = false;

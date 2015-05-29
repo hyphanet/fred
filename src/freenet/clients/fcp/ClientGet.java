@@ -924,6 +924,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	synchronized RequestStatus getStatus() {
 		boolean totalFinalized = false;
 		int total = 0, min = 0, fetched = 0, fatal = 0, failed = 0;
+		// See ClientRequester.getLatestSuccess() for why this defaults to current time.
 		Date latestSuccess = CurrentTimeUTC.get();
 		Date latestFailure = null;
 		

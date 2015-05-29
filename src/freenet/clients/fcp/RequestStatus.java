@@ -49,6 +49,7 @@ public abstract class RequestStatus implements Cloneable {
 	}
 	
 	synchronized void restart(boolean started) {
+        // See ClientRequester.getLatestSuccess() for why this defaults to current time.
 		this.latestSuccess = CurrentTimeUTC.get();
 		this.hasFinished = false;
 		this.hasSucceeded = false;

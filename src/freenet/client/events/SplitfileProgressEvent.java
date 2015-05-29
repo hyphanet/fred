@@ -60,6 +60,7 @@ public class SplitfileProgressEvent implements ClientEvent {
 	    // For serialization.
 	    totalBlocks = 0;
 	    succeedBlocks = 0;
+	    // See ClientRequester.getLatestSuccess() for why this defaults to current time.
 	    latestSuccess = CurrentTimeUTC.get();
 	    failedBlocks = 0;
 	    fatallyFailedBlocks = 0;
