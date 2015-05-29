@@ -132,7 +132,7 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 	protected int successfulBlocks;
     /**
      * ATTENTION: This may be null for very old databases.
-     * @see #getLatestSuccess() */
+     * @see #getLatestSuccess() Explanation of the content and especially the default value. */
     protected Date latestSuccess = CurrentTimeUTC.get();
 	/** Number of blocks which have failed. */
 	protected int failedBlocks;
@@ -179,6 +179,7 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 	protected synchronized void resetBlocks() {
 		totalBlocks = 0;
 		successfulBlocks = 0;
+        // See ClientRequester.getLatestSuccess() for why this defaults to current time.
         latestSuccess = CurrentTimeUTC.get();
 		failedBlocks = 0;
 		fatallyFailedBlocks = 0;
@@ -335,6 +336,7 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 		this.minSuccessBlocks = 0;
 		this.sentToNetwork = false;
 		this.successfulBlocks = 0;
+        // See ClientRequester.getLatestSuccess() for why this defaults to current time.
         this.latestSuccess = CurrentTimeUTC.get();
 		this.totalBlocks = 0;
 	}
