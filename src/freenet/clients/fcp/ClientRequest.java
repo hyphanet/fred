@@ -295,6 +295,28 @@ public abstract class ClientRequest implements Serializable {
 
 	public abstract boolean hasSucceeded();
 
+	/**
+	 * Returns the time of the request’s last activity, or {@code 0} if there is
+	 * no known last activity.
+	 *
+	 * @return The time of the request’s last activity, or {@code 0}
+	 * @deprecated
+	 *     Use {@link ClientRequester#getLatestSuccess()} instead. You can use 
+	 *     {@link #getClientRequest()} to obtain the ClientRequester.
+	 */
+	@Deprecated
+	public long getLastActivity() {
+	    ClientRequester cr = getClientRequest();
+	    // I have not actually read the code to find out whether this if() is needed.
+	    // But this function is deprecated at the time of its writing and thus will be removed soon,
+	    // so there is no reason to invest the time to read the code to see whether it will happen.
+	    if (cr == null) {
+	        return 0;
+	    }
+	    
+	    return cr.getLatestSuccess().getTime();
+	}
+
 	public abstract boolean canRestart();
 
 	public abstract boolean restart(ClientContext context, boolean disableFilterData) throws PersistenceDisabledException;

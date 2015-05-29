@@ -131,18 +131,14 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 	/** Number of blocks we have successfully completed a fetch/put for. */
 	protected int successfulBlocks;
     /**
-     * UTC Date of latest increase of {@link #successfulBlocks}.<br>
-     * Initialized to current time for usability purposes: This allows the user to sort downloads by
-     * last success in the user interface to determine which ones are stalling - those will be the
-     * ones with the oldest last success date. If we initialized it to "null" only, that would not
-     * be possible: The user couldn't distinguish very old stalling downloads from downloads which
-     * merely had no success yet because they were added a short time ago */
+     * ATTENTION: This may be null for very old databases.
+     * @see #getLatestSuccess() */
     protected Date latestSuccess = CurrentTimeUTC.get();
 	/** Number of blocks which have failed. */
 	protected int failedBlocks;
 	/** Number of blocks which have failed fatally. */
 	protected int fatallyFailedBlocks;
-    /** UTC Date of latest increase of {@link #failedBlocks} or {@link #fatallyFailedBlocks} */
+    /** @see #getLatestFailure() */
     protected Date latestFailure = null;
 	/** Minimum number of blocks required to succeed for success. */
 	protected int minSuccessBlocks;
@@ -154,6 +150,30 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 	
     public int getTotalBlocks() {
         return totalBlocks;
+    }
+
+    /**
+     * UTC Date of latest increase of {@link #successfulBlocks}.<br>
+     * Initialized to current time for usability purposes: This allows the user to sort downloads by
+     * last success in the user interface to determine which ones are stalling - those will be the
+     * ones with the oldest last success date. If we initialized it to "null" only, that would not
+     * be possible: The user couldn't distinguish very old stalling downloads from downloads which
+     * merely had no success yet because they were added a short time ago.<br> */
+    public Date getLatestSuccess() {
+        // clone() because Date is mutable.
+        // Null-check for backwards compatibility: Old serialized versions of objects of this
+        // class might not have this field yet.
+        return latestSuccess != null ? (Date)latestSuccess.clone() : new Date(0);
+    }
+
+    /**
+     * UTC Date of latest increase of {@link #failedBlocks} or {@link #fatallyFailedBlocks}.<br>
+     * Null if there was no failure yet. */
+    public Date getLatestFailure() {
+        // clone() because Date is mutable.
+        // Null-check for backwards compatibility: Old serialized versions of objects of this
+        // class might not have this field yet.
+        return latestFailure != null ? (Date)latestFailure.clone() : null;
     }
 
 	protected synchronized void resetBlocks() {
