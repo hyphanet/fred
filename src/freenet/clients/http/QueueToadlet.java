@@ -1370,8 +1370,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							result = Fields.compare(firstProgress, secondProgress);
 						}
 					} else if (sortBy.equals("lastActivity")) {
-                        Date a = firstRequest.getLastActivity();
-                        Date b = secondRequest.getLastActivity();
+                        Date a = firstRequest.getLastSuccess();
+                        Date b = secondRequest.getLastSuccess();
                         if(a == null) a = new Date(0);
                         if(b == null) b = new Date(0);
                         result = a.compareTo(b);
@@ -2204,7 +2204,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						requestRow.addChild(createReasonCell(clientRequest.getFailureReason(false)));
 						break;
 					case LAST_ACTIVITY:
-						requestRow.addChild(createLastActivityCell(now, clientRequest.getLastActivity()));
+						requestRow.addChild(createLastActivityCell(now, clientRequest.getLastSuccess()));
 						break;
                     case LAST_FAILURE:
                         requestRow.addChild(createLastFailureCell(now,

@@ -113,7 +113,13 @@ public abstract class RequestStatus implements Cloneable {
 		return fetchedBlocks;
 	}
 
-	public Date getLastActivity() {
+	/** @deprecated Use {@link #getLastSuccess()} instead. */
+	@Deprecated
+	public long getLastActivity() {
+		return latestSuccess != null ? latestSuccess.getTime() : 0;
+	}
+
+    public Date getLastSuccess() {
         // clone() because Date is mutable.
         return latestSuccess != null ? (Date)latestSuccess.clone() : null;
 	}
