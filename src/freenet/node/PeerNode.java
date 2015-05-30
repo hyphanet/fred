@@ -3227,9 +3227,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			long until;
 			if(now > (until = realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk)) {
 				if(realTime)
-					routingBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
+					transferBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
 				else
-					routingBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
+					transferBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
 				if(logMINOR)
 					Logger.minor(this, "Resetting transfer backoff on " + peer);
 			} else {
