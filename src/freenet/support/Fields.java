@@ -975,7 +975,13 @@ public abstract class Fields {
 		}
 		return 0;
 	}
-	
+
+    public static final int compare(Date a, Date b) {
+        if(a == null) a = new Date(0);
+        if(b == null) b = new Date(0);
+        return a.compareTo(b);
+    }
+
 	/** Copy all of the remaining bytes in the buffer to a byte array.
 	 * @param buf The input buffer. Position will be at the limit when returning.
 	 */
