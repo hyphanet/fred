@@ -977,6 +977,7 @@ public abstract class Fields {
 	}
 
     public static final int compare(Date a, Date b) {
+        // Replace null Dates with real ones so we can use Date.compareTo()
         a = (a != null ? a : new Date(0));
         b = (b != null ? b : new Date(0));
         return a.compareTo(b);
