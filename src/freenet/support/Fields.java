@@ -977,8 +977,8 @@ public abstract class Fields {
 	}
 
     public static final int compare(Date a, Date b) {
-        if(a == null) a = new Date(0);
-        if(b == null) b = new Date(0);
+        a = (a != null ? a : new Date(0));
+        b = (b != null ? b : new Date(0));
         return a.compareTo(b);
     }
 
