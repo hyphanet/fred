@@ -1679,7 +1679,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
                         new QueueColumn[] {
                             QueueColumn.IDENTIFIER, QueueColumn.PRIORITY, QueueColumn.SIZE,
                             QueueColumn.MIME_TYPE, QueueColumn.PROGRESS, QueueColumn.LAST_ACTIVITY,
-                            QueueColumn.LAST_FAILURE, QueueColumn.PERSISTENCE, QueueColumn.FILENAME,
+                            /* FIXME: This column has been disabled since it will always show
+                             * "never" even if parts of the file transfer failed due to temporary
+                             * reasons such as "data not found" / "route not found" / etc. This is
+                             * due to shortcomings in the underlying event framework. Please
+                             * re-enable it once the underlying issue is fixed:
+                             * https://bugs.freenetproject.org/view.php?id=6526 */
+                            // QueueColumn.LAST_FAILURE,
+                            QueueColumn.PERSISTENCE, QueueColumn.FILENAME,
                             QueueColumn.KEY, QueueColumn.COMPAT_MODE },
                         priorityClasses, advancedModeEnabled, false, "uncompleted-download", false,
                         false)
@@ -1699,7 +1706,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
                         new QueueColumn[] {
                             QueueColumn.IDENTIFIER, QueueColumn.PRIORITY, QueueColumn.SIZE,
                             QueueColumn.MIME_TYPE, QueueColumn.PROGRESS, QueueColumn.LAST_ACTIVITY,
-                            QueueColumn.LAST_FAILURE, QueueColumn.PERSISTENCE, QueueColumn.FILENAME,
+                            /* FIXME: This column has been disabled since it will always show
+                             * "never" even if parts of the file transfer failed due to temporary
+                             * reasons such as "data not found" / "route not found" / etc. This is
+                             * due to shortcomings in the underlying event framework. Please
+                             * re-enable it once the underlying issue is fixed:
+                             * https://bugs.freenetproject.org/view.php?id=6526 */
+                            // QueueColumn.LAST_FAILURE,
+                            QueueColumn.PERSISTENCE, QueueColumn.FILENAME,
                             QueueColumn.KEY },
                         priorityClasses, advancedModeEnabled, true, "uncompleted-upload-file",
                         false, false)
@@ -1719,7 +1733,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
                         new QueueColumn[] {
                             QueueColumn.IDENTIFIER, QueueColumn.FILES, QueueColumn.PRIORITY,
                             QueueColumn.TOTAL_SIZE, QueueColumn.PROGRESS, QueueColumn.LAST_ACTIVITY,
-                            QueueColumn.LAST_FAILURE, QueueColumn.PERSISTENCE, QueueColumn.KEY },
+                            /* FIXME: This column has been disabled since it will always show
+                             * "never" even if parts of the file transfer failed due to temporary
+                             * reasons such as "data not found" / "route not found" / etc. This is
+                             * due to shortcomings in the underlying event framework. Please
+                             * re-enable it once the underlying issue is fixed:
+                             * https://bugs.freenetproject.org/view.php?id=6526 */
+                            // QueueColumn.LAST_FAILURE,
+                            QueueColumn.PERSISTENCE, QueueColumn.KEY },
                         priorityClasses, advancedModeEnabled, true, "uncompleted-upload-dir", false,
                         false)
                 );
