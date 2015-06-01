@@ -2031,8 +2031,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private HTMLNode createLastActivityCell(long now, Date lastActivity) {
 		HTMLNode lastActivityCell = new HTMLNode("td", "class", "request-last-activity");
 		if (lastActivity == null) {
-            // This is "unknown"  instead of "never" because the backend of RequestStatus always
-            // tries to initialize lastActivity to current time, it should probably never be null.
+            // During normal operation, lastActivity will never be null even if there was no
+            // activity yet. It will default to the Date when the request was added. (See
+            // ClientRequester.getLatestSuccess() for the usability motivation behind that.)
+            // lastActivity can however be null if the user had been using a pre-release of
+            // purge-db4o which did not store the lastActivity Date to the database yet.
+            // Thus, we initialize to "unknown" instead of "never" to stress that there was possibly
+            // activity but we cannot know because the Date was not stored yet.
 			lastActivityCell.addChild("i", l10n("lastActivity.unknown"));
 		} else {
             lastActivityCell.addChild("#", l10n("lastActivity.ago", "time",
