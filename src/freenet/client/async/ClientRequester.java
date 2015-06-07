@@ -32,9 +32,6 @@ import freenet.support.io.ResumeFailedException;
  */
 public abstract class ClientRequester implements Serializable, ClientRequestSchedulerGroup {
 
-    /**
-     * ATTENTION: When incrementing this, please skip version 2. Version 2 had already temporarily
-     * been used by a development branch. */
     private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;
 	
