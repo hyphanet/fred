@@ -100,9 +100,9 @@ public class OfficialPlugins {
 					.advanced();
 			addPlugin("WebOfTrust")
 					.inGroup("communication")
-					.minimumVersion(13)
+					.minimumVersion(15)
 					.usesXml()
-					.loadedFrom("CHK@dSfeVmjFX15QVyFCTUQmZItrJi8XnoYpiapxLTxaQeg,wizfFOtkKSBEdjUYgjCUJczjl74r0CjRBfzvaRvKUMo,AAMC--8/WebOfTrust.jar");
+					.loadedFrom("CHK@1FWUqydeyTbxC3fut51QT8VGnokQFYHMoLsqzP4RU60,BM3ibZYejeo2-sC7WklJ9I8ZJysMpO9~l9MZ8NUzP2c,AAMC--8/WebOfTrust-build0015.jar");
 			addPlugin("FlogHelper")
 					.inGroup("communication")
 					.minimumVersion(31)

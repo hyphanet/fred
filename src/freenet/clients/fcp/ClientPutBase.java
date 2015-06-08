@@ -176,8 +176,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			if(generatedURI == null)
 				Logger.error(this, "No generated URI in onSuccess() for "+this+" from "+state);
 		}
-		// Could restart, and is on the putter, don't free data until we remove the putter
-		//freeData(container);
+    if (persistence == Persistence.CONNECTION) {
+      freeData();
+    }
 		finish();
 		trySendFinalMessage(null);
 		if(client != null)
@@ -193,8 +194,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			completionTime = System.currentTimeMillis();
 			putFailedMessage = new PutFailedMessage(e, identifier, global);
 		}
-		// Could restart, and is on the putter, don't free data until we remove the putter
-		//freeData(container);
+    if (persistence == Persistence.CONNECTION) {
+      freeData();
+    }
 		finish();
 		trySendFinalMessage(null);
 		if(client != null)
