@@ -49,7 +49,7 @@ public abstract class RequestStatus implements Cloneable {
 	}
 	
 	synchronized void restart(boolean started) {
-        // See ClientRequester.getLatestSuccess() for why this defaults to current time.
+		// See ClientRequester.getLatestSuccess() for why this defaults to current time.
 		this.latestSuccess = CurrentTimeUTC.get();
 		this.hasFinished = false;
 		this.hasSucceeded = false;
@@ -70,14 +70,14 @@ public abstract class RequestStatus implements Cloneable {
 		this.totalBlocks = total;
 		this.minBlocks = min;
 		this.fetchedBlocks = fetched;
-        // clone() because Date is mutable
+		// clone() because Date is mutable
 		this.latestSuccess
-		    = latestSuccess != null ? (Date)latestSuccess.clone() : null;
+			= latestSuccess != null ? (Date)latestSuccess.clone() : null;
 		this.fatallyFailedBlocks = fatal;
 		this.failedBlocks = failed;
-        // clone() because Date is mutable
+		// clone() because Date is mutable
 		this.latestFailure
-		    = latestFailure != null ? (Date)latestFailure.clone() : null;
+			= latestFailure != null ? (Date)latestFailure.clone() : null;
 		this.isTotalFinalized = totalFinalized;
 		this.persistence = persistence;
 	}
@@ -120,15 +120,15 @@ public abstract class RequestStatus implements Cloneable {
 		return latestSuccess != null ? latestSuccess.getTime() : 0;
 	}
 
-    public Date getLastSuccess() {
-        // clone() because Date is mutable.
-        return latestSuccess != null ? (Date)latestSuccess.clone() : null;
+	public Date getLastSuccess() {
+		// clone() because Date is mutable.
+		return latestSuccess != null ? (Date)latestSuccess.clone() : null;
 	}
 	
-    public Date getLastFailure() {
-        // clone() because Date is mutable.
-        return latestFailure != null ? (Date)latestFailure.clone() : null;
-    }
+	public Date getLastFailure() {
+		// clone() because Date is mutable.
+		return latestFailure != null ? (Date)latestFailure.clone() : null;
+	}
 
 	/** Get the original URI for a fetch or the final URI for an insert. */
 	public abstract FreenetURI getURI();
@@ -160,10 +160,10 @@ public abstract class RequestStatus implements Cloneable {
 	public synchronized void updateStatus(SplitfileProgressEvent event) {
 		this.failedBlocks = event.failedBlocks;
 		this.fatallyFailedBlocks = event.fatallyFailedBlocks;
-    	// clone() because Date is mutable
+		// clone() because Date is mutable
 		this.latestFailure = event.latestFailure != null ? (Date)event.latestFailure.clone() : null;
 		this.fetchedBlocks = event.succeedBlocks;
-        // clone() because Date is mutable
+		// clone() because Date is mutable
 		this.latestSuccess = event.latestSuccess != null ? (Date)event.latestSuccess.clone() : null;
 		this.isTotalFinalized = event.finalizedTotal;
 		this.minBlocks = event.minSuccessfulBlocks;
