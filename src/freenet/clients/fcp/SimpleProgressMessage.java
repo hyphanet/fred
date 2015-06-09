@@ -78,8 +78,8 @@ public class SimpleProgressMessage extends FCPMessage {
 	}
 	
 	public Date getLatestSuccess() {
-        // clone() because Date is mutable
-	    return event.latestSuccess != null ? (Date)event.latestSuccess.clone() : null;
+		// clone() because Date is mutable
+		return event.latestSuccess != null ? (Date)event.latestSuccess.clone() : null;
 	}
 	
 	public double getFailedBlocks(){
@@ -90,10 +90,10 @@ public class SimpleProgressMessage extends FCPMessage {
 		return event.fatallyFailedBlocks;
 	}
 	
-    public Date getLatestFailure() {
-        // clone() because Date is mutable
-        return event.latestFailure != null ? (Date)event.latestFailure.clone() : null;
-    }
+	public Date getLatestFailure() {
+		// clone() because Date is mutable
+		return event.latestFailure != null ? (Date)event.latestFailure.clone() : null;
+	}
 
 	public boolean isTotalFinalized() {
 		return event.finalizedTotal;
