@@ -170,6 +170,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("bottom");
 		allelementVerifiers.add("box-decoration-break");
 		allelementVerifiers.add("box-shadow");
+		allelementVerifiers.add("box-sizing");
 		allelementVerifiers.add("caption-side");
 		allelementVerifiers.add("clear");
 		allelementVerifiers.add("clip");
@@ -689,6 +690,11 @@ class CSSTokenizerFilter {
 		else if("box-shadow".equalsIgnoreCase(element))
 		{ // way more permissive than it should be
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none"), ElementInfo.VISUALMEDIA, null, Arrays.asList("75<1,65535>"), true, true));
+			allelementVerifiers.remove(element);
+
+		}
+		else if("box-sizing".equalsIgnoreCase(element)) {
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("content-box", "border-box", "initial", "inherit"), ElementInfo.VISUALMEDIA, null));
 			allelementVerifiers.remove(element);
 
 		}

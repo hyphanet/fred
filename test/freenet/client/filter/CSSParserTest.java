@@ -664,6 +664,11 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("#xy34 { border-style: solid dotted }", "#xy34 { border-style: solid dotted }");
 		propertyTests.put("h1 { border-bottom: thick solid red }", "h1 { border-bottom: thick solid red }");
 		propertyTests.put("h1[foo] { border: solid red; }", "h1[foo] { border: solid red; }");
+		propertyTests.put("div { box-sizing: content-box; }", "div { box-sizing: content-box; }");
+		propertyTests.put("div { box-sizing: border-box; }", "div { box-sizing: border-box; }");
+		propertyTests.put("div { box-sizing: initial; }", "div { box-sizing: initial; }");
+		propertyTests.put("div { box-sizing: inherit; }", "div { box-sizing: inherit; }");
+		propertyTests.put("div { box-sizing: inhemerit; }", "div { }");
 
 		// Visual formatting
 		propertyTests.put("body { display: inline }\np { display: block }", "body { display: inline }\np { display: block }");
