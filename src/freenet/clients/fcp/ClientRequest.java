@@ -27,6 +27,9 @@ import freenet.support.io.StorageFormatException;
  */
 public abstract class ClientRequest implements Serializable {
 
+    /**
+     * ATTENTION: When incrementing this, please skip version 2. Version 2 had already temporarily
+     * been used by a development branch. */
     private static final long serialVersionUID = 1L;
     /** URI to fetch, or target URI to insert to */
 	protected FreenetURI uri;
@@ -58,9 +61,6 @@ public abstract class ClientRequest implements Serializable {
 	protected final long startupTime;
 	/** Timestamp : completion time */
 	protected long completionTime;
-
-	/** Timestamp: last activity. */
-	protected long lastActivity;
 
 	protected transient RequestClient lowLevelClient;
 	private final int hashCode; // for debugging it is good to have a persistent id
@@ -300,9 +300,21 @@ public abstract class ClientRequest implements Serializable {
 	 * no known last activity.
 	 *
 	 * @return The time of the request’s last activity, or {@code 0}
+	 * @deprecated
+	 *     Use {@link ClientRequester#getLatestSuccess()} instead. You can use 
+	 *     {@link #getClientRequest()} to obtain the ClientRequester.
 	 */
+	@Deprecated
 	public long getLastActivity() {
-		return lastActivity;
+	    ClientRequester cr = getClientRequest();
+	    // I have not actually read the code to find out whether this if() is needed.
+	    // But this function is deprecated at the time of its writing and thus will be removed soon,
+	    // so there is no reason to invest the time to read the code to see whether it will happen.
+	    if (cr == null) {
+	        return 0;
+	    }
+	    
+	    return cr.getLatestSuccess().getTime();
 	}
 
 	public abstract boolean canRestart();

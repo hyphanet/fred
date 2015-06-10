@@ -1181,7 +1181,16 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	public void innerNotifyClients(ClientContext context) {
 	    SplitfileProgressEvent e;
 	    synchronized(this) {
-	        e = new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, minSuccessFetchBlocks, this.blockSetFinalized);
+	        e = new SplitfileProgressEvent(
+	            this.totalBlocks,
+	            this.successfulBlocks,
+	            this.latestSuccess,
+	            this.failedBlocks,
+	            this.fatallyFailedBlocks,
+	            this.latestFailure,
+	            this.minSuccessBlocks,
+	            this.minSuccessFetchBlocks,
+	            this.blockSetFinalized);
 	    }
 		ctx.eventProducer.produceEvent(e, context);
 	}

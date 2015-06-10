@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Date;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
@@ -27,6 +28,7 @@ import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.support.Base64;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -519,6 +521,9 @@ public class ClientPut extends ClientPutBase {
 		if(fnam != null) fnam = new File(fnam.getPath());
 		
 		int total=0, min=0, fetched=0, fatal=0, failed=0;
+		// See ClientRequester.getLatestSuccess() for why this defaults to current time.
+		Date latestSuccess = CurrentTimeUTC.get();
+		Date latestFailure = null;
 		boolean totalFinalized = false;
 		
 		if(progressMessage != null) {
@@ -527,17 +532,19 @@ public class ClientPut extends ClientPutBase {
 				total = (int) msg.getTotalBlocks();
 				min = (int) msg.getMinBlocks();
 				fetched = (int) msg.getFetchedBlocks();
+				latestSuccess = msg.getLatestSuccess();
 				fatal = (int) msg.getFatalyFailedBlocks();
 				failed = (int) msg.getFailedBlocks();
+				latestFailure = msg.getLatestFailure();
 				totalFinalized = msg.isTotalFinalized();
 			}
 		}
 		
-		return new UploadFileRequestStatus(identifier, persistence, started, finished, 
-				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
-				lastActivity, priorityClass, finalURI, uri, failureCode,
-				failureReasonShort, failureReasonLong, getDataSize(), mimeType,
-				fnam, isCompressing());
+        return new UploadFileRequestStatus(
+            identifier, persistence, started, finished, succeeded, total, min, fetched,
+            latestSuccess, fatal, failed, latestFailure, totalFinalized, priorityClass, finalURI,
+            uri, failureCode, failureReasonShort, failureReasonLong, getDataSize(), mimeType,
+            fnam, isCompressing());
 	}
 	
 	@Override

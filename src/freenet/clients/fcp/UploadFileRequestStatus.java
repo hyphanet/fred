@@ -1,6 +1,7 @@
 package freenet.clients.fcp;
 
 import java.io.File;
+import java.util.Date;
 
 import freenet.client.InsertException.InsertExceptionMode;
 import freenet.clients.fcp.ClientPut.COMPRESS_STATE;
@@ -16,15 +17,16 @@ public class UploadFileRequestStatus extends UploadRequestStatus {
 	private final File origFilename;
 	private COMPRESS_STATE compressing;
 	
-	UploadFileRequestStatus(String identifier, Persistence persistence, boolean started, boolean finished, 
-			boolean success, int total, int min, int fetched, int fatal, int failed,
-			boolean totalFinalized, long last, short prio, // all these passed to parent
-			FreenetURI finalURI, FreenetURI targetURI, 
-			InsertExceptionMode failureCode, String failureReasonShort, String failureReasonLong,
+	UploadFileRequestStatus(String identifier, Persistence persistence, boolean started,
+	        boolean finished, boolean success, int total, int min, int fetched, Date latestSuccess,
+	        int fatal, int failed, Date latestFailure, boolean totalFinalized, short prio,
+	        FreenetURI finalURI, FreenetURI targetURI, InsertExceptionMode failureCode,
+	        String failureReasonShort, String failureReasonLong,
+			// all of the above are passed to parent
 			long dataSize, String mimeType, File origFilename, COMPRESS_STATE compressing) {
-		super(identifier, persistence, started, finished, success, total, min, fetched, 
-				fatal, failed, totalFinalized, last, prio, finalURI, targetURI, 
-				failureCode, failureReasonShort, failureReasonLong);
+		super(identifier, persistence, started, finished, success, total, min, fetched,
+		      latestSuccess, fatal, failed, latestFailure, totalFinalized, prio, finalURI,
+			  targetURI, failureCode, failureReasonShort, failureReasonLong);
 		this.dataSize = dataSize;
 		this.mimeType = mimeType;
 		this.origFilename = origFilename;

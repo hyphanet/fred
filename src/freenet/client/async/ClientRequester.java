@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.WeakHashMap;
 
 import freenet.crypt.ChecksumChecker;
@@ -15,6 +16,7 @@ import freenet.node.RequestClient;
 import freenet.node.SendableRequest;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.ResumeFailedException;
@@ -29,6 +31,7 @@ import freenet.support.io.ResumeFailedException;
  * restarting downloads or losing uploads.
  */
 public abstract class ClientRequester implements Serializable, ClientRequestSchedulerGroup {
+
     private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;
 	
@@ -124,10 +127,16 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 	protected int totalBlocks;
 	/** Number of blocks we have successfully completed a fetch/put for. */
 	protected int successfulBlocks;
+    /**
+     * ATTENTION: This may be null for very old databases.
+     * @see #getLatestSuccess() Explanation of the content and especially the default value. */
+    protected Date latestSuccess = CurrentTimeUTC.get();
 	/** Number of blocks which have failed. */
 	protected int failedBlocks;
 	/** Number of blocks which have failed fatally. */
 	protected int fatallyFailedBlocks;
+    /** @see #getLatestFailure() */
+    protected Date latestFailure = null;
 	/** Minimum number of blocks required to succeed for success. */
 	protected int minSuccessBlocks;
 	/** Has totalBlocks stopped growing? */
@@ -140,11 +149,38 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
         return totalBlocks;
     }
 
+    /**
+     * UTC Date of latest increase of {@link #successfulBlocks}.<br>
+     * Initialized to current time for usability purposes: This allows the user to sort downloads by
+     * last success in the user interface to determine which ones are stalling - those will be the
+     * ones with the oldest last success date. If we initialized it to "null" only, that would not
+     * be possible: The user couldn't distinguish very old stalling downloads from downloads which
+     * merely had no success yet because they were added a short time ago.<br> */
+    public Date getLatestSuccess() {
+        // clone() because Date is mutable.
+        // Null-check for backwards compatibility: Old serialized versions of objects of this
+        // class might not have this field yet.
+        return latestSuccess != null ? (Date)latestSuccess.clone() : new Date(0);
+    }
+
+    /**
+     * UTC Date of latest increase of {@link #failedBlocks} or {@link #fatallyFailedBlocks}.<br>
+     * Null if there was no failure yet. */
+    public Date getLatestFailure() {
+        // clone() because Date is mutable.
+        // Null-check for backwards compatibility: Old serialized versions of objects of this
+        // class might not have this field yet.
+        return latestFailure != null ? (Date)latestFailure.clone() : null;
+    }
+
 	protected synchronized void resetBlocks() {
 		totalBlocks = 0;
 		successfulBlocks = 0;
+        // See ClientRequester.getLatestSuccess() for why this defaults to current time.
+        latestSuccess = CurrentTimeUTC.get();
 		failedBlocks = 0;
 		fatallyFailedBlocks = 0;
+        latestFailure = null;
 		minSuccessBlocks = 0;
 		blockSetFinalized = false;
 		sentToNetwork = false;
@@ -208,6 +244,7 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 		synchronized(this) {
 			if(cancelled) return;
 			successfulBlocks++;
+            latestSuccess = CurrentTimeUTC.get();
 		}
 		if(dontNotify) return;
 		notifyClients(context);
@@ -219,6 +256,7 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
     public void failedBlock(boolean dontNotify, ClientContext context) {
         synchronized(this) {
             failedBlocks++;
+            latestFailure = CurrentTimeUTC.get();
         }
         if(!dontNotify)
             notifyClients(context);
@@ -233,6 +271,7 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 	public void fatallyFailedBlock(ClientContext context) {
 		synchronized(this) {
 			fatallyFailedBlocks++;
+            latestFailure = CurrentTimeUTC.get();
 		}
 		notifyClients(context);
 	}
@@ -290,9 +329,12 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 		this.cancelled = false;
 		this.failedBlocks = 0;
 		this.fatallyFailedBlocks = 0;
+        this.latestFailure = null;
 		this.minSuccessBlocks = 0;
 		this.sentToNetwork = false;
 		this.successfulBlocks = 0;
+        // See ClientRequester.getLatestSuccess() for why this defaults to current time.
+        this.latestSuccess = CurrentTimeUTC.get();
 		this.totalBlocks = 0;
 	}
 

@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import java.io.Serializable;
+import java.util.Date;
 
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.node.Node;
@@ -35,7 +35,14 @@ public class SimpleProgressMessage extends FCPMessage {
 		fs.put("Required", event.minSuccessfulBlocks);
 		fs.put("Failed", event.failedBlocks);
 		fs.put("FatallyFailed", event.fatallyFailedBlocks);
+		/* FIXME: This field has been disabled since it will always be 0 (= "never") even if
+		 * parts of the file transfer failed due to temporary reasons such as "data not found" /
+		 * "route not found" / etc. This is due to shortcomings in the underlying event framework.
+		 * Please re-enable it once the underlying issue is fixed:
+		 * https://bugs.freenetproject.org/view.php?id=6526 */
+		// fs.put("LastFailure", event.latestFailure != null ? event.latestFailure.getTime() : 0);
 		fs.put("Succeeded",event.succeedBlocks);
+		fs.put("LastProgress", event.latestSuccess != null ? event.latestSuccess.getTime() : 0);
 		fs.put("FinalizedTotal", event.finalizedTotal);
 		if(event.minSuccessFetchBlocks != 0)
 			fs.put("MinSuccessFetchBlocks", event.minSuccessFetchBlocks);
@@ -70,12 +77,22 @@ public class SimpleProgressMessage extends FCPMessage {
 		return event.succeedBlocks;
 	}
 	
+	public Date getLatestSuccess() {
+		// clone() because Date is mutable
+		return event.latestSuccess != null ? (Date)event.latestSuccess.clone() : null;
+	}
+	
 	public double getFailedBlocks(){
 		return event.failedBlocks;
 	}
 	
 	public double getFatalyFailedBlocks(){
 		return event.fatallyFailedBlocks;
+	}
+	
+	public Date getLatestFailure() {
+		// clone() because Date is mutable
+		return event.latestFailure != null ? (Date)event.latestFailure.clone() : null;
 	}
 
 	public boolean isTotalFinalized() {

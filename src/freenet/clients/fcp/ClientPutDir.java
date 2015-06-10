@@ -6,6 +6,7 @@ package freenet.clients.fcp;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
+import java.util.Date;
 import java.util.HashMap;
 
 import freenet.client.DefaultMIMETypes;
@@ -18,12 +19,13 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
-import freenet.client.async.ManifestPutter;
 import freenet.client.async.DefaultManifestPutter;
+import freenet.client.async.ManifestPutter;
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -376,6 +378,9 @@ public class ClientPutDir extends ClientPutBase {
 		}
 		
 		int total=0, min=0, fetched=0, fatal=0, failed=0;
+		// See ClientRequester.getLatestSuccess() for why this defaults to current time.
+		Date latestSuccess = CurrentTimeUTC.get();
+		Date latestFailure = null;
 		boolean totalFinalized = false;
 		
 		if(progressMessage != null) {
@@ -384,16 +389,18 @@ public class ClientPutDir extends ClientPutBase {
 				total = (int) msg.getTotalBlocks();
 				min = (int) msg.getMinBlocks();
 				fetched = (int) msg.getFetchedBlocks();
+				latestSuccess = msg.getLatestSuccess();
 				fatal = (int) msg.getFatalyFailedBlocks();
 				failed = (int) msg.getFailedBlocks();
+				latestFailure = msg.getLatestFailure();
 				totalFinalized = msg.isTotalFinalized();
 			}
 		}
 		
-		return new UploadDirRequestStatus(identifier, persistence, started, finished, 
-				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
-				lastActivity, priorityClass, finalURI, uri, failureCode,
-				failureReasonShort, failureReasonLong, totalSize, numberOfFiles);
+		return new UploadDirRequestStatus(
+		    identifier, persistence, started, finished, succeeded, total, min, fetched,
+		    latestSuccess, fatal, failed, latestFailure, totalFinalized, priorityClass, finalURI,
+		    uri, failureCode, failureReasonShort, failureReasonLong, totalSize, numberOfFiles);
 	}
 	
 	@Override
