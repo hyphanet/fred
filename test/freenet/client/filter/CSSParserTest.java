@@ -542,6 +542,13 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1 { margin: 1ex;}", "h1 { margin: 1ex;}");
 		propertyTests.put("p { font-size: 12px;}", "p { font-size: 12px;}");
 		propertyTests.put("h3 { word-spacing: 4mm }", "h3 { word-spacing: 4mm }");
+		// CSS 3.0 Length units (ch, rem, vw, vh, vmin, vmax)
+		propertyTests.put("img { max-height: 12ch;}\n","img { max-height: 12ch;}\n");
+		propertyTests.put("img { max-height: 12rem;}\n","img { max-height: 12rem;}\n");
+		propertyTests.put("img { max-height: 12vw;}\n","img { max-height: 12vw;}\n");
+		propertyTests.put("img { max-height: 12vh}\n","img { max-height: 12vh}\n");
+		propertyTests.put("img { max-height: 12vmin }\n","img { max-height: 12vmin }\n");
+		propertyTests.put("img { max-height: 1.2vmax }\n","img { max-height: 1.2vmax }\n");
 
 		// Fonts
 		propertyTests.put("h2 { font-family: times new roman;}\n", "h2 { font-family: times new roman;}\n");
@@ -1095,5 +1102,4 @@ public class CSSParserTest extends TestCase {
 	public void testTripleCommentStart() throws IOException, URISyntaxException {
 		assertEquals("Triple comment start does not crash", filter("/*/*/*"), "");
 	}
-
 }
