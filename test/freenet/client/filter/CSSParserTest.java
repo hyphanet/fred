@@ -816,6 +816,35 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put(":active,a:visited { color:red }", ":active { color:red }");
 		propertyTests.put(":focus,:visited,:active { color:red }", ":focus,:active { color:red }");
 		propertyTests.put(":focus,a:visited,:active { color:red }", ":focus,:active { color:red }");
+		
+		// Flex-box Test
+		propertyTests.put("nav > ul { display: flex; }", "nav>ul { display: flex; }");
+		propertyTests.put("nav > ul > li {\n  min-width: 100px;\n  /* Prevent items from getting too small for their content. */\n  }", "nav>ul>li {\n  min-width: 100px;\n  \n  }");
+		propertyTests.put("nav > ul > #login {\n  margin-left: auto;\n}", "nav>ul>#login {\n  margin-left: auto;\n}");
+		propertyTests.put("nav > ul { display: flex; }", "nav>ul { display: flex; }");
+		propertyTests.put("div { flex-flow: row nowrap; }", "div { flex-flow: row nowrap; }");
+		propertyTests.put("div { flex-grow: 5; }", "div { flex-grow: 5; }");
+		propertyTests.put("div { flex: 64 content; }", "div { flex: 64 content; }");
+		propertyTests.put("div { flex-grow: 5; }", "div { flex-grow: 5; }");
+		propertyTests.put("div { flex-basis: 5px; }", "div { flex-basis: 5px; }");
+		propertyTests.put("div { flex-basis: content; }", "div { flex-basis: content; }");
+		propertyTests.put("div { flex: 64 ; }", "div { flex: 64; }");
+		propertyTests.put("nav { flex-shrink: 3; }", "nav { flex-shrink: 3; }");
+		propertyTests.put("div { flex-wrap: nowrap ; }", "div { flex-wrap: nowrap; }");
+		propertyTests.put("div { flex-wrap: wrap ; }", "div { flex-wrap: wrap; }");
+		propertyTests.put("div { flex-wrap: wrap-reverse; }", "div { flex-wrap: wrap-reverse; }");
+		propertyTests.put("div { order: 5; flex-basis: content; }", "div { order: 5; flex-basis: content; }");
+		propertyTests.put("div { justify-content: flex-start; }", "div { justify-content: flex-start; }");
+		propertyTests.put("div { justify-content: flex-end; }", "div { justify-content: flex-end; }");
+		propertyTests.put("div { justify-content: center; }", "div { justify-content: center; }");
+		propertyTests.put("div { justify-content: space-between; }", "div { justify-content: space-between; }");
+		propertyTests.put("div { justify-content: space-around; }", "div { justify-content: space-around; }");
+		propertyTests.put("div { align-content: flex-start; }", "div { align-content: flex-start; }");
+		propertyTests.put("div { align-self: baseline; }", "div { align-self: baseline; }");
+		propertyTests.put("div { align-self: stretch; }", "div { align-self: stretch; }");
+		propertyTests.put("div { align-items: stretch; }", "div { align-items: stretch; }");
+		propertyTests.put("div { align-items: flex-end; }", "div { align-items: flex-end; }");
+		propertyTests.put("div { flex-direction: column-reverse; }", "div { flex-direction: column-reverse; }");
 	}
 
 	FilterMIMEType cssMIMEType;

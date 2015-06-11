@@ -22,6 +22,7 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
+
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -113,6 +114,9 @@ class CSSTokenizerFilter {
 	private final static HashSet<String> allelementVerifiers=new HashSet<String>();
 	//Reference http://www.w3.org/TR/CSS2/propidx.html
 	static {
+		allelementVerifiers.add("align-content");
+		allelementVerifiers.add("align-items");
+		allelementVerifiers.add("align-self");
 		allelementVerifiers.add("azimuth");
 		allelementVerifiers.add("background-attachment");
 		allelementVerifiers.add("background-clip");
@@ -201,6 +205,13 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("display");
 		allelementVerifiers.add("elevation");
 		allelementVerifiers.add("empty-cells");
+		allelementVerifiers.add("flex");
+		allelementVerifiers.add("flex-basis");
+		allelementVerifiers.add("flex-direction");
+		allelementVerifiers.add("flex-flow");
+		allelementVerifiers.add("flex-grow");
+		allelementVerifiers.add("flex-shrink");
+		allelementVerifiers.add("flex-wrap");
 		allelementVerifiers.add("float");
 		allelementVerifiers.add("font-family");
 		allelementVerifiers.add("font-size");
@@ -210,6 +221,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("font");
 		allelementVerifiers.add("hanging-punctuation");
 		allelementVerifiers.add("height");
+		allelementVerifiers.add("justify-content");
 		allelementVerifiers.add("left");
 		allelementVerifiers.add("letter-spacing");
 		allelementVerifiers.add("line-break");
@@ -228,6 +240,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("min-height");
 		allelementVerifiers.add("min-width");
 		allelementVerifiers.add("opacity");
+		allelementVerifiers.add("order");
 		allelementVerifiers.add("orphans");
 		allelementVerifiers.add("outline-color");
 		allelementVerifiers.add("outline-style");
@@ -304,7 +317,7 @@ class CSSTokenizerFilter {
 	 * Array for storing additional Verifier objects for validating Regular expressions in CSS Property value
 	 * e.g. [ <color> | transparent]{1,4}. It is explained in detail in CSSPropertyVerifier class
 	 */
-	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[117];
+	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[121];
 	static
 	{
 		/*CSSPropertyVerifier(String[] allowedValues,String[] possibleValues,String expression,boolean onlyValueVerifier)*/
@@ -372,7 +385,22 @@ class CSSTokenizerFilter {
 	 */
 	private static void addVerifier(String element)
 	{
-		if("azimuth".equalsIgnoreCase(element))
+		if("align-content".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("flex-start", "flex-end", "center", "space-between", "space-around", "stretch"), ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("align-items".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("flex-start", "flex-end", "center", "baseline", "stretch"), ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("align-self".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("auto", "flex-start", "flex-end", "center", "baseline", "stretch"), ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("azimuth".equalsIgnoreCase(element))
 		{
 			auxilaryVerifiers[0]=new CSSPropertyVerifier(Arrays.asList("left-side","far-left","left","center-left","center","center-right","right","far-right","right-side"),null,null,null,true);
 			auxilaryVerifiers[1]=new CSSPropertyVerifier(Arrays.asList("behind"),null,null,null,true);
@@ -866,7 +894,7 @@ class CSSTokenizerFilter {
 		}
 		else if("display".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("inline","block","list-item","run-in","inline-block","table","inline-table","table-row-group","table-header-group","table-footer-group","table-row","table-column-group","table-column","table-cell","table-caption","none","inherit"),ElementInfo.MEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("inline","block","list-item","run-in","inline-block","table","inline-table","table-row-group","table-header-group","table-footer-group","table-row","table-column-group","table-column","table-cell","table-caption","none","inherit","flex","inline-flex"),ElementInfo.MEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("elevation".equalsIgnoreCase(element))
@@ -882,6 +910,51 @@ class CSSTokenizerFilter {
 		else if("float".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("left","right","none","inherit"),ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("flex".equalsIgnoreCase(element))
+		{
+			// flex: none | <flex-grow> <flex-shrink>? || <flex-basis>
+			// flex-grow and flex-shrink are both integers so we can use one auxilaryVerifier
+			auxilaryVerifiers[119] = new CSSPropertyVerifier(null, null, Arrays.asList("in"));
+			auxilaryVerifiers[120] = new CSSPropertyVerifier(Arrays.asList("content", "auto", "inherit"), null, null, null, true);
+			elementVerifiers.put(element, new CSSPropertyVerifier(null, ElementInfo.VISUALMEDIA, null, Arrays.asList("119a120")));
+			allelementVerifiers.remove(element);
+		}
+		else if("flex-basis".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("content", "auto", "inherit"), ElementInfo.VISUALMEDIA, Arrays.asList("le", "pe")));
+			allelementVerifiers.remove(element);
+		}
+		else if("flex-direction".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("row", "row-reverse", "column", "column-reverse"), ElementInfo.VISUALMEDIA, null));
+			allelementVerifiers.remove(element);
+		}
+		else if("flex-flow".equalsIgnoreCase(element))
+		{
+			// flex-flow: <flex-direction> || <flex-wrap>
+			// flex-direction:
+			auxilaryVerifiers[117] = new CSSPropertyVerifier(Arrays.asList("row", "row-reverse", "column", "column-reverse"), null, null, null, true);
+			// flex-wrap:
+			auxilaryVerifiers[118] = new CSSPropertyVerifier(Arrays.asList("nowrap", "wrap", "wrap-reverse"), null, null, null, true);
+			elementVerifiers.put(element, new CSSPropertyVerifier(null, ElementInfo.VISUALMEDIA, null, Arrays.asList("117a118")));
+			//elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("52a53")));
+			allelementVerifiers.remove(element);
+		}
+		else if("flex-grow".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element, new CSSPropertyVerifier(null, ElementInfo.VISUALMEDIA, Arrays.asList("in")));
+			allelementVerifiers.remove(element);
+		}
+		else if("flex-shrink".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element, new CSSPropertyVerifier(null, ElementInfo.VISUALMEDIA, Arrays.asList("in")));
+			allelementVerifiers.remove(element);
+		}
+		else if("flex-wrap".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("nowrap", "wrap", "wrap-reverse"), ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("font-family".equalsIgnoreCase(element))
@@ -955,6 +1028,11 @@ class CSSTokenizerFilter {
 		else if("height".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","inherit"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			allelementVerifiers.remove(element);
+		}
+		else if("justify-content".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("flex-start", "flex-end", "center", "space-between", "space-around"),ElementInfo.VISUALPAGEDMEDIA,null));
 			allelementVerifiers.remove(element);
 		}
 		else if("left".equalsIgnoreCase(element))
@@ -1043,17 +1121,22 @@ class CSSTokenizerFilter {
 		}
 		else if("min-height".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("inherit"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("inherit", "auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
 			allelementVerifiers.remove(element);
 		}
 		else if("min-width".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("inherit"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("inherit", "auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
 			allelementVerifiers.remove(element);
 		}
 		else if("opacity".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("inherit"),ElementInfo.VISUALPAGEDMEDIA,Arrays.asList("re")));
+			allelementVerifiers.remove(element);
+		}
+		else if("order".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALPAGEDMEDIA,Arrays.asList("in")));
 			allelementVerifiers.remove(element);
 		}
 		else if("orphans".equalsIgnoreCase(element))
