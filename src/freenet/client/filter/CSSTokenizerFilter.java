@@ -714,7 +714,7 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 
 		} else if ("box-sizing".equalsIgnoreCase(element)) {
-			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("content-box", "border-box", "initial", "inherit"), ElementInfo.VISUALMEDIA, null));
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("content-box", "padding-box", "border-box"), ElementInfo.VISUALMEDIA, null));
 			allelementVerifiers.remove(element);
 		}
 		else if("caption-side".equalsIgnoreCase(element))
