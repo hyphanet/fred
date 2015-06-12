@@ -103,15 +103,16 @@ public class FilterUtils {
 	{
 		String lengthValue=null;
 		value=value.trim();
-		if(value.length()==0) {
+		if (value.length() == 0) {
 			return false;
 		}
-		if(isSVG) {
-			if(value.charAt(value.length()-1)=='%')
-				lengthValue=value.substring(0,value.length()-1);
+		if (isSVG) {
+			if (value.charAt(value.length()-1) == '%') {
+				lengthValue = value.substring(0, value.length()-1);
+			}
 		}
 		boolean units = false;
-		if(lengthValue==null) { //Valid unit Vxx[x[x]] (where xx[x[x]] is unit) or V
+		if (lengthValue == null) { //Valid unit Vxx[x[x]] (where xx[x[x]] is unit) or V
 			int pos = 0;
 			int len = value.length();
 			for (int i = len - 1; i >= 0; i --) {
@@ -124,8 +125,9 @@ public class FilterUtils {
 			if (len - pos > 0 && allowedUnits.contains(value.substring(pos))) {
 				lengthValue = value.substring(0, pos);
 				units = true;
-			} else
-				lengthValue=value.substring(0,value.length());
+			} else {
+				lengthValue = value;
+			}
 		}
 		try
 		{

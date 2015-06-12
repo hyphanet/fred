@@ -385,23 +385,16 @@ class CSSTokenizerFilter {
 	 */
 	private static void addVerifier(String element)
 	{
-		if("align-content".equalsIgnoreCase(element))
-		{
+		if ("align-content".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("flex-start", "flex-end", "center", "space-between", "space-around", "stretch"), ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
-		}
-		else if("align-items".equalsIgnoreCase(element))
-		{
+		} else if("align-items".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("flex-start", "flex-end", "center", "baseline", "stretch"), ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
-		}
-		else if("align-self".equalsIgnoreCase(element))
-		{
+		} else if("align-self".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("auto", "flex-start", "flex-end", "center", "baseline", "stretch"), ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
-		}
-		else if("azimuth".equalsIgnoreCase(element))
-		{
+		} else if("azimuth".equalsIgnoreCase(element)) {
 			auxilaryVerifiers[0]=new CSSPropertyVerifier(Arrays.asList("left-side","far-left","left","center-left","center","center-right","right","far-right","right-side"),null,null,null,true);
 			auxilaryVerifiers[1]=new CSSPropertyVerifier(Arrays.asList("behind"),null,null,null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("leftwards","rightwards","inherit"),ElementInfo.AURALMEDIA,Arrays.asList("an"),Arrays.asList("0a1")));
@@ -721,7 +714,8 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 
 		}
-		else if("box-sizing".equalsIgnoreCase(element)) {
+		else if ("box-sizing".equalsIgnoreCase(element))
+		{
 			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("content-box", "border-box", "initial", "inherit"), ElementInfo.VISUALMEDIA, null));
 			allelementVerifiers.remove(element);
 
@@ -911,49 +905,34 @@ class CSSTokenizerFilter {
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("left","right","none","inherit"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
-		}
-		else if("flex".equalsIgnoreCase(element))
-		{
+		} else if ("flex".equalsIgnoreCase(element)) {
 			// flex: none | <flex-grow> <flex-shrink>? || <flex-basis>
 			// flex-grow and flex-shrink are both integers so we can use one auxilaryVerifier
 			auxilaryVerifiers[119] = new CSSPropertyVerifier(null, null, Arrays.asList("in"));
 			auxilaryVerifiers[120] = new CSSPropertyVerifier(Arrays.asList("content", "auto", "inherit"), null, null, null, true);
 			elementVerifiers.put(element, new CSSPropertyVerifier(null, ElementInfo.VISUALMEDIA, null, Arrays.asList("119a120")));
 			allelementVerifiers.remove(element);
-		}
-		else if("flex-basis".equalsIgnoreCase(element))
-		{
+		} else if ("flex-basis".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("content", "auto", "inherit"), ElementInfo.VISUALMEDIA, Arrays.asList("le", "pe")));
 			allelementVerifiers.remove(element);
-		}
-		else if("flex-direction".equalsIgnoreCase(element))
-		{
+		} else if ("flex-direction".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("row", "row-reverse", "column", "column-reverse"), ElementInfo.VISUALMEDIA, null));
 			allelementVerifiers.remove(element);
-		}
-		else if("flex-flow".equalsIgnoreCase(element))
-		{
+		} else if ("flex-flow".equalsIgnoreCase(element)) {
 			// flex-flow: <flex-direction> || <flex-wrap>
 			// flex-direction:
 			auxilaryVerifiers[117] = new CSSPropertyVerifier(Arrays.asList("row", "row-reverse", "column", "column-reverse"), null, null, null, true);
 			// flex-wrap:
 			auxilaryVerifiers[118] = new CSSPropertyVerifier(Arrays.asList("nowrap", "wrap", "wrap-reverse"), null, null, null, true);
 			elementVerifiers.put(element, new CSSPropertyVerifier(null, ElementInfo.VISUALMEDIA, null, Arrays.asList("117a118")));
-			//elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("52a53")));
 			allelementVerifiers.remove(element);
-		}
-		else if("flex-grow".equalsIgnoreCase(element))
-		{
+		} else if ("flex-grow".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element, new CSSPropertyVerifier(null, ElementInfo.VISUALMEDIA, Arrays.asList("in")));
 			allelementVerifiers.remove(element);
-		}
-		else if("flex-shrink".equalsIgnoreCase(element))
-		{
+		} else if ("flex-shrink".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element, new CSSPropertyVerifier(null, ElementInfo.VISUALMEDIA, Arrays.asList("in")));
 			allelementVerifiers.remove(element);
-		}
-		else if("flex-wrap".equalsIgnoreCase(element))
-		{
+		} else if ("flex-wrap".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("nowrap", "wrap", "wrap-reverse"), ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
@@ -1029,9 +1008,7 @@ class CSSTokenizerFilter {
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","inherit"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
 			allelementVerifiers.remove(element);
-		}
-		else if("justify-content".equalsIgnoreCase(element))
-		{
+		} else if ("justify-content".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("flex-start", "flex-end", "center", "space-between", "space-around"),ElementInfo.VISUALPAGEDMEDIA,null));
 			allelementVerifiers.remove(element);
 		}
@@ -1133,9 +1110,7 @@ class CSSTokenizerFilter {
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("inherit"),ElementInfo.VISUALPAGEDMEDIA,Arrays.asList("re")));
 			allelementVerifiers.remove(element);
-		}
-		else if("order".equalsIgnoreCase(element))
-		{
+		} else if ("order".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALPAGEDMEDIA,Arrays.asList("in")));
 			allelementVerifiers.remove(element);
 		}
