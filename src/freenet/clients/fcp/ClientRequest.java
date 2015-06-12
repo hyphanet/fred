@@ -13,6 +13,7 @@ import freenet.crypt.ChecksumChecker;
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
+import freenet.node.RequestClientBuilder;
 import freenet.node.RequestStarter;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
