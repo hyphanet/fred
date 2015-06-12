@@ -134,19 +134,7 @@ public abstract class ClientRequest implements Serializable {
 		if(persistence == Persistence.CONNECTION) {
 			this.origHandler = handler;
 			client = null;
-			lowLevelClient = new RequestClient() {
-
-				@Override
-				public boolean persistent() {
-					return false;
-				}
-
-				@Override
-				public boolean realTimeFlag() {
-					return realTime;
-				}
-				
-			};
+			lowLevelClient = new RequestClientBuilder().realTime(realTime).build();
 			this.clientName = null;
             this.verbosity = verbosity2;
 		} else {

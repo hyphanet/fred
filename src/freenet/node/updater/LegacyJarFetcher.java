@@ -13,6 +13,7 @@ import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
+import freenet.node.RequestClientBuilder;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.io.FileBucket;
@@ -38,21 +39,9 @@ class LegacyJarFetcher implements ClientGetCallback {
 		public void onSuccess(LegacyJarFetcher fetcher);
 		public void onFailure(FetchException e, LegacyJarFetcher fetcher);
 	}
-	
+
 	// Single client for both fetches.
-	static final RequestClient client = new RequestClient() {
-
-		@Override
-		public boolean persistent() {
-			return false;
-		}
-
-		@Override
-		public boolean realTimeFlag() {
-			return false;
-		}
-
-	};
+	static final RequestClient client = new RequestClientBuilder().build();
 
 	public LegacyJarFetcher(FreenetURI uri, File saveTo, NodeClientCore core, LegacyFetchCallback cb) {
 		this.uri = uri;

@@ -21,6 +21,7 @@ import freenet.client.async.PersistentJob;
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.node.RequestClient;
+import freenet.node.RequestClientBuilder;
 import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
@@ -132,33 +133,9 @@ public class FCPConnectionHandler implements Closeable {
 	private final HashMap<String, DirectoryAccess> checkedDirectories = new HashMap<String, DirectoryAccess>();
 	// DDACheckJobs in flight
 	private final HashMap<File, DDACheckJob> inTestDirectories = new HashMap<File, DDACheckJob>();
-	public final RequestClient connectionRequestClientBulk = new RequestClient() {
-		
-		@Override
-		public boolean persistent() {
-			return false;
-		}
-		
-		@Override
-		public boolean realTimeFlag() {
-			return false;
-		}
-		
-	};
-	public final RequestClient connectionRequestClientRT = new RequestClient() {
-		
-		@Override
-		public boolean persistent() {
-			return false;
-		}
-		
-		@Override
-		public boolean realTimeFlag() {
-			return true;
-		}
-		
-	};
-	
+	public final RequestClient connectionRequestClientBulk = new RequestClientBuilder().build();
+	public final RequestClient connectionRequestClientRT = new RequestClientBuilder().realTime().build();
+
 	public FCPConnectionHandler(Socket s, FCPServer server) {
 		this.sock = s;
 		this.server = server;
