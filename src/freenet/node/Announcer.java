@@ -131,6 +131,14 @@ public class Announcer {
 			timeAddedSeeds = now;
 			if(seeds.size() == 0) {
 				registerEvent(STATUS_NO_SEEDNODES);
+        /*
+         * Developers might run nodes in empty directories instead of one made by an installer.
+         * They can copy in the seed nodes file, so check for it periodically to support loading it
+         * without the need to restart the node.
+         *
+         * TODO: If the seed nodes file is found it does not unregister the STATUS_NO_SEEDNODES
+         * event.
+         */
 				node.getTicker().queueTimedJob(new Runnable() {
 					public void run() {
 						maybeSendAnnouncement();
