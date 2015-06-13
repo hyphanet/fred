@@ -66,6 +66,7 @@ public class Announcer {
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
 	private static final long NOT_ALL_CONNECTED_DELAY = SECONDS.toMillis(60);
 	public static final String SEEDNODES_FILENAME = "seednodes.fref";
+	private static final long RETRY_MISSING_SEEDNODES_DELAY = SECONDS.toMillis(30);
 	/** Total nodes added by announcement so far */
 	private int announcementAddedNodes;
 	/** Total nodes that didn't want us so far */
@@ -130,6 +131,11 @@ public class Announcer {
 			timeAddedSeeds = now;
 			if(seeds.size() == 0) {
 				registerEvent(STATUS_NO_SEEDNODES);
+				node.getTicker().queueTimedJob(new Runnable() {
+					public void run() {
+						maybeSendAnnouncement();
+					}
+				}, Announcer.RETRY_MISSING_SEEDNODES_DELAY);
 				return;
 			} else {
 				registerEvent(STATUS_CONNECTING_SEEDNODES);
