@@ -484,6 +484,7 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				String firstLine = lis.readLine(32768, 128, false); // ISO-8859-1 or US-ASCII, _not_ UTF-8
 				if (firstLine == null) {
+          System.out.println("Empty first line.");
 					sock.close();
 					return;
 				} else if (firstLine.equals("")) {
@@ -516,6 +517,7 @@ public class ToadletContextImpl implements ToadletContext {
 				while(true) {
 					String line = lis.readLine(32768, 128, false); // ISO-8859 or US-ASCII, not UTF-8
 					if (line == null) {
+            System.out.println("Empty header.");
 						sock.close();
 						return;
 					}
@@ -654,6 +656,7 @@ public class ToadletContextImpl implements ToadletContext {
 						}
 					}
 					if(ctx.shouldDisconnect) {
+            System.out.println("Disconnecting.");
 						sock.close();
 						return;
 					}

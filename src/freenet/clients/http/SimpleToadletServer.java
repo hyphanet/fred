@@ -867,7 +867,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 					isPanicButtonToBeShown = true;
 				}
 			}
-			
+
 		});
 		synchronized(this) {
 			finishedStartup = true;
@@ -992,10 +992,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			Socket conn = networkInterface.accept();
 			if (WrapperManager.hasShutdownHookBeenTriggered())
 				return;
-            if(conn == null)
-                continue; // timeout
+            if(conn == null) {
+              System.out.printf("Connection timed out.\n");
+              continue; // timeout
+            }
             if(logMINOR)
                 Logger.minor(this, "Accepted connection");
+      System.out.printf("Accepted connection: %s\n", conn.toString());
             SocketHandler sh = new SocketHandler(conn, finishedStartup);
             sh.start();
 		}
