@@ -2,9 +2,7 @@ package freenet.node;
 
 /**
  * Fluent-style builder for {@link RequestClient} implementations. The default {@code
- * RequestClient} built by this builder is not persistent and not real-time. For different values
- * of there properties you need to call the methods {@link #persistent()} and {@link #realTime()}
- * on this builder.
+ * RequestClient} built by this builder is not persistent and not real-time.
  *
  * @author <a href="mailto:bombe@freenetproject.org">David ‘Bombe’ Roden</a>
  */
