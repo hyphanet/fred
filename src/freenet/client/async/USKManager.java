@@ -22,6 +22,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
+import freenet.node.RequestClientBuilder;
 import freenet.node.RequestStarter;
 import freenet.support.Executor;
 import freenet.support.LRUMap;
@@ -42,35 +43,11 @@ public class USKManager {
 
 	private static volatile boolean logDEBUG;
 	private static volatile boolean logMINOR;
-	
-	static RequestClient rcRT = new RequestClient() {
 
-		@Override
-		public boolean persistent() {
-			return false;
-		}
+	static RequestClient rcRT = new RequestClientBuilder().realTime().build();
 
-		@Override
-		public boolean realTimeFlag() {
-			return true;
-		}
+	static RequestClient rcBulk = new RequestClientBuilder().build();
 
-	};
-	
-	static RequestClient rcBulk = new RequestClient() {
-
-		@Override
-		public boolean persistent() {
-			return false;
-		}
-
-		@Override
-		public boolean realTimeFlag() {
-			return false;
-		}
-
-	};
-	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			

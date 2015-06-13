@@ -814,15 +814,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 				if(needsFetch){
 					//If we don't have the data, then we need to fetch it and block until it is available
-					FetchResult result = fetch(key, maxSize, new RequestClient() {
-						@Override
-						public boolean persistent() {
-							return false;
-						}
-						@Override
-						public boolean realTimeFlag() {
-							return true;
-						} }, fctx);
+					FetchResult result = fetch(key, maxSize, new RequestClientBuilder().realTime().build(), fctx);
 
 					// Now, is it safe?
 
@@ -1124,19 +1116,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		core.random.nextBytes(random);
 
 		FProxyFetchTracker fetchTracker = new FProxyFetchTracker(core.clientContext, client.getFetchContext(),
-		        new RequestClient() {
-
-			@Override
-			public boolean persistent() {
-				return false;
-			}
-
-			@Override
-			public boolean realTimeFlag() {
-				return true;
-			}
-
-		});
+				new RequestClientBuilder().realTime().build());
 
 
 		FProxyToadlet fproxy = new FProxyToadlet(client, core, fetchTracker);

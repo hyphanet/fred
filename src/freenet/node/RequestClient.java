@@ -7,6 +7,9 @@ package freenet.node;
  * Must be implemented by any client object returned by SendableRequest.getClient().
  * Mostly this is for scheduling, but it does have one key purpose: to identify whether
  * a request is persistent or not.
+ *
+ * Use a {@link RequestClientBuilder} to conveniently build {@code RequestClient}s.
+ *
  * @author toad
  */
 public interface RequestClient {
