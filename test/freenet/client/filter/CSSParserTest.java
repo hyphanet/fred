@@ -666,8 +666,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1[foo] { border: solid red; }", "h1[foo] { border: solid red; }");
 		propertyTests.put("div { box-sizing: content-box; }", "div { box-sizing: content-box; }");
 		propertyTests.put("div { box-sizing: border-box; }", "div { box-sizing: border-box; }");
-		propertyTests.put("div { box-sizing: initial; }", "div { box-sizing: initial; }");
-		propertyTests.put("div { box-sizing: inherit; }", "div { box-sizing: inherit; }");
+		propertyTests.put("div { box-sizing: padding-box; }", "div { box-sizing: padding-box; }");
 		propertyTests.put("div { box-sizing: inhemerit; }", "div { }");
 
 		// Visual formatting
