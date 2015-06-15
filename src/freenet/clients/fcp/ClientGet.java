@@ -8,6 +8,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -36,14 +37,13 @@ import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
-import freenet.clients.fcp.ClientGet.ReturnType;
-import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.HashResult;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -574,7 +574,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(ce instanceof SplitfileProgressEvent) {
 			verbosityMask = ClientGet.VERBOSITY_SPLITFILE_PROGRESS;
 			synchronized(this) {
-                lastActivity = System.currentTimeMillis();
 			    progress = progressPending = 
 			        new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
 			}
@@ -925,14 +924,20 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	synchronized RequestStatus getStatus() {
 		boolean totalFinalized = false;
 		int total = 0, min = 0, fetched = 0, fatal = 0, failed = 0;
+		// See ClientRequester.getLatestSuccess() for why this defaults to current time.
+		Date latestSuccess = CurrentTimeUTC.get();
+		Date latestFailure = null;
+		
 		if(progressPending != null) {
 			totalFinalized = progressPending.isTotalFinalized();
 			// FIXME why are these doubles???
 			total = (int) progressPending.getTotalBlocks();
 			min = (int) progressPending.getMinBlocks();
 			fetched = (int) progressPending.getFetchedBlocks();
+			latestSuccess = progressPending.getLatestSuccess();
 			fatal = (int) progressPending.getFatalyFailedBlocks();
 			failed = (int) progressPending.getFailedBlocks();
+			latestFailure = progressPending.getLatestFailure();
 		}
 		if(finished && succeeded) totalFinalized = true;
 		FetchExceptionMode failureCode = null;
@@ -964,11 +969,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		filterData = fctx.filterData;
 		overriddenDataType = fctx.overrideMIME != null || fctx.charset != null;
 		
-		return new DownloadRequestStatus(identifier, persistence, started, finished, 
-				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
-				lastActivity, priorityClass, failureCode, mimeType, dataSize, target, 
-				getCompatibilityMode(), getOverriddenSplitfileCryptoKey(), 
-				getURI(), failureReasonShort, failureReasonLong, overriddenDataType, shadow, filterData, getDontCompress());
+        return new DownloadRequestStatus(
+            identifier, persistence, started, finished, succeeded, total, min, fetched,
+            latestSuccess, fatal, failed, latestFailure, totalFinalized, priorityClass, failureCode,
+            mimeType, dataSize, target, getCompatibilityMode(),  getOverriddenSplitfileCryptoKey(),
+            getURI(), failureReasonShort, failureReasonLong, overriddenDataType, shadow, filterData,
+            getDontCompress());
 	}
 
 	private static final long CLIENT_DETAIL_MAGIC = 0x67145b675d2e22f4L;

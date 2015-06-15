@@ -50,6 +50,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
+import freenet.node.RequestClientBuilder;
 import freenet.node.RequestStarter;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -1160,19 +1161,7 @@ public class PluginManager {
 	private final Object pluginLoadSyncObject = new Object();
 
 	/** All plugin updates are on a single request client. */
-	public final RequestClient singleUpdaterRequestClient = new RequestClient() {
-
-		@Override
-		public boolean persistent() {
-			return false;
-		}
-
-		@Override
-		public boolean realTimeFlag() {
-			return false;
-		}
-
-	};
+	public final RequestClient singleUpdaterRequestClient = new RequestClientBuilder().build();
 
 	public File getPluginFilename(String pluginName) {
 		File pluginDirectory = node.getPluginDir();

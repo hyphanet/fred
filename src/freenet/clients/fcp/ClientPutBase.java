@@ -294,7 +294,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
 				SimpleProgressMessage progress = 
 					new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
-				lastActivity = System.currentTimeMillis();
 				trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null, context);
 			}
 			if(client != null) {

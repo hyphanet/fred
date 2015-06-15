@@ -814,15 +814,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 				if(needsFetch){
 					//If we don't have the data, then we need to fetch it and block until it is available
-					FetchResult result = fetch(key, maxSize, new RequestClient() {
-						@Override
-						public boolean persistent() {
-							return false;
-						}
-						@Override
-						public boolean realTimeFlag() {
-							return true;
-						} }, fctx);
+					FetchResult result = fetch(key, maxSize, new RequestClientBuilder().realTime().build(), fctx);
 
 					// Now, is it safe?
 
@@ -963,7 +955,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(filterException != null) {
 					if((mime.equals("application/x-freenet-index")) && (core.node.pluginManager.isPluginLoaded("plugins.ThawIndexBrowser.ThawIndexBrowser"))) {
 						option = optionList.addChild("li");
-						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsThawIndex", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/plugins/plugins.ThawIndexBrowser.ThawIndexBrowser/?key=" + key.toString()).addChild("b") });
+						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsThawIndex", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/plugins/plugins.ThawIndexBrowser.ThawIndexBrowser/?key=" + key.toString())});
 					}
 					option = optionList.addChild("li");
 					// FIXME: is this safe? See bug #131
@@ -1124,19 +1116,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		core.random.nextBytes(random);
 
 		FProxyFetchTracker fetchTracker = new FProxyFetchTracker(core.clientContext, client.getFetchContext(),
-		        new RequestClient() {
-
-			@Override
-			public boolean persistent() {
-				return false;
-			}
-
-			@Override
-			public boolean realTimeFlag() {
-				return true;
-			}
-
-		});
+				new RequestClientBuilder().realTime().build());
 
 
 		FProxyToadlet fproxy = new FProxyToadlet(client, core, fetchTracker);

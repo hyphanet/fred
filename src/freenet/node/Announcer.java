@@ -66,6 +66,7 @@ public class Announcer {
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
 	private static final long NOT_ALL_CONNECTED_DELAY = SECONDS.toMillis(60);
 	public static final String SEEDNODES_FILENAME = "seednodes.fref";
+	private static final long RETRY_MISSING_SEEDNODES_DELAY = SECONDS.toMillis(30);
 	/** Total nodes added by announcement so far */
 	private int announcementAddedNodes;
 	/** Total nodes that didn't want us so far */
@@ -130,6 +131,19 @@ public class Announcer {
 			timeAddedSeeds = now;
 			if(seeds.size() == 0) {
 				registerEvent(STATUS_NO_SEEDNODES);
+        /*
+         * Developers might run nodes in empty directories instead of one made by an installer.
+         * They can copy in the seed nodes file, so check for it periodically to support loading it
+         * without the need to restart the node.
+         *
+         * TODO: If the seed nodes file is found it does not unregister the STATUS_NO_SEEDNODES
+         * event.
+         */
+				node.getTicker().queueTimedJob(new Runnable() {
+					public void run() {
+						maybeSendAnnouncement();
+					}
+				}, Announcer.RETRY_MISSING_SEEDNODES_DELAY);
 				return;
 			} else {
 				registerEvent(STATUS_CONNECTING_SEEDNODES);
