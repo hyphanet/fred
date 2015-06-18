@@ -63,9 +63,9 @@ public class OfficialPlugins {
 					.experimental();
 			addPlugin("ThawIndexBrowser")
 					.inGroup("file-transfer")
-					.minimumVersion(5)
+					.minimumVersion(6)
 					.usesXml()
-					.loadedFrom("CHK@G8Je6u7aY3PN7KsxNYlQJzkYJure-5YNiZ~kFhwjHgs,ci3UDwFeWDzZzBvNsga1aM2vjouOUMMyKO8HAeOgFgs,AAIC--8/ThawIndexBrowser.jar");
+					.loadedFrom("CHK@9bjNQtl7ndPKh~gi4woH0Xvb7uRunJ81deIlXwGE6qg,clwp0Bhx2LZxt2XCWeARqv24tBNmjlhXDZtwAJpzlIc,AAMC--8/ThawIndexBrowser-v6.jar");
 			addPlugin("UPnP")
 					.inGroup("connectivity")
 					.essential()
