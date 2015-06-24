@@ -46,31 +46,24 @@ and that the commit messages meet the standards:
 
 ## Commit messages
 
-From the git commit man page:
+The first line is the title:
 
-> begin the commit message with a single short (less than 50 character) line
-> summarizing the change, followed by a blank line and then a more thorough
-> description. The text up to the first blank line in a commit message is
-> treated as the commit title...
+* Write it as a command to the codebase
+* Limit the length to 72 characters
+* Do not put a period at the end
+* (optional) Separate context with a colon
 
-Except for proper nouns, only the first character of the title may be
-capitalized. It may start with the class / module the change applies to
-followed by a colon if it helps to explain the change and give it context. The
-main part of it is a short imperative description - a command given to the
-codebase. The title is at most 72 characters and does not end with a period. The
-second line is blank. If the message contains additional prose description on
-the third and subsequent lines, it is wrapped to 72 characters. Long lines that
-do not split well, such as URLs or stack traces, are an exception to this.
-
-    [Context:] command given to the codebase
+The second line is blank. If the message contains additional prose description
+on the third and subsequent lines, it is wrapped to 72 characters. Long lines
+that do not split well, such as URLs or stack traces, are an exception to this.
 
 For example:
 
     Update default bookmark editions
     
     Additional description of what the change does, why it is a good idea,
-    and alternate solutions decided against, if any, goes here. For some
-    changes this might not be necessary.
+    and any alternate solutions that seem more obvious and were decided
+    against goes here. For some changes this might not be necessary.
 
 For more discussion see the [git patch submission documentation](https://git.kernel.org/cgit/git/git.git/tree/Documentation/SubmittingPatches#n87).
 
