@@ -444,18 +444,32 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 
 		@Override
 		public synchronized void free() {
-			if(hasBeenFreed) return;
-			hasBeenFreed = true;
-			
-			Closer.close(os);
-			closeInputStreams(true);
-			currentBucket.free();
-			if(isRAMBucket()) {
-				_hasFreed(currentSize);
-				synchronized(ramBucketQueue) {
-					ramBucketQueue.remove(getReference());
-				}
-			}
+		    Bucket cur;
+		    synchronized(this) {
+		        if(hasBeenFreed) return;
+		        hasBeenFreed = true;
+		        
+		        Closer.close(os);
+		        closeInputStreams(true);
+		        if(isRAMBucket()) {
+		            // If it's in memory we must free before removing from the queue.
+		            currentBucket.free();
+		            _hasFreed(currentSize);
+		            synchronized(ramBucketQueue) {
+		                ramBucketQueue.remove(getReference());
+		            }
+		            return;
+		        } else {
+		            // Better to free outside the lock if it's not in-memory.
+		            cur = currentBucket;
+		        }
+		    }
+		    cur.free();
+		}
+		
+		/** Called only by TempRandomAccessBuffer */
+		private synchronized void onFreed() {
+            hasBeenFreed = true;
 		}
 
 		@Override
@@ -775,6 +789,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 	class TempRandomAccessBuffer extends SwitchableProxyRandomAccessBuffer implements Migratable {
 	    
 	    protected boolean hasMigrated = false;
+	    /** If false, there is in-memory storage that needs to be freed. */
 	    private boolean hasFreedRAM = false;
 	    private final long creationTime;
 	    /** Kept in RAM so that finalizer is called on the TempBucket when *both* the 
@@ -827,7 +842,18 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
         }
 
         @Override
+        public void free() {
+            if(!super.innerFree()) return;
+            if(logMINOR) Logger.minor(this, "Freed "+this, new Exception("debug"));
+            if(original != null) {
+                // Tell the TempBucket to prevent log spam. Don't call free().
+                original.onFreed();
+            }
+        }
+        
+        @Override
         protected void afterFreeUnderlying() {
+            // Called when the in-RAM storage has been freed.
             synchronized(this) {
                 if(hasFreedRAM) return;
                 hasFreedRAM = true;
