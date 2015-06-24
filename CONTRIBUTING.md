@@ -69,26 +69,3 @@ For more discussion see the [git patch submission documentation](https://git.ker
 
 Text editors can be configured to assist in formatting messages this way, and
 git packages sometimes ship with such configuration.
-
-## Commit separation
-
-Each commit in a pull request should represent a logically distinct subset of
-the overall change so that it is easy to review. This means the following is
-appropriate for things in development:
-
-    Add more tests for new feature
-    Fix NPE in new feature
-    Fix inverted branch condition in new feature
-    Add tests for new feature
-    Add exciting new feature
-    Add support needed by new feature
-
-But this is much easier to review:
-
-    Add tests for new feature
-    Add exciting new feature
-    Add support needed by new feature
-
-See the Git documentation on [history rewriting](http://git-scm.com/book/en/v2/Git-Tools-Rewriting-History)
-for how to do this. `squash` and `fixup` are the relevant actions. `git commit`
-has `--fixup` and `--squash` for use with `rebase -i --autosquash`.
