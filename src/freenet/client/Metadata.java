@@ -1235,6 +1235,7 @@ public class Metadata implements Cloneable, Serializable {
             throw new Error("Could not write to CountedOutputStream: "+e, e);
         } finally {
             Closer.close(dos);
+            Closer.close(cos);
         }
         return cos.written();
     }
