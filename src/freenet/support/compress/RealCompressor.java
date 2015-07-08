@@ -62,13 +62,11 @@ public class RealCompressor implements PrioRunnable {
 				synchronized(this) {
 					currentJob = _awaitingJobs.poll();
 					if(currentJob == null) {
-						wait();
+						wait(1000);
 						continue;
 					}
 				}
-				compressorSemaphore.acquire(); 
 			} catch(InterruptedException e) {
-				Logger.error(this, "caught: "+e.getMessage(), e);
 				continue;
 			}
 			
@@ -78,6 +76,7 @@ public class RealCompressor implements PrioRunnable {
 				public void run() {
 					freenet.support.Logger.OSThread.logPID(this);
 					try {
+							compressorSemaphore.acquire();
 							try {
 								finalJob.tryCompress(context);
 							} catch(InsertException e) {
