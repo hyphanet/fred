@@ -111,8 +111,6 @@ class KeyListenerTracker implements KeySalter {
 		boolean ret;
 		synchronized (this) {
 			ret = keyListeners.remove(listener);
-			while(logMINOR && keyListeners.remove(listener))
-				Logger.error(this, "Still in pending keys after removal, must be in twice or more: "+listener, new Exception("error"));
 			listener.onRemove();
 		}
 		if (logMINOR)
@@ -124,11 +122,6 @@ class KeyListenerTracker implements KeySalter {
 		boolean found = false;
 		for(Iterator<KeyListener> i = keyListeners.iterator();i.hasNext();) {
 			KeyListener listener = i.next();
-			if(listener == null) {
-				i.remove();
-				Logger.error(this, "Null KeyListener in removePendingKeys()");
-				continue;
-			}
 			if(listener.getHasKeyListener() == hasListener) {
 				found = true;
 				i.remove();
@@ -208,10 +201,6 @@ class KeyListenerTracker implements KeySalter {
 			for(KeyListener listener : keyListeners) {
 				if(!listener.probablyWantKey(key, saltedKey)) continue;
 				if(matches == null) matches = new ArrayList<KeyListener> ();
-				if(matches.contains(listener)) {
-					Logger.error(this, "In matches twice, presumably in keyListeners twice?: "+listener);
-					continue;
-				}
 				matches.add(listener);
 			}
 		}
