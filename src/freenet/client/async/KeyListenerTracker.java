@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
 
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
@@ -80,7 +81,7 @@ class KeyListenerTracker implements KeySalter {
 		this.isRTScheduler = forRT;
 		this.sched = sched;
 		keyListeners = new ArrayList<KeyListener>();
-		singleKeyListeners = new HashMap<ByteArrayWrapper,ArrayList<KeyListener>>();
+		singleKeyListeners = this.isSSKScheduler ? new TreeMap<ByteArrayWrapper,ArrayList<KeyListener>>(ByteArrayWrapper.FAST_COMPARATOR) : new HashMap<ByteArrayWrapper,ArrayList<KeyListener>>();
 		if(globalSalt == null) {
 		    globalSalt = new byte[32];
 		    random.nextBytes(globalSalt);
@@ -302,6 +303,8 @@ class KeyListenerTracker implements KeySalter {
 	}
 
 	private byte[] saltKey(byte[] key) {
+		if (isSSKScheduler)
+			return key;
 		MessageDigest md = SHA256.getMessageDigest();
 		md.update(key);
 		md.update(globalSalt);
