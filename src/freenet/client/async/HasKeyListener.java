@@ -25,4 +25,9 @@ public interface HasKeyListener {
 	 * Notify that makeKeyListener() failed.
 	 */
 	void onFailed(KeyListenerConstructionException e, ClientContext context);
+
+	/**
+	 * @return non-null if only key with (isSSK() ? pubKeyHash : routingKey) wanted.
+	 */
+	public byte[] getWantedKey();
 }

@@ -10,6 +10,7 @@ import freenet.keys.ClientSSK;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
+import freenet.keys.NodeSSK;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
 import freenet.node.NullSendableRequestItem;
@@ -341,6 +342,12 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		innerCheckCachedCooldownData();
 	}
 	
+	@Override
+	public byte[] getWantedKey() {
+		Key newKey = key.getNodeKey(false);
+		return newKey instanceof NodeSSK ? ((NodeSSK)newKey).getPubKeyHash() : newKey.getRoutingKey();
+	}
+
     public void onResume(ClientContext context) {
         schedule(context);
     }

@@ -174,5 +174,10 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     protected ClientGetState getClientGetState() {
         return parent;
     }
+
+    @Override
+    public byte[] getWantedKey() {
+        return null;
+    }
     
 }

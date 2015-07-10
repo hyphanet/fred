@@ -1644,6 +1644,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	@Override
+	public byte[] getWantedKey() {
+		return origUSK.getPubKeyHash();
+	}
+
+	@Override
 	public boolean probablyWantKey(Key key, byte[] saltedKey) {
 		if(!(key instanceof NodeSSK)) return false;
 		NodeSSK k = (NodeSSK) key;
