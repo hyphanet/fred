@@ -66,11 +66,11 @@ public class RealCompressor implements PrioRunnable {
 						continue;
 					}
 				}
+				compressorSemaphore.acquire();
 			} catch(InterruptedException e) {
 				continue;
 			}
 
-			compressorSemaphore.acquire();
 			final CompressJob finalJob = currentJob;
 			exec.execute(new PrioRunnable() {
 				@Override
