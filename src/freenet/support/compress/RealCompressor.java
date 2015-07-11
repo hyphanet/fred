@@ -69,14 +69,14 @@ public class RealCompressor implements PrioRunnable {
 			} catch(InterruptedException e) {
 				continue;
 			}
-			
+
+			compressorSemaphore.acquire();
 			final CompressJob finalJob = currentJob;
 			exec.execute(new PrioRunnable() {
 				@Override
 				public void run() {
 					freenet.support.Logger.OSThread.logPID(this);
 					try {
-							compressorSemaphore.acquire();
 							try {
 								finalJob.tryCompress(context);
 							} catch(InsertException e) {
