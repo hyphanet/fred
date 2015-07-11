@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 import freenet.node.PrioRunnable;
+import freenet.support.io.NativeThread;
 
 /** Start jobs as long as there is sufficient memory (or other limited resource) available, then 
  * queue them. FIXME I bet there is something like this in the standard libraries?
@@ -11,6 +12,7 @@ import freenet.node.PrioRunnable;
  */
 public class MemoryLimitedJobRunner {
     
+    public static final int THREAD_PRIORITY = NativeThread.LOW_PRIORITY;
     public long capacity;
     /** The amount of some limited resource that is in use */
     private long counter;
@@ -85,7 +87,7 @@ public class MemoryLimitedJobRunner {
             
             @Override
             public int getPriority() {
-                return job.getPriority();
+                return THREAD_PRIORITY;
             }
             
         });

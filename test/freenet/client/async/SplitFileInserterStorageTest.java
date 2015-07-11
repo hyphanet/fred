@@ -215,6 +215,11 @@ public class SplitFileInserterStorageTest extends TestCase {
             return finishedEncode;
         }
 
+        @Override
+        public short getPriorityClass() {
+            return 0;
+        }
+
     }
     
     public void testSmallSplitfileNoLastBlock() throws IOException, InsertException {

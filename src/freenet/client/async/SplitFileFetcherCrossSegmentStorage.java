@@ -15,6 +15,7 @@ import freenet.keys.ClientCHKBlock;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
+import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.io.NativeThread;
 import freenet.support.io.StorageFormatException;
 
@@ -75,6 +76,7 @@ public class SplitFileFetcherCrossSegmentStorage {
     
     /** Called when a segment fetches a block that it believes to be relevant to us */
     public void onFetchedRelevantBlock(SplitFileFetcherSegmentStorage segment, int blockNo) {
+        short priorityClass = parent.getPriorityClass();
         synchronized(this) {
             boolean found = false;
             for(int i=0;i<segments.length;i++) {
@@ -97,18 +99,17 @@ public class SplitFileFetcherCrossSegmentStorage {
                 if(logMINOR) Logger.minor(this, "Not decoding "+this+" : found "+totalFound+" blocks of "+dataBlockCount+" (total "+segments.length+")");
                 return;
             }
-            tryDecodeOrEncode();
+            tryDecodeOrEncode(priorityClass);
         }
     }
     
-    private synchronized void tryDecodeOrEncode() {
+    private synchronized void tryDecodeOrEncode(final short prio) {
         if(succeeded) return;
         if(tryDecode) return;
         if(cancelled) return;
         long limit = totalBlocks * CHKBlock.DATA_LENGTH + 
             Math.max(parent.fecCodec.maxMemoryOverheadDecode(dataBlockCount, crossCheckBlockCount),
                     parent.fecCodec.maxMemoryOverheadEncode(dataBlockCount, crossCheckBlockCount));
-        final int prio = NativeThread.LOW_PRIORITY;
         parent.memoryLimitedJobRunner.queueJob(new MemoryLimitedJob(limit) {
             
             @Override
@@ -141,7 +142,7 @@ public class SplitFileFetcherCrossSegmentStorage {
                         }
                     } finally {
                         // Callback is part of the persistent job, unlock *after* calling it.
-                        if(lock != null) lock.unlock(false, prio);
+                        if(lock != null) lock.unlock(false, MemoryLimitedJobRunner.THREAD_PRIORITY);
                     }
                 }
                 return true;
@@ -411,9 +412,10 @@ public class SplitFileFetcherCrossSegmentStorage {
         synchronized(this) {
             if(succeeded) return;
         }
+        short priorityClass = parent.getPriorityClass();
         synchronized(this) {
             if(totalBlocks < dataBlockCount) return;
-            tryDecodeOrEncode();
+            tryDecodeOrEncode(priorityClass);
         }
     }
     

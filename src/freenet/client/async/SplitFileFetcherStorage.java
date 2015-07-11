@@ -1116,8 +1116,6 @@ public class SplitFileFetcherStorage {
         }
         throw new IllegalStateException("Unable to allocate cross data block!");
     }
-
-
     
     public short getPriorityClass() {
         return fetcher.getPriorityClass();

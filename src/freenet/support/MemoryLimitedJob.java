@@ -9,7 +9,7 @@ public abstract class MemoryLimitedJob {
         this.initialAllocation = initial;
     }
     
-    /** Does not affect queueing, only the priority of the thread when it is run. */
+    /** All memory limited jobs run at LOW_PRIORITY. This affects queueing. */
     public abstract int getPriority();
     
     /** Start the job. Generally called by MemoryLimitedJobRunner, which schedules jobs within

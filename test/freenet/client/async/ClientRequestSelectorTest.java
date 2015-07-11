@@ -206,6 +206,11 @@ public class ClientRequestSelectorTest extends TestCase {
             return finishedEncode;
         }
 
+        @Override
+        public short getPriorityClass() {
+            return 0;
+        }
+
     }
     
     private HashResult[] getHashes(LockableRandomAccessBuffer data) throws IOException {
