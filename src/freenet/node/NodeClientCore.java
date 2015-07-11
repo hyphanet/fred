@@ -189,7 +189,7 @@ public class NodeClientCore implements Persistable {
 		storeChecker = new DatastoreChecker(node);
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
-		compressor = new RealCompressor(node.executor);
+		compressor = new RealCompressor();
 		this.formPassword = Base64.encode(pwdBuf);
 		alerts = new UserAlertManager(this);
 		persister = new ConfigurablePersister(this, nodeConfig, "clientThrottleFile", "client-throttle.dat", sortOrder++, true, false,
@@ -941,7 +941,6 @@ public class NodeClientCore implements Persistable {
         node.ipDetector.ipDetectorManager.start();
 		if(tmci != null)
 			tmci.start();
-		node.executor.execute(compressor, "Compression scheduler");
 
 		node.executor.execute(new PrioRunnable() {
 
