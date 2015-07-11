@@ -15,16 +15,19 @@ public class MemoryLimitedJobRunner {
     /** The amount of some limited resource that is in use */
     private long counter;
     /** The jobs we can't start yet. FIXME Always FIFO order? Small jobs first? Prioritised even? */
-    private final Deque<MemoryLimitedJob> jobs;
+    private final Deque<MemoryLimitedJob>[] jobs;
     private final Executor executor;
     private int runningThreads;
     private int maxThreads;
     private boolean shutdown;
     
-    public MemoryLimitedJobRunner(long capacity, int maxThreads, Executor executor) {
+    @SuppressWarnings("unchecked")
+    public MemoryLimitedJobRunner(long capacity, int maxThreads, Executor executor, int priorities) {
         this.capacity = capacity;
         this.counter = 0;
-        this.jobs = new ArrayDeque<MemoryLimitedJob>();
+        this.jobs = new ArrayDeque[priorities];
+        for(int i=0;i<jobs.length;i++) 
+            jobs[i] = new ArrayDeque<MemoryLimitedJob>();
         this.executor = executor;
         this.maxThreads = maxThreads;
         
@@ -35,11 +38,8 @@ public class MemoryLimitedJobRunner {
     public synchronized void queueJob(final MemoryLimitedJob job) {
         if(shutdown) return;
         if(job.initialAllocation > capacity) throw new IllegalArgumentException("Job size "+job.initialAllocation+" > capacity "+capacity);
-        if(counter + job.initialAllocation <= capacity && runningThreads < maxThreads) {
-            startJob(job);
-        } else {
-            jobs.add(job);
-        }
+        jobs[job.getPriority()].add(job);
+        maybeStartJobs();
     }
 
     synchronized void deallocate(long size, boolean finishedThread) {
@@ -57,10 +57,15 @@ public class MemoryLimitedJobRunner {
     private synchronized void maybeStartJobs() {
         if(shutdown) return;
         while(true) {
-            MemoryLimitedJob job = jobs.peekFirst();
+            MemoryLimitedJob job = null;
+            int prio = 0;
+            for(;prio<jobs.length;prio++) {
+                job = jobs[prio].peekFirst();
+                if(job != null) break;
+            }
             if(job == null) return;
             if(job.initialAllocation + counter <= capacity && runningThreads < maxThreads) {
-                jobs.removeFirst();
+                jobs[prio].removeFirst();
                 startJob(job);
             } else return;
         }
