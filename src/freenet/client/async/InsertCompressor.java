@@ -8,6 +8,8 @@ import freenet.client.InsertException;
 import freenet.client.InsertException.InsertExceptionMode;
 import freenet.crypt.HashResult;
 import freenet.crypt.MultiHashInputStream;
+import freenet.keys.CHKBlock;
+import freenet.keys.SSKBlock;
 import freenet.node.PrioRunnable;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -84,9 +86,11 @@ public class InsertCompressor implements CompressJob {
 	@Override
 	public void tryCompress(final ClientContext context) throws InsertException {
 		long origSize = origData.size();
+		long origNumberOfBlocks = origSize/CHKBlock.DATA_LENGTH;
 		COMPRESSOR_TYPE bestCodec = null;
 		RandomAccessBucket bestCompressedData = origData;
 		long bestCompressedDataSize = origSize;
+		long bestNumberOfBlocks = origNumberOfBlocks;
 		
 		HashResult[] hashes = null;
 		
@@ -159,10 +163,12 @@ public class InsertCompressor implements CompressJob {
 						Closer.close(os);
 					}
 					long resultSize = result.size();
+					long resultNumberOfBlocks = resultSize/CHKBlock.DATA_LENGTH;
 					// minSize is {SSKBlock,CHKBlock}.MAX_COMPRESSED_DATA_LENGTH
 					if(resultSize <= minSize) {
 						if(logMINOR)
-							Logger.minor(this, "New size "+resultSize+" smaller then minSize "+minSize);
+							Logger.minor(this, "New size " + resultSize + " smaller then minSize "
+											   + minSize);
 
 						bestCodec = comp;
 						if(bestCompressedData != null && bestCompressedData != origData)
@@ -170,16 +176,18 @@ public class InsertCompressor implements CompressJob {
 							bestCompressedData.free();
 						bestCompressedData = result;
 						bestCompressedDataSize = resultSize;
+						bestNumberOfBlocks = resultNumberOfBlocks;
 						shouldFreeOnFinally = false;
 						break;
 					}
-					if(resultSize < bestCompressedDataSize) {
+					if(resultNumberOfBlocks < bestNumberOfBlocks) {
 						if(logMINOR)
-							Logger.minor(this, "New size "+resultSize+" better than old best "+bestCompressedDataSize);
+							Logger.minor(this, "New size "+resultSize+" ("+resultNumberOfBlocks+" blocks) better than old best "+bestCompressedDataSize+ " ("+bestNumberOfBlocks+" blocks)");
 						if(bestCompressedData != null && bestCompressedData != origData)
 							bestCompressedData.free();
 						bestCompressedData = result;
 						bestCompressedDataSize = resultSize;
+						bestNumberOfBlocks = resultNumberOfBlocks;
 						bestCodec = comp;
 						shouldFreeOnFinally = false;
 					}
