@@ -133,13 +133,12 @@ public class InsertCompressor implements CompressJob {
 						is = origData.getInputStream();
 						result = bucketFactory.makeBucket(-1);
 						os = result.getOutputStream();
-						long maxOutputSize = bestCompressedDataSize;
 						if(first && generateHashes != 0) {
 							if(logMINOR) Logger.minor(this, "Generating hashes: "+generateHashes);
 							is = hasher = new MultiHashInputStream(is, generateHashes);
 						}
 						try {
-							comp.compress(is, os, origSize, maxOutputSize);
+							comp.compress(is, os, origSize, bestCompressedDataSize);
 						} catch (RuntimeException e) {
 							// ArithmeticException has been seen in bzip2 codec.
 							Logger.error(this, "Compression failed with codec "+comp+" : "+e, e);
