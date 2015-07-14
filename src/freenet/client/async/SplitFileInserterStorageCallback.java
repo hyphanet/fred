@@ -35,5 +35,8 @@ public interface SplitFileInserterStorageCallback {
     /** Called when a block becomes fetchable (unless because of an encode, in which case we only 
      * call encodingProgress() ) */
     void clearCooldown();
+    
+    /** Get request priority class for FEC jobs etc */
+    short getPriorityClass();
 
 }

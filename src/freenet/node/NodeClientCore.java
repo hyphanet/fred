@@ -431,7 +431,7 @@ public class NodeClientCore implements Persistable {
                     }
 		    
 		}, true);
-		memoryLimitedJobRunner = new MemoryLimitedJobRunner(nodeConfig.getLong("memoryLimitedJobMemoryLimit"), nodeConfig.getInt("memoryLimitedJobThreadLimit"), node.executor);
+		memoryLimitedJobRunner = new MemoryLimitedJobRunner(nodeConfig.getLong("memoryLimitedJobMemoryLimit"), nodeConfig.getInt("memoryLimitedJobThreadLimit"), node.executor, RequestStarter.NUMBER_OF_PRIORITY_CLASSES);
 		shutdownHook.addEarlyJob(new NativeThread("Shutdown FEC", NativeThread.HIGH_PRIORITY, true) {
 		    
 		    public void realRun() {

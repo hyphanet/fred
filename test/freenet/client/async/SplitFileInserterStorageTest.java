@@ -61,6 +61,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessBufferFactory;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
+import freenet.support.io.NativeThread;
 import freenet.support.io.NullOutputStream;
 import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.PooledFileRandomAccessBufferFactory;
@@ -114,7 +115,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         cryptoKey = new byte[32];
         r.nextBytes(cryptoKey);
         checker = new CRCChecksumChecker();
-        memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 20, executor);
+        memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 20, executor, NativeThread.JAVA_PRIORITY_RANGE);
         jobRunner = new DummyJobRunner(executor, null);
         URI = FreenetURI.generateRandomCHK(r);
     }
@@ -212,6 +213,11 @@ public class SplitFileInserterStorageTest extends TestCase {
 
         public synchronized boolean hasFinishedEncode() {
             return finishedEncode;
+        }
+
+        @Override
+        public short getPriorityClass() {
+            return 0;
         }
 
     }
@@ -895,7 +901,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         MyCallback cb = new MyCallback();
         MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
         // Only enough for one segment at a time.
-        MemoryLimitedJobRunner memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 1, executor);
+        MemoryLimitedJobRunner memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 1, executor, NativeThread.JAVA_PRIORITY_RANGE);
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, true, baseContext.clone(), 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
@@ -907,7 +913,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage resumed = null;
         if(storage.crossSegments != null) {
             for(int i=0;i<storage.crossSegments.length;i++) {
-                memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 1, executor);
+                memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 1, executor, NativeThread.JAVA_PRIORITY_RANGE);
                 resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
                         memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker, null);
                 assertEquals(i, countEncodedCrossSegments(resumed));
@@ -922,7 +928,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         }
         
         for(int i=0;i<storage.segments.length;i++) {
-            memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 1, executor);
+            memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 1, executor, NativeThread.JAVA_PRIORITY_RANGE);
             resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
                     memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker, null);
             assertEquals(i, countEncodedSegments(resumed));

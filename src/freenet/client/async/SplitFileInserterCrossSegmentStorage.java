@@ -13,6 +13,7 @@ import freenet.keys.ClientCHK;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
+import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
 import freenet.support.io.CountedOutputStream;
 import freenet.support.io.NativeThread;
@@ -149,7 +150,7 @@ public class SplitFileInserterCrossSegmentStorage {
         }
     }
 
-    public synchronized void startEncode() {
+    public synchronized void startEncode(final short prio) {
         if(encoded) return;
         if(cancelled) return;
         if(encoding) return;
@@ -157,7 +158,6 @@ public class SplitFileInserterCrossSegmentStorage {
         long limit = totalBlocks * CHKBlock.DATA_LENGTH + 
             Math.max(parent.codec.maxMemoryOverheadDecode(dataBlockCount, crossCheckBlockCount),
                 parent.codec.maxMemoryOverheadEncode(dataBlockCount, crossCheckBlockCount));
-        final int prio = NativeThread.LOW_PRIORITY;
         parent.memoryLimitedJobRunner.queueJob(new MemoryLimitedJob(limit) {
             
             @Override
@@ -188,7 +188,7 @@ public class SplitFileInserterCrossSegmentStorage {
                         }
                     } finally {
                         // Callback is part of the persistent job, unlock *after* calling it.
-                        if(lock != null) lock.unlock(false, prio);
+                        if(lock != null) lock.unlock(false, MemoryLimitedJobRunner.THREAD_PRIORITY);
                     }
                 }
                 return true;

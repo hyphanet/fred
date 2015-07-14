@@ -49,6 +49,7 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessBufferFactory;
+import freenet.support.io.NativeThread;
 import freenet.support.io.StorageFormatException;
 import junit.framework.TestCase;
 
@@ -70,7 +71,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
     static final WaitableExecutor exec = new WaitableExecutor(new PooledExecutor());
     static final PersistentJobRunner jobRunner = new DummyJobRunner(exec, null);
     static final Ticker ticker = new CheatingTicker(exec);
-    static MemoryLimitedJobRunner memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 20, exec);
+    static MemoryLimitedJobRunner memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 20, exec, NativeThread.JAVA_PRIORITY_RANGE);
     static final int BLOCK_SIZE = CHKBlock.DATA_LENGTH;
     private static final OnionFECCodec codec = new OnionFECCodec();
     private static final int MAX_SEGMENT_SIZE = 256;

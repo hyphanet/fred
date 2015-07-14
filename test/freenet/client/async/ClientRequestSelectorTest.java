@@ -49,6 +49,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessBufferFactory;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
+import freenet.support.io.NativeThread;
 import freenet.support.io.NullOutputStream;
 import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.PooledFileRandomAccessBufferFactory;
@@ -100,7 +101,7 @@ public class ClientRequestSelectorTest extends TestCase {
         cryptoKey = new byte[32];
         r.nextBytes(cryptoKey);
         checker = new CRCChecksumChecker();
-        memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 20, executor);
+        memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 20, executor, NativeThread.JAVA_PRIORITY_RANGE);
         jobRunner = new DummyJobRunner(executor, null);
         URI = FreenetURI.generateRandomCHK(r);
     }
@@ -203,6 +204,11 @@ public class ClientRequestSelectorTest extends TestCase {
 
         public synchronized boolean hasFinishedEncode() {
             return finishedEncode;
+        }
+
+        @Override
+        public short getPriorityClass() {
+            return 0;
         }
 
     }

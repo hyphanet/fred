@@ -28,6 +28,7 @@ import freenet.node.KeysFetchingLocally;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
+import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
 import freenet.support.io.NativeThread;
 import freenet.support.io.StorageFormatException;
@@ -286,7 +287,7 @@ public class SplitFileFetcherSegmentStorage {
         long limit = totalBlocks() * CHKBlock.DATA_LENGTH + 
             Math.max(parent.fecCodec.maxMemoryOverheadDecode(blocksForDecode(), checkBlocks),
                     parent.fecCodec.maxMemoryOverheadEncode(blocksForDecode(), checkBlocks));
-        final int prio = NativeThread.LOW_PRIORITY;
+        final int prio = parent.getPriorityClass();
         parent.memoryLimitedJobRunner.queueJob(new MemoryLimitedJob(limit) {
             
             @Override
@@ -324,7 +325,7 @@ public class SplitFileFetcherSegmentStorage {
                         if(!shutdown)
                             parent.finishedEncoding(SplitFileFetcherSegmentStorage.this);
                     } finally {
-                        if(lock != null) lock.unlock(false, prio);
+                        if(lock != null) lock.unlock(false, MemoryLimitedJobRunner.THREAD_PRIORITY);
                     }
                 }
                 return true;
