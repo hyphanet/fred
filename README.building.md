@@ -5,7 +5,7 @@ Install junit 4, Apache ant and Hamcrest. For Debian Wheezy these are `junit4`, 
 If sufficient packages are not available, put these jars into the `lib/` directory:
 
 * `junit4.jar` and `hamcrest-core.jar`: See the [download instructions](https://github.com/junit-team/junit/wiki/Download-and-Install)
-* `bcprov-jdk15on-151.jar`: Download Bouncy Castle 1.51: `wget --no-passive-ftp ftp://ftp.bouncycastle.org/pub/release1.51/bcprov-jdk15on-151.jar` or `wget http://www.bouncycastle.org/download/bcprov-jdk15on-151.jar`
+* `bcprov-jdk15on-152.jar`: Download Bouncy Castle 1.52: `wget --no-passive-ftp ftp://ftp.bouncycastle.org/pub/release1.52/bcprov-jdk15on-152.jar` or `wget http://www.bouncycastle.org/download/bcprov-jdk15on-152.jar`
 
 Freenet also requires in the `lib/freenet/` directory:
 
