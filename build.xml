@@ -13,7 +13,7 @@ available (possibly using *pre-built blobs*).
 
 	<import file="build-clean.xml"/>
 	<property name="contrib.ant" value="${lib.contrib.dir}/../build.xml"/>
-	<property name="get.contrib.dir" value="https://downloads.freenetproject.org/latest"/>
+	<property name="get.contrib.dir" value="https://downloads.freenetproject.org/"/>
 	<available property="contrib.present" file="${contrib.ant}"/>
 
 	<!-- =================================================================== -->
