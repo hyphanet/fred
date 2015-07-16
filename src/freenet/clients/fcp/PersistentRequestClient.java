@@ -153,7 +153,7 @@ public class PersistentRequestClient {
 
 	public void queuePendingMessagesOnConnectionRestartAsync(FCPConnectionOutputHandler outputHandler, ClientContext context) {
 		if(persistence == Persistence.FOREVER) {
-			PersistentListJob job = new PersistentListJob(this, outputHandler, context) {
+			PersistentListJob job = new PersistentListJob(this, outputHandler, context, null) {
 
 				@Override
 				void complete(ClientContext context) {
@@ -163,7 +163,7 @@ public class PersistentRequestClient {
 			};
 			job.run(context);
 		} else {
-			TransientListJob job = new TransientListJob(this, outputHandler, context) {
+			TransientListJob job = new TransientListJob(this, outputHandler, context, null) {
 
 				@Override
 				void complete(ClientContext context) {
