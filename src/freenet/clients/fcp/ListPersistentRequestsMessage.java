@@ -55,7 +55,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 					reschedule(context);
 					return false;
 				}
-				int p = client.queuePendingMessagesOnConnectionRestart(outputHandler, progressCompleted, 30);
+				int p = client.queuePendingMessagesOnConnectionRestart(outputHandler, listRequestIdentifier, progressCompleted, 30);
 				if(p <= progressCompleted) {
 					sentRestartJobs = true;
 					break;
@@ -70,7 +70,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 					reschedule(context);
 					return false;
 				}
-				int p = client.queuePendingMessagesFromRunningRequests(outputHandler, progressRunning, 30);
+				int p = client.queuePendingMessagesFromRunningRequests(outputHandler, listRequestIdentifier, progressRunning, 30);
 				if(p <= progressRunning) {
 					complete(context);
 					return false;

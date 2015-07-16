@@ -183,7 +183,7 @@ public class PersistentRequestClient {
 	 * requests, to be immediately sent. This happens automatically on startup and hopefully
 	 * will encourage clients to acknowledge persistent requests!
 	 */
-	public int queuePendingMessagesOnConnectionRestart(FCPConnectionOutputHandler outputHandler, int offset, int max) {
+	public int queuePendingMessagesOnConnectionRestart(FCPConnectionOutputHandler outputHandler, String listRequestIdentifier, int offset, int max) {
 		Object[] reqs;
 		synchronized(this) {
 			reqs = completedUnackedRequests.toArray();
@@ -191,7 +191,7 @@ public class PersistentRequestClient {
 		int i = 0;
 		for(i=offset;i<Math.min(reqs.length,offset+max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
-			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true, false, false);
+			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, listRequestIdentifier, true, false, false);
 		}
 		return i;
 	}
@@ -199,7 +199,7 @@ public class PersistentRequestClient {
 	/**
 	 * Queue any and all pending messages from running requests. Happens on demand.
 	 */
-	public int queuePendingMessagesFromRunningRequests(FCPConnectionOutputHandler outputHandler, int offset, int max) {
+	public int queuePendingMessagesFromRunningRequests(FCPConnectionOutputHandler outputHandler, String listRequestIdentifier, int offset, int max) {
 		Object[] reqs;
 		synchronized(this) {
 			reqs = runningPersistentRequests.toArray();
@@ -207,7 +207,7 @@ public class PersistentRequestClient {
 		int i = 0;
 		for(i=offset;i<Math.min(reqs.length,offset+max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
-			req.sendPendingMessages(outputHandler, true, false, false);
+			req.sendPendingMessages(outputHandler, listRequestIdentifier, true, false, false);
 		}
 		return i;
 	}

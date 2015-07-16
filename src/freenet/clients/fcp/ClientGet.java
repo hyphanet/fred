@@ -371,8 +371,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(returnType == ReturnType.DIRECT)
 			    returnBucketDirect = data;
 		}
-		trySendDataFoundOrGetFailed(null);
-		trySendAllDataMessage(null);
+		trySendDataFoundOrGetFailed(null, null);
+		trySendAllDataMessage(null, null);
 		finish();
 		if(client != null)
 			client.notifySuccess(this);
@@ -396,10 +396,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             }
         }
     }
-    
 
-
-	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler) {
+	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler, String listRequestIdentifier) {
 		FCPMessage msg;
 
 		// Don't need to lock. succeeded is only ever set, never unset.
@@ -415,9 +413,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(handler == null && persistence == Persistence.CONNECTION)
 			handler = origHandler.outputHandler;
 		if(handler != null)
-			handler.queue(msg);
+			handler.queue(FCPMessage.withListRequestIdentifier(msg, listRequestIdentifier));
 		else
-			client.queueClientRequestMessage(msg, 0);
+			client.queueClientRequestMessage(FCPMessage.withListRequestIdentifier(msg, listRequestIdentifier), 0);
 	}
 	
 	private synchronized AllDataMessage getAllDataMessage() {
@@ -430,13 +428,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         return msg;
 	}
 
-	private void trySendAllDataMessage(FCPConnectionOutputHandler handler) {
+	private void trySendAllDataMessage(FCPConnectionOutputHandler handler, String listRequestIdentifier) {
 	    if(persistence == Persistence.CONNECTION) {
 	        if(handler == null)
 	            handler = origHandler.outputHandler;
 	    }
 	    if(handler != null) {
-	        FCPMessage allData = getAllDataMessage();
+	        FCPMessage allData = FCPMessage.withListRequestIdentifier(getAllDataMessage(), listRequestIdentifier);
 	        if(allData != null)
 	            handler.queue(allData);
 	    }
@@ -452,19 +450,19 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     }
 
     @Override
-	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData) {
+	public void sendPendingMessages(FCPConnectionOutputHandler handler, String listRequestIdentifier, boolean includePersistentRequest, boolean includeData, boolean onlyData) {
 		if(!onlyData) {
 			if(includePersistentRequest) {
 				FCPMessage msg = persistentTagMessage();
-				handler.queue(msg);
+				handler.queue(FCPMessage.withListRequestIdentifier(msg, listRequestIdentifier));
 			}
 			if(progressPending != null) {
-				handler.queue(progressPending);
+				handler.queue(FCPMessage.withListRequestIdentifier(progressPending, listRequestIdentifier));
 			}
 			if(sentToNetwork)
-				handler.queue(new SendingToNetworkMessage(identifier, global));
+				handler.queue(FCPMessage.withListRequestIdentifier(new SendingToNetworkMessage(identifier, global), listRequestIdentifier));
 			if(finished)
-				trySendDataFoundOrGetFailed(handler);
+				trySendDataFoundOrGetFailed(handler, listRequestIdentifier);
 		} else if(returnType != ReturnType.DIRECT) {
 		    ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.WRONG_RETURN_TYPE, false, "No AllData", identifier, global);
 		    handler.queue(msg);
@@ -472,7 +470,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 
 		if(includeData) {
-		    trySendAllDataMessage(handler);
+		    trySendAllDataMessage(handler, listRequestIdentifier);
 		}
 		
 		CompatibilityMode cmsg;
@@ -487,22 +485,21 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		    if(foundDataLength > 0)
 		        lengthMsg = new ExpectedDataLength(identifier, global, foundDataLength);
 		}
-		handler.queue(cmsg);
-		
+		handler.queue(FCPMessage.withListRequestIdentifier(cmsg, listRequestIdentifier));
+
 		if(expectedHashes != null) {
-			handler.queue(expectedHashes);
+			handler.queue(FCPMessage.withListRequestIdentifier(expectedHashes, listRequestIdentifier));
 		}
 
 		if (mimeMsg != null) {
-			handler.queue(mimeMsg);
+			handler.queue(FCPMessage.withListRequestIdentifier(mimeMsg, listRequestIdentifier));
 		}
 		if (lengthMsg != null) {
-			handler.queue(lengthMsg);
+			handler.queue(FCPMessage.withListRequestIdentifier(lengthMsg, listRequestIdentifier));
 		}
 	}
 
-	@Override
-	protected FCPMessage persistentTagMessage() {
+	private FCPMessage persistentTagMessage() {
 		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistence, targetFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries, binaryBlob, fctx.maxOutputLength, isRealTime());
 	}
 	
@@ -534,7 +531,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 		if(logMINOR)
 			Logger.minor(this, "Caught "+e, e);
-		trySendDataFoundOrGetFailed(null);
+		trySendDataFoundOrGetFailed(null, null);
 		// We do not want the data to be removed on failure, because the request
 		// may be restarted, and the bucket persists on the getter, even if we get rid of it here.
 		//freeData(container);
@@ -553,7 +550,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				FetchException cancelled = new FetchException(FetchExceptionMode.CANCELLED);
 				getFailedMessage = new GetFailedMessage(cancelled, identifier, global);
 			}
-			trySendDataFoundOrGetFailed(null);
+			trySendDataFoundOrGetFailed(null, null);
 		}
 		// notify client that request was removed
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
