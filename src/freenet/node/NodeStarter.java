@@ -8,6 +8,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.Properties;
 import java.util.UUID;
 
 import org.tanukisoftware.wrapper.WrapperListener;
@@ -23,11 +24,13 @@ import freenet.crypt.RandomSource;
 import freenet.crypt.SSL;
 import freenet.crypt.Yarrow;
 import freenet.support.Executor;
+import freenet.support.JVMVersion;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
+import freenet.support.WaitableExecutor;
 import freenet.support.io.NativeThread;
 
 /**
@@ -610,12 +613,25 @@ public class NodeStarter implements WrapperListener {
 		else if(maxMemory <= 0)
 			return -1;
 		else {
+			// If over 2GB we need to check we're 64bits capable.
+			// If we aren't we default to a safe size for the heap
+			if(isSomething32bits() && maxMemory >= (2048 * 1024 * 1024)) {
+				return 1408 * 1024 * 1024;
+			}
 			if(maxMemory < (1024 * 1024)) {
 				// Some weird buggy JVMs provide this number in MB IIRC?
 				return maxMemory * 1024 * 1024;
 			}
 			return maxMemory;
 		}
+	}
+
+	/** check whether the OS, JVM and wrapper are 64bits
+	 * On Windows this will be always true (the wrapper we deploy is 32bits)
+	 */
+	public final static boolean isSomething32bits() {
+		Properties wrapperProperties = WrapperManager.getProperties();
+		return !JVMVersion.is32Bit() && !wrapperProperties.getProperty("wrapper.java.additional.auto_bits").startsWith("32");
 	}
 	
 	/** Static instance of SecureRandom, as opposed to Node's copy. @see getSecureRandom() */

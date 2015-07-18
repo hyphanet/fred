@@ -17,6 +17,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeInitException;
+import freenet.node.NodeStarter;
 import freenet.node.updater.MainJarDependenciesChecker.Dependency;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
 import freenet.support.io.Closer;
@@ -344,7 +345,8 @@ public class UpdateDeployContext {
 					int memoryLimit = Integer.parseInt(line.substring("wrapper.java.maxmemory=".length()));
 					int newMemoryLimit = memoryLimit + extraMemoryMB;
 					// There have been some cases where really high limits have caused the JVM to do bad things.
-					if(newMemoryLimit > 2048) newMemoryLimit = 2048;
+					long maxSystemMem = NodeStarter.getMemoryLimitMB();
+					if(newMemoryLimit > maxSystemMem) newMemoryLimit = (int)maxSystemMem;
 					bw.write('#' + markerComment + '\n');
 					bw.write("wrapper.java.maxmemory="+newMemoryLimit+'\n');
 					success = true;
