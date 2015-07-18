@@ -348,6 +348,13 @@ public class NodeClientCore implements Persistable {
 		        node, this, persistentTempBucketFactory, tempBucketFactory, bandwidthStatsPutter);
 		
 		SemiOrderedShutdownHook shutdownHook = SemiOrderedShutdownHook.get();
+
+		shutdownHook.addEarlyJob(new NativeThread("Shutdown RealCompressor", NativeThread.HIGH_PRIORITY, true) {
+			@Override
+			public void realRun() {
+				compressor.shutdown();
+			}
+		});
 		
 		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, true) {
 		    
