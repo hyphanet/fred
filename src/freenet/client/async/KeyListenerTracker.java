@@ -143,25 +143,27 @@ class KeyListenerTracker implements KeySalter {
 		return ret;
 	}
 	
-	public synchronized boolean removePendingKeys(HasKeyListener hasListener) {
-		boolean found = false;
+	public boolean removePendingKeys(HasKeyListener hasListener) {
+		boolean ret = false;
 		byte[] wantedKey = hasListener.getWantedKey();
 		ByteArrayWrapper wrapper = wantedKey != null ? new ByteArrayWrapper(saltKey(wantedKey)) : null;
-		ArrayList<KeyListener> keyListeners = this.keyListeners;
-		if(wantedKey != null)
-			keyListeners = singleKeyListeners.get(wrapper);
-		if(keyListeners == null)
-			return false;
-		for(Iterator<KeyListener> i = keyListeners.iterator();i.hasNext();) {
-			KeyListener listener = i.next();
-			if(listener.getHasKeyListener() == hasListener) {
-				found = true;
-				i.remove();
-				listener.onRemove();
-				Logger.normal(this, "Removed pending keys from "+this+" : size now "+this.keyListeners.size()+"/"+singleKeyListeners.size()+" : "+listener);
+		synchronized(this) {
+			ArrayList<KeyListener> keyListeners = this.keyListeners;
+			if(wantedKey != null)
+				keyListeners = singleKeyListeners.get(wrapper);
+			if(keyListeners == null)
+				return false;
+			for(Iterator<KeyListener> i = keyListeners.iterator();i.hasNext();) {
+				KeyListener listener = i.next();
+				if(listener.getHasKeyListener() == hasListener) {
+					ret = true;
+					i.remove();
+					listener.onRemove();
+					Logger.normal(this, "Removed pending keys from "+this+" : size now "+this.keyListeners.size()+"/"+singleKeyListeners.size()+" : "+listener);
+				}
 			}
 		}
-		return found;
+		return ret;
 	}
 	
 	private synchronized ArrayList<KeyListener> probablyMatches(Key key, byte[] saltedKey) {
