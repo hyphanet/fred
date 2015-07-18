@@ -84,7 +84,7 @@ public class RealCompressor {
         int maxRunningThreads = 1;
 
         String osName = System.getProperty("os.name");
-        if(osName.contains("Windows") && (osName.toLowerCase().indexOf("mac os x") > 0) || (!NativeThread.usingNativeCode()))
+        if(!osName.contains("Windows") && (osName.toLowerCase().indexOf("mac os x") > 0) || (!NativeThread.usingNativeCode()))
             // OS/X niceness is really weak, so we don't want any more background CPU load than necessary
             // Also, on non-Windows, we need the native threads library to be working.
             maxRunningThreads = 1;
