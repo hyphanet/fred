@@ -24,8 +24,12 @@ public class JVMVersion {
 	}
 
 	public static final boolean is32Bit() {
-		boolean is32bitJVM = System.getProperty("sun.arch.data.model").startsWith("32");
 		boolean is32bitOS = System.getProperty("os.arch").equalsIgnoreCase("x86");
-		return is32bitJVM || is32bitOS;
+		String prop = System.getProperty("sun.arch.data.model");
+		if (prop != null) {
+			return prop.startsWith("32") || is32bitOS;
+		} else {
+			return is32bitOS;
+		}
 	}
 }
