@@ -590,7 +590,7 @@ public class PproxyToadlet extends Toadlet {
 				if(pluginDescription.experimental)
 					option.addChild("b", " ("+l10n("loadLabelExperimental")+")");
 				if (advancedModeEnabled && pluginDescription.minimumVersion >= 0) {
-					option.addChild("#", " ("+l10n("pluginVersion")+" " + pluginDescription.minimumVersion + ")");
+					option.addChild("#", " ("+l10n("pluginVersion")+" " + pluginDescription.recommendedVersion + ")");
 				}
 				option.addChild("#", " - "+pluginDescription.getLocalisedPluginDescription());
 			}
