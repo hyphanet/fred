@@ -613,11 +613,6 @@ public class NodeStarter implements WrapperListener {
 		else if(maxMemory <= 0)
 			return -1;
 		else {
-			// If over 2GB we need to check we're 64bits capable.
-			// If we aren't we default to a safe size for the heap
-			if(isSomething32bits() && maxMemory >= (2048 * 1024 * 1024)) {
-				return 1408 * 1024 * 1024;
-			}
 			if(maxMemory < (1024 * 1024)) {
 				// Some weird buggy JVMs provide this number in MB IIRC?
 				return maxMemory * 1024 * 1024;
