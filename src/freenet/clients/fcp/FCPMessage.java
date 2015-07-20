@@ -179,6 +179,9 @@ public abstract class FCPMessage {
 	 * @return The new FCP message
 	 */
 	public static FCPMessage withListRequestIdentifier(final FCPMessage fcpMessage, final String listRequestIdentifier) {
+		if (listRequestIdentifier == null) {
+			return fcpMessage;
+		}
 		return new FCPMessage() {
 			@Override
 			public SimpleFieldSet getFieldSet() {
