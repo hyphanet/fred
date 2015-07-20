@@ -15,11 +15,8 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 	static final String NAME = "ListPersistentRequests";
 	private final String identifier;
 
-	public ListPersistentRequestsMessage(SimpleFieldSet fs) throws MessageInvalidException {
+	public ListPersistentRequestsMessage(SimpleFieldSet fs) {
 		identifier = fs.get("Identifier");
-		if (identifier == null) {
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain an Identifier field", null, false);
-		}
 	}
 	
 	@Override
