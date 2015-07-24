@@ -30,6 +30,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.RequestClient;
+import freenet.node.RequestClientBuilder;
 import freenet.node.Version;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -269,20 +270,8 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 			FetchContext fctx = client.getFetchContext();
 			fctx.maxNonSplitfileRetries = 0;
 			fctx.maxSplitfileBlockRetries = 0;
-			RequestClient requestContext = new RequestClient() {
+			RequestClient requestContext = new RequestClientBuilder().build();
 
-				@Override
-				public boolean persistent() {
-					return false;
-				}
-
-				@Override
-				public boolean realTimeFlag() {
-					return false;
-				}
-				
-			};
-			
 			// PARSE FILE AND FETCH OLD STUFF IF APPROPRIATE
 			
 			FreenetURI[] mhkURIs = new FreenetURI[3];

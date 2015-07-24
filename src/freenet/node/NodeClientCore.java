@@ -189,7 +189,7 @@ public class NodeClientCore implements Persistable {
 		storeChecker = new DatastoreChecker(node);
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
-		compressor = new RealCompressor(node.executor);
+		compressor = new RealCompressor();
 		this.formPassword = Base64.encode(pwdBuf);
 		alerts = new UserAlertManager(this);
 		persister = new ConfigurablePersister(this, nodeConfig, "clientThrottleFile", "client-throttle.dat", sortOrder++, true, false,
@@ -348,6 +348,13 @@ public class NodeClientCore implements Persistable {
 		        node, this, persistentTempBucketFactory, tempBucketFactory, bandwidthStatsPutter);
 		
 		SemiOrderedShutdownHook shutdownHook = SemiOrderedShutdownHook.get();
+
+		shutdownHook.addEarlyJob(new NativeThread("Shutdown RealCompressor", NativeThread.HIGH_PRIORITY, true) {
+			@Override
+			public void realRun() {
+				compressor.shutdown();
+			}
+		});
 		
 		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, true) {
 		    
@@ -431,7 +438,7 @@ public class NodeClientCore implements Persistable {
                     }
 		    
 		}, true);
-		memoryLimitedJobRunner = new MemoryLimitedJobRunner(nodeConfig.getLong("memoryLimitedJobMemoryLimit"), nodeConfig.getInt("memoryLimitedJobThreadLimit"), node.executor);
+		memoryLimitedJobRunner = new MemoryLimitedJobRunner(nodeConfig.getLong("memoryLimitedJobMemoryLimit"), nodeConfig.getInt("memoryLimitedJobThreadLimit"), node.executor, RequestStarter.NUMBER_OF_PRIORITY_CLASSES);
 		shutdownHook.addEarlyJob(new NativeThread("Shutdown FEC", NativeThread.HIGH_PRIORITY, true) {
 		    
 		    public void realRun() {
@@ -941,7 +948,6 @@ public class NodeClientCore implements Persistable {
         node.ipDetector.ipDetectorManager.start();
 		if(tmci != null)
 			tmci.start();
-		node.executor.execute(compressor, "Compression scheduler");
 
 		node.executor.execute(new PrioRunnable() {
 

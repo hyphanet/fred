@@ -86,7 +86,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 							shouldFlush = true;
 						else {
 							try {
-								outQueue.wait();
+								outQueue.wait(1000);
 							} catch (InterruptedException e) {
 								// Ignore
 							}
@@ -167,7 +167,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 			while(!outQueue.isEmpty()) {
 				if(closedOutputQueue) return;
 				try {
-					outQueue.wait();
+					outQueue.wait(1500);
 				} catch (InterruptedException e) {
 					continue;
 				}

@@ -1227,10 +1227,15 @@ public class Metadata implements Cloneable, Serializable {
 	
     public long writtenLength() throws MetadataUnresolvedException {
         CountedOutputStream cos = new CountedOutputStream(new NullOutputStream());
+        DataOutputStream dos = null;
         try {
-            writeTo(new DataOutputStream(cos));
+            dos = new DataOutputStream(cos);
+            writeTo(dos);
         } catch (IOException e) {
             throw new Error("Could not write to CountedOutputStream: "+e, e);
+        } finally {
+            Closer.close(dos);
+            Closer.close(cos);
         }
         return cos.written();
     }

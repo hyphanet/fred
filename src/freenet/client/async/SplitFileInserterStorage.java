@@ -1135,14 +1135,16 @@ public class SplitFileInserterStorage {
     }
 
     private void startSegmentEncode() {
+        short prio = callback.getPriorityClass();
         for (SplitFileInserterSegmentStorage segment : segments)
-            segment.startEncode();
+            segment.startEncode(prio);
     }
 
     private void startCrossSegmentEncode() {
+        short prio = callback.getPriorityClass();
         // Start cross-segment encode.
         for (SplitFileInserterCrossSegmentStorage segment : crossSegments)
-            segment.startEncode();
+            segment.startEncode(prio);
     }
 
     /** Called when a cross-segment finishes encoding blocks. Can be called inside locks as it runs

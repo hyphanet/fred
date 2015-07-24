@@ -17,8 +17,10 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeInitException;
+import freenet.node.NodeStarter;
 import freenet.node.updater.MainJarDependenciesChecker.Dependency;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
+import freenet.support.Logger;
 import freenet.support.io.Closer;
 
 /**
@@ -344,7 +346,10 @@ public class UpdateDeployContext {
 					int memoryLimit = Integer.parseInt(line.substring("wrapper.java.maxmemory=".length()));
 					int newMemoryLimit = memoryLimit + extraMemoryMB;
 					// There have been some cases where really high limits have caused the JVM to do bad things.
-					if(newMemoryLimit > 2048) newMemoryLimit = 2048;
+					if(NodeStarter.isSomething32bits() && newMemoryLimit > 1408) {
+						Logger.error(UpdateDeployContext.class, "We've detected a 32bit JVM so we're refusing to set maxmemory to "+newMemoryLimit);
+						newMemoryLimit = 1408;
+					}
 					bw.write('#' + markerComment + '\n');
 					bw.write("wrapper.java.maxmemory="+newMemoryLimit+'\n');
 					success = true;

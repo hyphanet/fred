@@ -284,4 +284,9 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
         sender.clearWakeupTime(context);
     }
 
+    @Override
+    public short getPriorityClass() {
+        return parent.getPriorityClass();
+    }
+
 }

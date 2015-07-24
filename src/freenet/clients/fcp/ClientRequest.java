@@ -13,6 +13,7 @@ import freenet.crypt.ChecksumChecker;
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
+import freenet.node.RequestClientBuilder;
 import freenet.node.RequestStarter;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -133,19 +134,7 @@ public abstract class ClientRequest implements Serializable {
 		if(persistence == Persistence.CONNECTION) {
 			this.origHandler = handler;
 			client = null;
-			lowLevelClient = new RequestClient() {
-
-				@Override
-				public boolean persistent() {
-					return false;
-				}
-
-				@Override
-				public boolean realTimeFlag() {
-					return realTime;
-				}
-				
-			};
+			lowLevelClient = new RequestClientBuilder().realTime(realTime).build();
 			this.clientName = null;
             this.verbosity = verbosity2;
 		} else {

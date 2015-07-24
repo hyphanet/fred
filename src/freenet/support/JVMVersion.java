@@ -22,4 +22,14 @@ public class JVMVersion {
 
 		return version.compareTo(REQUIRED) < 0;
 	}
+
+	public static final boolean is32Bit() {
+		boolean is32bitOS = System.getProperty("os.arch").equalsIgnoreCase("x86");
+		String prop = System.getProperty("sun.arch.data.model");
+		if (prop != null) {
+			return prop.startsWith("32") || is32bitOS;
+		} else {
+			return is32bitOS;
+		}
+	}
 }

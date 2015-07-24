@@ -12,6 +12,9 @@ import freenet.keys.FreenetURI;
 /**
  * Container for Freenet’s official plugins.
  *
+ * FIXME: Connectivity essential plugins shouldn't have their minimum version increased!
+ * @see https://bugs.freenetproject.org/view.php?id=6600
+ *
  * @author <a href="mailto:bombe@pterodactylus.net">David ‘Bombe’ Roden</a>
  */
 public class OfficialPlugins {
@@ -63,14 +66,16 @@ public class OfficialPlugins {
 					.experimental();
 			addPlugin("ThawIndexBrowser")
 					.inGroup("file-transfer")
-					.minimumVersion(5)
+					.minimumVersion(6)
 					.usesXml()
-					.loadedFrom("CHK@G8Je6u7aY3PN7KsxNYlQJzkYJure-5YNiZ~kFhwjHgs,ci3UDwFeWDzZzBvNsga1aM2vjouOUMMyKO8HAeOgFgs,AAIC--8/ThawIndexBrowser.jar");
+					.loadedFrom("CHK@9bjNQtl7ndPKh~gi4woH0Xvb7uRunJ81deIlXwGE6qg,clwp0Bhx2LZxt2XCWeARqv24tBNmjlhXDZtwAJpzlIc,AAMC--8/ThawIndexBrowser-v6.jar");
 			addPlugin("UPnP")
 					.inGroup("connectivity")
 					.essential()
+                    .recommendedVersion(10006)
 					.minimumVersion(10003)
-					.loadedFrom("CHK@ICSu1tgnNxJ0bApWkL-fQFswbfi9KPnmWI3Is4eq0iw,Sj1N3zdDHBbL3Uc3~eY4elqWwSP7IR1uHrKVR2-nA0s,AAMC--8/UPnP-10006.jar");
+					.loadedFrom(
+                        "CHK@ICSu1tgnNxJ0bApWkL-fQFswbfi9KPnmWI3Is4eq0iw,Sj1N3zdDHBbL3Uc3~eY4elqWwSP7IR1uHrKVR2-nA0s,AAMC--8/UPnP-10006.jar");
 			addPlugin("XMLLibrarian")
 					.inGroup("index")
 					.minimumVersion(26)
@@ -105,9 +110,9 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@1FWUqydeyTbxC3fut51QT8VGnokQFYHMoLsqzP4RU60,BM3ibZYejeo2-sC7WklJ9I8ZJysMpO9~l9MZ8NUzP2c,AAMC--8/WebOfTrust-build0015.jar");
 			addPlugin("FlogHelper")
 					.inGroup("communication")
-					.minimumVersion(31)
+					.minimumVersion(34)
 					.usesXml()
-					.loadedFrom("CHK@UAgvzuTihdGnVmtQ7R2PMoSzzcPpMisS8AILj7j78Ek,mRnnc-NDu~ktr4809nfD2huLk-6thoiMK9Khndo3Toc,AAMC--8/FlogHelper.jar");
+					.loadedFrom("CHK@yuiC-Dv0UYNgqRcLq4heCL-y0nHctr2LBcOsBN0ORyM,8M2bv~d7Su~O0MJHz4Tq1g3n4nrAgw-C7dn6mMFQSA4,AAMC--8/FlogHelper-v34.jar");
 		} catch (MalformedURLException mue1) {
 			throw new RuntimeException("Could not create FreenetURI.", mue1);
 		}
@@ -205,6 +210,10 @@ public class OfficialPlugins {
     }
 
 		private void addCurrentPluginDescription() {
+            if(recommendedVersion == 0 && minimumVersion > 0)
+                recommendedVersion = minimumVersion;
+            if(minimumVersion == 0 && recommendedVersion > 0)
+                minimumVersion = recommendedVersion;
 			officialPlugins.put(name, createOfficialPluginDescription());
 		}
 

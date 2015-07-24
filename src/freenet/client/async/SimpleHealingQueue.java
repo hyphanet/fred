@@ -13,6 +13,7 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
+import freenet.node.RequestClientBuilder;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -34,19 +35,9 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			}
 		});
 	}
-	
-	static final RequestClient REQUEST_CLIENT = 
-	    new RequestClient() {
-            @Override
-            public boolean persistent() {
-                return false;
-            }
-            @Override
-            public boolean realTimeFlag() {
-                return false;
-            }
-	};
-    
+
+	static final RequestClient REQUEST_CLIENT = new RequestClientBuilder().build();
+
     static final ClientBaseCallback BOGUS_CALLBACK = 
         new ClientBaseCallback() {
             @Override

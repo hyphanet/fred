@@ -8,6 +8,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.Properties;
 import java.util.UUID;
 
 import org.tanukisoftware.wrapper.WrapperListener;
@@ -23,6 +24,7 @@ import freenet.crypt.RandomSource;
 import freenet.crypt.SSL;
 import freenet.crypt.Yarrow;
 import freenet.support.Executor;
+import freenet.support.JVMVersion;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
@@ -616,6 +618,14 @@ public class NodeStarter implements WrapperListener {
 			}
 			return maxMemory;
 		}
+	}
+
+	/** check whether the OS, JVM and wrapper are 64bits
+	 * On Windows this will be always true (the wrapper we deploy is 32bits)
+	 */
+	public final static boolean isSomething32bits() {
+		Properties wrapperProperties = WrapperManager.getProperties();
+		return !JVMVersion.is32Bit() && !wrapperProperties.getProperty("wrapper.java.additional.auto_bits").startsWith("32");
 	}
 	
 	/** Static instance of SecureRandom, as opposed to Node's copy. @see getSecureRandom() */

@@ -765,7 +765,7 @@ public class NodeUpdateManager {
 
 	void startPluginUpdater(OfficialPluginDescription plugin) {
 		String name = plugin.name;
-		long minVer = plugin.minimumVersion;
+		long minVer = plugin.recommendedVersion;
 		// But it might already be past that ...
 		PluginInfoWrapper info = node.pluginManager.getPluginInfo(name);
 		if (info == null) {

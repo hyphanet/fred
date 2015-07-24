@@ -35,6 +35,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
+import freenet.support.io.Closer;
 import freenet.support.io.ResumeFailedException;
 
 public class ClientPut extends ClientPutBase {
@@ -235,15 +236,17 @@ public class ClientPut extends ClientPutBase {
 			} catch (UnsupportedEncodingException e) {
 				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 			}
+			InputStream is = null;
 			try {
-				InputStream is = data.getInputStream();
+				is = data.getInputStream();
 				SHA256.hash(is, md);
-				is.close();
 			} catch (IOException e) {
 				SHA256.returnMessageDigest(md);
 				Logger.error(this, "Got IOE: " + e.getMessage(), e);
 				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_READ_FILE,
 						"Unable to access file: " + e, identifier, global);
+			} finally {
+				Closer.close(is);
 			}
 			foundHash = md.digest();
 			SHA256.returnMessageDigest(md);
