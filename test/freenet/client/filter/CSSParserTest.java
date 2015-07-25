@@ -667,7 +667,8 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("div { box-sizing: content-box; }", "div { box-sizing: content-box; }");
 		propertyTests.put("div { box-sizing: border-box; }", "div { box-sizing: border-box; }");
 		propertyTests.put("div { box-sizing: padding-box; }", "div { box-sizing: padding-box; }");
-		propertyTests.put("div { box-sizing: inhemerit; }", "div { }");
+		propertyTests.put("div { box-sizing: invalidValueToTestFilter; }", "div { }");
+		propertyTests.put("div { box-sizing: inherit; }", "div { box-sizing: inherit; }");
 
 		// Visual formatting
 		propertyTests.put("body { display: inline }\np { display: block }", "body { display: inline }\np { display: block }");

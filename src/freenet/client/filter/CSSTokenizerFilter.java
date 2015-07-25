@@ -3768,9 +3768,18 @@ class CSSTokenizerFilter {
 
 			if(words.length == 1) {
 
-			if(words[0] instanceof ParsedIdentifier && allowedValues != null && allowedValues.contains(((ParsedIdentifier)words[0]).original.toLowerCase()))
-			//CSS Property has one of the explicitly defined values
-				return true;
+			if(words[0] instanceof ParsedIdentifier) {
+				String lowerCaseWord = ((ParsedIdentifier)words[0]).original.toLowerCase();
+				if (allowedValues != null && allowedValues.contains(lowerCaseWord)) {
+					// CSS Property has one of the explicitly defined values
+					return true;
+				}
+				if (lowerCaseWord.equals("initial") || lowerCaseWord.equals("inherit") || lowerCaseWord.equals("unset")) {
+					// CSS Property is one of the Defaulting Keywords (http://www.w3.org/TR/css3-cascade/#defaulting-keywords)
+					return true;
+				}
+			}
+				
 
 			if(words[0] instanceof SimpleParsedWord) {
 
