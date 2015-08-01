@@ -839,12 +839,37 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("div { justify-content: center; }", "div { justify-content: center; }");
 		propertyTests.put("div { justify-content: space-between; }", "div { justify-content: space-between; }");
 		propertyTests.put("div { justify-content: space-around; }", "div { justify-content: space-around; }");
+		propertyTests.put("div { justify-items: legacy center; }", "div { justify-items: legacy center; }");
+		propertyTests.put("div { align-self: true center; }", "div { align-self: true center; }");
+		propertyTests.put("div { align-self: center true; }", "div { align-self: center true; }");
+		propertyTests.put("div { align-self: center true center; }", "div { }");
+		propertyTests.put("div { justify-self: true center; }", "div { justify-self: true center; }");
+		propertyTests.put("div { justify-self: center true; }", "div { justify-self: center true; }");
+		propertyTests.put("div { justify-self: center true center; }", "div { }");
+		
 		propertyTests.put("div { align-content: flex-start; }", "div { align-content: flex-start; }");
+		propertyTests.put("div { align-content: space-between; }", "div { align-content: space-between; }");
+		propertyTests.put("div { align-content: true flex-start; }", "div { align-content: true flex-start; }");
+		propertyTests.put("div { align-content: flex-start safe; }", "div { align-content: flex-start safe; }");
 		propertyTests.put("div { align-self: baseline; }", "div { align-self: baseline; }");
 		propertyTests.put("div { align-self: stretch; }", "div { align-self: stretch; }");
 		propertyTests.put("div { align-items: stretch; }", "div { align-items: stretch; }");
 		propertyTests.put("div { align-items: flex-end; }", "div { align-items: flex-end; }");
 		propertyTests.put("div { flex-direction: column-reverse; }", "div { flex-direction: column-reverse; }");
+		
+		propertyTests.put("div { display: list-item; }", "div { display: list-item; }");
+		propertyTests.put("div { display: list-item flow; }", "div { display: list-item flow; }");
+		propertyTests.put("div { display: list-item block flow; }", "div { display: list-item block flow; }");
+		propertyTests.put("div { display: block list-item flow; }", "div { display: block list-item flow; }");
+		propertyTests.put("div { display: inline-block; }", "div { display: inline-block; }");
+		propertyTests.put("div { display: inline-flex; }", "div { display: inline-flex; }");
+		propertyTests.put("div { display: table; }", "div { display: table; }");
+		propertyTests.put("div { display: ruby; }", "div { display: ruby; }");
+		propertyTests.put("div { display: ruby-text-container; }", "div { display: ruby-text-container; }");
+		
+		propertyTests.put("div { display: block list-item flow list-item; }", "div { }");
+		propertyTests.put("div { display: invalidItem; }", "div { }");
+		propertyTests.put("div { display: block invalidItem; }", "div { }");
 	}
 
 	FilterMIMEType cssMIMEType;
