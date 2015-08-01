@@ -3950,7 +3950,7 @@ class CSSTokenizerFilter {
 		 * 1* => 1<0,65536>
 		 * 1? => 1o
 		 * 1+ => 1<1,65536>
-		 * 1&&2 => 1b2   (see recursiveDoubleAmpersandVerifier())
+		 * 1&&2 => 1b2   (see doubleAmpersandVerifier())
 		 * Additional expressions that can be passed to the function
 		 * 1 2 => both 1 and 2 should return true where 1 and 2 are again indices in auxiliaryVerifier array.
 		 * [a,b]=> give at least a tokens and at the most b tokens(part of values) to this block of expression.
@@ -4043,7 +4043,7 @@ class CSSTokenizerFilter {
 					}
 					for (int j = 1; j <= words.length; j++) {
 						ParsedWord[] partToPassToDA = Arrays.copyOf(words, j);
-						if (recursiveDoubleAmpersandVerifier(firstPart, partToPassToDA, cb)) {
+						if (doubleAmpersandVerifier(firstPart, partToPassToDA, cb)) {
 							ParsedWord[] partToPass = Arrays.copyOfRange(words, j, words.length);
 							if (recursiveParserExpressionVerifier(secondPart,partToPass,cb)) {
 								return true;
@@ -4150,7 +4150,7 @@ class CSSTokenizerFilter {
 		 * @param cb
 		 * @return true if all the words were consumed false otherwise.
 		 */
-		public boolean recursiveDoubleAmpersandVerifier(String expression, ParsedWord[] words, FilterCallback cb) {
+		public boolean doubleAmpersandVerifier(String expression, ParsedWord[] words, FilterCallback cb) {
 			if(words==null || words.length == 0)
 				return true;
 
