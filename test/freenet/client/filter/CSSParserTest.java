@@ -867,7 +867,10 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("div { display: ruby; }", "div { display: ruby; }");
 		propertyTests.put("div { display: ruby-text-container; }", "div { display: ruby-text-container; }");
 		
+		// all valid properties but too many of them
 		propertyTests.put("div { display: block list-item flow list-item; }", "div { }");
+		// all valid but repeated when repetition is not allowed
+		propertyTests.put("div { display: list-item flow flow; }", "div { }");
 		propertyTests.put("div { display: invalidItem; }", "div { }");
 		propertyTests.put("div { display: block invalidItem; }", "div { }");
 	}

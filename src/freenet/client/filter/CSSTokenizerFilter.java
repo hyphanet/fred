@@ -4041,7 +4041,7 @@ class CSSTokenizerFilter {
 					if (endIndex != expression.length()) {
 						secondPart = expression.substring(endIndex+1,expression.length());
 					}
-					for (int j = 1; j <= words.length; j++) {
+					for (int j = words.length; j >= 1; j--) {
 						ParsedWord[] partToPassToDA = Arrays.copyOf(words, j);
 						if (doubleAmpersandVerifier(firstPart, partToPassToDA, cb)) {
 							ParsedWord[] partToPass = Arrays.copyOfRange(words, j, words.length);
@@ -4156,14 +4156,13 @@ class CSSTokenizerFilter {
 
 			String ignoredParts="";
 			String firstPart = "";
-			String secondPart = "";
 			int lastB = -1;
 			// Check for invalid patterns.
 			assert(expression.length() != 0);
 			assert(expression.charAt(expression.length()-1) != 'b');
 			assert(expression.charAt(0) != 'b');
 			
-			// Get all the verifiers in one list, we need to check them indivdually
+			// Get all the verifiers in one list, we need to check them individually
 			List<CSSPropertyVerifier> propertyVerifierList = new ArrayList<>();
 			for (int i = 0; i <= expression.length(); i++) {
 				if(i == expression.length() || expression.charAt(i)=='b') {
@@ -4177,11 +4176,6 @@ class CSSTokenizerFilter {
 					else ignoredParts = "";
 					firstPart = expression.substring(lastB+1,i);
 					lastB = i;
-					if(i == expression.length()) {
-						secondPart = "";
-					} else {
-						secondPart=expression.substring(i+1,expression.length());
-					}
 					
 					int index = Integer.parseInt(firstPart);
 					propertyVerifierList.add(CSSTokenizerFilter.auxilaryVerifiers[index]);
