@@ -1540,28 +1540,23 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation+" total usage is "+bandwidthLiabilityOutput+" of lower limit"+bandwidthAvailableOutputLowerLimit+" upper limit is "+bandwidthAvailableOutputUpperLimit+" for "+name);
 			
 			if(peerUsedBytes > thisAllocation) {
+			    // Peer is over 100% of its limit. Reject.
 				rejected(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 				return new RejectReason(name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")", true);
-			// FIXME slowdown
-//			} else {
-//				double slowDownLimit = thisAllocation * SOFT_REJECT_MAX_BANDWIDTH_USAGE;
-//				// Allow any node to use one request of each type. They'll just have to get backed off if necessary.
-//				slowDownLimit = Math.max(slowDownLimit, requestsSnapshot.calculateMinimum(input, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert));
-//				if(peerUsedBytes > slowDownLimit) {
-//					// Sender should slow down if we are using more than 80% of our fair share of capacity.
-//					slowDown(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag, tag);
-//				}
 			} else {
-		        return new Accept(peerUsedBytes >= EARLY_WARNING * thisAllocation);
+			    // Send slowdown if the peer is over 75% of its individual limit.
+			    return new Accept(peerUsedBytes >= EARLY_WARNING * thisAllocation);
 			}
-			
 		} else {
-
-		    /* Work on the basis of the lower limit. Slow-down is sent when *this one node* is
-		     * using EARLY_WARNING * lower limit (i.e. 37.5%) of the whole node capacity. */
-			if(logMINOR)
-				Logger.minor(this, "Total usage is "+bandwidthLiabilityOutput+" below lower limit "+bandwidthAvailableOutputLowerLimit+" for "+name);
-			return new Accept(peerUsedBytes >= EARLY_WARNING * bandwidthAvailableOutputLowerLimit);
+		    // We are below 50% overall (the lower limit).
+		    if(peerUsedBytes <= thisAllocation) {
+		        // Peer is within its allocation. Accept it without slowdown.
+		        return new Accept(false);
+		    } else {
+		        // Peer is above its allocation.
+		        // Slowdown if the overall usage is over 37.5%.
+		        return new Accept(bandwidthLiabilityOutput >= EARLY_WARNING * bandwidthAvailableOutputLowerLimit);
+		    }
 		}
 	}
 	
