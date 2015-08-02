@@ -175,6 +175,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("box-decoration-break");
 		allelementVerifiers.add("box-shadow");
 		allelementVerifiers.add("box-sizing");
+		allelementVerifiers.add("box-suppress");
 		allelementVerifiers.add("caption-side");
 		allelementVerifiers.add("caret-color");
 		allelementVerifiers.add("clear");
@@ -751,6 +752,9 @@ class CSSTokenizerFilter {
 
 		} else if ("box-sizing".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("content-box", "border-box"), ElementInfo.VISUALMEDIA, null));
+			allelementVerifiers.remove(element);
+		} else if ("box-suppress".equalsIgnoreCase(element)) {
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("show", "discard", "hide"), ElementInfo.VISUALMEDIA, null));
 			allelementVerifiers.remove(element);
 		}
 		else if("caption-side".equalsIgnoreCase(element))
