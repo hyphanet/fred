@@ -666,7 +666,6 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1[foo] { border: solid red; }", "h1[foo] { border: solid red; }");
 		propertyTests.put("div { box-sizing: content-box; }", "div { box-sizing: content-box; }");
 		propertyTests.put("div { box-sizing: border-box; }", "div { box-sizing: border-box; }");
-		propertyTests.put("div { box-sizing: padding-box; }", "div { box-sizing: padding-box; }");
 		propertyTests.put("div { box-sizing: invalidValueToTestFilter; }", "div { }");
 		propertyTests.put("div { box-sizing: inherit; }", "div { box-sizing: inherit; }");
 
@@ -675,6 +674,15 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("body.abc { display: run-in }", "body.abc { display: run-in }");
 		propertyTests.put("body.abc { display: none }", "body.abc { display: none }");
 		propertyTests.put("body.abc { display: inherit }", "body.abc { display: inherit }");
+		propertyTests.put("div { display: list-item; }", "div { display: list-item; }");
+		propertyTests.put("div { display: list-item flow; }", "div { display: list-item flow; }");
+		propertyTests.put("div { display: list-item block flow; }", "div { display: list-item block flow; }");
+		propertyTests.put("div { display: block list-item flow; }", "div { display: block list-item flow; }");
+		propertyTests.put("div { display: inline-block; }", "div { display: inline-block; }");
+		propertyTests.put("div { display: inline-flex; }", "div { display: inline-flex; }");
+		propertyTests.put("div { display: table; }", "div { display: table; }");
+		propertyTests.put("div { display: ruby; }", "div { display: ruby; }");
+		propertyTests.put("div { display: ruby-text-container; }", "div { display: ruby-text-container; }");
 		propertyTests.put("@media screen { h1#first { position: fixed } }\n@media print { h1#first { position: static } }", "@media screen { h1#first { position: fixed }}\n@media print { h1#first { position: static }}");
 		propertyTests.put("body { top: auto; left: inherit; right: 23em; bottom: 3.2% }", "body { top: auto; left: inherit; right: 23em; bottom: 3.2% }");
 		propertyTests.put("EM { padding: 2px; margin: 1em; border-width: medium; border-style: dashed; line-height: 2.4em; }", "EM { padding: 2px; margin: 1em; border-width: medium; border-style: dashed; line-height: 2.4em; }");
@@ -774,6 +782,7 @@ public class CSSParserTest extends TestCase {
 		// User interface
 		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", ":link { cursor: url(\"example.svg#linkcursor\") url(\"hyper.cur\") pointer }");
 		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor), url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\"), url(\"hyper.cur\"), pointer }");
+		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) 2 5, url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\") 2 5, url(\"hyper.cur\"), pointer }");
 
 		// UI colors
 		propertyTests.put("p { color: WindowText; background-color: Window }", "p { color: WindowText; background-color: Window }");
@@ -833,6 +842,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("div { flex-wrap: nowrap ; }", "div { flex-wrap: nowrap; }");
 		propertyTests.put("div { flex-wrap: wrap ; }", "div { flex-wrap: wrap; }");
 		propertyTests.put("div { flex-wrap: wrap-reverse; }", "div { flex-wrap: wrap-reverse; }");
+		propertyTests.put("div { flex-direction: column-reverse; }", "div { flex-direction: column-reverse; }");
 		propertyTests.put("div { order: 5; flex-basis: content; }", "div { order: 5; flex-basis: content; }");
 		propertyTests.put("div { justify-content: flex-start; }", "div { justify-content: flex-start; }");
 		propertyTests.put("div { justify-content: flex-end; }", "div { justify-content: flex-end; }");
@@ -855,24 +865,20 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("div { align-self: stretch; }", "div { align-self: stretch; }");
 		propertyTests.put("div { align-items: stretch; }", "div { align-items: stretch; }");
 		propertyTests.put("div { align-items: flex-end; }", "div { align-items: flex-end; }");
-		propertyTests.put("div { flex-direction: column-reverse; }", "div { flex-direction: column-reverse; }");
-		
-		propertyTests.put("div { display: list-item; }", "div { display: list-item; }");
-		propertyTests.put("div { display: list-item flow; }", "div { display: list-item flow; }");
-		propertyTests.put("div { display: list-item block flow; }", "div { display: list-item block flow; }");
-		propertyTests.put("div { display: block list-item flow; }", "div { display: block list-item flow; }");
-		propertyTests.put("div { display: inline-block; }", "div { display: inline-block; }");
-		propertyTests.put("div { display: inline-flex; }", "div { display: inline-flex; }");
-		propertyTests.put("div { display: table; }", "div { display: table; }");
-		propertyTests.put("div { display: ruby; }", "div { display: ruby; }");
-		propertyTests.put("div { display: ruby-text-container; }", "div { display: ruby-text-container; }");
-		
 		// all valid properties but too many of them
 		propertyTests.put("div { display: block list-item flow list-item; }", "div { }");
 		// all valid but repeated when repetition is not allowed
 		propertyTests.put("div { display: list-item flow flow; }", "div { }");
 		propertyTests.put("div { display: invalidItem; }", "div { }");
 		propertyTests.put("div { display: block invalidItem; }", "div { }");
+		
+		// Navigation Attributes for CSS3 UI
+		propertyTests.put("body { nav-down: auto; }",  "body { nav-down: auto; }");
+		propertyTests.put("body { nav-down: h2#java current; }",  "body { nav-down: h2#java current; }");
+		propertyTests.put("body { nav-up: #java root; }",  "body { nav-up: #java root; }");
+		propertyTests.put("body { nav-left: div.bold '<target-name>'; }",  "body { nav-left: div.bold '<target-name>'; }");
+		propertyTests.put("button#foo { nav-left: #bar \"sidebar\"; }", "button#foo { nav-left: #bar \"sidebar\"; }");
+		propertyTests.put("button#foo { nav-left: invalidSelector \"sidebar\"; }", "button#foo { }");
 	}
 
 	FilterMIMEType cssMIMEType;

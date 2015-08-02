@@ -176,6 +176,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("box-shadow");
 		allelementVerifiers.add("box-sizing");
 		allelementVerifiers.add("caption-side");
+		allelementVerifiers.add("caret-color");
 		allelementVerifiers.add("clear");
 		allelementVerifiers.add("clip");
                 allelementVerifiers.add("break-before");
@@ -241,10 +242,15 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("max-width");
 		allelementVerifiers.add("min-height");
 		allelementVerifiers.add("min-width");
+		allelementVerifiers.add("nav-down");
+		allelementVerifiers.add("nav-left");
+		allelementVerifiers.add("nav-right");
+		allelementVerifiers.add("nav-up");
 		allelementVerifiers.add("opacity");
 		allelementVerifiers.add("order");
 		allelementVerifiers.add("orphans");
 		allelementVerifiers.add("outline-color");
+		allelementVerifiers.add("outline-offset");
 		allelementVerifiers.add("outline-style");
 		allelementVerifiers.add("outline-width");
 		allelementVerifiers.add("outline");
@@ -266,6 +272,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("punctuation-trim");
 		allelementVerifiers.add("position");
 		allelementVerifiers.add("quotes");
+		allelementVerifiers.add("resize");
 		allelementVerifiers.add("richness");
 		allelementVerifiers.add("right");
 		allelementVerifiers.add("speak-header");
@@ -319,7 +326,7 @@ class CSSTokenizerFilter {
 	 * Array for storing additional Verifier objects for validating Regular expressions in CSS Property value
 	 * e.g. [ <color> | transparent]{1,4}. It is explained in detail in CSSPropertyVerifier class
 	 */
-	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[141];
+	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[145];
 	static
 	{
 		/*CSSPropertyVerifier(String[] allowedValues,String[] possibleValues,String expression,boolean onlyValueVerifier)*/
@@ -404,6 +411,10 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[128] = new CSSPropertyVerifier(Arrays.asList("legacy"), null, null, null, true);
 		auxilaryVerifiers[129] = new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("4 128", "128 4"), true,true);
 		auxilaryVerifiers[130] = new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("129 126", "126", "126 129"), true,true);
+		
+		// used in nav-down, nav-left, nav-right and nav-up
+		auxilaryVerifiers[143] = new CSSPropertyVerifier(null, Arrays.asList("se"), null, null, true);
+		auxilaryVerifiers[144] = new CSSPropertyVerifier(Arrays.asList("current", "root"), Arrays.asList("st"), null, null, true);
 	}
 	/* This function loads a verifier object in elementVerifiers.
 	 * After the object has been loaded, property name is removed from allelementVerifier.
@@ -739,7 +750,7 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 
 		} else if ("box-sizing".equalsIgnoreCase(element)) {
-			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("content-box", "padding-box", "border-box"), ElementInfo.VISUALMEDIA, null));
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("content-box", "border-box"), ElementInfo.VISUALMEDIA, null));
 			allelementVerifiers.remove(element);
 		}
 		else if("caption-side".equalsIgnoreCase(element))
@@ -747,6 +758,9 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("top","bottom"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 
+		} else if ("caret-color".equalsIgnoreCase(element)) {
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("auto", "transparent"), ElementInfo.VISUALMEDIA, Arrays.asList("co")));
+			allelementVerifiers.remove(element);
 		}
 		else if("clear".equalsIgnoreCase(element))
 		{
@@ -897,10 +911,23 @@ class CSSTokenizerFilter {
 		}
 		else if("cursor".equalsIgnoreCase(element))
 		{
+			// <cursor> = [ [<url> [<x> <y>]?,]* 
+			// [ auto | default | none |
+			//   context-menu | help | pointer | progress | wait | 
+			//   cell | crosshair | text | vertical-text | 
+			//   alias | copy | move | no-drop | not-allowed | grab | grabbing | 
+			//   e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out 
+			//  ] ]
 			auxilaryVerifiers[25]=new CSSPropertyVerifier(null,Arrays.asList("ur"),null,null,true);
-			auxilaryVerifiers[26]=new CSSPropertyVerifier(Arrays.asList("auto","crosshair","default","pointer","move","e-resize","ne-resize","nw-resize","n-resize","se-resize","sw-resize","s-resize","w-resize","text","wait","help","progress"),null,null,null,true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALINTERACTIVEMEDIA,null,Arrays.asList("25<0,"+ElementInfo.UPPERLIMIT+"> 26"),false,true));
-
+			auxilaryVerifiers[141] = new CSSPropertyVerifier(null, Arrays.asList("in", "re"), null, null, true);
+			auxilaryVerifiers[142] = new CSSPropertyVerifier(null, null, null, Arrays.asList("25 141<0,1> 141<0,1>"), true, true);
+			auxilaryVerifiers[26] = new CSSPropertyVerifier(
+			Arrays.asList("auto", "default", "none",
+					"context-menu", "help", "pointer", "progress", "wait",
+					"cell", "crosshair", "text", "vertical-text",
+					"alias", "copy", "move", "no-drop", "not-allowed", "grab", "grabbing",
+					"e-resize", "n-resize", "ne-resize", "nw-resize", "s-resize", "se-resize", "sw-resize", "w-resize", "ew-resize", "ns-resize", "nesw-resize", "nwse-resize", "col-resize", "row-resize", "all-scroll", "zoom-in", "zoom-out"),null,null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALINTERACTIVEMEDIA,null,Arrays.asList("142<0,"+ElementInfo.UPPERLIMIT+">[1,3] 26"),false,true));
 			allelementVerifiers.remove(element);
 		}
 		else if("direction".equalsIgnoreCase(element))
@@ -1153,6 +1180,18 @@ class CSSTokenizerFilter {
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
 			allelementVerifiers.remove(element);
+		} else if ("nav-down".equalsIgnoreCase(element)) {
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("auto"), ElementInfo.VISUALINTERACTIVEMEDIA, null, Arrays.asList("143 144?")));
+			allelementVerifiers.remove(element);
+		} else if ("nav-left".equalsIgnoreCase(element)) {
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("auto"), ElementInfo.VISUALINTERACTIVEMEDIA, null, Arrays.asList("143 144?")));
+			allelementVerifiers.remove(element);
+		} else if ("nav-right".equalsIgnoreCase(element)) {
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("auto"), ElementInfo.VISUALINTERACTIVEMEDIA, null, Arrays.asList("143 144?")));
+			allelementVerifiers.remove(element);
+		} else if ("nav-up".equalsIgnoreCase(element)) {
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("auto"), ElementInfo.VISUALINTERACTIVEMEDIA, null, Arrays.asList("143 144?")));
+			allelementVerifiers.remove(element);
 		}
 		else if("opacity".equalsIgnoreCase(element))
 		{
@@ -1170,6 +1209,9 @@ class CSSTokenizerFilter {
 		else if("outline-color".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("invert"),ElementInfo.VISUALINTERACTIVEMEDIA,Arrays.asList("co")));
+			allelementVerifiers.remove(element);
+		} else if ("outline-offset".equalsIgnoreCase(element)) {
+			elementVerifiers.put(element, new CSSPropertyVerifier(null, ElementInfo.VISUALMEDIA, Arrays.asList("le")));
 			allelementVerifiers.remove(element);
 		}
 		else if("outline-style".equalsIgnoreCase(element))
@@ -1301,6 +1343,9 @@ class CSSTokenizerFilter {
 			auxilaryVerifiers[46]=new CSSPropertyVerifier(null,Arrays.asList("st"),null,null,true);
 			auxilaryVerifiers[47]=new CSSPropertyVerifier(null,null,Arrays.asList("46 46"),null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none"),null,ElementInfo.VISUALMEDIA,Arrays.asList("47<1,"+ ElementInfo.UPPERLIMIT+">[2,2]")));
+			allelementVerifiers.remove(element);
+		} else if ("resize".equalsIgnoreCase(element)) {
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none", "both", "horizontal", "vertical"),ElementInfo.VISUALMEDIA,null));
 			allelementVerifiers.remove(element);
 		}
 		else if("richness".equalsIgnoreCase(element))
@@ -1630,9 +1675,9 @@ class CSSTokenizerFilter {
 	 * This function accepts an HTML element(along with class name, ID, pseudo class and attribute selector) and determines whether it is valid or not.
 	 * Returns null on failure (invalid selector), empty string on banned (but otherwise valid) selector.
 	 */
-	public String HTMLelementVerifier(String elementString)
+	public static String HTMLelementVerifier(String elementString)
 	{
-		if(logDEBUG) Logger.debug(this, "varifying element/selector: \""+elementString+"\"");
+//		if(logDEBUG) Logger.debug(this, "varifying element/selector: \""+elementString+"\"");
 		String HTMLelement="",pseudoClass="",className="",id="";
 		boolean isValid=true;
 		StringBuilder fBuffer=new StringBuilder();
@@ -1643,7 +1688,7 @@ class CSSTokenizerFilter {
 			StringBuilder buf=new StringBuilder(elementString);
 			buf.delete(elementString.indexOf('['), elementString.indexOf(']')+1);
 			elementString=buf.toString();
-			if(logDEBUG) Logger.debug(this, "attSelection="+attSelection+"  elementString="+elementString);
+//			if(logDEBUG) Logger.debug(this, "attSelection="+attSelection+"  elementString="+elementString);
 			if(attSelections == null) attSelections = new ArrayList<String>();
 			attSelections.add(attSelection);
 		}
@@ -1654,7 +1699,7 @@ class CSSTokenizerFilter {
 			{
 				pseudoClass=elementString.substring(index+1,elementString.length()).trim();
 				HTMLelement=elementString.substring(0,index).trim();
-				if(logDEBUG) Logger.debug(this, "pseudoclass="+pseudoClass+" HTMLelement="+HTMLelement);
+//				if(logDEBUG) Logger.debug(this, "pseudoclass="+pseudoClass+" HTMLelement="+HTMLelement);
 			}
 			else
 			{
@@ -1671,7 +1716,7 @@ class CSSTokenizerFilter {
 			{
 				className=HTMLelement.substring(index+1,HTMLelement.length()).trim();
 				HTMLelement=HTMLelement.substring(0,index).trim();
-				if(logDEBUG) Logger.debug(this, "class="+className+" HTMLelement="+HTMLelement);
+//				if(logDEBUG) Logger.debug(this, "class="+className+" HTMLelement="+HTMLelement);
 			}
 
 		}
@@ -1682,7 +1727,7 @@ class CSSTokenizerFilter {
 			{
 				id=HTMLelement.substring(index+1,HTMLelement.length()).trim();
 				HTMLelement=HTMLelement.substring(0,index).trim();
-				if(logDEBUG) Logger.debug(this, "id="+id+" element="+HTMLelement);
+//				if(logDEBUG) Logger.debug(this, "id="+id+" element="+HTMLelement);
 			}
 
 		}
@@ -1736,7 +1781,7 @@ class CSSTokenizerFilter {
 					}
 
 					//Verifying whether each character is alphanumeric or _
-					if(logDEBUG) Logger.debug(this, "HTMLelementVerifier length of attSelectionParts="+attSelectionParts.length);
+//					if(logDEBUG) Logger.debug(this, "HTMLelementVerifier length of attSelectionParts="+attSelectionParts.length);
 
 					if(attSelectionParts[0].length()==0)
 						isValid=false;
@@ -1755,7 +1800,7 @@ class CSSTokenizerFilter {
 					if(attSelectionParts.length > 1) {
 						// What about the right hand side?
 						// The grammar says it's an IDENT.
-						if(logDEBUG) Logger.debug(this, "RHS is \""+attSelectionParts[1]+"\"");
+//						if(logDEBUG) Logger.debug(this, "RHS is \""+attSelectionParts[1]+"\"");
 						if(!(ElementInfo.isValidIdentifier(attSelectionParts[1]) || ElementInfo.isValidStringWithQuotes(attSelectionParts[1]))) isValid = false;
 					}
 				}
@@ -3432,7 +3477,7 @@ class CSSTokenizerFilter {
 		String s = origToken.toString();
 		if(couldBeIdentifier)
 			return new ParsedIdentifier(s, decodedToken.toString(), dontLikeOrigToken);
-
+		
 		String sl = s.toLowerCase();
 		if(sl.startsWith("url(")) {
 			if(s.endsWith(")")) {
@@ -3601,6 +3646,7 @@ class CSSTokenizerFilter {
 		public final boolean isAngle;      //an
 		public final boolean isColor;      //co
 		public final boolean isURI;        //ur
+		public final boolean isSelector;   //se
 		public final boolean isShape;      //sh
 		public final boolean isString;     //st
 		public final boolean isCounter;    //co
@@ -3657,10 +3703,10 @@ class CSSTokenizerFilter {
 			this.allowCommaDelimiters = allowCommaDelimiters;
 
 			boolean isInteger, isReal, isPercentage, isLength, isAngle, isColor,
-				isURI, isShape, isString, isCounter, isIdentifier, isTime,
-				isFrequency, isTransform;
+				isSelector, isURI, isShape, isString, isCounter, isIdentifier,
+				isTime, isFrequency, isTransform;
 			isInteger = isReal = isPercentage = isLength = isAngle = isColor = isURI
-				= isShape = isString = isCounter = isIdentifier = isTime
+				= isShape = isString = isCounter = isIdentifier = isTime = isSelector
 				= isFrequency = isTransform = false;
 			if(possibleValues != null) {
 				for(String possibleValue : possibleValues) {
@@ -3678,6 +3724,9 @@ class CSSTokenizerFilter {
 						isColor=true; //co
 					else if("ur".equals(possibleValue))
 						isURI=true;	//ur
+					else if ("se".equals(possibleValue)) {
+						isSelector = true; //se
+					}
 					else if("sh".equals(possibleValue))
 						isShape=true;	//sh
 					else if("st".equals(possibleValue))
@@ -3701,6 +3750,7 @@ class CSSTokenizerFilter {
 			this.isAngle = isAngle;
 			this.isColor = isColor;
 			this.isURI = isURI;
+			this.isSelector = isSelector;
 			this.isShape = isShape;
 			this.isString = isString;
 			this.isCounter = isCounter;
@@ -3911,6 +3961,13 @@ class CSSTokenizerFilter {
 			if(isIdentifier && words[0] instanceof ParsedIdentifier)
 			{
 				return true;
+			}
+			
+			if (isSelector) {
+				String result = HTMLelementVerifier(words[0].original);
+				if (!(result == null || result.equals(""))) {
+					return true;
+				}
 			}
 
 			if(isString && words[0] instanceof ParsedString)
