@@ -1516,6 +1516,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			Logger.warning(this, "Above upper limit. Not rejecting as this can occasionally happen due to reassigns: upper limit "+bandwidthAvailableOutputUpperLimit+" usage is "+bandwidthLiabilityOutput);
 		}
 		
+		/* BEHAVIOUR:
+		 * 0 to 50%: All requests accepted.
+		 * - A peer using more than 37.5% *of the total capacity of the node* gets slow-downs.
+		 * 50%+: Enforce peer allocations:
+		 * - 75% of peer allocation: Slow-down's sent.
+		 * - 100% of peer allocation: Reject requests.
+		 * 
+		 * In particular, if a node keeps on sending more requests, without heeding slow-downs,
+		 * it will get slow-downs at 37.5%, after 50% all its requests will be rejected. Meanwhile
+		 * the other nodes will still be able to use their individual guaranteed allocations.
+		 * Once the overall total goes over 50%, some peers which were over their limits, but
+		 * below 37.5%, will see rejections, so we still get a bit of a cliff-edge. Lower usage
+		 * nodes will see smooth behaviour.
+		 */
+        double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, source, isSSK, transfersPerInsert, input);
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutputLowerLimit) {
 			
 			// Bandwidth is scarce (we are over the lower limit i.e. more than half our capacity is used).
@@ -1524,7 +1539,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(logMINOR)
 				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation+" total usage is "+bandwidthLiabilityOutput+" of lower limit"+bandwidthAvailableOutputLowerLimit+" upper limit is "+bandwidthAvailableOutputUpperLimit+" for "+name);
 			
-			double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, source, isSSK, transfersPerInsert, input);
 			if(peerUsedBytes > thisAllocation) {
 				rejected(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 				return new RejectReason(name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")", true);
@@ -1542,14 +1556,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			}
 			
 		} else {
-			
-			// Plenty of bandwidth available, allow one peer to use up to the lower limit (about half the total).
-			
-			// slowDown() is unnecessary, we do NOT want to keep the total below the lower limit.
-			
+
+		    /* Work on the basis of the lower limit. Slow-down is sent when *this one node* is
+		     * using EARLY_WARNING * lower limit (i.e. 37.5%) of the whole node capacity. */
 			if(logMINOR)
 				Logger.minor(this, "Total usage is "+bandwidthLiabilityOutput+" below lower limit "+bandwidthAvailableOutputLowerLimit+" for "+name);
-			return new Accept(false);
+			return new Accept(peerUsedBytes >= EARLY_WARNING * bandwidthAvailableOutputLowerLimit);
 		}
 	}
 	
