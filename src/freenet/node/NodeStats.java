@@ -1516,20 +1516,22 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			Logger.warning(this, "Above upper limit. Not rejecting as this can occasionally happen due to reassigns: upper limit "+bandwidthAvailableOutputUpperLimit+" usage is "+bandwidthLiabilityOutput);
 		}
 		
-		/* BEHAVIOUR:
-		 * 0 to 50%: All requests accepted.
-		 * - A peer using more than 37.5% *of the total capacity of the node* gets slow-downs.
-		 * 50%+: Enforce peer allocations:
-		 * - 75% of peer allocation: Slow-down's sent.
-		 * - 100% of peer allocation: Reject requests.
+		/* Behaviour depends on both overall node usage and the peer's individual usage of its
+		 * "fair share". Slow-downs are sent to try to get originators to reduce their sending
+		 * rate without actually rejecting requests (to limit misrouting).
+		 * OVERALL: 0 to 50%:
+		 * - All requests accepted.
+		 * - Peers over their guaranteed bandwidth get slow-downs based on *the overall usage of
+		 *   the node*. I.e. slow-down if node capacity is over 37.5%.
+		 * OVERALL: 50%+: Enforce peer allocations:
+		 * - Peer above 100% of its allocation: Reject requests.
+		 * - Peer above 75% of its allocation: Accept requests, but slow-down sent.
+		 * - Peer below 75% of its allocation: Accept requests, no slow-down.
+		 * OVERALL: 100%: Reject everything. (Shouldn't happen unless something drastic changes)
 		 * 
-		 * In particular, if a node keeps on sending more requests, without heeding slow-downs,
-		 * it will get slow-downs at 37.5%, after 50% all its requests will be rejected. Meanwhile
-		 * the other nodes will still be able to use their individual guaranteed allocations.
-		 * Once the overall total goes over 50%, some peers which were over their limits, but
-		 * below 37.5%, will see rejections, so we still get a bit of a cliff-edge. Lower usage
-		 * nodes will see smooth behaviour.
-		 */
+		 * Obviously this isn't entirely smooth, and there will be some oscillation. But it should
+		 * be an improvement on the situation previously where we only sent a slow-down when we
+		 * rejected a request. */
         double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, source, isSSK, transfersPerInsert, input);
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutputLowerLimit) {
 			
