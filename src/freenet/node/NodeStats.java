@@ -1553,6 +1553,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		    // We are below 50% overall (the lower limit).
 		    if(peerUsedBytes <= thisAllocation) {
 		        // Peer is within its allocation. Accept it without slowdown.
+		        // When the overall capacity moves over 50%, we may have to send slowdowns.
 		        return new Accept(false);
 		    } else {
 		        // Peer is above its allocation.
