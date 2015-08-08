@@ -235,6 +235,18 @@ public final class MessageAuthCode {
      * @return Returns true if the MACs match, otherwise false.
      */
     public final static boolean verify(byte[] mac1, byte[] mac2){
+        /*
+         * An April 2015 patch prevented null input from throwing. JVMs without that patch will
+         * throw, so the change is included here for consistent behavior.
+         *
+         * http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/rev/10929#l8.13
+         */
+        if (mac1 == mac2) {
+            return true;
+        }
+        if (mac1 == null || mac2 == null) {
+            return false;
+        }
         return MessageDigest.isEqual(mac1, mac2);
     }
     
