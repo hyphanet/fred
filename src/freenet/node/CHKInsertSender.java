@@ -1422,11 +1422,21 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	}
 
     private void callListenerOffThread(final InsertSenderListener listener, final int status) {
-        node.executor.execute(new Runnable() {
+        node.executor.execute(new PrioRunnable() {
 
             @Override
             public void run() {
                 listener.onInsertSenderFinished(status, CHKInsertSender.this);
+            }
+ 
+            @Override
+            public String toString() {
+                return "CHKInsertHandler callback for "+uid;
+            }
+            
+            @Override
+            public int getPriority() {
+                return NativeThread.HIGH_PRIORITY;
             }
             
         });
