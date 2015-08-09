@@ -1430,16 +1430,11 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
             }
  
             @Override
-            public String toString() {
-                return "CHKInsertHandler callback for "+uid;
-            }
-            
-            @Override
             public int getPriority() {
                 return NativeThread.HIGH_PRIORITY;
             }
             
-        });
+        }, "CHKInsertHandler callback for "+uid);
     }
 
 }
