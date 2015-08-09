@@ -68,6 +68,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 	private final boolean ignoreLowBackoff;
 	private final boolean realTimeFlag;
 	private boolean waiting = false;
+	private boolean waitingCompletion = false;
 
     CHKInsertHandler(NodeCHK key, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.node = node;
@@ -297,7 +298,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
             finish(CHKInsertSender.INTERNAL_ERROR);
             return;
         } finally {
-            tag.unlockHandler();
+            if(!waitingCompletion)
+                tag.unlockHandler();
         }
 	}
 
@@ -401,52 +403,51 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		CHKBlock block = verify();
 		// If we wanted to reduce latency at the cost of security (bug 3338), we'd commit here, or even on the receiver thread.
 		
-		boolean routingTookTooLong = false;
-        if(sender != null) {
-            if(logMINOR) Logger.minor(this, "Waiting for completion");
-            long startedTime = System.currentTimeMillis();
-			//If there are downstream senders, our final success report depends on there being no timeouts in the chain.
-        	while(true) {
-        		synchronized(sender) {
-        			if(sender.completed()) {
-        				break;
-        			}
-        			try {
-        				int t = (int)Math.min(Integer.MAX_VALUE, startedTime + transferTimeout - System.currentTimeMillis());
-        				if(t > 0) sender.wait(t);
-        				else {
-        					routingTookTooLong = true;
-        					break;
-        				}
-        			} catch (InterruptedException e) {
-        				// Loop
-        			}
-        		}
-        	}
-        	if(routingTookTooLong) {
-        		tag.timedOutToHandlerButContinued();
-        		sendCompletionAsync(true);
-        		
-        		Logger.error(this, "Insert took too long, telling downstream that it's finished and reassigning to self on "+this);
-        		
-        		// Still waiting.
-        		while(true) {
-        			synchronized(sender) {
-        				if(sender.completed()) {
-        					break;
-        				}
-        				try {
-        					sender.wait(SECONDS.toMillis(10));
-        				} catch (InterruptedException e) {
-        					// Loop
-        				}
-        			}
-        		}
-        		if(logMINOR) Logger.minor(this, "Completed after telling downstream on "+this);
-        	}
+		if(sender != null) {
+		    waitingCompletion = true;
+		    node.ticker.queueTimedJob(new Runnable() {
+		        
+		        @Override
+		        public void run() {
+		            routingTookTooLong();
+		        }
+		        
+		    }, "CHKInsertHandler timeout", transferTimeout, false, false);
+		    // Wait for onCompletion() or routingTookTooLong().
+		    return;
 		}
 		
         finishFinish(block, code);
+    }
+    
+    private boolean calledCompletion = false;
+    private boolean routingTookTooLong = false;
+    
+    private void routingTookTooLong() {
+        synchronized(this) {
+            if(calledCompletion) return;
+            if(routingTookTooLong) return;
+            routingTookTooLong = true;
+        }
+        tag.timedOutToHandlerButContinued();
+        sendCompletionAsync(true);
+        
+        Logger.error(this, "Insert took too long, telling downstream that it's finished and reassigning to self on "+this);
+        // Wait for completion.
+    }
+    
+    @Override
+    public void onCompletion(CHKInsertSender sender) {
+        boolean routingTookTooLong;
+        synchronized(this) {
+            routingTookTooLong = this.routingTookTooLong;
+            calledCompletion = true;
+        }
+        if(routingTookTooLong) {
+            if(logMINOR) Logger.minor(this, "Completed after telling downstream on "+this);
+        }
+        
+        finishFinish(verify(), sender.getStatus());
     }
     
     private void finishFinish(CHKBlock block, int code) {
@@ -523,13 +524,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
             // Ignore.
         }
     }
-
-    @Override
-    public void onCompletion(CHKInsertSender sender) {
-        // TODO Auto-generated method stub
-        
-    }
     
+
     /**
      * Verify data, or send DataInsertRejected.
      */
