@@ -464,7 +464,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
     	    sendCompletionSync(sender != null && sender.anyTransfersFailed());
     	else {
     	    if(logMINOR)
-    	        Logger.minor(this, "Not sending completion because of non-committing failure mode for "+this);
+    	        Logger.minor(this, "Not sending completion because of non-committing failure mode for "+this+" status="+code+" receive failed="+receiveFailed());
     	}
 		
         if(code != CHKInsertSender.TIMED_OUT && code != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && 
