@@ -989,7 +989,24 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         onFinishedBackgroundTransfers(false, pn);
 	}
 	
+	/* Probably not necessary. FIXME can be removed after exhaustive testing / review for deadlocks! */
 	private void onBackgroundTransferProgress() {
+	    node.executor.execute(new PrioRunnable() {
+
+            @Override
+            public void run() {
+                innerOnBackgroundTransferProgress();
+            }
+
+            @Override
+            public int getPriority() {
+                return NativeThread.HIGH_PRIORITY;
+            }
+	        
+	    }, "CHKInsertSender background transfer progress callback for "+this);
+	}
+	
+	private void innerOnBackgroundTransferProgress() {
 	    boolean success = true;
 	    final PeerNode pn;
 	    synchronized(backgroundTransfers) {
