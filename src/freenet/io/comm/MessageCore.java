@@ -314,7 +314,7 @@ public class MessageCore {
 		long dT = tEnd - tStart;
 		if(dT > 50) {
 			if(dT > 3000)
-				Logger.error(this, "checkFilters took "+(dT)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
+				Logger.error(this, "checkFilters took "+(dT)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched+" for "+m);
 			else
 				if(logMINOR) Logger.minor(this, "checkFilters took "+(dT)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
 		}
