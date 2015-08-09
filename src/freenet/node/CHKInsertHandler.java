@@ -60,7 +60,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
     private byte[] headers;
     private BlockReceiver br;
     private Thread runThread;
-    PartiallyReceivedBlock prb;
+    private PartiallyReceivedBlock prb;
     final InsertTag tag;
     private boolean canWriteDatastore;
 	private final boolean forkOnCacheable;
