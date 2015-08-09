@@ -139,6 +139,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				//transferSucceeded = success; //FIXME Don't used
 				completedTransfer = true;
 				backgroundTransfers.notifyAll();
+				onBackgroundTransferProgress();
 			}
 			if(!success) {
 				setTransferTimedOut();
@@ -204,6 +205,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				// Avoid "Unlocked handler but still routing to yet not reassigned".
 				if(!gotFatalTimeout) {
 					backgroundTransfers.notifyAll();
+					onBackgroundTransferProgress();
 				}
 			}
 			if(timeout && gotFatalTimeout) {
@@ -364,6 +366,10 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     /** List of nodes we are waiting for either a transfer completion
      * notice or a transfer completion from. Also used as a sync object for waiting for transfer completion. */
     private final List<BackgroundTransfer> backgroundTransfers;
+    private boolean finishAfterBackgroundTransfers = false;
+    private boolean finishedBackgroundTransfers = false;
+    private boolean timedOutBackgroundTransfers = false;
+    private PeerNode succeededNode;
     
     private final CopyOnWriteArrayList<InsertSenderListener> listeners = 
             new CopyOnWriteArrayList<InsertSenderListener>();
@@ -415,9 +421,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			}
             if(myStatus == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
-            origTag.finishedSender();
-        	if(forkedRequestTag != null)
-        		forkedRequestTag.finishedSender();
         }
     }
     
@@ -791,66 +794,110 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
      * @param next The node we successfully inserted to.
      */
     private void finish(int code, PeerNode next) {
-    	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
-     
-    	// If there is an InsertReply, it always happens before the transfer completion notice.
-    	// So we do NOT need to removeRoutingTo().
-    	
-        synchronized(this) {
-        	if(allTransfersCompleted) return; // Already called. Doesn't prevent race condition resulting in the next bit running but that's not really a problem.
-        	if((code == ROUTE_NOT_FOUND) && !hasForwarded)
-        		code = ROUTE_REALLY_NOT_FOUND;
-
-        	if(status != NOT_FINISHED) {
-        		if(status == RECEIVE_FAILED) {
-        			if(code == SUCCESS)
-        				Logger.error(this, "Request succeeded despite receive failed?! on "+this);
-        		} else if(status != TIMED_OUT)
-        			throw new IllegalStateException("finish() called with "+code+" when was already "+status);
-        	} else {
-                status = code;
-                notifyAll();
-                if(status != NOT_FINISHED)
-                    callListenersOffThread(status);
-                if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
-        	}
+        try {
+            if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
+            
+            // If there is an InsertReply, it always happens before the transfer completion notice.
+            // So we do NOT need to removeRoutingTo().
+            
+            synchronized(this) {
+                if(allTransfersCompleted) return; // Already called. Doesn't prevent race condition resulting in the next bit running but that's not really a problem.
+                if((code == ROUTE_NOT_FOUND) && !hasForwarded)
+                    code = ROUTE_REALLY_NOT_FOUND;
+                
+                if(status != NOT_FINISHED) {
+                    if(status == RECEIVE_FAILED) {
+                        if(code == SUCCESS)
+                            Logger.error(this, "Request succeeded despite receive failed?! on "+this);
+                    } else if(status != TIMED_OUT)
+                        throw new IllegalStateException("finish() called with "+code+" when was already "+status);
+                } else {
+                    status = code;
+                    notifyAll();
+                    if(status != NOT_FINISHED)
+                        callListenersOffThread(status);
+                    if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
+                }
+            }
+            
+            // Now wait for transfers, or for downstream transfer notifications.
+            // Note that even the data receive may not have completed by this point.
+            synchronized(backgroundTransfers) {
+                if (backgroundTransfers.isEmpty()) {
+                    if(logMINOR) Logger.minor(this, "No background transfers");
+                } else {
+                    waitAsyncForBackgroundTransfers(next);
+                    return;
+                }
+            }
+            
+            finishFinish(next);
+        } catch (RuntimeException t) {
+            finishTags();
+            throw t;
+        } catch (Error t) {
+            finishTags();
+            throw t;
         }
-		
-        boolean failedRecv = false; // receiveFailed is protected by backgroundTransfers but status by this
-        // Now wait for transfers, or for downstream transfer notifications.
-        // Note that even the data receive may not have completed by this point.
-        boolean mustWait = false;
-		synchronized(backgroundTransfers) {
-			if (backgroundTransfers.isEmpty()) {
-				if(logMINOR) Logger.minor(this, "No background transfers");
-				failedRecv = receiveFailed;
-			} else {
-				mustWait = true;
-			}
-		}
-		if(mustWait) { 
-			waitForBackgroundTransferCompletions();
-			synchronized(backgroundTransfers) {
-				failedRecv = receiveFailed;
-			}
-		}
-        
-		synchronized(this) {
-			// waitForBackgroundTransferCompletions() may have already set it.
-			if(!allTransfersCompleted) {
-				if(failedRecv)
-					status = RECEIVE_FAILED;
-				allTransfersCompleted = true;
-				notifyAll();
-				callListenersOffThread(status);
-				callListenersOffThreadCompletion();
-			}
-		}
-        	
-        if(status == SUCCESS && next != null)
-        	next.onSuccess(true, false);
-        
-        if(logMINOR) Logger.minor(this, "Returning from finish()");
+    }
+    
+    private void waitAsyncForBackgroundTransfers(PeerNode next) {
+        synchronized(backgroundTransfers) {
+            finishAfterBackgroundTransfers = true;
+            succeededNode = next;
+        }
+        if(logMINOR) Logger.minor(this, "Waiting for background transfer completions: "+this);
+        // Setup timeout.
+        // Generous deadline so we catch bugs more obviously
+        node.ticker.queueTimedJob(new PrioRunnable() {
+
+            @Override
+            public void run() {
+                onTimedOutWaitingForTransfers();
+            }
+
+            @Override
+            public int getPriority() {
+                return NativeThread.HIGH_PRIORITY;
+            }
+            
+        }, "CHKInsertSender background transfer timeout for "+this, 
+        transferCompletionTimeout * 3, false, false);
+        // Wait for timeout *or* completion.
+    }
+
+    private void finishFinish(PeerNode next) {
+        try {
+            boolean failedRecv = false; // receiveFailed is protected by backgroundTransfers but status by this
+            synchronized(backgroundTransfers) {
+                failedRecv = receiveFailed;
+            }
+            
+            synchronized(this) {
+                // waitForBackgroundTransferCompletions() may have already set it.
+                if(!allTransfersCompleted) {
+                    if(failedRecv)
+                        status = RECEIVE_FAILED;
+                    allTransfersCompleted = true;
+                    notifyAll();
+                    callListenersOffThread(status);
+                    callListenersOffThreadCompletion();
+                }
+            }
+            
+            if(status == SUCCESS && next != null)
+                next.onSuccess(true, false);
+            
+            if(logMINOR) Logger.minor(this, "Returning from finish()");
+        } finally {
+            finishTags();
+        }
+    }
+    
+    private void finishTags() {
+        origTag.finishedSender();
+        if(forkedRequestTag != null)
+            forkedRequestTag.finishedSender();
     }
 
     @Override
@@ -883,6 +930,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     	synchronized(backgroundTransfers) {
     		receiveFailed = true;
     		backgroundTransfers.notifyAll();
+            onBackgroundTransferProgress();
     		// Locking is safe as UIDTag always taken last.
     		for(BackgroundTransfer t : backgroundTransfers)
     			t.thisTag.handlingTimeout(t.pn);
@@ -927,97 +975,116 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	public synchronized boolean sentRequest() {
 		return hasForwarded;
 	}
+	
+	private void onTimedOutWaitingForTransfers() {
+	    PeerNode pn = null;
+	    synchronized(backgroundTransfers) {
+	        if(!finishAfterBackgroundTransfers) return;
+	        if(finishedBackgroundTransfers) return;
+	        timedOutBackgroundTransfers = true;
+	        pn = succeededNode;
+	    }
+        // NORMAL priority because it is normally caused by a transfer taking too long downstream, and that doesn't usually indicate a bug.
+        Logger.normal(this, "Timed out waiting for background transfers! Probably caused by async filter not getting a timeout notification! DEBUG ME!");
+        onFinishedBackgroundTransfers(false, pn);
+	}
+	
+	private void onBackgroundTransferProgress() {
+	    boolean success = true;
+	    final PeerNode pn;
+	    synchronized(backgroundTransfers) {
+	        if(!finishAfterBackgroundTransfers) return;
+	        if(timedOutBackgroundTransfers || finishedBackgroundTransfers) return;
+	        if(receiveFailed) {
+	            success = false;
+	        } else {
+                StillWaitingForTransfers waitStatus =
+                        getBackgroundTransfersWaitStatus();
+                if(waitStatus == StillWaitingForTransfers.ALL_SUCCEEDED) success = true;
+                else if(waitStatus == StillWaitingForTransfers.SOME_FAILED) success = false;
+                else return; // Continue waiting.
+	        }
+	        finishedBackgroundTransfers = true;
+	        pn = succeededNode;
+	    }
+	    final boolean succeeded = success;
+	    node.executor.execute(new PrioRunnable() {
+
+            @Override
+            public void run() {
+                onFinishedBackgroundTransfers(succeeded, pn);
+            }
+
+            @Override
+            public int getPriority() {
+                return NativeThread.HIGH_PRIORITY;
+            }
+	        
+	    }, "CHK insert downstream transfer completion for "+this);
+	}
+	
+	private void onFinishedBackgroundTransfers(boolean success, PeerNode pn) {
+	    try {
+	        if(!success)
+	            setTransferTimedOut();
+	    } finally {
+	        synchronized(CHKInsertSender.this) {
+	            allTransfersCompleted = true;
+	            CHKInsertSender.this.notifyAll();
+	            callListenersOffThreadCompletion();
+	        }
+	    }
+        finishFinish(pn);
+	}
 		
-		private void waitForBackgroundTransferCompletions() {
-			try {
-				freenet.support.Logger.OSThread.logPID(this);
-				if(logMINOR) Logger.minor(this, "Waiting for background transfer completions: "+this);
-				
-				// We must presently be at such a stage that no more background transfers will be added.
-				
-				BackgroundTransfer[] transfers;
-				synchronized(backgroundTransfers) {
-					transfers = new BackgroundTransfer[backgroundTransfers.size()];
-					transfers = backgroundTransfers.toArray(transfers);
-				}
-				
-				// Wait for the outgoing transfers to complete.
-				if(!waitForBackgroundTransfers(transfers)) {
-					setTransferTimedOut();
-					return;
-				}
-			} finally {
-				synchronized(CHKInsertSender.this) {
-					allTransfersCompleted = true;
-					CHKInsertSender.this.notifyAll();
-					callListenersOffThreadCompletion();
-				}
-			}
+		enum StillWaitingForTransfers {
+		    WAITING,
+		    ALL_SUCCEEDED,
+		    SOME_FAILED
 		}
 
-		/**
-		 * Block until all transfers have reached a final-terminal state (success/failure). On success this means that a
-		 * successful 'received-notification' has been received.
-		 * @return True if all background transfers were successful.
-		 */
-		private boolean waitForBackgroundTransfers(BackgroundTransfer[] transfers) {
-			long start = System.currentTimeMillis();
-			// Generous deadline so we catch bugs more obviously
-			long deadline = start + transferCompletionTimeout * 3;
-			// MAYBE all done
-			while(true) {
-				if(System.currentTimeMillis() > deadline) {
-					// NORMAL priority because it is normally caused by a transfer taking too long downstream, and that doesn't usually indicate a bug.
-					Logger.normal(this, "Timed out waiting for background transfers! Probably caused by async filter not getting a timeout notification! DEBUG ME!");
-					return false;
-				}
-				//If we want to be sure to exit as-soon-as the transfers are done, then we must hold the lock while we check.
-				synchronized(backgroundTransfers) {
-					if(receiveFailed) return false;
-					
-					boolean noneRouteable = true;
-					boolean completedTransfers = true;
-					boolean completedNotifications = true;
-					boolean someFailed = false;
-					for(BackgroundTransfer transfer: transfers) {
-						if(!transfer.pn.isRoutable()) {
-							if(logMINOR)
-								Logger.minor(this, "Ignoring transfer to "+transfer.pn+" for "+this+" as not routable");
-							continue;
-						}
-						noneRouteable = false;
-						if(!transfer.completedTransfer) {
-							if(logMINOR)
-								Logger.minor(this, "Waiting for transfer completion to "+transfer.pn+" : "+transfer);
-							//must wait
-							completedTransfers = false;
-							break;
-						}
-						if (!transfer.receivedCompletionNotice) {
-							if(logMINOR)
-								Logger.minor(this, "Waiting for completion notice from "+transfer.pn+" : "+transfer);
-							//must wait
-							completedNotifications = false;
-							break;
-						}
-						if (!transfer.completionSucceeded)
-							someFailed = true;
-					}
-					if(noneRouteable) return false;
-					if(completedTransfers && completedNotifications) return !someFailed;
-					
-					if(logMINOR) Logger.minor(this, "Waiting: transfer completion=" + completedTransfers + " notification="+completedNotifications); 
-					try {
-						backgroundTransfers.wait(SECONDS.toMillis(100));
-					} catch (InterruptedException e) {
-						// Ignore
-					}
-				}				
-			}
-		}
+	private StillWaitingForTransfers getBackgroundTransfersWaitStatus() {
+        
+        boolean noneRouteable = true;
+        boolean completedTransfers = true;
+        boolean completedNotifications = true;
+        boolean someFailed = false;
+        for(BackgroundTransfer transfer: 
+            backgroundTransfers.toArray(new BackgroundTransfer[backgroundTransfers.size()])) {
+            if(!transfer.pn.isRoutable()) {
+                if(logMINOR)
+                    Logger.minor(this, "Ignoring transfer to "+transfer.pn+" for "+this+" as not routable");
+                continue;
+            }
+            noneRouteable = false;
+            if(!transfer.completedTransfer) {
+                if(logMINOR)
+                    Logger.minor(this, "Waiting for transfer completion to "+transfer.pn+" : "+transfer);
+                //must wait
+                completedTransfers = false;
+                break;
+            }
+            if (!transfer.receivedCompletionNotice) {
+                if(logMINOR)
+                    Logger.minor(this, "Waiting for completion notice from "+transfer.pn+" : "+transfer);
+                //must wait
+                completedNotifications = false;
+                break;
+            }
+            if (!transfer.completionSucceeded)
+                someFailed = true;
+        }
+        if(noneRouteable) return StillWaitingForTransfers.SOME_FAILED;
+        if(completedTransfers && completedNotifications) {
+            return someFailed ? StillWaitingForTransfers.SOME_FAILED : 
+                StillWaitingForTransfers.ALL_SUCCEEDED;
+        }
+        
+        if(logMINOR) Logger.minor(this, "Waiting: transfer completion=" + completedTransfers + " notification="+completedNotifications); 
+        return StillWaitingForTransfers.WAITING;
+	}
 
-
-	public synchronized boolean completed() {
+    public synchronized boolean completed() {
 		return allTransfersCompleted;
 	}
 
