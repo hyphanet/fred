@@ -1259,91 +1259,87 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		
 		// Once the transfer has started, we only unlock the tag after the transfer completes (successfully or not).
 		
-        while (true) {
-
-			if(failIfReceiveFailed(thisTag, next)) {
-				// The transfer has started, it will be cancelled.
-				transfer.onCompleted();
-				return;
-			}
-			
-			try {
-                node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
-
-                    @Override
-                    public void onMatched(Message msg) {
-                        if(logMINOR) Logger.minor(this, "Matched "+msg+" on "+CHKInsertSender.this);
-                        if(failIfReceiveFailed(thisTag, next)) {
-                            // The transfer has started, it will be cancelled.
-                            transfer.onCompleted();
-                            return;
-                        }
-                        if(onMessageAfterAccepted(msg, next, transfer, thisTag)) {
-                            // Keep waiting...
-                            try {
-                                node.usm.addAsyncFilter(getFilterAfterAccepted(next), this, CHKInsertSender.this);
-                            } catch (DisconnectedException e) {
-                                onDisconnect(next);
-                            }
-                        }
-                    }
-
-                    @Override
-                    public boolean shouldTimeout() {
-                        return false;
-                    }
-
-                    @Override
-                    public void onTimeout() {
-                        if(logMINOR) Logger.minor(this, "Timeout on "+CHKInsertSender.this);
-                        if(failIfReceiveFailed(thisTag, next)) {
-                            // The transfer has started, it will be cancelled.
-                            transfer.onCompleted();
-                            return;
-                        }
-                        handleTimeoutAfterAccepted(next, thisTag, transfer);
-                    }
-
-                    @Override
-                    public void onDisconnect(PeerContext ctx) {
-                        if(logMINOR) Logger.minor(this, "Disconnected on "+CHKInsertSender.this);
-                        if(failIfReceiveFailed(thisTag, next)) {
-                            // The transfer has started, it will be cancelled.
-                            transfer.onCompleted();
-                            return;
-                        }
-                        Logger.normal(this, "Disconnected from " + next
-                                + " while waiting for InsertReply on " + this);
-                        transfer.onDisconnect(next);
-                        routeRequests();
-                    }
-
-                    @Override
-                    public void onRestarted(PeerContext ctx) {
-                        if(logMINOR) Logger.minor(this, "Restarted on "+CHKInsertSender.this);
-                        if(failIfReceiveFailed(thisTag, next)) {
-                            // The transfer has started, it will be cancelled.
-                            transfer.onCompleted();
-                            return;
-                        }
-                        Logger.normal(this, "Restarted on " + next
-                                + " while waiting for InsertReply on " + this);
-                        transfer.onDisconnect(next);
-                        routeRequests();
-                    }
-
-                    @Override
-                    public int getPriority() {
-                        return NativeThread.HIGH_PRIORITY;
-                    }
-                    
-                }, this);
-            } catch (DisconnectedException e1) {
-                Logger.normal(this, "Disconnected from " + next
-                        + " while waiting for InsertReply on " + this);
-                transfer.onDisconnect(next);
-                break;
-            }
+		if(failIfReceiveFailed(thisTag, next)) {
+		    // The transfer has started, it will be cancelled.
+		    transfer.onCompleted();
+		    return;
+		}
+		
+		try {
+		    node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+		        
+		        @Override
+		        public void onMatched(Message msg) {
+		            if(logMINOR) Logger.minor(this, "Matched "+msg+" on "+CHKInsertSender.this);
+		            if(failIfReceiveFailed(thisTag, next)) {
+		                // The transfer has started, it will be cancelled.
+		                transfer.onCompleted();
+		                return;
+		            }
+		            if(onMessageAfterAccepted(msg, next, transfer, thisTag)) {
+		                // Keep waiting...
+		                try {
+		                    node.usm.addAsyncFilter(getFilterAfterAccepted(next), this, CHKInsertSender.this);
+		                } catch (DisconnectedException e) {
+		                    onDisconnect(next);
+		                }
+		            }
+		        }
+		        
+		        @Override
+		        public boolean shouldTimeout() {
+		            return false;
+		        }
+		        
+		        @Override
+		        public void onTimeout() {
+		            if(logMINOR) Logger.minor(this, "Timeout on "+CHKInsertSender.this);
+		            if(failIfReceiveFailed(thisTag, next)) {
+		                // The transfer has started, it will be cancelled.
+		                transfer.onCompleted();
+		                return;
+		            }
+		            handleTimeoutAfterAccepted(next, thisTag, transfer);
+		        }
+		        
+		        @Override
+		        public void onDisconnect(PeerContext ctx) {
+		            if(logMINOR) Logger.minor(this, "Disconnected on "+CHKInsertSender.this);
+		            if(failIfReceiveFailed(thisTag, next)) {
+		                // The transfer has started, it will be cancelled.
+		                transfer.onCompleted();
+		                return;
+		            }
+		            Logger.normal(this, "Disconnected from " + next
+		                    + " while waiting for InsertReply on " + this);
+		            transfer.onDisconnect(next);
+		            routeRequests();
+		        }
+		        
+		        @Override
+		        public void onRestarted(PeerContext ctx) {
+		            if(logMINOR) Logger.minor(this, "Restarted on "+CHKInsertSender.this);
+		            if(failIfReceiveFailed(thisTag, next)) {
+		                // The transfer has started, it will be cancelled.
+		                transfer.onCompleted();
+		                return;
+		            }
+		            Logger.normal(this, "Restarted on " + next
+		                    + " while waiting for InsertReply on " + this);
+		            transfer.onDisconnect(next);
+		            routeRequests();
+		        }
+		        
+		        @Override
+		        public int getPriority() {
+		            return NativeThread.HIGH_PRIORITY;
+		        }
+		        
+		    }, this);
+		} catch (DisconnectedException e1) {
+		    Logger.normal(this, "Disconnected from " + next
+		            + " while waiting for InsertReply on " + this);
+		    transfer.onDisconnect(next);
 		}
 	}
 
