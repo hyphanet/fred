@@ -673,6 +673,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
 				@Override
 				public void onMatched(Message m) {
+				    if(logMINOR) Logger.minor(this, "Matched "+m+" on "+CHKInsertSender.this+" waiting for accepted/rejected");
 					if(m.getSpec() == DMT.FNPRejectedLoop ||
 							m.getSpec() == DMT.FNPRejectedOverload) {
 						// Ok.
@@ -1271,6 +1272,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
                     @Override
                     public void onMatched(Message msg) {
+                        if(logMINOR) Logger.minor(this, "Matched "+msg+" on "+CHKInsertSender.this);
                         if(failIfReceiveFailed(thisTag, next)) {
                             // The transfer has started, it will be cancelled.
                             transfer.onCompleted();
@@ -1293,6 +1295,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
                     @Override
                     public void onTimeout() {
+                        if(logMINOR) Logger.minor(this, "Timeout on "+CHKInsertSender.this);
                         if(failIfReceiveFailed(thisTag, next)) {
                             // The transfer has started, it will be cancelled.
                             transfer.onCompleted();
@@ -1303,6 +1306,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
                     @Override
                     public void onDisconnect(PeerContext ctx) {
+                        if(logMINOR) Logger.minor(this, "Disconnected on "+CHKInsertSender.this);
                         if(failIfReceiveFailed(thisTag, next)) {
                             // The transfer has started, it will be cancelled.
                             transfer.onCompleted();
@@ -1316,6 +1320,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
                     @Override
                     public void onRestarted(PeerContext ctx) {
+                        if(logMINOR) Logger.minor(this, "Restarted on "+CHKInsertSender.this);
                         if(failIfReceiveFailed(thisTag, next)) {
                             // The transfer has started, it will be cancelled.
                             transfer.onCompleted();
