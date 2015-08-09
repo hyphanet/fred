@@ -8,6 +8,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
@@ -363,6 +364,10 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     /** List of nodes we are waiting for either a transfer completion
      * notice or a transfer completion from. Also used as a sync object for waiting for transfer completion. */
     private List<BackgroundTransfer> backgroundTransfers;
+    
+    private final CopyOnWriteArrayList<InsertSenderListener> listeners = 
+            new CopyOnWriteArrayList<InsertSenderListener>();
+    private boolean calledListeners = false;
     
     /** Have all transfers completed and all nodes reported completion status? */
     private boolean allTransfersCompleted;
@@ -801,10 +806,11 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         			throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         	} else {
                 status = code;
+                notifyAll();
+                if(status != NOT_FINISHED)
+                    callListenersOffThread(status);
+                if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
         	}
-        	
-        	notifyAll();
-        	if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
         }
 		
         boolean failedRecv = false; // receiveFailed is protected by backgroundTransfers but status by this
@@ -833,6 +839,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 					status = RECEIVE_FAILED;
 				allTransfersCompleted = true;
 				notifyAll();
+				callListenersOffThread(status);
 			}
 		}
         	
@@ -884,6 +891,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     		status = RECEIVE_FAILED;
     		allTransfersCompleted = true;
     		notifyAll();
+    		callListenersOffThread(status);
     	}
     	// Do not call finish(), that can only be called on the main thread and it will block.
     }
@@ -1213,6 +1221,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				synchronized(this) {
 					status = TIMED_OUT;
 					notifyAll();
+					callListenersOffThread(status);
 				}
 				
 				// Wait for the second timeout off-thread.
@@ -1390,5 +1399,37 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	protected long ignoreLowBackoff() {
 		return ignoreLowBackoff ? Node.LOW_BACKOFF : 0;
 	}
+	
+	public synchronized void addListener(InsertSenderListener listener) {
+	    listeners.add(listener);
+	    if(status != NOT_FINISHED) {
+	        callListenerOffThread(listener, status);
+	    }
+	}
+	
+	private synchronized void callListenersOffThread(final int status) {
+	    assert(status != NOT_FINISHED);
+	    if(calledListeners) {
+	        // FIXME is this legal or not?
+	        Logger.error(this, "Calling listeners twice for "+this+" with status "+status, 
+	                new Exception("debug"));
+	        return;
+	    }
+	    // Whether it's legal or not, the listeners only want to be called ONCE.
+	    calledListeners = true;
+	    for(InsertSenderListener listener : listeners)
+	        callListenerOffThread(listener, status);
+	}
+
+    private void callListenerOffThread(final InsertSenderListener listener, final int status) {
+        node.executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                listener.onInsertSenderFinished(status, CHKInsertSender.this);
+            }
+            
+        });
+    }
 
 }

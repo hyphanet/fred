@@ -36,7 +36,7 @@ import freenet.support.io.NativeThread;
  * Handle an incoming insert request.
  * This corresponds to RequestHandler.
  */
-public class CHKInsertHandler implements PrioRunnable, ByteCounter {
+public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSenderListener {
 	private static volatile boolean logMINOR;
 
 	static {
@@ -67,6 +67,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 	private final boolean preferInsert;
 	private final boolean ignoreLowBackoff;
 	private final boolean realTimeFlag;
+	private boolean waiting = false;
 
     CHKInsertHandler(NodeCHK key, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.node = node;
@@ -98,10 +99,11 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             tag.handlerThrew(t);
         } finally {
         	if(logMINOR) Logger.minor(this, "Exiting CHKInsertHandler.run() for "+uid);
-        	tag.unlockHandler();
+        	if(!waiting)
+        	    tag.unlockHandler();
         }
     }
-
+    
     private void realRun() {
         runThread = Thread.currentThread();
         
@@ -191,18 +193,17 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         // So we call the wait method on the CHKInsertSender, but we
         // also have a flag locally to indicate the receive failed.
         // And if it does, we interrupt.
-        
-        boolean receivedRejectedOverload = false;
-        
-        while(true) {
-            synchronized(sender) {
-                try {
-                	if(sender.getStatus() == CHKInsertSender.NOT_FINISHED)
-                		sender.wait(5000);
-                } catch (InterruptedException e) {
-                    // Cool, probably this is because the receive failed...
-                }
-            }
+        if(logMINOR) Logger.minor(this, "Waiting asynchronously for insert to finish on "+this+" for "+sender);
+        sender.addListener(this);
+        waiting = true;
+    }
+    
+    private boolean receivedRejectedOverload = false;
+    
+    @Override
+    public void onInsertSenderFinished(int status, CHKInsertSender sender) {
+        if(logMINOR) Logger.minor(this, "Sender finished with status "+status+" on "+this+" from "+sender);
+        try {
             if(receiveFailed()) {
                 // Nothing else we can do
                 finish(CHKInsertSender.RECEIVE_FAILED);
@@ -222,18 +223,12 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 				}
             }
             
-            int status = sender.getStatus();
-            
-            if(status == CHKInsertSender.NOT_FINISHED) {
-                continue;
-            }
-
             // Local RejectedOverload's (fatal).
             // Internal error counts as overload. It'd only create a timeout otherwise, which is the same thing anyway.
             if((status == CHKInsertSender.TIMED_OUT) ||
             		(status == CHKInsertSender.GENERATED_REJECTED_OVERLOAD) ||
             		(status == CHKInsertSender.INTERNAL_ERROR)) {
-                msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
+                Message msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
                 try {
 					source.sendSync(msg, this, realTimeFlag);
 				} catch (NotConnectedException e) {
@@ -252,7 +247,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             }
             
             if((status == CHKInsertSender.ROUTE_NOT_FOUND) || (status == CHKInsertSender.ROUTE_REALLY_NOT_FOUND)) {
-                msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
+                Message msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
                 try {
 					source.sendSync(msg, this, realTimeFlag);
 				} catch (NotConnectedException e) {
@@ -274,7 +269,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             }
             
             if(status == CHKInsertSender.SUCCESS) {
-            	msg = DMT.createFNPInsertReply(uid);
+            	Message msg = DMT.createFNPInsertReply(uid);
             	try {
 					source.sendSync(msg, this, realTimeFlag);
 				} catch (NotConnectedException e) {
@@ -291,7 +286,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             
             // Otherwise...?
             Logger.error(this, "Unknown status code: "+sender.getStatusString());
-            msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
+            Message msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
             try {
 				source.sendSync(msg, this, realTimeFlag);
 			} catch (NotConnectedException e) {
@@ -301,6 +296,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 			}
             finish(CHKInsertSender.INTERNAL_ERROR);
             return;
+        } finally {
+            tag.unlockHandler();
         }
 	}
 
