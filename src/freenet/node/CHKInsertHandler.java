@@ -69,6 +69,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 	private final boolean realTimeFlag;
 	private boolean waiting = false;
 	private boolean waitingCompletion = false;
+	private boolean waitingReceiveFinish = false;
 
     CHKInsertHandler(NodeCHK key, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.node = node;
@@ -286,7 +287,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
             finish(CHKInsertSender.INTERNAL_ERROR);
             return;
         } finally {
-            if(!waitingCompletion)
+            if(!(waitingCompletion || waitingReceiveFinish))
                 tag.unlockHandler();
         }
 	}
@@ -368,26 +369,46 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 	private boolean canCommit = false;
 	private boolean sentCompletion = false;
 	private Object sentCompletionLock = new Object();
+	private int finishingCode;
     
+	private void onReceiveCompleted(boolean failure) {
+	    int code;
+	    synchronized(this) {
+	        if(receiveCompleted) return;
+	        receiveCompleted = true;
+	        receiveFailed = failure;
+	        CHKInsertHandler.this.notifyAll();
+	        code = finishingCode;
+	        if(!waitingReceiveFinish) return;
+	    }
+	    finishAfterReceiveCompleted(code);
+	}
+	
     /**
      * If canCommit, and we have received all the data, and it
      * verifies, then commit it.
      */
     private void finish(int code) {
     	if(logMINOR) Logger.minor(this, "Waiting for receive");
-    	long transferTimeout = realTimeFlag ?
-    			CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME :
-    				CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_BULK;
 		synchronized(this) {
-			while(receiveStarted && !receiveCompleted) {
-				try {
-					wait(SECONDS.toMillis(100));
-				} catch (InterruptedException e) {
-					// Ignore
-				}
-			}
-    	}
+		    finishingCode = code;
+		    if(receiveStarted && !receiveCompleted) {
+		        waitingReceiveFinish = true;
+		        if(logMINOR)
+		            Logger.minor(this, "Waiting for receive to finish on "+this
+		                    +" while completing with "+code);
+		        return;
+		    }
+		}
+		finishAfterReceiveCompleted(code);
+    }
+    
+    private void finishAfterReceiveCompleted(int code) {
 		
+        long transferTimeout = realTimeFlag ?
+                CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME :
+                    CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_BULK;
+        
 		CHKBlock block = verify();
 		// If we wanted to reduce latency at the cost of security (bug 3338), we'd commit here, or even on the receiver thread.
 		
@@ -574,20 +595,13 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
         		@Override
         		public void blockReceived(byte[] buf) {
         			if(logMINOR) Logger.minor(this, "Received data for "+CHKInsertHandler.this);
-        			synchronized(CHKInsertHandler.this) {
-        				receiveCompleted = true;
-        				CHKInsertHandler.this.notifyAll();
-        			}
+        			onReceiveCompleted(false);
    					node.nodeStats.successfulBlockReceive(realTimeFlag, false);
         		}
 
         		@Override
         		public void blockReceiveFailed(RetrievalException e) {
-        			synchronized(CHKInsertHandler.this) {
-        				receiveCompleted = true;
-        				receiveFailed = true;
-        				CHKInsertHandler.this.notifyAll();
-        			}
+        		    onReceiveCompleted(true);
         			// Cancel the sender
         			if(sender != null)
         				sender.onReceiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store

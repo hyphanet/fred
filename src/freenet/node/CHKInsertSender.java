@@ -1416,9 +1416,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	private synchronized void callListenersOffThread(final int status) {
 	    assert(status != NOT_FINISHED);
 	    if(calledListenersStatus) {
-	        // FIXME is this legal or not?
-	        Logger.error(this, "Calling listeners twice for "+this+" with status "+status, 
-	                new Exception("debug"));
+	        // Status changed e.g. due to receive failure after InsertReply.
 	        return;
 	    }
 	    // Whether it's legal or not, the listeners only want to be called ONCE.
