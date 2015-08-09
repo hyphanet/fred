@@ -400,7 +400,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		// If we wanted to reduce latency at the cost of security (bug 3338), we'd commit here, or even on the receiver thread.
 		
         // Wait for completion
-        boolean sentCompletionWasSet = false;
+        boolean sentCompletion = false;
         
 		Message m=null;
 		
@@ -428,7 +428,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
         	}
         	if(routingTookTooLong) {
         		tag.timedOutToHandlerButContinued();
-        		sentCompletionWasSet = true;
+        		sentCompletion = true;
         		try {
         			source.sendAsync(DMT.createFNPInsertTransfersCompleted(uid, true), null, this);
         		} catch (NotConnectedException e) {
@@ -453,11 +453,11 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
         		if(logMINOR) Logger.minor(this, "Completed after telling downstream on "+this);
         	}
         	boolean failed = sender.anyTransfersFailed();
-        	if(!sentCompletionWasSet)
+        	if(!sentCompletion)
         		m = DMT.createFNPInsertTransfersCompleted(uid, failed);
 		}
 		
-		if((sender == null) && (!sentCompletionWasSet) && (canCommit)) {
+		if((sender == null) && (!sentCompletion) && (canCommit)) {
 			//There are no downstream senders, but we stored the data locally, report successful transfer.
 			//Note that this is done even if the verify fails.
 			m = DMT.createFNPInsertTransfersCompleted(uid, false /* no timeouts */);
