@@ -206,7 +206,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
         if(logMINOR) Logger.minor(this, "Sender finished with status "+status+" on "+this+" from "+sender);
         try {
             if(receiveFailed()) {
-                // Nothing else we can do
+                // Sender has just got back to us after an earlier receive failure.
+                // Nothing else we can do. Do not commit.
                 finish(CHKInsertSender.RECEIVE_FAILED);
                 return;
             }
