@@ -376,8 +376,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 	}
 
 	private boolean canCommit = false;
-    private boolean sentCompletion = false;
-    private Object sentCompletionLock = new Object();
     
     /**
      * If canCommit, and we have received all the data, and it
@@ -402,11 +400,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		// If we wanted to reduce latency at the cost of security (bug 3338), we'd commit here, or even on the receiver thread.
 		
         // Wait for completion
-        boolean sentCompletionWasSet;
-        synchronized(sentCompletionLock) {
-        	sentCompletionWasSet = sentCompletion;
-        	sentCompletion = true;
-        }
+        boolean sentCompletionWasSet = false;
         
 		Message m=null;
 		
