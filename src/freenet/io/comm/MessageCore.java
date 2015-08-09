@@ -197,6 +197,7 @@ public class MessageCore {
 		MessageFilter match = null;
 		ArrayList<MessageFilter> timedOut = null;
 		synchronized (_filters) {
+		    if(logMINOR) Logger.minor(this, "Matching against "+_filters.size()+" filters...");
 			for (ListIterator<MessageFilter> i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = i.next();
 				if (f.matched()) {
