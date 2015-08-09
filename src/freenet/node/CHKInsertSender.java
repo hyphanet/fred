@@ -415,9 +415,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			}
             if(myStatus == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
-            origTag.finishedSender();
-        	if(forkedRequestTag != null)
-        		forkedRequestTag.finishedSender();
         }
     }
     
@@ -791,70 +788,88 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
      * @param next The node we successfully inserted to.
      */
     private void finish(int code, PeerNode next) {
-    	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
-     
-    	// If there is an InsertReply, it always happens before the transfer completion notice.
-    	// So we do NOT need to removeRoutingTo().
-    	
-        synchronized(this) {
-        	if(allTransfersCompleted) return; // Already called. Doesn't prevent race condition resulting in the next bit running but that's not really a problem.
-        	if((code == ROUTE_NOT_FOUND) && !hasForwarded)
-        		code = ROUTE_REALLY_NOT_FOUND;
-
-        	if(status != NOT_FINISHED) {
-        		if(status == RECEIVE_FAILED) {
-        			if(code == SUCCESS)
-        				Logger.error(this, "Request succeeded despite receive failed?! on "+this);
-        		} else if(status != TIMED_OUT)
-        			throw new IllegalStateException("finish() called with "+code+" when was already "+status);
-        	} else {
-                status = code;
-                notifyAll();
-                if(status != NOT_FINISHED)
-                    callListenersOffThread(status);
-                if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
-        	}
+        try {
+            if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
+            
+            // If there is an InsertReply, it always happens before the transfer completion notice.
+            // So we do NOT need to removeRoutingTo().
+            
+            synchronized(this) {
+                if(allTransfersCompleted) return; // Already called. Doesn't prevent race condition resulting in the next bit running but that's not really a problem.
+                if((code == ROUTE_NOT_FOUND) && !hasForwarded)
+                    code = ROUTE_REALLY_NOT_FOUND;
+                
+                if(status != NOT_FINISHED) {
+                    if(status == RECEIVE_FAILED) {
+                        if(code == SUCCESS)
+                            Logger.error(this, "Request succeeded despite receive failed?! on "+this);
+                    } else if(status != TIMED_OUT)
+                        throw new IllegalStateException("finish() called with "+code+" when was already "+status);
+                } else {
+                    status = code;
+                    notifyAll();
+                    if(status != NOT_FINISHED)
+                        callListenersOffThread(status);
+                    if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
+                }
+            }
+            
+            // Now wait for transfers, or for downstream transfer notifications.
+            // Note that even the data receive may not have completed by this point.
+            boolean mustWait = false;
+            synchronized(backgroundTransfers) {
+                if (backgroundTransfers.isEmpty()) {
+                    if(logMINOR) Logger.minor(this, "No background transfers");
+                } else {
+                    mustWait = true;
+                }
+            }
+            if(mustWait) { 
+                waitForBackgroundTransferCompletions();
+            }
+            
+            finishFinish(next);
+        } catch (RuntimeException t) {
+            finishTags();
+            throw t;
+        } catch (Error t) {
+            finishTags();
+            throw t;
         }
-		
-        // Now wait for transfers, or for downstream transfer notifications.
-        // Note that even the data receive may not have completed by this point.
-        boolean mustWait = false;
-		synchronized(backgroundTransfers) {
-			if (backgroundTransfers.isEmpty()) {
-				if(logMINOR) Logger.minor(this, "No background transfers");
-			} else {
-				mustWait = true;
-			}
-		}
-		if(mustWait) { 
-			waitForBackgroundTransferCompletions();
-		}
-		
-		finishFinish(next);
     }
     
     private void finishFinish(PeerNode next) {
-        boolean failedRecv = false; // receiveFailed is protected by backgroundTransfers but status by this
-        synchronized(backgroundTransfers) {
-            failedRecv = receiveFailed;
+        try {
+            boolean failedRecv = false; // receiveFailed is protected by backgroundTransfers but status by this
+            synchronized(backgroundTransfers) {
+                failedRecv = receiveFailed;
+            }
+            
+            synchronized(this) {
+                // waitForBackgroundTransferCompletions() may have already set it.
+                if(!allTransfersCompleted) {
+                    if(failedRecv)
+                        status = RECEIVE_FAILED;
+                    allTransfersCompleted = true;
+                    notifyAll();
+                    callListenersOffThread(status);
+                    callListenersOffThreadCompletion();
+                }
+            }
+            
+            if(status == SUCCESS && next != null)
+                next.onSuccess(true, false);
+            
+            if(logMINOR) Logger.minor(this, "Returning from finish()");
+        } finally {
+            finishTags();
         }
-        
-		synchronized(this) {
-			// waitForBackgroundTransferCompletions() may have already set it.
-			if(!allTransfersCompleted) {
-				if(failedRecv)
-					status = RECEIVE_FAILED;
-				allTransfersCompleted = true;
-				notifyAll();
-				callListenersOffThread(status);
-				callListenersOffThreadCompletion();
-			}
-		}
-        	
-        if(status == SUCCESS && next != null)
-        	next.onSuccess(true, false);
-        
-        if(logMINOR) Logger.minor(this, "Returning from finish()");
+    }
+    
+    private void finishTags() {
+        origTag.finishedSender();
+        if(forkedRequestTag != null)
+            forkedRequestTag.finishedSender();
     }
 
     @Override
