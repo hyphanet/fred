@@ -289,16 +289,16 @@ public class MessageAuthCodeTest{
         assertFalse(MessageAuthCode.verify(trueMacs[3], falseMacs[3]));
     }
 
-    @Test (expected = NullPointerException.class)
+    @Test
     public void testVerifyNullInput1() {
         byte[] nullArray = null;
-        MessageAuthCode.verify(nullArray, trueMacs[3]);
+        assertFalse(MessageAuthCode.verify(nullArray, trueMacs[3]));
     }
 
-    @Test (expected = NullPointerException.class)
+    @Test
     public void testVerifyNullInput2() {
         byte[] nullArray = null;
-        MessageAuthCode.verify(trueMacs[1], nullArray);
+        assertFalse(MessageAuthCode.verify(trueMacs[1], nullArray));
     }
 
     @Test
@@ -342,14 +342,8 @@ public class MessageAuthCodeTest{
             else{
                 mac = new MessageAuthCode(types[i], keys[i]);
             }
-            boolean throwNull = false;
             byte[] nullArray = null;
-            try{
-                mac.verifyData(nullArray, messages[i]);
-            }catch(NullPointerException e){
-                throwNull = true;
-            }
-            assertTrue("MACType: "+types[i].name(), throwNull);
+            assertFalse("MACType: "+types[i].name(), mac.verifyData(nullArray, messages[i]));
         }
     }
 
