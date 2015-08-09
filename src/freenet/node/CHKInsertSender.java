@@ -933,16 +933,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				freenet.support.Logger.OSThread.logPID(this);
 				if(logMINOR) Logger.minor(this, "Waiting for background transfer completions: "+this);
 				
-				// We must presently be at such a stage that no more background transfers will be added.
-				
-				BackgroundTransfer[] transfers;
-				synchronized(backgroundTransfers) {
-					transfers = new BackgroundTransfer[backgroundTransfers.size()];
-					transfers = backgroundTransfers.toArray(transfers);
-				}
-				
 				// Wait for the outgoing transfers to complete.
-				if(!waitForBackgroundTransfers(transfers)) {
+				if(!waitForBackgroundTransfers()) {
 					setTransferTimedOut();
 					return;
 				}
@@ -954,13 +946,19 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				}
 			}
 		}
+		
+		enum StillWaitingForTransfers {
+		    WAITING,
+		    ALL_SUCCEEDED,
+		    SOME_FAILED
+		}
 
 		/**
 		 * Block until all transfers have reached a final-terminal state (success/failure). On success this means that a
 		 * successful 'received-notification' has been received.
 		 * @return True if all background transfers were successful.
 		 */
-		private boolean waitForBackgroundTransfers(BackgroundTransfer[] transfers) {
+		private boolean waitForBackgroundTransfers() {
 			long start = System.currentTimeMillis();
 			// Generous deadline so we catch bugs more obviously
 			long deadline = start + transferCompletionTimeout * 3;
@@ -974,39 +972,10 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				//If we want to be sure to exit as-soon-as the transfers are done, then we must hold the lock while we check.
 				synchronized(backgroundTransfers) {
 					if(receiveFailed) return false;
-					
-					boolean noneRouteable = true;
-					boolean completedTransfers = true;
-					boolean completedNotifications = true;
-					boolean someFailed = false;
-					for(BackgroundTransfer transfer: transfers) {
-						if(!transfer.pn.isRoutable()) {
-							if(logMINOR)
-								Logger.minor(this, "Ignoring transfer to "+transfer.pn+" for "+this+" as not routable");
-							continue;
-						}
-						noneRouteable = false;
-						if(!transfer.completedTransfer) {
-							if(logMINOR)
-								Logger.minor(this, "Waiting for transfer completion to "+transfer.pn+" : "+transfer);
-							//must wait
-							completedTransfers = false;
-							break;
-						}
-						if (!transfer.receivedCompletionNotice) {
-							if(logMINOR)
-								Logger.minor(this, "Waiting for completion notice from "+transfer.pn+" : "+transfer);
-							//must wait
-							completedNotifications = false;
-							break;
-						}
-						if (!transfer.completionSucceeded)
-							someFailed = true;
-					}
-					if(noneRouteable) return false;
-					if(completedTransfers && completedNotifications) return !someFailed;
-					
-					if(logMINOR) Logger.minor(this, "Waiting: transfer completion=" + completedTransfers + " notification="+completedNotifications); 
+					StillWaitingForTransfers waitStatus =
+					        getBackgroundTransfersWaitStatus();
+					if(waitStatus == StillWaitingForTransfers.ALL_SUCCEEDED) return true;
+					else if(waitStatus == StillWaitingForTransfers.SOME_FAILED) return false;
 					try {
 						backgroundTransfers.wait(SECONDS.toMillis(100));
 					} catch (InterruptedException e) {
@@ -1017,7 +986,48 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		}
 
 
-	public synchronized boolean completed() {
+	private StillWaitingForTransfers getBackgroundTransfersWaitStatus() {
+        
+        boolean noneRouteable = true;
+        boolean completedTransfers = true;
+        boolean completedNotifications = true;
+        boolean someFailed = false;
+        for(BackgroundTransfer transfer: 
+            backgroundTransfers.toArray(new BackgroundTransfer[backgroundTransfers.size()])) {
+            if(!transfer.pn.isRoutable()) {
+                if(logMINOR)
+                    Logger.minor(this, "Ignoring transfer to "+transfer.pn+" for "+this+" as not routable");
+                continue;
+            }
+            noneRouteable = false;
+            if(!transfer.completedTransfer) {
+                if(logMINOR)
+                    Logger.minor(this, "Waiting for transfer completion to "+transfer.pn+" : "+transfer);
+                //must wait
+                completedTransfers = false;
+                break;
+            }
+            if (!transfer.receivedCompletionNotice) {
+                if(logMINOR)
+                    Logger.minor(this, "Waiting for completion notice from "+transfer.pn+" : "+transfer);
+                //must wait
+                completedNotifications = false;
+                break;
+            }
+            if (!transfer.completionSucceeded)
+                someFailed = true;
+        }
+        if(noneRouteable) return StillWaitingForTransfers.SOME_FAILED;
+        if(completedTransfers && completedNotifications) {
+            return someFailed ? StillWaitingForTransfers.SOME_FAILED : 
+                StillWaitingForTransfers.ALL_SUCCEEDED;
+        }
+        
+        if(logMINOR) Logger.minor(this, "Waiting: transfer completion=" + completedTransfers + " notification="+completedNotifications); 
+        return StillWaitingForTransfers.WAITING;
+	}
+
+    public synchronized boolean completed() {
 		return allTransfersCompleted;
 	}
 
