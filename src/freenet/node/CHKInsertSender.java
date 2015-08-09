@@ -363,7 +363,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     
     /** List of nodes we are waiting for either a transfer completion
      * notice or a transfer completion from. Also used as a sync object for waiting for transfer completion. */
-    private List<BackgroundTransfer> backgroundTransfers;
+    private final List<BackgroundTransfer> backgroundTransfers;
     
     private final CopyOnWriteArrayList<InsertSenderListener> listeners = 
             new CopyOnWriteArrayList<InsertSenderListener>();
