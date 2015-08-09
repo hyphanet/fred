@@ -23,6 +23,7 @@ public class CompatibilityAnalyser implements Serializable {
     public CompatibilityAnalyser() {
         this.min = CompatibilityMode.COMPAT_UNKNOWN;
         this.max = CompatibilityMode.COMPAT_UNKNOWN;
+        this.dontCompress = true;
     }
     
     public void merge(CompatibilityMode min, CompatibilityMode max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
