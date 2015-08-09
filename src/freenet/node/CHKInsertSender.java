@@ -917,6 +917,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     	if(tag != null && next != null) {
    			next.noLongerRoutingTo(tag, false);
     	}
+    	finishTags();
     	return true;
     }
 
