@@ -816,24 +816,28 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         	}
         }
 		
-        boolean failedRecv = false; // receiveFailed is protected by backgroundTransfers but status by this
         // Now wait for transfers, or for downstream transfer notifications.
         // Note that even the data receive may not have completed by this point.
         boolean mustWait = false;
 		synchronized(backgroundTransfers) {
 			if (backgroundTransfers.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "No background transfers");
-				failedRecv = receiveFailed;
 			} else {
 				mustWait = true;
 			}
 		}
 		if(mustWait) { 
 			waitForBackgroundTransferCompletions();
-			synchronized(backgroundTransfers) {
-				failedRecv = receiveFailed;
-			}
 		}
+		
+		finishFinish(next);
+    }
+    
+    private void finishFinish(PeerNode next) {
+        boolean failedRecv = false; // receiveFailed is protected by backgroundTransfers but status by this
+        synchronized(backgroundTransfers) {
+            failedRecv = receiveFailed;
+        }
         
 		synchronized(this) {
 			// waitForBackgroundTransferCompletions() may have already set it.
