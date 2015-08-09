@@ -287,7 +287,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
             finish(CHKInsertSender.INTERNAL_ERROR);
             return;
         } finally {
-            if(!(waitingCompletion || waitingReceiveFinish))
+            if(!(waitingCompletion || waitingReceiveFinish || waitingCompletion))
                 tag.unlockHandler();
         }
 	}
