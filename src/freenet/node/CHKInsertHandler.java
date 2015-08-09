@@ -69,6 +69,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 	private final boolean realTimeFlag;
 	private boolean waiting = false;
 	private boolean waitingCompletion = false;
+	private boolean waitingReceiveFinish = false;
 
     CHKInsertHandler(NodeCHK key, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.node = node;
@@ -286,7 +287,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
             finish(CHKInsertSender.INTERNAL_ERROR);
             return;
         } finally {
-            if(!waitingCompletion)
+            if(!(waitingCompletion || waitingReceiveFinish))
                 tag.unlockHandler();
         }
 	}
@@ -378,7 +379,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 	        receiveFailed = failure;
 	        CHKInsertHandler.this.notifyAll();
 	        code = finishingCode;
-	        if(code == CHKInsertSender.NOT_FINISHED) return;
+	        if(!waitingReceiveFinish) return;
 	    }
 	    finishAfterReceiveCompleted(code);
 	}
@@ -392,6 +393,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		synchronized(this) {
 		    finishingCode = code;
 		    if(receiveStarted && !receiveCompleted) {
+		        waitingReceiveFinish = true;
 		        if(logMINOR)
 		            Logger.minor(this, "Waiting for receive to finish on "+this
 		                    +" while completing with "+code);
