@@ -1425,7 +1425,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	        callListenerOffThread(listener, status);
 	}
 
-    private synchronized void callListenersCompletion() {
+    private synchronized void callListenersOffThreadCompletion() {
         if(calledListenersCompletion) return;
         calledListenersCompletion = true;
         for(InsertSenderListener listener : listeners)
