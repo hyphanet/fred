@@ -1046,16 +1046,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	}
 	
 	private void onFinishedBackgroundTransfers(boolean success, PeerNode pn) {
-	    try {
-	        if(!success)
-	            setTransferTimedOut();
-	    } finally {
-	        synchronized(CHKInsertSender.this) {
-	            allTransfersCompleted = true;
-	            CHKInsertSender.this.notifyAll();
-	            callListenersOffThreadCompletion();
-	        }
-	    }
+	    if(!success)
+	        setTransferTimedOut();
         finishFinish(pn);
 	}
 		
