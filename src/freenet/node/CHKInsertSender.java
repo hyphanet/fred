@@ -866,6 +866,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     }
 
     private void finishFinish(PeerNode next) {
+        boolean complete = false;
         try {
             boolean failedRecv = false; // receiveFailed is protected by backgroundTransfers but status by this
             synchronized(backgroundTransfers) {
@@ -879,8 +880,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
                         status = RECEIVE_FAILED;
                     allTransfersCompleted = true;
                     notifyAll();
-                    callListenersOffThread(status);
-                    callListenersOffThreadCompletion();
+                    complete = true;
                 }
             }
             
@@ -890,6 +890,11 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
             if(logMINOR) Logger.minor(this, "Returning from finish()");
         } finally {
             finishTags();
+            if(complete) {
+                // Need to finish routing before unlock handler.
+                callListenersOffThread(status);
+                callListenersOffThreadCompletion();
+            }
         }
     }
     
@@ -1041,16 +1046,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	}
 	
 	private void onFinishedBackgroundTransfers(boolean success, PeerNode pn) {
-	    try {
-	        if(!success)
-	            setTransferTimedOut();
-	    } finally {
-	        synchronized(CHKInsertSender.this) {
-	            allTransfersCompleted = true;
-	            CHKInsertSender.this.notifyAll();
-	            callListenersOffThreadCompletion();
-	        }
-	    }
+	    if(!success)
+	        setTransferTimedOut();
         finishFinish(pn);
 	}
 		
