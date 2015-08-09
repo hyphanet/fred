@@ -2518,6 +2518,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			
 			String parsedRel = "", parsedRev = "";
 			boolean isStylesheet = false;
+			boolean isIcon = false;
 
 			if(rel != null) {
 				
@@ -2537,6 +2538,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							if(tok.hasMoreTokens())
 								return null; // Disallow extra tokens after "stylesheet"
 						}
+					} else if (token.equalsIgnoreCase("icon")) {
+						isIcon = true;
 					} else if(!isStandardLinkType(token)) continue;
 					
 					i++;
@@ -2616,7 +2619,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String href = getHashString(h, "href");
 			if (href != null) {
 				href = HTMLDecoder.decode(href);
-				href = htmlSanitizeURI(href, type, charset, maybecharset, pc.cb, pc, false);
+				if (isIcon) {
+					href = htmlSanitizeURI(href, type, null, null, pc.cb, pc, false);
+				} else {
+					href = htmlSanitizeURI(href, type, charset, maybecharset, pc.cb, pc, false);
+				}
 				if (href != null) {
 					href = HTMLEncoder.encode(href);
 					hn.put("href", href);
