@@ -518,6 +518,12 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
         }
     }
     
+    @Override
+    public void onCompletion(CHKInsertSender sender) {
+        // TODO Auto-generated method stub
+        
+    }
+    
     /**
      * Verify data, or send DataInsertRejected.
      */
@@ -700,5 +706,5 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		}
 		
 	};
-    
+
 }

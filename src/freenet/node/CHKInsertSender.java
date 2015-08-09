@@ -368,6 +368,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     private final CopyOnWriteArrayList<InsertSenderListener> listeners = 
             new CopyOnWriteArrayList<InsertSenderListener>();
     private boolean calledListenersStatus = false;
+    private boolean calledListenersCompletion = false;
     
     /** Have all transfers completed and all nodes reported completion status? */
     private boolean allTransfersCompleted;
@@ -840,6 +841,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				allTransfersCompleted = true;
 				notifyAll();
 				callListenersOffThread(status);
+				callListenersOffThreadCompletion();
 			}
 		}
         	
@@ -892,6 +894,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     		allTransfersCompleted = true;
     		notifyAll();
     		callListenersOffThread(status);
+    		callListenersOffThreadCompletion();
     	}
     	// Do not call finish(), that can only be called on the main thread and it will block.
     }
@@ -945,6 +948,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				synchronized(CHKInsertSender.this) {
 					allTransfersCompleted = true;
 					CHKInsertSender.this.notifyAll();
+					callListenersOffThreadCompletion();
 				}
 			}
 		}
@@ -1421,6 +1425,13 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	        callListenerOffThread(listener, status);
 	}
 
+    private synchronized void callListenersCompletion() {
+        if(calledListenersCompletion) return;
+        calledListenersCompletion = true;
+        for(InsertSenderListener listener : listeners)
+            callListenerOffThreadCompletion(listener);
+    }
+
     private void callListenerOffThread(final InsertSenderListener listener, final int status) {
         node.executor.execute(new PrioRunnable() {
 
@@ -1435,6 +1446,22 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
             }
             
         }, "CHKInsertHandler callback for "+uid);
+    }
+
+    private void callListenerOffThreadCompletion(final InsertSenderListener listener) {
+        node.executor.execute(new PrioRunnable() {
+
+            @Override
+            public void run() {
+                listener.onCompletion(CHKInsertSender.this);
+            }
+ 
+            @Override
+            public int getPriority() {
+                return NativeThread.HIGH_PRIORITY;
+            }
+            
+        }, "CHKInsertHandler completion callback for "+uid);
     }
 
 }
