@@ -405,7 +405,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		Message m=null;
 		
 		boolean routingTookTooLong = false;
-        if((sender != null) && (!sentCompletionWasSet)) {
+        if(sender != null) {
             if(logMINOR) Logger.minor(this, "Waiting for completion");
             long startedTime = System.currentTimeMillis();
 			//If there are downstream senders, our final success report depends on there being no timeouts in the chain.
