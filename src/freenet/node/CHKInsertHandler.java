@@ -60,7 +60,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
     private byte[] headers;
     private BlockReceiver br;
     private Thread runThread;
-    PartiallyReceivedBlock prb;
+    private PartiallyReceivedBlock prb;
     final InsertTag tag;
     private boolean canWriteDatastore;
 	private final boolean forkOnCacheable;
@@ -68,6 +68,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 	private final boolean ignoreLowBackoff;
 	private final boolean realTimeFlag;
 	private boolean waiting = false;
+	private boolean waitingCompletion = false;
 
     CHKInsertHandler(NodeCHK key, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.node = node;
@@ -205,22 +206,10 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
         if(logMINOR) Logger.minor(this, "Sender finished with status "+status+" on "+this+" from "+sender);
         try {
             if(receiveFailed()) {
-                // Nothing else we can do
+                // Sender has just got back to us after an earlier receive failure.
+                // Nothing else we can do. Do not commit.
                 finish(CHKInsertSender.RECEIVE_FAILED);
                 return;
-            }
-            
-            if((!receivedRejectedOverload) && sender.receivedRejectedOverload()) {
-            	receivedRejectedOverload = true;
-            	// Forward it
-            	// Does not need to be sent synchronously since is non-terminal.
-            	Message m = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
-            	try {
-					source.sendAsync(m, null, this);
-				} catch (NotConnectedException e) {
-					if(logMINOR) Logger.minor(this, "Lost connection to source");
-					return;
-				}
             }
             
             // Local RejectedOverload's (fatal).
@@ -297,7 +286,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
             finish(CHKInsertSender.INTERNAL_ERROR);
             return;
         } finally {
-            tag.unlockHandler();
+            if(!waitingCompletion)
+                tag.unlockHandler();
         }
 	}
 
@@ -376,8 +366,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 	}
 
 	private boolean canCommit = false;
-    private boolean sentCompletion = false;
-    private Object sentCompletionLock = new Object();
+	private boolean sentCompletion = false;
+	private Object sentCompletionLock = new Object();
     
     /**
      * If canCommit, and we have received all the data, and it
@@ -401,74 +391,55 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		CHKBlock block = verify();
 		// If we wanted to reduce latency at the cost of security (bug 3338), we'd commit here, or even on the receiver thread.
 		
-        // Wait for completion
-        boolean sentCompletionWasSet;
-        synchronized(sentCompletionLock) {
-        	sentCompletionWasSet = sentCompletion;
-        	sentCompletion = true;
-        }
-        
-		Message m=null;
-		
-		boolean routingTookTooLong = false;
-        if((sender != null) && (!sentCompletionWasSet)) {
-            if(logMINOR) Logger.minor(this, "Waiting for completion");
-            long startedTime = System.currentTimeMillis();
-			//If there are downstream senders, our final success report depends on there being no timeouts in the chain.
-        	while(true) {
-        		synchronized(sender) {
-        			if(sender.completed()) {
-        				break;
-        			}
-        			try {
-        				int t = (int)Math.min(Integer.MAX_VALUE, startedTime + transferTimeout - System.currentTimeMillis());
-        				if(t > 0) sender.wait(t);
-        				else {
-        					routingTookTooLong = true;
-        					break;
-        				}
-        			} catch (InterruptedException e) {
-        				// Loop
-        			}
-        		}
-        	}
-        	if(routingTookTooLong) {
-        		tag.timedOutToHandlerButContinued();
-        		sentCompletionWasSet = true;
-        		try {
-        			source.sendAsync(DMT.createFNPInsertTransfersCompleted(uid, true), null, this);
-        		} catch (NotConnectedException e) {
-        			// Ignore.
-        		}
-        		
-        		Logger.error(this, "Insert took too long, telling downstream that it's finished and reassigning to self on "+this);
-        		
-        		// Still waiting.
-        		while(true) {
-        			synchronized(sender) {
-        				if(sender.completed()) {
-        					break;
-        				}
-        				try {
-        					sender.wait(SECONDS.toMillis(10));
-        				} catch (InterruptedException e) {
-        					// Loop
-        				}
-        			}
-        		}
-        		if(logMINOR) Logger.minor(this, "Completed after telling downstream on "+this);
-        	}
-        	boolean failed = sender.anyTransfersFailed();
-        	if(!sentCompletionWasSet)
-        		m = DMT.createFNPInsertTransfersCompleted(uid, failed);
+		if(sender != null) {
+		    waitingCompletion = true;
+		    node.ticker.queueTimedJob(new Runnable() {
+		        
+		        @Override
+		        public void run() {
+		            routingTookTooLong();
+		        }
+		        
+		    }, "CHKInsertHandler timeout", transferTimeout, false, false);
+		    // Wait for onCompletion() or routingTookTooLong().
+		    return;
 		}
 		
-		if((sender == null) && (!sentCompletionWasSet) && (canCommit)) {
-			//There are no downstream senders, but we stored the data locally, report successful transfer.
-			//Note that this is done even if the verify fails.
-			m = DMT.createFNPInsertTransfersCompleted(uid, false /* no timeouts */);
-		}		
-		
+        finishFinish(block, code);
+    }
+    
+    private boolean calledCompletion = false;
+    private boolean routingTookTooLong = false;
+    
+    private void routingTookTooLong() {
+        synchronized(this) {
+            if(calledCompletion) return;
+            if(routingTookTooLong) return;
+            routingTookTooLong = true;
+        }
+        tag.timedOutToHandlerButContinued();
+        sendCompletionAsync(true);
+        
+        Logger.error(this, "Insert took too long, telling downstream that it's finished and reassigning to self on "+this);
+        // Wait for completion.
+    }
+    
+    @Override
+    public void onCompletion(CHKInsertSender sender) {
+        boolean routingTookTooLong;
+        synchronized(this) {
+            routingTookTooLong = this.routingTookTooLong;
+            calledCompletion = true;
+        }
+        if(routingTookTooLong) {
+            if(logMINOR) Logger.minor(this, "Completed after telling downstream on "+this);
+        }
+        
+        finishFinish(verify(), sender.getStatus());
+    }
+    
+    private void finishFinish(CHKBlock block, int code) {
+        
 		// Don't commit until after we have received all the downstream transfer completion notifications.
 		// We don't want an attacker to see a ULPR notice from the inserter before he sees it from the end of the chain (bug 3338).
 		if(block != null) {
@@ -483,20 +454,13 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		// which will cause unnecessary rejects and thus mandatory backoff.
     	tag.unlockHandler();
         
-    	if(m != null) {
-        	try {
-        		// We do need to sendSync here so we have accurate byte counter totals.
-        		source.sendSync(m, this, realTimeFlag);
-        		if(logMINOR) Logger.minor(this, "Sent completion: "+m+" for "+this);
-        	} catch (NotConnectedException e1) {
-        		if(logMINOR) Logger.minor(this, "Not connected: "+source+" for "+this);
-        		// May need to commit anyway...
-        	} catch (SyncSendWaitedTooLongException e) {
-        		Logger.error(this, "Took too long to send "+m+" to "+source);
-        		// May need to commit anyway...
-			}
+    	if(canCommit)
+    	    sendCompletionSync(sender != null && sender.anyTransfersFailed());
+    	else {
+    	    if(logMINOR)
+    	        Logger.minor(this, "Not sending completion because of non-committing failure mode for "+this+" status="+code+" receive failed="+receiveFailed());
     	}
-		        
+		
         if(code != CHKInsertSender.TIMED_OUT && code != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && 
         		code != CHKInsertSender.INTERNAL_ERROR && code != CHKInsertSender.ROUTE_REALLY_NOT_FOUND &&
         		code != CHKInsertSender.RECEIVE_FAILED && !receiveFailed()) {
@@ -518,6 +482,38 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
         }
     }
     
+    private void sendCompletionSync(boolean timeout) {
+        synchronized(sentCompletionLock) {
+            if(sentCompletion) return;
+            sentCompletion = true;
+        }
+        Message m = DMT.createFNPInsertTransfersCompleted(uid, timeout);
+        try {
+            // We do need to sendSync here so we have accurate byte counter totals.
+            source.sendSync(m, this, realTimeFlag);
+            if(logMINOR) Logger.minor(this, "Sent completion: "+m+" for "+this);
+        } catch (NotConnectedException e1) {
+            if(logMINOR) Logger.minor(this, "Not connected: "+source+" for "+this);
+            // May need to commit anyway...
+        } catch (SyncSendWaitedTooLongException e) {
+            Logger.error(this, "Took too long to send "+m+" to "+source);
+            // May need to commit anyway...
+        }
+    }
+
+    private void sendCompletionAsync(boolean timeout) {
+        synchronized(sentCompletionLock) {
+            if(sentCompletion) return;
+            sentCompletion = true;
+        }
+        try {
+            source.sendAsync(DMT.createFNPInsertTransfersCompleted(uid, timeout), null, this);
+        } catch (NotConnectedException e) {
+            // Ignore.
+        }
+    }
+    
+
     /**
      * Verify data, or send DataInsertRejected.
      */
@@ -700,5 +696,22 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		}
 		
 	};
-    
+
+    @Override
+    public void onReceivedRejectedOverload(CHKInsertSender sender) {
+        synchronized(this) {
+            if(receivedRejectedOverload) return;
+            receivedRejectedOverload = true;
+        }
+        // Forward it
+        // Does not need to be sent synchronously since is non-terminal.
+        Message m = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
+        try {
+            source.sendAsync(m, null, this);
+        } catch (NotConnectedException e) {
+            if(logMINOR) Logger.minor(this, "Lost connection to source");
+            return;
+        }
+    }
+
 }
