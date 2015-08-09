@@ -367,7 +367,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     
     private final CopyOnWriteArrayList<InsertSenderListener> listeners = 
             new CopyOnWriteArrayList<InsertSenderListener>();
-    private boolean calledListeners = false;
+    private boolean calledListenersStatus = false;
     
     /** Have all transfers completed and all nodes reported completion status? */
     private boolean allTransfersCompleted;
@@ -1409,14 +1409,14 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	
 	private synchronized void callListenersOffThread(final int status) {
 	    assert(status != NOT_FINISHED);
-	    if(calledListeners) {
+	    if(calledListenersStatus) {
 	        // FIXME is this legal or not?
 	        Logger.error(this, "Calling listeners twice for "+this+" with status "+status, 
 	                new Exception("debug"));
 	        return;
 	    }
 	    // Whether it's legal or not, the listeners only want to be called ONCE.
-	    calledListeners = true;
+	    calledListenersStatus = true;
 	    for(InsertSenderListener listener : listeners)
 	        callListenerOffThread(listener, status);
 	}
