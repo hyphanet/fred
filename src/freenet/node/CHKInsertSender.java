@@ -419,8 +419,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
             synchronized (this) {
 				myStatus = status;
 			}
-            if(myStatus == NOT_FINISHED)
-            	finish(INTERNAL_ERROR, null);
         }
     }
     
