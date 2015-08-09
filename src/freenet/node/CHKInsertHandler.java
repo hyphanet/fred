@@ -211,19 +211,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
                 return;
             }
             
-            if((!receivedRejectedOverload) && sender.receivedRejectedOverload()) {
-            	receivedRejectedOverload = true;
-            	// Forward it
-            	// Does not need to be sent synchronously since is non-terminal.
-            	Message m = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
-            	try {
-					source.sendAsync(m, null, this);
-				} catch (NotConnectedException e) {
-					if(logMINOR) Logger.minor(this, "Lost connection to source");
-					return;
-				}
-            }
-            
             // Local RejectedOverload's (fatal).
             // Internal error counts as overload. It'd only create a timeout otherwise, which is the same thing anyway.
             if((status == CHKInsertSender.TIMED_OUT) ||
@@ -708,5 +695,22 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		}
 		
 	};
+
+    @Override
+    public void onReceivedRejectedOverload(CHKInsertSender sender) {
+        synchronized(this) {
+            if(receivedRejectedOverload) return;
+            receivedRejectedOverload = true;
+        }
+        // Forward it
+        // Does not need to be sent synchronously since is non-terminal.
+        Message m = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
+        try {
+            source.sendAsync(m, null, this);
+        } catch (NotConnectedException e) {
+            if(logMINOR) Logger.minor(this, "Lost connection to source");
+            return;
+        }
+    }
 
 }

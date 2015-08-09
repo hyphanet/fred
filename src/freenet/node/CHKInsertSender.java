@@ -771,9 +771,11 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     	if(hasForwardedRejectedOverload) return;
     	hasForwardedRejectedOverload = true;
    		notifyAll();
+        for(InsertSenderListener listener : listeners)
+            callListenerOffThreadRejectedOverload(listener);
 	}
 	
-	private void setTransferTimedOut() {
+    private void setTransferTimedOut() {
 		synchronized(this) {
 			if(!transferTimedOut) {
 				transferTimedOut = true;
@@ -1463,5 +1465,23 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
             
         }, "CHKInsertHandler completion callback for "+uid);
     }
+    
+    private void callListenerOffThreadRejectedOverload(final InsertSenderListener listener) {
+        node.executor.execute(new PrioRunnable() {
+
+            @Override
+            public void run() {
+                listener.onReceivedRejectedOverload(CHKInsertSender.this);
+            }
+ 
+            @Override
+            public int getPriority() {
+                return NativeThread.HIGH_PRIORITY;
+            }
+            
+        }, "CHKInsertHandler rejected overload callback for "+uid);
+    }
+
+
 
 }
