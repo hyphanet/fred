@@ -810,7 +810,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
                         if(code == SUCCESS)
                             Logger.error(this, "Request succeeded despite receive failed?! on "+this);
                     } else if(status != TIMED_OUT)
-                        throw new IllegalStateException("finish() called with "+code+" when was already "+status);
+                        throw new IllegalStateException("finish() called with "+code+" when was already "+status+" on "+this);
                 } else {
                     status = code;
                     notifyAll();
