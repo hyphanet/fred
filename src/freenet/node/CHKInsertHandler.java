@@ -448,15 +448,17 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
     @Override
     public void onCompletion(CHKInsertSender sender) {
         boolean routingTookTooLong;
+        int code;
         synchronized(this) {
             routingTookTooLong = this.routingTookTooLong;
             calledCompletion = true;
+            code = finishingCode;
         }
         if(routingTookTooLong) {
             if(logMINOR) Logger.minor(this, "Completed after telling downstream on "+this);
         }
         
-        finishFinish(verify(), sender.getStatus());
+        finishFinish(verify(), code);
     }
     
     private void finishFinish(CHKBlock block, int code) {
