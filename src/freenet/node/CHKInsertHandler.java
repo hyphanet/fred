@@ -404,6 +404,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
     }
     
     private void finishAfterReceiveCompleted(int code) {
+        if(logMINOR) Logger.minor(this, "Finish after receive completed: "+code+" on "+this);
 		
         long transferTimeout = realTimeFlag ?
                 CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME :
@@ -413,7 +414,10 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		// If we wanted to reduce latency at the cost of security (bug 3338), we'd commit here, or even on the receiver thread.
 		
 		if(sender != null) {
-		    waitingCompletion = true;
+		    if(logMINOR) Logger.minor(this, "Waiting for sender to finish on "+this);
+		    synchronized(this) {
+		        waitingCompletion = true;
+		    }
 		    node.ticker.queueTimedJob(new Runnable() {
 		        
 		        @Override
@@ -437,6 +441,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
             if(calledCompletion) return;
             if(routingTookTooLong) return;
             routingTookTooLong = true;
+            if(!waitingCompletion) return;
         }
         tag.timedOutToHandlerButContinued();
         sendCompletionAsync(true);
@@ -453,6 +458,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
             routingTookTooLong = this.routingTookTooLong;
             calledCompletion = true;
             code = finishingCode;
+            if(!waitingCompletion) return;
         }
         if(routingTookTooLong) {
             if(logMINOR) Logger.minor(this, "Completed after telling downstream on "+this);
