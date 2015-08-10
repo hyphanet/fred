@@ -414,20 +414,26 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		// If we wanted to reduce latency at the cost of security (bug 3338), we'd commit here, or even on the receiver thread.
 		
 		if(sender != null) {
-		    if(logMINOR) Logger.minor(this, "Waiting for sender to finish on "+this);
-		    synchronized(this) {
-		        waitingCompletion = true;
-		    }
-		    node.ticker.queueTimedJob(new Runnable() {
-		        
-		        @Override
-		        public void run() {
-		            routingTookTooLong();
+		    if(sender.completed()) {
+		        synchronized(this) {
+		            calledCompletion = true;
 		        }
-		        
-		    }, "CHKInsertHandler timeout", transferTimeout, false, false);
-		    // Wait for onCompletion() or routingTookTooLong().
-		    return;
+		    } else {
+		        if(logMINOR) Logger.minor(this, "Waiting for sender to finish on "+this);
+		        synchronized(this) {
+		            waitingCompletion = true;
+		        }
+		        node.ticker.queueTimedJob(new Runnable() {
+		            
+		            @Override
+		            public void run() {
+		                routingTookTooLong();
+		            }
+		            
+		        }, "CHKInsertHandler timeout", transferTimeout, false, false);
+		        // Wait for onCompletion() or routingTookTooLong().
+		        return;
+		    }
 		}
 		
         finishFinish(block, code);
