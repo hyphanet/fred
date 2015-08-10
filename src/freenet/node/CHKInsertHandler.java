@@ -448,6 +448,10 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
         
         Logger.error(this, "Insert took too long, telling downstream that it's finished and reassigning to self on "+this);
         // Wait for completion.
+        if(sender.completed()) {
+            Logger.error(this, "Missed completion notification on "+this);
+            onCompletion(sender);
+        }
     }
     
     @Override
