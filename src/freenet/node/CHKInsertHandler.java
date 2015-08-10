@@ -404,6 +404,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
     }
     
     private void finishAfterReceiveCompleted(int code) {
+        if(logMINOR) Logger.minor(this, "Finish after receive completed: "+code+" on "+this);
 		
         long transferTimeout = realTimeFlag ?
                 CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME :
@@ -413,17 +414,26 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		// If we wanted to reduce latency at the cost of security (bug 3338), we'd commit here, or even on the receiver thread.
 		
 		if(sender != null) {
-		    waitingCompletion = true;
-		    node.ticker.queueTimedJob(new Runnable() {
-		        
-		        @Override
-		        public void run() {
-		            routingTookTooLong();
+		    if(sender.completed()) {
+		        synchronized(this) {
+		            calledCompletion = true;
 		        }
-		        
-		    }, "CHKInsertHandler timeout", transferTimeout, false, false);
-		    // Wait for onCompletion() or routingTookTooLong().
-		    return;
+		    } else {
+		        if(logMINOR) Logger.minor(this, "Waiting for sender to finish on "+this);
+		        synchronized(this) {
+		            waitingCompletion = true;
+		        }
+		        node.ticker.queueTimedJob(new Runnable() {
+		            
+		            @Override
+		            public void run() {
+		                routingTookTooLong();
+		            }
+		            
+		        }, "CHKInsertHandler timeout", transferTimeout, false, false);
+		        // Wait for onCompletion() or routingTookTooLong().
+		        return;
+		    }
 		}
 		
         finishFinish(block, code);
@@ -437,12 +447,17 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
             if(calledCompletion) return;
             if(routingTookTooLong) return;
             routingTookTooLong = true;
+            if(!waitingCompletion) return;
         }
         tag.timedOutToHandlerButContinued();
         sendCompletionAsync(true);
         
         Logger.error(this, "Insert took too long, telling downstream that it's finished and reassigning to self on "+this);
         // Wait for completion.
+        if(sender.completed()) {
+            Logger.error(this, "Missed completion notification on "+this);
+            onCompletion(sender);
+        }
     }
     
     @Override
@@ -451,8 +466,10 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
         int code;
         synchronized(this) {
             routingTookTooLong = this.routingTookTooLong;
+            if(calledCompletion) return;
             calledCompletion = true;
             code = finishingCode;
+            if(!waitingCompletion) return;
         }
         if(routingTookTooLong) {
             if(logMINOR) Logger.minor(this, "Completed after telling downstream on "+this);

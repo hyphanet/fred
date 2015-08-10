@@ -866,6 +866,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     }
 
     private void finishFinish(PeerNode next) {
+        if(logMINOR) Logger.minor(this, "Finishing completion of "+this+" from "+next);
         boolean complete = false;
         try {
             boolean failedRecv = false; // receiveFailed is protected by backgroundTransfers but status by this
@@ -1557,6 +1558,12 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	    listeners.add(listener);
 	    if(status != NOT_FINISHED) {
 	        callListenerOffThread(listener, status);
+	    }
+	    if(calledListenersCompletion) {
+	        callListenerOffThreadCompletion(listener);
+	    }
+	    if(hasForwardedRejectedOverload) {
+	        callListenerOffThreadRejectedOverload(listener);
 	    }
 	}
 	
