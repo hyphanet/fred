@@ -119,6 +119,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob$");
 	private static final Pattern mainTempBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
 	private static final Pattern revocationTempBuildNumberPattern = Pattern.compile("^revocation(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
+	/** If we fetched the main jar locally, there is a 1 in RANDOM_INSERT_BLOB chance of inserting it.
+	 * We always insert it if we downloaded it via UOM. We always reinsert revocations. */
+    protected static final int RANDOM_INSERT_BLOB = 10;
 	private boolean fetchingUOM;
 	
 	private final HashMap<ShortBuffer, File> dependencies;
@@ -1053,7 +1056,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					if(!fromDisk)
 						temp.free();
 
-					insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
+					insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation", RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 				} else {
 					String message = "Failed to fetch revocation certificate from blob from " +
 						source + " : "+e+
@@ -1074,7 +1077,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				updateManager.revocationChecker.onSuccess(result, state, cleanedBlob);
 				if(!fromDisk)
 					temp.free();
-				insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
+				insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation", RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 			}
 			
             @Override
@@ -1103,7 +1106,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 	}
 
-	protected void insertBlob(final RandomAccessBucket bucket, final String type) {
+	protected void insertBlob(final RandomAccessBucket bucket, final String type, short priority) {
 		ClientPutCallback callback = new ClientPutCallback() {
 
 			@Override
@@ -1149,7 +1152,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false).getInsertContext(true);
 		ClientPutter putter = new ClientPutter(callback, bucket,
 			FreenetURI.EMPTY_CHK_URI, null, ctx,
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, null, true, updateManager.node.clientCore.clientContext, null, -1);
+			priority, false, null, true, updateManager.node.clientCore.clientContext, null, -1);
 		try {
 			updateManager.node.clientCore.clientContext.start(putter);
 		} catch(InsertException e1) {
@@ -1528,7 +1531,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 				mainUpdater.onSuccess(result, state, cleanedBlobFile, version);
 				temp.delete();
-				insertBlob(mainUpdater.getBlobBucket(version), "main jar");
+				
+				maybeInsertMainJar(mainUpdater, source, version);
 			}
 
             @Override
@@ -1556,7 +1560,24 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 	}
 
-	protected boolean removeOldTempFiles() {
+	/** Maybe insert the main jar blob. If so, compute the appropriate priority. */
+	protected void maybeInsertMainJar(NodeUpdater mainUpdater, PeerNode source, int version) {
+	    short priority = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
+	    if(source != null) {
+	        // We got it from another node.
+	        priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+	    } else if(updateManager.node.lastVersion > 0 && 
+	            updateManager.node.lastVersion != version) {
+	        // We just restarted after updating.
+	        priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+	    } else if(updateManager.node.fastWeakRandom.nextInt(RANDOM_INSERT_BLOB) != 0) {
+	        // 1 in RANDOM_INSERT_BLOB chance of inserting anyway at bulk priority.
+	        return;
+	    }
+        insertBlob(mainUpdater.getBlobBucket(version), "main jar", priority);
+    }
+
+    protected boolean removeOldTempFiles() {
 		File oldTempFilesPeerDir = updateManager.node.clientCore.getPersistentTempDir();
 		if(!oldTempFilesPeerDir.exists())
 			return false;
