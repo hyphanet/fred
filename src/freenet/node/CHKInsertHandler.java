@@ -460,6 +460,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
         int code;
         synchronized(this) {
             routingTookTooLong = this.routingTookTooLong;
+            if(calledCompletion) return;
             calledCompletion = true;
             code = finishingCode;
             if(!waitingCompletion) return;
