@@ -292,7 +292,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		}
 
 		/** Called when we have received an InsertReply, RouteNotFound or other
-		 * successful or quasi-successful completion to routing. */
+		 * successful or quasi-successful completion to routing. In general, this
+		 * means the transfer has started and we must wait for it to be cancelled. */
 		public void onCompleted() {
 			synchronized(backgroundTransfers) {
 				if(finishedWaiting) return;
@@ -305,7 +306,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			startWait();
 		}
 
-		/** Called when we get a failure, e.g. DataInsertRejected. */
+		/** Called when we get a failure, e.g. DataInsertRejected, and the other side
+		 * never started receiving the data. */
 		public void kill() {
 			Logger.normal(this, "Killed "+this);
 			receivedNotice(false, false, true); // as far as we know
