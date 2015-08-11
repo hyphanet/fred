@@ -479,6 +479,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
     }
     
     private void finishFinish(CHKBlock block, int code) {
+        if(logMINOR) Logger.minor(this, "Finishing with "+code+" on "+this, new Exception("debug"));
         
 		// Don't commit until after we have received all the downstream transfer completion notifications.
 		// We don't want an attacker to see a ULPR notice from the inserter before he sees it from the end of the chain (bug 3338).
