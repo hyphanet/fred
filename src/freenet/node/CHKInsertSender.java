@@ -155,7 +155,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			synchronized(backgroundTransfers) {
 				if(finishedWaiting) {
 				    if(transferSucceeded && !(kill || killed))
-						Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+","+kill+")", new Exception("error"));
+						Logger.warning(this, "Finished waiting already yet receivedNotice("+success+","+timeout+","+kill+")");
 					// Make sure we don't lose the notification.
 					backgroundTransfers.notifyAll();
 					onBackgroundTransferProgress();
