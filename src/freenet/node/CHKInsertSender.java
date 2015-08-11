@@ -141,8 +141,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			synchronized(backgroundTransfers) {
 				//transferSucceeded = success; //FIXME Don't used
 				completedTransfer = true;
-				backgroundTransfers.notifyAll();
-				onBackgroundTransferProgress();
+				// We do not need to notify, because the CHKInsertSender is waiting for the 
+				// notification. In case of an error the caller must call receivedNotice().
 			}
 		}
 		
