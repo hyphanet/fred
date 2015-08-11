@@ -135,14 +135,14 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		}
 		
 		private void completedTransfer(boolean success) {
+            if(!success) {
+                setTransferTimedOut();
+            }
 			synchronized(backgroundTransfers) {
 				//transferSucceeded = success; //FIXME Don't used
 				completedTransfer = true;
 				backgroundTransfers.notifyAll();
 				onBackgroundTransferProgress();
-			}
-			if(!success) {
-				setTransferTimedOut();
 			}
 		}
 		
@@ -156,6 +156,9 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				if(finishedWaiting) {
 					if(!(killed || kill))
 						Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+","+kill+")", new Exception("error"));
+					// Make sure we don't lose the notification.
+					backgroundTransfers.notifyAll();
+					onBackgroundTransferProgress();
 					return false;
 				}
 				if(killed) {
