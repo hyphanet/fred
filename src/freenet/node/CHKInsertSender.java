@@ -50,7 +50,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		/** Have we completed the immediate transfer? */
 		boolean completedTransfer;
 		/** Did it succeed? */
-		//boolean transferSucceeded;
+		boolean transferSucceeded;
 		
 		/** Do we have the InsertReply, RNF or similar completion? If not,
 		 * there is no point starting to wait for a timeout. */
@@ -139,10 +139,10 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
                 setTransferTimedOut();
             }
 			synchronized(backgroundTransfers) {
-				//transferSucceeded = success; //FIXME Don't used
+				transferSucceeded = success;
 				completedTransfer = true;
-				backgroundTransfers.notifyAll();
-				onBackgroundTransferProgress();
+				// We do not need to notify, because the CHKInsertSender is waiting for the 
+				// notification. In case of an error the caller must call receivedNotice().
 			}
 		}
 		
@@ -154,8 +154,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			boolean gotFatalTimeout = false;
 			synchronized(backgroundTransfers) {
 				if(finishedWaiting) {
-					if(!(killed || kill))
-						Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+","+kill+")", new Exception("error"));
+				    if(transferSucceeded && !(kill || killed))
+						Logger.warning(this, "Finished waiting already yet receivedNotice("+success+","+timeout+","+kill+")");
 					// Make sure we don't lose the notification.
 					backgroundTransfers.notifyAll();
 					onBackgroundTransferProgress();
@@ -292,7 +292,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		}
 
 		/** Called when we have received an InsertReply, RouteNotFound or other
-		 * successful or quasi-successful completion to routing. */
+		 * successful or quasi-successful completion to routing. In general, this
+		 * means the transfer has started and we must wait for it to be cancelled. */
 		public void onCompleted() {
 			synchronized(backgroundTransfers) {
 				if(finishedWaiting) return;
@@ -305,7 +306,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			startWait();
 		}
 
-		/** Called when we get a failure, e.g. DataInsertRejected. */
+		/** Called when we get a failure, e.g. DataInsertRejected, and the other side
+		 * never started receiving the data. */
 		public void kill() {
 			Logger.normal(this, "Killed "+this);
 			receivedNotice(false, false, true); // as far as we know
