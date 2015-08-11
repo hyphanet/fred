@@ -5370,9 +5370,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			throw new IllegalArgumentException("Only requests can have offeredKey=true");
 		synchronized(routedToLock) {
 			if(offeredKey)
-				tag.removeFetchingOfferedKeyFrom(this);
+				if(!tag.removeFetchingOfferedKeyFrom(this)) return;
 			else
-				tag.removeRoutingTo(this);
+				if(!tag.removeRoutingTo(this)) return;
 		}
 		if(logMINOR) Logger.minor(this, "No longer routing "+tag+" to "+this);
 		outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
