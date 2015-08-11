@@ -163,11 +163,11 @@ public abstract class UIDTag {
 	 * already removed the node from our routed-to list.
 	 */
 	public boolean removeRoutingTo(PeerNode next) {
-		if(logMINOR)
-			Logger.minor(this, "No longer routing to "+next+" on "+this, new Exception("debug"));
 		boolean noRecordUnlock;
 		boolean found = false;
 		synchronized(this) {
+	        if(logMINOR)
+	            Logger.minor(this, "No longer routing to "+next+" on "+this, new Exception("debug"));
 			if(currentlyRoutingTo == null) return false;
 			found |= currentlyRoutingTo.remove(next);
 			if(!found) {
