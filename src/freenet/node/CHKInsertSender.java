@@ -50,7 +50,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		/** Have we completed the immediate transfer? */
 		boolean completedTransfer;
 		/** Did it succeed? */
-		//boolean transferSucceeded;
+		boolean transferSucceeded;
 		
 		/** Do we have the InsertReply, RNF or similar completion? If not,
 		 * there is no point starting to wait for a timeout. */
@@ -139,7 +139,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
                 setTransferTimedOut();
             }
 			synchronized(backgroundTransfers) {
-				//transferSucceeded = success; //FIXME Don't used
+				transferSucceeded = success;
 				completedTransfer = true;
 				// We do not need to notify, because the CHKInsertSender is waiting for the 
 				// notification. In case of an error the caller must call receivedNotice().
@@ -154,7 +154,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			boolean gotFatalTimeout = false;
 			synchronized(backgroundTransfers) {
 				if(finishedWaiting) {
-					if(!(killed || kill))
+				    if(transferSucceeded && !(kill || killed))
 						Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+","+kill+")", new Exception("error"));
 					// Make sure we don't lose the notification.
 					backgroundTransfers.notifyAll();
