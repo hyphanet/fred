@@ -1800,11 +1800,9 @@ public class PeerManager {
 	
 	public void changePeerNodeStatus(PeerNode peerNode, int oldPeerNodeStatus,
 			int peerNodeStatus, boolean noLog) {
-		Integer newStatus = Integer.valueOf(peerNodeStatus);
-		Integer oldStatus = Integer.valueOf(oldPeerNodeStatus);
-		this.allPeersStatuses.changePeerNodeStatus(peerNode, oldStatus, newStatus, noLog);
+		this.allPeersStatuses.changePeerNodeStatus(peerNode, oldPeerNodeStatus, peerNodeStatus, noLog);
 		if(!peerNode.isOpennet())
-			this.darknetPeersStatuses.changePeerNodeStatus(peerNode, oldStatus, newStatus, noLog);
+			this.darknetPeersStatuses.changePeerNodeStatus(peerNode, oldPeerNodeStatus, peerNodeStatus, noLog);
 		node.executor.execute(new Runnable() {
 
 			@Override
