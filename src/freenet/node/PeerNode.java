@@ -1490,19 +1490,21 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public boolean shouldSendHandshake() {
 		long now = System.currentTimeMillis();
 		boolean tempShouldSendHandshake = false;
+		boolean disconnected;
 		synchronized(this) {
 			if(disconnecting) return false;
-			tempShouldSendHandshake = ((now > sendHandshakeTime) && (handshakeIPs != null) && (isRekeying || !isConnected()));
+			disconnected = !isConnected();
+			tempShouldSendHandshake = ((now > sendHandshakeTime) && (handshakeIPs != null) && (isRekeying || disconnected));
 		}
 		if(logMINOR) Logger.minor(this, "shouldSendHandshake(): initial = "+tempShouldSendHandshake);
 		if(tempShouldSendHandshake && (hasLiveHandshake(now)))
 			tempShouldSendHandshake = false;
 		if(tempShouldSendHandshake) {
-			if(isBurstOnly()) {
+			if(disconnected && isBurstOnly()) {
 				synchronized(this) {
 					isBursting = true;
 				}
-				setPeerNodeStatus(System.currentTimeMillis());
+			    setPeerNodeStatus(System.currentTimeMillis());
 			} else
 				return true;
 		}
@@ -1539,7 +1541,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * Set sendHandshakeTime, and return whether to fetch the ARK.
 	 */
 	protected boolean innerCalcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, long now) {
-		if(isBurstOnly())
+		if((!isConnected()) && isBurstOnly())
 			return calcNextHandshakeBurstOnly(now);
 		synchronized(this) {
 			long delay;
