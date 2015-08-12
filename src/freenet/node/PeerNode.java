@@ -320,7 +320,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/** The time at which we last completed a connection setup. */
 	private long connectedTime;
 	/** The status of this peer node in terms of Node.PEER_NODE_STATUS_* */
-	public int peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
+	private int peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
 
 	static final long CHECK_FOR_SWAPPED_TRACKERS_INTERVAL = FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL / 30;
 
