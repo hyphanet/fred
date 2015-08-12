@@ -29,13 +29,13 @@ class PeerStatusTracker<K extends Object> {
 					Logger.error(this, "addPeerNodeStatus(): node already in peerNodeStatuses: " + peerNode + " status " + peerNodeStatus, new Exception("debug"));
 				return;
 			}
-			statuses.remove(peerNodeStatus);
-		} else
+		} else {
 			statusSet = new WeakHashSet<PeerNode>();
+			statuses.put(peerNodeStatus, statusSet);
+		}
 		if(logMINOR)
 			Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '" + peerNode.getIdentityString() + "' with status '" + peerNodeStatus + "'");
 		statusSet.add(peerNode);
-		statuses.put(peerNodeStatus, statusSet);
 	}
 
 	public synchronized int statusSize(K pnStatus) {
