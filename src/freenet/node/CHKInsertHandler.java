@@ -59,7 +59,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
     private CHKInsertSender sender;
     private byte[] headers;
     private BlockReceiver br;
-    private Thread runThread;
     private PartiallyReceivedBlock prb;
     final InsertTag tag;
     private boolean canWriteDatastore;
@@ -107,8 +106,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
     }
     
     private void realRun() {
-        runThread = Thread.currentThread();
-        
         // FIXME implement rate limiting or something!
         // Send Accepted
         Message accepted = DMT.createFNPAccepted(uid);
@@ -194,7 +191,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
         // yet, we probably want to kill the sender.
         // So we call the wait method on the CHKInsertSender, but we
         // also have a flag locally to indicate the receive failed.
-        // And if it does, we interrupt.
         if(logMINOR) Logger.minor(this, "Waiting asynchronously for insert to finish on "+this+" for "+sender);
         sender.addListener(this);
         waiting = true;
@@ -625,7 +621,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
         			// Cancel the sender
         			if(sender != null)
         				sender.onReceiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
-        			runThread.interrupt();
         			tag.timedOutToHandlerButContinued(); // sender is finished, or will be very soon; we may however be waiting for the sendAborted downstream.
         			Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
         			try {
