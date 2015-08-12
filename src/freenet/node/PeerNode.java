@@ -3482,9 +3482,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			return "peer_unknown_status";
 	}
 
+	/** Calculate the current status. Do not update this.peerNodeStatus and do not update the
+	 * PeerManager. */
 	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntilRT, long localRoutingBackedOffUntilBulk, boolean overPingTime, boolean noLoadStats) {
 		if(disconnecting)
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
+		int peerNodeStatus; // Caller's responsibility to update this.peerNodeStatus.
 		boolean isConnected = isConnected();
 		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
 			if(noLoadStats)
