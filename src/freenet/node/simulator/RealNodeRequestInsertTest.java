@@ -46,7 +46,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
     static final int NUMBER_OF_NODES = 100;
     static final int DEGREE = 10;
-    static final short MAX_HTL = (short)5;
+    /* HTL is higher than it needs to be because we don't cache until htl <= max-3.
+     * The insert is forked at this point, so it will still get stored on the "ideal" nodes. */
+    static final short MAX_HTL = (short)7;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
     static final boolean ENABLE_SWAPPING = false;
