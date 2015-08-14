@@ -288,7 +288,7 @@ public class NewPacketFormatKeyContext {
 			}
 		}
 		if(count > 0 && logMINOR)
-			Logger.minor(this, "" + count + " packets in flight with threshold " + maxDelay + "ms");
+			Logger.minor(this, "" + count + " packets in flight with threshold " + maxDelay + "ms to "+pn);
 		if(bigLostCount != 0 && pn != null) {
 			PacketThrottle throttle = pn.getThrottle();
 			if(throttle != null) {

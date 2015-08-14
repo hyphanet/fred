@@ -217,7 +217,7 @@ public class NewPacketFormat implements PacketFormat {
 			PartiallyReceivedBuffer recvBuffer = receiveBuffers.get(fragment.messageID);
 			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
 			if(recvBuffer == null) {
-				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": Creating buffer");
+				if(logDEBUG) Logger.debug(this, "Message id " + fragment.messageID + ": Creating buffer");
 
 				recvBuffer = new PartiallyReceivedBuffer(this);
 				if(fragment.firstFragment) {
@@ -285,7 +285,7 @@ public class NewPacketFormat implements PacketFormat {
 
 				fullyReceived.add(recvBuffer.buffer);
 				
-				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": Completed");
+				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": Completed from "+sessionKey.pn);
 			} else {
 				if(logDEBUG) Logger.debug(this, "Message id " + fragment.messageID + ": " + recvMap);
 			}
@@ -374,7 +374,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
 			NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
 			if(p != null) {
-				if(logMINOR) Logger.minor(this, "Received packet " + p.getSequenceNumber()+" on "+sessionKey);
+				if(logMINOR) Logger.minor(this, "Received packet " + p.getSequenceNumber()+" on "+sessionKey+" for "+sessionKey.pn);
 				return p;
 			}
 		}
