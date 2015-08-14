@@ -992,7 +992,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	 * queued at plus the lesser of half the RTT or 100ms if there are acks queued. 
 	 * Otherwise Long.MAX_VALUE to indicate that we need to get messages from the queue. */
 	@Override
-	public long timeNextUrgent(boolean canSend) {
+	public long timeNextUrgent(boolean canSend, long now) {
 		long ret = Long.MAX_VALUE;
 		if(canSend) {
 			// Is there anything in flight?
@@ -1014,9 +1014,9 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 		}
 		// Check for acks.
 		ret = Math.min(ret, timeCheckForAcks());
-		
+				
 		// Always wake up after half an RTT, check whether stuff is lost or needs ack'ing.
-		ret = Math.min(ret, System.currentTimeMillis() + Math.min(100, (long)averageRTT()/2));
+		ret = Math.min(ret, now + Math.min(100, (long)averageRTT()/2));
 		
 		if(canSend && DO_KEEPALIVES) {
 		    synchronized(this) {
