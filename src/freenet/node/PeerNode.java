@@ -1826,7 +1826,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			// Not urgent. This makes up the majority of the total writes.
 			// Writing it on shutdown is sufficient.
 			node.peers.writePeers(isOpennet());
-		setPeerNodeStatus(System.currentTimeMillis());
+		synchronized(this) {
+		    if(!isConnected()) return; // Race condition.
+	        setPeerNodeStatus(System.currentTimeMillis());
+		}
 	}
 
 	/**
