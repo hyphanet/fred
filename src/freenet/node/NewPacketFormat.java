@@ -1014,13 +1014,15 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 		}
 		// Check for acks.
 		ret = Math.min(ret, timeCheckForAcks());
-				
-		// Always wake up after half an RTT, check whether stuff is lost or needs ack'ing.
-		ret = Math.min(ret, now + Math.min(100, (long)averageRTT()/2));
 		
-		if(canSend && DO_KEEPALIVES) {
-		    synchronized(this) {
-		        ret = Math.min(ret, timeLastSentPayload + Node.KEEPALIVE_INTERVAL);
+		if(ret > now) {
+		    // Always wake up after half an RTT, check whether stuff is lost or needs ack'ing.
+		    ret = Math.min(ret, now + Math.min(100, (long)averageRTT()/2));
+		    
+		    if(canSend && DO_KEEPALIVES) {
+		        synchronized(this) {
+		            ret = Math.min(ret, timeLastSentPayload + Node.KEEPALIVE_INTERVAL);
+		        }
 		    }
 		}
 
