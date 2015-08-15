@@ -34,7 +34,7 @@ class PeerStatusTracker<K extends Object> {
 			statuses.put(peerNodeStatus, statusSet);
 		}
 		if(logMINOR)
-			Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '" + peerNode.getIdentityString() + "' with status '" + peerNodeStatus + "'");
+			Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '" + peerNode.getIdentityString() + "' with status '" + peerNodeStatus + "'", new Exception("debug"));
 		statusSet.add(peerNode);
 	}
 
@@ -59,7 +59,7 @@ class PeerStatusTracker<K extends Object> {
 				statuses.remove(peerNodeStatus);
 		}
 		if(logMINOR)
-			Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '" + peerNode.getIdentityString() + "' with status '" + peerNodeStatus + "'");
+			Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '" + peerNode.getIdentityString() + "' with status '" + peerNodeStatus + "'", new Exception("debug"));
 	}
 	
 	public synchronized void changePeerNodeStatus(PeerNode peerNode, K oldPeerNodeStatus,
