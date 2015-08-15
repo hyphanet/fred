@@ -3567,7 +3567,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return setPeerNodeStatus(now, false);
 	}
 
-	public int setPeerNodeStatus(long now, boolean noLog) {
+	/* Calls calculatePeerNodeStatus() to calculate the current status, and then updates everyone
+	 * who needs to know. In particular the PeerStatusTracker but also load management stuff and
+	 * UI listeners. Should not be overridden in general. 
+	 * @param now The current time.
+	 * @param noLog If true don't complain if a peer status e.g. isn't in the tracker. */
+	public final int setPeerNodeStatus(long now, boolean noLog) {
 		long localRoutingBackedOffUntilRT = getRoutingBackedOffUntil(true);
 		long localRoutingBackedOffUntilBulk = getRoutingBackedOffUntil(true);
 		int oldPeerNodeStatus;
