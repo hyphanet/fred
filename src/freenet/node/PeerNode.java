@@ -3486,9 +3486,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			return "peer_unknown_status";
 	}
 
-	/** Calculate the current status. Do not update this.peerNodeStatus and do not update the
-	 * PeerManager. */
-	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntilRT, long localRoutingBackedOffUntilBulk, boolean overPingTime, boolean noLoadStats) {
+	/** Calculate the current status. Does not update peerNodeStatus itself, nor does it update
+	 * the various listeners and trackers interested in peer statuses; see 
+	 * setPeerNodeStatus(long, boolean) for that. Override this method to implement special peer
+	 * statuses that are specific to your PeerNode implementation (e.g. DarknetPeerNode).
+	 * You should generally call this method and then adjust the return value in special cases.
+	 * Note that this method updates the backoff statistics. */
+	protected synchronized int calculatePeerNodeStatus(long now, long routingBackedOffUntilRT, long localRoutingBackedOffUntilBulk, boolean overPingTime, boolean noLoadStats) {
 		if(disconnecting)
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
 		int peerNodeStatus; // Caller's responsibility to update this.peerNodeStatus.
@@ -3567,7 +3571,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return setPeerNodeStatus(now, false);
 	}
 
-	public int setPeerNodeStatus(long now, boolean noLog) {
+	/* Calls calculatePeerNodeStatus() to calculate the current status, and then updates everyone
+	 * who needs to know. In particular the PeerStatusTracker but also load management stuff and
+	 * UI listeners. Should not be overridden in general. 
+	 * @param now The current time.
+	 * @param noLog If true don't complain if a peer status e.g. isn't in the tracker. */
+	public final int setPeerNodeStatus(long now, boolean noLog) {
 		long localRoutingBackedOffUntilRT = getRoutingBackedOffUntil(true);
 		long localRoutingBackedOffUntilBulk = getRoutingBackedOffUntil(true);
 		int oldPeerNodeStatus;
@@ -3575,7 +3584,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		boolean noLoadStats = noLoadStats();
 		synchronized(this) {
 			oldPeerNodeStatus = peerNodeStatus;
-			peerNodeStatus = getPeerNodeStatus(now, localRoutingBackedOffUntilRT, localRoutingBackedOffUntilBulk, averagePingTime() > threshold, noLoadStats);
+			peerNodeStatus = calculatePeerNodeStatus(now, localRoutingBackedOffUntilRT, localRoutingBackedOffUntilBulk, averagePingTime() > threshold, noLoadStats);
 
 			if(peerNodeStatus != oldPeerNodeStatus && recordStatus() && !removed) {
 				peers.changePeerNodeStatus(this, oldPeerNodeStatus, peerNodeStatus, noLog);
@@ -3947,8 +3956,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public void onAdded() {
 		synchronized(this) {
 			removed = false;
-			if(!disconnecting)
-				return;
 			disconnecting = false;
 		}
 		setPeerNodeStatus(System.currentTimeMillis(), true);
