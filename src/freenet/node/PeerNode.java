@@ -453,6 +453,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* @param node2 The running Node we are part of.
 	*/
 	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	    removed = true;
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
@@ -3943,7 +3944,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	/** Called to cancel a delayed disconnect. Always succeeds even if the node was not being
 	 * disconnected. */
-	public void forceCancelDisconnecting() {
+	public void onAdded() {
 		synchronized(this) {
 			removed = false;
 			if(!disconnecting)
