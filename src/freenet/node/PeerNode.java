@@ -3947,8 +3947,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public void onAdded() {
 		synchronized(this) {
 			removed = false;
-			if(!disconnecting)
-				return;
 			disconnecting = false;
 		}
 		setPeerNodeStatus(System.currentTimeMillis(), true);
