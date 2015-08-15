@@ -3486,8 +3486,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			return "peer_unknown_status";
 	}
 
-	/** Calculate the current status. Does not update peerNodeStatus itself, and does not update the status tracker. 
-	 * May update backoff statistics. Override this to implement special peer statuses (see DarknetPeerNode). */
+	/** Calculate the current status. Does not update peerNodeStatus itself, nor does it update
+	 * the various listeners and trackers interested in peer statuses; see 
+	 * setPeerNodeStatus(long, boolean) for that. Override this method to implement special peer
+	 * statuses that are specific to your PeerNode implementation (e.g. DarknetPeerNode).
+	 * You should generally call this method and then adjust the return value in special cases.
+	 * Note that this method updates the backoff statistics. */
 	protected synchronized int calculatePeerNodeStatus(long now, long routingBackedOffUntilRT, long localRoutingBackedOffUntilBulk, boolean overPingTime, boolean noLoadStats) {
 		if(disconnecting)
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
