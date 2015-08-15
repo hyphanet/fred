@@ -86,7 +86,7 @@ public class SeedClientPeerNode extends PeerNode {
 	}
 	
 	@Override
-	public boolean shouldSendHandshake(boolean ignored) {
+	public boolean shouldSendHandshake() {
 		return false;
 	}
 

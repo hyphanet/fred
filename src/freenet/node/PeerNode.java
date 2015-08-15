@@ -1487,7 +1487,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* sufficient time period since we last sent a handshake
 	* attempt.
 	*/
-	public boolean shouldSendHandshake(boolean notInRoutingTable) {
+	public boolean shouldSendHandshake() {
 		long now = System.currentTimeMillis();
 		boolean tempShouldSendHandshake = false;
 		boolean disconnected;
@@ -1504,7 +1504,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				synchronized(this) {
 					isBursting = true;
 				}
-			    setPeerNodeStatus(System.currentTimeMillis(), false, notInRoutingTable);
+			    setPeerNodeStatus(System.currentTimeMillis());
 			} else
 				return true;
 		}
@@ -3563,10 +3563,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	public int setPeerNodeStatus(long now) {
-		return setPeerNodeStatus(now, false, false);
+		return setPeerNodeStatus(now, false);
 	}
 
-	public int setPeerNodeStatus(long now, boolean noLog, boolean temporaryNoStatus) {
+	public int setPeerNodeStatus(long now, boolean noLog) {
 		long localRoutingBackedOffUntilRT = getRoutingBackedOffUntil(true);
 		long localRoutingBackedOffUntilBulk = getRoutingBackedOffUntil(true);
 		int oldPeerNodeStatus;
@@ -3576,7 +3576,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			oldPeerNodeStatus = peerNodeStatus;
 			peerNodeStatus = getPeerNodeStatus(now, localRoutingBackedOffUntilRT, localRoutingBackedOffUntilBulk, averagePingTime() > threshold, noLoadStats);
 
-			if(peerNodeStatus != oldPeerNodeStatus && recordStatus() && !temporaryNoStatus && !removed) {
+			if(peerNodeStatus != oldPeerNodeStatus && recordStatus() && !removed) {
 				peers.changePeerNodeStatus(this, oldPeerNodeStatus, peerNodeStatus, noLog);
 			}
 
@@ -3950,7 +3950,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				return;
 			disconnecting = false;
 		}
-		setPeerNodeStatus(System.currentTimeMillis(), true, false);
+		setPeerNodeStatus(System.currentTimeMillis(), true);
 	}
 
 	/** Called when the peer is removed from the PeerManager */
@@ -4059,7 +4059,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 */
 	public Peer getHandshakeIP() {
 		Peer[] localHandshakeIPs;
-		if(!shouldSendHandshake(false)) {
+		if(!shouldSendHandshake()) {
 			if(logMINOR) Logger.minor(this, "Not sending handshake to "+getPeer()+" because pn.shouldSendHandshake() returned false");
 			return null;
 		}

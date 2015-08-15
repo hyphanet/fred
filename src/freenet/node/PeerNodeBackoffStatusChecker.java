@@ -40,6 +40,6 @@ class PeerNodeBackoffStatusChecker implements Runnable {
 				Logger.error(this, "Not in peers table but not flagged as removed: "+pn);
 			return;
 		}
-		pn.setPeerNodeStatus(System.currentTimeMillis(), true, false);
+		pn.setPeerNodeStatus(System.currentTimeMillis(), true);
 	}
 }

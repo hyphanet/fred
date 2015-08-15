@@ -244,13 +244,11 @@ public class DarknetPeerNode extends PeerNode {
 	 * attempt.
 	 */
 	@Override
-	public boolean shouldSendHandshake(boolean notInRoutingTable) {
-	    if(notInRoutingTable)
-	        Logger.error(this, "Darknet peer not in routing table?!", new Exception("error"));
+	public boolean shouldSendHandshake() {
 		synchronized(this) {
 			if(isDisabled) return false;
 			if(isListenOnly) return false;
-			if(!super.shouldSendHandshake(notInRoutingTable)) return false;
+			if(!super.shouldSendHandshake()) return false;
 		}
 		return true;
 	}
