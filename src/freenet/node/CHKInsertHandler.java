@@ -419,14 +419,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		        synchronized(this) {
 		            waitingCompletion = true;
 		        }
-		        node.ticker.queueTimedJob(new Runnable() {
-		            
-		            @Override
-		            public void run() {
-		                routingTookTooLong();
-		            }
-		            
-		        }, "CHKInsertHandler timeout", transferTimeout, false, false);
+		        node.ticker.queueTimedJob(timeoutJob, "CHKInsertHandler timeout", 
+		                transferTimeout, false, false);
 		        // Wait for onCompletion() or routingTookTooLong().
 		        return;
 		    }
@@ -434,6 +428,15 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
 		
         finishFinish(block, code);
     }
+    
+    private final Runnable timeoutJob = new Runnable() {
+        
+        @Override
+        public void run() {
+            routingTookTooLong();
+        }
+        
+    };
     
     private boolean calledCompletion = false;
     private boolean routingTookTooLong = false;
@@ -488,6 +491,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter, InsertSender
         }
         
         finishFinish(verify(), code);
+        node.ticker.removeQueuedJob(timeoutJob);
     }
     
     private void finishFinish(CHKBlock block, int code) {
