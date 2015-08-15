@@ -57,7 +57,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean ENABLE_SWAP_QUEUEING = false;
     static final boolean ENABLE_PACKET_COALESCING = true;
     static final boolean ENABLE_FOAF = true;
-    static final boolean FORK_ON_CACHEABLE = false;
+    /* Fork on cacheable is necessary to ensure that we store on the ideal
+     * nodes, even if they are early in the insert chain. */
+    static final boolean FORK_ON_CACHEABLE = true;
     static final boolean DISABLE_PROBABILISTIC_HTLS = true;
     // Set to true to cache everything. This depends on security level.
     static final boolean USE_SLASHDOT_CACHE = false;
