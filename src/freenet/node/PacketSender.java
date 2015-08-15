@@ -428,7 +428,7 @@ public class PacketSender implements Runnable {
 					pn.startARKFetcher();
 					continue;
 				}
-				if(pn.shouldSendHandshake(true)) {
+				if(pn.shouldSendHandshake()) {
 					// Send handshake if necessary
 					long beforeHandshakeTime = System.currentTimeMillis();
 					pn.getOutgoingMangler().sendHandshake(pn, true);

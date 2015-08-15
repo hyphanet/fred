@@ -252,7 +252,7 @@ public class PeerManager {
 					    else
 					        opennet.addOldOpennetNode((OpennetPeerNode)pn);
 					} else
-						addPeer(pn, true, false);
+						addPeer(pn, true);
 					gotSome = true;
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
@@ -305,7 +305,7 @@ public class PeerManager {
 	}
 
 	public boolean addPeer(PeerNode pn) {
-		return addPeer(pn, false, false);
+		return addPeer(pn, false);
 	}
 
 	/**
@@ -317,10 +317,9 @@ public class PeerManager {
 	 * @return True if the node was successfully added. False if it was already present, or if we tried to add
 	 * an opennet peer when opennet was disabled.
 	 */
-	boolean addPeer(PeerNode pn, boolean ignoreOpennet, boolean reactivate) {
+	boolean addPeer(PeerNode pn, boolean ignoreOpennet) {
 		assert (pn != null);
-		if(reactivate)
-			pn.forceCancelDisconnecting();
+		pn.onAdded();
 		synchronized(this) {
 			for(PeerNode myPeer: myPeers) {
 				if(myPeer.equals(pn)) {
