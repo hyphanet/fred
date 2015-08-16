@@ -281,14 +281,23 @@ public class PrioritizedTicker implements Ticker, Runnable {
 			Long t = timedJobsQueued.remove(job);
 			if(t != null) {
 				Object o = timedJobsByTime.get(t);
-				if(o == null) return; // XXX impossible -> assert
+				if(o == null) {
+				    assert(false); // Inconsistent data structure.
+				    return;
+				}
 				if(o instanceof Job) {
-					assert(o.equals(job));
+				    if(!o.equals(job)) {
+				        assert(false); // Inconsistent data structure.
+				        return;
+				    }
 					timedJobsByTime.remove(t);
 				} else {
 					Job[] jobs = (Job[]) o;
 					if(jobs.length == 1) {
-						assert(jobs[0].equals(job));
+					    if(!jobs[0].equals(job)) {
+					        assert(false); // Inconsistent data structure.
+					        return;
+					    }
 						timedJobsByTime.remove(t);
 					} else {
 						Job[] newJobs = new Job[jobs.length-1];
