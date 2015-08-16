@@ -282,12 +282,13 @@ public class PrioritizedTicker implements Ticker, Runnable {
 			if(t != null) {
 				Object o = timedJobsByTime.get(t);
 				if(o == null) {
-				    assert(false); // Inconsistent data structure.
+				    Logger.error(this, "Job in timedJobsQueued but not in timedJobsByTime");
+				    // Cleaned up so no reason to throw in this critical structure.
 				    return;
 				}
 				if(o instanceof Job) {
 				    if(!o.equals(job)) {
-				        assert(false); // Inconsistent data structure.
+				        Logger.error(this, "Job in timedJobsQueued but not equal to job for timeslot");
 				        return;
 				    }
 					timedJobsByTime.remove(t);
@@ -295,7 +296,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 					Job[] jobs = (Job[]) o;
 					if(jobs.length == 1) {
 					    if(!jobs[0].equals(job)) {
-					        assert(false); // Inconsistent data structure.
+					        Logger.error(this, "Job in timedJobsQueued but not equal to [0] job");
 					        return;
 					    }
 						timedJobsByTime.remove(t);
@@ -308,13 +309,13 @@ public class PrioritizedTicker implements Ticker, Runnable {
 							}
 							newJobs[x++] = oldjob;
 							if(x == jobs.length) {
-								assert(false);
-								newJobs = jobs;
+							    Logger.error(this, "Job in timedJobsQueued but not in jobs array");
+							    newJobs = jobs;
 							}
 						}
 						if(x == 0) {
-							assert(false);
 							timedJobsByTime.remove(t);
+                            Logger.error(this, "Should not have length 1 arrays");
 						} else if (x == 1) {
 							timedJobsByTime.put(t, newJobs[0]);
 						} else {
