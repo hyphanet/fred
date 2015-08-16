@@ -193,44 +193,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 						return;
 					} else {
 						// Delete the existing job because the new job will run first.
-						Object o = timedJobsByTime.get(t);
-						if(o instanceof Job) {
-							timedJobsQueued.remove(job);
-							assert(o.equals(job));
-							timedJobsByTime.remove(t);
-						} else {
-							Job[] jobs = (Job[]) o;
-							if(jobs.length == 1) {
-								timedJobsQueued.remove(job);
-								assert(jobs[0].equals(job));
-								timedJobsByTime.remove(t);
-							} else {
-								Job[] newJobs = new Job[jobs.length-1];
-								int x = 0;
-								for(Job oldjob: jobs) {
-									if(oldjob.equals(job)) {
-										timedJobsQueued.remove(oldjob);
-										continue;
-									}
-									newJobs[x++] = oldjob;
-									if(x == jobs.length) {
-										assert(false);
-										newJobs = jobs;
-									}
-								}
-								if(x == 0) {
-									assert(false);
-									timedJobsByTime.remove(t);
-								} else if (x == 1) {
-									timedJobsByTime.put(t, newJobs[0]);
-								} else {
-									if(x != newJobs.length)
-										newJobs = Arrays.copyOf(newJobs, x);
-									timedJobsByTime.put(t, newJobs);
-									assert(x == jobs.length-1);
-								}
-							}
-						}
+					    removeQueuedJobInner(job, t);
 					}
 				}
 			}
@@ -272,49 +235,70 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	}
 
 	@Override
+	/* Remove a queued job.
+	 * @param runnable The job to remove. If this is currently queued, it will be 
+	 * removed. The Ticker should not throw if the job is not queued. */
 	public void removeQueuedJob(Runnable runnable) {
 		Job job = new Job(null, runnable);
 		synchronized(timedJobsByTime) {
 			Long t = timedJobsQueued.remove(job);
 			if(t != null) {
-				Object o = timedJobsByTime.get(t);
-				if(o == null) return; // XXX impossible -> assert
-				if(o instanceof Job) {
-					assert(o.equals(job));
-					timedJobsByTime.remove(t);
-				} else {
-					Job[] jobs = (Job[]) o;
-					if(jobs.length == 1) {
-						assert(jobs[0].equals(job));
-						timedJobsByTime.remove(t);
-					} else {
-						Job[] newJobs = new Job[jobs.length-1];
-						int x = 0;
-						for(Job oldjob : jobs) {
-							if(oldjob.equals(job)) {
-								continue;
-							}
-							newJobs[x++] = oldjob;
-							if(x == jobs.length) {
-								assert(false);
-								newJobs = jobs;
-							}
-						}
-						if(x == 0) {
-							assert(false);
-							timedJobsByTime.remove(t);
-						} else if (x == 1) {
-							timedJobsByTime.put(t, newJobs[0]);
-						} else {
-							if(x != newJobs.length)
-								newJobs = Arrays.copyOf(newJobs, x);
-							timedJobsByTime.put(t, newJobs);
-							assert(x == jobs.length-1);
-						}
-					}
-				}
+			    removeQueuedJobInner(job, t);
 			}
 		}
 	}
-	
+
+	/** Remove a queued job from the internal structures other than timedJobsQueued. The
+	 * caller is responsible for that.
+	 * @param job The job to remove.
+	 * @param t The time at which is it scheduled.
+	 */
+	private void removeQueuedJobInner(Job job, Long t) {
+        Object o = timedJobsByTime.get(t);
+        if(o == null) {
+            Logger.error(this, "Job in timedJobsQueued but not in timedJobsByTime");
+            // Cleaned up so no reason to throw in this critical structure.
+            return;
+        }
+        if(o instanceof Job) {
+            if(!o.equals(job)) {
+                Logger.error(this, "Job in timedJobsQueued but not equal to job for timeslot");
+                return;
+            }
+            timedJobsByTime.remove(t);
+        } else {
+            Job[] jobs = (Job[]) o;
+            if(jobs.length == 1) {
+                if(!jobs[0].equals(job)) {
+                    Logger.error(this, "Job in timedJobsQueued but not equal to [0] job");
+                    return;
+                }
+                timedJobsByTime.remove(t);
+            } else {
+                Job[] newJobs = new Job[jobs.length-1];
+                int x = 0;
+                for(Job oldjob : jobs) {
+                    if(oldjob.equals(job)) {
+                        continue;
+                    }
+                    newJobs[x++] = oldjob;
+                    if(x == jobs.length) {
+                        Logger.error(this, "Job in timedJobsQueued but not in jobs array");
+                        return;
+                    }
+                }
+                if(x == 0) {
+                    timedJobsByTime.remove(t);
+                    Logger.error(this, "Should not have length 1 arrays");
+                } else if (x == 1) {
+                    timedJobsByTime.put(t, newJobs[0]);
+                } else {
+                    if(x != newJobs.length)
+                        newJobs = Arrays.copyOf(newJobs, x);
+                    timedJobsByTime.put(t, newJobs);
+                    assert(x == jobs.length-1);
+                }
+            }
+        }
+    }
 }
