@@ -1,6 +1,5 @@
 package freenet.support;
 
-import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
 public class PrioritizedTickerTest extends TestCase {
@@ -93,12 +92,7 @@ public class PrioritizedTickerTest extends TestCase {
         synchronized(PrioritizedTickerTest.this) {
             assert(runCount == 0);
         }
-        try {
-            ticker.removeQueuedJob(simpleRunnable);
-            fail();
-        } catch (AssertionFailedError e) {
-            // Ok.
-        }
+        ticker.removeQueuedJob(simpleRunnable);
         boolean testedBothInSameMillisecond = false;
         do {
             // Need to get them in the same millisecond. :(
@@ -109,20 +103,10 @@ public class PrioritizedTickerTest extends TestCase {
             if(count == 1) testedBothInSameMillisecond = true;
             ticker.removeQueuedJob(simpleRunnable);
             assert(ticker.queuedJobs() == 1);
-            try {
-                ticker.removeQueuedJob(simpleRunnable);
-                fail();
-            } catch (AssertionFailedError e) {
-                // Ok.
-            }
+            ticker.removeQueuedJob(simpleRunnable);
             assert(ticker.queuedJobs() == 1);
             ticker.removeQueuedJob(simpleRunnable2);
-            try {
-                ticker.removeQueuedJob(simpleRunnable2);
-                fail();
-            } catch (AssertionFailedError e) {
-                // Ok.
-            }
+            ticker.removeQueuedJob(simpleRunnable2);
             assert(ticker.queuedJobs() == 0);
             Thread.sleep(100);
             assert(ticker.queuedJobs() == 0);
