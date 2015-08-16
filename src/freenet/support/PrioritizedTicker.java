@@ -230,9 +230,15 @@ public class PrioritizedTicker implements Ticker, Runnable {
 
 	public int queuedJobs() {
 		synchronized(timedJobsByTime) {
-			return timedJobsByTime.size();
+			return timedJobsQueued.size();
 		}
 	}
+
+    public int queuedJobsUniqueTimes() {
+        synchronized(timedJobsByTime) {
+            return timedJobsByTime.size();
+        }
+    }
 
 	@Override
 	/* Remove a queued job.
