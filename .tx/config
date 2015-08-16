@@ -1,0 +1,13 @@
+[main]
+host = https://www.transifex.com
+
+[freenet.master]
+file_filter = src/freenet/l10n/freenet.l10n.<lang>.properties
+source_file = src/freenet/l10n/freenet.l10n.en.properties
+source_lang = en
+trans.nb_NO = src/freenet/l10n/freenet.l10n.nb-no.properties
+trans.pt_BR = src/freenet/l10n/freenet.l10n.pt-br.properties
+trans.zh_CN = src/freenet/l10n/freenet.l10n.zh-cn.properties
+trans.zh_TW = src/freenet/l10n/freenet.l10n.zh-tw.properties
+type = MOZILLAPROPERTIES
+
