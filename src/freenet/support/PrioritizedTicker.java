@@ -310,7 +310,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 							newJobs[x++] = oldjob;
 							if(x == jobs.length) {
 							    Logger.error(this, "Job in timedJobsQueued but not in jobs array");
-							    newJobs = jobs;
+							    return;
 							}
 						}
 						if(x == 0) {
