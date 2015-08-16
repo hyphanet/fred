@@ -3556,13 +3556,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			return PeerManager.PEER_NODE_STATUS_BURSTING;
 		else
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
-		if(!isConnected && (previousRoutingBackoffReasonRT != null)) {
-			peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonRT, this, true);
-			previousRoutingBackoffReasonRT = null;
-		}
-		if(!isConnected && (previousRoutingBackoffReasonBulk != null)) {
-			peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonBulk, this, false);
-			previousRoutingBackoffReasonBulk = null;
+		if(!removed) {
+		    if(!isConnected && (previousRoutingBackoffReasonRT != null)) {
+		        peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonRT, this, true);
+		        previousRoutingBackoffReasonRT = null;
+		    }
+		    if(!isConnected && (previousRoutingBackoffReasonBulk != null)) {
+		        peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonBulk, this, false);
+		        previousRoutingBackoffReasonBulk = null;
+		    }
 		}
 		return peerNodeStatus;
 	}
