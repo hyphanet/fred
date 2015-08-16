@@ -272,6 +272,9 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	}
 
 	@Override
+	/* Remove a queued job.
+	 * @param runnable The job to remove. If this is currently queued, it will be 
+	 * removed. The Ticker should not throw if the job is not queued. */
 	public void removeQueuedJob(Runnable runnable) {
 		Job job = new Job(null, runnable);
 		synchronized(timedJobsByTime) {
