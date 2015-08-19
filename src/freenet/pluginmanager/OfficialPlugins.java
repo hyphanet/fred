@@ -110,6 +110,14 @@ public class OfficialPlugins {
 					.minimumVersion(15)
 					.usesXml()
 					.loadedFrom("CHK@1FWUqydeyTbxC3fut51QT8VGnokQFYHMoLsqzP4RU60,BM3ibZYejeo2-sC7WklJ9I8ZJysMpO9~l9MZ8NUzP2c,AAMC--8/WebOfTrust-build0015.jar");
+			addPlugin("WebOfTrustTesting")
+					.inGroup("communication")
+					.advanced()
+					.experimental()
+					.usesXml()
+					.alwaysFetchLatestVersion()
+					.minimumVersion(17) // When changing this also update edition of USK below!
+					.loadedFrom("USK@QeTBVWTwBldfI-lrF~xf0nqFVDdQoSUghT~PvhyJ1NE,OjEywGD063La2H-IihD7iYtZm3rC0BP6UTvvwyF5Zh4,AQACAAE/WebOfTrustTesting.jar/17");
 			addPlugin("FlogHelper")
 					.inGroup("communication")
 					.minimumVersion(34)
