@@ -378,9 +378,11 @@ public class PluginManager {
 
 	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc, boolean force, boolean forceHTTPS) {
 		if((alwaysLoadOfficialPluginsFromCentralServer && !force)|| force && forceHTTPS) {
-			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store, false);
+			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store,
+				desc.alwaysFetchLatestVersion);
 		} else {
-			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false), pluginname, store, false);
+			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false),
+				pluginname, store, desc.alwaysFetchLatestVersion);
 		}
 	}
 

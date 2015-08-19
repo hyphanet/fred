@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import freenet.keys.FreenetURI;
+import freenet.node.updater.NodeUpdater;
+import freenet.node.updater.PluginJarUpdater;
 
 /**
  * Container for Freenet’s official plugins.
@@ -137,7 +139,10 @@ public class OfficialPlugins {
 		private boolean essential;
 		private long minimumVersion = -1;
 		private long recommendedVersion = -1;
+		/** @see OfficialPluginDescription#alwaysFetchLatestVersion */
+		private boolean alwaysFetchLatestVersion;
 		private boolean usesXml;
+		/** @see OfficialPluginDescription#uri */
 		private FreenetURI uri;
 		private boolean deprecated;
 		private boolean experimental;
@@ -173,12 +178,22 @@ public class OfficialPlugins {
 			return this;
 		}
 
+		/** @see OfficialPluginDescription#alwaysFetchLatestVersion */
+		public OfficialPluginBuilder alwaysFetchLatestVersion() {
+			this.alwaysFetchLatestVersion = true;
+			addCurrentPluginDescription();
+			return this;
+		}
+
 		public OfficialPluginBuilder usesXml() {
 			usesXml = true;
 			addCurrentPluginDescription();
 			return this;
 		}
 
+		/**
+		 * ATTENTION: Please read {@link OfficialPluginDescription#uri} before deciding whether
+		 * to use USK or CHK! */
 		public OfficialPluginBuilder loadedFrom(String uri) throws MalformedURLException {
 			this.uri = new FreenetURI(uri);
 			addCurrentPluginDescription();
@@ -218,7 +233,9 @@ public class OfficialPlugins {
 		}
 
 		private OfficialPluginDescription createOfficialPluginDescription() {
-			return new OfficialPluginDescription(name, group, essential, minimumVersion, recommendedVersion, usesXml, uri, deprecated, experimental, advanced, unsupported);
+			return new OfficialPluginDescription(name, group, essential, minimumVersion,
+				recommendedVersion, alwaysFetchLatestVersion, usesXml, uri, deprecated,
+				experimental, advanced, unsupported);
 		}
 
 	}
@@ -253,9 +270,49 @@ public class OfficialPlugins {
 		 * what happens on a USK-based update...
 		 */
 		public final long recommendedVersion;
+		
+		/**
+		 * If true, if during startup we already have a copy of the plugin JAR on disk, the
+		 * {@link PluginManager} will ignore it and redownload the JAR instead so the user gets a
+		 * recent version if there is one.<br><br>
+		 * 
+		 * This is for being used together with plugins which are fetched from a USK {@link #uri},
+		 * and which are not included in the official main Freenet update USK which
+		 * {@link PluginJarUpdater} watches.<br>
+		 * For plugins which are in the main Freenet update USK, setting this to true is usually
+		 * not necessary: The {@link PluginJarUpdater} will update the plugin if there is a new
+		 * version.<br><br>
+		 * 
+		 * In other words: Plugins which are NOT in the official USK but have their own USK will
+		 * not have the {@link PluginJarUpdater} monitor their USK, it only monitors the main
+		 * USK. Thus, the only chance to update them is during startup by ignoring the JAR and
+		 * causing a re-download of it. */
+		public final boolean alwaysFetchLatestVersion;
+		
 		/** Does it use XML? If so, if the JVM is vulnerable, then don't load it */
 		public final boolean usesXML;
-		/** FreenetURI to get the latest version from */
+		/**
+		 * FreenetURI to get the latest version from.<br>
+		 * Typically a CHK, not USK, since updates are deployed using the main Freenet USK of
+		 * {@link NodeUpdater}'s subclass {@link PluginJarUpdater}.<br><br>
+		 * 
+		 * To allow people to insert plugin updates without giving them write access to the main
+		 * USK, this *can* be an USK, but updating when a new version is inserted to the USK will
+		 * only happen at certain points in time:<br>
+		 * - if the plugin is manually unloaded and loaded again.<br>
+		 * - at restart of Freenet if {@link #alwaysFetchLatestVersion} is true. If it is false, the
+		 *   cached local JAR file on disk will prevent updating!<br>
+		 * So to make updating work using USK, set {@link #alwaysFetchLatestVersion} so we check
+		 * for updates when the node is restarted.<br><br>
+		 * 
+		 * NOTICE the conclusion of the above: It is NOT RECOMMENDED to use USKs here: Updates will
+		 * only be delivered at restarts of the node, while the main Freenet USK supports live
+		 * updates; and also there is no revocation mechanism for the USKs. Instead of using USKs
+		 * here, a CHK should be preferred, and new plugin versions then should be inserted at the
+		 * main Freenet update USK of the the {@link NodeUpdater}. A typical usecase for
+		 * nevertheless using an USK here is to allow individual plugin developers to push testing
+		 * versions of their plugin on their own without giving them write-access to the main
+		 * Freenet update USK.*/
 		public final FreenetURI uri;
 		/** If true, the plugin is obsolete. */
 		public final boolean deprecated;
@@ -272,18 +329,34 @@ public class OfficialPlugins {
      */
     public final boolean unsupported;
 
-		OfficialPluginDescription(String name, String group, boolean essential, long minVer, long recVer, boolean usesXML, FreenetURI uri, boolean deprecated, boolean experimental, boolean advanced, boolean unsupported) {
+		OfficialPluginDescription(String name, String group, boolean essential, long minVer,
+				long recVer, boolean alwaysFetchLatestVersion, boolean usesXML, FreenetURI uri,
+				boolean deprecated, boolean experimental, boolean advanced, boolean unsupported) {
+			
 			this.name = name;
 			this.group = group;
 			this.essential = essential;
 			this.minimumVersion = minVer;
 			this.recommendedVersion = recVer;
+			this.alwaysFetchLatestVersion = alwaysFetchLatestVersion;
 			this.usesXML = usesXML;
-			this.uri = uri;
 			this.deprecated = deprecated;
 			this.experimental = experimental;
 			this.advanced = advanced;
       this.unsupported = unsupported;
+
+			if (alwaysFetchLatestVersion && uri != null) {
+				assert(uri.isUSK()) : "Non-USK URIs do not support updates!";
+				
+				// Force fetching the latest edition by setting a negative USK edition.
+				long edition = uri.getSuggestedEdition();
+				if (edition >= 0) {
+					edition = Math.min(-1, -edition);
+				}
+				uri = uri.setSuggestedEdition(edition);
+			}
+			
+			this.uri = uri;
 		}
 
 		public String getLocalisedPluginName() {
