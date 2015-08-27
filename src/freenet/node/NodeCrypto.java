@@ -72,14 +72,6 @@ public class NodeCrypto {
 	byte[] identityHashHash;
 	/** Nonce used to generate ?secureid= for fproxy etc */
 	byte[] clientNonce;
-	/** My crypto group */
-	private DSAGroup cryptoGroup;
-	/** My private key */
-	private DSAPrivateKey privKey;
-	/** My public key */
-	private DSAPublicKey pubKey;
-	byte[] pubKeyHash;
-	byte[] pubKeyHashHash;
 	/** My ECDSA/P256 keypair and context */
 	private ECDSA ecdsaP256;
 	byte[] ecdsaPubKeyHash;
@@ -94,8 +86,6 @@ public class NodeCrypto {
 	// Noderef related
 	/** An ordered version of the noderef FieldSet, without the signature */
 	private String mySignedReference = null;
-	/** The signature of the above fieldset */
-	private DSASignature myReferenceSignature = null;
 	/** The ECDSA/P256 signature of the above fieldset */
 	private String myReferenceECDSASignature = null;
 	/** A synchronization object used while signing the reference fieldset */
@@ -208,19 +198,10 @@ public class NodeCrypto {
 
 		SimpleFieldSet ecdsaSFS = null;
 		try {
-			cryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
-			privKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), cryptoGroup);
-			pubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), cryptoGroup);
-			pubKeyHash = SHA256.digest(pubKey.asBytes());
-			pubKeyHashHash = SHA256.digest(pubKeyHash);
-			
 			ecdsaSFS = fs.subset("ecdsa");
 			if(ecdsaSFS != null) {
 			    ecdsaP256 = new ECDSA(ecdsaSFS.subset(ECDSA.Curves.P256.name()), Curves.P256);
 		    }
-		} catch (IllegalBase64Exception e) {
-			Logger.error(this, "Caught "+e, e);
-			throw new IOException(e.toString());
 		} catch (FSParseException e) {
 			Logger.error(this, "Caught "+e, e);
 			throw new IOException(e.toString());
@@ -289,22 +270,18 @@ public class NodeCrypto {
 	 */
 	public void initCrypto() {
 		MessageDigest md = SHA256.getMessageDigest();
-		cryptoGroup = Global.DSAgroupBigA;
-		privKey = new DSAPrivateKey(cryptoGroup, random);
-		pubKey = new DSAPublicKey(cryptoGroup, privKey);
+        ecdsaP256 = new ECDSA(ECDSA.Curves.P256);
+        ecdsaPubKeyHash = SHA256.digest(ecdsaP256.getPublicKey().getEncoded());
 		myARK = InsertableClientSSK.createRandom(random, "ark");
 		myARKNumber = 0;
 		SHA256.returnMessageDigest(md);
 		clientNonce = new byte[32];
 		node.random.nextBytes(clientNonce);
-		pubKeyHash = SHA256.digest(pubKey.asBytes());
-		pubKeyHashHash = SHA256.digest(pubKeyHash);
-		myIdentity = Arrays.copyOf(pubKeyHash, IDENTITY_LENGTH);
+		myIdentity = Arrays.copyOf(ecdsaPubKeyHash, IDENTITY_LENGTH);
 		identityHash = md.digest(myIdentity);
 		identityHashHash = md.digest(identityHash);
 		anonSetupCipher.initialize(identityHash);
-		ecdsaP256 = new ECDSA(ECDSA.Curves.P256);
-        ecdsaPubKeyHash = SHA256.digest(ecdsaP256.getPublicKey().getEncoded());
+        SHA256.returnMessageDigest(md);
 	}
 
 	public void start() {
@@ -368,20 +345,17 @@ public class NodeCrypto {
 			// Anonymous initiator setup type specifies whether the node is opennet or not.
 			fs.put("opennet", isOpennet);
 			synchronized (referenceSync) {
-				if(myReferenceSignature == null || myReferenceECDSASignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
+				if(myReferenceECDSASignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
 					mySignedReference = fs.toOrderedString();
 					try {
 					    myReferenceECDSASignature = ecdsaSignRef(mySignedReference);
 
 					    // Old nodes will verify the signature including sigP256
 					    fs.putSingle("sigP256", myReferenceECDSASignature);
-					    mySignedReference = fs.toOrderedString();
-					    myReferenceSignature = signRef(mySignedReference);
 					} catch (NodeInitException e) {
 						node.exit(e.exitCode);
 					}
 				}
-				fs.putSingle("sig", myReferenceSignature.toLongString());
 			}
 		}
 
@@ -398,8 +372,6 @@ public class NodeCrypto {
 			fs.putSingle("identity", Base64.encode(myIdentity));
 		if(!forSetup) {
 			// These are invariant. They cannot change on connection setup. They can safely be excluded.
-			fs.put("dsaGroup", cryptoGroup.asFieldSet());
-			fs.put("dsaPubKey", pubKey.asFieldSet());
 			fs.put("ecdsa", ecdsaP256.asFieldSet(false));
 		}
 		if(!forAnonInitiator) {
@@ -411,22 +383,6 @@ public class NodeCrypto {
 			}
 		}
 		return fs;
-	}
-
-	private DSASignature signRef(String mySignedReference) throws NodeInitException {
-		if(logMINOR) Logger.minor(this, "Signing reference:\n"+mySignedReference);
-
-		try{
-			byte[] ref = mySignedReference.getBytes("UTF-8");
-			BigInteger m = new BigInteger(1, SHA256.digest(ref));
-			if(logMINOR) Logger.minor(this, "m = "+m.toString(16));
-			DSASignature _signature = DSA.sign(cryptoGroup, privKey, m, random);
-			if(logMINOR && !DSA.verify(pubKey, _signature, m, false))
-				throw new NodeInitException(NodeInitException.EXIT_EXCEPTION_TO_DEBUG, mySignedReference);
-			return _signature;
-		} catch(UnsupportedEncodingException e){
-			throw new NodeInitException(NodeInitException.EXIT_CRAPPY_JVM, "Impossible: JVM doesn't support UTF-8");
-		}
 	}
 	
 	private String ecdsaSignRef(String mySignedReference) throws NodeInitException {
@@ -450,9 +406,6 @@ public class NodeCrypto {
 
 	private byte[] myCompressedRef(boolean setup, boolean heavySetup, boolean forARK) {
 		SimpleFieldSet fs = exportPublicFieldSet(setup, heavySetup, forARK);
-		boolean shouldStripGroup = heavySetup && Global.DSAgroupBigA.equals(cryptoGroup);
-		if(shouldStripGroup)
-			fs.removeSubset("dsaGroup");
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DeflaterOutputStream gis;
@@ -469,16 +422,9 @@ public class NodeCrypto {
 		byte[] buf = baos.toByteArray();
 		if(buf.length >= 4096)
 			throw new IllegalStateException("We are attempting to send a "+buf.length+" bytes big reference!");
-		byte[] obuf = new byte[buf.length + 1 + (shouldStripGroup ? 1 : 0)];
+		byte[] obuf = new byte[buf.length + 1];
 		int offset = 0;
-		if(shouldStripGroup) {
-			obuf[offset++] = 0x3; // compressed noderef - group
-			int dsaGroupIndex = Global.GROUP_INDEX_BIG_A;
-			if(logMINOR)
-				Logger.minor(this, "We are stripping the group from the reference as it's a known group (groupIndex="+dsaGroupIndex+')');
-			obuf[offset++] = (byte)(dsaGroupIndex & 0xff);
-		} else
-			obuf[offset++] = 0x01; // compressed noderef
+		obuf[offset++] = 0x01; // compressed noderef
 		System.arraycopy(buf, 0, obuf, offset, buf.length);
 		if(logMINOR)
 			Logger.minor(this, "myCompressedRef("+setup+","+heavySetup+") returning "+obuf.length+" bytes");
@@ -514,8 +460,6 @@ public class NodeCrypto {
 	    // Let's not add it twice
 	    fs.removeSubset("ecdsa");
 	    fs.put("ecdsa", ecdsaP256.asFieldSet(true));
-	    
-		fs.put("dsaPrivKey", privKey.asFieldSet());
 		fs.putSingle("ark.privURI", myARK.getInsertURI().toString(false, false));
 		fs.putSingle("clientNonce", Base64.encode(clientNonce));
 
@@ -523,15 +467,6 @@ public class NodeCrypto {
 
 	public int getIdentityHash(){
 		return Fields.hashCode(identityHash);
-	}
-
-	/** Sign a hash */
-	byte[] sign(byte[] hash) {
-        byte[] sig = new byte[Node.SIGNATURE_PARAMETER_LENGTH*2];
-        DSASignature s = DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
-        System.arraycopy(s.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH), 0, sig, 0, Node.SIGNATURE_PARAMETER_LENGTH);
-        System.arraycopy(s.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH), 0, sig, Node.SIGNATURE_PARAMETER_LENGTH, Node.SIGNATURE_PARAMETER_LENGTH);
-		return sig;
 	}
 	
 	/** Sign data with the node's ECDSA key. The data does not need to be hashed, the signing code
@@ -609,10 +544,6 @@ public class NodeCrypto {
 		}
 	}
 
-	DSAGroup getCryptoGroup() {
-		return cryptoGroup;
-	}
-
 	/**
 	 * Get the cipher for connection attempts for e.g. seednode connections from nodes we don't know.
 	 */
@@ -642,12 +573,7 @@ public class NodeCrypto {
 	 * identity. FIXME This complexity can be removed as soon as negType 9 is mandatory!
 	 */
 	public byte[] getIdentity(int negType, boolean unknownInitiator) {
-	    if(negType > 8)
-	        return ecdsaPubKeyHash;
-	    else if(unknownInitiator)
-			return this.pubKey.asBytesHash();
-		else
-			return myIdentity;
+	    return ecdsaPubKeyHash;
 	}
 
 	public boolean definitelyPortForwarded() {

@@ -13,7 +13,6 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.ref.WeakReference;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -38,10 +37,6 @@ import freenet.client.FetchResult;
 import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
 import freenet.crypt.BlockCipher;
-import freenet.crypt.DSA;
-import freenet.crypt.DSAGroup;
-import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DSASignature;
 import freenet.crypt.ECDSA;
 import freenet.crypt.ECDSA.Curves;
 import freenet.crypt.Global;
@@ -273,16 +268,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private long totalInputSinceStartup;
 	/** Total output */
 	private long totalOutputSinceStartup;
-	/** Peer node crypto group; changing this means new noderef */
-	final DSAGroup peerCryptoGroup;
 
 	/** Peer node public key; changing this means new noderef */
-	final DSAPublicKey peerPubKey;
-	// FIXME when negType 9 is mandatory, make peerECDSAPubKey final and remove getter, synchronization and complexity in parseECDSA().
-	private ECPublicKey peerECDSAPubKey;
-	private byte[] peerECDSAPubKeyHash;
-	final byte[] pubKeyHash;
-	final byte[] pubKeyHashHash;
+	protected final ECPublicKey peerECDSAPubKey;
+    public final byte[] peerECDSAPubKeyHash;
+
 	private boolean isSignatureVerificationSuccessfull;
 	/** Incoming setup key. Used to decrypt incoming auth packets.
 	* Specifically: K_node XOR H(setupKey).
@@ -503,32 +493,26 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(fs.getBoolean("opennet", false) != isOpennet)
 			throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet isOpennet="+isOpennet+" boolean = "+fs.getBoolean("opennet", false)+" string = \""+fs.get("opennet")+"\"");
 
-		/* Read the DSA key material for the peer */
-		try {
-			SimpleFieldSet sfs = fs.subset("dsaGroup");
-			if(sfs == null) {
-			    this.peerCryptoGroup = Global.DSAgroupBigA;
-				fs.put("dsaGroup", this.peerCryptoGroup.asFieldSet());
-			} else
-			    this.peerCryptoGroup = DSAGroup.create(sfs);
+        // recover ECDSA key
+        SimpleFieldSet sfs = fs.subset("ecdsa.P256");
+        byte[] pub;
+        try {
+            pub = Base64.decode(sfs.get("pub"));
+        } catch (IllegalBase64Exception e) {
+            Logger.error(this, "Caught " + e + " parsing ECC pubkey", e);
+            throw new FSParseException(e);
+        }
+        if (pub.length > ECDSA.Curves.P256.modulusSize)
+            throw new FSParseException("ecdsa.P256.pub is not the right size!");
+        peerECDSAPubKey = ECDSA.getPublicKey(pub, ECDSA.Curves.P256);
+        if(peerECDSAPubKey == null) {
+            throw new FSParseException("ecdsa.P256.pub is invalid!");
+        }
+        peerECDSAPubKeyHash =  SHA256.digest(peerECDSAPubKey.getEncoded());
 
-			sfs = fs.subset("dsaPubKey");
-			if(sfs == null || peerCryptoGroup == null)
-				throw new FSParseException("No dsaPubKey - very old reference?");
-			else {
-				this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
-				pubKeyHash = SHA256.digest(peerPubKey.asBytes());
-				pubKeyHashHash = SHA256.digest(pubKeyHash);
-			}
-			
-			parseECDSA(fs, fromAnonymousInitiator, true);
-			if(noSig || verifyReferenceSignature(fs)) {
-				this.isSignatureVerificationSuccessfull = true;
-			}
-		} catch(IllegalBase64Exception e) {
-			Logger.error(this, "Caught " + e, e);
-			throw new FSParseException(e);
-		}
+        if(noSig || verifyReferenceSignature(fs)) {
+            this.isSignatureVerificationSuccessfull = true;
+        }
 
 		// Identifier
 
@@ -544,7 +528,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				throw new FSParseException(e);
 			}
 		} else {
-			identity = pubKeyHash;
+			identity = peerECDSAPubKeyHash;
 		}
 
 		if(identity == null)
@@ -553,7 +537,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		identityHash = SHA256.digest(identity);
 		identityHashHash = SHA256.digest(identityHash);
 		swapIdentifier = Fields.bytesToLong(identityHashHash);
-		hashCode = Fields.hashCode(pubKeyHash);
+		hashCode = Fields.hashCode(peerECDSAPubKeyHash);
 
 		// Setup incoming and outgoing setup ciphers
 		byte[] nodeKey = crypto.identityHash;
@@ -748,44 +732,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
-	}
-
-	/** @return True if there is a new ECDSA key */
-	private synchronized boolean parseECDSA(SimpleFieldSet fs, boolean fromAnonymousInitiator, boolean startup) throws FSParseException {
-	    // FIXME When negType9 is mandatory, make the fields final and move back into PeerNode.
-		SimpleFieldSet sfs = fs.subset("ecdsa.P256");
-		if(sfs == null) {
-			// ECDSA is not sent on connect, for example.
-			// This is fine, don't change the existing reference.
-			return false;
-		} else {
-            byte[] pub;
-			try {
-				pub = Base64.decode(sfs.get("pub"));
-			} catch (IllegalBase64Exception e) {
-				Logger.error(this, "Caught " + e + " parsing ECC pubkey", e);
-				throw new FSParseException(e);
-			}
-            if (pub.length > ECDSA.Curves.P256.modulusSize)
-                throw new FSParseException("ecdsa.P256.pub is not the right size!");
-            ECPublicKey key = ECDSA.getPublicKey(pub, ECDSA.Curves.P256);
-            if(key == null)
-                throw new FSParseException("ecdsa.P256.pub is invalid!");
-            if(peerECDSAPubKey == null) {
-                this.peerECDSAPubKey = key;
-                peerECDSAPubKeyHash = SHA256.digest(peerECDSAPubKey.getEncoded());
-                if(!startup) {
-                    Logger.normal(this, "Peer now has an ECDSA key, upgraded to negType 9+: "+userToString());
-                    if(isDarknet()) node.peers.writePeersDarknetUrgent();
-                }
-                return true;
-            } else if(!key.equals(peerECDSAPubKey)) {
-            	Logger.error(this, "Tried to change ECDSA key on "+userToString()+" - did neighbour try to downgrade? Rejecting...");
-            	throw new FSParseException("Changing ECDSA key not allowed!");
-            } else {
-            	return false;
-            }
-		}
 	}
 
 	abstract boolean dontKeepFullFieldSet();
@@ -1582,7 +1528,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			isBursting = false;
 		} else {
 			delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
-				+ node.random.nextInt((int) Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 		}
 		// FIXME proper multi-homing support!
 		delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
@@ -1929,7 +1875,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	private String shortToString;
 	private void updateShortToString() {
-		shortToString = super.toString() + '@' + detectedPeer + '@' + HexUtil.bytesToHex(pubKeyHash);
+		shortToString = super.toString() + '@' + detectedPeer + '@' + HexUtil.bytesToHex(peerECDSAPubKeyHash);
 	}
 
 	/**
@@ -2448,20 +2394,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	static SimpleFieldSet compressedNoderefToFieldSet(byte[] data, int offset, int length) throws FSParseException {
 		if(length <= 5)
 			throw new FSParseException("Too short");
-		// Lookup table for groups.
-		DSAGroup group = null;
 		int firstByte = data[offset];
 		offset++;
 		length--;
-		if((firstByte & 0x2) == 2) {
-			int groupIndex = (data[offset] & 0xff);
-			offset++;
-			length--;
-			group = Global.getGroup(groupIndex);
-			if(group == null) throw new FSParseException("Unknown group number "+groupIndex);
-			if(logMINOR)
-				Logger.minor(PeerNode.class, "DSAGroup set to "+group.fingerprintToString()+ " using the group-index "+groupIndex);
-		}
 		// Is it compressed?
 		if((firstByte & 1) == 1) {
 			try {
@@ -2493,13 +2428,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		BufferedReader br = new BufferedReader(isr);
 		try {
-			SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
-			if(group != null) {
-				SimpleFieldSet sfs = new SimpleFieldSet(true);
-				sfs.put("dsaGroup", group.asFieldSet());
-				fs.putAllOverwrite(sfs);
-			}
-			return fs;
+			return new SimpleFieldSet(br, false, true);
 		} catch(IOException e) {
 			throw (FSParseException)new FSParseException("Impossible: " + e).initCause(e);
 		}
@@ -2570,26 +2499,25 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				}
 			}
 		}
-		
-		SimpleFieldSet sfs = fs.subset("dsaGroup");
-		if(sfs != null) {
-			DSAGroup cmp;
-			try {
-				cmp = DSAGroup.create(sfs);
-			} catch (IllegalBase64Exception e) {
-				throw new FSParseException(e);
-			}
-			if(!cmp.equals(this.peerCryptoGroup))
-				throw new FSParseException("Changed DSA group?!");
-		}
 
-		sfs = fs.subset("dsaPubKey");
-		if(sfs != null) {
-			DSAPublicKey key;
-			key = DSAPublicKey.create(sfs, peerCryptoGroup);
-			if(!key.equals(this.peerPubKey))
-				throw new FSParseException("Changed pubkey?!");
-		}
+        SimpleFieldSet sfs = fs.subset("ecdsa.P256");
+        if(sfs != null) {
+            byte[] pub;
+            try {
+                pub = Base64.decode(sfs.get("pub"));
+            } catch (IllegalBase64Exception e) {
+                Logger.error(this, "Caught " + e + " parsing ECC pubkey", e);
+                throw new FSParseException(e);
+            }
+            if (pub.length > ECDSA.Curves.P256.modulusSize)
+                throw new FSParseException("ecdsa.P256.pub is not the right size!");
+            ECPublicKey key = ECDSA.getPublicKey(pub, ECDSA.Curves.P256);
+            if (key == null) {
+                throw new FSParseException("ecdsa.P256.pub is invalid!");
+            } else if (!key.equals(peerECDSAPubKey)) {
+                throw new FSParseException("Changed pubkey?!");
+            }
+        }
 
 		String newVersion = fs.get("version");
 		if(newVersion == null) {
@@ -2707,7 +2635,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				negTypes = newNegTypes;
 			}
 		}
-		changedAnything |= parseECDSA(fs, false, false);
 
 		if(parseARK(fs, false, forDiffNodeRef))
 			changedAnything = true;
@@ -2855,10 +2782,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		fs.put("location", getLocation());
 		fs.put("testnet", testnetEnabled);
 		fs.putSingle("version", version);
-		if(peerCryptoGroup != null)
-			fs.put("dsaGroup", peerCryptoGroup.asFieldSet());
-		if(peerPubKey != null)
-			fs.put("dsaPubKey", peerPubKey.asFieldSet());
 		if(peerECDSAPubKey != null) {
 		    fs.put("ecdsa", ECDSA.Curves.P256.getSFS(peerECDSAPubKey));
 		}
@@ -2893,7 +2816,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			return true;
 		if(o instanceof PeerNode) {
 			PeerNode pn = (PeerNode) o;
-			return Arrays.equals(pn.pubKeyHash, pubKeyHash);
+			return Arrays.equals(pn.peerECDSAPubKeyHash, peerECDSAPubKeyHash);
 		} else
 			return false;
 	}
@@ -3009,7 +2932,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			int mandatoryBackoffLength = realTime ? mandatoryBackoffLengthRT : mandatoryBackoffLengthBulk;
 			if(mandatoryBackoffUntil > -1 && mandatoryBackoffUntil > now) return;
 			Logger.error(this, "Entering mandatory backoff for "+this + (realTime ? " (realtime)" : " (bulk)"));
-			mandatoryBackoffUntil = now + (mandatoryBackoffLength/2) + node.fastWeakRandom.nextInt((int) (mandatoryBackoffLength/2));
+			mandatoryBackoffUntil = now + (mandatoryBackoffLength/2) + node.fastWeakRandom.nextInt((mandatoryBackoffLength/2));
 			mandatoryBackoffLength *= MANDATORY_BACKOFF_MULTIPLIER;
 			node.nodeStats.reportMandatoryBackoff(reason, mandatoryBackoffUntil - now, realTime);
 			if(realTime) {
@@ -3099,7 +3022,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				routingBackoffLength = routingBackoffLength * BACKOFF_MULTIPLIER;
 				if(routingBackoffLength > MAX_ROUTING_BACKOFF_LENGTH)
 					routingBackoffLength = MAX_ROUTING_BACKOFF_LENGTH;
-				int x = node.random.nextInt((int) routingBackoffLength);
+				int x = node.random.nextInt(routingBackoffLength);
 				routingBackedOffUntil = now + x;
 				node.nodeStats.reportRoutingBackoff(reason, x, realTime);
 				if(logMINOR) {
@@ -3181,7 +3104,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				transferBackoffLength = transferBackoffLength * TRANSFER_BACKOFF_MULTIPLIER;
 				if(transferBackoffLength > MAX_TRANSFER_BACKOFF_LENGTH)
 					transferBackoffLength = MAX_TRANSFER_BACKOFF_LENGTH;
-				int x = node.random.nextInt((int) transferBackoffLength);
+				int x = node.random.nextInt(transferBackoffLength);
 				transferBackedOffUntil = now + x;
 				node.nodeStats.reportTransferBackoff(reason, x, realTime);
 				if(logMINOR) {
@@ -3798,15 +3721,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public int selectNegType(OutgoingPacketMangler mangler) {
 		int[] hisNegTypes;
 		int[] myNegTypes = mangler.supportedNegTypes(false);
-		boolean supportECDSA;
 		synchronized(this) {
 			hisNegTypes = negTypes;
-			supportECDSA = this.peerECDSAPubKey != null; // FIXME REMOVE
 		}
 		int bestNegType = -1;
 		for(int negType: myNegTypes) {
-			if(negType >= 9 && !supportECDSA)
-				continue; // FIXME REMOVE
 			for(int hisNegType: hisNegTypes) {
 				if(hisNegType == negType) {
 					bestNegType = negType;
@@ -3885,14 +3804,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		else
 			return new DarknetPeerNode(fs, node2, crypto, manager, true, mangler, null, null);
 	}
-	
-	public byte[] getPubKeyHash() {
-		return pubKeyHash;
-	}
-
-	public byte[] getPubKeyHashHash() {
-		return pubKeyHashHash;
-	}
 
 	public boolean neverConnected() {
 		return neverConnected;
@@ -3970,12 +3881,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	protected void setJFKBuffer(byte[] bufferJFK) {
 		this.jfkBuffer = bufferJFK;
-	}
-
-	public int getSigParamsByteLength() {
-		int bitLen = this.peerCryptoGroup.getQ().bitLength();
-		int byteLen = (bitLen + 7) / 8;
-		return byteLen;
 	}
 
 	static final int MAX_SIMULTANEOUS_ANNOUNCEMENTS = 1;
@@ -5881,57 +5786,38 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private boolean verifyReferenceSignature(SimpleFieldSet fs) throws ReferenceSignatureVerificationException {
 	    // Assume we failed at validating
 	    boolean failed = true;
-	    String signature = fs.get("sig");
         String signatureP256 = fs.get("sigP256");
             try {
                 // If we have:
                 // - the new P256 signature AND the P256 pubkey
-                // OR
-                // - the old DSA signature the pubkey and the groups
-                // THEN
-                // verify the signatures
+                // verify the signatures but remove the old DSA sig (we might still have refs with it)
                 fs.removeValue("sig");
-                byte[] toVerifyDSA = fs.toOrderedString().getBytes("UTF-8");
                 fs.removeValue("sigP256");
                 byte[] toVerifyECDSA = fs.toOrderedString().getBytes("UTF-8");
                 
 
                 boolean isECDSAsigPresent = (signatureP256 != null && peerECDSAPubKey != null);
-                boolean isDSAsigPresent = (signature != null && peerPubKey != null);
                 boolean verifyECDSA = false; // assume it failed.
-                boolean verifyDSA  = false; //assume it failed.
                 
                 // Is there a new ECDSA sig?
                 if(isECDSAsigPresent) {
                         fs.putSingle("sigP256", signatureP256);
                         verifyECDSA = ECDSA.verify(Curves.P256, peerECDSAPubKey, Base64.decode(signatureP256), toVerifyECDSA);                       
                 }
-                
-                // Is there an old DSA sig?
-                if(isDSAsigPresent) {
-                    fs.putSingle("sig", signature);
-                    verifyDSA = DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(toVerifyDSA)), false);
-                }
 
                 // If there is no signature, FAIL
                 // If there is an ECDSA signature, and it doesn't verify, FAIL
-                // If there is a DSA signature, and it doesn't verify, FAIL
-                boolean hasNoSignature = (!isECDSAsigPresent && !isDSAsigPresent);
+                boolean hasNoSignature = !isECDSAsigPresent;
                 boolean isECDSAsigInvalid = (isECDSAsigPresent && !verifyECDSA);
-                boolean isDSAsigInvalid = (isDSAsigPresent && !verifyDSA);
-                failed = hasNoSignature || isECDSAsigInvalid || isDSAsigInvalid;
+                failed = hasNoSignature || isECDSAsigInvalid;
                 if(failed) {
                     String errCause = "";
                     if(hasNoSignature)
                         errCause += " (No signature)";
-                    if(peerCryptoGroup == null)
-                        errCause += " (No peer crypto group)";
-                    if(peerPubKey == null && peerECDSAPubKey == null)
+                    if(peerECDSAPubKey == null)
                         errCause += " (No peer public key)";
                     if(isECDSAsigInvalid)
                         errCause += " (ECDSA signature is invalid)";
-                    if(isDSAsigInvalid)
-                        errCause += " (DSA signature is invalid)";
                     if(failed)
                         errCause += " (VERIFICATION FAILED)";
                     Logger.error(this, "The integrity of the reference has been compromised!" + errCause + " fs was\n" + fs.toOrderedString());
@@ -5959,19 +5845,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 	
 	protected byte[] getIdentity(int negType) {
-	    if(negType > 8)
-	        return peerECDSAPubKeyHash;
-	    else
-	        return identity;
-	}
-
-	synchronized ECPublicKey peerECDSAPubKey() {
-		// FIXME when negType 9 is mandatory, make peerECDSAPubKey final and remove this getter.
-		return peerECDSAPubKey;
-	}
-
-	synchronized byte[] peerECDSAPubKeyHash() {
-		// FIXME when negType 9 is mandatory, make peerECDSAPubKey final and remove this getter.
-		return peerECDSAPubKeyHash;
+        return peerECDSAPubKeyHash;
 	}
 }

@@ -605,7 +605,7 @@ public class PeerManager {
 		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
 		PeerNode[] peerList = myPeers();
 		for(PeerNode mp: peerList) {
-			if(Arrays.equals(mp.pubKeyHash, pn.pubKeyHash))
+			if(Arrays.equals(mp.peerECDSAPubKeyHash, pn.peerECDSAPubKeyHash))
 				return;
 		}
 		addPeer(pn);
@@ -2221,7 +2221,7 @@ public class PeerManager {
 	public PeerNode getByPubKeyHash(byte[] pkHash) {
 		PeerNode[] peers = myPeers();
 		for(PeerNode peer : peers) {
-			if(Arrays.equals(peer.getPubKeyHash(), pkHash))
+			if(Arrays.equals(peer.peerECDSAPubKeyHash, pkHash))
 				return peer;
 		}
 		return null;
