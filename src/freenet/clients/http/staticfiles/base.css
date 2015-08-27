@@ -75,11 +75,6 @@
 
 div,
 body,
-h1,
-h2,
-h3,
-h4,
-h5,
 li,
 p,
 span,
@@ -167,7 +162,9 @@ body {
 }
 
 #topbar h1 {
+	font-family: Arial;
 	font-size: 1.818em; /* 1.818em = 20pt based on an 11pt reference */
+	font-weight: normal;
 	/* FIXME the following line looks redundant but things break if you remove it. */
 	margin: 0px;
 	padding-top: 0.35em; /* 7px based on an 20pt reference */
