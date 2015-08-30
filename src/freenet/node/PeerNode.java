@@ -456,12 +456,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* should not contain metadata, and will be signed. 
 	* @param fromAnonymousInitiator True if the node has just connected and given us a noderef,
 	* and we did not know it beforehand. This makes it a temporary connection. At the moment
-	* this only happens on seednodes.
-	* @param isOpennet True if the noderef should have opennet=true.
-	*/
+	* this only happens on seednodes. */
 	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, 
-	        boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, 
-	        boolean isOpennet) 
+	        boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler) 
 	                throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator) noSig = true;
@@ -471,7 +468,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		this.outgoingMangler = mangler;
 		this.node = node2;
 		this.crypto = crypto;
-		assert(crypto.isOpennet == (isOpennet() || isSeed()));
+		assert(crypto.isOpennet == isOpennetForNoderef());
 		this.peers = peers;
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
@@ -510,8 +507,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				throw new FSParseException("No negTypes!");
 		}
 
-		if(fs.getBoolean("opennet", false) != isOpennet)
-			throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet isOpennet="+isOpennet+" boolean = "+fs.getBoolean("opennet", false)+" string = \""+fs.get("opennet")+"\"");
+		if(fs.getBoolean("opennet", false) != isOpennetForNoderef())
+			throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet isOpennet="+isOpennetForNoderef()+" boolean = "+fs.getBoolean("opennet", false)+" string = \""+fs.get("opennet")+"\"");
 
 		/* Read the DSA key material for the peer */
 		try {
@@ -2558,8 +2555,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		else if(s != null) {
 			try {
 				boolean b = Fields.stringToBool(s);
-				if(b != (isOpennet() || isSeed()))
-					throw new FSParseException("Changed opennet status?!?!?!? expected="+isOpennet()+" but got "+b+" ("+s+") on "+this);
+				if(b != isOpennetForNoderef())
+					throw new FSParseException("Changed opennet status?!?!?!? expected="+isOpennetForNoderef()+" but got "+b+" ("+s+") on "+this);
 			} catch (NumberFormatException e) {
 				throw new FSParseException("Cannot parse opennet=\""+s+"\"", e);
 			}
@@ -2877,7 +2874,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			fs.put("ark.number", myARK.suggestedEdition - 1);
 			fs.putSingle("ark.pubURI", myARK.getBaseSSK().toString(false, false));
 		}
-		fs.put("opennet", isOpennet());
+		fs.put("opennet", isOpennetForNoderef());
 		fs.put("seed", isSeed());
 		fs.put("totalInput", (getTotalInputSinceStartup()+getTotalInputBytes()));
 		fs.put("totalOutput", (getTotalOutputSinceStartup()+getTotalOutputBytes()));
@@ -2891,11 +2888,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/** @return True if the node is a full opennet peer ("Stranger"), which should usually be in
 	 * the OpennetManager and opennet routing table. */
 	public abstract boolean isOpennet();
+	
+	/** @return Expected value of "opennet=" in the noderef. This returns true if the node is an
+	 * actual opennet peer, but also if the node is a seed client or seed server, even though they
+	 * are never part of the routing table. This also determines whether we use the opennet or
+	 * darknet NodeCrypto. */
+	public abstract boolean isOpennetForNoderef();
 
 	/** @return True if the node is a seed client or seed server. These are never in the routing
 	 * table, but their noderefs should still say opennet=true. */
 	public abstract boolean isSeed();
-
+	
 	/**
 	* @return The time at which we last connected (or reconnected).
 	*/
