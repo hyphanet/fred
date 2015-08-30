@@ -2884,10 +2884,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return fs;
 	}
 
+	/** @return True if the node is a full darknet peer ("Friend"), which should usually be in
+	 * the darknet routing table. */
 	public abstract boolean isDarknet();
 
+	/** @return True if the node is a full opennet peer ("Stranger"), which should usually be in
+	 * the OpennetManager and opennet routing table. */
 	public abstract boolean isOpennet();
 
+	/** @return True if the node is a seed client or seed server. These are never in the routing
+	 * table, but their noderefs should still say opennet=true. */
 	public abstract boolean isSeed();
 
 	/**
