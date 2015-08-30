@@ -4045,9 +4045,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public abstract boolean isRealConnection();
 
 	/** Can we accept announcements from this node? */
-	public boolean canAcceptAnnouncements() {
-		return isOpennet() || node.passOpennetRefsThroughDarknet();
-	}
+	public abstract boolean canAcceptAnnouncements();
 
 	public boolean handshakeUnknownInitiator() {
 		return false;

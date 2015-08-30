@@ -183,4 +183,9 @@ public class SeedServerPeerNode extends PeerNode {
         return true;
     }
 
+    @Override
+    public boolean canAcceptAnnouncements() {
+        return false; // We do not accept announcements from a seednode.
+    }
+
 }

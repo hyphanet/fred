@@ -294,4 +294,9 @@ public class OpennetPeerNode extends PeerNode {
         return true;
     }
 
+    @Override
+    public boolean canAcceptAnnouncements() {
+        return true;
+    }
+
 }

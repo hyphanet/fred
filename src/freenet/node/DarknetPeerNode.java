@@ -1972,4 +1972,9 @@ public class DarknetPeerNode extends PeerNode {
     public boolean isOpennetForNoderef() {
         return false;
     }
+
+    @Override
+    public boolean canAcceptAnnouncements() {
+        return node.passOpennetRefsThroughDarknet();
+    }
 }
