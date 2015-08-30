@@ -454,15 +454,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* @param fromLocal True if the noderef was read from the stored peers file and can contain
 	* local metadata, and won't be signed. Otherwise, it is a new node reference from elsewhere,
 	* should not contain metadata, and will be signed. */
-	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto,
-	        boolean fromLocal, OutgoingPacketMangler mangler) 
+	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal) 
 	                throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator()) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
 		this.checkStatusAfterBackoff = new PeerNodeBackoffStatusChecker(myRef);
-		if(mangler == null) throw new NullPointerException();
-		this.outgoingMangler = mangler;
+		this.outgoingMangler = crypto.packetMangler;
 		this.node = node2;
 		this.crypto = crypto;
 		assert(crypto.isOpennet == isOpennetForNoderef());
@@ -499,7 +497,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		negTypes = fs.getIntArray("auth.negTypes");
 		if(negTypes == null || negTypes.length == 0) {
 			if(fromAnonymousInitiator())
-				negTypes = mangler.supportedNegTypes(false); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
+				negTypes = outgoingMangler.supportedNegTypes(false); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
 			else
 				throw new FSParseException("No negTypes!");
 		}
@@ -3903,11 +3901,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/**
 	 * Create a DarknetPeerNode or an OpennetPeerNode as appropriate
 	 */
-	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		if(crypto.isOpennet)
-			return new OpennetPeerNode(fs, node2, crypto, opennet, true, mangler);
+			return new OpennetPeerNode(fs, node2, crypto, opennet, true);
 		else
-			return new DarknetPeerNode(fs, node2, crypto, true, mangler, null, null);
+			return new DarknetPeerNode(fs, node2, crypto, true, null, null);
 	}
 	
 	public byte[] getPubKeyHash() {

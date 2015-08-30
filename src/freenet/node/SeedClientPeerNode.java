@@ -16,8 +16,8 @@ import freenet.support.SimpleFieldSet;
  */
 public class SeedClientPeerNode extends PeerNode {
 
-	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		super(fs, node2, crypto, false, mangler);
+	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		super(fs, node2, crypto, false);
 	}
 
 	@Override
