@@ -40,7 +40,7 @@ public interface BasePeerNode extends PeerContext {
 
 	int getMaxPacketSize();
 
-	PeerMessageQueue getMessageQueue();
+	MessageQueue getMessageQueue();
 
 	boolean shouldPadDataPackets();
 

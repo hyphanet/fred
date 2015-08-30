@@ -241,7 +241,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	final PeerManager peers;
 	/** MessageItem's to send ASAP.
 	 * LOCKING: Lock on self, always take that lock last. Sometimes used inside PeerNode.this lock. */
-	private final PeerMessageQueue messageQueue;
+	private final MessageQueue messageQueue;
 	/** When did we last receive a SwapRequest? */
 	private long timeLastReceivedSwapRequest;
 	/** Average interval between SwapRequest's */
@@ -5454,7 +5454,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public abstract boolean shallWeRouteAccordingToOurPeersLocation();
 	
 	@Override
-	public PeerMessageQueue getMessageQueue() {
+	public MessageQueue getMessageQueue() {
 		return messageQueue;
 	}
 

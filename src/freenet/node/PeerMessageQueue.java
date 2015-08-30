@@ -19,7 +19,7 @@ import freenet.support.MutableBoolean;
  * Will soon be round-robin between different transfers/UIDs/clients too.
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
-public class PeerMessageQueue {
+public class PeerMessageQueue implements MessageQueue {
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -725,15 +725,11 @@ public class PeerMessageQueue {
 		}
 	}
 
-	/**
-	 * Queue a <code>MessageItem</code> and return an estimate of the size of
-	 * this queue. The value returned is the estimated number of bytes
-	 * needed for sending the all messages in this queue. Note that if the
-	 * returned estimate is higher than 1024, it might not cover all messages.
-	 * @param item the <code>MessageItem</code> to queue
-	 * @return an estimate of the size of this queue
-	 */
-	public synchronized int queueAndEstimateSize(MessageItem item, int maxSize) {
+	/* (non-Javadoc)
+     * @see freenet.node.MessageQueue#queueAndEstimateSize(freenet.node.MessageItem, int)
+     */
+	@Override
+    public synchronized int queueAndEstimateSize(MessageItem item, int maxSize) {
 		enqueuePrioritizedMessageItem(item);
 		int x = 0;
 		for(PrioQueue pq : queuesByPriority) {
@@ -756,7 +752,11 @@ public class PeerMessageQueue {
 		return x;
 	}
 
-	public synchronized long getMessageQueueLengthBytes() {
+	/* (non-Javadoc)
+     * @see freenet.node.MessageQueue#getMessageQueueLengthBytes()
+     */
+	@Override
+    public synchronized long getMessageQueueLengthBytes() {
 		long x = 0;
 		for(PrioQueue pq : queuesByPriority) {
 			if(pq.nonEmptyItemsWithID != null)
@@ -777,13 +777,11 @@ public class PeerMessageQueue {
 			mustSendLoadBulk = true;
 	}
 
-	/**
-	 * like enqueuePrioritizedMessageItem, but adds it to the front of those in the same priority.
-	 * 
-	 * WARNING: Pulling a message and then pushing it back will mess up the fairness 
-	 * between UID's send order. Try to avoid it.
-	 */
-	synchronized void pushfrontPrioritizedMessageItem(MessageItem addMe) {
+	/* (non-Javadoc)
+     * @see freenet.node.MessageQueue#pushfrontPrioritizedMessageItem(freenet.node.MessageItem)
+     */
+	@Override
+    public synchronized void pushfrontPrioritizedMessageItem(MessageItem addMe) {
 		//Assume it goes on the front
 		short prio = addMe.getPriority();
 		queuesByPriority[prio].addFirst(addMe);
@@ -793,7 +791,11 @@ public class PeerMessageQueue {
 			mustSendLoadBulk = true;
 	}
 
-	public synchronized MessageItem[] grabQueuedMessageItems() {
+	/* (non-Javadoc)
+     * @see freenet.node.MessageQueue#grabQueuedMessageItems()
+     */
+	@Override
+    public synchronized MessageItem[] grabQueuedMessageItems() {
 		int size = 0;
 		for(PrioQueue queue : queuesByPriority)
 			size += queue.size();
@@ -806,18 +808,11 @@ public class PeerMessageQueue {
 		return output;
 	}
 
-	/**
-	 * Get the time at which the next message must be sent. If any message is
-	 * overdue, we will return a value less than now, which may not be completely
-	 * accurate.
-	 * @param t The current next urgent time. The return value will be no greater
-	 * than this.
-	 * @param returnIfBefore The current time. If the next urgent time is less than 
-	 * this we return immediately rather than computing an accurate past value. 
-	 * Set to Long.MAX_VALUE if you want an accurate value.
-	 * @return The next urgent time, but can be too high if it is less than now.
-	 */
-	public synchronized long getNextUrgentTime(long t, long returnIfBefore) {
+	/* (non-Javadoc)
+     * @see freenet.node.MessageQueue#getNextUrgentTime(long, long)
+     */
+	@Override
+    public synchronized long getNextUrgentTime(long t, long returnIfBefore) {
 		for(PrioQueue queue: queuesByPriority) {
 			t = Math.min(t, queue.getNextUrgentTime(t, returnIfBefore));
 			if(t <= returnIfBefore) return t; // How much in the past doesn't matter, as long as it's in the past.
@@ -825,26 +820,19 @@ public class PeerMessageQueue {
 		return t;
 	}
 
-	/**
-	 * Returns <code>true</code> if there are messages that will timeout before
-	 * <code>now</code>.
-	 * @param now the timeout for messages waiting to be sent
-	 * @return <code>true</code> if there are messages that will timeout before
-	 * <code>now</code>
-	 */
-	public boolean mustSendNow(long now) {
+	/* (non-Javadoc)
+     * @see freenet.node.MessageQueue#mustSendNow(long)
+     */
+	@Override
+    public boolean mustSendNow(long now) {
 		return getNextUrgentTime(Long.MAX_VALUE, now) <= now;
 	}
 
-	/**
-	 * Returns <code>true</code> if <code>minSize</code> + the length of all
-	 * messages in this queue is greater than <code>maxSize</code>.
-	 * @param minSize the starting size
-	 * @param maxSize the maximum size
-	 * @return <code>true</code> if <code>minSize</code> + the length of all
-	 * messages in this queue is greater than <code>maxSize</code>
-	 */
-	public synchronized boolean mustSendSize(int minSize, int maxSize) {
+	/* (non-Javadoc)
+     * @see freenet.node.MessageQueue#mustSendSize(int, int)
+     */
+	@Override
+    public synchronized boolean mustSendSize(int minSize, int maxSize) {
 		int length = minSize;
 		for(PrioQueue items : queuesByPriority) {
 			length = items.addSize(length, maxSize);
@@ -853,11 +841,11 @@ public class PeerMessageQueue {
 		return false;
 	}
 
-	/** Grab a message to send. WARNING: PeerMessageQueue not only removes the message,
-	 * it assumes it has been sent for purposes of fairness between UID's. You should try
-	 * not to call this function if you are not going to be able to send the message: 
-	 * check in advance if possible. */
-	public synchronized MessageItem grabQueuedMessageItem(int minPriority) {
+	/* (non-Javadoc)
+     * @see freenet.node.MessageQueue#grabQueuedMessageItem(int)
+     */
+	@Override
+    public synchronized MessageItem grabQueuedMessageItem(int minPriority) {
 		long now = System.currentTimeMillis();
 		
 		MutableBoolean addPeerLoadStatsRT = new MutableBoolean();
@@ -919,7 +907,11 @@ public class PeerMessageQueue {
 		return null;
 	}
 	
-	public boolean removeMessage(MessageItem message) {
+	/* (non-Javadoc)
+     * @see freenet.node.MessageQueue#removeMessage(freenet.node.MessageItem)
+     */
+	@Override
+    public boolean removeMessage(MessageItem message) {
 		synchronized(this) {
 			short prio = message.getPriority();
 			if(!queuesByPriority[prio].removeMessage(message)) return false;
@@ -928,7 +920,11 @@ public class PeerMessageQueue {
 		return true;
 	}
 
-	public synchronized void removeUIDsFromMessageQueues(Long[] list) {
+	/* (non-Javadoc)
+     * @see freenet.node.MessageQueue#removeUIDsFromMessageQueues(java.lang.Long[])
+     */
+	@Override
+    public synchronized void removeUIDsFromMessageQueues(Long[] list) {
 		for(PrioQueue queue : queuesByPriority) {
 			queue.removeUIDs(list);
 		}
