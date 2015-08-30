@@ -1404,39 +1404,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return messageQueue.grabQueuedMessageItems();
 	}
 
-	public void requeueMessageItems(MessageItem[] messages, int offset, int length, boolean dontLog) {
-		requeueMessageItems(messages, offset, length, dontLog, "");
-	}
-
-	public void requeueMessageItems(MessageItem[] messages, int offset, int length, boolean dontLog, String reason) {
-		// Will usually indicate serious problems
-		if(!dontLog) {
-			long now = System.currentTimeMillis();
-			String rateLimitWrapper = "";
-			boolean rateLimitLogging = false;
-			if(messages.length > messageRequeueLogRateLimitThreshold) {
-				rateLimitWrapper = " (log message rate limited)";
-				if(nextMessageRequeueLogTime <= now) {
-					nextMessageRequeueLogTime = now + messageRequeueLogRateLimitInterval;
-				} else {
-					rateLimitLogging = true;
-				}
-			}
-			if(!rateLimitLogging) {
-				String reasonWrapper = "";
-				if(0 < reason.length()) {
-					reasonWrapper = " because of '" + reason + '\'';
-				}
-				Logger.normal(this, "Requeueing " + messages.length + " messages" + reasonWrapper + " on " + this + rateLimitWrapper);
-			}
-		}
-		synchronized(messageQueue) {
-			for(int i = offset+length-1; i >= offset; i--)
-				if(messages[i] != null)
-					messageQueue.pushfrontPrioritizedMessageItem(messages[i]);
-		}
-	}
-
 	/**
 	* @return The time at which we must send a packet, even if
 	* it means it will only contains ack requests etc., or
