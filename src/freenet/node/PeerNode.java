@@ -449,8 +449,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* - physical.udp
 	* - setupKey
 	* Do not add self to PeerManager.
-	* @param fs The SimpleFieldSet to parse
+	* @param fs The node reference to parse.
 	* @param node2 The running Node we are part of.
+	* @param fromLocal True if the noderef was read from the stored peers file and can contain
+	* local metadata, and won't be signed. Otherwise, it is a new node reference from elsewhere,
+	* should not contain metadata, and will be signed. 
+	* @param fromAnonymousInitiator True if the node has just connected and given us a noderef,
+	* and we did not know it beforehand. This makes it a temporary connection. At the moment
+	* this only happens on seednodes.
+	* @param isOpennet True if the noderef should have opennet=true.
 	*/
 	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, 
 	        boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, 
