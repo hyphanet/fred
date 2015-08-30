@@ -454,7 +454,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* @param fromLocal True if the noderef was read from the stored peers file and can contain
 	* local metadata, and won't be signed. Otherwise, it is a new node reference from elsewhere,
 	* should not contain metadata, and will be signed. */
-	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, 
+	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto,
 	        boolean fromLocal, OutgoingPacketMangler mangler) 
 	                throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		boolean noSig = false;
@@ -466,7 +466,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		this.node = node2;
 		this.crypto = crypto;
 		assert(crypto.isOpennet == isOpennetForNoderef());
-		this.peers = peers;
+		this.peers = node.peers;
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
@@ -3905,9 +3905,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 */
 	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		if(crypto.isOpennet)
-			return new OpennetPeerNode(fs, node2, crypto, opennet, manager, true, mangler);
+			return new OpennetPeerNode(fs, node2, crypto, opennet, true, mangler);
 		else
-			return new DarknetPeerNode(fs, node2, crypto, manager, true, mangler, null, null);
+			return new DarknetPeerNode(fs, node2, crypto, true, mangler, null, null);
 	}
 	
 	public byte[] getPubKeyHash() {

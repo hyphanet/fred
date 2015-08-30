@@ -1491,7 +1491,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 			PeerNode seed;
 			try {
-				seed = new SeedClientPeerNode(ref, node, crypto, node.peers, crypto.packetMangler);
+				seed = new SeedClientPeerNode(ref, node, crypto, crypto.packetMangler);
 				// Don't tell tracker yet as we don't have the address yet.
 			} catch (FSParseException e) {
 				Logger.error(this, "Invalid seed client noderef: "+e+" from "+from, e);
