@@ -453,15 +453,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* @param node2 The running Node we are part of.
 	* @param fromLocal True if the noderef was read from the stored peers file and can contain
 	* local metadata, and won't be signed. Otherwise, it is a new node reference from elsewhere,
-	* should not contain metadata, and will be signed. 
-	* @param fromAnonymousInitiator True if the node has just connected and given us a noderef,
-	* and we did not know it beforehand. This makes it a temporary connection. At the moment
-	* this only happens on seednodes. */
+	* should not contain metadata, and will be signed. */
 	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, 
-	        boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler) 
+	        boolean fromLocal, OutgoingPacketMangler mangler) 
 	                throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		boolean noSig = false;
-		if(fromLocal || fromAnonymousInitiator) noSig = true;
+		if(fromLocal || fromAnonymousInitiator()) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
 		this.checkStatusAfterBackoff = new PeerNodeBackoffStatusChecker(myRef);
 		if(mangler == null) throw new NullPointerException();
@@ -501,7 +498,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		negTypes = fs.getIntArray("auth.negTypes");
 		if(negTypes == null || negTypes.length == 0) {
-			if(fromAnonymousInitiator)
+			if(fromAnonymousInitiator())
 				negTypes = mangler.supportedNegTypes(false); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
 			else
 				throw new FSParseException("No negTypes!");
@@ -528,7 +525,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				pubKeyHashHash = SHA256.digest(pubKeyHash);
 			}
 			
-			parseECDSA(fs, fromAnonymousInitiator, true);
+			parseECDSA(fs, fromAnonymousInitiator(), true);
 			if(noSig || verifyReferenceSignature(fs)) {
 				this.isSignatureVerificationSuccessfull = true;
 			}
@@ -757,7 +754,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
 
-	/** @return True if there is a new ECDSA key */
+	/** @return True if the node has just connected and given us a noderef, and we did not know 
+	 * it beforehand. This makes it a temporary connection. At the moment this only happens on 
+	 * seednodes. */
+	protected boolean fromAnonymousInitiator() {
+	    return false;
+	}
+	
+    /** @return True if there is a new ECDSA key */
 	private synchronized boolean parseECDSA(SimpleFieldSet fs, boolean fromAnonymousInitiator, boolean startup) throws FSParseException {
 	    // FIXME When negType9 is mandatory, make the fields final and move back into PeerNode.
 		SimpleFieldSet sfs = fs.subset("ecdsa.P256");
