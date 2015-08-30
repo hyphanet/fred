@@ -188,4 +188,9 @@ public class SeedServerPeerNode extends PeerNode {
         return false; // We do not accept announcements from a seednode.
     }
 
+    @Override
+    protected void writePeers() {
+        // Do not write peers, seeds are kept separately.
+    }
+
 }

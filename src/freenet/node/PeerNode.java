@@ -1832,11 +1832,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
-	private void writePeers() {
-        // Not urgent. This makes up the majority of the total writes.
-        // Writing it on shutdown is sufficient.
-        node.peers.writePeers(isOpennet());
-    }
+	/** Write the peers list affecting this node. */
+	protected abstract void writePeers();
 
     /**
 	* Should we reject a swap request?

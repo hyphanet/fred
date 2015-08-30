@@ -177,5 +177,10 @@ public class SeedClientPeerNode extends PeerNode {
         return true;
     }
 
+    @Override
+    protected void writePeers() {
+        // Do not write peers as seed clients are not in the peers list and are not saved.
+    }
+
 
 }
