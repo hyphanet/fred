@@ -781,6 +781,9 @@ public class Node implements TimeSkewDetectorCallback {
 	private boolean storePreallocate;
 	
 	private boolean enableRoutedPing;
+	
+	/** Copied here since expensive to access on NodeStats itself. */
+	public final boolean isTestingVM;
 
 	/**
 	 * Minimum bandwidth limit in bytes considered usable: 5 KiB. If there is an attempt to set a limit below this -
@@ -979,6 +982,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
 		this.shutdownHook = SemiOrderedShutdownHook.get();
+		this.isTestingVM = NodeStarter.isTestingVM();
 		// Easy stuff
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision()+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
 		fixCertsFiles();
