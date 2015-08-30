@@ -1828,13 +1828,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		boolean anythingChanged = location.updateLocation(newLoc, newLocs);
 		node.peers.updatePMUserAlert();
 		if(anythingChanged)
-			// Not urgent. This makes up the majority of the total writes.
-			// Writing it on shutdown is sufficient.
-			node.peers.writePeers(isOpennet());
+		    writePeers();
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
-	/**
+	private void writePeers() {
+        // Not urgent. This makes up the majority of the total writes.
+        // Writing it on shutdown is sufficient.
+        node.peers.writePeers(isOpennet());
+    }
+
+    /**
 	* Should we reject a swap request?
 	*/
 	public boolean shouldRejectSwapRequest() {
@@ -2520,7 +2524,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			Logger.minor(this, "Parsing: \n" + fs);
 		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef, forFullNodeRef) || forARK;
 		if(changedAnything && !isSeed())
-			node.peers.writePeers(isOpennet());
+		    writePeers();
 		// FIXME should this be urgent if IPs change? Dunno.
 	}
 
