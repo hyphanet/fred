@@ -8,6 +8,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -23,6 +25,7 @@ import freenet.crypt.JceLoader;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SSL;
 import freenet.crypt.Yarrow;
+import freenet.support.ByteArrayWrapper;
 import freenet.support.Executor;
 import freenet.support.JVMVersion;
 import freenet.support.Logger;
@@ -62,6 +65,9 @@ public class NodeStarter implements WrapperListener {
 
 	private static boolean isTestingVM;
 	private static boolean isStarted;
+	private static boolean testingVMEnableBypassConnections;
+	private static final Map<ByteArrayWrapper, Node> testingVMNodesByPubKeyHash = 
+	        new HashMap<ByteArrayWrapper, Node>();
 
 	/** If false, this is some sort of multi-node testing VM */
 	public synchronized static boolean isTestingVM() {
@@ -277,7 +283,7 @@ public class NodeStarter implements WrapperListener {
     public static RandomSource globalTestInit(String testName, boolean enablePlug,
             LogLevel logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
 
-        return globalTestInit(new File(testName), enablePlug, logThreshold, details, noDNS, null);
+        return globalTestInit(new File(testName), enablePlug, logThreshold, details, noDNS, false, null);
     }
 
 	/**
@@ -303,13 +309,15 @@ public class NodeStarter implements WrapperListener {
      *         {@link Yarrow} is returned.
 	 */
     public static RandomSource globalTestInit(File baseDirectory, boolean enablePlug,
-            LogLevel logThreshold, String details, boolean noDNS, RandomSource randomSource)
+            LogLevel logThreshold, String details, boolean noDNS, boolean enableBypassConnections,
+            RandomSource randomSource)
                 throws InvalidThresholdException {
 
 		synchronized(NodeStarter.class) {
 			if(isStarted) throw new IllegalStateException();
 			isStarted = true;
 			isTestingVM = true;
+			testingVMEnableBypassConnections = enableBypassConnections;
 		}
 
         if((!baseDirectory.mkdir()) && ((!baseDirectory.exists())
@@ -576,6 +584,11 @@ public class NodeStarter implements WrapperListener {
 
 		//All testing environments connect the nodes as they want, even if the old setup is restored, it is not desired.
 		node.peers.removeAllPeers();
+		
+		synchronized(NodeStarter.class) {
+		    if(testingVMEnableBypassConnections)
+		        testingVMNodesByPubKeyHash.put(new ByteArrayWrapper(node.darknetCrypto.pubKeyHash), node);
+		}
 
 		return node;
 	}
@@ -638,5 +651,16 @@ public class NodeStarter implements WrapperListener {
 	    }
 	    return globalSecureRandom;
 	}
+
+	/** If we are running a simulation with multiple nodes in one VM, and if bypass messaging is
+	 * enabled, then look up a Node by its pubKeyHash. */
+    public static Node maybeGetNode(byte[] pubKeyHash) {
+        synchronized(NodeStarter.class) {
+            assert(isTestingVM());
+            if(testingVMEnableBypassConnections)
+                return testingVMNodesByPubKeyHash.get(new ByteArrayWrapper(pubKeyHash));
+            return null;
+        }
+    }
 
 }

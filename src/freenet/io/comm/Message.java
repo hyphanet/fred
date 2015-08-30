@@ -183,6 +183,20 @@ public class Message {
 		needsLoadBulk = m.needsLoadBulk;
 	}
 
+    /** Drops sub-messages, and changes originator */
+    public Message(Message m, PeerContext source) {
+        _spec = m._spec;
+        _sourceRef = source.getWeakRef();
+        _internal = m._internal;
+        _payload.putAll(m._payload);
+        _subMessages = null;
+        localInstantiationTime = System.currentTimeMillis();
+        _receivedByteCount = 0;
+        priority = m.priority;
+        needsLoadRT = m.needsLoadRT;
+        needsLoadBulk = m.needsLoadBulk;
+    }
+
 	public boolean getBoolean(String key) {
 		return (Boolean) _payload.get(key);
 	}

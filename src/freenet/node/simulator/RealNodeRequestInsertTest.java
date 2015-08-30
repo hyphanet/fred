@@ -60,6 +60,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     // Set to true to cache everything. This depends on security level.
     static final boolean USE_SLASHDOT_CACHE = false;
     static final boolean REAL_TIME_FLAG = false;
+    static final boolean BYPASS_TRANSPORT_LAYER = true;
     
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
@@ -85,7 +86,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
         //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.NodeDispatcher:MINOR,freenet.node.simulator:MINOR,freenet.node.PeerManager:MINOR,freenet.node.RequestSender:MINOR");
         //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.FNP:MINOR,freenet.node.Packet:MINOR,freenet.io.comm:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR");
-        NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "", true);
+        //NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, "freenet.node.BypassMessageQueue:DEBUG,freenet.io.comm.MessageCore:MINOR,freenet.node:MINOR", true, BYPASS_TRANSPORT_LAYER, null);
+        NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, "", true, BYPASS_TRANSPORT_LAYER, null);
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource(3142);

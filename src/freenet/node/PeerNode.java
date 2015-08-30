@@ -643,7 +643,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		swapRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS);
 		probeRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS);
 
-		messageQueue = new PeerMessageQueue();
+		messageQueue = makeMessageQueue(node, crypto, pubKeyHash);
 
 		decrementHTLAtMaximum = node.random.nextFloat() < Node.DECREMENT_AT_MAX_PROB;
 		decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;
@@ -752,7 +752,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
 
-	/** @return True if the node has just connected and given us a noderef, and we did not know 
+	private static MessageQueue makeMessageQueue(Node source, 
+	        NodeCrypto sourceCrypto, byte[] pubKeyHash) {
+	    if(source.isTestingVM) {
+	        Node target = NodeStarter.maybeGetNode(pubKeyHash);
+	        if(target != null) {
+	            NodeCrypto targetCrypto =
+	                    sourceCrypto.isOpennet ? target.getOpennet().crypto : target.darknetCrypto;
+	            return new BypassMessageQueue(target, source, targetCrypto, sourceCrypto);
+            }
+	    }
+	    return new PeerMessageQueue();
+    }
+
+    /** @return True if the node has just connected and given us a noderef, and we did not know 
 	 * it beforehand. This makes it a temporary connection. At the moment this only happens on 
 	 * seednodes. */
 	protected boolean fromAnonymousInitiator() {
