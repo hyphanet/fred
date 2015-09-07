@@ -42,10 +42,7 @@ next ():
 
   - The Windows installer now defaults to starting Freenet on login.
   - There is a new Windows tray app with some useful features that is
-    included with new installations. If you are using the existing
-    Windows tray app you can download the new one here. No need to put
-    it in a specific directory - it will try the default installation
-    location and prompt if it can't find it.
+    included with new installations.
 
 - misc
 
@@ -70,4 +67,3 @@ next ():
     radio/meshnet darknet users group, and another run by
     ArneBab. Thanks!
   - Update existing seed node references.
-	
