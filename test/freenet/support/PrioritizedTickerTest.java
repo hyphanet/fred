@@ -101,14 +101,21 @@ public class PrioritizedTickerTest extends TestCase {
         }
         ticker.removeQueuedJob(simpleRunnable);
         boolean testedBothInSameMillisecond = false;
-        do {
+        while(!testedBothInSameMillisecond) {
             // Need to get them in the same millisecond. :(
-            ticker.queueTimedJob(simpleRunnable, 50);
-            ticker.queueTimedJob(simpleRunnable2, 50);
+            long tRunAt = System.currentTimeMillis()+50;
+            ticker.queueTimedJobAbsolute(simpleRunnable, "test1", tRunAt, true, false);
+            ticker.queueTimedJobAbsolute(simpleRunnable2, "test2", tRunAt, true, false);
+            if(tRunAt > System.currentTimeMillis()) {
+                // Rare race condition: If there is a severe delay and the first job runs
+                // before the second job can be queued, we don't get to test the "2 jobs in
+                // the same millisecond" behaviour on the Ticker thread.
+                // So test for that here. However 99% of the time this will work first time.
+                testedBothInSameMillisecond = true;
+            }
             assert(ticker.queuedJobs() == 2);
             int count = ticker.queuedJobsUniqueTimes();
-            assert(count == 1 || count == 2);
-            if(count == 1) testedBothInSameMillisecond = true;
+            assert(count == 1);
             ticker.removeQueuedJob(simpleRunnable);
             assert(ticker.queuedJobs() == 1);
             assert(ticker.queuedJobsUniqueTimes() == 1);
@@ -125,7 +132,7 @@ public class PrioritizedTickerTest extends TestCase {
             synchronized(PrioritizedTickerTest.this) {
                 assert(runCount == 0);
             }
-        } while(!testedBothInSameMillisecond);
+        }
     }
 
 	public void testDeduping() throws InterruptedException {
