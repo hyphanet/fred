@@ -125,32 +125,19 @@ public class PrioritizedTickerTest extends TestCase {
             runCount = 0;
         }
         assert(ticker.queuedJobs() == 0);
-        ticker.queueTimedJob(simpleRunnable, 5);
-        ticker.removeQueuedJob(simpleRunnable);
-        Thread.sleep(50);
-        synchronized(PrioritizedTickerTest.this) {
-            assert(runCount == 0);
-        }
-        assert(ticker.queuedJobs() == 0);
-        assert(ticker.queuedJobsUniqueTimes() == 0);
-        Thread.sleep(100);
-        synchronized(PrioritizedTickerTest.this) {
-            assert(runCount == 0);
-        }
-        ticker.queueTimedJob(simpleRunnable, 100);
+        BlockTickerJob blocker = new BlockTickerJob();
+        ticker.queueTimedJob(blocker, "Block the ticker", 0, true, false);
+        blocker.waitForBlocking();
+        ticker.queueTimedJob(simpleRunnable, "test", 0, true, false);
         assert(ticker.queuedJobs() == 1);
         assert(ticker.queuedJobsUniqueTimes() == 1);
-        Thread.sleep(10);
         ticker.removeQueuedJob(simpleRunnable);
-        assert(ticker.queuedJobs() == 0);
-        assert(ticker.queuedJobsUniqueTimes() == 0);
-        Thread.sleep(200);
         assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
         synchronized(PrioritizedTickerTest.this) {
             assert(runCount == 0);
         }
-        ticker.removeQueuedJob(simpleRunnable);
+        blocker.unblockAndWait();
     }
     
     public void testRemoveTwoInSameMillisecond() throws InterruptedException {
