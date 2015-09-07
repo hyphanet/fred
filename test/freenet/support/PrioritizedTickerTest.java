@@ -1,5 +1,6 @@
 package freenet.support;
 
+import freenet.node.FastRunnable;
 import junit.framework.TestCase;
 
 public class PrioritizedTickerTest extends TestCase {
@@ -40,34 +41,84 @@ public class PrioritizedTickerTest extends TestCase {
         
     };
     
-	public void testSimple() throws InterruptedException {
-		synchronized(PrioritizedTickerTest.this) {
-			runCount = 0;
-		}
-		assert(ticker.queuedJobs() == 0);
+    private enum BlockTickerJobState {
+        WAITING,
+        BLOCKING,
+        FINISHED
+    }
+
+    /** Allows us to block the Ticker. Because it's a FastRunnable it will be run directly on
+     * the Ticker thread itself. But it's not actually fast - it waits! */
+    private class BlockTickerJob implements FastRunnable {
+
+        private BlockTickerJobState state = 
+                BlockTickerJobState.WAITING;
+        private boolean proceed = false;
+        
+        @Override
+        public synchronized void run() {
+            state = BlockTickerJobState.BLOCKING;
+            notifyAll();
+            while(!proceed) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    // Ignore.
+                }
+            }
+            state = BlockTickerJobState.FINISHED;
+            notifyAll();
+        }
+        
+        public synchronized void waitForBlocking() throws InterruptedException {
+            while(state != BlockTickerJobState.BLOCKING) {
+                wait();
+            }
+        }
+        
+        public synchronized void waitForFinished() throws InterruptedException {
+            while(state == BlockTickerJobState.FINISHED) {
+                wait();
+            }
+        }
+        
+        public synchronized void unblockAndWait() throws InterruptedException {
+            waitForBlocking();
+            proceed = true;
+            notifyAll();
+            waitForFinished();
+        }
+        
+    }
+    
+    public void testSimple() throws InterruptedException {
+        synchronized(PrioritizedTickerTest.this) {
+            runCount = 0;
+        }
+        assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
-		ticker.queueTimedJob(simpleRunnable, 0);
-		Thread.sleep(50);
-		synchronized(PrioritizedTickerTest.this) {
-			assert(runCount == 1);
-		}
-		assert(ticker.queuedJobs() == 0);
+        ticker.queueTimedJob(simpleRunnable, 0);
+        Thread.sleep(50);
+        synchronized(PrioritizedTickerTest.this) {
+            assert(runCount == 1);
+        }
+        assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
-		Thread.sleep(100);
-		synchronized(PrioritizedTickerTest.this) {
-			assert(runCount == 1);
-		}
-		ticker.queueTimedJob(simpleRunnable, 100);
-		assert(ticker.queuedJobs() == 1);
-		Thread.sleep(80);
-		assert(ticker.queuedJobs() == 1);
-		Thread.sleep(200);
-		assert(ticker.queuedJobs() == 0);
+        Thread.sleep(100);
+        synchronized(PrioritizedTickerTest.this) {
+            assert(runCount == 1);
+        }
+        ticker.queueTimedJob(simpleRunnable, 100);
+        assert(ticker.queuedJobs() == 1);
+        Thread.sleep(80);
+        assert(ticker.queuedJobs() == 1);
+        Thread.sleep(200);
+        assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
-		synchronized(PrioritizedTickerTest.this) {
-			assert(runCount == 2);
-		}
-	}
+        synchronized(PrioritizedTickerTest.this) {
+            assert(runCount == 2);
+        }
+    }
 
     public void testRemove() throws InterruptedException {
         synchronized(PrioritizedTickerTest.this) {
@@ -103,43 +154,36 @@ public class PrioritizedTickerTest extends TestCase {
     }
     
     public void testRemoveTwoInSameMillisecond() throws InterruptedException {
-        boolean testedBothInSameMillisecond = false;
-        while(!testedBothInSameMillisecond) {
-            // Need to get them in the same millisecond. :(
-            long tRunAt = System.currentTimeMillis()+50;
-            ticker.queueTimedJobAbsolute(simpleRunnable, "test1", tRunAt, true, false);
-            ticker.queueTimedJobAbsolute(simpleRunnable2, "test2", tRunAt, true, false);
-            if(tRunAt > System.currentTimeMillis()) {
-                // Rare race condition: If there is a severe delay and the first job runs
-                // before the second job can be queued, we don't get to test the "2 jobs in
-                // the same millisecond" behaviour on the Ticker thread.
-                // So test for that here. However 99% of the time this will work first time.
-                testedBothInSameMillisecond = true;
-            }
-            assert(ticker.queuedJobs() == 2);
-            int count = ticker.queuedJobsUniqueTimes();
-            assert(count == 1);
-            ticker.removeQueuedJob(simpleRunnable);
-            assert(ticker.queuedJobs() == 1);
-            assert(ticker.queuedJobsUniqueTimes() == 1);
-            // Remove it again, should not throw or affect other queued job.
-            ticker.removeQueuedJob(simpleRunnable);
-            assert(ticker.queuedJobs() == 1);
-            assert(ticker.queuedJobsUniqueTimes() == 1);
-            // Remove second job.
-            ticker.removeQueuedJob(simpleRunnable2);
-            assert(ticker.queuedJobs() == 0);
-            assert(ticker.queuedJobsUniqueTimes() == 0);
-            // Remove second job again, should not throw.
-            ticker.removeQueuedJob(simpleRunnable2);
-            assert(ticker.queuedJobs() == 0);
-            assert(ticker.queuedJobsUniqueTimes() == 0);
-            Thread.sleep(100);
-            assert(ticker.queuedJobs() == 0);
-            assert(ticker.queuedJobsUniqueTimes() == 0);
-            synchronized(PrioritizedTickerTest.this) {
-                assert(runCount == 0);
-            }
+        BlockTickerJob blocker = new BlockTickerJob();
+        ticker.queueTimedJob(blocker, "Block the ticker", 0, true, false);
+        blocker.waitForBlocking();
+        // Use absolute time to ensure they are both in the same millisecond.
+        long tRunAt = System.currentTimeMillis();
+        ticker.queueTimedJobAbsolute(simpleRunnable, "test1", tRunAt, true, false);
+        ticker.queueTimedJobAbsolute(simpleRunnable2, "test2", tRunAt, true, false);
+        assert(ticker.queuedJobs() == 2);
+        int count = ticker.queuedJobsUniqueTimes();
+        assert(count == 1);
+        ticker.removeQueuedJob(simpleRunnable);
+        assert(ticker.queuedJobs() == 1);
+        assert(ticker.queuedJobsUniqueTimes() == 1);
+        // Remove it again, should not throw or affect other queued job.
+        ticker.removeQueuedJob(simpleRunnable);
+        assert(ticker.queuedJobs() == 1);
+        assert(ticker.queuedJobsUniqueTimes() == 1);
+        // Remove second job.
+        ticker.removeQueuedJob(simpleRunnable2);
+        assert(ticker.queuedJobs() == 0);
+        assert(ticker.queuedJobsUniqueTimes() == 0);
+        // Remove second job again, should not throw.
+        ticker.removeQueuedJob(simpleRunnable2);
+        assert(ticker.queuedJobs() == 0);
+        assert(ticker.queuedJobsUniqueTimes() == 0);
+        blocker.unblockAndWait();
+        assert(ticker.queuedJobs() == 0);
+        assert(ticker.queuedJobsUniqueTimes() == 0);
+        synchronized(PrioritizedTickerTest.this) {
+            assert(runCount == 0);
         }
     }
 
