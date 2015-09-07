@@ -100,6 +100,9 @@ public class PrioritizedTickerTest extends TestCase {
             assert(runCount == 0);
         }
         ticker.removeQueuedJob(simpleRunnable);
+    }
+    
+    public void testRemoveTwoInSameMillisecond() throws InterruptedException {
         boolean testedBothInSameMillisecond = false;
         while(!testedBothInSameMillisecond) {
             // Need to get them in the same millisecond. :(
