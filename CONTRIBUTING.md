@@ -29,7 +29,7 @@ have missed it.
 
 Code review helps improve code quality, ensures that multiple people know the
 codebase, serves as a defense against introducing malicious code, and makes it
-infeasable to pressure people into contributing malicious code. Its goal is
+infeasible to pressure people into contributing malicious code. Its goal is
 producing software that is readable, correct, and sufficiently efficient.
 
 Breaking API creates an immense amount of work for developers of other projects,
