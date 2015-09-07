@@ -7,13 +7,49 @@ public class PrioritizedTickerTest extends TestCase {
 	
 	private Executor realExec;
 	
-	private PrioritizedTicker ticker;
+	private MyTicker ticker;
+	
+	private class MyTicker extends PrioritizedTicker {
+
+	    private boolean sleeping;
+	    private Object sleepSync = new Object();
+	    
+        public MyTicker(Executor executor, int portNumber) {
+            super(executor, portNumber);
+        }
+        
+        protected void sleep(long sleepTime) throws InterruptedException {
+            if(sleepTime == MAX_SLEEP_TIME) {
+                synchronized(sleepSync) {
+                    sleeping = true;
+                    sleepSync.notifyAll();
+                }
+            }
+            super.sleep(sleepTime);
+        }
+        
+        public void waitForSleeping() throws InterruptedException {
+            synchronized(sleepSync) {
+                while(!sleeping) {
+                    sleepSync.wait();
+                }
+                sleeping = false;
+            }
+        }
+        
+        public void waitForIdle() throws InterruptedException {
+            while(queuedJobsUniqueTimes() > 0) {
+                waitForSleeping();
+            }
+        }
+	    
+	}
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		realExec = new PooledExecutor();
-		ticker = new PrioritizedTicker(realExec, 0);
+		ticker = new MyTicker(realExec, 0);
 		ticker.start();
 	}
 
@@ -98,21 +134,19 @@ public class PrioritizedTickerTest extends TestCase {
         assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
         ticker.queueTimedJob(simpleRunnable, 0);
-        Thread.sleep(50);
+        ticker.waitForIdle();
         synchronized(PrioritizedTickerTest.this) {
             assert(runCount == 1);
         }
         assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
-        Thread.sleep(100);
-        synchronized(PrioritizedTickerTest.this) {
-            assert(runCount == 1);
-        }
-        ticker.queueTimedJob(simpleRunnable, 100);
+        BlockTickerJob blocker = new BlockTickerJob();
+        ticker.queueTimedJob(blocker, "Block the ticker", 0, true, false);
+        blocker.waitForBlocking();
+        ticker.queueTimedJob(simpleRunnable, "test", 0, true, false);
         assert(ticker.queuedJobs() == 1);
-        Thread.sleep(80);
-        assert(ticker.queuedJobs() == 1);
-        Thread.sleep(200);
+        blocker.unblockAndWait();
+        ticker.waitForIdle();
         assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
         synchronized(PrioritizedTickerTest.this) {

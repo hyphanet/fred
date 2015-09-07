@@ -136,13 +136,8 @@ public class PrioritizedTicker implements Ticker, Runnable {
 			}
 
 		if(sleepTime > 0) {
-			// Update logging only when have time to do so
 			try {
-				if(logMINOR)
-					Logger.minor(this, "Sleeping for " + sleepTime);
-				synchronized(this) {
-					wait(sleepTime);
-				}
+			    sleep(sleepTime);
 			} catch(InterruptedException e) {
 				// Ignore, just wake up. Probably we got interrupt()ed
 				// because a new job came in.
@@ -150,8 +145,15 @@ public class PrioritizedTicker implements Ticker, Runnable {
 		}
 	}
 
+	protected void sleep(long sleepTime) throws InterruptedException {
+        if(logMINOR)
+            Logger.minor(this, "Sleeping for " + sleepTime);
+        synchronized(this) {
+            wait(sleepTime);
+        }
+    }
 
-	@Override
+    @Override
 	public void queueTimedJob(Runnable job, long offset) {
 		queueTimedJob(job, "Scheduled job: "+job, offset, false, false);
 	}
