@@ -119,10 +119,15 @@ public class PrioritizedTickerTest extends TestCase {
             ticker.removeQueuedJob(simpleRunnable);
             assert(ticker.queuedJobs() == 1);
             assert(ticker.queuedJobsUniqueTimes() == 1);
+            // Remove it again, should not throw or affect other queued job.
             ticker.removeQueuedJob(simpleRunnable);
             assert(ticker.queuedJobs() == 1);
             assert(ticker.queuedJobsUniqueTimes() == 1);
+            // Remove second job.
             ticker.removeQueuedJob(simpleRunnable2);
+            assert(ticker.queuedJobs() == 0);
+            assert(ticker.queuedJobsUniqueTimes() == 0);
+            // Remove second job again, should not throw.
             ticker.removeQueuedJob(simpleRunnable2);
             assert(ticker.queuedJobs() == 0);
             assert(ticker.queuedJobsUniqueTimes() == 0);
