@@ -13,11 +13,6 @@
 
 div,
 body,
-h1,
-h2,
-h3,
-h4,
-h5,
 li,
 p,
 span,
@@ -68,6 +63,7 @@ body {
 }
 
 #topbar h1 {
+	font-family: tahoma;
 	font-size: 2em;
 	font-weight: bold;
 	padding-top: 0px;
