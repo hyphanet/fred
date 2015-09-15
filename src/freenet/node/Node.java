@@ -1185,7 +1185,7 @@ public class Node implements TimeSkewDetectorCallback {
 		masterKeysFile = f;
 		FileUtil.setOwnerRW(masterKeysFile);
 		
-		nodeConfig.register("showFriendsVisibilityAlert", false, sortOrder++, true, false, "Node.showFriendsVisibilityAlert", "Node.showFriendsVisibilityAlertLong", new BooleanCallback() {
+		nodeConfig.register("showFriendsVisibilityAlert", false, sortOrder++, true, false, "Node.showFriendsVisibilityAlert", "Node.showFriendsVisibilityAlert", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
@@ -1437,7 +1437,7 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		publishOurPeersLocation = nodeConfig.getBoolean("publishOurPeersLocation");
 
-		nodeConfig.register("routeAccordingToOurPeersLocation", true, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
+		nodeConfig.register("routeAccordingToOurPeersLocation", true, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocation", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
