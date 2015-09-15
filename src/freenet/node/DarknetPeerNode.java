@@ -159,8 +159,8 @@ public class DarknetPeerNode extends PeerNode {
 	 * @param node2 The running Node we are part of.
 	 * @param trust If this is a new node, we will use this parameter to set the initial trust level.
 	 */
-	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		super(fs, node2, crypto, peers, fromLocal, false, mangler, false);
+	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		super(fs, node2, crypto, fromLocal);
 
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
@@ -1967,4 +1967,19 @@ public class DarknetPeerNode extends PeerNode {
 			}
 		}
 	}
+
+    @Override
+    public boolean isOpennetForNoderef() {
+        return false;
+    }
+
+    @Override
+    public boolean canAcceptAnnouncements() {
+        return node.passOpennetRefsThroughDarknet();
+    }
+
+    @Override
+    protected void writePeers() {
+        node.peers.writePeers(false);
+    }
 }

@@ -449,20 +449,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* - physical.udp
 	* - setupKey
 	* Do not add self to PeerManager.
-	* @param fs The SimpleFieldSet to parse
+	* @param fs The node reference to parse.
 	* @param node2 The running Node we are part of.
-	*/
-	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	* @param fromLocal True if the noderef was read from the stored peers file and can contain
+	* local metadata, and won't be signed. Otherwise, it is a new node reference from elsewhere,
+	* should not contain metadata, and will be signed. */
+	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal) 
+	                throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		boolean noSig = false;
-		if(fromLocal || fromAnonymousInitiator) noSig = true;
+		if(fromLocal || fromAnonymousInitiator()) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
 		this.checkStatusAfterBackoff = new PeerNodeBackoffStatusChecker(myRef);
-		if(mangler == null) throw new NullPointerException();
-		this.outgoingMangler = mangler;
+		this.outgoingMangler = crypto.packetMangler;
 		this.node = node2;
 		this.crypto = crypto;
-		assert(crypto.isOpennet == (isOpennet() || isSeed()));
-		this.peers = peers;
+		assert(crypto.isOpennet == isOpennetForNoderef());
+		this.peers = node.peers;
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
@@ -494,14 +496,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		negTypes = fs.getIntArray("auth.negTypes");
 		if(negTypes == null || negTypes.length == 0) {
-			if(fromAnonymousInitiator)
-				negTypes = mangler.supportedNegTypes(false); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
+			if(fromAnonymousInitiator())
+				negTypes = outgoingMangler.supportedNegTypes(false); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
 			else
 				throw new FSParseException("No negTypes!");
 		}
 
-		if(fs.getBoolean("opennet", false) != isOpennet)
-			throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet isOpennet="+isOpennet+" boolean = "+fs.getBoolean("opennet", false)+" string = \""+fs.get("opennet")+"\"");
+		if(fs.getBoolean("opennet", false) != isOpennetForNoderef())
+			throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet isOpennet="+isOpennetForNoderef()+" boolean = "+fs.getBoolean("opennet", false)+" string = \""+fs.get("opennet")+"\"");
 
 		/* Read the DSA key material for the peer */
 		try {
@@ -521,7 +523,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				pubKeyHashHash = SHA256.digest(pubKeyHash);
 			}
 			
-			parseECDSA(fs, fromAnonymousInitiator, true);
+			parseECDSA(fs, fromAnonymousInitiator(), true);
 			if(noSig || verifyReferenceSignature(fs)) {
 				this.isSignatureVerificationSuccessfull = true;
 			}
@@ -750,7 +752,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
 
-	/** @return True if there is a new ECDSA key */
+	/** @return True if the node has just connected and given us a noderef, and we did not know 
+	 * it beforehand. This makes it a temporary connection. At the moment this only happens on 
+	 * seednodes. */
+	protected boolean fromAnonymousInitiator() {
+	    return false;
+	}
+	
+    /** @return True if there is a new ECDSA key */
 	private synchronized boolean parseECDSA(SimpleFieldSet fs, boolean fromAnonymousInitiator, boolean startup) throws FSParseException {
 	    // FIXME When negType9 is mandatory, make the fields final and move back into PeerNode.
 		SimpleFieldSet sfs = fs.subset("ecdsa.P256");
@@ -1788,13 +1797,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		boolean anythingChanged = location.updateLocation(newLoc, newLocs);
 		node.peers.updatePMUserAlert();
 		if(anythingChanged)
-			// Not urgent. This makes up the majority of the total writes.
-			// Writing it on shutdown is sufficient.
-			node.peers.writePeers(isOpennet());
+		    writePeers();
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
-	/**
+	/** Write the peers list affecting this node. */
+	protected abstract void writePeers();
+
+    /**
 	* Should we reject a swap request?
 	*/
 	public boolean shouldRejectSwapRequest() {
@@ -2480,7 +2490,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			Logger.minor(this, "Parsing: \n" + fs);
 		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef, forFullNodeRef) || forARK;
 		if(changedAnything && !isSeed())
-			node.peers.writePeers(isOpennet());
+		    writePeers();
 		// FIXME should this be urgent if IPs change? Dunno.
 	}
 
@@ -2515,8 +2525,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		else if(s != null) {
 			try {
 				boolean b = Fields.stringToBool(s);
-				if(b != (isOpennet() || isSeed()))
-					throw new FSParseException("Changed opennet status?!?!?!? expected="+isOpennet()+" but got "+b+" ("+s+") on "+this);
+				if(b != isOpennetForNoderef())
+					throw new FSParseException("Changed opennet status?!?!?!? expected="+isOpennetForNoderef()+" but got "+b+" ("+s+") on "+this);
 			} catch (NumberFormatException e) {
 				throw new FSParseException("Cannot parse opennet=\""+s+"\"", e);
 			}
@@ -2834,19 +2844,31 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			fs.put("ark.number", myARK.suggestedEdition - 1);
 			fs.putSingle("ark.pubURI", myARK.getBaseSSK().toString(false, false));
 		}
-		fs.put("opennet", isOpennet());
+		fs.put("opennet", isOpennetForNoderef());
 		fs.put("seed", isSeed());
 		fs.put("totalInput", (getTotalInputSinceStartup()+getTotalInputBytes()));
 		fs.put("totalOutput", (getTotalOutputSinceStartup()+getTotalOutputBytes()));
 		return fs;
 	}
 
+	/** @return True if the node is a full darknet peer ("Friend"), which should usually be in
+	 * the darknet routing table. */
 	public abstract boolean isDarknet();
 
+	/** @return True if the node is a full opennet peer ("Stranger"), which should usually be in
+	 * the OpennetManager and opennet routing table. */
 	public abstract boolean isOpennet();
+	
+	/** @return Expected value of "opennet=" in the noderef. This returns true if the node is an
+	 * actual opennet peer, but also if the node is a seed client or seed server, even though they
+	 * are never part of the routing table. This also determines whether we use the opennet or
+	 * darknet NodeCrypto. */
+	public abstract boolean isOpennetForNoderef();
 
+	/** @return True if the node is a seed client or seed server. These are never in the routing
+	 * table, but their noderefs should still say opennet=true. */
 	public abstract boolean isSeed();
-
+	
 	/**
 	* @return The time at which we last connected (or reconnected).
 	*/
@@ -3846,11 +3868,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/**
 	 * Create a DarknetPeerNode or an OpennetPeerNode as appropriate
 	 */
-	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		if(crypto.isOpennet)
-			return new OpennetPeerNode(fs, node2, crypto, opennet, manager, true, mangler);
+			return new OpennetPeerNode(fs, node2, crypto, opennet, true);
 		else
-			return new DarknetPeerNode(fs, node2, crypto, manager, true, mangler, null, null);
+			return new DarknetPeerNode(fs, node2, crypto, true, null, null);
 	}
 	
 	public byte[] getPubKeyHash() {
@@ -3993,9 +4015,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public abstract boolean isRealConnection();
 
 	/** Can we accept announcements from this node? */
-	public boolean canAcceptAnnouncements() {
-		return isOpennet() || node.passOpennetRefsThroughDarknet();
-	}
+	public abstract boolean canAcceptAnnouncements();
 
 	public boolean handshakeUnknownInitiator() {
 		return false;

@@ -198,13 +198,12 @@ public class PeerManager {
 				else
 					darkFilename = filename;
 		}
-		OutgoingPacketMangler mangler = crypto.packetMangler;
 		int maxBackups = isOpennet ? BACKUPS_OPENNET : BACKUPS_DARKNET;
 		for(int i=0;i<=maxBackups;i++) {
 			File peersFile = this.getBackupFilename(filename, i);
 			// Try to read the node list from disk
 			if(peersFile.exists())
-				if(readPeers(peersFile, mangler, crypto, opennet, oldOpennetPeers)) {
+				if(readPeers(peersFile, crypto, opennet, oldOpennetPeers)) {
 					String msg;
 					if(oldOpennetPeers)
 						msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
@@ -222,7 +221,7 @@ public class PeerManager {
 		// The other cases are less important.
 	}
 
-	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
+	private boolean readPeers(File peersFile, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
 		boolean someBroken = false;
 		boolean gotSome = false;
 		FileInputStream fis;
@@ -245,7 +244,7 @@ public class PeerManager {
 				SimpleFieldSet fs;
 				fs = new SimpleFieldSet(br, false, true);
 				try {
-					PeerNode pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
+					PeerNode pn = PeerNode.create(fs, node, crypto, opennet, this);
 					if(oldOpennetPeers) {
 					    if(!(pn instanceof OpennetPeerNode))
 					        Logger.error(this, "Darknet node in old opennet peers?!: "+pn);

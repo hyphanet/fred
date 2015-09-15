@@ -16,8 +16,8 @@ import freenet.support.SimpleFieldSet;
  */
 public class SeedClientPeerNode extends PeerNode {
 
-	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean noSig, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		super(fs, node2, crypto, peers, fromLocal, noSig, mangler, true);
+	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		super(fs, node2, crypto, false);
 	}
 
 	@Override
@@ -172,5 +172,19 @@ public class SeedClientPeerNode extends PeerNode {
 		return true;
 	}
 
+    @Override
+    public boolean isOpennetForNoderef() {
+        return true;
+    }
+
+    @Override
+    protected void writePeers() {
+        // Do not write peers as seed clients are not in the peers list and are not saved.
+    }
+
+    @Override
+    protected boolean fromAnonymousInitiator() {
+        return true;
+    }
 
 }
