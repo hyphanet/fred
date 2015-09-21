@@ -1,10 +1,14 @@
-package freenet.store;
+package freenet.store.caching;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 
 import junit.framework.TestCase;
 import freenet.crypt.DSAGroup;
@@ -30,6 +34,14 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKEncodeException;
 import freenet.keys.SSKVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
+import freenet.store.CHKStore;
+import freenet.store.GetPubkey;
+import freenet.store.KeyCollisionException;
+import freenet.store.PubkeyStore;
+import freenet.store.RAMFreenetStore;
+import freenet.store.SSKStore;
+import freenet.store.SimpleGetPubkey;
+import freenet.store.WriteBlockableFreenetStore;
 import freenet.store.saltedhash.ResizablePersistentIntBuffer;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.Fields;
@@ -50,6 +62,7 @@ import freenet.support.io.FileUtil;
  * 
  * @author Simon Vocella <voxsim@gmail.com>
  * 
+ * FIXME lots of repeated code, factor out.
  */
 public class CachingFreenetStoreTest extends TestCase {
 
@@ -80,7 +93,8 @@ public class CachingFreenetStoreTest extends TestCase {
 
 		CHKStore store = new CHKStore();
 		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
+		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, ticker);
+		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, saltStore, tracker);
 		cachingStore.start(null, true);
 
 		for(int i=0;i<5;i++) {
@@ -106,7 +120,8 @@ public class CachingFreenetStoreTest extends TestCase {
 
 		CHKStore store = new CHKStore();
 		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, 0, cachingFreenetStorePeriod, saltStore, ticker);
+		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(0, cachingFreenetStorePeriod, ticker);
+		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, saltStore, tracker);
 		cachingStore.start(null, true);
 
 		for(int i=0;i<5;i++) {
@@ -123,6 +138,313 @@ public class CachingFreenetStoreTest extends TestCase {
 		
 		cachingStore.close();
 	}
+
+	/* Check that if we are going over the maximum size, the caching store will call pushAll and all blocks is in the 
+	 *  *undelying* store and the size is 0
+	 */
+	public void testOverMaximumSize() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException, InterruptedException {
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+		
+		String test = "test0";
+		ClientCHKBlock block = encodeBlockCHK(test);
+		byte[] data = block.getBlock().getRawData();
+		byte[] header = block.getBlock().getRawHeaders();
+		byte[] routingKey = block.getBlock().getRoutingKey();
+		long sizeBlock = data.length+header.length+block.getBlock().getFullKey().length+routingKey.length;
+		long sumSizeBlock = sizeBlock;
+		int howManyBlocks = ((int) (cachingFreenetStoreMaxSize / sizeBlock)) + 1;
+		
+		CHKStore store = new CHKStore();
+		
+		// SaltedHashFreenetStore is lossy, since it only has 5 possible places to put each 
+		// key. So if you want to be 100% sure it doesn't lose any keys you need to give it 
+		// 5x the number of slots as the keys you are putting in. For small stores you can 
+		// get away with smaller numbers. 
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, howManyBlocks*5, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, ticker);
+		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, saltStore, tracker);
+		cachingStore.start(null, true);
+		List<ClientCHKBlock> chkBlocks = new ArrayList<ClientCHKBlock>();
+		List<String> tests = new ArrayList<String>();
+		
+		store.put(block.getBlock(), false);
+		chkBlocks.add(block);
+		tests.add(test);
+		
+		for(int i=1; i<howManyBlocks; i++) {
+			test = "test" + i;
+			block = encodeBlockCHK(test);
+			data = block.getBlock().getRawData();
+			header = block.getBlock().getRawHeaders();
+			routingKey = block.getBlock().getRoutingKey();
+			sizeBlock = data.length+header.length+block.getBlock().getFullKey().length+routingKey.length;
+			sumSizeBlock += sizeBlock;
+			store.put(block.getBlock(), false);
+			chkBlocks.add(block);
+			tests.add(test);
+		}
+		
+		assertTrue(sumSizeBlock > cachingFreenetStoreMaxSize);
+		
+		waitForZero(tracker);
+		
+		for(int i=0; i<howManyBlocks; i++) {
+			test = tests.remove(0); //get the first element
+			block = chkBlocks.remove(0); //get the first element
+			ClientCHK key = block.getClientKey();
+			// It should pass straight through.
+			assertNotNull(saltStore.fetch(key.getRoutingKey(), key.getNodeCHK().getFullKey(), false, false, false, false, null));
+			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
+			String receivedData = decodeBlockCHK(verify, key);
+			assertEquals(test, receivedData);
+		}
+		
+		cachingStore.close();
+	}
+	
+	private void waitForZero(CachingFreenetStoreTracker tracker) throws InterruptedException {
+		long time = 0;
+		long maxTime = 1000;
+		while(time < maxTime && tracker.getSizeOfCache() > 0) {
+			Thread.sleep(1);
+			time += 1;
+		}
+		
+		assertTrue(time < maxTime && tracker.getSizeOfCache() == 0);
+	}
+
+	public void testCollisionsOverMaximumSize() throws IOException, SSKEncodeException, InvalidCompressionCodecException, InterruptedException {
+		
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+		PubkeyStore pk = new PubkeyStore();
+		new RAMFreenetStore<DSAPublicKey>(pk, 10);
+		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
+		SSKStore store = new SSKStore(pubkeyCache);
+		int sskBlockSize = store.getTotalBlockSize();
+		
+		// Create a cache with size limit of 1.5 SSK's.
+		
+		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK", store, weakPRNG, 20, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker((sskBlockSize * 3) / 2, cachingFreenetStorePeriod, ticker);
+		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, saltStore, tracker);
+		cachingStore.start(null, true);
+		RandomSource random = new DummyRandomSource(12345);
+		
+		final int CRYPTO_KEY_LENGTH = 32;
+		byte[] ckey = new byte[CRYPTO_KEY_LENGTH];
+		random.nextBytes(ckey);
+		DSAGroup g = Global.DSAgroupBigA;
+		DSAPrivateKey privKey = new DSAPrivateKey(g, random);
+		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
+		byte[] pkHash = SHA256.digest(pubKey.asBytes());
+		String docName = "myDOC";
+		InsertableClientSSK ik = new InsertableClientSSK(docName, pkHash, pubKey, privKey, ckey, Key.ALGO_AES_PCFB_256_SHA256);
+		
+		// Write one key to the store.
+		
+		String test = "test";
+		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
+		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		SSKBlock sskBlock = (SSKBlock) block.getBlock();
+		pubkeyCache.cacheKey(sskBlock.getKey().getPubKeyHash(), sskBlock.getPubKey(), false, false, false, false, false);
+		try {
+			store.put(sskBlock, false, false);
+		} catch (KeyCollisionException e1) {
+			fail();
+		}
+		
+		assertTrue(tracker.getSizeOfCache() == sskBlockSize);
+		
+		// Write a colliding key.
+		test = "test1";
+		bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
+		block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		sskBlock = (SSKBlock) block.getBlock();
+		try {
+			store.put(sskBlock, false, false);
+			fail();
+		} catch (KeyCollisionException e) {
+			// Expected.
+		}
+		try {
+			store.put(sskBlock, true, false);
+		} catch (KeyCollisionException e) {
+			fail();
+		}
+		
+		// Size is still one key.
+		assertTrue(tracker.getSizeOfCache() == sskBlockSize);
+		
+		// Write a second key, should trigger write to disk.
+		DSAPrivateKey privKey2 = new DSAPrivateKey(g, random);
+		DSAPublicKey pubKey2 = new DSAPublicKey(g, privKey2);
+		byte[] pkHash2 = SHA256.digest(pubKey2.asBytes());
+		InsertableClientSSK ik2 = new InsertableClientSSK(docName, pkHash2, pubKey2, privKey2, ckey, Key.ALGO_AES_PCFB_256_SHA256);
+		block = ik2.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		SSKBlock sskBlock2 = (SSKBlock) block.getBlock();
+		pubkeyCache.cacheKey(sskBlock2.getKey().getPubKeyHash(), sskBlock2.getPubKey(), false, false, false, false, false);
+		
+		try {
+			store.put(sskBlock2, false, false);
+		} catch (KeyCollisionException e) {
+			fail();
+		}
+		
+		// Wait for it to write to disk.
+		waitForZero(tracker);
+		
+		assertTrue(store.fetch(sskBlock.getKey(), false, false, false, false, null).equals(sskBlock));
+		assertTrue(store.fetch(sskBlock2.getKey(), false, false, false, false, null).equals(sskBlock2));
+	}
+	
+	public void testSimpleManualWrite() throws IOException, SSKEncodeException, InvalidCompressionCodecException, InterruptedException {
+		
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+		PubkeyStore pk = new PubkeyStore();
+		new RAMFreenetStore<DSAPublicKey>(pk, 10);
+		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
+		SSKStore store = new SSKStore(pubkeyCache);
+		int sskBlockSize = store.getTotalBlockSize();
+		
+		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK", store, weakPRNG, 20, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker((sskBlockSize * 3), cachingFreenetStorePeriod, ticker);
+		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, saltStore, tracker);
+		cachingStore.start(null, true);
+		RandomSource random = new DummyRandomSource(12345);
+		
+		final int CRYPTO_KEY_LENGTH = 32;
+		byte[] ckey = new byte[CRYPTO_KEY_LENGTH];
+		random.nextBytes(ckey);
+		DSAGroup g = Global.DSAgroupBigA;
+		DSAPrivateKey privKey = new DSAPrivateKey(g, random);
+		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
+		byte[] pkHash = SHA256.digest(pubKey.asBytes());
+		String docName = "myDOC";
+		InsertableClientSSK ik = new InsertableClientSSK(docName, pkHash, pubKey, privKey, ckey, Key.ALGO_AES_PCFB_256_SHA256);
+		
+		// Nothing to write.
+		assertTrue(tracker.getSizeOfCache() == 0);
+		assert(cachingStore.pushLeastRecentlyBlock() == -1);
+		
+		// Write one key to the store.
+		
+		String test = "test";
+		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
+		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		SSKBlock sskBlock = (SSKBlock) block.getBlock();
+		pubkeyCache.cacheKey(sskBlock.getKey().getPubKeyHash(), sskBlock.getPubKey(), false, false, false, false, false);
+		try {
+			store.put(sskBlock, false, false);
+		} catch (KeyCollisionException e1) {
+			fail();
+		}
+		
+		// Write.
+		assertEquals(tracker.getSizeOfCache(), sskBlockSize);
+		assertEquals(cachingStore.pushLeastRecentlyBlock(), sskBlockSize);
+		
+		// Nothing to write.
+		assertEquals(cachingStore.pushLeastRecentlyBlock(), -1);
+	}
+	
+	/** pushLeastRecentlyBlock() with collisions:
+	 * Lock { Grab a block for key K. (Do not remove it) }
+	 * Write the block.
+	 * Lock { Detected a different block for key K. Return 0 rather than removing it. }
+	 */
+	public void testManualWriteCollision() throws IOException, SSKEncodeException, InvalidCompressionCodecException, InterruptedException, ExecutionException {
+		
+		File f = new File(tempDir, "saltstore");
+		FileUtil.removeAll(f);
+		PubkeyStore pk = new PubkeyStore();
+		new RAMFreenetStore<DSAPublicKey>(pk, 10);
+		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
+		SSKStore store = new SSKStore(pubkeyCache);
+		int sskBlockSize = store.getTotalBlockSize();
+		
+		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK", store, weakPRNG, 20, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		// Don't let the write complete until we say so...
+		WriteBlockableFreenetStore<SSKBlock> delayStore = new WriteBlockableFreenetStore<SSKBlock>(saltStore, true);
+		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker((sskBlockSize * 3), cachingFreenetStorePeriod, ticker);
+		final CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, delayStore, tracker);
+		cachingStore.start(null, true);
+		RandomSource random = new DummyRandomSource(12345);
+		
+		final int CRYPTO_KEY_LENGTH = 32;
+		byte[] ckey = new byte[CRYPTO_KEY_LENGTH];
+		random.nextBytes(ckey);
+		DSAGroup g = Global.DSAgroupBigA;
+		DSAPrivateKey privKey = new DSAPrivateKey(g, random);
+		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
+		byte[] pkHash = SHA256.digest(pubKey.asBytes());
+		String docName = "myDOC";
+		InsertableClientSSK ik = new InsertableClientSSK(docName, pkHash, pubKey, privKey, ckey, Key.ALGO_AES_PCFB_256_SHA256);
+		
+		// Nothing to write.
+		assertTrue(tracker.getSizeOfCache() == 0);
+		assertEquals(cachingStore.pushLeastRecentlyBlock(), -1);
+		
+		// Write one key to the cache. It will not be written through to disk.
+		String test = "test";
+		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
+		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		SSKBlock sskBlock = (SSKBlock) block.getBlock();
+		pubkeyCache.cacheKey(sskBlock.getKey().getPubKeyHash(), sskBlock.getPubKey(), false, false, false, false, false);
+		try {
+			store.put(sskBlock, false, false);
+		} catch (KeyCollisionException e1) {
+			fail();
+		}
+		
+		FutureTask<Long> future = new FutureTask<Long>(new Callable<Long>() {
+
+			@Override
+			public Long call() throws Exception {
+				return cachingStore.pushLeastRecentlyBlock();
+			}
+			
+		});
+		Executors.newCachedThreadPool().execute(future);
+		
+		delayStore.waitForSomeBlocked();
+		
+		// Write colliding key. Should cause the write above to return 0: After it unlocks, it will see
+		// there is a new, different block for that key, and therefore it cannot remove the block, and
+		// thus must return 0.
+		test = "test1";
+		bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
+		block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		SSKBlock sskBlock2 = (SSKBlock) block.getBlock();
+		try {
+			store.put(sskBlock2, false, false);
+			fail();
+		} catch (KeyCollisionException e) {
+			// Expected.
+		}
+		try {
+			store.put(sskBlock2, true, false);
+		} catch (KeyCollisionException e) {
+			fail();
+		}
+		
+		// Size is still one key.
+		assertTrue(tracker.getSizeOfCache() == sskBlockSize);
+		
+		// Now let the write through.
+		delayStore.setBlocked(false);
+		
+		assertEquals(future.get().longValue(), 0L);
+		NodeSSK key = sskBlock.getKey();
+		assertTrue(saltStore.fetch(key.getRoutingKey(), key.getFullKey(), false, false, false, false, null).equals(sskBlock));
+		assertTrue(store.fetch(key, false, false, false, false, null).equals(sskBlock2));
+		
+		// Still needs writing.
+		assertEquals(cachingStore.pushLeastRecentlyBlock(), sskBlockSize);
+		assertTrue(store.fetch(key, false, false, false, false, null).equals(sskBlock2));
+	}
 	
 	/* Simple test with SSK for CachingFreenetStore */
 	public void testSimpleSSK() throws IOException, KeyCollisionException, SSKVerifyException, KeyDecodeException, SSKEncodeException, InvalidCompressionCodecException {
@@ -135,7 +457,8 @@ public class CachingFreenetStoreTest extends TestCase {
 		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
 		SSKStore store = new SSKStore(pubkeyCache);
 		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK", store, weakPRNG, 20, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
+		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, ticker);
+		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, saltStore, tracker);
 		cachingStore.start(null, true);
 		RandomSource random = new DummyRandomSource(12345);
 
@@ -164,7 +487,8 @@ public class CachingFreenetStoreTest extends TestCase {
 
 		CHKStore store = new CHKStore();
 		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreOnClose", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
+		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, ticker);
+		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, saltStore, tracker);
 		cachingStore.start(null, true);
 		
 		List<ClientCHKBlock> chkBlocks = new ArrayList<ClientCHKBlock>();
@@ -183,7 +507,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		cachingStore.close();
 		
 		SaltedHashFreenetStore<CHKBlock> saltStore2 = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreOnClose", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		cachingStore = new CachingFreenetStore<CHKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore2, ticker);
+		cachingStore = new CachingFreenetStore<CHKBlock>(store, saltStore2, tracker);
 		cachingStore.start(null, true);
 
 		for(int i=0;i<5;i++) {
@@ -206,7 +530,8 @@ public class CachingFreenetStoreTest extends TestCase {
 		
 		CHKStore store = new CHKStore();
 		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreTimeExpire", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, cachingFreenetStoreMaxSize, delay, saltStore, ticker);
+		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize, delay, ticker);
+		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, saltStore, tracker);
 		cachingStore.start(null, true);
 		
 		List<ClientCHKBlock> chkBlocks = new ArrayList<ClientCHKBlock>();
@@ -268,7 +593,8 @@ public class CachingFreenetStoreTest extends TestCase {
 		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
 		SSKStore store = new SSKStore(pubkeyCache);
 		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreOnCloseSSK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
+		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, ticker);
+		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, saltStore, tracker);
 		cachingStore.start(null, true);
 		RandomSource random = new DummyRandomSource(12345);
 		
@@ -288,7 +614,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		cachingStore.close();
 		
 		SaltedHashFreenetStore<SSKBlock> saltStore2 = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreOnCloseSSK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore2, ticker);
+		cachingStore = new CachingFreenetStore<SSKBlock>(store, saltStore2, tracker);
 		cachingStore.start(null, true);
 		
 
@@ -300,6 +626,8 @@ public class CachingFreenetStoreTest extends TestCase {
 			SSKBlock verify = store.fetch(ssk, false, false, false, false, null);
 			String data = decodeBlockSSK(verify, key);
 			assertEquals(test, data);
+			// Check that it's in the underlying store now.
+			assertNotNull(saltStore2.fetch(block.getKey().getRoutingKey(), block.getKey().getFullKey(), false, false, false, false, null));
 		}
 		
 		cachingStore.close();
@@ -317,7 +645,8 @@ public class CachingFreenetStoreTest extends TestCase {
 		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
 		SSKStore store = new SSKStore(pubkeyCache);
 		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreOnCloseSSK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
+		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, ticker);
+		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, saltStore, tracker);
 		cachingStore.start(null, true);
 		RandomSource random = new DummyRandomSource(12345);
 		
@@ -348,6 +677,8 @@ public class CachingFreenetStoreTest extends TestCase {
 			SSKBlock verify = store.fetch(ssk, false, false, false, false, null);
 			String data = decodeBlockSSK(verify, key);
 			assertEquals(test, data);
+			// Check that it's in the underlying store now.
+			assertNotNull(saltStore.fetch(block.getKey().getRoutingKey(), block.getKey().getFullKey(), false, false, false, false, null));
 		}
 		
 		cachingStore.close();
@@ -371,7 +702,8 @@ public class CachingFreenetStoreTest extends TestCase {
 		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
 		SSKStore store = new SSKStore(pubkeyCache);
 		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreOnCloseSSK", store, weakPRNG, 10, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
+		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, ticker);
+		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, saltStore, tracker);
 		cachingStore.start(null, true);
 		RandomSource random = new DummyRandomSource(12345);
 		
@@ -396,8 +728,7 @@ public class CachingFreenetStoreTest extends TestCase {
 			store.put(sskBlock, false, false);
 			assertTrue(true);
 		} catch (KeyCollisionException e) {
-			assertTrue(false);
-			
+			fail();
 		}
 		
 		String test1 = "test1";
@@ -408,7 +739,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		//if it's different (e.g. different content, same key), there should be a KCE thrown
 		try {
 			store.put(sskBlock1, false, false);
-			assertTrue(false);
+			fail();
 		} catch (KeyCollisionException e) {
 			assertTrue(true);
 		}
@@ -418,13 +749,11 @@ public class CachingFreenetStoreTest extends TestCase {
 			store.put(sskBlock1, true, false);
 			assertTrue(true);
 		} catch (KeyCollisionException e) {
-			assertTrue(false);
-			
+			fail();
 		}
 		
 		ClientSSK key = block1.getClientKey();
 		pubkeyCache.cacheKey(sskBlock.getKey().getPubKeyHash(), sskBlock.getKey().getPubKey(), false, false, false, false, false);
-		// Check that it's in the cache, *not* the underlying store.
 		NodeSSK ssk = (NodeSSK) key.getNodeKey();
 		SSKBlock verify = store.fetch(ssk, false, false, false, false, null);
 		String data = decodeBlockSSK(verify, key);

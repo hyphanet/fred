@@ -1,15 +1,19 @@
-package freenet.store;
+package freenet.store.caching;
 
 import java.io.IOException;
-import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.keys.KeyVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
-import freenet.node.stats.StoreAccessStats;
-import freenet.node.useralerts.UserAlertManager;
+import freenet.store.BlockMetadata;
+import freenet.store.FreenetStore;
+import freenet.store.KeyCollisionException;
+import freenet.store.ProxyFreenetStore;
+import freenet.store.StorableBlock;
+import freenet.store.StoreCallback;
 import freenet.support.ByteArrayWrapper;
+import freenet.support.LRUMap;
 import freenet.support.Logger;
 import freenet.support.Ticker;
 import freenet.support.io.NativeThread;
@@ -20,21 +24,16 @@ import freenet.support.io.NativeThread;
  * @author Simon Vocella <voxsim@gmail.com>
  * 
  */
-public class CachingFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
+public class CachingFreenetStore<T extends StorableBlock> extends ProxyFreenetStore<T> {
     private static volatile boolean logMINOR;
-    
-	private long size;
-	private boolean startJob;
+ 
 	private boolean shuttingDown; /* If this flag is true, we don't accept puts anymore */
-	
-	private final long maxSize;
-	private final long period;
-	private final TreeMap<ByteArrayWrapper, Block<T>> blocksByRoutingKey;
+	private final LRUMap<ByteArrayWrapper, Block<T>> blocksByRoutingKey;
 	private final StoreCallback<T> callback;
-	private final FreenetStore<T> backDatastore;
-	private final Ticker ticker;
 	private final boolean collisionPossible;
 	private final ReadWriteLock configLock = new ReentrantReadWriteLock();
+	private final CachingFreenetStoreTracker tracker;
+	private final int sizeBlock;
 	
     static { Logger.registerClass(CachingFreenetStore.class); }
     
@@ -46,23 +45,17 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		boolean isOldBlock;
 	}
 
-	public CachingFreenetStore(StoreCallback<T> callback, long maxSize, long period, FreenetStore<T> backDatastore, Ticker ticker) {
-		if(ticker == null)
-			throw new IllegalArgumentException();
+	public CachingFreenetStore(StoreCallback<T> callback, FreenetStore<T> backDatastore, CachingFreenetStoreTracker tracker) {
+		super(backDatastore);
 		this.callback = callback;
-		this.maxSize = maxSize;
-		this.period = period;
-		this.backDatastore = backDatastore;
 		SemiOrderedShutdownHook shutdownHook = SemiOrderedShutdownHook.get();
-		this.blocksByRoutingKey = new TreeMap<ByteArrayWrapper, Block<T>>(ByteArrayWrapper.FAST_COMPARATOR);
-		this.ticker = ticker;
-		this.size = 0;
-		this.startJob = false;
+		this.blocksByRoutingKey = LRUMap.createSafeMap(ByteArrayWrapper.FAST_COMPARATOR);
 		this.collisionPossible = callback.collisionPossible();
 		this.shuttingDown = false;
+		this.tracker = tracker;
+		this.sizeBlock = callback.getTotalBlockSize();
 		
 		callback.setStore(this);
-		
 		shutdownHook.addEarlyJob(new NativeThread("Close CachingFreenetStore", NativeThread.HIGH_PRIORITY, true) {
 			@Override
 			public void realRun() {
@@ -99,31 +92,6 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 	}
 
 	@Override
-	public long getBloomFalsePositive() {
-		return backDatastore.getBloomFalsePositive();
-	}
-
-	@Override
-	public long getMaxKeys() {
-		return backDatastore.getMaxKeys();
-	}
-
-	@Override
-	public long hits() {
-		return backDatastore.hits();
-	}
-
-	@Override
-	public long keyCount() {
-		return backDatastore.keyCount();
-	}
-
-	@Override
-	public long misses() {
-		return backDatastore.misses();
-	}
-
-	@Override
 	public boolean probablyInStore(byte[] routingKey) {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		Block<T> block = null;
@@ -137,11 +105,10 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		
 		return block != null || backDatastore.probablyInStore(routingKey);
 	}
-
+	
 	@Override
 	public void put(T block, byte[] data, byte[] header,
-			boolean overwrite, boolean isOldBlock) throws IOException,
-			KeyCollisionException {
+			boolean overwrite, boolean isOldBlock) throws IOException, KeyCollisionException {
 		byte[] routingKey = block.getRoutingKey();
 		final ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		
@@ -152,21 +119,22 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		storeBlock.overwrite = overwrite;
 		storeBlock.isOldBlock = isOldBlock;
 		
-		long sizeBlock = data.length+header.length+block.getFullKey().length+routingKey.length;	
 		boolean cacheIt = true;
 		
 		//Case cache it
 		configLock.writeLock().lock();
 		
 		try {
-			if(sizeBlock < maxSize && !shuttingDown) {
+			if(!shuttingDown) {
 				Block<T> previousBlock = blocksByRoutingKey.get(key);
 			
 				if(!collisionPossible || overwrite) {
-					blocksByRoutingKey.put(key, storeBlock);
-					
 					if(previousBlock == null) {
-						size += sizeBlock;
+						cacheIt = tracker.add(sizeBlock);
+					}
+					
+					if(cacheIt) {
+						blocksByRoutingKey.push(key, storeBlock);
 					}
 				} else {
 					//Case cache it but is it in blocksByRoutingKey? If so, throw a KCE
@@ -180,30 +148,11 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 					if(backDatastore.probablyInStore(routingKey)) {
 						cacheIt = false;
 					} else {
-						blocksByRoutingKey.put(key, storeBlock);
-						size += sizeBlock;
-					}
-				}
-				
-				//Check max size
-				if(size > maxSize) {
-					pushAll();
-				} else {
-					//Check period
-					if(!blocksByRoutingKey.isEmpty() && !startJob) {
-						startJob = true;
-						this.ticker.queueTimedJob(new Runnable() {
-							@Override
-							public void run() {
-								configLock.writeLock().lock();
-								try {
-									pushAll();
-								} finally {
-									startJob = false;
-									configLock.writeLock().unlock();
-								}
-							}
-						}, period);
+						cacheIt = tracker.add(sizeBlock);
+						
+						if(cacheIt) {
+							blocksByRoutingKey.push(key, storeBlock);
+						}
 					}
 				}
 			} else {
@@ -220,60 +169,52 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		}
 	}
 	
-	private void pushAll() {
+	/** Try to write one block to disk.
+	 * @return The number of bytes written to disk if we successfully wrote a block, 0 if we wrote 
+	 * a block but can't remove it because it changed while we were writing it, and -1 if there 
+	 * were no blocks to write because the cache is empty.
+	 */
+	long pushLeastRecentlyBlock() {
+		Block<T> block = null;
+		ByteArrayWrapper key = null;
+		
 		configLock.writeLock().lock();
-		try
-		{
-			for(Block<T> block : blocksByRoutingKey.values()) {
-					try {
-						backDatastore.put(block.block, block.data, block.header, block.overwrite, block.isOldBlock);
-					} catch (IOException e) {
-						Logger.error(this, "Error in pushAll for CachingFreenetStore: "+e, e);
-					} catch (KeyCollisionException e) {
-						if(logMINOR) Logger.minor(this, "KeyCollisionException in pushAll for CachingFreenetStore: "+e, e);
-					}
-				}
-			blocksByRoutingKey.clear();
-			size = 0;
+		try {
+			block = blocksByRoutingKey.peekValue();
+			if(block == null) return -1;
+			key = blocksByRoutingKey.peekKey();
 		} finally {
 			configLock.writeLock().unlock();
 		}
-	}
-
-	@Override
-	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow)
-			throws IOException {
-		backDatastore.setMaxKeys(maxStoreKeys, shrinkNow);
-	}
-
-	@Override
-	public long writes() {
-		return backDatastore.writes();
-	}
-
-	@Override
-	public StoreAccessStats getSessionAccessStats() {
-		return backDatastore.getSessionAccessStats();
-	}
-
-	@Override
-	public StoreAccessStats getTotalAccessStats() {
-		return backDatastore.getTotalAccessStats();
+			
+		try {
+			backDatastore.put(block.block, block.data, block.header, block.overwrite, block.isOldBlock);
+		} catch (IOException e) {
+			Logger.error(this, "Error in pushAll for CachingFreenetStore: "+e, e);
+		} catch (KeyCollisionException e) {
+			if(logMINOR) Logger.minor(this, "KeyCollisionException in pushAll for CachingFreenetStore: "+e, e);
+		}
+		
+		configLock.writeLock().lock();
+		try {
+			Block<T> currentVersionOfBlock = blocksByRoutingKey.get(key);
+			
+			/** it might have changed if there was a put() with overwrite=true. 
+			 *  If it has changed, return 0 , i.e. don't remove it*/
+			if(currentVersionOfBlock != null && currentVersionOfBlock.block.equals(block.block)) {
+				if(blocksByRoutingKey.removeKey(key))
+					return sizeBlock;
+			}
+		} finally {
+			configLock.writeLock().unlock();
+		}
+		return 0;
 	}
 
 	@Override
 	public boolean start(Ticker ticker, boolean longStart) throws IOException {
+		tracker.registerCachingFS(this);
 		return this.backDatastore.start(ticker, longStart);
-	}
-
-	@Override
-	public void setUserAlertManager(UserAlertManager userAlertManager) {
-		this.backDatastore.setUserAlertManager(userAlertManager);
-	}
-	
-	@Override
-	public FreenetStore<T> getUnderlyingStore() {
-		return this.backDatastore;
 	}
 
 	@Override
@@ -287,9 +228,21 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		configLock.writeLock().lock();
 		try {
 			shuttingDown = true;
-			pushAll();
+			tracker.unregisterCachingFS(this);
 		} finally {
 			configLock.writeLock().unlock();
 		}
+	}
+	
+	/** Only for unit tests */
+	boolean isEmpty() {
+		boolean isEmpty;
+		configLock.readLock().lock();
+		try {
+			isEmpty = this.blocksByRoutingKey.isEmpty();
+		} finally {
+			configLock.readLock().unlock();
+		}
+		return isEmpty;
 	}
 }

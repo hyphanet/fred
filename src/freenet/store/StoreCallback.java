@@ -99,4 +99,9 @@ public abstract class StoreCallback<T extends StorableBlock> {
 	public StoreAccessStats getTotalAccessStats() {
 		return store.getTotalAccessStats();
 	}
+
+	/** @return The total size in memory of a block with its key and routing key and data and headers. */
+	public int getTotalBlockSize() {
+		return dataLength() + headerLength() + fullKeyLength() + routingKeyLength();
+	}
 }

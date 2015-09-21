@@ -124,7 +124,6 @@ import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginStore;
 import freenet.store.BlockMetadata;
 import freenet.store.CHKStore;
-import freenet.store.CachingFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.NullFreenetStore;
@@ -134,6 +133,8 @@ import freenet.store.SSKStore;
 import freenet.store.SlashdotStore;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
+import freenet.store.caching.CachingFreenetStore;
+import freenet.store.caching.CachingFreenetStoreTracker;
 import freenet.store.saltedhash.ResizablePersistentIntBuffer;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.Executor;
@@ -2180,6 +2181,10 @@ public class Node implements TimeSkewDetectorCallback {
 		}, true);
 		
 		cachingFreenetStorePeriod = nodeConfig.getLong("cachingFreenetStorePeriod");
+		
+		if(cachingFreenetStoreMaxSize > 0 && cachingFreenetStorePeriod > 0) {
+			cachingFreenetStoreTracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, ticker);
+		}
 
 		boolean shouldWriteConfig = false;
 
@@ -2999,6 +3004,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private long cachingFreenetStoreMaxSize;
 	private long cachingFreenetStorePeriod;
+	private CachingFreenetStoreTracker cachingFreenetStoreTracker;
 
 	private void initSaltHashFS(final String suffix, boolean dontResizeOnStart, byte[] masterKey) throws NodeInitException {
 		try {
@@ -3184,7 +3190,7 @@ public class Node implements TimeSkewDetectorCallback {
 		        random, maxKeys, storeUseSlotFilters, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, lateStart ? ticker : null, clientCacheMasterKey);
 		cb.setStore(fs);
 		if(cachingFreenetStoreMaxSize > 0)
-			return new CachingFreenetStore<T>(cb, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, fs, ticker);
+			return new CachingFreenetStore<T>(cb, fs, cachingFreenetStoreTracker);
 		else
 			return fs;
 	}
