@@ -88,7 +88,9 @@ public class CachingFreenetStoreTracker {
 						try {
 							pushAllCachingStores();
 						} finally {
-							runningJob = false;
+              synchronized (CachingFreenetStoreTracker.this) {
+                runningJob = false;
+              }
 						}
 					}
 				}, 0);
@@ -109,14 +111,14 @@ public class CachingFreenetStoreTracker {
 				this.ticker.queueTimedJob(new Runnable() {
 					@Override
 					public void run() {
-						synchronized(this) {
+						synchronized(CachingFreenetStoreTracker.this) {
 							if(runningJob) return;
 							runningJob = true;
 						}
 						try {
 							pushAllCachingStores();
 						} finally {
-							synchronized(this) {
+							synchronized(CachingFreenetStoreTracker.this) {
 								queuedJob = false;
 								runningJob = false;
 							}
