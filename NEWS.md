@@ -1,6 +1,7 @@
 next ():
 
 - add a NEWS file
+- Fix problems with blank bookmark names. Thanks to _xiaoyu for the report!
 
 1470 (2015-08-15):
 
