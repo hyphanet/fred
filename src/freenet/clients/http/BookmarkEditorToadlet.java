@@ -441,7 +441,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 	}
 
   private boolean isValidName(String name) {
-    return !name.contains("/");
+    return !name.isEmpty() && !name.contains("/");
   }
 
   private void addNameError(PageMaker pageMaker, HTMLNode parent) {
