@@ -398,15 +398,13 @@ public class BookmarkEditorToadlet extends Toadlet {
 						 * - values as "on", "true", "yes" should be accepted.
 						 */
 						boolean hasAnActivelink = req.isPartSet("hasAnActivelink");
-						if (name.contains("/")) {
-							pageMaker.getInfobox("infobox-error", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidNameTitle"), content, "bookmark-error", false).
-								addChild("#", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidName"));
+						if (!isValidName(name)) {
+              addNameError(pageMaker, content);
 						} else
 							newBookmark = new BookmarkItem(key, name, req.getPartAsStringFailsafe("descB", MAX_KEY_LENGTH), req.getPartAsStringFailsafe("explain", MAX_EXPLANATION_LENGTH), hasAnActivelink, ctx.getAlertManager());
 					} else
-						if (name.contains("/")) {
-							pageMaker.getInfobox("infobox-error", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidNameTitle"), content, "bookmark-error", false).
-								addChild("#", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidName"));
+						if (!isValidName(name)) {
+              addNameError(pageMaker, content);
 						} else
 							newBookmark = new BookmarkCategory(name);
 					
@@ -441,4 +439,15 @@ public class BookmarkEditorToadlet extends Toadlet {
 	public String path() {
 		return "/bookmarkEditor/";
 	}
+
+  private boolean isValidName(String name) {
+    return !name.contains("/");
+  }
+
+  private void addNameError(PageMaker pageMaker, HTMLNode parent) {
+    HTMLNode errorBox = pageMaker.getInfobox(
+            "infobox-error", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidNameTitle"),
+            parent, "bookmark-error", false);
+    errorBox.addChild("#", NodeL10n.getBase().getString("BookmarkEditorToadlet.invalidName"));
+  }
 }
