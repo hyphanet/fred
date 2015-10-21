@@ -2,18 +2,23 @@
 
 Install junit 4, Apache ant and Hamcrest. For Debian Wheezy these are `junit4`, `ant`, `ant-optional` and `libhamcrest-java`.
 
-If sufficient packages are not available, put these jars into the `lib/` directory:
+Freenet also requires `freenet-ext.jar` in the `lib/freenet/` directory. To get it, [download](https://downloads.freenetproject.org/latest/freenet-ext.jar) or copy from the freenet folder of an existing installation or build the `contrib/` submodule.
+
+Then just execute `ant`.
+
+You can run your version of Freenet by stopping your node, copying `dist/freenet.jar` into your Freenet folder and starting your node again.
+
+
+To override values of variables set in build.xml by putting them into the file override.properties in the format `variable = value`. To build Freenet without running the tests, use `ant -Dtests.skip=true`.
+
+
+If sufficient packages for the dependencies are not available, put these jars into the `lib/` directory:
 
 * `junit4.jar` and `hamcrest-core.jar`: See the [download instructions](https://github.com/junit-team/junit/wiki/Download-and-Install)
 * `bcprov-jdk15on-152.jar`: Download Bouncy Castle 1.52: `wget --no-passive-ftp ftp://ftp.bouncycastle.org/pub/release1.52/bcprov-jdk15on-152.jar` or `wget http://www.bouncycastle.org/download/bcprov-jdk15on-152.jar`
 
-Freenet also requires in the `lib/freenet/` directory:
 
-* `freenet-ext.jar`: Build the `contrib/` submodule or [download](https://downloads.freenetproject.org/latest/freenet-ext.jar) for convenience.
-
-The dependencies could also be copied from an existing Freenet installation.
-
-## Building Freenet from source: Using Eclipse etc
+## Building Freenet from source: Using Eclipse
 
 You may want to use the command line git client, as people have sometimes had problems with the egit plugin for Eclipse.
 
@@ -36,6 +41,7 @@ You may need to add the two jars, and junit 4, to the build path for the project
 
 Don't use build-clean.xml, or call "ant distclean". This will cause problems. In particular it may delete the GWT-generated javascript in src/freenet/clients/http/staticfiles/freenetjs/ . If this happens just checkout that folder again, or do "git reset --hard" to reset the whole project. Note that the generated javascript isn't actually used unless web-pushing is enabled in the config, but it is needed for building Freenet.
 
+
 ## Building Freenet from source: Long version
 
 These are instructions on how to rebuild Freenet completely from source.
@@ -44,7 +50,7 @@ It is difficult for everyone to build all components, so the default Freenet
 source package ships with some pre-compiled binaries. However, this means that
 users need to trust that these binaries haven't been compromised.
 
-For the paranoid, we offer the option of building these binaries yourself, so
+For the careful/paranoid, we offer the option of building these binaries yourself, so
 that this extra trust is not necessary[1]. Unfortunately, this involves more
 effort than the default build path; help in easing this would be appreciated.
 
