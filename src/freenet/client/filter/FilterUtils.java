@@ -117,7 +117,7 @@ public class FilterUtils {
 			int len = value.length();
 			for (int i = len - 1; i >= 0; i --) {
 				char c = value.charAt(i);
-				if (c >= '0' && c <= '9') {
+				if ((c >= '0' && c <= '9') || c == '.') {
 					pos = i + 1;
 					break;
 				}

@@ -19,11 +19,16 @@ public class FilterUtilsTest extends TestCase {
 		assertTrue(FilterUtils.isLength("+1.1ch", false));
 		assertTrue(FilterUtils.isLength("-1.1vmin", false));
 		assertTrue(FilterUtils.isLength("-1.1vmax", false));
+		assertTrue(FilterUtils.isLength("1.em", false));
+		assertTrue(FilterUtils.isLength("0", false));
+		assertTrue(FilterUtils.isLength("0.0", false));
 		assertTrue(FilterUtils.isLength("81", true));
 		assertTrue(FilterUtils.isLength("5.1%", true));
 		assertTrue(FilterUtils.isLength("1", true));
+		assertTrue(FilterUtils.isLength("1.em", true));
+		assertTrue(FilterUtils.isLength("1.", true));
 	}
-	
+
 	public void testInvalidLengthUnits() {
 		assertFalse(FilterUtils.isLength("--1.1em", false));
 		assertFalse(FilterUtils.isLength("-1f-1vmax", false));
@@ -32,7 +37,6 @@ public class FilterUtilsTest extends TestCase {
 		assertFalse(FilterUtils.isLength("--1.1vmax", false));
 		assertFalse(FilterUtils.isLength("sevenvmax", false));
 		assertFalse(FilterUtils.isLength("1", false));
-		assertFalse(FilterUtils.isLength("1.em", false));
 		assertFalse(FilterUtils.isLength("1.", false));
 		assertFalse(FilterUtils.isLength("", false));
 	}

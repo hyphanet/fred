@@ -4224,7 +4224,7 @@ class CSSTokenizerFilter {
 			assert(expression.charAt(0) != 'b');
 			
 			// Get all the verifiers in one list, we need to check them individually
-			List<CSSPropertyVerifier> propertyVerifierList = new ArrayList<>();
+			List<CSSPropertyVerifier> propertyVerifierList = new ArrayList<CSSPropertyVerifier>();
 			for (int i = 0; i <= expression.length(); i++) {
 				if(i == expression.length() || expression.charAt(i)=='b') {
 					if(!firstPart.equals("")) {
