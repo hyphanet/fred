@@ -60,14 +60,22 @@ public class FilterUtils {
 	private final static HashSet<String> allowedUnits=new HashSet<String>();
 	static
 	{
+		// W3C CSS Spec Section 5 (http://www.w3.org/TR/css3-values/)
+		// "Distance Units: the '<length>' type"
 		allowedUnits.add("em");
 		allowedUnits.add("ex");
-		allowedUnits.add("px");
-		allowedUnits.add("in");
+		allowedUnits.add("ch");
+		allowedUnits.add("rem");
 		allowedUnits.add("cm");
 		allowedUnits.add("mm");
+		allowedUnits.add("in");
 		allowedUnits.add("pt");
 		allowedUnits.add("pc");
+		allowedUnits.add("px");
+		allowedUnits.add("vw");
+		allowedUnits.add("vh");
+		allowedUnits.add("vmin");
+		allowedUnits.add("vmax");
 	}
 	public static boolean isPercentage(String value)
 	{
@@ -95,23 +103,32 @@ public class FilterUtils {
 	{
 		String lengthValue=null;
 		value=value.trim();
-		if(isSVG)
-		{
-		if(value.charAt(value.length()-1)=='%')
-			lengthValue=value.substring(0,value.length()-2);
+		if (value.length() == 0) {
+			return false;
+		}
+		if (isSVG) {
+			if (value.charAt(value.length()-1) == '%') {
+				lengthValue = value.substring(0, value.length()-1);
+			}
 		}
 		boolean units = false;
-		if(lengthValue==null && value.length()>2) //Valid unit Vxx where xx is unit or V
-		{
-			String unit=value.substring(value.length()-2, value.length());
-			if(allowedUnits.contains(unit)) {
-				lengthValue=value.substring(0,value.length()-2);
+		if (lengthValue == null) { //Valid unit Vxx[x[x]] (where xx[x[x]] is unit) or V
+			int pos = 0;
+			int len = value.length();
+			for (int i = len - 1; i >= 0; i --) {
+				char c = value.charAt(i);
+				if ((c >= '0' && c <= '9') || c == '.') {
+					pos = i + 1;
+					break;
+				}
+			}
+			if (len - pos > 0 && allowedUnits.contains(value.substring(pos))) {
+				lengthValue = value.substring(0, pos);
 				units = true;
-			} else
-				lengthValue=value.substring(0,value.length());
+			} else {
+				lengthValue = value;
+			}
 		}
-		else
-			lengthValue=value.substring(0,value.length());
 		try
 		{
 			int x = Integer.parseInt(lengthValue);
