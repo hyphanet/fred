@@ -33,8 +33,8 @@ public class OfficialPlugins {
 					.deprecated();
 			addPlugin("Freemail_wot")
 					.inGroup("communication")
-					.minimumVersion(26)
-					.loadedFrom("CHK@~N5XxfOXgprXtRlZTIE-BcZT2UaZKFFbStEZM9LCILQ,oUOM~YlFSZgYGBZZSf898OITzOosi6UOJTxtU0Ruag0,AAMC--8/Freemail-v0.2.7.1.jar");
+					.minimumVersion(27)
+					.loadedFrom("CHK@fR~OePzegkidZcKQN3aX-2EmS8RPo6Qj3hNTKf~BmJA,Mb7laJ5Mz0vvnEIhYr6yZbAytgdhQeXxJDA2LL0ziZU,AAMC--8/Freemail-v0.2.7.2.jar");
 			addPlugin("HelloWorld")
 					.inGroup("example")
 					.loadedFrom("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar")
