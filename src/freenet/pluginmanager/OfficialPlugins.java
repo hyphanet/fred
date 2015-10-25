@@ -50,8 +50,8 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@Zgib8xrGxcEuix7AVB4eajton1FpNHbIJeQZgEbHMNU,BQekU261VLSDUBQPOHSMKUF5qxY1v0zjXa33RyoEbYk,AAMC--8/JSTUN.jar");
 			addPlugin("KeyUtils")
 					.inGroup("technical")
-					.minimumVersion(5024)
-					.loadedFrom("CHK@rsRNrCbYJvuCcQa3OC0c9uQh23KtqczNfZSUQfLpiAM,68yt6H-UiG00PWNQWF5uNrhuT5bcWu5CYwP~acTnzEM,AAMC--8/KeyUtils-v5024.jar")
+					.minimumVersion(5025)
+					.loadedFrom("CHK@29bfpHzev4IgtHQX5Gjkpxx~N3FRHyQMNLJCYY9kRso,tUIPly-hkmrIcFF0n4xmz4YWvFIq1HbFsjRJZqUqX7s,AAMC--8/KeyUtils-v5025.jar")
 					.advanced();
 			addPlugin("MDNSDiscovery")
 					.inGroup("connectivity")
