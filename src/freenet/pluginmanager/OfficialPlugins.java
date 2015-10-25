@@ -107,9 +107,9 @@ public class OfficialPlugins {
 					.advanced();
 			addPlugin("WebOfTrust")
 					.inGroup("communication")
-					.minimumVersion(15)
+					.minimumVersion(18)
 					.usesXml()
-					.loadedFrom("CHK@1FWUqydeyTbxC3fut51QT8VGnokQFYHMoLsqzP4RU60,BM3ibZYejeo2-sC7WklJ9I8ZJysMpO9~l9MZ8NUzP2c,AAMC--8/WebOfTrust-build0015.jar");
+					.loadedFrom("CHK@qprIfrwqW0zg4izvRqStw0GUR2siJBe6LuDuy-t6D7A,eVd5fUG5nrNnIl7vwlRGzyhTe~TTZwuh6P1oqZH8g0A,AAMC--8/WebOfTrust-build0018.jar");
 			addPlugin("WebOfTrustTesting")
 					.inGroup("communication")
 					.advanced()
