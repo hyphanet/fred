@@ -120,9 +120,9 @@ public class OfficialPlugins {
 					.loadedFrom("USK@QeTBVWTwBldfI-lrF~xf0nqFVDdQoSUghT~PvhyJ1NE,OjEywGD063La2H-IihD7iYtZm3rC0BP6UTvvwyF5Zh4,AQACAAE/WebOfTrustTesting.jar/17");
 			addPlugin("FlogHelper")
 					.inGroup("communication")
-					.minimumVersion(34)
+					.minimumVersion(35)
 					.usesXml()
-					.loadedFrom("CHK@yuiC-Dv0UYNgqRcLq4heCL-y0nHctr2LBcOsBN0ORyM,8M2bv~d7Su~O0MJHz4Tq1g3n4nrAgw-C7dn6mMFQSA4,AAMC--8/FlogHelper-v34.jar");
+					.loadedFrom("CHK@3Ht6otYHogKxa1Z8SC0hz46kV9q1qaSBsjbJxuwPosU,txky3jF33oWU9n6YiGMphiHA1V9q3i4ZN0VPtgElSaI,AAMC--8/FlogHelper-v35.jar");
 		} catch (MalformedURLException mue1) {
 			throw new RuntimeException("Could not create FreenetURI.", mue1);
 		}
