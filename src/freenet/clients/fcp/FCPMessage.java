@@ -184,6 +184,16 @@ public abstract class FCPMessage {
 		}
 		return new FCPMessage() {
 			@Override
+			public void send(OutputStream os) throws IOException {
+				fcpMessage.send(os);
+			}
+
+			@Override
+			String getEndString() {
+				return fcpMessage.getEndString();
+			}
+
+			@Override
 			public SimpleFieldSet getFieldSet() {
 				SimpleFieldSet fieldSet = fcpMessage.getFieldSet();
 				fieldSet.putSingle("ListRequestIdentifier", listRequestIdentifier);
