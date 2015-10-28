@@ -196,7 +196,7 @@ public abstract class FCPMessage {
 			@Override
 			public SimpleFieldSet getFieldSet() {
 				SimpleFieldSet fieldSet = fcpMessage.getFieldSet();
-				fieldSet.putSingle("ListRequestIdentifier", listRequestIdentifier);
+				fieldSet.putOverwrite("ListRequestIdentifier", listRequestIdentifier);
 				return fieldSet;
 			}
 
