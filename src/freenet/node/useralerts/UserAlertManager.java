@@ -158,13 +158,9 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			int classHash1 = a1.getClass().hashCode();
 			if(classHash0 > classHash1) return 1;
 			else if(classHash0 < classHash1) return -1;
-			// then go by sent time, if both are n2ntms
-			boolean isN2NTM0 = a0 instanceof N2NTMUserAlert;
-			boolean isN2NTM1 = a1 instanceof N2NTMUserAlert;
-			if(isN2NTM0 && isN2NTM1) { // newest first
-				if(a0.getUpdatedTime() < a1.getUpdatedTime()) return 1;
-				else if(a0.getUpdatedTime() > a1.getUpdatedTime()) return -1;
-			}
+			// Then go by sent time
+			if(a0.getUpdatedTime() < a1.getUpdatedTime()) return 1;
+			else if(a0.getUpdatedTime() > a1.getUpdatedTime()) return -1;
 			// Then by object hashCode
 			int hash0 = a0.hashCode();
 			int hash1 = a1.hashCode();
