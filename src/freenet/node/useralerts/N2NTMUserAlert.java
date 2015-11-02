@@ -119,7 +119,7 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 
     @Override
     public long getUpdatedTime() {
-        return sentTime;
+        return receivedTime;
     }
 
 	@Override
