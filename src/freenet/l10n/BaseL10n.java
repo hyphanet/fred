@@ -591,11 +591,35 @@ public class BaseL10n {
 	 * @param values For each entry in the previous array parameter, this array specifies the {@link HTMLNode} with which it shall be replaced. 
 	 */
 	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, HTMLNode[] values) {
-		String value = getString(key);
-		tryAddL10nSubstitution(node, key, value, patterns, values);
+        List<HTMLNode> newContent = getL10nSubstitution(key, patterns, values);
+        if (newContent != null) {
+            node.addChildren(newContent);
+        }
 	}
     
-    private void tryAddL10nSubstitution(HTMLNode node, String key, String value,
+    /**
+     * Looks up a l10n string and performs substitutions to generate a list of {@link HTMLNode}s.
+     */
+    private List<HTMLNode> getL10nSubstitution(String key, String[] patterns, HTMLNode[] values) {
+        List<HTMLNode> newContent = null;
+        String value = getString(key, true);
+        if (value != null) {
+            newContent = tryGetL10nSubstitution(key, value, patterns, values);
+        }
+        if (newContent == null) {
+            String fallbackValue = getDefaultString(key);
+            if (!fallbackValue.equals(value)) {
+                newContent = tryGetL10nSubstitution(key, fallbackValue, patterns, values);
+            }
+        }
+        return newContent;
+    }
+    
+    /**
+     * Performs substitutions on a l10n string to generate a list of {@link HTMLNode}s. Returns
+     * null if an error is encountered.
+     */
+    private List<HTMLNode> tryGetL10nSubstitution(String key, String value,
             String[] patterns, HTMLNode[] values) {
         HTMLNode tempNode = new HTMLNode("#");
         // catch errors caused by bad translation strings
@@ -603,9 +627,9 @@ public class BaseL10n {
             addL10nSubstitutionInner(tempNode, value, patterns, values);
         } catch (L10nParseException e) {
             Logger.error(this, "Error in l10n value \""+value+"\" for "+key+": "+e.getMessage());
-            return;
+            return null;
         }
-        node.addChildren(tempNode.getChildren());
+        return tempNode.getChildren();
     }
 
 	/**

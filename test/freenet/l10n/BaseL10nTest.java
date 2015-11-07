@@ -137,6 +137,26 @@ public class BaseL10nTest extends TestCase {
         assertEquals("", node.generateChildren());
     }
     
+    public void testAddL10nSubstitutionFallback() {
+        BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
+        HTMLNode node = new HTMLNode("div");
+        HTMLNode tagNode = new HTMLNode("tag");
+        l10n.addL10nSubstitution(node, "test.badSubstitutionFallback",
+                new String[] {"tag"},
+                new HTMLNode[] {tagNode});
+        assertEquals("Fallback <tag></tag>", node.generateChildren());
+    }
+    
+    public void testAddL10nSubstitutionMissingFallback() {
+        BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
+        HTMLNode node = new HTMLNode("div");
+        HTMLNode boldNode = new HTMLNode("b");
+        l10n.addL10nSubstitution(node, "test.substitution",
+                new String[] {"bold"},
+                new HTMLNode[] {boldNode});
+        assertEquals("Text with <b>loud</b> string", node.generateChildren());
+    }
+    
     public void testGetString() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         String value = l10n.getString("test.sanity");
