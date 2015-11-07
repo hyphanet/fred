@@ -643,7 +643,7 @@ public class BaseL10n {
 			if(x == -1) {
 				// It goes up to the end of the tag. It has no contents.
 				if(subnode != null) {
-					node.addChild(subnode);
+                    node.addChild(subnode.clone());
 				}
 			} else {
 				// It has contents. Must recurse.
