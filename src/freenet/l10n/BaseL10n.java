@@ -640,10 +640,10 @@ public class BaseL10n {
 				if(subnode != null) {
 					subnode = subnode.clone();
 					node.addChild(subnode);
-					addL10nSubstitutionInner(subnode, key, inner, patterns, values);
 				} else {
-					addL10nSubstitutionInner(node, key, inner, patterns, values);
+                    subnode = node;
 				}
+                addL10nSubstitutionInner(subnode, key, inner, patterns, values);
 				value = rest;
 			}
 		}
