@@ -600,7 +600,7 @@ public class BaseL10n {
         HTMLNode tempNode = new HTMLNode("#");
         // catch errors caused by bad translation strings
         try {
-            addL10nSubstitutionInner(tempNode, key, value, patterns, values);
+            addL10nSubstitutionInner(tempNode, value, patterns, values);
         } catch (L10nParseException e) {
             Logger.error(this, "Error in l10n value \""+value+"\" for "+key+": "+e.getMessage());
             return;
@@ -611,7 +611,7 @@ public class BaseL10n {
 	/**
 	 * @see #addL10nSubstitution(HTMLNode, String, String[], HTMLNode[])
 	 */
-    private void addL10nSubstitutionInner(HTMLNode node, String key, String value,
+    private void addL10nSubstitutionInner(HTMLNode node, String value,
             String[] patterns, HTMLNode[] values) throws L10nParseException {
 		int x;
 		while(!value.equals("") && (x = value.indexOf("${")) != -1) {
@@ -655,7 +655,7 @@ public class BaseL10n {
 				} else {
                     subnode = node;
 				}
-                addL10nSubstitutionInner(subnode, key, inner, patterns, values);
+                addL10nSubstitutionInner(subnode, inner, patterns, values);
 				value = rest;
 			}
 		}
