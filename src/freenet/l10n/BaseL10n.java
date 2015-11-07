@@ -592,13 +592,27 @@ public class BaseL10n {
 	 */
 	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, HTMLNode[] values) {
 		String value = getString(key);
-		addL10nSubstitutionInner(node, key, value, patterns, values);
+		tryAddL10nSubstitution(node, key, value, patterns, values);
 	}
+    
+    private void tryAddL10nSubstitution(HTMLNode node, String key, String value,
+            String[] patterns, HTMLNode[] values) {
+        HTMLNode tempNode = new HTMLNode("#");
+        // catch errors caused by bad translation strings
+        try {
+            addL10nSubstitutionInner(tempNode, key, value, patterns, values);
+        } catch (L10nParseException e) {
+            Logger.error(this, "Error in l10n value \""+value+"\" for "+key+": "+e.getMessage());
+            return;
+        }
+        node.addChildren(tempNode.getChildren());
+    }
 
 	/**
 	 * @see #addL10nSubstitution(HTMLNode, String, String[], HTMLNode[])
 	 */
-	private void addL10nSubstitutionInner(HTMLNode node, String key, String value, String[] patterns, HTMLNode[] values) {
+    private void addL10nSubstitutionInner(HTMLNode node, String key, String value,
+            String[] patterns, HTMLNode[] values) throws L10nParseException {
 		int x;
 		while(!value.equals("") && (x = value.indexOf("${")) != -1) {
 			String before = value.substring(0, x);
@@ -607,14 +621,12 @@ public class BaseL10n {
 			value = value.substring(x);
 			int y = value.indexOf('}');
 			if(y == -1) {
-				Logger.error(this, "Unclosed braces in l10n value \""+value+"\" for "+key);
-				return;
+                throw new L10nParseException("Unclosed braces");
 			}
 			String lookup = value.substring(2, y);
 			value = value.substring(y+1);
 			if(lookup.startsWith("/")) {
-				Logger.error(this, "Starts with / in "+key);
-				return;
+                throw new L10nParseException("Starts with /");
 			}
 			
 			HTMLNode subnode = null;
