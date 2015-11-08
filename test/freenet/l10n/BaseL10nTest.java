@@ -2,9 +2,13 @@ package freenet.l10n;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Iterator;
 
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
+import freenet.support.SimpleFieldSet;
 import junit.framework.TestCase;
 
 public class BaseL10nTest extends TestCase {
@@ -185,6 +189,22 @@ public class BaseL10nTest extends TestCase {
         BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
         String value = l10n.getString("test.nonexistent");
         assertEquals("test.nonexistent", value);
+    }
+    
+    public void testStrings() throws Exception {
+        Logger.setupStdoutLogging(LogLevel.ERROR, null);
+        for (LANGUAGE lang : LANGUAGE.values()) {
+            BaseL10n l10n = createL10n(lang);
+            SimpleFieldSet fields = l10n.getCurrentLanguageTranslation();
+            if (fields != null) {
+                for (Iterator<String> itr = fields.keyIterator(); itr.hasNext();) {
+                    String key = itr.next();
+                    String value = fields.get(key);
+                    boolean success = l10n.isL10nValid(key, value);
+                    assertTrue("Error in "+key+" for "+lang, success);
+                }
+            }
+        }
     }
     
     private BaseL10n createL10n(LANGUAGE lang) {

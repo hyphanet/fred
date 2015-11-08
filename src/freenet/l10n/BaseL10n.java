@@ -598,6 +598,17 @@ public class BaseL10n {
 	}
     
     /**
+     * Return whether a l10n string possibly containing substitution variables can be parsed.
+     * Intended for use in tests.
+     */
+    boolean isL10nValid(String key, String value) {
+        String[] patterns = new String[0];
+        HTMLNode[] values = new HTMLNode[0];
+        List<HTMLNode> content = tryGetL10nSubstitution(key, value, patterns, values);
+        return content != null;
+    }
+    
+    /**
      * Looks up a l10n string and performs substitutions to generate a list of {@link HTMLNode}s.
      */
     private List<HTMLNode> getL10nSubstitution(String key, String[] patterns, HTMLNode[] values) {
