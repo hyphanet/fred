@@ -629,7 +629,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		});
 		enableInlinePrefetch = fproxyConfig.getBoolean("enableInlinePrefetch");
 		
-		fproxyConfig.register("enableActivelinks", false, configItemOrder++, false, false, "SimpleToadletServer.enableActivelinks", "SimpleToadletServer.enableActivelinksLong", new BooleanCallback() {
+		fproxyConfig.register("enableActivelinks", true, configItemOrder++, false, false, "SimpleToadletServer.enableActivelinks", "SimpleToadletServer.enableActivelinksLong", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
