@@ -445,6 +445,22 @@ public class BaseL10n {
 
 		return translationField;
 	}
+    
+    /**
+     * Get the value for a key in the fallback translation, or null.
+     */
+    private String getFallbackString(String key) {
+        this.loadFallback();
+
+        String result = this.fallbackTranslation.get(key);
+
+        if (result == null) {
+            Logger.error(this.getClass(), "The default translation for " + key + " hasn't been found!");
+            System.err.println("The default translation for " + key + " hasn't been found!");
+            new Exception().printStackTrace();
+        }
+        return result;
+    }
 
 	/**
 	 * Get the default value for a key.
@@ -452,18 +468,10 @@ public class BaseL10n {
 	 * @return String
 	 */
 	public String getDefaultString(String key) {
-		String result = null;
-		this.loadFallback();
-
-		result = this.fallbackTranslation.get(key);
-
-
+        String result = getFallbackString(key);
 		if (result != null) {
 			return result;
 		}
-		Logger.error(this.getClass(), "The default translation for " + key + " hasn't been found!");
-		System.err.println("The default translation for " + key + " hasn't been found!");
-		new Exception().printStackTrace();
 		return key;
 	}
 
