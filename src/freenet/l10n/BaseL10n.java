@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -613,15 +614,21 @@ public class BaseL10n {
      */
     private List<HTMLNode> getL10nSubstitution(String key, String[] patterns, HTMLNode[] values) {
         List<HTMLNode> newContent = null;
+        // first try the value in the current language
         String value = getString(key, true);
         if (value != null) {
             newContent = tryGetL10nSubstitution(key, value, patterns, values);
         }
+        // then try the fallback
         if (newContent == null) {
             String fallbackValue = getDefaultString(key);
             if (!fallbackValue.equals(value)) {
                 newContent = tryGetL10nSubstitution(key, fallbackValue, patterns, values);
             }
+        }
+        // if that doesn't work, just use the key itself
+        if (newContent == null) {
+            newContent = Collections.singletonList(new HTMLNode("#", key));
         }
         return newContent;
     }

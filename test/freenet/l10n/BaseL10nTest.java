@@ -99,7 +99,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("<tag></tag>content<tag></tag>", node.generateChildren());
     }
     
-    public void testAddL10nSubstitutionSelfNested() {
+    public void testAddL10nSubstitutionSelfNested() throws Exception {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         HTMLNode node = new HTMLNode("div");
         HTMLNode tagNode = new HTMLNode("tag");
@@ -108,7 +108,7 @@ public class BaseL10nTest extends TestCase {
                 new HTMLNode[] {tagNode});
         // it would be nice to handle this correctly, but it seems like more trouble than it's worth
         //assertEquals("<tag>content <tag>nested</tag></tag>", node.generateChildren());
-        assertEquals("", node.generateChildren());
+        assertEquals("test.selfNestedSubstitution", node.generateChildren());
     }
     
     public void testAddL10nSubstitutionSelfNestedEmpty() {
@@ -128,7 +128,7 @@ public class BaseL10nTest extends TestCase {
         l10n.addL10nSubstitution(node, "test.missingBraceSubstitution",
                 new String[] {"ok"},
                 new HTMLNode[] {okNode});
-        assertEquals("", node.generateChildren());
+        assertEquals("test.missingBraceSubstitution", node.generateChildren());
     }
     
     public void testAddL10nSubstitutionUnmatchedClose() {
@@ -138,7 +138,7 @@ public class BaseL10nTest extends TestCase {
         l10n.addL10nSubstitution(node, "test.unmatchedCloseSubstitution",
                 new String[] {"ok"},
                 new HTMLNode[] {okNode});
-        assertEquals("", node.generateChildren());
+        assertEquals("test.unmatchedCloseSubstitution", node.generateChildren());
     }
     
     public void testAddL10nSubstitutionFallback() {
