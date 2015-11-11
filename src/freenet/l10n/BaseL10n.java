@@ -644,7 +644,7 @@ public class BaseL10n {
         try {
             addL10nSubstitutionInner(tempNode, value, patterns, values);
         } catch (L10nParseException e) {
-            Logger.error(this, "Error in l10n value \""+value+"\" for "+key+": "+e.getMessage());
+            Logger.error(this, "Error in l10n value \""+value+"\" for "+key, e);
             return null;
         }
         return tempNode.getChildren();
