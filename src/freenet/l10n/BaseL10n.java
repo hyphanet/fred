@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.MissingResourceException;
+import java.util.NoSuchElementException;
 
 import freenet.clients.http.TranslationToadlet;
 import freenet.support.HTMLEncoder;
@@ -118,7 +119,68 @@ public class BaseL10n {
 			return ENGLISH;
 		}
 	}
-	
+    
+    /**
+     * State enum for {@link L10nStringIterator}. Declared here for
+     * {@link #getStrings(String, FallbackState)}.
+     */
+    private enum FallbackState {
+        CURRENT_LANG,
+        FALLBACK_LANG,
+        KEY,
+        END
+    }
+    
+    /**
+     * Iterator that returns the strings associated with a key in order of preference. First the
+     * value in the current language (if any), then the value in the fallback language (if any),
+     * and then just the key itself.
+     */
+    private class L10nStringIterator implements Iterator<String> {
+        private final String key;
+        private FallbackState state;
+        
+        public L10nStringIterator(String key, FallbackState state) {
+            this.key = key;
+            this.state = state;
+        }
+        
+        @Override
+        public boolean hasNext() {
+            return state != FallbackState.END;
+        }
+        
+        @Override
+        public String next() {
+            if (state == FallbackState.CURRENT_LANG) { 
+                state = FallbackState.FALLBACK_LANG;
+                String value = getString(key, true);
+                if (value != null) {
+                    return value;
+                }
+            }
+            if (state == FallbackState.FALLBACK_LANG) {
+                state = FallbackState.KEY;
+                if (getSelectedLanguage() != LANGUAGE.getDefault()) {
+                    String value = getFallbackString(key);
+                    if (value != null) {
+                        return value;
+                    }
+                }
+            }
+            if (state == FallbackState.KEY) {
+                state = FallbackState.END;
+                return key;
+            }
+            throw new NoSuchElementException();
+        }
+        
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+    
 	private LANGUAGE lang;
 	private String l10nFilesBasePath;
 	private String l10nFilesMask;
@@ -381,7 +443,7 @@ public class BaseL10n {
 	 * @return String
 	 */
 	public String getString(String key) {
-		return getString(key, false);
+        return getStrings(key).iterator().next();
 	}
 
 	/**
@@ -391,6 +453,10 @@ public class BaseL10n {
 	 * @return String
 	 */
 	public String getString(String key, boolean returnNullIfNotFound) {
+        if (!returnNullIfNotFound) {
+            return getString(key);
+        }
+        
 		String result = null;
 		if (this.translationOverride != null) {
 			result = this.translationOverride.get(key);
@@ -404,13 +470,31 @@ public class BaseL10n {
 			result = this.currentTranslation.get(key);
 		}
 
-		if (result != null) {
-			return result;
-		} else {
+        if (result == null) {
 			Logger.normal(this.getClass(), "The translation for " + key + " hasn't been found (" + this.getSelectedLanguage() + ")! please tell the maintainer.");
-			return (returnNullIfNotFound ? null : this.getDefaultString(key));
 		}
+        return result;
 	}
+    
+    /**
+     * Enumerate strings associated with a key in order of preference.
+     */
+    private Iterable<String> getStrings(final String key) {
+        return getStrings(key, FallbackState.CURRENT_LANG);
+    }
+    
+    /**
+     * Enumerate strings associated with a key in order of preference, starting with a specified
+     * one.
+     */
+    private Iterable<String> getStrings(final String key, final FallbackState initialState) {
+        return new Iterable<String>() {
+            @Override
+            public Iterator<String> iterator() {
+                return new L10nStringIterator(key, initialState);
+            }
+        };
+    }
 
 	/**
 	 * Get a localized string and put it in a HTMLNode for the translation page.
@@ -468,11 +552,7 @@ public class BaseL10n {
 	 * @return String
 	 */
 	public String getDefaultString(String key) {
-        String result = getFallbackString(key);
-		if (result != null) {
-			return result;
-		}
-		return key;
+        return getStrings(key, FallbackState.FALLBACK_LANG).iterator().next();
 	}
 
 	/**
@@ -621,24 +701,14 @@ public class BaseL10n {
      * Looks up a l10n string and performs substitutions to generate a list of {@link HTMLNode}s.
      */
     private List<HTMLNode> getL10nSubstitution(String key, String[] patterns, HTMLNode[] values) {
-        List<HTMLNode> newContent = null;
-        // first try the value in the current language
-        String value = getString(key, true);
-        if (value != null) {
-            newContent = tryGetL10nSubstitution(key, value, patterns, values);
-        }
-        // then try the fallback
-        if (newContent == null) {
-            String fallbackValue = getDefaultString(key);
-            if (!fallbackValue.equals(value)) {
-                newContent = tryGetL10nSubstitution(key, fallbackValue, patterns, values);
+        for (String value : getStrings(key)) {
+            List<HTMLNode> newContent = tryGetL10nSubstitution(key, value, patterns, values);
+            if (newContent != null) {
+                return newContent;
             }
         }
-        // if that doesn't work, just use the key itself
-        if (newContent == null) {
-            newContent = Collections.singletonList(new HTMLNode("#", key));
-        }
-        return newContent;
+        // this should never happen, because the last item from getStrings() will be the key itself
+        return Collections.singletonList(new HTMLNode("#"));
     }
     
     /**
