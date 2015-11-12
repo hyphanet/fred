@@ -687,24 +687,25 @@ public class BaseL10n {
 	}
     
     /**
-     * Return whether a l10n string possibly containing substitution variables can be parsed.
-     * Intended for use in tests.
+     * Attempts to parse any substitution variables found in a l10n string. Intended for use in
+     * tests.
      */
-    boolean isL10nValid(String key, String value) {
+    void attemptParse(String value) throws L10nParseException {
         String[] patterns = new String[0];
         HTMLNode[] values = new HTMLNode[0];
-        List<HTMLNode> content = tryGetL10nSubstitution(key, value, patterns, values);
-        return content != null;
+        tryGetL10nSubstitution(value, patterns, values);
     }
     
     /**
-     * Looks up a l10n string and performs substitutions to generate a list of {@link HTMLNode}s.
+     * Look up a l10n string and perform substitutions to generate a list of {@link HTMLNode}s.
      */
     private List<HTMLNode> getL10nSubstitution(String key, String[] patterns, HTMLNode[] values) {
         for (String value : getStrings(key)) {
-            List<HTMLNode> newContent = tryGetL10nSubstitution(key, value, patterns, values);
-            if (newContent != null) {
-                return newContent;
+            // catch errors caused by bad translation strings
+            try {
+                return tryGetL10nSubstitution(value, patterns, values);
+            } catch (L10nParseException e) {
+                Logger.error(this, "Error in l10n value \""+value+"\" for "+key, e);
             }
         }
         // this should never happen, because the last item from getStrings() will be the key itself
@@ -712,19 +713,12 @@ public class BaseL10n {
     }
     
     /**
-     * Performs substitutions on a l10n string to generate a list of {@link HTMLNode}s. Returns
-     * null if an error is encountered.
+     * Perform substitutions on a l10n string to generate a list of {@link HTMLNode}s.
      */
-    private List<HTMLNode> tryGetL10nSubstitution(String key, String value,
-            String[] patterns, HTMLNode[] values) {
+    private List<HTMLNode> tryGetL10nSubstitution(String value, String[] patterns,
+            HTMLNode[] values) throws L10nParseException {
         HTMLNode tempNode = new HTMLNode("#");
-        // catch errors caused by bad translation strings
-        try {
-            addL10nSubstitutionInner(tempNode, value, patterns, values);
-        } catch (L10nParseException e) {
-            Logger.error(this, "Error in l10n value \""+value+"\" for "+key, e);
-            return null;
-        }
+        addL10nSubstitutionInner(tempNode, value, patterns, values);
         return tempNode.getChildren();
     }
 

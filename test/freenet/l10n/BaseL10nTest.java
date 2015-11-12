@@ -6,8 +6,6 @@ import java.util.Iterator;
 
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import junit.framework.TestCase;
 
@@ -192,7 +190,6 @@ public class BaseL10nTest extends TestCase {
     }
     
     public void testStrings() throws Exception {
-        Logger.setupStdoutLogging(LogLevel.ERROR, null);
         for (LANGUAGE lang : LANGUAGE.values()) {
             BaseL10n l10n = createL10n(lang);
             SimpleFieldSet fields = l10n.getCurrentLanguageTranslation();
@@ -200,8 +197,11 @@ public class BaseL10nTest extends TestCase {
                 for (Iterator<String> itr = fields.keyIterator(); itr.hasNext();) {
                     String key = itr.next();
                     String value = fields.get(key);
-                    boolean success = l10n.isL10nValid(key, value);
-                    assertTrue("Error in "+key+" for "+lang, success);
+                    try {
+                        l10n.attemptParse(value);
+                    } catch (L10nParseException e) {
+                        fail("Error in "+key+" for "+lang+": "+e.getMessage());
+                    }
                 }
             }
         }
