@@ -681,9 +681,7 @@ public class BaseL10n {
 	 */
 	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, HTMLNode[] values) {
         List<HTMLNode> newContent = getL10nSubstitution(key, patterns, values);
-        if (newContent != null) {
-            node.addChildren(newContent);
-        }
+        node.addChildren(newContent);
 	}
     
     /**
