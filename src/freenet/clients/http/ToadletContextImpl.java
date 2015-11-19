@@ -381,8 +381,8 @@ public class ToadletContextImpl implements ToadletContext {
 		if (mTime == null) {
 			expiresTime = "Thu, 01 Jan 1970 00:00:00 GMT";
 		} else {
-			// use an expiry time of 1 day, somewhat arbitrarily
-			expiresTime = TimeUtil.makeHTTPDate(mTime.getTime() + DAYS.toMillis(1));
+			// use an expiry time of 1 day from now, somewhat arbitrarily
+			expiresTime = TimeUtil.makeHTTPDate(System.currentTimeMillis() + DAYS.toMillis(1));
 		}
 		mvt.put("expires", expiresTime);
 		
