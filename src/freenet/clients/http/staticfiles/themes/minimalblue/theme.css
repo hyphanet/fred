@@ -1,13 +1,13 @@
 ﻿/* minimalblue */
 
 /* Basic CSS functions */
-@import url(/static/base-old.css);
+/* @import url(/static/base-old.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* Bookmarks & bookmark editor */
-@import url(/static/bookmark.css);
+/* @import url(/static/bookmark.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* Status bar style & colors */
-@import url(/static/statusbar.css);
+/* @import url(/static/statusbar.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* minimal blue overall settings */
 

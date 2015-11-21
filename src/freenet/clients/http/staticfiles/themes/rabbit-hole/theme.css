@@ -1,14 +1,14 @@
 ﻿/* rabbit-hole */
 
 /* Basic CSS functions */
-@import url(/static/base-old.css);
+/* @import url(/static/base-old.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* Bookmarks & bookmark editor */
-@import url(/static/bookmark.css);
+/* @import url(/static/bookmark.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* Base theme; commented out, since it is not really compatible. TODO: Get everything therein to here and integrate it. */
 /* First: Progress bars */
-/* @import url(/static/themes/clean/theme.css); */
+/*/*  @import url(/static/themes/clean/theme.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */ */
 
 /* rabbit-hole overall settings */
 
