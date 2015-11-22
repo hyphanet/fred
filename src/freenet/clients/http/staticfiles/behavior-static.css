@@ -2,9 +2,6 @@
  * behavior-static: Always show all submenu items.
  */
 
-/* Basic CSS functions */
-@import url(/static/base.css);
-
 /* code */
 
 /* We don't need to set any submenu parameters to get this behavior - we just
