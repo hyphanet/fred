@@ -3,6 +3,8 @@ next ():
 - add a NEWS file
 - Fix problems with blank bookmark names. Thanks to _xiaoyu for the report!
 - Fix missing the software category in bookmarks.
+- Fix caching of static assets
+- Optimize CSS to load everything but the first theme in parallel
 
 1470 (2015-08-15):
 
