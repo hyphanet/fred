@@ -82,8 +82,8 @@ public class WelcomeToadlet extends Toadlet {
                 if (item.hasAnActivelink() && !noActiveLinks) {
                     String initialKey = item.getKey();
                     String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/") + "activelink.png";
-                    cell.addChild("div", "style", "height: 36px; width: 108px;").addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "alt", "title"},
-                            new String[]{ key, "activelink", item.getDescription()});
+                    cell.addChild("div", "style", "height: 36px; width: 108px;").addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "alt", "style", "title"},
+                            new String[]{ key, "activelink", "height: 36px; width: 108px", item.getDescription()});
                 } else {
                     cell.addChild("#", " ");
                 }
