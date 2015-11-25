@@ -391,9 +391,6 @@ public class ToadletContextImpl implements ToadletContext {
 			// Expires is needed for older browsers
 			expiresTime = TimeUtil.makeHTTPDate(System.currentTimeMillis() + DAYS.toMillis(30));
 			cacheControl = "public, max-age=" + String.valueOf(3600 * 24 * 30);
-			// Use contentlength as simplest possible hash function
-			// which needs no additional file access
-			mvt.put("ETag", String.valueOf(contentLength));
 		} else {
 			expiresTime = "Thu, 01 Jan 1970 00:00:00 GMT";
 			// no-cache for Internet Explorer, no-store for Firefox
