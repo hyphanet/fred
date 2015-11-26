@@ -2,6 +2,7 @@ package freenet.clients.fcp;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -28,6 +29,11 @@ public class FCPMessageTest {
     private static final String END_STRING = "End";
 
     private final FCPMessage originalMessage = mock(FCPMessage.class);
+
+    @Test
+    public void wrappingNullReturnsNull() {
+        assertThat(FCPMessage.withListRequestIdentifier(null, LIST_REQUEST_IDENTIFIER), nullValue());
+    }
 
     @Test
     public void wrappingMessageAddsIdentifier() {
