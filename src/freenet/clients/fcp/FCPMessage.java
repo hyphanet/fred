@@ -179,7 +179,7 @@ public abstract class FCPMessage {
 	 * @return The new FCP message
 	 */
 	public static FCPMessage withListRequestIdentifier(final FCPMessage fcpMessage, final String listRequestIdentifier) {
-		if (listRequestIdentifier == null) {
+		if ((listRequestIdentifier == null) || (fcpMessage == null)) {
 			return fcpMessage;
 		}
 		return new FCPMessage() {
