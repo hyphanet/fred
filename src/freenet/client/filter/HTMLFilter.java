@@ -1255,6 +1255,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "href" },
 				emptyStringArray,
 				new String[] { "onfocus", "onblur" }));
+		allowedTagsVerifiers.put(
+			"audio", // currently just minimal support
+			new CoreTagVerifier(
+				"audio",
+				new String[] { // allowed tags
+					"preload",
+					"controls"},
+				emptyStringArray, // uris
+				new String[] { "src" }, // inline uris
+				emptyStringArray));
 		allowedTagsVerifiers.put("style", new StyleTagVerifier());
 		allowedTagsVerifiers.put(
 			"font",
