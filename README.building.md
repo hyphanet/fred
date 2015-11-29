@@ -2,7 +2,7 @@
 
 Install junit 4, Apache ant and Hamcrest:
 For Debian Wheezy these are `junit4`, `ant`, `ant-optional` and `libhamcrest-java`.
-For CentOS, "yum install ant-junit" will install all of the above.
+For CentOS, 'sudo yum install ant-junit' will install all of the above.
 
 Freenet also requires `freenet-ext.jar` in the `lib/freenet/` directory. To get it, [download](https://downloads.freenetproject.org/latest/freenet-ext.jar) or copy from the freenet folder of an existing installation or build the `contrib/` submodule.
 
