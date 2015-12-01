@@ -74,6 +74,7 @@ public class SlowBypassMessageQueue extends BypassMessageQueue {
                 }
                 PeerNode pn = getSourceNode();
                 Message msg = new Message(item.msg, pn);
+                pn.receivedPacket(true, true);
                 pn.handleMessage(msg);
                 ticker.queueTimedJob(new PrioRunnable() {
 
@@ -83,6 +84,7 @@ public class SlowBypassMessageQueue extends BypassMessageQueue {
                             for(AsyncMessageCallback item : callbacks) {
                                 item.acknowledged();
                             }
+                            sourceNode.receivedAck(System.currentTimeMillis());
                         }
                     }
 

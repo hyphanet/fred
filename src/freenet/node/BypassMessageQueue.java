@@ -21,7 +21,7 @@ public class BypassMessageQueue implements MessageQueue {
     private final Executor executor;
     protected final String targetName;
     private byte[] sourcePubKeyHash;
-    private PeerNode sourceNode;
+    PeerNode sourceNode;
     
     private static volatile boolean logMINOR;
     private static volatile boolean logDEBUG;
@@ -56,11 +56,13 @@ public class BypassMessageQueue implements MessageQueue {
                 }
                 PeerNode pn = getSourceNode();
                 Message msg = new Message(item.msg, pn);
+                pn.receivedPacket(true, true);
                 pn.handleMessage(msg);
                 if(callbacks != null) {
                     for(AsyncMessageCallback item : callbacks) {
                         item.acknowledged();
                     }
+                    sourceNode.receivedAck(System.currentTimeMillis());
                 }
             }
 
