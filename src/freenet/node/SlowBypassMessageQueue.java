@@ -51,8 +51,7 @@ public class SlowBypassMessageQueue extends BypassMessageQueue {
     
     @Override
     public int queueAndEstimateSize(final MessageItem item, int maxSize) {
-        if(logDEBUG)
-            Logger.debug(this, "Sending message "+item.msg+" to "+targetName);
+        PrioRunnable job = makeDeliveryJob(item);
         int messageSize = item.getLength();
         long deliveryTime;
         synchronized(this) {
@@ -63,49 +62,30 @@ public class SlowBypassMessageQueue extends BypassMessageQueue {
             nextDeliveryTimeNS += (messageSize * nanosecondsPerByte);
             deliveryTime = (nextDeliveryTimeNS / NANOS_PER_MILLISECOND) - nowMS;
         }
+        ticker.queueTimedJob(job, deliveryTime);
+        return 0;
+    }
+
+    protected void callAcks(final AsyncMessageCallback[] callbacks, 
+            final PeerNode originator) {
         ticker.queueTimedJob(new PrioRunnable() {
+
             @Override
             public void run() {
-                final AsyncMessageCallback[] callbacks = item.cb;
                 if(callbacks != null) {
                     for(AsyncMessageCallback item : callbacks) {
-                        item.sent();
+                        item.acknowledged();
                     }
+                    originator.receivedAck(System.currentTimeMillis());
                 }
-                PeerNode pn = getSourceNode();
-                Message msg = new Message(item.msg, pn);
-                pn.receivedPacket(true, true);
-                pn.handleMessage(msg);
-                ticker.queueTimedJob(new PrioRunnable() {
-
-                    @Override
-                    public void run() {
-                        if(callbacks != null) {
-                            for(AsyncMessageCallback item : callbacks) {
-                                item.acknowledged();
-                            }
-                            sourceNode.receivedAck(System.currentTimeMillis());
-                        }
-                    }
-
-                    @Override
-                    public int getPriority() {
-                        return NativeThread.HIGH_PRIORITY;
-                    }
-                    
-                }, latencyMS);
             }
 
             @Override
             public int getPriority() {
-                return NativeThread.NORM_PRIORITY;
+                return NativeThread.HIGH_PRIORITY;
             }
             
-            
-        }, deliveryTime + latencyMS);
-        return 0;
+        }, latencyMS);
     }
-
-
 
 }
