@@ -241,7 +241,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} else if(spec == DMT.FNPGetOfferedKey) {
 				rejectRequest(m, node.failureTable.senderCounter);
 			}
-			return false;
+			return true;
 		}
 
 		if(spec == DMT.FNPSwapRequest) {
