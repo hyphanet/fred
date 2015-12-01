@@ -74,6 +74,8 @@ public class NodeStarter implements WrapperListener {
 	private static TestingVMBypass testingVMEnableBypassConnections;
 	private static final Map<ByteArrayWrapper, Node> testingVMNodesByPubKeyHash = 
 	        new HashMap<ByteArrayWrapper, Node>();
+    private static final Map<ByteArrayWrapper, TestNodeParameters> testingVMNodeParametersByPubKeyHash = 
+            new HashMap<ByteArrayWrapper, TestNodeParameters>();
 
 	/** If false, this is some sort of multi-node testing VM */
 	public synchronized static boolean isTestingVM() {
@@ -592,8 +594,11 @@ public class NodeStarter implements WrapperListener {
 		node.peers.removeAllPeers();
 		
 		synchronized(NodeStarter.class) {
-		    if(testingVMEnableBypassConnections != TestingVMBypass.NONE)
-		        testingVMNodesByPubKeyHash.put(new ByteArrayWrapper(node.darknetCrypto.pubKeyHash), node);
+		    if(testingVMEnableBypassConnections != TestingVMBypass.NONE) {
+		        ByteArrayWrapper key = new ByteArrayWrapper(node.darknetCrypto.pubKeyHash);
+		        testingVMNodesByPubKeyHash.put(key, node);
+		        testingVMNodeParametersByPubKeyHash.put(key, params);
+		    }
 		}
 
 		return node;
@@ -668,5 +673,14 @@ public class NodeStarter implements WrapperListener {
             return null;
         }
     }
-
+    
+    public static TestNodeParameters maybeGetNodeParameters(byte[] pubKeyHash) {
+        synchronized(NodeStarter.class) {
+            assert(isTestingVM());
+            if(testingVMEnableBypassConnections != TestingVMBypass.NONE)
+                return testingVMNodeParametersByPubKeyHash.get(new ByteArrayWrapper(pubKeyHash));
+            return null;
+        }
+    }
+    
 }
