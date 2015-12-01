@@ -302,7 +302,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		try {
 			m.getSource().sendAsync(msg, null, ctr);
 		} catch (NotConnectedException e) {
-			// Ignore
+		    if(logMINOR) Logger.minor(this, "Rejecting request but disconnected on "+this+" for "+node.getDarknetPortNumber()+" original message was "+msg);
 		}
 	}
 
