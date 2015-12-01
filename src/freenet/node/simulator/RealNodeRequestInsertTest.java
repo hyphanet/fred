@@ -27,6 +27,7 @@ import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
+import freenet.node.NodeStarter.TestingVMBypass;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
@@ -60,7 +61,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     // Set to true to cache everything. This depends on security level.
     static final boolean USE_SLASHDOT_CACHE = false;
     static final boolean REAL_TIME_FLAG = false;
-    static final boolean BYPASS_TRANSPORT_LAYER = true;
+    static final TestingVMBypass BYPASS_TRANSPORT_LAYER = TestingVMBypass.FAST_QUEUE_BYPASS;
     
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;

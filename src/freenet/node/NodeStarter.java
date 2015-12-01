@@ -65,7 +65,13 @@ public class NodeStarter implements WrapperListener {
 
 	private static boolean isTestingVM;
 	private static boolean isStarted;
-	private static boolean testingVMEnableBypassConnections;
+	public enum TestingVMBypass {
+	    /** Do not attempt to bypass the transport layer */
+	    NONE,
+	    /** Deliver messages immediately to the destination Node */
+	    FAST_QUEUE_BYPASS
+	}
+	private static TestingVMBypass testingVMEnableBypassConnections;
 	private static final Map<ByteArrayWrapper, Node> testingVMNodesByPubKeyHash = 
 	        new HashMap<ByteArrayWrapper, Node>();
 
@@ -283,7 +289,7 @@ public class NodeStarter implements WrapperListener {
     public static RandomSource globalTestInit(String testName, boolean enablePlug,
             LogLevel logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
 
-        return globalTestInit(new File(testName), enablePlug, logThreshold, details, noDNS, false, null);
+        return globalTestInit(new File(testName), enablePlug, logThreshold, details, noDNS, TestingVMBypass.NONE, null);
     }
 
 	/**
@@ -309,7 +315,7 @@ public class NodeStarter implements WrapperListener {
      *         {@link Yarrow} is returned.
 	 */
     public static RandomSource globalTestInit(File baseDirectory, boolean enablePlug,
-            LogLevel logThreshold, String details, boolean noDNS, boolean enableBypassConnections,
+            LogLevel logThreshold, String details, boolean noDNS, TestingVMBypass enableBypassConnections,
             RandomSource randomSource)
                 throws InvalidThresholdException {
 
@@ -586,7 +592,7 @@ public class NodeStarter implements WrapperListener {
 		node.peers.removeAllPeers();
 		
 		synchronized(NodeStarter.class) {
-		    if(testingVMEnableBypassConnections)
+		    if(testingVMEnableBypassConnections != TestingVMBypass.NONE)
 		        testingVMNodesByPubKeyHash.put(new ByteArrayWrapper(node.darknetCrypto.pubKeyHash), node);
 		}
 
@@ -657,7 +663,7 @@ public class NodeStarter implements WrapperListener {
     public static Node maybeGetNode(byte[] pubKeyHash) {
         synchronized(NodeStarter.class) {
             assert(isTestingVM());
-            if(testingVMEnableBypassConnections)
+            if(testingVMEnableBypassConnections != TestingVMBypass.NONE)
                 return testingVMNodesByPubKeyHash.get(new ByteArrayWrapper(pubKeyHash));
             return null;
         }
