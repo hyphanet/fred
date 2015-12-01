@@ -1147,6 +1147,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(logMINOR)
 			Logger.minor(this, "Sending async: " + msg + " : " + cb + " on " + this+" for "+node.getDarknetPortNumber()+" priority "+msg.getPriority());
 		if(!isConnected()) {
+		    if(logMINOR) Logger.minor(this, "Not connected on "+this+" for "+msg);
 			if(cb != null)
 				cb.disconnected();
 			throw new NotConnectedException();
