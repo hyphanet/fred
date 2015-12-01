@@ -5533,10 +5533,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	
 	@Override
 	public void handleMessage(Message m) {
-	    if(!isConnected()) {
-	        Logger.error(this, "Not connected receiving message "+m+" on "+this+" for "+node.getDarknetPortNumber());
-	        return;
-	    }
 		node.usm.checkFilters(m, crypto.socket);
 	}
 
