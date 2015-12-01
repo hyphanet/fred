@@ -186,7 +186,8 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	 * passed already, then run the job ASAP. 
 	 * @param time The time at which to run the job. @see System.currentTimeMillis()
 	 */
-	void queueTimedJobAbsolute(Runnable runner, String name, long time, 
+	@Override
+	public void queueTimedJobAbsolute(Runnable runner, String name, long time, 
             boolean runOnTickerAnyway, boolean noDupes) {
 	    long now = System.currentTimeMillis();
 	    queueTimedJobInner(runner, name, time, time-now, runOnTickerAnyway, noDupes);

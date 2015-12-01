@@ -10,5 +10,7 @@ public interface Ticker {
 	public abstract void queueTimedJob(Runnable job, String name, long offset, boolean runOnTickerAnyway, boolean noDupes);
 	public abstract Executor getExecutor();
 	public abstract void removeQueuedJob(Runnable job);
+    public abstract void queueTimedJobAbsolute(Runnable runner, String name, long time, 
+            boolean runOnTickerAnyway, boolean noDupes);
 
 }
