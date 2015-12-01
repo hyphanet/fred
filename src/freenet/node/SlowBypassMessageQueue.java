@@ -72,8 +72,9 @@ public class SlowBypassMessageQueue extends BypassMessageQueue {
                         item.sent();
                     }
                 }
-                Message msg = new Message(item.msg, getSourceNode());
-                targetMessageCore.checkFilters(msg, targetHandler);
+                PeerNode pn = getSourceNode();
+                Message msg = new Message(item.msg, pn);
+                pn.handleMessage(msg);
                 ticker.queueTimedJob(new PrioRunnable() {
 
                     @Override
