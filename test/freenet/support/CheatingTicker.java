@@ -32,4 +32,10 @@ public class CheatingTicker implements Ticker {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void queueTimedJobAbsolute(Runnable job, String name, long time,
+            boolean runOnTickerAnyway, boolean noDupes) {
+        underlying.execute(job);
+    }
+
 }
