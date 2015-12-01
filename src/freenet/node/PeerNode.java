@@ -1987,21 +1987,21 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	*/
 	@Override
 	public void receivedPacket(boolean dontLog, boolean dataPacket) {
-		synchronized(this) {
-			if((!isConnected()) && (!dontLog)) {
-				// Don't log if we are disconnecting, because receiving packets during disconnecting is normal.
-				// That includes receiving packets after we have technically disconnected already.
-				// A race condition involving forceCancelDisconnecting causing a mistaken log message anyway
-				// is conceivable, but unlikely...
-				if((unverifiedTracker == null) && (currentTracker == null) && !disconnecting)
-					Logger.error(this, "Received packet while disconnected!: " + this, new Exception("error"));
-				else
-					if(logMINOR)
-						Logger.minor(this, "Received packet while disconnected on " + this + " - recently disconnected() ?");
-			} else {
-				if(logMINOR) Logger.minor(this, "Received packet on "+this);
-			}
-		}
+	    if((!isConnected()) && (!dontLog)) {
+	        synchronized(this) {
+	            // Don't log if we are disconnecting, because receiving packets during disconnecting is normal.
+	            // That includes receiving packets after we have technically disconnected already.
+	            // A race condition involving forceCancelDisconnecting causing a mistaken log message anyway
+	            // is conceivable, but unlikely...
+	            if((unverifiedTracker == null) && (currentTracker == null) && !disconnecting)
+	                Logger.error(this, "Received packet while disconnected!: " + this, new Exception("error"));
+	            else
+	                if(logMINOR)
+	                    Logger.minor(this, "Received packet while disconnected on " + this + " - recently disconnected() ?");
+	        }
+	    } else {
+	        if(logMINOR) Logger.minor(this, "Received packet on "+this);
+	    }
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			timeLastReceivedPacket = now;
