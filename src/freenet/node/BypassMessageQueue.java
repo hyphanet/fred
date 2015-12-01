@@ -16,11 +16,11 @@ import freenet.support.io.NativeThread;
  */
 public class BypassMessageQueue implements MessageQueue {
     
-    private final MessageCore targetMessageCore;
-    private final PacketSocketHandler targetHandler;
+    final MessageCore targetMessageCore;
+    final PacketSocketHandler targetHandler;
     private final Node targetNode;
     private final Executor executor;
-    private final String targetName;
+    protected final String targetName;
     private byte[] sourcePubKeyHash;
     private PeerNode sourceNode;
     
