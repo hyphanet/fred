@@ -3626,9 +3626,9 @@ public class Node implements TimeSkewDetectorCallback {
 					block = store.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR, ignoreOldBlocks, meta);
 			}
 			if(block != null) {
-			nodeStats.avgStoreSSKSuccess.report(loc);
-			if (dist > nodeStats.furthestStoreSSKSuccess)
-				nodeStats.furthestStoreSSKSuccess=dist;
+				nodeStats.avgStoreSSKSuccess.report(loc);
+				if (dist > nodeStats.furthestStoreSSKSuccess)
+					nodeStats.furthestStoreSSKSuccess=dist;
 				if(logDEBUG) Logger.debug(this, "Found key "+key+" in store");
 				return block;
 			}
@@ -3639,11 +3639,11 @@ public class Node implements TimeSkewDetectorCallback {
 					block = store.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR, ignoreOldBlocks, meta);
 			}
 			if (block != null) {
-			nodeStats.avgCacheSSKSuccess.report(loc);
-			if (dist > nodeStats.furthestCacheSSKSuccess)
-				nodeStats.furthestCacheSSKSuccess=dist;
+				nodeStats.avgCacheSSKSuccess.report(loc);
+				if (dist > nodeStats.furthestCacheSSKSuccess)
+					nodeStats.furthestCacheSSKSuccess=dist;
+				if(logDEBUG) Logger.debug(this, "Found key "+key+" in cache");
 			}
-			if(logDEBUG) Logger.debug(this, "Found key "+key+" in cache");
 			return block;
 		} catch (IOException e) {
 			Logger.error(this, "Cannot fetch data: "+e, e);
