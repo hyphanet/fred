@@ -69,6 +69,7 @@ import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.USK;
+import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
@@ -759,7 +760,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	        if(target != null) {
 	            NodeCrypto targetCrypto =
 	                    sourceCrypto.isOpennet ? target.getOpennet().crypto : target.darknetCrypto;
-	            return new BypassMessageQueue(target, source, targetCrypto, sourceCrypto);
+	            if(NodeStarter.isCBRMessageQueueBypass()) {
+	                TestNodeParameters params = NodeStarter.maybeGetNodeParameters(pubKeyHash);
+	                return new SlowBypassMessageQueue(target, source, targetCrypto, sourceCrypto, params.bypassCBRBandwidthLimit, params.bypassCBRDelay);
+	            } else {
+	                return new BypassMessageQueue(target, source, targetCrypto, sourceCrypto);
+	            }
             }
 	    }
 	    return new PeerMessageQueue();

@@ -69,7 +69,9 @@ public class NodeStarter implements WrapperListener {
 	    /** Do not attempt to bypass the transport layer */
 	    NONE,
 	    /** Deliver messages immediately to the destination Node */
-	    FAST_QUEUE_BYPASS
+	    FAST_QUEUE_BYPASS,
+	    /** Message bypass simulating a constant bitrate link */
+	    CBR_QUEUE_BYPASS
 	}
 	private static TestingVMBypass testingVMEnableBypassConnections;
 	private static final Map<ByteArrayWrapper, Node> testingVMNodesByPubKeyHash = 
@@ -446,6 +448,10 @@ public class NodeStarter implements WrapperListener {
         public boolean useSlashdotCache;
         public String ipAddressOverride;
         public boolean enableFCP;
+        /** Simulated per-link bandwidth limit if doing CBR message queue bypass */
+        public int bypassCBRBandwidthLimit = 1000;
+        /** Simulate per-link one-way transport latency */
+        public int bypassCBRDelay = 100;
     }
 
     /**
@@ -683,4 +689,9 @@ public class NodeStarter implements WrapperListener {
         }
     }
     
+    public synchronized static boolean isCBRMessageQueueBypass() {
+        assert(isTestingVM());
+        return testingVMEnableBypassConnections == TestingVMBypass.CBR_QUEUE_BYPASS;
+    }
+
 }
