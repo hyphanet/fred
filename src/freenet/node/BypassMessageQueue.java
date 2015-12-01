@@ -16,7 +16,6 @@ import freenet.support.io.NativeThread;
  */
 public class BypassMessageQueue implements MessageQueue {
     
-    final MessageCore targetMessageCore;
     final PacketSocketHandler targetHandler;
     private final Node targetNode;
     private final Executor executor;
@@ -34,7 +33,6 @@ public class BypassMessageQueue implements MessageQueue {
     public BypassMessageQueue(Node target, Node source, 
             NodeCrypto targetCrypto, NodeCrypto sourceCrypto) {
         targetNode = target;
-        targetMessageCore = target.getUSM();
         // Only used for logging.
         targetHandler = targetCrypto.socket;
         executor = target.executor;
@@ -56,8 +54,9 @@ public class BypassMessageQueue implements MessageQueue {
                         item.sent();
                     }
                 }
-                Message msg = new Message(item.msg, getSourceNode());
-                targetMessageCore.checkFilters(msg, targetHandler);
+                PeerNode pn = getSourceNode();
+                Message msg = new Message(item.msg, pn);
+                pn.handleMessage(msg);
                 if(callbacks != null) {
                     for(AsyncMessageCallback item : callbacks) {
                         item.acknowledged();
@@ -74,7 +73,7 @@ public class BypassMessageQueue implements MessageQueue {
         return 0;
     }
 
-    protected synchronized PeerContext getSourceNode() {
+    protected synchronized PeerNode getSourceNode() {
         if(sourceNode != null) return sourceNode;
         sourceNode = targetNode.peers.getByPubKeyHash(sourcePubKeyHash);
         return sourceNode;
