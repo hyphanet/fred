@@ -60,9 +60,9 @@ public class SlowBypassMessageQueue extends BypassMessageQueue {
             if(nextDeliveryTimeNS < nowNS) 
                 nextDeliveryTimeNS = nowNS;
             nextDeliveryTimeNS += (messageSize * nanosecondsPerByte);
-            deliveryTime = (nextDeliveryTimeNS / NANOS_PER_MILLISECOND) - nowMS;
+            deliveryTime = (nextDeliveryTimeNS / NANOS_PER_MILLISECOND);
         }
-        ticker.queueTimedJob(job, deliveryTime);
+        ticker.queueTimedJobAbsolute(job, "Bypass delivery", deliveryTime, false, false);
         return 0;
     }
 
