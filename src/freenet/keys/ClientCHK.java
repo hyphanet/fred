@@ -63,7 +63,7 @@ public class ClientCHK extends ClientKey implements Serializable {
     	this.controlDocument = key.controlDocument;
     	this.cryptoAlgorithm = key.cryptoAlgorithm;
     	this.compressionAlgorithm = key.compressionAlgorithm;
-        hashCode = Fields.hashCode(routingKey) ^ Fields.hashCode(routingKey) ^ compressionAlgorithm;
+        hashCode = key.hashCode;
     }
     
     /**
