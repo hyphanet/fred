@@ -63,7 +63,6 @@ public class ClientCHK extends ClientKey implements Serializable {
     	this.controlDocument = key.controlDocument;
     	this.cryptoAlgorithm = key.cryptoAlgorithm;
     	this.compressionAlgorithm = key.compressionAlgorithm;
-        if(routingKey == null) throw new NullPointerException();
         hashCode = Fields.hashCode(routingKey) ^ Fields.hashCode(routingKey) ^ compressionAlgorithm;
     }
     
