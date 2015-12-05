@@ -1531,14 +1531,13 @@ public class StatisticsToadlet extends Toadlet {
 
 		PeerNodeStatus peerNodeStatus;
 		double peerLocation;
-		double peerDistance;
 		int histogramIndex;
 		int peerCount = peerNodeStatuses.length;
 		for (int peerIndex = 0; peerIndex < peerCount; peerIndex++) {
 			peerNodeStatus = peerNodeStatuses[peerIndex];
 			peerLocation = peerNodeStatus.getLocation();
 			if(!peerNodeStatus.isSearchable()) continue;
-			if(peerLocation < 0.0 || peerLocation > 1.0) continue;
+			if (!Location.isValid(peerLocation)) continue;
 			double[] foafLocations=peerNodeStatus.getPeersLocation();
 			if (foafLocations!=null && peerNodeStatus.isRoutable()) {
 				for (double foafLocation : foafLocations) {
@@ -1546,8 +1545,8 @@ public class StatisticsToadlet extends Toadlet {
 					peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(foafLocation, false, 0.9), "disconnected" }, ".");
 				}
 			}
-			peerDistance = Location.distance( myLocation, peerLocation );
-			histogramIndex = (int) (Math.floor(peerDistance * HISTOGRAM_LENGTH * 2));
+			histogramIndex = (int)(peerLocation * HISTOGRAM_LENGTH);
+			histogramIndex %= HISTOGRAM_LENGTH; // Map (unlikely) location 1.0 to 0.0
 			if (peerNodeStatus.isConnected()) {
 				histogramConnected[histogramIndex]++;
 			} else {
@@ -1562,7 +1561,7 @@ public class StatisticsToadlet extends Toadlet {
 		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
 			peerHistogramLegendCell = peerHistogramLegendTableRow.addChild("td");
 			peerHistogramGraphCell = peerHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
-			peerHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p2.format(((double) i) / ( HISTOGRAM_LENGTH * 2 )));
+			peerHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p1.format(((double) i) / HISTOGRAM_LENGTH));
 			//
 			histogramPercent = ((double) histogramConnected[ i ] ) / histogramDiv;
 			peerHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramConnected", "height: " + fix3pctUS.format(histogramPercent) + "; width: 100%;" }, "\u00a0");
