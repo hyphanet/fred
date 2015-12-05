@@ -2722,7 +2722,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			"checkbox",
 			"radio",
 			"submit",
-			"reset,",
+			"reset",
 			// no ! file
 			"hidden",
 			"image",
