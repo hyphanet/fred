@@ -2,7 +2,10 @@ package freenet.clients.http;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +22,122 @@ import freenet.support.api.HTTPRequest;
 /** Simple class to output standard heads and tail for web interface pages. 
 */
 public final class PageMaker {
+	
+	/**
+	 * Enumeration of recursive theme CSS dependencies to replace CSS @imports.
+	 */
+    private enum ThemeCSS {
+	    BOOKMARK("bookmark.css"),
+	    COLOR("color.css"),
+	    STATUSBAR("statusbar.css"),
+	    BASE("base.css", COLOR, BOOKMARK, STATUSBAR),
+	    
+	    // Behavior definitions
+	    BEHAVIOR_CLASSIC("behavior-classic.css", BASE),
+	    BEHAVIOR_DROPDOWN("behavior-dropdown.css", BASE),
+	    BEHAVIOR_DYNAMIC("behavior-dynamic.css", BASE),
+	    BEHAVIOR_STATIC("behavior-static.css", BASE),
+	    BEHAVIOR_TOP("behavior-top.css", BASE),
+        
+        // Boxed theme variants
+	    BOXED("themes/boxed/layout.css", "themes/boxed/color.css"),
+	    BOXED_THEME("themes/boxed/theme.css", BEHAVIOR_TOP, BOXED),
+	    BOXED_CLASSIC_THEME("themes/boxed-classic/theme.css", BEHAVIOR_CLASSIC, BOXED),
+	    BOXED_DROPDOWN_THEME("themes/boxed-dropdown/theme.css", BEHAVIOR_DROPDOWN, BOXED),
+	    BOXED_DYNAMIC_THEME("themes/boxed-dynamic/theme.css", BEHAVIOR_DYNAMIC, BOXED),
+	    BOXED_STATIC_THEME("themes/boxed-static/theme.css", BEHAVIOR_STATIC, BOXED),
+	    
+	    // Clean theme variants
+	    CLEAN("themes/clean/layout.css", "themes/clean/color.css"),
+	    CLEAN_THEME("themes/clean/theme.css", BEHAVIOR_DYNAMIC, CLEAN),
+	    CLEAN_CLASSIC_THEME("themes/clean-classic/theme.css", BEHAVIOR_CLASSIC, CLEAN),
+	    CLEAN_DROPDOWN_THEME("themes/clean-dropdown/theme.css", BEHAVIOR_DROPDOWN, CLEAN),
+	    CLEAN_STATIC_THEME("themes/clean-static/theme.css", BEHAVIOR_STATIC, CLEAN),
+	    CLEAN_TOP_THEME("themes/clean-top/theme.css", BEHAVIOR_TOP, CLEAN),
+	    
+	    // Gray and blue theme variants
+	    GRAYANDBLUE("themes/grayandblue/layout.css", "themes/grayandblue/color.css"),
+	    GRAYANDBLUE_THEME("themes/grayandblue/theme.css", BEHAVIOR_CLASSIC, GRAYANDBLUE),
+	    GRAYANDBLUE_DROPDOWN_THEME("themes/grayandblue-dropdown/theme.css", BEHAVIOR_DROPDOWN, GRAYANDBLUE),
+	    GRAYANDBLUE_DYNAMIC_THEME("themes/grayandblue-dynamic/theme.css", BEHAVIOR_DYNAMIC, GRAYANDBLUE),
+	    GRAYANDBLUE_STATIC_THEME("themes/grayandblue-static/theme.css", BEHAVIOR_STATIC, GRAYANDBLUE),
+	    GRAYANDBLUE_TOP_THEME("themes/grayandblue-top/theme.css", BEHAVIOR_TOP, GRAYANDBLUE),
+
+	    // Sky theme variants
+	    SKY("themes/sky/layout.css", "themes/sky/color.css"),
+	    SKY_THEME("themes/sky/theme.css", BEHAVIOR_TOP, SKY),
+	    SKY_CLASSIC_THEME("themes/sky-classic/theme.css", BEHAVIOR_CLASSIC, SKY),
+	    SKY_DROPDOWN_THEME("themes/sky-dropdown/theme.css", BEHAVIOR_DROPDOWN, SKY),
+	    SKY_DYNAMIC_THEME("themes/sky-dynamic/theme.css", BEHAVIOR_DYNAMIC, SKY),
+	    SKY_STATIC_THEME("themes/sky-static/theme.css", BEHAVIOR_STATIC, SKY),
+        
+	    // Old theme dependencies
+	    BASE_OLD("base-old.css"),
+	    PICTURESNULLIFIER("picturesnullifier.css"),
+	    CLEAN_OLD("clean-old.css", BASE_OLD, BOOKMARK, STATUSBAR),
+	    CLEAN_DROPDOWN_OLD("clean-dropdown-old.css", BASE_OLD, BOOKMARK, CLEAN_OLD),
+	    
+	    // Minimal blue theme
+	    MINIMALBLUE_THEME("themes/minimalblue/theme.css", BASE_OLD, BOOKMARK, STATUSBAR),
+	    
+	    // Minimalistic theme
+	    MINIMALISTIC_THEME("themes/minimalist/theme.css", CLEAN_DROPDOWN_OLD, PICTURESNULLIFIER),
+	    
+	    // Rabbit hole theme
+	    RABBIT_HOLE_THEME("themes/rabbit-hole/theme.css", BASE_OLD, BOOKMARK);
+	    	    
+	    /**
+	     * All relative CSS file paths that should be included to properly render the theme.
+	     */
+	    private final List<String> paths;
+	    
+	    private static <T> List<T> asList(T first, T[] others) {
+	        List<T> vals = new ArrayList<T>(others.length + 1);
+	        vals.add(first);
+	        vals.addAll(Arrays.asList(others));
+	        return vals;
+	    }
+	    
+	    /**
+	     * Convenience ThemeCSS constructor for grouping non-recursive dependencies.
+	     */
+	    private ThemeCSS(String... paths) {
+	        this.paths = Collections.unmodifiableList(Arrays.asList(paths));
+	    }
+	    
+	    /**
+	     * Constructs a ThemeCSS equivalent to first loading the firstDepenency /
+	     * otherDependencies through CSS @import statements, then loading the file
+	     * in the given path.
+	     */
+	    private ThemeCSS(String path, ThemeCSS firstDependency, ThemeCSS... otherDependencies) {
+	        LinkedHashSet<String> paths = new LinkedHashSet<String>();
+	        List<ThemeCSS> dependencies = asList(firstDependency, otherDependencies);
+	        for (ThemeCSS group : dependencies) {
+	            for (String dependency : group.paths) {
+	                // Deduplicate dependencies, keeping only the last occurence.
+	                paths.remove(dependency);
+	                paths.add(dependency);
+                }
+            }
+            if (path != null) {
+                paths.add(path);
+            }
+            this.paths = Collections.unmodifiableList(new ArrayList<String>(paths));
+	    }
+	    
+	    /**
+	     * Gets the list of relative paths of stylesheets to be included to properly
+	     * render the given theme.
+	     *
+	     * More precisely, it returns the paths of the ThemeCSS with the name 
+	     * <theme_name>_THEME, where <theme_name> is the theme enumeration name
+	     * in THEME.
+	     */
+	    public static List<String> getPathsForTheme(THEME theme) {
+	        return Enum.valueOf(ThemeCSS.class, theme.name() + "_THEME").paths;
+	    }
+	}
 	
 	public enum THEME {
 		BOXED("boxed", "Boxed (Top menu)", "", false, false),
@@ -86,6 +205,12 @@ public final class PageMaker {
 		 */
 		public final boolean fetchKeyBoxAboveBookmarks;
 		
+		/**
+		 * Ordered collection of paths for all CSS files to be loaded for this
+		 * theme.
+		 */
+		private final List<String> paths;
+		
 		private THEME(String code, String name, String description) {
 			this(code, name, description, false, false);
 		}
@@ -96,6 +221,15 @@ public final class PageMaker {
 			this.description = description;
 			this.forceActivelinks = forceActivelinks;
 			this.fetchKeyBoxAboveBookmarks = fetchKeyBoxAboveBookmarks;
+			this.paths = ThemeCSS.getPathsForTheme(this);
+		}
+		
+		/**
+		 * Gets the list of relative paths of stylesheets to be included to properly
+	     * render this theme.
+		 */
+		public List<String> getPaths() {
+		    return this.paths;
 		}
 
 		public static THEME themeFromName(String cssName) {
@@ -188,11 +322,13 @@ public final class PageMaker {
 		if (theme2 == null) {
 			this.theme = THEME.getDefault();
 		} else {
-			URL themeurl = getClass().getResource("staticfiles/themes/" + theme2.code + "/theme.css");
-			if (themeurl == null)
-				this.theme = THEME.getDefault();
-			else
-				this.theme = theme2;
+		    for (String path : theme2.getPaths()) {
+			    if (getClass().getResource(StaticToadlet.ROOT_PATH + path) == null) {
+			        theme2 = THEME.getDefault();
+			        break;
+			    }
+		    }
+			this.theme = theme2;
 		}
 	}
 
@@ -301,6 +437,12 @@ public final class PageMaker {
 		return getPageNode(title, ctx, new RenderParameters().renderNavigationLinks(renderNavigationLinks).renderStatus(renderStatus).renderModeSwitch(true));
 	}
 
+    private void addThemeStylesheetLinks(HTMLNode headNode, THEME theme) {
+        for (String path : theme.getPaths()) {
+            headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", StaticToadlet.ROOT_URL + path, "text/css", theme.code });
+        }
+    }
+
 	/**
 	 * Generates an FProxy template page suitable for adding content to.
 	 *
@@ -326,14 +468,13 @@ public final class PageMaker {
 		if(override != null)
 			headNode.addChild(getOverrideContent());
 		else 
-			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme.code + "/theme.css", "text/css", theme.code });
+			addThemeStylesheetLinks(headNode, theme);
 		
 		boolean sendAllThemes =  ctx != null && ctx.getContainer().sendAllThemes();
 		
 		if(sendAllThemes) {
 			for (THEME t: THEME.values()) {
-				String themeName = t.code;
-				headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
+				addThemeStylesheetLinks(headNode, t);
 			}
 		}
 		

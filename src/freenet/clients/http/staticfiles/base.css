@@ -1,13 +1,13 @@
 /* default color scheme */
-@import url(/static/color.css);
+/* @import url(/static/color.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* FIXME these includes should be incorporated into this file */
 
 /* Bookmarks & bookmark editor */
-@import url(/static/bookmark.css);
+/* @import url(/static/bookmark.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* Status bar style & colors */
-@import url(/static/statusbar.css);
+/* @import url(/static/statusbar.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* 
  * Overall Settings

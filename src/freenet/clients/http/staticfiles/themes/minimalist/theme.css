@@ -1,10 +1,10 @@
 ﻿/* minimalist */
 
 /* Base theme */
-@import url(/static/clean-dropdown-old.css);
+/* @import url(/static/clean-dropdown-old.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* Default pictures won't render nice with this theme */
-@import url(/static/picturesnullifier.css);
+/* @import url(/static/picturesnullifier.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* minimalist overall settings */
 

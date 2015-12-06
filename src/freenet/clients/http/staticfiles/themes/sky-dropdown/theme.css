@@ -1,10 +1,10 @@
 /* sky-dropdown theme */
 
 /* navigation behavior */
-@import url(/static/behavior-dropdown.css);
+/* @import url(/static/behavior-dropdown.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* layout */
-@import url(/static/themes/sky/layout.css);
+/* @import url(/static/themes/sky/layout.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* color scheme */
-@import url(/static/themes/sky/color.css);
+/* @import url(/static/themes/sky/color.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */

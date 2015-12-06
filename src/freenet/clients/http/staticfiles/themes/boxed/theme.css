@@ -1,10 +1,10 @@
 /* boxed top */
 
 /* navigation behavior */
-@import url(/static/behavior-top.css);
+/* @import url(/static/behavior-top.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* layout */
-@import url(/static/themes/boxed/layout.css);
+/* @import url(/static/themes/boxed/layout.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
 
 /* color scheme */
-@import url(/static/themes/boxed/color.css);
+/* @import url(/static/themes/boxed/color.css); replaced by freenet.clients.http.PageMaker.ThemeCSS */
