@@ -239,8 +239,6 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 			if(cancelled) cancel();
 		} catch (MalformedURLException e) {
 			throw new FetchException(FetchExceptionMode.INVALID_URI, e);
-		} catch (KeyListenerConstructionException e) {
-			onFailure(e.getFetchException(), currentState, context);
 		}
 		return true;
 	}
