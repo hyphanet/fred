@@ -2,6 +2,7 @@ package freenet.support.io;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -45,7 +46,7 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 	/** Vector of streams (FileBucketInputStream or FileBucketOutputStream) which 
 	 * are open to this file. So we can be sure they are all closed when we free it. 
 	 * Can be null. */
-	private transient Vector<Object> streams;
+	private transient Vector<Closeable> streams;
 
 	protected static String tempDir = null;
 
@@ -126,15 +127,15 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 	    return new BufferedOutputStream(getOutputStreamUnbuffered());
 	}
 
-	private synchronized void addStream(Object stream) {
+	private synchronized void addStream(Closeable stream) {
 		// BaseFileBucket is a very common object, and often very long lived,
 		// so we need to minimize memory usage even at the cost of frequent allocations.
 		if(streams == null)
-			streams = new Vector<Object>(1, 1);
+			streams = new Vector<Closeable>(1, 1);
 		streams.add(stream);
 	}
-	
-	private synchronized void removeStream(Object stream) {
+
+	private synchronized void removeStream(Closeable stream) {
 		// Race condition is possible
 		if(streams == null) return;
 		streams.remove(stream);
@@ -433,25 +434,21 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 	}
 	
 	public void free(boolean forceFree) {
-		Object[] toClose;
+		Closeable[] toClose;
 		if(logMINOR)
 			Logger.minor(this, "Freeing "+this, new Exception("debug"));
 		synchronized(this) {
 			if(freed) return;
 			freed = true;
-			toClose = streams == null ? null : streams.toArray();
+			toClose = streams == null ? null : streams.toArray(new Closeable[streams.size()]);
 			streams = null;
 		}
 		
 		if(toClose != null) {
 			Logger.error(this, "Streams open free()ing "+this+" : "+Arrays.toString(toClose), new Exception("debug"));
-			for(Object strm: toClose) {
+			for(Closeable strm: toClose) {
 				try {
-					if(strm instanceof FileBucketOutputStream) {
-						((FileBucketOutputStream) strm).close();
-					} else {
-						((FileBucketInputStream) strm).close();
-					}
+					strm.close();
 				} catch (IOException e) {
 					Logger.error(this, "Caught closing stream in free(): "+e, e);
 				} catch (Throwable t) {
