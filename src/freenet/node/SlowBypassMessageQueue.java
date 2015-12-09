@@ -27,7 +27,7 @@ public class SlowBypassMessageQueue extends BypassMessageQueue {
     static final long NANOS_PER_MILLISECOND = 1000*1000;
 
     static {
-        Logger.registerClass(BypassMessageQueue.class);
+        Logger.registerClass(SlowBypassMessageQueue.class);
     }
 
     /** Create a message queue bypass which simulates a constant bit-rate link.
@@ -62,6 +62,7 @@ public class SlowBypassMessageQueue extends BypassMessageQueue {
             nextDeliveryTimeNS += (messageSize * nanosecondsPerByte);
             deliveryTime = (nextDeliveryTimeNS / NANOS_PER_MILLISECOND);
         }
+        if(logDEBUG) Logger.debug(this, "Delivering message "+item+" in "+(deliveryTime - System.currentTimeMillis()));
         ticker.queueTimedJobAbsolute(job, "Bypass delivery", deliveryTime, false, false);
         return 0;
     }
