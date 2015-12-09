@@ -42,9 +42,12 @@ public class PrioritizedTickerTest extends TestCase {
         }
         
         public void waitForIdle() throws InterruptedException {
+            // Wait until all jobs have been removed from the queue.
             while(queuedJobsUniqueTimes() > 0) {
                 waitForSleeping();
             }
+            // Wait until the jobs have actually been started off thread or completed on thread.
+            waitForSleeping();
         }
 	    
 	}
