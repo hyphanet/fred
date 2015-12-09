@@ -5,7 +5,7 @@ import junit.framework.TestCase;
 
 public class PrioritizedTickerTest extends TestCase {
 	
-	private Executor realExec;
+	private WaitableExecutor realExec;
 	
 	private MyTicker ticker;
 	
@@ -26,6 +26,11 @@ public class PrioritizedTickerTest extends TestCase {
                 }
             }
             super.sleep(sleepTime);
+            if(sleepTime == MAX_SLEEP_TIME) {
+                synchronized(sleepSync) {
+                    sleeping = false;
+                }
+            }
         }
         
         public void waitForSleeping() throws InterruptedException {
@@ -33,14 +38,16 @@ public class PrioritizedTickerTest extends TestCase {
                 while(!sleeping) {
                     sleepSync.wait();
                 }
-                sleeping = false;
             }
         }
         
         public void waitForIdle() throws InterruptedException {
+            // Wait until all jobs have been removed from the queue.
             while(queuedJobsUniqueTimes() > 0) {
                 waitForSleeping();
             }
+            // Wait until the jobs have actually been started off thread or completed on thread.
+            waitForSleeping();
         }
 	    
 	}
@@ -48,7 +55,7 @@ public class PrioritizedTickerTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		realExec = new PooledExecutor();
+		realExec = new WaitableExecutor(new PooledExecutor());
 		ticker = new MyTicker(realExec, 0);
 		ticker.start();
 	}
@@ -113,7 +120,7 @@ public class PrioritizedTickerTest extends TestCase {
         }
         
         public synchronized void waitForFinished() throws InterruptedException {
-            while(state == BlockTickerJobState.FINISHED) {
+            while(state != BlockTickerJobState.FINISHED) {
                 wait();
             }
         }
@@ -135,8 +142,9 @@ public class PrioritizedTickerTest extends TestCase {
         assert(ticker.queuedJobsUniqueTimes() == 0);
         ticker.queueTimedJob(simpleRunnable, 0);
         ticker.waitForIdle();
+        realExec.waitForIdle();
         synchronized(PrioritizedTickerTest.this) {
-            assert(runCount == 1);
+            assertEquals(runCount, 1);
         }
         assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
@@ -147,10 +155,11 @@ public class PrioritizedTickerTest extends TestCase {
         assert(ticker.queuedJobs() == 1);
         blocker.unblockAndWait();
         ticker.waitForIdle();
+        realExec.waitForIdle();
         assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
         synchronized(PrioritizedTickerTest.this) {
-            assert(runCount == 2);
+            assertEquals(runCount, 2);
         }
     }
 
@@ -226,8 +235,9 @@ public class PrioritizedTickerTest extends TestCase {
         assert(ticker.queuedJobsUniqueTimes() == 1);
         blocker.unblockAndWait();
         ticker.waitForIdle();
+        realExec.waitForIdle();
 		synchronized(PrioritizedTickerTest.this) {
-			assert(runCount == 1);
+		    assertEquals(runCount, 1);
 		}
 		assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
@@ -236,6 +246,7 @@ public class PrioritizedTickerTest extends TestCase {
         ticker.queueTimedJob(blocker, "Block the ticker", 0, true, false);
         blocker.waitForBlocking();
         runAt = System.currentTimeMillis();
+        // Note that these will actually be run on the Ticker, and therefore be de-duped.
 		ticker.queueTimedJobAbsolute(simpleRunnable, "De-dupe test", runAt+1, false, true);
 		assert(ticker.queuedJobs() == 1);
         assert(ticker.queuedJobsUniqueTimes() == 1);
@@ -244,10 +255,11 @@ public class PrioritizedTickerTest extends TestCase {
         assert(ticker.queuedJobsUniqueTimes() == 1);
         blocker.unblockAndWait();
         ticker.waitForIdle();
+        realExec.waitForIdle();
         assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
 		synchronized(PrioritizedTickerTest.this) {
-			assert(runCount == 2);
+		    assertEquals(runCount, 2);
 		}
 	}
 
