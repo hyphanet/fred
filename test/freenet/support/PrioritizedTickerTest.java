@@ -113,7 +113,7 @@ public class PrioritizedTickerTest extends TestCase {
         }
         
         public synchronized void waitForFinished() throws InterruptedException {
-            while(state == BlockTickerJobState.FINISHED) {
+            while(state != BlockTickerJobState.FINISHED) {
                 wait();
             }
         }
