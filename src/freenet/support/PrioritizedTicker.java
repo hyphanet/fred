@@ -199,6 +199,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	 * System.currentTimeMillis()). */
     private void queueTimedJobInner(Runnable runner, String name, long l, long offset, 
             boolean runOnTickerAnyway, boolean noDupes) {
+        if(noDupes) runOnTickerAnyway = true;
         if(offset <= 0 && !runOnTickerAnyway) {
             if(logMINOR) Logger.minor(this, "Running directly: "+runner);
             executor.execute(runner, name);

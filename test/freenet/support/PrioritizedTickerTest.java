@@ -246,6 +246,7 @@ public class PrioritizedTickerTest extends TestCase {
         ticker.queueTimedJob(blocker, "Block the ticker", 0, true, false);
         blocker.waitForBlocking();
         runAt = System.currentTimeMillis();
+        // Note that these will actually be run on the Ticker, and therefore be de-duped.
 		ticker.queueTimedJobAbsolute(simpleRunnable, "De-dupe test", runAt+1, false, true);
 		assert(ticker.queuedJobs() == 1);
         assert(ticker.queuedJobsUniqueTimes() == 1);
