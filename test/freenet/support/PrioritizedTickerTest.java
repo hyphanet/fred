@@ -5,7 +5,7 @@ import junit.framework.TestCase;
 
 public class PrioritizedTickerTest extends TestCase {
 	
-	private Executor realExec;
+	private WaitableExecutor realExec;
 	
 	private MyTicker ticker;
 	
@@ -48,7 +48,7 @@ public class PrioritizedTickerTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		realExec = new PooledExecutor();
+		realExec = new WaitableExecutor(new PooledExecutor());
 		ticker = new MyTicker(realExec, 0);
 		ticker.start();
 	}
@@ -135,6 +135,7 @@ public class PrioritizedTickerTest extends TestCase {
         assert(ticker.queuedJobsUniqueTimes() == 0);
         ticker.queueTimedJob(simpleRunnable, 0);
         ticker.waitForIdle();
+        realExec.waitForIdle();
         synchronized(PrioritizedTickerTest.this) {
             assertEquals(runCount, 1);
         }
