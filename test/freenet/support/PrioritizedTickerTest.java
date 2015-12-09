@@ -26,6 +26,11 @@ public class PrioritizedTickerTest extends TestCase {
                 }
             }
             super.sleep(sleepTime);
+            if(sleepTime == MAX_SLEEP_TIME) {
+                synchronized(sleepSync) {
+                    sleeping = false;
+                }
+            }
         }
         
         public void waitForSleeping() throws InterruptedException {
@@ -33,7 +38,6 @@ public class PrioritizedTickerTest extends TestCase {
                 while(!sleeping) {
                     sleepSync.wait();
                 }
-                sleeping = false;
             }
         }
         
