@@ -136,7 +136,7 @@ public class PrioritizedTickerTest extends TestCase {
         ticker.queueTimedJob(simpleRunnable, 0);
         ticker.waitForIdle();
         synchronized(PrioritizedTickerTest.this) {
-            assert(runCount == 1);
+            assertEquals(runCount, 1);
         }
         assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
@@ -150,7 +150,7 @@ public class PrioritizedTickerTest extends TestCase {
         assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
         synchronized(PrioritizedTickerTest.this) {
-            assert(runCount == 2);
+            assertEquals(runCount, 2);
         }
     }
 
@@ -227,7 +227,7 @@ public class PrioritizedTickerTest extends TestCase {
         blocker.unblockAndWait();
         ticker.waitForIdle();
 		synchronized(PrioritizedTickerTest.this) {
-			assert(runCount == 1);
+		    assertEquals(runCount, 1);
 		}
 		assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
@@ -247,7 +247,7 @@ public class PrioritizedTickerTest extends TestCase {
         assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
 		synchronized(PrioritizedTickerTest.this) {
-			assert(runCount == 2);
+		    assertEquals(runCount, 2);
 		}
 	}
 
