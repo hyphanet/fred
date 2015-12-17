@@ -63,6 +63,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean USE_SLASHDOT_CACHE = false;
     static final boolean REAL_TIME_FLAG = false;
     static final TestingVMBypass BYPASS_TRANSPORT_LAYER = TestingVMBypass.FAST_QUEUE_BYPASS;
+    static final int PACKET_DROP = 20; /* 5% */
     
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
@@ -145,7 +146,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         params.baseDirectory = new File(name+i);
         params.disableProbabilisticHTLs = DISABLE_PROBABILISTIC_HTLS;
         params.maxHTL = MAX_HTL;
-        params.dropProb = 20; /* 5% */
+        params.dropProb = PACKET_DROP;
         params.random = nodesRandom;
         params.executor = executor;
         params.threadLimit = 500*NUMBER_OF_NODES;
