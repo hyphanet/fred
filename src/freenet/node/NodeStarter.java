@@ -412,7 +412,8 @@ public class NodeStarter implements WrapperListener {
     public static final class TestNodeParameters {
         /** The UDP port number. Each test node must have a different port number. */
         public int port;
-        /** The UDP opennet port number. Each test node must have a different port number. */
+        /** The UDP opennet port number. Each test node must have a different port number,
+         * but this can be 0 if we are only using darknet (which is usually true for tests). */
         public int opennetPort;
         /** The directory where the test node will put all its data. <br>
          *  Will be created automatically if it does not exist.<br>
@@ -429,6 +430,7 @@ public class NodeStarter implements WrapperListener {
         public File baseDirectory = new File("freenet-test-node-" + UUID.randomUUID().toString());
         public boolean disableProbabilisticHTLs;
         public short maxHTL;
+        /** Probability of dropping a packet randomly, or 0. */
         public int dropProb;
         public RandomSource random;
         public Executor executor;
