@@ -147,7 +147,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         params.disableProbabilisticHTLs = DISABLE_PROBABILISTIC_HTLS;
         params.maxHTL = MAX_HTL;
         params.dropProb = PACKET_DROP;
-        params.random = nodesRandom;
+        params.random = new DummyRandomSource(nodesRandom.nextLong());
         params.executor = executor;
         params.threadLimit = 500*NUMBER_OF_NODES;
         params.storeSize = 256*1024;
