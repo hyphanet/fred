@@ -63,7 +63,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean USE_SLASHDOT_CACHE = false;
     static final boolean REAL_TIME_FLAG = false;
     static final TestingVMBypass BYPASS_TRANSPORT_LAYER = TestingVMBypass.FAST_QUEUE_BYPASS;
-    static final int PACKET_DROP = 20; /* 5% */
+    static final int PACKET_DROP = 0;
     
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
