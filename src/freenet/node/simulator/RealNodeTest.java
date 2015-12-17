@@ -71,6 +71,7 @@ public class RealNodeTest {
 			for(int i=0;i<nodes.length;i++) {
 				int next = (i+1) % nodes.length;
 				connect(nodes[i], nodes[next]);
+                Logger.normal(RealNodeTest.class, "Connecting node "+i+" to node "+next);
 			}
 		}
 		for (int i=0; i<nodes.length; i++) {
@@ -90,6 +91,7 @@ public class RealNodeTest {
 				for (int n = 0; n < degree / 2; n++) {
 					if (random.nextFloat() < p) {
 						connect(a, b);
+						Logger.normal(RealNodeTest.class, "Connecting node "+i+" to node "+k);
 						break;
 					}
 				}
