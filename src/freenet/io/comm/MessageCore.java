@@ -630,4 +630,8 @@ public class MessageCore {
 	public Executor getExecutor() {
 		return _executor;
 	}
+
+    public Dispatcher getDispatcher() {
+        return _dispatcher;
+    }
 }
