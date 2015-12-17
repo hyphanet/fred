@@ -54,10 +54,15 @@ public class NativeThread extends Thread {
 	
 
 	public static final int ENOUGH_NICE_LEVELS = PriorityLevel.values().length;
+	@Deprecated
 	public static final int MIN_PRIORITY = PriorityLevel.MIN_PRIORITY.value;
+	@Deprecated
 	public static final int LOW_PRIORITY = PriorityLevel.LOW_PRIORITY.value;
+	@Deprecated
 	public static final int NORM_PRIORITY = PriorityLevel.NORM_PRIORITY.value;
+	@Deprecated
 	public static final int HIGH_PRIORITY = PriorityLevel.HIGH_PRIORITY.value;
+	@Deprecated
 	public static final int MAX_PRIORITY = PriorityLevel.MAX_PRIORITY.value;
 	
 	
