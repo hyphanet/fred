@@ -91,7 +91,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, "", true, BYPASS_TRANSPORT_LAYER, null);
         System.out.println("Insert/retrieve test");
         System.out.println();
-        DummyRandomSource random = new DummyRandomSource(3142);
+        DummyRandomSource nodesRandom = new DummyRandomSource(3142);
+        DummyRandomSource random = new DummyRandomSource(3141);
         DummyRandomSource topologyRandom = new DummyRandomSource(3143);
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
@@ -99,7 +100,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, DISABLE_PROBABILISTIC_HTLS, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, BWLIMIT, ENABLE_FOAF, false, true, USE_SLASHDOT_CACHE, null);
+            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, DISABLE_PROBABILISTIC_HTLS, MAX_HTL, 20 /* 5% */, nodesRandom, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, BWLIMIT, ENABLE_FOAF, false, true, USE_SLASHDOT_CACHE, null);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         
@@ -147,7 +148,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     private final RandomSource random;
     private int requestNumber = 0;
     private RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
-    private String baseString = System.currentTimeMillis() + " ";
+    private String baseString = "Test ";
 	private int insertAttempts = 0;
 	private int fetchSuccesses = 0;
 	private final int targetSuccesses;
