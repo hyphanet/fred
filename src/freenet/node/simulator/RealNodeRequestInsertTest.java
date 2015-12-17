@@ -143,7 +143,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             Executor executor) {
         TestNodeParameters params = new TestNodeParameters();
         params.port = DARKNET_PORT_BASE+i;
-        params.baseDirectory = new File(name+i);
+        params.baseDirectory = new File(name);
         params.disableProbabilisticHTLs = DISABLE_PROBABILISTIC_HTLS;
         params.maxHTL = MAX_HTL;
         params.dropProb = PACKET_DROP;
