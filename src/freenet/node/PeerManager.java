@@ -507,7 +507,7 @@ public class PeerManager {
 			connectedPeers = Arrays.copyOf(connectedPeers, connectedPeers.length + 1);
 			connectedPeers[connectedPeers.length - 1] = pn;
 			if(logMINOR)
-				Logger.minor(this, "Connected peers: " + connectedPeers.length);
+				Logger.minor(this, "Connected peers: " + connectedPeers.length+" of "+myPeers.length);
 		}
 		if(!pn.isSeed())
                     updatePMUserAlert();
