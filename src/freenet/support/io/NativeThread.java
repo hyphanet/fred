@@ -94,20 +94,43 @@ public class NativeThread extends Thread {
 		}
 		Logger.minor(NativeThread.class, "Run init(): _loadNative = "+_loadNative);
 	}
-	
 
+	/**
+	* Creates a new native (reniced) thread
+	*
+	* @param name
+	* @param priority
+	* @param dontCheckRenice This should be set to true
+	*    unless the caller is running at NATIVE_PRIORITY_BASE @see bug6623
+	*/
 	public NativeThread(String name, int priority, boolean dontCheckRenice) {
 		super(name);
 		this.currentPriority = priority;
 		this.dontCheckRenice = dontCheckRenice;
 	}
 	
+	/**
+	* Creates a new native (reniced) thread
+	*
+	* @param name
+	* @param priority
+	* @param dontCheckRenice This should be set to true
+	*    unless the caller is running at NATIVE_PRIORITY_BASE @see bug6623
+	*/
 	public NativeThread(Runnable r, String name, int priority, boolean dontCheckRenice) {
 		super(r, name);
 		this.currentPriority = priority;
 		this.dontCheckRenice = dontCheckRenice;
 	}
 	
+	/**
+	* Creates a new native (reniced) thread
+	*
+	* @param name
+	* @param priority
+	* @param dontCheckRenice This should be set to true
+	*    unless the caller is running at NATIVE_PRIORITY_BASE @see bug6623
+	*/
 	public NativeThread(ThreadGroup g, Runnable r, String name, int priority, boolean dontCheckRenice) {
 		super(g, r, name);
 		this.currentPriority = priority;
