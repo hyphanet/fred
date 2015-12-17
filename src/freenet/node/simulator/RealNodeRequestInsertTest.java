@@ -175,8 +175,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Node randomNode = nodes[node1];
         //Logger.error(RealNodeRequestInsertTest.class,"Inserting: \""+dataString+"\" to "+node1);
         
-        //boolean isSSK = requestNumber % 2 == 1;
-        boolean isSSK = true;
+        boolean isSSK = requestNumber % 2 == 1;
         
         FreenetURI testKey;
         ClientKey insertKey;
