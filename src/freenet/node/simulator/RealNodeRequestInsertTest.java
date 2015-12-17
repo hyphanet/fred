@@ -27,6 +27,7 @@ import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
+import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.node.NodeStarter.TestingVMBypass;
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -98,8 +99,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
-            nodes[i] = 
-            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, DISABLE_PROBABILISTIC_HTLS, MAX_HTL, 20 /* 5% */, nodesRandom, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, BWLIMIT, ENABLE_FOAF, false, true, USE_SLASHDOT_CACHE, null);
+            TestNodeParameters params = getNodeParameters(i, name, nodesRandom, executor);
+            nodes[i] = NodeStarter.createTestNode(params);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         
@@ -135,6 +136,30 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
             }
         }
+    }
+
+    private static TestNodeParameters getNodeParameters(int i, String name, RandomSource nodesRandom,
+            Executor executor) {
+        TestNodeParameters params = new TestNodeParameters();
+        params.port = DARKNET_PORT_BASE+i;
+        params.baseDirectory = new File(name+i);
+        params.disableProbabilisticHTLs = DISABLE_PROBABILISTIC_HTLS;
+        params.maxHTL = MAX_HTL;
+        params.dropProb = 20; /* 5% */
+        params.random = nodesRandom;
+        params.executor = executor;
+        params.threadLimit = 500*NUMBER_OF_NODES;
+        params.storeSize = 256*1024;
+        params.ramStore = true;
+        params.enableSwapping = ENABLE_SWAPPING;
+        params.enableULPRs = ENABLE_ULPRS;
+        params.enablePerNodeFailureTables = ENABLE_PER_NODE_FAILURE_TABLES;
+        params.enableSwapQueueing = ENABLE_SWAP_QUEUEING;
+        params.enablePacketCoalescing = ENABLE_PACKET_COALESCING;
+        params.outputBandwidthLimit = BWLIMIT;
+        params.longPingTimes = true;
+        params.useSlashdotCache = USE_SLASHDOT_CACHE;
+        return params;
     }
 
     public RealNodeRequestInsertTest(Node[] nodes, DummyRandomSource random, int targetSuccesses) {
