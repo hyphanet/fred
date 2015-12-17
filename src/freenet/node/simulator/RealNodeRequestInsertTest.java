@@ -84,11 +84,10 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         }
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
-        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.NodeDispatcher:MINOR,freenet.node.simulator:MINOR,freenet.node.PeerManager:MINOR,freenet.node.RequestSender:MINOR");
-        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.FNP:MINOR,freenet.node.Packet:MINOR,freenet.io.comm:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR");
-        //NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, "freenet.node.BypassMessageQueue:DEBUG,freenet.io.comm.MessageCore:MINOR,freenet.node:MINOR", true, BYPASS_TRANSPORT_LAYER, null);
-        NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, "", true, BYPASS_TRANSPORT_LAYER, null);
+        String logDetails = "freenet.node.Request:MINOR,freenet.node.CHK:MINOR,freenet.node.SSK:MINOR," +
+        		"freenet.io.comm.MessageCore:MINOR,freenet.node.Peer:MINOR";
+        NodeStarter.globalTestInit(new File(name), false, LogLevel.NORMAL, logDetails, true, 
+                BYPASS_TRANSPORT_LAYER, null);
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource nodesRandom = new DummyRandomSource(3142);
