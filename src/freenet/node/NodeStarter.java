@@ -520,7 +520,7 @@ public class NodeStarter implements WrapperListener {
         File baseDir = params.baseDirectory;
         File portDir = new File(baseDir, Integer.toString(params.port));
 		if((!portDir.mkdir()) && ((!portDir.exists()) || (!portDir.isDirectory()))) {
-			System.err.println("Cannot create directory for test");
+			System.err.println("Cannot create directory "+portDir+" for test");
 			System.exit(NodeInitException.EXIT_TEST_ERROR);
 		}
 
