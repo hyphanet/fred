@@ -118,8 +118,8 @@ public class BypassMessageQueue implements MessageQueue {
             for(AsyncMessageCallback it : callbacks) {
                 it.acknowledged();
             }
-            originator.receivedAck(System.currentTimeMillis());
         }
+        originator.receivedAck(System.currentTimeMillis());
     }
     
     protected void callDisconnectedCallbacks(AsyncMessageCallback[] callbacks) {
