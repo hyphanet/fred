@@ -97,7 +97,7 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         } else if(spec == DMT.FNPInsertRequest) {
             uid = m.getLong(DMT.UID);
             isSSK = false;
-            isInsert = false;
+            isInsert = true;
             key = (NodeCHK) m.getObject(DMT.FREENET_ROUTING_KEY);
         } else if(spec == DMT.FNPSSKInsertRequest || spec == DMT.FNPSSKInsertRequestNew) {
             uid = m.getLong(DMT.UID);
