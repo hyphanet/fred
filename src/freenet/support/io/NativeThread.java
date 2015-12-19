@@ -54,10 +54,15 @@ public class NativeThread extends Thread {
 	
 
 	public static final int ENOUGH_NICE_LEVELS = PriorityLevel.values().length;
+	@Deprecated
 	public static final int MIN_PRIORITY = PriorityLevel.MIN_PRIORITY.value;
+	@Deprecated
 	public static final int LOW_PRIORITY = PriorityLevel.LOW_PRIORITY.value;
+	@Deprecated
 	public static final int NORM_PRIORITY = PriorityLevel.NORM_PRIORITY.value;
+	@Deprecated
 	public static final int HIGH_PRIORITY = PriorityLevel.HIGH_PRIORITY.value;
+	@Deprecated
 	public static final int MAX_PRIORITY = PriorityLevel.MAX_PRIORITY.value;
 	
 	
@@ -89,20 +94,43 @@ public class NativeThread extends Thread {
 		}
 		Logger.minor(NativeThread.class, "Run init(): _loadNative = "+_loadNative);
 	}
-	
 
+	/**
+	* Creates a new native (reniced) thread
+	*
+	* @param name
+	* @param priority
+	* @param dontCheckRenice This should be set to true
+	*    unless the caller is running at NATIVE_PRIORITY_BASE @see bug6623
+	*/
 	public NativeThread(String name, int priority, boolean dontCheckRenice) {
 		super(name);
 		this.currentPriority = priority;
 		this.dontCheckRenice = dontCheckRenice;
 	}
 	
+	/**
+	* Creates a new native (reniced) thread
+	*
+	* @param name
+	* @param priority
+	* @param dontCheckRenice This should be set to true
+	*    unless the caller is running at NATIVE_PRIORITY_BASE @see bug6623
+	*/
 	public NativeThread(Runnable r, String name, int priority, boolean dontCheckRenice) {
 		super(r, name);
 		this.currentPriority = priority;
 		this.dontCheckRenice = dontCheckRenice;
 	}
 	
+	/**
+	* Creates a new native (reniced) thread
+	*
+	* @param name
+	* @param priority
+	* @param dontCheckRenice This should be set to true
+	*    unless the caller is running at NATIVE_PRIORITY_BASE @see bug6623
+	*/
 	public NativeThread(ThreadGroup g, Runnable r, String name, int priority, boolean dontCheckRenice) {
 		super(g, r, name);
 		this.currentPriority = priority;
