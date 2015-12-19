@@ -432,7 +432,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     public CheckpointLock lock() throws PersistenceDisabledException {
         synchronized(sync) {
             if(killed) throw new PersistenceDisabledException();
-            while(writing || mustCheckpoint) {
+            while(writing || (mustCheckpoint && enableCheckpointing)) {
                 try {
                     sync.wait();
                 } catch (InterruptedException e) {
