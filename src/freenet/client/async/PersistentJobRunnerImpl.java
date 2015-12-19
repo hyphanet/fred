@@ -146,10 +146,6 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     
     public void handleCompletion(boolean ret, int threadPriority) {
         synchronized(sync) {
-            if(ret) {
-                mustCheckpoint = true;
-                if(logMINOR) Logger.minor(this, "Writing because asked to");
-            }
             runningJobs--;
             if(runningJobs == 0)
                 // Even if not going to checkpoint indirectly, somebody might be waiting, need to notify.
@@ -157,6 +153,10 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             if(!enableCheckpointing) {
                 if(logMINOR) Logger.minor(this, "Not enableCheckpointing yet");
                 return;
+            }
+            if(ret) {
+                mustCheckpoint = true;
+                if(logMINOR) Logger.minor(this, "Writing because asked to");
             }
             if(!mustCheckpoint) {
                 if(System.currentTimeMillis() - lastCheckpointed > checkpointInterval) {
