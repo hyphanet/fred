@@ -1,8 +1,9 @@
 next ():
 
-- add a NEWS file
+- Add a NEWS file
 - Fix problems with blank bookmark names. Thanks to _xiaoyu for the report!
 - Fix missing the software category in bookmarks.
+- Sort alerts within a category by time, newest first (including node-to-node messages).
 
 1470 (2015-08-15):
 

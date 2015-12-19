@@ -117,6 +117,11 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 				composedTime, sentTime, receivedTime, messageText);
 	}
 
+    @Override
+    public long getUpdatedTime() {
+        return receivedTime;
+    }
+
 	@Override
 	public boolean isValid() {
 		DarknetPeerNode pn = (DarknetPeerNode) peerRef.get();
