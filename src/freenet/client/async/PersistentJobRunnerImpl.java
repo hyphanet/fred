@@ -455,6 +455,8 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     public void disableWrite() {
         synchronized(sync) {
             enableCheckpointing = false;
+            mustCheckpoint = false;
+            sync.notifyAll();
         }
     }
 
