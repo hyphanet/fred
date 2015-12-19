@@ -51,7 +51,7 @@ public class BaseL10n {
 		FINNISH("fi", "Suomi", "fin", new String[] { "WINDOWS040B"}),
 		FRENCH("fr", "Français", "fra", new String[] { "WINDOWS040C", "WINDOWS080C", "WINDOWS0C0C", "WINDOWS100C", "WINDOWS140C", "WINDOWS180C"}),
 		ITALIAN("it", "Italiano", "ita", new String[] { "WINDOWS0410", "WINDOWS0810"}),
-		NORWEGIAN("no", "Norsk", "nor", new String[] { "WINDOWS0414", "WINDOWS0814"}),
+		NORWEGIAN("nb-no", "Bokmål", "nob", new String[] { "WINDOWS0414", "WINDOWS0814"}),
 		POLISH("pl", "Polski", "pol", new String[] { "WINDOWS0415"}),
 		SWEDISH("sv", "Svenska", "swe", new String[] { "WINDOWS041D", "WINDOWS081D"}),
 		CHINESE("zh-cn", "中文(简体)", "chn", new String[] { "WINDOWS0804", "WINDOWS1004" }),
