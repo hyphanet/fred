@@ -20,6 +20,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.keys.Key;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.SSKEncodeException;
 import freenet.node.FSParseException;
@@ -95,6 +96,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         DummyRandomSource nodesRandom = new DummyRandomSource(3142);
         DummyRandomSource random = new DummyRandomSource(3141);
         DummyRandomSource topologyRandom = new DummyRandomSource(3143);
+        SimulatorRequestTracker tracker = new SimulatorRequestTracker(MAX_HTL);
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
@@ -102,6 +104,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             TestNodeParameters params = getNodeParameters(i, name, nodesRandom, executor);
             nodes[i] = NodeStarter.createTestNode(params);
+            tracker.add(nodes[i]);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         
@@ -125,7 +128,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.out.println("Ping average > 95%, lets do some inserts/requests");
         System.out.println();
         
-        RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, TARGET_SUCCESSES);
+        RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, TARGET_SUCCESSES, tracker);
         
         while(true) {
             try {
@@ -163,10 +166,11 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         return params;
     }
 
-    public RealNodeRequestInsertTest(Node[] nodes, DummyRandomSource random, int targetSuccesses) {
+    public RealNodeRequestInsertTest(Node[] nodes, DummyRandomSource random, int targetSuccesses, SimulatorRequestTracker tracker) {
     	this.nodes = nodes;
     	this.random = random;
     	this.targetSuccesses = targetSuccesses;
+    	this.tracker = tracker;
 	}
 
     private final Node[] nodes;
@@ -177,6 +181,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 	private int insertAttempts = 0;
 	private int fetchSuccesses = 0;
 	private final int targetSuccesses;
+	private final SimulatorRequestTracker tracker;
 
 	/**
 	 * @param nodes
@@ -239,6 +244,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 			System.err.println("Insert failed: "+ putEx);
 			return EXIT_INSERT_FAILED;
 		}
+		Key lowLevelKey = block.getKey();
+		tracker.dumpKey(block.getKey(), true, true);
         // Pick random node to request from
         int node2;
         do {
@@ -250,6 +257,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         } catch (LowLevelGetException e) {
         	block = null;
         }
+        tracker.dumpKey(lowLevelKey, false, true);
         if(block == null) {
 			int percentSuccess=100*fetchSuccesses/insertAttempts;
             Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
@@ -292,6 +300,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         if(!runningUIDsList.isEmpty()) {
         	System.err.println("List of running UIDs: "+Arrays.toString(runningUIDsList.toArray()));
         }
+        System.err.println("Surplus requests:");
+        tracker.dumpAndClear();
         return -1;
 	}
 }

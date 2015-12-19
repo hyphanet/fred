@@ -64,9 +64,11 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 		Node[] nodes = new Node[NUMBER_OF_NODES];
 		Logger.normal(RealNodeProbeTest.class, "Creating nodes...");
 		Executor executor = new PooledExecutor();
+        SimulatorRequestTracker tracker = new SimulatorRequestTracker(MAX_HTL);
 		for(int i = 0; i < NUMBER_OF_NODES; i++) {
 			System.err.println("Creating node " + i);
 			nodes[i] = NodeStarter.createTestNode(DARKNET_PORT_BASE + i, 0, dir, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500 * NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, OUTPUT_BANDWIDTH_LIMIT, ENABLE_FOAF, false, true, false, null, i == 0);
+			tracker.add(nodes[i]);
 			Logger.normal(RealNodeProbeTest.class, "Created node " + i);
 		}
 		Logger.normal(RealNodeProbeTest.class, "Created " + NUMBER_OF_NODES + " nodes");
@@ -88,7 +90,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
         	
             waitForPingAverage(0.5, nodes, new DummyRandomSource(3143), MAX_PINGS, 1000);
             
-            RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, 10);
+            RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, 10, tracker);
             
             waitForAllConnected(nodes);
             
