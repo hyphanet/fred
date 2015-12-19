@@ -62,7 +62,6 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DiffieHellman;
 import freenet.crypt.ECDH;
 import freenet.crypt.MasterSecret;
 import freenet.crypt.PersistentRandomSource;
@@ -110,8 +109,6 @@ import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.NotAvailNodeStoreStats;
 import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
-import freenet.node.updater.UpdateDeployContext;
-import freenet.node.updater.UpdateDeployContext.CHANGED;
 import freenet.node.useralerts.JVMVersionAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
@@ -121,7 +118,6 @@ import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginDownLoaderOfficialHTTPS;
 import freenet.pluginmanager.PluginManager;
-import freenet.pluginmanager.PluginStore;
 import freenet.store.BlockMetadata;
 import freenet.store.CHKStore;
 import freenet.store.FreenetStore;
@@ -1122,7 +1118,6 @@ public class Node implements TimeSkewDetectorCallback {
 			entropyGatheringThread.start();
 			// Can block.
 			this.random = new Yarrow(seed);
-			DiffieHellman.init(random);
 			// http://bugs.sun.com/view_bug.do;jsessionid=ff625daf459fdffffffffcd54f1c775299e0?bug_id=4705093
 			// This might block on /dev/random while doing new SecureRandom(). Once it's created, it won't block.
 			ECDH.blockingInit();
