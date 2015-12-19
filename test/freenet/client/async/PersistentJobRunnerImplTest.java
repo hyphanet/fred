@@ -168,5 +168,28 @@ public class PersistentJobRunnerImplTest extends TestCase {
         checkpointer.waitForFinished();
         assertTrue(w.finished());
     }
+    
+    public void testDisabledCheckpointing() throws PersistenceDisabledException {
+        jobRunner.setCheckpointASAP();
+        exec.waitForIdle();
+        assertFalse(jobRunner.mustCheckpoint()); // Has checkpointed, now false.
+        jobRunner.disableWrite();
+        assertFalse(jobRunner.mustCheckpoint());
+        jobRunner.setCheckpointASAP();
+        assertFalse(jobRunner.mustCheckpoint());
+        
+        // Run a job which will request a checkpoint.
+        jobRunner.queue(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                return true;
+            }
+            
+        }, NativeThread.NORM_PRIORITY);
+        // Wait for the job to complete.
+        exec.waitForIdle();
+        assertFalse(jobRunner.mustCheckpoint());
+    }
 
 }

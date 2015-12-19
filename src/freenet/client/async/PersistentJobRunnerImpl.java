@@ -459,5 +459,11 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             sync.notifyAll();
         }
     }
+    
+    boolean mustCheckpoint() {
+        synchronized(sync) {
+            return mustCheckpoint;
+        }
+    }
 
 }
