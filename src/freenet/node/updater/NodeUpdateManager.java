@@ -765,7 +765,8 @@ public class NodeUpdateManager {
 
 	void startPluginUpdater(OfficialPluginDescription plugin) {
 		String name = plugin.name;
-		long minVer = plugin.recommendedVersion;
+		// @see https://emu.freenetproject.org/pipermail/devl/2015-November/038581.html
+		long minVer = (plugin.essential ? plugin.minimumVersion : plugin.recommendedVersion);
 		// But it might already be past that ...
 		PluginInfoWrapper info = node.pluginManager.getPluginInfo(name);
 		if (info == null) {
