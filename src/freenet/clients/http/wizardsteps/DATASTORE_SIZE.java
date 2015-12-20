@@ -73,11 +73,8 @@ public class DATASTORE_SIZE implements Step {
 		if(maxSize >= 5l*1024*1024*1024) result.addChild("option", "value", "5G", "5 GiB");
 		if(maxSize >= 10l*1024*1024*1024) result.addChild("option", "value", "10G", "10 GiB");
 		if(maxSize >= 20l*1024*1024*1024) result.addChild("option", "value", "20G", "20 GiB");
-		if(maxSize >= 30l*1024*1024*1024) result.addChild("option", "value", "30G", "30 GiB");
 		if(maxSize >= 50l*1024*1024*1024) result.addChild("option", "value", "50G", "50 GiB");
-		if(maxSize >= 100l*1024*1024*1024) result.addChild("option", "value", "100G", "100 GiB");
 		if(maxSize >= 200l*1024*1024*1024) result.addChild("option", "value", "200G", "200GiB");
-		if(maxSize >= 300l*1024*1024*1024) result.addChild("option", "value", "300G", "300GiB");
 		if(maxSize >= 500l*1024*1024*1024) result.addChild("option", "value", "500G", "500GiB");
 
 		//Put buttons below dropdown.
@@ -154,31 +151,38 @@ public class DATASTORE_SIZE implements Step {
 		return slots * Node.sizePerKey;
 	}
 
-	private long canAutoconfigureDatastoreSize() {
-		if(!config.get("node").getOption("storeSize").isDefault())
-			return -1;
+    private long canAutoconfigureDatastoreSize() {
+        if(!config.get("node").getOption("storeSize").isDefault())
+            return -1;
 
-		long freeSpace = core.node.getStoreDir().getUsableSpace();
+        long freeSpace = core.node.getStoreDir().getUsableSpace();
 
-		if(freeSpace <= 0) {
-			return -1;
-		} else {
-			long shortSize;
-			if(freeSpace / 20 > 1024 * 1024 * 1024) { // 20GB+ => 5%, limit 256GB
-				// If 20GB+ free, 5% of available disk space.
-				// Maximum of 256GB. That's a 128MB bloom filter.
-				shortSize = Math.min(freeSpace / 20, 256*1024*1024*1024L);
-			}else if(freeSpace / 10 > 1024 * 1024 * 1024) { // 10GB+ => 10%
-				// If 10GB+ free, 10% of available disk space.
-				shortSize = freeSpace / 10;
-			}else if(freeSpace / 5 > 1024 * 1024 * 1024) { // 5GB+ => 512MB
-				// If 5GB+ free, default to 512MB
-				shortSize = 512*1024*1024;
-			}else { // <5GB => 256MB
-				shortSize = 256*1024*1024;
-			}
+        if(freeSpace <= 0) {
+            return -1;
+        } else {
+            long shortSize;
+            long oneGiB = 1024 * 1024 * 1024L;
+            // Maximum for Freenet: 256GB. That's a 128MiB bloom filter.
+            long bloomFilter128MiBMax = 256 * oneGiB;
+            // Maximum to suggest to keep Disk I/O managable. This
+            // value might need revisiting when hardware or
+            // filesystems change.
+            long diskIoMax = 20 * oneGiB;
+            if(freeSpace / 50 > oneGiB) { // 50GB+ => 10%, but at least 10GiB
+                // Limited by bloom filters and disk I/O
+                shortSize = Math.max(10 * oneGiB,
+                                     Math.min(freeSpace / 10,
+                                              Math.min(diskIoMax,
+                                                       bloomFilter128MiBMax)));
+            }else if(freeSpace / 5 > oneGiB) { // 5GB+ => 20%, min 2GiB
+                shortSize = Math.max(freeSpace / 5, 2 * oneGiB);
+            }else if(freeSpace / 2 > oneGiB) { // 2GB+ => 512MiB
+                shortSize = 512*1024*1024;
+            }else { // <2GiB => 256MiB
+                shortSize = 256*1024*1024;
+            }
 
-			return shortSize;
-		}
-	}
+            return shortSize;
+        }
+    }
 }
