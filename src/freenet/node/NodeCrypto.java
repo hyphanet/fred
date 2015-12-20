@@ -6,22 +6,17 @@ package freenet.node;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.MalformedURLException;
-import java.security.MessageDigest;
 import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.zip.DeflaterOutputStream;
-
-import net.i2p.util.NativeBigInteger;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
 
 import freenet.crypt.BlockCipher;
-import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
@@ -202,15 +197,23 @@ public class NodeCrypto {
 		identityHashHash = SHA256.digest(identityHash);
 
 		SimpleFieldSet ecdsaSFS = null;
+		SimpleFieldSet dsaSFS = null;
 		try {
-			cryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
-			privKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), cryptoGroup);
-			pubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), cryptoGroup);
-			
+
 			ecdsaSFS = fs.subset("ecdsa");
-			if(ecdsaSFS != null) {
-			    ecdsaP256 = new ECDSA(ecdsaSFS.subset(ECDSA.Curves.P256.name()), Curves.P256);
-		    }
+			if(ecdsaSFS != null)
+				ecdsaP256 = new ECDSA(ecdsaSFS.subset(ECDSA.Curves.P256.name()), Curves.P256);
+
+			//TODO: remove this once 1471 is mandatory
+			dsaSFS = fs.subset("dsaGroup");
+			if(dsaSFS != null && dsaSFS.toString().length() > 30)
+				cryptoGroup = DSAGroup.create(dsaSFS);
+			dsaSFS = fs.subset("dsaPrivKey");
+			if(dsaSFS != null && dsaSFS.toString().length() > 30)
+				privKey = DSAPrivateKey.create(dsaSFS, cryptoGroup);
+			dsaSFS = fs.subset("dsaPubKey");
+			if(dsaSFS != null && dsaSFS.toString().length() > 30)
+				pubKey = DSAPublicKey.create(dsaSFS, cryptoGroup);
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Caught "+e, e);
 			throw new IOException(e.toString());
@@ -283,9 +286,6 @@ public class NodeCrypto {
 	public void initCrypto() {
 		ecdsaP256 = new ECDSA(ECDSA.Curves.P256);
 		ecdsaPubKeyHash = SHA256.digest(ecdsaP256.getPublicKey().getEncoded());
-		cryptoGroup = Global.DSAgroupBigA;
-		privKey = new DSAPrivateKey(cryptoGroup, random);
-		pubKey = new DSAPublicKey(cryptoGroup, privKey);
 		myARK = InsertableClientSSK.createRandom(random, "ark");
 		myARKNumber = 0;
 		clientNonce = new byte[32];
@@ -385,8 +385,19 @@ public class NodeCrypto {
 			fs.putSingle("identity", Base64.encode(myIdentity));
 		if(!forSetup) {
 			// These are invariant. They cannot change on connection setup. They can safely be excluded.
-			fs.put("dsaGroup", cryptoGroup.asFieldSet());
-			fs.put("dsaPubKey", pubKey.asFieldSet());
+			// we have to return "something" otherwise we break opennet
+			// TODO: remove it once 1471 is mandatory
+			if(pubKey == null)
+				fs.putSingle("dsaPubKey.y", "placeholder");
+			else
+				fs.put("dsaPubKey", pubKey.asFieldSet());
+			if(cryptoGroup == null) {
+				fs.putSingle("dsaGroup.g", "placeholder");
+				fs.putSingle("dsaGroup.p", "placeholder");
+				fs.putSingle("dsaGroup.q", "placeholder");
+			} else {
+				fs.put("dsaGroup", cryptoGroup.asFieldSet());
+			}
 			fs.put("ecdsa", ecdsaP256.asFieldSet(false));
 		}
 		if(!forAnonInitiator) {
@@ -421,7 +432,7 @@ public class NodeCrypto {
 
 	private byte[] myCompressedRef(boolean setup, boolean heavySetup, boolean forARK) {
 		SimpleFieldSet fs = exportPublicFieldSet(setup, heavySetup, forARK);
-		boolean shouldStripGroup = heavySetup && Global.DSAgroupBigA.equals(cryptoGroup);
+		boolean shouldStripGroup = heavySetup;
 		if(shouldStripGroup)
 			fs.removeSubset("dsaGroup");
 
@@ -485,8 +496,9 @@ public class NodeCrypto {
 	    // Let's not add it twice
 	    fs.removeSubset("ecdsa");
 	    fs.put("ecdsa", ecdsaP256.asFieldSet(true));
-	    
-		fs.put("dsaPrivKey", privKey.asFieldSet());
+
+		if(privKey != null)
+			fs.put("dsaPrivKey", privKey.asFieldSet());
 		fs.putSingle("ark.privURI", myARK.getInsertURI().toString(false, false));
 		fs.putSingle("clientNonce", Base64.encode(clientNonce));
 
