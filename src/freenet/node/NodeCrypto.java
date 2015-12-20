@@ -78,8 +78,6 @@ public class NodeCrypto {
 	private DSAPrivateKey privKey;
 	/** My public key */
 	private DSAPublicKey pubKey;
-	byte[] pubKeyHash;
-	byte[] pubKeyHashHash;
 	/** My ECDSA/P256 keypair and context */
 	private ECDSA ecdsaP256;
 	byte[] ecdsaPubKeyHash;
@@ -209,8 +207,6 @@ public class NodeCrypto {
 			cryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
 			privKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), cryptoGroup);
 			pubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), cryptoGroup);
-			pubKeyHash = SHA256.digest(pubKey.asBytes());
-			pubKeyHashHash = SHA256.digest(pubKeyHash);
 			
 			ecdsaSFS = fs.subset("ecdsa");
 			if(ecdsaSFS != null) {
@@ -233,7 +229,7 @@ public class NodeCrypto {
 		    Logger.normal(this, "No ecdsa.P256 field found in noderef: let's generate a new key");
 		    ecdsaP256 = new ECDSA(Curves.P256);
 		}
-        ecdsaPubKeyHash = SHA256.digest(ecdsaP256.getPublicKey().getEncoded());
+        	ecdsaPubKeyHash = SHA256.digest(ecdsaP256.getPublicKey().getEncoded());
 		
 		InsertableClientSSK ark = null;
 
@@ -297,9 +293,7 @@ public class NodeCrypto {
 		SHA256.returnMessageDigest(md);
 		clientNonce = new byte[32];
 		node.random.nextBytes(clientNonce);
-		pubKeyHash = SHA256.digest(pubKey.asBytes());
-		pubKeyHashHash = SHA256.digest(pubKeyHash);
-		myIdentity = Arrays.copyOf(pubKeyHash, IDENTITY_LENGTH);
+		myIdentity = Arrays.copyOf(ecdsaPubKeyHash, IDENTITY_LENGTH);
 		identityHash = md.digest(myIdentity);
 		identityHashHash = md.digest(identityHash);
 		anonSetupCipher.initialize(identityHash);
