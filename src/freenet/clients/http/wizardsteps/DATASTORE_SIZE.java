@@ -152,12 +152,12 @@ public class DATASTORE_SIZE implements Step {
 	}
 
     private long canAutoconfigureDatastoreSize() {
-        if(!config.get("node").getOption("storeSize").isDefault())
+        if (!config.get("node").getOption("storeSize").isDefault())
             return -1;
 
         long freeSpace = core.node.getStoreDir().getUsableSpace();
 
-        if(freeSpace <= 0) {
+        if (freeSpace <= 0) {
             return -1;
         } else {
             long shortSize;
@@ -168,18 +168,24 @@ public class DATASTORE_SIZE implements Step {
             // value might need revisiting when hardware or
             // filesystems change.
             long diskIoMax = 20 * oneGiB;
-            if(freeSpace / 50 > oneGiB) { // 50GB+ => 10%, but at least 10GiB
-                // Limited by bloom filters and disk I/O
+
+            // Choose a suggested store size based on available free space.
+            if (freeSpace > 50 * oneGiB) {
+                // > 50 GiB: Use 10% free space; minimum 10 GiB. Limited by
+                // bloom filters and disk I/O.
                 shortSize = Math.max(10 * oneGiB,
-                                     Math.min(freeSpace / 10,
+                                     Math.min(freeSpace * 0.10,
                                               Math.min(diskIoMax,
                                                        bloomFilter128MiBMax)));
-            }else if(freeSpace / 5 > oneGiB) { // 5GB+ => 20%, min 2GiB
-                shortSize = Math.max(freeSpace / 5, 2 * oneGiB);
-            }else if(freeSpace / 2 > oneGiB) { // 2GB+ => 512MiB
-                shortSize = 512*1024*1024;
-            }else { // <2GiB => 256MiB
-                shortSize = 256*1024*1024;
+            } else if (freeSpace > 5 * oneGiB) {
+                // > 5 GiB: Use 20% free space, minimum 2 GiB.
+                shortSize = Math.max(freeSpace * 0.20, 2 * oneGiB);
+            } else if (freeSpace > 2 * oneGiB) {
+                // > 2 GiB: 512 MiB.
+                shortSize = 512 * (1024 * 1024);
+            } else {
+                // <= 2 GiB: 256 MiB.
+                shortSize = 256 * (1024 * 1024);
             }
 
             return shortSize;
