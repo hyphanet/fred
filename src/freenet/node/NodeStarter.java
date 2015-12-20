@@ -450,6 +450,13 @@ public class NodeStarter implements WrapperListener {
         public boolean useSlashdotCache;
         public String ipAddressOverride;
         public boolean enableFCP;
+        /** True to write everything to the datastore. By default, we only cache requests with HTL 
+         * at least 3 below the maximum, see Node.canWriteDatastoreInsert(). This is a security
+         * setting that makes sense for large networks. For simulations we can either cache 
+         * everything (writeLocalToDatastore=true), or set the HTL high enough that the low-HTL
+         * part of the insert will coincide with the request path, in which case the "fork on
+         * cacheable" request flag is necessary. */
+        public boolean writeLocalToDatastore;
         /** Simulated per-link bandwidth limit if doing CBR message queue bypass */
         public int bypassCBRBandwidthLimit = 1000;
         /** Simulate per-link one-way transport latency */
@@ -571,6 +578,7 @@ public class NodeStarter implements WrapperListener {
         configFS.put("node.enablePacketCoalescing", params.enablePacketCoalescing);
         configFS.put("node.publishOurPeersLocation", params.enableFOAF);
         configFS.put("node.routeAccordingToOurPeersLocation", params.enableFOAF);
+        configFS.put("node.writeLocalToDatastore", params.writeLocalToDatastore);
         configFS.put("node.opennet.enabled", params.opennetPort > 0);
         configFS.put("node.opennet.listenPort", params.opennetPort);
 		configFS.put("node.opennet.alwaysAllowLocalAddresses", true);
