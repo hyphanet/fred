@@ -183,13 +183,16 @@ public class Message {
 		needsLoadBulk = m.needsLoadBulk;
 	}
 
-    /** Drops sub-messages, and changes originator */
-    public Message(Message m, PeerContext source) {
+    /** Changes originator but keeps sub-messages */
+    private Message(Message m, PeerContext source) {
         _spec = m._spec;
         _sourceRef = source.getWeakRef();
         _internal = m._internal;
         _payload.putAll(m._payload);
-        _subMessages = null;
+        if(m._subMessages != null)
+            _subMessages = new ArrayList<Message>(m._subMessages); // Shallow copy.
+        else
+            _subMessages = null;
         localInstantiationTime = System.currentTimeMillis();
         _receivedByteCount = 0;
         priority = m.priority;
@@ -439,6 +442,10 @@ public class Message {
 	/** Clone the message, clear sub-messages and set originator to self. */
 	public Message cloneAndDropSubMessages() {
 		return new Message(this);
+	}
+	
+	public Message cloneAndKeepSubMessages(PeerContext newSource) {
+	    return new Message(this, newSource);
 	}
 
 }

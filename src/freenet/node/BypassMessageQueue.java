@@ -98,7 +98,7 @@ public class BypassMessageQueue implements MessageQueue {
     protected boolean tryToDeliverMessage(MessageItem item, PeerNode pn, 
             AsyncMessageCallback[] callbacks) {
         if(pn.isConnected()) {
-            Message msg = new Message(item.msg, pn);
+            Message msg = item.msg.cloneAndKeepSubMessages(pn);
             pn.receivedPacket(true, true);
             pn.handleMessage(msg);
             return true;
