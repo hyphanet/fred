@@ -25,7 +25,6 @@ import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DSASignature;
 import freenet.crypt.ECDSA;
 import freenet.crypt.ECDSA.Curves;
 import freenet.crypt.Global;
@@ -400,22 +399,6 @@ public class NodeCrypto {
 		}
 		return fs;
 	}
-
-	private DSASignature signRef(String mySignedReference) throws NodeInitException {
-		if(logMINOR) Logger.minor(this, "Signing reference:\n"+mySignedReference);
-
-		try{
-			byte[] ref = mySignedReference.getBytes("UTF-8");
-			BigInteger m = new BigInteger(1, SHA256.digest(ref));
-			if(logMINOR) Logger.minor(this, "m = "+m.toString(16));
-			DSASignature _signature = DSA.sign(cryptoGroup, privKey, m, random);
-			if(logMINOR && !DSA.verify(pubKey, _signature, m, false))
-				throw new NodeInitException(NodeInitException.EXIT_EXCEPTION_TO_DEBUG, mySignedReference);
-			return _signature;
-		} catch(UnsupportedEncodingException e){
-			throw new NodeInitException(NodeInitException.EXIT_CRAPPY_JVM, "Impossible: JVM doesn't support UTF-8");
-		}
-	}
 	
 	private String ecdsaSignRef(String mySignedReference) throws NodeInitException {
 	    if(logMINOR) Logger.minor(this, "Signing reference:\n"+mySignedReference);
@@ -586,10 +569,6 @@ public class NodeCrypto {
 				node.peers.disconnectAndRemove(pn, true, true, pn.isOpennet());
 			}
 		}
-	}
-
-	DSAGroup getCryptoGroup() {
-		return cryptoGroup;
 	}
 
 	/**
