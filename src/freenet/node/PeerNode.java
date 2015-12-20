@@ -415,14 +415,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	
 	protected SimpleFieldSet fullFieldSet;
 
-	/**
-	 * If this returns true, we will generate the identity from the pubkey.
-	 * Only set this if you don't want to send an identity, e.g. for anonymous
-	 * initiator crypto where we need a small noderef and we don't use the
-	 * identity anyway because we don't auto-reconnect.
-	 */
-	protected abstract boolean generateIdentityFromPubkey();
-
 	protected boolean ignoreLastGoodVersion() {
 		return false;
 	}
@@ -516,7 +508,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		// Identifier
 
-		if(!generateIdentityFromPubkey()) {
 			String identityString = fs.get("identity");
 			if(identityString == null)
 				throw new PeerParseException("No identity!");
@@ -527,9 +518,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			} catch(IllegalBase64Exception e) {
 				throw new FSParseException(e);
 			}
-		} else {
-			identity = peerECDSAPubKeyHash;
-		}
 
 		if(identity == null)
 			throw new FSParseException("No identity");
@@ -2464,22 +2452,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				throw new FSParseException("Cannot parse opennet=\""+s+"\"", e);
 			}
 		}
-		if(!generateIdentityFromPubkey()) {
 			String identityString = fs.get("identity");
 			if(identityString == null && forFullNodeRef)
 				throw new FSParseException("No identity!");
 			else if(identityString != null) {
 				try {
 					byte[] id = Base64.decode(identityString);
-					if(!Arrays.equals(id, identity))
+					if (!Arrays.equals(id, identity))
 						throw new FSParseException("Changing the identity");
-				} catch(NumberFormatException e) {
+				} catch (NumberFormatException e) {
 					throw new FSParseException(e);
-				} catch(IllegalBase64Exception e) {
+				} catch (IllegalBase64Exception e) {
 					throw new FSParseException(e);
 				}
 			}
-		}
 		
 		String newVersion = fs.get("version");
 		if(newVersion == null) {
