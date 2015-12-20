@@ -284,18 +284,16 @@ public class NodeCrypto {
 	public void initCrypto() {
 		ecdsaP256 = new ECDSA(ECDSA.Curves.P256);
 		ecdsaPubKeyHash = SHA256.digest(ecdsaP256.getPublicKey().getEncoded());
-		MessageDigest md = SHA256.getMessageDigest();
 		cryptoGroup = Global.DSAgroupBigA;
 		privKey = new DSAPrivateKey(cryptoGroup, random);
 		pubKey = new DSAPublicKey(cryptoGroup, privKey);
 		myARK = InsertableClientSSK.createRandom(random, "ark");
 		myARKNumber = 0;
-		SHA256.returnMessageDigest(md);
 		clientNonce = new byte[32];
 		node.random.nextBytes(clientNonce);
 		myIdentity = Arrays.copyOf(ecdsaPubKeyHash, IDENTITY_LENGTH);
-		identityHash = md.digest(myIdentity);
-		identityHashHash = md.digest(identityHash);
+		identityHash = SHA256.digest(myIdentity);
+		identityHashHash = SHA256.digest(identityHash);
 		anonSetupCipher.initialize(identityHash);
 	}
 
