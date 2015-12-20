@@ -38,8 +38,10 @@ import freenet.client.FetchResult;
 import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
 import freenet.crypt.BlockCipher;
+import freenet.crypt.DSAPublicKey;
 import freenet.crypt.ECDSA;
 import freenet.crypt.ECDSA.Curves;
+import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.SHA256;
@@ -509,10 +511,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		// Identifier
 
 			String identityString = fs.get("identity");
-			if(identityString == null)
+			if(identityString == null && isDarknet())
 				throw new PeerParseException("No identity!");
 			try {
-				identity = Base64.decode(identityString);
+				if(identityString != null) {
+					identity = Base64.decode(identityString);
+				} else {
+					// We might be talking to a pre-1471 node
+					// We need to generate it from the DSA key
+					sfs = fs.subset("dsaPubKey");
+					identity = SHA256.digest(DSAPublicKey.create(sfs, Global.DSAgroupBigA).asBytes());
+				}
 			} catch(NumberFormatException e) {
 				throw new FSParseException(e);
 			} catch(IllegalBase64Exception e) {
