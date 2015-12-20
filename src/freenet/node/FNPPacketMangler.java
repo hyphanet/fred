@@ -1072,8 +1072,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		    // Verify the ECDSA signature ; We are assuming that it's the curve we expect
-		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey(), sig, hisExponential)) {
-	              if(pn.peerECDSAPubKeyHash() == null) {
+		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey, sig, hisExponential)) {
+	              if(pn.peerECDSAPubKeyHash == null) {
 	            	  // FIXME remove when remove DSA support.
 	            	  // Caused by nodes running broken early versions of negType9.
 	            	  Logger.error(this, "Peer attempting negType "+negType+" with ECDSA but no ECDSA key known: "+pn.userToString());
@@ -1081,7 +1081,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	              }
 		    	  Logger.error(this, "The ECDSA signature verification has failed in JFK(2)!! "+pn.getPeer());
 	              if(logDEBUG) Logger.debug(this, "Expected signature on "+HexUtil.bytesToHex(hisExponential)+
-	            		  " with "+HexUtil.bytesToHex(pn.peerECDSAPubKeyHash())+
+	            		  " with "+HexUtil.bytesToHex(pn.peerECDSAPubKeyHash)+
 	            		  " signature "+HexUtil.bytesToHex(sig));
 	              return;
 		    }
@@ -1309,7 +1309,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		// verify the signature
 		byte[] toVerify = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, crypto.getIdentity(negType, false), data);
-		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey(), sig, toVerify)) {
+		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey, sig, toVerify)) {
 	              Logger.error(this, "The ECDSA signature verification has failed!! JFK(3) - "+pn.getPeer());
 	                return;
 		    }
@@ -1550,7 +1550,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		System.arraycopy(data, 0, locallyGeneratedText, bufferOffset, dataLen);
 		bufferOffset += dataLen;
 		System.arraycopy(pn.jfkMyRef, 0, locallyGeneratedText, bufferOffset, pn.jfkMyRef.length);
-	        if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey(), sig, locallyGeneratedText)) {
+	        if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey, sig, locallyGeneratedText)) {
 	            Logger.error(this, "The ECDSA signature verification has failed!! JFK(4) - "+pn.getPeer()+" length "+locallyGeneratedText.length+" hisRef "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" myRef "+pn.jfkMyRef.length+" hash "+Fields.hashCode(pn.jfkMyRef)+" boot ID "+bootID);
 	            return true;
 	        }
