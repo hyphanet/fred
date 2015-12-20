@@ -560,7 +560,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		} catch (KeyCollisionException e) {
 			// Impossible with CHKs.
 		}
-        if(logMINOR) Logger.minor(this, "Committed");
+        if(logMINOR) Logger.minor(this, "Committed "+this);
     }
 
 	/** Has the receive failed? If so, there's not much more that can be done... */

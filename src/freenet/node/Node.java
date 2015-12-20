@@ -3807,6 +3807,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private void store(CHKBlock block, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
+	    if(logMINOR) Logger.minor(this, "Store "+block+", "+deep+", "+canWriteClientCache+", "+canWriteDatastore+", "+forULPR);
 		try {
 			double loc = block.getKey().toNormalizedDouble();
 			if (canWriteClientCache) {
@@ -3855,6 +3856,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void store(SSKBlock block, boolean deep, boolean overwrite, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) throws KeyCollisionException {
+	    if(logMINOR) Logger.minor(this, "Store "+block+", "+deep+", "+canWriteClientCache+", "+canWriteDatastore+", "+forULPR);
 		try {
 			// Store the pubkey before storing the data, otherwise we can get a race condition and
 			// end up deleting the SSK data.
