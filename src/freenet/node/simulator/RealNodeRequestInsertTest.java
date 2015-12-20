@@ -58,6 +58,22 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean ENABLE_SWAP_QUEUEING = false;
     static final boolean ENABLE_PACKET_COALESCING = true;
     static final boolean ENABLE_FOAF = true;
+    /* On a real, large network, we cache only at HTL well below the maximum, for security reasons.
+     * For a simulation, this is problematic! Two solutions for smaller networks:
+     * 
+     * 1) Enable CACHE_HIGH_HTL. Nodes cache everything regardless of HTL. This is the simplest
+     * solution but not realistic.
+     * 2) Keep the default caching behaviour and enable FORK_ON_CACHEABLE. On a small network, the
+     * nodes closest to the destination may have already been visited by the time HTL is small 
+     * enough for the data to be cached. FORK_ON_CACHEABLE allows the insert to go back to these 
+     * nodes if necessary. 
+     * 
+     * You should enable one of the following two options:
+     */
+    /** Cache all requested/inserted blocks regardless of HTL ("write local to datastore"). */
+    static final boolean CACHE_HIGH_HTL = true;
+    /** Fork inserts to a new UID after they become cacheable, so that the insert can go back to 
+     * the nodes its already visited (but wouldn't have been cached on). */
     static final boolean FORK_ON_CACHEABLE = false;
     static final boolean DISABLE_PROBABILISTIC_HTLS = true;
     // Set to true to cache everything. This depends on security level.
@@ -163,6 +179,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         params.outputBandwidthLimit = BWLIMIT;
         params.longPingTimes = true;
         params.useSlashdotCache = USE_SLASHDOT_CACHE;
+        params.writeLocalToDatastore = CACHE_HIGH_HTL;
         return params;
     }
 
