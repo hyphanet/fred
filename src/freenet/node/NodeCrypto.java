@@ -94,8 +94,6 @@ public class NodeCrypto {
 	// Noderef related
 	/** An ordered version of the noderef FieldSet, without the signature */
 	private String mySignedReference = null;
-	/** The signature of the above fieldset */
-	private DSASignature myReferenceSignature = null;
 	/** The ECDSA/P256 signature of the above fieldset */
 	private String myReferenceECDSASignature = null;
 	/** A synchronization object used while signing the reference fieldset */
@@ -288,6 +286,8 @@ public class NodeCrypto {
 	 * Create the cryptographic keys etc from scratch
 	 */
 	public void initCrypto() {
+		ecdsaP256 = new ECDSA(ECDSA.Curves.P256);
+		ecdsaPubKeyHash = SHA256.digest(ecdsaP256.getPublicKey().getEncoded());
 		MessageDigest md = SHA256.getMessageDigest();
 		cryptoGroup = Global.DSAgroupBigA;
 		privKey = new DSAPrivateKey(cryptoGroup, random);
@@ -303,8 +303,6 @@ public class NodeCrypto {
 		identityHash = md.digest(myIdentity);
 		identityHashHash = md.digest(identityHash);
 		anonSetupCipher.initialize(identityHash);
-		ecdsaP256 = new ECDSA(ECDSA.Curves.P256);
-        ecdsaPubKeyHash = SHA256.digest(ecdsaP256.getPublicKey().getEncoded());
 	}
 
 	public void start() {
@@ -368,7 +366,7 @@ public class NodeCrypto {
 			// Anonymous initiator setup type specifies whether the node is opennet or not.
 			fs.put("opennet", isOpennet);
 			synchronized (referenceSync) {
-				if(myReferenceSignature == null || myReferenceECDSASignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
+				if(myReferenceECDSASignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
 					mySignedReference = fs.toOrderedString();
 					try {
 					    myReferenceECDSASignature = ecdsaSignRef(mySignedReference);
@@ -376,12 +374,10 @@ public class NodeCrypto {
 					    // Old nodes will verify the signature including sigP256
 					    fs.putSingle("sigP256", myReferenceECDSASignature);
 					    mySignedReference = fs.toOrderedString();
-					    myReferenceSignature = signRef(mySignedReference);
 					} catch (NodeInitException e) {
 						node.exit(e.exitCode);
 					}
 				}
-				fs.putSingle("sig", myReferenceSignature.toLongString());
 			}
 		}
 
@@ -525,15 +521,6 @@ public class NodeCrypto {
 		return Fields.hashCode(identityHash);
 	}
 
-	/** Sign a hash */
-	byte[] sign(byte[] hash) {
-        byte[] sig = new byte[Node.SIGNATURE_PARAMETER_LENGTH*2];
-        DSASignature s = DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
-        System.arraycopy(s.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH), 0, sig, 0, Node.SIGNATURE_PARAMETER_LENGTH);
-        System.arraycopy(s.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH), 0, sig, Node.SIGNATURE_PARAMETER_LENGTH, Node.SIGNATURE_PARAMETER_LENGTH);
-		return sig;
-	}
-	
 	/** Sign data with the node's ECDSA key. The data does not need to be hashed, the signing code
 	 * will handle that for us, using an algorithm appropriate for the keysize. */
 	byte[] ecdsaSign(byte[]... data) {
@@ -642,12 +629,7 @@ public class NodeCrypto {
 	 * identity. FIXME This complexity can be removed as soon as negType 9 is mandatory!
 	 */
 	public byte[] getIdentity(int negType, boolean unknownInitiator) {
-	    if(negType > 8)
-	        return ecdsaPubKeyHash;
-	    else if(unknownInitiator)
-			return this.pubKey.asBytesHash();
-		else
-			return myIdentity;
+	    return ecdsaPubKeyHash;
 	}
 
 	public boolean definitelyPortForwarded() {
