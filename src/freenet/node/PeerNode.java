@@ -2462,9 +2462,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			}
 		}
 			String identityString = fs.get("identity");
-			if(identityString == null && forFullNodeRef)
-				throw new FSParseException("No identity!");
-			else if(identityString != null) {
+			if(identityString == null && forFullNodeRef) {
+				if(isDarknet())
+					throw new FSParseException("No identity!");
+				else if(logMINOR)
+					Logger.minor(this, "didn't send an identity;"
+					  + " let's assume it's pre-1471");
+			} else if(identityString != null) {
 				try {
 					byte[] id = Base64.decode(identityString);
 					if (!Arrays.equals(id, identity))
