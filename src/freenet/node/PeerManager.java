@@ -726,26 +726,6 @@ public class PeerManager {
 		}
 	};
 
-	protected static class LocationUIDPair implements Comparable<LocationUIDPair> {
-		double location;
-		long uid;
-
-		LocationUIDPair(PeerNode pn) {
-			location = pn.getLocation();
-			uid = pn.swapIdentifier;
-		}
-
-		@Override
-		public int compareTo(LocationUIDPair p) {
-			// Compare purely on location, so result is the same as getPeerLocationDoubles()
-			if(p.location > location)
-				return 1;
-			if(p.location < location)
-				return -1;
-			return 0;
-		}
-	}
-
 	/**
 	 * @return An array of the current locations (as doubles) of all
 	 * our connected peers or double[0] if Node.shallWePublishOurPeersLocation() is false
@@ -770,28 +750,6 @@ public class PeerManager {
 			return Arrays.copyOf(locs, x);
 		else
 			return locs;
-	}
-
-	/** Just like getPeerLocationDoubles, except it also
-	 * returns the UID for each node. */
-	public LocationUIDPair[] getPeerLocationsAndUIDs() {
-		PeerNode[] conns;
-		LocationUIDPair[] locPairs;
-		synchronized(this) {
-			conns = myPeers;
-		}
-		locPairs = new LocationUIDPair[conns.length];
-		int x = 0;
-		for(PeerNode conn: conns) {
-			if(conn.isRoutable())
-				locPairs[x++] = new LocationUIDPair(conn);
-		}
-		// Sort it
-		Arrays.sort(locPairs, 0, x);
-		if(x != locPairs.length)
-			return Arrays.copyOf(locPairs, x);
-		else
-			return locPairs;
 	}
 
 	/**
