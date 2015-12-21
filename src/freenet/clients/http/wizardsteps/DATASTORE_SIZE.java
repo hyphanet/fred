@@ -174,12 +174,12 @@ public class DATASTORE_SIZE implements Step {
                 // > 50 GiB: Use 10% free space; minimum 10 GiB. Limited by
                 // bloom filters and disk I/O.
                 shortSize = Math.max(10 * oneGiB,
-                                     Math.min(freeSpace * 0.10,
+                                     Math.min(freeSpace / 10,
                                               Math.min(diskIoMax,
                                                        bloomFilter128MiBMax)));
             } else if (freeSpace > 5 * oneGiB) {
                 // > 5 GiB: Use 20% free space, minimum 2 GiB.
-                shortSize = Math.max(freeSpace * 0.20, 2 * oneGiB);
+                shortSize = Math.max(freeSpace / 5, 2 * oneGiB);
             } else if (freeSpace > 2 * oneGiB) {
                 // > 2 GiB: 512 MiB.
                 shortSize = 512 * (1024 * 1024);
