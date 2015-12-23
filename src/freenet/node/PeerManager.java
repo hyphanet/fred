@@ -3,9 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
@@ -44,6 +41,9 @@ import freenet.support.TimeUtil;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @author amphibian
@@ -604,7 +604,7 @@ public class PeerManager {
 		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
 		PeerNode[] peerList = myPeers();
 		for(PeerNode mp: peerList) {
-			if(Arrays.equals(mp.pubKeyHash, pn.pubKeyHash))
+			if(Arrays.equals(mp.peerECDSAPubKeyHash, pn.peerECDSAPubKeyHash))
 				return;
 		}
 		addPeer(pn);
@@ -2178,7 +2178,7 @@ public class PeerManager {
 	public PeerNode getByPubKeyHash(byte[] pkHash) {
 		PeerNode[] peers = myPeers();
 		for(PeerNode peer : peers) {
-			if(Arrays.equals(peer.getPubKeyHash(), pkHash))
+			if(Arrays.equals(peer.peerECDSAPubKeyHash, pkHash))
 				return peer;
 		}
 		return null;

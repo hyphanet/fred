@@ -3,9 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.net.InetAddress;
 import java.util.ArrayList;
 
@@ -15,6 +12,9 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Sender's representation of a seed node.
@@ -129,11 +129,6 @@ public class SeedServerPeerNode extends PeerNode {
 		boolean ret = super.disconnected(dumpMessageQueue, dumpTrackers);
 		node.peers.disconnectAndRemove(this, false, false, false);
 		return ret;
-	}
-
-	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return false;
 	}
 	
 	@Override

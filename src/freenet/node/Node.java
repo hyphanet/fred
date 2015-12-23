@@ -4492,11 +4492,11 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public byte[] getOpennetPubKeyHash() {
-		return opennet.crypto.pubKeyHash;
+		return opennet.crypto.ecdsaPubKeyHash;
 	}
 
 	public byte[] getDarknetPubKeyHash() {
-		return darknetCrypto.pubKeyHash;
+		return darknetCrypto.ecdsaPubKeyHash;
 	}
 
 	public synchronized boolean isOpennetEnabled() {
