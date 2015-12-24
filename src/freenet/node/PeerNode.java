@@ -13,7 +13,6 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.ref.WeakReference;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -271,8 +270,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/** Total output */
 	private long totalOutputSinceStartup;
 	/** Peer node public key; changing this means new noderef */
-	public final ECPublicKey peerECDSAPubKey;
-	public final byte[] peerECDSAPubKeyHash;
+	final ECPublicKey peerECDSAPubKey;
+	final byte[] peerECDSAPubKeyHash;
 	private boolean isSignatureVerificationSuccessfull;
 	/** Incoming setup key. Used to decrypt incoming auth packets.
 	* Specifically: K_node XOR H(setupKey).
@@ -5834,6 +5833,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 	
 	protected final byte[] getIdentity(int negType) {
-	        return peerECDSAPubKeyHash;
+	    return peerECDSAPubKeyHash;
 	}
+
+	// FIXME Move callers into freenet/node/ (or copy the byte[]).
+    public byte[] getPeerECDSAPubKeyHash() {
+        return peerECDSAPubKeyHash;
+    }
 }
