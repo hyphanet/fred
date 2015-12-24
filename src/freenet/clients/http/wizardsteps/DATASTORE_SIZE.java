@@ -163,6 +163,7 @@ public class DATASTORE_SIZE implements Step {
             long shortSize;
             long oneGiB = 1024 * 1024 * 1024L;
             // Maximum for Freenet: 256GB. That's a 128MiB bloom filter.
+            // FIXME Consider making this depend on actual available memory.
             long bloomFilter128MiBMax = 256 * oneGiB;
             // Maximum to suggest to keep Disk I/O managable. 
             // Depends on hardware, operating systems, support for I/O priorities...
