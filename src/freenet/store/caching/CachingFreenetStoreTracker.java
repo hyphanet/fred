@@ -78,9 +78,12 @@ public class CachingFreenetStoreTracker {
 	 *  Even if we are not, we schedule one after period. If we are at the limit, we will return 
 	 *  false, and the caller should write directly to the underlying store.  */
 	public synchronized boolean add(long sizeBlock) {
-		/**  Here have a lower threshold, say 90% of maxSize, when it will start a write job, but still accept the data. */
+		/**  Here have a lower threshold, say 90% of maxSize, when it will start a write job, but 
+		 * still accept the data. */
+	    boolean justStartedPush = false;
 		if(this.size + sizeBlock > this.maxSize*lowerThreshold) {
 		    pushOffThreadNow();
+		    justStartedPush = true;
 		}
 		//Check max size
 		if(this.size + sizeBlock > this.maxSize) {
@@ -90,9 +93,11 @@ public class CachingFreenetStoreTracker {
 			return false;
 		} else {
 			this.size += sizeBlock;
-			// Write everything to disk after the maximum delay (period), unless there is already
-			// a job scheduled to write to disk before that.
-			pushOffThreadDelayed();
+			if(!justStartedPush) {
+			    // Write everything to disk after the maximum delay (period), unless there is already
+			    // a job scheduled to write to disk before that.
+			    pushOffThreadDelayed();
+			} // Else will be written anyway.
 			return true;
 		}
 	}
