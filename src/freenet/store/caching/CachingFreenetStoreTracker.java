@@ -80,19 +80,7 @@ public class CachingFreenetStoreTracker {
 	public synchronized boolean add(long sizeBlock) {
 		/**  Here have a lower threshold, say 90% of maxSize, when it will start a write job, but still accept the data. */
 		if(this.size + sizeBlock > this.maxSize*lowerThreshold) {
-			if(!runningJob) {
-				runningJob = true;
-				this.ticker.queueTimedJob(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							pushAllCachingStores();
-						} finally {
-							runningJob = false;
-						}
-					}
-				}, 0);
-			}
+		    pushOffThreadNow();
 		}
 		//Check max size
 		if(this.size + sizeBlock > this.maxSize) {
@@ -104,31 +92,49 @@ public class CachingFreenetStoreTracker {
 			this.size += sizeBlock;
 			// Write everything to disk after the maximum delay (period), unless there is already
 			// a job scheduled to write to disk before that.
-			if(!queuedJob) {
-				queuedJob = true;
-				this.ticker.queueTimedJob(new Runnable() {
-					@Override
-					public void run() {
-						synchronized(this) {
-							if(runningJob) return;
-							runningJob = true;
-						}
-						try {
-							pushAllCachingStores();
-						} finally {
-							synchronized(this) {
-								queuedJob = false;
-								runningJob = false;
-							}
-						}
-					}
-				}, period);
-			}
+			pushOffThreadDelayed();
 			return true;
 		}
 	}
 	
-	private void pushAllCachingStores() {
+    private synchronized void pushOffThreadNow() {
+        if(runningJob) return;
+        runningJob = true;
+        this.ticker.queueTimedJob(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    pushAllCachingStores();
+                } finally {
+                    runningJob = false;
+                }
+            }
+        }, 0);
+    }
+
+	private void pushOffThreadDelayed() {
+	    if(queuedJob) return;
+	    queuedJob = true;
+	    this.ticker.queueTimedJob(new Runnable() {
+	        @Override
+	        public void run() {
+	            synchronized(this) {
+	                if(runningJob) return;
+	                runningJob = true;
+	            }
+	            try {
+	                pushAllCachingStores();
+	            } finally {
+	                synchronized(this) {
+	                    queuedJob = false;
+	                    runningJob = false;
+	                }
+	            }
+	        }
+	    }, period);
+    }
+
+    private void pushAllCachingStores() {
 		CachingFreenetStore<?>[] cachingStoresSnapshot = null;
 		
 		while(true) {
