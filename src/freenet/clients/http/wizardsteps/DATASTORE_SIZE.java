@@ -164,9 +164,10 @@ public class DATASTORE_SIZE implements Step {
             long oneGiB = 1024 * 1024 * 1024L;
             // Maximum for Freenet: 256GB. That's a 128MiB bloom filter.
             long bloomFilter128MiBMax = 256 * oneGiB;
-            // Maximum to suggest to keep Disk I/O managable. This
-            // value might need revisiting when hardware or
-            // filesystems change.
+            // Maximum to suggest to keep Disk I/O managable. 
+            // Depends on hardware, operating systems, support for I/O priorities...
+            // FIXME ALCHEMY! Revisit periodically.
+            // FIXME Consider a more sensitive default e.g. per OS, detect hardware.
             long diskIoMax = 20 * oneGiB;
 
             // Choose a suggested store size based on available free space.
