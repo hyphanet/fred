@@ -15,6 +15,7 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,10 +31,15 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
+import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.PeerManagerUserAlert;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
@@ -238,6 +244,9 @@ public class PeerManager {
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e4, e4);
 		}
 		BufferedReader br = new BufferedReader(ris);
+		List<String> droppedOldPeers = new ArrayList<String>();
+		int droppedOldPeersBuild = 0;
+		Date droppedOldPeersDate = new Date();
 		try { // FIXME: no better way?
 			while(true) {
 				// Read a single NodePeer
@@ -274,7 +283,33 @@ public class PeerManager {
 					someBroken = true;
 					continue;
 					// FIXME tell the user???
-				}
+				} catch (PeerTooOldException e) {
+				    if(crypto.isOpennet) {
+				        // Ignore.
+				        Logger.error(this, "Dropping too-old opennet peer");
+				    } else {
+				        // A lot more noisy!
+				        // May or may not have a name...
+				        String name = fs.get("myName");
+				        if(name == null) { 
+				            name = "(unknown name)";
+				        } else { 
+				            name = "\"" + name + "\""; 
+				        }
+                        droppedOldPeers.add(name);
+				        String[] keys = new String[] { "count", "buildNumber", "buildDate", "port" };
+				        String[] values = new String[] { ""+droppedOldPeers.size(), 
+				                "" + e.buildNumber, e.buildDate.toString(), 
+				                new File(peersFile.getPath()+".broken").toString() };
+				        if(e.buildNumber > droppedOldPeersBuild) {
+				            droppedOldPeersBuild = e.buildNumber;
+				            droppedOldPeersDate = e.buildDate;
+				        }
+				        String shortError = l10n("droppingOldFriendTitle", keys, values);
+				        System.err.println(shortError);
+                        Logger.error(this, shortError);
+				    }
+                }
 			}
 		} catch(EOFException e) {
 			// End of file, fine
@@ -285,6 +320,9 @@ public class PeerManager {
 			br.close();
 		} catch(IOException e3) {
 			Logger.error(this, "Ignoring " + e3 + " caught reading " + peersFile, e3);
+		}
+		if(!droppedOldPeers.isEmpty()) {
+		    reportDroppedOldPeers(droppedOldPeers, droppedOldPeersBuild, droppedOldPeersDate, peersFile);
 		}
 		if(someBroken) {
 			File broken = new File(peersFile.getPath()+".broken");
@@ -303,7 +341,39 @@ public class PeerManager {
 		return !someBroken;
 	}
 
-	public boolean addPeer(PeerNode pn) {
+	private void reportDroppedOldPeers(List<String> droppedOldPeers, int droppedOldPeersBuild,
+            Date droppedOldPeersDate, File peersFile) {
+        String[] keys = new String[] { "count", "buildNumber", "buildDate", "filename" };
+        String[] values = new String[] { ""+droppedOldPeers.size(), 
+                "" + droppedOldPeersBuild, droppedOldPeersDate.toString(), 
+                new File(peersFile.getPath()+".broken").toString() };
+        String shortError = l10n("droppingOldFriendTitle", keys, values);
+        String longError = l10n("droppingOldFriendFull", keys, values);
+        HTMLNode html = new HTMLNode("#");
+        StringBuffer longErrorText = new StringBuffer();
+        html.addChild("p", longError);
+        html.addChild("p", l10n("droppingOldFriendList"));
+        longErrorText.append('\n');
+        longErrorText.append(l10n("droppingOldFriendList"));
+        longErrorText.append('\n');
+        HTMLNode list = html.addChild("ul");
+        for(String name : droppedOldPeers) {
+            list.addChild("li", name);
+            longErrorText.append(name);
+            longErrorText.append('\n');
+        }
+        longErrorText.setLength(longErrorText.length()-1);
+        String longErrorString = longErrorText.toString();
+        Logger.error(this, longErrorString);
+        UserAlert alert = new AbstractUserAlert(true, shortError, longErrorString, shortError, 
+                html, UserAlert.CRITICAL_ERROR, true, 
+                NodeL10n.getBase().getString("UserAlert.hide"), true, null) {
+            
+        };
+        node.clientCore.alerts.register(alert);
+    }
+
+    public boolean addPeer(PeerNode pn) {
 		return addPeer(pn, false, false);
 	}
 
@@ -599,8 +669,9 @@ public class PeerManager {
 
 	/**
 	 * Connect to a node provided the fieldset representing it.
+	 * @throws PeerTooOldException 
 	 */
-	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
 		PeerNode[] peerList = myPeers();
 		for(PeerNode mp: peerList) {
@@ -2278,6 +2349,18 @@ public class PeerManager {
 		if(tooNewOpennet >= OUTDATED_MIN_TOO_NEW_TOTAL) {
 			return connections < OUTDATED_MAX_CONNS;
 		} else return false;
+	}
+	
+	private String l10n(String key) {
+	    return NodeL10n.getBase().getString("PeerManager."+key);
+	}
+	
+	private String l10n(String key, String pattern, String value) {
+	    return NodeL10n.getBase().getString("PeerManager."+key, pattern, value);
+	}
+	
+	private String l10n(String key, String[] pattern, String[] value) {
+	    return NodeL10n.getBase().getString("PeerManager."+key, pattern, value);
 	}
 
 }

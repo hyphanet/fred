@@ -16,7 +16,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class SeedClientPeerNode extends PeerNode {
 
-	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		super(fs, node2, crypto, false);
 	}
 

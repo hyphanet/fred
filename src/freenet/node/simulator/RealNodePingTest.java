@@ -14,6 +14,7 @@ import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.PeerTooOldException;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
@@ -39,7 +40,7 @@ public class RealNodePingTest {
 	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
 	static final FRIEND_VISIBILITY visibility = FRIEND_VISIBILITY.NO;
 
-    public static void main(String[] args) throws FSParseException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, NodeInitException, InvalidThresholdException {
+    public static void main(String[] args) throws FSParseException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, NodeInitException, InvalidThresholdException, PeerTooOldException {
         RandomSource random = NodeStarter.globalTestInit("pingtest", false, LogLevel.ERROR, "", true);
         // Create 2 nodes
         Executor executor = new PooledExecutor();

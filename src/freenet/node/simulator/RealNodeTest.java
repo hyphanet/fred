@@ -13,6 +13,7 @@ import freenet.node.NodeStats;
 import freenet.node.PeerNode;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.PeerTooOldException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -107,7 +108,9 @@ public class RealNodeTest {
 			Logger.error(RealNodeTest.class, "cannot connect #2!!!!", e);
 		} catch (freenet.io.comm.ReferenceSignatureVerificationException e) {
 			Logger.error(RealNodeTest.class, "cannot connect #3!!!!", e);
-		}
+		} catch (PeerTooOldException e) {
+            Logger.error(RealNodeTest.class, "cannot connect #4!!!!", e);
+        }
 	}
 	
 	static double distance(Node a, Node b) {

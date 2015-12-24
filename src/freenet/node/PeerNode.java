@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -29,6 +30,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.DataFormatException;
@@ -435,9 +437,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* @param node2 The running Node we are part of.
 	* @param fromLocal True if the noderef was read from the stored peers file and can contain
 	* local metadata, and won't be signed. Otherwise, it is a new node reference from elsewhere,
-	* should not contain metadata, and will be signed. */
+	* should not contain metadata, and will be signed. 
+	* @throws PeerTooOldException If the peer is so old that it can no longer be parsed, e.g. 
+	* because it hasn't been connected since the last major crypto change. */
 	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal) 
-	                throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	                throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator()) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
@@ -489,6 +493,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		/* Read the ECDSA key material for the peer */
 		SimpleFieldSet sfs = fs.subset("ecdsa.P256");
+		if(sfs == null) {
+		    GregorianCalendar gc = new GregorianCalendar(2013, 6, 20);
+		    gc.setTimeZone(TimeZone.getTimeZone("GMT"));
+		    throw new PeerTooOldException("No ECC support", 1449, gc.getTime());
+		}
 		byte[] pub;
 		try {
 			pub = Base64.decode(sfs.get("pub"));
@@ -3791,8 +3800,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	/**
 	 * Create a DarknetPeerNode or an OpennetPeerNode as appropriate
+	 * @throws PeerTooOldException 
 	 */
-	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		if(crypto.isOpennet)
 			return new OpennetPeerNode(fs, node2, crypto, opennet, true);
 		else

@@ -1166,7 +1166,11 @@ public class TextModeClientInterface implements Runnable {
         	System.err.println("Did not parse: "+e1);
             Logger.error(this, "Did not parse: "+e1, e1);
             return;
-		}
+		} catch (PeerTooOldException e1) {
+		    System.err.println("Did not parse: "+e1);
+		    Logger.error(this, "Did not parse: "+e1, e1);
+		    return;
+        }
         if(n.peers.addPeer(pn))
             System.out.println("Added peer: "+pn);
         n.peers.writePeersDarknetUrgent();
