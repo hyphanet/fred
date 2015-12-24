@@ -322,7 +322,12 @@ public class PeerManager {
 			Logger.error(this, "Ignoring " + e3 + " caught reading " + peersFile, e3);
 		}
 		if(!droppedOldPeers.isEmpty()) {
-		    reportDroppedOldPeers(droppedOldPeers, droppedOldPeersBuild, droppedOldPeersDate, peersFile);
+		    try {
+		        reportDroppedOldPeers(droppedOldPeers, droppedOldPeersBuild, droppedOldPeersDate, peersFile);
+		    } catch (Throwable t) {
+		        // Startup MUST complete, don't let client layer problems kill it.
+		        Logger.error(this, "Caught error telling user about dropped peers", t);
+		    }
 		}
 		if(someBroken) {
 			File broken = new File(peersFile.getPath()+".broken");
