@@ -129,10 +129,9 @@ public class CachingFreenetStoreTracker {
 	}
 	
 	private void pushAllCachingStores() {
-		CachingFreenetStore<?>[] cachingStoresSnapshot = null;
-		
 		while(true) {
 		    // Need to re-check occasionally in case new stores have been added.
+	        CachingFreenetStore<?>[] cachingStoresSnapshot = null;
 	        synchronized (cachingStores) {
 	            cachingStoresSnapshot = this.cachingStores.toArray(new CachingFreenetStore[cachingStores.size()]);
 	        }
