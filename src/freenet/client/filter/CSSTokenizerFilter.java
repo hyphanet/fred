@@ -3976,6 +3976,13 @@ class CSSTokenizerFilter {
 			}
 			
 			if (isIDSelector) {
+			    // In accordance with spec for e.g. nav-*, we only allow ID selectors.
+			    // See http://www.w3.org/TR/css3-ui/
+			    // REDFLAG If we allow more general selectors (which some browsers may accept) we 
+			    // have two new problems:
+			    // 1) They may occupy more than one word, which greatly complicates parsing here,
+			    // 2) We should sanitize the selectors, not just pass them on. Which in turn may 
+			    // cause them to take up more than one word!
 				String result = HTMLelementVerifier(words[0].original, true);
 				if (!(result == null || result.equals(""))) {
 					return true;
