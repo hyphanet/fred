@@ -876,7 +876,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("body { nav-down: auto; }",  "body { nav-down: auto; }");
 		propertyTests.put("body { nav-down: h2#java current; }",  "body { nav-down: h2#java current; }");
 		propertyTests.put("body { nav-up: #java root; }",  "body { nav-up: #java root; }");
-		propertyTests.put("body { nav-left: div.bold '<target-name>'; }",  "body { nav-left: div.bold '<target-name>'; }");
+		propertyTests.put("body { nav-left: div.bold '<target-name>'; }",  "body { }");
 		propertyTests.put("button#foo { nav-left: #bar \"sidebar\"; }", "button#foo { nav-left: #bar \"sidebar\"; }");
 		propertyTests.put("button#foo { nav-left: invalidSelector \"sidebar\"; }", "button#foo { }");
 	}
