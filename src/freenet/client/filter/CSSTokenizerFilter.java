@@ -1678,8 +1678,11 @@ class CSSTokenizerFilter {
 	/*
 	 * This function accepts an HTML element(along with class name, ID, pseudo class and attribute selector) and determines whether it is valid or not.
 	 * Returns null on failure (invalid selector), empty string on banned (but otherwise valid) selector.
+	 * @param elementName A selector which may include an HTML element.
+	 * @param isIDSelector True if we only allow an ID selector, which must include an ID, may 
+	 * include an element name or *, but must not contain anything else.
 	 */
-	public static String HTMLelementVerifier(String elementString)
+	public static String HTMLelementVerifier(String elementString, boolean isIDSelector)
 	{
 //		if(logDEBUG) Logger.debug(this, "varifying element/selector: \""+elementString+"\"");
 		String HTMLelement="",pseudoClass="",className="",id="";
@@ -1688,6 +1691,7 @@ class CSSTokenizerFilter {
 		ArrayList<String> attSelections = null;
 		while(elementString.indexOf('[')!=-1 && elementString.indexOf(']')!=-1 && (elementString.indexOf('[')<elementString.indexOf(']')))
 		{
+		    if(isIDSelector) return null;
 			String attSelection=elementString.substring(elementString.indexOf('[')+1,elementString.indexOf(']')).trim();
 			StringBuilder buf=new StringBuilder(elementString);
 			buf.delete(elementString.indexOf('['), elementString.indexOf(']')+1);
@@ -1698,6 +1702,7 @@ class CSSTokenizerFilter {
 		}
 		if(elementString.indexOf(':')!=-1)
 		{
+		    if(isIDSelector) return null;
 			int index=elementString.indexOf(':');
 			if(index!=elementString.length()-1)
 			{
@@ -1715,6 +1720,7 @@ class CSSTokenizerFilter {
 
 		if(HTMLelement.indexOf('.')!=-1)
 		{
+		    if(isIDSelector) return null;
 			int index=HTMLelement.indexOf('.');
 			if(index!=HTMLelement.length()-1)
 			{
@@ -1726,6 +1732,7 @@ class CSSTokenizerFilter {
 		}
 		else if(HTMLelement.indexOf('#')!=-1)
 		{
+		    // Allowed in an ID selector.
 			int index=HTMLelement.indexOf('#');
 			if(index!=HTMLelement.length()-1)
 			{
@@ -1735,6 +1742,7 @@ class CSSTokenizerFilter {
 			}
 
 		}
+		if(isIDSelector && "".equals(id)) return null; // No ID
 
 		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTag(HTMLelement.toLowerCase())) || 
 				("".equals(HTMLelement.trim()) && 
@@ -1932,14 +1940,14 @@ class CSSTokenizerFilter {
 		if(bracketing != 0) return null; // Mismatched brackets
 
 		if(index == -1)
-			return HTMLelementVerifier(selectorString);
+			return HTMLelementVerifier(selectorString, false);
 
 		String[] parts=new String[2];
 
 		parts[0]=selectorString.substring(0,index).trim();
 		parts[1]=selectorString.substring(index+1,selectorString.length()).trim();
 		if(logDEBUG) Logger.debug(this, "recursiveSelectorVerifier parts[0]=" + parts[0]+" parts[1]="+parts[1]);
-		parts[0]=HTMLelementVerifier(parts[0]);
+		parts[0]=HTMLelementVerifier(parts[0], false);
 		parts[1]=recursiveSelectorVerifier(parts[1]);
 		if(parts[0]!=null && parts[1]!=null)
 			return parts[0]+selector+parts[1];
@@ -3968,7 +3976,7 @@ class CSSTokenizerFilter {
 			}
 			
 			if (isIDSelector) {
-				String result = HTMLelementVerifier(words[0].original);
+				String result = HTMLelementVerifier(words[0].original, true);
 				if (!(result == null || result.equals(""))) {
 					return true;
 				}
