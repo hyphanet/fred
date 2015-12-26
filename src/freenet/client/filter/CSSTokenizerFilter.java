@@ -4008,7 +4008,7 @@ class CSSTokenizerFilter {
 			 * 1 && 2 => 1b2
 			 * 1<1,4> => 1<1,4>
 			 * 1* => 1<0,65536>
-			 * 1? => 1o
+			 * 1? => 1?
 			 * 
 			 * Note that we do not (correctly) implement operator precedence. Brackets must be
 			 * implemented using auxiliary expression verifiers. && may only join numbered 
@@ -4031,7 +4031,7 @@ class CSSTokenizerFilter {
 		 * [1][2] => 1 2
 		 * 1<1,4> => 1<1,4>
 		 * 1* => 1<0,65536>
-		 * 1? => 1o
+		 * 1? => 1?
 		 * 1+ => 1<1,65536>
 		 * 1&&2 => 1b2   (see doubleAmpersandVerifier())
 		 * Additional expressions that can be passed to the function
