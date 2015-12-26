@@ -1734,11 +1734,15 @@ class CSSTokenizerFilter {
 			}
 
 		}
-
-		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTag(HTMLelement.toLowerCase())) || 
-				("".equals(HTMLelement.trim()) && 
-						((!className.equals("")) || (!id.equals("")) || attSelections!=null || !pseudoClass.equals(""))))
-		{
+		
+		boolean elementValid =
+		    "*".equals(HTMLelement) ||
+		    (ElementInfo.isValidHTMLTag(HTMLelement.toLowerCase())) ||
+		    ("".equals(HTMLelement.trim()) && 
+                    ((!className.equals("")) || (!id.equals("")) || attSelections!=null || 
+                            !pseudoClass.equals("")));
+		if(!elementValid) return null;
+		
 			if(!className.equals(""))
 			{
 				// Note that the definition of isValidName() allows chained classes because it allows . in class names.
@@ -1832,9 +1836,6 @@ class CSSTokenizerFilter {
 			    }
 			}
 			return fBuffer.toString();
-		}
-
-		return null;
 	}
 	/*
 	 * This function works with different operators, +, >, " " and verifies each HTML element with HTMLelementVerifier(String elementString)
