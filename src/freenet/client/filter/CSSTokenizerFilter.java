@@ -1681,7 +1681,7 @@ class CSSTokenizerFilter {
 	 */
 	public static String HTMLelementVerifier(String elementString)
 	{
-//		if(logDEBUG) Logger.debug(this, "varifying element/selector: \""+elementString+"\"");
+		if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "varifying element/selector: \""+elementString+"\"");
 		String HTMLelement="",pseudoClass="",className="",id="";
 		boolean isValid=true;
 		StringBuilder fBuffer=new StringBuilder();
@@ -1692,7 +1692,7 @@ class CSSTokenizerFilter {
 			StringBuilder buf=new StringBuilder(elementString);
 			buf.delete(elementString.indexOf('['), elementString.indexOf(']')+1);
 			elementString=buf.toString();
-//			if(logDEBUG) Logger.debug(this, "attSelection="+attSelection+"  elementString="+elementString);
+			if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "attSelection="+attSelection+"  elementString="+elementString);
 			if(attSelections == null) attSelections = new ArrayList<String>();
 			attSelections.add(attSelection);
 		}
@@ -1703,7 +1703,7 @@ class CSSTokenizerFilter {
 			{
 				pseudoClass=elementString.substring(index+1,elementString.length()).trim();
 				HTMLelement=elementString.substring(0,index).trim();
-//				if(logDEBUG) Logger.debug(this, "pseudoclass="+pseudoClass+" HTMLelement="+HTMLelement);
+				if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "pseudoclass="+pseudoClass+" HTMLelement="+HTMLelement);
 			}
 			else
 			{
@@ -1720,7 +1720,7 @@ class CSSTokenizerFilter {
 			{
 				className=HTMLelement.substring(index+1,HTMLelement.length()).trim();
 				HTMLelement=HTMLelement.substring(0,index).trim();
-//				if(logDEBUG) Logger.debug(this, "class="+className+" HTMLelement="+HTMLelement);
+				if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "class="+className+" HTMLelement="+HTMLelement);
 			}
 
 		}
@@ -1731,7 +1731,7 @@ class CSSTokenizerFilter {
 			{
 				id=HTMLelement.substring(index+1,HTMLelement.length()).trim();
 				HTMLelement=HTMLelement.substring(0,index).trim();
-//				if(logDEBUG) Logger.debug(this, "id="+id+" element="+HTMLelement);
+				if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "id="+id+" element="+HTMLelement);
 			}
 
 		}
@@ -1785,7 +1785,7 @@ class CSSTokenizerFilter {
 					}
 
 					//Verifying whether each character is alphanumeric or _
-//					if(logDEBUG) Logger.debug(this, "HTMLelementVerifier length of attSelectionParts="+attSelectionParts.length);
+					if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "HTMLelementVerifier length of attSelectionParts="+attSelectionParts.length);
 
 					if(attSelectionParts[0].length()==0)
 						isValid=false;
@@ -1804,7 +1804,7 @@ class CSSTokenizerFilter {
 					if(attSelectionParts.length > 1) {
 						// What about the right hand side?
 						// The grammar says it's an IDENT.
-//						if(logDEBUG) Logger.debug(this, "RHS is \""+attSelectionParts[1]+"\"");
+						if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "RHS is \""+attSelectionParts[1]+"\"");
 						if(!(ElementInfo.isValidIdentifier(attSelectionParts[1]) || ElementInfo.isValidStringWithQuotes(attSelectionParts[1]))) isValid = false;
 					}
 				}
