@@ -4001,12 +4001,14 @@ class CSSTokenizerFilter {
 
 			/*
 			 * Parser expressions
+			 * Original syntax: http://www.w3.org/TR/CSS2/about.html#value-defs
+			 * We encode it a bit differently...
 			 * 1 || 2 => 1a2
 			 * [1][2] =>1 2
+			 * 1 && 2 => 1b2
 			 * 1<1,4> => 1<1,4>
 			 * 1* => 1<0,65536>
 			 * 1? => 1o
-			 *
 			 */
 			/*
 			 * For each parserExpression, recursiveParserExpressionVerifier() would be called with parserExpression and value.
