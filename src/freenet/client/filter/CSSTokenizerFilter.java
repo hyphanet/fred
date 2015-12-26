@@ -4009,6 +4009,11 @@ class CSSTokenizerFilter {
 			 * 1<1,4> => 1<1,4>
 			 * 1* => 1<0,65536>
 			 * 1? => 1o
+			 * 
+			 * Note that we do not (correctly) implement operator precedence. Brackets must be
+			 * implemented using auxiliary expression verifiers. && may only join numbered 
+			 * expressions, but || and space may join anything. There is no support for the single
+			 * bar, again we use multiple alternative numbered patterns for this.
 			 */
 			/*
 			 * For each parserExpression, recursiveParserExpressionVerifier() would be called with parserExpression and value.
