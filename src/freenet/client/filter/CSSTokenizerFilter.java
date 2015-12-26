@@ -1683,7 +1683,6 @@ class CSSTokenizerFilter {
 	{
 		if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "varifying element/selector: \""+elementString+"\"");
 		String HTMLelement="",pseudoClass="",className="",id="";
-		boolean isValid=true;
 		StringBuilder fBuffer=new StringBuilder();
 		ArrayList<String> attSelections = null;
 		while(elementString.indexOf('[')!=-1 && elementString.indexOf(']')!=-1 && (elementString.indexOf('[')<elementString.indexOf(']')))
@@ -1744,24 +1743,24 @@ class CSSTokenizerFilter {
 			{
 				// Note that the definition of isValidName() allows chained classes because it allows . in class names.
 				if(!ElementInfo.isValidName(className))
-					isValid=false;
+					return null;
 			}
 			else if(!id.equals(""))
 			{
 				if(!ElementInfo.isValidName(id))
-					isValid=false;
+					return null;
 			}
 
-			if(isValid && !pseudoClass.equals(""))
+			if(!pseudoClass.equals(""))
 			{
 				if(!ElementInfo.isValidPseudoClass(pseudoClass)) {
-					isValid=false;
+					return null;
 				} else if(ElementInfo.isBannedPseudoClass(pseudoClass)) {
 					return "";
 				}
 			}
 
-			if(isValid && attSelections!=null)
+			if(attSelections!=null)
 			{
 				String[] attSelectionParts;
 
@@ -1788,16 +1787,16 @@ class CSSTokenizerFilter {
 					if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "HTMLelementVerifier length of attSelectionParts="+attSelectionParts.length);
 
 					if(attSelectionParts[0].length()==0)
-						isValid=false;
+						return null;
 					else
 					{
 						char c=attSelectionParts[0].charAt(0);
 						if(!((c>='a' && c<='z') || (c>='A' && c<='Z')))
-							isValid=false;
+							return null;
 						for(int i=1;i<attSelectionParts[0].length();i++)
 						{
 							if(!((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_' || c=='-'))
-								isValid=false;
+								return null;
 						}
 					}
 
@@ -1805,35 +1804,34 @@ class CSSTokenizerFilter {
 						// What about the right hand side?
 						// The grammar says it's an IDENT.
 						if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "RHS is \""+attSelectionParts[1]+"\"");
-						if(!(ElementInfo.isValidIdentifier(attSelectionParts[1]) || ElementInfo.isValidStringWithQuotes(attSelectionParts[1]))) isValid = false;
+						if(!(ElementInfo.isValidIdentifier(attSelectionParts[1]) || 
+						        ElementInfo.isValidStringWithQuotes(attSelectionParts[1]))) 
+						    return null;
 					}
 				}
 			}
 
 
-			if(isValid)
-			{
-				fBuffer.append(HTMLelement);
-				if(!className.equals("")) {
-					fBuffer.append('.');
-					fBuffer.append(className);
-				} else if(!id.equals("")) {
-					fBuffer.append('#');
-					fBuffer.append(id);
-				}
-				if(!pseudoClass.equals("")) {
-					fBuffer.append(':');
-					fBuffer.append(pseudoClass);
-				}
-				if(attSelections!=null) {
-					for(String attSelection:attSelections) {
-						fBuffer.append('[');
-						fBuffer.append(attSelection);
-						fBuffer.append(']');
-					}
-				}
-				return fBuffer.toString();
+			fBuffer.append(HTMLelement);
+			if(!className.equals("")) {
+			    fBuffer.append('.');
+			    fBuffer.append(className);
+			} else if(!id.equals("")) {
+			    fBuffer.append('#');
+			    fBuffer.append(id);
 			}
+			if(!pseudoClass.equals("")) {
+			    fBuffer.append(':');
+			    fBuffer.append(pseudoClass);
+			}
+			if(attSelections!=null) {
+			    for(String attSelection:attSelections) {
+			        fBuffer.append('[');
+			        fBuffer.append(attSelection);
+			        fBuffer.append(']');
+			    }
+			}
+			return fBuffer.toString();
 		}
 
 		return null;
