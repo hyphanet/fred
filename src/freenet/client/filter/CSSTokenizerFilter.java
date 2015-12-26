@@ -4108,8 +4108,10 @@ class CSSTokenizerFilter {
 				} else if (expression.charAt(i) == 'b') {
 					// detecting b which is the && operator
 					int endIndex = expression.length();
+                    // Find the end of a chain of 1b2b3...
 					for (int j = 0; j < expression.length(); j++) {
-						if (expression.charAt(j)=='?' || expression.charAt(j)=='<' || expression.charAt(j)=='>' || expression.charAt(j)==' ') {
+					    char c = expression.charAt(j);
+					    if(!(c == 'b' || '0' <= c && '9' >= c)) {
 							endIndex=j;
 							break;
 						}
