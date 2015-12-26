@@ -531,7 +531,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		seclevelGroup = ul.addChild("li");
 		seclevelGroup.addChild("#", l10nSec("physicalThreatLevel"));
 		
-		NodeL10n.getBase().addL10nSubstitution(seclevelGroup.addChild("p").addChild("i"), "SecurityLevels.physicalThreatLevelTruecrypt",
+		NodeL10n.getBase().addL10nSubstitution(seclevelGroup.addChild("p").addChild("i"), "SecurityLevels.physicalThreatLevelFDE",
 		        new String[]{"bold", "truecrypt"},
 		        new HTMLNode[]{HTMLNode.STRONG,
 		                HTMLNode.linkInNewWindow(ExternalLinkToadlet.escape("http://www.truecrypt.org/"))});
