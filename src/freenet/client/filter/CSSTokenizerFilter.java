@@ -4215,6 +4215,7 @@ class CSSTokenizerFilter {
 		}
 		/**
 		 * Takes b expressions and evaluates them.<br/>
+		 * "&&" means all of the expressions must occur in any order.<br/>
 		 * CSS Grammar <code>list-item && [ block | nonsense ] && [ more ]?</code><br/>
 		 * Will accept the following inputs as valid:<br/>
 		 * <code>list-item block</code><br/>
@@ -4224,12 +4225,9 @@ class CSSTokenizerFilter {
 		 * @param expression the expression, explained above
 		 * @param words tokens to parse
 		 * @param cb
-		 * @return true if all the words were consumed false otherwise.
+		 * @return true if all the verifiers and all the words were consumed, false otherwise.
 		 */
 		public boolean doubleAmpersandVerifier(String expression, ParsedWord[] words, FilterCallback cb) {
-			if(words==null || words.length == 0)
-				return true;
-
 			String ignoredParts="";
 			String firstPart = "";
 			int lastB = -1;
