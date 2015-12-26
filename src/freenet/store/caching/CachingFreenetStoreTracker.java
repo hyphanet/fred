@@ -139,7 +139,7 @@ public class CachingFreenetStoreTracker {
 	    }, period);
     }
 
-    private void pushAllCachingStores() {
+	void pushAllCachingStores() {
 		CachingFreenetStore<?>[] cachingStoresSnapshot = null;
 		
 		while(true) {
