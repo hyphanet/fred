@@ -4011,9 +4011,9 @@ class CSSTokenizerFilter {
 			 * 1? => 1?
 			 * 
 			 * Note that we do not (correctly) implement operator precedence. Brackets must be
-			 * implemented using auxiliary expression verifiers. && may only join numbered 
-			 * expressions, but || and space may join anything. There is no support for the single
-			 * bar, again we use multiple alternative numbered patterns for this.
+			 * implemented using auxiliary expression verifiers. && and || may only join numbered 
+			 * expressions. There is no support for the single bar, again we use multiple 
+			 * alternative numbered patterns for this.
 			 */
 			/*
 			 * For each parserExpression, recursiveParserExpressionVerifier() would be called with parserExpression and value.
@@ -4075,14 +4075,13 @@ class CSSTokenizerFilter {
 					//Detecting the other end
 					for(int j=0;j<expression.length();j++)
 					{
-						if(expression.charAt(j)=='?' || expression.charAt(j)=='<' || expression.charAt(j)=='>' || expression.charAt(j)==' ')
-						{
+					    char c = expression.charAt(j);
+					    if(c == 'a') {
+                            noOfa++;
+					    } else if(!('0' <= c && '9' >= c)) {
 							endIndex=j;
 							break;
 						}
-						else if(expression.charAt(j)=='a')
-							noOfa++;
-
 					}
 					String firstPart=expression.substring(0,endIndex);
 					String secondPart="";
