@@ -924,7 +924,7 @@ class CSSTokenizerFilter {
 			//  ] ]
 			auxilaryVerifiers[25]=new CSSPropertyVerifier(null,Arrays.asList("ur"),null,null,true);
 			auxilaryVerifiers[141] = new CSSPropertyVerifier(null, Arrays.asList("in", "re"), null, null, true);
-			auxilaryVerifiers[142] = new CSSPropertyVerifier(null, null, null, Arrays.asList("25 141<0,1> 141<0,1>"), true, true);
+			auxilaryVerifiers[142] = new CSSPropertyVerifier(null, null, null, Arrays.asList("25 141 141", "25"), true, true);
 			auxilaryVerifiers[26] = new CSSPropertyVerifier(
 			Arrays.asList("auto", "default", "none",
 					"context-menu", "help", "pointer", "progress", "wait",
