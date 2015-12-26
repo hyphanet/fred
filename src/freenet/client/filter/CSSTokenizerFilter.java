@@ -3650,7 +3650,7 @@ class CSSTokenizerFilter {
 		public final boolean isAngle;      //an
 		public final boolean isColor;      //co
 		public final boolean isURI;        //ur
-		public final boolean isSelector;   //se
+		public final boolean isIDSelector;   //se
 		public final boolean isShape;      //sh
 		public final boolean isString;     //st
 		public final boolean isCounter;    //co
@@ -3707,10 +3707,10 @@ class CSSTokenizerFilter {
 			this.allowCommaDelimiters = allowCommaDelimiters;
 
 			boolean isInteger, isReal, isPercentage, isLength, isAngle, isColor,
-				isSelector, isURI, isShape, isString, isCounter, isIdentifier,
+				isIDSelector, isURI, isShape, isString, isCounter, isIdentifier,
 				isTime, isFrequency, isTransform;
 			isInteger = isReal = isPercentage = isLength = isAngle = isColor = isURI
-				= isShape = isString = isCounter = isIdentifier = isTime = isSelector
+				= isShape = isString = isCounter = isIdentifier = isTime = isIDSelector
 				= isFrequency = isTransform = false;
 			if(possibleValues != null) {
 				for(String possibleValue : possibleValues) {
@@ -3729,7 +3729,7 @@ class CSSTokenizerFilter {
 					else if("ur".equals(possibleValue))
 						isURI=true;	//ur
 					else if ("se".equals(possibleValue)) {
-						isSelector = true; //se
+						isIDSelector = true; //se
 					}
 					else if("sh".equals(possibleValue))
 						isShape=true;	//sh
@@ -3754,7 +3754,7 @@ class CSSTokenizerFilter {
 			this.isAngle = isAngle;
 			this.isColor = isColor;
 			this.isURI = isURI;
-			this.isSelector = isSelector;
+			this.isIDSelector = isIDSelector;
 			this.isShape = isShape;
 			this.isString = isString;
 			this.isCounter = isCounter;
@@ -3967,7 +3967,7 @@ class CSSTokenizerFilter {
 				return true;
 			}
 			
-			if (isSelector) {
+			if (isIDSelector) {
 				String result = HTMLelementVerifier(words[0].original);
 				if (!(result == null || result.equals(""))) {
 					return true;
