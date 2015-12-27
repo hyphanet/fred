@@ -1267,39 +1267,12 @@ public class PluginManager {
 					downloaded = true;
 					System.err.println("Downloading plugin "+name);
 					WrapperManager.signalStarting((int) MINUTES.toMillis(5));
-					File tempPluginFile = null;
-					OutputStream pluginOutputStream = null;
-					InputStream pluginInputStream = null;
 					try {
-						tempPluginFile = File.createTempFile("plugin-", ".jar", pluginDirectory);
-						tempPluginFile.deleteOnExit();
-
-
-						pluginOutputStream = new FileOutputStream(tempPluginFile);
-						pluginInputStream = pdl.getInputStream(progress);
-						byte[] buffer = new byte[1024];
-						int read;
-						while((read = pluginInputStream.read(buffer)) != -1) {
-							pluginOutputStream.write(buffer, 0, read);
-						}
-						pluginOutputStream.close();
-						if(tempPluginFile.length() == 0)
-							throw new PluginNotFoundException("downloaded zero length file");
-						if(!FileUtil.renameTo(tempPluginFile, pluginFile)) {
-							Logger.error(this, "could not rename temp file to plugin file");
-							throw new PluginNotFoundException("could not rename temp file to plugin file");
-						}
-						
+						downloadPluginFile(pdl, pluginDirectory, pluginFile, progress);
 						verifyDigest(pdl, pluginFile);
-
 					} catch(IOException ioe1) {
 						Logger.error(this, "could not load plugin", ioe1);
-						if(tempPluginFile != null)
-							tempPluginFile.delete();
 						throw new PluginNotFoundException("could not load plugin: " + ioe1.getMessage(), ioe1);
-					} finally {
-						Closer.close(pluginOutputStream);
-						Closer.close(pluginInputStream);
 					}
 				} catch(PluginNotFoundException e) {
 					if(i < RETRIES - 1) {
@@ -1462,6 +1435,31 @@ public class PluginManager {
 		}
 		}
 		return null;
+	}
+
+	private void downloadPluginFile(PluginDownLoader<?> pluginDownLoader, File pluginDirectory, File pluginFile, PluginProgress pluginProgress) throws IOException, PluginNotFoundException {
+		File tempPluginFile = File.createTempFile("plugin-", ".jar", pluginDirectory);
+		tempPluginFile.deleteOnExit();
+		OutputStream pluginOutputStream = null;
+		InputStream pluginInputStream = null;
+		try {
+			pluginOutputStream = new FileOutputStream(tempPluginFile);
+			pluginInputStream = pluginDownLoader.getInputStream(pluginProgress);
+			FileUtil.copy(pluginInputStream, pluginOutputStream, -1);
+		} catch (IOException ioe1) {
+			tempPluginFile.delete();
+			throw ioe1;
+		} finally {
+			Closer.close(pluginInputStream);
+			Closer.close(pluginOutputStream);
+		}
+		if (tempPluginFile.length() == 0) {
+			throw new PluginNotFoundException("downloaded zero length file");
+		}
+		if (!FileUtil.renameTo(tempPluginFile, pluginFile)) {
+			Logger.error(this, "could not rename temp file to plugin file");
+			throw new PluginNotFoundException("could not rename temp file to plugin file");
+		}
 	}
 
 	private void verifyDigest(PluginDownLoader<?> pluginDownLoader, File pluginFile) throws PluginNotFoundException {
