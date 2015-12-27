@@ -419,8 +419,8 @@ public class PluginManager {
 		return realStartPlugin(new PluginDownLoaderFreenet(client, node, false), filename, store, false);
 	}
 
-	private PluginInfoWrapper realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store, boolean ignoreOld) {
-	    if(!enabled) throw new IllegalStateException("Plugins disabled");
+	private PluginInfoWrapper realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store, boolean alwaysDownload) {
+	    if (!enabled) throw new IllegalStateException("Plugins disabled");
 		if(filename.trim().length() == 0)
 			return null;
 		final PluginProgress pluginProgress = new PluginProgress(filename, pdl);
@@ -431,7 +431,7 @@ public class PluginManager {
 		FredPlugin plug;
 		PluginInfoWrapper pi = null;
 		try {
-			plug = loadPlugin(pdl, filename, pluginProgress, ignoreOld);
+			plug = loadPlugin(pdl, filename, pluginProgress, alwaysDownload);
 			if (plug == null)
 				return null; // Already loaded
 			pluginProgress.setProgress(PluginProgress.PROGRESS_STATE.STARTING);
@@ -1219,15 +1219,14 @@ public class PluginManager {
 	 *
 	 * @param name
 	 *            The specification of the plugin
-	 * @param ignoreOld If true, ignore any old cached copies of the plugin,
-	 * and download a new version anyway. This is especially important on Windows,
-	 * where we will not usually be able to delete the file after determining
-	 * that it is too old. 
+	 * @param alwaysDownload If true, always download a new version anyway.
+	 * This is especially important on Windows, where we will not usually be
+	 * able to delete the file after determining that it is too old.
 	 * @return An instanciated object of the plugin
 	 * @throws PluginNotFoundException
 	 *             If anything goes wrong.
 	 */
-	private FredPlugin loadPlugin(PluginDownLoader<?> pdl, String name, PluginProgress progress, boolean ignoreOld) throws PluginNotFoundException {
+	private FredPlugin loadPlugin(PluginDownLoader<?> pdl, String name, PluginProgress progress, boolean alwaysDownload) throws PluginNotFoundException {
 
 		pdl.setSource(name);
 
@@ -1247,7 +1246,7 @@ public class PluginManager {
 		File[] filesInPluginDirectory = getPreviousInstances(pluginDirectory, filename);
 		boolean first = true;
 		for (File cachedFile : filesInPluginDirectory) {
-			if (first && !pluginIsLocal && !ignoreOld) {
+			if (first && !pluginIsLocal && !alwaysDownload) {
 				first = false;
 				pluginFile = new File(pluginDirectory, cachedFile.getName());
 				continue;
