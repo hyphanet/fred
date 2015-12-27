@@ -1,0 +1,18 @@
+language: java
+
+cache:
+  apt: true
+  directories:
+  - lib/
+
+before_install:
+  - sudo hostname freenet-build
+  - sudo apt-get install -y ant ant-optional junit4 libhamcrest-java
+  - mkdir -p lib/freenet/ && cd lib/ && wget -c https://bouncycastle.org/download/bcprov-jdk15on-152.jar && cd ..
+
+script: ant -Dlib.contrib.get=true
+
+jdk:
+  - oraclejdk7
+  - openjdk7
+  - openjdk6
