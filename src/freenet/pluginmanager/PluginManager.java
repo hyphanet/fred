@@ -1289,25 +1289,8 @@ public class PluginManager {
 							Logger.error(this, "could not rename temp file to plugin file");
 							throw new PluginNotFoundException("could not rename temp file to plugin file");
 						}
-
-						// try strongest first
-						String testsum = null;
-						String digest = pdl.getSHA256sum();
-						if(digest == null) {
-							digest = pdl.getSHA1sum();
-						} else {
-							testsum = getFileDigest(pluginFile, "SHA-256");
-						}
-						if(digest != null && testsum == null) {
-							testsum = getFileDigest(pluginFile, "SHA-1");
-						}
-
-						if(digest != null) {
-							if(!(digest.equalsIgnoreCase(testsum))) {
-								Logger.error(this, "Checksum verification failed, should be " + digest + " but was " + testsum);
-								throw new PluginNotFoundException("Checksum verification failed, should be " + digest + " but was " + testsum);
-							}
-						}
+						
+						verifyDigest(pdl, pluginFile);
 
 					} catch(IOException ioe1) {
 						Logger.error(this, "could not load plugin", ioe1);
@@ -1479,6 +1462,18 @@ public class PluginManager {
 		}
 		}
 		return null;
+	}
+
+	private void verifyDigest(PluginDownLoader<?> pluginDownLoader, File pluginFile) throws PluginNotFoundException {
+		String digest = pluginDownLoader.getSHA1sum();
+		if (digest == null) {
+			return;
+		}
+		String testsum = getFileDigest(pluginFile, "SHA-1");
+		if (!(digest.equalsIgnoreCase(testsum))) {
+            Logger.error(this, "Checksum verification failed, should be " + digest + " but was " + testsum);
+            throw new PluginNotFoundException("Checksum verification failed, should be " + digest + " but was " + testsum);
+        }
 	}
 
 	/**
