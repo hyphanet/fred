@@ -96,12 +96,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	public final static int DH_GENERATION_INTERVAL = 30000; // 30sec
 	/* How big is the FIFO? */
 	public final static int DH_CONTEXT_BUFFER_SIZE = 20;
-	/*
-	* The FIFO itself
-	* Get a lock on dhContextFIFO before touching it!
-	*/
-	/* The element which is about to be prunned from the FIFO */
-	private long jfkDHLastGenerationTimestamp = 0;
 	
 	private final LinkedList<ECDHLightContext> ecdhContextFIFO = new LinkedList<ECDHLightContext>();
 	private ECDHLightContext ecdhContextToBePrunned;
