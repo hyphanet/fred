@@ -259,7 +259,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    return DECODED.NOT_DECODED;
 		}
 		
-		DECODED ret = decodeUnmatched(buf, offset, length, peer, now, wantAnonAuth, opn);
+		DECODED ret = processUnmatched(buf, offset, length, peer, now, wantAnonAuth, opn);
 		
 		if(ret == DECODED.NOT_DECODED) {
 		    unmatchedCount.incrementAndGet();
@@ -268,7 +268,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return ret;
 	}
 	
-	private DECODED decodeUnmatched(byte[] buf, int offset, int length, Peer peer, long now,
+	/** Try all possible peers for the packet. Maybe one of them has changed IP address. */
+	private DECODED processUnmatched(byte[] buf, int offset, int length, Peer peer, long now,
 	        boolean wantAnonAuth, PeerNode opn) {
 		PeerNode[] peers = crypto.getPeerNodes();
 		// Disconnected node connecting on a new IP address?
