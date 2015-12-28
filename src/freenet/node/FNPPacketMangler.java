@@ -11,6 +11,7 @@ import java.security.interfaces.ECPublicKey;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.ECDH;
@@ -145,7 +146,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
         private long lastConnectivityStatusUpdate;
         private Status lastConnectivityStatus;
-
+        private AtomicInteger unmatchedCount = new AtomicInteger(0);
 
 	public FNPPacketMangler(Node node, NodeCrypto crypt, PacketSocketHandler sock) {
 		this.node = node;
@@ -237,7 +238,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    return DECODED.NOT_DECODED;
 		}
 		
-		return decodeUnmatched(buf, offset, length, peer, now, wantAnonAuth, opn);
+		DECODED ret = decodeUnmatched(buf, offset, length, peer, now, wantAnonAuth, opn);
+		
+		if(ret == DECODED.NOT_DECODED) {
+		    unmatchedCount.incrementAndGet();
+		}
+		
+		return ret;
 	}
 	
 	private DECODED decodeUnmatched(byte[] buf, int offset, int length, Peer peer, long now,
