@@ -147,6 +147,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         private long lastConnectivityStatusUpdate;
         private Status lastConnectivityStatus;
         private AtomicInteger unmatchedCount = new AtomicInteger(0);
+        // FIXME make configurable.
+        static final int MAX_UNMATCHED_PACKETS_IN_INTERVAL = 10;
         private int CLEAR_UNMATCHED_INTERVAL = (int) MINUTES.toMillis(5);
         
         private class ClearUnmatchedCount implements Runnable {
@@ -254,21 +256,39 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		
 		if(sock.getDetectedConnectivityStatus() == AddressTracker.Status.DEFINITELY_PORT_FORWARDED
 		        && peer != null && peer.isRealInternetAddress(false, true, false)) {
-		    if(logDEBUG) Logger.debug(this, "Not scanning all peers for unmatched packet from "+peer);
+		    if(logDEBUG) Logger.debug(this, "Not scanning all peers for unmatched packet from "+peer+
+		            " (not port forwarded)");
 		    // FIXME lastConnectivityStatus? Be careful, uses configs we don't care about.
+		    return DECODED.NOT_DECODED;
+		}
+
+		// FIXME consider a token bucket. We need to get "now" anyway.
+		
+		if(unmatchedCount.get() >= MAX_UNMATCHED_PACKETS_IN_INTERVAL) {
+		    if(logDEBUG) Logger.debug(this, "Not scanning all peers for unmatched packet from "+peer+
+		            " (too many packets in interval)");
 		    return DECODED.NOT_DECODED;
 		}
 		
 		DECODED ret = processUnmatched(buf, offset, length, peer, now, wantAnonAuth, opn);
 		
 		if(ret == DECODED.NOT_DECODED) {
-		    unmatchedCount.incrementAndGet();
+		    if(unmatchedCount.incrementAndGet() == MAX_UNMATCHED_PACKETS_IN_INTERVAL) {
+		        onTooManyUnmatchedPackets();
+		    }
 		}
 		
 		return ret;
 	}
 	
-	/** Try all possible peers for the packet. Maybe one of them has changed IP address. */
+	private void onTooManyUnmatchedPackets() {
+	    Logger.error(this, "Too many unmatched packets on "+(crypto.isOpennet?"opennet":"darknet")+
+	            " port, will ignore packets not easily matched for a while");
+	    // FIXME useralert, explain that this means a probable DoS or a former seednode and we
+	    // won't be able to reconnect quickly if peers change IP address.
+    }
+
+    /** Try all possible peers for the packet. Maybe one of them has changed IP address. */
 	private DECODED processUnmatched(byte[] buf, int offset, int length, Peer peer, long now,
 	        boolean wantAnonAuth, PeerNode opn) {
 		PeerNode[] peers = crypto.getPeerNodes();
