@@ -233,6 +233,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(sock.getDetectedConnectivityStatus() == AddressTracker.Status.DEFINITELY_PORT_FORWARDED
 		        && peer != null && peer.isRealInternetAddress(false, true, false)) {
 		    if(logDEBUG) Logger.debug(this, "Not scanning all peers for unmatched packet from "+peer);
+		    // FIXME lastConnectivityStatus? Be careful, uses configs we don't care about.
 		    return DECODED.NOT_DECODED;
 		}
 		
