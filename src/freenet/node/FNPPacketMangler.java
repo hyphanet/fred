@@ -229,6 +229,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		        return DECODED.DECODED;
 		}
 		
+		return decodeUnmatched(buf, offset, length, peer, now, wantAnonAuth, opn);
+	}
+	
+	private DECODED decodeUnmatched(byte[] buf, int offset, int length, Peer peer, long now,
+	        boolean wantAnonAuth, PeerNode opn) {
 		PeerNode[] peers = crypto.getPeerNodes();
 		// Disconnected node connecting on a new IP address?
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
@@ -254,7 +259,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(wantAnonAuth && wantAnonAuthChangeIP) {
 			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) return DECODED.DECODED;
 		}
-
+		
 		boolean didntTryOldOpennetPeers;
 		OpennetManager opennet = node.getOpennet();
 		if(opennet != null) {
