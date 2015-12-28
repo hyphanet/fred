@@ -401,7 +401,7 @@ class CSSTokenizerFilter {
 		
 		// <align-items>
 		// auto | stretch | <baseline-position> | [ <item-position> && <overflow-position>? ]
-		auxilaryVerifiers[125] = new CSSPropertyVerifier(Arrays.asList("auto", "stretch", "baseline", "last-baseline", "space-between", "space-around", "space-evenly"), null, null, null, true);
+		auxilaryVerifiers[125] = new CSSPropertyVerifier(Arrays.asList("auto", "stretch", "baseline", "last-baseline"), null, null, null, true);
 		// <item-position> = center | start | end | self-start | self-end | flex-start | flex-end | left | right;
 		auxilaryVerifiers[126] = new CSSPropertyVerifier(Arrays.asList("center", "start", "end", "self-start", "self-end", "flex-start", "flex-end", "left", "right"), null, null, null, true);
 		// [ <item-position> && <overflow-position>? ]
