@@ -147,6 +147,26 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         private long lastConnectivityStatusUpdate;
         private Status lastConnectivityStatus;
         private AtomicInteger unmatchedCount = new AtomicInteger(0);
+        private int CLEAR_UNMATCHED_INTERVAL = (int) MINUTES.toMillis(5);
+        
+        private class ClearUnmatchedCount implements Runnable {
+
+            @Override
+            public void run() {
+                unmatchedCount.set(0);
+                queue();
+            }
+            
+            private final void queue() {
+                int interval = CLEAR_UNMATCHED_INTERVAL + 
+                    node.fastWeakRandom.nextInt(CLEAR_UNMATCHED_INTERVAL);
+                node.ticker.queueTimedJob(this, interval);
+            }
+            
+        };
+        
+        private ClearUnmatchedCount clearUnmatchedCountJob = new ClearUnmatchedCount();
+
 
 	public FNPPacketMangler(Node node, NodeCrypto crypt, PacketSocketHandler sock) {
 		this.node = node;
@@ -167,6 +187,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			_fillJFKECDHFIFO();
 		}
 		this.authHandlingThread.start(node.executor, "FNP incoming auth packet handler thread");
+		clearUnmatchedCountJob.queue();
 	}
 
 	/**
