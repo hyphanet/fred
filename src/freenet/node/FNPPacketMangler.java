@@ -49,6 +49,7 @@ import freenet.support.TimeUtil;
 import freenet.support.io.FileUtil;
 import freenet.support.io.InetAddressComparator;
 import freenet.support.io.NativeThread;
+import freenet.support.transport.ip.IPUtil;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -227,6 +228,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(wantAnonAuth) {
 		    if(tryProcessAuthAnon(buf, offset, length, peer))
 		        return DECODED.DECODED;
+		}
+		
+		if(sock.getDetectedConnectivityStatus() == AddressTracker.Status.DEFINITELY_PORT_FORWARDED
+		        && peer != null && peer.isRealInternetAddress(false, true, false)) {
+		    if(logDEBUG) Logger.debug(this, "Not scanning all peers for unmatched packet from "+peer);
+		    return DECODED.NOT_DECODED;
 		}
 		
 		return decodeUnmatched(buf, offset, length, peer, now, wantAnonAuth, opn);
