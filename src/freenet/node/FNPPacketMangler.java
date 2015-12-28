@@ -221,8 +221,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				}
 			}
 		}
-		PeerNode[] peers = crypto.getPeerNodes();
+
 		if(node.isStopping()) return DECODED.SHUTTING_DOWN;
+		
+		if(wantAnonAuth) {
+		    if(tryProcessAuthAnon(buf, offset, length, peer))
+		        return DECODED.DECODED;
+		}
+		
+		PeerNode[] peers = crypto.getPeerNodes();
 		// Disconnected node connecting on a new IP address?
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
 			for(PeerNode pn: peers) {
@@ -263,11 +270,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				didntTryOldOpennetPeers = true;
 		} else
 			didntTryOldOpennetPeers = false;
-		if(wantAnonAuth) {
-			if(tryProcessAuthAnon(buf, offset, length, peer))
-				return DECODED.DECODED;
-		}
-		
 		if(wantAnonAuth && !wantAnonAuthChangeIP) {
 			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) {
 				// This can happen when a node is upgraded from a SeedClientPeerNode to an OpennetPeerNode.
