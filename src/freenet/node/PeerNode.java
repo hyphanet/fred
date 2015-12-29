@@ -230,7 +230,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	final long swapIdentifier;
 	/** Negotiation types supported */
 	int[] negTypes;
-	/** Integer hash of node identity. Used as hashCode(). */
+	/** Integer hash of the peer's public key. Used as hashCode(). */
 	final int hashCode;
 	/** The Node we serve */
 	final Node node;
