@@ -2012,7 +2012,7 @@ public class PeerManager {
 		PeerNode[] peers = pn.isOpennet() ? getOpennetAndSeedServerPeers() : getDarknetPeers();
 
 		for(PeerNode peer: peers)
-			if(Arrays.equals(pn.getIdentity(), peer.getIdentity()))
+			if(Arrays.equals(pn.getPubKeyHash(), peer.getPubKeyHash()))
 				return peer;
 
 		return null;
