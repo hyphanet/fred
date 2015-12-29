@@ -57,11 +57,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * @author amphibian
  *
- * Encodes and decodes packets for FNP.
- *
- * This includes encryption, authentication, and may later
- * include queueing etc. (that may require some interface
- * changes in IncomingPacketFilter).
+ * Handles connection setup and more complex packet decoding (cases where we don't immediately know
+ * which peer sent the packet). Connection setup uses JFKi, but with an outer obfuscation layer
+ * keyed on the "identity" of both the peer and this node.
+ * 
+ * @see freenet.io.comm.IncomingPacketFilter
+ * @see NewPacketFormat
  */
 public class FNPPacketMangler implements OutgoingPacketMangler {
     static { Logger.registerClass(FNPPacketMangler.class); }

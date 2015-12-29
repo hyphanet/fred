@@ -216,9 +216,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/** After this many failed handshakes, we start the ARK fetcher. */
 	private static final int MAX_HANDSHAKE_COUNT = 2;
 	final PeerLocation location;
-	/** Node identity; for now a block of data, in future a
-	* public key (FIXME). Cannot be changed.
-	*/
+	/** Node "identity". This is a random 32 byte block of data, which may be derived from the 
+	 * node's public key. It cannot be changed, and is only used for the outer keyed obfuscation 
+	 * on connection setup packets in FNPPacketMangler. */
 	final byte[] identity;
 	final String identityAsBase64String;
 	/** Hash of node identity. Used in setup key. */

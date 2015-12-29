@@ -59,7 +59,8 @@ public class NodeCrypto {
 	public FNPPacketMangler packetMangler;
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int portNumber;
-	byte[] myIdentity; // FIXME: simple identity block; should be unique
+	/** @see PeerNode.identity */
+	byte[] myIdentity;
 	/** Hash of identity. Used as setup key. */
 	byte[] identityHash;
 	/** Hash of hash of identity i.e. hash of setup key. */
