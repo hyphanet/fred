@@ -106,7 +106,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private static final ECDH.Curves ecdhCurveToUse = ECDH.Curves.P256;
 	private long jfkECDHLastGenerationTimestamp = 0;
 
-	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = SHA256.getDigestLength();
 	/** The size of the key used to authenticate the hmac */
 	private static final int TRANSIENT_KEY_SIZE = HASH_LENGTH;
@@ -126,25 +125,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			maybeResetTransientKey();
 		}
 	};
-	/** Minimum headers overhead */
-	private static final int HEADERS_LENGTH_MINIMUM =
-		4 + // sequence number
-		RANDOM_BYTES_LENGTH + // random junk
-		1 + // version
-		1 + // assume seqno != -1; otherwise would be 4
-		4 + // other side's seqno
-		1 + // number of acks
-		0 + // assume no acks
-		1 + // number of resend reqs
-		0 + // assume no resend requests
-		1 + // number of ack requests
-		0 + // assume no ack requests
-		1 + // no forgotten packets
-		HASH_LENGTH + // hash
-		1; // number of messages
-	/** Headers overhead if there is one message and no acks. */
-	static public final int HEADERS_LENGTH_ONE_MESSAGE =
-		HEADERS_LENGTH_MINIMUM + 2; // 2 bytes = length of message. rest is the same.
 
         private long lastConnectivityStatusUpdate;
         private Status lastConnectivityStatus;
