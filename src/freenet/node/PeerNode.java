@@ -423,14 +423,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	/**
 	* Create a PeerNode from a SimpleFieldSet containing a
-	* node reference for one. This must contain the following
-	* fields:
-	* - identity
-	* - version
-	* - location
-	* - physical.udp
-	* - setupKey
-	* Do not add self to PeerManager.
+	* node reference for one. Does not add self to PeerManager.
 	* @param fs The node reference to parse.
 	* @param node2 The running Node we are part of.
 	* @param fromLocal True if the noderef was read from the stored peers file and can contain
