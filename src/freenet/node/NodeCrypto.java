@@ -291,7 +291,8 @@ public class NodeCrypto {
 		myARKNumber = 0;
 		clientNonce = new byte[32];
 		node.random.nextBytes(clientNonce);
-		myIdentity = Arrays.copyOf(ecdsaPubKeyHash, IDENTITY_LENGTH);
+		byte[] myIdentity = new byte[IDENTITY_LENGTH];
+		node.random.nextBytes(myIdentity);
 		identityHash = SHA256.digest(myIdentity);
 		identityHashHash = SHA256.digest(identityHash);
 		anonSetupCipher.initialize(identityHash);
