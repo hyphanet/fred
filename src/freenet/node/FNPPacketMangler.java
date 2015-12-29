@@ -50,7 +50,6 @@ import freenet.support.TimeUtil;
 import freenet.support.io.FileUtil;
 import freenet.support.io.InetAddressComparator;
 import freenet.support.io.NativeThread;
-import freenet.support.transport.ip.IPUtil;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
