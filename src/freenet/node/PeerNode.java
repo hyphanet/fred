@@ -257,12 +257,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	/** Time at which we should send the next handshake request */
 	protected long sendHandshakeTime;
-	/** Time after which we log message requeues while rate limiting */
-	private long nextMessageRequeueLogTime;
-	/** Interval between rate limited message requeue logs (in milliseconds) */
-	private static final long messageRequeueLogRateLimitInterval = 1000;
-	/** Number of messages to be requeued after which we rate limit logging of such */
-	private static final int messageRequeueLogRateLimitThreshold = 15;
 	/** Version of the node */
 	private String version;
 	/** Total input */
