@@ -101,9 +101,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	* The FIFO itself
 	* Get a lock on dhContextFIFO before touching it!
 	*/
-	/* The element which is about to be prunned from the FIFO */
-	private long jfkDHLastGenerationTimestamp = 0;
-	
 	private final LinkedList<ECDHLightContext> ecdhContextFIFO = new LinkedList<ECDHLightContext>();
 	private ECDHLightContext ecdhContextToBePrunned;
 	private static final ECDH.Curves ecdhCurveToUse = ECDH.Curves.P256;
