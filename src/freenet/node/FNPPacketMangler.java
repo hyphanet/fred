@@ -151,21 +151,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		this.authHandlingThread.start(node.executor, "FNP incoming auth packet handler thread");
 	}
 
-	/**
-	 * Packet format:
-	 *
-	 * E_session_ecb(
-	 *         4 bytes:  sequence number XOR first 4 bytes of node identity
-	 *         12 bytes: first 12 bytes of H(data)
-	 *         )
-	 * E_session_ecb(
-	 *         16 bytes: bytes 12-28 of H(data)
-	 *         ) XOR previous ciphertext XOR previous plaintext
-	 * 4 bytes: bytes 28-32 of H(data) XOR bytes 0-4 of H(data)
-	 * E_session_pcfb(data) // IV = first 32 bytes of packet
-	 *
-	 */
-
 	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
 		/**
 		 * Look up the Peer.
