@@ -254,14 +254,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		        return DECODED.DECODED;
 		}
 		
-		if(sock.getDetectedConnectivityStatus() == AddressTracker.Status.DEFINITELY_PORT_FORWARDED
-		        && peer != null && peer.isRealInternetAddress(false, true, false)) {
-		    if(logDEBUG) Logger.debug(this, "Not scanning all peers for unmatched packet from "+peer+
-		            " (not port forwarded)");
-		    // FIXME lastConnectivityStatus? Be careful, uses configs we don't care about.
-		    return DECODED.NOT_DECODED;
-		}
-
 		// FIXME consider a token bucket. We need to get "now" anyway.
 		
 		if(unmatchedCount.get() >= MAX_UNMATCHED_PACKETS_IN_INTERVAL) {
@@ -270,6 +262,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    return DECODED.NOT_DECODED;
 		}
 		
+        if(sock.getDetectedConnectivityStatus() == AddressTracker.Status.DEFINITELY_PORT_FORWARDED
+                && peer != null && peer.isRealInternetAddress(false, true, false)) {
+            if(logDEBUG) Logger.debug(this, "Not scanning all peers for unmatched packet from "+peer+
+                    " (not port forwarded)");
+            // FIXME lastConnectivityStatus? Be careful, uses configs we don't care about.
+            return DECODED.NOT_DECODED;
+        }
+
 		DECODED ret = processUnmatched(buf, offset, length, peer, now, wantAnonAuth, opn);
 		
 		if(ret == DECODED.NOT_DECODED) {
