@@ -151,17 +151,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		this.authHandlingThread.start(node.executor, "FNP incoming auth packet handler thread");
 	}
 
-	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
-		/**
-		 * Look up the Peer.
-		 * If we know it, check the packet with that key.
-		 * Otherwise try all of them (on the theory that nodes
-		 * occasionally change their IP addresses).
-		 */
-		PeerNode opn = node.peers.getByPeer(peer);
-		return process(buf, offset, length, peer, opn, now);
-	}
-
 	/**
 	 * Decrypt and authenticate packet.
 	 * Then feed it to USM.checkFilters.
