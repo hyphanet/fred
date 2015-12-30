@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.ParseException;
@@ -52,7 +55,7 @@ public final class SessionManager {
 	/**
 	 * The amount of milliseconds after which a session is deleted due to expiration.
 	 */
-	public static final long MAX_SESSION_IDLE_TIME = 1 * 60 * 60 * 1000;
+	public static final long MAX_SESSION_IDLE_TIME = HOURS.toMillis(1);
 	
 	public static final String SESSION_COOKIE_NAME = "SessionID"; 
 	
@@ -419,7 +422,7 @@ public final class SessionManager {
 			Session session = sessions.nextElement();
 			
 			if(session.getExpirationTime() < previousTime) {
-				long sessionAge = (CurrentTimeUTC.getInMillis() - session.getExpirationTime()) / (60 * 60 * 1000);
+				long sessionAge = HOURS.convert(CurrentTimeUTC.getInMillis() - session.getExpirationTime(), MILLISECONDS);
 				Logger.error(this, "Session LRU queue out of order! Found session which is " + sessionAge + " hour old: " + session); 
 				Logger.error(this, "Deleting all sessions...");
 				

@@ -30,8 +30,8 @@ public class ByteArrayWrapperTest extends TestCase {
 		assertEquals(wrapper1, wrapper2);
 		assertTrue(wrapper1.equals(wrapper2));
 		assertFalse(wrapper2.equals(wrapper3));
-		assertFalse(wrapper1.equals(new String()));
-		
+		assertFalse(wrapper1.equals(""));
+
 		Map<ByteArrayWrapper, ByteArrayWrapper> map = new HashMap<ByteArrayWrapper, ByteArrayWrapper>();
 		
 		map.put(wrapper1, wrapper1);

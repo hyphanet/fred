@@ -3,16 +3,17 @@ package freenet.crypt;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.Arrays;
-
-import com.db4o.ObjectContainer;
 
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
-public class HashResult implements Comparable<HashResult>, Cloneable {
+public class HashResult implements Comparable<HashResult>, Cloneable, Serializable {
 
-	/** The type of hash. */
+    private static final long serialVersionUID = 1L;
+    /** The type of hash. */
 	public final HashType type;
 	/** The result of the hash. Immutable. */
 	private final byte[] result;
@@ -24,9 +25,16 @@ public class HashResult implements Comparable<HashResult>, Cloneable {
 		this.result = bs;
 		assert(bs.length == type.hashLength);
 	}
+	
+	protected HashResult() {
+        // For serialization.
+	    type = null;
+	    result = null;
+	}
 
 	public static HashResult[] readHashes(DataInputStream dis) throws IOException {
 		int bitmask = dis.readInt();
+		if(bitmask == 0) return null;
 		int count = 0;
 		for(HashType h : HashType_values) {
 			if((bitmask & h.bitmask) == h.bitmask) {
@@ -50,6 +58,7 @@ public class HashResult implements Comparable<HashResult>, Cloneable {
 	}
 
 	public static void write(HashResult[] hashes, DataOutputStream dos) throws IOException {
+	    if(hashes == null) hashes = new HashResult[0];
 		int bitmask = 0;
 		for(HashResult hash : hashes)
 			bitmask |= hash.type.bitmask;
@@ -64,7 +73,7 @@ public class HashResult implements Comparable<HashResult>, Cloneable {
 			h.writeTo(dos);
 	}
 
-	private void writeTo(DataOutputStream dos) throws IOException {
+	public void writeTo(OutputStream dos) throws IOException {
 		// Any given hash type has a fixed hash length, so just push the bytes.
 		dos.write(result);
 	}
@@ -74,12 +83,6 @@ public class HashResult implements Comparable<HashResult>, Cloneable {
 		if(type.bitmask == h.type.bitmask) return 0;
 		if(type.bitmask > h.type.bitmask) return 1;
 		/* else if(type.bitmask < h.type.bitmask) */ return -1;
-	}
-
-	public void removeFrom(ObjectContainer container) {
-		// HashType is an enum, so we don't need to worry about it.
-		// Db4o does the right thing with them.
-		container.delete(this);
 	}
 
 	public static long makeBitmask(HashResult[] hashes) {

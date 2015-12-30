@@ -5,7 +5,6 @@ package freenet.node;
 
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
 
 /**
@@ -48,9 +47,6 @@ public class DNSRequester implements Runnable {
         while(true) {
             try {
                 realRun();
-            } catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("Will retry above failed operation...");
             } catch (Throwable t) {
                 Logger.error(this, "Caught in DNSRequester: "+t, t);
             }

@@ -1,5 +1,8 @@
 package freenet.node.probe;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
@@ -11,6 +14,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
+import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
@@ -74,29 +78,24 @@ public class Probe implements ByteCounter {
 	/**
 	 * In ms, per HTL above HTL = 1.
 	 */
-	public static final int TIMEOUT_PER_HTL = 3000;
+	public static final long TIMEOUT_PER_HTL = SECONDS.toMillis(3);
 
 	/**
 	 * In ms, to account for probabilistic decrement at HTL = 1.
 	 */
-	public static final int TIMEOUT_HTL1 = (int)(TIMEOUT_PER_HTL / DECREMENT_PROBABILITY);
-
-	/**
-	 * Minute in milliseconds.
-	 */
-	private static final long MINUTE = 60 * 1000;
+	public static final long TIMEOUT_HTL1 = (long) (TIMEOUT_PER_HTL / DECREMENT_PROBABILITY);
 
 	/**
 	 * To make the timing less obvious when a node responds with a local result instead of forwarding at
 	 * HTL = 1, delay for a number of milliseconds, specifically an exponential distribution with this constant as
 	 * its mean.
 	 */
-	public static final long WAIT_BASE = 1000L;
+	public static final long WAIT_BASE = SECONDS.toMillis(1);
 
 	/**
 	 * Maximum number of milliseconds to wait before sending a response.
 	 */
-	public static final long WAIT_MAX = 2000L;
+	public static final long WAIT_MAX = SECONDS.toMillis(2);
 
 	/**
 	 * Maximum number of probes accepted from a single peer in the past minute.
@@ -438,7 +437,7 @@ public class Probe implements ByteCounter {
 			return;
 		}
 		//One-minute window on acceptance; free up this probe slot in 60 seconds.
-		timer.schedule(task, MINUTE);
+		timer.schedule(task, MINUTES.toMillis(1));
 
 		/*
 		 * Route to a peer, using Metropolis-Hastings correction and ignoring backoff to get a more uniform
@@ -552,7 +551,7 @@ public class Probe implements ByteCounter {
 	 * @return filter for the requested result type, probe error, and probe refusal.
 	 */
 	private static MessageFilter createResponseFilter(final Type type, final PeerNode candidate, final long uid, final byte htl) {
-		final int timeout = (htl - 1) * TIMEOUT_PER_HTL + TIMEOUT_HTL1;
+		final long timeout = (htl - 1) * TIMEOUT_PER_HTL + TIMEOUT_HTL1;
 		final MessageFilter filter = createFilter(candidate, uid, timeout);
 
 		switch (type) {
@@ -576,7 +575,7 @@ public class Probe implements ByteCounter {
 		return filter;
 	}
 
-	private static MessageFilter createFilter(final PeerNode source, final long uid, final int timeout) {
+	private static MessageFilter createFilter(final PeerNode source, final long uid, final long timeout) {
 		return MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(timeout);
 	}
 
@@ -638,10 +637,15 @@ public class Probe implements ByteCounter {
 			 * assumption that a change of 0.002 is enough to make it still useful for statistics but not
 			 * useful for identification, 0.002 change / 0.2 link length = 0.01 sigma.
 			 */
+			double myLoc = node.getLocation();
 			for (PeerNode peer : peers) {
-				linkLengths[i++] = (float)randomNoise(Math.min(Math.abs(peer.getLocation() - node.getLocation()),
-				                                         1.0 - Math.abs(peer.getLocation() - node.getLocation())), 0.01);
+				double peerLoc = peer.getLocation();
+				if (Location.isValid(peerLoc)) {
+					linkLengths[i++] = (float)randomNoise(Location.distance(myLoc, peerLoc), 0.01);
+				}
 			}
+			linkLengths = java.util.Arrays.copyOf(linkLengths, i);
+			java.util.Arrays.sort(linkLengths);
 			listener.onLinkLengths(linkLengths);
 			break;
 		case LOCATION:

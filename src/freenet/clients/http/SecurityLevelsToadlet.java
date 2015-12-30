@@ -58,19 +58,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase()
-			        .getString("Toadlet.unauthorized"));
-			return;
-		}
-
-		String formPassword = request.getPartAsStringFailsafe("formPassword", 32);
-		if((formPassword == null) || !formPassword.equals(core.formPassword)) {
-			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
-			headers.put("Location", "/seclevels/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		if(request.isPartSet("seclevels")) {
 			// Handle the security level changes.
@@ -464,17 +453,14 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 
     public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-
-		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("SecurityLevelsToadlet.fullTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
-		contentNode.addChild(core.alerts.createSummary());
+		contentNode.addChild(ctx.getAlertManager().createSummary());
 
 		drawSecurityLevelsPage(contentNode, ctx);
 
@@ -575,17 +561,6 @@ public class SecurityLevelsToadlet extends Toadlet {
 			HTMLNode inner = input.addChild("p").addChild("i");
 			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold" },
 					new HTMLNode[] { HTMLNode.STRONG });
-			if(level != PHYSICAL_THREAT_LEVEL.LOW && physicalLevel == PHYSICAL_THREAT_LEVEL.LOW && node.hasDatabase() && !node.isDatabaseEncrypted()) {
-				if(node.autoChangeDatabaseEncryption())
-					inner.addChild("b", " "+l10nSec("warningWillEncrypt"));
-				else
-					inner.addChild("b", " "+l10nSec("warningWontEncrypt"));
-			} else if(level == PHYSICAL_THREAT_LEVEL.LOW && physicalLevel != PHYSICAL_THREAT_LEVEL.LOW && node.hasDatabase() && node.isDatabaseEncrypted()) {
-				if(node.autoChangeDatabaseEncryption())
-					inner.addChild("b", " "+l10nSec("warningWillDecrypt"));
-				else
-					inner.addChild("b", " "+l10nSec("warningWontDecrypt"));
-			}
 			if(level == PHYSICAL_THREAT_LEVEL.MAXIMUM && node.hasDatabase()) {
 				inner.addChild("b", " "+l10nSec("warningMaximumWillDeleteQueue"));
 			}

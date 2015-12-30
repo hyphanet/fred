@@ -9,6 +9,7 @@
 /generator/js/tests/lib
 /generator/js/tests/bin
 /generator/js/gwt-unitCache/
+/run
 .classpath
 *.swp
 *.iml

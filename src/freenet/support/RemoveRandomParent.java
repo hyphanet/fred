@@ -1,17 +1,13 @@
 package freenet.support;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
-import freenet.client.async.HasCooldownCacheItem;
+import freenet.client.async.RequestSelectionTreeNode;
 
-public interface RemoveRandomParent extends HasCooldownCacheItem {
+public interface RemoveRandomParent extends RequestSelectionTreeNode {
 
-	/** If the specified RemoveRandom is empty, remove it.
-	 * LOCKING: Must be called with no locks held, particularly no locks on the
-	 * RemoveRandom, because we take locks in order!
+	/** Remove the specified RemoveRandom, and propagate upwards if the parent is now empty.
 	 * @param context 
 	 */
-	public void maybeRemove(RemoveRandom r, ObjectContainer container, ClientContext context);
+	public void maybeRemove(RemoveRandom r, ClientContext context);
 
 }

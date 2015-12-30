@@ -50,18 +50,18 @@ public class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	private static final int buildNumber = 1444;
+	private static final int buildNumber = 1470;
 
 	/** Oldest build of fred we will talk to *before* _cal */
-	private static final int oldLastGoodBuild = 1439;
+	private static final int oldLastGoodBuild = 1465;
 	/** Oldest build of fred we will talk to *after* _cal */
-	private static final int newLastGoodBuild = 1442;
+	private static final int newLastGoodBuild = 1466;
 	static final long transitionTime;
 
 	static {
 		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 		// year, month - 1 (or constant), day, hour, minute, second
-		_cal.set( 2013, Calendar.MAY, 21, 0, 0, 0 );
+		_cal.set( 2014, Calendar.NOVEMBER, 16, 0, 0, 0 );
 		transitionTime = _cal.getTimeInMillis();
 	}
 
@@ -146,13 +146,13 @@ public class Version {
 	 */
 	public static String[] getVersion() {
 		String[] ret =
-			{ nodeName, nodeVersion, protocolVersion, "" + buildNumber };
+			{ nodeName, nodeVersion, protocolVersion,  String.valueOf(buildNumber) };
 		return ret;
 	}
 
 	public static String[] getLastGoodVersion() {
 		String[] ret =
-			{ nodeName, nodeVersion, protocolVersion, "" + lastGoodBuild() };
+			{ nodeName, nodeVersion, protocolVersion,  String.valueOf(lastGoodBuild()) };
 		return ret;
 	}
 

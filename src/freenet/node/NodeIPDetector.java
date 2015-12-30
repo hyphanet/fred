@@ -1,5 +1,7 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -9,6 +11,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -119,7 +122,7 @@ public class NodeIPDetector {
 	public NodeIPDetector(Node node) {
 		this.node = node;
 		ipDetectorManager = new IPDetectorPluginManager(node, this);
-		ipDetector = new IPAddressDetector(10*1000, this);
+		ipDetector = new IPAddressDetector(SECONDS.toMillis(10), this);
 		invalidAddressOverrideAlert = new InvalidAddressOverrideUserAlert(node);
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert(node);
 		portDetectors = new NodeIPPortDetector[0];
@@ -286,9 +289,9 @@ public class NodeIPDetector {
 				}
 			}
 			if(countsByPeer.size() == 1) {
-				Iterator<FreenetInetAddress> it = countsByPeer.keySet().iterator();
-				FreenetInetAddress addr = it.next();
-				confidence = countsByPeer.get(addr);
+                Entry<FreenetInetAddress, Integer> countByPeer = countsByPeer.entrySet().iterator().next();
+				FreenetInetAddress addr = countByPeer.getKey();
+				confidence = countByPeer.getValue();
 				Logger.minor(this, "Everyone agrees we are "+addr);
 				if(!addresses.contains(addr)) {
 					if(addr.isRealInternetAddress(false, false, false))
@@ -522,7 +525,7 @@ public class NodeIPDetector {
 			} catch (UnknownHostException e) {
 				String msg = "Unknown host: "+ipHintString+" in config: "+e.getMessage();
 				Logger.error(this, msg);
-				System.err.println(msg+"");
+				System.err.println(msg);
 				oldIPAddress = null;
 			}
 		}
@@ -550,7 +553,7 @@ public class NodeIPDetector {
 				for(NodeIPPortDetector detector: detectors)
 					detector.startARK();
 			}
-		}, 60*1000);
+		}, SECONDS.toMillis(60));
 	}
 
 	public void onConnectedPeer() {

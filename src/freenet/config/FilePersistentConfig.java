@@ -34,7 +34,7 @@ public class FilePersistentConfig extends PersistentConfig {
 	final File tempFilename;
 	final protected String header;
 	protected final Object storeSync = new Object();
-	private boolean writeOnFinished;
+	protected boolean writeOnFinished;
 
         private static volatile boolean logMINOR;
 	static {

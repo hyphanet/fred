@@ -1,5 +1,7 @@
 package freenet.support;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
@@ -277,7 +279,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					int x = gc.get(INTERVAL);
 					gc.set(INTERVAL, (x / INTERVAL_MULTIPLIER) * INTERVAL_MULTIPLIER);
 				}
-				findOldLogFiles(gc);
+				findOldLogFiles((GregorianCalendar)gc.clone());
 				currentFilename = new File(getHourLogName(gc, -1, true));
 				synchronized(logFiles) {
 					if((!logFiles.isEmpty()) && logFiles.getLast().filename.equals(currentFilename)) {
@@ -337,7 +339,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							try {
 								if(thisTime < maxWait) {
 									// Wait no more than 500ms since the CloserThread might be waiting for closedFinished.
-									list.wait(Math.min(500, (int)(Math.min(maxWait-thisTime, Integer.MAX_VALUE))));
+									list.wait(Math.min(500L, maxWait - thisTime));
 									thisTime = System.currentTimeMillis();
 									if(listBytes < LIST_WRITE_THRESHOLD) {
 										// Don't write at all until the lower bytes threshold is exceeded, or the time threshold is.
@@ -527,7 +529,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	
 	static {
 		try {
-			BOM = (""+(char)0xFEFF).getBytes(ENCODING);
+			BOM = "\uFEFF".getBytes(ENCODING);
 		} catch (UnsupportedEncodingException e) {
 			throw new Error(e);
 		}
@@ -604,6 +606,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 
 	/** Initialize oldLogFiles */
 	public void findOldLogFiles(GregorianCalendar gc) {
+		gc = (GregorianCalendar) gc.clone();
 		File currentFilename = new File(getHourLogName(gc, -1, true));
 		System.out.println("Finding old log files. New log file is "+currentFilename);
 		File numericSameDateFilename;
@@ -1082,7 +1085,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		public void run() {
 			synchronized(list) {
 				closed = true;
-				long deadline = System.currentTimeMillis() + 10*1000;
+				long deadline = System.currentTimeMillis() + SECONDS.toMillis(10);
 				while(!closedFinished) {
 					int wait = (int) (deadline - System.currentTimeMillis());
 					if(wait <= 0) return;

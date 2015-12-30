@@ -314,6 +314,7 @@ public class SecurityLevels {
 		if(newThreatLevel == null) throw new NullPointerException();
 		NETWORK_THREAT_LEVEL oldLevel;
 		synchronized(this) {
+            if(networkThreatLevel == newThreatLevel) return;
 			oldLevel = networkThreatLevel;
 			networkThreatLevel = newThreatLevel;
 		}
@@ -324,6 +325,7 @@ public class SecurityLevels {
 		if(newThreatLevel == null) throw new NullPointerException();
 		PHYSICAL_THREAT_LEVEL oldLevel;
 		synchronized(this) {
+		    if(physicalThreatLevel == newThreatLevel) return;
 			oldLevel = physicalThreatLevel;
 			physicalThreatLevel = newThreatLevel;
 		}

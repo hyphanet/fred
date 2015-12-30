@@ -3,11 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 public interface BaseRequestThrottle {
 
-	public static final long DEFAULT_DELAY = 200;
-	static final long MAX_DELAY = 5*60*1000;
-	static final long MIN_DELAY = 20;
+	public static final long DEFAULT_DELAY = MILLISECONDS.toMillis(200);
+	static final long MAX_DELAY = MINUTES.toMillis(5);
+	static final long MIN_DELAY = MILLISECONDS.toMillis(20);
 
 	/**
 	 * Get the current inter-request delay.

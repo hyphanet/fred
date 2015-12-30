@@ -106,10 +106,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	public static final String TOADLET_URL = "/wizard/";
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		//Read the current step from the URL parameter, defaulting to the welcome page if unset or invalid..
 		WIZARD_STEP currentStep;
@@ -168,19 +166,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-
-		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
-			return;
-		}
-
-		String passwd = request.getPartAsStringFailsafe("formPassword", 32);
-		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
-		if(noPassword) {
-			if(logMINOR) Logger.minor(this, "No password ("+passwd+" should be "+core.formPassword+ ')');
-			super.writeTemporaryRedirect(ctx, "invalid/unhandled data", "/");
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		WIZARD_STEP currentStep;
 		try {

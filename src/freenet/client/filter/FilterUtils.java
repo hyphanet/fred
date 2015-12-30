@@ -10,6 +10,8 @@ public class FilterUtils {
 	static {
 	    Logger.registerClass(FilterUtils.class);
 	}
+	
+	private final static int MAX_NTH = 999999;  // Limit range of numbers allowed in isNth, due to incorrect behavior found in webkit based browsers.
 
 	//Basic Data types
 	public static boolean isInteger(String strValue)
@@ -58,14 +60,22 @@ public class FilterUtils {
 	private final static HashSet<String> allowedUnits=new HashSet<String>();
 	static
 	{
+		// W3C CSS Spec Section 5 (http://www.w3.org/TR/css3-values/)
+		// "Distance Units: the '<length>' type"
 		allowedUnits.add("em");
 		allowedUnits.add("ex");
-		allowedUnits.add("px");
-		allowedUnits.add("in");
+		allowedUnits.add("ch");
+		allowedUnits.add("rem");
 		allowedUnits.add("cm");
 		allowedUnits.add("mm");
+		allowedUnits.add("in");
 		allowedUnits.add("pt");
 		allowedUnits.add("pc");
+		allowedUnits.add("px");
+		allowedUnits.add("vw");
+		allowedUnits.add("vh");
+		allowedUnits.add("vmin");
+		allowedUnits.add("vmax");
 	}
 	public static boolean isPercentage(String value)
 	{
@@ -93,23 +103,32 @@ public class FilterUtils {
 	{
 		String lengthValue=null;
 		value=value.trim();
-		if(isSVG)
-		{
-		if(value.charAt(value.length()-1)=='%')
-			lengthValue=value.substring(0,value.length()-2);
+		if (value.length() == 0) {
+			return false;
+		}
+		if (isSVG) {
+			if (value.charAt(value.length()-1) == '%') {
+				lengthValue = value.substring(0, value.length()-1);
+			}
 		}
 		boolean units = false;
-		if(lengthValue==null && value.length()>2) //Valid unit Vxx where xx is unit or V
-		{
-			String unit=value.substring(value.length()-2, value.length());
-			if(allowedUnits.contains(unit)) {
-				lengthValue=value.substring(0,value.length()-2);
+		if (lengthValue == null) { //Valid unit Vxx[x[x]] (where xx[x[x]] is unit) or V
+			int pos = 0;
+			int len = value.length();
+			for (int i = len - 1; i >= 0; i --) {
+				char c = value.charAt(i);
+				if ((c >= '0' && c <= '9') || c == '.') {
+					pos = i + 1;
+					break;
+				}
+			}
+			if (len - pos > 0 && allowedUnits.contains(value.substring(pos))) {
+				lengthValue = value.substring(0, pos);
 				units = true;
-			} else
-				lengthValue=value.substring(0,value.length());
+			} else {
+				lengthValue = value;
+			}
 		}
-		else
-			lengthValue=value.substring(0,value.length());
 		try
 		{
 			int x = Integer.parseInt(lengthValue);
@@ -327,7 +346,7 @@ public class FilterUtils {
 	}
 	public static boolean isValidCSSShape(String value)
 	{
-		if(value.indexOf("rect(")==0 && value.indexOf(")")==value.length()-1)
+		if(value.indexOf("rect(")==0 && value.indexOf(')')==value.length()-1)
 		{
 			String[] shapeParts=value.substring(5,value.length()-1).split(",");
 			if(shapeParts.length==4)
@@ -346,7 +365,7 @@ public class FilterUtils {
 	}
 	private final static HashSet<String> cssMedia = new HashSet<String>();
 	static {
-	    cssMedia.addAll(Arrays.asList(new String[]{"all", "aural", "braille", "embossed", "handheld", "print", "projection", "screen", "speech", "tty", "tv"}));
+	    cssMedia.addAll(Arrays.asList("all", "aural", "braille", "embossed", "handheld", "print", "projection", "screen", "speech", "tty", "tv"));
 	}
 	public static boolean isMedia(String media) {
 		return cssMedia.contains(media);
@@ -388,7 +407,7 @@ public class FilterUtils {
 				}
 			}
 		}
-		if(value.indexOf("rgb(")==0 && value.indexOf(")")==value.length()-1)
+		if(value.indexOf("rgb(")==0 && value.indexOf(')')==value.length()-1)
 		{
 			String[] colorParts=value.substring(4,value.length()-1).split(",");
 			if(colorParts.length!=3)
@@ -402,7 +421,7 @@ public class FilterUtils {
 			if(isValidColorParts)
 				return true;
 		}
-		if(value.indexOf("rgba(")==0 && value.indexOf(")")==value.length()-1)
+		if(value.indexOf("rgba(")==0 && value.indexOf(')')==value.length()-1)
 		{
 			String[] colorParts=value.substring(5,value.length()-1).split(",");
 			if(colorParts.length!=4)
@@ -417,7 +436,7 @@ public class FilterUtils {
 				return true;
 		}
 
-		if(value.indexOf("hsl(")==0 && value.indexOf(")")==value.length()-1)
+		if(value.indexOf("hsl(")==0 && value.indexOf(')')==value.length()-1)
 		{
 			String[] colorParts = value.substring(4, value.length() - 1).split(",");
 			if (colorParts.length != 3) {
@@ -428,7 +447,7 @@ public class FilterUtils {
 			    return true;
 		}
 
-		if(value.indexOf("hsla(")==0 && value.indexOf(")")==value.length()-1)
+		if(value.indexOf("hsla(")==0 && value.indexOf(')')==value.length()-1)
 		{
 			String[] colorParts = value.substring(5, value.length() - 1).split(",");
 			if (colorParts.length != 4) {
@@ -446,7 +465,7 @@ public class FilterUtils {
 	    value = value.trim();
 	    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform(\""+value+"\")");
 	    
-	    if(value.indexOf("matrix(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("matrix(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String[] parts = value.substring(7, value.length() - 1).split(",");
 		if (parts.length != 6) {
@@ -465,7 +484,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("translateX(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("translateX(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(11, value.length() - 1);
 		if (isPercentage(part.trim()) || isLength(part.trim(), false)) {
@@ -474,7 +493,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("translateY(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("translateY(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(11, value.length() - 1);
 		if (isPercentage(part.trim()) || isLength(part.trim(), false)) {
@@ -483,7 +502,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("translate(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("translate(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String[] parts = value.substring(10, value.length() - 1).split(",");
 		if (parts.length == 1 && (isPercentage(parts[0].trim()) || isLength(parts[0].trim(), false))) {
@@ -495,7 +514,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("scale(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("scale(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String[] parts = value.substring(6, value.length() - 1).split(",");
 		if (parts.length == 1 && isNumber(parts[0].trim())) {
@@ -507,7 +526,7 @@ public class FilterUtils {
 		}
 	    }
 	    
-	    if(value.indexOf("scaleX(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("scaleX(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(7, value.length() - 1);
 		if (isNumber(part.trim())) {
@@ -516,7 +535,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("scaleY(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("scaleY(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(7, value.length() - 1);
 		if (isNumber(part.trim())) {
@@ -525,7 +544,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("rotate(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("rotate(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(7, value.length() - 1);
 		if (isAngle(part.trim())) {
@@ -534,7 +553,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("skewX(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("skewX(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(6, value.length() - 1);
 		if (isNumber(part.trim()) || isAngle(part.trim())) {
@@ -543,7 +562,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("skewY(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("skewY(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(6, value.length() - 1);
 		if (isNumber(part.trim()) || isAngle(part.trim())) {
@@ -552,7 +571,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("skew(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("skew(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String[] parts = value.substring(5, value.length() - 1).split(",");
 		if (parts.length == 1 && (isNumber(parts[0].trim()) || isAngle(parts[0].trim()))) {
@@ -614,7 +633,7 @@ public class FilterUtils {
 		String intValue;
 		if(value.indexOf("ms")>-1 && value.length()>2)
 			intValue=value.substring(0,value.length()-2);
-		else if(value.indexOf("s")>-1 && value.length()>1)
+		else if(value.indexOf('s')>-1 && value.length()>1)
 			intValue=value.substring(0,value.length()-1);
 		else
 			return false;
@@ -702,6 +721,50 @@ public class FilterUtils {
 			}
 		}
 		return true;
+	}
+	public static boolean isIntegerInRange(String strValue, int min, int max)
+	{
+		try
+		{
+			// Strip any leading '+' character, because Integer.parseInt handles it differently between Java 6 (fails) and 7 (succeeds).
+			if(strValue.length()>1 && strValue.charAt(0)=='+' && Character.isDigit(strValue.charAt(1)))
+			{
+				strValue = strValue.substring(1,strValue.length());
+			}
+			
+			int value = Integer.parseInt(strValue);
+			return (value>=min && value<=max);
+		}
+		catch(Exception e)
+		{
+			return false;
+		}
+	}
+	public static boolean isNth(String value)
+	{
+		if(value.equals("odd") || value.equals("even") || isIntegerInRange(value, -MAX_NTH, MAX_NTH))
+		{
+			return true;
+		}
+		else
+		{
+			// Check if value has the form "an+b" - where a and b can be any in range integer.
+			int nIndex=value.indexOf('n');
+			if(nIndex!=-1)
+			{
+				int aLength=nIndex;
+				if(aLength==0 || (aLength==1 && value.charAt(0)=='-') || isIntegerInRange(value.substring(0,aLength), -MAX_NTH, MAX_NTH))
+				{
+					int bIndex=nIndex+1;
+					int bLength=value.length()-bIndex;
+					if(bLength==0 || ((value.charAt(bIndex)=='+' || value.charAt(bIndex)=='-') && isIntegerInRange(value.substring(bIndex,value.length()), -MAX_NTH, MAX_NTH)))
+					{
+						return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 //	public static HTMLNode getHTMLNodeFromElement(Element node)
 //	{

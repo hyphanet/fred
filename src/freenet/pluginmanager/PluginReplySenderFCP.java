@@ -3,21 +3,28 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
-import freenet.node.fcp.FCPConnectionHandler;
-import freenet.node.fcp.FCPPluginReply;
+import freenet.clients.fcp.FCPConnectionHandler;
+import freenet.clients.fcp.FCPPluginConnection;
+import freenet.clients.fcp.FCPPluginServerMessage;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 /**
  * @author saces
- *
+ * @author xor (xor@freenetproject.org)
+ * @deprecated Use the {@link FCPPluginConnection} API instead.
  */
+@Deprecated
 public class PluginReplySenderFCP extends PluginReplySender {
 	
 	final FCPConnectionHandler handler; 
 
-	public PluginReplySenderFCP(FCPConnectionHandler handler2, String pluginname2, String identifier2) {
-		super(pluginname2, identifier2);
+	/**
+	 * @see PluginReplySender#PluginReplySender(String, String, String)
+	 */
+	public PluginReplySenderFCP(FCPConnectionHandler handler2, String pluginname2, String clientIdentifier, String clientSideIdentifier) {
+		super(pluginname2, clientIdentifier, clientSideIdentifier);
+		
 		handler = handler2;
 	}
 
@@ -26,7 +33,7 @@ public class PluginReplySenderFCP extends PluginReplySender {
 		// like in linux everthing is a file, in Plugintalker everything is a plugin. So it throws PluginNotFoundException
 		// instead fcp connection errors 
 		if (handler.isClosed()) throw new PluginNotFoundException("FCP connection closed");
-		FCPPluginReply reply = new FCPPluginReply(pluginname, identifier, params, bucket);
+        FCPPluginServerMessage reply = new FCPPluginServerMessage(pluginname, clientSideIdentifier, params, bucket);
 		handler.outputHandler.queue(reply);
 	}
 }

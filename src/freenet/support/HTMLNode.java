@@ -1,6 +1,7 @@
 package freenet.support;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -263,12 +264,16 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	}
 	
 	public void addChildren(HTMLNode[] childNodes) {
-		if(readOnly)
-			throw new IllegalArgumentException("Read only");
-		for (HTMLNode childNode: childNodes) {
-			addChild(childNode);
-		}
+		addChildren(Arrays.asList(childNodes));
 	}
+    
+    public void addChildren(List<HTMLNode> childNodes) {
+        if(readOnly)
+            throw new IllegalArgumentException("Read only");
+        for (HTMLNode childNode: childNodes) {
+            addChild(childNode);
+        }
+    }
 
 	public HTMLNode addChild(String nodeName) {
 		return addChild(nodeName, null);
@@ -512,5 +517,11 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 
 	public static HTMLNode text(short count) {
 		return new HTMLNode("#", Short.toString(count));
+	}
+
+	public void removeChildren() {
+		if(readOnly)
+			throw new IllegalArgumentException("Read only");
+		children.clear();
 	}
 }

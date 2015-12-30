@@ -3,13 +3,19 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import freenet.node.RequestClient;
+import java.io.Serializable;
 
 public abstract class BaseClientGetter extends ClientRequester implements
-		GetCompletionCallback {
+		GetCompletionCallback, Serializable {
 	
-	protected BaseClientGetter(short priorityClass, RequestClient client) {
-		super(priorityClass, client);
+    private static final long serialVersionUID = 1L;
+
+    protected BaseClientGetter(short priorityClass, ClientBaseCallback cb) {
+		super(priorityClass, cb);
+	}
+	
+	protected BaseClientGetter() {
+	    // For serialization.
 	}
 
 }

@@ -7,14 +7,17 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.SimpleFieldSet;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * Seed node's representation of a client node connecting in order to announce.
  * @author toad
  */
 public class SeedClientPeerNode extends PeerNode {
 
-	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean noSig, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		super(fs, node2, crypto, peers, fromLocal, noSig, mangler, true);
+	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		super(fs, node2, crypto, false);
 	}
 
 	@Override
@@ -95,11 +98,6 @@ public class SeedClientPeerNode extends PeerNode {
 	}
 
 	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return true;
-	}
-
-	@Override
 	protected boolean ignoreLastGoodVersion() {
 		return true;
 	}
@@ -119,12 +117,12 @@ public class SeedClientPeerNode extends PeerNode {
 			// Synchronize to avoid messy races.
 			synchronized(this) {
 				if(timeLastConnectionCompleted() > 0 &&
-						System.currentTimeMillis() - lastReceivedPacketTime() > 60*1000)
+						System.currentTimeMillis() - lastReceivedPacketTime() > SECONDS.toMillis(60))
 				return true;
 			}
 		} else {
 			// Disconnect after an hour in any event.
-			if(System.currentTimeMillis() - timeLastConnectionCompleted() > 60*60*1000)
+			if(System.currentTimeMillis() - timeLastConnectionCompleted() > HOURS.toMillis(1))
 				return true;
 		}
 		return false;
@@ -169,5 +167,19 @@ public class SeedClientPeerNode extends PeerNode {
 		return true;
 	}
 
+    @Override
+    public boolean isOpennetForNoderef() {
+        return true;
+    }
+
+    @Override
+    protected void writePeers() {
+        // Do not write peers as seed clients are not in the peers list and are not saved.
+    }
+
+    @Override
+    protected boolean fromAnonymousInitiator() {
+        return true;
+    }
 
 }

@@ -10,7 +10,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 
+import freenet.support.Logger;
+import freenet.support.LoggerHook;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Closer;
 
 public class CleanupTranslations {
 
@@ -18,7 +21,8 @@ public class CleanupTranslations {
 	 * @param args
 	 * @throws IOException 
 	 */
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, LoggerHook.InvalidThresholdException {
+		Logger.setupStdoutLogging(Logger.LogLevel.ERROR, "");
 		File engFile = new File("src/freenet/l10n/freenet.l10n.en.properties");
 		SimpleFieldSet english = SimpleFieldSet.readFrom(engFile, false, true);
 		File[] translations = new File("src/freenet/l10n").listFiles();
@@ -62,12 +66,17 @@ public class CleanupTranslations {
 				}
 				sw.append(line+"\n");
 			}
+			Closer.close(fis);
+			Closer.close(isr);
+			Closer.close(br);
 			if(!changed) continue;
-			br.close();
 			FileOutputStream fos = new FileOutputStream(f);
 			OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
-			osw.write(sw.toString());
-			osw.close();
+			try {
+				osw.write(sw.toString());
+			} finally {
+				osw.close();
+			}
 			System.out.println("Rewritten "+f);
 		}
 	}

@@ -492,7 +492,7 @@ public class HTMLNodeTest extends TestCase {
 	 * @return the first line of the String
 	 */
 	private String readFirstLine(String aString) {
-		int newLineIndex = aString.indexOf("\n");
+		int newLineIndex = aString.indexOf('\n');
 		if ( newLineIndex == -1)
 			return aString;
 		return aString.substring(0,newLineIndex);

@@ -1,8 +1,12 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -23,7 +27,7 @@ import freenet.node.RequestTracker.WaitingForSlots;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.stats.StatsNotAvailableException;
 import freenet.node.stats.StoreLocationStats;
-import freenet.store.CHKStore;
+import freenet.store.StoreCallback;
 import freenet.support.HTMLNode;
 import freenet.support.Histogram2;
 import freenet.support.LogThresholdCallback;
@@ -36,7 +40,6 @@ import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
-import freenet.support.io.NativeThread;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
@@ -57,30 +60,30 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 	
 	/** Sub-max ping time. If ping is greater than this, we reject some requests. */
-	public static final long DEFAULT_SUB_MAX_PING_TIME = 700;
+	public static final long DEFAULT_SUB_MAX_PING_TIME = MILLISECONDS.toMillis(700);
 	/** Maximum overall average ping time. If ping is greater than this,
 	 * we reject all requests. */
-	public static final long DEFAULT_MAX_PING_TIME = 1500;
+	public static final long DEFAULT_MAX_PING_TIME = MILLISECONDS.toMillis(1500);
 	/** Maximum throttled packet delay. If the throttled packet delay is greater
 	 * than this, reject all packets. */
-	public static final long MAX_THROTTLE_DELAY_RT = 2000;
-	public static final long MAX_THROTTLE_DELAY_BULK = 10000;
+	public static final long MAX_THROTTLE_DELAY_RT = SECONDS.toMillis(2);
+	public static final long MAX_THROTTLE_DELAY_BULK = SECONDS.toMillis(10);
 	/** If the throttled packet delay is less than this, reject no packets; if it's
 	 * between the two, reject some packets. */
-	public static final long SUB_MAX_THROTTLE_DELAY_RT = 1000;
-	public static final long SUB_MAX_THROTTLE_DELAY_BULK = 5000;
+	public static final long SUB_MAX_THROTTLE_DELAY_RT = SECONDS.toMillis(1);
+	public static final long SUB_MAX_THROTTLE_DELAY_BULK = SECONDS.toMillis(5);
 	/** How high can bwlimitDelayTime be before we alert (in milliseconds)*/
 	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD = MAX_THROTTLE_DELAY_BULK;
 	/** How high can nodeAveragePingTime be before we alert (in milliseconds)*/
 	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD = DEFAULT_MAX_PING_TIME;
 	/** How long we're over the bwlimitDelayTime threshold before we alert (in milliseconds)*/
-	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
+	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY = MINUTES.toMillis(10);
 	/** How long we're over the nodeAveragePingTime threshold before we alert (in milliseconds)*/
-	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
+	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_DELAY = MINUTES.toMillis(10);
 	/** Accept one request every 10 seconds regardless, to ensure we update the
 	 * block send time.
 	 */
-	public static final int MAX_INTERREQUEST_TIME = 10*1000;
+	public static final long MAX_INTERREQUEST_TIME = SECONDS.toMillis(10);
 	/** Locations of incoming requests */
 	private final int[] incomingRequestsByLoc = new int[10];
 	private int incomingRequestsAccounted = 0;
@@ -91,7 +94,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private int outgoingRequestsAccounted = 0;
 	private volatile long subMaxPingTime;
 	private volatile long maxPingTime;
-    private final double nodeLoc=0.0;
 
 	final Node node;
 	private MemoryChecker myMemoryChecker;
@@ -495,7 +497,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 		});
 		enableNewLoadManagementRT = statsConfig.getBoolean("enableNewLoadManagementRT");
-
 		statsConfig.register("enableNewLoadManagementBulk", false, sortOrder++, true, false, "Node.enableNewLoadManagementBulk", "Node.enableNewLoadManagementBulkLong", new BooleanCallback() {
 
 			@Override
@@ -512,6 +513,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		});
 		enableNewLoadManagementBulk = statsConfig.getBoolean("enableNewLoadManagementBulk");
 		
+        if(node.lastVersion <= 1455 && (enableNewLoadManagementRT || enableNewLoadManagementBulk)) {
+            // FIXME remove
+            enableNewLoadManagementRT = false;
+            enableNewLoadManagementBulk = false;
+            System.err.println("Turning off NLM when upgrading from pre-1455. The load stats messages aren't being sent at the moment so it won't work anyway.");
+            statsConfig.config.store();
+        }
+
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false,
 				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ticker, node.getRunDir());
 
@@ -577,9 +586,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		chkSuccessRatesByLocation = new Histogram2(10, 1.0);
 
 		requestOutputThrottle =
-			new TokenBucket(Math.max(obwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (obwLimit)), 0);
+			new TokenBucket(Math.max(obwLimit*60, 32768*20), SECONDS.toNanos(1) / obwLimit, 0);
 		requestInputThrottle =
-			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (ibwLimit)), 0);
+			new TokenBucket(Math.max(ibwLimit*60, 32768*20), SECONDS.toNanos(1) / ibwLimit, 0);
 
 		double nodeLoc=node.lm.getLocation();
 		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
@@ -618,14 +627,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(!NodeStarter.isTestingVM()) {
 			// Normal mode
 			minReportsNoisyRejectStats = 200;
-			rejectStatsUpdateInterval = 10*60*1000;
+			rejectStatsUpdateInterval = MINUTES.toMillis(10);
 			rejectStatsFuzz = 10.0;
 		} else {
 			// Stuff we only do in testing VMs
 			minReportsNoisyRejectStats = 1;
-			rejectStatsUpdateInterval = 10*1000;
+			rejectStatsUpdateInterval = SECONDS.toMillis(10);
 			rejectStatsFuzz = -1.0;
 		}
+		statsConfig.finishedInitialization();
 	}
 
 	protected String l10n(String key) {
@@ -650,7 +660,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	/** Every 60 seconds, check whether we need to adjust the bandwidth delay time because of idleness.
 	 * (If no packets have been sent, the throttledPacketSendAverage should decrease; if it doesn't, it may go high,
 	 * and then no requests will be accepted, and it will stay high forever. */
-	static final int CHECK_THROTTLE_TIME = 60 * 1000;
+	static final long CHECK_THROTTLE_TIME = SECONDS.toMillis(60);
 	/** Absolute limit of 4MB queued to any given peer. FIXME make this configurable.
 	 * Note that for many MessageItem's, the actual memory usage will be significantly more than this figure. */
 	private static final long MAX_PEER_QUEUE_BYTES = 4 * 1024 * 1024;
@@ -670,14 +680,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * using at most half the limit, so the time will be slightly over the overall limit. */
 	
 	// FIXME increase to 4 minutes when bulk/realtime flag merged!
-	
-	private static final double MAX_PEER_QUEUE_TIME = 2 * 60 * 1000.0;
+
+	private static final long MAX_PEER_QUEUE_TIME = MINUTES.toMillis(2);
 
 	private long lastAcceptedRequest = -1;
 
 	static final double DEFAULT_OVERHEAD = 0.7;
-	static final long DEFAULT_ONLY_PERIOD = 60*1000;
-	static final long DEFAULT_TRANSITION_PERIOD = 240*1000;
+	static final long DEFAULT_ONLY_PERIOD = MINUTES.toMillis(1);
+	static final long DEFAULT_TRANSITION_PERIOD = MINUTES.toMillis(4);
 	/** Relatively high minimum overhead. A low overhead estimate becomes a self-fulfilling
 	 * prophecy, and it takes a long time to shake it off as the averages gradually increase.
 	 * If we accept no requests then everything is overhead! Whereas with a high minimum
@@ -1941,32 +1951,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			rootThreadGroup.enumerate(threads);
 			if(threads[threads.length-1] == null) break;
 		}
-		
+
 		return threads;
-	}
-
-	/**
-	 * Get a list of threads with the given normalized name.
-	 */
-	public ArrayList<NativeThread> getNativeThreadsByNormalizedName(String normalizedThreadName) {
-		Thread[] threads = getThreads();
-		
-		ArrayList<NativeThread> result = new ArrayList<NativeThread>(threads.length);
-		
-		for(Thread thread : threads) {
-			if(thread == null)
-				break;
-		
-			if(!(thread instanceof NativeThread))
-				continue;
-			
-			final NativeThread nt = (NativeThread)thread;
-		
-			if(nt.getNormalizedName().equals(normalizedThreadName))
-				result.add(nt);
-		}
-
-		return result;
 	}
 
 	public SimpleFieldSet exportVolatileFieldSet() {
@@ -1990,7 +1976,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("networkSizeEstimateSession", getDarknetSizeEstimate(-1));
 		for (int t = 1 ; t < 7; t++) {
 			int hour = t * 24;
-			long limit = now - t * ((long) 24 * 60 * 60 * 1000);
+			long limit = now - DAYS.toMillis(t);
 
 			fs.put("opennetSizeEstimate"+hour+"hourRecent", getOpennetSizeEstimate(limit));
 			fs.put("networkSizeEstimate"+hour+"hourRecent", getDarknetSizeEstimate(limit));
@@ -2271,14 +2257,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public void setOutputLimit(int obwLimit) {
-		requestOutputThrottle.changeNanosAndBucketSize((int)((1000L*1000L*1000L) / (obwLimit)), Math.max(obwLimit*60, 32768*20));
+		requestOutputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, Math.max(obwLimit*60, 32768*20));
 		if(node.inputLimitDefault) {
 			setInputLimit(obwLimit * 4);
 		}
 	}
 
 	public void setInputLimit(int ibwLimit) {
-		requestInputThrottle.changeNanosAndBucketSize((int)((1000L*1000L*1000L) / (ibwLimit)), Math.max(ibwLimit*60, 32768*20));
+		requestInputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / ibwLimit, Math.max(ibwLimit*60, 32768*20));
 	}
 
 	public boolean isTestnetEnabled() {
@@ -2986,7 +2972,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public double getSentOverheadPerSecond() {
 		long uptime = node.getUptime();
-		return (getSentOverhead() * 1000.0) / uptime;
+		// actually we’d want to convert uptime to seconds here but this is results in better accuracy.
+		return getSentOverhead() * SECONDS.toMillis(1) / uptime;
 	}
 
 	public synchronized void successfulBlockReceive(boolean realTimeFlag, boolean isLocal) {
@@ -3265,7 +3252,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(nodeLoc, avgLocation());
+				return Location.distance(node.lm.getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3299,7 +3286,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(nodeLoc, avgLocation());
+				return Location.distance(node.lm.getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3333,12 +3320,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(nodeLoc, avgLocation());
+				return Location.distance(node.lm.getLocation(), avgLocation());
 			}
 
 			@Override
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgSlashdotCacheCHKLocation, node.getChkDatacache());
+				return cappedDistance(avgSlashdotCacheCHKLocation, node.getChkSlashdotCache());
 			}
 		};
 	}
@@ -3367,12 +3354,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(nodeLoc, avgLocation());
+				return Location.distance(node.lm.getLocation(), avgLocation());
 			}
 
 			@Override
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgClientCacheCHKLocation, node.getChkDatacache());
+				return cappedDistance(avgClientCacheCHKLocation, node.getChkClientCache());
 			}
 		};
 	}
@@ -3401,12 +3388,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(nodeLoc, avgLocation());
+				return Location.distance(node.lm.getLocation(), avgLocation());
 			}
 
 			@Override
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgStoreSSKLocation, node.getChkDatastore());
+				return cappedDistance(avgStoreSSKLocation, node.getSskDatastore());
 			}
 		};
 	}
@@ -3435,12 +3422,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(nodeLoc, avgLocation());
+				return Location.distance(node.lm.getLocation(), avgLocation());
 			}
 
 			@Override
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgCacheSSKLocation, node.getChkDatacache());
+				return cappedDistance(avgCacheSSKLocation, node.getSskDatacache());
 			}
 		};
 	}
@@ -3469,12 +3456,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(nodeLoc, avgLocation());
+				return Location.distance(node.lm.getLocation(), avgLocation());
 			}
 
 			@Override
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgSlashdotCacheSSKLocation, node.getChkDatacache());
+				return cappedDistance(avgSlashdotCacheSSKLocation, node.getSskSlashdotCache());
 			}
 		};
 	}
@@ -3503,18 +3490,18 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(nodeLoc, avgLocation());
+				return Location.distance(node.lm.getLocation(), avgLocation());
 			}
 
 			@Override
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgClientCacheSSKLocation, node.getChkDatacache());
+				return cappedDistance(avgClientCacheSSKLocation, node.getSskClientCache());
 			}
 		};
 	}
 
 
-	private double cappedDistance(DecayingKeyspaceAverage avgLocation, CHKStore store) {
+	private double cappedDistance(DecayingKeyspaceAverage avgLocation, StoreCallback<?> store) {
 		double cachePercent = 1.0 * avgLocation.countReports() / store.keyCount();
 		//Cap the reported value at 100%, as the decaying average does not account beyond that anyway.
 		if (cachePercent > 1.0) {
@@ -3652,20 +3639,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		Arrays.sort(entries);
 		return entries;
-	}
-
-	public StringCounter getDatabaseJobQueueStatistics() {
-		final StringCounter result = new StringCounter();
-
-		final Runnable[][] dbJobs = node.clientCore.clientDatabaseExecutor.getQueuedJobsByPriority();
-
-		for(Runnable[] list : dbJobs) {
-			for(Runnable job : list) {
-				result.inc(sanitizeDBJobType(job.toString()));
-			}
-		}
-
-		return result;
 	}
 
 	public PeerLoadStats createPeerLoadStats(PeerNode peer, int transfersPerInsert, boolean realTimeFlag) {
@@ -3876,7 +3849,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	/** How many reports to require before returning a value for reject stats */
 	private final int minReportsNoisyRejectStats;
 	/** How often to update the reject stats */
-	private final int rejectStatsUpdateInterval;
+	private final long rejectStatsUpdateInterval;
 	/** If positive, the level of fuzz (size of 1 standard deviation for gauss in percent) to use */
 	private final double rejectStatsFuzz;
 	

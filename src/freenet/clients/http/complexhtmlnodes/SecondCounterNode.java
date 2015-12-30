@@ -7,7 +7,7 @@ import freenet.support.TimeUtil;
 public class SecondCounterNode extends HTMLNode {
 	public SecondCounterNode(long initialValue, boolean ascending, String text) {
 		super("span", "class", ascending ? "needsIncrement" : "needsDecrement");
-		addChild("input", new String[] { "type", "value" }, new String[] { "hidden", "" + initialValue });
+		addChild("input", new String[] { "type", "value" }, new String[] { "hidden", String.valueOf(initialValue) });
 		// If the text has {0}, then it will be replaced by the time. This way text can be present both before and after the counter
 		if (text.contains("{0}") == false) {
 			addChild("span", text);

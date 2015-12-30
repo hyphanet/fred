@@ -2,8 +2,6 @@
 
 package freenet.client.filter;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -21,6 +19,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Stack;
 import java.util.StringTokenizer;
 
@@ -68,15 +68,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
-		BufferedInputStream bis = new BufferedInputStream(input, 4096);
-		BufferedOutputStream bos = new BufferedOutputStream(output, 4096);
 		Reader r = null;
 		Writer w = null;
 		InputStreamReader isr = null;
 		OutputStreamWriter osw = null;
 		try {
-			isr = new InputStreamReader(bis, charset);
-			osw = new OutputStreamWriter(bos, charset);
+			isr = new InputStreamReader(input, charset);
+			osw = new OutputStreamWriter(output, charset);
 			r = new BufferedReader(isr, 4096);
 			w = new BufferedWriter(osw, 4096);
 		} catch(UnsupportedEncodingException e) {
@@ -818,8 +816,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		public Map<String,String> getAttributesAsMap(){
 			Map<String,String> map=new HashMap<String, String>();
 			for(String attr: unparsedAttrs) {
-				String name=attr.substring(0,attr.indexOf("="));
-				String value=attr.substring(attr.indexOf("=")+2,attr.length()-1);
+				String name=attr.substring(0,attr.indexOf('='));
+				String value=attr.substring(attr.indexOf('=')+2,attr.length()-1);
 				map.put(name, value);
 			}
 			return map;
@@ -862,10 +860,19 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 	}
 
-	static final Map<String, TagVerifier> allowedTagsVerifiers = new LinkedHashMap<String, TagVerifier>();
-	static final String[] emptyStringArray = new String[0];
+	public static Set<String> getAllowedHTMLTags() {
+		return Collections.unmodifiableSet(allowedHTMLTags);
+	}
 
-	static {
+	private static final Set<String> allowedHTMLTags = new HashSet<String>();
+	static final Map<String, TagVerifier> allowedTagsVerifiers =
+		Collections.unmodifiableMap(getAllowedTagVerifiers());
+	private static final String[] emptyStringArray = new String[0];
+
+	private static Map<String, TagVerifier> getAllowedTagVerifiers()
+	{
+		Map<String, TagVerifier> allowedTagsVerifiers = new HashMap<String, TagVerifier>();
+		
 		allowedTagsVerifiers.put("?xml", new XmlTagVerifier());
 		allowedTagsVerifiers.put(
 			"!doctype",
@@ -1954,16 +1961,18 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray));
 		// <maction> would go here though it seems a bit pointless and may require extra filtering
 		// MathML content tags would go here if anyone used them
+		
+		return allowedTagsVerifiers;
 	}
 
 	static class TagVerifier {
-		final String tag;
+		private final String tag;
 		//Attributes which need no sanitation
-		final HashSet<String> allowedAttrs;
+		private final HashSet<String> allowedAttrs;
 		//Attributes which will be sanitized by child classes
-		final HashSet<String> parsedAttrs;
-		final HashSet<String> uriAttrs;
-		final HashSet<String> inlineURIAttrs;
+		protected final HashSet<String> parsedAttrs;
+		private final HashSet<String> uriAttrs;
+		private final HashSet<String> inlineURIAttrs;
 
 		TagVerifier(String tag, String[] allowedAttrs) {
 			this(tag, allowedAttrs, null, null);
@@ -2308,7 +2317,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class BaseCoreTagVerifier extends TagVerifier {
-		static final String[] locallyVerifiedAttrs = new String[] {
+		private static final String[] locallyVerifiedAttrs = new String[] {
 			"id",
 			"class",
 			"style"
@@ -2320,7 +2329,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] uriAttrs,
 			String[] inlineURIAttrs) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs);
-			ElementInfo.addHTMLTag(tag);
+			allowedHTMLTags.add(tag);
 			for(String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
 			}
@@ -2362,8 +2371,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class CoreTagVerifier extends BaseCoreTagVerifier {
-		final HashSet<String> eventAttrs;
-		static final String[] stdEvents =
+		private final HashSet<String> eventAttrs;
+		private static final String[] stdEvents =
 			new String[] {
 				"onclick",
 				"ondblclick",
@@ -2442,7 +2451,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class LinkTagVerifier extends CoreTagVerifier {
-		static final String[] locallyVerifiedAttrs = new String[] {
+		private static final String[] locallyVerifiedAttrs = new String[] {
 			"type",
 			"charset",
 			"rel",
@@ -2509,6 +2518,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			
 			String parsedRel = "", parsedRev = "";
 			boolean isStylesheet = false;
+			boolean isIcon = false;
 
 			if(rel != null) {
 				
@@ -2528,6 +2538,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							if(tok.hasMoreTokens())
 								return null; // Disallow extra tokens after "stylesheet"
 						}
+					} else if (token.equalsIgnoreCase("icon")) {
+						isIcon = true;
 					} else if(!isStandardLinkType(token)) continue;
 					
 					i++;
@@ -2607,7 +2619,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String href = getHashString(h, "href");
 			if (href != null) {
 				href = HTMLDecoder.decode(href);
-				href = htmlSanitizeURI(href, type, charset, maybecharset, pc.cb, pc, false);
+				if (isIcon) {
+					href = htmlSanitizeURI(href, type, null, null, pc.cb, pc, false);
+				} else {
+					href = htmlSanitizeURI(href, type, charset, maybecharset, pc.cb, pc, false);
+				}
 				if (href != null) {
 					href = HTMLEncoder.encode(href);
 					hn.put("href", href);
@@ -2652,7 +2668,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	// We do not allow forms to act anywhere else than on / 
 	static class FormTagVerifier extends CoreTagVerifier{
-		static final String[] locallyVerifiedAttrs = new String[] {
+		private static final String[] locallyVerifiedAttrs = new String[] {
 			"method",
 			"action",
 			"enctype",
@@ -2699,14 +2715,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 	
 	static class InputTagVerifier extends CoreTagVerifier{
-		final HashSet<String> allowedTypes;
-		String[] types = new String[]{
+		private final HashSet<String> allowedTypes;
+		private String[] types = new String[]{
 			"text",
 			"password",
 			"checkbox",
 			"radio",
 			"submit",
-			"reset,",
+			"reset",
 			// no ! file
 			"hidden",
 			"image",
@@ -2744,8 +2760,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 	
 	static class MetaTagVerifier extends TagVerifier {
-		static final String[] allowedContentTypes = ContentFilter.HTML_MIME_TYPES;
-		static final String[] locallyVerifiedAttrs = {
+		private static final String[] allowedContentTypes = ContentFilter.HTML_MIME_TYPES;
+		private static final String[] locallyVerifiedAttrs = {
 			"http-equiv",
 			"name",
 			"content"
@@ -2917,7 +2933,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, null);
 		}
 
-		static final Map<String, Object> DTDs = new HashMap<String, Object>();
+		private static final Map<String, Object> DTDs = new HashMap<String, Object>();
 
 		static {
 			DTDs.put(
@@ -3035,7 +3051,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class HtmlTagVerifier extends TagVerifier {
-		static final String[] locallyVerifiedAttrs = new String[] { "xmlns" };
+		private static final String[] locallyVerifiedAttrs = new String[] { "xmlns" };
 		HtmlTagVerifier() {
 			super("html", new String[] { "id", "version" });
 			for(String attr : locallyVerifiedAttrs) {
@@ -3058,7 +3074,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class BaseHrefTagVerifier extends TagVerifier {
-		static final String[] locallyVerifiedAttrs = new String[] {
+		private static final String[] locallyVerifiedAttrs = new String[] {
 			"href"};
 
 		BaseHrefTagVerifier(String tag, String[] allowedAttrs, String[] uriAttrs) {
@@ -3274,9 +3290,5 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		//Read in 64 kilobytes. The charset could be defined anywhere in the head section
 		return 1024*64;
 	}
-
-	static void forceSetup() {
-		// Do nothing.
-		// Force static init of the class.
-	}
 }
+

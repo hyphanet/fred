@@ -38,7 +38,7 @@ public class SlashdotStoreTest extends TestCase {
 		tempDir = new File("tmp-slashdotstoretest");
 		tempDir.mkdir();
 		fg = new FilenameGenerator(weakPRNG, true, tempDir, "temp-");
-		tbf = new TempBucketFactory(exec, fg, 4096, 65536, strongPRNG, weakPRNG, false);
+		tbf = new TempBucketFactory(exec, fg, 4096, 65536, weakPRNG, false, 2*1024*1024, null);
 		exec.start();
 	}
 	
@@ -80,7 +80,7 @@ public class SlashdotStoreTest extends TestCase {
 		if(verify == null) return; // Expected outcome
 		String data = decodeBlock(verify, key);
 		System.err.println("Got data: "+data+" but should have been deleted!");
-		assertTrue(false);
+		fail();
 	}
 
 	private String decodeBlock(CHKBlock verify, ClientCHK key) throws CHKVerifyException, CHKDecodeException, IOException {

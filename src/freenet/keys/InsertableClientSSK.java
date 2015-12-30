@@ -10,9 +10,8 @@ import java.util.Arrays;
 
 import net.i2p.util.NativeBigInteger;
 
+import freenet.support.Logger;
 import freenet.support.math.MersenneTwister;
-
-import com.db4o.ObjectContainer;
 
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
@@ -33,12 +32,24 @@ import freenet.support.compress.InvalidCompressionCodecException;
 /** A ClientSSK that has a private key and therefore can be inserted. */
 public class InsertableClientSSK extends ClientSSK {
 
-	public final DSAPrivateKey privKey;
+    private static final long serialVersionUID = 1L;
+
+    public final DSAPrivateKey privKey;
+	
+	private static boolean logMINOR;
+	static {
+	    Logger.registerClass(InsertableClientSSK.class);
+	}
 	
 	public InsertableClientSSK(String docName, byte[] pubKeyHash, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] cryptoKey, byte cryptoAlgorithm) throws MalformedURLException {
 		super(docName, pubKeyHash, getExtraBytes(cryptoAlgorithm), pubKey, cryptoKey);
 		if(pubKey == null) throw new NullPointerException();
 		this.privKey = privKey;
+	}
+	
+	protected InsertableClientSSK() {
+	    // For serialization.
+	    privKey = null;
 	}
 	
 	public static InsertableClientSSK create(FreenetURI uri) throws MalformedURLException {
@@ -70,10 +81,20 @@ public class InsertableClientSSK extends ClientSSK {
 			throw new MalformedURLException("Not a valid SSK insert URI type: "+uri.getKeyType());
 		}
 		
-		if((uri.getDocName() == null) || (uri.getDocName().length() == 0))
+		// Allow docName="" for SSKs. E.g. GenerateSSK returns these; we want to be consistent. 
+		// However, we recommend that you not use this, especially not for a freesite, as 
+		// SSK@blah,blah,blah//filename is confusing for clients, browsers etc.
+		if(uri.getDocName() == null)
 			throw new MalformedURLException("SSK URIs must have a document name (to avoid ambiguity)");
 		DSAGroup g = Global.DSAgroupBigA;
-		DSAPrivateKey privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getRoutingKey()), g);
+		DSAPrivateKey privKey;
+		try {
+			privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getRoutingKey()), g);
+		} catch(IllegalArgumentException e) {
+			// DSAPrivateKey is invalid
+			Logger.error(InsertableClientSSK.class, "Caught "+e, e);
+			throw new MalformedURLException("SSK private key (routing key) is invalid: " + e);
+		}
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
 		byte[] pkHash = pubKey.asBytesHash();
 		return new InsertableClientSSK(uri.getDocName(), pkHash, pubKey, privKey, uri.getCryptoKey(), keyType);
@@ -178,7 +199,7 @@ public class InsertableClientSSK extends ClientSSK {
 			if (x != SSKBlock.TOTAL_HEADERS_LENGTH)
 				throw new IllegalStateException("Too long");
 			try {
-				return new ClientSSKBlock(data, headers, this, true);
+				return new ClientSSKBlock(data, headers, this, !logMINOR);
 			} catch (SSKVerifyException e) {
 				throw (AssertionError)new AssertionError("Impossible encoding error").initCause(e);
 			}
@@ -230,13 +251,6 @@ public class InsertableClientSSK extends ClientSSK {
 
 	public DSAGroup getCryptoGroup() {
 		return Global.DSAgroupBigA;
-	}
-	
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.activate(privKey, 5);
-		privKey.removeFrom(container);
-		super.removeFrom(container);
 	}
 	
 }
