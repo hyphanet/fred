@@ -1742,6 +1742,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		node.peers.updatePMUserAlert();
 		if(anythingChanged)
 		    writePeers();
+        if(!isConnected()) return; // Race condition.
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
