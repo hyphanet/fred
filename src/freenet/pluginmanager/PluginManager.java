@@ -1289,8 +1289,7 @@ public class PluginManager {
 					throw new PluginNotFoundException("plugin main class is not a plugin");
 				}
 
-				if(pdl instanceof PluginDownLoaderOfficialHTTPS ||
-						pdl instanceof PluginDownLoaderOfficialFreenet) {
+				if (pdl.isOfficialPluginLoader()) {
 					System.err.println("Loading official plugin "+name);
 					// Check the version after loading it!
 					// FIXME IMPORTANT Build the version into the manifest. This is actually pretty easy and just involves changing build.xml.
