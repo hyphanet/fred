@@ -1230,12 +1230,7 @@ public class PluginManager {
 
 		pdl.setSource(name);
 
-		/* check for plugin directory. */
-		File pluginDirectory = node.getPluginDir();
-		if((pluginDirectory.exists() && !pluginDirectory.isDirectory()) || (!pluginDirectory.exists() && !pluginDirectory.mkdirs())) {
-			Logger.error(this, "could not create plugin directory");
-			throw new PluginNotFoundException("could not create plugin directory");
-		}
+		File pluginDirectory = getPluginDirectory();
 
 		/* get plugin filename. */
 		String filename = pdl.getPluginName(name);
@@ -1434,6 +1429,15 @@ public class PluginManager {
 		}
 		}
 		return null;
+	}
+
+	private File getPluginDirectory() throws PluginNotFoundException {
+		File pluginDirectory = node.getPluginDir();
+		if ((pluginDirectory.exists() && !pluginDirectory.isDirectory()) || (!pluginDirectory.exists() && !pluginDirectory.mkdirs())) {
+			Logger.error(this, "could not create plugin directory");
+			throw new PluginNotFoundException("could not create plugin directory");
+		}
+		return pluginDirectory;
 	}
 
 	private void downloadPluginFile(PluginDownLoader<?> pluginDownLoader, File pluginDirectory, File pluginFile, PluginProgress pluginProgress) throws IOException, PluginNotFoundException {
