@@ -17,8 +17,10 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeInitException;
+import freenet.node.NodeStarter;
 import freenet.node.updater.MainJarDependenciesChecker.Dependency;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
+import freenet.support.Logger;
 import freenet.support.io.Closer;
 
 /**
@@ -43,8 +45,8 @@ public class UpdateDeployContext {
 
 	File mainJar;
 	int mainClasspathNo;
-	int extClasspathNo;
 	File newMainJar;
+	File backupMainJar;
 	boolean mainJarAbsolute;
 	final MainJarDependencies deps;
 	
@@ -83,6 +85,7 @@ public class UpdateDeployContext {
 		
 		if(mainJar == null)
 			throw new UpdaterParserException(l10n("cannotUpdateNoMainJar"));
+		backupMainJar = new File(mainJar.getParent(), "freenet.jar.bak");
 	}
 
 	private String l10n(String key) {
@@ -136,6 +139,10 @@ public class UpdateDeployContext {
 		String line;
 			
 		boolean writtenReload = false;
+		/** On Windows, we need the anchor file option explicitly. */
+		boolean writtenAnchor = false;
+		/** Write the anchor polling interval too if it doesn't exist already */
+		boolean writtenAnchorInterval = false;
 		
 		String newMain = mainJarAbsolute ? newMainJar.getAbsolutePath() : newMainJar.getPath();
 		
@@ -152,12 +159,14 @@ public class UpdateDeployContext {
 		// able to overwrite either of them, so we'll just restart every 5 minutes forever!
 		
 		while((line = br.readLine()) != null) {
+		    /** The values are case sensitive, but the keys aren't */
+		    String lowcaseLine = line.toLowerCase();
 			// The classpath numbers are not reliable.
 			// We have to check the content.
 			
 			boolean dontWrite = false;
 			
-			if(line.startsWith("wrapper.java.classpath.")) {
+			if(lowcaseLine.startsWith("wrapper.java.classpath.")) {
 				line = line.substring("wrapper.java.classpath.".length());
 				int idx = line.indexOf('=');
 				if(idx != -1) {
@@ -175,15 +184,23 @@ public class UpdateDeployContext {
 						// Is it on the list of dependencies?
 						Dependency dep = findDependencyByRHSFilename(new File(rhs));
 						if(dep != null) {
-							System.out.println("Found dependency "+dep.oldFilename());
+						    if(dep.oldFilename() != null)
+						        System.out.println("Found old dependency "+dep.oldFilename());
+						    else
+						        System.out.println("Found new dependency "+dep.newFilename());
 						} else { // dep == null
+						    System.out.println("Found unknown jar in classpath, will keep: "+rhs);
 							// If not, it's something the user has added, we just keep it.
 							classpath.add(rhs);
 						}
 					}
 				}
-			} else if(line.equalsIgnoreCase("wrapper.restart.reload_configuration=TRUE")) {
+			} else if(lowcaseLine.equals("wrapper.restart.reload_configuration=true")) {
 				writtenReload = true;
+			} else if(lowcaseLine.startsWith("wrapper.anchorfile=")) {
+			    writtenAnchor = true;
+			} else if(lowcaseLine.startsWith("wrapper.anchor.poll_interval=")) {
+			    writtenAnchorInterval = true;
 			}
 			if(!dontWrite)
 				otherLines.add(line);
@@ -200,6 +217,7 @@ public class UpdateDeployContext {
 		// As above, we need to write ALL the dependencies BEFORE we write the main jar.
 		int count = 1; // Classpath is 1-based.
 		for(Dependency d : deps.dependencies) {
+		    System.out.println("Writing dependency "+d.newFilename()+" priority "+d.order());
 			bw.write("wrapper.java.classpath."+count+"="+d.newFilename()+'\n');
 			count++;
 		}
@@ -218,6 +236,12 @@ public class UpdateDeployContext {
 		if(!writtenReload) {
 			// Add it.
 			bw.write("wrapper.restart.reload_configuration=TRUE\n");
+		}
+		if(!writtenAnchor) {
+		    bw.write("wrapper.anchorfile=Freenet.anchor\n");
+		}
+		if(!writtenAnchorInterval) {
+		    bw.write("wrapper.anchor.poll_interval=1\n");
 		}
 		
 		bw.close();
@@ -238,6 +262,7 @@ public class UpdateDeployContext {
 
 	private Dependency findDependencyByRHSFilename(File rhs) {
 		String rhsName = rhs.getName().toLowerCase();
+		// Check for files already in use.
 		for(Dependency dep : deps.dependencies) {
 			File f = dep.oldFilename();
 			if(f == null) {
@@ -245,8 +270,15 @@ public class UpdateDeployContext {
 				continue;
 			}
 			if(rhs.equals(f)) return dep;
-			if(rhsName.equals(f.getName())) return dep;
+			if(rhsName.equals(f.getName().toLowerCase())) return dep;
 		}
+		// It may be already on the classpath even though it's a new file officially.
+        for(Dependency dep : deps.dependencies) {
+            File f = dep.newFilename();
+            if(rhs.equals(f)) return dep;
+            if(rhsName.equals(f.getName().toLowerCase())) return dep;
+        }
+        // Slightly more expensive test.
 		for(Dependency dep : deps.dependencies) {
 			Pattern p = dep.regex();
 			if(p != null) {
@@ -314,7 +346,10 @@ public class UpdateDeployContext {
 					int memoryLimit = Integer.parseInt(line.substring("wrapper.java.maxmemory=".length()));
 					int newMemoryLimit = memoryLimit + extraMemoryMB;
 					// There have been some cases where really high limits have caused the JVM to do bad things.
-					if(newMemoryLimit > 2048) newMemoryLimit = 2048;
+					if(NodeStarter.isSomething32bits() && newMemoryLimit > 1408) {
+						Logger.error(UpdateDeployContext.class, "We've detected a 32bit JVM so we're refusing to set maxmemory to "+newMemoryLimit);
+						newMemoryLimit = 1408;
+					}
 					bw.write('#' + markerComment + '\n');
 					bw.write("wrapper.java.maxmemory="+newMemoryLimit+'\n');
 					success = true;
@@ -360,6 +395,10 @@ public class UpdateDeployContext {
 			newConfig.delete();
 			return CHANGED.FAIL;
 		}
+	}
+
+	public File getBackupJar() {
+		return backupMainJar;
 	}
 
 }

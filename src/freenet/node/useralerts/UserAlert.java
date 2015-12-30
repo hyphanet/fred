@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.node.fcp.FCPMessage;
+import freenet.clients.fcp.FCPMessage;
 import freenet.support.HTMLNode;
 
 public interface UserAlert {

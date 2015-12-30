@@ -30,7 +30,7 @@ public class HourlyStats {
 	/** Report an incoming accepted remote request.
 	  *
 	  * @param ssk Whether the request was an ssk
-	  * @param successs Whether the request succeeded
+	  * @param success Whether the request succeeded
 	  * @param local If the request succeeded, whether it succeeded locally
 	  * @param htl The htl counter the request had when it arrived
 	  * @param location The routing location of the request

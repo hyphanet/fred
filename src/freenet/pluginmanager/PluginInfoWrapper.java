@@ -1,15 +1,15 @@
 package freenet.pluginmanager;
 
-import java.util.Date;
-import java.util.HashSet;
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
+import java.util.HashSet;
 
-import freenet.l10n.NodeL10n;
 import freenet.clients.http.ConfigToadlet;
 import freenet.config.Config;
 import freenet.config.FilePersistentConfig;
 import freenet.config.SubConfig;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
@@ -32,32 +32,43 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	private final boolean isBandwidthIndicator;
 	private final boolean isPortForwardPlugin;
 	private final boolean isMultiplePlugin;
-	private final boolean isFCPPlugin;
+    /** Use {@link #isFCPServerPlugin} instead. */
+    @Deprecated
+    private final boolean isFCPPlugin;
+    private final boolean isFCPServerPlugin;
 	private final boolean isVersionedPlugin;
 	private final boolean isLongVersionedPlugin;
 	private final boolean isThemedPlugin;
 	private final boolean isL10nPlugin;
 	private final boolean isBaseL10nPlugin;
 	private final boolean isConfigurablePlugin;
+	private final boolean isOfficialPlugin;
 	private final String filename;
 	private HashSet<String> toadletLinks = new HashSet<String>();
 	private volatile boolean stopping = false;
 	private volatile boolean unregistered = false;
 	
-	public PluginInfoWrapper(Node node, FredPlugin plug, String filename) throws IOException {
+	public PluginInfoWrapper(Node node, FredPlugin plug, String filename, boolean isOfficial) throws IOException {
 		this.plug = plug;
 		className = plug.getClass().toString();
 		this.filename = filename;
 		this.pr = new PluginRespirator(node, this);
 		threadName = 'p' + className.replaceAll("^class ", "") + '_' + hashCode();
 		start = System.currentTimeMillis();
+
+        // TODO: Code quality: Do we really need to cache these values? I don't care about the
+        // memory overhead, but it's the pointless clutter it causes in the member variables, while
+        // the information is right there and always accessible in the runtime type of plug.
+        // When fixing this, please also consider the TODO at getFCPServerPlugin(). 
 		isBandwidthIndicator = (plug instanceof FredPluginBandwidthIndicator);
 		isPproxyPlugin = (plug instanceof FredPluginHTTP);
 		isThreadlessPlugin = (plug instanceof FredPluginThreadless);
 		isIPDetectorPlugin = (plug instanceof FredPluginIPDetector);
 		isPortForwardPlugin = (plug instanceof FredPluginPortForward);
 		isMultiplePlugin = (plug instanceof FredPluginMultiple);
-		isFCPPlugin = (plug instanceof FredPluginFCP);
+        isFCPPlugin = (plug instanceof FredPluginFCP);
+        isFCPServerPlugin
+            = (plug instanceof FredPluginFCPMessageHandler.ServerSideFCPMessageHandler);
 		isVersionedPlugin = (plug instanceof FredPluginVersioned);
 		isLongVersionedPlugin = (plug instanceof FredPluginRealVersioned);
 		isThemedPlugin = (plug instanceof FredPluginThemed);
@@ -65,7 +76,8 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		isBaseL10nPlugin = (plug instanceof FredPluginBaseL10n);
 		isConfigurablePlugin = (plug instanceof FredPluginConfigurable);
 		if(isConfigurablePlugin) {
-			config = FilePersistentConfig.constructFilePersistentConfig(new File(node.getCfgDir(), "plugin-"+getPluginClassName()+".ini"), "config options for plugin: "+getPluginClassName());
+			config = FilePersistentConfig.constructFilePersistentConfig(new File(node.getCfgDir(), "plugin-"+getPluginClassName()+".ini"),
+			             "config options for plugin: "+getPluginClassName());
 			subconfig = new SubConfig(getPluginClassName(), config);
 			((FredPluginConfigurable)plug).setupConfig(subconfig);
 			config.finishedInit();
@@ -75,6 +87,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 			subconfig = null;
 			configToadlet = null;
 		}
+		isOfficialPlugin = isOfficial;
 	}
 
 	void setThread(Thread ps) {
@@ -140,10 +153,8 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 			stopping = true;
 		}
 	}
-	
-	
-	
-	public boolean finishShutdownPlugin(PluginManager manager, int maxWaitTime, boolean reloading) {
+
+	public boolean finishShutdownPlugin(PluginManager manager, long maxWaitTime, boolean reloading) {
 		boolean success = true;
 		if(thread != null) {
 			thread.interrupt();
@@ -180,7 +191,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	 * terminate. Set to -1 if you don't want to wait at all, 0 to wait forever
 	 * or else a value in milliseconds.
 	 **/
-	public void stopPlugin(PluginManager manager, int maxWaitTime, boolean reloading) {
+	public void stopPlugin(PluginManager manager, long maxWaitTime, boolean reloading) {
 		startShutdownPlugin(manager, reloading);
 		finishShutdownPlugin(manager, maxWaitTime, reloading);
 		// always remove plugin
@@ -227,11 +238,38 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	public boolean isMultiplePlugin() {
 		return isMultiplePlugin;
 	}
-	
-	public boolean isFCPPlugin() {
-		return isFCPPlugin;
-	}
-	
+
+    /**
+     * @deprecated Use {@link #isFCPServerPlugin()}
+     */
+    @Deprecated
+    public boolean isFCPPlugin() {
+        return isFCPPlugin;
+    }
+
+    public boolean isFCPServerPlugin() {
+        return isFCPServerPlugin;
+    }
+
+    /**
+     * If {@link #isFCPServerPlugin()} returns true, may be called to obtain the
+     * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} of the plugin.<br><br>
+     * 
+     * TODO: Code quality: Currently, all the other is...() functions are used by PluginManager
+     * just to then manually cast the plugin main object to the desired type, i.e. it manually
+     * does what the body of this function does. This restricts the API to require the plugin main
+     * class to implement all the various interfaces. Instead, please add equivalents of this 
+     * function for all the other is...(), and use those new functions everywhere in PluginManager.
+     * This will a preparation for allowing plugins to implement the various interfaces in DIFFERENT
+     * classes than their plugin main class - which will be a good idea for keeping plugin main
+     * classes short.
+     */
+    public FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
+            getFCPServerPlugin() {
+
+        return (FredPluginFCPMessageHandler.ServerSideFCPMessageHandler)plug;
+    }
+
 	public boolean isThemedPlugin() {
 		return isThemedPlugin;
 	}
@@ -283,5 +321,16 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 
 	public ConfigToadlet getConfigToadlet() {
 		return configToadlet;
+	}
+
+	public boolean isOfficialPlugin() {
+		return isOfficialPlugin;
+	}
+
+	public String getLocalisedPluginName() {
+		String pluginName = getFilename();
+		if(isOfficialPlugin())
+			return PluginManager.getOfficialPluginLocalisedName(pluginName);
+		else return pluginName;
 	}
 }

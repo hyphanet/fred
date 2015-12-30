@@ -42,13 +42,13 @@ public class PeerMessageQueue {
 	private class PrioQueue {
 		
 		// FIXME refactor into PrioQueue and RoundRobinByUIDPrioQueue
-		PrioQueue(int timeout, boolean timeoutSinceLastSend) {
+		PrioQueue(long timeout, boolean timeoutSinceLastSend) {
 			this.timeout = timeout;
 			this.roundRobinBetweenUIDs = timeoutSinceLastSend;
 		}
 		
 		/** The timeout, period after which messages become urgent. */
-		final int timeout;
+		final long timeout;
 		/** If true, do round-robin between UID's, and count the timeout relative
 		 * to the last send. Block transfers need this - both realtime and bulk. */
 		final boolean roundRobinBetweenUIDs;

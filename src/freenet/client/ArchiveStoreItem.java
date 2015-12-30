@@ -3,10 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.DoublyLinkedListImpl;
-import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
 /**
@@ -20,7 +17,10 @@ abstract class ArchiveStoreItem extends DoublyLinkedListImpl.Item<ArchiveStoreIt
 	ArchiveStoreItem(ArchiveKey key, ArchiveStoreContext context) {
 		this.key = key;
 		this.context = context;
-		context.addItem(this);
+	}
+	
+	protected void addToContext() {
+	    context.addItem(this);
 	}
 
 	/** Delete any stored data on disk etc. 
@@ -52,25 +52,5 @@ abstract class ArchiveStoreItem extends DoublyLinkedListImpl.Item<ArchiveStoreIt
 	 * returned object is either finalized or freed.
 	 */
 	abstract Bucket getReaderBucket() throws ArchiveFailureException;
-	
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Trying to store an ArchiveStoreItem!", new Exception("error"));
-		return false;
-	}
-	
-	public boolean objectCanUpdate(ObjectContainer container) {
-		Logger.error(this, "Trying to store an ArchiveStoreItem!", new Exception("error"));
-		return false;
-	}
-	
-	public boolean objectCanActivate(ObjectContainer container) {
-		Logger.error(this, "Trying to store an ArchiveStoreItem!", new Exception("error"));
-		return false;
-	}
-	
-	public boolean objectCanDeactivate(ObjectContainer container) {
-		Logger.error(this, "Trying to store an ArchiveStoreItem!", new Exception("error"));
-		return false;
-	}
 	
 }

@@ -1,7 +1,5 @@
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.USK;
 import freenet.support.Logger;
 
@@ -36,7 +34,7 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 	}
 
 	@Override
-	public void onFoundEdition(long l, USK key, ObjectContainer container,
+	public void onFoundEdition(long l, USK key, 
 			ClientContext context, boolean metadata, short codec, byte[] data,
 			boolean newKnownGood, boolean newSlotToo) {
 		synchronized(this) {
@@ -54,7 +52,7 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 			}
 			if(!roundFinished) return;
 		}
-		target.onFoundEdition(l, key, null, context, metadata, codec, data, newKnownGood, newSlotToo);
+		target.onFoundEdition(l, key, context, metadata, codec, data, newKnownGood, newSlotToo);
 	}
 
 	@Override
@@ -102,7 +100,7 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 			wasKnownGood = false;
 		}
 		if(ed == -1) return;
-		target.onFoundEdition(ed, key, null, context, meta, codec, data, wasKnownGood, wasKnownGood);
+		target.onFoundEdition(ed, key, context, meta, codec, data, wasKnownGood, wasKnownGood);
 	}
 
 }

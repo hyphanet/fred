@@ -1,23 +1,29 @@
 package freenet.support;
 
 import java.io.ByteArrayInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
+import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
+import freenet.support.api.LockableRandomAccessBuffer;
+import freenet.support.api.RandomAccessBucket;
+import freenet.support.io.ByteArrayRandomAccessBuffer;
 
 /**
  * Simple read-only array bucket. Just an adapter class to save some RAM.
  * Wraps a byte[], offset, length into a Bucket. Read-only. ArrayBucket on
  * the other hand is a chain of byte[]'s.
+ * 
+ * Not serializable as it doesn't copy. Should only be used for short-lived hacks for that reason.
  */
-public class SimpleReadOnlyArrayBucket implements Bucket {
+public class SimpleReadOnlyArrayBucket implements Bucket, RandomAccessBucket {
 
-	final byte[] buf;
+    private static final long serialVersionUID = 1L;
+    final byte[] buf;
 	final int offset;
 	final int length;
 	
@@ -36,9 +42,19 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 		throw new IOException("Read only");
 	}
 
+    @Override
+    public OutputStream getOutputStreamUnbuffered() throws IOException {
+        throw new IOException("Read only");
+    }
+    
+	@Override
+	public InputStream getInputStreamUnbuffered() throws IOException {
+		return new ByteArrayInputStream(buf, offset, length);
+	}
+	
 	@Override
 	public InputStream getInputStream() throws IOException {
-		return new ByteArrayInputStream(buf, offset, length);
+	    return getInputStreamUnbuffered();
 	}
 
 	@Override
@@ -67,21 +83,30 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 	}
 
 	@Override
-	public void storeTo(ObjectContainer container) {
-		container.store(this);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
-
-	@Override
-	public Bucket createShadow() {
+	public RandomAccessBucket createShadow() {
 		if(buf.length < 256*1024) {
 			return new SimpleReadOnlyArrayBucket(Arrays.copyOfRange(buf, offset, offset+length));
 		}
 		return null;
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Not persistent.
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void storeTo(DataOutputStream dos) {
+        // Not persistent.
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public LockableRandomAccessBuffer toRandomAccessBuffer() throws IOException {
+        ByteArrayRandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(buf, offset, length, true);
+        raf.setReadOnly();
+        return raf;
+    }
 
 }

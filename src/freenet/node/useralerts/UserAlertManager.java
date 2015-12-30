@@ -14,9 +14,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import freenet.clients.fcp.FCPConnectionHandler;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
-import freenet.node.fcp.FCPConnectionHandler;
 import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -158,7 +158,10 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			int classHash1 = a1.getClass().hashCode();
 			if(classHash0 > classHash1) return 1;
 			else if(classHash0 < classHash1) return -1;
-			// Then by object hashCode
+			// Then go by time (newest first)
+			if(a0.getUpdatedTime() < a1.getUpdatedTime()) return 1;
+			else if(a0.getUpdatedTime() > a1.getUpdatedTime()) return -1;
+			// And finally by object hashCode
 			int hash0 = a0.hashCode();
 			int hash1 = a1.hashCode();
 			if(hash0 > hash1) return 1;
@@ -187,7 +190,17 @@ public class UserAlertManager implements Comparator<UserAlert> {
 				continue;
 			totalNumber++;
 			alertsNode.addChild("a", "name", alert.anchor());
-			alertsNode.addChild(renderAlert(alert));
+			if(showOnlyErrors) {
+				// Paranoia. Don't break the web interface no matter what.
+				try {
+					alertsNode.addChild(renderAlert(alert));
+				} catch (Throwable t) {
+					Logger.error(this, "FAILED TO RENDER ALERT: "+alert+" : "+t, t);
+				}
+			} else {
+				// Alerts toadlet itself can error, that's OK.
+				alertsNode.addChild(renderAlert(alert));
+			}
 		}
 		if (totalNumber == 0) {
 			return new HTMLNode("#", "");

@@ -15,6 +15,10 @@
  */
 package freenet.io;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -229,13 +233,13 @@ public class AddressTracker {
 	
 	/** If the minimum gap is at least this, we might be port forwarded.
 	 * RFC 4787 requires at least 2 minutes, but many NATs have shorter timeouts. */
-	public final static long MAYBE_TUNNEL_LENGTH = ((5 * 60) + 1) * 1000L;
+	public final static long MAYBE_TUNNEL_LENGTH = MINUTES.toMillis(5) + SECONDS.toMillis(1);
 	/** If the minimum gap is at least this, we are almost certainly port forwarded.
 	 * Some stateful firewalls do at least 30 minutes. Hopefully the below is
 	 * sufficiently over the top! */
-	public final static long DEFINITELY_TUNNEL_LENGTH = (12 * 60 + 1) * 60 * 1000L;
+	public final static long DEFINITELY_TUNNEL_LENGTH = HOURS.toMillis(12) + MINUTES.toMillis(1);
 	/** Time after which we ignore evidence that we are port forwarded */
-	public static final long HORIZON = 24*60*60*1000L;
+	public static final long HORIZON = HOURS.toMillis(24);
 
 	public long getLongestSendReceiveGap() {
 		return getLongestSendReceiveGap(HORIZON);

@@ -15,10 +15,8 @@ import freenet.node.NodeClientCore;
 import freenet.pluginmanager.FredPluginBaseL10n;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet.KeyIterator;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.BucketTools;
@@ -43,10 +41,8 @@ public class TranslationToadlet extends Toadlet {
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 		
 		boolean showEverything = !request.isParameterSet("toTranslateOnly");
 		
@@ -226,20 +222,9 @@ public class TranslationToadlet extends Toadlet {
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 		
-		final boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		final String passwd = request.getPartAsStringFailsafe("formPassword", 32);
-		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
-		if(noPassword) {
-			if(logMINOR) Logger.minor(this, "No password ("+passwd+" should be "+core.formPassword+ ')');
-			redirectTo(ctx, "/");
-			return;
-		}
-
 		if(request.isPartSet("translating_for")) {
 			final String translateFor = request.getPartAsStringFailsafe("translating_for", 255);
 

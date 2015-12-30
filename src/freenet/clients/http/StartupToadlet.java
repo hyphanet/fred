@@ -33,7 +33,7 @@ public class StartupToadlet extends Toadlet {
 			PageNode page = ctx.getPageMaker().getPageNode(desc, ctx, new RenderParameters().renderStatus(false).renderNavigationLinks(false).renderModeSwitch(false));
 			HTMLNode pageNode = page.outer;
 			HTMLNode headNode = page.headNode;
-			headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "20; url="});
+			headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "1; url="});
 			HTMLNode contentNode = page.content;
 
 			if(!isPRNGReady) {

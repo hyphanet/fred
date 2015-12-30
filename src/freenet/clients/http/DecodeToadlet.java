@@ -28,7 +28,7 @@ public class DecodeToadlet extends Toadlet {
 		HTMLNode contentNode = page.content;
 		
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(ctx.getAlertManager().createSummary());
 		
 		final String requestPath = request.getPath().substring(path().length());
 

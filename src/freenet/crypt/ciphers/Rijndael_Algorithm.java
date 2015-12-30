@@ -4,8 +4,9 @@
  */
 package freenet.crypt.ciphers;
 
-import java.io.PrintWriter;
 import java.security.InvalidKeyException;
+
+import freenet.support.Logger;
 
 //...........................................................................
 /**
@@ -29,22 +30,32 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 {
 //	Debugging methods and variables
 //	...........................................................................
+	
+	static {
+		Logger.registerClass(Rijndael_Algorithm.class);
+	}
+	private static boolean logMINOR;
+	private static boolean logDEBUG;
+	
+	static final String ALGORITHM = "Rijndael";
+	static final double VERSION = 0.1;
+	static final String FULL_NAME = ALGORITHM + " ver. " + VERSION;
 
 	private static final String NAME = "Rijndael_Algorithm";
 	private static final boolean IN = true, OUT = false;
-
-	private static final boolean RDEBUG = Rijndael_Properties.GLOBAL_DEBUG;
-	private static final int debuglevel = RDEBUG ? Rijndael_Properties.getLevel(NAME) : 0;
-	private static final PrintWriter err = RDEBUG ? Rijndael_Properties.getOutput() : null;
-
-	private static final boolean TRACE = Rijndael_Properties.isTraceable(NAME);
+	/** Must be enabled to see most (all?) of the logging */
+	private static final boolean RDEBUG = false;
+	/** 0 for normal, 6 for verbose with plaintext etc, 8 for really verbose */
+	private static final int debuglevel = RDEBUG ? 6 : 0;
+	/** Enable to see input and output of the API functions */
+	private static final boolean TRACE = false;
 
 	private static void debug(String s) {
-		err.println(">>> " + NAME + ": " + s);
+		if(logDEBUG) Logger.debug(Rijndael_Algorithm.class, ">>> " + NAME + ": " + s);
 	}
 
 	private static void trace(boolean in, String s) {
-		if (TRACE) err.println((in?"==> ":"<== ")+NAME+ '.' +s);
+		if (TRACE && logDEBUG) Logger.debug(Rijndael_Algorithm.class, (in?"==> ":"<== ")+NAME+ '.' +s);
 	}
 	
 //	Constants and variables
@@ -88,8 +99,8 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	static {
 		long time = System.currentTimeMillis();
 
-		if (RDEBUG && (debuglevel > 6)) {
-			System.out.println("Algorithm Name: "+Rijndael_Properties.FULL_NAME);
+		if (RDEBUG && (logMINOR)) {
+			System.out.println("Algorithm Name: "+FULL_NAME);
 			System.out.println("Electronic Codebook (ECB) Mode");
 			System.out.println();
 		}
@@ -100,55 +111,9 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		// produce log and alog tables, needed for multiplying in the
 		// field GF(2^m) (generator = 3)
 		//
-		alog[0] = 1;
-		for (i = 1; i < 256; i++) {
-			j = (alog[i-1] << 1) ^ alog[i-1];
-			if ((j & 0x100) != 0) j ^= ROOT;
-			alog[i] = j;
-		}
-		for (i = 1; i < 255; i++) log[alog[i]] = i;
-		byte[][] A = new byte[][] {
-				{1, 1, 1, 1, 1, 0, 0, 0},
-				{0, 1, 1, 1, 1, 1, 0, 0},
-				{0, 0, 1, 1, 1, 1, 1, 0},
-				{0, 0, 0, 1, 1, 1, 1, 1},
-				{1, 0, 0, 0, 1, 1, 1, 1},
-				{1, 1, 0, 0, 0, 1, 1, 1},
-				{1, 1, 1, 0, 0, 0, 1, 1},
-				{1, 1, 1, 1, 0, 0, 0, 1}
-		};
-		byte[] B = new byte[] { 0, 1, 1, 0, 0, 0, 1, 1};
+        generateLogAndAlogTables(ROOT);
+        generateSBoxes();
 
-		//
-		// substitution box based on F^{-1}(x)
-		//
-		int t;
-		byte[][] box = new byte[256][8];
-		box[1][7] = 1;
-		for (i = 2; i < 256; i++) {
-			j = alog[255 - log[i]];
-			for (t = 0; t < 8; t++)
-				box[i][t] = (byte)((j >>> (7 - t)) & 0x01);
-		}
-		//
-		// affine transform:  box[i] <- B + A*box[i]
-		//
-		byte[][] cox = new byte[256][8];
-		for (i = 0; i < 256; i++)
-			for (t = 0; t < 8; t++) {
-				cox[i][t] = B[t];
-				for (j = 0; j < 8; j++)
-					cox[i][t] ^= A[t][j] * box[i][j];
-			}
-		//
-		// S-boxes and inverse S-boxes
-		//
-		for (i = 0; i < 256; i++) {
-			S[i] = (byte)(cox[i][0] << 7);
-			for (t = 1; t < 8; t++)
-				S[i] ^= cox[i][t] << (7-t);
-			Si[S[i] & 0xFF] = (byte) i;
-		}
 		//
 		// T-boxes
 		//
@@ -158,73 +123,19 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 				{1, 3, 2, 1},
 				{1, 1, 3, 2}
 		};
-		byte[][] AA = new byte[4][8];
-		for (i = 0; i < 4; i++) {
-			for (j = 0; j < 4; j++) AA[i][j] = G[i][j];
-			AA[i][i+4] = 1;
-		}
-		byte pivot, tmp;
-		byte[][] iG = new byte[4][4];
-		for (i = 0; i < 4; i++) {
-			pivot = AA[i][i];
-			if (pivot == 0) {
-				t = i + 1;
-				while ((AA[t][i] == 0) && (t < 4))
-					t++;
-				if (t == 4)
-					throw new RuntimeException("G matrix is not invertible");
-				else {
-					for (j = 0; j < 8; j++) {
-						tmp = AA[i][j];
-						AA[i][j] = AA[t][j];
-						AA[t][j] = tmp;
-					}
-					pivot = AA[i][i];
-				}
-			}
-			for (j = 0; j < 8; j++)
-				if (AA[i][j] != 0)
-					AA[i][j] = (byte)
-					alog[(255 + log[AA[i][j] & 0xFF] - log[pivot & 0xFF]) % 255];
-			for (t = 0; t < 4; t++)
-				if (i != t) {
-					for (j = i+1; j < 8; j++)
-						AA[t][j] ^= mul(AA[i][j], AA[t][i]);
-					AA[t][i] = 0;
-				}
-		}
-		for (i = 0; i < 4; i++)
-			for (j = 0; j < 4; j++) iG[i][j] = AA[i][j + 4];
+        byte[][] iG = generateInvertedGMatrix(G);
+        generateTBoxes(G, iG);
 
-		int s;
-		for (t = 0; t < 256; t++) {
-			s = S[t];
-			T1[t] = mul4(s, G[0]);
-			T2[t] = mul4(s, G[1]);
-			T3[t] = mul4(s, G[2]);
-			T4[t] = mul4(s, G[3]);
-
-			s = Si[t];
-			T5[t] = mul4(s, iG[0]);
-			T6[t] = mul4(s, iG[1]);
-			T7[t] = mul4(s, iG[2]);
-			T8[t] = mul4(s, iG[3]);
-
-			U1[t] = mul4(t, iG[0]);
-			U2[t] = mul4(t, iG[1]);
-			U3[t] = mul4(t, iG[2]);
-			U4[t] = mul4(t, iG[3]);
-		}
 		//
 		// round constants
 		//
 		rcon[0] = 1;
 		int r = 1;
-		for (t = 1; t < 30; ) rcon[t++] = (byte)(r = mul(2, r));
+		for (int t = 1; t < 30; ) rcon[t++] = (byte)(r = mul(2, r));
 
 		time = System.currentTimeMillis() - time;
 
-		if (RDEBUG && (debuglevel > 8)) {
+		if (RDEBUG && (logDEBUG)) {
 			System.out.println("==========");
 			System.out.println();
 			System.out.println("Static Data");
@@ -270,6 +181,123 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			System.out.println();
 		}
 	}
+
+    private static void generateLogAndAlogTables(int ROOT) {
+        alog[0] = 1;
+        for (int i = 1; i < 256; i++) {
+            int j = (alog[i-1] << 1) ^ alog[i-1];
+            if ((j & 0x100) != 0) j ^= ROOT;
+            alog[i] = j;
+        }
+        for (int i = 1; i < 255; i++) log[alog[i]] = i;
+    }
+
+    private static void generateSBoxes() {
+        byte[][] A = new byte[][] {
+                {1, 1, 1, 1, 1, 0, 0, 0},
+                {0, 1, 1, 1, 1, 1, 0, 0},
+                {0, 0, 1, 1, 1, 1, 1, 0},
+                {0, 0, 0, 1, 1, 1, 1, 1},
+                {1, 0, 0, 0, 1, 1, 1, 1},
+                {1, 1, 0, 0, 0, 1, 1, 1},
+                {1, 1, 1, 0, 0, 0, 1, 1},
+                {1, 1, 1, 1, 0, 0, 0, 1}
+        };
+        byte[] B = new byte[] { 0, 1, 1, 0, 0, 0, 1, 1};
+
+        //
+        // substitution box based on F^{-1}(x)
+        //
+        byte[][] box = new byte[256][8];
+        box[1][7] = 1;
+        for (int i = 2; i < 256; i++) {
+            int j = alog[255 - log[i]];
+            for (int t = 0; t < 8; t++)
+                box[i][t] = (byte)((j >>> (7 - t)) & 0x01);
+        }
+        //
+        // affine transform:  box[i] <- B + A*box[i]
+        //
+        byte[][] cox = new byte[256][8];
+        for (int i = 0; i < 256; i++)
+            for (int t = 0; t < 8; t++) {
+                cox[i][t] = B[t];
+                for (int j = 0; j < 8; j++)
+                    cox[i][t] ^= A[t][j] * box[i][j];
+            }
+        //
+        // S-boxes and inverse S-boxes
+        //
+        for (int i = 0; i < 256; i++) {
+            S[i] = (byte)(cox[i][0] << 7);
+            for (int t = 1; t < 8; t++)
+                S[i] ^= cox[i][t] << (7-t);
+            Si[S[i] & 0xFF] = (byte) i;
+        }
+    }
+
+    private static byte[][] generateInvertedGMatrix(byte[][] gMatrix) {
+        byte[][] AA = new byte[4][8];
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) AA[i][j] = gMatrix[i][j];
+            AA[i][i+4] = 1;
+        }
+        byte pivot, tmp;
+        byte[][] iG = new byte[4][4];
+        for (int i = 0; i < 4; i++) {
+            pivot = AA[i][i];
+            if (pivot == 0) {
+                int t = i + 1;
+                while ((AA[t][i] == 0) && (t < 4))
+                    t++;
+                if (t == 4)
+                    throw new RuntimeException("G matrix is not invertible");
+                else {
+                    for (int j = 0; j < 8; j++) {
+                        tmp = AA[i][j];
+                        AA[i][j] = AA[t][j];
+                        AA[t][j] = tmp;
+                    }
+                    pivot = AA[i][i];
+                }
+            }
+            for (int j = 0; j < 8; j++)
+                if (AA[i][j] != 0)
+                    AA[i][j] = (byte)
+                            alog[(255 + log[AA[i][j] & 0xFF] - log[pivot & 0xFF]) % 255];
+            for (int t = 0; t < 4; t++)
+                if (i != t) {
+                    for (int j = i+1; j < 8; j++)
+                        AA[t][j] ^= mul(AA[i][j], AA[t][i]);
+                    AA[t][i] = 0;
+                }
+        }
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++) iG[i][j] = AA[i][j + 4];
+
+        return iG;
+    }
+
+    private static void generateTBoxes(byte[][] g, byte[][] iG) {
+        for (int t = 0; t < 256; t++) {
+            int s = S[t];
+            T1[t] = mul4(s, g[0]);
+            T2[t] = mul4(s, g[1]);
+            T3[t] = mul4(s, g[2]);
+            T4[t] = mul4(s, g[3]);
+
+            s = Si[t];
+            T5[t] = mul4(s, iG[0]);
+            T6[t] = mul4(s, iG[1]);
+            T7[t] = mul4(s, iG[2]);
+            T8[t] = mul4(s, iG[3]);
+
+            U1[t] = mul4(t, iG[0]);
+            U2[t] = mul4(t, iG[1]);
+            U3[t] = mul4(t, iG[2]);
+            U4[t] = mul4(t, iG[3]);
+        }
+    }
 
 	// multiply two elements of GF(2^m)
 	private static int mul(int a, int b) {
@@ -350,7 +378,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		t1 = a1;
 		t2 = a2;
 		t3 = a3;
-		if (RDEBUG && (debuglevel > 6)) System.out.println("CT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+		if (RDEBUG && (logMINOR)) System.out.println("CT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
 		}
 
 		// last round is special
@@ -375,7 +403,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		result[13] = (byte)(S[(t0 >>> 16) & 0xFF] ^ (tt >>> 16));
 		result[14] = (byte)(S[(t1 >>>  8) & 0xFF] ^ (tt >>>  8));
 		result[15] = (byte)(S[ t2         & 0xFF] ^  tt        );
-		if (RDEBUG && (debuglevel > 6)) {
+		if (RDEBUG && (logMINOR)) {
 			System.out.println("CT="+toString(result));
 			System.out.println();
 		}
@@ -482,7 +510,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		t5 = a5;
 		t6 = a6;
 		t7 = a7;
-		if (RDEBUG && (debuglevel > 6)) System.out.println("CT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+		if (RDEBUG && (logMINOR)) System.out.println("CT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
 		}
 
 		// last round is special
@@ -527,7 +555,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		result[29] = (byte)(S[(t0 >>> 16) & 0xFF] ^ (tt >>> 16));
 		result[30] = (byte)(S[(t2 >>>  8) & 0xFF] ^ (tt >>>  8));
 		result[31] = (byte)(S[ t3         & 0xFF] ^  tt        );
-		if (RDEBUG && (debuglevel > 6)) {
+		if (RDEBUG && (logMINOR)) {
 			System.out.println("CT="+toString(result));
 			System.out.println();
 		}
@@ -590,7 +618,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		t1 = a1;
 		t2 = a2;
 		t3 = a3;
-		if (RDEBUG && (debuglevel > 6)) System.out.println("PT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+		if (RDEBUG && (logMINOR)) System.out.println("PT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
 		}
 
 		// last round is special
@@ -615,7 +643,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		result[13] = (byte)(Si[(t2 >>> 16) & 0xFF] ^ (tt >>> 16));
 		result[14] = (byte)(Si[(t1 >>>  8) & 0xFF] ^ (tt >>>  8));
 		result[15] = (byte)(Si[ t0         & 0xFF] ^  tt        );
-		if (RDEBUG && (debuglevel > 6)) {
+		if (RDEBUG && (logMINOR)) {
 			System.out.println("PT="+toString(result));
 			System.out.println();
 		}
@@ -721,7 +749,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		t5 = a5;
 		t6 = a6;
 		t7 = a7;
-		if (RDEBUG && (debuglevel > 6)) System.out.println("PT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+		if (RDEBUG && (logMINOR)) System.out.println("PT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
 		}
 
 		// last round is special
@@ -766,7 +794,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		result[29] = (byte)(Si[(t6 >>> 16) & 0xFF] ^ (tt >>> 16));
 		result[30] = (byte)(Si[(t4 >>>  8) & 0xFF] ^ (tt >>>  8));
 		result[31] = (byte)(Si[ t3         & 0xFF] ^  tt        );
-		if (RDEBUG && (debuglevel > 6)) {
+		if (RDEBUG && (logMINOR)) {
 			System.out.println("PT="+toString(result));
 			System.out.println();
 		}
@@ -945,7 +973,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 						T3[(t[(i + s2) % BC] >>>  8) & 0xFF] ^
 						T4[ t[(i + s3) % BC]         & 0xFF]  ) ^ Ke[r][i];
 			System.arraycopy(a, 0, t, 0, BC);
-			if (RDEBUG && (debuglevel > 6)) System.out.println("CT"+r+ '=' +toString(t));
+			if (RDEBUG && (logMINOR)) System.out.println("CT"+r+ '=' +toString(t));
 		}
 		for (i = 0; i < BC; i++) {                   // last round is special
 			tt = Ke[ROUNDS][i];
@@ -954,7 +982,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			result[j++] = (byte)(S[(t[(i + s2) % BC] >>>  8) & 0xFF] ^ (tt >>>  8));
 			result[j++] = (byte)(S[ t[(i + s3) % BC]         & 0xFF] ^ tt);
 		}
-		if (RDEBUG && (debuglevel > 6)) {
+		if (RDEBUG && (logMINOR)) {
 			System.out.println("CT="+toString(result));
 			System.out.println();
 		}
@@ -1008,7 +1036,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 						T7[(t[(i + s2) % BC] >>>  8) & 0xFF] ^
 						T8[ t[(i + s3) % BC]         & 0xFF]  ) ^ Kd[r][i];
 			System.arraycopy(a, 0, t, 0, BC);
-			if (RDEBUG && (debuglevel > 6)) System.out.println("PT"+r+ '=' +toString(t));
+			if (RDEBUG && (logMINOR)) System.out.println("PT"+r+ '=' +toString(t));
 		}
 		for (i = 0; i < BC; i++) {                   // last round is special
 			tt = Kd[ROUNDS][i];
@@ -1017,7 +1045,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			result[j++] = (byte)(Si[(t[(i + s2) % BC] >>>  8) & 0xFF] ^ (tt >>>  8));
 			result[j++] = (byte)(Si[ t[(i + s3) % BC]         & 0xFF] ^ tt);
 		}
-		if (RDEBUG && (debuglevel > 6)) {
+		if (RDEBUG && (logMINOR)) {
 			System.out.println("PT="+toString(result));
 			System.out.println();
 		}
@@ -1038,7 +1066,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			for (i = 0; i < BLOCK_SIZE; i++)
 				pt[i] = (byte) i;
 
-			if (RDEBUG && (debuglevel > 6)) {
+			if (RDEBUG && (logMINOR)) {
 				System.out.println("==========");
 				System.out.println();
 				System.out.println("KEYSIZE="+(8*keysize));
@@ -1047,7 +1075,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			}
 			Object key = makeKey(kb, BLOCK_SIZE);
 
-			if (RDEBUG && (debuglevel > 6)) {
+			if (RDEBUG && (logMINOR)) {
 				System.out.println("Intermediate Ciphertext Values (Encryption)");
 				System.out.println();
 				System.out.println("PT="+toString(pt));
@@ -1055,7 +1083,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			byte[] ct = new byte[BLOCK_SIZE];
 			blockEncrypt(pt, ct, 0, key, BLOCK_SIZE);
 
-			if (RDEBUG && (debuglevel > 6)) {
+			if (RDEBUG && (logMINOR)) {
 				System.out.println("Intermediate Plaintext Values (Decryption)");
 				System.out.println();
 				System.out.println("CT="+toString(ct));

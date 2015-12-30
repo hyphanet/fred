@@ -1,10 +1,12 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.ArrayList;
 
 public class SemiOrderedShutdownHook extends Thread {
-	
-	private static final int TIMEOUT = 100*1000;
+
+	private static final long TIMEOUT = SECONDS.toMillis(100);
 	private final ArrayList<Thread> earlyJobs;
 	private final ArrayList<Thread> lateJobs;
 	
@@ -36,7 +38,7 @@ public class SemiOrderedShutdownHook extends Thread {
 		System.err.println("Shutting down...");
 		// First run early jobs, all at once, and wait for them to all complete.
 		
-		Thread[] early = getEarlyJobs();;
+		Thread[] early = getEarlyJobs();
 		
 		for(Thread r : early) {
 			r.start();

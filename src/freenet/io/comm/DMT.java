@@ -143,6 +143,8 @@ public class DMT {
 	public static final String UPTIME_PERCENT = "uptimePercent";
 	public static final String EXPECTED_HASH = "expectedHash";
 	public static final String REJECT_STATS = "rejectStats";
+	public static final String OUTPUT_BANDWIDTH_CLASS = "outputBandwidthClass";
+	public static final String CAPACITY_USAGE = "capacityUsage";
 	
 	/** Very urgent */
 	public static final short PRIORITY_NOW=0;
@@ -1247,58 +1249,34 @@ public class DMT {
 		msg.set(REJECT_STATS, new ShortBuffer(rejectStats));
 		return msg;
 	}
+	
+	/** Divide output bandwidth limit by this to get bandwidth class. */
+	static final int CAPACITY_USAGE_MULTIPLIER = 10*1024;
+	/** Maximum value of bandwidth class */
+	static final byte CAPACITY_USAGE_MAX = 10;
+	/** Minimum value of bandwidth class */
+	static final byte CAPACITY_USAGE_MIN = 1;
+	
+	public static final MessageType ProbeOverallBulkOutputCapacityUsage = new MessageType("ProbeOverallBulkOutputCapacityUsage", PRIORITY_HIGH) {{
+		addField(UID, Long.class); // UID for the probe
+		addField(OUTPUT_BANDWIDTH_CLASS, Byte.class); // Approximate bandwidth, severely truncated.
+		addField(CAPACITY_USAGE, Float.class); // Noisy capacity usage.
+	}};
+	
+	public static final byte bandwidthClassForCapacityUsage(int bandwidthLimit) {
+		bandwidthLimit /= CAPACITY_USAGE_MULTIPLIER;
+		bandwidthLimit = Math.min(bandwidthLimit, CAPACITY_USAGE_MAX);
+		return (byte) Math.max(bandwidthLimit, CAPACITY_USAGE_MIN);
+	}
+	
+	public static final Message createProbeOverallBulkOutputCapacityUsage(long uid, byte outputBandwidthClass, float capacityUsage) {
+		Message msg = new Message(ProbeOverallBulkOutputCapacityUsage);
+		msg.set(UID, uid);
+		msg.set(OUTPUT_BANDWIDTH_CLASS, outputBandwidthClass);
+		msg.set(CAPACITY_USAGE, capacityUsage);
+		return msg;
+	}
 
-	public static final MessageType FNPProbeRequest = new MessageType("FNPProbeRequest", PRIORITY_HIGH) {{
-		addField(UID, Long.class);
-		addField(TARGET_LOCATION, Double.class);
-		addField(NEAREST_LOCATION, Double.class);
-		addField(BEST_LOCATION, Double.class);
-		addField(HTL, Short.class);
-		addField(COUNTER, Short.class);
-		addField(LINEAR_COUNTER, Short.class);
-	}};
-	
-	public static final MessageType FNPProbeTrace = new MessageType("FNPProbeTrace", PRIORITY_LOW) {{
-		addField(UID, Long.class);
-		addField(TARGET_LOCATION, Double.class);
-		addField(NEAREST_LOCATION, Double.class);
-		addField(BEST_LOCATION, Double.class);
-		addField(HTL, Short.class);
-		addField(COUNTER, Short.class);
-		addField(LOCATION, Double.class);
-		addField(MY_UID, Long.class);
-		addField(PEER_LOCATIONS, ShortBuffer.class);
-		addField(PEER_UIDS, ShortBuffer.class);
-		addField(FORK_COUNT, Short.class);
-		addField(LINEAR_COUNTER, Short.class);
-		addField(REASON, String.class);
-		addField(PREV_UID, Long.class);
-	}};
-	
-	public static final MessageType FNPProbeReply = new MessageType("FNPProbeReply", PRIORITY_LOW) {{
-		addField(UID, Long.class);
-		addField(TARGET_LOCATION, Double.class);
-		addField(NEAREST_LOCATION, Double.class);
-		addField(BEST_LOCATION, Double.class);
-		addField(COUNTER, Short.class);
-		addField(LINEAR_COUNTER, Short.class);
-	}};
-	
-	public static final MessageType FNPProbeRejected = new MessageType("FNPProbeRejected", PRIORITY_HIGH) {{
-		addField(UID, Long.class);
-		addField(TARGET_LOCATION, Double.class);
-		addField(NEAREST_LOCATION, Double.class);
-		addField(BEST_LOCATION, Double.class);
-		addField(HTL, Short.class);
-		addField(COUNTER, Short.class);
-		addField(REASON, Short.class);
-		addField(LINEAR_COUNTER, Short.class);
-	}};
-	
-	static public final short PROBE_REJECTED_LOOP = 1;
-	static public final short PROBE_REJECTED_RNF = 2;
-	static public final short PROBE_REJECTED_OVERLOAD = 3;
-	
 	public static final MessageType FNPSwapRequest = new MessageType("FNPSwapRequest", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(HASH, ShortBuffer.class);

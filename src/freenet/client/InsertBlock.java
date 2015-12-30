@@ -3,23 +3,26 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import com.db4o.ObjectContainer;
+import java.io.Serializable;
 
 import freenet.keys.FreenetURI;
-import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 
 /**
  * Class to contain everything needed for an insert.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class InsertBlock {
+public class InsertBlock implements Serializable {
 
-	private Bucket data;
+    private static final long serialVersionUID = 1L;
+    private RandomAccessBucket data;
 	private boolean isFreed;
 	public FreenetURI desiredURI;
 	public ClientMetadata clientMetadata;
 	
-	public InsertBlock(Bucket data, ClientMetadata metadata, FreenetURI desiredURI) {
+	public InsertBlock(RandomAccessBucket data, ClientMetadata metadata, FreenetURI desiredURI) {
 		if(data == null) throw new NullPointerException();
 		this.data = data;
 		this.isFreed = false;
@@ -30,47 +33,19 @@ public class InsertBlock {
 		this.desiredURI = desiredURI;
 	}
 	
-	public Bucket getData() {
+	public RandomAccessBucket getData() {
 		return (isFreed ? null : data);
 	}
 	
-	public void free(ObjectContainer container){
+	public void free(){
 		synchronized (this) {
 			if(isFreed) return;
 			isFreed = true;
 			if(data == null) return;
 		}
 		data.free();
-		if(container != null) {
-			data.removeFrom(container);
-			data = null; // don't remove twice
-		}
-		if(container != null)
-			container.store(this);
 	}
 	
-	public void removeFrom(ObjectContainer container) {
-		if(data != null) {
-			container.activate(data, 1);
-			data.removeFrom(container);
-		}
-		if(desiredURI != null) {
-			container.activate(desiredURI, 5);
-			desiredURI.removeFrom(container);
-		}
-		if(clientMetadata != null) {
-			container.activate(clientMetadata, 5);
-			clientMetadata.removeFrom(container);
-		}
-		container.delete(this);
-	}
-	
-	public void objectOnActivate(ObjectContainer container) {
-		// Cascading activation of dependancies
-		container.activate(data, 1); // will cascade
-		container.activate(desiredURI, 5);
-	}
-
 	/** Null out the data so it doesn't get removed in removeFrom().
 	 * Call this when the data becomes somebody else's problem. */
 	public void nullData() {

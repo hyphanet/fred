@@ -51,6 +51,12 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	 * Prompt for node restart
 	 */
 	private class NeedRestartUserAlert extends AbstractUserAlert {
+		private final String formPassword;
+		
+		public NeedRestartUserAlert(String formPassword) {
+			this.formPassword = formPassword;
+		}
+		
 		@Override
 		public String getTitle() {
 			return l10n("needRestartTitle");
@@ -81,7 +87,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 								"restartForm", "utf-8" }).addChild("div");
 				restartForm.addChild("input", new String[] { "type", "name",
 						"value" }, new String[] { "hidden", "formPassword",
-						node.clientCore.formPassword });
+						formPassword });
 				restartForm.addChild("div");
 				restartForm.addChild("input",//
 						new String[] { "type", "name" },//
@@ -179,20 +185,9 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	public void handleMethodPOST(URI uri, HTTPRequest request,
 			ToadletContext ctx) throws ToadletContextClosedException,
 			IOException, RedirectException {
-		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403,
-					NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
-					NodeL10n.getBase().getString("Toadlet.unauthorized"));
-			return;
-		}
-
-		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if ((pass == null) || !pass.equals(core.formPassword)) {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", path());
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
-		}
+	    
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		// User requested reset to defaults, so present confirmation page.
 		if (request.isPartSet("confirm-reset-to-defaults")) {
@@ -258,23 +253,25 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		// constructing params string. It always constructs it, then redirects
 		// if it turns out to be needed.
 		boolean directorySelector = false;
-		String params = "?";
+		StringBuilder paramsBuilder = new StringBuilder();
+		paramsBuilder.append('?');
 		String value;
 		for (String key : request.getParts()) {
 			// Prepare parts for page selection redirect:
 			// Extract option and put into "select-for"; preserve others.
 			value = request.getPartAsStringFailsafe(key, MAX_PARAM_VALUE_SIZE);
 			if (key.startsWith("select-directory.")) {
-				params += "select-for="
-						+ URLEncoder.encode(
-								key.substring("select-directory.".length()),
-								true) + '&';
+				paramsBuilder
+					.append("select-for=")
+					.append(URLEncoder.encode(key.substring("select-directory.".length()), true))
+					.append('&');
 				directorySelector = true;
 			} else {
-				params += URLEncoder.encode(key, true) + '='
-						+ URLEncoder.encode(value, true) + '&';
+				paramsBuilder.append(URLEncoder.encode(key, true)).append('=')
+					.append(URLEncoder.encode(value, true)).append('&');
 			}
 		}
+		String params = paramsBuilder.toString();
 		if (directorySelector) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>(
 					1);
@@ -321,7 +318,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 							+ configName, MAX_PARAM_VALUE_SIZE);
 				}
 
-				if (!(o.getValueString().equals(value))) {
+				if (!(o.getValueDisplayString().equals(value))) {
 
 					if (logMINOR) {
 						Logger.minor(this, "Changing " + prefix + '.'
@@ -393,8 +390,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				}
 
 				if (needRestartUserAlert == null) {
-					needRestartUserAlert = new NeedRestartUserAlert();
-					node.clientCore.alerts.register(needRestartUserAlert);
+					needRestartUserAlert = new NeedRestartUserAlert(ctx.getFormPassword());
+					ctx.getAlertManager().register(needRestartUserAlert);
 				}
 			}
 		} else {
@@ -427,22 +424,17 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException {
 
-		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403,
-					NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
-					NodeL10n.getBase().getString("Toadlet.unauthorized"));
-			return;
-		}
-
-		boolean advancedModeEnabled = ctx.getContainer()
-				.isAdvancedModeEnabled();
+        if(!ctx.checkFullAccess(this))
+            return;
+        
+		boolean advancedModeEnabled = ctx.isAdvancedModeEnabled();
 
 		PageNode page = ctx.getPageMaker().getPageNode(
 				NodeL10n.getBase().getString("ConfigToadlet.fullTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
-		contentNode.addChild(core.alerts.createSummary());
+		contentNode.addChild(ctx.getAlertManager().createSummary());
 
 		HTMLNode infobox = contentNode.addChild("div", "class",
 				"infobox infobox-normal");
@@ -527,7 +519,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				displayedConfigElements++;
 				String configName = o.getName();
 				String fullName = subConfig.getPrefix() + '.' + configName;
-				String value = o.getValueString();
+				String value = o.getValueDisplayString();
 
 				if (value == null) {
 					Logger.error(this, fullName
@@ -556,12 +548,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				// config descriptions, otherwise use the node's BaseL10n
 				// instance like
 				// normal.
-				HTMLNode shortDesc = (plugin == null) ? NodeL10n.getBase()
-						.getHTMLNode(o.getShortDesc()) : new HTMLNode("#",
-						plugin.getString(o.getShortDesc()));
-				HTMLNode longDesc = (plugin == null) ? NodeL10n.getBase()
-						.getHTMLNode(o.getLongDesc()) : new HTMLNode("#",
-						plugin.getString(o.getLongDesc()));
+				HTMLNode shortDesc = o.getShortDescNode(plugin);
+				HTMLNode longDesc = o.getLongDescNode(plugin);
 
 				HTMLNode configItemNode = configGroupUlNode.addChild("li");
 				String defaultValue;
@@ -797,7 +785,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	@Override
 	public boolean isEnabled(ToadletContext ctx) {
 		Option<?>[] o = subConfig.getOptions();
-		if (core.isAdvancedModeEnabled())
+		if (ctx.isAdvancedModeEnabled())
 			return true;
 		for (Option<?> option : o)
 			if (!option.isExpert())

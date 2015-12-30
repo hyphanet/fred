@@ -3,11 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import com.db4o.ObjectContainer;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
-import freenet.client.FECQueue;
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientRequestSelector;
 import freenet.keys.Key;
 
 public interface RequestScheduler {
@@ -17,20 +17,20 @@ public interface RequestScheduler {
 	 * Definition of "succeeded" will vary, but the point is most schedulers will run another
 	 * request from the parentGrabArray in the near future on the theory that if one works,
 	 * another may also work. 
-	 * @param req The request we ran, which must be deleted.
+	 * @param get The request we ran, which must be deleted.
+	 * @param persistent
 	 * */
 	public void succeeded(BaseSendableGet get, boolean persistent);
 
 	/** Once a key has been requested a few times, don't request it again for 30 minutes. 
 	 * To do so would be pointless given ULPRs, and just waste bandwidth. */
-	public static final long COOLDOWN_PERIOD = 30*60*1000;
+	public static final long COOLDOWN_PERIOD = MINUTES.toMillis(30);
 	/** The number of times a key can be requested before triggering the cooldown period. 
 	 * Note: If you don't want your requests to be subject to cooldown (e.g. in fproxy), make 
 	 * your max retry count less than this (and more than -1). */
 	public static final int COOLDOWN_RETRIES = 3;
-	public long countTransientQueuedRequests();
-
-	public void queueFillRequestStarterQueue();
+	
+	public long countQueuedRequests();
 
 	public KeysFetchingLocally fetchingKeys();
 
@@ -40,15 +40,13 @@ public interface RequestScheduler {
 	
 	public void callFailure(SendableInsert insert, LowLevelPutException exception, int prio, boolean persistent);
 	
-	public FECQueue getFECQueue();
-
 	public ClientContext getContext();
 	
 	public boolean addToFetching(Key key);
 
 	public ChosenBlock grabRequest();
 
-	public void removeRunningRequest(SendableRequest request, ObjectContainer container);
+	public void removeRunningRequest(SendableRequest request);
 
 	/**
 	 * This only works for persistent requests, because transient requests are not
@@ -62,16 +60,13 @@ public interface RequestScheduler {
 	 * @param key
 	 * @param getterWaiting
 	 * @param persistent
-	 * @param container
 	 * @return
 	 */
-	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container);
+	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent);
 
-	public void start(NodeClientCore core);
+	public boolean addRunningInsert(SendableInsert insert, SendableRequestItemKey token);
 
-	public boolean addTransientInsertFetching(SendableInsert insert, Object token);
-
-	public void removeTransientInsertFetching(SendableInsert insert, Object token);
+	public void removeRunningInsert(SendableInsert insert, SendableRequestItemKey token);
 
 	public void wakeStarter();
 
@@ -79,5 +74,7 @@ public interface RequestScheduler {
 	 * at a distance this will need to be reconsidered. See the comments on the caller in 
 	 * RequestHandler (onAbort() handler). */
 	public boolean wantKey(Key key);
+
+    public ClientRequestSelector getSelector();
 
 }

@@ -28,7 +28,6 @@ import freenet.io.comm.UdpSocketHandler;
 import freenet.l10n.NodeL10n;
 import freenet.node.FSParseException;
 import freenet.node.Node;
-import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
@@ -44,12 +43,10 @@ import freenet.support.api.HTTPRequest;
 public class ConnectivityToadlet extends Toadlet {
 	
 	private final Node node;
-	private final NodeClientCore core;
 
-	protected ConnectivityToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
+	protected ConnectivityToadlet(HighLevelSimpleClient client, Node node) {
 		super(client);
 		this.node = node;
-		this.core = core;
 	}
 
 	public void handleMethodGET(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -61,7 +58,7 @@ public class ConnectivityToadlet extends Toadlet {
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(ctx.getAlertManager().createSummary());
 
 		// our ports
 		HTMLNode portInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -112,7 +109,7 @@ public class ConnectivityToadlet extends Toadlet {
 			row.addChild("td", AddressTracker.statusString(tracker.getPortForwardStatus()));
 		}
 		
-		if(ctx.getContainer().isAdvancedModeEnabled()) {
+		if(ctx.isAdvancedModeEnabled()) {
 		
 		// One box per port
 		

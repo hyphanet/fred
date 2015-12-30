@@ -166,6 +166,9 @@ public class IPConverter {
 				return hasFlag ? flagPath : null;
 			}
 		}
+
+		/** cached values(). Never modify or pass this array to outside code! */
+		private static final Country[] values = values();
 	}
 
 	// Base85 Decoding table
@@ -373,7 +376,7 @@ public class IPConverter {
 		}
 		short countryOrdinal = codes[last];
 		if(countryOrdinal < 0) return null;
-		Country country = Country.values()[countryOrdinal];
+		Country country = Country.values[countryOrdinal];
 		cache.put((int)longip, country);
 		return country;
 	}

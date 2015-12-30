@@ -69,7 +69,7 @@ public class SSL {
 		int configItemOrder = 0;
 
 		// Tracks config parameters related to a SSL
-		sslConfig.register("sslEnable", false, configItemOrder++, true, true, "SSL.enable", "SSL.enableLong",
+		sslConfig.register("sslEnable", false, configItemOrder++, true, true, "SSL.enable", "SSL.enable",
 			new BooleanCallback() {
 
 				@Override
@@ -98,7 +98,7 @@ public class SSL {
 				}
 			});
 
-		sslConfig.register("sslKeyStore", "datastore/certs", configItemOrder++, true, true, "SSL.keyStore", "SSL.keyStoreLong",
+		sslConfig.register("sslKeyStore", "datastore/certs", configItemOrder++, true, true, "SSL.keyStore", "SSL.keyStore",
 			new StringCallback() {
 
 				@Override
@@ -122,7 +122,7 @@ public class SSL {
 				}
 			});
 
-		sslConfig.register("sslKeyStorePass", "freenet", configItemOrder++, true, true, "SSL.keyStorePass", "SSL.keyStorePassLong",
+		sslConfig.register("sslKeyStorePass", "freenet", configItemOrder++, true, true, "SSL.keyStorePass", "SSL.keyStorePass",
 			new StringCallback() {
 
 				@Override
@@ -146,7 +146,7 @@ public class SSL {
 				}
 			});
 
-		sslConfig.register("sslKeyPass", "freenet", configItemOrder++, true, true, "SSL.keyPass", "SSL.keyPassLong",
+		sslConfig.register("sslKeyPass", "freenet", configItemOrder++, true, true, "SSL.keyPass", "SSL.keyPass",
 			new StringCallback() {
 
 				@Override
@@ -185,6 +185,7 @@ public class SSL {
 		} catch(Exception e) {
 			Logger.error(SSL.class, "Cannot load keystore, ssl is disable", e);
 		}
+		sslConfig.finishedInitialization();
 
 	}
 

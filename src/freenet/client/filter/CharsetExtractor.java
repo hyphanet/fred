@@ -16,7 +16,7 @@ public interface CharsetExtractor {
 	/** Inspect the first few bytes of the file for any obvious but 
 	 * type-specific BOM. Don't try too hard, if we don't find anything we 
 	 * will call getCharset() with some specific charset families to try.
-	 * @param data The data.
+	 * @param input The data.
 	 * @return The BOM-detected charset family, this is essentially a guess
 	 * which will have to be fed to getCharset().
 	 * (A true BOM would give an exact match, but the caller will have 

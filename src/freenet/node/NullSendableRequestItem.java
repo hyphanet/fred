@@ -1,12 +1,17 @@
 package freenet.node;
 
-public class NullSendableRequestItem implements SendableRequestItem {
+public class NullSendableRequestItem implements SendableRequestItem, SendableRequestItemKey {
 
-	public static final SendableRequestItem nullItem = new NullSendableRequestItem();
+	public static final NullSendableRequestItem nullItem = new NullSendableRequestItem();
 
 	@Override
 	public void dump() {
 		// Do nothing, we will be GC'ed.
+	}
+
+	@Override
+	public SendableRequestItemKey getKey() {
+		return this;
 	}
 
 }

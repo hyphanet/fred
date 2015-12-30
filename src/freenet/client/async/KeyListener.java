@@ -1,7 +1,5 @@
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.node.SendableGet;
@@ -37,18 +35,18 @@ public interface KeyListener {
 	 * @return -1 if we don't want the key, otherwise the priority of the request
 	 * interested in the key.
 	 */
-	public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context);
+	public short definitelyWantKey(Key key, byte[] saltedKey, ClientContext context);
 
 	/**
 	 * Find the requests related to a specific key, used in retrying after cooldown.
 	 * Caller should call probablyWantKey() first.
 	 */
-	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context);
+	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ClientContext context);
 	
 	/**
 	 * Handle the found data, if we really want it.
 	 */
-	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found, ObjectContainer container, ClientContext context);
+	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found, ClientContext context);
 	
 	/**
 	 * Is this related to a persistent request?
@@ -59,9 +57,8 @@ public interface KeyListener {
 	 * Priority of the associated request.
 	 * LOCKING: Should avoid external locking if possible. Will be called
 	 * within the CRSBase lock.
-	 * @param container Database handle.
 	 */
-	short getPriorityClass(ObjectContainer container);
+	short getPriorityClass();
 
 	public long countKeys();
 
@@ -85,11 +82,5 @@ public interface KeyListener {
 	public boolean isEmpty();
 
 	public boolean isSSK();
-
-	/**
-	 * Should this be on the bulk or the real-time scheduler? The actual listener itself
-	 * of course is neither, but it is usually associated with a request...
-	 */
-	public boolean isRealTime();
 
 }

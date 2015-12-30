@@ -127,7 +127,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         // Now add some random links
         for(int i=0;i<NUMBER_OF_NODES*5;i++) {
             if(i % NUMBER_OF_NODES == 0)
-                Logger.normal(RealNodeRoutingTest.class, ""+i);
+                Logger.normal(RealNodeRoutingTest.class, String.valueOf(i));
             int length = (int)Math.pow(NUMBER_OF_NODES, random.nextDouble());
             int nodeA = random.nextInt(NUMBER_OF_NODES);
             int nodeB = (nodeA+length)%NUMBER_OF_NODES;

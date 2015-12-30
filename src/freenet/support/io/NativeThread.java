@@ -10,7 +10,7 @@ import freenet.support.Logger;
 /**
  * Do *NOT* forget to call super.run() if you extend it!
  * 
- * @see http://archives.freenetproject.org/thread/20080214.235159.6deed539.en.html
+ * @see <a href="https://emu.freenetproject.org/pipermail/devl/2008-February/028357.html">Devl Mailing List</a>
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 public class NativeThread extends Thread {
@@ -54,10 +54,15 @@ public class NativeThread extends Thread {
 	
 
 	public static final int ENOUGH_NICE_LEVELS = PriorityLevel.values().length;
+	@Deprecated
 	public static final int MIN_PRIORITY = PriorityLevel.MIN_PRIORITY.value;
+	@Deprecated
 	public static final int LOW_PRIORITY = PriorityLevel.LOW_PRIORITY.value;
+	@Deprecated
 	public static final int NORM_PRIORITY = PriorityLevel.NORM_PRIORITY.value;
+	@Deprecated
 	public static final int HIGH_PRIORITY = PriorityLevel.HIGH_PRIORITY.value;
+	@Deprecated
 	public static final int MAX_PRIORITY = PriorityLevel.MAX_PRIORITY.value;
 	
 	
@@ -89,20 +94,43 @@ public class NativeThread extends Thread {
 		}
 		Logger.minor(NativeThread.class, "Run init(): _loadNative = "+_loadNative);
 	}
-	
 
+	/**
+	* Creates a new native (reniced) thread
+	*
+	* @param name
+	* @param priority
+	* @param dontCheckRenice This should be set to true
+	*    unless the caller is running at NATIVE_PRIORITY_BASE @see bug6623
+	*/
 	public NativeThread(String name, int priority, boolean dontCheckRenice) {
 		super(name);
 		this.currentPriority = priority;
 		this.dontCheckRenice = dontCheckRenice;
 	}
 	
+	/**
+	* Creates a new native (reniced) thread
+	*
+	* @param name
+	* @param priority
+	* @param dontCheckRenice This should be set to true
+	*    unless the caller is running at NATIVE_PRIORITY_BASE @see bug6623
+	*/
 	public NativeThread(Runnable r, String name, int priority, boolean dontCheckRenice) {
 		super(r, name);
 		this.currentPriority = priority;
 		this.dontCheckRenice = dontCheckRenice;
 	}
 	
+	/**
+	* Creates a new native (reniced) thread
+	*
+	* @param name
+	* @param priority
+	* @param dontCheckRenice This should be set to true
+	*    unless the caller is running at NATIVE_PRIORITY_BASE @see bug6623
+	*/
 	public NativeThread(ThreadGroup g, Runnable r, String name, int priority, boolean dontCheckRenice) {
 		super(g, r, name);
 		this.currentPriority = priority;
@@ -183,12 +211,12 @@ public class NativeThread extends Thread {
 	public static String normalizeName(String name) {
 		if(name.indexOf(" for ") != -1)
 			name = name.substring(0, name.indexOf(" for "));
-		if(name.indexOf("@") != -1)
-			name = name.substring(0, name.indexOf("@"));
-		if (name.indexOf("(") != -1)
-			name = name.substring(0, name.indexOf("("));
+		if(name.indexOf('@') != -1)
+			name = name.substring(0, name.indexOf('@'));
+		if (name.indexOf('(') != -1)
+			name = name.substring(0, name.indexOf('('));
 		
-		return name;
+		return name.trim();
 	}
 	
 	public String getNormalizedName() {

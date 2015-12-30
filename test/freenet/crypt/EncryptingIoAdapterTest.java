@@ -33,9 +33,8 @@ public class EncryptingIoAdapterTest extends TestCase {
 		
 		// Test case known to have failed at some point.
 		checkLinearBuffered(1<<11, 71, 20, 152661464779838170L);
-		// FIXME this next one doesn't work. Looks like a problem with MersenneTwister? TODO DEBUG!
-		// Shows an extra byte in the ciphertext at the beginning of the second 71 byte segment.
-		//checkLinear(1<<11, 71, 20, 152661464779838170L);
+		checkLinearBuffered(1<<11, 72, 20, 152661464779838170L);
+		checkLinear(1<<11, 72, 20, 152661464779838170L);
 		
 		for(int x=0;x<1<<6;x++) {
 			int size = 1<<10;
@@ -51,6 +50,10 @@ public class EncryptingIoAdapterTest extends TestCase {
 	}
 	
 	public void checkLinear(int size, int writeStep, int readStep, long seed) {
+		// API NOTE: java.util.Random generates bytes by generating ints, so the stream is 
+		// reproducible provided that the chunks are always exact multiples of 4 bytes.
+		assertTrue(writeStep % 4 == 0);
+		assertTrue(readStep % 4 == 0);
 		EncryptingIoAdapter a = createAdapter();
 		MersenneTwister dataMT = new MersenneTwister(seed);
 		for(int written=0;written<size;) {

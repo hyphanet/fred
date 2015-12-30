@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -30,7 +32,7 @@ public class UptimeEstimator implements Runnable {
 	/**
 	 * Five minutes in milliseconds.
 	 */
-	static final int PERIOD = 5*60*1000;
+	static final long PERIOD = MINUTES.toMillis(5);
 
 	Ticker ticker;
 

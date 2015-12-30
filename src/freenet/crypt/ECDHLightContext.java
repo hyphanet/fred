@@ -2,8 +2,6 @@ package freenet.crypt;
 
 import java.security.interfaces.ECPublicKey;
 
-import javax.crypto.SecretKey;
-
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
@@ -33,9 +31,11 @@ public class ECDHLightContext extends KeyAgreementSchemeContext {
     /*
      * Calling the following is costy; avoid
      */
-    public SecretKey getHMACKey(ECPublicKey peerExponential) {
-        lastUsedTime = System.currentTimeMillis();
-        SecretKey sharedKey = ecdh.getAgreedSecret(peerExponential);
+    public byte[] getHMACKey(ECPublicKey peerExponential) {
+        synchronized(this) {
+            lastUsedTime = System.currentTimeMillis();
+        }
+        byte[] sharedKey = ecdh.getAgreedSecret(peerExponential);
 
         if (logMINOR) {
             Logger.minor(this, "Curve in use: " + ecdh.curve.toString());
@@ -47,7 +47,7 @@ public class ECDHLightContext extends KeyAgreementSchemeContext {
             			"Peer's exponential: "
             			+ HexUtil.bytesToHex(peerExponential.getEncoded()));
             	Logger.debug(this,
-            			"SharedSecret = " + HexUtil.bytesToHex(sharedKey.getEncoded()));
+            			"SharedSecret = " + HexUtil.bytesToHex(sharedKey));
             }
         }
 
@@ -56,6 +56,6 @@ public class ECDHLightContext extends KeyAgreementSchemeContext {
 
     @Override
     public byte[] getPublicKeyNetworkFormat() {
-        return ecdh.getPublicKey().getEncoded();
+        return ecdh.getPublicKeyNetworkFormat();
     }
 }

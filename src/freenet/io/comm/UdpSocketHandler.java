@@ -14,7 +14,6 @@ import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.IPUtil;
 
@@ -100,11 +99,11 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			try {
 				System.err.print(t.getClass().getName());
 				System.err.println();
-			} catch (Throwable tt) {};
+			} catch (Throwable tt) {}
 			try {
 				System.err.print(t.getMessage());
 				System.err.println();
-			} catch (Throwable tt) {};
+			} catch (Throwable tt) {}
 			try {
 				System.gc();
 				System.runFinalization();
@@ -117,10 +116,10 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				System.err.println();
 				System.err.print(r.totalMemory());
 				System.err.println();
-			} catch (Throwable tt) {};
+			} catch (Throwable tt) {}
 			try {
 				t.printStackTrace();
-			} catch (Throwable tt) {};
+			} catch (Throwable tt) {}
 		} finally {
 			System.err.println("run() exiting for UdpSocketHandler on port "+_sock.getLocalPort());
 			Logger.error(this, "run() exiting for UdpSocketHandler on port "+_sock.getLocalPort());
@@ -137,9 +136,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		while (_active) {
 			try {
 				realRun(packet);
-			} catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("Will retry above failed operation...");
 			} catch (Throwable t) {
 				System.err.println("Caught "+t);
 				t.printStackTrace(System.err);
