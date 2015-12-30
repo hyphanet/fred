@@ -156,15 +156,15 @@ public class DroppedOldPeersUserAlert implements UserAlert {
     }
 
     private static String l10n(String key) {
-        return NodeL10n.getBase().getString("PeerManager."+key);
+        return NodeL10n.getBase().getString("DroppedOldPeersUserAlert."+key);
     }
     
     private static String l10n(String key, String pattern, String value) {
-        return NodeL10n.getBase().getString("PeerManager."+key, pattern, value);
+        return NodeL10n.getBase().getString("DroppedOldPeersUserAlert."+key, pattern, value);
     }
     
     private static String l10n(String key, String[] pattern, String[] value) {
-        return NodeL10n.getBase().getString("PeerManager."+key, pattern, value);
+        return NodeL10n.getBase().getString("DroppedOldPeersUserAlert."+key, pattern, value);
     }
 
     public static String getLogWarning(int size, PeerTooOldException e, File peersFile) {
