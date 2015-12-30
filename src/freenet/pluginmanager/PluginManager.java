@@ -1269,6 +1269,10 @@ public class PluginManager {
 			String pluginMainClassName;
 			try {
 				pluginMainClassName = verifyJarFileAndGetPluginMainClass(pluginFile);
+				FredPlugin object = loadPluginFromJarFile(name, pluginFile, pluginMainClassName, pdl.isOfficialPluginLoader());
+				if (object != null) {
+					return object;
+				}
 			} catch (PluginNotFoundException e) {
 				Logger.error(this, e.getMessage());
 				pluginFile.delete();
@@ -1278,101 +1282,6 @@ public class PluginManager {
 				throw e;
 			}
 
-			try {
-				JarClassLoader jarClassLoader = new JarClassLoader(pluginFile);
-				Class<?> pluginMainClass = jarClassLoader.loadClass(pluginMainClassName);
-				Object object = pluginMainClass.newInstance();
-				if(!(object instanceof FredPlugin)) {
-					Logger.error(this, "plugin main class is not a plugin");
-					pluginFile.delete();
-					if(!downloaded) continue;
-					throw new PluginNotFoundException("plugin main class is not a plugin");
-				}
-
-				if (pdl.isOfficialPluginLoader()) {
-					System.err.println("Loading official plugin "+name);
-					// Check the version after loading it!
-					// FIXME IMPORTANT Build the version into the manifest. This is actually pretty easy and just involves changing build.xml.
-					// We already do similar things elsewhere.
-
-					// Ugh, this is just as messy ... ideas???? Maybe we need to have OS
-					// detection and use grep/sed on unix and find on windows???
-
-					OfficialPluginDescription desc = officialPlugins.get(name);
-
-					long minVer = desc.minimumVersion;
-					long ver = -1;
-
-					if(minVer != -1) {
-						if(object instanceof FredPluginRealVersioned) {
-							ver = ((FredPluginRealVersioned)object).getRealVersion();
-						}
-					}
-
-					// FIXME l10n the PluginNotFoundException errors.
-					if(ver < minVer) {
-						System.err.println("Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
-						Logger.error(this, "Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
-
-						// At this point, the constructor has run, so it's theoretically possible that the plugin has e.g. created some threads.
-						// However, it has not been able to use any of the node's services, because we haven't passed it the PluginRespirator.
-						// So there is no need to call runPlugin and terminate().
-						// And it doesn't matter all that much if the shutdown fails - we won't be able to delete the file on Windows anyway, we're relying on the ignoreOld logic.
-						// Plus, this will not cause a leak of more than one fd per plugin, even when it has started threads.
-						try {
-							jarClassLoader.close();
-						} catch (Throwable t) {
-							Logger.error(this, "Failed to close jar classloader for plugin: "+t, t);
-						}
-						pluginFile.delete();
-						if(!downloaded) continue;
-						throw new PluginTooOldException("plugin too old: need at least version "+minVer+" but is "+ver);
-					}
-
-				}
-
-				if(object instanceof FredPluginL10n) {
-					((FredPluginL10n)object).setLanguage(NodeL10n.getBase().getSelectedLanguage());
-				}
-
-				if(object instanceof FredPluginBaseL10n) {
-					((FredPluginBaseL10n)object).setLanguage(NodeL10n.getBase().getSelectedLanguage());
-				}
-
-				if(object instanceof FredPluginThemed) {
-					((FredPluginThemed)object).setTheme(fproxyTheme);
-				}
-
-				return (FredPlugin) object;
-			} catch(IOException ioe1) {
-				Logger.error(this, "could not load plugin", ioe1);
-				pluginFile.delete();
-				throw new PluginNotFoundException("could not load plugin", ioe1);
-			} catch(ClassNotFoundException cnfe1) {
-				Logger.error(this, "could not find plugin class", cnfe1);
-				pluginFile.delete();
-				if(!downloaded) continue;
-				throw new PluginNotFoundException(
-					"could not find plugin class: \"" + cnfe1.getMessage() + "\"", cnfe1);
-			} catch(InstantiationException ie1) {
-				Logger.error(this, "could not instantiate plugin", ie1);
-				pluginFile.delete();
-				if(!downloaded) continue;
-				throw new PluginNotFoundException("could not instantiate plugin", ie1);
-			} catch(IllegalAccessException iae1) {
-				Logger.error(this, "could not access plugin main class", iae1);
-				pluginFile.delete();
-				throw new PluginNotFoundException("could not access plugin main class", iae1);
-			} catch(NoClassDefFoundError ncdfe1) {
-				Logger.error(this, "could not find class def, may a missing lib?", ncdfe1);
-				pluginFile.delete();
-				if(!downloaded) continue;
-				throw new PluginNotFoundException("could not find class def, may a missing lib?", ncdfe1);
-			} catch(Throwable t) {
-				Logger.error(this, "unexpected error while plugin loading", t);
-				pluginFile.delete();
-				throw new PluginNotFoundException("unexpected error while plugin loading " + t, t);
-			}
 		}
 		}
 		return null;
@@ -1472,6 +1381,81 @@ public class PluginManager {
 			throw new PluginNotFoundException("error procesesing jar file", ioe1);
 		} finally {
 			Closer.close(pluginJarFile);
+		}
+	}
+
+	private FredPlugin loadPluginFromJarFile(String name, File pluginFile, String pluginMainClassName, boolean isOfficialPlugin) throws PluginNotFoundException {
+		try {
+			JarClassLoader jarClassLoader = new JarClassLoader(pluginFile);
+			Class<?> pluginMainClass = jarClassLoader.loadClass(pluginMainClassName);
+			Object object = pluginMainClass.newInstance();
+			if (!(object instanceof FredPlugin)) {
+				throw new PluginNotFoundException("plugin main class is not a plugin");
+			}
+			if (isOfficialPlugin) {
+				verifyPluginVersion(name, jarClassLoader, (FredPlugin) object);
+			}
+			if (object instanceof FredPluginL10n) {
+				((FredPluginL10n) object).setLanguage(NodeL10n.getBase().getSelectedLanguage());
+			}
+			if (object instanceof FredPluginBaseL10n) {
+				((FredPluginBaseL10n) object).setLanguage(NodeL10n.getBase().getSelectedLanguage());
+			}
+			if (object instanceof FredPluginThemed) {
+				((FredPluginThemed) object).setTheme(fproxyTheme);
+			}
+			return (FredPlugin) object;
+		} catch (IOException ioe1) {
+			throw new PluginNotFoundException("could not load plugin", ioe1);
+		} catch (ClassNotFoundException cnfe1) {
+			throw new PluginNotFoundException("could not find plugin class: \"" + cnfe1.getMessage() + "\"", cnfe1);
+		} catch (InstantiationException ie1) {
+			throw new PluginNotFoundException("could not instantiate plugin", ie1);
+		} catch (IllegalAccessException iae1) {
+			throw new PluginNotFoundException("could not access plugin main class", iae1);
+		} catch (NoClassDefFoundError ncdfe1) {
+			throw new PluginNotFoundException("could not find class def, may a missing lib?", ncdfe1);
+		} catch (Throwable t) {
+			throw new PluginNotFoundException("unexpected error while plugin loading " + t, t);
+		}
+	}
+
+	private void verifyPluginVersion(String name, JarClassLoader jarClassLoader, FredPlugin plugin) throws PluginTooOldException {
+		System.err.println("Loading official plugin " + name);
+		// Check the version after loading it!
+		// FIXME IMPORTANT Build the version into the manifest. This is actually pretty easy and just involves changing build.xml.
+		// We already do similar things elsewhere.
+
+		// Ugh, this is just as messy ... ideas???? Maybe we need to have OS
+		// detection and use grep/sed on unix and find on windows???
+
+		OfficialPluginDescription desc = officialPlugins.get(name);
+
+		long minVer = desc.minimumVersion;
+		long ver = -1;
+
+		if (minVer != -1) {
+			if (plugin instanceof FredPluginRealVersioned) {
+				ver = ((FredPluginRealVersioned) plugin).getRealVersion();
+			}
+		}
+
+		// FIXME l10n the PluginNotFoundException errors.
+		if (ver < minVer) {
+			System.err.println("Failed to load plugin " + name + " : TOO OLD: need at least version " + minVer + " but is " + ver);
+			Logger.error(this, "Failed to load plugin " + name + " : TOO OLD: need at least version " + minVer + " but is " + ver);
+
+			// At this point, the constructor has run, so it's theoretically possible that the plugin has e.g. created some threads.
+			// However, it has not been able to use any of the node's services, because we haven't passed it the PluginRespirator.
+			// So there is no need to call runPlugin and terminate().
+			// And it doesn't matter all that much if the shutdown fails - we won't be able to delete the file on Windows anyway, we're relying on the ignoreOld logic.
+			// Plus, this will not cause a leak of more than one fd per plugin, even when it has started threads.
+			try {
+				jarClassLoader.close();
+			} catch (Throwable t) {
+				Logger.error(this, "Failed to close jar classloader for plugin: " + t, t);
+			}
+			throw new PluginTooOldException("plugin too old: need at least version " + minVer + " but is " + ver);
 		}
 	}
 
