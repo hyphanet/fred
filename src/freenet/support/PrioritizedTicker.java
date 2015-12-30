@@ -194,10 +194,10 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	}
 	
 	/** Queue a job at a specific absolute time. 
-	 * @param l The absolute time at which the job should run.
+	 * @param runJobAt The absolute time at which the job should run.
 	 * @param offset The offset in milliseconds from "now" (i.e. some recent call to 
 	 * System.currentTimeMillis()). */
-    private void queueTimedJobInner(Runnable runner, String name, long l, long offset, 
+    private void queueTimedJobInner(Runnable runner, String name, long runJobAt, long offset, 
             boolean runOnTickerAnyway, boolean noDupes) {
         if(noDupes) runOnTickerAnyway = true;
         if(offset <= 0 && !runOnTickerAnyway) {
@@ -208,29 +208,29 @@ public class PrioritizedTicker implements Ticker, Runnable {
         Job job = new Job(name, runner);
         synchronized(timedJobsByTime) {
             if(noDupes) {
-                Long t = timedJobsQueued.get(job);
-                if(t != null) {
-                    if(t <= l) {
+                Long alreadyQueuedAt = timedJobsQueued.get(job);
+                if(alreadyQueuedAt != null) {
+                    if(alreadyQueuedAt <= runJobAt) {
                         Logger.normal(this, "Not re-running as already queued: "+runner+" for "+name);
                         return;
                     } else {
                         // Delete the existing job because the new job will run first.
-                        removeQueuedJobInner(job, t);
+                        removeQueuedJobInner(job, alreadyQueuedAt);
                     }
                 }
             }
-            Object o = timedJobsByTime.get(l);
+            Object o = timedJobsByTime.get(runJobAt);
             if(o == null)
-                timedJobsByTime.put(l, job);
+                timedJobsByTime.put(runJobAt, job);
             else if(o instanceof Job)
-                timedJobsByTime.put(l, new Job[]{(Job) o, job});
+                timedJobsByTime.put(runJobAt, new Job[]{(Job) o, job});
             else if(o instanceof Job[]) {
                 Job[] r = (Job[]) o;
                 Job[] jobs = Arrays.copyOf(r, r.length+1);
                 jobs[jobs.length - 1] = job;
-                timedJobsByTime.put(l, jobs);
+                timedJobsByTime.put(runJobAt, jobs);
             }
-            timedJobsQueued.put(job, l);
+            timedJobsQueued.put(job, runJobAt);
         }
         if(offset < MAX_SLEEP_TIME) {
             wakeUp();
