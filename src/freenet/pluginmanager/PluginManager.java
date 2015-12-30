@@ -1234,14 +1234,13 @@ public class PluginManager {
 
 		/* get plugin filename. */
 		String filename = pdl.getPluginName(name);
-		boolean pluginIsLocal = pdl instanceof PluginDownLoaderFile;
 		File pluginFile = new File(pluginDirectory, filename + "-" + System.currentTimeMillis());
 
 		/* check for previous instances and delete them. */
 		File[] filesInPluginDirectory = getPreviousInstances(pluginDirectory, filename);
 		boolean first = true;
 		for (File cachedFile : filesInPluginDirectory) {
-			if (first && !pluginIsLocal && !alwaysDownload) {
+			if (first && !pdl.isCachingProhibited() && !alwaysDownload) {
 				first = false;
 				pluginFile = new File(pluginDirectory, cachedFile.getName());
 				continue;

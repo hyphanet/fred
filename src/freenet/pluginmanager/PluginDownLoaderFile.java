@@ -40,4 +40,9 @@ public class PluginDownLoaderFile extends PluginDownLoader<File> {
 		// Definitely not supported.
 	}
 
+	@Override
+	public boolean isCachingProhibited() {
+		return true;
+	}
+
 }
