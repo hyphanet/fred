@@ -38,6 +38,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.LockableRandomAccessBufferFactory;
 import freenet.support.api.RandomAccessBucket;
+import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
 
 /**
  * Temporary Bucket Factory
@@ -977,6 +978,26 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
             super.finalize();
         }
 
+        @Override
+        public RAFLock lockOpen() throws IOException {
+            promote();
+            return super.lockOpen();
+        }
+        
+        @Override
+        protected void externalUnlock() {
+            promote();
+            super.externalUnlock();
+        }
+        
+        private void promote() {
+            long now = System.currentTimeMillis();
+            updateTime = now;
+            synchronized(ramBucketQueue) {
+                ramBucketQueue.push(getReference());
+            }
+        }
+        
 	}
 
 	@Override
