@@ -303,10 +303,8 @@ public class PrioritizedTicker implements Ticker, Runnable {
                     newJobs[x++] = oldjob;
                     assert(x != jobs.length); // Must be in jobs array.
                 }
-                if(x == 0) {
-                    timedJobsByTime.remove(t); // Clean up anyway.
-                    assert(false); // Should not happen.
-                } else if (x == 1) {
+                assert(x != 0); // Not duplicated.
+                if (x == 1) {
                     timedJobsByTime.put(t, newJobs[0]);
                 } else {
                     if(x != newJobs.length)
