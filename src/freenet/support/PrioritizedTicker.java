@@ -284,24 +284,14 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	 */
 	private void removeQueuedJobInner(Job job, Long t) {
         Object o = timedJobsByTime.get(t);
-        if(o == null) {
-            Logger.error(this, "Job in timedJobsQueued but not in timedJobsByTime");
-            // Cleaned up so no reason to throw in this critical structure.
-            return;
-        }
+        assert(o != null);
         if(o instanceof Job) {
-            if(!o.equals(job)) {
-                Logger.error(this, "Job in timedJobsQueued but not equal to job for timeslot");
-                return;
-            }
+            assert(o.equals(job));
             timedJobsByTime.remove(t);
         } else {
             Job[] jobs = (Job[]) o;
             if(jobs.length == 1) {
-                if(!jobs[0].equals(job)) {
-                    Logger.error(this, "Job in timedJobsQueued but not equal to [0] job");
-                    return;
-                }
+                assert(jobs[0].equals(job));
                 timedJobsByTime.remove(t);
             } else {
                 Job[] newJobs = new Job[jobs.length-1];
@@ -311,14 +301,11 @@ public class PrioritizedTicker implements Ticker, Runnable {
                         continue;
                     }
                     newJobs[x++] = oldjob;
-                    if(x == jobs.length) {
-                        Logger.error(this, "Job in timedJobsQueued but not in jobs array");
-                        return;
-                    }
+                    assert(x != jobs.length); // Must be in jobs array.
                 }
                 if(x == 0) {
-                    timedJobsByTime.remove(t);
-                    Logger.error(this, "Should not have length 1 arrays");
+                    timedJobsByTime.remove(t); // Clean up anyway.
+                    assert(false); // Should not happen.
                 } else if (x == 1) {
                     timedJobsByTime.put(t, newJobs[0]);
                 } else {
