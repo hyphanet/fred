@@ -28,10 +28,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Semaphore;
 import java.util.jar.Attributes;
-import java.util.jar.JarException;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
-import java.util.zip.ZipException;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -433,8 +431,6 @@ public class PluginManager {
 		PluginInfoWrapper pi = null;
 		try {
 			plug = loadPlugin(pdl, filename, pluginProgress, alwaysDownload);
-			if (plug == null)
-				return null; // Already loaded
 			pluginProgress.setProgress(PluginProgress.PROGRESS_STATE.STARTING);
 			pi = new PluginInfoWrapper(node, plug, filename, pdl.isOfficialPluginLoader());
 			PluginHandler.startPlugin(PluginManager.this, pi);
@@ -443,6 +439,8 @@ public class PluginManager {
 				pluginsFailedLoad.remove(filename);
 			}
 			Logger.normal(this, "Plugin loaded: " + filename);
+		} catch (PluginAlreadyLoaded e) {
+			return null;
 		} catch (PluginNotFoundException e) {
 			Logger.normal(this, "Loading plugin failed (" + filename + ')', e);
 			boolean stillTrying = false;
@@ -1226,8 +1224,9 @@ public class PluginManager {
 	 * @return An instanciated object of the plugin
 	 * @throws PluginNotFoundException
 	 *             If anything goes wrong.
+	 * @throws PluginAlreadyLoaded if the plugin is already loaded
 	 */
-	private FredPlugin loadPlugin(PluginDownLoader<?> pdl, String name, PluginProgress progress, boolean alwaysDownload) throws PluginNotFoundException {
+	private FredPlugin loadPlugin(PluginDownLoader<?> pdl, String name, PluginProgress progress, boolean alwaysDownload) throws PluginNotFoundException, PluginAlreadyLoaded {
 
 		pdl.setSource(name);
 
@@ -1267,54 +1266,16 @@ public class PluginManager {
 
 		// we do quite a lot inside the lock, use a dedicated one
 		synchronized (pluginLoadSyncObject) {
-			/* now get the manifest file. */
-			JarFile pluginJarFile = null;
-			String pluginMainClassName = null;
+			String pluginMainClassName;
 			try {
-				pluginJarFile = new JarFile(pluginFile);
-				Manifest manifest = pluginJarFile.getManifest();
-				if(manifest == null) {
-					Logger.error(this, "could not load manifest from plugin file");
-					pluginFile.delete();
-					if(!downloaded) continue;
-					throw new PluginNotFoundException("could not load manifest from plugin file");
-				}
-				Attributes mainAttributes = manifest.getMainAttributes();
-				if(mainAttributes == null) {
-					Logger.error(this, "manifest does not contain attributes");
-					pluginFile.delete();
-					if(!downloaded) continue;
-					throw new PluginNotFoundException("manifest does not contain attributes");
-				}
-				pluginMainClassName = mainAttributes.getValue("Plugin-Main-Class");
-				if(pluginMainClassName == null) {
-					Logger.error(this, "manifest does not contain a Plugin-Main-Class attribute");
-					pluginFile.delete();
-					if(!downloaded) continue;
-					throw new PluginNotFoundException("manifest does not contain a Plugin-Main-Class attribute");
-				}
-				if(this.isPluginLoaded(pluginMainClassName)) {
-					Logger.error(this, "Plugin already loaded: "+filename);
-					return null;
-				}
-
-			} catch(JarException je1) {
-				Logger.error(this, "could not process jar file", je1);
+				pluginMainClassName = verifyJarFileAndGetPluginMainClass(pluginFile);
+			} catch (PluginNotFoundException e) {
+				Logger.error(this, e.getMessage());
 				pluginFile.delete();
-				if(!downloaded) continue;
-				throw new PluginNotFoundException("could not process jar file", je1);
-			} catch(ZipException ze1) {
-				Logger.error(this, "could not process jar file", ze1);
-				pluginFile.delete();
-				if(!downloaded) continue;
-				throw new PluginNotFoundException("could not process jar file", ze1);
-			} catch(IOException ioe1) {
-				Logger.error(this, "error processing jar file", ioe1);
-				pluginFile.delete();
-				if(!downloaded) continue;
-				throw new PluginNotFoundException("error procesesing jar file", ioe1);
-			} finally {
-				Closer.close(pluginJarFile);
+				if (!downloaded) {
+					continue;
+				}
+				throw e;
 			}
 
 			try {
@@ -1485,6 +1446,34 @@ public class PluginManager {
             Logger.error(this, "Checksum verification failed, should be " + digest + " but was " + testsum);
             throw new PluginNotFoundException("Checksum verification failed, should be " + digest + " but was " + testsum);
         }
+	}
+
+	private String verifyJarFileAndGetPluginMainClass(File pluginFile) throws PluginNotFoundException, PluginAlreadyLoaded {
+		JarFile pluginJarFile = null;
+		try {
+			pluginJarFile = new JarFile(pluginFile);
+			Manifest manifest = pluginJarFile.getManifest();
+			if (manifest == null) {
+				throw new PluginNotFoundException("could not load manifest from plugin file");
+			}
+			Attributes mainAttributes = manifest.getMainAttributes();
+			if (mainAttributes == null) {
+				throw new PluginNotFoundException("manifest does not contain attributes");
+			}
+			String pluginMainClassName = mainAttributes.getValue("Plugin-Main-Class");
+			if (pluginMainClassName == null) {
+				throw new PluginNotFoundException("manifest does not contain a Plugin-Main-Class attribute");
+			}
+			if (isPluginLoaded(pluginMainClassName)) {
+				Logger.error(this, "Plugin already loaded: " + pluginFile.getName());
+				throw new PluginAlreadyLoaded();
+			}
+			return pluginMainClassName;
+		} catch (IOException ioe1) {
+			throw new PluginNotFoundException("error procesesing jar file", ioe1);
+		} finally {
+			Closer.close(pluginJarFile);
+		}
 	}
 
 	/**
