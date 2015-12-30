@@ -5,24 +5,33 @@
  */
 package freenet.support.io;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
+import freenet.client.async.ClientContext;
+import freenet.crypt.MasterSecret;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 
-public class DelayedFreeBucket implements Bucket {
+public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 
-	private final PersistentFileTracker factory;
-	Bucket bucket;
-	boolean freed;
-	boolean removed;
-	boolean reallyRemoved;
+    private static final long serialVersionUID = 1L;
+    // Only set on construction and on onResume() on startup. So shouldn't need locking.
+	private transient PersistentFileTracker factory;
+	private final Bucket bucket;
+	private boolean freed;
+	/** Has the bucket been migrated to a RandomAccessBucket? If so it should not be accessed 
+	 * again, and in particular it should not be freed, since the new DelayedFreeRandomAccessBucket
+	 * will share share the underlying RandomAccessBucket. */
+	private boolean migrated;
+	private transient long createdCommitID;
 
         private static volatile boolean logMINOR;
 	static {
@@ -34,31 +43,53 @@ public class DelayedFreeBucket implements Bucket {
 		});
 	}
 	
-	public boolean toFree() {
+	@Override
+	public synchronized boolean toFree() {
 		return freed;
 	}
 	
-	public boolean toRemove() {
-		return removed;
-	}
-	
-	public DelayedFreeBucket(PersistentTempBucketFactory factory, Bucket bucket) {
+	public DelayedFreeBucket(PersistentFileTracker factory, Bucket bucket) {
 		this.factory = factory;
 		this.bucket = bucket;
+		this.createdCommitID = factory.commitID();
 		if(bucket == null) throw new NullPointerException();
 	}
 
-	@Override
+    @Override
 	public OutputStream getOutputStream() throws IOException {
-		if(freed) throw new IOException("Already freed");
+        synchronized(this) {
+            if(migrated) throw new IOException("Already migrated to a RandomAccessBucket");
+            if(freed) throw new IOException("Already freed");
+        }
 		return bucket.getOutputStream();
 	}
 
+    @Override
+    public OutputStream getOutputStreamUnbuffered() throws IOException {
+        synchronized(this) {
+            if(migrated) throw new IOException("Already migrated to a RandomAccessBucket");
+            if(freed) throw new IOException("Already freed");
+        }
+        return bucket.getOutputStreamUnbuffered();
+    }
+
 	@Override
 	public InputStream getInputStream() throws IOException {
-		if(freed) throw new IOException("Already freed");
+	    synchronized(this) {
+	        if(migrated) throw new IOException("Already migrated to a RandomAccessBucket");
+	        if(freed) throw new IOException("Already freed");
+	    }
 		return bucket.getInputStream();
 	}
+
+    @Override
+    public InputStream getInputStreamUnbuffered() throws IOException {
+        synchronized(this) {
+            if(migrated) throw new IOException("Already migrated to a RandomAccessBucket");
+            if(freed) throw new IOException("Already freed");
+        }
+        return bucket.getInputStreamUnbuffered();
+    }
 
 	@Override
 	public String getName() {
@@ -80,40 +111,22 @@ public class DelayedFreeBucket implements Bucket {
 		bucket.setReadOnly();
 	}
 
-	public Bucket getUnderlying() {
+    public synchronized Bucket getUnderlying() {
 		if(freed) return null;
+		if(migrated) return null;
 		return bucket;
 	}
 	
 	@Override
 	public void free() {
-		synchronized(this) { // mutex on just this method; make a separate lock if necessary to lock the above
-			if(freed) return;
-			if(logMINOR)
-				Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
-			this.factory.delayedFreeBucket(this);
-			freed = true;
-		}
-	}
-
-	@Override
-	public void storeTo(ObjectContainer container) {
-		bucket.storeTo(container);
-		container.store(this);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		if(logMINOR)
-			Logger.minor(this, "Removing from database: "+this);
-		synchronized(this) {
-			boolean wasQueued = freed || removed;
-			if(!freed)
-				Logger.error(this, "Asking to remove from database but not freed: "+this, new Exception("error"));
-			removed = true;
-			if(!wasQueued)
-				this.factory.delayedFreeBucket(this);
-		}
+	    synchronized(this) {
+	        if(freed) return;
+	        if(migrated) return;
+	        freed = true;
+	    }
+	    if(logMINOR)
+	        Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
+	    this.factory.delayedFree(this, createdCommitID);
 	}
 
 	@Override
@@ -121,56 +134,50 @@ public class DelayedFreeBucket implements Bucket {
 		return super.toString()+":"+bucket;
 	}
 	
-	public void objectOnActivate(ObjectContainer container) {
-//		StackTraceElement[] elements = Thread.currentThread().getStackTrace();
-//		if(elements != null && elements.length > 100) {
-//			System.err.println("Infinite recursion in progress...");
-//		}
-		if(logMINOR)
-			Logger.minor(this, "Activating "+super.toString()+" : "+bucket.getClass());
-		if(bucket == this) {
-			Logger.error(this, "objectOnActivate on DelayedFreeBucket: wrapping self!!!");
-			return;
-		}
-		// Cascading activation of dependancies
-		container.activate(bucket, 1);
-	}
-
 	@Override
 	public Bucket createShadow() {
 		return bucket.createShadow();
 	}
 
-	public void realFree() {
+	@Override
+    public void realFree() {
 		bucket.free();
 	}
 
-	public void realRemoveFrom(ObjectContainer container) {
-		synchronized(this) {
-			if(reallyRemoved)
-				Logger.error(this, "Calling realRemoveFrom() twice on "+this);
-			reallyRemoved = true;
-		}
-		bucket.removeFrom(container);
-		container.delete(this);
-	}
-	
-	public boolean objectCanNew(ObjectContainer container) {
-		if(reallyRemoved) {
-			Logger.error(this, "objectCanNew() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
-			return false;
-		}
-		assert(bucket != null);
-		return true;
-	}
-	
-	public boolean objectCanUpdate(ObjectContainer container) {
-		if(reallyRemoved) {
-			Logger.error(this, "objectCanUpdate() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
-			return false;
-		}
-		assert(bucket != null);
-		return true;
-	}
+    @Override
+    public void onResume(ClientContext context) throws ResumeFailedException {
+        this.factory = context.persistentBucketFactory;
+        bucket.onResume(context);
+    }
+    
+    static final int MAGIC = 0x4e9c9a03;
+    static final int VERSION = 1;
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeInt(MAGIC);
+        dos.writeInt(VERSION);
+        bucket.storeTo(dos);
+    }
+
+    protected DelayedFreeBucket(DataInputStream dis, FilenameGenerator fg, 
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+    throws StorageFormatException, IOException, ResumeFailedException {
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Bad version");
+        bucket = (RandomAccessBucket) BucketTools.restoreFrom(dis, fg, persistentFileTracker, masterKey);
+    }
+    
+    /** Convert to a RandomAccessBucket if it can be done quickly. Otherwise return null. 
+     * @throws IOException If the bucket has already been freed. */
+    public synchronized RandomAccessBucket toRandomAccessBucket() throws IOException {
+        if(freed) throw new IOException("Already freed");
+        if(bucket instanceof RandomAccessBucket) {
+            migrated = true;
+            return new DelayedFreeRandomAccessBucket(factory, (RandomAccessBucket)bucket);
+            // Underlying file is already registered.
+        }
+        return null;
+    }
 
 }

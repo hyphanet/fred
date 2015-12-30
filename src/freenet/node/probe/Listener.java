@@ -70,4 +70,7 @@ public interface Listener {
 	 * percentage rejected.	
 	 */
 	void onRejectStats(byte[] stats);
+
+	/** Capacity usage and approximate bandwidth class */
+	void onOverallBulkOutputCapacity(byte bandwidthClassForCapacityUsage, float capacityUsage);
 }

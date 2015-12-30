@@ -11,8 +11,6 @@ import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
@@ -35,8 +33,10 @@ import freenet.support.io.BucketTools;
  * @author amphibian
  *
  * Base class for node keys.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class Key implements WritableToDataOutputStream, Comparable<Key> {
 
     final int hash;
@@ -326,13 +326,14 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 	/** Get the full key, including any crypto type bytes, everything needed to construct a Key object */
 	public abstract byte[] getFullKey();
 
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
-
 	/** Get a copy of the key with any unnecessary information stripped, for long-term
 	 * in-memory storage. E.g. for SSKs, strips the DSAPublicKey. Copies it whether or
 	 * not we need to copy it because the original might pick up a pubkey after this
 	 * call. And the returned key will not accidentally pick up extra data. */
 	public abstract Key archivalCopy();
+
+    public static boolean isValidCryptoAlgorithm(byte cryptoAlgorithm) {
+        return cryptoAlgorithm == ALGO_AES_PCFB_256_SHA256 ||
+            cryptoAlgorithm == ALGO_AES_CTR_256_SHA256;
+    }
 }

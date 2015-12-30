@@ -3,11 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import freenet.support.LightweightException;
 
 /**
  * If thrown, something wrong with http range
  */
-public class HTTPRangeException extends Exception {
+public class HTTPRangeException extends LightweightException {
 	private static final long serialVersionUID = -1;
 
 	public HTTPRangeException(Throwable cause) {
@@ -16,10 +17,5 @@ public class HTTPRangeException extends Exception {
 
 	public HTTPRangeException(String msg) {
 		super(msg);
-	}
-
-	@Override
-	public final synchronized Throwable fillInStackTrace() {
-		return null;
 	}
 }

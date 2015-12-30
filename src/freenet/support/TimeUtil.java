@@ -18,6 +18,12 @@
 
 package freenet.support;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -65,41 +71,41 @@ public class TimeUtil {
             return sb.toString();
         }
         //
-        long weeks = (l / (7L*24*60*60*1000));
-        if (weeks > 0) {
+		long weeks = DAYS.convert(l, MILLISECONDS) / 7;
+		if (weeks > 0) {
             sb.append(weeks).append('w');
             termCount++;
-            l = l - (weeks * (7L*24*60*60*1000));
+            l = l - DAYS.toMillis(7 * weeks);
         }
         if(termCount >= maxTerms) {
             return sb.toString();
         }
         //
-        long days = (l / (24L*60*60*1000));
+        long days = DAYS.convert(l, MILLISECONDS);
         if (days > 0) {
             sb.append(days).append('d');
             termCount++;
-            l = l - (days * (24L*60*60*1000));
+            l = l - DAYS.toMillis(days);
         }
         if(termCount >= maxTerms) {
           return sb.toString();
         }
         //
-        long hours = (l / (60L*60*1000));
+        long hours = HOURS.convert(l, MILLISECONDS);
         if (hours > 0) {
             sb.append(hours).append('h');
             termCount++;
-            l = l - (hours * (60L*60*1000));
+            l = l - HOURS.toMillis(hours);
         }
         if(termCount >= maxTerms) {
             return sb.toString();
         }
         //
-        long minutes = (l / (60L*1000));
+        long minutes = MINUTES.convert(l, MILLISECONDS);
         if (minutes > 0) {
             sb.append(minutes).append('m');
             termCount++;
-            l = l - (minutes * (60L*1000));
+            l = l - MINUTES.toMillis(minutes);
         }
         if(termCount >= maxTerms) {
             return sb.toString();
@@ -113,7 +119,7 @@ public class TimeUtil {
                 //l = l - ((long)fractionalSeconds * (long)1000);
             }
         } else {
-            long seconds = (l / 1000L);
+            long seconds = SECONDS.convert(l, MILLISECONDS);
             if (seconds > 0) {
                 sb.append(seconds).append('s');
                 termCount++;

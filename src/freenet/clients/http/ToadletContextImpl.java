@@ -1,18 +1,20 @@
 package freenet.clients.http;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.Math;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.MessageDigest;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -23,15 +25,17 @@ import java.util.TimeZone;
 
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
 import freenet.clients.http.annotation.AllowData;
+import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.l10n.NodeL10n;
+import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 import freenet.support.TimeUtil;
 import freenet.support.URIPreEncoder;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.HTTPRequest;
@@ -64,8 +68,10 @@ public class ToadletContextImpl implements ToadletContext {
 	private final PageMaker pagemaker;
 	private final BucketFactory bf;
 	private final ToadletContainer container;
+	private final UserAlertManager userAlertManager;
+	private final BookmarkManager bookmarkManager;
 	private final InetAddress remoteAddr;
-	private boolean sentReplyHeaders;
+	private Exception firstReplySendingException;
 	private volatile Toadlet activeToadlet;
 	
 	/** The unique id of the request*/
@@ -91,7 +97,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private boolean closed;
 	private boolean shouldDisconnect;
 	
-	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container,URI uri, long uniqueID) throws IOException {
+	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container, UserAlertManager userAlertManager, BookmarkManager bookmarkManager, URI uri, long uniqueID) throws IOException {
 		this.headers = headers;
 		this.cookies = null;
 		this.replyCookies = null;
@@ -104,6 +110,8 @@ public class ToadletContextImpl implements ToadletContext {
 		this.bf = bf;
 		this.pagemaker = pageMaker;
 		this.container = container;
+		this.userAlertManager = userAlertManager;
+		this.bookmarkManager = bookmarkManager;
 		//Generate an unique id
 		uniqueId=String.valueOf(Math.random());
 	}
@@ -149,7 +157,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private static void sendHTMLError(OutputStream os, int code, String httpReason, String htmlMessage, boolean disconnect, MultiValueTable<String,String> mvt) throws IOException {
 		if(mvt == null) mvt = new MultiValueTable<String,String>();
 		byte[] messageBytes = htmlMessage.getBytes("UTF-8");
-		sendReplyHeaders(os, code, httpReason, mvt, "text/html; charset=UTF-8", messageBytes.length, null, disconnect);
+		sendReplyHeaders(os, code, httpReason, mvt, "text/html; charset=UTF-8", messageBytes.length, null, disconnect, false, false);
 		os.write(messageBytes);
 	}
 	
@@ -166,25 +174,48 @@ public class ToadletContextImpl implements ToadletContext {
 		String message = "<html><head><title>"+l10n("uriParseErrorTitle")+"</title></head><body><p>"+HTMLEncoder.encode(e.getMessage())+"</p><pre>\n"+sw.toString();
 		sendHTMLError(os, 400, "Bad Request", message, shouldDisconnect, null);
 	}
+
+	public void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException {
+	    sendReplyHeaders(code, desc, mvt, mimeType, length, false);
+	}
 	
-	@Override
-	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
-		sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null);
+	public void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length, boolean forceDisableJavascript) throws ToadletContextClosedException, IOException {
+	    boolean enableJavascript = (!forceDisableJavascript) && container.isFProxyJavascriptEnabled();
+	    sendReplyHeaders(code, desc, mvt, mimeType, length, null, false, false, enableJavascript);
+	}
+
+	@Deprecated
+	public void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length, Date mTime) throws ToadletContextClosedException, IOException {
+	    if(mTime != null)
+	        sendReplyHeadersStatic(code, desc, mvt, mimeType, length, mTime);
+	    else
+	        sendReplyHeaders(code, desc, mvt, mimeType, length);
+	}
+	
+	public void sendReplyHeadersStatic(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime) throws ToadletContextClosedException, IOException {
+	    if(mTime == null) throw new IllegalArgumentException();
+	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, mTime, false, false, false);
 	}
 	
 	@Override
-	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime) throws ToadletContextClosedException, IOException {
+	public void sendReplyHeadersFProxy(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
+	    boolean enableJavascript = false;
+	    if(container.isFProxyWebPushingEnabled() && container.isFProxyJavascriptEnabled())
+	        enableJavascript = true;
+	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null, false, true, enableJavascript);
+	}
+	
+	private void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean isOutlinkConfirmationPage, boolean allowFrames, boolean enableJavascript) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
-		if(sentReplyHeaders) {
-			throw new IllegalStateException("Already sent headers!");
+		if(firstReplySendingException != null) {
+			throw new IllegalStateException("Already sent headers!", firstReplySendingException);
 		}
-		sentReplyHeaders = true;
+		firstReplySendingException = new Exception();
 		
 		if(replyCookies != null) {
 			if (mvt == null) {
 				mvt = new MultiValueTable<String,String>();
 			}
-			mvt.put("cache-control:", "no-cache=\"set-cookie\"");
 			
 			// We do NOT use "set-cookie2" even though we should according though RFC2965 - Firefox 3.0.14 ignores it for me!
 			
@@ -195,13 +226,71 @@ public class ToadletContextImpl implements ToadletContext {
 					Logger.minor(this, "set-cookie: " + cookieHeader);
 			}
 		}
-		
-		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect);
+		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect, enableJavascript, allowFrames);
 	}
 	
 	@Override
 	public PageMaker getPageMaker() {
 		return pagemaker;
+	}
+	
+	@Override
+	public String getFormPassword() {
+		return container.getFormPassword();
+	}
+	
+	@Override
+	public boolean checkFormPassword(HTTPRequest request)
+			throws ToadletContextClosedException, IOException {
+		return checkFormPassword(request, "/");
+	}
+	
+	@Override
+	public boolean checkFormPassword(HTTPRequest request, String redirectTo)
+			throws ToadletContextClosedException, IOException {
+		if (!hasFormPassword(request)) {
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+			headers.put("Location", redirectTo);
+			sendReplyHeaders(302, "Found", headers, null, 0);
+			return false;
+		} else {
+			return true;
+		}
+	}
+	
+	/**
+	 * @see ToadletContext#checkFullAccess(Toadlet)
+	 */
+	@Override
+    public boolean checkFullAccess(Toadlet toadlet) throws ToadletContextClosedException, IOException {
+        if(isAllowedFullAccess()) {
+            return true;
+        } else {
+            toadlet.sendUnauthorizedPage(this);
+            return false;
+        }
+    }
+	
+	@Override
+	public boolean hasFormPassword(HTTPRequest request) throws IOException {
+		String pass = request.getPartAsStringFailsafe("formPassword", 32);
+		byte[] inputBytes = pass.getBytes("UTF-8");
+		byte[] compareBytes = getFormPassword().getBytes("UTF-8");
+		if(!MessageDigest.isEqual(inputBytes, compareBytes)) {
+			if (logMINOR)
+				Logger.minor(this, "Bad formPassword: " + pass);
+			return false;
+		} else return true;
+	}
+	
+	@Override
+	public UserAlertManager getAlertManager() {
+		return userAlertManager;
+	}
+	
+	@Override
+	public BookmarkManager getBookmarkManager() {
+		return bookmarkManager;
 	}
 	
 	@Override
@@ -274,7 +363,7 @@ public class ToadletContextImpl implements ToadletContext {
 		replyCookies.add(newCookie);
 	}
 	
-	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect) throws IOException {
+	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect, boolean allowScripts, boolean allowFrames) throws IOException {
 		
 		// Construct headers
 		if(mvt == null)
@@ -293,7 +382,7 @@ public class ToadletContextImpl implements ToadletContext {
 			expiresTime = "Thu, 01 Jan 1970 00:00:00 GMT";
 		} else {
 			// use an expiry time of 1 day, somewhat arbitrarily
-			expiresTime = TimeUtil.makeHTTPDate(mTime.getTime() + (24 * 60 * 60 * 1000));
+			expiresTime = TimeUtil.makeHTTPDate(mTime.getTime() + DAYS.toMillis(1));
 		}
 		mvt.put("expires", expiresTime);
 		
@@ -309,12 +398,17 @@ public class ToadletContextImpl implements ToadletContext {
 		mvt.put("date", nowString);
 		if (mTime == null) {
 			mvt.put("pragma", "no-cache");
-			mvt.put("cache-control", "max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0");
+			String cacheControl = "max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0";
+			mvt.put("cache-control", cacheControl);
 		}
 		if(disconnect)
 			mvt.put("connection", "close");
 		else
 			mvt.put("connection", "keep-alive");
+		String contentSecurityPolicy = generateCSP(allowScripts, allowFrames);
+		mvt.put("content-security-policy", contentSecurityPolicy);
+		mvt.put("x-content-security-policy", contentSecurityPolicy);
+		mvt.put("x-webkit-csp", contentSecurityPolicy);
 		StringBuilder buf = new StringBuilder(1024);
 		buf.append("HTTP/1.1 ");
 		buf.append(replyCode);
@@ -337,7 +431,21 @@ public class ToadletContextImpl implements ToadletContext {
 		sockOutputStream.write(buf.toString().getBytes("US-ASCII"));
 	}
 	
-	static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
+	private static String generateCSP(boolean allowScripts, boolean allowFrames) {
+	    StringBuilder sb = new StringBuilder();
+	    sb.append("default-src 'self'; script-src ");
+	    // "options inline-script" is old syntax needed for older Firefox's.
+	    sb.append(allowScripts ? "'self' 'unsafe-inline'; options inline-script" : "'none'");
+	    sb.append("; frame-src ");
+        sb.append(allowFrames ? "'self'" : "'none'");
+        sb.append("; object-src 'none'");
+        // Always send unsafe-inline for CSS. This is safe given it can't use external stuff anyway.
+        // It's only strictly needed for fproxy.
+        sb.append("; style-src 'self' 'unsafe-inline'");
+        return sb.toString();
+    }
+
+    static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
 	
 	public static Date parseHTTPDate(String httpDate) throws java.text.ParseException{
 		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
@@ -366,7 +474,7 @@ public class ToadletContextImpl implements ToadletContext {
 	/**
 	 * Handle an incoming connection. Blocking, obviously.
 	 */
-	public static void handle(Socket sock, ToadletContainer container, PageMaker pageMaker) {
+	public static void handle(Socket sock, ToadletContainer container, PageMaker pageMaker, UserAlertManager userAlertManager, BookmarkManager bookmarkManager) {
 		try {
 			InputStream is = new BufferedInputStream(sock.getInputStream(), 4096);
 			
@@ -428,7 +536,7 @@ public class ToadletContextImpl implements ToadletContext {
 				boolean allowPost = container.allowPosts();
 				BucketFactory bf = container.getBucketFactory();
 				
-				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container,uri, container.generateUniqueID());
+				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container, userAlertManager, bookmarkManager, uri, container.generateUniqueID());
 				ctx.shouldDisconnect = disconnect;
 				
 				/*
@@ -525,37 +633,19 @@ public class ToadletContextImpl implements ToadletContext {
 
 						HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx, method);
 						
+						// require form password if it's a POST, unless the toadlet requests otherwise
+						if (method.equals("POST") && !t.allowPOSTWithoutPassword()) {
+							if (!ctx.checkFormPassword(req, t.path())) {
+								break;
+							}
+						}
+						
 						if(ctx.isAllowedFullAccess()) {
 							ctx.getPageMaker().parseMode(req, container);
 						}
 						
 						try {
-							String methodName = Toadlet.HANDLE_METHOD_PREFIX + method;
-							try {
-								Class<? extends Toadlet> c = t.getClass();
-								Method m = c.getMethod(methodName, HANDLE_PARAMETERS);
-								if (methodIsConfigurable) {
-									AllowData anno = m.getAnnotation(AllowData.class);
-									if (anno == null) {
-										if (data != null) {
-											sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
-											ctx.close();
-											return;
-										}
-									} else if (anno.value()) {
-										if (data == null) {
-											sendError(sock.getOutputStream(), 400, "Bad Request", "Missing Content", true, null);
-											ctx.close();
-											return;
-										}
-									}
-								}
-								ctx.setActiveToadlet(t);
-								Object arglist[] = new Object[] {uri, req, ctx};
-								m.invoke(t, arglist);
-							} catch (InvocationTargetException ite) {
-								throw ite.getCause();
-							}
+							callToadletMethod(t, method, uri, req, ctx, data, sock, redirect);
 						} catch (RedirectException re) {
 							uri = re.newuri;
 							redirect = true;
@@ -599,7 +689,7 @@ public class ToadletContextImpl implements ToadletContext {
 				pw.flush();
 				msg = msg + sw.toString() + "</pre></body></html>";
 				byte[] messageBytes = msg.getBytes("UTF-8");
-				sendReplyHeaders(sock.getOutputStream(), 500, "Internal failure", null, "text/html; charset=UTF-8", messageBytes.length, null, true);
+				sendReplyHeaders(sock.getOutputStream(), 500, "Internal failure", null, "text/html; charset=UTF-8", messageBytes.length, null, true, false, false);
 				sock.getOutputStream().write(messageBytes);
 			} catch (IOException e1) {
 				// ignore and return
@@ -607,6 +697,47 @@ public class ToadletContextImpl implements ToadletContext {
 		}
 	}
 	
+	private static void callToadletMethod(Toadlet t, String method, URI uri, HTTPRequestImpl req, 
+			ToadletContextImpl ctx, Bucket data, Socket sock, boolean methodIsConfigurable) throws Throwable {
+		String methodName = Toadlet.HANDLE_METHOD_PREFIX + method;
+		if("GET".equals(method)) {
+			// Short cut the common case.
+			if (data != null) {
+				sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
+				ctx.close();
+				return;
+			}
+			ctx.setActiveToadlet(t);
+			t.handleMethodGET(uri, req, ctx);
+			return;
+		}
+		try {
+			Class<? extends Toadlet> c = t.getClass();
+			Method m = c.getMethod(methodName, HANDLE_PARAMETERS);
+			if (methodIsConfigurable) {
+				AllowData anno = m.getAnnotation(AllowData.class);
+				if (anno == null) {
+					if (data != null) {
+						sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
+						ctx.close();
+						return;
+					}
+				} else if (anno.value()) {
+					if (data == null) {
+						sendError(sock.getOutputStream(), 400, "Bad Request", "Missing Content", true, null);
+						ctx.close();
+						return;
+					}
+				}
+			}
+			ctx.setActiveToadlet(t);
+			Object arglist[] = new Object[] {uri, req, ctx};
+			m.invoke(t, arglist);
+		} catch (InvocationTargetException ite) {
+			throw ite.getCause();
+		}
+	}
+
 	private void setActiveToadlet(Toadlet t) {
 		this.activeToadlet = t;
 	}
@@ -677,6 +808,11 @@ public class ToadletContextImpl implements ToadletContext {
 	@Override
 	public boolean isAllowedFullAccess() {
 		return container.isAllowedFullAccess(remoteAddr);
+	}
+	
+	@Override
+	public boolean isAdvancedModeEnabled() {
+		return container.isAdvancedModeEnabled();
 	}
 
 	@Override

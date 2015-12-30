@@ -57,7 +57,7 @@ public class BookmarkItem extends Bookmark {
     
     public BookmarkItem(SimpleFieldSet sfs, UserAlertManager uam) throws FSParseException, MalformedURLException {
         this.name = sfs.get("Name");
-        if(name == null) name = "";
+        if(name == null || name.isEmpty()) name = l10n("unnamedBookmark");
         this.desc = sfs.get("Description");
         if(desc == null) desc = "";
         this.shortDescription = sfs.get("ShortDescription");
@@ -184,7 +184,7 @@ public class BookmarkItem extends Bookmark {
 
     @Override
 	public String getName() {
-        return ("".equals(name) ? l10n("unnamedBookmark") : name);
+        return name;
     }
 
     @Override
@@ -254,21 +254,29 @@ public class BookmarkItem extends Bookmark {
         }
     }
 
+    public boolean hasUpdated() {
+        return updated;
+    }
+
+    public void clearUpdated() {
+        this.updated = false;
+    }
+
     public boolean hasAnActivelink() {
         return hasAnActivelink;
     }
     
     public String getDescription() {
     	if(desc == null) return "";
-		if(desc.startsWith("L10N:"))
-			return NodeL10n.getBase().getString("Bookmarks.Defaults.Description."+desc.substring("L10N:".length()));
+		if(desc.toLowerCase().startsWith("l10n:"))
+			return NodeL10n.getBase().getString("Bookmarks.Defaults.Description."+desc.substring("l10n:".length()));
         return desc;
     }
     
     public String getShortDescription() {
     	if(shortDescription == null) return "";
-		if(shortDescription.startsWith("L10N:"))
-			return NodeL10n.getBase().getString("Bookmarks.Defaults.ShortDescription."+shortDescription.substring("L10N:".length()));
+		if(shortDescription.toLowerCase().startsWith("l10n:"))
+			return NodeL10n.getBase().getString("Bookmarks.Defaults.ShortDescription."+shortDescription.substring("l10n:".length()));
         return shortDescription;
     }
     

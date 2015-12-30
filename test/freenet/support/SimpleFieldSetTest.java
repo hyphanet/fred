@@ -19,11 +19,14 @@ package freenet.support;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import freenet.node.FSParseException;
+import freenet.support.io.LineReader;
+import freenet.support.io.Readers;
 import junit.framework.TestCase;
 
 /**
@@ -434,11 +437,11 @@ public class SimpleFieldSetTest extends TestCase {
 	 */
 	private String sfsReadyString(String[][] aStringPairsArray) {
 		
-		String methodStringToReturn = "";
+		StringBuilder methodStringToReturn = new StringBuilder();
 		for(int i = 0; i < aStringPairsArray.length; i++)
-			methodStringToReturn += aStringPairsArray[i][0]+KEY_VALUE_SEPARATOR+aStringPairsArray[i][1]+'\n';
-		methodStringToReturn += SAMPLE_END_MARKER;
-		return methodStringToReturn;
+			methodStringToReturn.append(aStringPairsArray[i][0]).append(KEY_VALUE_SEPARATOR).append(aStringPairsArray[i][1]).append('\n');
+		methodStringToReturn.append(SAMPLE_END_MARKER);
+		return methodStringToReturn.toString();
 	}
 	
 	/**
@@ -449,7 +452,7 @@ public class SimpleFieldSetTest extends TestCase {
 		String[][] methodStringPairs = SAMPLE_STRING_PAIRS;
 		String methodStringToParse = sfsReadyString(methodStringPairs);
 		try {
-			SimpleFieldSet methodSFS = new SimpleFieldSet(methodStringToParse,false,false);
+			SimpleFieldSet methodSFS = new SimpleFieldSet(methodStringToParse,false,false,false);
 			for (int i=0; i < methodStringPairs.length; i++)
 				assertEquals(methodSFS.get(methodStringPairs[i][0]),
 						methodStringPairs[i][1]);
@@ -509,7 +512,7 @@ public class SimpleFieldSetTest extends TestCase {
 		String methodEndMarker = "ANOTHER-ENDING";
 		String methodStringToParse = sfsReadyString(SAMPLE_STRING_PAIRS);
 		try {
-			SimpleFieldSet methodSFS = new SimpleFieldSet(methodStringToParse,false,false);
+			SimpleFieldSet methodSFS = new SimpleFieldSet(methodStringToParse,false,false,false);
 			assertEquals(methodSFS.getEndMarker(),SAMPLE_END_MARKER);
 			methodSFS.setEndMarker(methodEndMarker);
 			assertEquals(methodSFS.getEndMarker(),methodEndMarker);
@@ -753,5 +756,48 @@ public class SimpleFieldSetTest extends TestCase {
 		} catch(NoSuchElementException e) {
 			//Expected
 		}
+	}
+	
+	public void testBase64() throws IOException {
+		checkBase64("test", " ", "IA");
+		for(String[] s : SAMPLE_STRING_PAIRS) {
+			String evilValue = "="+s[1];
+			String base64 = Base64.encodeUTF8(evilValue);
+			checkBase64(s[0], evilValue, base64);
+		}
+	}
+	
+	private void checkBase64(String key, String value, String base64Value) throws IOException {
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs.putSingle(key, value);
+		assertEquals(sfs.toOrderedString(), key+"="+value+"\nEnd\n");
+		StringWriter sw = new StringWriter();
+		sfs.writeTo(sw, "", false, true);
+		String written = sw.toString();
+		assertEquals(written, key+"=="+base64Value+"\nEnd\n");
+		LineReader r = Readers.fromBufferedReader(new BufferedReader(new StringReader(written)));
+		SimpleFieldSet sfsCheck = new SimpleFieldSet(r, 1024, 1024, true, false, true, true);
+		assertEquals(sfsCheck.get(key), value);
+	}
+	
+	public void testEmptyValue() throws IOException {
+		String written = "foo.blah=\nEnd\n";
+		LineReader r = Readers.fromBufferedReader(new BufferedReader(new StringReader(written)));
+		SimpleFieldSet sfsCheck = new SimpleFieldSet(r, 1024, 1024, true, false, true, false);
+		assertTrue(sfsCheck.get("foo.blah").equals(""));
+		r = Readers.fromBufferedReader(new BufferedReader(new StringReader(written)));
+		sfsCheck = new SimpleFieldSet(r, 1024, 1024, true, false, true, true);
+		assertTrue(sfsCheck.get("foo.blah").equals(""));
+	}
+	
+	public void testSplit() {
+	    assertTrue(Arrays.equals(SimpleFieldSet.split("blah"), new String[] { "blah" }));
+	    assertTrue(Arrays.equals(SimpleFieldSet.split("blah; blah"), new String[] { "blah", " blah" }));
+	    assertTrue(Arrays.equals(SimpleFieldSet.split("blah;1;2"), new String[] { "blah", "1", "2" }));
+	    assertTrue(Arrays.equals(SimpleFieldSet.split("blah;1;2;"), new String[] { "blah", "1", "2", "" }));
+	    assertTrue(Arrays.equals(SimpleFieldSet.split("blah;1;2;;"), new String[] { "blah", "1", "2", "", "" }));
+        assertTrue(Arrays.equals(SimpleFieldSet.split(";blah;1;2;;"), new String[] { "", "blah", "1", "2", "", "" }));
+        assertTrue(Arrays.equals(SimpleFieldSet.split(";;blah;1;2;;"), new String[] { "", "", "blah", "1", "2", "", "" }));
+        assertTrue(Arrays.equals(SimpleFieldSet.split(";;;"), new String[] { "", "", "" }));
 	}
 }

@@ -8,8 +8,6 @@ import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
@@ -25,7 +23,8 @@ import freenet.support.Logger;
  */
 public class ClientSSK extends ClientKey {
 
-	/** Crypto type */
+    private static final long serialVersionUID = 1L;
+    /** Crypto type */
 	public final byte cryptoAlgorithm;
 	/** Document name */
 	public final String docName;
@@ -44,7 +43,7 @@ public class ClientSSK extends ClientKey {
 	
 	private ClientSSK(ClientSSK key) {
 		this.cryptoAlgorithm = key.cryptoAlgorithm;
-		this.docName = new String(key.docName);
+		this.docName = key.docName;
 		if(key.pubKey != null)
 			this.pubKey = key.pubKey.cloneKey();
 		else
@@ -110,6 +109,16 @@ public class ClientSSK extends ClientKey {
 		this(origURI.getDocName(), origURI.getRoutingKey(), origURI.getExtra(), null, origURI.getCryptoKey());
 		if(!origURI.getKeyType().equalsIgnoreCase("SSK"))
 			throw new MalformedURLException();
+	}
+	
+	protected ClientSSK() {
+	    // For serialization.
+	    this.cryptoAlgorithm = 0;
+	    this.docName = null;
+	    this.pubKeyHash = null;
+	    this.cryptoKey = null;
+	    this.ehDocname = null;
+	    this.hashCode = 0;
 	}
 	
 	public synchronized void setPublicKey(DSAPublicKey pubKey) {
@@ -186,11 +195,6 @@ public class ClientSSK extends ClientKey {
 		return new ClientSSK(this);
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
-	
 	@Override
 	public int hashCode() {
 		return hashCode;

@@ -38,6 +38,9 @@ public abstract class PluginDownLoader<T> {
 
 	/** Cancel the load if possible */
 	abstract void tryCancel();
-	
 
+	public boolean isOfficialPluginLoader() {
+		return false;
+	}
+	
 }

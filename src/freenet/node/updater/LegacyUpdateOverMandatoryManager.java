@@ -7,8 +7,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -22,7 +20,7 @@ import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.io.RandomAccessFileWrapper;
+import freenet.support.io.FileRandomAccessBuffer;
 
 /**
  * Legacy UOM. This class simply enables older nodes to pull the transition
@@ -55,7 +53,7 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 		
 		Message msg;
 		final BulkTransmitter bt;
-		final RandomAccessFileWrapper raf;
+		final FileRandomAccessBuffer raf;
 
 		if (source.isOpennet() && updateManager.dontAllowUOM()) {
 			Logger.normal(this, "Peer " + source
@@ -84,23 +82,20 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 		try {
 			
 			try {
-				raf = new RandomAccessFileWrapper(data, "r");
+				raf = new FileRandomAccessBuffer(data, true);
 			} catch(FileNotFoundException e) {
 				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
 				return;
+			} catch(IOException e) {
+			    Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but can't read the file on disk!: " + e, e);
+			    return;
 			}
 			
 			final PartiallyReceivedBulk prb;
 			long length;
-			try {
-				length = raf.size();
-				prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
-						Node.PACKET_SIZE, raf, true);
-			} catch(IOException e) {
-				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but we can't determine the file size: " + e, e);
-				raf.close();
-				return;
-			}
+			length = raf.size();
+			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
+			        Node.PACKET_SIZE, raf, true);
 			
 			try {
 				bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr, true);
@@ -194,11 +189,6 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 	@Override
 	public boolean persistent() {
 		return false;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 	@Override

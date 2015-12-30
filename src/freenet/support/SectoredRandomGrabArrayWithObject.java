@@ -1,19 +1,21 @@
 package freenet.support;
 
-import com.db4o.ObjectContainer;
+import freenet.client.async.ClientRequestSelector;
 
-public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray implements RemoveRandomWithObject {
+public class SectoredRandomGrabArrayWithObject<MyType,ChildType,GrabType extends RemoveRandomWithObject<ChildType>> extends SectoredRandomGrabArray<ChildType,GrabType> implements RemoveRandomWithObject<MyType> {
 
-	private Object object;
+	private MyType object;
 	
-	public SectoredRandomGrabArrayWithObject(Object object, boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
-		super(persistent, container, parent);
+	public SectoredRandomGrabArrayWithObject(MyType object, RemoveRandomParent parent, ClientRequestSelector root) {
+		super(parent, root);
 		this.object = object;
 	}
 
 	@Override
-	public Object getObject() {
-		return object;
+	public MyType getObject() {
+	    synchronized(root) {
+	        return object;
+	    }
 	}
 	
 	@Override
@@ -22,9 +24,10 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
 	}
 
 	@Override
-	public void setObject(Object client, ObjectContainer container) {
-		object = client;
-		if(persistent) container.store(this);
+	public void setObject(MyType client) {
+	    synchronized(root) {
+	        object = client;
+	    }
 	}
 
 }

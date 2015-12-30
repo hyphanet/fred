@@ -1,5 +1,8 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -300,8 +303,8 @@ public class RequestTracker {
 	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local 
 	 * (that is, count imaginary onward transfers etc depending on the request type).
 	 * @param counter Transfer counts for all requests will be added to this counter object.
-	 * @param counterSourceRestarted Transfer counts for requests whose source restarted (which 
-	 * will be deducted from the peer limit before the peer receives the limit) */
+	 * @param counterSourceRestarted Transfer counts for requests whose source restarted (and so 
+	 * are counted as local) will be added to this counter object. */
 	public void countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSR) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		// Map is locked by the non-local version, although we're counting from the local version.
@@ -528,7 +531,7 @@ public class RequestTracker {
 
 	// Must include bulk inserts so fairly long.
 	// 21 minutes is enough for a fatal timeout.
-	static final int TIMEOUT = 21 * 60 * 1000;
+	static final long TIMEOUT = MINUTES.toMillis(21);
 
 	void startDeadUIDChecker() {
 		ticker.queueTimedJob(deadUIDChecker, TIMEOUT);
@@ -551,7 +554,7 @@ public class RequestTracker {
 				checkUIDs(runningSSKOfferReplyUIDsBulk);
 				checkUIDs(runningCHKOfferReplyUIDsBulk);
 			} finally {
-				ticker.queueTimedJob(this, 60*1000);
+				ticker.queueTimedJob(this, SECONDS.toMillis(60));
 			}
 		}
 

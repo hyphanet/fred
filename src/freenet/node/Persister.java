@@ -1,12 +1,13 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Ticker;
 import freenet.support.io.Closer;
@@ -17,8 +18,8 @@ class Persister implements Runnable {
         static {
             Logger.registerClass(Persister.class);
         }
-        
-        static final int PERIOD = 900*1000;
+
+        static final long PERIOD = MINUTES.toMillis(15);
 
 	Persister(Persistable t, File persistTemp, File persistTarget, Ticker ps) {
 		this.persistable = t;
@@ -50,9 +51,6 @@ class Persister implements Runnable {
 		freenet.support.Logger.OSThread.logPID(this);
 		try {
 			persistThrottle();
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
-			System.err.println("Will restart ThrottlePersister...");
 		} catch (Throwable t) {
 			Logger.error(this, "Caught in ThrottlePersister: "+t, t);
 			System.err.println("Caught in ThrottlePersister: "+t);

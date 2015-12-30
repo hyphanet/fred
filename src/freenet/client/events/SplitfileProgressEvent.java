@@ -3,14 +3,17 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
 
-import com.db4o.ObjectContainer;
+import java.util.Date;
 
+import freenet.client.async.ClientRequester;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
 public class SplitfileProgressEvent implements ClientEvent {
-	private static volatile boolean logMINOR;
+
+    private static volatile boolean logMINOR;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
@@ -25,25 +28,48 @@ public class SplitfileProgressEvent implements ClientEvent {
 	
 	public final int totalBlocks;
 	public final int succeedBlocks;
+	/** @see ClientRequester#latestSuccess */
+	public final Date latestSuccess;
 	public final int failedBlocks;
 	public final int fatallyFailedBlocks;
+	/** @see ClientRequester#latestFailure */
+	public final Date latestFailure;
 	public final int minSuccessFetchBlocks;
 	public int minSuccessfulBlocks;
 	public final boolean finalizedTotal;
 	
-	public SplitfileProgressEvent(int totalBlocks, int succeedBlocks, int failedBlocks, 
-			int fatallyFailedBlocks, int minSuccessfulBlocks, int minSuccessFetchBlocks, boolean finalizedTotal) {
+	public SplitfileProgressEvent(int totalBlocks, int succeedBlocks, Date latestSuccess, 
+			int failedBlocks, int fatallyFailedBlocks, Date latestFailure, int minSuccessfulBlocks,
+			int minSuccessFetchBlocks, boolean finalizedTotal) {
 		this.totalBlocks = totalBlocks;
 		this.succeedBlocks = succeedBlocks;
+		// clone() because Date is mutable.
+		this.latestSuccess = latestSuccess != null ? (Date)latestSuccess.clone() : null; 
 		this.failedBlocks = failedBlocks;
 		this.fatallyFailedBlocks = fatallyFailedBlocks;
+		// clone() because Date is mutable.
+		this.latestFailure = latestFailure != null ? (Date)latestFailure.clone() : null;
 		this.minSuccessfulBlocks = minSuccessfulBlocks;
 		this.finalizedTotal = finalizedTotal;
 		this.minSuccessFetchBlocks = minSuccessFetchBlocks;
 		if(logMINOR)
 			Logger.minor(this, "Created SplitfileProgressEvent: total="+totalBlocks+" succeed="+succeedBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" min success="+minSuccessfulBlocks+" finalized="+finalizedTotal);
 	}
+	
+	protected SplitfileProgressEvent() {
+	    // For serialization.
+	    totalBlocks = 0;
+	    succeedBlocks = 0;
+	    // See ClientRequester.getLatestSuccess() for why this defaults to current time.
+	    latestSuccess = CurrentTimeUTC.get();
+	    failedBlocks = 0;
+	    fatallyFailedBlocks = 0;
+	    latestFailure = null;
+	    minSuccessFetchBlocks = 0;
+	    finalizedTotal = false;
+	}
 
+	/** TODO: Developer's tools: Include {@link #latestSuccess} and {@link #latestFailure}. */
 	@Override
 	public String getDescription() {
 		StringBuilder sb = new StringBuilder();
@@ -81,10 +107,6 @@ public class SplitfileProgressEvent implements ClientEvent {
 	@Override
 	public int getCode() {
 		return CODE;
-	}
-
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
 	}
 
 }

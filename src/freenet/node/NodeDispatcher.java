@@ -275,18 +275,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return handleRoutedReply(m);
 		} else if(spec == DMT.FNPRoutedRejected) {
 			return handleRoutedRejected(m);
-			// FIXME implement threaded probe requests of various kinds.
-			// Old probe request code was a major pain, never really worked.
-			// We should have threaded probe requests (for simple code),
-			// and one for each routing strategy.
-//		} else if(spec == DMT.FNPProbeRequest) {
-//			return handleProbeRequest(m, source);
-//		} else if(spec == DMT.FNPProbeReply) {
-//			return handleProbeReply(m, source);
-//		} else if(spec == DMT.FNPProbeRejected) {
-//			return handleProbeRejected(m, source);
-//		} else if(spec == DMT.FNPProbeTrace) {
-//			return handleProbeTrace(m, source);
 		} else if(spec == DMT.FNPOfferKey) {
 			return handleOfferKey(m, source);
 		} else if(spec == DMT.FNPGetOfferedKey) {
@@ -434,8 +422,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		boolean purge = m.getBoolean(DMT.PURGE);
 		if(purge) {
 			OpennetManager om = node.getOpennet();
-			if(om != null)
-				om.purgeOldOpennetPeer(source);
+			if(om != null && source instanceof OpennetPeerNode)
+				om.purgeOldOpennetPeer((OpennetPeerNode)source);
 		}
 		// Process parting message
 		int type = m.getInt(DMT.NODE_TO_NODE_MESSAGE_TYPE);

@@ -39,13 +39,19 @@ class NPFPacket {
 	private final List<byte[]> lossyMessages = new LinkedList<byte[]>();
 	private boolean error;
 	private int length = 5; //Sequence number (4), numAcks(1)
+	private int ackRangeCount = 0;
+	private int ackBlockByteSize = 0;
+	private boolean useCumulativeAcks = true;
 
-	public static NPFPacket create(byte[] plaintext) {
-		return create(plaintext, null);
+	public void setAcknowledgeType(boolean useCumulativeAcks) {
+		this.useCumulativeAcks = useCumulativeAcks;
 	}
 	
 	public static NPFPacket create(byte[] plaintext, BasePeerNode pn) {
 		NPFPacket packet = new NPFPacket();
+		if (pn == null) throw new IllegalArgumentException("Can't estimate an ack type of received packet");
+		boolean useCumAcks = pn.isUseCumulativeAcksSet();
+		packet.setAcknowledgeType(useCumAcks);
 		int offset = 0;
 
 		if(plaintext.length < (offset + 5)) { //Sequence number + the number of acks
@@ -60,27 +66,71 @@ class NPFPacket {
 		offset += 4;
 
 		//Process received acks
-		int numAcks = plaintext[offset++] & 0xFF;
-		if(plaintext.length < (offset + numAcks + (numAcks > 0 ? 3 : 0))) {
-			packet.error = true;
-			return packet;
-		}
+		if (useCumAcks) {
+			int numAckRanges = plaintext[offset++] & 0xFF;
+			if (numAckRanges > 0) {
+				try {
+					int ack, prevAck = 0;
+					
+					for(int i = 0; i < numAckRanges; i++) {
+						if (i == 0) {
+							ack = ((plaintext[offset] & 0xFF) << 24)
+						               | ((plaintext[offset + 1] & 0xFF) << 16)
+						               | ((plaintext[offset + 2] & 0xFF) << 8)
+						               | (plaintext[offset + 3] & 0xFF);
+							offset += 4;
+						} else {
+							int distanceFromPrevious = (plaintext[offset++] & 0xFF);
+							if (distanceFromPrevious != 0) {
+								ack = prevAck + distanceFromPrevious;
+							} else {
+								// Far offset
+								ack = ((plaintext[offset] & 0xFF) << 24)
+							               | ((plaintext[offset + 1] & 0xFF) << 16)
+							               | ((plaintext[offset + 2] & 0xFF) << 8)
+							               | (plaintext[offset + 3] & 0xFF);
+								offset += 4;
+							}
+						}
+						
+						int rangeSize = (plaintext[offset++] & 0xFF);
+						for (int j = 1; j <= rangeSize; j++) {
+							packet.acks.add(ack++);
+						}
+						
+						prevAck = ack-1;
+					}
+				} catch (ArrayIndexOutOfBoundsException e) {
+					// The packet's length is not big enough
+					packet.error = true;
+					return packet;
+				}
+			}
+		} else {
+			// Old format for compatibility
+			int numAcks = plaintext[offset++] & 0xFF;
+			if(plaintext.length < (offset + numAcks + (numAcks > 0 ? 3 : 0))) {
+				packet.error = true;
+				return packet;
+			}
 
-		int prevAck = 0;
-		for(int i = 0; i < numAcks; i++) {
-			int ack = 0;
-			if(i == 0) {
-				ack = ((plaintext[offset] & 0xFF) << 24)
-				                | ((plaintext[offset + 1] & 0xFF) << 16)
-				                | ((plaintext[offset + 2] & 0xFF) << 8)
-				                | (plaintext[offset + 3] & 0xFF);
-				offset += 4;
+			int prevAck = 0;
+			for(int i = 0; i < numAcks; i++) {
+				int ack = 0;
+				if(i == 0) {
+					ack = ((plaintext[offset] & 0xFF) << 24)
+							| ((plaintext[offset + 1] & 0xFF) << 16)
+							| ((plaintext[offset + 2] & 0xFF) << 8)
+							| (plaintext[offset + 3] & 0xFF);
+					offset += 4;
 			} else {
 				ack = prevAck + (plaintext[offset++] & 0xFF);
 			}
-			packet.acks.add(ack);
-			prevAck = ack;
+				packet.acks.add(ack);
+				prevAck = ack;
+			}
 		}
+		
 
 		//Handle received message fragments
 		int prevFragmentID = -1;
@@ -207,6 +257,7 @@ class NPFPacket {
 	}
 
 	public int toBytes(byte[] buf, int offset, Random paddingGen) {
+	    int origOffset = offset;
 		buf[offset] = (byte) (sequenceNumber >>> 24);
 		buf[offset + 1] = (byte) (sequenceNumber >>> 16);
 		buf[offset + 2] = (byte) (sequenceNumber >>> 8);
@@ -214,24 +265,77 @@ class NPFPacket {
 		offset += 4;
 
 		//Add acks
-		buf[offset++] = (byte) (acks.size());
-		int prevAck;
-		Iterator<Integer> acksIterator = acks.iterator();
-		if(acksIterator.hasNext()) {
-			prevAck = acksIterator.next();
-			buf[offset] = (byte) (prevAck >>> 24);
-			buf[offset + 1] = (byte) (prevAck >>> 16);
-			buf[offset + 2] = (byte) (prevAck >>> 8);
-			buf[offset + 3] = (byte) (prevAck);
-			offset += 4;
-
-			while(acksIterator.hasNext()) {
-				int ack = acksIterator.next();
-				buf[offset++] = (byte) (ack - prevAck);
-				prevAck = ack;
+		if (useCumulativeAcks) {
+			buf[offset++] = (byte) (ackRangeCount);
+			Iterator<Integer> acksIterator = acks.iterator();
+			if(acksIterator.hasNext()) {
+				int startRange = 0, endRange = -1;
+				int nextAck = acksIterator.next();
+				for (int i = 0; acksIterator.hasNext(); i++) {
+				    assert(nextAck - endRange >= 0);
+					if (i == 0 || (nextAck - endRange >= 254)) {
+					    if(i != 0)
+					        buf[offset++] = (byte) 0; // Mark a far offset
+						buf[offset] = (byte) (nextAck >>> 24);
+						buf[offset + 1] = (byte) (nextAck >>> 16);
+						buf[offset + 2] = (byte) (nextAck >>> 8);
+						buf[offset + 3] = (byte) (nextAck);
+						offset += 4;
+					} else {
+						assert(nextAck - endRange < 254);
+						buf[offset++] = (byte) (nextAck - endRange);
+					}
+					
+					endRange = startRange = nextAck;
+					
+					while(acksIterator.hasNext() &&  ((nextAck = acksIterator.next()) - endRange == 1) &&  (endRange - startRange < 254)) {
+						endRange++;
+					}
+					
+					byte rangeSize = (byte) (endRange - startRange + 1);
+					buf[offset++] = rangeSize;
+					
+					// TODO: Add zero-cost dub-acks if any
+				}
+				if (nextAck != endRange) { // Edge-case when the last ack does not fit into previous range
+                    assert(nextAck - endRange >= 0);
+					if (nextAck - endRange >= 254 && endRange != -1) {
+						buf[offset++] = (byte) 0; // Mark a far offset
+					}
+					if (ackRangeCount == 1 || (nextAck - endRange >= 254)) {
+						buf[offset] = (byte) (nextAck >>> 24);
+						buf[offset + 1] = (byte) (nextAck >>> 16);
+						buf[offset + 2] = (byte) (nextAck >>> 8);
+						buf[offset + 3] = (byte) (nextAck);
+						offset += 4;
+						buf[offset++] = (byte) 1;
+					} else {
+						buf[offset++] = (byte) (nextAck - endRange);
+						buf[offset++] = (byte) 1;
+					}
+				}
+			}
+		} else {
+			// Use old format
+			buf[offset++] = (byte) (acks.size());
+			int prevAck;
+			Iterator<Integer> acksIterator = acks.iterator();
+			if(acksIterator.hasNext()) {
+				prevAck = acksIterator.next();
+				buf[offset] = (byte) (prevAck >>> 24);
+				buf[offset + 1] = (byte) (prevAck >>> 16);
+				buf[offset + 2] = (byte) (prevAck >>> 8);
+				buf[offset + 3] = (byte) (prevAck);
+				offset += 4;
+	
+				while(acksIterator.hasNext()) {
+					int ack = acksIterator.next();
+					buf[offset++] = (byte) (ack - prevAck);
+					prevAck = ack;
+				}
 			}
 		}
-
+		
 		//Add fragments
 		int prevFragmentID = -1;
 		for(MessageFragment fragment : fragments) {
@@ -289,6 +393,8 @@ class NPFPacket {
 			}
 		}
 
+        assert(offset - origOffset == length);
+
 		if(offset < buf.length) {
 			//More room, so add padding
 			Util.randomBytes(paddingGen, buf, offset, buf.length - offset);
@@ -298,25 +404,69 @@ class NPFPacket {
 				b = (byte)0x9F; // Make sure it doesn't match the pattern for lossy messages
 			buf[offset] = b;
 		}
-
+		
 		return offset;
 	}
 
-	public boolean addAck(int ack) {
+	public boolean addAck(int ack, int maxPacketSize) {
 		if(ack < 0) throw new IllegalArgumentException("Got negative ack: " + ack);
 		if(acks.contains(ack)) return true;
-		if(acks.size() >= 255) return false;
+		
+		if (useCumulativeAcks) {
+			acks.add(ack);
+			int nearRangeCount = 0, farRangeCount = 0;
+	
+			Iterator<Integer> acksIterator = acks.iterator();
+			int startRange = 0, endRange = -1;
+			int nextAck = acksIterator.next();
+			while (acksIterator.hasNext()) {
+				if (nextAck - endRange > 254 && endRange != -1) {
+					farRangeCount++;
+				} else {
+					nearRangeCount++;
+				}
+				endRange = startRange = nextAck;
+				while(acksIterator.hasNext() && ((nextAck = acksIterator.next()) - endRange == 1) && (endRange - startRange < 254)) {
+					endRange++;
+				}
+				// TODO: Add zero-cost dub-acks if any
+			}
+			if (nextAck != endRange) {
+				if (nextAck - endRange < 254 || endRange == -1) {
+					nearRangeCount++;
+				} else {
+					farRangeCount++;
+				}
+			}
+			if (nearRangeCount + farRangeCount > 254) {
+				acks.remove(ack);
+				return false;
+			}
+			//              (start + offset) + (rangeCount-1)    *(1byte deltaFromPrevios + length) + farRangeCount*(flag + 4byte packetSequenceNumber + length)
+			int blockSize = 5                + (nearRangeCount-1)*2                                 + farRangeCount*6;
+			int finalLength = length + blockSize - ackBlockByteSize;
+			if(finalLength > maxPacketSize) {
+			    acks.remove(ack);
+			    return false;
+			}
+			length = finalLength;
+			ackBlockByteSize = blockSize;
+			ackRangeCount = farRangeCount + nearRangeCount;
+		} else {
+			// Use old format
+			if(acks.size() >= 255) return false;
 
-		if(acks.size() == 0) {
-			length += 3;
-		} else if(ack < acks.first()) {
-			if((acks.first() - ack) > 255) return false;
-		} else if(ack > acks.last()) {
-			if((ack - acks.last()) > 255) return false;
+			if(acks.size() == 0) {
+				length += 3;
+			} else if(ack < acks.first()) {
+				if((acks.first() - ack) > 255) return false;
+			} else if(ack > acks.last()) {
+				if((ack - acks.last()) > 255) return false;
+			}
+			acks.add(ack);
+			length++;
 		}
-		acks.add(ack);
-		length++;
-
+		
 		return true;
 	}
 

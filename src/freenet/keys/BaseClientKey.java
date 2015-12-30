@@ -3,17 +3,22 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
+import java.io.Serializable;
 import java.net.MalformedURLException;
 
 /**
  * Anything that a Node can fetch.
  * Base class of ClientKey; non-ClientKey subclasses are things like USKs, which
  * don't directly translate to a routing key.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public abstract class BaseClientKey {
+public abstract class BaseClientKey implements Serializable {
 
-	public static BaseClientKey getBaseKey(FreenetURI origURI) throws MalformedURLException {
+    private static final long serialVersionUID = 1L;
+
+    public static BaseClientKey getBaseKey(FreenetURI origURI) throws MalformedURLException {
 		String keyType = origURI.getKeyType();
 		if("CHK".equals(keyType))
 			return new ClientCHK(origURI);
@@ -27,5 +32,9 @@ public abstract class BaseClientKey {
 	}
 	
 	public abstract FreenetURI getURI();
+	
+	protected BaseClientKey() {
+	    // For serialization.
+	}
 
 }

@@ -1,7 +1,5 @@
 package freenet.support.compress;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,7 +14,6 @@ import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class GzipCompressor implements Compressor {
 
 	@Override
@@ -42,9 +39,7 @@ public class GzipCompressor implements Compressor {
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		if(maxReadLength < 0)
 			throw new IllegalArgumentException();
-		is = new BufferedInputStream(is, 32768);
 		GZIPOutputStream gos = null;
-		os = new BufferedOutputStream(os, 32768);
 		CountedOutputStream cos = new CountedOutputStream(os);
 		try {
 			gos = new GZIPOutputStream(cos);
@@ -79,8 +74,7 @@ public class GzipCompressor implements Compressor {
 
 	@Override
 	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
-		GZIPInputStream gis = new GZIPInputStream(new BufferedInputStream(is, 32768));
-		os = new BufferedOutputStream(os, 32768);
+		GZIPInputStream gis = new GZIPInputStream(is);
 		long written = 0;
 		int bufSize = 32768;
 		if(maxLength > 0 && maxLength < bufSize)

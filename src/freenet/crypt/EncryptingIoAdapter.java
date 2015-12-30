@@ -3,8 +3,7 @@ package freenet.crypt;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-
-import freenet.support.math.MersenneTwister;
+import java.util.Random;
 
 import com.db4o.ext.Db4oIOException;
 import com.db4o.io.IoAdapter;
@@ -25,7 +24,7 @@ import freenet.support.io.FileUtil;
 public class EncryptingIoAdapter extends IoAdapter {
 	
 	private final IoAdapter baseAdapter;
-	private final RandomSource random;
+	private final Random random;
 	private final byte[] key;
 	private final BlockCipher cipher;
 	private long position;
@@ -39,7 +38,7 @@ public class EncryptingIoAdapter extends IoAdapter {
 	 * @param databaseKey This is copied, so caller must wipe it.
 	 * @param random
 	 */
-	public EncryptingIoAdapter(IoAdapter baseAdapter2, byte[] databaseKey, RandomSource random) {
+	public EncryptingIoAdapter(IoAdapter baseAdapter2, byte[] databaseKey, Random random) {
 		this.baseAdapter = baseAdapter2;
 		this.key = databaseKey.clone();
 		this.random = random;
@@ -67,7 +66,7 @@ public class EncryptingIoAdapter extends IoAdapter {
 		byte[] seed = new byte[32];
 		random.nextBytes(seed);
 		try {
-			FileUtil.secureDelete(new File(arg0), new MersenneTwister(seed));
+			FileUtil.secureDelete(new File(arg0));
 		} catch (IOException e) {
 			// FIXME useralert?
 			// We shouldn't do this ever afaics though, with our usage of db4o...

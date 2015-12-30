@@ -3,10 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import com.db4o.ObjectContainer;
-
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
+import freenet.node.RequestClient;
 
 /** Provides a blocking wrapper for a fetch. Used for simple blocking APIs such as HighLevelSimpleClient. */
 public class FetchWaiter implements ClientGetCallback {
@@ -14,9 +14,14 @@ public class FetchWaiter implements ClientGetCallback {
 	private FetchResult result;
 	private FetchException error;
 	private boolean finished;
+	private final RequestClient client;
 	
-	@Override
-	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public FetchWaiter(RequestClient client) {
+	    this.client = client;
+    }
+
+    @Override
+	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
 		if(finished) return;
 		this.result = result;
 		finished = true;
@@ -24,7 +29,7 @@ public class FetchWaiter implements ClientGetCallback {
 	}
 
 	@Override
-	public synchronized void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public synchronized void onFailure(FetchException e, ClientGetter state) {
 		if(finished) return;
 		this.error = e;
 		finished = true;
@@ -45,8 +50,14 @@ public class FetchWaiter implements ClientGetCallback {
 		return result;
 	}
 
-	@Override
-	public void onMajorProgress(ObjectContainer container) {
-		// Ignore
-	}
+    @Override
+    public void onResume(ClientContext context) {
+        throw new UnsupportedOperationException();
+        // Not persistent.
+    }
+
+    @Override
+    public RequestClient getRequestClient() {
+        return client;
+    }
 }

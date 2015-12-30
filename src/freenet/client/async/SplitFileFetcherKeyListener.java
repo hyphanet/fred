@@ -1,467 +1,355 @@
 package freenet.client.async;
 
 import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
+import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
+import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.SHA256;
+import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
+import freenet.keys.NodeCHK;
 import freenet.node.SendableGet;
 import freenet.support.BinaryBloomFilter;
+import freenet.support.BloomFilter;
 import freenet.support.CountingBloomFilter;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
-import freenet.support.io.NativeThread;
+import freenet.support.io.StorageFormatException;
 
-/**
- * KeyListener implementation for SplitFileFetcher.
- * Details:
- * - We have a bloom filter. This is kept in RAM, but stored in a file. It is a
- * counting filter which is created with the splitfile; when a block is 
- * completed, it is removed from the filter, and we schedule a write after a
- * certain period of time (we ensure that the write doesn't happen before that).
- * Hence even on a fast node, we won't have to write the filter so frequently
- * as to be a problem. We could use mmap'ed filters, but that might also be a
- * problem with fd's.
- * - When a block is actually found, on the database thread, we load the per-
- * segment bloom filters from the SplitFileFetcher, and thus determine which 
- * segment it belongs to. These are non-counting and static.
- * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
- * 
- * LOCKING: Synchronize when changing something, and writing to disk. 
- * Don't need to synchronize on read in most cases, at least for sane 
- * BloomFilter implementations (that is, counting with counting width less than
- * and divisible into 8).
- */
 public class SplitFileFetcherKeyListener implements KeyListener {
-	
-	private static volatile boolean logMINOR;
+    
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerClass(SplitFileFetcherKeyListener.class);
+    }
+    
+    final SplitFileFetcherStorage storage;
+    final SplitFileFetcherStorageCallback fetcher;
+    /** Salt used in the secondary Bloom filters if the primary matches.
+     * The primary Bloom filters use the already-salted saltedKey. */
+    private final byte[] localSalt;
+    /** Size of the main Bloom filter in bytes. */
+    private final int mainBloomFilterSizeBytes;
+    /** Default mainBloomElementsPerKey. False positives is approx
+     * 0.6185^[this number], so 19 gives us 0.01% false positives, which should
+     * be acceptable even if there are thousands of splitfiles on the queue. */
+    static final int DEFAULT_MAIN_BLOOM_ELEMENTS_PER_KEY = 19;
+    /** Number of hashes for the main filter. */
+    private final int mainBloomK;
+    /** What proportion of false positives is acceptable for the per-segment
+     * Bloom filters? This is divided by the number of segments, so it is (roughly)
+     * an overall probability of any false positive given that we reach the
+     * per-segment filters. IMHO 1 in 100 is adequate. */
+    static final double ACCEPTABLE_BLOOM_FALSE_POSITIVES_ALL_SEGMENTS = 0.01;
+    /** Size of per-segment bloom filter in bytes. This is calculated from the
+     * above constant and the number of segments, and rounded up. */
+    private final int perSegmentBloomFilterSizeBytes;
+    /** Number of hashes for the per-segment bloom filters. */
+    private final int perSegmentK;
+    /** The overall bloom filter, containing all the keys, salted with the global hash. When a key
+     * is found, it is removed from this. */
+    private final CountingBloomFilter filter;
+    /** The per-segment bloom filters, containing the keys for each segment. These are not changed. */
+    private final BinaryBloomFilter[] segmentFilters;
+    private boolean finishedSetup;
+    private final boolean persistent;
+    /** Does the main bloom filter need writing? */
+    private boolean dirty;
+    private transient boolean mustRegenerateMainFilter;
+    private transient boolean mustRegenerateSegmentFilters;
+    
+    /** Create a set of bloom filters for a new download.
+     * @throws FetchException */
+    public SplitFileFetcherKeyListener(SplitFileFetcherStorageCallback fetcher, SplitFileFetcherStorage storage, 
+            boolean persistent, byte[] localSalt, int origSize, int segBlocks, int segments) 
+    throws FetchException {
+        this.fetcher = fetcher;
+        this.storage = storage;
+        this.localSalt = localSalt;
+        this.persistent = persistent;
+        int mainElementsPerKey = DEFAULT_MAIN_BLOOM_ELEMENTS_PER_KEY;
+        mainBloomK = (int) (mainElementsPerKey * 0.7);
+        long elementsLong = origSize * mainElementsPerKey;
+        // REDFLAG: SIZE LIMIT: 3.36TB limit!
+        if(elementsLong > Integer.MAX_VALUE)
+            throw new FetchException(FetchExceptionMode.TOO_BIG, "Cannot fetch splitfiles with more than "+(Integer.MAX_VALUE/mainElementsPerKey)+" keys! (approx 3.3TB)");
+        int mainSizeBits = (int)elementsLong; // counting filter
+        mainSizeBits = (mainSizeBits + 7) & ~7; // round up to bytes
+        mainBloomFilterSizeBytes = mainSizeBits / 8 * 2; // counting filter
+        double acceptableFalsePositives = ACCEPTABLE_BLOOM_FALSE_POSITIVES_ALL_SEGMENTS / segments;
+        int perSegmentBitsPerKey = (int) Math.ceil(Math.log(acceptableFalsePositives) / Math.log(0.6185));
+        if(segBlocks > origSize)
+            segBlocks = origSize;
+        int perSegmentSize = perSegmentBitsPerKey * segBlocks;
+        perSegmentSize = (perSegmentSize + 7) & ~7;
+        perSegmentBloomFilterSizeBytes = perSegmentSize / 8;
+        perSegmentK = BloomFilter.optimialK(perSegmentSize, segBlocks);
+        segmentFilters = new BinaryBloomFilter[segments];
+        byte[] segmentsFilterBuffer = new byte[perSegmentBloomFilterSizeBytes * segments];
+        ByteBuffer baseBuffer = ByteBuffer.wrap(segmentsFilterBuffer);
+        int start = 0;
+        int end = perSegmentBloomFilterSizeBytes;
+        for(int i=0;i<segments;i++) {
+            baseBuffer.position(start);
+            baseBuffer.limit(end);
+            ByteBuffer slice;
+            
+            slice = baseBuffer.slice();
+            segmentFilters[i] = new BinaryBloomFilter(slice, perSegmentBloomFilterSizeBytes * 8, perSegmentK);
+            start += perSegmentBloomFilterSizeBytes;
+            end += perSegmentBloomFilterSizeBytes;
+        }
+        byte[] filterBuffer = new byte[mainBloomFilterSizeBytes];
+        filter = new CountingBloomFilter(mainBloomFilterSizeBytes * 8 / 2, mainBloomK, filterBuffer);
+        filter.setWarnOnRemoveFromEmpty();
+    }
+    
+    public SplitFileFetcherKeyListener(SplitFileFetcherStorage storage, 
+            SplitFileFetcherStorageCallback callback, DataInputStream dis, boolean persistent, boolean newSalt) 
+    throws IOException, StorageFormatException {
+        this.storage = storage;
+        this.fetcher = callback;
+        this.persistent = persistent;
+        localSalt = new byte[32];
+        dis.readFully(localSalt);
+        mainBloomFilterSizeBytes = dis.readInt();
+        // FIXME impose an upper bound based on estimate of bits per key.
+        if(mainBloomFilterSizeBytes < 0)
+            throw new StorageFormatException("Bad main bloom filter size");
+        mainBloomK = dis.readInt();
+        if(mainBloomK < 1)
+            throw new StorageFormatException("Bad main bloom filter K");
+        perSegmentBloomFilterSizeBytes = dis.readInt();
+        if(perSegmentBloomFilterSizeBytes < 0)
+            throw new StorageFormatException("Bad per segment bloom filter size");
+        perSegmentK = dis.readInt();
+        if(perSegmentK < 0)
+            throw new StorageFormatException("Bad per segment bloom filter K");
+        int segments = storage.segments.length;
+        segmentFilters = new BinaryBloomFilter[segments];
+        byte[] segmentsFilterBuffer = new byte[perSegmentBloomFilterSizeBytes * segments];
+        try {
+            storage.preadChecksummed(storage.offsetSegmentBloomFilters, segmentsFilterBuffer, 0, segmentsFilterBuffer.length);
+        } catch (ChecksumFailedException e) {
+            Logger.error(this, "Checksummed read for segment filters at "+storage.offsetSegmentBloomFilters+" failed for "+this+": "+e);
+            mustRegenerateSegmentFilters = true;
+        }
+        ByteBuffer baseBuffer = ByteBuffer.wrap(segmentsFilterBuffer);
+        int start = 0;
+        int end = perSegmentBloomFilterSizeBytes;
+        for(int i=0;i<segments;i++) {
+            baseBuffer.position(start);
+            baseBuffer.limit(end);
+            ByteBuffer slice;
+            
+            slice = baseBuffer.slice();
+            segmentFilters[i] = new BinaryBloomFilter(slice, perSegmentBloomFilterSizeBytes * 8, perSegmentK);
+            start += perSegmentBloomFilterSizeBytes;
+            end += perSegmentBloomFilterSizeBytes;
+        }
+        byte[] filterBuffer = new byte[mainBloomFilterSizeBytes];
+        if(!newSalt) {
+            try {
+                storage.preadChecksummed(storage.offsetMainBloomFilter, filterBuffer, 0, mainBloomFilterSizeBytes);
+            } catch (ChecksumFailedException e) {
+                Logger.error(this, "Checksummed read for main filters at "+storage.offsetMainBloomFilter+" failed for "+this+": "+e);
+                mustRegenerateMainFilter = true;
+            }
+        } else {
+            mustRegenerateMainFilter = true;
+        }
+        filter = new CountingBloomFilter(mainBloomFilterSizeBytes * 8 / 2, mainBloomK, filterBuffer);
+        filter.setWarnOnRemoveFromEmpty();
+    }
 
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+    /**
+     * SplitFileFetcher adds keys in whatever blocks are convenient.
+     * @param keys
+     */
+    synchronized void addKey(Key key, int segNo, KeySalter salter) {
+        if(finishedSetup && !(mustRegenerateMainFilter || mustRegenerateSegmentFilters)) 
+            throw new IllegalStateException();
+        if(mustRegenerateMainFilter || !finishedSetup) {
+            byte[] saltedKey = salter.saltKey(key);
+            filter.addKey(saltedKey);
+        }
+        if(mustRegenerateSegmentFilters || !finishedSetup) {
+            byte[] localSalted = localSaltKey(key);
+            segmentFilters[segNo].addKey(localSalted);
+        }
+//      if(!segmentFilters[segNo].checkFilter(localSalted))
+//          Logger.error(this, "Key added but not in filter: "+key+" on "+this);
+    }
+    
+    synchronized void finishedSetup() {
+        finishedSetup = true;
+    }
 
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
+    private byte[] localSaltKey(Key key) {
+        MessageDigest md = SHA256.getMessageDigest();
+        md.update(key.getRoutingKey());
+        md.update(localSalt);
+        byte[] ret = md.digest();
+        SHA256.returnMessageDigest(md);
+        return ret;
+    }
+    
+    /** The segment bloom filters should only need to be written ONCE, and can all be written at 
+     * once. Include a checksum. */
+    void initialWriteSegmentBloomFilters(long fileOffset) throws IOException {
+        OutputStream cos = storage.writeChecksummedTo(fileOffset, totalSegmentBloomFiltersSize());
+        for(BinaryBloomFilter segFilter : segmentFilters) {
+            segFilter.writeTo(cos);
+        }
+        cos.close();
+    }
+    
+    int totalSegmentBloomFiltersSize() {
+        return perSegmentBloomFilterSizeBytes * segmentFilters.length + storage.checksumLength;
+    }
+    
+    void maybeWriteMainBloomFilter(long fileOffset) throws IOException {
+        synchronized(this) {
+            if(!dirty) return;
+            dirty = false;
+        }
+        innerWriteMainBloomFilter(fileOffset);
+    }
 
-	private final SplitFileFetcher fetcher;
-	private final boolean persistent;
-	private int keyCount;
-	private final CountingBloomFilter filter;
-	private final BinaryBloomFilter[] segmentFilters;
-	/** Wait for this period for new data to come in before writing the filter.
-	 * The filter is only ever subtracted from, so if we crash we just have a
-	 * few more false positives. On a fast node with slow disk, writing on every 
-	 * completed block could become a major bottleneck. */
-	private static final int WRITE_DELAY = 60*1000;
-	private short prio;
-	/** Used only if we reach the per-segment bloom filters. The overall bloom
-	 * filters use the global salt. */
-	private final byte[] localSalt;
-	private boolean killed;
-	/** If true, we were loaded on startup. If false, we were created since then. */
-	final boolean loadedOnStartup;
-	final boolean realTime;
+    /** Write the main segment filter, which does get updated. Include a checksum. */
+    void innerWriteMainBloomFilter(long fileOffset) throws IOException {
+        OutputStream cos = storage.writeChecksummedTo(fileOffset, paddedMainBloomFilterSize());
+        filter.writeTo(cos);
+        cos.close();
+    }
+    
+    public int paddedMainBloomFilterSize() {
+        assert(mainBloomFilterSizeBytes == filter.getSizeBytes());
+        return mainBloomFilterSizeBytes + storage.checksumLength;
+    }
 
-	/**
-	 * Caller must create bloomFile, but it may be empty.
-	 * @param newFilter If true, the bloom file is empty, and the bloom filter
-	 * should be created from scratch.
-	 * @throws IOException 
-	 */
-	public SplitFileFetcherKeyListener(SplitFileFetcher parent, int keyCount, File bloomFile, File altBloomFile, int mainBloomSizeBytes, int mainBloomK, byte[] localSalt, int segments, int segmentFilterSizeBytes, int segmentBloomK, boolean persistent, boolean newFilter, CountingBloomFilter cachedMainFilter, BinaryBloomFilter[] cachedSegFilters, ObjectContainer container, boolean onStartup, boolean realTime) throws IOException {
-		fetcher = parent;
-		this.loadedOnStartup = onStartup;
-		this.persistent = persistent;
-		this.keyCount = keyCount;
-		this.realTime = realTime;
-		assert(localSalt.length == 32);
-		if(persistent) {
-			this.localSalt = Arrays.copyOf(localSalt, 32);
-		} else {
-			this.localSalt = localSalt;
-		}
-		segmentFilters = new BinaryBloomFilter[segments];
-		if(cachedSegFilters != null) {
-			for(int i=0;i<cachedSegFilters.length;i++) {
-				segmentFilters[i] = cachedSegFilters[i];
-				container.activate(cachedSegFilters[i], Integer.MAX_VALUE);
-				cachedSegFilters[i].init(container);
-				if(logMINOR) Logger.minor(this, "Restored segment "+i+" filter for "+parent+" : k="+cachedSegFilters[i].getK()+" size = "+cachedSegFilters[i].getSizeBytes()+" bytes = "+cachedSegFilters[i].getLength()+" elements, filled: "+cachedSegFilters[i].getFilledCount());
-			}
-		} else {
-			byte[] segmentsFilterBuffer = new byte[segmentFilterSizeBytes * segments];
-			ByteBuffer baseBuffer = ByteBuffer.wrap(segmentsFilterBuffer);
-			if(!newFilter) {
-				FileInputStream fis = new FileInputStream(altBloomFile);
-				DataInputStream dis = new DataInputStream(fis);
-				dis.readFully(segmentsFilterBuffer);
-				dis.close();
-			}
-			int start = 0;
-			int end = segmentFilterSizeBytes;
-			for(int i=0;i<segments;i++) {
-				baseBuffer.position(start);
-				baseBuffer.limit(end);
-				ByteBuffer slice;
-				
-				if(persistent) {
-					// byte[] arrays get stored separately in each object, so we need to copy it.
-					byte[] buf = Arrays.copyOfRange(segmentsFilterBuffer, start, start + segmentFilterSizeBytes);
-					slice = ByteBuffer.wrap(buf);
-				} else {
-					slice = baseBuffer.slice();
-				}
-				segmentFilters[i] = new BinaryBloomFilter(slice, segmentFilterSizeBytes * 8, segmentBloomK);
-				start += segmentFilterSizeBytes;
-				end += segmentFilterSizeBytes;
-			}
-			if(persistent) {
-				for(int i=0;i<segments;i++) {
-					if(logMINOR) Logger.minor(this, "Storing segment "+i+" filter to database for "+parent+" : k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
-					segmentFilters[i].storeTo(container);
-				}
-			}
-			parent.setCachedSegFilters(segmentFilters);
-			if(persistent) {
-				container.store(parent);
-			}
-		}
-		
-		byte[] filterBuffer = new byte[mainBloomSizeBytes];
-		if(cachedMainFilter != null) {
-			filter = cachedMainFilter;
-			if(persistent) container.activate(filter, Integer.MAX_VALUE);
-			filter.init(container);
-			if(logMINOR) Logger.minor(this, "Restored filter for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
-		} else if(newFilter) {
-			filter = new CountingBloomFilter(mainBloomSizeBytes * 8 / 2, mainBloomK, filterBuffer);
-			filter.setWarnOnRemoveFromEmpty();
-			parent.setCachedMainFilter(filter);
-			if(persistent) {
-				filter.storeTo(container);
-				container.store(parent);
-			}
-		} else {
-			// Read from file.
-			FileInputStream fis = new FileInputStream(bloomFile);
-			DataInputStream dis = new DataInputStream(fis);
-			dis.readFully(filterBuffer);
-			dis.close();
-			filter = new CountingBloomFilter(mainBloomSizeBytes * 8 / 2, mainBloomK, filterBuffer);
-			filter.setWarnOnRemoveFromEmpty();
-			parent.setCachedMainFilter(filter);
-			if(persistent) {
-				if(logMINOR) Logger.minor(this, "Storing filter to database for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
-				filter.storeTo(container);
-				container.store(parent);
-			}
-		}
-		if(logMINOR)
-			Logger.minor(this, "Created "+this+" for "+fetcher);
-	}
+    @Override
+    public boolean probablyWantKey(Key key, byte[] saltedKey) {
+        if(filter.checkFilter(saltedKey)) {
+            byte[] salted = localSaltKey(key);
+            for(int i=0;i<segmentFilters.length;i++) {
+                if(segmentFilters[i].checkFilter(salted)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
-	@Override
-	public long countKeys() {
-		return keyCount;
-	}
-	
-	/**
-	 * SplitFileFetcher adds keys in whatever blocks are convenient.
-	 * @param keys
-	 */
-	void addKey(Key key, int segNo, ClientContext context) {
-		byte[] saltedKey = context.getChkFetchScheduler(realTime).saltKey(persistent, key);
-		filter.addKey(saltedKey);
-		byte[] localSalted = localSaltKey(key);
-		segmentFilters[segNo].addKey(localSalted);
-//		if(!segmentFilters[segNo].checkFilter(localSalted))
-//			Logger.error(this, "Key added but not in filter: "+key+" on "+this);
-	}
+    @Override
+    public short definitelyWantKey(Key key, byte[] saltedKey, ClientContext context) {
+        // Caller has already called probablyWantKey(), so don't do it again.
+        byte[] salted = localSaltKey(key);
+        for(int i=0;i<segmentFilters.length;i++) {
+            if(segmentFilters[i].checkFilter(salted)) {
+                if(storage.segments[i].definitelyWantKey((NodeCHK)key))
+                    return fetcher.getPriorityClass();
+            }
+        }
+        return -1;
+    }
 
-	private byte[] localSaltKey(Key key) {
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(key.getRoutingKey());
-		md.update(localSalt);
-		byte[] ret = md.digest();
-		SHA256.returnMessageDigest(md);
-		return ret;
-	}
+    @Override
+    public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ClientContext context) {
+        // FIXME Ignored. We don't use the cooldown *queue*.
+        return null;
+    }
 
-	@Override
-	public boolean probablyWantKey(Key key, byte[] saltedKey) {
-		if(filter == null) Logger.error(this, "Probably want key: filter = null for "+this+ " fetcher = "+fetcher);
-		if(filter.checkFilter(saltedKey)) {
-			byte[] salted = localSaltKey(key);
-			for(int i=0;i<segmentFilters.length;i++) {
-				if(segmentFilters[i].checkFilter(salted)) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+    @Override
+    public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock block, ClientContext context) {
+        // Caller has already called probablyWantKey(), so don't do it again.
+        boolean found = false;
+        byte[] salted = localSaltKey(key);
+        if(logMINOR)
+            Logger.minor(this, "handleBlock("+key+") on "+this+" for "+fetcher, new Exception("debug"));
+        for(int i=0;i<segmentFilters.length;i++) {
+            boolean match;
+            synchronized(this) {
+                match = segmentFilters[i].checkFilter(salted);
+            }
+            if(match) {
+                try {
+                    found = storage.segments[i].onGotKey((NodeCHK)key, (CHKBlock)block);
+                } catch (IOException e) {
+                    fetcher.failOnDiskError(e);
+                    return false;
+                }
+            }
+        }
+        if(found) {
+            synchronized(this) {
+                dirty = true;
+            }
+            filter.removeKey(saltedKey);
+            if(persistent)
+                storage.lazyWriteMetadata();
+        }
+        return found;
+    }
 
-	@Override
-	public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container,
-			ClientContext context) {
-		// Caller has already called probablyWantKey(), so don't do it again.
-		byte[] salted = localSaltKey(key);
-		for(int i=0;i<segmentFilters.length;i++) {
-			if(segmentFilters[i].checkFilter(salted)) {
-				if(persistent) {
-					if(container.ext().isActive(fetcher))
-						Logger.error(this, "ALREADY ACTIVE in definitelyWantKey(): "+fetcher);
-					container.activate(fetcher, 1);
-				}
-				SplitFileFetcherSegment segment = fetcher.getSegment(i);
-				if(persistent)
-					container.deactivate(fetcher, 1);
-				if(persistent) {
-					if(container.ext().isActive(segment))
-						Logger.error(this, "ALREADY ACTIVE in definitelyWantKey(): "+segment);
-					container.activate(segment, 1);
-				}
-				boolean found = segment.getBlockNumber(key, container) >= 0;
-				if(!found)
-					Logger.error(this, "Found block in primary and segment bloom filters but segment doesn't want it: "+segment+" on "+this);
-				if(persistent)
-					container.deactivate(segment, 1);
-				if(found) return prio;
-			}
-		}
-		return -1;
-	}
-	
-	@Override
-	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock block,
-			ObjectContainer container, ClientContext context) {
-		// Caller has already called probablyWantKey(), so don't do it again.
-		boolean found = false;
-		byte[] salted = localSaltKey(key);
-		if(logMINOR)
-			Logger.minor(this, "handleBlock("+key+") on "+this+" for "+fetcher);
-		for(int i=0;i<segmentFilters.length;i++) {
-			boolean match;
-			synchronized(this) {
-				match = segmentFilters[i].checkFilter(salted);
-			}
-			if(match) {
-				if(persistent) {
-					if(!container.ext().isStored(fetcher)) {
-						Logger.error(this, "Fetcher not in database! for "+this);
-						return false;
-					}
-					if(container.ext().isActive(fetcher))
-						Logger.warning(this, "ALREADY ACTIVATED: "+fetcher);
-					container.activate(fetcher, 1);
-				}
-				SplitFileFetcherSegment segment = fetcher.getSegment(i);
-				if(persistent) {
-					if(container.ext().isActive(segment))
-						Logger.warning(this, "ALREADY ACTIVATED: "+segment);
-					container.activate(segment, 1);
-				}
-				if(logMINOR)
-					Logger.minor(this, "Key "+key+" may be in segment "+segment);
-				// A segment can contain the same key twice if e.g. it isn't compressed and repeats itself.
-				while(segment.onGotKey(key, block, container, context)) {
-					found = true;
-				}
-				if(persistent)
-					container.deactivate(segment, 1);
-				if(persistent)
-					container.deactivate(fetcher, 1);
-			}
-		}
-		return found;
-	}
+    @Override
+    public boolean persistent() {
+        return persistent;
+    }
 
-	@Override
-	public HasKeyListener getHasKeyListener() {
-		return fetcher;
-	}
+    @Override
+    public short getPriorityClass() {
+        return fetcher.getPriorityClass();
+    }
 
-	@Override
-	public short getPriorityClass(ObjectContainer container) {
-		return prio;
-	}
+    @Override
+    public long countKeys() {
+        // FIXME remove. Only used by persistent fetches.
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, 
-			ObjectContainer container, ClientContext context) {
-		ArrayList<SendableGet> ret = new ArrayList<SendableGet>();
-		// Caller has already called probablyWantKey(), so don't do it again.
-		byte[] salted = localSaltKey(key);
-		for(int i=0;i<segmentFilters.length;i++) {
-			if(segmentFilters[i].checkFilter(salted)) {
-				if(persistent) {
-					if(container.ext().isActive(fetcher))
-						Logger.warning(this, "ALREADY ACTIVATED in getRequestsForKey: "+fetcher);
-					container.activate(fetcher, 1);
-				}
-				SplitFileFetcherSegment segment = fetcher.getSegment(i);
-				if(persistent)
-					container.deactivate(fetcher, 1);
-				if(persistent) {
-					if(container.ext().isActive(segment))
-						Logger.warning(this, "ALREADY ACTIVATED in getRequestsForKey: "+segment);
-					container.activate(segment, 1);
-				}
-				int blockNum = segment.getBlockNumber(key, container);
-				if(blockNum >= 0) {
-					SplitFileFetcherSegmentGet getter = segment.makeGetter(container, context);
-					if(getter != null) ret.add(getter);
-				}
-				if(persistent)
-					container.deactivate(segment, 1);
-			}
-		}
-		return ret.toArray(new SendableGet[ret.size()]);
-	}
+    @Override
+    public HasKeyListener getHasKeyListener() {
+        return fetcher.getHasKeyListener();
+    }
 
-	@Override
-	public void onRemove() {
-		synchronized(this) {
-			killed = true;
-		}
-		
-	}
+    @Override
+    public void onRemove() {
+        // Ignore.
+    }
 
-	@Override
-	public boolean persistent() {
-		return persistent;
-	}
+    @Override
+    public boolean isEmpty() {
+        return storage.hasFinished();
+    }
 
-	public void writeFilters(ObjectContainer container, String reason) throws IOException {
-		if(!persistent) return;
-		synchronized(this) {
-			if(killed) return;
-		}
-		filter.storeTo(container);
-		for(int i=0;i<segmentFilters.length;i++) {
-			if(logMINOR)
-				Logger.minor(this, "Storing segment "+i+" filter to database ("+reason+") k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
-			segmentFilters[i].storeTo(container);
-		}
-	}
+    @Override
+    public boolean isSSK() {
+        return false;
+    }
 
-	public synchronized int killSegment(SplitFileFetcherSegment segment, ObjectContainer container, ClientContext context) {
-		int segNo = segment.segNum;
-		segmentFilters[segNo].unsetAll();
-		Key[] removeKeys = segment.listKeys(container);
-		if(logMINOR)
-			Logger.minor(this, "Removing segment from bloom filter: "+segment+" keys: "+removeKeys.length);
-		for(Key removeKey: removeKeys) {
-			if(logMINOR)
-				Logger.minor(this, "Removing key from bloom filter: "+removeKey);
-			byte[] salted = context.getChkFetchScheduler(realTime).saltKey(persistent, removeKey);
-			if(filter.checkFilter(salted)) {
-				filter.removeKey(salted);
-			} else
-				// Huh??
-				Logger.error(this, "Removing key "+removeKey+" for "+this+" from "+segment+" : NOT IN BLOOM FILTER!", new Exception("debug"));
-		}
-		scheduleWriteFilters(container, context, "killed segment "+segNo);
-		return keyCount -= removeKeys.length;
-	}
-	
-	public synchronized void removeKey(Key key, SplitFileFetcherSegment segment, ObjectContainer container, ClientContext context) {
-		if(logMINOR)
-			Logger.minor(this, "Removing key "+key+" from bloom filter for "+segment);
-		if(logMINOR)
-			Logger.minor(this, "Removing key from bloom filter: "+key);
-		byte[] salted = context.getChkFetchScheduler(realTime).saltKey(persistent, key);
-		if(filter.checkFilter(salted)) {
-			filter.removeKey(salted);
-			keyCount--;
-		} else
-			// Huh??
-			Logger.error(this, "Removing key "+key+" for "+this+" from "+segment+" : NOT IN BLOOM FILTER!", new Exception("debug"));
-		boolean deactivateFetcher = false;
-		if(persistent) {
-			deactivateFetcher = !container.ext().isActive(fetcher);
-			if(deactivateFetcher) container.activate(fetcher, 1);
-		}
-		// Update the persistent keyCount.
-		fetcher.setKeyCount(keyCount, container);
-		if(deactivateFetcher)
-			container.deactivate(fetcher, 1);
-		// Don't save the bloom filter, to limit I/O.
-		// Frequent restarts will result in higher false positive rates.
-	}
+    public void writeStaticSettings(DataOutputStream dos) throws IOException {
+        dos.write(localSalt);
+        dos.writeInt(mainBloomFilterSizeBytes);
+        dos.writeInt(mainBloomK);
+        dos.writeInt(perSegmentBloomFilterSizeBytes);
+        dos.writeInt(perSegmentK);
+    }
 
-	private boolean writingBloomFilter;
-	
-	private void scheduleWriteFilters(ObjectContainer container, ClientContext context, final String reason) {
-		synchronized(this) {
-			if(!persistent) return;
-			if(writingBloomFilter) return;
-			writingBloomFilter = true;
-			try {
-				filter.storeTo(container);
-				// The write must be executed on the database thread, and must happen
-				// AFTER this one has committed. Otherwise we have a serious risk of inconsistency:
-				// A transaction that deletes a segment and then does something big, and
-				// is interrupted and rolled back, must not write the filters...
-				context.jobRunner.setCommitThisTransaction();
-				context.jobRunner.queue(new DBJob() {
+    public boolean needsKeys() {
+        return mustRegenerateMainFilter || mustRegenerateSegmentFilters;
+    }
 
-					@Override
-					public boolean run(ObjectContainer container,
-							ClientContext context) {
-						synchronized(SplitFileFetcherKeyListener.this) {
-							try {
-								writeFilters(container, reason);
-							} catch (IOException e) {
-								Logger.error(this, "Failed to write bloom filters, we will have more false positives on already-found blocks which aren't in the store: "+e, e);
-							} finally {
-								writingBloomFilter = false;
-							}
-						}
-						return false;
-					}
-					
-				}, NativeThread.HIGH_PRIORITY, false);
-			} catch (Throwable t) {
-				writingBloomFilter = false;
-				Logger.error(this, "Caught "+t+" writing bloom filter", t);
-			}
-		}
-	}
-
-	@Override
-	public boolean isEmpty() {
-		// FIXME: We rely on SplitFileFetcher unregistering itself.
-		// Maybe we should keep track of how many segments have been cleared?
-		// We'd have to be sure that they weren't cleared twice...?
-		return killed;
-	}
-
-	@Override
-	public boolean isSSK() {
-		return false;
-	}
-	
-	public void objectOnDeactivate(ObjectContainer container) {
-		Logger.error(this, "Deactivating a SplitFileFetcherKeyListener: "+this, new Exception("error"));
-	}
-
-	@Override
-	public boolean isRealTime() {
-		return realTime;
-	}
+    public void addedAllKeys() {
+        mustRegenerateMainFilter = false;
+        mustRegenerateSegmentFilters = false;
+        finishedSetup = true;
+    }
 
 }

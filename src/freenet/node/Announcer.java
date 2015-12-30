@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
@@ -26,12 +27,13 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.HTMLNode;
 import freenet.support.ListUtils;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.transport.ip.IPUtil;
-import java.util.Arrays;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Decide whether to announce, and announce if necessary to a node in the
@@ -51,9 +53,9 @@ public class Announcer {
 	private int sentAnnouncements;
 	private long startTime;
 	private long timeAddedSeeds;
-	private static final long MIN_ADDED_SEEDS_INTERVAL = 60*1000;
+	private static final long MIN_ADDED_SEEDS_INTERVAL = SECONDS.toMillis(60);
 	/** After we have sent 3 announcements, wait for 30 seconds before sending 3 more if we still have no connections. */
-	static final int COOLING_OFF_PERIOD = 30*1000;
+	static final long COOLING_OFF_PERIOD = SECONDS.toMillis(30);
 	/** Pubkey hashes of nodes we have announced to */
 	private final HashSet<ByteArrayWrapper> announcedToIdentities;
 	/** IPs of nodes we have announced to. Maybe this should be first-two-bytes, but I'm not sure how to do that with IPv6. */
@@ -62,8 +64,9 @@ public class Announcer {
 	private static final int CONNECT_AT_ONCE = 15;
 	/** Do not announce if there are more than this many opennet peers connected */
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
-	private static final long NOT_ALL_CONNECTED_DELAY = 60*1000;
+	private static final long NOT_ALL_CONNECTED_DELAY = SECONDS.toMillis(60);
 	public static final String SEEDNODES_FILENAME = "seednodes.fref";
+	private static final long RETRY_MISSING_SEEDNODES_DELAY = SECONDS.toMillis(30);
 	/** Total nodes added by announcement so far */
 	private int announcementAddedNodes;
 	/** Total nodes that didn't want us so far */
@@ -128,6 +131,19 @@ public class Announcer {
 			timeAddedSeeds = now;
 			if(seeds.size() == 0) {
 				registerEvent(STATUS_NO_SEEDNODES);
+        /*
+         * Developers might run nodes in empty directories instead of one made by an installer.
+         * They can copy in the seed nodes file, so check for it periodically to support loading it
+         * without the need to restart the node.
+         *
+         * TODO: If the seed nodes file is found it does not unregister the STATUS_NO_SEEDNODES
+         * event.
+         */
+				node.getTicker().queueTimedJob(new Runnable() {
+					public void run() {
+						maybeSendAnnouncement();
+					}
+				}, Announcer.RETRY_MISSING_SEEDNODES_DELAY);
 				return;
 			} else {
 				registerEvent(STATUS_CONNECTING_SEEDNODES);
@@ -141,7 +157,7 @@ public class Announcer {
 		List<SeedServerPeerNode> tryingSeeds = node.peers.getSeedServerPeersVector();
 		synchronized(this) {
 			for(SeedServerPeerNode seed : tryingSeeds) {
-				if(!announcedToIdentities.contains(new ByteArrayWrapper(seed.pubKeyHash))) {
+				if(!announcedToIdentities.contains(new ByteArrayWrapper(seed.peerECDSAPubKeyHash))) {
 					// Either:
 					// a) we are still trying to connect to this node,
 					// b) there is a race condition and we haven't sent the announcement yet despite connecting, or
@@ -207,13 +223,13 @@ public class Announcer {
 			SimpleFieldSet fs = ListUtils.removeRandomBySwapLastSimple(node.random, seeds);
 			try {
 				SeedServerPeerNode seed =
-					new SeedServerPeerNode(fs, node, om.crypto, node.peers, false, om.crypto.packetMangler);
-				if(node.wantAnonAuth(true) && Arrays.equals(node.getOpennetPubKeyHash(), seed.pubKeyHash)) {
+					new SeedServerPeerNode(fs, node, om.crypto, false);
+				if(node.wantAnonAuth(true) && Arrays.equals(node.getOpennetPubKeyHash(), seed.peerECDSAPubKeyHash)) {
                                     if(logMINOR)
                                         Logger.minor("Not adding: I am a seednode attempting to connect to myself!", seed.userToString());
                                     continue;
                                 }
-                                if(announcedToIdentities.contains(new ByteArrayWrapper(seed.pubKeyHash))) {
+                                if(announcedToIdentities.contains(new ByteArrayWrapper(seed.peerECDSAPubKeyHash))) {
 					if(logMINOR)
 						Logger.minor(this, "Not adding: already announced-to: "+seed.userToString());
 					continue;
@@ -253,7 +269,7 @@ public class Announcer {
 			BufferedReader br = new BufferedReader(isr);
 			while(true) {
 				try {
-					SimpleFieldSet fs = new SimpleFieldSet(br, false, false);
+					SimpleFieldSet fs = new SimpleFieldSet(br, false, false, true, false);
 					if(!fs.isEmpty())
 						list.add(fs);
 				} catch (EOFException e) {
@@ -404,9 +420,9 @@ public class Announcer {
 	}
 
 	/** 1 minute after we have enough peers, remove all seednodes left (presumably disconnected ones) */
-	private static final int FINAL_DELAY = 60*1000;
+	private static final long FINAL_DELAY = SECONDS.toMillis(60);
 	/** But if we don't have enough peers at that point, wait another minute and if the situation has not improved, reannounce. */
-	static final int RETRY_DELAY = 60*1000;
+	static final long RETRY_DELAY = SECONDS.toMillis(60);
 	private boolean started = false;
 
 	private final Runnable checker = new Runnable() {
@@ -512,7 +528,7 @@ public class Announcer {
 				if(sendAnnouncement(seed)) {
 					sentAnnouncements++;
 					runningAnnouncements++;
-					announcedToIdentities.add(new ByteArrayWrapper(seed.getPubKeyHash()));
+					announcedToIdentities.add(new ByteArrayWrapper(seed.peerECDSAPubKeyHash));
 				}
 			}
 			if(runningAnnouncements >= WANT_ANNOUNCEMENTS) {

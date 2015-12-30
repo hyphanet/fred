@@ -3,7 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
-public class IncomingPacketFilterException extends Exception {
+import freenet.support.LightweightException;
+
+public class IncomingPacketFilterException extends LightweightException {
 	private static final long serialVersionUID = -1;
 
 	public IncomingPacketFilterException(String string) {

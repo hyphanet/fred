@@ -9,8 +9,6 @@ import java.math.BigInteger;
 
 import net.i2p.util.NativeBigInteger;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.FSParseException;
 import freenet.support.Base64;
 import freenet.support.HexUtil;
@@ -41,6 +39,13 @@ public class DSAGroup extends CryptoKey {
     	this.q = new NativeBigInteger(1, group.q.toByteArray());
     	this.g = new NativeBigInteger(1, group.g.toByteArray());
 	}
+    
+    protected DSAGroup() {
+        // For serialization.
+        p = null;
+        q = null;
+        g = null;
+    }
 
 	/**
      * Parses a DSA Group from a string, where p, q, and g are in unsigned
@@ -166,16 +171,4 @@ public class DSAGroup extends CryptoKey {
 		return new DSAGroup(this);
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		if(this == Global.DSAgroupBigA) return; // It will only be stored once, so it's okay.
-		container.delete(p);
-		container.delete(q);
-		container.delete(g);
-		container.delete(this);
-	}
-	
-	public boolean objectCanDeactivate(ObjectContainer container) {
-		if(this == Global.DSAgroupBigA) return false;
-		return true;
-	}
 }

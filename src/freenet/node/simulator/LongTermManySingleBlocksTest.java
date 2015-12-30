@@ -1,5 +1,7 @@
 package freenet.node.simulator;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,25 +16,26 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchWaiter;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.RequestClient;
+import freenet.node.RequestClientBuilder;
 import freenet.node.Version;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
-import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -100,7 +103,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 				} finally {
 					synchronized(InsertBatch.this) {
 						runningInserts--;
-						System.out.println("Stopping insert: running "+runningInserts);
+						System.out.println("Completed insert: running "+runningInserts);
 						//finished = true;
 						if(thisURI != null) {
 							uri = thisURI;
@@ -109,7 +112,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 							if(f != null)
 								failed = f;
 							else
-								f = new InsertException(InsertException.INTERNAL_ERROR);
+								f = new InsertException(InsertExceptionMode.INTERNAL_ERROR);
 						}
 							
 						InsertBatch.this.notifyAll();
@@ -234,7 +237,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 				
 				System.err.println("Inserting block "+i);
 				
-				Bucket single = randomData(node);
+				RandomAccessBucket single = randomData(node);
 				
 				InsertBlock block = new InsertBlock(single, new ClientMetadata(), FreenetURI.EMPTY_CHK_URI);
 				
@@ -254,7 +257,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 					System.out.println("Pushed block "+i+" : "+uris[i]+" in "+times[i]);
 					successes++;
 				} else {
-					csvLine.add(FetchException.getShortMessage(errors[i].getMode()));
+					csvLine.add(InsertException.getShortMessage(errors[i].getMode()));
 					csvLine.add("N/A");
 					System.out.println("Failed to push block "+i+" : "+errors[i]);
 				}
@@ -267,25 +270,8 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 			FetchContext fctx = client.getFetchContext();
 			fctx.maxNonSplitfileRetries = 0;
 			fctx.maxSplitfileBlockRetries = 0;
-			RequestClient requestContext = new RequestClient() {
+			RequestClient requestContext = new RequestClientBuilder().build();
 
-				@Override
-				public boolean persistent() {
-					return false;
-				}
-
-				@Override
-				public void removeFrom(ObjectContainer container) {
-					// Ignore.
-				}
-
-				@Override
-				public boolean realTimeFlag() {
-					return false;
-				}
-				
-			};
-			
 			// PARSE FILE AND FETCH OLD STUFF IF APPROPRIATE
 			
 			FreenetURI[] mhkURIs = new FreenetURI[3];
@@ -349,7 +335,7 @@ loopOverLines:
 					System.out.println("Key insert "+i+" : "+insertedURIs[i]+" in "+insertTimes[i]);
 				}
 				for(int i=0;i<targets.length;i++) {
-					if(Math.abs(targets[i].getTimeInMillis() - calendar.getTimeInMillis()) < 12*60*60*1000) {
+					if(Math.abs(targets[i].getTimeInMillis() - calendar.getTimeInMillis()) < HOURS.toMillis(12)) {
 						System.out.println("Found row for target date "+((1<<i)-1)+" days ago.");
 						System.out.println("Version: "+split[1]);
 						csvLine.add(Integer.toString(i));
@@ -363,8 +349,8 @@ loopOverLines:
 							inserted++;
 							try {
 								t1 = System.currentTimeMillis();
-								FetchWaiter fw = new FetchWaiter();
-								client.fetch(insertedURIs[j], 32768, requestContext, fw, fctx);
+								FetchWaiter fw = new FetchWaiter(requestContext);
+								client.fetch(insertedURIs[j], 32768, fw, fctx);
 								fw.waitForCompletion();
 								t2 = System.currentTimeMillis();
 								
@@ -372,8 +358,8 @@ loopOverLines:
 								csvLine.add(String.valueOf(t2 - t1));
 								pulled++;
 							} catch (FetchException e) {
-								if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-										&& e.getMode() != FetchException.DATA_NOT_FOUND)
+								if (e.getMode() != FetchExceptionMode.ALL_DATA_NOT_FOUND
+										&& e.getMode() != FetchExceptionMode.DATA_NOT_FOUND)
 									e.printStackTrace();
 								csvLine.add(FetchException.getShortMessage(e.getMode()));
 								System.err.println("FAILED PULL FOR BLOCK "+j+": "+e);
@@ -452,8 +438,8 @@ loopOverLines:
 		}
 	}	
 	
-	private static Bucket randomData(Node node) throws IOException {
-		Bucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
+	private static RandomAccessBucket randomData(Node node) throws IOException {
+	    RandomAccessBucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
 		OutputStream os = data.getOutputStream();
 		try {
 		byte[] buf = new byte[4096];

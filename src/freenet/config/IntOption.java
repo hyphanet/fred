@@ -41,7 +41,12 @@ public class IntOption extends Option<Integer> {
 	}
 
 	@Override
-	protected String toString(Integer val) {
+	protected String toDisplayString(Integer val) {
 		return Fields.intToString(val, isSize);
+	}
+
+	@Override
+	protected String toString(Integer val) {
+		return Fields.intToString(val, false);
 	}
 }

@@ -6,8 +6,11 @@ package freenet.crypt;
 public abstract class KeyAgreementSchemeContext {
 
 	protected long lastUsedTime;
-	/** The signature of (g^r, grpR) */
-    public DSASignature signature = null;
+	/** DSA signature. Used by negType <9. Note that negType 8 uses ECDH but not ECDSA, so you have
+	 * an ECDHLightContext with a DSA signature!! */
+    public byte[] dsaSig;
+    /** ECDSA signature. Used by negType 9+. */
+    public byte[] ecdsaSig;
     /** A timestamp: when was the context created ? */
     public final long lifetime = System.currentTimeMillis();
 
@@ -17,10 +20,13 @@ public abstract class KeyAgreementSchemeContext {
 	public synchronized long lastUsedTime() {
 		return lastUsedTime;
 	}
+	  
+    public void setECDSASignature(byte[] sig) {
+        this.ecdsaSig = sig;
+    }
 	
-	   
-    public void setSignature(DSASignature sig) {
-        this.signature = sig;
+    public void setDSASignature(byte[] sig) {
+        this.dsaSig = sig;
     }
 	
 	public abstract byte[] getPublicKeyNetworkFormat();

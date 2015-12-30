@@ -5,8 +5,6 @@ package freenet.node.simulator;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;

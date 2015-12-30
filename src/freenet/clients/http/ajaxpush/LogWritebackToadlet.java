@@ -30,7 +30,7 @@ public class LogWritebackToadlet extends Toadlet {
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		if (logMINOR) {
 			try {
-				Logger.minor(this, "GWT:" + new String(URLDecoder.decode(req.getParam("msg"), false)));
+				Logger.minor(this, "GWT:" + URLDecoder.decode(req.getParam("msg"), false));
 			} catch (URLEncodedFormatException e) {
 				Logger.error(this, "Invalid GWT:"+req.getParam("msg"));
 			}

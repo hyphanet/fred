@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.bookmark;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -12,8 +14,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-
-import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.USKCallback;
@@ -120,10 +120,10 @@ public class BookmarkManager implements RequestClient {
 	private class USKUpdatedCallback implements USKCallback {
 
 		@Override
-		public void onFoundEdition(long edition, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+		public void onFoundEdition(long edition, USK key, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			if(!newKnownGood) {
 				FreenetURI uri = key.copy(edition).getURI();
-				node.makeClient(PRIORITY_PROGRESS, false, false).prefetch(uri, 60*60*1000, FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, null, PRIORITY_PROGRESS);
+				node.makeClient(PRIORITY_PROGRESS, false, false).prefetch(uri, MINUTES.toMillis(60), FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, null, PRIORITY_PROGRESS);
 				return;
 			}
 			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
@@ -173,7 +173,7 @@ public class BookmarkManager implements RequestClient {
 		if(path.equals("/"))
 			return "/";
 
-		return path.substring(0, path.substring(0, path.length() - 1).lastIndexOf("/")) + "/";
+		return path.substring(0, path.substring(0, path.length() - 1).lastIndexOf('/')) + "/";
 	}
 
 	public Bookmark getBookmarkByPath(String path) {
@@ -247,8 +247,8 @@ public class BookmarkManager implements RequestClient {
 			for(int i = 0; i < cat.size(); i++)
 				removeBookmark(path + cat.get(i).getName() + ((cat.get(i) instanceof BookmarkCategory) ? "/"
 					: ""));
-		} else
-			if(((BookmarkItem) bookmark).getKeyType().equals("USK"))
+		} else {
+			if(((BookmarkItem) bookmark).getKeyType().equals("USK")) {
 				try {
 					USK u = ((BookmarkItem) bookmark).getUSK();
 					if(!wantUSK(u, (BookmarkItem)bookmark)) {
@@ -256,6 +256,8 @@ public class BookmarkManager implements RequestClient {
 					}
 				} catch(MalformedURLException mue) {
 				}
+			}
+		}
 
 		getCategoryByPath(parentPath(path)).removeBookmark(bookmark);
 		synchronized(bookmarks) {
@@ -342,8 +344,8 @@ public class BookmarkManager implements RequestClient {
 						isSavingBookmarksLazy = false;
 					}
 				}
-				
-			}, 5*60*1000);
+
+			}, MINUTES.toMillis(5));
 		}
 	}
 
@@ -467,11 +469,6 @@ public class BookmarkManager implements RequestClient {
 	@Override
 	public boolean persistent() {
 		return false;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 	@Override

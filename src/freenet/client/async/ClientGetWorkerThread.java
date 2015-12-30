@@ -9,12 +9,12 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PipedInputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.FoundURICallback;
 import freenet.client.filter.LinkFilterExceptionProvider;
@@ -78,7 +78,7 @@ public class ClientGetWorkerThread extends Thread {
 	 * @param linkFilterExceptionProvider Provider for link filter exceptions
 	 * @throws URISyntaxException 
 	 */
-	public ClientGetWorkerThread(PipedInputStream input, OutputStream output, FreenetURI uri,
+	public ClientGetWorkerThread(InputStream input, OutputStream output, FreenetURI uri,
 			String mimeType, HashResult[] hashes, boolean filterData, String charset,
 			FoundURICallback prefetchHook, TagReplacerCallback tagReplacer, LinkFilterExceptionProvider linkFilterExceptionProvider) throws URISyntaxException {
 		super("ClientGetWorkerThread-"+counter());
@@ -127,16 +127,12 @@ public class ClientGetWorkerThread extends Thread {
 			// Dump the rest.
 			try {
 				while(true) {
-					long skipped = input.skip(4096);
-					if(skipped < 0) break;
-					if(skipped == 0) {
-						while(true) {
-							byte[] buf = new byte[4096];
-							int r = input.read(buf);
-							if(r < 0) break;
-						}
-						break;
-					}
+				    // FileInputStream.skip() doesn't do what we want. Use read().
+				    // Note this is only necessary because we might have an AEADInputStream?
+				    // FIXME get rid - they should check the end anyway?
+				    byte[] buf = new byte[4096];
+				    int r = input.read(buf);
+				    if(r < 0) break;
 				}
 			} catch (EOFException e) {
 				// Okay.
@@ -147,7 +143,7 @@ public class ClientGetWorkerThread extends Thread {
 				HashResult[] results = hashStream.getResults();
 				if(!HashResult.strictEquals(results, hashes)) {
 					Logger.error(this, "Hashes failed verification (length read is "+hashStream.getReadBytes()+") "+" for "+uri);
-					throw new FetchException(FetchException.CONTENT_HASH_FAILED);
+					throw new FetchException(FetchExceptionMode.CONTENT_HASH_FAILED);
 				}
 			}
 

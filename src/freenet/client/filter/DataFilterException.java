@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import freenet.client.FetchException;
+
 /**
  * Exception thrown when the data cannot be filtered.
  */
@@ -37,6 +39,16 @@ public class DataFilterException extends UnsafeContentTypeException {
 	@Override
 	public String toString() {
 		return rawTitle;
+	}
+
+	@Override
+	public FetchException recreateFetchException(FetchException e, String mime) {
+		return new FetchException(e.expectedSize, this, mime);
+	}
+	
+	@Override
+	public FetchException createFetchException(String mime, long expectedSize) {
+		return new FetchException(expectedSize, this, mime);
 	}
 
 }

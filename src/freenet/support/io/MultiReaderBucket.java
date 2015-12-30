@@ -3,12 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-import com.db4o.ObjectContainer;
+import freenet.client.async.ClientContext;
 import freenet.support.LogThresholdCallback;
 
 import freenet.support.ListUtils;
@@ -21,9 +23,11 @@ import freenet.support.api.Bucket;
  * only freed when all of the readers have freed it.
  * @author toad
  */
-public class MultiReaderBucket {
+public class MultiReaderBucket implements Serializable {
 	
-	private final Bucket bucket;
+    private static final long serialVersionUID = 1L;
+
+    private final Bucket bucket;
 	
 	// Assume there will be relatively few readers
 	private ArrayList<Bucket> readers;
@@ -44,6 +48,11 @@ public class MultiReaderBucket {
 	public MultiReaderBucket(Bucket underlying) {
 		bucket = underlying;
 	}
+	
+	protected MultiReaderBucket() {
+	    // For serialization.
+	    bucket = null;
+	}
 
 	/** Get a reader bucket */
 	public Bucket getReaderBucket() {
@@ -59,9 +68,10 @@ public class MultiReaderBucket {
 		}
 	}
 
-	class ReaderBucket implements Bucket {
+	class ReaderBucket implements Bucket, Serializable {
 		
-		private boolean freed;
+        private static final long serialVersionUID = 1L;
+        private boolean freed;
 
 		@Override
 		public void free() {
@@ -86,15 +96,25 @@ public class MultiReaderBucket {
 					throw new IOException("Already freed");
 				}
 			}
-			return new ReaderBucketInputStream();
+			return new ReaderBucketInputStream(true);
 		}
 		
+        @Override
+        public InputStream getInputStreamUnbuffered() throws IOException {
+            synchronized(MultiReaderBucket.this) {
+                if(freed || closed) {
+                    throw new IOException("Already freed");
+                }
+            }
+            return new ReaderBucketInputStream(false);
+        }
+        
 		private class ReaderBucketInputStream extends InputStream {
 			
 			InputStream is;
 			
-			ReaderBucketInputStream() throws IOException {
-				is = bucket.getInputStream();
+			ReaderBucketInputStream(boolean buffer) throws IOException {
+				is = buffer ? bucket.getInputStream() : bucket.getInputStreamUnbuffered();
 			}
 			
 			@Override
@@ -142,6 +162,11 @@ public class MultiReaderBucket {
 			throw new IOException("Read only");
 		}
 
+        @Override
+        public OutputStream getOutputStreamUnbuffered() throws IOException {
+            throw new IOException("Read only");
+        }
+
 		@Override
 		public boolean isReadOnly() {
 			return true;
@@ -164,25 +189,19 @@ public class MultiReaderBucket {
 		}
 
 		@Override
-		public void storeTo(ObjectContainer container) {
-			container.store(this);
-		}
-
-		@Override
-		public void removeFrom(ObjectContainer container) {
-			container.delete(this);
-			synchronized(MultiReaderBucket.this) {
-				if(!closed) return;
-			}
-			bucket.removeFrom(container);
-			container.delete(readers);
-			container.delete(MultiReaderBucket.this);
-		}
-
-		@Override
 		public Bucket createShadow() {
 			return null;
 		}
+
+        @Override
+        public void onResume(ClientContext context) throws ResumeFailedException {
+            throw new UnsupportedOperationException(); // Not persistent.
+        }
+
+        @Override
+        public void storeTo(DataOutputStream dos) throws IOException {
+            throw new UnsupportedOperationException();
+        }
 		
 	}
 	

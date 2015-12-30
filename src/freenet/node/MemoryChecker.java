@@ -4,7 +4,6 @@
 package freenet.node;
 
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.SizeUtil;
 import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
@@ -73,11 +72,6 @@ public class MemoryChecker implements Runnable {
 
 				freeMemory = r.freeMemory();
 				avgFreeMemory.report(freeMemory);
-				
-				if (freeMemory < 4 * 1024 * 1024) { // *current* free memory < 4 MB
-					Logger.error(this, "Memory too low, trying to free some");
-					OOMHandler.lowMemory();
-				} 
 			}
 		}
 		
