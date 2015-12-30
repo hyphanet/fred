@@ -1429,13 +1429,19 @@ public class PluginManager {
 
 	private File getTargetFileForPluginDownload(File pluginDirectory, String filename, boolean useCachedFile) {
 		List<File> filesInPluginDirectory = getPreviousInstances(pluginDirectory, filename);
+		cleanCacheDirectory(filesInPluginDirectory, useCachedFile);
+		if (!filesInPluginDirectory.isEmpty() && useCachedFile) {
+			return new File(pluginDirectory, filesInPluginDirectory.get(0).getName());
+		}
+		return new File(pluginDirectory, filename + "-" + System.currentTimeMillis());
+	}
+
+	private void cleanCacheDirectory(List<File> filesInPluginDirectory, boolean useCachedFile) {
 		if (!useCachedFile) {
 			deleteCachedVersions(filesInPluginDirectory);
 		} else if (!filesInPluginDirectory.isEmpty()) {
 			deleteCachedVersions(filesInPluginDirectory.subList(1, filesInPluginDirectory.size()));
-			return new File(pluginDirectory, filesInPluginDirectory.get(0).getName());
 		}
-		return new File(pluginDirectory, filename + "-" + System.currentTimeMillis());
 	}
 
 	private void deleteCachedVersions(List<File> filesInPluginDirectory) {
