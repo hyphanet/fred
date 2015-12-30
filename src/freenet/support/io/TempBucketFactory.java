@@ -528,6 +528,11 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
         public long creationTime() {
             return creationTime;
         }
+        
+        @Override
+        public long updateTime() {
+            return updateTime;
+        }
 
         @Override
         public void onResume(ClientContext context) {
@@ -552,7 +557,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
                     synchronized(ramBucketQueue) {
                         // No change in space usage.
                         ramBucketQueue.remove(getReference());
-                        ramBucketQueue.add(raf.getReference());
+                        ramBucketQueue.push(raf.getReference());
                     }
                 }
                 currentBucket = new RAFBucket(raf);
@@ -564,6 +569,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
         synchronized Bucket getUnderlying() {
             return currentBucket;
         }
+
 	}
 	
 	// Storage accounting disabled by default.
@@ -823,7 +829,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 		}
 	}
 
-	private final Queue<WeakReference<Migratable>> ramBucketQueue = new LinkedBlockingQueue<WeakReference<Migratable>>();
+	private final LRUQueue<WeakReference<Migratable>> ramBucketQueue = new LRUQueue<WeakReference<Migratable>>();
 	
 	private RandomAccessBucket _makeFileBucket() throws IOException {
 		RandomAccessBucket ret = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
@@ -995,7 +1001,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 	    
 	    if(raf != null) {
             synchronized(ramBucketQueue) {
-                ramBucketQueue.add(raf.getReference());
+                ramBucketQueue.push(raf.getReference());
             }
             return raf;
 	    } else {
@@ -1043,7 +1049,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
         
         if(raf != null) {
             synchronized(ramBucketQueue) {
-                ramBucketQueue.add(raf.getReference());
+                ramBucketQueue.push(raf.getReference());
             }
             return raf;
         } else {
