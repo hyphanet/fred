@@ -1428,21 +1428,20 @@ public class PluginManager {
 	}
 
 	private File getTargetFileForPluginDownload(File pluginDirectory, String filename, boolean useCachedFile) {
-		File pluginFile = new File(pluginDirectory, filename + "-" + System.currentTimeMillis());
-
-		/* check for previous instances and delete them. */
 		List<File> filesInPluginDirectory = getPreviousInstances(pluginDirectory, filename);
-		boolean first = true;
+		if (!useCachedFile) {
+			deleteCachedVersions(filesInPluginDirectory);
+		} else if (!filesInPluginDirectory.isEmpty()) {
+			deleteCachedVersions(filesInPluginDirectory.subList(1, filesInPluginDirectory.size()));
+			return new File(pluginDirectory, filesInPluginDirectory.get(0).getName());
+		}
+		return new File(pluginDirectory, filename + "-" + System.currentTimeMillis());
+	}
+
+	private void deleteCachedVersions(List<File> filesInPluginDirectory) {
 		for (File cachedFile : filesInPluginDirectory) {
-			if (first && useCachedFile) {
-				first = false;
-				pluginFile = new File(pluginDirectory, cachedFile.getName());
-				continue;
-			}
-			first = false;
 			cachedFile.delete();
 		}
-		return pluginFile;
 	}
 
 	private void downloadPluginFile(PluginDownLoader<?> pluginDownLoader, File pluginDirectory, File pluginFile, PluginProgress pluginProgress) throws IOException, PluginNotFoundException {
