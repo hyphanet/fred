@@ -35,6 +35,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.useralerts.AbstractUserAlert;
+import freenet.node.useralerts.DroppedOldPeersUserAlert;
 import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -244,9 +245,7 @@ public class PeerManager {
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e4, e4);
 		}
 		BufferedReader br = new BufferedReader(ris);
-		List<String> droppedOldPeers = new ArrayList<String>();
-		int droppedOldPeersBuild = 0;
-		Date droppedOldPeersDate = new Date();
+		DroppedOldPeersUserAlert droppedOldPeers = new DroppedOldPeersUserAlert(peersFile);
 		try { // FIXME: no better way?
 			while(true) {
 				// Read a single NodePeer
@@ -289,25 +288,7 @@ public class PeerManager {
 				        Logger.error(this, "Dropping too-old opennet peer");
 				    } else {
 				        // A lot more noisy!
-				        // May or may not have a name...
-				        String name = fs.get("myName");
-				        if(name == null) { 
-				            name = "(unknown name)";
-				        } else { 
-				            name = "\"" + name + "\""; 
-				        }
-                        droppedOldPeers.add(name);
-				        String[] keys = new String[] { "count", "buildNumber", "buildDate", "port" };
-				        String[] values = new String[] { ""+droppedOldPeers.size(), 
-				                "" + e.buildNumber, e.buildDate.toString(), 
-				                new File(peersFile.getPath()+".broken").toString() };
-				        if(e.buildNumber > droppedOldPeersBuild) {
-				            droppedOldPeersBuild = e.buildNumber;
-				            droppedOldPeersDate = e.buildDate;
-				        }
-				        String shortError = l10n("droppingOldFriendTitle", keys, values);
-				        System.err.println(shortError);
-                        Logger.error(this, shortError);
+				        droppedOldPeers.add(e, fs.get("myName"));
 				    }
                 }
 			}
@@ -322,8 +303,9 @@ public class PeerManager {
 			Logger.error(this, "Ignoring " + e3 + " caught reading " + peersFile, e3);
 		}
 		if(!droppedOldPeers.isEmpty()) {
-		    try {
-		        reportDroppedOldPeers(droppedOldPeers, droppedOldPeersBuild, droppedOldPeersDate, peersFile);
+            try {
+                node.clientCore.alerts.register(droppedOldPeers);
+                Logger.error(this, droppedOldPeers.getText());
 		    } catch (Throwable t) {
 		        // Startup MUST complete, don't let client layer problems kill it.
 		        Logger.error(this, "Caught error telling user about dropped peers", t);
@@ -345,38 +327,6 @@ public class PeerManager {
 		}
 		return !someBroken;
 	}
-
-	private void reportDroppedOldPeers(List<String> droppedOldPeers, int droppedOldPeersBuild,
-            Date droppedOldPeersDate, File peersFile) {
-        String[] keys = new String[] { "count", "buildNumber", "buildDate", "filename" };
-        String[] values = new String[] { ""+droppedOldPeers.size(), 
-                "" + droppedOldPeersBuild, droppedOldPeersDate.toString(), 
-                new File(peersFile.getPath()+".broken").toString() };
-        String shortError = l10n("droppingOldFriendTitle", keys, values);
-        String longError = l10n("droppingOldFriendFull", keys, values);
-        HTMLNode html = new HTMLNode("#");
-        StringBuffer longErrorText = new StringBuffer();
-        html.addChild("p", longError);
-        html.addChild("p", l10n("droppingOldFriendList"));
-        longErrorText.append('\n');
-        longErrorText.append(l10n("droppingOldFriendList"));
-        longErrorText.append('\n');
-        HTMLNode list = html.addChild("ul");
-        for(String name : droppedOldPeers) {
-            list.addChild("li", name);
-            longErrorText.append(name);
-            longErrorText.append('\n');
-        }
-        longErrorText.setLength(longErrorText.length()-1);
-        String longErrorString = longErrorText.toString();
-        Logger.error(this, longErrorString);
-        UserAlert alert = new AbstractUserAlert(true, shortError, longErrorString, shortError, 
-                html, UserAlert.CRITICAL_ERROR, true, 
-                NodeL10n.getBase().getString("UserAlert.hide"), true, null) {
-            
-        };
-        node.clientCore.alerts.register(alert);
-    }
 
     public boolean addPeer(PeerNode pn) {
 		return addPeer(pn, false, false);
@@ -2356,16 +2306,4 @@ public class PeerManager {
 		} else return false;
 	}
 	
-	private String l10n(String key) {
-	    return NodeL10n.getBase().getString("PeerManager."+key);
-	}
-	
-	private String l10n(String key, String pattern, String value) {
-	    return NodeL10n.getBase().getString("PeerManager."+key, pattern, value);
-	}
-	
-	private String l10n(String key, String[] pattern, String[] value) {
-	    return NodeL10n.getBase().getString("PeerManager."+key, pattern, value);
-	}
-
 }
