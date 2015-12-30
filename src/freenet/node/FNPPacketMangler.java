@@ -11,6 +11,7 @@ import java.security.interfaces.ECPublicKey;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.ECDH;
@@ -96,12 +97,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	public final static int DH_GENERATION_INTERVAL = 30000; // 30sec
 	/* How big is the FIFO? */
 	public final static int DH_CONTEXT_BUFFER_SIZE = 20;
-	/*
-	* The FIFO itself
-	* Get a lock on dhContextFIFO before touching it!
-	*/
-	/* The element which is about to be prunned from the FIFO */
-	private long jfkDHLastGenerationTimestamp = 0;
 	
 	private final LinkedList<ECDHLightContext> ecdhContextFIFO = new LinkedList<ECDHLightContext>();
 	private ECDHLightContext ecdhContextToBePrunned;
@@ -150,6 +145,28 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
         private long lastConnectivityStatusUpdate;
         private Status lastConnectivityStatus;
+        private AtomicInteger unmatchedCount = new AtomicInteger(0);
+        // FIXME make configurable.
+        static final int MAX_UNMATCHED_PACKETS_IN_INTERVAL = 10;
+        private int CLEAR_UNMATCHED_INTERVAL = (int) MINUTES.toMillis(5);
+        
+        private class ClearUnmatchedCount implements Runnable {
+
+            @Override
+            public void run() {
+                unmatchedCount.set(0);
+                queue();
+            }
+            
+            private final void queue() {
+                int interval = CLEAR_UNMATCHED_INTERVAL + 
+                    node.fastWeakRandom.nextInt(CLEAR_UNMATCHED_INTERVAL);
+                node.ticker.queueTimedJob(this, interval);
+            }
+            
+        };
+        
+        private ClearUnmatchedCount clearUnmatchedCountJob = new ClearUnmatchedCount();
 
 
 	public FNPPacketMangler(Node node, NodeCrypto crypt, PacketSocketHandler sock) {
@@ -171,6 +188,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			_fillJFKECDHFIFO();
 		}
 		this.authHandlingThread.start(node.executor, "FNP incoming auth packet handler thread");
+		clearUnmatchedCountJob.queue();
 	}
 
 	/**
@@ -227,8 +245,52 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				}
 			}
 		}
-		PeerNode[] peers = crypto.getPeerNodes();
+
 		if(node.isStopping()) return DECODED.SHUTTING_DOWN;
+		
+		if(wantAnonAuth) {
+		    if(tryProcessAuthAnon(buf, offset, length, peer))
+		        return DECODED.DECODED;
+		}
+		
+		// FIXME consider a token bucket. We need to get "now" anyway.
+		
+		if(unmatchedCount.get() >= MAX_UNMATCHED_PACKETS_IN_INTERVAL) {
+		    if(logDEBUG) Logger.debug(this, "Not scanning all peers for unmatched packet from "+peer+
+		            " (too many packets in interval)");
+		    return DECODED.NOT_DECODED;
+		}
+		
+        if(sock.getDetectedConnectivityStatus() == AddressTracker.Status.DEFINITELY_PORT_FORWARDED
+                && peer != null && peer.isRealInternetAddress(false, true, false)) {
+            if(logDEBUG) Logger.debug(this, "Not scanning all peers for unmatched packet from "+peer+
+                    " (not port forwarded)");
+            // FIXME lastConnectivityStatus? Be careful, uses configs we don't care about.
+            return DECODED.NOT_DECODED;
+        }
+
+		DECODED ret = processUnmatched(buf, offset, length, peer, now, wantAnonAuth, opn);
+		
+		if(ret == DECODED.NOT_DECODED) {
+		    if(unmatchedCount.incrementAndGet() == MAX_UNMATCHED_PACKETS_IN_INTERVAL) {
+		        onTooManyUnmatchedPackets();
+		    }
+		}
+		
+		return ret;
+	}
+	
+	private void onTooManyUnmatchedPackets() {
+	    Logger.error(this, "Too many unmatched packets on "+(crypto.isOpennet?"opennet":"darknet")+
+	            " port, will ignore packets not easily matched for a while");
+	    // FIXME useralert, explain that this means a probable DoS or a former seednode and we
+	    // won't be able to reconnect quickly if peers change IP address.
+    }
+
+    /** Try all possible peers for the packet. Maybe one of them has changed IP address. */
+	private DECODED processUnmatched(byte[] buf, int offset, int length, Peer peer, long now,
+	        boolean wantAnonAuth, PeerNode opn) {
+		PeerNode[] peers = crypto.getPeerNodes();
 		// Disconnected node connecting on a new IP address?
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
 			for(PeerNode pn: peers) {
@@ -253,7 +315,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(wantAnonAuth && wantAnonAuthChangeIP) {
 			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) return DECODED.DECODED;
 		}
-
+		
 		boolean didntTryOldOpennetPeers;
 		OpennetManager opennet = node.getOpennet();
 		if(opennet != null) {
@@ -269,11 +331,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				didntTryOldOpennetPeers = true;
 		} else
 			didntTryOldOpennetPeers = false;
-		if(wantAnonAuth) {
-			if(tryProcessAuthAnon(buf, offset, length, peer))
-				return DECODED.DECODED;
-		}
-		
 		if(wantAnonAuth && !wantAnonAuthChangeIP) {
 			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) {
 				// This can happen when a node is upgraded from a SeedClientPeerNode to an OpennetPeerNode.
