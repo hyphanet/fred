@@ -145,7 +145,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 			long now = System.currentTimeMillis();
 			updateTime = now;
 			synchronized(ramBucketQueue) {
-				ramBucketQueue.push(getReference());
+			    if(ramBucketQueue.contains(getReference()))
+			        ramBucketQueue.push(getReference());
 			}
 		}
 		
@@ -994,7 +995,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
             long now = System.currentTimeMillis();
             updateTime = now;
             synchronized(ramBucketQueue) {
-                ramBucketQueue.push(getReference());
+                if(ramBucketQueue.contains(getReference()))
+                    ramBucketQueue.push(getReference());
             }
         }
         
