@@ -180,7 +180,7 @@ public class SaltedHashFreenetStoreTest extends TestCase {
 			store.put(sskBlock, false, false);
 			assertTrue(true);
 		} catch (KeyCollisionException e) {
-			assertTrue(false);
+			fail();
 			
 		}
 		
@@ -192,7 +192,7 @@ public class SaltedHashFreenetStoreTest extends TestCase {
 		//if it's different (e.g. different content, same key), there should be a KCE thrown
 		try {
 			store.put(sskBlock1, false, false);
-			assertTrue(false);
+			fail();
 		} catch (KeyCollisionException e) {
 			assertTrue(true);
 		}
@@ -202,7 +202,7 @@ public class SaltedHashFreenetStoreTest extends TestCase {
 			store.put(sskBlock1, true, false);
 			assertTrue(true);
 		} catch (KeyCollisionException e) {
-			assertTrue(false);
+			fail();
 			
 		}
 		

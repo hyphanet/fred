@@ -400,6 +400,8 @@ public class SplitFileInserterSegmentStorage {
         long limit = totalBlockCount * CHKBlock.DATA_LENGTH + 
             Math.max(parent.codec.maxMemoryOverheadDecode(dataBlockCount, crossCheckBlockCount),
                 parent.codec.maxMemoryOverheadEncode(dataBlockCount, crossCheckBlockCount));
+        if(logMINOR) Logger.minor(this, "Scheduling encode on "+this+" at priority "+prio+
+                " blocks "+totalBlockCount+" memory limit "+limit);
         parent.memoryLimitedJobRunner.queueJob(new MemoryLimitedJob(limit) {
             
             @Override

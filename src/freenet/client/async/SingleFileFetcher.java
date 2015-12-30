@@ -803,12 +803,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				        topCompatibilityMode, persistent, thisKey, reallyFinal, context);
 				this.deleteFetchContext = false;
 				parent.onTransition(this, sf, context);
-				try {
-					sf.schedule(context);
-				} catch (KeyListenerConstructionException e) {
-					onFailure(e.getFetchException(), false, context);
-					return;
-				}
+				sf.schedule(context);
 				rcb.onBlockSetFinished(this, context);
 				// Clear our own metadata, we won't need it any more.
 				// Note that SplitFileFetcher() above will have used the keys from the metadata,

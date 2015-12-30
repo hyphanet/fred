@@ -29,7 +29,7 @@ have missed it.
 
 Code review helps improve code quality, ensures that multiple people know the
 codebase, serves as a defense against introducing malicious code, and makes it
-infeasable to pressure people into contributing malicious code. Its goal is
+infeasible to pressure people into contributing malicious code. Its goal is
 producing software that is readable, correct, and sufficiently efficient.
 
 Breaking API creates an immense amount of work for developers of other projects,
@@ -40,9 +40,11 @@ and [IRC](https://freenetproject.org/irc.html) are good places to contact us.
 
 # Standards
 
-Before submitting a pull request, please make sure that modified lines meet the
-project [coding standards](https://google-styleguide.googlecode.com/svn/trunk/javaguide.html)
-and that the commit messages meet the standards:
+Before submitting a pull request, please:
+
+* add an entry to the [NEWS](/NEWS.md) file if appropriate
+* ensure modified lines meet the project [coding standards](https://google-styleguide.googlecode.com/svn/trunk/javaguide.html)
+* ensure the commit messages meet the standards:
 
 ## Commit messages
 

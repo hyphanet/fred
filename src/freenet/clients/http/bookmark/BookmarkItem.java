@@ -57,7 +57,7 @@ public class BookmarkItem extends Bookmark {
     
     public BookmarkItem(SimpleFieldSet sfs, UserAlertManager uam) throws FSParseException, MalformedURLException {
         this.name = sfs.get("Name");
-        if(name == null) name = "";
+        if(name == null || name.isEmpty()) name = l10n("unnamedBookmark");
         this.desc = sfs.get("Description");
         if(desc == null) desc = "";
         this.shortDescription = sfs.get("ShortDescription");
@@ -184,7 +184,7 @@ public class BookmarkItem extends Bookmark {
 
     @Override
 	public String getName() {
-        return ("".equals(name) ? l10n("unnamedBookmark") : name);
+        return name;
     }
 
     @Override

@@ -12,7 +12,7 @@ import freenet.client.FetchException;
 public interface ClientGetState {
 
 	/** Schedule the request on the ClientRequestScheduler. */
-	public void schedule(ClientContext context) throws KeyListenerConstructionException;
+	public void schedule(ClientContext context);
 
 	/** Cancel the request, and call onFailure() on the callback in order to tell 
 	 * downstream (ultimately the client) that cancel has succeeded, and to allow

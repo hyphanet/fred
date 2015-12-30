@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.EOFException;
@@ -14,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
@@ -28,12 +27,13 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.HTMLNode;
 import freenet.support.ListUtils;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.transport.ip.IPUtil;
-import java.util.Arrays;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Decide whether to announce, and announce if necessary to a node in the
@@ -157,7 +157,7 @@ public class Announcer {
 		List<SeedServerPeerNode> tryingSeeds = node.peers.getSeedServerPeersVector();
 		synchronized(this) {
 			for(SeedServerPeerNode seed : tryingSeeds) {
-				if(!announcedToIdentities.contains(new ByteArrayWrapper(seed.pubKeyHash))) {
+				if(!announcedToIdentities.contains(new ByteArrayWrapper(seed.peerECDSAPubKeyHash))) {
 					// Either:
 					// a) we are still trying to connect to this node,
 					// b) there is a race condition and we haven't sent the announcement yet despite connecting, or
@@ -223,13 +223,13 @@ public class Announcer {
 			SimpleFieldSet fs = ListUtils.removeRandomBySwapLastSimple(node.random, seeds);
 			try {
 				SeedServerPeerNode seed =
-					new SeedServerPeerNode(fs, node, om.crypto, node.peers, false, om.crypto.packetMangler);
-				if(node.wantAnonAuth(true) && Arrays.equals(node.getOpennetPubKeyHash(), seed.pubKeyHash)) {
+					new SeedServerPeerNode(fs, node, om.crypto, false);
+				if(node.wantAnonAuth(true) && Arrays.equals(node.getOpennetPubKeyHash(), seed.peerECDSAPubKeyHash)) {
                                     if(logMINOR)
                                         Logger.minor("Not adding: I am a seednode attempting to connect to myself!", seed.userToString());
                                     continue;
                                 }
-                                if(announcedToIdentities.contains(new ByteArrayWrapper(seed.pubKeyHash))) {
+                                if(announcedToIdentities.contains(new ByteArrayWrapper(seed.peerECDSAPubKeyHash))) {
 					if(logMINOR)
 						Logger.minor(this, "Not adding: already announced-to: "+seed.userToString());
 					continue;
@@ -528,7 +528,7 @@ public class Announcer {
 				if(sendAnnouncement(seed)) {
 					sentAnnouncements++;
 					runningAnnouncements++;
-					announcedToIdentities.add(new ByteArrayWrapper(seed.getPubKeyHash()));
+					announcedToIdentities.add(new ByteArrayWrapper(seed.peerECDSAPubKeyHash));
 				}
 			}
 			if(runningAnnouncements >= WANT_ANNOUNCEMENTS) {

@@ -1,7 +1,5 @@
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -53,8 +51,10 @@ import freenet.support.api.HTTPUploadedFile;
 import freenet.support.api.RandomAccessBuffer;
 import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessBuffer;
-import freenet.support.io.FileUtil;
 import freenet.support.io.FileRandomAccessBuffer;
+import freenet.support.io.FileUtil;
+
+import static java.util.concurrent.TimeUnit.DAYS;
 
 public class DarknetPeerNode extends PeerNode {
 
@@ -159,8 +159,8 @@ public class DarknetPeerNode extends PeerNode {
 	 * @param node2 The running Node we are part of.
 	 * @param trust If this is a new node, we will use this parameter to set the initial trust level.
 	 */
-	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		super(fs, node2, crypto, peers, fromLocal, false, mangler, false);
+	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		super(fs, node2, crypto, fromLocal);
 
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
@@ -1677,11 +1677,6 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return false;
-	}
-
-	@Override
 	public boolean equals(Object o) {
 		if(o == this) return true;
 		// Only equal to seednode of its own type.
@@ -1967,4 +1962,19 @@ public class DarknetPeerNode extends PeerNode {
 			}
 		}
 	}
+
+    @Override
+    public boolean isOpennetForNoderef() {
+        return false;
+    }
+
+    @Override
+    public boolean canAcceptAnnouncements() {
+        return node.passOpennetRefsThroughDarknet();
+    }
+
+    @Override
+    protected void writePeers() {
+        node.peers.writePeers(false);
+    }
 }
