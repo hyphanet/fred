@@ -18,6 +18,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -837,7 +838,7 @@ public class PluginManager {
 			pluginFilename = pluginSpecification.substring(lastSlash + 1);
 		if(logDEBUG)
 			Logger.minor(this, "Delete plugin - plugname: " + pluginSpecification + " filename: " + pluginFilename, new Exception("debug"));
-		File[] cachedFiles = getPreviousInstances(pluginDirectory, pluginFilename);
+		List<File> cachedFiles = getPreviousInstances(pluginDirectory, pluginFilename);
 		for (File cachedFile : cachedFiles) {
 			if (!cachedFile.delete())
 				if(logMINOR) Logger.minor(this, "Can't delete file " + cachedFile);
@@ -1430,7 +1431,7 @@ public class PluginManager {
 		File pluginFile = new File(pluginDirectory, filename + "-" + System.currentTimeMillis());
 
 		/* check for previous instances and delete them. */
-		File[] filesInPluginDirectory = getPreviousInstances(pluginDirectory, filename);
+		List<File> filesInPluginDirectory = getPreviousInstances(pluginDirectory, filename);
 		boolean first = true;
 		for (File cachedFile : filesInPluginDirectory) {
 			if (first && useCachedFile) {
@@ -1492,15 +1493,15 @@ public class PluginManager {
 	 *            The name of the JAR file
 	 * @return All cached instances
 	 */
-	private File[] getPreviousInstances(File pluginDirectory, final String filename) {
-		File[] cachedFiles = pluginDirectory.listFiles(new FileFilter() {
+	private List<File> getPreviousInstances(File pluginDirectory, final String filename) {
+		List<File> cachedFiles = Arrays.asList(pluginDirectory.listFiles(new FileFilter() {
 
 			@Override
 			public boolean accept(File pathname) {
 				return pathname.isFile() && pathname.getName().startsWith(filename);
 			}
-		});
-		Arrays.sort(cachedFiles, new Comparator<File>() {
+		}));
+		Collections.sort(cachedFiles, new Comparator<File>() {
 
 			@Override
 			public int compare(File file1, File file2) {
