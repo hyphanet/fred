@@ -29,7 +29,7 @@ import freenet.support.math.SimpleRunningAverage;
 public class RealNodeRoutingTest extends RealNodeTest {
 
 	static final int NUMBER_OF_NODES = 100;
-	static final int DEGREE = 5;
+	static final int DEGREE = 10;
 	static final short MAX_HTL = (short) 5;
 	static final boolean START_WITH_IDEAL_LOCATIONS = true;
 	static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
@@ -147,7 +147,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 					double loc2 = randomNode2.getLocation();
 					Logger.normal(RealNodeRoutingTest.class, "Pinging " + randomNode2.getDarknetPortNumber() + " @ " + loc2 + " from " + randomNode.getDarknetPortNumber() + " @ " + randomNode.getLocation());
 					
-					int hopsTaken = randomNode.routedPing(loc2, randomNode2.getDarknetIdentity());
+					int hopsTaken = randomNode.routedPing(loc2, randomNode2.getDarknetPubKeyHash());
 					pings++;
 					if(hopsTaken < 0) {
 						failures++;

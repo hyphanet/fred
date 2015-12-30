@@ -30,6 +30,7 @@ public class PersistentConfig extends Config {
 			Logger.error(this, "Unknown option: "+key+" (value="+origConfigFileContents.get(key)+ ')');
 		}
 		origConfigFileContents = null;
+		super.finishedInit();
 	}
 
 	public SimpleFieldSet exportFieldSet() {

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -187,11 +188,10 @@ public abstract class BucketTestBase extends TestCase {
 			os.close();
 
 			// Read byte[]
-			InputStream is = bucket.getInputStream();
+			DataInputStream is = new DataInputStream(bucket.getInputStream());
 			for (int i = 0; i < 16; i++) {
 				byte[] buf = new byte[DATA_LONG.length];
-				int read = is.read(buf);
-				assertEquals("Read-Long-Size", DATA_LONG.length, read);
+				is.readFully(buf);
 				assertEquals("Read-Long", new ByteArrayWrapper(DATA_LONG), new ByteArrayWrapper(buf));
 			}
 

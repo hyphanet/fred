@@ -23,7 +23,7 @@ import freenet.support.Logger.LogLevel;
  * into account the fact that reports persist and accumulate. :) 
  * 
  */
-public class TimeDecayingRunningAverage implements RunningAverage, Cloneable {
+public final class TimeDecayingRunningAverage implements RunningAverage, Cloneable {
 
 	private static final long serialVersionUID = -1;
     static final int MAGIC = 0x5ff4ac94;

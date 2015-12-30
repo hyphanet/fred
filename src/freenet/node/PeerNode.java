@@ -1,5 +1,11 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -11,6 +17,7 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,18 +30,17 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-import net.i2p.util.NativeBigInteger;
 import freenet.client.FetchResult;
 import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
 import freenet.crypt.BlockCipher;
-import freenet.crypt.DSA;
-import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DSASignature;
+import freenet.crypt.ECDSA;
+import freenet.crypt.ECDSA.Curves;
 import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.KeyAgreementSchemeContext;
@@ -66,6 +72,7 @@ import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
 import freenet.support.Base64;
+import freenet.support.BooleanLastTrueTracker;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
@@ -95,7 +102,7 @@ import freenet.support.transport.ip.IPUtil;
  * LOCKING: Can hold PeerManager and then lock PeerNode. Cannot hold
  * PeerNode and then lock PeerManager.
  */
-public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
+public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, PeerNodeUnlocked {
 
 	private String lastGoodVersion;
 	/**
@@ -164,8 +171,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private long timeLastReceivedDataPacket;
 	/** When did we last receive an ack? */
 	private long timeLastReceivedAck;
-	/** When was isConnected() last true? */
-	private long timeLastConnected;
 	/** When was isRoutingCompatible() last true? */
 	private long timeLastRoutable;
 	/** Time added or restarted (reset on startup unlike peerAddedTime) */
@@ -173,19 +178,23 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	private long countSelectionsSinceConnected = 0;
 	// 5mins; yes it's alchemy!
-	public static final int SELECTION_SAMPLING_PERIOD = 5 * 60 * 1000;
+	public static final long SELECTION_SAMPLING_PERIOD = MINUTES.toMillis(5);
 	// 30%; yes it's alchemy too! and probably *way* too high to serve any purpose
 	public static final int SELECTION_PERCENTAGE_WARNING = 30;
 	// Minimum number of routable peers to have for the selection code to have any effect
 	public static final int SELECTION_MIN_PEERS = 5;
 	// Should be good enough provided we don't get selected more than 10 times per/sec
 	// Lower the following value if you want to spare memory... or better switch from a TreeSet to a bit field.
-	public static final int SELECTION_MAX_SAMPLES = 10 * SELECTION_SAMPLING_PERIOD / 1000;
+	public static final int SELECTION_MAX_SAMPLES = (int) (10 * SECONDS.convert(SELECTION_SAMPLING_PERIOD, MILLISECONDS));
 
-	/** Are we connected? If not, we need to start trying to
-	* handshake.
-	*/
-	private boolean isConnected;
+	/** Is the peer connected? If currentTracker == null then we have no way to send packets 
+	 * (though we may be able to receive them on the other trackers), and are disconnected. So we
+	 * MUST set isConnected to false when currentTracker = null, but the other way around isn't
+	 * always true. LOCKING: Locks itself, safe to read atomically, however we should take (this) 
+	 * when setting it. */
+	private final BooleanLastTrueTracker isConnected;
+	
+	// FIXME use a BooleanLastTrueTracker. Be careful as isRoutable() depends on more than this flag!
 	private boolean isRoutable;
 
 	/** Used by maybeOnConnect */
@@ -206,12 +215,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private int handshakeCount;
 	/** After this many failed handshakes, we start the ARK fetcher. */
 	private static final int MAX_HANDSHAKE_COUNT = 2;
-	/** Current location in the keyspace, or -1 if it is unknown */
-	private double currentLocation;
-	/** Current locations of our peer's peers */
-	private double[] currentPeersLocation;
-	/** Time the location was set */
-	private long locSetTime;
+	final PeerLocation location;
 	/** Node identity; for now a block of data, in future a
 	* public key (FIXME). Cannot be changed.
 	*/
@@ -266,13 +270,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private long totalInputSinceStartup;
 	/** Total output */
 	private long totalOutputSinceStartup;
-	/** Peer node crypto group; changing this means new noderef */
-	final DSAGroup peerCryptoGroup;
-
 	/** Peer node public key; changing this means new noderef */
-	final DSAPublicKey peerPubKey;
-	final byte[] pubKeyHash;
-	final byte[] pubKeyHashHash;
+	public final ECPublicKey peerECDSAPubKey;
+	public final byte[] peerECDSAPubKeyHash;
 	private boolean isSignatureVerificationSuccessfull;
 	/** Incoming setup key. Used to decrypt incoming auth packets.
 	* Specifically: K_node XOR H(setupKey).
@@ -293,9 +293,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** The context object for the currently running negotiation. */
 	private KeyAgreementSchemeContext ctx;
 	/** The other side's boot ID. This is a random number generated
-	* at startup.
-	*/
-	private long bootID;
+	* at startup. LOCKING: It is far too dangerous to hold the main (this) lock while accessing 
+	* bootID given that we ask for it in the messaging code and so on. This is essentially a "the 
+	* other side restarted" flag, so there isn't really a consistency issue with the rest of 
+	* PeerNode. So it's okay to effectively use a separate lock for it. */
+	private final AtomicLong bootID;
 	/** Our boot ID. This is set to a random number on startup, and then reset whenever
 	 * we dump the in-flight messages and call disconnected() on their clients, i.e.
 	 * whenever we call disconnected(true, ...) */
@@ -310,7 +312,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** The status of this peer node in terms of Node.PEER_NODE_STATUS_* */
 	public int peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
 
-	static final int CHECK_FOR_SWAPPED_TRACKERS_INTERVAL = FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL / 30;
+	static final long CHECK_FOR_SWAPPED_TRACKERS_INTERVAL = FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL / 30;
 
 	static final byte[] TEST_AS_BYTES;
 	static {
@@ -355,10 +357,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	/** If the clock delta is more than this constant, we don't talk to the node. Reason: It may not be up to date,
 	* it will have difficulty resolving date-based content etc. */
-	private static final long MAX_CLOCK_DELTA = 24L * 60L * 60L * 1000L;
+	private static final long MAX_CLOCK_DELTA = DAYS.toMillis(1);
 	/** 1 hour after the node is disconnected, if it is still disconnected and hasn't connected in that time,
 	 * clear the message queue */
-	private static final long CLEAR_MESSAGE_QUEUE_AFTER = 60 * 60 * 1000L;
+	private static final long CLEAR_MESSAGE_QUEUE_AFTER = HOURS.toMillis(1);
 	/** A WeakReference to this object. Can be taken whenever a node object needs to refer to this object for a
 	 * long time, but without preventing it from being GC'ed. */
 	final WeakReference<PeerNode> myRef;
@@ -368,6 +370,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	long timeLastDisconnect;
 	/** Previous time of disconnection */
 	long timePrevDisconnect;
+	/** Acknowledging mode */
+	private boolean useCumulativeAcks;
 
 	// Burst-only mode
 	/** True if we are currently sending this peer a burst of handshake requests */
@@ -386,7 +390,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	 * Some alchemy we use in PeerNode.shouldBeExcludedFromPeerList()
 	 */
-	public static final int BLACK_MAGIC_BACKOFF_PRUNING_TIME = 5 * 60 * 1000;
+	public static final long BLACK_MAGIC_BACKOFF_PRUNING_TIME = MINUTES.toMillis(5);
 	public static final double BLACK_MAGIC_BACKOFF_PRUNING_PERCENTAGE = 0.9;
 
 	/**
@@ -413,14 +417,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	protected SimpleFieldSet fullFieldSet;
 
-	/**
-	 * If this returns true, we will generate the identity from the pubkey.
-	 * Only set this if you don't want to send an identity, e.g. for anonymous
-	 * initiator crypto where we need a small noderef and we don't use the
-	 * identity anyway because we don't auto-reconnect.
-	 */
-	protected abstract boolean generateIdentityFromPubkey();
-
 	protected boolean ignoreLastGoodVersion() {
 		return false;
 	}
@@ -435,24 +431,27 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* - physical.udp
 	* - setupKey
 	* Do not add self to PeerManager.
-	* @param fs The SimpleFieldSet to parse
+	* @param fs The node reference to parse.
 	* @param node2 The running Node we are part of.
-	*/
-	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	* @param fromLocal True if the noderef was read from the stored peers file and can contain
+	* local metadata, and won't be signed. Otherwise, it is a new node reference from elsewhere,
+	* should not contain metadata, and will be signed. */
+	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal) 
+	                throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		boolean noSig = false;
-		if(fromLocal || fromAnonymousInitiator) noSig = true;
+		if(fromLocal || fromAnonymousInitiator()) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
 		this.checkStatusAfterBackoff = new PeerNodeBackoffStatusChecker(myRef);
-		if(mangler == null) throw new NullPointerException();
-		this.outgoingMangler = mangler;
+		this.outgoingMangler = crypto.packetMangler;
 		this.node = node2;
 		this.crypto = crypto;
-		assert(crypto.isOpennet == (isOpennet() || isSeed()));
-		this.peers = peers;
+		assert(crypto.isOpennet == isOpennetForNoderef());
+		this.peers = node.peers;
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.myBootID = node2.bootID;
+		this.bootID = new AtomicLong();
 		version = fs.get("version");
 		Version.seenVersion(version);
 		try {
@@ -462,9 +461,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		String locationString = fs.get("location");
 
-		currentLocation = Location.getLocation(locationString);
-		locSetTime = System.currentTimeMillis();
-
+		location = new PeerLocation(locationString);
+		
 		disableRouting = disableRoutingHasBeenSetLocally = false;
 		disableRoutingHasBeenSetRemotely = false; // Assume so
 
@@ -480,92 +478,55 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		negTypes = fs.getIntArray("auth.negTypes");
 		if(negTypes == null || negTypes.length == 0) {
-			if(fromAnonymousInitiator)
-				negTypes = mangler.supportedNegTypes(false); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
+			if(fromAnonymousInitiator())
+				negTypes = outgoingMangler.supportedNegTypes(false); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
 			else
 				throw new FSParseException("No negTypes!");
 		}
 
-		if(fs.getBoolean("opennet", false) != isOpennet)
-			throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet isOpennet="+isOpennet+" boolean = "+fs.getBoolean("opennet", false)+" string = \""+fs.get("opennet")+"\"");
+		if(fs.getBoolean("opennet", false) != isOpennetForNoderef())
+			throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet isOpennet="+isOpennetForNoderef()+" boolean = "+fs.getBoolean("opennet", false)+" string = \""+fs.get("opennet")+"\"");
 
-		/* Read the DSA key material for the peer */
+		/* Read the ECDSA key material for the peer */
+		SimpleFieldSet sfs = fs.subset("ecdsa.P256");
+		byte[] pub;
 		try {
-			SimpleFieldSet sfs = fs.subset("dsaGroup");
-			if(sfs == null) {
-			    this.peerCryptoGroup = Global.DSAgroupBigA;
-				fs.put("dsaGroup", this.peerCryptoGroup.asFieldSet());
-			} else
-			    this.peerCryptoGroup = DSAGroup.create(sfs);
-
-			sfs = fs.subset("dsaPubKey");
-			if(sfs == null || peerCryptoGroup == null)
-				throw new FSParseException("No dsaPubKey - very old reference?");
-			else {
-				this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
-				pubKeyHash = SHA256.digest(peerPubKey.asBytes());
-				pubKeyHashHash = SHA256.digest(pubKeyHash);
-			}
-
-			String signature = fs.get("sig");
-			if(!noSig) {
-				try {
-					boolean failed = false;
-					if(signature == null || peerCryptoGroup == null || peerPubKey == null)
-						failed = true;
-					else {
-						fs.removeValue("sig");
-						String toVerify = fs.toOrderedString();
-						fs.putSingle("sig", signature);
-						failed = !(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(toVerify.getBytes("UTF-8"))), false));
-					}
-					if(failed) {
-						String errCause = "";
-						if(signature == null)
-							errCause += " (No signature)";
-						if(peerPubKey == null)
-							errCause += " (No peer public key)";
-						if(failed)
-							errCause += " (VERIFICATION FAILED)";
-						Logger.error(this, "The integrity of the reference has been compromised!" + errCause + " fs was\n" + fs.toOrderedString());
-						this.isSignatureVerificationSuccessfull = false;
-						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromised!" + errCause);
-					} else {
-						this.isSignatureVerificationSuccessfull = true;
-						if(!dontKeepFullFieldSet())
-							this.fullFieldSet = fs;
-					}
-				} catch(NumberFormatException e) {
-					Logger.error(this, "Invalid reference: " + e, e);
-					throw new ReferenceSignatureVerificationException("The node reference you added is invalid: It does not have a valid signature.");
-				} catch(UnsupportedEncodingException e) {
-					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-				}
-			} else {
-				// Local is always good (assumed)
-				this.isSignatureVerificationSuccessfull = true;
-			}
-		} catch(IllegalBase64Exception e) {
-			Logger.error(this, "Caught " + e, e);
+			pub = Base64.decode(sfs.get("pub"));
+		} catch (IllegalBase64Exception e) {
+			Logger.error(this, "Caught " + e + " parsing ECC pubkey", e);
 			throw new FSParseException(e);
+		}
+		if (pub.length > ECDSA.Curves.P256.modulusSize)
+			throw new FSParseException("ecdsa.P256.pub is not the right size!");
+		ECPublicKey key = ECDSA.getPublicKey(pub, ECDSA.Curves.P256);
+		if(key == null)
+			throw new FSParseException("ecdsa.P256.pub is invalid!");
+		this.peerECDSAPubKey = key;
+		peerECDSAPubKeyHash = SHA256.digest(peerECDSAPubKey.getEncoded());
+
+		if(noSig || verifyReferenceSignature(fs)) {
+			this.isSignatureVerificationSuccessfull = true;
 		}
 
 		// Identifier
 
-		if(!generateIdentityFromPubkey()) {
 			String identityString = fs.get("identity");
-			if(identityString == null)
+			if(identityString == null && isDarknet())
 				throw new PeerParseException("No identity!");
 			try {
-				identity = Base64.decode(identityString);
+				if(identityString != null) {
+					identity = Base64.decode(identityString);
+				} else {
+					// We might be talking to a pre-1471 node
+					// We need to generate it from the DSA key
+					sfs = fs.subset("dsaPubKey");
+					identity = SHA256.digest(DSAPublicKey.create(sfs, Global.DSAgroupBigA).asBytes());
+				}
 			} catch(NumberFormatException e) {
 				throw new FSParseException(e);
 			} catch(IllegalBase64Exception e) {
 				throw new FSParseException(e);
 			}
-		} else {
-			identity = pubKeyHash;
-		}
 
 		if(identity == null)
 			throw new FSParseException("No identity");
@@ -573,7 +534,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		identityHash = SHA256.digest(identity);
 		identityHashHash = SHA256.digest(identityHash);
 		swapIdentifier = Fields.bytesToLong(identityHashHash);
-		hashCode = Fields.hashCode(pubKeyHash);
+		hashCode = Fields.hashCode(peerECDSAPubKeyHash);
 
 		// Setup incoming and outgoing setup ciphers
 		byte[] nodeKey = crypto.identityHash;
@@ -641,7 +602,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			throw new FSParseException(e1);
 		}
 		if(nominalPeer.isEmpty()) {
-			Logger.normal(this, "No IP addresses found for identity '" + identityAsBase64String + "', possibly at location '" + Double.toString(currentLocation) + ": " + userToString());
+			Logger.normal(this, "No IP addresses found for identity '" + identityAsBase64String + "', possibly at location '" + location + ": " + userToString());
 			detectedPeer = null;
 		} else {
 			detectedPeer = nominalPeer.get(0);
@@ -655,15 +616,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		timeLastSentPacket = -1;
 		timeLastReceivedPacket = -1;
 		timeLastReceivedSwapRequest = -1;
-		timeLastConnected = -1;
 		timeLastRoutable = -1;
 		timeAddedOrRestarted = System.currentTimeMillis();
 
 		swapRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS);
 		probeRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS);
-
-		// Not connected yet; need to handshake
-		isConnected = false;
 
 		messageQueue = new PeerMessageQueue();
 
@@ -676,11 +633,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		// So go for a filter.
 		pingAverage =
 			// Short average otherwise we will reject for a *REALLY* long time after any spike.
-			new TimeDecayingRunningAverage(1, 30 * 1000, 0, NodePinger.CRAZY_MAX_PING_TIME, node);
+			new TimeDecayingRunningAverage(1, SECONDS.toMillis(30), 0, NodePinger.CRAZY_MAX_PING_TIME, node);
 
 		// TDRA for probability of rejection
 		pRejected =
-			new TimeDecayingRunningAverage(0, 240 * 1000, 0.0, 1.0, node);
+			new TimeDecayingRunningAverage(0, MINUTES.toMillis(4), 0.0, 1.0, node);
 
 		// ARK stuff.
 
@@ -698,14 +655,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 			if(metadata != null) {
 				
-				String[] peerLocationsString = fs.getAll("peersLocation");
-				if(peerLocationsString != null) {
-					double[] peerLocations = new double[peerLocationsString.length];
-					for(int i = 0; i < peerLocationsString.length; i++)
-						peerLocations[i] = Location.getLocation(peerLocationsString[i]);
-					currentPeersLocation = peerLocations;
-				}
-
+				location.setPeerLocations(fs.getAll("peersLocation"));
+				
 				// Don't be tolerant of nonexistant domains; this should be an IP address.
 				Peer p;
 				try {
@@ -724,10 +675,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					detectedPeer = p;
 				updateShortToString();
 				timeLastReceivedPacket = metadata.getLong("timeLastReceivedPacket", -1);
-				timeLastConnected = metadata.getLong("timeLastConnected", -1);
+				long timeLastConnected = metadata.getLong("timeLastConnected", -1);
 				timeLastRoutable = metadata.getLong("timeLastRoutable", -1);
 				if(timeLastConnected < 1 && timeLastReceivedPacket > 1)
 					timeLastConnected = timeLastReceivedPacket;
+				isConnected = new BooleanLastTrueTracker(timeLastConnected);
 				if(timeLastRoutable < 1 && timeLastReceivedPacket > 1)
 					timeLastRoutable = timeLastReceivedPacket;
 				peerAddedTime = metadata.getLong("peerAddedTime",
@@ -737,8 +689,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				maybeClearPeerAddedTimeOnRestart(now);
 				hadRoutableConnectionCount = metadata.getLong("hadRoutableConnectionCount", 0);
 				routableConnectionCheckCount = metadata.getLong("routableConnectionCheckCount", 0);
+			} else {
+				isConnected = new BooleanLastTrueTracker();
 			}
 		} else {
+			isConnected = new BooleanLastTrueTracker();
 			neverConnected = true;
 			peerAddedTime = now;
 		}
@@ -774,6 +729,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
+	}
+
+	/** @return True if the node has just connected and given us a noderef, and we did not know 
+	 * it beforehand. This makes it a temporary connection. At the moment this only happens on 
+	 * seednodes. */
+	protected boolean fromAnonymousInitiator() {
+	    return false;
 	}
 
 	abstract boolean dontKeepFullFieldSet();
@@ -907,7 +869,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		Peer localDetectedPeer = null;
 		synchronized(this) {
 			localDetectedPeer = detectedPeer;
-			if((now - lastAttemptedHandshakeIPUpdateTime) < (5 * 60 * 1000)) {  // 5 minutes
+			if((now - lastAttemptedHandshakeIPUpdateTime) < MINUTES.toMillis(5)) {
 				//Logger.minor(this, "Looked up recently (localDetectedPeer = "+localDetectedPeer + " : "+((localDetectedPeer == null) ? "" : localDetectedPeer.getAddress(false).toString()));
 				return;
 			}
@@ -1002,8 +964,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	* Returns this peer's current keyspace location, or -1 if it is unknown.
 	*/
-	public synchronized double getLocation() {
-		return currentLocation;
+	public double getLocation() {
+		return location.getLocation();
 	}
 
 	public boolean shouldBeExcludedFromPeerList() {
@@ -1018,12 +980,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 
-	public synchronized  double[] getPeersLocation() {
-		return currentPeersLocation;
+	public double[] getPeersLocation() {
+		return location.getPeerLocations();
 	}
 
-	public synchronized long getLocSetTime() {
-		return locSetTime;
+	public long getLocSetTime() {
+		return location.getLocationSetTime();
 	}
 
 	/**
@@ -1059,8 +1021,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	*/
 	@Override
 	public boolean isRoutable() {
-		return isConnected() && isRoutingCompatible() &&
-			!(currentLocation < 0.0 || currentLocation > 1.0);
+		if((!isConnected()) || (!isRoutingCompatible())) return false;
+		return location.isValidLocation();
 	}
 	
 	synchronized boolean isInMandatoryBackoff(long now, boolean realTime) {
@@ -1091,14 +1053,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	@Override
 	public boolean isConnected() {
-		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
-		synchronized(this) {
-			if(isConnected && currentTracker != null) {
-				timeLastConnected = now;
-				return true;
-			}
-			return false;
-		}
+		return isConnected.isTrue();
 	}
 
 	/**
@@ -1179,8 +1134,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return timeLastReceivedAck;
 	}
 
-	public synchronized long timeLastConnected() {
-		return timeLastConnected;
+	public long timeLastConnected(long now) {
+		return isConnected.getTimeLastTrue(now);
 	}
 
 	public synchronized long timeLastRoutable() {
@@ -1198,7 +1153,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		synchronized (this) {
 			timeWhenRekeyingShouldOccur = timeLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL;
 			shouldDisconnect = (timeWhenRekeyingShouldOccur + FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY < now) && isRekeying;
-			shouldReturn = isRekeying || !isConnected;
+			shouldReturn = isRekeying || !isConnected();
 			shouldRekey = (timeWhenRekeyingShouldOccur < now);
 			if((!shouldRekey) && totalBytesExchangedWithCurrentTracker > FNPPacketMangler.AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY) {
 				shouldRekey = true;
@@ -1284,9 +1239,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		PacketFormat oldPacketFormat = null;
 		synchronized(this) {
 			disconnecting = false;
-			ret = isConnected;
 			// Force renegotiation.
-			isConnected = false;
+			ret = isConnected.set(false, now);
 			isRoutable = false;
 			isRekeying = false;
 			// Prevent sending packets to the node until that happens.
@@ -1346,7 +1300,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							timeLastDisconnect == now) {
 						PacketFormat oldPacketFormat = null;
 						synchronized(this) {
-							if(isConnected) return;
+							if(isConnected()) return;
 							// Reset the boot ID so that we get different trackers next time.
 							myBootID = node.fastWeakRandom.nextLong();
 							oldPacketFormat = packetFormat;
@@ -1400,39 +1354,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return messageQueue.grabQueuedMessageItems();
 	}
 
-	public void requeueMessageItems(MessageItem[] messages, int offset, int length, boolean dontLog) {
-		requeueMessageItems(messages, offset, length, dontLog, "");
-	}
-
-	public void requeueMessageItems(MessageItem[] messages, int offset, int length, boolean dontLog, String reason) {
-		// Will usually indicate serious problems
-		if(!dontLog) {
-			long now = System.currentTimeMillis();
-			String rateLimitWrapper = "";
-			boolean rateLimitLogging = false;
-			if(messages.length > messageRequeueLogRateLimitThreshold) {
-				rateLimitWrapper = " (log message rate limited)";
-				if(nextMessageRequeueLogTime <= now) {
-					nextMessageRequeueLogTime = now + messageRequeueLogRateLimitInterval;
-				} else {
-					rateLimitLogging = true;
-				}
-			}
-			if(!rateLimitLogging) {
-				String reasonWrapper = "";
-				if(0 <= reason.length()) {
-					reasonWrapper = " because of '" + reason + '\'';
-				}
-				Logger.normal(this, "Requeueing " + messages.length + " messages" + reasonWrapper + " on " + this + rateLimitWrapper);
-			}
-		}
-		synchronized(messageQueue) {
-			for(int i = offset+length-1; i >= offset; i--)
-				if(messages[i] != null)
-					messageQueue.pushfrontPrioritizedMessageItem(messages[i]);
-		}
-	}
-
 	/**
 	* @return The time at which we must send a packet, even if
 	* it means it will only contains ack requests etc., or
@@ -1447,7 +1368,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		SessionKey prev;
 		PacketFormat pf;
 		synchronized(this) {
-			if(!isConnected) return Long.MAX_VALUE;
+			if(!isConnected()) return Long.MAX_VALUE;
 			cur = currentTracker;
 			prev = previousTracker;
 			pf = packetFormat;
@@ -1578,7 +1499,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			isBursting = false;
 		} else {
 			delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
-				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+				+ node.random.nextInt((int) Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 		}
 		// FIXME proper multi-homing support!
 		delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
@@ -1610,7 +1531,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * once every UPDATE_BURST_NOW_PERIOD. */
 	private boolean burstNow;
 	private long timeSetBurstNow;
-	static final int UPDATE_BURST_NOW_PERIOD = 5*60*1000;
+	static final long UPDATE_BURST_NOW_PERIOD = MINUTES.toMillis(5);
 	/** Burst only 19 in 20 times if definitely port forwarded. Save entropy by writing this as 20 not 0.95. */
 	static final int P_BURST_IF_DEFINITELY_FORWARDED = 20;
 
@@ -1652,14 +1573,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	* @return The maximum time between received packets.
 	*/
-	public int maxTimeBetweenReceivedPackets() {
+	public long maxTimeBetweenReceivedPackets() {
 		return Node.MAX_PEER_INACTIVITY;
 	}
 
 	/**
 	* @return The maximum time between received packets.
 	*/
-	public int maxTimeBetweenReceivedAcks() {
+	public long maxTimeBetweenReceivedAcks() {
 		return Node.MAX_PEER_INACTIVITY;
 	}
 
@@ -1718,13 +1639,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public void sendSync(Message req, ByteCounter ctr, boolean realTime) throws NotConnectedException, SyncSendWaitedTooLongException {
 		SyncMessageCallback cb = new SyncMessageCallback();
 		MessageItem item = sendAsync(req, cb, ctr);
-		cb.waitForSend(60 * 1000);
+		cb.waitForSend(MINUTES.toMillis(1));
 		if (!cb.done) {
 			Logger.warning(this, "Waited too long for a blocking send for " + req + " to " + PeerNode.this, new Exception("error"));
 			this.localRejectedOverload("SendSyncTimeout", realTime);
 			// Try to unqueue it, since it presumably won't be of any use now.
 			if(!messageQueue.removeMessage(item)) {
-				cb.waitForSend(10 * 1000);
+				cb.waitForSend(SECONDS.toMillis(10));
 				if(!cb.done) {
 					Logger.error(this, "Waited too long for blocking send and then could not unqueue for "+req+" to "+PeerNode.this, new Exception("error"));
 					// Can't cancel yet can't send, something seriously wrong.
@@ -1809,60 +1730,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * Determines the degree of the peer via the locations of its peers it provides.
 	 * @return The number of peers this peer reports having, or 0 if this peer does not provide that information.
 	 */
-	public synchronized int getDegree() {
-		if (currentPeersLocation == null) return 0;
-		return currentPeersLocation.length;
+	public int getDegree() {
+		return location.getDegree();
 	}
 
 	public void updateLocation(double newLoc, double[] newLocs) {
-		if(newLoc < 0.0 || newLoc > 1.0) {
-			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
-			// Ignore it
-			return;
-		}
-
-		for(double currentLoc : newLocs) {
-			if(currentLoc < 0.0 || currentLoc > 1.0) {
-				Logger.error(this, "Invalid location update for " + this + " ("+currentLoc+')', new Exception("error"));
-				// Ignore it
-				return;
-			}
-		}
-
-		Arrays.sort(newLocs);
-		
-		boolean anythingChanged = false;
-
-		synchronized(this) {
-			if(!Location.equals(currentLocation, newLoc))
-				anythingChanged = true;
-			currentLocation = newLoc;
-			if(currentPeersLocation == null)
-				anythingChanged = true;
-			else if(currentPeersLocation != null && !anythingChanged) {
-				if(currentPeersLocation.length != newLocs.length)
-					anythingChanged = true;
-				else {
-					for(int i=0;i<currentPeersLocation.length;i++) {
-						if(!Location.equals(currentPeersLocation[i], newLocs[i])) {
-							anythingChanged = true;
-							break;
-						}
-					}
-				}
-			}
-			currentPeersLocation = newLocs;
-			locSetTime = System.currentTimeMillis();
-		}
+		boolean anythingChanged = location.updateLocation(newLoc, newLocs);
 		node.peers.updatePMUserAlert();
 		if(anythingChanged)
-			// Not urgent. This makes up the majority of the total writes.
-			// Writing it on shutdown is sufficient.
-			node.peers.writePeers(isOpennet());
+		    writePeers();
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
-	/**
+	/** Write the peers list affecting this node. */
+	protected abstract void writePeers();
+
+    /**
 	* Should we reject a swap request?
 	*/
 	public boolean shouldRejectSwapRequest() {
@@ -1925,7 +1808,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				updateShortToString();
 				// IP has changed, it is worth looking up the DNS address again.
 				this.lastAttemptedHandshakeIPUpdateTime = 0;
-				if(!isConnected)
+				if(!isConnected())
 					return;
 			} else
 				return;
@@ -1964,7 +1847,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	private String shortToString;
 	private void updateShortToString() {
-		shortToString = super.toString() + '@' + detectedPeer + '@' + HexUtil.bytesToHex(pubKeyHash);
+		shortToString = super.toString() + '@' + detectedPeer + '@' + HexUtil.bytesToHex(peerECDSAPubKeyHash);
 	}
 
 	/**
@@ -1993,7 +1876,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	@Override
 	public void receivedPacket(boolean dontLog, boolean dataPacket) {
 		synchronized(this) {
-			if((!isConnected) && (!dontLog)) {
+			if((!isConnected()) && (!dontLog)) {
 				// Don't log if we are disconnecting, because receiving packets during disconnecting is normal.
 				// That includes receiving packets after we have technically disconnected already.
 				// A race condition involving forceCancelDisconnecting causing a mistaken log message anyway
@@ -2091,7 +1974,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			synchronized(this) {
 				bogusNoderef = true;
 				// Disconnect, something broke
-				isConnected = false;
+				isConnected.set(false, now);
 			}
 			Logger.error(this, "Failed to parse new noderef for " + this + ": " + e1, e1);
 			node.peers.disconnected(this);
@@ -2156,19 +2039,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			handshakeCount = 0;
 			bogusNoderef = false;
 			// Don't reset the uptime if we rekey
-			if(!isConnected) {
+			if(!isConnected()) {
 				connectedTime = now;
 				countSelectionsSinceConnected = 0;
 				sentInitialMessages = false;
 			} else
 				wasARekey = true;
-			isConnected = true;
 			disableRouting = disableRoutingHasBeenSetLocally || disableRoutingHasBeenSetRemotely;
 			isRoutable = routable;
 			unroutableNewerVersion = newer;
 			unroutableOlderVersion = older;
 			boolean notReusingTracker = false;
-			bootIDChanged = (thisBootID != this.bootID);
+			long oldBootID;
+			oldBootID = bootID.getAndSet(thisBootID);
+			bootIDChanged = oldBootID != thisBootID;
 			if(myLastSuccessfulBootID != this.myBootID) {
 				// If our own boot ID changed, because we forcibly disconnected, 
 				// we need to use a new tracker. This is equivalent to us having restarted,
@@ -2179,20 +2063,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			if(bootIDChanged && wasARekey) {
 				// This can happen if the other side thought we disconnected but we didn't think they did.
-				Logger.normal(this, "Changed boot ID while rekeying! from " + bootID + " to " + thisBootID + " for " + getPeer());
+				Logger.normal(this, "Changed boot ID while rekeying! from " + oldBootID + " to " + thisBootID + " for " + getPeer());
 				wasARekey = false;
 				connectedTime = now;
 				countSelectionsSinceConnected = 0;
 				sentInitialMessages = false;
 			} else if(bootIDChanged && logMINOR)
-				Logger.minor(this, "Changed boot ID from " + bootID + " to " + thisBootID + " for " + getPeer());
-			this.bootID = thisBootID;
+				Logger.minor(this, "Changed boot ID from " + oldBootID + " to " + thisBootID + " for " + getPeer());
 			if(bootIDChanged) {
-				if((!bootIDChanged) && notReusingTracker && !(currentTracker == null && previousTracker == null))
-					// FIXME is this a real problem? Clearly the other side has changed trackers for some reason...
-					// Normally that shouldn't happen except when a connection times out ... it is probably possible
-					// for that to timeout on one side and not the other ...
-					Logger.error(this, "Not reusing tracker, so wiping old trackers for "+this);
 				oldPrev = previousTracker;
 				oldCur = currentTracker;
 				previousTracker = null;
@@ -2216,8 +2094,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						previousTracker = unverifiedTracker;
 				}
 				unverifiedTracker = newTracker;
-				if(currentTracker == null)
-					isConnected = false;
 			} else {
 				oldPrev = previousTracker;
 				previousTracker = currentTracker;
@@ -2228,6 +2104,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				neverConnected = false;
 				maybeClearPeerAddedTimeOnConnect();
 			}
+			isConnected.set(currentTracker != null, now);
 			ctx = null;
 			isRekeying = false;
 			timeLastRekeyed = now - (unverified ? 0 : FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY / 2);
@@ -2296,7 +2173,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	@Override
 	public long getBootID() {
-		return bootID;
+		return bootID.get();
 	}
 	private final Object arkFetcherSync = new Object();
 
@@ -2422,7 +2299,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				previousTracker = currentTracker;
 				currentTracker = unverifiedTracker;
 				unverifiedTracker = null;
-				isConnected = true;
+				isConnected.set(true, now);
 				neverConnected = false;
 				maybeClearPeerAddedTimeOnConnect();
 				ctx = null;
@@ -2489,19 +2366,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	static SimpleFieldSet compressedNoderefToFieldSet(byte[] data, int offset, int length) throws FSParseException {
 		if(length <= 5)
 			throw new FSParseException("Too short");
-		// Lookup table for groups.
-		DSAGroup group = null;
 		int firstByte = data[offset];
 		offset++;
 		length--;
-		if((firstByte & 0x2) == 2) {
+		if((firstByte & 0x2) == 2) { // DSAcompressed group; legacy
 			int groupIndex = (data[offset] & 0xff);
 			offset++;
 			length--;
-			group = Global.getGroup(groupIndex);
-			if(group == null) throw new FSParseException("Unknown group number "+groupIndex);
-			if(logMINOR)
-				Logger.minor(PeerNode.class, "DSAGroup set to "+group.fingerprintToString()+ " using the group-index "+groupIndex);
 		}
 		// Is it compressed?
 		if((firstByte & 1) == 1) {
@@ -2535,11 +2406,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		BufferedReader br = new BufferedReader(isr);
 		try {
 			SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
-			if(group != null) {
-				SimpleFieldSet sfs = new SimpleFieldSet(true);
-				sfs.put("dsaGroup", group.asFieldSet());
-				fs.putAllOverwrite(sfs);
-			}
 			return fs;
 		} catch(IOException e) {
 			throw (FSParseException)new FSParseException("Impossible: " + e).initCause(e);
@@ -2554,7 +2420,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			Logger.minor(this, "Parsing: \n" + fs);
 		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef, forFullNodeRef) || forARK;
 		if(changedAnything && !isSeed())
-			node.peers.writePeers(isOpennet());
+		    writePeers();
 		// FIXME should this be urgent if IPs change? Dunno.
 	}
 
@@ -2567,33 +2433,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		boolean shouldUpdatePeerCounts = false;
 		
 		if(forFullNodeRef) {
-			// Check the signature.
-			String signature = fs.get("sig");
+		    // Check the signature.
 			try {
-				boolean failed = false;
-				if(signature == null)
-					failed = false;
-				else {
-					fs.removeValue("sig");
-					String toVerify = fs.toOrderedString();
-					fs.putSingle("sig", signature);
-					failed = !(DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(1, SHA256.digest(toVerify.getBytes("UTF-8"))), false));
-				}
-				if(failed) {
-					String errCause = "";
-					if(signature == null)
-						errCause += " (No signature)";
-					if(failed)
-						errCause += " (VERIFICATION FAILED)";
-					Logger.error(this, "The integrity of the reference has been compromised!" + errCause + " fs was\n" + fs.toOrderedString());
-					throw new FSParseException("Signature verification failed: "+errCause);
-				}
-			} catch(NumberFormatException e) {
-				Logger.error(this, "Invalid reference: " + e, e);
-				throw new FSParseException("Invalid signature", e);
-			} catch(UnsupportedEncodingException e) {
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-			}
+				if(!verifyReferenceSignature(fs))
+	                throw new FSParseException("Invalid signature");
+			} catch (ReferenceSignatureVerificationException e) {
+                throw new FSParseException("Invalid signature");
+            }
 		}
 		
 		// Anything may be omitted for a differential node reference
@@ -2609,49 +2455,31 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		else if(s != null) {
 			try {
 				boolean b = Fields.stringToBool(s);
-				if(b != (isOpennet() || isSeed()))
-					throw new FSParseException("Changed opennet status?!?!?!? expected="+isOpennet()+" but got "+b+" ("+s+") on "+this);
+				if(b != isOpennetForNoderef())
+					throw new FSParseException("Changed opennet status?!?!?!? expected="+isOpennetForNoderef()+" but got "+b+" ("+s+") on "+this);
 			} catch (NumberFormatException e) {
 				throw new FSParseException("Cannot parse opennet=\""+s+"\"", e);
 			}
 		}
-		if(!generateIdentityFromPubkey()) {
 			String identityString = fs.get("identity");
-			if(identityString == null && forFullNodeRef)
-				throw new FSParseException("No identity!");
-			else if(identityString != null) {
+			if(identityString == null && forFullNodeRef) {
+				if(isDarknet())
+					throw new FSParseException("No identity!");
+				else if(logMINOR)
+					Logger.minor(this, "didn't send an identity;"
+					  + " let's assume it's pre-1471");
+			} else if(identityString != null) {
 				try {
 					byte[] id = Base64.decode(identityString);
-					if(!Arrays.equals(id, identity))
+					if (!Arrays.equals(id, identity))
 						throw new FSParseException("Changing the identity");
-				} catch(NumberFormatException e) {
+				} catch (NumberFormatException e) {
 					throw new FSParseException(e);
-				} catch(IllegalBase64Exception e) {
+				} catch (IllegalBase64Exception e) {
 					throw new FSParseException(e);
 				}
 			}
-		}
 		
-		SimpleFieldSet sfs = fs.subset("dsaGroup");
-		if(sfs != null) {
-			DSAGroup cmp;
-			try {
-				cmp = DSAGroup.create(sfs);
-			} catch (IllegalBase64Exception e) {
-				throw new FSParseException(e);
-			}
-			if(!cmp.equals(this.peerCryptoGroup))
-				throw new FSParseException("Changed DSA group?!");
-		}
-
-		sfs = fs.subset("dsaPubKey");
-		if(sfs != null) {
-			DSAPublicKey key;
-			key = DSAPublicKey.create(sfs, peerCryptoGroup);
-			if(!key.equals(this.peerPubKey))
-				throw new FSParseException("Changed pubkey?!");
-		}
-
 		String newVersion = fs.get("version");
 		if(newVersion == null) {
 			// Version may be ommitted for an ARK.
@@ -2682,16 +2510,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		String locationString = fs.get("location");
 		if(locationString != null) {
 			double newLoc = Location.getLocation(locationString);
-			if (newLoc == -1) {
+			if (!Location.isValid(newLoc)) {
 				if(logMINOR)
 					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);
 			} else {
-				if(!Location.equals(newLoc, currentLocation)) {
-					changedAnything = true;
-					if(currentLocation < 0.0 || currentLocation > 1.0)
+				double oldLoc = location.setLocation(newLoc);
+				if(!Location.equals(oldLoc, newLoc)) {
+					if(!Location.isValid(oldLoc))
 						shouldUpdatePeerCounts = true;
-					currentLocation = newLoc;
-					locSetTime = System.currentTimeMillis();
+					changedAnything = true;
 				}
 			}
 		}
@@ -2770,6 +2597,28 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 		}
 
+		/* Read the ECDSA key material for the peer */
+		SimpleFieldSet sfs = fs.subset("ecdsa.P256");
+		if(sfs != null) {
+			byte[] pub;
+			try {
+				pub = Base64.decode(sfs.get("pub"));
+			} catch (IllegalBase64Exception e) {
+				Logger.error(this, "Caught " + e + " parsing ECC pubkey", e);
+				throw new FSParseException(e);
+			}
+			if (pub.length > ECDSA.Curves.P256.modulusSize)
+				throw new FSParseException("ecdsa.P256.pub is not the right size!");
+			ECPublicKey key = ECDSA.getPublicKey(pub, ECDSA.Curves.P256);
+			if (key == null)
+				throw new FSParseException("ecdsa.P256.pub is invalid!");
+			if (!key.equals(peerECDSAPubKey)) {
+				Logger.error(this, "Tried to change ECDSA key on " + userToString()
+						   + " - did neighbour try to downgrade? Rejecting...");
+				throw new FSParseException("Changing ECDSA key not allowed!");
+			}
+		}
+
 		if(parseARK(fs, false, forDiffNodeRef))
 			changedAnything = true;
 		if(shouldUpdatePeerCounts) {
@@ -2803,10 +2652,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return String.valueOf(getPeer()) + '\t' + getIdentityString() + '\t' + getLocation() + '\t' + getPeerNodeStatusString() + '\t' + idle;
 	}
 
-	public String getFreevizOutput() {
-		return getStatus(true).toString() + '|' + identityAsBase64String;
-	}
-
 	public synchronized String getVersion() {
 		return version;
 	}
@@ -2826,7 +2671,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	*/
 	public void write(Writer w) throws IOException {
 		SimpleFieldSet fs = exportFieldSet();
-		SimpleFieldSet meta = exportMetadataFieldSet();
+		SimpleFieldSet meta = exportMetadataFieldSet(System.currentTimeMillis());
 		if(!meta.isEmpty())
 			fs.put("metadata", meta);
 		fs.writeTo(w);
@@ -2837,7 +2682,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 */
 	public synchronized SimpleFieldSet exportDiskFieldSet() {
 		SimpleFieldSet fs = exportFieldSet();
-		SimpleFieldSet meta = exportMetadataFieldSet();
+		SimpleFieldSet meta = exportMetadataFieldSet(System.currentTimeMillis());
 		if(!meta.isEmpty())
 			fs.put("metadata", meta);
 		if(fullFieldSet != null)
@@ -2848,7 +2693,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	* Export metadata about the node as a SimpleFieldSet
 	*/
-	public synchronized SimpleFieldSet exportMetadataFieldSet() {
+	public synchronized SimpleFieldSet exportMetadataFieldSet(long now) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		if(detectedPeer != null)
 			fs.putSingle("detected.udp", detectedPeer.toStringPrefNumeric());
@@ -2856,7 +2701,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			fs.put("timeLastReceivedPacket", timeLastReceivedPacket);
 		if(lastReceivedAckTime() > 0)
 			fs.put("timeLastReceivedAck", timeLastReceivedAck);
-		if(timeLastConnected() > 0)
+		long timeLastConnected = isConnected.getTimeLastTrue(now);
+		if(timeLastConnected > 0)
 			fs.put("timeLastConnected", timeLastConnected);
 		if(timeLastRoutable() > 0)
 			fs.put("timeLastRoutable", timeLastRoutable);
@@ -2868,8 +2714,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			fs.put("hadRoutableConnectionCount", hadRoutableConnectionCount);
 		if(routableConnectionCheckCount > 0)
 			fs.put("routableConnectionCheckCount", routableConnectionCheckCount);
-		if(currentPeersLocation != null)
-			fs.put("peersLocation", currentPeersLocation);
+		double[] peerLocs = getPeersLocation();
+		if(peerLocs != null)
+			fs.put("peersLocation", peerLocs);
 		return fs;
 	}
 
@@ -2885,7 +2732,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		synchronized(this) {
 			fs.put("averagePingTime", averagePingTime());
 			long idle = now - lastReceivedPacketTime();
-			if(idle > (60 * 1000) && -1 != lastReceivedPacketTime())  // 1 minute
+			if(idle > SECONDS.toMillis(60) && -1 != lastReceivedPacketTime())
 
 				fs.put("idle", idle);
 			if(peerAddedTime > 1)
@@ -2915,31 +2762,41 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			fs.putAppend("physical.udp", nominalPeer.get(i).toString());
 		fs.put("auth.negTypes", negTypes);
 		fs.putSingle("identity", getIdentityString());
-		fs.put("location", currentLocation);
+		fs.put("location", getLocation());
 		fs.put("testnet", testnetEnabled);
 		fs.putSingle("version", version);
-		if(peerCryptoGroup != null)
-			fs.put("dsaGroup", peerCryptoGroup.asFieldSet());
-		if(peerPubKey != null)
-			fs.put("dsaPubKey", peerPubKey.asFieldSet());
+		fs.put("ecdsa", ECDSA.Curves.P256.getSFS(peerECDSAPubKey));
+
 		if(myARK != null) {
 			// Decrement it because we keep the number we would like to fetch, not the last one fetched.
 			fs.put("ark.number", myARK.suggestedEdition - 1);
 			fs.putSingle("ark.pubURI", myARK.getBaseSSK().toString(false, false));
 		}
-		fs.put("opennet", isOpennet());
+		fs.put("opennet", isOpennetForNoderef());
 		fs.put("seed", isSeed());
 		fs.put("totalInput", (getTotalInputSinceStartup()+getTotalInputBytes()));
 		fs.put("totalOutput", (getTotalOutputSinceStartup()+getTotalOutputBytes()));
 		return fs;
 	}
 
+	/** @return True if the node is a full darknet peer ("Friend"), which should usually be in
+	 * the darknet routing table. */
 	public abstract boolean isDarknet();
 
+	/** @return True if the node is a full opennet peer ("Stranger"), which should usually be in
+	 * the OpennetManager and opennet routing table. */
 	public abstract boolean isOpennet();
+	
+	/** @return Expected value of "opennet=" in the noderef. This returns true if the node is an
+	 * actual opennet peer, but also if the node is a seed client or seed server, even though they
+	 * are never part of the routing table. This also determines whether we use the opennet or
+	 * darknet NodeCrypto. */
+	public abstract boolean isOpennetForNoderef();
 
+	/** @return True if the node is a seed client or seed server. These are never in the routing
+	 * table, but their noderefs should still say opennet=true. */
 	public abstract boolean isSeed();
-
+	
 	/**
 	* @return The time at which we last connected (or reconnected).
 	*/
@@ -2953,7 +2810,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return true;
 		if(o instanceof PeerNode) {
 			PeerNode pn = (PeerNode) o;
-			return Arrays.equals(pn.pubKeyHash, pubKeyHash);
+			return Arrays.equals(pn.peerECDSAPubKeyHash, peerECDSAPubKeyHash);
 		} else
 			return false;
 	}
@@ -2963,7 +2820,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return hashCode;
 	}
 
-	public boolean isRoutingBackedOff(int ignoreBackoffUnder, boolean realTime) {
+	public boolean isRoutingBackedOff(long ignoreBackoffUnder, boolean realTime) {
 		long now = System.currentTimeMillis();
 		double pingTime;
 		synchronized(this) {
@@ -3011,21 +2868,21 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	long routingBackedOffUntilRT = -1;
 	long routingBackedOffUntilBulk = -1;
 	/** Initial nominal routing backoff length */
-	static final int INITIAL_ROUTING_BACKOFF_LENGTH = 1000;  // 1 second
+	static final int INITIAL_ROUTING_BACKOFF_LENGTH = (int) SECONDS.toMillis(1);
 	/** How much to multiply by during fast routing backoff */
 
 	static final int BACKOFF_MULTIPLIER = 2;
 	/** Maximum upper limit to routing backoff slow or fast */
-	static final int MAX_ROUTING_BACKOFF_LENGTH = 3 * 60 * 60 * 1000;  // 3 hours
+	static final int MAX_ROUTING_BACKOFF_LENGTH = (int) HOURS.toMillis(3);
 	/** Current nominal routing backoff length */
 
 	// Transfer Backoff
 
 	long transferBackedOffUntilRT = -1;
 	long transferBackedOffUntilBulk = -1;
-	static final int INITIAL_TRANSFER_BACKOFF_LENGTH = 30*1000; // 60 seconds, but it starts at twice this.
+	static final int INITIAL_TRANSFER_BACKOFF_LENGTH = (int) SECONDS.toMillis(30); // 60 seconds, but it starts at twice this.
 	static final int TRANSFER_BACKOFF_MULTIPLIER = 2;
-	static final int MAX_TRANSFER_BACKOFF_LENGTH = 3 * 60 * 60 * 1000; // 3 hours
+	static final int MAX_TRANSFER_BACKOFF_LENGTH = (int) HOURS.toMillis(3);
 
 	int transferBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
 	int transferBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
@@ -3056,10 +2913,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	int mandatoryBackoffLengthRT = INITIAL_MANDATORY_BACKOFF_LENGTH;
 	long mandatoryBackoffUntilBulk = -1;
 	int mandatoryBackoffLengthBulk = INITIAL_MANDATORY_BACKOFF_LENGTH;
-	static final int INITIAL_MANDATORY_BACKOFF_LENGTH = 1*1000;
+	static final int INITIAL_MANDATORY_BACKOFF_LENGTH = (int) SECONDS.toMillis(1);
 	static final int MANDATORY_BACKOFF_MULTIPLIER = 2;
-	static final int MAX_MANDATORY_BACKOFF_LENGTH = 5*60*1000;
-	
+	static final int MAX_MANDATORY_BACKOFF_LENGTH = (int) MINUTES.toMillis(5);
+
 	/** When load management predicts that a peer will definitely accept the request, both
 	 * before it was sent and after we got the rejected, we go into mandatory backoff. */
 	public void enterMandatoryBackoff(String reason, boolean realTime) {
@@ -3069,7 +2926,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			int mandatoryBackoffLength = realTime ? mandatoryBackoffLengthRT : mandatoryBackoffLengthBulk;
 			if(mandatoryBackoffUntil > -1 && mandatoryBackoffUntil > now) return;
 			Logger.error(this, "Entering mandatory backoff for "+this + (realTime ? " (realtime)" : " (bulk)"));
-			mandatoryBackoffUntil = now + (mandatoryBackoffLength/2) + node.fastWeakRandom.nextInt(mandatoryBackoffLength/2);
+			mandatoryBackoffUntil = now + (mandatoryBackoffLength/2) + node.fastWeakRandom.nextInt((int) (mandatoryBackoffLength/2));
 			mandatoryBackoffLength *= MANDATORY_BACKOFF_MULTIPLIER;
 			node.nodeStats.reportMandatoryBackoff(reason, mandatoryBackoffUntil - now, realTime);
 			if(realTime) {
@@ -3143,7 +3000,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * Back off this node for a while.
 	 */
 	public void localRejectedOverload(String reason, boolean realTime) {
-		assert reason.indexOf(" ") == -1;
+		assert reason.indexOf(' ') == -1;
 		pRejected.report(1.0);
 		if(logMINOR)
 			Logger.minor(this, "Local rejected overload (" + reason + ") on " + this + " : pRejected=" + pRejected.currentValue());
@@ -3159,14 +3016,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				routingBackoffLength = routingBackoffLength * BACKOFF_MULTIPLIER;
 				if(routingBackoffLength > MAX_ROUTING_BACKOFF_LENGTH)
 					routingBackoffLength = MAX_ROUTING_BACKOFF_LENGTH;
-				int x = node.random.nextInt(routingBackoffLength);
+				int x = node.random.nextInt((int) routingBackoffLength);
 				routingBackedOffUntil = now + x;
 				node.nodeStats.reportRoutingBackoff(reason, x, realTime);
-				String reasonWrapper = "";
-				if(0 <= reason.length())
-					reasonWrapper = " because of '" + reason + '\'';
-				if(logMINOR)
+				if(logMINOR) {
+					String reasonWrapper = "";
+					if(0 < reason.length())
+						reasonWrapper = " because of '" + reason + '\'';
 					Logger.minor(this, "Backing off" + reasonWrapper + ": routingBackoffLength=" + routingBackoffLength + ", until " + x + "ms on " + peer);
+				}
 				if(realTime) {
 					routingBackedOffUntilRT = routingBackedOffUntil;
 					routingBackoffLengthRT = routingBackoffLength;
@@ -3224,7 +3082,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 */
 	@Override
 	public void transferFailed(String reason, boolean realTime) {
-		assert reason.indexOf(" ") == -1;
+		assert reason.indexOf(' ') == -1;
 		pRejected.report(1.0);
 		if(logMINOR)
 			Logger.minor(this, "Transfer failed (" + reason + ") on " + this + " : pRejected=" + pRejected.currentValue());
@@ -3240,14 +3098,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				transferBackoffLength = transferBackoffLength * TRANSFER_BACKOFF_MULTIPLIER;
 				if(transferBackoffLength > MAX_TRANSFER_BACKOFF_LENGTH)
 					transferBackoffLength = MAX_TRANSFER_BACKOFF_LENGTH;
-				int x = node.random.nextInt(transferBackoffLength);
+				int x = node.random.nextInt((int) transferBackoffLength);
 				transferBackedOffUntil = now + x;
 				node.nodeStats.reportTransferBackoff(reason, x, realTime);
-				String reasonWrapper = "";
-				if(0 <= reason.length())
-					reasonWrapper = " because of '" + reason + '\'';
-				if(logMINOR)
+				if(logMINOR) {
+					String reasonWrapper = "";
+					if(0 < reason.length())
+						reasonWrapper = " because of '" + reason + '\'';
 					Logger.minor(this, "Backing off (transfer)" + reasonWrapper + ": transferBackoffLength=" + transferBackoffLength + ", until " + x + "ms on " + peer);
+				}
 				if(realTime) {
 					transferBackedOffUntilRT = transferBackedOffUntil;
 					transferBackoffLengthRT = transferBackoffLength;
@@ -3285,9 +3144,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			long until;
 			if(now > (until = realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk)) {
 				if(realTime)
-					routingBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
+					transferBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
 				else
-					routingBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
+					transferBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
 				if(logMINOR)
 					Logger.minor(this, "Resetting transfer backoff on " + peer);
 			} else {
@@ -3347,7 +3206,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return remoteDetectedPeer;
 	}
 
-	public synchronized int getRoutingBackoffLength(boolean realTime) {
+	public synchronized long getRoutingBackoffLength(boolean realTime) {
 		return realTime ? routingBackoffLengthRT : routingBackoffLengthBulk;
 	}
 
@@ -3541,6 +3400,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntilRT, long localRoutingBackedOffUntilBulk, boolean overPingTime, boolean noLoadStats) {
 		if(disconnecting)
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
+		boolean isConnected = isConnected();
 		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
 			if(noLoadStats)
 				peerNodeStatus = PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS;
@@ -3584,9 +3444,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					}
 				}
 			}
-		} else if(isConnected() && bogusNoderef)
+		} else if(isConnected && bogusNoderef)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONN_ERROR;
-		else if(isConnected() && unroutableNewerVersion)
+		else if(isConnected && unroutableNewerVersion)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_NEW;
 		else if(isConnected && unroutableOlderVersion)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_TOO_OLD;
@@ -3650,15 +3510,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * stats message. If so, we will not be able to route requests to the node under new 
 	 * load management. */
 	private boolean noLoadStats() {
-		if(outputLoadTrackerRealTime.getLastIncomingLoadStats() == null) {
-			if(isRoutable())
-				Logger.normal(this, "No realtime load stats on "+this);
-			return true;
-		}
-		if(outputLoadTrackerBulk.getLastIncomingLoadStats() == null) {
-			if(isRoutable())
-				Logger.normal(this, "No bulk load stats on "+this);
-			return true;
+		if(node.enableNewLoadManagement(false) || node.enableNewLoadManagement(true)) {
+			if(outputLoadTrackerRealTime.getLastIncomingLoadStats() == null) {
+				if(isRoutable())
+					Logger.normal(this, "No realtime load stats on "+this);
+				return true;
+			}
+			if(outputLoadTrackerBulk.getLastIncomingLoadStats() == null) {
+				if(isRoutable())
+					Logger.normal(this, "No bulk load stats on "+this);
+				return true;
+			}
 		}
 		return false;
 	}
@@ -3731,8 +3593,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			sendingUOMLegacyExtJar = false;
 		}
 		OpennetManager om = node.getOpennet();
-		if(om != null)
-			om.dropExcessPeers();
+		if(om != null) {
+		    // OpennetManager must be notified of a new connection even if it is a darknet peer.
+		    om.onConnectedPeer(this);
+		}
 	}
 
 	@Override
@@ -3761,7 +3625,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		SimpleFieldSet fs;
 		try {
-			fs = new SimpleFieldSet(ref, false, true);
+			fs = new SimpleFieldSet(ref, false, true, false);
 			if(logMINOR)
 				Logger.minor(this, "Got ARK for " + this);
 			gotARK(fs, edition);
@@ -3866,13 +3730,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return bestNegType;
 	}
 
-	/** Verify a hash */
-	public boolean verify(byte[] hash, DSASignature sig) {
-		return DSA.verify(peerPubKey, sig, new NativeBigInteger(1, hash), false);
-	}
-
 	public String userToString() {
-		return "" + getPeer();
+		return String.valueOf(getPeer());
 	}
 
 	public void setTimeDelta(long delta) {
@@ -3933,23 +3792,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	 * Create a DarknetPeerNode or an OpennetPeerNode as appropriate
 	 */
-	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		if(crypto.isOpennet)
-			return new OpennetPeerNode(fs, node2, crypto, opennet, manager, true, mangler);
+			return new OpennetPeerNode(fs, node2, crypto, opennet, true);
 		else
-			return new DarknetPeerNode(fs, node2, crypto, manager, true, mangler, null, null);
-	}
-
-	public byte[] getIdentity() {
-		return identity;
-	}
-	
-	public byte[] getPubKeyHash() {
-		return pubKeyHash;
-	}
-
-	public byte[] getPubKeyHashHash() {
-		return pubKeyHashHash;
+			return new DarknetPeerNode(fs, node2, crypto, true, null, null);
 	}
 
 	public boolean neverConnected() {
@@ -3962,7 +3809,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** Called when a delayed disconnect is occurring. Tell the node that it is being 
 	 * disconnected, but that the process may take a while. After this point, requests
 	 * will not be accepted from the peer nor routed to it. 
-	 * @param dumpMessagesNow If true, immediately dump the message queue, since we are
+	 * @param dumpMessageQueue If true, immediately dump the message queue, since we are
 	 * closing the connection due to some low level trouble e.g. not acknowledging. 
 	 * We will continue to try to send anything already in flight, and it is possible to
 	 * send more messages after this point, for instance the message telling it we are
@@ -4030,12 +3877,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		this.jfkBuffer = bufferJFK;
 	}
 
-	public int getSigParamsByteLength() {
-		int bitLen = this.peerCryptoGroup.getQ().bitLength();
-		int byteLen = (bitLen + 7) / 8;
-		return byteLen;
-	}
-
 	static final int MAX_SIMULTANEOUS_ANNOUNCEMENTS = 1;
 	static final int MAX_ANNOUNCE_DELAY = 1000;
 	private long timeLastAcceptedAnnouncement;
@@ -4084,9 +3925,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public abstract boolean isRealConnection();
 
 	/** Can we accept announcements from this node? */
-	public boolean canAcceptAnnouncements() {
-		return isOpennet() || node.passOpennetRefsThroughDarknet();
-	}
+	public abstract boolean canAcceptAnnouncements();
 
 	public boolean handshakeUnknownInitiator() {
 		return false;
@@ -4255,14 +4094,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return IPUtil.isValidAddress(addr, false);
 	}
 
-	static final double MAX_RTO = 60*1000;
-	static final double MIN_RTO = 1000;
+	static final long MAX_RTO = SECONDS.toMillis(60);
+	static final long MIN_RTO = SECONDS.toMillis(1);
 	private int consecutiveRTOBackoffs;
 
 	// Clock generally has 20ms granularity or better, right?
 	// FIXME determine the clock granularity.
 	private static final int CLOCK_GRANULARITY = 20;
-
+	
 	@Override
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
@@ -4391,7 +4230,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public synchronized double selectionRate() {
 		long timeSinceConnected = System.currentTimeMillis() - this.connectedTime;
 		// Avoid bias due to short uptime.
-		if(timeSinceConnected < 10*1000) return 0.0;
+		if(timeSinceConnected < SECONDS.toMillis(10)) return 0.0;
 		return countSelectionsSinceConnected / (double) timeSinceConnected;
 	}
 
@@ -4414,8 +4253,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * throttling.
 	 * So it makes sense to send a single packet and round-robin.
 	 * @param now
-	 * @param rpiTemp
-	 * @param rpiTemp
+	 * @param ackOnly
 	 * @throws BlockedTooLongException
 	 */
 	public boolean maybeSendPacket(long now, boolean ackOnly) throws BlockedTooLongException {
@@ -5078,6 +4916,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 	}
 	
+
+	/** cached RequestType.values(). Never modify or pass this array to outside code! */
+	private static final RequestType[] RequestType_values = RequestType.values();
+
 	/** Uses the information we receive on the load on the target node to determine whether
 	 * we can route to it and when we can route to it.
 	 */
@@ -5250,7 +5092,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		
 		private void failSlotWaiters(boolean reallyFailed) {
-			for(RequestType type : RequestType.values()) {
+			for(RequestType type : RequestType_values) {
 				SlotWaiterList slots; 
 				synchronized(routedToLock) {
 					slots = slotWaiters.get(type);
@@ -5270,7 +5112,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime+" for "+PeerNode.this.shortToString());
 			while(true) {
 				boolean foundNone = true;
-				RequestType type;
 				int typeNum;
 				PeerLoadStats loadStats;
 				synchronized(routedToLock) {
@@ -5282,11 +5123,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					typeNum = slotWaiterTypeCounter;
 				}
 				typeNum++;
-				if(typeNum == RequestType.values().length)
+				if(typeNum == RequestType_values.length)
 					typeNum = 0;
-				for(int i=0;i<RequestType.values().length;i++) {
+				for(int i=0;i<RequestType_values.length;i++) {
 					SlotWaiterList list;
-					type = RequestType.values()[typeNum];
+					RequestType type = RequestType_values[typeNum];
 					if(logMINOR) Logger.minor(this, "Checking slot waiter list for "+type);
 					SlotWaiter slot;
 					RequestLikelyAcceptedState acceptState;
@@ -5296,14 +5137,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						if(list == null) {
 							if(logMINOR) Logger.minor(this, "No list");
 							typeNum++;
-							if(typeNum == RequestType.values().length)
+							if(typeNum == RequestType_values.length)
 								typeNum = 0;
 							continue;
 						}
 						if(list.isEmpty()) {
 							if(logMINOR) Logger.minor(this, "List empty");
 							typeNum++;
-							if(typeNum == RequestType.values().length)
+							if(typeNum == RequestType_values.length)
 								typeNum = 0;
 							continue;
 						}
@@ -5334,7 +5175,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					slot.unregister(PeerNode.this, peersForSuccessfulSlot);
 					if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up");
 					typeNum++;
-					if(typeNum == RequestType.values().length)
+					if(typeNum == RequestType_values.length)
 						typeNum = 0;
 				}
 				if(foundNone) {
@@ -5518,13 +5359,23 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		return pf.timeCheckForLostPackets();
 	}
+	
+	public void setAcknowledgeType(int negType) {
+		useCumulativeAcks = (negType >= 10);
+	}
+	
+	@Override
+	public boolean isUseCumulativeAcksSet() {
+		return useCumulativeAcks;
+	}
 
 	/** Only called for new format connections, for which we don't care about PacketTracker */
 	public void dumpTracker(SessionKey brokenKey) {
+		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(currentTracker == brokenKey) {
 				currentTracker = null;
-				isConnected = false;
+				isConnected.set(false, now);
 			} else if(previousTracker == brokenKey)
 				previousTracker = null;
 			else if(unverifiedTracker == brokenKey)
@@ -5610,9 +5461,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	@Override
 	public MessageItem makeLoadStats(boolean realtime, boolean boostPriority, boolean noRemember) {
-		Message msg = loadSender(realtime).makeLoadStats(System.currentTimeMillis(), node.nodeStats.outwardTransfersPerInsert(), noRemember);
-		if(msg == null) return null;
-		return new MessageItem(msg, null, node.nodeStats.allocationNoticesCounter, boostPriority ? DMT.PRIORITY_NOW : (short)-1);
+	    // FIXME re-enable when try NLM again.
+	    return null;
+//		Message msg = loadSender(realtime).makeLoadStats(System.currentTimeMillis(), node.nodeStats.outwardTransfersPerInsert(), noRemember);
+//		if(msg == null) return null;
+//		return new MessageItem(msg, null, node.nodeStats.allocationNoticesCounter, boostPriority ? DMT.PRIORITY_NOW : (short)-1);
 	}
 
 	@Override
@@ -5825,7 +5678,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		return pf.timeSendAcks();
 	}
-
+	
 	/** Calculate the maximum number of outgoing transfers to this peer that we
 	 * will accept in requests and inserts. */
 	public int calculateMaxTransfersOut(int timeout, double nonOverheadFraction) {
@@ -5920,4 +5773,67 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		else return Integer.MAX_VALUE;
 	}
 	
+	private boolean verifyReferenceSignature(SimpleFieldSet fs) throws ReferenceSignatureVerificationException {
+	    // Assume we failed at validating
+	    boolean failed = true;
+	    String signatureP256 = fs.get("sigP256");
+            try {
+                // If we have:
+                // - the new P256 signature AND the P256 pubkey
+                // OR
+                // - the old DSA signature the pubkey and the groups
+                // THEN
+                // verify the signatures
+                fs.removeValue("sig");
+                byte[] toVerifyDSA = fs.toOrderedString().getBytes("UTF-8");
+                fs.removeValue("sigP256");
+                byte[] toVerifyECDSA = fs.toOrderedString().getBytes("UTF-8");
+                
+
+                boolean isECDSAsigPresent = (signatureP256 != null && peerECDSAPubKey != null);
+                boolean verifyECDSA = false; // assume it failed.
+                
+                // Is there a new ECDSA sig?
+                if(isECDSAsigPresent) {
+                        fs.putSingle("sigP256", signatureP256);
+                        verifyECDSA = ECDSA.verify(Curves.P256, peerECDSAPubKey, Base64.decode(signatureP256), toVerifyECDSA);                       
+                }
+
+                // If there is no signature, FAIL
+                // If there is an ECDSA signature, and it doesn't verify, FAIL
+                boolean hasNoSignature = (!isECDSAsigPresent);
+                boolean isECDSAsigInvalid = (isECDSAsigPresent && !verifyECDSA);
+                failed = hasNoSignature || isECDSAsigInvalid;
+                if(failed) {
+                    String errCause = "";
+                    if(hasNoSignature)
+                        errCause += " (No signature)";
+                    if(isECDSAsigInvalid)
+                        errCause += " (ECDSA signature is invalid)";
+                    if(failed)
+                        errCause += " (VERIFICATION FAILED)";
+                    Logger.error(this, "The integrity of the reference has been compromised!" + errCause + " fs was\n" + fs.toOrderedString());
+                    this.isSignatureVerificationSuccessfull = false;
+                    throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromised!" + errCause);
+                } else {
+                    this.isSignatureVerificationSuccessfull = true;
+                    if(!dontKeepFullFieldSet())
+                        this.fullFieldSet = fs;
+                }
+            } catch(IllegalBase64Exception e) {
+                Logger.error(this, "Invalid reference: " + e, e);
+                throw new ReferenceSignatureVerificationException("The node reference you added is invalid: It does not have a valid ECDSA signature.");
+            } catch(UnsupportedEncodingException e) {
+                throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+            }
+        return !failed;
+	}
+	
+	protected byte[] getIdentity() {
+	    return identity;
+	}
+	
+	protected final byte[] getIdentity(int negType) {
+	        return peerECDSAPubKeyHash;
+	}
 }

@@ -15,8 +15,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import com.db4o.ObjectContainer;
-
 import freenet.crypt.BlockCipher;
 import freenet.crypt.CTRBlockCipher;
 import freenet.crypt.JceLoader;
@@ -41,9 +39,10 @@ import freenet.support.math.MersenneTwister;
  * 
  * Client CHKBlock - provides functions for decoding, holds a client-key.
  */
-public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
+public class ClientCHKBlock implements ClientKeyBlock {
 
 	final ClientCHK key;
+	private final CHKBlock block;
 	
     @Override
 	public String toString() {
@@ -59,7 +58,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @param data The data.
      */
     public ClientCHKBlock(byte[] data, byte[] header, ClientCHK key2, boolean verify) throws CHKVerifyException {
-        super(data, header, key2.getNodeCHK(), verify, key2.cryptoAlgorithm);
+        block = new CHKBlock(data, header, key2.getNodeCHK(), verify, key2.cryptoAlgorithm);
         this.key = key2;
     }
 
@@ -115,6 +114,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @return the original data
      * @throws IOException If there is a bucket error.
      */
+    @SuppressWarnings("deprecation") // FIXME Back compatibility, using dubious ciphers; remove eventually.
     public Bucket decodeOld(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
         // Overall hash already verified, so first job is to decrypt.
 		if(key.cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
@@ -131,6 +131,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new CHKDecodeException("Crypto key too short");
         cipher.initialize(key.cryptoKey);
         PCFBMode pcfb = PCFBMode.create(cipher);
+        byte[] headers = block.headers;
+        byte[] data = block.data;
 		byte[] hbuf = Arrays.copyOfRange(headers, 2, headers.length);
         byte[] dbuf = Arrays.copyOf(data, data.length);
         // Decipher header first - functions as IV
@@ -151,7 +153,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new CHKDecodeException("Invalid size: "+size);
         }
         return Key.decompress(dontCompress ? false : key.isCompressed(), dbuf, size, bf, 
-        		Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
+        		Math.min(maxLength, CHKBlock.MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
     }
     
 	private static final Provider hmacProvider;
@@ -198,7 +200,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 			if (sun != null) {
 				// SunJCE provider is faster (in some configurations)
 				try {
-					Mac sun_hmac = Mac.getInstance(algo, "HmacSHA256");
+					Mac sun_hmac = Mac.getInstance(algo, sun);
 					sun_hmac.init(dummyKey); // resolve provider
 					if (hmac.getProvider() != sun_hmac.getProvider()) {
 						long time_def = benchmark(hmac);
@@ -239,6 +241,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     public Bucket decodeNew(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
 		if(key.cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
 			throw new UnsupportedOperationException();
+        byte[] headers = block.headers;
+        byte[] data = block.data;
     	byte[] hash = Arrays.copyOfRange(headers, 2, 2+32);
         byte[] cryptoKey = key.cryptoKey;
         if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
@@ -262,7 +266,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         	throw new CHKDecodeException("HMAC is wrong, wrong decryption key?");
         }
         return Key.decompress(dontCompress ? false : key.isCompressed(), plaintext, size, bf, 
-        		Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
+        		Math.min(maxLength, CHKBlock.MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
 		} catch(GeneralSecurityException e) {
 			throw new CHKDecodeException("Problem with JCA, should be impossible!", e);
 		}
@@ -278,6 +282,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     public Bucket decodeNewNoJCA(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
 		if(key.cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
 			throw new UnsupportedOperationException();
+        byte[] headers = block.headers;
+        byte[] data = block.data;
     	byte[] hash = Arrays.copyOfRange(headers, 2, 2+32);
         byte[] cryptoKey = key.cryptoKey;
         if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
@@ -314,7 +320,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 			throw new CHKDecodeException("Problem with JCA, should be impossible!", e);
 		}
         return Key.decompress(dontCompress ? false : key.isCompressed(), plaintext, size, bf, 
-        		Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
+        		Math.min(maxLength, CHKBlock.MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
     }
 
     /**
@@ -366,7 +372,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         byte[] data;
         short compressionAlgorithm = -1;
         try {
-			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, MAX_LENGTH_BEFORE_COMPRESSION, CHKBlock.DATA_LENGTH, false, compressorDescriptor, pre1254);
+			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, CHKBlock.MAX_LENGTH_BEFORE_COMPRESSION, CHKBlock.DATA_LENGTH, false, compressorDescriptor, pre1254);
 			finalData = comp.compressedData;
 			compressionAlgorithm = comp.compressionAlgorithm;
 		} catch (KeyEncodeException e2) {
@@ -563,7 +569,9 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 		}
     }
     
+    @SuppressWarnings("deprecation") // FIXME Back compatibility, using dubious ciphers; remove eventually.
     public static ClientCHKBlock innerEncode(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm) {
+        data = data.clone(); // Will overwrite otherwise. Callers expect data not to be clobbered.
     	if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
     		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
         byte[] header;
@@ -649,12 +657,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 	}
 
 	@Override
-	public boolean objectCanNew(ObjectContainer container) {
-		// Useful to be able to tell whether it's a CHKBlock or a ClientCHKBlock, so override here too.
-		throw new UnsupportedOperationException("ClientCHKBlock storage in database not supported");
-	}
-
-	@Override
 	public int hashCode() {
 		return key.hashCode;
 	}
@@ -664,6 +666,16 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 		if(!(o instanceof ClientCHKBlock)) return false;
 		ClientCHKBlock block = (ClientCHKBlock) o;
 		if(!key.equals(block.key)) return false;
-		return super.equals(o);
+		return block.block.equals(this.block);
+	}
+
+	@Override
+	public CHKBlock getBlock() {
+		return block;
+	}
+
+	@Override
+	public Key getKey() {
+		return block.getKey();
 	}
 }

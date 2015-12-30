@@ -42,6 +42,9 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * @author amphibian
  * 
@@ -92,12 +95,12 @@ public class PeerManager {
 	/** Next time to update routableConnectionStats */
 	private long nextRoutableConnectionStatsUpdateTime = -1;
 	/** routableConnectionStats update interval (milliseconds) */
-	private static final long routableConnectionStatsUpdateInterval = 7 * 1000;  // 7 seconds
-	
+	private static final long routableConnectionStatsUpdateInterval = SECONDS.toMillis(7);
+
 	/** Should update the peer-file ? */
 	private volatile boolean shouldWritePeersDarknet = false;
 	private volatile boolean shouldWritePeersOpennet = false;
-	private static final int MIN_WRITEPEERS_DELAY = 5*60*1000; // 5 minutes. Urgent stuff calls write*PeersUrgent.
+	private static final long MIN_WRITEPEERS_DELAY = MINUTES.toMillis(5); // Urgent stuff calls write*PeersUrgent.
 	private final Runnable writePeersRunnable = new Runnable() {
 
 		@Override
@@ -157,7 +160,7 @@ public class PeerManager {
 	 * Create a PeerManager by reading a list of peers from
 	 * a file.
 	 * @param node
-	 * @param filename
+	 * @param shutdownHook
 	 */
 	public PeerManager(Node node, SemiOrderedShutdownHook shutdownHook) {
 		Logger.normal(this, "Creating PeerManager");
@@ -178,7 +181,8 @@ public class PeerManager {
 
 	/**
 	 * Attempt to read a file full of noderefs. Try the file as named first, then the .bak if it is empty or
-	 * otherwise doesn't work.
+	 * otherwise doesn't work. WARNING: Only call this AFTER the Node constructor has completed! Methods may 
+	 * be called on Node!
 	 * @param filename The filename to read from. If this doesn't work, we try the .bak file.
 	 * @param crypto The cryptographic identity which these nodes are connected to.
 	 * @param opennet The opennet manager for the nodes. Only needed (for constructing the nodes) if isOpennet.
@@ -194,13 +198,12 @@ public class PeerManager {
 				else
 					darkFilename = filename;
 		}
-		OutgoingPacketMangler mangler = crypto.packetMangler;
 		int maxBackups = isOpennet ? BACKUPS_OPENNET : BACKUPS_DARKNET;
 		for(int i=0;i<=maxBackups;i++) {
 			File peersFile = this.getBackupFilename(filename, i);
 			// Try to read the node list from disk
 			if(peersFile.exists())
-				if(readPeers(peersFile, mangler, crypto, opennet, oldOpennetPeers)) {
+				if(readPeers(peersFile, crypto, opennet, oldOpennetPeers)) {
 					String msg;
 					if(oldOpennetPeers)
 						msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
@@ -218,7 +221,7 @@ public class PeerManager {
 		// The other cases are less important.
 	}
 
-	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
+	private boolean readPeers(File peersFile, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
 		boolean someBroken = false;
 		boolean gotSome = false;
 		FileInputStream fis;
@@ -240,9 +243,16 @@ public class PeerManager {
 				// Read a single NodePeer
 				SimpleFieldSet fs;
 				fs = new SimpleFieldSet(br, false, true);
-				PeerNode pn;
 				try {
-					pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
+					PeerNode pn = PeerNode.create(fs, node, crypto, opennet, this);
+					if(oldOpennetPeers) {
+					    if(!(pn instanceof OpennetPeerNode))
+					        Logger.error(this, "Darknet node in old opennet peers?!: "+pn);
+					    else
+					        opennet.addOldOpennetNode((OpennetPeerNode)pn);
+					} else
+						addPeer(pn, true, false);
+					gotSome = true;
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					System.err.println("Cannot parse a friend from the peers file: "+e2);
@@ -265,11 +275,6 @@ public class PeerManager {
 					continue;
 					// FIXME tell the user???
 				}
-				if(oldOpennetPeers)
-					opennet.addOldOpennetNode(pn);
-				else
-					addPeer(pn, true, false);
-				gotSome = true;
 			}
 		} catch(EOFException e) {
 			// End of file, fine
@@ -295,7 +300,7 @@ public class PeerManager {
 				System.err.println("Unable to copy broken peers file.");
 			}
 		}
-		return gotSome;
+		return !someBroken;
 	}
 
 	public boolean addPeer(PeerNode pn) {
@@ -333,7 +338,7 @@ public class PeerManager {
 		if((!ignoreOpennet) && pn instanceof OpennetPeerNode) {
 			OpennetManager opennet = node.getOpennet();
 			if(opennet != null)
-				opennet.forceAddPeer(pn, true);
+				opennet.forceAddPeer((OpennetPeerNode)pn, true);
 			else {
 				Logger.error(this, "Adding opennet peer when no opennet enabled!!!: " + pn + " - removing...");
 				removePeer(pn);
@@ -599,7 +604,7 @@ public class PeerManager {
 		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
 		PeerNode[] peerList = myPeers();
 		for(PeerNode mp: peerList) {
-			if(Arrays.equals(mp.pubKeyHash, pn.pubKeyHash))
+			if(Arrays.equals(mp.peerECDSAPubKeyHash, pn.peerECDSAPubKeyHash))
 				return;
 		}
 		addPeer(pn);
@@ -619,7 +624,7 @@ public class PeerManager {
 	 * disconnect completes.
 	 * @param remove If true, remove the node from the routing table and tell the peer to do so.
 	 */
-	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge, boolean dumpMessagesNow, final boolean remove, int timeout) {
+	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge, boolean dumpMessagesNow, final boolean remove, long timeout) {
 		if(logMINOR)
 			Logger.minor(this, "Disconnecting " + pn.shortToString(), new Exception("debug"));
 		synchronized(this) {
@@ -721,26 +726,6 @@ public class PeerManager {
 		}
 	};
 
-	protected static class LocationUIDPair implements Comparable<LocationUIDPair> {
-		double location;
-		long uid;
-
-		LocationUIDPair(PeerNode pn) {
-			location = pn.getLocation();
-			uid = pn.swapIdentifier;
-		}
-
-		@Override
-		public int compareTo(LocationUIDPair p) {
-			// Compare purely on location, so result is the same as getPeerLocationDoubles()
-			if(p.location > location)
-				return 1;
-			if(p.location < location)
-				return -1;
-			return 0;
-		}
-	}
-
 	/**
 	 * @return An array of the current locations (as doubles) of all
 	 * our connected peers or double[0] if Node.shallWePublishOurPeersLocation() is false
@@ -765,28 +750,6 @@ public class PeerManager {
 			return Arrays.copyOf(locs, x);
 		else
 			return locs;
-	}
-
-	/** Just like getPeerLocationDoubles, except it also
-	 * returns the UID for each node. */
-	public LocationUIDPair[] getPeerLocationsAndUIDs() {
-		PeerNode[] conns;
-		LocationUIDPair[] locPairs;
-		synchronized(this) {
-			conns = myPeers;
-		}
-		locPairs = new LocationUIDPair[conns.length];
-		int x = 0;
-		for(PeerNode conn: conns) {
-			if(conn.isRoutable())
-				locPairs[x++] = new LocationUIDPair(conn);
-		}
-		// Sort it
-		Arrays.sort(locPairs, 0, x);
-		if(x != locPairs.length)
-			return Arrays.copyOf(locPairs, x);
-		else
-			return locPairs;
 	}
 
 	/**
@@ -878,7 +841,7 @@ public class PeerManager {
 	}
 
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double loc, boolean ignoreSelf, boolean calculateMisrouting,
-	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal, boolean realTime, boolean excludeMandatoryBackoff) {
+	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL, long ignoreBackoffUnder, boolean isLocal, boolean realTime, boolean excludeMandatoryBackoff) {
 		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, false, System.currentTimeMillis(), excludeMandatoryBackoff);
 	}
 
@@ -887,7 +850,8 @@ public class PeerManager {
 	 * If ignoreSelf==false, and we are closer to the target than any peers, this function returns null.
 	 * This function returns two values, the closest such peer which is backed off, and the same which is not backed off.
 	 * It is possible for either to be null independent of the other, 'closest' is the closer of the two in either case, and
-	 * will not be null if any of the other two return values is not null.
+	 * will not be null if any of the other two return values is not null. LOCKING: This will briefly take
+	 * various locks, try to avoid calling it with lots of locks held.
 	 * @param addUnpickedLocsTo Add all locations we didn't choose which we could have routed to to 
 	 * this array. Remove the location of the peer we pick from it.
 	 * @param maxDistance If a node is further away from the target than this distance, ignore it.
@@ -904,7 +868,7 @@ public class PeerManager {
 	 * wouldn't be a good idea due to introducing a round-trip-to-request-originator; FIXME consider this.
 	 */
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double target, boolean ignoreSelf,
-	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal, boolean realTime,
+	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, long ignoreBackoffUnder, boolean isLocal, boolean realTime,
 	        RecentlyFailedReturn recentlyFailed, boolean ignoreTimeout, long now, boolean newLoadManagement) {
 		
 		int countWaiting = 0;
@@ -1159,7 +1123,8 @@ public class PeerManager {
 		
 		if(recentlyFailed != null && logMINOR)
 			Logger.minor(this, "Count waiting: "+countWaiting);
-		if(recentlyFailed != null && countWaiting >= 3) {
+		if(recentlyFailed != null && countWaiting >= 3 && 
+				node.enableULPRDataPropagation /* dangerous to do RecentlyFailed if we won't track/propagate offers */) {
 			// Recently failed is possible.
 			// Route twice, each time ignoring timeout.
 			// If both return a node which is in timeout, we should do RecentlyFailed.
@@ -1203,8 +1168,12 @@ public class PeerManager {
 									Logger.error(this, "Wakeup time is too long: "+TimeUtil.formatTime(until-now));
 									until = now + FailureTable.RECENTLY_FAILED_TIME;
 								}
-								recentlyFailed.fail(countWaiting, until);
-								return null;
+								if(!node.failureTable.hadAnyOffers(key)) {
+									recentlyFailed.fail(countWaiting, until);
+									return null;
+								} else {
+									if(logMINOR) Logger.minor(this, "Have an offer for the key so not sending RecentlyFailed");
+								}
 							} else {
 								// Waking up too soon. Don't RecentlyFailed.
 								if(logMINOR) Logger.minor(this, "Not sending RecentlyFailed because will wake up in "+(check-now)+"ms");
@@ -1359,21 +1328,6 @@ public class PeerManager {
 		return sb.toString();
 	}
 
-	public String getFreevizOutput() {
-		StringBuilder sb = new StringBuilder();
-		PeerNode[] peers = myPeers();
-		String[] identity = new String[peers.length];
-		for(int i = 0; i < peers.length; i++) {
-			PeerNode pn = peers[i];
-			identity[i] = pn.getFreevizOutput();
-		}
-		Arrays.sort(identity);
-		for(String i: identity) {
-			sb.append(i);
-			sb.append('\n');
-		}
-		return sb.toString();
-	}
 	private final Object writePeersSync = new Object();
 	private final Object writePeerFileSync = new Object();
 	
@@ -1718,7 +1672,7 @@ public class PeerManager {
 	 */
 	public void maybeLogPeerNodeStatusSummary(long now) {
 		if(now > nextPeerNodeStatusLogTime) {
-			if((now - nextPeerNodeStatusLogTime) > (10 * 1000) && nextPeerNodeStatusLogTime > 0)
+			if((now - nextPeerNodeStatusLogTime) > SECONDS.toMillis(10) && nextPeerNodeStatusLogTime > 0)
 				Logger.error(this, "maybeLogPeerNodeStatusSummary() not called for more than 10 seconds (" + (now - nextPeerNodeStatusLogTime) + ").  PacketSender getting bogged down or something?");
 
 			int numberOfConnected = 0;
@@ -2221,10 +2175,10 @@ public class PeerManager {
 		return count;
 	}
 
-	public PeerNode getByIdentity(byte[] identity) {
+	public PeerNode getByPubKeyHash(byte[] pkHash) {
 		PeerNode[] peers = myPeers();
 		for(PeerNode peer : peers) {
-			if(Arrays.equals(peer.getIdentity(), identity))
+			if(Arrays.equals(peer.peerECDSAPubKeyHash, pkHash))
 				return peer;
 		}
 		return null;

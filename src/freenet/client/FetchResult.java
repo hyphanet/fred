@@ -13,10 +13,14 @@ import freenet.support.io.BucketTools;
  */
 public class FetchResult {
 
+	/** The ClientMetadata, i.e. MIME type. Must not be null. */
 	final ClientMetadata metadata;
+	/** The data. */
 	final Bucket data;
 	
 	public FetchResult(ClientMetadata dm, Bucket fetched) {
+		if(dm == null) throw new IllegalArgumentException();
+		assert(fetched != null);
 		metadata = dm;
 		data = fetched;
 	}

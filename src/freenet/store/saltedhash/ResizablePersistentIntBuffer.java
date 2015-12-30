@@ -81,6 +81,13 @@ public class ResizablePersistentIntBuffer {
 			raf.setLength(expectedLength);
 		channel = raf.getChannel();
 	}
+	
+	/** Should be called during startup to fill in an appropriate default value e.g. if the store 
+	 * is completely new. */
+	public void fill(int value) {
+		for(int i=0;i<buffer.length;i++)
+			buffer[i] = value;
+	}
 
 	private void readBuffer(int size) throws IOException {
 		raf.seek(0);
@@ -316,7 +323,7 @@ public class ResizablePersistentIntBuffer {
 		for(int i=0;i<buffer.length;i++)
 			if(buffer[i] == key) buffer[i] = value;
 	}
-
+	
 	public int size() {
 		return size;
 	}

@@ -18,9 +18,11 @@
 package freenet.support;
 
 import java.net.MalformedURLException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import freenet.client.DefaultMIMETypes;
 
 /**
  * A media type denotes the content type of a document. A media consists of a
@@ -46,7 +48,7 @@ public class MediaType {
 	private final String subtype;
 
 	/** The parameters. */
-	private final Map<String, String> parameters = new HashMap<String, String>();
+	private final LinkedHashMap<String, String> parameters = new LinkedHashMap<String, String>();
 
 	/**
 	 * Creates a new media type by parsing the given string.
@@ -64,6 +66,8 @@ public class MediaType {
 		if (mediaType == null) {
 			throw new NullPointerException("contentType must not be null");
 		}
+		if(!DefaultMIMETypes.isPlausibleMIMEType(mediaType))
+		    throw new MalformedURLException("Doesn't look like a MIME type");
 		int slash = mediaType.indexOf('/');
 		if (slash == -1) {
 			throw new MalformedURLException("mediaType does not contain ‘/’!");
@@ -83,6 +87,8 @@ public class MediaType {
 			}
 			String name = parameter.substring(0, equals).trim().toLowerCase();
 			String value = parameter.substring(equals + 1).trim();
+			if(value.startsWith("\"") && value.endsWith("\""))
+			    value = value.substring(1, value.length()-1).trim();
 			this.parameters.put(name, value);
 		}
 	}
@@ -239,7 +245,7 @@ public class MediaType {
 			if (parameter.getValue() == null) {
 				continue;
 			}
-			mediaType.append("; ").append(parameter.getKey()).append('=').append(parameter.getValue());
+			mediaType.append("; ").append(parameter.getKey()).append("=\"").append(parameter.getValue()).append("\"");
 		}
 		return mediaType.toString();
 	}
@@ -262,5 +268,16 @@ public class MediaType {
 		if(charset == null) return "UTF-8";
 		return charset;
 	}
+
+    public LinkedHashMap<String, String> getParameters() {
+        LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+        map.putAll(parameters);
+        return map;
+    }
+
+    /** Get the base type without any parameters */
+    public String getPlainType() {
+        return type + '/' + subtype;
+    }
 
 }

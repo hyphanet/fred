@@ -9,6 +9,7 @@ import java.util.List;
 
 import freenet.keys.KeyVerifyException;
 import freenet.node.stats.StoreAccessStats;
+import freenet.node.useralerts.UserAlertManager;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LRUMap;
 import freenet.support.LogThresholdCallback;
@@ -113,15 +114,18 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 			}
 			timeAccessed = block.lastAccessed;
 		}
-		InputStream in = block.data.getInputStream();
-		DataInputStream dis = new DataInputStream(in);
 		byte[] fk = new byte[fullKeySize];
 		byte[] header = new byte[headerSize];
 		byte[] data = new byte[dataSize];
-		dis.readFully(fk);
-		dis.readFully(header);
-		dis.readFully(data);
-		in.close();
+		InputStream in = block.data.getInputStream();
+		try {
+			DataInputStream dis = new DataInputStream(in);
+			dis.readFully(fk);
+			dis.readFully(header);
+			dis.readFully(data);
+		} finally {
+			in.close();
+		}
 		try {
 			T ret =
 				callback.construct(data, header, routingKey, fk, canReadClientCache, canReadSlashdotCache, null, null);
@@ -229,11 +233,16 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 	
 	protected void purgeOldData(ByteArrayWrapper key, DiskBlock addFirst) {
 		List<DiskBlock> blocks = null;
+		DiskBlock oldBlock;
 		synchronized(this) {
 			long now = System.currentTimeMillis();
 			if(addFirst != null) {
 				addFirst.lastAccessed = now;
-				blocksByRoutingKey.push(key, addFirst);
+				oldBlock = blocksByRoutingKey.push(key, addFirst);
+				if(oldBlock != null) {
+	                if(blocks == null) blocks = new ArrayList<DiskBlock>();
+	                blocks.add(oldBlock);
+				}
 				writes++;
 			}
 			while(true) {
@@ -291,4 +300,23 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		return null;
 	}
 
+	@Override
+	public boolean start(Ticker ticker, boolean longStart) throws IOException {
+		return false;
+	}
+
+	@Override
+	public void setUserAlertManager(UserAlertManager userAlertManager) {
+		// Do nothing
+	}
+
+	@Override
+	public FreenetStore<T> getUnderlyingStore() {
+		return this;
+	}
+
+	@Override
+	public void close() {
+		// Do nothing
+	}
 }

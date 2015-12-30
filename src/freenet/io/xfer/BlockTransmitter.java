@@ -151,7 +151,11 @@ public class BlockTransmitter {
 		}
 		
 		public void schedule() {
-			if(_failed || _receivedSendCompletion || _completed) return;
+			if(_failed || _receivedSendCompletion || _completed) {
+				if(logMINOR) Logger.minor(this, "Not scheduling for "+_uid+" to "+_destination+" :"+
+						(_failed ? "(failed) " : "") + (_receivedSendCompletion ? "(receivedSendCompletion) " : "") + (_completed ? "(completed) " : ""));
+				return;
+			}
 			_executor.execute(this, "BlockTransmitter block sender for "+_uid+" to "+_destination);
 		}
 
@@ -216,8 +220,7 @@ public class BlockTransmitter {
 		_prb = source;
 		_ctr = ctr;
 		if(_ctr == null) throw new NullPointerException();
-		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, _prb._packets)
-			+ destination.getOutgoingMangler().fullHeadersLengthOneMessage();
+		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, _prb._packets);
 		try {
 			_sentPackets = new BitArray(_prb.getNumPackets());
 		} catch (AbortedException e) {
@@ -623,6 +626,7 @@ public class BlockTransmitter {
 					@Override
 					public void packetReceived(int packetNo) {
 						synchronized(_senderThread) {
+							if(logMINOR) Logger.minor(this, "Got packet "+packetNo+" for "+_uid+" to "+_destination);
 							if(_unsent.contains(packetNo)) {
 								Logger.error(this, "Already in unsent: "+packetNo+" for "+this+" unsent is "+_unsent, new Exception("error"));
 								return;
@@ -738,7 +742,7 @@ public class BlockTransmitter {
 				completed = true;
 				if(lastSentPacket > 0) {
 					delta = now - lastSentPacket;
-					int threshold = (realTime ? BlockReceiver.RECEIPT_TIMEOUT_REALTIME : BlockReceiver.RECEIPT_TIMEOUT_BULK);
+					long threshold = (realTime ? BlockReceiver.RECEIPT_TIMEOUT_REALTIME : BlockReceiver.RECEIPT_TIMEOUT_BULK);
 					if(delta > threshold)
 						Logger.warning(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
 					else if(delta > threshold / 5)

@@ -15,6 +15,7 @@ import freenet.l10n.NodeL10n;
 import freenet.support.io.FileUtil;
 
 /**
+ * @author kurmiashish
  * This class would verify whether the BMP header is valid or not
  Reference:
  http://www.fastgraph.com/help/bmp_header_format.html

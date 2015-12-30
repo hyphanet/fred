@@ -49,12 +49,6 @@ public class PacketThrottle {
 	private float _windowSize = 2;
 	private final int PACKET_SIZE;
 	private boolean slowStart = true;
-	/** Incremented on each send; the sequence number of the packet last added to the window/sent */
-	private long _packetSeq;
-	/** Last time (seqno) the window was full */
-	private long _packetSeqWindowFull;
-	/** Last time (seqno) we checked whether the window was full, or dropped a packet. */
-	private long _packetSeqWindowFullChecked;
 	
 	public PacketThrottle(int packetSize) {
 		PACKET_SIZE = packetSize;
@@ -65,15 +59,20 @@ public class PacketThrottle {
 		if(logMINOR) Logger.minor(this, "Set round trip time to "+rtt+" on "+this);
 	}
 
-    public synchronized void notifyOfPacketLost() {
-		_droppedPackets++;
-		_totalPackets++;
-		_windowSize *= PACKET_DROP_DECREASE_MULTIPLE;
-		if(_windowSize < 1.0F) _windowSize = 1.0F;
-		slowStart = false;
-		if(logMINOR)
-			Logger.minor(this, "notifyOfPacketLost(): "+this);
-		_packetSeqWindowFullChecked = _packetSeq;
+    public synchronized void notifyOfPacketsLost(int numPackets) {
+        if (numPackets <= 0) {
+            throw new IllegalArgumentException("Reported loss is zero or negative");
+        }
+        _droppedPackets += numPackets;
+        _totalPackets += numPackets;
+        _windowSize *= Math.pow(PACKET_DROP_DECREASE_MULTIPLE, numPackets);
+        if (_windowSize < 1.0F) {
+            _windowSize = 1.0F;
+        }
+        slowStart = false;
+        if (logMINOR) {
+            Logger.minor(this, "notifyOfPacketsLost(): " + this);
+        }
     }
 
     /**
@@ -89,18 +88,6 @@ public class PacketThrottle {
 		// This is similar but not identical to RFC2861
 		// See [freenet-dev] Major weakness in our current link-level congestion control
         int windowSize = (int)getWindowSize();
-        if(_packetSeqWindowFullChecked + windowSize < _packetSeq) {
-        	// FIXME this is only relevant for old packet format, which uses sendThrottledMessage(), get rid of it when we get rid of old packet format.
-        	if(_packetSeqWindowFull < _packetSeqWindowFullChecked) {
-        		// We haven't used the full window once since we last checked.
-        		_windowSize *= PACKET_DROP_DECREASE_MULTIPLE;
-        		if(_windowSize < 1.0F) _windowSize = 1.0F;
-            	_packetSeqWindowFullChecked += windowSize;
-            	if(logMINOR) Logger.minor(this, "Window not used since we last checked: full="+_packetSeqWindowFull+" last checked="+_packetSeqWindowFullChecked+" window = "+_windowSize+" for "+this);
-        		return;
-        	}
-        	_packetSeqWindowFullChecked += windowSize;
-        }
 
     	if(slowStart) {
     		if(logMINOR) Logger.minor(this, "Still in slow start");
@@ -114,9 +101,7 @@ public class PacketThrottle {
     		_windowSize += (PACKET_TRANSMIT_INCREMENT / _windowSize);
     	}
     	// Ensure that we the window size does not grow dramatically larger than the largest window
-    	// that has actually been in flight at one time. This works both on new and old packet format,
-    	// although it is more relevant for new packet format because new packet format allows larger
-    	// in flight windows in practice.
+    	// that has actually been in flight at one time.
     	if(_windowSize > maxWindowSize)
     		_windowSize = (float) maxWindowSize;
     	if(_windowSize > (windowSize + 1))

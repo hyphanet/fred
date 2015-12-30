@@ -27,10 +27,8 @@ import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 
 public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
-	
-	private static final String certurlOld = "freenet/clients/http/staticfiles/startssl.pem";
-	private static final String certurlNew = "freenet/clients/http/staticfiles/globalsign-intermediate-2012.pem";
-	private static final String[] certURLs = new String[] { certurlOld, certurlNew };
+	private static final String certurlNew = "freenet/clients/http/staticfiles/globalsign.pem";
+	private static final String[] certURLs = new String[] { certurlNew };
 	public static final String certfileOld = "startssl.pem";
 	private static final String certfile = "sslcerts.pem";
 
@@ -127,7 +125,7 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 		
 		try {
 			try {
-				bucket = new FileBucket(certFile, false, false, false, false, false);
+				bucket = new FileBucket(certFile, false, false, false, false);
 				os = bucket.getOutputStream();
 				writeCerts(os);
 				// If this fails, we need the whole fetch to fail.
@@ -150,12 +148,19 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 	private static void writeCerts(OutputStream os) throws IOException {
 		// try to create pem file
 		ClassLoader loader = ClassLoader.getSystemClassLoader();
+		InputStream in = null;
 		for(String certurl : certURLs) {
-			InputStream in = loader.getResourceAsStream(certurl);
-			if(in != null) {
-				FileUtil.copy(in, os, -1);
-			} else {
-				throw new IOException("Could not find certificates in fred source nor find certificates file");
+			try {
+				in = loader.getResourceAsStream(certurl);
+				if (in != null) {
+					FileUtil.copy(in, os, -1);
+				} else {
+					throw new IOException("Could not find certificates in fred source nor find certificates file");
+				}
+			} finally {
+				if (in != null) {
+					in.close();
+				}
 			}
 		}
 	}
@@ -168,4 +173,8 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 		fos.close();
 	}
 
+	public boolean isOfficialPluginLoader() {
+		return true;
+	}
+	
 }

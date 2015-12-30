@@ -15,10 +15,10 @@ import java.security.NoSuchAlgorithmException;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
-@SuppressWarnings("serial")
 public abstract class CryptoKey implements CryptoElement, Serializable {
 
-	protected static final MessageDigest shactx;
+    private static final long serialVersionUID = 1L;
+    protected static final MessageDigest shactx;
 	static {
 		try {
 			shactx = MessageDigest.getInstance("SHA1", Util.mdProviders.get("SHA1"));
@@ -38,7 +38,7 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 			Class<?> keyClass = Class.forName(type);
 			Method m =
 				keyClass.getMethod("read", new Class[] { InputStream.class });
-			return (CryptoKey) m.invoke(null, new Object[] { dis });
+			return (CryptoKey) m.invoke(null, dis);
 		} catch (Exception e) {
 			e.printStackTrace();
 			if (e instanceof CryptFormatException)

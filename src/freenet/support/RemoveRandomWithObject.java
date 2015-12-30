@@ -1,16 +1,11 @@
 package freenet.support;
 
-import com.db4o.ObjectContainer;
+public interface RemoveRandomWithObject<T> extends RemoveRandom {
 
-public interface RemoveRandomWithObject extends RemoveRandom {
+	public T getObject();
 
-	public Object getObject();
+	public boolean isEmpty();
 
-	public boolean isEmpty(ObjectContainer container);
-
-	@Override
-	public void removeFrom(ObjectContainer container);
-
-	public void setObject(Object client, ObjectContainer container);
+	public void setObject(T client);
 
 }

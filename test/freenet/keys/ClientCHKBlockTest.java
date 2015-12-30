@@ -77,11 +77,11 @@ public class ClientCHKBlockTest extends TestCase {
 			ClientCHKBlock otherEncodedBlock = 
 				ClientCHKBlock.encode(new ArrayBucket(data), false, false, (short)-1, data.length, null, false, null, cryptoAlgorithm, true);
 			assertTrue(key.equals(otherEncodedBlock.getClientKey()));
-			assertTrue(Arrays.equals(otherEncodedBlock.data, encodedBlock.data));
-			assertTrue(Arrays.equals(otherEncodedBlock.headers, encodedBlock.headers));
+			assertTrue(Arrays.equals(otherEncodedBlock.getBlock().data, encodedBlock.getBlock().data));
+			assertTrue(Arrays.equals(otherEncodedBlock.getBlock().headers, encodedBlock.getBlock().headers));
 		}
 		// Verify it.
-		CHKBlock block = CHKBlock.construct(encodedBlock.data, encodedBlock.headers, cryptoAlgorithm);
+		CHKBlock block = CHKBlock.construct(encodedBlock.getBlock().data, encodedBlock.getBlock().headers, cryptoAlgorithm);
 		ClientCHKBlock checkBlock = new ClientCHKBlock(block, key);
 		ArrayBucket checkData = (ArrayBucket) checkBlock.decode(new ArrayBucketFactory(), data.length, false);
 		assert(Arrays.equals(checkData.toByteArray(), data));

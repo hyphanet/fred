@@ -83,14 +83,6 @@ public class ProxyUserAlert extends AbstractUserAlert {
 		if(alert != null) alert.onDismiss();
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public Object getUserIdentifier() {
-		return alert.getUserIdentifier();
-	}
-
 	@Override
 	public String anchor() {
 		return "anchor:"+Integer.toString(hashCode());

@@ -8,8 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -22,8 +20,10 @@ public interface Compressor {
 	public static final String DEFAULT_COMPRESSORDESCRIPTOR = null;
 
 	public enum COMPRESSOR_TYPE implements Compressor {
-		// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-		// They will be tried in order: put the less resource consuming first
+	    // WARNING: Changing non-transient members on classes that are Serializable can result in 
+	    // restarting downloads or losing uploads.
+	    
+		// Codecs will be tried in order: put the less resource consuming first
 		GZIP("GZIP", new GzipCompressor(), (short) 0),
 		BZIP2("BZIP2", new Bzip2Compressor(), (short) 1),
 		LZMA("LZMA", new OldLZMACompressor(), (short)2),
@@ -33,6 +33,9 @@ public interface Compressor {
 		public final Compressor compressor;
 		public final short metadataID;
 
+		/** cached values(). Never modify or pass this array to outside code! */
+		private final static COMPRESSOR_TYPE[] values = values();
+
 		COMPRESSOR_TYPE(String name, Compressor c, short metadataID) {
 			this.name = name;
 			this.compressor = c;
@@ -40,7 +43,6 @@ public interface Compressor {
 		}
 
 		public static COMPRESSOR_TYPE getCompressorByMetadataID(short id) {
-			COMPRESSOR_TYPE[] values = values();
 			for(COMPRESSOR_TYPE current : values)
 				if(current.metadataID == id)
 					return current;
@@ -48,7 +50,6 @@ public interface Compressor {
 		}
 
 		public static COMPRESSOR_TYPE getCompressorByName(String name) {
-			COMPRESSOR_TYPE[] values = values();
 			for(COMPRESSOR_TYPE current : values)
 				if(current.name.equals(name))
 					return current;
@@ -57,7 +58,7 @@ public interface Compressor {
 
 		public static String getHelloCompressorDescriptor() {
 			StringBuilder sb = new StringBuilder();
-			sb.append(COMPRESSOR_TYPE.values().length);
+			sb.append(values.length);
 			sb.append(" - ");
 			getCompressorDescriptor(sb);
 			return sb.toString();
@@ -70,7 +71,6 @@ public interface Compressor {
 		}
 
 		public static void getCompressorDescriptor(StringBuilder sb) {
-			COMPRESSOR_TYPE[] values = values();
 			boolean isfirst = true;
 			for(COMPRESSOR_TYPE current : values) {
 				if (isfirst)
@@ -96,10 +96,9 @@ public interface Compressor {
 		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor, boolean pre1254) throws InvalidCompressionCodecException {
 			COMPRESSOR_TYPE[] result = getCompressorsArrayNoDefault(compressordescriptor);
 			if (result == null) {
-				COMPRESSOR_TYPE[] val = COMPRESSOR_TYPE.values();
-				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[val.length-1];
+				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[values.length-1];
 				int x = 0;
-				for(COMPRESSOR_TYPE v: val) {
+				for(COMPRESSOR_TYPE v: values) {
 					if((v == LZMA) && !pre1254) continue;
 					if((v == LZMA_NEW) && pre1254) continue;
 					ret[x++] = v;
@@ -138,64 +137,26 @@ public interface Compressor {
 
 		@Override
 		public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
-			if(compressor == null) {
-				// DB4O VOODOO! See below.
-				if(name != null) return getOfficial().compress(data, bf, maxReadLength, maxWriteLength);
-			}
 			return compressor.compress(data, bf, maxReadLength, maxWriteLength);
 		}
 
 		@Override
 		public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
-			if(compressor == null) {
-				// DB4O VOODOO! See below.
-				if(name != null) return getOfficial().compress(is, os, maxReadLength, maxWriteLength);
-			}
 			return compressor.compress(is, os, maxReadLength, maxWriteLength);
 		}
 
 		@Override
 		public long decompress(InputStream input, OutputStream output, long maxLength, long maxEstimateSizeLength) throws IOException, CompressionOutputSizeException {
-			if(compressor == null) {
-				// DB4O VOODOO! See below.
-				if(name != null) return getOfficial().decompress(input, output, maxLength, maxEstimateSizeLength);
-			}
 			return compressor.decompress(input, output, maxLength, maxEstimateSizeLength);
 		}
 
 		@Override
 		public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {
-			if(compressor == null) {
-				// DB4O VOODOO! See below.
-				if(name != null) return getOfficial().decompress(dbuf, i, j, output);
-			}
 			return compressor.decompress(dbuf, i, j, output);
 		}
 
-		// DB4O VOODOO!
-		// Copies of the static fields get stored into the database.
-		// Really the solution is probably to store the codes only.
-
-		private Compressor getOfficial() {
-			if(name.equals("GZIP")) return GZIP;
-			if(name.equals("BZIP2")) return BZIP2;
-			if(name.equals("LZMA")) return LZMA;
-			if(name.equals("LZMA_OLD")) return LZMA;
-			if(name.equals("LZMA_NEW")) return LZMA_NEW;
-			if(name.equals("LZMA")) return LZMA_NEW;
-			return null;
-		}
-
-		public boolean objectCanDeactivate(ObjectContainer container) {
-			return false;
-		}
-
-		public boolean objectCanActivate(ObjectContainer container) {
-			return false;
-		}
-
 		public static int countCompressors() {
-			return Compressor.COMPRESSOR_TYPE.values().length;
+			return values.length;
 		}
 
 	}

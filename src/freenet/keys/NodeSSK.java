@@ -10,12 +10,10 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
-import freenet.node.GetPubkey;
 import freenet.store.BlockMetadata;
+import freenet.store.GetPubkey;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -251,11 +249,6 @@ public class NodeSSK extends Key {
 		return Fields.compareBytes(pubKeyHash, key.pubKeyHash);
 	}
 	
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		super.removeFrom(container);
-	}
-
 }
 
 final class ArchiveNodeSSK extends NodeSSK {

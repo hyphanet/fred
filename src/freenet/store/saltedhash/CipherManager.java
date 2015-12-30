@@ -105,8 +105,8 @@ public class CipherManager {
 		random.nextBytes(entry.dataEncryptIV);
 
 		PCFBMode cipher = makeCipher(entry.dataEncryptIV, entry.plainRoutingKey);
-		entry.header = cipher.blockEncipher(entry.header, 0, entry.header.length);
-		entry.data = cipher.blockEncipher(entry.data, 0, entry.data.length);
+		cipher.blockEncipher(entry.header, 0, entry.header.length);
+		cipher.blockEncipher(entry.data, 0, entry.data.length);
 
 		entry.getDigestedRoutingKey();
 		entry.isEncrypted = true;
@@ -144,8 +144,8 @@ public class CipherManager {
 		entry.plainRoutingKey = routingKey;
 
 		PCFBMode cipher = makeCipher(entry.dataEncryptIV, entry.plainRoutingKey);
-		entry.header = cipher.blockDecipher(entry.header, 0, entry.header.length);
-		entry.data = cipher.blockDecipher(entry.data, 0, entry.data.length);
+		cipher.blockDecipher(entry.header, 0, entry.header.length);
+		cipher.blockDecipher(entry.data, 0, entry.data.length);
 
 		entry.isEncrypted = false;
 

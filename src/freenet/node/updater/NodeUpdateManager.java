@@ -1,5 +1,9 @@
 package freenet.node.updater;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -7,15 +11,14 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -32,6 +35,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
@@ -40,9 +44,8 @@ import freenet.node.useralerts.RevocationKeyFoundUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UpdatedVersionAvailableUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.pluginmanager.OfficialPlugins.OfficialPluginDescription;
 import freenet.pluginmanager.PluginInfoWrapper;
-import freenet.pluginmanager.PluginManager;
-import freenet.pluginmanager.PluginManager.OfficialPluginDescription;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
@@ -53,8 +56,21 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**
- * Supervises NodeUpdater's. Enables us to easily update multiple files, change
- * the URI's on the fly, eliminates some messy code in the callbacks etc.
+ * <p>Supervises NodeUpdater's. Enables us to easily update multiple files, change
+ * the URI's on the fly, eliminates some messy code in the callbacks etc.</p>
+ * 
+ * <p>Procedure for updating the update key: Create a new key. Create a new build X, the 
+ * "transition version". This must be UOM-compatible with the previous transition version. 
+ * UOM-compatible means UOM should work from the older builds. This in turn means that it should 
+ * support an overlapping set of connection setup negTypes (@link 
+ * FNPPacketMangler.supportedNegTypes()). Similarly there may be issues with changes to the UOM
+ * messages, or to messages in general. Build X is inserted to both the old key and the new key.
+ * Build X's SSK URI (on the old auto-update key) will be hard-coded as the new transition version. 
+ * Then the next build, X+1, can get rid of some of the back compatibility cruft (especially old 
+ * connection setup types), and will be inserted only to the new key. Secure backups of the new 
+ * key are required and are documented elsewhere.</p>
+ * 
+ * FIXME: See bug #6009 for some current UOM compatibility issues.
  */
 public class NodeUpdateManager {
 
@@ -83,9 +99,10 @@ public class NodeUpdateManager {
 			+ TRANSITION_VERSION_EXT;
 
 	public final static String REVOCATION_URI = "SSK@tHlY8BK2KFB7JiO2bgeAw~e4sWU43YdJ6kmn73gjrIw,DnQzl0BYed15V8WQn~eRJxxIA-yADuI8XW7mnzEbut8,AQACAAE/revoked";
-	public static final long MAX_REVOCATION_KEY_LENGTH = 4 * 1024;
-	public static final long MAX_REVOCATION_KEY_TEMP_LENGTH = 4 * 1024;
-	public static final long MAX_REVOCATION_KEY_BLOB_LENGTH = 8 * 1024;
+	// These are necessary to prevent DoS.
+	public static final long MAX_REVOCATION_KEY_LENGTH = 32 * 1024;
+	public static final long MAX_REVOCATION_KEY_TEMP_LENGTH = 64 * 1024;
+	public static final long MAX_REVOCATION_KEY_BLOB_LENGTH = 128 * 1024;
 
 	public static final long MAX_MAIN_JAR_LENGTH = 16 * 1024 * 1024; // 16MB
 
@@ -155,6 +172,7 @@ public class NodeUpdateManager {
 	private volatile boolean hasNewMainJar;
 	/** If another main jar is being fetched, when did the fetch start? */
 	private long startedFetchingNextMainJar;
+	/** Time when we got the jar */
 	private long gotJarTime;
 
 	// Revocation alert
@@ -189,6 +207,8 @@ public class NodeUpdateManager {
 	 * deploying.
 	 */
 	private Bucket maybeNextMainJarData;
+	
+	private static final Object deployLock = new Object();
 	
 	static final String TEMP_BLOB_SUFFIX = ".updater.fblob.tmp";
 	static final String TEMP_FILE_SUFFIX = ".updater.tmp";
@@ -232,18 +252,6 @@ public class NodeUpdateManager {
 					"error", e.getLocalizedMessage()));
 		}
 		updateURI = updateURI.setSuggestedEdition(Version.buildNumber());
-		// FIXME remove, or at least disable, pre-1421 backward compatibility code in 6 months or so.
-		// It might be worth keeping it around in case we have to do another transition?
-		if(updateURI.setSuggestedEdition(TRANSITION_VERSION).equals(transitionMainJarURIAsUSK)) {
-			System.out.println("Updating config to new update key.");
-			try {
-				updateURI = new FreenetURI(UPDATE_URI);
-			} catch (MalformedURLException e1) {
-				RuntimeException e = new RuntimeException("Impossible: Cannot parse default update URI!");
-				e.initCause(e1);
-			}
-			config.store();
-		}
 		if(updateURI.hasMetaStrings())
 			throw new InvalidConfigValueException(l10n("updateURIMustHaveNoMetaStrings"));
 		if(!updateURI.isUSK())
@@ -385,25 +393,23 @@ public class NodeUpdateManager {
 			context.maxTempLength = maxSize;
 			context.maxOutputLength = maxSize;
 			ClientGetter get = new ClientGetter(this, freenetURI, context,
-					priority, node.nonPersistentClientBulk, null, null, null);
+					priority, null, null, null);
 			try {
 				node.clientCore.clientContext.start(get);
-			} catch (DatabaseDisabledException e) {
+			} catch (PersistenceDisabledException e) {
 				// Impossible
 			} catch (FetchException e) {
-				onFailure(e, null, null);
+				onFailure(e, null);
 			}
 		}
 
 		@Override
-		public void onFailure(FetchException e, ClientGetter state,
-				ObjectContainer container) {
+		public void onFailure(FetchException e, ClientGetter state) {
 			System.err.println("Failed to fetch " + filename + " : " + e);
 		}
 
 		@Override
-		public void onSuccess(FetchResult result, ClientGetter state,
-				ObjectContainer container) {
+		public void onSuccess(FetchResult result, ClientGetter state) {
 			File temp;
 			FileOutputStream fos = null;
 			try {
@@ -425,9 +431,7 @@ public class NodeUpdateManager {
 										+ filename
 										+ " after fetching it from Freenet.");
 						try {
-							Thread.sleep(1000 + node.fastWeakRandom
-									.nextInt(((int) (1000 * Math.min(
-											Math.pow(2, i), 15 * 60 * 1000)))));
+							Thread.sleep(SECONDS.toMillis(1) + node.fastWeakRandom.nextInt((int) SECONDS.toMillis((long) Math.min(Math.pow(2, i), MINUTES.toSeconds(15)))));
 						} catch (InterruptedException e) {
 							// Ignore
 						}
@@ -445,13 +449,19 @@ public class NodeUpdateManager {
 				e.printStackTrace();
 			} finally {
 				Closer.close(fos);
+				Closer.close(result.asBucket());
 			}
 		}
 
-		@Override
-		public void onMajorProgress(ObjectContainer container) {
-			// Ignore
-		}
+        @Override
+        public void onResume(ClientContext context) {
+            // Not persistent.
+        }
+
+        @Override
+        public RequestClient getRequestClient() {
+            return node.nonPersistentClientBulk; 
+        }
 
 	}
 
@@ -730,7 +740,7 @@ public class NodeUpdateManager {
 	}
 
 	private void startPluginUpdaters() {
-		for(OfficialPluginDescription plugin : PluginManager.getOfficialPlugins()) {
+		for(OfficialPluginDescription plugin : node.getPluginManager().getOfficialPlugins()) {
 			startPluginUpdater(plugin.name);
 		}
 	}
@@ -743,7 +753,7 @@ public class NodeUpdateManager {
 	public void startPluginUpdater(String plugName) {
 		if (logMINOR)
 			Logger.minor(this, "Starting plugin updater for " + plugName);
-		OfficialPluginDescription plugin = PluginManager.getOfficialPlugin(plugName);
+		OfficialPluginDescription plugin = node.getPluginManager().getOfficialPlugin(plugName);
 		if (plugin != null)
 			startPluginUpdater(plugin);
 		else
@@ -755,7 +765,8 @@ public class NodeUpdateManager {
 
 	void startPluginUpdater(OfficialPluginDescription plugin) {
 		String name = plugin.name;
-		long minVer = plugin.minimumVersion;
+		// @see https://emu.freenetproject.org/pipermail/devl/2015-November/038581.html
+		long minVer = (plugin.essential ? plugin.minimumVersion : plugin.recommendedVersion);
 		// But it might already be past that ...
 		PluginInfoWrapper info = node.pluginManager.getPluginInfo(name);
 		if (info == null) {
@@ -769,8 +780,8 @@ public class NodeUpdateManager {
 			minVer = Math.max(minVer, info.getPluginLongVersion());
 		FreenetURI uri = updateURI.setDocName(name).setSuggestedEdition(minVer);
 		PluginJarUpdater updater = new PluginJarUpdater(this, uri,
-				(int) minVer, -1, Integer.MAX_VALUE, name + "-", name,
-				node.pluginManager, autoDeployPluginsOnRestart);
+				(int) minVer, -1, (plugin.essential ? (int)minVer : Integer.MAX_VALUE)
+				, name + "-", name, node.pluginManager, autoDeployPluginsOnRestart);
 		synchronized (this) {
 			if (pluginUpdaters == null) {
 				if (logMINOR)
@@ -789,7 +800,7 @@ public class NodeUpdateManager {
 	}
 
 	public void stopPluginUpdater(String plugName) {
-		OfficialPluginDescription plugin = PluginManager.getOfficialPlugin(plugName);
+		OfficialPluginDescription plugin = node.getPluginManager().getOfficialPlugin(plugName);
 		if (plugin == null)
 			return; // Not an official plugin
 		PluginJarUpdater updater = null;
@@ -837,7 +848,33 @@ public class NodeUpdateManager {
 	}
 
 	/**
-	 * Set the URI freenet.jar should be updated from.
+	 * @return URI for the user-facing changelog.
+	 */
+	public synchronized FreenetURI getChangelogURI() {
+		return updateURI.setDocName("changelog");
+	}
+
+	public synchronized FreenetURI getDeveloperChangelogURI() {
+		return updateURI.setDocName("fullchangelog");
+	}
+
+	/**
+	 * Add links to the changelog for the given version to the given node.
+	 * @param version USK edition to point to
+	 * @param node to add links to
+	 */
+	public synchronized void addChangelogLinks(long version, HTMLNode node) {
+		String changelogUri = getChangelogURI().setSuggestedEdition(version).sskForUSK().toASCIIString();
+		String developerDetailsUri = getDeveloperChangelogURI().setSuggestedEdition(version).sskForUSK().toASCIIString();
+		node.addChild("a", "href", '/' + changelogUri + "?type=text/plain",
+			NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert.changelog"));
+		node.addChild("br");
+		node.addChild("a", "href", '/' + developerDetailsUri + "?type=text/plain",
+			NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert.devchangelog"));
+	}
+
+	/**
+	 * Set the URfrenet.jar should be updated from.
 	 * 
 	 * @param uri
 	 *            The URI to set.
@@ -910,8 +947,8 @@ public class NodeUpdateManager {
 		deployOffThread(0, false);
 	}
 
-	private static final int WAIT_FOR_SECOND_FETCH_TO_COMPLETE = 240 * 1000;
-	private static final int RECENT_REVOCATION_INTERVAL = 120 * 1000;
+	private static final long WAIT_FOR_SECOND_FETCH_TO_COMPLETE = MINUTES.toMillis(4);
+	private static final long RECENT_REVOCATION_INTERVAL = MINUTES.toMillis(2);
 	/**
 	 * After 5 minutes, deploy the update even if we haven't got 3 DNFs on the
 	 * revocation key yet. Reason: we want to be able to deploy UOM updates on
@@ -919,11 +956,14 @@ public class NodeUpdateManager {
 	 * Note that with UOM, revocation certs are automatically propagated node to
 	 * node, so this should be *relatively* safe. Any better ideas, tell us.
 	 */
-	private static final int REVOCATION_FETCH_TIMEOUT = 5 * 60 * 1000;
+	private static final long REVOCATION_FETCH_TIMEOUT = MINUTES.toMillis(5);
 
 	/**
 	 * Does the updater have an update ready to deploy? May be called
-	 * synchronized(this)
+	 * synchronized(this).
+	 * @param ignoreRevocation If true, return whether we will deploy when the revocation check 
+	 * finishes. If false, return whether we can deploy now, and if not, deploy after a delay with
+	 * deployOffThread().
 	 */
 	private boolean isReadyToDeployUpdate(boolean ignoreRevocation) {
 		long now = System.currentTimeMillis();
@@ -992,7 +1032,7 @@ public class NodeUpdateManager {
 				Logger.minor(this, "Returning true because of ignoreRevocation");
 			return true;
 		}
-		int waitTime = Math.max(REVOCATION_FETCH_TIMEOUT, waitForNextJar);
+		long waitTime = Math.max(REVOCATION_FETCH_TIMEOUT, waitForNextJar);
 		if(logMINOR) Logger.minor(this, "Will deploy in "+waitTime+"ms");
 		deployOffThread(waitTime, false);
 		return false;
@@ -1050,7 +1090,10 @@ public class NodeUpdateManager {
 				deps = latestMainJarDependencies;
 			}
 
-			success = innerDeployUpdate(deps);
+			synchronized(deployLock()) {
+			    success = innerDeployUpdate(deps);
+			    if(success) waitForever();
+			}
 			// isDeployingUpdate remains true as we are about to restart.
 		} catch (Throwable t) {
 			Logger.error(this, "DEPLOYING UPDATE FAILED: "+t, t);
@@ -1080,6 +1123,27 @@ public class NodeUpdateManager {
 					toFree.free();
 			}
 		}
+	}
+	
+	/** Use this lock when deploying an update of any kind which will require us to restart. If the 
+	 * update succeeds, you should call waitForever() if you don't immediately exit. There could be
+	 * rather nasty race conditions if we deploy two updates at once. 
+	 * @return A mutex for serialising update deployments. */
+	static final Object deployLock() {
+	    return deployLock;
+	}
+	
+	/** Does not return. Should be called, inside the deployLock(), if you are in a situation 
+	 * where you've deployed an update but the exit hasn't actually happened yet. */
+	static void waitForever() {
+	    while(true) {
+	        System.err.println("Waiting for shutdown after deployed update...");
+	        try {
+                Thread.sleep(60*1000);
+            } catch (InterruptedException e) {
+                // Ignore.
+            }
+	    }
 	}
 
 	/**
@@ -1131,8 +1195,9 @@ public class NodeUpdateManager {
 		if (hasNewMainJar) {
 			File mainJar = ctx.getMainJar();
 			File newMainJar = ctx.getNewMainJar();
+			File backupJar = ctx.getBackupJar();
 			try {
-				if (writeJar(mainJar, newMainJar, mainUpdater, "main",
+				if (writeJar(mainJar, newMainJar, backupJar, mainUpdater, "main",
 						tryEasyWay))
 					writtenNewJar = true;
 			} catch (UpdateFailedException e) {
@@ -1176,6 +1241,10 @@ public class NodeUpdateManager {
 	 *            The location of the current jar file.
 	 * @param newMainJar
 	 *            The location of the new jar file.
+	 * @param backupMainJar
+	 *            On Windows, we alternate between freenet.jar and freenet.jar.new, so we do not 
+	 *            need to write a backup - the user can rename between these two. On Unix, we 
+	 *            copy to freenet.jar.bak before updating, in case something horrible happens. 
 	 * @param mainUpdater
 	 *            The NodeUpdater for the file in question, so we can ask it to
 	 *            write the file.
@@ -1189,7 +1258,7 @@ public class NodeUpdateManager {
 	 * @throws UpdateFailedException
 	 *             If something breaks.
 	 */
-	private boolean writeJar(File mainJar, File newMainJar,
+	private boolean writeJar(File mainJar, File newMainJar, File backupMainJar,
 			NodeUpdater mainUpdater, String name, boolean tryEasyWay)
 			throws UpdateFailedException {
 		boolean writtenToTempFile = false;
@@ -1236,6 +1305,7 @@ public class NodeUpdateManager {
 			} else {
 				writeJarTo(newMainJar);
 			}
+			System.out.println("Written new main jar to "+newMainJar);
 		} catch (IOException e) {
 			throw new UpdateFailedException("Cannot update: Cannot write to "
 					+ (tryEasyWay ? " temp file " : "new jar ") + newMainJar);
@@ -1243,6 +1313,9 @@ public class NodeUpdateManager {
 
 		if (tryEasyWay) {
 			// Do it the easy way. Just rewrite the main jar.
+			backupMainJar.delete();
+			if(FileUtil.copyFile(mainJar, backupMainJar))
+				System.err.println("Written backup of current main jar to "+backupMainJar+" (if freenet fails to start up try renaming "+backupMainJar+" over "+mainJar);
 			if (!newMainJar.renameTo(mainJar)) {
 				Logger.error(NodeUpdateManager.class,
 						"Cannot rename temp file " + newMainJar
@@ -1255,10 +1328,11 @@ public class NodeUpdateManager {
 				}
 				// Try the hard way
 			} else {
-				System.err.println("Written new Freenet jar.");
+				System.err.println("Completed writing new Freenet jar to "+mainJar+".");
 				return false;
 			}
 		}
+		System.err.println("Rewriting wrapper.conf to point to "+newMainJar+" rather than "+mainJar+" (if Freenet fails to start after the update you could try changing wrapper.conf to use the old jar)");
 		return true;
 	}
 
@@ -1294,7 +1368,7 @@ public class NodeUpdateManager {
 			Logger.minor(this, "Restarting...");
 		node.getNodeStarter().restart();
 		try {
-			Thread.sleep(5 * 60 * 1000);
+			Thread.sleep(MINUTES.toMillis(5));
 		} catch (InterruptedException e) {
 			// Break
 		} // in case it's still restarting
@@ -1461,7 +1535,7 @@ public class NodeUpdateManager {
 			public void run() {
 				revocationChecker.start(false);
 			}
-		}, node.random.nextInt(24 * 60 * 60 * 1000));
+		}, node.random.nextInt((int) DAYS.toMillis(1)));
 	}
 
 	private void deployPluginUpdates() {
@@ -1700,7 +1774,8 @@ public class NodeUpdateManager {
 
 			@Override
 			public void run() {
-				isReadyToDeployUpdate(false);
+				if(isReadyToDeployUpdate(false))
+					deployUpdate();
 			}
 
 		}, "Check for updates");
@@ -1762,12 +1837,6 @@ public class NodeUpdateManager {
 		return startedFetchingNextMainJar;
 	}
 
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing NodeUpdateManager in database",
-				new Exception("error"));
-		return false;
-	}
-
 	public void disconnected(PeerNode pn) {
 		uom.disconnected(pn);
 	}
@@ -1804,7 +1873,7 @@ public class NodeUpdateManager {
 			// We are a seednode.
 			// Normally this means we won't send UOM.
 			// However, if something breaks severely, we need an escape route.
-			if (node.getUptime() > 5 * 60 * 1000
+			if (node.getUptime() > MINUTES.toMillis(5)
 					&& node.peers.countCompatibleRealPeers() == 0)
 				return false;
 			return true;
@@ -1832,7 +1901,9 @@ public class NodeUpdateManager {
 			this.dependenciesValidForBuild = deps.build;
 		}
 		revocationChecker.start(true);
-		deployOffThread(REVOCATION_FETCH_TIMEOUT, true);
+		// Deploy immediately if the revocation checker has already reported in but we were waiting for deps.
+		// Otherwise wait for the revocation checker.
+		deployOffThread(0, true);
 	}
 
 	public File getTransitionExtBlob() {

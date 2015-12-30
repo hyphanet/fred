@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.node.fcp.FCPMessage;
+import freenet.clients.fcp.FCPMessage;
 import freenet.support.HTMLNode;
 
 public interface UserAlert {
@@ -57,13 +57,6 @@ public interface UserAlert {
 	 */
 	public void onDismiss();
 	
-	/**
-	 * Returns a user-specified object that can be used to identify this alert.
-	 * 
-	 * @return The user-specified identifier object
-	 */
-	public Object getUserIdentifier();
-
 	/**
 	 * @return A unique, short name for the alert. Can be simply hashCode(), not visible to the user.
 	 * MUST NOT contain spaces or commas.

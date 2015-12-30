@@ -127,7 +127,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         // Now add some random links
         for(int i=0;i<NUMBER_OF_NODES*5;i++) {
             if(i % NUMBER_OF_NODES == 0)
-                Logger.normal(RealNodeRoutingTest.class, ""+i);
+                Logger.normal(RealNodeRoutingTest.class, String.valueOf(i));
             int length = (int)Math.pow(NUMBER_OF_NODES, random.nextDouble());
             int nodeA = random.nextInt(NUMBER_OF_NODES);
             int nodeB = (nodeA+length)%NUMBER_OF_NODES;
@@ -254,7 +254,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         
         Logger.normal(RealNodeULPRTest.class, "Inserting to node "+(nodes.length-1));
 		long tStart = System.currentTimeMillis();
-		nodes[nodes.length-1].store(block, false, false, true, false); // Write to datastore
+		nodes[nodes.length-1].store(block.getBlock(), false, false, true, false); // Write to datastore
         Logger.normal(RealNodeULPRTest.class, "Inserted to node "+(nodes.length-1));
 		
 		int x = -1;

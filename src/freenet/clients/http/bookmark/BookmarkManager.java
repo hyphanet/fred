@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.bookmark;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -12,8 +14,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-
-import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.USKCallback;
@@ -43,6 +43,7 @@ public class BookmarkManager implements RequestClient {
 	private final File bookmarksFile;
 	private final File backupBookmarksFile;
 	private boolean isSavingBookmarks = false;
+	private boolean isSavingBookmarksLazy = false;
 	static {
 		String name = "freenet/clients/http/staticfiles/defaultbookmarks.dat";
 		SimpleFieldSet defaultBookmarks = null;
@@ -119,14 +120,15 @@ public class BookmarkManager implements RequestClient {
 	private class USKUpdatedCallback implements USKCallback {
 
 		@Override
-		public void onFoundEdition(long edition, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+		public void onFoundEdition(long edition, USK key, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			if(!newKnownGood) {
 				FreenetURI uri = key.copy(edition).getURI();
-				node.makeClient(PRIORITY_PROGRESS, false, false).prefetch(uri, 60*60*1000, FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, null, PRIORITY_PROGRESS);
+				node.makeClient(PRIORITY_PROGRESS, false, false).prefetch(uri, MINUTES.toMillis(60), FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, null, PRIORITY_PROGRESS);
 				return;
 			}
 			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
 			boolean matched = false;
+			boolean updated = false;
 			for(int i = 0; i < items.size(); i++) {
 				if(!"USK".equals(items.get(i).getKeyType()))
 					continue;
@@ -138,15 +140,16 @@ public class BookmarkManager implements RequestClient {
 					if(usk.equals(key, false)) {
 						if(logMINOR) Logger.minor(this, "Updating bookmark for "+furi+" to edition "+edition);
 						matched = true;
-						items.get(i).setEdition(edition, node);
+						BookmarkItem item = items.get(i);
+						updated |= item.setEdition(edition, node);
 						// We may have bookmarked the same site twice, so continue the search.
 					}
 				} catch(MalformedURLException mue) {
 				}
 			}
-			if(matched) {
-				storeBookmarks();
-			} else {
+			if(updated) {
+				storeBookmarksLazy();
+			} else if(!matched) {
 				Logger.error(this, "No match for bookmark "+key+" edition "+edition);
 			}
 		}
@@ -170,7 +173,7 @@ public class BookmarkManager implements RequestClient {
 		if(path.equals("/"))
 			return "/";
 
-		return path.substring(0, path.substring(0, path.length() - 1).lastIndexOf("/")) + "/";
+		return path.substring(0, path.substring(0, path.length() - 1).lastIndexOf('/')) + "/";
 	}
 
 	public Bookmark getBookmarkByPath(String path) {
@@ -244,8 +247,8 @@ public class BookmarkManager implements RequestClient {
 			for(int i = 0; i < cat.size(); i++)
 				removeBookmark(path + cat.get(i).getName() + ((cat.get(i) instanceof BookmarkCategory) ? "/"
 					: ""));
-		} else
-			if(((BookmarkItem) bookmark).getKeyType().equals("USK"))
+		} else {
+			if(((BookmarkItem) bookmark).getKeyType().equals("USK")) {
 				try {
 					USK u = ((BookmarkItem) bookmark).getUSK();
 					if(!wantUSK(u, (BookmarkItem)bookmark)) {
@@ -253,6 +256,8 @@ public class BookmarkManager implements RequestClient {
 					}
 				} catch(MalformedURLException mue) {
 				}
+			}
+		}
 
 		getCategoryByPath(parentPath(path)).removeBookmark(bookmark);
 		synchronized(bookmarks) {
@@ -324,6 +329,25 @@ public class BookmarkManager implements RequestClient {
 
 		return uris;
 	}
+	
+	public void storeBookmarksLazy() {
+		synchronized(bookmarks) {
+			if(isSavingBookmarksLazy) return;
+			isSavingBookmarksLazy = true;
+			node.node.ticker.queueTimedJob(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						storeBookmarks();
+					} finally {
+						isSavingBookmarksLazy = false;
+					}
+				}
+
+			}, MINUTES.toMillis(5));
+		}
+	}
 
 	public void storeBookmarks() {
 		Logger.normal(this, "Attempting to save bookmarks to " + bookmarksFile.toString());
@@ -338,7 +362,7 @@ public class BookmarkManager implements RequestClient {
 		FileOutputStream fos = null;
 		try {
 			fos = new FileOutputStream(backupBookmarksFile);
-			sfs.writeTo(fos);
+			sfs.writeToBigBuffer(fos);
 			fos.close();
 			fos = null;
 			if(!FileUtil.renameTo(backupBookmarksFile, bookmarksFile))
@@ -445,11 +469,6 @@ public class BookmarkManager implements RequestClient {
 	@Override
 	public boolean persistent() {
 		return false;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 	@Override

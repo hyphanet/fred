@@ -1,7 +1,9 @@
 package freenet.support;
 
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
@@ -546,6 +548,10 @@ public abstract class Fields {
 		return x;
 	}
 
+	public static int bytesToInt(byte[] buf) {
+		return bytesToInt(buf, 0);
+	}
+	
 	/**
 	 * Convert an array of bytes to a single int.
 	 */
@@ -909,4 +915,81 @@ public abstract class Fields {
 		}
 		return i - origI;
 	}
+
+	public static int compareObjectID(Object o1, Object o2) {
+		int id1 = System.identityHashCode(o1);
+		int id2 = System.identityHashCode(o2);
+		if(id1 > id2) return 1;
+		if(id2 > id1) return -1;
+		return 0;
+	}
+	
+	/** Avoid issues with overflow, 2's complement. E.g. 0-Integer.MIN_VALUE = Integer.MIN_VALUE-0. */
+	public static final int compare(int x, int y) {
+		if(x > y) return 1;
+		if(y > x) return -1;
+		return 0;
+	}
+	
+	/** Avoid issues with overflow, 2's complement. */
+	public static final int compare(long x, long y) {
+		if(x > y) return 1;
+		if(y > x) return -1;
+		return 0;
+	}
+
+	/** Avoid issues with NaN's. */
+	public static final int compare(double x, double y) {
+		if(Double.isNaN(x)) {
+			if(Double.isNaN(y)) {
+				return 0; // kind of!
+			} else {
+				return -1; // second is better
+			}
+		} else if(Double.isNaN(y)) {
+			return 1; // first is better
+		} else {
+			if(x > y)
+				return 1;
+			else if(x < y)
+				return -1;
+		}
+		return 0;
+	}
+
+	/** Avoid issues with NaN's. */
+	public static final int compare(float x, float y) {
+		if(Float.isNaN(x)) {
+			if(Float.isNaN(y)) {
+				return 0; // kind of!
+			} else {
+				return -1; // second is better
+			}
+		} else if(Float.isNaN(y)) {
+			return 1; // first is better
+		} else {
+			if(x > y)
+				return 1;
+			else if(x < y)
+				return -1;
+		}
+		return 0;
+	}
+
+    public static final int compare(Date a, Date b) {
+        // Replace null Dates with real ones so we can use Date.compareTo()
+        a = (a != null ? a : new Date(0));
+        b = (b != null ? b : new Date(0));
+        return a.compareTo(b);
+    }
+
+	/** Copy all of the remaining bytes in the buffer to a byte array.
+	 * @param buf The input buffer. Position will be at the limit when returning.
+	 */
+	public static byte[] copyToArray(ByteBuffer buf) {
+	    byte[] ret = new byte[buf.remaining()];
+	    buf.get(ret);
+	    return ret;
+	}
+
 }

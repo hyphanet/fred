@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.store.saltedhash;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
@@ -71,7 +74,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	/** Option for saving plainkey. 
 	 * SECURITY: This should NEVER be enabled for a client-cache! */
 	private static final boolean OPTION_SAVE_PLAINKEY = false;
-	private static final int OPTION_MAX_PROBE = 5;
+	static final int OPTION_MAX_PROBE = 5;
 
 	private static final byte FLAG_DIRTY = 0x1;
 	private static final byte FLAG_REBUILD_BLOOM = 0x2;
@@ -199,8 +202,18 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		if(!slotFilterDisabled) {
 			slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size);
 			System.err.println("Slot filter (" + slotFilterFile + ") for " + name + " is loaded (new="+slotFilter.isNew()+").");
-		} else
+			if(newStore && slotFilter.isNew())
+				slotFilter.fill(SLOT_CHECKED);
+		} else {
+			if(slotFilterFile.exists()) {
+				if(slotFilterFile.delete()) {
+					System.err.println("Old slot filter file deleted as slot filters are disabled, keeping it might cause data loss when they are turned back on.");
+				} else {
+					System.err.println("Old slot filter file "+slotFilterFile+" could not be deleted. If you turn on slot filters later you might lose data from your datastore. Please delete it manually.");
+				}
+			}
 			slotFilter = null;
+		}
 
 		if ((flags & FLAG_DIRTY) != 0)
 			System.err.println("Datastore(" + name + ") is dirty.");
@@ -1092,7 +1105,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						random.nextBytes(seed);
 						mt = new MersenneTwister(seed);
 						if (starting) {
-							WrapperManager.signalStarting(5*60*1000);
+							WrapperManager.signalStarting((int) MINUTES.toMillis(5));
 							if ( x++ % 32 == 0 )
 								System.err.println("Preallocating space for " + name + ": " + currentHdLen + "/" + newHdLen);
 						}
@@ -1414,7 +1427,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						configLock.writeLock().unlock();
 					}
 
-					WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 30 * 1000 + 1000);
+					WrapperManager.signalStarting((int) (RESIZE_MEMORY_ENTRIES * SECONDS.toMillis(30) + SECONDS.toMillis(1)));
 				}
 
 				@Override
@@ -1456,7 +1469,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				int i = 0;
 				@Override
 				public boolean batch(long entriesLeft) {
-					WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 30 * 1000 + 1000);
+					WrapperManager.signalStarting((int) (RESIZE_MEMORY_ENTRIES * SECONDS.toMillis(30) + SECONDS.toMillis(1)));
 
 					if (i++ % 16 == 0)
 						writeConfigFile();
@@ -1526,8 +1539,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					} finally {
 						configLock.writeLock().unlock();
 					}
-					
-					WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 5 * 1000 + 1000);
+
+					WrapperManager.signalStarting((int) (RESIZE_MEMORY_ENTRIES * SECONDS.toMillis(5) + SECONDS.toMillis(1)));
 				}
 				
 				@Override
@@ -1554,7 +1567,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				int i = 0;
 				@Override
 				public boolean batch(long entriesLeft) {
-					WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 5 * 1000 + 1000);
+					WrapperManager.signalStarting((int) (RESIZE_MEMORY_ENTRIES * SECONDS.toMillis(5) + SECONDS.toMillis(1)));
 
 					if (i++ % 16 == 0)
 						writeConfigFile();
@@ -1843,13 +1856,13 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			if (cleaner.isResizing)
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.shortResizeProgress", //
 				        new String[] { "name", "processed", "total" },//
-				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
-				                cleaner.entriesTotal + "" });
+				        new String[] { name, String.valueOf(cleaner.entriesTotal - cleaner.entriesLeft) ,
+				                String.valueOf(cleaner.entriesTotal)  });
 			else
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.shortRebuildProgress" + (slotFilter.isNew() ? "New" : ""), 
 				        new String[] { "name", "processed", "total" },//
-				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
-				                cleaner.entriesTotal + "" });
+				        new String[] { name, String.valueOf(cleaner.entriesTotal - cleaner.entriesLeft) ,
+				                String.valueOf(cleaner.entriesTotal)  });
 		}
 
 		@Override
@@ -1857,13 +1870,13 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			if (cleaner.isResizing)
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.longResizeProgress", //
 				        new String[] { "name", "processed", "total" },//
-				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
-				                cleaner.entriesTotal + "" });
+				        new String[] { name, String.valueOf(cleaner.entriesTotal - cleaner.entriesLeft) ,
+				                String.valueOf(cleaner.entriesTotal)  });
 			else
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.longRebuildProgress" + (slotFilter.isNew() ? "New" : ""),
 				        new String[] { "name", "processed", "total" },
-				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
-				                cleaner.entriesTotal + "" });
+				        new String[] { name, String.valueOf(cleaner.entriesTotal - cleaner.entriesLeft) ,
+				                String.valueOf(cleaner.entriesTotal)  });
 		}
 
 		@Override
@@ -1871,11 +1884,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			return NodeL10n.getBase().getString("SaltedHashFreenetStore.cleanerAlertTitle", //
 			        new String[] { "name" }, //
 			        new String[] { name });
-		}
-
-		@Override
-		public Object getUserIdentifier() {
-			return null;
 		}
 
 		@Override
@@ -2148,53 +2156,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		return bloomFalsePos.get();
 	}
 
-	// ------------- Migration
-	public void migrationFrom(File storeFile, File keyFile) {
-		try {
-			System.out.println("Migrating from " + storeFile);
-
-			RandomAccessFile storeRAF = new RandomAccessFile(storeFile, "r");
-			RandomAccessFile keyRAF = keyFile.exists() ? new RandomAccessFile(keyFile, "r") : null;
-
-			byte[] header = new byte[headerBlockLength];
-			byte[] data = new byte[dataBlockLength];
-			byte[] key = new byte[fullKeyLength];
-
-			long maxKey = storeRAF.length() / (headerBlockLength + dataBlockLength);
-
-			for (int l = 0; l < maxKey; l++) {
-				if (l % 1024 == 0) {
-					System.out.println(" migrating key " + l + "/" + maxKey);
-					WrapperManager.signalStarting(10 * 60 * 1000); // max 10 minutes for every 1024 keys
-				}
-
-				boolean keyRead = false;
-				storeRAF.readFully(header);
-				storeRAF.readFully(data);
-				try {
-					if (keyRAF != null) {
-						keyRAF.readFully(key);
-						keyRead = true;
-					}
-				} catch (IOException e) {
-				}
-
-				try {
-					T b = callback.construct(data, header, null, keyRead ? key : null, false, false, null, null);
-					put(b, data, header, true, true);
-				} catch (KeyVerifyException e) {
-					System.out.println("kve at block " + l);
-				} catch (KeyCollisionException e) {
-					System.out.println("kce at block " + l);
-				}
-			}
-		} catch (EOFException eof) {
-			// done
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
 	@Override
 	public boolean probablyInStore(byte[] routingKey) {
 		configLock.readLock().lock();
@@ -2320,5 +2281,23 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		slotFilter.replaceAllEntries(0, SLOT_CHECKED);
 	}
 
+	@Override
+	public FreenetStore<T> getUnderlyingStore() {
+		return this;
+	}
 
+	/** Only for testing (crude!) 
+	 * @throws InterruptedException */
+	void testingWaitForCleanerDone(int delay, int count) throws InterruptedException {
+		for(int i=0;i<count;i++) {
+			configLock.readLock().lock();
+			try {
+				if((flags & FLAG_REBUILD_BLOOM) == 0) return;
+			} finally {
+				configLock.readLock().unlock();
+			}
+			Thread.sleep(delay);
+		}
+		throw new AssertionError();
+	}
 }

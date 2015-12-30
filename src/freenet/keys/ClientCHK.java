@@ -6,11 +6,11 @@ package freenet.keys;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.HashSet;
-
-import com.db4o.ObjectContainer;
+import java.util.Random;
 
 import freenet.support.Base64;
 import freenet.support.ByteArrayWrapper;
@@ -21,9 +21,10 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
  * Client level CHK. Can be converted into a FreenetURI, can be used to decrypt
  * a CHKBlock, can be produced by a CHKBlock. 
  */
-public class ClientCHK extends ClientKey {
+public class ClientCHK extends ClientKey implements Serializable {
     
-	/** Lazily constructed: the NodeCHK */
+    private static final long serialVersionUID = 1L;
+    /** Lazily constructed: the NodeCHK */
     transient NodeCHK nodeKey;
     /** Routing key */
     final byte[] routingKey;
@@ -44,6 +45,17 @@ public class ClientCHK extends ClientKey {
     /** The length of the decryption key */
     public static final short CRYPTO_KEY_LENGTH = 32;
     
+    /** Useful for e.g. length checks */
+    public static final ClientCHK TEST_KEY;
+    
+    static {
+        try {
+            TEST_KEY = new ClientCHK(FreenetURI.generateRandomCHK(new Random()));
+        } catch (MalformedURLException e) {
+            throw new Error(e);
+        }
+    }
+    
     private ClientCHK(ClientCHK key) {
     	this.routingKey = key.routingKey.clone();
     	this.nodeKey = null;
@@ -51,8 +63,7 @@ public class ClientCHK extends ClientKey {
     	this.controlDocument = key.controlDocument;
     	this.cryptoAlgorithm = key.cryptoAlgorithm;
     	this.compressionAlgorithm = key.compressionAlgorithm;
-        if(routingKey == null) throw new NullPointerException();
-        hashCode = Fields.hashCode(routingKey) ^ Fields.hashCode(routingKey) ^ compressionAlgorithm;
+        hashCode = key.hashCode;
     }
     
     /**
@@ -117,7 +128,7 @@ public class ClientCHK extends ClientKey {
      * in as few bytes as possible.
      * @throws IOException 
      */
-	private ClientCHK(DataInputStream dis) throws IOException {
+	public ClientCHK(DataInputStream dis) throws IOException {
 		byte[] extra = new byte[EXTRA_LENGTH];
 		dis.readFully(extra);
 		// byte 0 is reserved, for now
@@ -131,6 +142,16 @@ public class ClientCHK extends ClientKey {
 		cryptoKey = new byte[CRYPTO_KEY_LENGTH];
 		dis.readFully(cryptoKey);
         hashCode = Fields.hashCode(routingKey) ^ Fields.hashCode(cryptoKey) ^ compressionAlgorithm;
+	}
+	
+	protected ClientCHK() {
+	    // Only for serialization.
+	    routingKey = null;
+	    cryptoKey = null;
+	    controlDocument = false;
+	    cryptoAlgorithm = 0;
+	    compressionAlgorithm = 0;
+	    hashCode = 0;
 	}
 
 	/**
@@ -159,6 +180,7 @@ public class ClientCHK extends ClientKey {
 		byte[] last = lastExtra;
 		// No synchronization required IMHO
 		if(Arrays.equals(last, extra)) return last;
+		assert(extra.length == EXTRA_LENGTH);
 		lastExtra = extra;
 		return extra;
 	}
@@ -236,11 +258,6 @@ public class ClientCHK extends ClientKey {
 	}
 
 	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
-	
-	@Override
 	public int hashCode() {
 		return hashCode;
 	}
@@ -265,11 +282,7 @@ public class ClientCHK extends ClientKey {
 		return cryptoKey;
 	}
 	
-	public boolean objectCanNew(ObjectContainer container) {
-		if(routingKey == null)
-			throw new NullPointerException("Storing a ClientCHK with no routingKey!: stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this));
-		if(cryptoKey == null)
-			throw new NullPointerException("Storing a ClientCHK with no cryptoKey!");
-		return true;
-	}
+    public byte getCryptoAlgorithm() {
+        return cryptoAlgorithm;
+    }
 }

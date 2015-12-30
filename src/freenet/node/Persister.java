@@ -1,12 +1,13 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Ticker;
 import freenet.support.io.Closer;
@@ -17,6 +18,8 @@ class Persister implements Runnable {
         static {
             Logger.registerClass(Persister.class);
         }
+
+        static final long PERIOD = MINUTES.toMillis(15);
 
 	Persister(Persistable t, File persistTemp, File persistTarget, Ticker ps) {
 		this.persistable = t;
@@ -48,16 +51,13 @@ class Persister implements Runnable {
 		freenet.support.Logger.OSThread.logPID(this);
 		try {
 			persistThrottle();
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
-			System.err.println("Will restart ThrottlePersister...");
 		} catch (Throwable t) {
 			Logger.error(this, "Caught in ThrottlePersister: "+t, t);
 			System.err.println("Caught in ThrottlePersister: "+t);
 			t.printStackTrace();
 			System.err.println("Will restart ThrottlePersister...");
 		}
-		ps.queueTimedJob(this, 60*1000);
+		ps.queueTimedJob(this, PERIOD);
 	}
 	
 	private void persistThrottle() {
@@ -68,7 +68,7 @@ class Persister implements Runnable {
 		FileOutputStream fos = null;
 		try {
 			fos = new FileOutputStream(persistTemp);
-			fs.writeTo(fos);
+			fs.writeToBigBuffer(fos);
 			fos.close();
 			FileUtil.renameTo(persistTemp, persistTarget);
 		} catch (FileNotFoundException e) {
@@ -105,6 +105,14 @@ class Persister implements Runnable {
 			}
 			started = true;
 		}
+		SemiOrderedShutdownHook.get().addEarlyJob(new Thread() {
+			
+			public void run() {
+				System.out.println("Writing "+persistTarget+" on shutdown");
+				persistThrottle();
+			}
+			
+		});
 		run();
 	}
 

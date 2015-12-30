@@ -3,8 +3,6 @@ package freenet.node.updater;
 import java.io.File;
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -15,6 +13,7 @@ import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
+import freenet.node.RequestClientBuilder;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.io.FileBucket;
@@ -40,26 +39,9 @@ class LegacyJarFetcher implements ClientGetCallback {
 		public void onSuccess(LegacyJarFetcher fetcher);
 		public void onFailure(FetchException e, LegacyJarFetcher fetcher);
 	}
-	
+
 	// Single client for both fetches.
-	static final RequestClient client = new RequestClient() {
-
-		@Override
-		public boolean persistent() {
-			return false;
-		}
-
-		@Override
-		public boolean realTimeFlag() {
-			return false;
-		}
-
-		@Override
-		public void removeFrom(ObjectContainer container) {
-			throw new UnsupportedOperationException();
-		}
-		
-	};
+	static final RequestClient client = new RequestClientBuilder().build();
 
 	public LegacyJarFetcher(FreenetURI uri, File saveTo, NodeClientCore core, LegacyFetchCallback cb) {
 		this.uri = uri;
@@ -71,7 +53,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 		ctx.dontEnterImplicitArchives = false;
 		ctx.maxNonSplitfileRetries = -1;
 		ctx.maxSplitfileBlockRetries = -1;
-		blobBucket = new FileBucket(saveTo, false, false, false, false, false);
+		blobBucket = new FileBucket(saveTo, false, false, false, false);
 		if(blobBucket.size() > 0) {
 			fetched = true;
 			cg = null;
@@ -93,7 +75,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 			tempFile = tmp;
 			cg = new ClientGetter(this,  
 					uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					client, null, new BinaryBlobWriter(new FileBucket(tempFile, false, false, false, false, false)));
+					null, new BinaryBlobWriter(new FileBucket(tempFile, false, false, false, false)));
 			fetched = false;
 		}
 	}
@@ -107,7 +89,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 			cb.onSuccess(this);
 		else {
 			try {
-				cg.start(null, context);
+				cg.start(context);
 			} catch (FetchException e) {
 				synchronized(this) {
 					failed = true;
@@ -121,7 +103,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 		synchronized(this) {
 			if(fetched) return;
 		}
-		cg.cancel(null, context);
+		cg.cancel(context);
 	}
 
 	public long getBlobSize() {
@@ -151,13 +133,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 	}
 
 	@Override
-	public void onMajorProgress(ObjectContainer container) {
-		// Ignore.
-	}
-
-	@Override
-	public void onSuccess(FetchResult result, ClientGetter state,
-			ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetter state) {
 		result.asBucket().free();
 		if(!FileUtil.renameTo(tempFile, saveTo)) {
 			Logger.error(this, "Fetched file but unable to rename temp file "+tempFile+" to "+saveTo+" : UOM FROM OLD NODES WILL NOT WORK!");
@@ -170,13 +146,22 @@ class LegacyJarFetcher implements ClientGetCallback {
 	}
 
 	@Override
-	public void onFailure(FetchException e, ClientGetter state,
-			ObjectContainer container) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		synchronized(this) {
 			failed = true;
 		}
 		tempFile.delete();
 		cb.onFailure(e, this);
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Do nothing. Not persistent.
+    }
+
+    @Override
+    public RequestClient getRequestClient() {
+        return client;
+    }
 
 }

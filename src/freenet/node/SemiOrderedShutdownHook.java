@@ -1,10 +1,12 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.ArrayList;
 
 public class SemiOrderedShutdownHook extends Thread {
-	
-	private static final int TIMEOUT = 100*1000;
+
+	private static final long TIMEOUT = SECONDS.toMillis(100);
 	private final ArrayList<Thread> earlyJobs;
 	private final ArrayList<Thread> lateJobs;
 	
@@ -36,23 +38,12 @@ public class SemiOrderedShutdownHook extends Thread {
 		System.err.println("Shutting down...");
 		// First run early jobs, all at once, and wait for them to all complete.
 		
-		for(Thread r : earlyJobs) {
+		Thread[] early = getEarlyJobs();
+		
+		for(Thread r : early) {
 			r.start();
 		}
-		for(Thread r : earlyJobs) {
-			try {
-				r.join(TIMEOUT);
-			} catch (InterruptedException e) {
-				// :(
-				// May as well move on
-			}
-		}
-
-		// Then run late jobs, all at once, and wait for them to all complete (JVM will exit when we return).
-		for(Thread r : lateJobs) {
-			r.start();
-		}
-		for(Thread r : lateJobs) {
+		for(Thread r : early) {
 			try {
 				r.join(TIMEOUT);
 			} catch (InterruptedException e) {
@@ -61,5 +52,28 @@ public class SemiOrderedShutdownHook extends Thread {
 			}
 		}
 		
+		Thread[] late = getLateJobs();
+
+		// Then run late jobs, all at once, and wait for them to all complete (JVM will exit when we return).
+		for(Thread r : late) {
+			r.start();
+		}
+		for(Thread r : late) {
+			try {
+				r.join(TIMEOUT);
+			} catch (InterruptedException e) {
+				// :(
+				// May as well move on
+			}
+		}
+		
+	}
+
+	private synchronized Thread[] getEarlyJobs() {
+		return earlyJobs.toArray(new Thread[earlyJobs.size()]);
+	}
+	
+	private synchronized Thread[] getLateJobs() {
+		return lateJobs.toArray(new Thread[lateJobs.size()]);
 	}
 }

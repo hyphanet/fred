@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -52,7 +54,7 @@ import freenet.support.io.Closer;
  *
  * @author Scott G. Miller <scgmille@indiana.edu>
  */
-public class Yarrow extends RandomSource {
+public class Yarrow extends RandomSource implements PersistentRandomSource {
 
 	private static final long serialVersionUID = -1;
 	private static volatile boolean logMINOR;
@@ -267,11 +269,19 @@ public class Yarrow extends RandomSource {
 		write_seed(filename, false);
 	}
 
-	public void write_seed(File filename, boolean force) {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void write_seed(boolean force) {
+        write_seed(seedfile, force);
+    }
+
+    private void write_seed(File filename, boolean force) {
 		if(!force)
 			synchronized(this) {
 				long now = System.currentTimeMillis();
-				if(now - timeLastWroteSeed <= 60 * 60 * 1000 /* once per hour */)
+				if(now - timeLastWroteSeed <= HOURS.toMillis(1) /* once per hour */)
 					return;
 				else
 					timeLastWroteSeed = now;

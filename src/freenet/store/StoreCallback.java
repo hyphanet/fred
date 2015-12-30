@@ -39,7 +39,8 @@ public abstract class StoreCallback<T extends StorableBlock> {
 
 
 	
-	/** Called once when first connecting to a FreenetStore. Package-local. */
+	/** Called when first connecting to a FreenetStore. If the FreenetStore is a wrapper, it can be
+	 * called more than once, but the last call will determine which store we use. */
 	public void setStore(FreenetStore<T> store) {
 		this.store = store;
 	}
@@ -97,5 +98,10 @@ public abstract class StoreCallback<T extends StorableBlock> {
 	 * @return Null if not supported. */
 	public StoreAccessStats getTotalAccessStats() {
 		return store.getTotalAccessStats();
+	}
+
+	/** @return The total size in memory of a block with its key and routing key and data and headers. */
+	public int getTotalBlockSize() {
+		return dataLength() + headerLength() + fullKeyLength() + routingKeyLength();
 	}
 }

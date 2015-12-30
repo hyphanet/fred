@@ -53,7 +53,7 @@ public final class MessageFilter {
     /** If true, timeouts are relative to the start of waiting, if false, they are relative to
      * the time of calling setTimeout() */
     private boolean _timeoutFromWait;
-    private int _initialTimeout;
+    private long _initialTimeout;
     private MessageFilter _or;
     private Message _message;
     private long _oldBootID;
@@ -106,7 +106,7 @@ public final class MessageFilter {
      * @param timeout The time before this filter expires in ms
      * @return This message filter
      */
-	public MessageFilter setTimeout(int timeout) {
+	public MessageFilter setTimeout(long timeout) {
 		_setTimeout = true;
 		_initialTimeout = timeout;
 		_timeout = System.currentTimeMillis() + timeout;
@@ -179,6 +179,10 @@ public final class MessageFilter {
 		if((or != null) && (_or != null) && or != _or) {
 			throw new IllegalStateException("Setting a second .or() on the same filter will replace the " +
 			    "existing one, not add another. " + _or + " would be replaced by " + or + ".");
+		}
+		if(or._initialTimeout != _initialTimeout) {
+			Logger.error(this, "Message filters being or()ed have different timeouts! This is very dangerous! This is "+this+" or is "+or);
+			// FIXME throw new IllegalArgumentException()
 		}
 		_or = or;
 		return this;
@@ -282,7 +286,7 @@ public final class MessageFilter {
         notifyAll();
     }
 
-    public int getInitialTimeout() {
+    public long getInitialTimeout() {
         return _initialTimeout;
     }
     

@@ -273,4 +273,10 @@ public class Peer implements WritableToDataOutputStream {
 			return new Peer(newAddr, _port);
 		} else return this;
 	}
+
+	/** Is this peer using IPv6? */
+	public boolean isIPv6(boolean defaultValue) {
+		if(addr == null) return defaultValue;
+		return addr.isIPv6(defaultValue);
+	}
 }

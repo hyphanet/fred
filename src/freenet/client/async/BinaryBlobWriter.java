@@ -9,10 +9,9 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
@@ -24,7 +23,13 @@ import freenet.support.io.BucketTools;
  * @author saces
  */
 public final class BinaryBlobWriter {
+    
+    private static volatile boolean logMINOR;
 
+    static {
+        Logger.registerClass(BinaryBlobWriter.class);
+    }
+    
 	private final HashSet<Key> _binaryBlobKeysAddedAlready;
 	private final BucketFactory _bf;
 	private final ArrayList<Bucket> _buckets;
@@ -62,7 +67,7 @@ public final class BinaryBlobWriter {
 
 	private DataOutputStream getOutputStream() throws IOException, BinaryBlobAlreadyClosedException {
 		if (_finalized) {
-			throw new BinaryBlobAlreadyClosedException("Already finalized (getting final data).");
+			throw new BinaryBlobAlreadyClosedException("Already finalized (getting final data) on "+this);
 		}
 		if (_stream_cache==null) {
 			if (_isSingleBucket) {
@@ -85,16 +90,15 @@ public final class BinaryBlobWriter {
 	 * @throws IOException
 	 * @throws BinaryBlobAlreadyClosedException 
 	 */
-	public synchronized void addKey(ClientKeyBlock block, ClientContext context, ObjectContainer container) throws IOException, BinaryBlobAlreadyClosedException {
+	public synchronized void addKey(ClientKeyBlock block, ClientContext context) throws IOException, BinaryBlobAlreadyClosedException {
 		Key key = block.getKey();
 		if(_binaryBlobKeysAddedAlready.contains(key)) return;
-		BinaryBlob.writeKey(getOutputStream(), block, key);
+		BinaryBlob.writeKey(getOutputStream(), block.getBlock(), key);
 		_binaryBlobKeysAddedAlready.add(key);
 	}
 
 	/**
 	 * finalize the return bucket
-	 * @return
 	 * @throws IOException
 	 * @throws BinaryBlobAlreadyClosedException 
 	 */
@@ -107,6 +111,7 @@ public final class BinaryBlobWriter {
 
 	private void finalizeBucket(boolean mark) throws IOException, BinaryBlobAlreadyClosedException {
 		if (_finalized) throw new BinaryBlobAlreadyClosedException("Already finalized (closing blob - 2).");
+		if(logMINOR) Logger.minor(this, "Finalizing binary blob "+this, new Exception("debug"));
 		if (!_isSingleBucket) {
 			if (!mark && (_buckets.size()==1)) {
 				return;

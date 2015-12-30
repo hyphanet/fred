@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import com.db4o.ObjectContainer;
 import freenet.support.LogThresholdCallback;
 
 import freenet.support.Logger;
@@ -39,8 +38,7 @@ public class SingleFileStreamGenerator implements StreamGenerator {
 	}
 
 	@Override
-	public void writeTo(OutputStream os, ObjectContainer container,
-			ClientContext context) throws IOException {
+	public void writeTo(OutputStream os, ClientContext context) throws IOException {
 		try{
 			if(logMINOR) Logger.minor(this, "Generating Stream", new Exception("debug"));
 			InputStream data = bucket.getInputStream();
@@ -51,7 +49,6 @@ public class SingleFileStreamGenerator implements StreamGenerator {
 			}
 			os.close();
 			bucket.free();
-			if(persistent) bucket.removeFrom(container);
 			if(logMINOR) Logger.minor(this, "Stream completely generated", new Exception("debug"));
 		} finally {
 			Closer.close(bucket);

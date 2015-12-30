@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,11 +29,12 @@ public class IPConverter {
 		}
 	};
 	// Cached DB file content
-	private WeakReference<Cache> fullCache;
+	private SoftReference<Cache> fullCache;
 	// Reference to singleton object
 	private static IPConverter instance;
 	// File containing IP ranges
 	private File dbFile;
+	private boolean dbFileCorrupt;
 
 	public enum Country {
 		L0("localhost"), I0("IntraNet"), A1("Anonymous Proxy"), A2(
@@ -164,6 +166,9 @@ public class IPConverter {
 				return hasFlag ? flagPath : null;
 			}
 		}
+
+		/** cached values(). Never modify or pass this array to outside code! */
+		private static final Country[] values = values();
 	}
 
 	// Base85 Decoding table
@@ -175,6 +180,16 @@ public class IPConverter {
 			'x', 'y', 'z', '.', ',', ';', '\'', '"', '`', '<', '>', '{', '}',
 			'[', ']', '=', '+', '-', '~', '*', '@', '#', '%', '$', '&', '!',
 			'?' };
+	private final static int base = base85.length;
+	// XXX this is actually base86, not base85!
+	private final static byte[] base85inv = new byte [128-32];
+	static {
+		Arrays.fill(base85inv, (byte)-1);
+		for(int i = 0; i < base85.length; i++) {
+			assert(base85[i] >= (char)32 && base85[i] < (char)128);
+			base85inv[(int)base85[i]-32] = (byte)i;
+		}
+	}
 
 	/**
 	 * Constructs a new {@link IPConverter}
@@ -224,18 +239,17 @@ public class IPConverter {
 			short[] codes = new short[size];
 			int[] ips = new int[size];
 			// Read ips and add it to ip table
-			for (int i = 0; i < size; i++) {
-				int offset = i * 7;
-				String iprange = line.substring(offset, offset + 7);
+			for (int i = 0, offset = 0; i < size; i++, offset += 7) {
 				// Code
-				String code = iprange.substring(0, 2);
+				String code = line.substring(offset, offset + 2);
 				// Ip
-				String ipcode = iprange.substring(2);
+				String ipcode = line.substring(offset + 2, offset + 7);
 				long ip = decodeBase85(ipcode.getBytes("ISO-8859-1"));
 				try {
 					Country country = Country.valueOf(code);
 					codes[i] = (short) country.ordinal();
 				} catch (IllegalArgumentException e) {
+					// Does not invalidate the whole file, just means the country list is out of date.
 					Logger.error(this, "Country not in list: "+code);
 					codes[i] = (short)-1;
 				}
@@ -248,6 +262,11 @@ public class IPConverter {
 			Logger.warning(this, "Database file not found!", e);
 		} catch (IOException e) {
 			Logger.error(this, e.getMessage());
+		} catch (IPConverterParseException e) {
+			Logger.error(this, "IP to country datbase file is corrupt: "+e, e);
+			// Don't try again until next restart.
+			// FIXME add a callback to clear the flag when we download a new copy.
+			dbFileCorrupt = true;
 		}
 		return null;
 	}
@@ -333,12 +352,12 @@ public class IPConverter {
 	}
 
 	private Country locateIP(long longip) {
-		Cache memCache = getCache();
 		// Check cache first
 		Country cached = cache.get((int)longip);
 		if (cached != null) {
 			return cached;
 		}
+		Cache memCache = getCache();
 		if(memCache == null) return null;
 		int[] ips = memCache.getIps();
 		short[] codes = memCache.getCodes();
@@ -357,7 +376,7 @@ public class IPConverter {
 		}
 		short countryOrdinal = codes[last];
 		if(countryOrdinal < 0) return null;
-		Country country = Country.values()[countryOrdinal];
+		Country country = Country.values[countryOrdinal];
 		cache.put((int)longip, country);
 		return country;
 	}
@@ -373,7 +392,8 @@ public class IPConverter {
 			if(fullCache != null)
 				memCache = fullCache.get();
 			if(memCache == null) {
-				fullCache = new WeakReference<Cache>(memCache = readRanges());
+				if(dbFileCorrupt) return null;
+				fullCache = new SoftReference<Cache>(memCache = readRanges());
 			}
 		}
 		return memCache;
@@ -385,35 +405,18 @@ public class IPConverter {
 	 * @param code
 	 *            encoded bytes
 	 * @return decoded long
+	 * @throws IPConverterParseException 
 	 */
-	private long decodeBase85(byte[] code) {
+	private long decodeBase85(byte[] code) throws IPConverterParseException {
 		long result = 0;
-		int base = base85.length;
 		if (code.length != 5)
-			return result;
-		long coef = 1;
-		for (int i = 4; i >= 0; i--) {
-			Integer value = getBaseIndex(code[i]);
-			result += value * coef;
-			coef *= base;
+			throw new IPConverterParseException();
+		for (int i = 0; i < code.length; i++) {
+			if (code[i] < (byte)32 || base85inv[code[i] - 32] < (byte)0)
+				throw new IPConverterParseException();
+			result = (result * base) + base85inv[code[i] - 32];
 		}
 		return result;
-	}
-
-	/**
-	 * Returns index of given character in base85 table, used for decoding.
-	 * 
-	 * @param c
-	 *            Character to find index
-	 * @return index of given char
-	 * @see #decodeBase85(byte[])
-	 */
-	private int getBaseIndex(byte c) {
-		for (int i = 0; i < base85.length; i++) {
-			if (c == base85[i])
-				return i;
-		}
-		return -1;
 	}
 	
 	/**

@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+
 import java.util.Arrays;
 
 import freenet.node.NodeStats.PeerLoadStats;
@@ -28,9 +30,9 @@ public class NodePinger implements Runnable {
 
 	private final Node node;
 	private volatile double meanPing = 0;
-	
-	public static final double CRAZY_MAX_PING_TIME = 365.25*24*60*60*1000;
-	
+
+	public static final double CRAZY_MAX_PING_TIME = 365.25 * DAYS.toMillis(1);
+
 	NodePinger(Node n) {
 		this.node = n;
 	}

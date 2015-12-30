@@ -40,7 +40,7 @@ public class SlashdotStoreTest extends TestCase {
 		tempDir = new File("tmp-slashdotstoretest");
 		tempDir.mkdir();
 		fg = new FilenameGenerator(weakPRNG, true, tempDir, "temp-");
-		tbf = new TempBucketFactory(exec, ticker, fg, 4096, 65536, strongPRNG, weakPRNG, false, false);
+		tbf = new TempBucketFactory(exec, ticker, fg, 4096, 65536, weakPRNG, false, 2*1024*1024, null, false);
 		exec.start();
 	}
 	
@@ -56,7 +56,7 @@ public class SlashdotStoreTest extends TestCase {
 		// Encode a block
 		String test = "test";
 		ClientCHKBlock block = encodeBlock(test);
-		store.put(block, false);
+		store.put(block.getBlock(), false);
 		
 		ClientCHK key = block.getClientKey();
 		
@@ -72,7 +72,7 @@ public class SlashdotStoreTest extends TestCase {
 		// Encode a block
 		String test = "test";
 		ClientCHKBlock block = encodeBlock(test);
-		store.put(block, false);
+		store.put(block.getBlock(), false);
 		
 		Thread.sleep(2000);
 		
@@ -82,7 +82,7 @@ public class SlashdotStoreTest extends TestCase {
 		if(verify == null) return; // Expected outcome
 		String data = decodeBlock(verify, key);
 		System.err.println("Got data: "+data+" but should have been deleted!");
-		assertTrue(false);
+		fail();
 	}
 
 	private String decodeBlock(CHKBlock verify, ClientCHK key) throws CHKVerifyException, CHKDecodeException, IOException {

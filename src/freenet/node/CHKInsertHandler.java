@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -24,7 +26,6 @@ import freenet.store.KeyCollisionException;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
@@ -47,8 +48,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		});
 	}
 
-    static final int DATA_INSERT_TIMEOUT = 10000;
-    
+    static final long DATA_INSERT_TIMEOUT = SECONDS.toMillis(10);
+
     final Node node;
     final long uid;
     final PeerNode source;
@@ -91,10 +92,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
         try {
-        	realRun();
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
-			tag.handlerThrew(e);
+            realRun();
         } catch (Throwable t) {
             Logger.error(this, "Caught in run() "+t, t);
             tag.handlerThrew(t);
@@ -120,7 +118,15 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 			Logger.error(this, "Unable to send "+accepted+" in a reasonable time to "+source);
 			return;
 		}
-        
+		
+		if(tag.shouldSlowDown()) {
+			try {
+				source.sendAsync(DMT.createFNPRejectedOverload(uid, false, false, realTimeFlag), null, this);
+			} catch (NotConnectedException e) {
+				// Ignore.
+			}
+		}
+		
         // Source will send us a DataInsert
         
         MessageFilter mf;
@@ -298,7 +304,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         }
 	}
 
-	private MessageFilter makeDataInsertFilter(int timeout) {
+	private MessageFilter makeDataInsertFilter(long timeout) {
     	MessageFilter mfDataInsert = MessageFilter.create().setType(DMT.FNPDataInsert).setField(DMT.UID, uid).setSource(source).setTimeout(timeout);
     	// DataInsertRejected means the transfer failed upstream so a DataInsert will not be sent.
     	MessageFilter mfDataInsertRejected = MessageFilter.create().setType(DMT.FNPDataInsertRejected).setField(DMT.UID, uid).setSource(source).setTimeout(timeout);
@@ -322,7 +328,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     		// Two stage timeout. Don't go fatal unless no response in 60 seconds.
     		// Yes it's ugly everywhere but since we have a longish connection timeout it's necessary everywhere. :|
     		// FIXME review two stage timeout everywhere with some low level networking guru.
-    		MessageFilter mf = makeDataInsertFilter(60*1000);
+    		MessageFilter mf = makeDataInsertFilter(SECONDS.toMillis(60));
     		node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 
     			@Override
@@ -382,13 +388,13 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
      */
     private void finish(int code) {
     	if(logMINOR) Logger.minor(this, "Waiting for receive");
-    	int transferTimeout = realTimeFlag ?
+    	long transferTimeout = realTimeFlag ?
     			CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME :
     				CHKInsertSender.TRANSFER_COMPLETION_ACK_TIMEOUT_BULK;
 		synchronized(this) {
 			while(receiveStarted && !receiveCompleted) {
 				try {
-					wait(100*1000);
+					wait(SECONDS.toMillis(100));
 				} catch (InterruptedException e) {
 					// Ignore
 				}
@@ -447,7 +453,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         					break;
         				}
         				try {
-        					sender.wait(10*1000);
+        					sender.wait(SECONDS.toMillis(10));
         				} catch (InterruptedException e) {
         					// Loop
         				}

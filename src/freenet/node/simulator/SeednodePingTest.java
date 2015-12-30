@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.simulator;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,6 +18,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import freenet.crypt.RandomSource;
 import freenet.io.comm.NotConnectedException;
@@ -42,7 +47,7 @@ import freenet.support.LoggerHook.InvalidThresholdException;
 public class SeednodePingTest extends RealNodeTest {
 
 	static File STATUS_DIR = new File("/var/www/freenet/tests/seednodes/status/");
-	static final long COUNT_SUCCESSES_PERIOD = 7*24*60*60*1000; // 1 week
+	static final long COUNT_SUCCESSES_PERIOD = DAYS.toMillis(7);
 
 	static final int DARKNET_PORT = RealNodeULPRTest.DARKNET_PORT_END;
 	static final int OPENNET_PORT = DARKNET_PORT+1;
@@ -67,21 +72,21 @@ public class SeednodePingTest extends RealNodeTest {
 			node.connectToSeednode(seednode);
 			seedNodes.add(seednode);
 		} catch (Exception fse) {
-			System.out.println("ERROR adding "+seednode.toString()+ " "+fse.getMessage());
+			System.err.println("ERROR adding "+seednode.toString()+ " "+fse.getMessage());
 		}
 	}
 	// Start it
         node.start(true);
 	//Logger.setupStdoutLogging(LogLevel.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
 	Logger.getChain().setThreshold(LogLevel.ERROR); // kill logging
-	Thread.sleep(2000);
+	Thread.sleep(SECONDS.toMillis(2));
 	if(seedNodes.size() != numberOfNodesInTheFile)
 		    System.out.println("ERROR ADDING SOME OF THE SEEDNODES!!");
 	System.out.println("Let some time for the "+ seedNodes.size() +" nodes to connect...");
-	Thread.sleep(8000);
+	Thread.sleep(SECONDS.toMillis(8));
 
 	int pingID = 0;
-	long deadline = System.currentTimeMillis() + 2*60*1000;
+	long deadline = System.currentTimeMillis() + MINUTES.toMillis(2);
 	while(System.currentTimeMillis() < deadline) {
 		int countConnectedSeednodes = 0;
 		for(SeedServerPeerNode seednode : node.peers.getConnectedSeedServerPeersVector(null)) {
@@ -118,11 +123,11 @@ public class SeednodePingTest extends RealNodeTest {
 			System.out.println(seednode.getIdentityString() + " : "+fate+ " : "+seednode.getPeerNodeStatusString());
 		}
 		System.out.println("TOTALS:");
-		for(FATE fate : totals.keySet()) {
-			System.out.println(fate + " : "+totals.get(fate));
+		for (Entry<FATE, Integer> fateEntry : totals.entrySet()) {
+			System.out.println(fateEntry.getKey() + " : " + fateEntry.getValue());
 		}
 		System.out.println("################## ("+node.peers.countConnectedPeers()+") "+countConnectedSeednodes+'/'+node.peers.countSeednodes());
-		Thread.sleep(5000);
+		Thread.sleep(SECONDS.toMillis(5));
 	}
 	Map<FATE, Integer> totals = new EnumMap<FATE, Integer>(SeedServerTestPeerNode.FATE.class);
 	for(SeedServerTestPeerNode seednode : seedNodes) {
@@ -192,7 +197,7 @@ public class SeednodePingTest extends RealNodeTest {
     	try {
     		if(node != null)
     		node.park();
-    	} catch (Throwable t1) {};
+    	} catch (Throwable t1) {}
     	System.exit(1);
     }
     }

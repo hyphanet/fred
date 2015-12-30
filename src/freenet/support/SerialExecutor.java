@@ -1,5 +1,7 @@
 package freenet.support;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -30,8 +32,8 @@ public class SerialExecutor implements Executor {
 	private String name;
 	private Executor realExecutor;
 
-	private static final int NEWJOB_TIMEOUT = 5*60*1000;
-	
+	private static final long NEWJOB_TIMEOUT = MINUTES.toMillis(5);
+
 	private Thread runningThread;
 
 	private final Runnable runner = new PrioRunnable() {
@@ -84,7 +86,14 @@ public class SerialExecutor implements Executor {
 	};
 
 	public SerialExecutor(int priority) {
-		jobs = new LinkedBlockingQueue<Runnable>();
+		this(priority, 0);
+	}
+	
+	public SerialExecutor(int priority, int bound) {
+		if(bound > 0)
+			jobs = new LinkedBlockingQueue<Runnable>(bound);
+		else
+			jobs = new LinkedBlockingQueue<Runnable>();
 		this.priority = priority;
 		this.syncLock = new Object();
 	}
@@ -118,7 +127,7 @@ public class SerialExecutor implements Executor {
 		if (logMINOR)
 			Logger.minor(this, "Running " + jobName + " : " + job + " started=" + threadStarted + " waiting="
 			        + threadWaiting);
-		jobs.add(job);
+		jobs.offer(job);
 
 		synchronized (syncLock) {
 			if (!threadStarted && realExecutor != null)

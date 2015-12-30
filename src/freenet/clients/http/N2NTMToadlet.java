@@ -14,6 +14,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.NodeStarter;
 import freenet.node.PeerManager;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -24,14 +25,12 @@ import freenet.support.api.HTTPUploadedFile;
 
 public class N2NTMToadlet extends Toadlet {
 	private Node node;
-	private NodeClientCore core;
 	private LocalFileN2NMToadlet browser;
 	protected N2NTMToadlet(Node n, NodeClientCore core,
 			HighLevelSimpleClient client) {
 		super(client);
 		browser = new LocalFileN2NMToadlet(core, client);
 		this.node = n;
-		this.core = core;
 	}
 
 	public Toadlet getBrowser() {
@@ -42,11 +41,8 @@ public class N2NTMToadlet extends Toadlet {
 			throws ToadletContextClosedException, IOException,
 			RedirectException {
 
-		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase()
-					.getString("Toadlet.unauthorized"));
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		if (request.isParameterSet("peernode_hashcode")) {
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessage"), ctx);
@@ -57,7 +53,7 @@ public class N2NTMToadlet extends Toadlet {
 			String input_hashcode_string = request.getParam("peernode_hashcode");
 			int input_hashcode = -1;
 			try {
-				input_hashcode = (Integer.valueOf(input_hashcode_string)).intValue();
+				input_hashcode = Integer.parseInt(input_hashcode_string);
 			} catch (NumberFormatException e) {
 				// ignore here, handle below
 			}
@@ -80,7 +76,7 @@ public class N2NTMToadlet extends Toadlet {
 			}
 			HashMap<String, String> peers = new HashMap<String, String>();
 			peers.put(input_hashcode_string, peernode_name);
-			createN2NTMSendForm(pageNode, ctx.getContainer().isAdvancedModeEnabled(), contentNode, ctx, peers);
+			createN2NTMSendForm(pageNode, ctx.isAdvancedModeEnabled(), contentNode, ctx, peers);
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
@@ -105,9 +101,10 @@ public class N2NTMToadlet extends Toadlet {
 	 * File size limit is 1 MiB (1024*1024 bytes) or 5% of maximum Java memory, whichever is greater.
 	 */
 	private static long maxSize(){
-		long maxMem = Math.round(0.05*Runtime.getRuntime().maxMemory());
+		long memory = NodeStarter.getMemoryLimitBytes();
+		if(memory == Long.MAX_VALUE || memory <= 0) return 1024*1024;
+		long maxMem = Math.round(0.05*memory);
 		long limit = Math.max(maxMem, 1024*1024);
-		if(maxMem == Long.MAX_VALUE) limit = 1024*1024;
 		return limit;
 	}
 
@@ -128,18 +125,9 @@ public class N2NTMToadlet extends Toadlet {
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException,
 			RedirectException {
-		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if ((pass == null) || !pass.equals(core.formPassword)) {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/send_n2ntm/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
-		}
-
-		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
-			return;
-		}
+	    
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		//Browse button clicked. Redirect.
 		if(request.isPartSet("n2nm-browse"))

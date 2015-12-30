@@ -21,7 +21,7 @@ import freenet.support.PooledExecutor;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
-import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.FileUtil;
 
 public class BootstrapPushPullTest {
@@ -72,7 +72,7 @@ public class BootstrapPushPullTest {
 			System.exit(EXIT_FAILED_TARGET);
 		}
         System.err.println("Creating test data: "+TEST_SIZE+" bytes.");
-        Bucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
+        RandomAccessBucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
         OutputStream os = data.getOutputStream();
 		try {
         byte[] buf = new byte[4096];
@@ -137,11 +137,11 @@ public class BootstrapPushPullTest {
 	    	try {
 	    		if(node != null)
 	    			node.park();
-	    	} catch (Throwable t1) {};
+	    	} catch (Throwable t1) {}
 	    	try {
 	    		if(secondNode != null)
 	    			secondNode.park();
-	    	} catch (Throwable t1) {};
+	    	} catch (Throwable t1) {}
 
 	    	System.exit(EXIT_THREW_SOMETHING);
 	    }

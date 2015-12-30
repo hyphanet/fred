@@ -1,5 +1,8 @@
 package freenet.node.updater;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -12,16 +15,15 @@ import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.USKCallback;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -34,8 +36,11 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.Ticker;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
+import freenet.support.io.NullOutputStream;
 
 public abstract class NodeUpdater implements ClientGetCallback, USKCallback, RequestClient {
 
@@ -97,7 +102,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	
 	protected void maybeProcessOldBlob() {
 		File oldBlob = getBlobFile(currentVersion);
-		if(oldBlob != null) {
+		if(oldBlob.exists()) {
 			File temp;
 			try {
 				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
@@ -122,12 +127,12 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 	}
 
-	protected RequestClient getRequestClient() {
+	public RequestClient getRequestClient() {
 		return this;
 	}
 	
 	@Override
-	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+	public void onFoundEdition(long l, USK key, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(newKnownGood && !newSlotToo) return;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
@@ -159,7 +164,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			public void run() {
 				maybeUpdate();
 			}
-		}, 60 * 1000); // leave some time in case we get later editions
+		}, SECONDS.toMillis(60)); // leave some time in case we get later editions
 		// LOCKING: Always take the NodeUpdater lock *BEFORE* the NodeUpdateManager lock
 		if(found <= currentVersion) {
 			System.err.println("Cancelling fetch for "+found+": not newer than current version "+currentVersion);
@@ -213,7 +218,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					uri = uri.sskForUSK();
 					cg = new ClientGetter(this,  
 						uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-						this, null, new BinaryBlobWriter(new FileBucket(tempBlobFile, false, false, false, false, false)), null);
+						null, new BinaryBlobWriter(new FileBucket(tempBlobFile, false, false, false, false)), null);
 					toStart = cg;
 				} else {
 					System.err.println("Already fetching "+jarName() + " fetch for " + fetchingVersion + " want "+availableVersion);
@@ -232,23 +237,25 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				synchronized(this) {
 					isFetching = false;
 				}
-			} catch (DatabaseDisabledException e) {
+			} catch (PersistenceDisabledException e) {
 				// Impossible
 			}
 		if(cancelled != null)
-			cancelled.cancel(null, core.clientContext);
+			cancelled.cancel(core.clientContext);
 	}
 
-	File getBlobFile(int availableVersion) {
+	final File getBlobFile(int availableVersion) {
 		return new File(node.clientCore.getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
 	}
-	Bucket getBlobBucket(int availableVersion) {
+	
+	RandomAccessBucket getBlobBucket(int availableVersion) {
 		File f = getBlobFile(availableVersion);
 		if(f == null) return null;
-		return new FileBucket(f, true, false, false, false, false);
+		return new FileBucket(f, true, false, false, false);
 	}
+	
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetter state) {
 		onSuccess(result, state, tempBlobFile, fetchingVersion);
 	}
 
@@ -358,6 +365,15 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	
 	static final String DEPENDENCIES_FILE = "dependencies.properties";
 	
+	/** Read the jar file. Parse the Properties. Read every file in the ZIP; if it is corrupted,
+	 * we will get a CRC error and therefore an IOException, and so the update won't be deployed.
+	 * This is not entirely foolproof because ZipInputStream doesn't check the CRC for stored 
+	 * files, only for deflated files, and it's only a CRC32 anyway. But it should reduce the
+	 * chances of accidental corruption breaking an update.
+	 * @param is The InputStream for the jar file.
+	 * @param filename The filename of the manifest file containing the properties (normally 
+	 * META-INF/MANIFEST.MF). 
+	 * @throws IOException If there is a temporary files error or the jar is corrupted. */
 	static Properties parseProperties(InputStream is, String filename) throws IOException {
 		Properties props = new Properties();
 		ZipInputStream zis = new ZipInputStream(is);
@@ -383,6 +399,11 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					ByteArrayInputStream bais = new ByteArrayInputStream(buf);
 					props.load(bais);
 				} else {
+				    // Read the file. Throw if there is a CRC error.
+				    // Note that java.util.zip.ZipInputStream only checks the CRC for compressed 
+				    // files, so this is not entirely foolproof.
+				    long size = ze.getSize();
+				    FileUtil.copy(zis, new NullOutputStream(), size);
 					zis.closeEntry();
 				}
 			}
@@ -418,11 +439,11 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	private static final int MAX_MANIFEST_SIZE = 1024*1024;
 
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(!isRunning)
 			return;
-		int errorCode = e.getMode();
+		FetchExceptionMode errorCode = e.getMode();
 		tempBlobFile.delete();
 
 		if(logMINOR)
@@ -431,7 +452,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			this.cg = null;
 			isFetching = false;
 		}
-		if(errorCode == FetchException.CANCELLED ||
+		if(errorCode == FetchExceptionMode.CANCELLED ||
 			!e.isFatal()) {
 			Logger.normal(this, "Rescheduling new request");
 			ticker.queueTimedJob(new Runnable() {
@@ -453,7 +474,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					public void run() {
 						maybeUpdate();
 					}
-				}, 60 * 60 * 1000);
+				}, HOURS.toMillis(1));
 		}
 	}
 
@@ -472,7 +493,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				c = cg;
 				cg = null;
 			}
-			c.cancel(null, core.clientContext);
+			c.cancel(core.clientContext);
 		} catch(Exception e) {
 			Logger.minor(this, "Cannot kill NodeUpdater", e);
 		}
@@ -480,11 +501,6 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 	public FreenetURI getUpdateKey() {
 		return URI;
-	}
-
-	@Override
-	public void onMajorProgress(ObjectContainer container) {
-		// Ignore
 	}
 
 	public synchronized boolean canUpdateNow() {
@@ -568,19 +584,13 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			finishOnFoundEdition(callFinishedFound);
 	}
 	
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing NodeUpdater in database", new Exception("error"));
-		return false;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-	
 	@Override
 	public boolean realTimeFlag() {
 		return false;
 	}
-
+	
+    @Override
+    public void onResume(ClientContext context) {
+        // Do nothing. Not persistent.
+    }
 }

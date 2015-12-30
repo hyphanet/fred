@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,8 +27,6 @@ import freenet.support.LRUMap;
 import freenet.support.ListUtils;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
-import freenet.support.OOMHook;
 import freenet.support.SerialExecutor;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
@@ -46,7 +46,7 @@ import freenet.support.io.NativeThread;
  * LOCKING: Do not lock PeerNode before FailureTable/FailureTableEntry.
  * @author toad
  */
-public class FailureTable implements OOMHook {
+public class FailureTable {
 	
 	private static volatile boolean logMINOR;
 	//private static volatile boolean logDEBUG;
@@ -63,7 +63,7 @@ public class FailureTable implements OOMHook {
 
 	/** FailureTableEntry's by key. Note that we push an entry only when sentTime changes. */
 	private final LRUMap<Key,FailureTableEntry> entriesByKey;
-	/** BlockOfferList by key */
+	/** BlockOfferList by key. Synchronized on self, as it doesn't interact with the main FT. */
 	private final LRUMap<Key,BlockOfferList> blockOfferListByKey;
 	private final Node node;
 	
@@ -74,21 +74,21 @@ public class FailureTable implements OOMHook {
 	/** Terminate a request if there was a DNF on the same key less than 10 minutes ago.
 	 * Maximum time for any FailureTable i.e. for this period after a DNF, we will avoid the node that 
 	 * DNFed. */
-	static final int REJECT_TIME = 10*60*1000;
+	static final long REJECT_TIME = MINUTES.toMillis(10);
 	/** Maximum time for a RecentlyFailed. I.e. until this period expires, we take a request into account
 	 * when deciding whether we have recently failed to this peer. If we get a DNF, we use this figure.
 	 * If we get a RF, we use what it tells us, which can be less than this. Most other failures use
 	 * shorter periods. */
-	static final int RECENTLY_FAILED_TIME = 30*60*1000;
+	static final long RECENTLY_FAILED_TIME = MINUTES.toMillis(30);
 	/** After 1 hour we forget about an entry completely */
-	static final int MAX_LIFETIME = 60*60*1000;
+	static final long MAX_LIFETIME = MINUTES.toMillis(60);
 	/** Offers expire after 10 minutes */
-	static final int OFFER_EXPIRY_TIME = 10*60*1000;
+	static final long OFFER_EXPIRY_TIME = MINUTES.toMillis(10);
 	/** HMAC key for the offer authenticator */
 	final byte[] offerAuthenticatorKey;
 	/** Clean up old data every 10 minutes to save memory and improve privacy */
-	static final int CLEANUP_PERIOD = 10*60*1000;
-	
+	static final long CLEANUP_PERIOD = MINUTES.toMillis(10);
+
 	FailureTable(Node node) {
 		entriesByKey = LRUMap.createSafeMap();
 		blockOfferListByKey = LRUMap.createSafeMap();
@@ -101,7 +101,6 @@ public class FailureTable implements OOMHook {
 	
 	public void start() {
 		offerExecutor.start(node.executor, "FailureTable offers executor for "+node.getDarknetPortNumber());
-		OOMHandler.addOOMHook(this);
 	}
 	
 	/**
@@ -111,9 +110,10 @@ public class FailureTable implements OOMHook {
 	 * @param key
 	 * @param routedTo
 	 * @param htl
-	 * @param timeout
+	 * @param rfTimeout
+	 * @param ftTimeout
 	 */
-	public void onFailed(Key key, PeerNode routedTo, short htl, int rfTimeout, int ftTimeout) {
+	public void onFailed(Key key, PeerNode routedTo, short htl, long rfTimeout, long ftTimeout) {
 		if(ftTimeout < 0 || ftTimeout > REJECT_TIME) {
 			Logger.error(this, "Bogus timeout "+ftTimeout, new Exception("error"));
 			ftTimeout = Math.max(Math.min(REJECT_TIME, ftTimeout), 0);
@@ -147,7 +147,7 @@ public class FailureTable implements OOMHook {
 	 * avoid problems.
 	 * LOCKING: NEVER synchronize on PeerNode before calling any FailureTable method.
 	 */
-	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, int rfTimeout, int ftTimeout, PeerNode requestor) {
+	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, long rfTimeout, long ftTimeout, PeerNode requestor) {
 		if(ftTimeout < -1 || ftTimeout > REJECT_TIME) {
 			// -1 is a valid no-op.
 			Logger.error(this, "Bogus timeout "+ftTimeout, new Exception("error"));
@@ -197,7 +197,7 @@ public class FailureTable implements OOMHook {
 		}
 
 		public long expires() {
-			synchronized(FailureTable.this) {
+			synchronized(blockOfferListByKey) {
 				long last = 0;
 				for(BlockOffer offer: offers) {
 					if(offer.offeredTime > last) last = offer.offeredTime;
@@ -207,7 +207,7 @@ public class FailureTable implements OOMHook {
 		}
 
 		public boolean isEmpty(long now) {
-			synchronized(FailureTable.this) {
+			synchronized(blockOfferListByKey) {
 				for(BlockOffer offer: offers) {
 					if(!offer.isExpired(now)) return false;
 				}
@@ -217,7 +217,7 @@ public class FailureTable implements OOMHook {
 
 		public void deleteOffer(BlockOffer offer) {
 			if(logMINOR) Logger.minor(this, "Deleting "+offer+" from "+this);
-			synchronized(FailureTable.this) {
+			synchronized(blockOfferListByKey) {
 				int idx = -1;
 				final int offerLength = offers.length;
 				for(int i=0;i<offerLength;i++) {
@@ -237,7 +237,7 @@ public class FailureTable implements OOMHook {
 		}
 
 		public void addOffer(BlockOffer offer) {
-			synchronized(FailureTable.this) {
+			synchronized(blockOfferListByKey) {
 				offers = Arrays.copyOf(offers, offers.length+1);
 				offers[offers.length-1] = offer;
 			}
@@ -280,7 +280,8 @@ public class FailureTable implements OOMHook {
 	
 	/**
 	 * Called when a data block is found (after it has been stored; there is a good chance of its being available in the
-	 * near future). If there are nodes waiting for it, we will offer it to them.
+	 * near future). If there are nodes waiting for it, we will offer it to them. Removes the list of 
+	 * nodes that offered the key too (but this is a separate operation).
 	 * LOCKING: Never call when locked PeerNode, and try to avoid other locks as
 	 * they might cause a deadlock. Schedule off-thread if necessary.
 	 */
@@ -293,6 +294,9 @@ public class FailureTable implements OOMHook {
 		Key key = block.getKey();
 		if(key == null) throw new NullPointerException();
 		FailureTableEntry entry;
+		synchronized(blockOfferListByKey) {
+			blockOfferListByKey.removeKey(key);
+		}
 		synchronized(this) {
 			entry = entriesByKey.get(key);
 			if(entry == null) {
@@ -300,7 +304,6 @@ public class FailureTable implements OOMHook {
 				return; // Nobody cares
 			}
 			entriesByKey.removeKey(key);
-			blockOfferListByKey.removeKey(key);
 		}
 		if(logMINOR) Logger.minor(this, "Offering key");
 		if(!node.enableULPRDataPropagation) return;
@@ -416,7 +419,7 @@ public class FailureTable implements OOMHook {
 		
 		// Add to offers list
 		
-		synchronized(this) {			
+		synchronized(blockOfferListByKey) {			
 			if(logMINOR) Logger.minor(this, "Valid offer");
 			BlockOfferList bl = blockOfferListByKey.get(key);
 			BlockOffer offer = new BlockOffer(peer, now, authenticator, peer.getBootID());
@@ -440,15 +443,17 @@ public class FailureTable implements OOMHook {
 		node.clientCore.queueOfferedKey(key, false);
 	}
 
-	private synchronized void trimOffersList(long now) {
-		while(true) {
-			if(blockOfferListByKey.isEmpty()) return;
-			BlockOfferList bl = blockOfferListByKey.peekValue();
-			if(bl.isEmpty(now) || bl.expires() < now || blockOfferListByKey.size() > MAX_OFFERS) {
-				if(logMINOR) Logger.minor(this, "Removing block offer list "+bl+" list size now "+blockOfferListByKey.size());
-				blockOfferListByKey.popKey();
-			} else {
-				return;
+	private void trimOffersList(long now) {
+		synchronized(blockOfferListByKey) {
+			while(true) {
+				if(blockOfferListByKey.isEmpty()) return;
+				BlockOfferList bl = blockOfferListByKey.peekValue();
+				if(bl.isEmpty(now) || bl.expires() < now || blockOfferListByKey.size() > MAX_OFFERS) {
+					if(logMINOR) Logger.minor(this, "Removing block offer list "+bl+" list size now "+blockOfferListByKey.size());
+					blockOfferListByKey.popKey();
+				} else {
+					return;
+				}
 			}
 		}
 	}
@@ -644,11 +649,21 @@ public class FailureTable implements OOMHook {
 		}
 		
 	}
+	
+	/** Have we had any offers for the key?
+	 * @param key The key to check.
+	 * @return True if there are any offers, false otherwise.
+	 */
+	public boolean hadAnyOffers(Key key) {
+		synchronized(blockOfferListByKey) {
+			return blockOfferListByKey.get(key) != null;
+		}
+	}
 
 	public OfferList getOffers(Key key) {
 		if(!node.enableULPRDataPropagation) return null;
 		BlockOfferList bl;
-		synchronized(this) {
+		synchronized(blockOfferListByKey) {
 			bl = blockOfferListByKey.get(key);
 			if(bl == null) return null;
 		}
@@ -714,27 +729,8 @@ public class FailureTable implements OOMHook {
 		}
 		return entry.othersWant(apartFrom);
 	}
-
-	@Override
-	public void handleLowMemory() throws Exception {
-		synchronized (this) {
-			int size = entriesByKey.size();
-			while(true) {
-				int newSize = entriesByKey.size();
-				if(newSize == 0 || newSize >= size / 2) return;
-				entriesByKey.popKey();
-			}
-		}
-	}
-
-	@Override
-	public void handleOutOfMemory() throws Exception {
-		synchronized (this) {
-			entriesByKey.clear();
-		}
-	}
-
-	/** @return The lowest HTL at which any peer has requested this key recently */
+        
+        /** @return The lowest HTL at which any peer has requested this key recently */
 	public short minOfferedHTL(Key key, short htl) {
 		FailureTableEntry entry;
 		synchronized(this) {

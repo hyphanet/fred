@@ -62,7 +62,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		// Encode a block
 		String test = "test";
 		ClientCHKBlock block = encodeBlock(test, newFormat);
-		store.put(block, false);
+		store.put(block.getBlock(), false);
 
 		ClientCHK key = block.getClientKey();
 
@@ -78,7 +78,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		// Encode a block
 		String test = "test";
 		ClientCHKBlock block = encodeBlock(test, false);
-		store.put(block, true);
+		store.put(block.getBlock(), true);
 
 		ClientCHK key = block.getClientKey();
 
@@ -90,7 +90,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		assertEquals(null, store.fetch(key.getNodeCHK(), false, true, null));
 		
 		// Put it with oldBlock = false should unset the flag.
-		store.put(block, false);
+		store.put(block.getBlock(), false);
 		
 		verify = store.fetch(key.getNodeCHK(), false, true, null);
 		data = decodeBlock(verify, key);
@@ -115,7 +115,7 @@ public class RAMSaltMigrationTest extends TestCase {
 			// Encode a block
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlock(test, newFormat);
-			store.put(block, false);
+			store.put(block.getBlock(), false);
 			
 			ClientCHK key = block.getClientKey();
 			
@@ -165,7 +165,7 @@ public class RAMSaltMigrationTest extends TestCase {
 			// Use new format for every other block to ensure they are mixed in the same store.
 			ClientCHKBlock block = encodeBlock(test, (i & 1) == 1);
 			if(write)
-				store.put(block, false);
+				store.put(block.getBlock(), false);
 			
 			ClientCHK key = block.getClientKey();
 			
@@ -257,7 +257,7 @@ public class RAMSaltMigrationTest extends TestCase {
 			// Encode a block
 			test[i] = "test" + i;
 			block[i] = encodeBlock(test[i], true);
-			store.put(block[i], true);
+			store.put(block[i].getBlock(), true);
 			
 			keys[i] = block[i].getClientKey();
 		}
@@ -274,7 +274,7 @@ public class RAMSaltMigrationTest extends TestCase {
 			assertEquals(null, store.fetch(key.getNodeCHK(), false, true, null));
 			
 			// Put it with oldBlock = false should unset the flag.
-			store.put(block[i], false);
+			store.put(block[i].getBlock(), false);
 			
 			verify = store.fetch(key.getNodeCHK(), false, true, null);
 			data = decodeBlock(verify, key);
@@ -317,7 +317,7 @@ public class RAMSaltMigrationTest extends TestCase {
 			// Encode a block
 			test[i] = "test" + i;
 			block[i] = encodeBlock(test[i], true);
-			store.put(block[i], true);
+			store.put(block[i].getBlock(), true);
 			
 			keys[i] = block[i].getClientKey();
 		}
@@ -360,7 +360,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		// Encode a block
 		String test = "test";
 		ClientCHKBlock block = encodeBlock(test, true);
-		store.put(block, false);
+		store.put(block.getBlock(), false);
 
 		ClientCHK key = block.getClientKey();
 
@@ -387,7 +387,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		// Encode a block
 		String test = "test";
 		ClientCHKBlock block = encodeBlock(test, true);
-		store.put(block, false);
+		store.put(block.getBlock(), false);
 
 		ClientCHK key = block.getClientKey();
 
