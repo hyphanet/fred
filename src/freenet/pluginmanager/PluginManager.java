@@ -1234,20 +1234,7 @@ public class PluginManager {
 
 		/* get plugin filename. */
 		String filename = pdl.getPluginName(name);
-		File pluginFile = new File(pluginDirectory, filename + "-" + System.currentTimeMillis());
-
-		/* check for previous instances and delete them. */
-		File[] filesInPluginDirectory = getPreviousInstances(pluginDirectory, filename);
-		boolean first = true;
-		for (File cachedFile : filesInPluginDirectory) {
-			if (first && !pdl.isCachingProhibited() && !alwaysDownload) {
-				first = false;
-				pluginFile = new File(pluginDirectory, cachedFile.getName());
-				continue;
-			}
-			first = false;
-			cachedFile.delete();
-		}
+		File pluginFile = getTargetFileForPluginDownload(pluginDirectory, filename, !pdl.isCachingProhibited() && !alwaysDownload);
 
 		boolean downloaded = false;
 		/* check if file needs to be downloaded. */
@@ -1437,6 +1424,24 @@ public class PluginManager {
 			throw new PluginNotFoundException("could not create plugin directory");
 		}
 		return pluginDirectory;
+	}
+
+	private File getTargetFileForPluginDownload(File pluginDirectory, String filename, boolean useCachedFile) {
+		File pluginFile = new File(pluginDirectory, filename + "-" + System.currentTimeMillis());
+
+		/* check for previous instances and delete them. */
+		File[] filesInPluginDirectory = getPreviousInstances(pluginDirectory, filename);
+		boolean first = true;
+		for (File cachedFile : filesInPluginDirectory) {
+			if (first && useCachedFile) {
+				first = false;
+				pluginFile = new File(pluginDirectory, cachedFile.getName());
+				continue;
+			}
+			first = false;
+			cachedFile.delete();
+		}
+		return pluginFile;
 	}
 
 	private void downloadPluginFile(PluginDownLoader<?> pluginDownLoader, File pluginDirectory, File pluginFile, PluginProgress pluginProgress) throws IOException, PluginNotFoundException {
