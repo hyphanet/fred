@@ -277,7 +277,8 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	}
 
 	/** Remove a queued job from the internal structures other than timedJobsQueued. The
-	 * caller is responsible for that.
+	 * caller must check that it is present in timedJobsQueued, remove from that structure, and 
+	 * call this method, all inside the timedJobsByTime lock. 
 	 * @param job The job to remove.
 	 * @param t The time at which is it scheduled.
 	 */
