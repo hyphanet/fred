@@ -1631,17 +1631,6 @@ public class PluginManager {
 			return "PluginProgress[name=" + name + ",startingTime=" + startingTime + ",progress=" + pluginProgress + "]";
 		}
 
-		public String toLocalisedString() {
-			if(pluginProgress == PROGRESS_STATE.DOWNLOADING && total > 0)
-				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading") + " : "+((current*100.0) / total)+"%";
-			else if(pluginProgress == PROGRESS_STATE.DOWNLOADING)
-				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading");
-			else if(pluginProgress == PROGRESS_STATE.STARTING)
-				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.starting");
-			else
-				return toString();
-		}
-
 		public HTMLNode toLocalisedHTML() {
 			if(pluginProgress == PROGRESS_STATE.DOWNLOADING && total > 0) {
 				return QueueToadlet.createProgressCell(false, true, ClientPut.COMPRESS_STATE.WORKING, current, failed, fatallyFailed, minSuccessful, total, finalisedTotal, false);
