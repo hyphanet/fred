@@ -161,7 +161,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="env">
 		<available property="lib.contrib.present" classname="freenet.node.ExtVersion" classpathref="lib.path"/>
-		<available property="lib.bouncycastle.present" classname="org.bouncycastle.crypto.SkippingStreamCipher" classpathref="lib.path"/>
+		<available property="lib.bouncycastle.present" classname="org.bouncycastle.crypto.signers.HMacDSAKCalculator" classpathref="lib.path"/>
 		<available property="lib.junit.present" classname="org.junit.runners.JUnit4" classpathref="libtest.path"/>
 		<available property="lib.hamcrest.present" classname="org.hamcrest.SelfDescribing" classpathref="libtest.path"/>
 		<available property="lib.findbugs.present" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>

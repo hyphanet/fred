@@ -15,11 +15,10 @@ cache:
   - lib/
 
 before_install:
-  - mkdir -p lib/freenet/ && cd lib/ && if [ ! -e bcprov-jdk15on-152.jar ]; then wget -c https://bouncycastle.org/download/bcprov-jdk15on-152.jar; fi ; cd ..
+  - mkdir -p lib/freenet/ && cd lib/ && if [ ! -e bcprov-jdk15on-154.jar ]; then wget -c https://bouncycastle.org/download/bcprov-jdk15on-154.jar; fi ; cd ..
 
 script: ant -Dlib.contrib.get=true
 
 jdk:
   - oraclejdk7
   - openjdk7
-  - openjdk6
