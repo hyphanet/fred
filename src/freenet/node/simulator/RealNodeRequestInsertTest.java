@@ -46,7 +46,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
     static final int NUMBER_OF_NODES = 100;
     static final int DEGREE = 10;
-    static final short MAX_HTL = (short)5;
+    /* HTL is higher than it needs to be because we don't cache until htl <= max-3.
+     * The insert is forked at this point, so it will still get stored on the "ideal" nodes. */
+    static final short MAX_HTL = (short)7;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
     static final boolean ENABLE_SWAPPING = false;
@@ -55,7 +57,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean ENABLE_SWAP_QUEUEING = false;
     static final boolean ENABLE_PACKET_COALESCING = true;
     static final boolean ENABLE_FOAF = true;
-    static final boolean FORK_ON_CACHEABLE = false;
+    /* Fork on cacheable is necessary to ensure that we store on the ideal
+     * nodes, even if they are early in the insert chain. */
+    static final boolean FORK_ON_CACHEABLE = true;
     static final boolean DISABLE_PROBABILISTIC_HTLS = true;
     // Set to true to cache everything. This depends on security level.
     static final boolean USE_SLASHDOT_CACHE = false;
@@ -85,7 +89,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
         //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.NodeDispatcher:MINOR,freenet.node.simulator:MINOR,freenet.node.PeerManager:MINOR,freenet.node.RequestSender:MINOR");
         //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.FNP:MINOR,freenet.node.Packet:MINOR,freenet.io.comm:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR");
-        NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "", true);
+        NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.PacketSender:NORMAL,freenet.node.NewPacketFormat:MINOR", true);
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource(3142);
@@ -172,8 +176,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Node randomNode = nodes[node1];
         //Logger.error(RealNodeRequestInsertTest.class,"Inserting: \""+dataString+"\" to "+node1);
         
-        //boolean isSSK = requestNumber % 2 == 1;
-        boolean isSSK = true;
+        boolean isSSK = requestNumber % 2 == 1;
+        //boolean isSSK = true;
         
         FreenetURI testKey;
         ClientKey insertKey;

@@ -217,7 +217,7 @@ public class NewPacketFormat implements PacketFormat {
 			PartiallyReceivedBuffer recvBuffer = receiveBuffers.get(fragment.messageID);
 			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
 			if(recvBuffer == null) {
-				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": Creating buffer");
+				if(logDEBUG) Logger.debug(this, "Message id " + fragment.messageID + ": Creating buffer");
 
 				recvBuffer = new PartiallyReceivedBuffer(this);
 				if(fragment.firstFragment) {
@@ -285,7 +285,7 @@ public class NewPacketFormat implements PacketFormat {
 
 				fullyReceived.add(recvBuffer.buffer);
 				
-				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": Completed");
+				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": Completed from "+sessionKey.pn);
 			} else {
 				if(logDEBUG) Logger.debug(this, "Message id " + fragment.messageID + ": " + recvMap);
 			}
@@ -374,7 +374,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
 			NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
 			if(p != null) {
-				if(logMINOR) Logger.minor(this, "Received packet " + p.getSequenceNumber()+" on "+sessionKey);
+				if(logMINOR) Logger.minor(this, "Received packet " + p.getSequenceNumber()+" on "+sessionKey+" for "+sessionKey.pn);
 				return p;
 			}
 		}
@@ -992,7 +992,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	 * queued at plus the lesser of half the RTT or 100ms if there are acks queued. 
 	 * Otherwise Long.MAX_VALUE to indicate that we need to get messages from the queue. */
 	@Override
-	public long timeNextUrgent(boolean canSend) {
+	public long timeNextUrgent(boolean canSend, long now) {
 		long ret = Long.MAX_VALUE;
 		if(canSend) {
 			// Is there anything in flight?
@@ -1015,8 +1015,17 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 		// Check for acks.
 		ret = Math.min(ret, timeCheckForAcks());
 		
-		// Always wake up after half an RTT, check whether stuff is lost or needs ack'ing.
-		ret = Math.min(ret, System.currentTimeMillis() + Math.min(100, (long)averageRTT()/2));
+		if(ret > now) {
+		    // Always wake up after half an RTT, check whether stuff is lost or needs ack'ing.
+		    ret = Math.min(ret, now + Math.min(100, (long)averageRTT()/2));
+		    
+		    if(canSend && DO_KEEPALIVES) {
+		        synchronized(this) {
+		            ret = Math.min(ret, timeLastSentPayload + Node.KEEPALIVE_INTERVAL);
+		        }
+		    }
+		}
+
 		return ret;
 	}
 	

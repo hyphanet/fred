@@ -127,20 +127,23 @@ public abstract class UIDTag {
 	 * detail. When we are not routing to any nodes, and not fetching from, and
 	 * the handler has also been unlocked, the UID is unlocked.
 	 * @param next The node we are no longer fetching an offered key from.
+	 * @return True if we were routing to the node.
 	 */
-	public void removeFetchingOfferedKeyFrom(PeerNode next) {
+	public boolean removeFetchingOfferedKeyFrom(PeerNode next) {
 		boolean noRecordUnlock;
+        boolean found = false;
 		synchronized(this) {
-			if(fetchingOfferedKeyFrom == null) return;
-			fetchingOfferedKeyFrom.remove(next);
+			if(fetchingOfferedKeyFrom == null) return false;
+			found |= fetchingOfferedKeyFrom.remove(next);
 			if(handlingTimeouts != null) {
-				handlingTimeouts.remove(next);
+				found |= handlingTimeouts.remove(next);
 			}
-			if(!mustUnlock()) return;
+			if(!mustUnlock()) return found;
 			noRecordUnlock = this.noRecordUnlock;
 		}
 		if(logMINOR) Logger.minor(this, "Unlocking "+this);
 		innerUnlock(noRecordUnlock);
+		return found;
 	}
 	
 	/** Notify that we are no longer routing to a specific node. When we are
@@ -156,24 +159,30 @@ public abstract class UIDTag {
 	 * finished when we haven't, or us thinking the next node has finished when
 	 * it hasn't.
 	 * @param next The node we are no longer routing to.
+	 * @return True if we were routing to the node. In error cases we may have
+	 * already removed the node from our routed-to list.
 	 */
-	public void removeRoutingTo(PeerNode next) {
-		if(logMINOR)
-			Logger.minor(this, "No longer routing to "+next+" on "+this, new Exception("debug"));
+	public boolean removeRoutingTo(PeerNode next) {
 		boolean noRecordUnlock;
+		boolean found = false;
 		synchronized(this) {
-			if(currentlyRoutingTo == null) return;
-			if(!currentlyRoutingTo.remove(next)) {
-				Logger.warning(this, "Removing wrong node or removing twice? on "+this+" : "+next, new Exception("debug"));
+	        if(logMINOR)
+	            Logger.minor(this, "No longer routing to "+next+" on "+this, new Exception("debug"));
+			if(currentlyRoutingTo == null) return false;
+			found |= currentlyRoutingTo.remove(next);
+			if(!found) {
+			    // Can happen in error cases.
+				Logger.normal(this, "Removing wrong node or removing twice? on "+this+" : "+next, new Exception("debug"));
 			}
 			if(handlingTimeouts != null) {
-				handlingTimeouts.remove(next);
+				found |= handlingTimeouts.remove(next);
 			}
-			if(!mustUnlock()) return;
+			if(!mustUnlock()) return found;
 			noRecordUnlock = this.noRecordUnlock;
 		}
 		if(logMINOR) Logger.minor(this, "Unlocking "+this);
 		innerUnlock(noRecordUnlock);
+		return found;
 	}
 	
 	protected void innerUnlock(boolean noRecordUnlock) {

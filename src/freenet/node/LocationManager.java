@@ -1087,10 +1087,11 @@ public class LocationManager implements ByteCounter {
         }
         item.lastMessageTime = System.currentTimeMillis();
         // Returning to source - use incomingID
-        m.set(DMT.UID, item.incomingID);
+        byte[] hisHash = ((ShortBuffer)m.getObject(DMT.HASH)).getData();
+        Message fwd = DMT.createFNPSwapReply(item.incomingID, hisHash);
         if(logMINOR) Logger.minor(this, "Forwarding SwapReply "+uid+" from "+source+" to "+item.requestSender);
         try {
-            item.requestSender.sendAsync(m, null, this);
+            item.requestSender.sendAsync(fwd, null, this);
         } catch (NotConnectedException e) {
         	if(logMINOR) Logger.minor(this, "Lost connection forwarding SwapReply "+uid+" to "+item.requestSender);
         }
