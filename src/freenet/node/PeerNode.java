@@ -1,11 +1,5 @@
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -13,7 +7,6 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.ref.WeakReference;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -88,6 +81,12 @@ import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
+
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @author amphibian
@@ -3751,7 +3750,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public void offer(Key key) {
 		byte[] keyBytes = key.getFullKey();
 		// FIXME maybe the authenticator should be shorter than 32 bytes to save memory?
-		byte[] authenticator = HMAC.macWithSHA256(node.failureTable.offerAuthenticatorKey, keyBytes, 32);
+		byte[] authenticator = HMAC.macWithSHA256(node.failureTable.offerAuthenticatorKey, keyBytes);
 		Message msg = DMT.createFNPOfferKey(key, authenticator);
 		try {
 			sendAsync(msg, null, node.nodeStats.sendOffersCtr);

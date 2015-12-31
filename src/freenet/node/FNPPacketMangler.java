@@ -948,7 +948,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] sig = ctx.ecdsaSig;
 	    if(sig.length != getSignatureLength(negType))
 	        throw new IllegalStateException("This shouldn't happen: please report! We are attempting to send "+sig.length+" bytes of signature in JFK2! "+pn.getPeer());
-	    byte[] authenticator = HMAC.macWithSHA256(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
+	    byte[] authenticator = HMAC.macWithSHA256(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()));
 		if(logDEBUG) Logger.debug(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
         if(logDEBUG) Logger.debug(this, "We have Ni' : " + HexUtil.bytesToHex(nonceInitator));
 		byte[] message2 = new byte[nonceInitator.length + nonceSize+modulusLength+
@@ -1777,7 +1777,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		pcfb.blockEncipher(cleartext, cleartextToEncypherOffset, cleartext.length-cleartextToEncypherOffset);
 
 		// We compute the HMAC of (prefix + cyphertext) Includes the IV!
-		byte[] hmac = HMAC.macWithSHA256(pn.jfkKa, cleartext, HASH_LENGTH);
+		byte[] hmac = HMAC.macWithSHA256(pn.jfkKa, cleartext);
 
 		// copy stuffs back to the message
 		System.arraycopy(hmac, 0, message3, offset, HASH_LENGTH);
@@ -1900,7 +1900,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		pk.blockEncipher(cyphertext, cleartextToEncypherOffset, cyphertext.length - cleartextToEncypherOffset);
 
 		// We compute the HMAC of (prefix + iv + signature)
-		byte[] hmac = HMAC.macWithSHA256(Ka, cyphertext, HASH_LENGTH);
+		byte[] hmac = HMAC.macWithSHA256(Ka, cyphertext);
 
 		// Message4 = hmac + IV + encryptedSignature
 		byte[] message4 = new byte[HASH_LENGTH + ivLength + (cyphertext.length - cleartextToEncypherOffset)];
@@ -2284,7 +2284,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		offset += nR.length;
 		System.arraycopy(number, 0, toHash, offset, number.length);
 
-		return HMAC.macWithSHA256(exponential, toHash, HASH_LENGTH);
+		return HMAC.macWithSHA256(exponential, toHash);
 	}
 
 	private long timeLastReset = -1;
