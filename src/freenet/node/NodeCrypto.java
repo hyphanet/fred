@@ -207,7 +207,7 @@ public class NodeCrypto {
 
 			//TODO: remove this once 1471 is mandatory
 			dsaSFS = fs.subset("dsaGroup");
-			if(dsaSFS != null && dsaSFS.toString().length() > 30)
+			if(dsaSFS != null && dsaSFS.toString().length() > 50)
 				cryptoGroup = DSAGroup.create(dsaSFS);
 			dsaSFS = fs.subset("dsaPrivKey");
 			if(dsaSFS != null && dsaSFS.toString().length() > 30)
