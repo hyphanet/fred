@@ -12,6 +12,14 @@ import freenet.support.Logger;
 
 /**
  * Implements the Digital Signature Algorithm (DSA) described in FIPS-186
+ *
+ * This is legacy and largely deprecated. You shouldn't be using it for new code
+ * Several concerns:
+ *  - we have no idea of where the DSA group came from
+ *  - until recently the code wasn't using deterministic signatures
+ *      (and we're not sure about the PRNG either!)
+ *  - the group is *way* too small (1024bits)
+ *  - the signature masking thingy is dodgy
  */
 public class DSA {
 
@@ -65,12 +73,22 @@ public class DSA {
 		BigInteger s1=m.add(x.getX().multiply(r)).mod(g.getQ());
 		BigInteger s=kInv.multiply(s1).mod(g.getQ());
 		if((r.compareTo(BigInteger.ZERO) == 0) || (s.compareTo(BigInteger.ZERO) == 0)) {
-			Logger.warning(DSA.class, "R or S equals 0 : Weird behaviour detected, please report if seen too often.");
-			return sign(g, x, generateK(g,x,m), m, random);
+			Logger.error(DSA.class, "R or S equals 0 : Weird behaviour detected, please report if seen too often.");
 		}
 		return new DSASignature(r,s);
 	}
 
+	/**
+	 * Deterministic (RFC6979 style) signatures
+	 *
+	 * Yes, we are not following the RFC to the letter;
+	 * We're masking K to ensure it's in range rather than looping and modifying the input
+	 *
+	 * @param g  group
+	 * @param x  private key
+	 * @param m  digested message
+	 * @return
+   */
 	private static BigInteger generateK(DSAGroup g, DSAPrivateKey x, BigInteger m){
 		if(g.getQ().bitLength() < DSAGroup.Q_BIT_LENGTH)
 			throw new IllegalArgumentException("Q is too short! (" + g.getQ().bitLength() + '<' + DSAGroup.Q_BIT_LENGTH + ')');
