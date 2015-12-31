@@ -3,13 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
-import freenet.support.LogThresholdCallback;
+import net.i2p.util.NativeBigInteger;
+
 import java.math.BigInteger;
 import java.util.Random;
 
-import net.i2p.util.NativeBigInteger;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /**
  * Implements the Digital Signature Algorithm (DSA) described in FIPS-186
@@ -19,13 +18,7 @@ public class DSA {
     private static volatile boolean logMINOR;
 
     static {
-        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-
-            @Override
-            public void shouldUpdate() {
-                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-            }
-        });
+	    Logger.registerClass(DSA.class);
     }
 
 	// FIXME DSAgroupBigA is 256 bits long and therefore cannot accomodate
@@ -57,7 +50,7 @@ public class DSA {
 
 	public static DSASignature sign(DSAGroup g, DSAPrivateKey x, BigInteger m,
 			RandomSource r) {
-		BigInteger k = DSA.generateK(g, r);
+		BigInteger k = DSA.generateK(g,x,m);
 		return sign(g, x, k, m, r);
 	}
 
@@ -73,20 +66,28 @@ public class DSA {
 		BigInteger s=kInv.multiply(s1).mod(g.getQ());
 		if((r.compareTo(BigInteger.ZERO) == 0) || (s.compareTo(BigInteger.ZERO) == 0)) {
 			Logger.warning(DSA.class, "R or S equals 0 : Weird behaviour detected, please report if seen too often.");
-			return sign(g, x, generateK(g, random), m, random);
+			return sign(g, x, generateK(g,x,m), m, random);
 		}
 		return new DSASignature(r,s);
 	}
 
-	private static BigInteger generateK(DSAGroup g, Random r){
-            if(g.getQ().bitLength() < DSAGroup.Q_BIT_LENGTH)
-		    throw new IllegalArgumentException("Q is too short! (" + g.getQ().bitLength() + '<' + DSAGroup.Q_BIT_LENGTH + ')');
-		
-            BigInteger k;
-		do {
-			k=new NativeBigInteger(DSAGroup.Q_BIT_LENGTH, r);
-		} while ((g.getQ().compareTo(k) < 1) || (k.compareTo(BigInteger.ZERO) < 1));
-		return k;
+	private static BigInteger generateK(DSAGroup g, DSAPrivateKey x, BigInteger m){
+		if(g.getQ().bitLength() < DSAGroup.Q_BIT_LENGTH)
+			throw new IllegalArgumentException("Q is too short! (" + g.getQ().bitLength() + '<' + DSAGroup.Q_BIT_LENGTH + ')');
+
+		byte[] q = g.getQ().toByteArray();
+		byte[] messageHash = m.toByteArray();
+		byte[] toHMAC = new byte[q.length+messageHash.length];
+		System.arraycopy(q, 0, toHMAC, 0, q.length);
+		System.arraycopy(messageHash,0, toHMAC, q.length, messageHash.length);
+
+		BigInteger k = new NativeBigInteger(1, HMAC.macWithSHA256(x.asBytes(), toHMAC, SHA256.getDigestLength()));
+		k = k.and(SIGNATURE_MASK);
+
+		// We can't log K here
+		if((g.getQ().compareTo(k) < 1) || (k.compareTo(BigInteger.ZERO) < 1))
+			throw new Error("We have generated an impossible value for K; This can't happen.");
+	        return k;
 	}
 
 	/**
