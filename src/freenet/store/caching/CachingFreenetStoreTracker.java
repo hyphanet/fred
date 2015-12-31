@@ -127,14 +127,14 @@ public class CachingFreenetStoreTracker {
 			return true;
 		}
 	}
-	
+    
 	private void pushAllCachingStores() {
-		CachingFreenetStore<?>[] cachingStoresSnapshot = null;
-		synchronized (cachingStores) {
-			cachingStoresSnapshot = this.cachingStores.toArray(new CachingFreenetStore[cachingStores.size()]);
-		}
-		
 		while(true) {
+            // Need to re-check occasionally in case new stores have been added.
+            CachingFreenetStore<?>[] cachingStoresSnapshot = null;
+            synchronized (cachingStores) {
+                cachingStoresSnapshot = this.cachingStores.toArray(new CachingFreenetStore[cachingStores.size()]);
+	        }
 			for(CachingFreenetStore<?> cfs : cachingStoresSnapshot) {
 				int k=0;
 				while(k < numberOfKeysToWrite) {
