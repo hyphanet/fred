@@ -13,7 +13,6 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.ref.WeakReference;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -216,9 +215,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/** After this many failed handshakes, we start the ARK fetcher. */
 	private static final int MAX_HANDSHAKE_COUNT = 2;
 	final PeerLocation location;
-	/** Node identity; for now a block of data, in future a
-	* public key (FIXME). Cannot be changed.
-	*/
+	/** Node "identity". This is a random 32 byte block of data, which may be derived from the 
+	 * node's public key. It cannot be changed, and is only used for the outer keyed obfuscation 
+	 * on connection setup packets in FNPPacketMangler. */
 	final byte[] identity;
 	final String identityAsBase64String;
 	/** Hash of node identity. Used in setup key. */
@@ -230,7 +229,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	final long swapIdentifier;
 	/** Negotiation types supported */
 	int[] negTypes;
-	/** Integer hash of node identity. Used as hashCode(). */
+	/** Integer hash of the peer's public key. Used as hashCode(). */
 	final int hashCode;
 	/** The Node we serve */
 	final Node node;
@@ -258,12 +257,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	/** Time at which we should send the next handshake request */
 	protected long sendHandshakeTime;
-	/** Time after which we log message requeues while rate limiting */
-	private long nextMessageRequeueLogTime;
-	/** Interval between rate limited message requeue logs (in milliseconds) */
-	private static final long messageRequeueLogRateLimitInterval = 1000;
-	/** Number of messages to be requeued after which we rate limit logging of such */
-	private static final int messageRequeueLogRateLimitThreshold = 15;
 	/** Version of the node */
 	private String version;
 	/** Total input */
@@ -423,14 +416,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	/**
 	* Create a PeerNode from a SimpleFieldSet containing a
-	* node reference for one. This must contain the following
-	* fields:
-	* - identity
-	* - version
-	* - location
-	* - physical.udp
-	* - setupKey
-	* Do not add self to PeerManager.
+	* node reference for one. Does not add self to PeerManager.
 	* @param fs The node reference to parse.
 	* @param node2 The running Node we are part of.
 	* @param fromLocal True if the noderef was read from the stored peers file and can contain
@@ -5829,11 +5815,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
         return !failed;
 	}
 	
-	protected byte[] getIdentity() {
-	    return identity;
-	}
-	
-	protected final byte[] getIdentity(int negType) {
-	        return peerECDSAPubKeyHash;
+	protected final byte[] getPubKeyHash() {
+	    return peerECDSAPubKeyHash;
 	}
 }

@@ -57,11 +57,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * @author amphibian
  *
- * Encodes and decodes packets for FNP.
- *
- * This includes encryption, authentication, and may later
- * include queueing etc. (that may require some interface
- * changes in IncomingPacketFilter).
+ * Handles connection setup and more complex packet decoding (cases where we don't immediately know
+ * which peer sent the packet). Connection setup uses JFKi, but with an outer obfuscation layer
+ * keyed on the "identity" of both the peer and this node.
+ * 
+ * @see freenet.io.comm.IncomingPacketFilter
+ * @see NewPacketFormat
  */
 public class FNPPacketMangler implements OutgoingPacketMangler {
     static { Logger.registerClass(FNPPacketMangler.class); }
@@ -100,15 +101,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	* The FIFO itself
 	* Get a lock on dhContextFIFO before touching it!
 	*/
-	/* The element which is about to be prunned from the FIFO */
-	private long jfkDHLastGenerationTimestamp = 0;
-	
 	private final LinkedList<ECDHLightContext> ecdhContextFIFO = new LinkedList<ECDHLightContext>();
 	private ECDHLightContext ecdhContextToBePrunned;
 	private static final ECDH.Curves ecdhCurveToUse = ECDH.Curves.P256;
 	private long jfkECDHLastGenerationTimestamp = 0;
 
-	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = SHA256.getDigestLength();
 	/** The size of the key used to authenticate the hmac */
 	private static final int TRANSIENT_KEY_SIZE = HASH_LENGTH;
@@ -128,25 +125,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			maybeResetTransientKey();
 		}
 	};
-	/** Minimum headers overhead */
-	private static final int HEADERS_LENGTH_MINIMUM =
-		4 + // sequence number
-		RANDOM_BYTES_LENGTH + // random junk
-		1 + // version
-		1 + // assume seqno != -1; otherwise would be 4
-		4 + // other side's seqno
-		1 + // number of acks
-		0 + // assume no acks
-		1 + // number of resend reqs
-		0 + // assume no resend requests
-		1 + // number of ack requests
-		0 + // assume no ack requests
-		1 + // no forgotten packets
-		HASH_LENGTH + // hash
-		1; // number of messages
-	/** Headers overhead if there is one message and no acks. */
-	static public final int HEADERS_LENGTH_ONE_MESSAGE =
-		HEADERS_LENGTH_MINIMUM + 2; // 2 bytes = length of message. rest is the same.
 
         private long lastConnectivityStatusUpdate;
         private Status lastConnectivityStatus;
@@ -171,32 +149,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			_fillJFKECDHFIFO();
 		}
 		this.authHandlingThread.start(node.executor, "FNP incoming auth packet handler thread");
-	}
-
-	/**
-	 * Packet format:
-	 *
-	 * E_session_ecb(
-	 *         4 bytes:  sequence number XOR first 4 bytes of node identity
-	 *         12 bytes: first 12 bytes of H(data)
-	 *         )
-	 * E_session_ecb(
-	 *         16 bytes: bytes 12-28 of H(data)
-	 *         ) XOR previous ciphertext XOR previous plaintext
-	 * 4 bytes: bytes 28-32 of H(data) XOR bytes 0-4 of H(data)
-	 * E_session_pcfb(data) // IV = first 32 bytes of packet
-	 *
-	 */
-
-	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
-		/**
-		 * Look up the Peer.
-		 * If we know it, check the packet with that key.
-		 * Otherwise try all of them (on the theory that nodes
-		 * occasionally change their IP addresses).
-		 */
-		PeerNode opn = node.peers.getByPeer(peer);
-		return process(buf, offset, length, peer, opn, now);
 	}
 
 	/**
@@ -1713,7 +1665,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		 * It is assumed to be non-message recovering
 		 */
 		// save parameters so that we can verify message4
-		byte[] toSign = assembleDHParams(nonceInitiatorHashed, nonceResponder, ourExponential, hisExponential, pn.getIdentity(negType), data);
+		byte[] toSign = assembleDHParams(nonceInitiatorHashed, nonceResponder, ourExponential, hisExponential, pn.getPubKeyHash(), data);
 		pn.setJFKBuffer(toSign);
 		byte[] sig = crypto.ecdsaSign(toSign);
 
@@ -1874,7 +1826,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		ptr += myRef.length;
 		System.arraycopy(hisRef, 0, data, ptr, hisRef.length);
 
-		byte[] params = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, pn.getIdentity(negType), data);
+		byte[] params = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, pn.getPubKeyHash(), data);
 		if(logMINOR)
 			Logger.minor(this, "Message length "+params.length+" myRef: "+myRef.length+" hash "+Fields.hashCode(myRef)+" hisRef: "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" boot ID "+node.bootID);
 		byte[] sig = crypto.ecdsaSign(params);
