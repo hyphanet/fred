@@ -855,6 +855,10 @@ public class PluginManager {
 		}
 	}
 
+	/**
+	 * @deprecated will be removed in version 1473.
+     */
+	@Deprecated
 	public void addToadletSymlinks(PluginInfoWrapper pi) {
 		synchronized(toadletList) {
 			try {
@@ -873,6 +877,10 @@ public class PluginManager {
 		}
 	}
 
+	/**
+	 * @deprecated will be removed in version 1473.
+	 */
+	@Deprecated
 	public void removeToadletSymlinks(PluginInfoWrapper pi) {
 		synchronized(toadletList) {
 			String rm = null;
@@ -927,7 +935,7 @@ public class PluginManager {
      *     the function did wrongly expect or not expect that. When removing this function, please
      *     review the callers for correctness with regards to that.<br>
      *     You might replace usage of this function with
-     *     {@link #getPluginInfoByClassName(String)} or {@link #getPluginInfoByFileName(String)}.
+     *     {@link #getPluginInfoByClassName(String)}.
 	 */
     @Deprecated
 	public PluginInfoWrapper getPluginInfo(String plugname) {
@@ -953,24 +961,6 @@ public class PluginManager {
         synchronized(pluginWrappers) {
             for(PluginInfoWrapper piw : pluginWrappers) {
                 if(piw.getPluginClassName().equals(pluginClassName)) {
-                    return piw;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * @param pluginFileName
-     *     The filename of the JAR from which the plugin was loaded.
-     * @return
-     *     The {@link PluginInfoWrapper} for the plugin with the given file name, or null if no
-     *     matching plugin was found.
-     */
-    public PluginInfoWrapper getPluginInfoByFileName(String pluginFileName) {
-        synchronized(pluginWrappers) {
-            for(PluginInfoWrapper piw : pluginWrappers) {
-                if(piw.getFilename().equals(pluginFileName)) {
                     return piw;
                 }
             }
@@ -1750,6 +1740,10 @@ public class PluginManager {
 		}
 	}
 
+	/**
+	 * @deprecated will be removed in version 1473.
+	 */
+	@Deprecated
 	public THEME getFProxyTheme() {
 		return fproxyTheme;
 	}
