@@ -436,7 +436,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* @param fromLocal True if the noderef was read from the stored peers file and can contain
 	* local metadata, and won't be signed. Otherwise, it is a new node reference from elsewhere,
 	* should not contain metadata, and will be signed. */
-	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal) 
+	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal) 
 	                throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
         removed = true;
 		boolean noSig = false;
