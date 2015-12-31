@@ -54,6 +54,7 @@ import freenet.node.RequestStarter;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.OfficialPlugins.OfficialPluginDescription;
+import freenet.pluginmanager.PluginManager.PluginProgress.ProgressState;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.JarClassLoader;
@@ -431,7 +432,7 @@ public class PluginManager {
 		PluginInfoWrapper pi = null;
 		try {
 			plug = loadPlugin(pdl, filename, pluginProgress, alwaysDownload);
-			pluginProgress.setProgress(PluginProgress.PROGRESS_STATE.STARTING);
+			pluginProgress.setProgress(ProgressState.STARTING);
 			pi = new PluginInfoWrapper(node, plug, filename, pdl.isOfficialPluginLoader());
 			PluginHandler.startPlugin(PluginManager.this, pi);
 			synchronized (pluginWrappers) {
@@ -1539,7 +1540,7 @@ public class PluginManager {
 	 */
 	public static class PluginProgress {
 
-		enum PROGRESS_STATE {
+		enum ProgressState {
 			DOWNLOADING,
 			STARTING
 		}
@@ -1547,7 +1548,7 @@ public class PluginManager {
 		/** The starting time. */
 		private long startingTime = System.currentTimeMillis();
 		/** The current state. */
-		private PROGRESS_STATE pluginProgress;
+		private ProgressState pluginProgress;
 		/** The name by which the plugin is loaded. */
 		private String name;
 		/** Total. Might be bytes, might be blocks. */
@@ -1571,7 +1572,7 @@ public class PluginManager {
 		 */
 		PluginProgress(String name, PluginDownLoader<?> pdl) {
 			this.name = name;
-			pluginProgress = PROGRESS_STATE.DOWNLOADING;
+			pluginProgress = ProgressState.DOWNLOADING;
 			loader = pdl;
 		}
 
@@ -1604,7 +1605,7 @@ public class PluginManager {
 		 *
 		 * @return The current state of the plugin
 		 */
-		public PROGRESS_STATE getProgress() {
+		public ProgressState getProgress() {
 			return pluginProgress;
 		}
 
@@ -1614,13 +1615,13 @@ public class PluginManager {
 		 * @param pluginProgress
 		 *            The current state
 		 */
-		void setProgress(PROGRESS_STATE state) {
+		void setProgress(ProgressState state) {
 			this.pluginProgress = state;
 		}
 
 		/**
-		 * If this object is one of the constants {@link #DOWNLOADING} or
-		 * {@link #STARTING}, the name of those constants will be returned,
+		 * If this object is one of the constants {@link ProgressState#DOWNLOADING} or
+		 * {@link ProgressState#STARTING}, the name of those constants will be returned,
 		 * otherwise a textual representation of the plugin progress is
 		 * returned.
 		 *
@@ -1632,18 +1633,18 @@ public class PluginManager {
 		}
 
 		public HTMLNode toLocalisedHTML() {
-			if(pluginProgress == PROGRESS_STATE.DOWNLOADING && total > 0) {
+			if(pluginProgress == ProgressState.DOWNLOADING && total > 0) {
 				return QueueToadlet.createProgressCell(false, true, ClientPut.COMPRESS_STATE.WORKING, current, failed, fatallyFailed, minSuccessful, total, finalisedTotal, false);
-			} else if(pluginProgress == PROGRESS_STATE.DOWNLOADING)
+			} else if(pluginProgress == ProgressState.DOWNLOADING)
 				return new HTMLNode("td", NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading"));
-			else if(pluginProgress == PROGRESS_STATE.STARTING)
+			else if(pluginProgress == ProgressState.STARTING)
 				return new HTMLNode("td", NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.starting"));
 			else
 				return new HTMLNode("td", toString());
 		}
 
 		public void setDownloadProgress(int minSuccess, int current, int total, int failed, int fatallyFailed, boolean finalised) {
-			this.pluginProgress = PROGRESS_STATE.DOWNLOADING;
+			this.pluginProgress = ProgressState.DOWNLOADING;
 			this.total = total;
 			this.current = current;
 			this.minSuccessful = minSuccess;
@@ -1653,7 +1654,7 @@ public class PluginManager {
 		}
 
 		public void setDownloading() {
-			this.pluginProgress = PROGRESS_STATE.DOWNLOADING;
+			this.pluginProgress = ProgressState.DOWNLOADING;
 		}
 		
 		public boolean isOfficialPlugin() {
