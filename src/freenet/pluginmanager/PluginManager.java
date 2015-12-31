@@ -1241,48 +1241,49 @@ public class PluginManager {
 		if(logMINOR)
 			Logger.minor(this, "plugin file " + pluginFile.getAbsolutePath() + " exists: " + pluginFile.exists()+" downloader "+pdl+" name "+name);
 		int RETRIES = 5;
-		for(int i = 0; i < RETRIES; i++) {
-			if(!pluginFile.exists() || pluginFile.length() == 0)
+		for (int i = 0; i < RETRIES; i++) {
+			if (!pluginFile.exists() || pluginFile.length() == 0) {
 				try {
 					downloaded = true;
-					System.err.println("Downloading plugin "+name);
+					System.err.println("Downloading plugin " + name);
 					WrapperManager.signalStarting((int) MINUTES.toMillis(5));
 					try {
 						downloadPluginFile(pdl, pluginDirectory, pluginFile, progress);
 						verifyDigest(pdl, pluginFile);
-					} catch(IOException ioe1) {
+					} catch (IOException ioe1) {
 						Logger.error(this, "could not load plugin", ioe1);
 						throw new PluginNotFoundException("could not load plugin: " + ioe1.getMessage(), ioe1);
 					}
-				} catch(PluginNotFoundException e) {
-					if(i < RETRIES - 1) {
+				} catch (PluginNotFoundException e) {
+					if (i < RETRIES - 1) {
 						Logger.normal(this, "Failed to load plugin: " + e, e);
 						continue;
-					} else
+					} else {
 						throw e;
+					}
 				}
-
-		cancelRunningLoads(name, progress);
-
-		// we do quite a lot inside the lock, use a dedicated one
-		synchronized (pluginLoadSyncObject) {
-			String pluginMainClassName;
-			try {
-				pluginMainClassName = verifyJarFileAndGetPluginMainClass(pluginFile);
-				FredPlugin object = loadPluginFromJarFile(name, pluginFile, pluginMainClassName, pdl.isOfficialPluginLoader());
-				if (object != null) {
-					return object;
-				}
-			} catch (PluginNotFoundException e) {
-				Logger.error(this, e.getMessage());
-				pluginFile.delete();
-				if (!downloaded) {
-					continue;
-				}
-				throw e;
 			}
 
-		}
+			cancelRunningLoads(name, progress);
+
+			// we do quite a lot inside the lock, use a dedicated one
+			synchronized (pluginLoadSyncObject) {
+				String pluginMainClassName;
+				try {
+					pluginMainClassName = verifyJarFileAndGetPluginMainClass(pluginFile);
+					FredPlugin object = loadPluginFromJarFile(name, pluginFile, pluginMainClassName, pdl.isOfficialPluginLoader());
+					if (object != null) {
+						return object;
+					}
+				} catch (PluginNotFoundException e) {
+					Logger.error(this, e.getMessage());
+					pluginFile.delete();
+					if (!downloaded) {
+						continue;
+					}
+					throw e;
+				}
+			}
 		}
 		return null;
 	}
