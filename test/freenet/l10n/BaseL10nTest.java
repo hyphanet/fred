@@ -10,8 +10,6 @@ import freenet.support.SimpleFieldSet;
 import junit.framework.TestCase;
 
 public class BaseL10nTest extends TestCase {
-    private static final String L10N_PATH = "freenet/l10n";
-    private static final String TEST_PATH = "../test";
     
     public void testAddL10nSubstitution() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
@@ -207,19 +205,19 @@ public class BaseL10nTest extends TestCase {
         }
     }
     
+    static final String FILENAME = "test.l10n.${lang}.properties";
+    static final String OVERRIDE_FILENAME = "test.l10n.${lang}.override.properties";
+    
     private BaseL10n createL10n(LANGUAGE lang) {
-        File overrideFile = new File(L10N_PATH, "freenet.l10n.${lang}.override.properties");
-        return new BaseL10n(L10N_PATH, "freenet.l10n.${lang}.properties",
-                overrideFile.getPath(), lang);
+        return new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties",
+                "freenet.l10n.${lang}.override.properties", lang);
     }
     
     private BaseL10n createTestL10n(LANGUAGE lang) {
-        String testL10nPath = new File(TEST_PATH, L10N_PATH).getPath();
-        URL classLoaderUrl = getClass().getClassLoader().getResource(".");
-        File classLoaderDir = new File(classLoaderUrl.getPath());
-        File overrideFile = new File(new File(classLoaderDir, testL10nPath),
-                "test.l10n.${lang}.override.properties");
-        return new BaseL10n(testL10nPath, "test.l10n.${lang}.properties",
-                overrideFile.getPath(), lang);
+        URL u = getClass().getResource(getClass().getSimpleName()+".class");
+        File parent = new File(u.getPath()).getParentFile();
+        File override = new File(parent, OVERRIDE_FILENAME);
+        return new BaseL10n("freenet/l10n/", "test.l10n.${lang}.properties",
+                override.getPath(), lang, getClass().getClassLoader());
     }
 }
