@@ -291,7 +291,7 @@ public class NodeCrypto {
 		myARKNumber = 0;
 		clientNonce = new byte[32];
 		node.random.nextBytes(clientNonce);
-		byte[] myIdentity = new byte[IDENTITY_LENGTH];
+		myIdentity = new byte[IDENTITY_LENGTH];
 		node.random.nextBytes(myIdentity);
 		identityHash = SHA256.digest(myIdentity);
 		identityHashHash = SHA256.digest(identityHash);
