@@ -71,16 +71,7 @@ import freenet.support.io.NativeThread;
 
 public class PluginManager {
 
-	/*
-	 *
-	 * TODO: Synchronize
-	 * TODO: Synchronize
-	 * TODO: Synchronize
-	 * TODO: Synchronize
-	 * TODO: Synchronize
-	 *
-	 */
-	private final HashMap<String, FredPlugin> toadletList;
+	private final HashMap<String, FredPlugin> toadletList = new HashMap<String, FredPlugin>();
 
 	/* All currently starting plugins. */
 	private final OfficialPlugins officialPlugins = new OfficialPlugins();
@@ -111,7 +102,6 @@ public class PluginManager {
 		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		// config
 
-		toadletList = new HashMap<String, FredPlugin>();
 		pluginWrappers = new ArrayList<PluginInfoWrapper>();
 		pluginsFailedLoad = new HashMap<String, PluginLoadFailedUserAlert>();
 		this.node = node;
