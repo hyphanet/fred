@@ -538,14 +538,14 @@ public class CachingFreenetStoreTest extends TestCase {
 	}
 	
 	/* Test whether stuff gets written to disk after the caching period expires */
-	public void testTimeExpireCHK() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+	public void testTimeExpireCHK() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException, InterruptedException {
 		File f = new File(tempDir, "saltstore");
 		FileUtil.removeAll(f);
 		long delay = 100;
 		
 		CHKStore store = new CHKStore();
 		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreTimeExpire", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize, delay, ticker);
+		WaitableCachingFreenetStoreTracker tracker = new WaitableCachingFreenetStoreTracker(cachingFreenetStoreMaxSize, delay, ticker);
 		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, saltStore, tracker);
 		cachingStore.start(null, true);
 		
@@ -563,11 +563,7 @@ public class CachingFreenetStoreTest extends TestCase {
 			chkBlocks.add(block);
 		}
 		
-		try {
-			Thread.sleep(2*delay);
-		} catch (InterruptedException e) {
-			// Ignore
-		}
+		tracker.waitForZero();
 		
 		//Fetch five chk blocks
 		for(int i=0; i<5; i++){
