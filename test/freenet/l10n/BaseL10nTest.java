@@ -218,8 +218,8 @@ public class BaseL10nTest extends TestCase {
         URL classLoaderUrl = getClass().getClassLoader().getResource(".");
         File classLoaderDir = new File(classLoaderUrl.getPath());
         File overrideFile = new File(new File(classLoaderDir, testL10nPath),
-                "freenet.l10n.${lang}.override.properties");
-        return new BaseL10n(testL10nPath, "freenet.l10n.${lang}.properties",
+                "test.l10n.${lang}.override.properties");
+        return new BaseL10n(testL10nPath, "test.l10n.${lang}.properties",
                 overrideFile.getPath(), lang);
     }
 }
