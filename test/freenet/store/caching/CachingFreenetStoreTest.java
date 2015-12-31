@@ -645,10 +645,9 @@ public class CachingFreenetStoreTest extends TestCase {
 	}
 	
 	/* Test with SSK whether stuff gets written to disk after the caching period expires */
-	public void testTimeExpireSSK() throws IOException, SSKEncodeException, InvalidCompressionCodecException, KeyCollisionException, SSKVerifyException, KeyDecodeException {
+	public void testTimeExpireSSK() throws IOException, SSKEncodeException, InvalidCompressionCodecException, KeyCollisionException, SSKVerifyException, KeyDecodeException, InterruptedException {
 		File f = new File(tempDir, "saltstore");
 		FileUtil.removeAll(f);
-		long delay = 100;
 		
 		final int keys = 5;
 		PubkeyStore pk = new PubkeyStore();
@@ -656,7 +655,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
 		SSKStore store = new SSKStore(pubkeyCache);
 		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreOnCloseSSK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
-		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, ticker);
+		WaitableCachingFreenetStoreTracker tracker = new WaitableCachingFreenetStoreTracker(cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, ticker);
 		CachingFreenetStore<SSKBlock> cachingStore = new CachingFreenetStore<SSKBlock>(store, saltStore, tracker);
 		cachingStore.start(null, true);
 		RandomSource random = new DummyRandomSource(12345);
@@ -674,11 +673,7 @@ public class CachingFreenetStoreTest extends TestCase {
 			sskBlocks.add(block);
 		}
 		
-		try {
-			Thread.sleep(2*delay);
-		} catch (InterruptedException e) {
-			// Ignore
-		}
+		tracker.waitForZero();
 		
 		for(int i=0;i<5;i++) {
 			String test = tests.remove(0); //get the first element
