@@ -682,13 +682,6 @@ public class NodeUpdateManager {
 		// }
 		NodeUpdater main = null;
 		Map<String, PluginJarUpdater> oldPluginUpdaters = null;
-		// We need to run the revocation checker even if auto-update is
-		// disabled.
-		// Two reasons:
-		// 1. For the benefit of other nodes, and because even if auto-update is
-		// off, it's something the user should probably know about.
-		// 2. When the key is blown, we turn off auto-update!!!!
-		revocationChecker.start(false);
 		synchronized (this) {
 			boolean enabled = (mainUpdater != null);
 			if (enabled == enable)
@@ -722,7 +715,10 @@ public class NodeUpdateManager {
 			stopPluginUpdaters(oldPluginUpdaters);
 			transitionMainJarFetcher.stop();
 			transitionExtJarFetcher.stop();
+			revocationChecker.kill();
 		} else {
+		    revocationChecker.start(false);
+
 			// FIXME copy it, dodgy locking.
 			try {
 				// Must be run before starting everything else as it cleans up tempfiles too.
