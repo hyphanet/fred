@@ -41,8 +41,8 @@ public class BypassMessageQueue implements MessageQueue {
         targetHandler = targetCrypto.socket;
         executor = target.executor;
         targetName = "node on port " + targetCrypto.portNumber;
-        sourcePubKeyHash = sourceCrypto.pubKeyHash;
-        targetPubKeyHash = targetCrypto.pubKeyHash;
+        sourcePubKeyHash = sourceCrypto.ecdsaPubKeyHash;
+        targetPubKeyHash = targetCrypto.ecdsaPubKeyHash;
     }
     
     @Override

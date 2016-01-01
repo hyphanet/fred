@@ -608,7 +608,7 @@ public class NodeStarter implements WrapperListener {
 		
 		synchronized(NodeStarter.class) {
 		    if(testingVMEnableBypassConnections != TestingVMBypass.NONE) {
-		        ByteArrayWrapper key = new ByteArrayWrapper(node.darknetCrypto.pubKeyHash);
+		        ByteArrayWrapper key = new ByteArrayWrapper(node.darknetCrypto.ecdsaPubKeyHash);
 		        testingVMNodesByPubKeyHash.put(key, node);
 		        testingVMNodeParametersByPubKeyHash.put(key, params);
 		    }

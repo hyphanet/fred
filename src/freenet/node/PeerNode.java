@@ -609,7 +609,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		swapRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS);
 		probeRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS);
 
-		messageQueue = makeMessageQueue(node, crypto, pubKeyHash);
+		messageQueue = makeMessageQueue(node, crypto, peerECDSAPubKeyHash);
 
 		decrementHTLAtMaximum = node.random.nextFloat() < Node.DECREMENT_AT_MAX_PROB;
 		decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;
