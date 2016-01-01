@@ -93,7 +93,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			try {
 				BucketTools.copy(new FileBucket(blobFile, true, false, false, true), bucket);
 				// Allow to free if bogus.
-				manager.uom.processRevocationBlob(bucket, "disk", true);
+				manager.uom.processRevocationBlob(bucket, "disk", true, true);
 			} catch (IOException e) {
 				Logger.error(this, "Failed to read old revocation blob: "+e, e);
 				System.err.println("We may have downloaded an old revocation blob before restarting but it cannot be read: "+e);
