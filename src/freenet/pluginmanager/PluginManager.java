@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Semaphore;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -77,7 +78,7 @@ public class PluginManager {
 	/* All currently starting plugins. */
 	private final OfficialPlugins officialPlugins = new OfficialPlugins();
 	private final Set<PluginProgress> startingPlugins = new HashSet<PluginProgress>();
-	private final List<PluginInfoWrapper> pluginWrappers = new ArrayList<PluginInfoWrapper>();
+	private final List<PluginInfoWrapper> pluginWrappers = new CopyOnWriteArrayList<PluginInfoWrapper>();
 	private final Map<String, PluginLoadFailedUserAlert> pluginsFailedLoad = new HashMap<String, PluginLoadFailedUserAlert>();
 	final Node node;
 	private final NodeClientCore core;
@@ -290,41 +291,36 @@ public class PluginManager {
 			progress.kill();
 		}
 		// Stop already loaded plugins.
-		ArrayList<PluginInfoWrapper> wrappers;
-		synchronized(pluginWrappers) {
-			wrappers = new ArrayList<PluginInfoWrapper>(pluginWrappers);
-		}
-		for(PluginInfoWrapper pi : wrappers)
+		for(PluginInfoWrapper pi : pluginWrappers)
 			pi.startShutdownPlugin(this, false);
 		long now = System.currentTimeMillis();
 		long deadline = now + maxWaitTime;
 		while(true) {
 			int delta = (int) (deadline - now);
 			if(delta <= 0) {
-				String list = pluginList(wrappers);
+				String list = pluginList(pluginWrappers);
 				Logger.error(this, "Plugins still shutting down at timeout:\n"+list);
 				System.err.println("Plugins still shutting down at timeout:\n"+list);
 			} else {
-				for(Iterator<PluginInfoWrapper> it = wrappers.listIterator();it.hasNext();) {
-					PluginInfoWrapper pi = it.next();
-					System.out.println("Waiting for plugin to finish shutting down: "+pi.getFilename());
-					if(pi.finishShutdownPlugin(this, delta, false)) {
-						it.remove();
+				for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
+					System.out.println("Waiting for plugin to finish shutting down: " + pluginInfoWrapper.getFilename());
+					if (pluginInfoWrapper.finishShutdownPlugin(this, delta, false)) {
+						pluginWrappers.remove(pluginInfoWrapper);
 					}
 				}
-				if(wrappers.isEmpty()) {
+				if (pluginWrappers.isEmpty()) {
 					Logger.normal(this, "All plugins unloaded");
 					System.out.println("All plugins unloaded");
 					return;
 				}
-				String list = pluginList(wrappers);
+				String list = pluginList(pluginWrappers);
 				Logger.error(this, "Plugins still shutting down:\n"+list);
 				System.err.println("Plugins still shutting down:\n"+list);
 			}
 		}
 	}
 
-	private static String pluginList(ArrayList<PluginInfoWrapper> wrappers) {
+	private static String pluginList(List<PluginInfoWrapper> wrappers) {
 		StringBuffer sb = new StringBuffer();
 		for(PluginInfoWrapper pi : wrappers) {
 			sb.append(pi.getFilename());
@@ -334,12 +330,14 @@ public class PluginManager {
 	}
 
 	private String[] getConfigLoadString() {
-		ArrayList<String> v = new ArrayList<String>();
+		List<String> v = new ArrayList<String>();
+		for (PluginInfoWrapper pi : pluginWrappers) {
+			v.add(pi.getFilename());
+		}
 
-		synchronized(pluginWrappers) {
-			if(!started) return toStart;
-			for(PluginInfoWrapper pi : pluginWrappers) {
-				v.add(pi.getFilename());
+		synchronized (pluginWrappers) {
+			if (!started) {
+				return toStart;
 			}
 			v.addAll(pluginsFailedLoad.keySet());
 		}
@@ -424,8 +422,8 @@ public class PluginManager {
 			pluginProgress.setProgress(ProgressState.STARTING);
 			pi = new PluginInfoWrapper(node, plug, filename, pdl.isOfficialPluginLoader());
 			PluginHandler.startPlugin(PluginManager.this, pi);
+			pluginWrappers.add(pi);
 			synchronized (pluginWrappers) {
-				pluginWrappers.add(pi);
 				pluginsFailedLoad.remove(filename);
 			}
 			Logger.normal(this, "Plugin loaded: " + filename);
@@ -894,25 +892,14 @@ public class PluginManager {
 
 	public String dumpPlugins() {
 		StringBuilder out = new StringBuilder();
-		synchronized(pluginWrappers) {
-			for(int i = 0; i < pluginWrappers.size(); i++) {
-				PluginInfoWrapper pi = pluginWrappers.get(i);
-				out.append(pi.toString());
-				out.append('\n');
-			}
+		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
+			out.append(pluginInfoWrapper.toString()).append('\n');
 		}
 		return out.toString();
 	}
 
 	public Set<PluginInfoWrapper> getPlugins() {
-		TreeSet<PluginInfoWrapper> out = new TreeSet<PluginInfoWrapper>();
-		synchronized(pluginWrappers) {
-			for(int i = 0; i < pluginWrappers.size(); i++) {
-				PluginInfoWrapper pi = pluginWrappers.get(i);
-				out.add(pi);
-			}
-		}
-		return out;
+		return new TreeSet<PluginInfoWrapper>(pluginWrappers);
 	}
 
 	/**
@@ -929,11 +916,9 @@ public class PluginManager {
 	 */
     @Deprecated
 	public PluginInfoWrapper getPluginInfo(String plugname) {
-		synchronized(pluginWrappers) {
-			for(int i = 0; i < pluginWrappers.size(); i++) {
-				PluginInfoWrapper pi = pluginWrappers.get(i);
-				if(pi.getPluginClassName().equals(plugname) || pi.getFilename().equals(plugname))
-					return pi;
+		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
+			if (pluginInfoWrapper.getPluginClassName().equals(plugname) || pluginInfoWrapper.getFilename().equals(plugname)) {
+				return pluginInfoWrapper;
 			}
 		}
 		return null;
@@ -948,15 +933,13 @@ public class PluginManager {
      *     matching plugin was found.
      */
     public PluginInfoWrapper getPluginInfoByClassName(String pluginClassName) {
-        synchronized(pluginWrappers) {
-            for(PluginInfoWrapper piw : pluginWrappers) {
-                if(piw.getPluginClassName().equals(pluginClassName)) {
-                    return piw;
-                }
-            }
-        }
-        return null;
-    }
+		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
+			if (pluginInfoWrapper.getPluginClassName().equals(pluginClassName)) {
+				return pluginInfoWrapper;
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * look for a FCPPlugin with given classname
@@ -973,11 +956,9 @@ public class PluginManager {
 	 */
     @Deprecated
 	public FredPluginFCP getFCPPlugin(String plugname) {
-		synchronized(pluginWrappers) {
-			for(int i = 0; i < pluginWrappers.size(); i++) {
-				PluginInfoWrapper pi = pluginWrappers.get(i);
-				if(pi.isFCPPlugin() && pi.getPluginClassName().equals(plugname) && !pi.isStopping())
-					return (FredPluginFCP) pi.plug;
+		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
+			if (pluginInfoWrapper.isFCPPlugin() && pluginInfoWrapper.getPluginClassName().equals(plugname) && !pluginInfoWrapper.isStopping()) {
+				return (FredPluginFCP) pluginInfoWrapper.plug;
 			}
 		}
 		return null;
@@ -1010,11 +991,9 @@ public class PluginManager {
 	 * @return the true if not found
 	 */
 	public boolean isPluginLoaded(String plugname) {
-		synchronized(pluginWrappers) {
-			for(int i = 0; i < pluginWrappers.size(); i++) {
-				PluginInfoWrapper pi = pluginWrappers.get(i);
-				if(pi.getPluginClassName().equals(plugname) || pi.getFilename().equals(plugname))
-					return true;
+		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
+			if (pluginInfoWrapper.getPluginClassName().equals(plugname) || pluginInfoWrapper.getFilename().equals(plugname)) {
+				return true;
 			}
 		}
 		return false;
@@ -1025,13 +1004,12 @@ public class PluginManager {
 	 * @return the true if not found
 	 */
 	public boolean isPluginLoadedOrLoadingOrWantLoad(String plugname) {
-		synchronized(pluginWrappers) {
-			for(int i = 0; i < pluginWrappers.size(); i++) {
-				PluginInfoWrapper pi = pluginWrappers.get(i);
-				if(pi.getFilename().equals(plugname))
-					return true;
-
+		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
+			if (pluginInfoWrapper.getFilename().equals(plugname)) {
+				return true;
 			}
+		}
+		synchronized(pluginWrappers) {
 			if (pluginsFailedLoad.containsKey(plugname)) {
 				return true;
 			}
@@ -1081,62 +1059,34 @@ public class PluginManager {
 	}
 
 	public void killPlugin(String name, long maxWaitTime, boolean reloading) {
-		PluginInfoWrapper pluginInfoWrapper = null;
-		synchronized (pluginWrappers) {
-			for (PluginInfoWrapper wrapper : pluginWrappers) {
-				if (wrapper.getThreadName().equals(name)) {
-					pluginInfoWrapper = wrapper;
-					break;
-				}
+		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
+			if (pluginInfoWrapper.getThreadName().equals(name)) {
+				pluginInfoWrapper.stopPlugin(this, maxWaitTime, reloading);
 			}
-		}
-		if (pluginInfoWrapper != null) {
-			pluginInfoWrapper.stopPlugin(this, maxWaitTime, reloading);
 		}
 	}
 
 	public void killPluginByFilename(String name, long maxWaitTime, boolean reloading) {
-		PluginInfoWrapper pluginInfoWrapper = null;
-		synchronized (pluginWrappers) {
-			for (PluginInfoWrapper wrapper : pluginWrappers) {
-				if (wrapper.getFilename().equals(name)) {
-					pluginInfoWrapper = wrapper;
-					break;
-				}
+		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
+			if (pluginInfoWrapper.getFilename().equals(name)) {
+				pluginInfoWrapper.stopPlugin(this, maxWaitTime, reloading);
 			}
-		}
-		if (pluginInfoWrapper != null) {
-			pluginInfoWrapper.stopPlugin(this, maxWaitTime, reloading);
 		}
 	}
 
-	public void killPluginByClass(String name, long maxWaitTime) {
-		PluginInfoWrapper pluginInfoWrapper = null;
-		synchronized (pluginWrappers) {
-			for (PluginInfoWrapper wrapper : pluginWrappers) {
-				if (pluginInfoWrapper.getPluginClassName().equals(name)) {
-					pluginInfoWrapper = wrapper;
-					break;
-				}
+	public void killPluginByClass(String name, final long maxWaitTime) {
+		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
+			if (pluginInfoWrapper.getPluginClassName().equals(name)) {
+				pluginInfoWrapper.stopPlugin(this, maxWaitTime, false);
 			}
-		}
-		if (pluginInfoWrapper != null) {
-			pluginInfoWrapper.stopPlugin(this, maxWaitTime, false);
 		}
 	}
 
 	public void killPlugin(FredPlugin plugin, long maxWaitTime) {
-		PluginInfoWrapper pluginInfoWrapper = null;
-		synchronized (pluginWrappers) {
-			for (PluginInfoWrapper wrapper : pluginWrappers) {
-				if (wrapper.plug == plugin) {
-					pluginInfoWrapper = wrapper;
-					break;
-				}
+		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
+			if (pluginInfoWrapper.plug == plugin) {
+				pluginInfoWrapper.stopPlugin(this, maxWaitTime, false);
 			}
-		}
-		if (pluginInfoWrapper != null) {
-			pluginInfoWrapper.stopPlugin(this, maxWaitTime, false);
 		}
 	}
 
@@ -1665,21 +1615,20 @@ public class PluginManager {
 	public void setFProxyTheme(final THEME cssName) {
 		//if (fproxyTheme.equals(cssName)) return;
 		fproxyTheme = cssName;
-		synchronized(pluginWrappers) {
-			for(PluginInfoWrapper pi: pluginWrappers) {
-				pi.pr.getPageMaker().setTheme(cssName);
-				if(pi.isThemedPlugin()) {
-					final FredPluginThemed plug = (FredPluginThemed)(pi.plug);
-					executor.execute(new Runnable() {
-						@Override
-						public void run() {
-							try {
-								plug.setTheme(cssName);
-							} catch (Throwable t) {
-								Logger.error(this, "Cought Trowable in Callback", t);
-							}
-						}}, "Callback");
-				}
+		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
+			pluginInfoWrapper.pr.getPageMaker().setTheme(cssName);
+			if (pluginInfoWrapper.isThemedPlugin()) {
+				final FredPluginThemed plug = (FredPluginThemed) pluginInfoWrapper.plug;
+				executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							plug.setTheme(cssName);
+						} catch (Throwable t) {
+							Logger.error(this, "Cought Trowable in Callback", t);
+						}
+					}
+				}, "Callback");
 			}
 		}
 	}
@@ -1690,31 +1639,31 @@ public class PluginManager {
 	}
 
 	private void setPluginLanguage(final LANGUAGE lang) {
-		synchronized(pluginWrappers) {
-			for(PluginInfoWrapper pi: pluginWrappers) {
-				if(pi.isL10nPlugin()) {
-					final FredPluginL10n plug = (FredPluginL10n)(pi.plug);
-					executor.execute(new Runnable() {
-						@Override
-						public void run() {
-							try {
-								plug.setLanguage(lang);
-							} catch (Throwable t) {
-								Logger.error(this, "Cought Trowable in Callback", t);
-							}
-						}}, "Callback");
-				} else if(pi.isBaseL10nPlugin()) {
-					final FredPluginBaseL10n plug = (FredPluginBaseL10n)(pi.plug);
-					executor.execute(new Runnable() {
-						@Override
-						public void run() {
-							try {
-								plug.setLanguage(lang);
-							} catch (Throwable t) {
-								Logger.error(this, "Cought Trowable in Callback", t);
-							}
-						}}, "Callback");
-				}
+		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
+			if (pluginInfoWrapper.isL10nPlugin()) {
+				final FredPluginL10n plug = (FredPluginL10n) (pluginInfoWrapper.plug);
+				executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							plug.setLanguage(lang);
+						} catch (Throwable t) {
+							Logger.error(this, "Cought Trowable in Callback", t);
+						}
+					}
+				}, "Callback");
+			} else if (pluginInfoWrapper.isBaseL10nPlugin()) {
+				final FredPluginBaseL10n plug = (FredPluginBaseL10n) (pluginInfoWrapper.plug);
+				executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							plug.setLanguage(lang);
+						} catch (Throwable t) {
+							Logger.error(this, "Cought Trowable in Callback", t);
+						}
+					}
+				}, "Callback");
 			}
 		}
 	}
