@@ -444,7 +444,7 @@ public class OpennetManager {
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType, boolean allowExisting) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		try {
 		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, false);
-		if(Arrays.equals(pn.getPubKeyHash(), crypto.pubKeyHash)) {
+		if(Arrays.equals(pn.peerECDSAPubKeyHash, crypto.ecdsaPubKeyHash)) {
 			if(logMINOR) Logger.minor(this, "Not adding self as opennet peer");
 			return null; // Equal to myself
 		}

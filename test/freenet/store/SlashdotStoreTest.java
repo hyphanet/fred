@@ -80,7 +80,7 @@ public class SlashdotStoreTest extends TestCase {
 		if(verify == null) return; // Expected outcome
 		String data = decodeBlock(verify, key);
 		System.err.println("Got data: "+data+" but should have been deleted!");
-		assertTrue(false);
+		fail();
 	}
 
 	private String decodeBlock(CHKBlock verify, ClientCHK key) throws CHKVerifyException, CHKDecodeException, IOException {

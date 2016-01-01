@@ -110,7 +110,7 @@ public final class PageMaker {
 		}
 
 		public static THEME getDefault() {
-			return THEME.CLEAN;
+			return THEME.SKY_STATIC;
 		}
 	}	
 	

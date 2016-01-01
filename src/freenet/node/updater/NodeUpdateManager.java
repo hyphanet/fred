@@ -765,7 +765,8 @@ public class NodeUpdateManager {
 
 	void startPluginUpdater(OfficialPluginDescription plugin) {
 		String name = plugin.name;
-		long minVer = plugin.recommendedVersion;
+		// @see https://emu.freenetproject.org/pipermail/devl/2015-November/038581.html
+		long minVer = (plugin.essential ? plugin.minimumVersion : plugin.recommendedVersion);
 		// But it might already be past that ...
 		PluginInfoWrapper info = node.pluginManager.getPluginInfo(name);
 		if (info == null) {
@@ -779,8 +780,8 @@ public class NodeUpdateManager {
 			minVer = Math.max(minVer, info.getPluginLongVersion());
 		FreenetURI uri = updateURI.setDocName(name).setSuggestedEdition(minVer);
 		PluginJarUpdater updater = new PluginJarUpdater(this, uri,
-				(int) minVer, -1, Integer.MAX_VALUE, name + "-", name,
-				node.pluginManager, autoDeployPluginsOnRestart);
+				(int) minVer, -1, (plugin.essential ? (int)minVer : Integer.MAX_VALUE)
+				, name + "-", name, node.pluginManager, autoDeployPluginsOnRestart);
 		synchronized (this) {
 			if (pluginUpdaters == null) {
 				if (logMINOR)

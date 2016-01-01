@@ -9,10 +9,17 @@ import freenet.support.SimpleFieldSet;
 public class EndListPersistentRequestsMessage extends FCPMessage {
 
 	static final String name = "EndListPersistentRequests";
-	
+	private final String listRequestIdentifier;
+
+	public EndListPersistentRequestsMessage(String listRequestIdentifier) {
+		this.listRequestIdentifier = listRequestIdentifier;
+	}
+
 	@Override
 	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet(true);
+		SimpleFieldSet simpleFieldSet = new SimpleFieldSet(true);
+		simpleFieldSet.putSingle("Identifier", listRequestIdentifier);
+		return simpleFieldSet;
 	}
 
 	@Override

@@ -1,7 +1,15 @@
 ## QUICK START
 
+To install Freenet, use the installer from https://freenetproject.org
+
 If the installer did not do it for you, start Freenet and open a browser pointing
 to http://127.0.0.1:8888/
+
+## Contributing
+
+For building Freenet, see README.building.md
+
+Short guidelines for contributing improvements are in CONTRIBUTING.md
 
 ## INTRODUCTION
 

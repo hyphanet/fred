@@ -1,7 +1,5 @@
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -53,8 +51,10 @@ import freenet.support.api.HTTPUploadedFile;
 import freenet.support.api.RandomAccessBuffer;
 import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessBuffer;
-import freenet.support.io.FileUtil;
 import freenet.support.io.FileRandomAccessBuffer;
+import freenet.support.io.FileUtil;
+
+import static java.util.concurrent.TimeUnit.DAYS;
 
 public class DarknetPeerNode extends PeerNode {
 
@@ -1674,11 +1674,6 @@ public class DarknetPeerNode extends PeerNode {
 	@Override
 	public boolean recordStatus() {
 		return true;
-	}
-
-	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return false;
 	}
 
 	@Override

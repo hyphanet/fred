@@ -3,9 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
@@ -44,6 +41,9 @@ import freenet.support.TimeUtil;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @author amphibian
@@ -604,7 +604,7 @@ public class PeerManager {
 		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
 		PeerNode[] peerList = myPeers();
 		for(PeerNode mp: peerList) {
-			if(Arrays.equals(mp.pubKeyHash, pn.pubKeyHash))
+			if(Arrays.equals(mp.peerECDSAPubKeyHash, pn.peerECDSAPubKeyHash))
 				return;
 		}
 		addPeer(pn);
@@ -726,26 +726,6 @@ public class PeerManager {
 		}
 	};
 
-	protected static class LocationUIDPair implements Comparable<LocationUIDPair> {
-		double location;
-		long uid;
-
-		LocationUIDPair(PeerNode pn) {
-			location = pn.getLocation();
-			uid = pn.swapIdentifier;
-		}
-
-		@Override
-		public int compareTo(LocationUIDPair p) {
-			// Compare purely on location, so result is the same as getPeerLocationDoubles()
-			if(p.location > location)
-				return 1;
-			if(p.location < location)
-				return -1;
-			return 0;
-		}
-	}
-
 	/**
 	 * @return An array of the current locations (as doubles) of all
 	 * our connected peers or double[0] if Node.shallWePublishOurPeersLocation() is false
@@ -770,28 +750,6 @@ public class PeerManager {
 			return Arrays.copyOf(locs, x);
 		else
 			return locs;
-	}
-
-	/** Just like getPeerLocationDoubles, except it also
-	 * returns the UID for each node. */
-	public LocationUIDPair[] getPeerLocationsAndUIDs() {
-		PeerNode[] conns;
-		LocationUIDPair[] locPairs;
-		synchronized(this) {
-			conns = myPeers;
-		}
-		locPairs = new LocationUIDPair[conns.length];
-		int x = 0;
-		for(PeerNode conn: conns) {
-			if(conn.isRoutable())
-				locPairs[x++] = new LocationUIDPair(conn);
-		}
-		// Sort it
-		Arrays.sort(locPairs, 0, x);
-		if(x != locPairs.length)
-			return Arrays.copyOf(locPairs, x);
-		else
-			return locPairs;
 	}
 
 	/**
@@ -1948,6 +1906,9 @@ public class PeerManager {
 		return v.toArray(new DarknetPeerNode[v.size()]);
 	}
 
+	/** Get the currently connected seednodes.
+	 * @param exclude Set of peer public keys to exclude.
+	 */
 	public List<SeedServerPeerNode> getConnectedSeedServerPeersVector(HashSet<ByteArrayWrapper> exclude) {
 		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
@@ -1955,7 +1916,7 @@ public class PeerManager {
 		for(PeerNode p : peers) {
 			if(p instanceof SeedServerPeerNode) {
 				SeedServerPeerNode sspn = (SeedServerPeerNode) p;
-				if(exclude != null && exclude.contains(new ByteArrayWrapper(sspn.getIdentity()))) {
+				if(exclude != null && exclude.contains(new ByteArrayWrapper(sspn.getPubKeyHash()))) {
 					if(logMINOR)
 						Logger.minor(this, "Not including in getConnectedSeedServerPeersVector() as in exclude set: " + sspn.userToString());
 					continue;
@@ -2054,7 +2015,7 @@ public class PeerManager {
 		PeerNode[] peers = pn.isOpennet() ? getOpennetAndSeedServerPeers() : getDarknetPeers();
 
 		for(PeerNode peer: peers)
-			if(Arrays.equals(pn.getIdentity(), peer.getIdentity()))
+			if(Arrays.equals(pn.getPubKeyHash(), peer.getPubKeyHash()))
 				return peer;
 
 		return null;
@@ -2220,7 +2181,7 @@ public class PeerManager {
 	public PeerNode getByPubKeyHash(byte[] pkHash) {
 		PeerNode[] peers = myPeers();
 		for(PeerNode peer : peers) {
-			if(Arrays.equals(peer.getPubKeyHash(), pkHash))
+			if(Arrays.equals(peer.peerECDSAPubKeyHash, pkHash))
 				return peer;
 		}
 		return null;

@@ -542,6 +542,13 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1 { margin: 1ex;}", "h1 { margin: 1ex;}");
 		propertyTests.put("p { font-size: 12px;}", "p { font-size: 12px;}");
 		propertyTests.put("h3 { word-spacing: 4mm }", "h3 { word-spacing: 4mm }");
+		// CSS 3.0 Length units (ch, rem, vw, vh, vmin, vmax)
+		propertyTests.put("img { max-height: 12ch;}\n","img { max-height: 12ch;}\n");
+		propertyTests.put("img { max-height: 12rem;}\n","img { max-height: 12rem;}\n");
+		propertyTests.put("img { max-height: 12vw;}\n","img { max-height: 12vw;}\n");
+		propertyTests.put("img { max-height: 12vh}\n","img { max-height: 12vh}\n");
+		propertyTests.put("img { max-height: 12vmin }\n","img { max-height: 12vmin }\n");
+		propertyTests.put("img { max-height: 1.2vmax }\n","img { max-height: 1.2vmax }\n");
 
 		// Fonts
 		propertyTests.put("h2 { font-family: times new roman;}\n", "h2 { font-family: times new roman;}\n");
@@ -657,12 +664,25 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("#xy34 { border-style: solid dotted }", "#xy34 { border-style: solid dotted }");
 		propertyTests.put("h1 { border-bottom: thick solid red }", "h1 { border-bottom: thick solid red }");
 		propertyTests.put("h1[foo] { border: solid red; }", "h1[foo] { border: solid red; }");
+		propertyTests.put("div { box-sizing: content-box; }", "div { box-sizing: content-box; }");
+		propertyTests.put("div { box-sizing: border-box; }", "div { box-sizing: border-box; }");
+		propertyTests.put("div { box-sizing: invalidValueToTestFilter; }", "div { }");
+		propertyTests.put("div { box-sizing: inherit; }", "div { box-sizing: inherit; }");
 
 		// Visual formatting
 		propertyTests.put("body { display: inline }\np { display: block }", "body { display: inline }\np { display: block }");
 		propertyTests.put("body.abc { display: run-in }", "body.abc { display: run-in }");
 		propertyTests.put("body.abc { display: none }", "body.abc { display: none }");
 		propertyTests.put("body.abc { display: inherit }", "body.abc { display: inherit }");
+		propertyTests.put("div { display: list-item; }", "div { display: list-item; }");
+		propertyTests.put("div { display: list-item flow; }", "div { display: list-item flow; }");
+		propertyTests.put("div { display: list-item block flow; }", "div { display: list-item block flow; }");
+		propertyTests.put("div { display: block list-item flow; }", "div { display: block list-item flow; }");
+		propertyTests.put("div { display: inline-block; }", "div { display: inline-block; }");
+		propertyTests.put("div { display: inline-flex; }", "div { display: inline-flex; }");
+		propertyTests.put("div { display: table; }", "div { display: table; }");
+		propertyTests.put("div { display: ruby; }", "div { display: ruby; }");
+		propertyTests.put("div { display: ruby-text-container; }", "div { display: ruby-text-container; }");
 		propertyTests.put("@media screen { h1#first { position: fixed } }\n@media print { h1#first { position: static } }", "@media screen { h1#first { position: fixed }}\n@media print { h1#first { position: static }}");
 		propertyTests.put("body { top: auto; left: inherit; right: 23em; bottom: 3.2% }", "body { top: auto; left: inherit; right: 23em; bottom: 3.2% }");
 		propertyTests.put("EM { padding: 2px; margin: 1em; border-width: medium; border-style: dashed; line-height: 2.4em; }", "EM { padding: 2px; margin: 1em; border-width: medium; border-style: dashed; line-height: 2.4em; }");
@@ -762,6 +782,7 @@ public class CSSParserTest extends TestCase {
 		// User interface
 		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", ":link { cursor: url(\"example.svg#linkcursor\") url(\"hyper.cur\") pointer }");
 		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor), url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\"), url(\"hyper.cur\"), pointer }");
+		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) 2 5, url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\") 2 5, url(\"hyper.cur\"), pointer }");
 
 		// UI colors
 		propertyTests.put("p { color: WindowText; background-color: Window }", "p { color: WindowText; background-color: Window }");
@@ -804,6 +825,60 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put(":active,a:visited { color:red }", ":active { color:red }");
 		propertyTests.put(":focus,:visited,:active { color:red }", ":focus,:active { color:red }");
 		propertyTests.put(":focus,a:visited,:active { color:red }", ":focus,:active { color:red }");
+		
+		// Flex-box Test
+		propertyTests.put("nav > ul { display: flex; }", "nav>ul { display: flex; }");
+		propertyTests.put("nav > ul > li {\n  min-width: 100px;\n  /* Prevent items from getting too small for their content. */\n  }", "nav>ul>li {\n  min-width: 100px;\n  \n  }");
+		propertyTests.put("nav > ul > #login {\n  margin-left: auto;\n}", "nav>ul>#login {\n  margin-left: auto;\n}");
+		propertyTests.put("nav > ul { display: flex; }", "nav>ul { display: flex; }");
+		propertyTests.put("div { flex-flow: row nowrap; }", "div { flex-flow: row nowrap; }");
+		propertyTests.put("div { flex-grow: 5; }", "div { flex-grow: 5; }");
+		propertyTests.put("div { flex: 64 content; }", "div { flex: 64 content; }");
+		propertyTests.put("div { flex-grow: 5; }", "div { flex-grow: 5; }");
+		propertyTests.put("div { flex-basis: 5px; }", "div { flex-basis: 5px; }");
+		propertyTests.put("div { flex-basis: content; }", "div { flex-basis: content; }");
+		propertyTests.put("div { flex: 64 ; }", "div { flex: 64; }");
+		propertyTests.put("nav { flex-shrink: 3; }", "nav { flex-shrink: 3; }");
+		propertyTests.put("div { flex-wrap: nowrap ; }", "div { flex-wrap: nowrap; }");
+		propertyTests.put("div { flex-wrap: wrap ; }", "div { flex-wrap: wrap; }");
+		propertyTests.put("div { flex-wrap: wrap-reverse; }", "div { flex-wrap: wrap-reverse; }");
+		propertyTests.put("div { flex-direction: column-reverse; }", "div { flex-direction: column-reverse; }");
+		propertyTests.put("div { order: 5; flex-basis: content; }", "div { order: 5; flex-basis: content; }");
+		propertyTests.put("div { justify-content: flex-start; }", "div { justify-content: flex-start; }");
+		propertyTests.put("div { justify-content: flex-end; }", "div { justify-content: flex-end; }");
+		propertyTests.put("div { justify-content: center; }", "div { justify-content: center; }");
+		propertyTests.put("div { justify-content: space-between; }", "div { justify-content: space-between; }");
+		propertyTests.put("div { justify-content: space-around; }", "div { justify-content: space-around; }");
+		propertyTests.put("div { justify-items: legacy center; }", "div { justify-items: legacy center; }");
+		propertyTests.put("div { align-self: true center; }", "div { align-self: true center; }");
+		propertyTests.put("div { align-self: center true; }", "div { align-self: center true; }");
+		propertyTests.put("div { align-self: center true center; }", "div { }");
+		propertyTests.put("div { justify-self: true center; }", "div { justify-self: true center; }");
+		propertyTests.put("div { justify-self: center true; }", "div { justify-self: center true; }");
+		propertyTests.put("div { justify-self: center true center; }", "div { }");
+		
+		propertyTests.put("div { align-content: flex-start; }", "div { align-content: flex-start; }");
+		propertyTests.put("div { align-content: space-between; }", "div { align-content: space-between; }");
+		propertyTests.put("div { align-content: true flex-start; }", "div { align-content: true flex-start; }");
+		propertyTests.put("div { align-content: flex-start safe; }", "div { align-content: flex-start safe; }");
+		propertyTests.put("div { align-self: baseline; }", "div { align-self: baseline; }");
+		propertyTests.put("div { align-self: stretch; }", "div { align-self: stretch; }");
+		propertyTests.put("div { align-items: stretch; }", "div { align-items: stretch; }");
+		propertyTests.put("div { align-items: flex-end; }", "div { align-items: flex-end; }");
+		// all valid properties but too many of them
+		propertyTests.put("div { display: block list-item flow list-item; }", "div { }");
+		// all valid but repeated when repetition is not allowed
+		propertyTests.put("div { display: list-item flow flow; }", "div { }");
+		propertyTests.put("div { display: invalidItem; }", "div { }");
+		propertyTests.put("div { display: block invalidItem; }", "div { }");
+		
+		// Navigation Attributes for CSS3 UI
+		propertyTests.put("body { nav-down: auto; }",  "body { nav-down: auto; }");
+		propertyTests.put("body { nav-down: h2#java current; }",  "body { nav-down: h2#java current; }");
+		propertyTests.put("body { nav-up: #java root; }",  "body { nav-up: #java root; }");
+		propertyTests.put("body { nav-left: div.bold '<target-name>'; }",  "body { nav-left: div.bold '<target-name>'; }");
+		propertyTests.put("button#foo { nav-left: #bar \"sidebar\"; }", "button#foo { nav-left: #bar \"sidebar\"; }");
+		propertyTests.put("button#foo { nav-left: invalidSelector \"sidebar\"; }", "button#foo { }");
 	}
 
 	FilterMIMEType cssMIMEType;
@@ -1095,5 +1170,4 @@ public class CSSParserTest extends TestCase {
 	public void testTripleCommentStart() throws IOException, URISyntaxException {
 		assertEquals("Triple comment start does not crash", filter("/*/*/*"), "");
 	}
-
 }

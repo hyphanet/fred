@@ -180,7 +180,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
       freeData();
     }
 		finish();
-		trySendFinalMessage(null);
+		trySendFinalMessage(null, null);
 		if(client != null)
 			client.notifySuccess(this);
 	}
@@ -198,7 +198,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
       freeData();
     }
 		finish();
-		trySendFinalMessage(null);
+		trySendFinalMessage(null, null);
 		if(client != null)
 			client.notifyFailure(this);
 	}
@@ -215,7 +215,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				generatedURI = uri;
 			}
 		}
-		trySendGeneratedURIMessage(null);
+		trySendGeneratedURIMessage(null, null);
 		if(client != null) {
 			RequestStatusCache cache = client.getRequestStatusCache();
 			if(cache != null) {
@@ -244,7 +244,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		if(delete) {
 			metadata.free();
 		} else {
-			trySendGeneratedMetadataMessage(metadata, null);
+			trySendGeneratedMetadataMessage(metadata, null, null);
 		}
 	}
 	
@@ -257,7 +257,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				InsertException cancelled = new InsertException(InsertExceptionMode.CANCELLED);
 				putFailedMessage = new PutFailedMessage(cancelled, identifier, global);
 			}
-			trySendFinalMessage(null);
+			trySendFinalMessage(null, null);
 		}
 		// notify client that request was removed
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
@@ -344,7 +344,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		}
 	}
 
-	private void trySendFinalMessage(FCPConnectionOutputHandler handler) {
+	private void trySendFinalMessage(FCPConnectionOutputHandler handler, String listRequestIdentifier) {
 
 		FCPMessage msg;
 		synchronized (this) {
@@ -361,13 +361,13 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			if(persistence == Persistence.CONNECTION && handler == null)
 				handler = origHandler.outputHandler;
 			if(handler != null)
-				handler.queue(msg);
+				handler.queue(FCPMessage.withListRequestIdentifier(msg, listRequestIdentifier));
 			else
-				client.queueClientRequestMessage(msg, 0);
+				client.queueClientRequestMessage(FCPMessage.withListRequestIdentifier(msg, listRequestIdentifier), 0);
 		}
 	}
 
-	private void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler) {
+	private void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler, String listRequestIdentifier) {
 		FCPMessage msg;
 		synchronized(this) {
 			msg = new URIGeneratedMessage(generatedURI, identifier, isGlobalQueue());
@@ -375,7 +375,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		if(persistence == Persistence.CONNECTION && handler == null)
 			handler = origHandler.outputHandler;
 		if(handler != null)
-			handler.queue(msg);
+			handler.queue(FCPMessage.withListRequestIdentifier(msg, listRequestIdentifier));
 		else
 			client.queueClientRequestMessage(msg, 0);
 	}
@@ -383,10 +383,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	/**
 	 * @param metadata Activated by caller.
 	 * @param handler
-	 * @param container
+	 * @param listRequestIdentifier
 	 */
-	private void trySendGeneratedMetadataMessage(Bucket metadata, FCPConnectionOutputHandler handler) {
-		FCPMessage msg = new GeneratedMetadataMessage(identifier, global, metadata);
+	private void trySendGeneratedMetadataMessage(Bucket metadata, FCPConnectionOutputHandler handler, String listRequestIdentifier) {
+		FCPMessage msg = FCPMessage.withListRequestIdentifier(new GeneratedMetadataMessage(identifier, global, metadata), listRequestIdentifier);
 		if(persistence == Persistence.CONNECTION && handler == null)
 			handler = origHandler.outputHandler;
 		if(handler != null)
@@ -415,10 +415,12 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			client.queueClientRequestMessage(msg, verbosity);
 	}
 
+	protected abstract FCPMessage persistentTagMessage();
+
 	@Override
-	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData) {
+	public void sendPendingMessages(FCPConnectionOutputHandler handler, String listRequestIdentifier, boolean includePersistentRequest, boolean includeData, boolean onlyData) {
 		if(includePersistentRequest) {
-			FCPMessage msg = persistentTagMessage();
+			FCPMessage msg = FCPMessage.withListRequestIdentifier(persistentTagMessage(), listRequestIdentifier);
 			handler.queue(msg);
 		}
 
@@ -428,18 +430,18 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		Bucket meta;
 		synchronized (this) {
 			generated = generatedURI != null;
-			msg = progressMessage;
+			msg = FCPMessage.withListRequestIdentifier(progressMessage, listRequestIdentifier);
 			fin = finished;
 			meta = generatedMetadata;
 		}
 		if(generated)
-			trySendGeneratedURIMessage(handler);
+			trySendGeneratedURIMessage(handler, listRequestIdentifier);
 		if(meta != null)
-			trySendGeneratedMetadataMessage(meta, handler);
+			trySendGeneratedMetadataMessage(meta, handler, listRequestIdentifier);
 		if(msg != null)
 			handler.queue(msg);
 		if(fin)
-			trySendFinalMessage(handler);
+			trySendFinalMessage(handler, listRequestIdentifier);
 	}
 
 	protected abstract String getTypeName();

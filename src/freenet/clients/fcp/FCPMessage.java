@@ -165,6 +165,53 @@ public abstract class FCPMessage {
 		return FCPMessage.create(name, fs, null, null);
 	}
 
+	/**
+	 * Returns an FCP message that delegates the methods {@link #getFieldSet()}, {@link #getName()},
+	 * and {@link #run(FCPConnectionHandler, Node)} to the given FCP message, adding a
+	 * “ListRequestIdentifier” field to the {@link SimpleFieldSet} returned by {@link
+	 * #getFieldSet()}.
+	 *
+	 * @param fcpMessage
+	 *         The FCP message to wrap
+	 * @param listRequestIdentifier
+	 *         The list request identifier to add (may be {@code null} in which case nothing is
+	 *         added)
+	 * @return The new FCP message
+	 */
+	public static FCPMessage withListRequestIdentifier(final FCPMessage fcpMessage, final String listRequestIdentifier) {
+		if ((listRequestIdentifier == null) || (fcpMessage == null)) {
+			return fcpMessage;
+		}
+		return new FCPMessage() {
+			@Override
+			public void send(OutputStream os) throws IOException {
+				fcpMessage.send(os);
+			}
+
+			@Override
+			String getEndString() {
+				return fcpMessage.getEndString();
+			}
+
+			@Override
+			public SimpleFieldSet getFieldSet() {
+				SimpleFieldSet fieldSet = fcpMessage.getFieldSet();
+				fieldSet.putOverwrite("ListRequestIdentifier", listRequestIdentifier);
+				return fieldSet;
+			}
+
+			@Override
+			public String getName() {
+				return fcpMessage.getName();
+			}
+
+			@Override
+			public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+				fcpMessage.run(handler, node);
+			}
+		};
+	}
+
 	/** Do whatever it is that we do with this type of message. 
 	 * @throws MessageInvalidException */
 	public abstract void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException;
