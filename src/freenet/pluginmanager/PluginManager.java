@@ -67,7 +67,7 @@ import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
-import freenet.support.io.NativeThread;
+import freenet.support.io.NativeThread.PriorityLevel;
 
 public class PluginManager {
 
@@ -116,7 +116,7 @@ public class PluginManager {
 		client = core.makeClient(PRIO, true, false);
 
 		// callback executor
-		executor = new SerialExecutor(NativeThread.NORM_PRIORITY);
+		executor = new SerialExecutor(PriorityLevel.NORM_PRIORITY.value);
 		executor.start(node.executor, "PM callback executor");
 
                 pmconfig = node.config.createSubConfig("pluginmanager");
