@@ -235,9 +235,9 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
     
     private void innerTestAsyncQueueingSmallDelayed(int JOB_SIZE, int JOB_COUNT, int JOB_LIMIT,
             boolean startLive) throws InterruptedException {
-        SynchronousJob[] jobs = new SynchronousJob[JOB_COUNT];
+        AsynchronousJob[] jobs = new AsynchronousJob[JOB_COUNT];
         final Object completion = new Object();
-        for(int i=0;i<jobs.length;i++) jobs[i] = new SynchronousJob(JOB_SIZE, startLive, completion);
+        for(int i=0;i<jobs.length;i++) jobs[i] = new AsynchronousJob(JOB_SIZE, startLive, completion);
         runJobs(jobs, JOB_COUNT, JOB_LIMIT, completion, startLive);
     }
 
