@@ -76,7 +76,7 @@ public class PluginManager {
 	/* All currently starting plugins. */
 	private final OfficialPlugins officialPlugins = new OfficialPlugins();
 	private final Set<PluginProgress> startingPlugins = new HashSet<PluginProgress>();
-	private final ArrayList<PluginInfoWrapper> pluginWrappers;
+	private final List<PluginInfoWrapper> pluginWrappers = new ArrayList<PluginInfoWrapper>();
 	private final HashMap<String, PluginLoadFailedUserAlert> pluginsFailedLoad;
 	final Node node;
 	private final NodeClientCore core;
@@ -102,7 +102,6 @@ public class PluginManager {
 		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		// config
 
-		pluginWrappers = new ArrayList<PluginInfoWrapper>();
 		pluginsFailedLoad = new HashMap<String, PluginLoadFailedUserAlert>();
 		this.node = node;
 		this.core = node.clientCore;
