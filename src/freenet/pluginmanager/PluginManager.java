@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Semaphore;
@@ -77,7 +78,7 @@ public class PluginManager {
 	private final OfficialPlugins officialPlugins = new OfficialPlugins();
 	private final Set<PluginProgress> startingPlugins = new HashSet<PluginProgress>();
 	private final List<PluginInfoWrapper> pluginWrappers = new ArrayList<PluginInfoWrapper>();
-	private final HashMap<String, PluginLoadFailedUserAlert> pluginsFailedLoad;
+	private final Map<String, PluginLoadFailedUserAlert> pluginsFailedLoad = new HashMap<String, PluginLoadFailedUserAlert>();
 	final Node node;
 	private final NodeClientCore core;
 	SubConfig pmconfig;
@@ -102,7 +103,6 @@ public class PluginManager {
 		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		// config
 
-		pluginsFailedLoad = new HashMap<String, PluginLoadFailedUserAlert>();
 		this.node = node;
 		this.core = node.clientCore;
 
@@ -1032,8 +1032,10 @@ public class PluginManager {
 					return true;
 
 			}
+			if (pluginsFailedLoad.containsKey(plugname)) {
+				return true;
+			}
 		}
-		if(pluginsFailedLoad.containsKey(plugname)) return true;
 		for(PluginProgress prog : startingPlugins)
 			if(prog.name.equals(plugname)) return true;
 		return false;
