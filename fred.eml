@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component inheritJdk="true">
+	<exclude-output/>
+	<contentEntry url="file://$MODULE_DIR$">
+		<testFolder url="file://$MODULE_DIR$/test"/>
+	</contentEntry>
+	<lib name="freenet-ext.jar" scope="COMPILE">
+		<srcroot url="file:///Contrib/db4o/src/db4oj"/>
+		<relative-module-cls project-related="jar://$PROJECT_DIR$/lib/freenet/freenet-ext.jar!/"/>
+	</lib>
+	<lib name="org.apache.ant:ant-junit4:Release" scope="TEST"/>
+	<levels>
+		<level name="org.bouncycastle:bcprov-jdk15on:Release" value="project"/>
+		<level name="org.apache.ant:ant-junit4:Release" value="project"/>
+	</levels>
+</component>
