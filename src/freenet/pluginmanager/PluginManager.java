@@ -1079,65 +1079,63 @@ public class PluginManager {
 	}
 
 	public void killPlugin(String name, long maxWaitTime, boolean reloading) {
-		PluginInfoWrapper pi = null;
-		boolean found = false;
-		synchronized(pluginWrappers) {
-			for(int i = 0; i < pluginWrappers.size() && !found; i++) {
-				pi = pluginWrappers.get(i);
-				if(pi.getThreadName().equals(name)) {
-					found = true;
+		PluginInfoWrapper pluginInfoWrapper = null;
+		synchronized (pluginWrappers) {
+			for (PluginInfoWrapper wrapper : pluginWrappers) {
+				if (wrapper.getThreadName().equals(name)) {
+					pluginInfoWrapper = wrapper;
 					break;
 				}
 			}
 		}
-		if(found)
-			pi.stopPlugin(this, maxWaitTime, reloading);
+		if (pluginInfoWrapper != null) {
+			pluginInfoWrapper.stopPlugin(this, maxWaitTime, reloading);
+		}
 	}
 
 	public void killPluginByFilename(String name, long maxWaitTime, boolean reloading) {
-		PluginInfoWrapper pi = null;
-		boolean found = false;
-		synchronized(pluginWrappers) {
-			for(int i = 0; i < pluginWrappers.size() && !found; i++) {
-				pi = pluginWrappers.get(i);
-				if(pi.getFilename().equals(name)) {
-					found = true;
+		PluginInfoWrapper pluginInfoWrapper = null;
+		synchronized (pluginWrappers) {
+			for (PluginInfoWrapper wrapper : pluginWrappers) {
+				if (wrapper.getFilename().equals(name)) {
+					pluginInfoWrapper = wrapper;
 					break;
 				}
 			}
 		}
-		if(found)
-			pi.stopPlugin(this, maxWaitTime, reloading);
+		if (pluginInfoWrapper != null) {
+			pluginInfoWrapper.stopPlugin(this, maxWaitTime, reloading);
+		}
 	}
 
 	public void killPluginByClass(String name, long maxWaitTime) {
-		PluginInfoWrapper pi = null;
-		boolean found = false;
-		synchronized(pluginWrappers) {
-			for(int i = 0; i < pluginWrappers.size() && !found; i++) {
-				pi = pluginWrappers.get(i);
-				if(pi.getPluginClassName().equals(name)) {
-					found = true;
+		PluginInfoWrapper pluginInfoWrapper = null;
+		synchronized (pluginWrappers) {
+			for (PluginInfoWrapper wrapper : pluginWrappers) {
+				if (pluginInfoWrapper.getPluginClassName().equals(name)) {
+					pluginInfoWrapper = wrapper;
 					break;
 				}
 			}
 		}
-		if(found)
-			pi.stopPlugin(this, maxWaitTime, false);
+		if (pluginInfoWrapper != null) {
+			pluginInfoWrapper.stopPlugin(this, maxWaitTime, false);
+		}
 	}
 
 	public void killPlugin(FredPlugin plugin, long maxWaitTime) {
-		PluginInfoWrapper pi = null;
-		boolean found = false;
-		synchronized(pluginWrappers) {
-			for(int i = 0; i < pluginWrappers.size() && !found; i++) {
-				pi = pluginWrappers.get(i);
-				if(pi.plug == plugin)
-					found = true;
+		PluginInfoWrapper pluginInfoWrapper = null;
+		synchronized (pluginWrappers) {
+			for (PluginInfoWrapper wrapper : pluginWrappers) {
+				if (wrapper.plug == plugin) {
+					pluginInfoWrapper = wrapper;
+					break;
+				}
 			}
 		}
-		if(found)
-			pi.stopPlugin(this, maxWaitTime, false);
+		if (pluginInfoWrapper != null) {
+			pluginInfoWrapper.stopPlugin(this, maxWaitTime, false);
+		}
 	}
 
 	public OfficialPluginDescription getOfficialPlugin(String name) {
