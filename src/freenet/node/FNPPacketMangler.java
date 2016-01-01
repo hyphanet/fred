@@ -845,7 +845,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] myExponential = ctx.getPublicKeyNetworkFormat();
 		node.random.nextBytes(nonce);
 
-		synchronized (pn) {
+		synchronized (pn.jfkNoncesSent) {
 			pn.jfkNoncesSent.add(nonce);
 			if(pn.jfkNoncesSent.size() > MAX_NONCES_PER_PEER)
 				pn.jfkNoncesSent.removeFirst();
@@ -1007,7 +1007,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		// sanity check
 		byte[] myNi = null;
-		synchronized (pn) {
+		synchronized (pn.jfkNoncesSent) {
 			for(byte[] buf : pn.jfkNoncesSent) {
 				if(MessageDigest.isEqual(nonceInitiator, SHA256.digest(buf)))
 					myNi = buf;
@@ -1584,7 +1584,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// We want to clear it here so that new handshake requests
 		// will be sent with a different DH pair
 		pn.setKeyAgreementSchemeContext(null);
-		synchronized (pn) {
+		synchronized (pn.jfkNoncesSent) {
 			// FIXME TRUE MULTI-HOMING: winner-takes-all, kill all other connection attempts since we can't deal with multiple active connections
 			// Also avoids leaking
 			pn.jfkNoncesSent.clear();
