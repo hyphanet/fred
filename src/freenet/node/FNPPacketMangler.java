@@ -718,17 +718,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		long t1=System.currentTimeMillis();
 		int modulusLength = getModulusLength(negType);
 		// Pre negtype 9 we were sending Ni as opposed to Ni'
-		int nonceSize = (negType < 9 ? getNonceSize(negType) : HASH_LENGTH);
+		int nonceSizeHashed = HASH_LENGTH;
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
 		// FIXME: follow the spec and send IDr' ?
-		if(payload.length < nonceSize + modulusLength + 3 + (unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)) {
-			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(nonceSize + modulusLength));
+		if(payload.length < nonceSizeHashed + modulusLength + 3 + (unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)) {
+			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(nonceSizeHashed + modulusLength));
 			return;
 		}
 		// get Ni'
-		byte[] nonceInitiator = new byte[nonceSize]; 
-		System.arraycopy(payload, offset, nonceInitiator, 0, nonceSize);
-		offset += nonceSize;
+		byte[] nonceInitiator = new byte[nonceSizeHashed];
+		System.arraycopy(payload, offset, nonceInitiator, 0, nonceSizeHashed);
+		offset += nonceSizeHashed;
 
 		// get g^i
 		byte[] hisExponential = Arrays.copyOfRange(payload, offset, offset + modulusLength);
@@ -2163,7 +2163,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
     	private enum CONTEXT {
     		SENDING,
     		REPLYING
-    	};
+    	}
     }
 
 	 /**
@@ -2313,15 +2313,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	}
 	
 	/** @returns the modulus length in bytes for a given negType */
-	private final int getModulusLength(int negType) {
+	private int getModulusLength(int negType) {
 	        return ecdhCurveToUse.modulusSize;
 	}
 	
-	private final int getSignatureLength(int negType) {
+	private int getSignatureLength(int negType) {
 	       return ECDSA.Curves.P256.maxSigSize;
 	}
 	
-	private final int getNonceSize(int negType) {
+	private int getNonceSize(int negType) {
 		return 16;
 	}
 }
