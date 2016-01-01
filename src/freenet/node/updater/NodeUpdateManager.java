@@ -509,6 +509,7 @@ public class NodeUpdateManager {
 
 		node.clientCore.alerts.register(alert);
 		
+		revocationChecker.checkForBlobOnDisk();
 		enable(wasEnabledOnStartup);
 
 		// Fetch 3 files, each to a file in the runDir.

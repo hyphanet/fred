@@ -85,7 +85,6 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 
 	public void start(boolean aggressive) {
 		start(aggressive, true);
-		checkForBlobOnDisk();
 	}
 	
 	public void checkForBlobOnDisk() {
