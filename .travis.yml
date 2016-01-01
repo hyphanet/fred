@@ -20,6 +20,6 @@ before_install:
 script: ant -Dlib.contrib.get=true
 
 jdk:
+  - oraclejdk8
   - oraclejdk7
   - openjdk7
-  - openjdk6
