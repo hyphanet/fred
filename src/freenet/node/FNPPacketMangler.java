@@ -35,9 +35,7 @@ import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
-import freenet.l10n.NodeL10n;
 import freenet.node.OpennetManager.ConnectionType;
-import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -81,7 +79,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	/** The following is used in the HMAC calculation of JFK message3 and message4 */
 	private static final byte[] JFK_PREFIX_INITIATOR, JFK_PREFIX_RESPONDER;
 	static {
-		byte[] I = null,R = null;
+		byte[] I,R;
 		try {
 			I = "I".getBytes("UTF-8");
 			R = "R".getBytes("UTF-8");
@@ -1989,29 +1987,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return true;
 	}
 
-	byte[] preformat(byte[] buf, int offset, int length) {
-		byte[] newBuf;
-		if(buf != null) {
-			newBuf = new byte[length+3];
-			newBuf[0] = 1;
-			newBuf[1] = (byte)(length >> 8);
-			newBuf[2] = (byte)length;
-			System.arraycopy(buf, offset, newBuf, 3, length);
-		} else {
-			newBuf = new byte[1];
-			newBuf[0] = 0;
-		}
-		return newBuf;
-	}
-
-	protected String l10n(String key, String[] patterns, String[] values) {
-		return NodeL10n.getBase().getString("FNPPacketMangler."+key, patterns, values);
-	}
-
-	protected String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("FNPPacketMangler."+key, pattern, value);
-	}
-
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#sendHandshake(freenet.node.PeerNode)
 	 */
@@ -2057,8 +2032,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(context == null) return false;
 		return !context.isConnected();
 	}
-	
-	static UserAlert BCPROV_LOAD_FAILED = null;
 
 	@Override
 	public int[] supportedNegTypes(boolean forPublic) {
