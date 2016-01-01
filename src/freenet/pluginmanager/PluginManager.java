@@ -40,7 +40,6 @@ import freenet.clients.fcp.ClientPut;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.Toadlet;
-import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
