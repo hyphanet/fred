@@ -81,7 +81,6 @@ public class PluginManager {
 	private final Map<String, PluginLoadFailedUserAlert> pluginsFailedLoad = new HashMap<String, PluginLoadFailedUserAlert>();
 	final Node node;
 	private final NodeClientCore core;
-	SubConfig pmconfig;
 	private boolean logMINOR;
 	private boolean logDEBUG;
 	private final HighLevelSimpleClient client;
@@ -118,8 +117,8 @@ public class PluginManager {
 		executor = new SerialExecutor(PriorityLevel.NORM_PRIORITY.value);
 		executor.start(node.executor, "PM callback executor");
 
-                pmconfig = node.config.createSubConfig("pluginmanager");
-                pmconfig.register("enabled", true, 0, true, true, "PluginManager.enabled", "PluginManager.enabledLong", new BooleanCallback() {
+        SubConfig pmconfig = node.config.createSubConfig("pluginmanager");
+        pmconfig.register("enabled", true, 0, true, true, "PluginManager.enabled", "PluginManager.enabledLong", new BooleanCallback() {
 
             @Override
             public synchronized Boolean get() {
