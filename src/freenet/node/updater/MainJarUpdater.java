@@ -352,7 +352,6 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
     @Override
     public void reannounce() {
         this.manager.broadcastUOMAnnouncesNew();
-        this.manager.broadcastUOMAnnouncesOld();
     }
 
     @Override
