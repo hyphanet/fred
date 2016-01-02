@@ -304,15 +304,6 @@ public class PeerManager {
 		} catch(IOException e3) {
 			Logger.error(this, "Ignoring " + e3 + " caught reading " + peersFile, e3);
 		}
-		if(!droppedOldPeers.isEmpty()) {
-            try {
-                node.clientCore.alerts.register(droppedOldPeers);
-                Logger.error(this, droppedOldPeers.getText());
-		    } catch (Throwable t) {
-		        // Startup MUST complete, don't let client layer problems kill it.
-		        Logger.error(this, "Caught error telling user about dropped peers", t);
-		    }
-		}
 		if(someBroken) {
 			File broken = new File(peersFile.getPath()+".broken");
 			try {
@@ -326,6 +317,15 @@ public class PeerManager {
 			} catch (IOException e) {
 				System.err.println("Unable to copy broken peers file.");
 			}
+		}
+		if(!droppedOldPeers.isEmpty()) {
+		    try {
+		        node.clientCore.alerts.register(droppedOldPeers);
+		        Logger.error(this, droppedOldPeers.getText());
+		    } catch (Throwable t) {
+		        // Startup MUST complete, don't let client layer problems kill it.
+		        Logger.error(this, "Caught error telling user about dropped peers", t);
+		    }
 		}
 		return !someBroken;
 	}
