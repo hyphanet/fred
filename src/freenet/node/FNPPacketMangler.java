@@ -97,7 +97,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	public final static int DH_CONTEXT_BUFFER_SIZE = 20;
     /*
      * The FIFO itself
-     * Get a lock on dhContextFIFO before touching it!
+     * Get a lock on ecdhContextFIFO before touching it!
      */
 	private final LinkedList<ECDHLightContext> ecdhContextFIFO = new LinkedList<ECDHLightContext>();
 	private ECDHLightContext ecdhContextToBePrunned;
