@@ -13,7 +13,7 @@ import freenet.support.SimpleFieldSet;
  */
 public class SeedServerTestPeerNode extends SeedServerPeerNode {
 
-	public SeedServerTestPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public SeedServerTestPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		super(fs, node2, crypto, fromLocal);
 	}
 	
