@@ -40,7 +40,7 @@ public class DroppedOldPeersUserAlert implements UserAlert {
             droppedOldPeersBuild = e.buildNumber;
             droppedOldPeersDate = e.buildDate;
         }
-        String shortError = DroppedOldPeersUserAlert.getLogWarning(droppedOldPeers.size(), e,
+        String shortError = getLogWarning(droppedOldPeers.size(), e,
                 peersBrokenFile);
         System.err.println(shortError);
         Logger.error(this, shortError);
@@ -165,7 +165,7 @@ public class DroppedOldPeersUserAlert implements UserAlert {
         return NodeL10n.getBase().getString("DroppedOldPeersUserAlert." + key, pattern, value);
     }
 
-    public static String getLogWarning(int size, PeerTooOldException e, File peersFile) {
+    public String getLogWarning(int size, PeerTooOldException e, File peersFile) {
         String[] keys = new String[] { "count", "buildNumber", "buildDate", "port" };
         String[] values = new String[] { "" + size, "" + e.buildNumber, e.buildDate.toString(),
                 new File(peersFile.getPath() + ".broken").toString() };
