@@ -13,7 +13,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 
 public class DroppedOldPeersUserAlert implements UserAlert {
-    
+
     private final List<String> droppedOldPeers;
     private int droppedOldPeersBuild;
     private Date droppedOldPeersDate;
@@ -22,31 +22,30 @@ public class DroppedOldPeersUserAlert implements UserAlert {
 
     public DroppedOldPeersUserAlert(File peersFile) {
         this.droppedOldPeers = new ArrayList<String>();
-        this.peersBrokenFile = new File(peersFile.getPath()+".broken");
+        this.peersBrokenFile = new File(peersFile.getPath() + ".broken");
         creationTime = System.currentTimeMillis();
         this.droppedOldPeersBuild = 0;
         this.droppedOldPeersDate = new Date();
     }
-    
+
     public void add(PeerTooOldException e, String name) {
         // May or may not have a name...
-        if(name == null) { 
+        if (name == null) {
             name = "(unknown name)";
-        } else { 
-            name = "\"" + name + "\""; 
+        } else {
+            name = "\"" + name + "\"";
         }
         droppedOldPeers.add(name);
-        if(e.buildNumber > droppedOldPeersBuild) {
+        if (e.buildNumber > droppedOldPeersBuild) {
             droppedOldPeersBuild = e.buildNumber;
             droppedOldPeersDate = e.buildDate;
         }
-        String shortError = 
-            DroppedOldPeersUserAlert.getLogWarning(droppedOldPeers.size(), e, 
-                    peersBrokenFile);
+        String shortError = DroppedOldPeersUserAlert.getLogWarning(droppedOldPeers.size(), e,
+                peersBrokenFile);
         System.err.println(shortError);
         Logger.error(this, shortError);
     }
-    
+
     public boolean isEmpty() {
         return droppedOldPeers.isEmpty();
     }
@@ -58,18 +57,16 @@ public class DroppedOldPeersUserAlert implements UserAlert {
 
     private String getErrorIntro() {
         String[] keys = new String[] { "count", "buildNumber", "buildDate", "filename" };
-        String[] values = new String[] { ""+droppedOldPeers.size(), 
-                "" + droppedOldPeersBuild, droppedOldPeersDate.toString(), 
-                peersBrokenFile.toString() };
+        String[] values = new String[] { "" + droppedOldPeers.size(), "" + droppedOldPeersBuild,
+                droppedOldPeersDate.toString(), peersBrokenFile.toString() };
         return l10n("droppingOldFriendFull", keys, values);
     }
-    
+
     @Override
     public String getTitle() {
         String[] keys = new String[] { "count", "buildNumber", "buildDate", "filename" };
-        String[] values = new String[] { ""+droppedOldPeers.size(), 
-                "" + droppedOldPeersBuild, droppedOldPeersDate.toString(),
-                peersBrokenFile.toString() };
+        String[] values = new String[] { "" + droppedOldPeers.size(), "" + droppedOldPeersBuild,
+                droppedOldPeersDate.toString(), peersBrokenFile.toString() };
         return l10n("droppingOldFriendTitle", keys, values);
     }
 
@@ -80,11 +77,11 @@ public class DroppedOldPeersUserAlert implements UserAlert {
         longErrorText.append('\n');
         longErrorText.append(l10n("droppingOldFriendList"));
         longErrorText.append('\n');
-        for(String name : droppedOldPeers) {
+        for (String name : droppedOldPeers) {
             longErrorText.append(name);
             longErrorText.append('\n');
         }
-        longErrorText.setLength(longErrorText.length()-1);
+        longErrorText.setLength(longErrorText.length() - 1);
         return longErrorText.toString();
     }
 
@@ -94,7 +91,7 @@ public class DroppedOldPeersUserAlert implements UserAlert {
         html.addChild("p", getErrorIntro());
         html.addChild("p", l10n("droppingOldFriendList"));
         HTMLNode list = html.addChild("ul");
-        for(String name : droppedOldPeers) {
+        for (String name : droppedOldPeers) {
             list.addChild("li", name);
         }
         return html;
@@ -147,7 +144,8 @@ public class DroppedOldPeersUserAlert implements UserAlert {
 
     @Override
     public FCPMessage getFCPMessage() {
-        return new FeedMessage(getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
+        return new FeedMessage(getTitle(), getShortText(), getText(), getPriorityClass(),
+                getUpdatedTime());
     }
 
     @Override
@@ -156,22 +154,21 @@ public class DroppedOldPeersUserAlert implements UserAlert {
     }
 
     private static String l10n(String key) {
-        return NodeL10n.getBase().getString("DroppedOldPeersUserAlert."+key);
+        return NodeL10n.getBase().getString("DroppedOldPeersUserAlert." + key);
     }
-    
+
     private static String l10n(String key, String pattern, String value) {
-        return NodeL10n.getBase().getString("DroppedOldPeersUserAlert."+key, pattern, value);
+        return NodeL10n.getBase().getString("DroppedOldPeersUserAlert." + key, pattern, value);
     }
-    
+
     private static String l10n(String key, String[] pattern, String[] value) {
-        return NodeL10n.getBase().getString("DroppedOldPeersUserAlert."+key, pattern, value);
+        return NodeL10n.getBase().getString("DroppedOldPeersUserAlert." + key, pattern, value);
     }
 
     public static String getLogWarning(int size, PeerTooOldException e, File peersFile) {
         String[] keys = new String[] { "count", "buildNumber", "buildDate", "port" };
-        String[] values = new String[] { ""+size, 
-                "" + e.buildNumber, e.buildDate.toString(), 
-                new File(peersFile.getPath()+".broken").toString() };
+        String[] values = new String[] { "" + size, "" + e.buildNumber, e.buildDate.toString(),
+                new File(peersFile.getPath() + ".broken").toString() };
         return l10n("droppingOldFriendTitle", keys, values);
     }
 
