@@ -35,9 +35,7 @@ import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
-import freenet.l10n.NodeL10n;
 import freenet.node.OpennetManager.ConnectionType;
-import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -81,7 +79,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	/** The following is used in the HMAC calculation of JFK message3 and message4 */
 	private static final byte[] JFK_PREFIX_INITIATOR, JFK_PREFIX_RESPONDER;
 	static {
-		byte[] I = null,R = null;
+		byte[] I,R;
 		try {
 			I = "I".getBytes("UTF-8");
 			R = "R".getBytes("UTF-8");
@@ -718,17 +716,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		long t1=System.currentTimeMillis();
 		int modulusLength = getModulusLength(negType);
 		// Pre negtype 9 we were sending Ni as opposed to Ni'
-		int nonceSize = (negType < 9 ? getNonceSize(negType) : HASH_LENGTH);
+		int nonceSizeHashed = HASH_LENGTH;
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
 		// FIXME: follow the spec and send IDr' ?
-		if(payload.length < nonceSize + modulusLength + 3 + (unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)) {
-			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(nonceSize + modulusLength));
+		if(payload.length < nonceSizeHashed + modulusLength + 3 + (unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)) {
+			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(nonceSizeHashed + modulusLength));
 			return;
 		}
 		// get Ni'
-		byte[] nonceInitiator = new byte[nonceSize]; 
-		System.arraycopy(payload, offset, nonceInitiator, 0, nonceSize);
-		offset += nonceSize;
+		byte[] nonceInitiator = new byte[nonceSizeHashed];
+		System.arraycopy(payload, offset, nonceInitiator, 0, nonceSizeHashed);
+		offset += nonceSizeHashed;
 
 		// get g^i
 		byte[] hisExponential = Arrays.copyOfRange(payload, offset, offset + modulusLength);
@@ -847,7 +845,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] myExponential = ctx.getPublicKeyNetworkFormat();
 		node.random.nextBytes(nonce);
 
-		synchronized (pn) {
+		synchronized (pn.jfkNoncesSent) {
 			pn.jfkNoncesSent.add(nonce);
 			if(pn.jfkNoncesSent.size() > MAX_NONCES_PER_PEER)
 				pn.jfkNoncesSent.removeFirst();
@@ -1009,7 +1007,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		// sanity check
 		byte[] myNi = null;
-		synchronized (pn) {
+		synchronized (pn.jfkNoncesSent) {
 			for(byte[] buf : pn.jfkNoncesSent) {
 				if(MessageDigest.isEqual(nonceInitiator, SHA256.digest(buf)))
 					myNi = buf;
@@ -1586,7 +1584,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// We want to clear it here so that new handshake requests
 		// will be sent with a different DH pair
 		pn.setKeyAgreementSchemeContext(null);
-		synchronized (pn) {
+		synchronized (pn.jfkNoncesSent) {
 			// FIXME TRUE MULTI-HOMING: winner-takes-all, kill all other connection attempts since we can't deal with multiple active connections
 			// Also avoids leaking
 			pn.jfkNoncesSent.clear();
@@ -1989,29 +1987,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return true;
 	}
 
-	byte[] preformat(byte[] buf, int offset, int length) {
-		byte[] newBuf;
-		if(buf != null) {
-			newBuf = new byte[length+3];
-			newBuf[0] = 1;
-			newBuf[1] = (byte)(length >> 8);
-			newBuf[2] = (byte)length;
-			System.arraycopy(buf, offset, newBuf, 3, length);
-		} else {
-			newBuf = new byte[1];
-			newBuf[0] = 0;
-		}
-		return newBuf;
-	}
-
-	protected String l10n(String key, String[] patterns, String[] values) {
-		return NodeL10n.getBase().getString("FNPPacketMangler."+key, patterns, values);
-	}
-
-	protected String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("FNPPacketMangler."+key, pattern, value);
-	}
-
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#sendHandshake(freenet.node.PeerNode)
 	 */
@@ -2057,8 +2032,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(context == null) return false;
 		return !context.isConnected();
 	}
-	
-	static UserAlert BCPROV_LOAD_FAILED = null;
 
 	@Override
 	public int[] supportedNegTypes(boolean forPublic) {
@@ -2163,7 +2136,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
     	private enum CONTEXT {
     		SENDING,
     		REPLYING
-    	};
+    	}
     }
 
 	 /**
@@ -2313,15 +2286,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	}
 	
 	/** @returns the modulus length in bytes for a given negType */
-	private final int getModulusLength(int negType) {
+	private int getModulusLength(int negType) {
 	        return ecdhCurveToUse.modulusSize;
 	}
 	
-	private final int getSignatureLength(int negType) {
+	private int getSignatureLength(int negType) {
 	       return ECDSA.Curves.P256.maxSigSize;
 	}
 	
-	private final int getNonceSize(int negType) {
+	private int getNonceSize(int negType) {
 		return 16;
 	}
 }
