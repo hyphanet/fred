@@ -64,6 +64,9 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		try {
 			// Exit reasonably quickly
 			_sock.setReuseAddress(true);
+			// DSCP AF13 (RFC 2475)
+			// High throughput but high drop probability
+			_sock.setTrafficClass(0x38);
 		} catch (SocketException e) {
 			throw new RuntimeException(e);
 		}
