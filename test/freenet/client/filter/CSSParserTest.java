@@ -851,6 +851,12 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("div { justify-content: space-between; }", "div { justify-content: space-between; }");
 		propertyTests.put("div { justify-content: space-around; }", "div { justify-content: space-around; }");
 		propertyTests.put("div { justify-items: legacy center; }", "div { justify-items: legacy center; }");
+		propertyTests.put("div { justify-items: auto; }", "div { justify-items: auto; }");
+		propertyTests.put("div { justify-items: baseline; }", "div { justify-items: baseline; }");
+		propertyTests.put("div { justify-items: true left; }", "div { justify-items: true left; }");
+		propertyTests.put("div { justify-items: self-start; }", "div { justify-items: self-start; }");
+		propertyTests.put("div { justify-items: self-start legacy left; }", "div { }");
+		propertyTests.put("div { justify-items: left; }", "div { justify-items: left; }");
 		propertyTests.put("div { align-self: true center; }", "div { align-self: true center; }");
 		propertyTests.put("div { align-self: center true; }", "div { align-self: center true; }");
 		propertyTests.put("div { align-self: center true center; }", "div { }");
