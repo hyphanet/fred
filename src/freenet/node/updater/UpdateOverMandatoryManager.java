@@ -64,6 +64,7 @@ import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
+import freenet.support.Waiter;
 import freenet.support.WeakHashSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
@@ -973,14 +974,16 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	}
 
 	void processRevocationBlob(final File temp, PeerNode source) {
-		processRevocationBlob(new FileBucket(temp, true, false, false, true), source.userToString(), false);
+		processRevocationBlob(new FileBucket(temp, true, false, false, true), 
+		        source.userToString(), false, false);
 	}
 	
 	/**
 	 * Process a binary blob for a revocation certificate (the revocation key).
 	 * @param temp The file it was written to.
 	 */
-	void processRevocationBlob(final Bucket temp, final String source, final boolean fromDisk) {
+	void processRevocationBlob(final Bucket temp, final String source, final boolean fromDisk, 
+	        boolean synchronous) {
 
 		SimpleBlockSet blocks = new SimpleBlockSet();
 
@@ -1035,11 +1038,14 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		tempContext.localRequestOnly = true;
 
 		final ArrayBucket cleanedBlob = new ArrayBucket();
+		
+		final Waiter w = new Waiter();
 
 		ClientGetCallback myCallback = new ClientGetCallback() {
 
 			@Override
 			public void onFailure(FetchException e, ClientGetter state) {
+			    try {
 				if(e.mode == FetchExceptionMode.CANCELLED) {
 					// Eh?
 					Logger.error(this, "Cancelled fetch from store/blob of revocation certificate from " + source);
@@ -1069,15 +1075,22 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					temp.free();
 					cleanedBlob.free();
 				}
+			    } finally {
+			        w.complete();
+			    }
 			}
 
 			@Override
 			public void onSuccess(FetchResult result, ClientGetter state) {
+			    try {
 				System.err.println("Got revocation certificate from " + source);
 				updateManager.revocationChecker.onSuccess(result, state, cleanedBlob);
 				if(!fromDisk)
 					temp.free();
 				insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation", RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+			    } finally {
+			        w.complete();
+			    }
 			}
 			
             @Override
@@ -1096,13 +1109,16 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
+			if(synchronous) w.waitForCompletion();
 		} catch(FetchException e1) {
 			System.err.println("Failed to decode UOM blob: " + e1);
 			e1.printStackTrace();
 			myCallback.onFailure(e1, cg);
 		} catch (PersistenceDisabledException e) {
 			// Impossible
-		}
+		} catch (InterruptedException e) {
+		    // Shutting down?
+        }
 
 	}
 
