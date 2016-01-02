@@ -20,9 +20,9 @@ public class DroppedOldPeersUserAlert implements UserAlert {
     private final File peersBrokenFile;
     private final long creationTime;
 
-    public DroppedOldPeersUserAlert(File peersFile) {
+    public DroppedOldPeersUserAlert(File droppedPeersFile) {
         this.droppedOldPeers = new ArrayList<String>();
-        this.peersBrokenFile = new File(peersFile.getPath() + ".broken");
+        this.peersBrokenFile = droppedPeersFile;
         creationTime = System.currentTimeMillis();
         this.droppedOldPeersBuild = 0;
         this.droppedOldPeersDate = new Date();
@@ -40,8 +40,7 @@ public class DroppedOldPeersUserAlert implements UserAlert {
             droppedOldPeersBuild = e.buildNumber;
             droppedOldPeersDate = e.buildDate;
         }
-        String shortError = DroppedOldPeersUserAlert.getLogWarning(droppedOldPeers.size(), e,
-                peersBrokenFile);
+        String shortError = getLogWarning(e);
         System.err.println(shortError);
         Logger.error(this, shortError);
     }
@@ -165,10 +164,14 @@ public class DroppedOldPeersUserAlert implements UserAlert {
         return NodeL10n.getBase().getString("DroppedOldPeersUserAlert." + key, pattern, value);
     }
 
-    public static String getLogWarning(int size, PeerTooOldException e, File peersFile) {
+    private String getLogWarning(PeerTooOldException e) {
         String[] keys = new String[] { "count", "buildNumber", "buildDate", "port" };
-        String[] values = new String[] { "" + size, "" + e.buildNumber, e.buildDate.toString(),
-                new File(peersFile.getPath() + ".broken").toString() };
+        String[] values = new String[] {
+                Integer.toString(droppedOldPeers.size()),
+                Integer.toString(e.buildNumber),
+                e.buildDate.toString(),
+                peersBrokenFile.getPath()
+        };
         return l10n("droppingOldFriendTitle", keys, values);
     }
 

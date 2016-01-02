@@ -245,7 +245,8 @@ public class PeerManager {
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e4, e4);
 		}
 		BufferedReader br = new BufferedReader(ris);
-		DroppedOldPeersUserAlert droppedOldPeers = new DroppedOldPeersUserAlert(peersFile);
+		File brokenPeersFile = new File(peersFile.getPath() + ".broken");
+		DroppedOldPeersUserAlert droppedOldPeers = new DroppedOldPeersUserAlert(brokenPeersFile);
 		try { // FIXME: no better way?
 			while(true) {
 				// Read a single NodePeer
@@ -312,15 +313,14 @@ public class PeerManager {
 		    }
 		}
 		if(someBroken) {
-			File broken = new File(peersFile.getPath()+".broken");
 			try {
-				broken.delete();
-				FileOutputStream fos = new FileOutputStream(broken);
+				brokenPeersFile.delete();
+				FileOutputStream fos = new FileOutputStream(brokenPeersFile);
 				fis = new FileInputStream(peersFile);
 				FileUtil.copy(fis, fos, -1);
 				fos.close();
 				fis.close();
-				System.err.println("Broken peers file copied to "+broken);
+				System.err.println("Broken peers file copied to " + brokenPeersFile);
 			} catch (IOException e) {
 				System.err.println("Unable to copy broken peers file.");
 			}
