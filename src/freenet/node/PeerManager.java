@@ -15,6 +15,7 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,10 +31,16 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
+import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.useralerts.AbstractUserAlert;
+import freenet.node.useralerts.DroppedOldPeersUserAlert;
 import freenet.node.useralerts.PeerManagerUserAlert;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
@@ -238,6 +245,7 @@ public class PeerManager {
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e4, e4);
 		}
 		BufferedReader br = new BufferedReader(ris);
+		DroppedOldPeersUserAlert droppedOldPeers = new DroppedOldPeersUserAlert(peersFile);
 		try { // FIXME: no better way?
 			while(true) {
 				// Read a single NodePeer
@@ -274,7 +282,17 @@ public class PeerManager {
 					someBroken = true;
 					continue;
 					// FIXME tell the user???
-				}
+				} catch (PeerTooOldException e) {
+				    if(crypto.isOpennet) {
+				        // Ignore.
+				        Logger.error(this, "Dropping too-old opennet peer");
+				    } else {
+				        // A lot more noisy!
+				        droppedOldPeers.add(e, fs.get("myName"));
+				    }
+                    someBroken = true;
+                    continue;
+                }
 			}
 		} catch(EOFException e) {
 			// End of file, fine
@@ -300,10 +318,19 @@ public class PeerManager {
 				System.err.println("Unable to copy broken peers file.");
 			}
 		}
+		if(!droppedOldPeers.isEmpty()) {
+		    try {
+		        node.clientCore.alerts.register(droppedOldPeers);
+		        Logger.error(this, droppedOldPeers.getText());
+		    } catch (Throwable t) {
+		        // Startup MUST complete, don't let client layer problems kill it.
+		        Logger.error(this, "Caught error telling user about dropped peers", t);
+		    }
+		}
 		return !someBroken;
 	}
 
-	public boolean addPeer(PeerNode pn) {
+    public boolean addPeer(PeerNode pn) {
 		return addPeer(pn, false, false);
 	}
 
@@ -599,8 +626,9 @@ public class PeerManager {
 
 	/**
 	 * Connect to a node provided the fieldset representing it.
+	 * @throws PeerTooOldException 
 	 */
-	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
 		PeerNode[] peerList = myPeers();
 		for(PeerNode mp: peerList) {
@@ -2282,5 +2310,5 @@ public class PeerManager {
 			return connections < OUTDATED_MAX_CONNS;
 		} else return false;
 	}
-
+	
 }
