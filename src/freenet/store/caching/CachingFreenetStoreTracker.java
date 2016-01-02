@@ -78,21 +78,12 @@ public class CachingFreenetStoreTracker {
 	 *  Even if we are not, we schedule one after period. If we are at the limit, we will return 
 	 *  false, and the caller should write directly to the underlying store.  */
 	public synchronized boolean add(long sizeBlock) {
-		/**  Here have a lower threshold, say 90% of maxSize, when it will start a write job, but still accept the data. */
+		/**  Here have a lower threshold, say 90% of maxSize, when it will start a write job, but 
+		 * still accept the data. */
+	    boolean justStartedPush = false;
 		if(this.size + sizeBlock > this.maxSize*lowerThreshold) {
-			if(!runningJob) {
-				runningJob = true;
-				this.ticker.queueTimedJob(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							pushAllCachingStores();
-						} finally {
-							runningJob = false;
-						}
-					}
-				}, 0);
-			}
+		    pushOffThreadNow();
+		    justStartedPush = true;
 		}
 		//Check max size
 		if(this.size + sizeBlock > this.maxSize) {
@@ -102,39 +93,60 @@ public class CachingFreenetStoreTracker {
 			return false;
 		} else {
 			this.size += sizeBlock;
-			// Write everything to disk after the maximum delay (period), unless there is already
-			// a job scheduled to write to disk before that.
-			if(!queuedJob) {
-				queuedJob = true;
-				this.ticker.queueTimedJob(new Runnable() {
-					@Override
-					public void run() {
-						synchronized(this) {
-							if(runningJob) return;
-							runningJob = true;
-						}
-						try {
-							pushAllCachingStores();
-						} finally {
-							synchronized(this) {
-								queuedJob = false;
-								runningJob = false;
-							}
-						}
-					}
-				}, period);
-			}
+			if(!justStartedPush) {
+			    // Write everything to disk after the maximum delay (period), unless there is already
+			    // a job scheduled to write to disk before that.
+			    pushOffThreadDelayed();
+			} // Else will be written anyway.
 			return true;
 		}
 	}
-	
-	private void pushAllCachingStores() {
+
+    private synchronized void pushOffThreadNow() {
+        if(runningJob) return;
+        runningJob = true;
+        this.ticker.queueTimedJob(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    pushAllCachingStores();
+                } finally {
+                    runningJob = false;
+                }
+            }
+        }, 0);
+    }
+
+	private void pushOffThreadDelayed() {
+	    if(queuedJob) return;
+	    queuedJob = true;
+	    this.ticker.queueTimedJob(new Runnable() {
+	        @Override
+	        public void run() {
+	            synchronized(this) {
+	                if(runningJob) return;
+	                runningJob = true;
+	            }
+	            try {
+	                pushAllCachingStores();
+	            } finally {
+	                synchronized(this) {
+	                    queuedJob = false;
+	                    runningJob = false;
+	                }
+	            }
+	        }
+	    }, period);
+    }
+
+	void pushAllCachingStores() {
 		CachingFreenetStore<?>[] cachingStoresSnapshot = null;
-		synchronized (cachingStores) {
-			cachingStoresSnapshot = this.cachingStores.toArray(new CachingFreenetStore[cachingStores.size()]);
-		}
 		
 		while(true) {
+		    // Need to re-check occasionally in case new stores have been added.
+	        synchronized (cachingStores) {
+	            cachingStoresSnapshot = this.cachingStores.toArray(new CachingFreenetStore[cachingStores.size()]);
+	        }
 			for(CachingFreenetStore<?> cfs : cachingStoresSnapshot) {
 				int k=0;
 				while(k < numberOfKeysToWrite) {

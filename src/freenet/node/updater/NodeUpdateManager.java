@@ -180,7 +180,6 @@ public class NodeUpdateManager {
 	// Update alert
 	private final UpdatedVersionAvailableUserAlert alert;
 
-	public final LegacyUpdateOverMandatoryManager legacyUOM;
 	public final UpdateOverMandatoryManager uom;
 
 	private static volatile boolean logMINOR;
@@ -369,7 +368,6 @@ public class NodeUpdateManager {
 		this.revocationChecker = new RevocationChecker(this, new File(
 				node.clientCore.getPersistentTempDir(), "revocation-key.fblob"));
 
-		this.legacyUOM = new LegacyUpdateOverMandatoryManager(this);
 		this.uom = new UpdateOverMandatoryManager(this);
 		this.uom.removeOldTempFiles();
 	}

@@ -15,6 +15,7 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,10 +31,16 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
+import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.useralerts.AbstractUserAlert;
+import freenet.node.useralerts.DroppedOldPeersUserAlert;
 import freenet.node.useralerts.PeerManagerUserAlert;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
@@ -238,6 +245,8 @@ public class PeerManager {
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e4, e4);
 		}
 		BufferedReader br = new BufferedReader(ris);
+		File brokenPeersFile = new File(peersFile.getPath() + ".broken");
+		DroppedOldPeersUserAlert droppedOldPeers = new DroppedOldPeersUserAlert(brokenPeersFile);
 		try { // FIXME: no better way?
 			while(true) {
 				// Read a single NodePeer
@@ -266,7 +275,15 @@ public class PeerManager {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					System.err.println("Cannot parse a friend from the peers file: "+e2);
 					// FIXME tell the user???
-				}
+                } catch (PeerTooOldException e) {
+                    if(crypto.isOpennet) {
+                        // Ignore.
+                        Logger.error(this, "Dropping too-old opennet peer");
+                    } else {
+                        // A lot more noisy!
+                        droppedOldPeers.add(e, fs.get("myName"));
+                    }
+                }
 				if(broken) someBroken = true;
 				else gotSome = true;
 			}
@@ -281,23 +298,31 @@ public class PeerManager {
 			Logger.error(this, "Ignoring " + e3 + " caught reading " + peersFile, e3);
 		}
 		if(someBroken) {
-			File broken = new File(peersFile.getPath()+".broken");
 			try {
-				broken.delete();
-				FileOutputStream fos = new FileOutputStream(broken);
+				brokenPeersFile.delete();
+				FileOutputStream fos = new FileOutputStream(brokenPeersFile);
 				fis = new FileInputStream(peersFile);
 				FileUtil.copy(fis, fos, -1);
 				fos.close();
 				fis.close();
-				System.err.println("Broken peers file copied to "+broken);
+				System.err.println("Broken peers file copied to " + brokenPeersFile);
 			} catch (IOException e) {
 				System.err.println("Unable to copy broken peers file.");
 			}
 		}
+		if(!droppedOldPeers.isEmpty()) {
+		    try {
+		        node.clientCore.alerts.register(droppedOldPeers);
+		        Logger.error(this, droppedOldPeers.getText());
+		    } catch (Throwable t) {
+		        // Startup MUST complete, don't let client layer problems kill it.
+		        Logger.error(this, "Caught error telling user about dropped peers", t);
+		    }
+		}
 		return !someBroken;
 	}
 
-	public boolean addPeer(PeerNode pn) {
+    public boolean addPeer(PeerNode pn) {
 		return addPeer(pn, false, false);
 	}
 
@@ -593,8 +618,9 @@ public class PeerManager {
 
 	/**
 	 * Connect to a node provided the fieldset representing it.
+	 * @throws PeerTooOldException 
 	 */
-	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
 		PeerNode[] peerList = myPeers();
 		for(PeerNode mp: peerList) {
@@ -1900,6 +1926,9 @@ public class PeerManager {
 		return v.toArray(new DarknetPeerNode[v.size()]);
 	}
 
+	/** Get the currently connected seednodes.
+	 * @param exclude Set of peer public keys to exclude.
+	 */
 	public List<SeedServerPeerNode> getConnectedSeedServerPeersVector(HashSet<ByteArrayWrapper> exclude) {
 		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
@@ -1907,7 +1936,7 @@ public class PeerManager {
 		for(PeerNode p : peers) {
 			if(p instanceof SeedServerPeerNode) {
 				SeedServerPeerNode sspn = (SeedServerPeerNode) p;
-				if(exclude != null && exclude.contains(new ByteArrayWrapper(sspn.getIdentity()))) {
+				if(exclude != null && exclude.contains(new ByteArrayWrapper(sspn.getPubKeyHash()))) {
 					if(logMINOR)
 						Logger.minor(this, "Not including in getConnectedSeedServerPeersVector() as in exclude set: " + sspn.userToString());
 					continue;
@@ -2006,7 +2035,7 @@ public class PeerManager {
 		PeerNode[] peers = pn.isOpennet() ? getOpennetAndSeedServerPeers() : getDarknetPeers();
 
 		for(PeerNode peer: peers)
-			if(Arrays.equals(pn.getIdentity(), peer.getIdentity()))
+			if(Arrays.equals(pn.getPubKeyHash(), peer.getPubKeyHash()))
 				return peer;
 
 		return null;
@@ -2273,5 +2302,5 @@ public class PeerManager {
 			return connections < OUTDATED_MAX_CONNS;
 		} else return false;
 	}
-
+	
 }

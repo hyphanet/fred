@@ -47,7 +47,7 @@ public class JVMVersionTest extends TestCase {
 	        String v1 = orderedVersions[i];
 	        for (int j = 0; j < orderedVersions.length; j++) {
 	            String v2 = orderedVersions[j];
-	            int expected = Integer.signum(Integer.compare(i, j));
+	            int expected = Integer.signum(Integer.valueOf(i).compareTo(Integer.valueOf(j)));
 	            int actual = Integer.signum(JVMVersion.compareVersion(v1, v2));
 	            assertEquals(expected, actual);
 	        }

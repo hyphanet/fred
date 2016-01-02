@@ -59,7 +59,8 @@ public class NodeCrypto {
 	public FNPPacketMangler packetMangler;
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int portNumber;
-	byte[] myIdentity; // FIXME: simple identity block; should be unique
+	/** @see PeerNode.identity */
+	byte[] myIdentity;
 	/** Hash of identity. Used as setup key. */
 	byte[] identityHash;
 	/** Hash of hash of identity i.e. hash of setup key. */
@@ -206,7 +207,7 @@ public class NodeCrypto {
 
 			//TODO: remove this once 1471 is mandatory
 			dsaSFS = fs.subset("dsaGroup");
-			if(dsaSFS != null && dsaSFS.toString().length() > 30)
+			if(dsaSFS != null && dsaSFS.toString().length() > 50)
 				cryptoGroup = DSAGroup.create(dsaSFS);
 			dsaSFS = fs.subset("dsaPrivKey");
 			if(dsaSFS != null && dsaSFS.toString().length() > 30)
@@ -290,7 +291,8 @@ public class NodeCrypto {
 		myARKNumber = 0;
 		clientNonce = new byte[32];
 		node.random.nextBytes(clientNonce);
-		myIdentity = Arrays.copyOf(ecdsaPubKeyHash, IDENTITY_LENGTH);
+		myIdentity = new byte[IDENTITY_LENGTH];
+		node.random.nextBytes(myIdentity);
 		identityHash = SHA256.digest(myIdentity);
 		identityHashHash = SHA256.digest(identityHash);
 		anonSetupCipher.initialize(identityHash);
