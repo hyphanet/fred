@@ -168,7 +168,7 @@ public class DroppedOldPeersUserAlert implements UserAlert {
     public String getLogWarning(int size, PeerTooOldException e, File peersFile) {
         String[] keys = new String[] { "count", "buildNumber", "buildDate", "port" };
         String[] values = new String[] { "" + size, "" + e.buildNumber, e.buildDate.toString(),
-                new File(peersFile.getPath() + ".broken").toString() };
+                peersFile.getPath() };
         return l10n("droppingOldFriendTitle", keys, values);
     }
 
