@@ -290,6 +290,8 @@ public class PeerManager {
 				        // A lot more noisy!
 				        droppedOldPeers.add(e, fs.get("myName"));
 				    }
+                    someBroken = true;
+                    continue;
                 }
 			}
 		} catch(EOFException e) {
