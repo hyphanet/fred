@@ -19,7 +19,6 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 
-import freenet.crypt.JceLoader;
 import freenet.node.FSParseException;
 import freenet.support.Base64;
 import freenet.support.Logger;
@@ -205,7 +204,10 @@ public class ECDSA {
         byte[] result = null;
         try {
             while(true) {
-                Signature sig = Signature.getInstance(curve.defaultHashAlgorithm, curve.sigProvider);
+                // FIXME: we hardcode bouncycastle here because right now that's the only that works
+                // verifying with a legacy non-deterministic (SHA256withECDSA) sig
+                // will *not* work with a bouncycastle SHA256withECDDSA verifier
+                Signature sig = Signature.getInstance(curve.defaultHashAlgorithm.replace("ECDSA", "ECDDSA"), JceLoader.BouncyCastle);
                 sig.initSign(key.getPrivate());
     			for(byte[] d: data)
     				sig.update(d);
