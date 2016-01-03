@@ -207,6 +207,7 @@ public class NodeUpdateManager {
 	 * deploying.
 	 */
 	private Bucket maybeNextMainJarData;
+	private boolean startedSimpleFetches;
 	
 	private static final Object deployLock = new Object();
 	
@@ -511,41 +512,49 @@ public class NodeUpdateManager {
 		
 		revocationChecker.checkForBlobOnDisk();
 		enable(wasEnabledOnStartup);
-
-		// Fetch 3 files, each to a file in the runDir.
-
-		if (updateSeednodes) {
-
-			SimplePuller seedrefsGetter = new SimplePuller(getSeednodesURI(),
-					Announcer.SEEDNODES_FILENAME);
-			seedrefsGetter.start(
-					RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					1024 * 1024);
-		}
-
-		if (updateInstallers) {
-			SimplePuller installerGetter = new SimplePuller(
-					getInstallerWindowsURI(), NON_WINDOWS_FILENAME);
-			SimplePuller wininstallerGetter = new SimplePuller(
-					getInstallerNonWindowsURI(), WINDOWS_FILENAME);
-
-			installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					32 * 1024 * 1024);
-			wininstallerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					32 * 1024 * 1024);
-
-		}
-
-		if (updateIPToCountry) {
-			SimplePuller ip4Getter = new SimplePuller(getIPv4ToCountryURI(),
-					IPV4_TO_COUNTRY_FILENAME);
-			ip4Getter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					8 * 1024 * 1024);
-		}
-		
 	}
 
-	void broadcastUOMAnnouncesOld() {
+	/** Start simple fetches needed by the node: The latest version of the seednodes, the installer
+	 * and the IP to country file. */
+	private void startSimpleFetches() {
+	    // Fetch 3 files, each to a file in the runDir.
+	    synchronized(this) {
+	        if(startedSimpleFetches) return;
+	        startedSimpleFetches = true;
+	    }
+
+        if (updateSeednodes) {
+
+            SimplePuller seedrefsGetter = new SimplePuller(getSeednodesURI(),
+                    Announcer.SEEDNODES_FILENAME);
+            seedrefsGetter.start(
+                    RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
+                    1024 * 1024);
+        }
+
+        if (updateInstallers) {
+            SimplePuller installerGetter = new SimplePuller(
+                    getInstallerWindowsURI(), NON_WINDOWS_FILENAME);
+            SimplePuller wininstallerGetter = new SimplePuller(
+                    getInstallerNonWindowsURI(), WINDOWS_FILENAME);
+
+            installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
+                    32 * 1024 * 1024);
+            wininstallerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
+                    32 * 1024 * 1024);
+
+        }
+
+        if (updateIPToCountry) {
+            SimplePuller ip4Getter = new SimplePuller(getIPv4ToCountryURI(),
+                    IPV4_TO_COUNTRY_FILENAME);
+            ip4Getter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
+                    8 * 1024 * 1024);
+        }
+        
+    }
+
+    void broadcastUOMAnnouncesOld() {
 		boolean mainJarAvailable = transitionMainJarFetcher == null ? false
 				: transitionMainJarFetcher.fetched();
 		boolean extJarAvailable = transitionExtJarFetcher == null ? false
@@ -733,6 +742,7 @@ public class NodeUpdateManager {
 			startPluginUpdaters();
 			transitionMainJarFetcher.start();
 			transitionExtJarFetcher.start();
+			startSimpleFetches();
 		}
 	}
 
