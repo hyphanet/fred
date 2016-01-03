@@ -30,10 +30,10 @@ public class HMAC_legacy {
 	public HMAC_legacy(MessageDigest md) {
 		this.d = md;
 	}
-	
+
 	public boolean verify(byte[] K, byte[] text, byte[] mac) {
 		byte[] mac2 = mac(K, text, mac.length);
-		
+
 		// this is constant-time; DO NOT 'optimize'
 		return MessageDigest.isEqual(mac, mac2);
 	}
@@ -151,4 +151,4 @@ public class HMAC_legacy {
 				SHA256.returnMessageDigest(sha256);
 		}
 	}
-}	
+}
