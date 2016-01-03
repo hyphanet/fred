@@ -103,10 +103,7 @@ public class DatabaseKey {
             return false;
         }
         DatabaseKey other = (DatabaseKey) obj;
-        if (!java.util.Arrays.equals(databaseKey, other.databaseKey)) {
-            return false;
-        }
-        return true;
+        return java.util.Arrays.equals(databaseKey, other.databaseKey);
     }
 
 }
