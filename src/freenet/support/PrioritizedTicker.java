@@ -194,10 +194,10 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	}
 	
 	/** Queue a job at a specific absolute time. 
-	 * @param l The absolute time at which the job should run.
+	 * @param runJobAt The absolute time at which the job should run.
 	 * @param offset The offset in milliseconds from "now" (i.e. some recent call to 
 	 * System.currentTimeMillis()). */
-    private void queueTimedJobInner(Runnable runner, String name, long l, long offset, 
+    private void queueTimedJobInner(Runnable runner, String name, long runJobAt, long offset, 
             boolean runOnTickerAnyway, boolean noDupes) {
         if(noDupes) runOnTickerAnyway = true;
         if(offset <= 0 && !runOnTickerAnyway) {
@@ -208,29 +208,29 @@ public class PrioritizedTicker implements Ticker, Runnable {
         Job job = new Job(name, runner);
         synchronized(timedJobsByTime) {
             if(noDupes) {
-                Long t = timedJobsQueued.get(job);
-                if(t != null) {
-                    if(t <= l) {
+                Long alreadyQueuedAt = timedJobsQueued.get(job);
+                if(alreadyQueuedAt != null) {
+                    if(alreadyQueuedAt <= runJobAt) {
                         Logger.normal(this, "Not re-running as already queued: "+runner+" for "+name);
                         return;
                     } else {
                         // Delete the existing job because the new job will run first.
-                        removeQueuedJobInner(job, t);
+                        removeQueuedJobInner(job, alreadyQueuedAt);
                     }
                 }
             }
-            Object o = timedJobsByTime.get(l);
+            Object o = timedJobsByTime.get(runJobAt);
             if(o == null)
-                timedJobsByTime.put(l, job);
+                timedJobsByTime.put(runJobAt, job);
             else if(o instanceof Job)
-                timedJobsByTime.put(l, new Job[]{(Job) o, job});
+                timedJobsByTime.put(runJobAt, new Job[]{(Job) o, job});
             else if(o instanceof Job[]) {
                 Job[] r = (Job[]) o;
                 Job[] jobs = Arrays.copyOf(r, r.length+1);
                 jobs[jobs.length - 1] = job;
-                timedJobsByTime.put(l, jobs);
+                timedJobsByTime.put(runJobAt, jobs);
             }
-            timedJobsQueued.put(job, l);
+            timedJobsQueued.put(job, runJobAt);
         }
         if(offset < MAX_SLEEP_TIME) {
             wakeUp();
@@ -277,30 +277,21 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	}
 
 	/** Remove a queued job from the internal structures other than timedJobsQueued. The
-	 * caller is responsible for that.
+	 * caller must check that it is present in timedJobsQueued, remove from that structure, and 
+	 * call this method, all inside the timedJobsByTime lock. 
 	 * @param job The job to remove.
 	 * @param t The time at which is it scheduled.
 	 */
 	private void removeQueuedJobInner(Job job, Long t) {
         Object o = timedJobsByTime.get(t);
-        if(o == null) {
-            Logger.error(this, "Job in timedJobsQueued but not in timedJobsByTime");
-            // Cleaned up so no reason to throw in this critical structure.
-            return;
-        }
+        assert(o != null);
         if(o instanceof Job) {
-            if(!o.equals(job)) {
-                Logger.error(this, "Job in timedJobsQueued but not equal to job for timeslot");
-                return;
-            }
+            assert(o.equals(job));
             timedJobsByTime.remove(t);
         } else {
             Job[] jobs = (Job[]) o;
             if(jobs.length == 1) {
-                if(!jobs[0].equals(job)) {
-                    Logger.error(this, "Job in timedJobsQueued but not equal to [0] job");
-                    return;
-                }
+                assert(jobs[0].equals(job));
                 timedJobsByTime.remove(t);
             } else {
                 Job[] newJobs = new Job[jobs.length-1];
@@ -310,15 +301,10 @@ public class PrioritizedTicker implements Ticker, Runnable {
                         continue;
                     }
                     newJobs[x++] = oldjob;
-                    if(x == jobs.length) {
-                        Logger.error(this, "Job in timedJobsQueued but not in jobs array");
-                        return;
-                    }
+                    assert(x != jobs.length); // Must be in jobs array.
                 }
-                if(x == 0) {
-                    timedJobsByTime.remove(t);
-                    Logger.error(this, "Should not have length 1 arrays");
-                } else if (x == 1) {
+                assert(x != 0); // Not duplicated.
+                if (x == 1) {
                     timedJobsByTime.put(t, newJobs[0]);
                 } else {
                     if(x != newJobs.length)

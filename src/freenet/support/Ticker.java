@@ -20,6 +20,9 @@ public interface Ticker {
 	 * it directly through to the Executor. This is needed for increasing thread priorities, since
 	 * the Ticker runs at a high priority, and for some tests.
 	 * @param noDupes If true, ignore the job if it is already queued. Implies runOnTickerAnyway.
+	 * WARNING: This does not guarantee that we don't run multiple copies of the job 
+     * simultaneously! You must ensure adequate locking. Worse, if the job takes an unexpectedly 
+     * long time, you could end up with many copies of the job running simultaneously. 
 	 */
 	public abstract void queueTimedJob(Runnable job, String name, long offset, boolean runOnTickerAnyway, boolean noDupes);
 	
@@ -37,6 +40,9 @@ public interface Ticker {
      * it directly through to the Executor. This is needed for increasing thread priorities, since
      * the Ticker runs at a high priority, and for some tests.
      * @param noDupes If true, ignore the job if it is already queued. Implies runOnTickerAnyway.
+     * WARNING: This does not guarantee that we don't run multiple copies of the job 
+     * simultaneously! You must ensure adequate locking. Worse, if the job takes an unexpectedly 
+     * long time, you could end up with many copies of the job running simultaneously. 
 	 */
     public abstract void queueTimedJobAbsolute(Runnable runner, String name, long time, 
             boolean runOnTickerAnyway, boolean noDupes);
