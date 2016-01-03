@@ -207,6 +207,7 @@ public class NodeUpdateManager {
 	 * deploying.
 	 */
 	private Bucket maybeNextMainJarData;
+	private boolean startedSimpleFetches;
 	
 	private static final Object deployLock = new Object();
 	
@@ -511,14 +512,16 @@ public class NodeUpdateManager {
 		
 		revocationChecker.checkForBlobOnDisk();
 		enable(wasEnabledOnStartup);
-
-		startSimpleFetches();
 	}
 
 	/** Start simple fetches needed by the node: The latest version of the seednodes, the installer
 	 * and the IP to country file. */
 	private void startSimpleFetches() {
 	    // Fetch 3 files, each to a file in the runDir.
+	    synchronized(this) {
+	        if(startedSimpleFetches) return;
+	        startedSimpleFetches = true;
+	    }
 
         if (updateSeednodes) {
 
@@ -739,6 +742,7 @@ public class NodeUpdateManager {
 			startPluginUpdaters();
 			transitionMainJarFetcher.start();
 			transitionExtJarFetcher.start();
+			startSimpleFetches();
 		}
 	}
 
