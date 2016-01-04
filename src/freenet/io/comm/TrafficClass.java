@@ -37,7 +37,7 @@ public enum TrafficClass {
   public static TrafficClass getDefault()
   {
     // That's high-throughput, high drop probability
-    return TrafficClass.DSCP_AF13;
+    return TrafficClass.CS1;
   }
 
   public static TrafficClass fromNameOrValue(String tcName) {
