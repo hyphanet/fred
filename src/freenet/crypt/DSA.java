@@ -99,7 +99,7 @@ public class DSA {
 		System.arraycopy(q, 0, toHMAC, 0, q.length);
 		System.arraycopy(messageHash,0, toHMAC, q.length, messageHash.length);
 
-		BigInteger k = new NativeBigInteger(1, HMAC.macWithSHA256(x.asBytes(), toHMAC));
+		BigInteger k = new NativeBigInteger(1, HMAC.macWithSHA256(SHA256.digest(x.asBytes()), toHMAC));
 		k = k.and(SIGNATURE_MASK);
 
 		// We can't log K here
