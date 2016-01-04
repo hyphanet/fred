@@ -6,6 +6,7 @@ package freenet.crypt;
 import net.i2p.util.NativeBigInteger;
 
 import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.util.Random;
 
 import freenet.support.Logger;
@@ -139,7 +140,7 @@ public class DSA {
 			BigInteger v1=kp.getG().modPow(u1, kp.getP());
 			BigInteger v2=kp.getY().modPow(u2, kp.getP());
 			BigInteger v=v1.multiply(v2).mod(kp.getP()).mod(kp.getQ());
-			return v.equals(sig.getR());
+			return MessageDigest.isEqual(v.toByteArray(), sig.getR().toByteArray());
 
 			//FIXME: is there a better way to handle this exception raised on the 'w=' line above?
 		} catch (ArithmeticException e) {  // catch error raised by invalid data
