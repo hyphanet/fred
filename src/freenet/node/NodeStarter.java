@@ -445,7 +445,7 @@ public class NodeStarter implements WrapperListener {
         public boolean connectToSeednodes;
         public boolean longPingTimes;
         public boolean useSlashdotCache;
-        public String ipAddressOverride;
+        public String ipAddressOverride = "127.0.0.1";
         public boolean enableFCP;
         /** True to write everything to the datastore. By default, we only cache requests with HTL 
          * at least 3 below the maximum, see Node.canWriteDatastoreInsert(). This is a security
