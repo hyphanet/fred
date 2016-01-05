@@ -10,9 +10,9 @@ public interface MessageQueue {
      * @param item the <code>MessageItem</code> to queue
      * @return an estimate of the size of this queue
      */
-    public abstract int queueAndEstimateSize(MessageItem item, int maxSize);
+    public int queueAndEstimateSize(MessageItem item, int maxSize);
 
-    public abstract long getMessageQueueLengthBytes();
+    public long getMessageQueueLengthBytes();
 
     /**
      * like enqueuePrioritizedMessageItem, but adds it to the front of those in the same priority.
@@ -20,9 +20,9 @@ public interface MessageQueue {
      * WARNING: Pulling a message and then pushing it back will mess up the fairness 
      * between UID's send order. Try to avoid it.
      */
-    public abstract void pushfrontPrioritizedMessageItem(MessageItem addMe);
+    public void pushfrontPrioritizedMessageItem(MessageItem addMe);
 
-    public abstract MessageItem[] grabQueuedMessageItems();
+    public MessageItem[] grabQueuedMessageItems();
 
     /**
      * Get the time at which the next message must be sent. If any message is
@@ -35,7 +35,7 @@ public interface MessageQueue {
      * Set to Long.MAX_VALUE if you want an accurate value.
      * @return The next urgent time, but can be too high if it is less than now.
      */
-    public abstract long getNextUrgentTime(long t, long returnIfBefore);
+    public long getNextUrgentTime(long t, long returnIfBefore);
 
     /**
      * Returns <code>true</code> if there are messages that will timeout before
@@ -44,7 +44,7 @@ public interface MessageQueue {
      * @return <code>true</code> if there are messages that will timeout before
      * <code>now</code>
      */
-    public abstract boolean mustSendNow(long now);
+    public boolean mustSendNow(long now);
 
     /**
      * Returns <code>true</code> if <code>minSize</code> + the length of all
@@ -54,16 +54,16 @@ public interface MessageQueue {
      * @return <code>true</code> if <code>minSize</code> + the length of all
      * messages in this queue is greater than <code>maxSize</code>
      */
-    public abstract boolean mustSendSize(int minSize, int maxSize);
+    public boolean mustSendSize(int minSize, int maxSize);
 
     /** Grab a message to send. WARNING: PeerMessageQueue not only removes the message,
      * it assumes it has been sent for purposes of fairness between UID's. You should try
      * not to call this function if you are not going to be able to send the message: 
      * check in advance if possible. */
-    public abstract MessageItem grabQueuedMessageItem(int minPriority);
+    public MessageItem grabQueuedMessageItem(int minPriority);
 
-    public abstract boolean removeMessage(MessageItem message);
+    public boolean removeMessage(MessageItem message);
 
-    public abstract void removeUIDsFromMessageQueues(Long[] list);
+    public void removeUIDsFromMessageQueues(Long[] list);
 
 }
