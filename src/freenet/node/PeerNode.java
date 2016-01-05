@@ -723,7 +723,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	private static MessageQueue makeMessageQueue(Node source, 
 	        NodeCrypto sourceCrypto, byte[] pubKeyHash) {
-	    if(source.isTestingVM) {
+	    if(source.isTestingVM && NodeStarter.isMessageQueueBypassEnabled()) {
 	        Node target = NodeStarter.maybeGetNode(pubKeyHash);
 	        if(target != null) {
 	            NodeCrypto targetCrypto =

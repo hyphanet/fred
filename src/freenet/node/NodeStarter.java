@@ -700,5 +700,12 @@ public class NodeStarter implements WrapperListener {
         assert(isTestingVM());
         return testingVMEnableBypassConnections == TestingVMBypass.CBR_QUEUE_BYPASS;
     }
+    
+    public synchronized static boolean isMessageQueueBypassEnabled() {
+        assert(isTestingVM());
+        return testingVMEnableBypassConnections == TestingVMBypass.CBR_QUEUE_BYPASS ||
+            testingVMEnableBypassConnections == TestingVMBypass.FAST_QUEUE_BYPASS;
+        
+    }
 
 }
