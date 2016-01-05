@@ -3195,6 +3195,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void start(boolean noSwaps) throws NodeInitException {
+	    boolean enableTransportLayer = !NodeStarter.isMessageQueueBypassEnabled();
 		
 		// IMPORTANT: Read the peers only after we have finished initializing Node.
 		// Peer constructors are complex and can call methods on Node.
@@ -3211,10 +3212,12 @@ public class Node implements TimeSkewDetectorCallback {
 		darknetCrypto.start();
 		if(opennet != null)
 			opennet.start();
-		ps.start(nodeStats);
+		if(enableTransportLayer)
+		    ps.start(nodeStats);
 		ticker.start();
 		scheduleVersionTransition();
-		usm.start(ticker);
+		if(enableTransportLayer)
+		    usm.start(ticker);
 
 		if(isUsingWrapper()) {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
