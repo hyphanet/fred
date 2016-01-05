@@ -977,7 +977,8 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @param executor Executor
 	 * @throws NodeInitException If the node initialization fails.
 	 */
-	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
+	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, 
+	         NodeStarter ns, Executor executor, PrioritizedTicker ticker) throws NodeInitException {
 		this.shutdownHook = SemiOrderedShutdownHook.get();
 		this.isTestingVM = NodeStarter.isTestingVM();
 		// Easy stuff
@@ -987,6 +988,7 @@ public class Node implements TimeSkewDetectorCallback {
 		System.out.println(tmp);
 		collector = new IOStatisticCollector();
 		this.executor = executor;
+		this.ticker = ticker;
 		nodeStarter=ns;
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
@@ -1498,7 +1500,6 @@ public class Node implements TimeSkewDetectorCallback {
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
 		ps = new PacketSender(this);
-		ticker = new PrioritizedTicker(executor);
 		if(executor instanceof PooledExecutor)
 			((PooledExecutor)executor).setTicker(ticker);
 

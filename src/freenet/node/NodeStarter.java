@@ -31,7 +31,9 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.PooledExecutor;
+import freenet.support.PrioritizedTicker;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Ticker;
 import freenet.support.io.NativeThread;
 
 /**
@@ -206,8 +208,9 @@ public class NodeStarter implements WrapperListener {
 		SubConfig sslConfig = new SubConfig("ssl", cfg);
 		SSL.init(sslConfig);
 
+		PrioritizedTicker ticker = new PrioritizedTicker(executor);
 		try {
-			node = new Node(cfg, null, null, logConfigHandler, this, executor);
+			node = new Node(cfg, null, null, logConfigHandler, this, executor, ticker);
 			node.start(false);
 			System.out.println("Node initialization completed.");
 		} catch(NodeInitException e) {
@@ -431,6 +434,7 @@ public class NodeStarter implements WrapperListener {
         public int dropProb;
         public RandomSource random;
         public Executor executor;
+        public PrioritizedTicker ticker;
         public int threadLimit;
         public long storeSize;
         public boolean ramStore;
@@ -489,6 +493,7 @@ public class NodeStarter implements WrapperListener {
         params.dropProb = dropProb;
         params.random = random;
         params.executor = executor;
+        params.ticker = new PrioritizedTicker(executor);
         params.threadLimit = threadLimit;
         params.storeSize = storeSize;
         params.ramStore = ramStore;
@@ -601,7 +606,7 @@ public class NodeStarter implements WrapperListener {
 
 		PersistentConfig config = new PersistentConfig(configFS);
 
-        Node node = new Node(config, params.random, params.random, null, null, params.executor);
+        Node node = new Node(config, params.random, params.random, null, null, params.executor, params.ticker);
 
 		//All testing environments connect the nodes as they want, even if the old setup is restored, it is not desired.
 		node.peers.removeAllPeers();
