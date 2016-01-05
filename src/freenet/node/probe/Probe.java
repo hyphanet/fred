@@ -27,8 +27,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Handles starting, routing, and responding to Metropolis-Hastings corrected probes.
@@ -118,8 +116,6 @@ public class Probe implements ByteCounter {
 
 	private final Node node;
 
-	private final Timer timer;
-
 	//Whether to respond to different types of probe requests.
 	private volatile boolean respondBandwidth;
 	private volatile boolean respondBuild;
@@ -171,7 +167,6 @@ public class Probe implements ByteCounter {
 	public Probe(final Node node) {
 		this.node = node;
 		this.accepted = Collections.synchronizedMap(new HashMap<PeerNode, Counter>());
-		this.timer = new Timer(true);
 
 		int sortOrder = 0;
 		final SubConfig nodeConfig = node.config.get("node");
@@ -397,7 +392,7 @@ public class Probe implements ByteCounter {
 			htl = MAX_HTL;
 		}
 		boolean availableSlot = true;
-		TimerTask task = null;
+		Runnable task = null;
 		//Allocate one of this peer's probe request slots for 60 seconds; send an overload if none are available.
 		synchronized (accepted) {
 			//If no counter exists for the current source, add one.
@@ -412,7 +407,7 @@ public class Probe implements ByteCounter {
 			} else {
 				//There's a free slot; increment the counter.
 				counter.increment();
-				task = new TimerTask() {
+				task = new Runnable() {
 					@Override
 					public void run() {
 						synchronized (accepted) {
@@ -437,7 +432,7 @@ public class Probe implements ByteCounter {
 			return;
 		}
 		//One-minute window on acceptance; free up this probe slot in 60 seconds.
-		timer.schedule(task, MINUTES.toMillis(1));
+		node.ticker.queueTimedJob(task, MINUTES.toMillis(1));
 
 		/*
 		 * Route to a peer, using Metropolis-Hastings correction and ignoring backoff to get a more uniform
@@ -449,7 +444,7 @@ public class Probe implements ByteCounter {
 		if (htl == 0 || !route(type, uid, htl, listener)) {
 			long wait = WAIT_MAX;
 			while (wait >= WAIT_MAX) wait = (long)(-Math.log(node.random.nextDouble()) * WAIT_BASE / Math.E);
-			timer.schedule(new TimerTask() {
+			node.ticker.queueTimedJob(new Runnable() {
 				@Override
 				public void run() {
 					respond(type, listener);
