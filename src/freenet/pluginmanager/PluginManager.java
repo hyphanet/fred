@@ -1169,7 +1169,7 @@ public class PluginManager {
 		String filename = pdl.getPluginName(name);
 		File pluginFile = getTargetFileForPluginDownload(pluginDirectory, filename, !pdl.isCachingProhibited() && !alwaysDownload);
 
-		boolean downloaded = false;
+		boolean downloadWasAttempted = false;
 		/* check if file needs to be downloaded. */
 		if(logMINOR)
 			Logger.minor(this, "plugin file " + pluginFile.getAbsolutePath() + " exists: " + pluginFile.exists()+" downloader "+pdl+" name "+name);
@@ -1177,7 +1177,7 @@ public class PluginManager {
 		for (int i = 0; i < RETRIES; i++) {
 			if (!pluginFile.exists() || pluginFile.length() == 0) {
 				try {
-					downloaded = true;
+					downloadWasAttempted = true;
 					System.err.println("Downloading plugin " + name);
 					WrapperManager.signalStarting((int) MINUTES.toMillis(5));
 					try {
@@ -1211,7 +1211,7 @@ public class PluginManager {
 				} catch (PluginNotFoundException e) {
 					Logger.error(this, e.getMessage());
 					pluginFile.delete();
-					if (!downloaded) {
+					if (!downloadWasAttempted) {
 						continue;
 					}
 					throw e;
