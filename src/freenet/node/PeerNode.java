@@ -5841,4 +5841,37 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	protected final byte[] getPubKeyHash() {
 	    return peerECDSAPubKeyHash;
 	}
+
+	/** Check for timeouts causing disconnection. Run on the PacketSender thread before checking 
+	 * for packets to send.
+	 */
+    public boolean checkForDisconnectionTimeout(long now) {
+        // Is the node dead?
+        // It might be disconnected in terms of FNP but trying to reconnect via JFK's, so we need to use the time when we last got a *data* packet.
+        if(now - lastReceivedDataPacketTime() > maxTimeBetweenReceivedPackets()) {
+            Logger.normal(this, "Disconnecting from " + this + " - haven't received packets recently");
+            // Hopefully this is a transient network glitch, but stuff will have already started to timeout, so lets dump the pending messages.
+            disconnected(true, false);
+            return true;
+        } else if(now - lastReceivedAckTime() > maxTimeBetweenReceivedAcks() && !isDisconnecting()) {
+            // FIXME better to disconnect immediately??? Or check canSend()???
+            Logger.normal(this, "Disconnecting from " + this + " - haven't received acks recently");
+            // Do it properly.
+            // There appears to be connectivity from them to us but not from us to them.
+            // So it is helpful for them to know that we are disconnecting.
+            node.peers.disconnect(this, true, true, false, true, false, SECONDS.toMillis(5));
+            return true;
+        } else if(isRoutable() && noLongerRoutable()) {
+            /*
+             NOTE: Whereas isRoutable() && noLongerRoutable() are generally mutually exclusive, this
+             code will only execute because of the scheduled-runnable in start() which executes
+             updateVersionRoutablity() on all our peers. We don't disconnect the peer, but mark it
+             as being incompatible.
+             */
+            invalidate(now);
+            Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible: "+this);
+            return true;
+        }
+        return false;
+    }
 }

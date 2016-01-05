@@ -214,33 +214,8 @@ public class PacketSender implements Runnable {
 				
 				pn.checkForLostPackets();
 
-				// Is the node dead?
-				// It might be disconnected in terms of FNP but trying to reconnect via JFK's, so we need to use the time when we last got a *data* packet.
-				if(now - pn.lastReceivedDataPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
-					Logger.normal(this, "Disconnecting from " + pn + " - haven't received packets recently");
-					// Hopefully this is a transient network glitch, but stuff will have already started to timeout, so lets dump the pending messages.
-					pn.disconnected(true, false);
-					continue;
-				} else if(now - pn.lastReceivedAckTime() > pn.maxTimeBetweenReceivedAcks() && !pn.isDisconnecting()) {
-					// FIXME better to disconnect immediately??? Or check canSend()???
-					Logger.normal(this, "Disconnecting from " + pn + " - haven't received acks recently");
-					// Do it properly.
-					// There appears to be connectivity from them to us but not from us to them.
-					// So it is helpful for them to know that we are disconnecting.
-					node.peers.disconnect(pn, true, true, false, true, false, SECONDS.toMillis(5));
-					continue;
-				} else if(pn.isRoutable() && pn.noLongerRoutable()) {
-					/*
-					 NOTE: Whereas isRoutable() && noLongerRoutable() are generally mutually exclusive, this
-					 code will only execute because of the scheduled-runnable in start() which executes
-					 updateVersionRoutablity() on all our peers. We don't disconnect the peer, but mark it
-					 as being incompatible.
-					 */
-					pn.invalidate(now);
-					Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible: "+pn);
-					continue;
-				}
-
+				if(pn.checkForDisconnectionTimeout(now)) continue;
+				
 				// The peer is connected.
 				
 				if(canSendThrottled || !shouldThrottle) {
