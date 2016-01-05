@@ -49,6 +49,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	private final HashMap<Job, Long> timedJobsQueued;
 	final Executor executor;
 	static final int MAX_SLEEP_TIME = 200;
+	private boolean started;
 	
 	public PrioritizedTicker(Executor executor) {
 		this.executor = executor;
@@ -57,6 +58,11 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	}
 	
 	public void start(int portNumber) {
+	    synchronized(this) {
+	        // For tests.
+	        if(started) return;
+	        started = true;
+	    }
 		Logger.normal(this, "Starting Ticker");
 		System.out.println("Starting Ticker");
 		NativeThread myThread = new NativeThread(this, "Ticker thread for " + portNumber, 
