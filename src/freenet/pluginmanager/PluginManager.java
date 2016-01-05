@@ -289,8 +289,9 @@ public class PluginManager {
 			progress.kill();
 		}
 		// Stop already loaded plugins.
-		for(PluginInfoWrapper pi : pluginWrappers)
+		for (PluginInfoWrapper pi : pluginWrappers) {
 			pi.startShutdownPlugin(this, false);
+		}
 		long now = System.currentTimeMillis();
 		long deadline = now + maxWaitTime;
 		while(true) {
