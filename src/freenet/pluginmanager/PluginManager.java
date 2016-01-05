@@ -1285,9 +1285,9 @@ public class PluginManager {
 		}
 		String testsum = getFileDigest(pluginFile, "SHA-1");
 		if (!(digest.equalsIgnoreCase(testsum))) {
-            Logger.error(this, "Checksum verification failed, should be " + digest + " but was " + testsum);
-            throw new PluginNotFoundException("Checksum verification failed, should be " + digest + " but was " + testsum);
-        }
+			Logger.error(this, "Checksum verification failed, should be " + digest + " but was " + testsum);
+			throw new PluginNotFoundException("Checksum verification failed, should be " + digest + " but was " + testsum);
+		}
 	}
 
 	private String verifyJarFileAndGetPluginMainClass(File pluginFile) throws PluginNotFoundException, PluginAlreadyLoaded {
