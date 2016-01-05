@@ -1061,6 +1061,7 @@ public class PluginManager {
 		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
 			if (pluginInfoWrapper.getThreadName().equals(name)) {
 				pluginInfoWrapper.stopPlugin(this, maxWaitTime, reloading);
+				break;
 			}
 		}
 	}
@@ -1069,6 +1070,7 @@ public class PluginManager {
 		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
 			if (pluginInfoWrapper.getFilename().equals(name)) {
 				pluginInfoWrapper.stopPlugin(this, maxWaitTime, reloading);
+				break;
 			}
 		}
 	}
@@ -1077,6 +1079,7 @@ public class PluginManager {
 		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
 			if (pluginInfoWrapper.getPluginClassName().equals(name)) {
 				pluginInfoWrapper.stopPlugin(this, maxWaitTime, false);
+				break;
 			}
 		}
 	}
@@ -1085,6 +1088,7 @@ public class PluginManager {
 		for (PluginInfoWrapper pluginInfoWrapper : pluginWrappers) {
 			if (pluginInfoWrapper.plug == plugin) {
 				pluginInfoWrapper.stopPlugin(this, maxWaitTime, false);
+				break;
 			}
 		}
 	}
