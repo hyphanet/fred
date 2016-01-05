@@ -3235,7 +3235,8 @@ public class Node implements TimeSkewDetectorCallback {
 //		SubConfig pluginManagerConfig = new SubConfig("pluginmanager3", config);
 //		pluginManager3 = new freenet.plugin_new.PluginManager(pluginManagerConfig);
 
-		ipDetector.start();
+		if(enableTransportLayer)
+		    ipDetector.start();
 
 		// Start sending swaps
 		lm.start();
