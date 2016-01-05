@@ -701,6 +701,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		else
 			sendHandshakeTime = now;  // Be sure we're ready to handshake right away
+		
+		if(messageQueue.neverHandshake())
+		    sendHandshakeTime = Long.MAX_VALUE;
 
 		totalInputSinceStartup = fs.getLong("totalInput", 0);
 		totalOutputSinceStartup = fs.getLong("totalOutput", 0);

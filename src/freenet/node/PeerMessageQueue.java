@@ -929,5 +929,10 @@ public class PeerMessageQueue implements MessageQueue {
 			queue.removeUIDs(list);
 		}
 	}
+
+    @Override
+    public boolean neverHandshake() {
+        return false;
+    }
 }
 

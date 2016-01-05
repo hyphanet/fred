@@ -189,4 +189,9 @@ public class BypassMessageQueue implements MessageQueue {
         // Ignore.
     }
 
+    @Override
+    public boolean neverHandshake() {
+        return true;
+    }
+
 }

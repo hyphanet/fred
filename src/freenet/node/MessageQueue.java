@@ -65,5 +65,10 @@ public interface MessageQueue {
     public boolean removeMessage(MessageItem message);
 
     public void removeUIDsFromMessageQueues(Long[] list);
+    
+    /** Some implementations, notably BypassMessageQueue used in testing, may not require 
+     * handshaking. If so, return true here.
+     */
+    public boolean neverHandshake();
 
 }
