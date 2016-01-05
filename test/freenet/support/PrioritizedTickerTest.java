@@ -14,8 +14,8 @@ public class PrioritizedTickerTest extends TestCase {
 	    private boolean sleeping;
 	    private Object sleepSync = new Object();
 	    
-        public MyTicker(Executor executor, int portNumber) {
-            super(executor, portNumber);
+        public MyTicker(Executor executor) {
+            super(executor);
         }
         
         protected void sleep(long sleepTime) throws InterruptedException {
@@ -56,8 +56,8 @@ public class PrioritizedTickerTest extends TestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 		realExec = new WaitableExecutor(new PooledExecutor());
-		ticker = new MyTicker(realExec, 0);
-		ticker.start();
+		ticker = new MyTicker(realExec);
+		ticker.start(0);
 	}
 
 	private int runCount = 0;

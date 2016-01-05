@@ -47,21 +47,21 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	/** ~= Ticker :) */
 	private final TreeMap<Long, Object> timedJobsByTime;
 	private final HashMap<Job, Long> timedJobsQueued;
-	final NativeThread myThread;
 	final Executor executor;
 	static final int MAX_SLEEP_TIME = 200;
 	
-	public PrioritizedTicker(Executor executor, int portNumber) {
+	public PrioritizedTicker(Executor executor) {
 		this.executor = executor;
 		timedJobsByTime = new TreeMap<Long, Object>();
 		timedJobsQueued = new HashMap<Job, Long>();
-		myThread = new NativeThread(this, "Ticker thread for " + portNumber, NativeThread.MAX_PRIORITY, false);
-		myThread.setDaemon(true);
 	}
 	
-	public void start() {
+	public void start(int portNumber) {
 		Logger.normal(this, "Starting Ticker");
 		System.out.println("Starting Ticker");
+		NativeThread myThread = new NativeThread(this, "Ticker thread for " + portNumber, 
+		        NativeThread.MAX_PRIORITY, false);
+		myThread.setDaemon(true);
 		myThread.start();
 	}
 

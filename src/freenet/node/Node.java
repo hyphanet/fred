@@ -1498,7 +1498,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
 		ps = new PacketSender(this);
-		ticker = new PrioritizedTicker(executor, getDarknetPortNumber());
+		ticker = new PrioritizedTicker(executor);
 		if(executor instanceof PooledExecutor)
 			((PooledExecutor)executor).setTicker(ticker);
 
@@ -3214,7 +3214,7 @@ public class Node implements TimeSkewDetectorCallback {
 			opennet.start();
 		if(enableTransportLayer)
 		    ps.start(nodeStats);
-		ticker.start();
+		ticker.start(getDarknetPortNumber());
 		scheduleVersionTransition();
 		if(enableTransportLayer)
 		    usm.start(ticker);
