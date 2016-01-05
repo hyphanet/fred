@@ -296,11 +296,12 @@ public class PacketSender implements Runnable {
 				} else {
 					nextActionTime = Math.min(nextActionTime, pn.timeCheckForLostPackets());
 				}
-			} else
+			} else {
 				// Not connected
 
 				if(pn.noContactDetails())
 					pn.startARKFetcher();
+			}
 
 			long handshakeTime = pn.timeSendHandshake(now);
 			if(handshakeTime != Long.MAX_VALUE) {
