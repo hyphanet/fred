@@ -23,6 +23,7 @@ import freenet.keys.InsertableClientSSK;
 import freenet.keys.Key;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.SSKEncodeException;
+import freenet.node.BypassMessageQueue;
 import freenet.node.FSParseException;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
@@ -30,6 +31,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.node.NodeStarter.TestingVMBypass;
+import freenet.node.PeerNode;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
@@ -132,6 +134,19 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i].start(false);
             System.err.println("Started node "+i+"/"+nodes.length);
+        }
+        
+        if(NodeStarter.isMessageQueueBypassEnabled()) {
+            System.err.println("Starting fake connections...");
+            for(int i=0;i<NUMBER_OF_NODES;i++) {
+                Node n = nodes[i];
+                for(PeerNode pnSource : n.getPeerNodes()) {
+                    BypassMessageQueue queue = 
+                        (BypassMessageQueue) pnSource.getMessageQueue();
+                    queue.fakeConnect();
+                }
+                System.err.println("Started fake connections for node "+i+"/"+nodes.length);
+            }
         }
         
         waitForAllConnected(nodes);
