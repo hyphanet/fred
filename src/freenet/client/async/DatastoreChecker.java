@@ -217,10 +217,6 @@ public class DatastoreChecker implements PrioRunnable {
 		}
 	}
 
-	synchronized void wakeUp() {
-		notifyAll();
-	}
-
 	public void start(Executor executor, String name) {
 		executor.execute(this, name);
 	}
