@@ -2129,7 +2129,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+previousTracker+" unv "+unverifiedTracker);
 			timeLastSentPacket = now;
 			if(packetFormat == null) {
-				packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
+			    if(messageQueue.neverHandshake()) {
+			        packetFormat = new DummyPacketFormat();
+			    } else {
+			        packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
+			    }
 			}
 			// Completed setup counts as received data packet, for purposes of avoiding spurious disconnections.
 			timeLastReceivedPacket = now;
