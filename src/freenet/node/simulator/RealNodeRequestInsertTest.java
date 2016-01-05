@@ -37,6 +37,7 @@ import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.PrioritizedTicker;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucket;
@@ -119,8 +120,13 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
+        int tickerThreads = Runtime.getRuntime().availableProcessors();
+        PrioritizedTicker[] tickers = new PrioritizedTicker[tickerThreads];
+        for(int i=0;i<tickerThreads;i++)
+            tickers[i] = new PrioritizedTicker(executor);
         for(int i=0;i<NUMBER_OF_NODES;i++) {
-            TestNodeParameters params = getNodeParameters(i, name, nodesRandom, executor);
+            TestNodeParameters params = getNodeParameters(i, name, nodesRandom, executor, 
+                    tickers[i % tickerThreads]);
             nodes[i] = NodeStarter.createTestNode(params);
             tracker.add(nodes[i]);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
@@ -174,7 +180,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     }
 
     private static TestNodeParameters getNodeParameters(int i, String name, RandomSource nodesRandom,
-            Executor executor) {
+            Executor executor, PrioritizedTicker ticker) {
         TestNodeParameters params = new TestNodeParameters();
         params.port = DARKNET_PORT_BASE+i;
         params.baseDirectory = new File(name);
@@ -183,6 +189,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         params.dropProb = PACKET_DROP;
         params.random = new DummyRandomSource(nodesRandom.nextLong());
         params.executor = executor;
+        params.ticker = ticker;
         params.threadLimit = 500*NUMBER_OF_NODES;
         params.storeSize = 256*1024;
         params.ramStore = true;
