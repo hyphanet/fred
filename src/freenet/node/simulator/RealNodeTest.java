@@ -75,6 +75,7 @@ public class RealNodeTest {
 			}
 		}
 		for (int i=0; i<nodes.length; i++) {
+		    System.err.println("Connecting node "+i+" of "+nodes.length);
 			Node a = nodes[i];
 			// Normalise the probabilities
 			double norm = 0.0;
