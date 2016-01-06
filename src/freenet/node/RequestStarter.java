@@ -79,11 +79,17 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	private final boolean isInsert;
 	private final boolean isSSK;
 	final boolean realTime;
+	/** True if lazy start is enabled */
+	final boolean lazyStart;
+	/** True if the request starter loop is running. False if it is not, or is exiting. */
+	private boolean running;
+	/** If lazyStart is true, we may have chosen a request already before starting */
+	private ChosenBlock chosenRequest;
 	
 	static final int MAX_WAITING_FOR_SLOTS = 50;
 	
 	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
-			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK, boolean realTime) {
+			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK, boolean realTime, boolean lazyStart) {
 		this.core = node;
 		this.stats = core.nodeStats;
 		this.throttle = throttle;
@@ -95,6 +101,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		this.isInsert = isInsert;
 		this.isSSK = isSSK;
 		this.realTime = realTime;
+		this.lazyStart = lazyStart;
 	}
 
 	void setScheduler(RequestScheduler sched) {
@@ -102,6 +109,24 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 	
 	void start() {
+        synchronized(this) {
+            if(running) return;
+            running = true;
+        }
+        if(lazyStart) {
+            // Is there a request to start?
+            chosenRequest = sched.grabRequest();
+            if(chosenRequest == null) {
+                synchronized(this) {
+                    running = false;
+                    return;
+                }
+            }
+        }
+	    innerStart();
+	}
+	
+	void innerStart() {
 		core.getExecutor().execute(this, name);
 	}
 	
@@ -113,7 +138,15 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 	
 	void realRun() {
-		ChosenBlock req = null;
+		ChosenBlock req;
+		if(lazyStart) {
+		    synchronized(this) {
+		        req = chosenRequest;
+		        chosenRequest = null;
+		    }
+		} else {
+		    req = null;
+		}
 		// The last time at which we sent a request or decided not to
 		long cycleTime = System.currentTimeMillis();
 		while(true) {
@@ -198,6 +231,10 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				synchronized(this) {
 					req = sched.grabRequest();
 					if(req == null) {
+					    if(lazyStart) {
+					        running = false;
+					        return;
+					    }
 						try {
 							wait(SECONDS.toMillis(1)); // this can happen when most but not all stuff is already running but there is still stuff to fetch, so don't wait *too* long.
 							// FIXME increase when we can be *sure* there is nothing left in the queue (especially for transient requests).
@@ -284,8 +321,14 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	 * if the RequestStarter lock is held we will get a deadlock. */
 	public void wakeUp() {
 		synchronized(this) {
-			notifyAll();
+		    if(running) {
+		        notifyAll();
+		        return;
+		    } else {
+		        running = true;
+		    }
 		}
+		innerStart();
 	}
 
 	/** Can this item be excluded, based on e.g. already running requests?
