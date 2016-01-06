@@ -3211,15 +3211,15 @@ public class Node implements TimeSkewDetectorCallback {
 		uptime.start();
 		failureTable.start();
 
-		darknetCrypto.start();
+		if(enableTransportLayer)
+		    darknetCrypto.start(); // Starts socket etc
 		if(opennet != null)
 			opennet.start();
 		if(enableTransportLayer)
 		    ps.start(nodeStats);
 		ticker.start(getDarknetPortNumber());
 		scheduleVersionTransition();
-		if(enableTransportLayer)
-		    usm.start(ticker);
+		usm.start(ticker);
 
 		if(isUsingWrapper()) {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
