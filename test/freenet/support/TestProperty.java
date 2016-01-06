@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import org.junit.Test;
+
 /**
 ** Unified class for getting java properties to control unit test behaviour.
 **
@@ -10,10 +12,17 @@ package freenet.support;
 */
 final public class TestProperty {
 
-	private TestProperty() { }
+	public TestProperty() { }
 
 	final public static boolean BENCHMARK = Boolean.getBoolean("test.benchmark");
 	final public static boolean VERBOSE = Boolean.getBoolean("test.verbose");
 	final public static boolean EXTENSIVE = Boolean.getBoolean("test.extensive");
 
+	/** Useful to check whether things such as Travis CI properly pass properties */
+	@Test
+	public void printProperties() {
+		System.out.println("test.benchmark=" + BENCHMARK);
+		System.out.println("test.verbose=" + VERBOSE);
+		System.out.println("test.extensive=" + EXTENSIVE);
+	}
 }
