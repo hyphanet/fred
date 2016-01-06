@@ -3196,7 +3196,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void start(boolean noSwaps) throws NodeInitException {
-	    boolean enableTransportLayer = !NodeStarter.isMessageQueueBypassEnabled();
+	    boolean enableTransportLayer = 
+	        !(NodeStarter.isTestingVM() && NodeStarter.isMessageQueueBypassEnabled());
 		
 		// IMPORTANT: Read the peers only after we have finished initializing Node.
 		// Peer constructors are complex and can call methods on Node.
