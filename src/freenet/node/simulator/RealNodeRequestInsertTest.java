@@ -155,6 +155,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             }
         }
         
+        // Wait for all connected *and* average ping is acceptable i.e. CPU load is settled.
+        // For NONE, this means wait for connection setup to finish.
         waitForAllConnected(nodes);
         
         if(BYPASS_TRANSPORT_LAYER == TestingVMBypass.NONE) {
