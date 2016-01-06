@@ -96,6 +96,7 @@ public class RequestStarterGroup {
                     }
 		    
 		});
+		this.lazyStart = schedulerConfig.getBoolean("lazyStart");
 		
 		throttleWindowCHK = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindowCHK"), node);
 		throttleWindowSSK = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindowSSK"), node);
