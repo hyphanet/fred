@@ -3204,7 +3204,8 @@ public class Node implements TimeSkewDetectorCallback {
 		peers.updatePMUserAlert();
 		
 		dispatcher.start(nodeStats); // must be before usm
-		dnsr.start();
+		if(enableTransportLayer)
+		    dnsr.start();
 		peers.start(); // must be before usm
 		nodeStats.start();
 		uptime.start();
