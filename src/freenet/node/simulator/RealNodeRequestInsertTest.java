@@ -106,9 +106,10 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         }
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        String logDetails = "freenet.node.Request:MINOR,freenet.node.CHK:MINOR,freenet.node.SSK:MINOR," +
-        		"freenet.io.comm.MessageCore:MINOR,freenet.node.Peer:MINOR,freenet.node.Node:MINOR";
-        NodeStarter.globalTestInit(new File(name), false, LogLevel.NORMAL, logDetails, true, 
+        //String logDetails = "freenet.node.Request:MINOR,freenet.node.CHK:MINOR,freenet.node.SSK:MINOR," +
+        //		"freenet.io.comm.MessageCore:MINOR,freenet.node.Peer:MINOR,freenet.node.Node:MINOR";
+        String logDetails = "";
+        NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, logDetails, true, 
                 BYPASS_TRANSPORT_LAYER, null);
         System.out.println("Insert/retrieve test");
         System.out.println();
