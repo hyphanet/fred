@@ -603,6 +603,7 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.respondLocation", true);
 		configFS.put("node.respondStoreSize", true);
 		configFS.put("node.respondUptime", true);
+        configFS.put("node.scheduler.lazyStart", true);
 
 		PersistentConfig config = new PersistentConfig(configFS);
 
