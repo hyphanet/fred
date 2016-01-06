@@ -115,11 +115,14 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
         }
         if(lazyStart) {
             // Is there a request to start?
-            chosenRequest = sched.grabRequest();
-            if(chosenRequest == null) {
-                synchronized(this) {
+            ChosenBlock req = sched.grabRequest();
+            synchronized(this) {
+                if(req == null) {
+                    // Don't start.
                     running = false;
                     return;
+                } else {
+                    chosenRequest = req;
                 }
             }
         }
