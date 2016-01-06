@@ -147,7 +147,7 @@ public class DatastoreChecker implements PrioRunnable {
 				waited = true;
 				try {
 					// Wait for anything.
-					wait(SECONDS.toMillis(100));
+					wait();
 				} catch (InterruptedException e) {
 					// Ok
 				}
