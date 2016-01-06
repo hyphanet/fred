@@ -157,7 +157,10 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         
         waitForAllConnected(nodes);
         
-        waitForPingAverage(0.5, nodes, new DummyRandomSource(3143), MAX_PINGS, 1000);
+        if(BYPASS_TRANSPORT_LAYER == TestingVMBypass.NONE) {
+            // Wait until we are sure it stabilises.
+            waitForPingAverage(0.5, nodes, new DummyRandomSource(3143), MAX_PINGS, 1000);
+        }
         
         random = new DummyRandomSource(3144);
         
