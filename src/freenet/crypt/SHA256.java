@@ -35,6 +35,7 @@ package freenet.crypt;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.SoftReference;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -68,7 +69,7 @@ public class SHA256 {
 	private static final int HASH_SIZE = 32;
 
 	private static final int MESSAGE_DIGESTS_TO_CACHE = 16;
-	private static final ArrayList<MessageDigest> digests = new ArrayList<MessageDigest>();
+	private static final ArrayList<SoftReference<MessageDigest>> digests = new ArrayList<SoftReference<MessageDigest>>();
 
 	/**
 	 * It won't reset the Message Digest for you!
@@ -101,9 +102,9 @@ public class SHA256 {
 		try {
 			MessageDigest md = null;
 			synchronized(digests) {
-				int x = digests.size();
-				if(x == 0) md = null;
-				else md = digests.remove(x-1);
+				while (digests.size() > 0 && md == null) {
+					md = digests.remove(0).get();
+				}
 			}
 			if(md == null)
 				md = MessageDigest.getInstance("SHA-256", mdProvider);
@@ -135,15 +136,18 @@ public class SHA256 {
 				if(logMINOR) Logger.normal(SHA256.class, "Throwing away a SHA256 MessageDigest ("+mdPoolSize+'>'+MESSAGE_DIGESTS_TO_CACHE+')');
 				return;
 			}
-			digests.add(md256);
+			digests.add(new SoftReference<MessageDigest>(md256));
 		}
 	}
 
 	public static byte[] digest(byte[] data) {
-		MessageDigest md = getMessageDigest();
-		byte[] hash = md.digest(data);
-		returnMessageDigest(md);
-		return hash;
+		MessageDigest md = null;
+		try {
+			md = getMessageDigest();
+			return md.digest(data);
+		} finally {
+			returnMessageDigest(md);
+		}
 	}
 
 	public static int getDigestLength() {
