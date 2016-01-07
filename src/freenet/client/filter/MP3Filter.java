@@ -119,7 +119,10 @@ public class MP3Filter implements ContentDataFilter {
 					continue; // Not valid
 				}
 				byte samplerateIndex = (byte) ((frameHeader & 0x00000c00) >>> 10); //2 bits
-				if(samplerateIndex == 3) continue; // Not valid
+				if (samplerateIndex == 3) {
+					foundStream = false;
+					continue; // Not valid
+				}
 				boolean paddingBit = ((frameHeader & 0x00000200) >>> 9) == 1 ? true : false;
 				// FIXME can we do anything with these?
 //				boolean privateBit = ((frameHeader & 0x00000100) >>> 8) == 1 ? true : false;
