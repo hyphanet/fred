@@ -170,6 +170,29 @@ public class MP3Filter implements ContentDataFilter {
 					Logger.normal(this, "Lost sync for "+countLostSyncBytes+" bytes");
 				countLostSyncBytes = 0;
 				frameHeader = in.readInt();
+			} else if (!foundStream && (frameHeader & 0xffffff00) == 0x49443300) {
+				// This is an ID3v2 header, see http://id3.org/id3v2.3.0#ID3v2_header
+				// Skip minor version, flags
+				in.skip(2);
+				// ID3 tag size
+				byte[] encodedSize = new byte[4];
+				in.readFully(encodedSize);
+				int size = 0;
+				size |= (encodedSize[0] & 0x7F) << 21;
+				size |= (encodedSize[1] & 0x7F) << 14;
+				size |= (encodedSize[2] & 0x7F) << 7;
+				size |= (encodedSize[3] & 0x7F);
+				in.skip(size);
+				Logger.normal(this, "Skipped " + size + " bytes of ID3v2 data");
+				frameHeader = in.readInt();
+				foundStream = (frameHeader & 0xffe00000) == 0xffe00000;
+			} else if (!foundStream && (frameHeader & 0xffffff00) == 0x54414700) {
+				// This is an ID3v1 header
+				// ID3v1 is of fixed length (128 bytes), from which we have already read the first 4
+				in.skip(124);
+				Logger.normal(this, "Skipped an ID3v1 TAG");
+				frameHeader = in.readInt();
+				foundStream = (frameHeader & 0xffe00000) == 0xffe00000;
 			} else {
 				if(foundFrames != 0)
 					Logger.normal(this, "Series of frames: "+foundFrames);
