@@ -129,7 +129,7 @@ public class MP3Filter implements ContentDataFilter {
 				 * two bits to false. */
 //				boolean copyright = ((frameHeader & 0x00000008) >>> 3) == 1 ? true : false;
 //				boolean original = ((frameHeader & 0x00000004) >>> 2) == 1 ? true : false;
-				byte emphasis = (byte) ((frameHeader & 0x00000002));
+				byte emphasis = (byte) ((frameHeader & 0x00000003));
 				if(emphasis == 2) {
 					foundStream = false;
 					continue; // Not valid
