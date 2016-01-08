@@ -34,8 +34,7 @@ public enum TrafficClass {
     value = tc;
   }
 
-  public static TrafficClass getDefault()
-  {
+  public static TrafficClass getDefault() {
     // That's high-throughput, high drop probability
     return TrafficClass.CS1;
   }
