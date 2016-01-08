@@ -39,7 +39,6 @@ import java.lang.ref.SoftReference;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
-import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -88,16 +87,13 @@ public class SHA256 {
 	public static MessageDigest getMessageDigest() {
 		try {
 			SoftReference<MessageDigest> item = null;
-			try {
-				while (item == null) {
-					item = digests.remove();
-					MessageDigest md = item.get();
-					if (md != null)
-						return md;
+			while (((item = digests.poll()) != null)) {
+				MessageDigest md = item.get();
+				if (md != null) {
+					return md;
 				}
-			} catch (NoSuchElementException e) {
-				return MessageDigest.getInstance("SHA-256", mdProvider);
 			}
+			return MessageDigest.getInstance("SHA-256", mdProvider);
 		} catch(NoSuchAlgorithmException e2) {
 			//TODO: maybe we should point to a HOWTO for freejvms
 			Logger.error(Node.class, "Check your JVM settings especially the JCE!" + e2);
