@@ -30,6 +30,7 @@ public enum TrafficClass {
   CS7(0xE0);
 
   public final int value;
+
   TrafficClass(int tc) {
     value = tc;
   }
@@ -47,10 +48,8 @@ public enum TrafficClass {
       // it's fine; we might have a name here
     }
 
-    for(TrafficClass t : TrafficClass.values()) {
-      if(t.toString().equalsIgnoreCase(tcName) ||
-         t.value == tcParsed)
-      {
+    for (TrafficClass t : TrafficClass.values()) {
+      if (t.toString().equalsIgnoreCase(tcName) || t.value == tcParsed) {
         return t;
       }
     }
