@@ -1335,7 +1335,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 			 @Override
 			 public void set(String tcName) throws InvalidConfigValueException {
-				 trafficClass = TrafficClass.fromNameOrValue(tcName);
+				 try {
+					 trafficClass = TrafficClass.fromNameOrValue(tcName);
+				 } catch (IllegalArgumentException e) {
+					 throw new InvalidConfigValueException(e);
+				 }
 			 }
 
 			 @Override
@@ -1349,7 +1353,13 @@ public class Node implements TimeSkewDetectorCallback {
 		 nodeConfig.register("trafficClass", TrafficClass.getDefault().name(), sortOrder++, true, false,
 				     "Node.trafficClass", "Node.trafficClassLong",
 				     new TrafficClassCallback());
-		 trafficClass = TrafficClass.fromNameOrValue(nodeConfig.getString("trafficClass"));
+		 String trafficClassValue = nodeConfig.getString("trafficClass");
+		 try {
+			 trafficClass = TrafficClass.fromNameOrValue(trafficClassValue);
+		 } catch (IllegalArgumentException e) {
+			 Logger.error(this, "Invalid trafficClass:"+trafficClassValue+" resetting the value to default.", e);
+			 trafficClass = TrafficClass.getDefault();
+		 }
 
 		// FIXME maybe these should persist? They need to be private.
 		decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;

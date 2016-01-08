@@ -53,6 +53,6 @@ public enum TrafficClass {
         return t;
       }
     }
-    return getDefault();
+    throw new IllegalArgumentException();
   }
 }
