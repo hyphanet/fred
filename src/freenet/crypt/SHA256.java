@@ -39,7 +39,9 @@ import java.lang.ref.SoftReference;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
-import java.util.ArrayList;
+import java.util.NoSuchElementException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -54,7 +56,7 @@ import freenet.support.io.Closer;
 public class SHA256 {
 	/** Size (in bytes) of this hash */
 	private static final int HASH_SIZE = 32;
-	private static final ArrayList<SoftReference<MessageDigest>> digests = new ArrayList<>();
+	private static final Queue<SoftReference<MessageDigest>> digests = new ConcurrentLinkedQueue<>();
 
 	/**
 	 * It won't reset the Message Digest for you!
@@ -85,15 +87,17 @@ public class SHA256 {
 	 */
 	public static MessageDigest getMessageDigest() {
 		try {
-			MessageDigest md = null;
-			synchronized(digests) {
-				while (digests.size() > 0 && md == null) {
-					md = digests.remove(0).get();
+			SoftReference<MessageDigest> item = null;
+			try {
+				while (item == null) {
+					item = digests.remove();
+					MessageDigest md = item.get();
+					if (md != null)
+						return md;
 				}
+			} catch (NoSuchElementException e) {
+				return MessageDigest.getInstance("SHA-256", mdProvider);
 			}
-			if(md == null)
-				md = MessageDigest.getInstance("SHA-256", mdProvider);
-			return md;
 		} catch(NoSuchAlgorithmException e2) {
 			//TODO: maybe we should point to a HOWTO for freejvms
 			Logger.error(Node.class, "Check your JVM settings especially the JCE!" + e2);
@@ -115,9 +119,7 @@ public class SHA256 {
 		if(!(algo.equals("SHA-256") || algo.equals("SHA256")))
 			throw new IllegalArgumentException("Should be SHA-256 but is " + algo);
 		md256.reset();
-		synchronized (digests) {
-			digests.add(new SoftReference<>(md256));
-		}
+		digests.add(new SoftReference<>(md256));
 	}
 
 	public static byte[] digest(byte[] data) {
