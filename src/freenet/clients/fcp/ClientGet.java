@@ -294,11 +294,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(client != null)
 			assert(this.persistence == client.persistence);
 		if(persistence != Persistence.CONNECTION)
-			try {
-				client.register(this);
-			} catch (IdentifierCollisionException e) {
-				throw e;
-			}
+			client.register(this);
 			if(persistence != Persistence.CONNECTION && !noTags) {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);

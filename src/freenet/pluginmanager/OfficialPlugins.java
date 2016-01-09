@@ -50,8 +50,8 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@Zgib8xrGxcEuix7AVB4eajton1FpNHbIJeQZgEbHMNU,BQekU261VLSDUBQPOHSMKUF5qxY1v0zjXa33RyoEbYk,AAMC--8/JSTUN.jar");
 			addPlugin("KeyUtils")
 					.inGroup("technical")
-					.minimumVersion(5025)
-					.loadedFrom("CHK@29bfpHzev4IgtHQX5Gjkpxx~N3FRHyQMNLJCYY9kRso,tUIPly-hkmrIcFF0n4xmz4YWvFIq1HbFsjRJZqUqX7s,AAMC--8/KeyUtils-v5025.jar")
+					.minimumVersion(5026)
+					.loadedFrom("CHK@VGVmYp8qGseh2S7irYSDS7f6Goy0Z7rZcOc-iiQVPXg,Q4VeVf0fhdfejLqXrSYY5TK76f37D34Ly3Npv5X1GMA,AAMC--8/KeyUtils-v5026.jar")
 					.advanced();
 			addPlugin("MDNSDiscovery")
 					.inGroup("connectivity")
@@ -74,10 +74,10 @@ public class OfficialPlugins {
 			addPlugin("UPnP")
 					.inGroup("connectivity")
 					.essential()
-                    .recommendedVersion(10006)
+                    .recommendedVersion(10007)
 					.minimumVersion(10003)
 					.loadedFrom(
-                        "CHK@ICSu1tgnNxJ0bApWkL-fQFswbfi9KPnmWI3Is4eq0iw,Sj1N3zdDHBbL3Uc3~eY4elqWwSP7IR1uHrKVR2-nA0s,AAMC--8/UPnP-10006.jar");
+                        "CHK@ZiX8yeMHTUtNfJAgxpwH~jLRnnbb41BKEkAxOD~33tY,aBTvD3IoPKPLjnHOCNQ4-iRwqVED5kHgkmD4UhGdITk,AAMC--8/UPnP-10007.jar");
 			addPlugin("XMLLibrarian")
 					.inGroup("index")
 					.minimumVersion(26)

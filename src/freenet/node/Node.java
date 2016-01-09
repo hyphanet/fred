@@ -62,7 +62,6 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DiffieHellman;
 import freenet.crypt.ECDH;
 import freenet.crypt.MasterSecret;
 import freenet.crypt.PersistentRandomSource;
@@ -110,8 +109,6 @@ import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.NotAvailNodeStoreStats;
 import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
-import freenet.node.updater.UpdateDeployContext;
-import freenet.node.updater.UpdateDeployContext.CHANGED;
 import freenet.node.useralerts.JVMVersionAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
@@ -121,7 +118,6 @@ import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginDownLoaderOfficialHTTPS;
 import freenet.pluginmanager.PluginManager;
-import freenet.pluginmanager.PluginStore;
 import freenet.store.BlockMetadata;
 import freenet.store.CHKStore;
 import freenet.store.FreenetStore;
@@ -1122,7 +1118,6 @@ public class Node implements TimeSkewDetectorCallback {
 			entropyGatheringThread.start();
 			// Can block.
 			this.random = new Yarrow(seed);
-			DiffieHellman.init(random);
 			// http://bugs.sun.com/view_bug.do;jsessionid=ff625daf459fdffffffffcd54f1c775299e0?bug_id=4705093
 			// This might block on /dev/random while doing new SecureRandom(). Once it's created, it won't block.
 			ECDH.blockingInit();
@@ -3626,9 +3621,9 @@ public class Node implements TimeSkewDetectorCallback {
 					block = store.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR, ignoreOldBlocks, meta);
 			}
 			if(block != null) {
-			nodeStats.avgStoreSSKSuccess.report(loc);
-			if (dist > nodeStats.furthestStoreSSKSuccess)
-				nodeStats.furthestStoreSSKSuccess=dist;
+				nodeStats.avgStoreSSKSuccess.report(loc);
+				if (dist > nodeStats.furthestStoreSSKSuccess)
+					nodeStats.furthestStoreSSKSuccess=dist;
 				if(logDEBUG) Logger.debug(this, "Found key "+key+" in store");
 				return block;
 			}
@@ -3639,11 +3634,11 @@ public class Node implements TimeSkewDetectorCallback {
 					block = store.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR, ignoreOldBlocks, meta);
 			}
 			if (block != null) {
-			nodeStats.avgCacheSSKSuccess.report(loc);
-			if (dist > nodeStats.furthestCacheSSKSuccess)
-				nodeStats.furthestCacheSSKSuccess=dist;
+				nodeStats.avgCacheSSKSuccess.report(loc);
+				if (dist > nodeStats.furthestCacheSSKSuccess)
+					nodeStats.furthestCacheSSKSuccess=dist;
+				if(logDEBUG) Logger.debug(this, "Found key "+key+" in cache");
 			}
-			if(logDEBUG) Logger.debug(this, "Found key "+key+" in cache");
 			return block;
 		} catch (IOException e) {
 			Logger.error(this, "Cannot fetch data: "+e, e);
@@ -4424,7 +4419,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public void connectToSeednode(SeedServerTestPeerNode node) throws OpennetDisabledException, FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		peers.addPeer(node,false,false);
 	}
-	public void connect(Node node, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public void connect(Node node, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler, trust, visibility);
 	}
 
@@ -4476,16 +4471,16 @@ public class Node implements TimeSkewDetectorCallback {
 	public ProgramDirectory pluginDir() { return pluginDir; }
 
 
-	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		return new DarknetPeerNode(fs, this, darknetCrypto, false, trust, visibility);
 	}
 
-	public OpennetPeerNode createNewOpennetNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {
+	public OpennetPeerNode createNewOpennetNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
 		return new OpennetPeerNode(fs, this, opennet.crypto, opennet, false);
 	}
 
-	public SeedServerTestPeerNode createNewSeedServerTestPeerNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {
+	public SeedServerTestPeerNode createNewSeedServerTestPeerNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
 		return new SeedServerTestPeerNode(fs, this, opennet.crypto, true);
 	}
@@ -4497,11 +4492,11 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public byte[] getOpennetPubKeyHash() {
-		return opennet.crypto.pubKeyHash;
+		return opennet.crypto.ecdsaPubKeyHash;
 	}
 
 	public byte[] getDarknetPubKeyHash() {
-		return darknetCrypto.pubKeyHash;
+		return darknetCrypto.ecdsaPubKeyHash;
 	}
 
 	public synchronized boolean isOpennetEnabled() {

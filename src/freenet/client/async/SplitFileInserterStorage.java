@@ -1107,9 +1107,9 @@ public class SplitFileInserterStorage {
         }
         for(SplitFileInserterSegmentStorage segment : segments)
             segment.checkKeys();
-        Logger.normal(this, "Starting splitfile, "+countEncodedSegments()+"/"+segments.length+" segments encoded");
+        Logger.normal(this, "Starting splitfile, "+countEncodedSegments()+"/"+segments.length+" segments encoded on "+this);
         if(crossSegments != null)
-            Logger.normal(this, "Starting splitfile, "+countEncodedCrossSegments()+"/"+crossSegments.length+" cross-segments encoded");
+            Logger.normal(this, "Starting splitfile, "+countEncodedCrossSegments()+"/"+crossSegments.length+" cross-segments encoded on "+this);
         if(startSegments) {
             startSegmentEncode();
         } else {

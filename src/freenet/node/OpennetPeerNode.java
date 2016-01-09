@@ -1,8 +1,5 @@
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.OpennetManager.ConnectionType;
@@ -12,6 +9,9 @@ import freenet.node.updater.UpdateOverMandatoryManager;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 public class OpennetPeerNode extends PeerNode {
 
 	final OpennetManager opennet;
@@ -19,7 +19,7 @@ public class OpennetPeerNode extends PeerNode {
 	// Not persisted across restart, since after restart grace periods don't apply anyway (except disconnection, which is really separate anyway).
 	private ConnectionType opennetNodeAddedReason;
 	
-	public OpennetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public OpennetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		super(fs, node2, crypto, fromLocal);
 
 		if (fromLocal) {
@@ -148,11 +148,6 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	public boolean recordStatus() {
 		return true;
-	}
-
-	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return false;
 	}
  
 	@Override

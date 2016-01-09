@@ -179,14 +179,24 @@ public abstract class FCPMessage {
 	 * @return The new FCP message
 	 */
 	public static FCPMessage withListRequestIdentifier(final FCPMessage fcpMessage, final String listRequestIdentifier) {
-		if (listRequestIdentifier == null) {
+		if ((listRequestIdentifier == null) || (fcpMessage == null)) {
 			return fcpMessage;
 		}
 		return new FCPMessage() {
 			@Override
+			public void send(OutputStream os) throws IOException {
+				fcpMessage.send(os);
+			}
+
+			@Override
+			String getEndString() {
+				return fcpMessage.getEndString();
+			}
+
+			@Override
 			public SimpleFieldSet getFieldSet() {
 				SimpleFieldSet fieldSet = fcpMessage.getFieldSet();
-				fieldSet.putSingle("ListRequestIdentifier", listRequestIdentifier);
+				fieldSet.putOverwrite("ListRequestIdentifier", listRequestIdentifier);
 				return fieldSet;
 			}
 

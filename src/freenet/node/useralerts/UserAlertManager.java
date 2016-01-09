@@ -158,7 +158,10 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			int classHash1 = a1.getClass().hashCode();
 			if(classHash0 > classHash1) return 1;
 			else if(classHash0 < classHash1) return -1;
-			// Then by object hashCode
+			// Then go by time (newest first)
+			if(a0.getUpdatedTime() < a1.getUpdatedTime()) return 1;
+			else if(a0.getUpdatedTime() > a1.getUpdatedTime()) return -1;
+			// And finally by object hashCode
 			int hash0 = a0.hashCode();
 			int hash1 = a1.hashCode();
 			if(hash0 > hash1) return 1;

@@ -397,8 +397,6 @@ final public class FileUtil {
 			while ((len = dis.read(buffer)) > 0) {
 				fos.write(buffer, 0, len);
 			}
-		} catch (IOException e) {
-			throw e;
 		} finally {
 			if(dis != null) dis.close();
 			if(fos != null) fos.close();

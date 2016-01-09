@@ -112,7 +112,7 @@ public class RealCompressor {
     public static class CompressorThreadFactory implements ThreadFactory {
         @Override
         public Thread newThread(Runnable r) {
-            return new NativeThread(r, "Compressor thread", NativeThread.MIN_PRIORITY, false);
+            return new NativeThread(r, "Compressor thread", NativeThread.MIN_PRIORITY, true);
         }
     }
 }

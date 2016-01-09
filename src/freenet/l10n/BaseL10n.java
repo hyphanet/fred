@@ -8,9 +8,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.MissingResourceException;
+import java.util.NoSuchElementException;
 
 import freenet.clients.http.TranslationToadlet;
 import freenet.support.HTMLEncoder;
@@ -51,7 +53,7 @@ public class BaseL10n {
 		FINNISH("fi", "Suomi", "fin", new String[] { "WINDOWS040B"}),
 		FRENCH("fr", "Français", "fra", new String[] { "WINDOWS040C", "WINDOWS080C", "WINDOWS0C0C", "WINDOWS100C", "WINDOWS140C", "WINDOWS180C"}),
 		ITALIAN("it", "Italiano", "ita", new String[] { "WINDOWS0410", "WINDOWS0810"}),
-		NORWEGIAN("no", "Norsk", "nor", new String[] { "WINDOWS0414", "WINDOWS0814"}),
+		NORWEGIAN("nb-no", "Bokmål", "nob", new String[] { "WINDOWS0414", "WINDOWS0814"}),
 		POLISH("pl", "Polski", "pol", new String[] { "WINDOWS0415"}),
 		SWEDISH("sv", "Svenska", "swe", new String[] { "WINDOWS041D", "WINDOWS081D"}),
 		CHINESE("zh-cn", "中文(简体)", "chn", new String[] { "WINDOWS0804", "WINDOWS1004" }),
@@ -61,6 +63,7 @@ public class BaseL10n {
 		RUSSIAN("ru", "Русский", "rus", new String[] { "WINDOWS0419" }), // Just one variant for russian. Belorussian is separate, code page 423, speakers may or may not speak russian, I'm not including it.
 		JAPANESE("ja", "日本語", "jpn", new String[] { "WINDOWS0411" }),
 		BRAZILIAN_PORTUGUESE("pt-br", "Português do Brasil", "pt-br", new String[] { "WINDOWS0416" }),
+		GREEK("el", "Ελληνικά", "ell", new String[] { "WINDOWS0408" }),
 		UNLISTED("unlisted", "unlisted", "unlisted", new String[] {});
 		/** The identifier we use internally : MUST BE UNIQUE! */
 		public final String shortCode;
@@ -117,7 +120,68 @@ public class BaseL10n {
 			return ENGLISH;
 		}
 	}
-	
+    
+    /**
+     * State enum for {@link L10nStringIterator}. Declared here for
+     * {@link #getStrings(String, FallbackState)}.
+     */
+    private enum FallbackState {
+        CURRENT_LANG,
+        FALLBACK_LANG,
+        KEY,
+        END
+    }
+    
+    /**
+     * Iterator that returns the strings associated with a key in order of preference. First the
+     * value in the current language (if any), then the value in the fallback language (if any),
+     * and then just the key itself.
+     */
+    private class L10nStringIterator implements Iterator<String> {
+        private final String key;
+        private FallbackState state;
+        
+        public L10nStringIterator(String key, FallbackState state) {
+            this.key = key;
+            this.state = state;
+        }
+        
+        @Override
+        public boolean hasNext() {
+            return state != FallbackState.END;
+        }
+        
+        @Override
+        public String next() {
+            if (state == FallbackState.CURRENT_LANG) { 
+                state = FallbackState.FALLBACK_LANG;
+                String value = getString(key, true);
+                if (value != null) {
+                    return value;
+                }
+            }
+            if (state == FallbackState.FALLBACK_LANG) {
+                state = FallbackState.KEY;
+                if (getSelectedLanguage() != LANGUAGE.getDefault()) {
+                    String value = getFallbackString(key);
+                    if (value != null) {
+                        return value;
+                    }
+                }
+            }
+            if (state == FallbackState.KEY) {
+                state = FallbackState.END;
+                return key;
+            }
+            throw new NoSuchElementException();
+        }
+        
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+    
 	private LANGUAGE lang;
 	private String l10nFilesBasePath;
 	private String l10nFilesMask;
@@ -380,7 +444,7 @@ public class BaseL10n {
 	 * @return String
 	 */
 	public String getString(String key) {
-		return getString(key, false);
+        return getStrings(key).iterator().next();
 	}
 
 	/**
@@ -390,6 +454,10 @@ public class BaseL10n {
 	 * @return String
 	 */
 	public String getString(String key, boolean returnNullIfNotFound) {
+        if (!returnNullIfNotFound) {
+            return getString(key);
+        }
+        
 		String result = null;
 		if (this.translationOverride != null) {
 			result = this.translationOverride.get(key);
@@ -403,13 +471,31 @@ public class BaseL10n {
 			result = this.currentTranslation.get(key);
 		}
 
-		if (result != null) {
-			return result;
-		} else {
+        if (result == null) {
 			Logger.normal(this.getClass(), "The translation for " + key + " hasn't been found (" + this.getSelectedLanguage() + ")! please tell the maintainer.");
-			return (returnNullIfNotFound ? null : this.getDefaultString(key));
 		}
+        return result;
 	}
+    
+    /**
+     * Enumerate strings associated with a key in order of preference.
+     */
+    private Iterable<String> getStrings(final String key) {
+        return getStrings(key, FallbackState.CURRENT_LANG);
+    }
+    
+    /**
+     * Enumerate strings associated with a key in order of preference, starting with a specified
+     * one.
+     */
+    private Iterable<String> getStrings(final String key, final FallbackState initialState) {
+        return new Iterable<String>() {
+            @Override
+            public Iterator<String> iterator() {
+                return new L10nStringIterator(key, initialState);
+            }
+        };
+    }
 
 	/**
 	 * Get a localized string and put it in a HTMLNode for the translation page.
@@ -444,6 +530,22 @@ public class BaseL10n {
 
 		return translationField;
 	}
+    
+    /**
+     * Get the value for a key in the fallback translation, or null.
+     */
+    private String getFallbackString(String key) {
+        this.loadFallback();
+
+        String result = this.fallbackTranslation.get(key);
+
+        if (result == null) {
+            Logger.error(this.getClass(), "The default translation for " + key + " hasn't been found!");
+            System.err.println("The default translation for " + key + " hasn't been found!");
+            new Exception().printStackTrace();
+        }
+        return result;
+    }
 
 	/**
 	 * Get the default value for a key.
@@ -451,19 +553,7 @@ public class BaseL10n {
 	 * @return String
 	 */
 	public String getDefaultString(String key) {
-		String result = null;
-		this.loadFallback();
-
-		result = this.fallbackTranslation.get(key);
-
-
-		if (result != null) {
-			return result;
-		}
-		Logger.error(this.getClass(), "The default translation for " + key + " hasn't been found!");
-		System.err.println("The default translation for " + key + " hasn't been found!");
-		new Exception().printStackTrace();
-		return key;
+        return getStrings(key, FallbackState.FALLBACK_LANG).iterator().next();
 	}
 
 	/**
@@ -591,14 +681,54 @@ public class BaseL10n {
 	 * @param values For each entry in the previous array parameter, this array specifies the {@link HTMLNode} with which it shall be replaced. 
 	 */
 	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, HTMLNode[] values) {
-		String value = getString(key);
-		addL10nSubstitutionInner(node, key, value, patterns, values);
+        List<HTMLNode> newContent = getHTMLWithSubstitutions(key, patterns, values);
+        node.addChildren(newContent);
 	}
+    
+    /**
+     * Attempt to parse any substitution variables found in a l10n string. Intended for use in
+     * tests.
+     */
+    void attemptParse(String value) throws L10nParseException {
+        String[] patterns = new String[0];
+        HTMLNode[] values = new HTMLNode[0];
+        performHTMLSubstitutions(value, patterns, values);
+    }
+    
+    /**
+     * Look up a l10n string and replace substitution variables to generate a list of
+     * {@link HTMLNode}s.
+     */
+    private List<HTMLNode> getHTMLWithSubstitutions(String key, String[] patterns, HTMLNode[] values) {
+        for (String value : getStrings(key)) {
+            // catch errors caused by bad translation strings
+            try {
+                return performHTMLSubstitutions(value, patterns, values);
+            } catch (L10nParseException e) {
+                Logger.error(this, "Error in l10n value \""+value+"\" for "+key, e);
+            }
+        }
+        // this should never happen, because the last item from getStrings() will be the key itself
+        return Collections.singletonList(new HTMLNode("#"));
+    }
+    
+    /**
+     * Convert a string to a list of {@link HTMLNode}s, replacing substitution variables found in
+     * {@code patterns} with corresponding nodes from {@code values}.
+     */
+    private List<HTMLNode> performHTMLSubstitutions(String value, String[] patterns,
+            HTMLNode[] values) throws L10nParseException {
+        HTMLNode tempNode = new HTMLNode("#");
+        addHTMLSubstitutions(tempNode, value, patterns, values);
+        return tempNode.getChildren();
+    }
 
-	/**
-	 * @see #addL10nSubstitution(HTMLNode, String, String[], HTMLNode[])
-	 */
-	private void addL10nSubstitutionInner(HTMLNode node, String key, String value, String[] patterns, HTMLNode[] values) {
+    /**
+     * Adds a string to an {@link HTMLNode}, replacing substitution variables found in
+     * {@code patterns} with corresponding nodes from {@code values}.
+     */
+    private void addHTMLSubstitutions(HTMLNode node, String value,
+            String[] patterns, HTMLNode[] values) throws L10nParseException {
 		int x;
 		while(!value.equals("") && (x = value.indexOf("${")) != -1) {
 			String before = value.substring(0, x);
@@ -607,14 +737,12 @@ public class BaseL10n {
 			value = value.substring(x);
 			int y = value.indexOf('}');
 			if(y == -1) {
-				Logger.error(this, "Unclosed braces in l10n value \""+value+"\" for "+key);
-				return;
+                throw new L10nParseException("Unclosed braces");
 			}
 			String lookup = value.substring(2, y);
 			value = value.substring(y+1);
 			if(lookup.startsWith("/")) {
-				Logger.error(this, "Starts with / in "+key);
-				return;
+                throw new L10nParseException("Starts with /");
 			}
 			
 			HTMLNode subnode = null;
@@ -631,7 +759,7 @@ public class BaseL10n {
 			if(x == -1) {
 				// It goes up to the end of the tag. It has no contents.
 				if(subnode != null) {
-					node.addChild(subnode);
+                    node.addChild(subnode.clone());
 				}
 			} else {
 				// It has contents. Must recurse.
@@ -640,10 +768,10 @@ public class BaseL10n {
 				if(subnode != null) {
 					subnode = subnode.clone();
 					node.addChild(subnode);
-					addL10nSubstitutionInner(subnode, key, inner, patterns, values);
 				} else {
-					addL10nSubstitutionInner(node, key, inner, patterns, values);
+                    subnode = node;
 				}
+                addHTMLSubstitutions(subnode, inner, patterns, values);
 				value = rest;
 			}
 		}
