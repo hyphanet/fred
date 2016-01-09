@@ -1345,7 +1345,7 @@ public class Node implements TimeSkewDetectorCallback {
 			 @Override
 			 public String[] getPossibleValues() {
 				 ArrayList<String> array = new ArrayList<String>();
-				 for(TrafficClass tc : TrafficClass.values())
+				 for (TrafficClass tc : TrafficClass.values())
 					 array.add(tc.name());
 				 return array.toArray(new String[0]);
 			 }
