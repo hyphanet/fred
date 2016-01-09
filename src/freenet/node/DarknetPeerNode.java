@@ -97,7 +97,8 @@ public class DarknetPeerNode extends PeerNode {
 	private FRIEND_VISIBILITY ourVisibility;
 	private FRIEND_VISIBILITY theirVisibility;
 
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+	static { Logger.registerClass(DarknetPeerNode.class); }
 
 	public enum FRIEND_TRUST {
 		LOW,
@@ -162,8 +163,6 @@ public class DarknetPeerNode extends PeerNode {
 	 */
 	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		super(fs, node2, crypto, fromLocal);
-
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
 		String name = fs.get("myName");
 		if(name == null) throw new FSParseException("No name");
