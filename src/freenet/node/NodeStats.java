@@ -8,9 +8,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Set;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -808,11 +810,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			maxTransfersOutUpperLimit = getMaxTransfersUpperLimit(realTimeFlag, nonOverheadFraction);
 			maxTransfersOutLowerLimit = (int)Math.max(1,getLowerLimit(maxTransfersOutUpperLimit, peers));
-			maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(peer, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, runningLocal.expectedTransfersOutCHKSR + runningLocal.expectedTransfersOutSSKSR));
+			maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(peer == null, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, runningLocal.expectedTransfersOutCHKSR + runningLocal.expectedTransfersOutSSKSR));
 			maxTransfersOut = calculateMaxTransfersOut(peer, realTime, nonOverheadFraction, maxTransfersOutUpperLimit);
 			
-			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthUpperLimit - outputBandwidthLowerLimit, false, transfersPerInsert, realTimeFlag, peers, runningLocal.calculateSR(ignoreLocalVsRemote, false));
-			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthUpperLimit - inputBandwidthLowerLimit, true, transfersPerInsert, realTimeFlag, peers, runningLocal.calculateSR(ignoreLocalVsRemote, true));
+			outputBandwidthPeerLimit = getPeerLimit(peer == null, outputBandwidthUpperLimit - outputBandwidthLowerLimit, false, transfersPerInsert, realTimeFlag, peers, runningLocal.calculateSR(ignoreLocalVsRemote, false));
+			inputBandwidthPeerLimit = getPeerLimit(peer == null, inputBandwidthUpperLimit - inputBandwidthLowerLimit, true, transfersPerInsert, realTimeFlag, peers, runningLocal.calculateSR(ignoreLocalVsRemote, true));
 			
 			this.averageTransfersOutPerInsert = transfersPerInsert;
 			
@@ -887,7 +889,80 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 	}
 	
-	class RunningRequestsSnapshot {
+	/** Get a snapshot of the running requests for all peers.
+	 * @param realTimeFlag True for realtime requests, false for bulk requests.
+	 * @param transfersPerInsert Average number of transfers outwards caused by an insert.
+	 * @param ignoreLocalVsRemote If true, count imaginary transfers in the other direction for 
+	 * local requests.
+	 * @return A map containing a RunningRequestsSnapshot for every currently connected, routable 
+	 * peer, and one for our own requests under the null key. Every running request will be 
+	 * included (although the method is only atomic for each category e.g. CHK requests). If a 
+	 * request was sent by a peer and it then restarted/disconnected, but is now connected and 
+	 * routable, we will count it as SourceRestarted towards that peer. However if the peer did not 
+	 * reconnect, it will be counted as local (even though it could later be shifted back to that 
+	 * peer if it reconnects). Hence the size of the map will be the number of routable connected 
+	 * peers. */
+	private Map<PeerNode, RunningRequestsSnapshot> getAllPeerSnapshots(boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote) {
+		// NodeStats needs to include peers we have no requests from. So start with peers.
+		// FIXME LOCKING A slight inconsistency is possible here because tracker is not necessarily 
+		// consistent with PeerManager. However any nodes added should not have any requests 
+		// running, so this should be OK. Long-term, consider keeping the snapshots on the 
+		// PeerNode's, although that would need a separate lock.
+		Set<PeerNode> peersSet = peers.getConnectedPeers();
+		peersSet.add(null); // Include self.
+		Map<PeerNode, CountedRequests> countersMapCHK = new HashMap<PeerNode, CountedRequests>();
+		Map<PeerNode, CountedRequests> countersMapSSK = new HashMap<PeerNode, CountedRequests>();
+		Map<PeerNode, CountedRequests> countersMapCHKSR = new HashMap<PeerNode, CountedRequests>();
+		Map<PeerNode, CountedRequests> countersMapSSKSR = new HashMap<PeerNode, CountedRequests>();
+		RequestTracker tracker = node.tracker;
+		tracker.countAllRequestsByIncomingPeer(true, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapCHK, countersMapCHKSR);
+		tracker.countAllRequestsByIncomingPeer(true, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapSSK, countersMapSSKSR);
+		tracker.countAllRequestsByIncomingPeer(true, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapCHK, countersMapCHKSR);
+		tracker.countAllRequestsByIncomingPeer(true, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapSSK, countersMapSSKSR);
+		tracker.countAllRequestsByIncomingPeer(false, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapCHK, countersMapCHKSR);
+		tracker.countAllRequestsByIncomingPeer(false, true, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapSSK, countersMapSSKSR);
+		tracker.countAllRequestsByIncomingPeer(false, false, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapCHK, countersMapCHKSR);
+		tracker.countAllRequestsByIncomingPeer(false, true, true, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapSSK, countersMapSSKSR);
+		tracker.countAllRequestsByIncomingPeer(false, false, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapCHK, countersMapCHKSR);
+		tracker.countAllRequestsByIncomingPeer(false, true, false, true, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote, countersMapSSK, countersMapSSKSR);
+		Map<PeerNode, RunningRequestsSnapshot> ret = new HashMap<PeerNode, RunningRequestsSnapshot>();
+		
+		// Remove peernodes that are disconnected or not routable but are still request originators.
+		Set<PeerNode> peersDisconnectedOriginators = new HashSet<PeerNode>();
+		Map<PeerNode,CountedRequests>[] maps = (Map<PeerNode,CountedRequests>[])new Map[] { countersMapSSK, countersMapCHK, countersMapCHKSR, countersMapSSKSR };
+		for(Map<PeerNode,CountedRequests> m : maps) {
+			peersDisconnectedOriginators.addAll(m.keySet());
+		}
+		peersDisconnectedOriginators.removeAll(peersSet);
+		for(Map<PeerNode,CountedRequests> m : maps) {
+			CountedRequests mine = m.get(null);
+			if(mine == null) {
+				mine = new CountedRequests();
+				m.put(null, mine);
+			}
+			for(Map.Entry<PeerNode,CountedRequests> entry : m.entrySet()) {
+				if(entry.getKey() != null)
+					mine.add(entry.getValue());
+			}
+		}
+		
+		// Now convert the "official" peers, including self.
+		for(PeerNode p : peersSet) {
+			ret.put(p, new RunningRequestsSnapshot(countersMapCHK.get(p), countersMapSSK.get(p),
+					countersMapCHKSR.get(p), countersMapSSKSR.get(p), realTimeFlag, 
+					transfersPerInsert));
+		}
+		
+		return ret;
+	}
+	
+	/** Get a snapshot of the running requests for every peer, including those which are not currently
+	 * running any requests. Bulk requests only. */
+	public Map<PeerNode, RunningRequestsSnapshot> getAllPeerSnapshots() {
+		return getAllPeerSnapshots(false, outwardTransfersPerInsert(), ignoreLocalVsRemoteBandwidthLiability);
+	}
+	
+	public class RunningRequestsSnapshot {
 		
 		final int expectedTransfersOutCHK;
 		final int expectedTransfersInCHK;
@@ -1003,6 +1078,48 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				this.expectedTransfersOutSSKSR = 0;
 				this.totalRequestsSR = 0;
 			}
+		}
+		
+		private RunningRequestsSnapshot(CountedRequests countCHK, CountedRequests countSSK, 
+				CountedRequests countCHKSR, CountedRequests countSSKSR, boolean realTimeFlag, 
+				int transfersPerInsert) {
+			this.realTimeFlag = realTimeFlag;
+			this.averageTransfersPerInsert = transfersPerInsert;
+			if(countCHKSR != null) {
+				this.expectedTransfersInCHKSR = countCHKSR.expectedTransfersIn();
+				this.expectedTransfersOutCHKSR = countCHKSR.expectedTransfersOut();
+			} else {
+				expectedTransfersInCHKSR = 0;
+				expectedTransfersOutCHKSR = 0;
+			}
+			if(countSSKSR != null) {
+				this.expectedTransfersInSSKSR = countSSKSR.expectedTransfersIn();
+				this.expectedTransfersOutSSKSR = countSSKSR.expectedTransfersOut();
+			} else {
+				expectedTransfersInSSKSR = 0;
+				expectedTransfersOutSSKSR = 0;
+			}
+			this.totalRequestsSR = (countCHKSR == null ? 0 : countCHKSR.total()) + 
+				(countSSKSR == null ? 0 : countSSKSR.total());
+			if(countCHK != null) {
+				this.expectedTransfersInCHK = countCHK.expectedTransfersIn() - expectedTransfersInCHKSR;
+				this.expectedTransfersOutCHK = countCHK.expectedTransfersOut() - expectedTransfersOutCHKSR;
+			} else {
+				assert(countCHKSR == null);
+				expectedTransfersInCHK = 0;
+				expectedTransfersOutCHK = 0;
+			}
+			if(countSSK != null) {
+				this.expectedTransfersInSSK = countSSK.expectedTransfersIn() - expectedTransfersInSSKSR;
+				this.expectedTransfersOutSSK = countSSK.expectedTransfersOut() - expectedTransfersOutSSKSR;
+			} else {
+				assert(countSSKSR == null);
+				expectedTransfersInSSK = 0;
+				expectedTransfersOutSSK = 0;
+			}
+			this.totalRequests = ((countCHK == null ? 0 : countCHK.total()) + 
+					(countSSK == null ? 0 : countSSK.total())) - totalRequestsSR;
+			
 		}
 
 		public RunningRequestsSnapshot(PeerLoadStats stats) {
@@ -1257,7 +1374,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		int maxTransfersOutUpperLimit = getMaxTransfersUpperLimit(realTimeFlag, nonOverheadFraction);
 		int maxTransfersOutLowerLimit = (int)Math.max(1,getLowerLimit(maxTransfersOutUpperLimit, peers));
-		int maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(source, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, (peerRequestsSnapshot.expectedTransfersOutCHKSR + peerRequestsSnapshot.expectedTransfersOutSSKSR)));
+		int maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(source == null, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, (peerRequestsSnapshot.expectedTransfersOutCHKSR + peerRequestsSnapshot.expectedTransfersOutSSKSR)));
 		/** Per-peer limit based on current state of the connection. */
 		int maxOutputTransfers = this.calculateMaxTransfersOut(source, realTimeFlag, nonOverheadFraction, maxTransfersOutUpperLimit);
 		
@@ -1466,7 +1583,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		// Calculate the peer limit so the peer gets notified, even if we are going to ignore it.
 		
-		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputUpperLimit - bandwidthAvailableOutputLowerLimit, input, transfersPerInsert, realTimeFlag, peers, peerRequestsSnapshot.calculateSR(ignoreLocalVsRemoteBandwidthLiability, input));
+		double thisAllocation = getPeerLimit(source == null, bandwidthAvailableOutputUpperLimit - bandwidthAvailableOutputLowerLimit, input, transfersPerInsert, realTimeFlag, peers, peerRequestsSnapshot.calculateSR(ignoreLocalVsRemoteBandwidthLiability, input));
 		
 		if(SEND_LOAD_STATS_NOTICES && source != null) {
 			// FIXME tell local as well somehow?
@@ -1573,7 +1690,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * @param sourceRestarted 
 	 * @return
 	 */
-	private double getPeerLimit(PeerNode source, double totalGuaranteedBandwidth, boolean input, int transfersPerInsert, boolean realTimeFlag, int peers, double sourceRestarted) {
+	private double getPeerLimit(boolean local, double totalGuaranteedBandwidth, boolean input, int transfersPerInsert, boolean realTimeFlag, int peers, double sourceRestarted) {
 		
 		double thisAllocation;
 		
@@ -1584,7 +1701,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			double totalAllocation = totalGuaranteedBandwidth;
 			// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
 			double localAllocation = totalAllocation * 0.5;
-			if(source == null)
+			if(local)
 				thisAllocation = localAllocation;
 			else {
 				totalAllocation -= localAllocation;
@@ -3649,6 +3766,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return new PeerLoadStats(source, m);
 	}
 
+	/** Get the requests being sent to a given peer */
 	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode, int transfersPerInsert, boolean realTimeFlag) {
 		return new RunningRequestsSnapshot(node.tracker, peerNode, true, false, outwardTransfersPerInsert(), realTimeFlag);
 	}
@@ -3895,6 +4013,42 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		double nonOverheadFraction = getNonOverheadFraction(now);
 		double upperLimit = getOutputBandwidthUpperLimit(limit, nonOverheadFraction);
 		return usedBytes / upperLimit;
+	}
+
+	/** Get the maximum output bulk bandwidth liability limit for an ordinary peer (i.e. not for 
+	 * ourself, which might be treated differently), assuming there are no SourceRestarted 
+	 * requests. */
+	public double getMaxPeerLimit() {
+		int peerCount = peers.countConnectedPeers();
+		int transfersPerInsert = outwardTransfersPerInsert();
+		return getPeerLimit(false, getBandwidthAvailableForPeersGuaranteed(peerCount), false, transfersPerInsert, false, peerCount, 0);
+	}
+
+	/**
+	 * Get the allocation for a peer.
+	 * @param local If true, calculate allocation for self, else calculate the allocation for a 
+	 * real peer.
+	 * @param peerRequestsSnapshot Snapshot of requests from the peer. (We deduct requests which are 
+	 * SourceRestarted).
+	 * @param transfersPerInsert The average number of transfers outward per insert (global 
+	 * parameter).
+	 * @param peerCount The number of peers to divide up the bandwidth.
+	 * @param bandwidthAvailableUpperLower The number of bytes of bandwidth available for guaranteed 
+	 * allocations, i.e. the difference between the upper and lower limits.
+	 */
+	public double getPeerAllocation(boolean local,
+			RunningRequestsSnapshot peerRequestsSnapshot, int transfersPerInsert, int peerCount,
+			double bandwidthAvailableUpperLower) {
+		return getPeerLimit(local, bandwidthAvailableUpperLower, false, transfersPerInsert, false, peerCount, peerRequestsSnapshot.calculateSR(ignoreLocalVsRemoteBandwidthLiability(), false));
+	}
+
+	/** Get the portion of available output bandwidth liability which is usable by peers for their guaranteed
+	 * allocations. I.e. the difference between the upper and lower limits. */
+	public double getBandwidthAvailableForPeersGuaranteed(int peerCount) {
+		double nonOverheadFraction = this.getNonOverheadFraction(System.currentTimeMillis());
+		int limitSeconds = this.getLimitSeconds(false);
+		double upperLimit = getOutputBandwidthUpperLimit(limitSeconds, nonOverheadFraction);
+		return upperLimit - getLowerLimit(upperLimit, peerCount);
 	}
 
 }

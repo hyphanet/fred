@@ -2634,7 +2634,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * Get a PeerNodeStatus for this node.
 	 * @param noHeavy If true, avoid any expensive operations e.g. the message count hashtables.
 	 */
-	public abstract PeerNodeStatus getStatus(boolean noHeavy);
+	public abstract PeerNodeStatus getStatus(boolean noHeavy, PeerNodeStatusContext context);
 
 	public String getTMCIPeerInfo() {
 		long now = System.currentTimeMillis();
@@ -4440,6 +4440,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		(realTime ? loadSenderRealTime : loadSenderBulk).onSetPeerAllocation(input, thisAllocation, transfersPerInsert);
 	}
 
+	/** Snapshot of the load status for requests going to this peer: The number of bytes available, 
+	 * how many we have used, etc. Based on both the requests we know are running and what the peer
+	 * tells us about how many requests we are allowed to send. */
 	public class IncomingLoadSummaryStats {
 		public IncomingLoadSummaryStats(int totalRequests,
 				double outputBandwidthPeerLimit,
@@ -4470,6 +4473,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		public final int usedCapacityInputBytes;
 		public final int othersUsedCapacityOutputBytes;
 		public final int othersUsedCapacityInputBytes;
+		public double outputUsageFraction() {
+			return ((double)usedCapacityOutputBytes)/((double)peerCapacityOutputBytes);
+		}
+		public double outputUsageFractionOverall() {
+			return ((double)(usedCapacityOutputBytes+othersUsedCapacityOutputBytes))/((double)totalCapacityOutputBytes);
+		}
 	}
 	
 	enum RequestLikelyAcceptedState {

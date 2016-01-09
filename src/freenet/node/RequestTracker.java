@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.keys.NodeCHK;
+import freenet.node.RequestTracker.CountedRequests;
 import freenet.support.Logger;
 import freenet.support.Ticker;
 
@@ -222,6 +223,11 @@ public class RequestTracker {
 		public int expectedTransfersIn() {
 			return expectedTransfersIn;
 		}
+		public void add(CountedRequests value) {
+			this.expectedTransfersIn += value.expectedTransfersIn;
+			this.expectedTransfersOut = value.expectedTransfersOut;
+			this.total = value.total;
+		}
 	}
 
 	/** Count all requests running globally which match particular parameters.
@@ -235,8 +241,8 @@ public class RequestTracker {
 	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local 
 	 * (that is, count imaginary onward transfers etc depending on the request type).
 	 * @param counter Transfer counts for all requests will be added to this counter object.
-	 * @param counterSourceRestarted Transfer counts for requests whose source restarted (and so 
-	 * are counted as local) will be added to this counter object. */
+	 * @param counterSourceRestarted Transfer counts for requests whose source restarted (which 
+	 * will be deducted from the peer limit before the peer receives the limit) */
 	public void countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSourceRestarted) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		// Map is locked by the non-local version, although we're counting from the local version.
@@ -297,7 +303,7 @@ public class RequestTracker {
 	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local 
 	 * (that is, count imaginary onward transfers etc depending on the request type).
 	 * @param counter Transfer counts for all requests will be added to this counter object.
-	 * @param counterSR Transfer counts for requests whose source restarted (and so 
+	 * @param counterSourceRestarted Transfer counts for requests whose source restarted (and so 
 	 * are counted as local) will be added to this counter object. */
 	public void countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, CountedRequests counter, CountedRequests counterSR) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
@@ -386,32 +392,42 @@ public class RequestTracker {
 	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local 
 	 * (that is, count imaginary onward transfers etc depending on the request type).
 	 * @param counterMap Map from PeerNode to CountedRequests counters. We will use "null" for 
-	 * various cases: local requests, requested that have been adopted because their originator
-	 * restarted, requests where the originator PeerNode has been removed from the routing table
-	 * etc. */
-	public void countAllRequestsByIncomingPeer(boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, Map<PeerNode, CountedRequests> counterMap) {
+	 * various cases: local requests, requested that have been reassigned to us, requests where the 
+	 * originator PeerNode has been removed from the routing table etc. 
+	 * @param counterMapSourceRestarted Counts requests which are source restarted, which are 
+	 * counted against the peer's limit before it is sent to the peer (requests will be counted to
+	 * either just counterMap or both counterMap and counterMapSourceRestarted). */
+	public void countAllRequestsByIncomingPeer(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag, int transfersPerInsert, boolean ignoreLocalVsRemote, Map<PeerNode, CountedRequests> counterMap, Map<PeerNode, CountedRequests> counterMapSourceRestarted) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		// Map is locked by the non-local version, although we're counting from the local version.
 		HashMap<Long, ? extends UIDTag> mapLock = map;
 		if(local)
 			mapLock = getTracker(false, ssk, insert, offer, realTimeFlag);
 		synchronized(mapLock) {
-			if(!requestsToNode) {
-				// If a request is adopted by us as a result of a timeout, it can be in the
-				// remote map despite having source == null. However, if a request is in the
-				// local map it will always have source == null.
-				for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
-					UIDTag tag = entry.getValue();
-					// The overall running* map can include local. But the local map can't include non-local.
-					if((!local) && tag.wasLocal) continue;
-					PeerNode source = tag.getSource(); // Can be null in various cases
-					CountedRequests counter = counterMap.get(source);
+			// If a request is adopted by us as a result of a timeout, it can be in the
+			// remote map despite having source == null. However, if a request is in the
+			// local map it will always have source == null.
+			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
+				UIDTag tag = entry.getValue();
+				// The overall running* map can include local. But the local map can't include non-local.
+				if((!local) && tag.wasLocal) continue;
+				PeerNode source = tag.getSource(); // Can be null in various cases
+				CountedRequests counter = counterMap.get(source);
+				if(counter == null) {
+					counter = new CountedRequests();
+					counterMap.put(source, counter);
+				}
+				int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
+				int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
+				counter.total++;
+				counter.expectedTransfersIn += in;
+				counter.expectedTransfersOut += out;
+				if(counterMapSourceRestarted != null && tag.countAsSourceRestarted()) {
+					counter = counterMapSourceRestarted.get(source);
 					if(counter == null) {
 						counter = new CountedRequests();
-						counterMap.put(source, counter);
+						counterMapSourceRestarted.put(source, counter);
 					}
-					int out = tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, true);
-					int in = tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, true);
 					counter.total++;
 					counter.expectedTransfersIn += in;
 					counter.expectedTransfersOut += out;

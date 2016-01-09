@@ -21,8 +21,8 @@ public class DarknetPeerNodeStatus extends PeerNodeStatus {
 	private FRIEND_VISIBILITY theirVisibility;
 	private FRIEND_VISIBILITY overallVisibility;
 	
-	public DarknetPeerNodeStatus(DarknetPeerNode peerNode, boolean noHeavy) {
-		super(peerNode, noHeavy);
+	public DarknetPeerNodeStatus(DarknetPeerNode peerNode, boolean noHeavy, PeerNodeStatusContext context) {
+		super(peerNode, noHeavy, context);
 		this.name = peerNode.getName();
 		this.burstOnly = peerNode.isBurstOnly();
 		this.listening = peerNode.isListenOnly();
