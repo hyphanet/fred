@@ -131,33 +131,6 @@ public class PluginManager {
 		});
 		enabled = pmconfig.getBoolean("enabled");
 		
-//		pmconfig.register("configfile", "fplugins.ini", 9, true, true, "PluginConfig.configFile", "PluginConfig.configFileLong",
-//				new StringCallback() {
-//			public String get() {
-//				return configFile;
-//			}
-//
-//			public void set(String val) throws InvalidConfigValueException {
-//				configFile = val;
-//			}
-//		});
-//		configFile = pmconfig.getString("configfile");
-//		pmconfig.register("installdir", "fplugins", 9, true, true, "PluginConfig.installDir", "PluginConfig.installDirLong",
-//				new StringCallback() {
-//			public String get() {
-//				return installDir;
-//				//return getConfigLoadString();
-//			}
-//
-//			public void set(String val) throws InvalidConfigValueException {
-//				installDir = val;
-//				//if(storeDir.equals(new File(val))) return;
-//				// FIXME
-//				//throw new InvalidConfigValueException(NodeL10n.getBase().getString("PluginManager.cannotSetOnceLoaded"));
-//			}
-//		});
-//		installDir = pmconfig.getString("installdir");
-
 		// Start plugins in the config
 		pmconfig.register("loadplugin", null, 0, true, false, "PluginManager.loadedOnStartup", "PluginManager.loadedOnStartupLong",
 			new StringArrCallback() {
