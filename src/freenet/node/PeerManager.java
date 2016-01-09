@@ -181,6 +181,9 @@ public class PeerManager {
 		this.node = node;
 		shutdownHook.addEarlyJob(new Thread() {
 			public void run() {
+				// Ensure we're not waiting 5mins here
+				writePeersDarknet();
+				writePeersOpennet();
 				writePeersNow(false);
 			}
 		});
