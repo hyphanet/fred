@@ -464,7 +464,7 @@ public class NodeStarter implements WrapperListener {
         public int bypassCBRDelay = 100;
         public boolean enablePlugins;
         public boolean lazyStartRequestStarters = true;
-        public boolean lazyStartDatastoreCheckers = true;
+        public boolean lazyStartDatastoreChecker = true;
     }
 
     /**
@@ -608,7 +608,7 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.respondStoreSize", true);
 		configFS.put("node.respondUptime", true);
         configFS.put("node.scheduler.lazyStart", params.lazyStartRequestStarters);
-        configFS.put("node.lazyStartDatastoreCheckers", params.lazyStartDatastoreCheckers);
+        configFS.put("node.lazyStartDatastoreChecker", params.lazyStartDatastoreChecker);
 
 		PersistentConfig config = new PersistentConfig(configFS);
 
