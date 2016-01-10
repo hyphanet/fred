@@ -287,6 +287,7 @@ public class PluginManager {
 	}
 
 	public void stop(long maxWaitTime) {
+	    if(!enabled) return;
 		// Stop loading plugins.
 		ArrayList<PluginProgress> matches = new ArrayList<PluginProgress>();
 		synchronized(this) {
