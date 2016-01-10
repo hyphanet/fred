@@ -421,6 +421,7 @@ public class PluginManager {
 	}
 
 	private PluginInfoWrapper realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store, boolean ignoreOld) {
+	    if(!enabled) throw new IllegalStateException("Plugins disabled");
 		if(filename.trim().length() == 0)
 			return null;
 		final PluginProgress pluginProgress = new PluginProgress(filename, pdl);
