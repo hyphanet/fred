@@ -209,6 +209,7 @@ public class NodeClientCore implements Persistable {
             }
 		    
 		});
+		lazyStartDatastoreChecker = nodeConfig.getBoolean("lazyStartDatastoreChecker");
 		
 		storeChecker = new DatastoreChecker(node, lazyStartDatastoreChecker, node.executor, "Datastore checker");
 		byte[] pwdBuf = new byte[16];
