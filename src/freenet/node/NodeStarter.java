@@ -463,6 +463,7 @@ public class NodeStarter implements WrapperListener {
         /** Simulate per-link one-way transport latency */
         public int bypassCBRDelay = 100;
         public boolean enablePlugins;
+        public boolean lazyStartRequestStarters = true;
     }
 
     /**
@@ -605,7 +606,7 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.respondLocation", true);
 		configFS.put("node.respondStoreSize", true);
 		configFS.put("node.respondUptime", true);
-        configFS.put("node.scheduler.lazyStart", true);
+        configFS.put("node.scheduler.lazyStart", params.lazyStartRequestStarters);
 
 		PersistentConfig config = new PersistentConfig(configFS);
 
