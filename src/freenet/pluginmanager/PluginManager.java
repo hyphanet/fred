@@ -1779,4 +1779,8 @@ public class PluginManager {
 			node.nodeUpdater.stopPluginUpdater(wrapper.getFilename());
 	}
 
+    public boolean isEnabled() {
+        return enabled;
+    }
+
 }
