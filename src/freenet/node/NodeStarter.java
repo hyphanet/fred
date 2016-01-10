@@ -427,6 +427,7 @@ public class NodeStarter implements WrapperListener {
         public boolean useSlashdotCache;
         public String ipAddressOverride;
         public boolean enableFCP;
+        public boolean enablePlugins;
     }
 
     /**
@@ -515,6 +516,7 @@ public class NodeStarter implements WrapperListener {
         configFS.put("fcp.enabled", params.enableFCP);
 		configFS.put("fcp.port", 9481);
 		configFS.put("fcp.ssl", false);
+		configFS.put("pluginmanager.enabled", params.enablePlugins);
 		configFS.put("console.enabled", false);
 		configFS.putSingle("pluginmanager.loadplugin", "");
 		configFS.put("node.updater.enabled", false);
