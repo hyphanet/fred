@@ -103,6 +103,8 @@ public class PluginManager {
 	private boolean alwaysLoadOfficialPluginsFromCentralServer = false;
 
 	static final short PRIO = RequestStarter.INTERACTIVE_PRIORITY_CLASS;
+	/** Is the plugin system enabled? Set at boot time only. Mainly for simulations. */
+	private final boolean enabled;
 
 	public PluginManager(Node node, int lastVersion) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -128,6 +130,24 @@ public class PluginManager {
 		executor.start(node.executor, "PM callback executor");
 
 		pmconfig = new SubConfig("pluginmanager", node.config);
+		
+		pmconfig.register("enable", true, 0, true, true, "PluginManager.enable", "PluginManager.enableLong", new BooleanCallback() {
+
+            @Override
+            public synchronized Boolean get() {
+                return enabled;
+            }
+
+            @Override
+            public void set(Boolean val) throws InvalidConfigValueException,
+                    NodeNeedRestartException {
+                if(enabled != val)
+                    throw new NodeNeedRestartException(l10n("changePluginManagerEnabledInConfig"));
+            }
+		    
+		});
+		enabled = pmconfig.getBoolean("enabled");
+		
 //		pmconfig.register("configfile", "fplugins.ini", 9, true, true, "PluginConfig.configFile", "PluginConfig.configFileLong",
 //				new StringCallback() {
 //			public String get() {
@@ -233,6 +253,7 @@ public class PluginManager {
 	private String[] toStart;
 
 	public void start(Config config) {
+	    if(!enabled) return;
 		if (toStart == null) {
 			synchronized (pluginWrappers) {
 				started = true;
