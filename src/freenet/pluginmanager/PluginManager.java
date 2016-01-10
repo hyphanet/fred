@@ -131,7 +131,7 @@ public class PluginManager {
 
 		pmconfig = new SubConfig("pluginmanager", node.config);
 		
-		pmconfig.register("enable", true, 0, true, true, "PluginManager.enable", "PluginManager.enableLong", new BooleanCallback() {
+		pmconfig.register("enabled", true, 0, true, true, "PluginManager.enabled", "PluginManager.enabledLong", new BooleanCallback() {
 
             @Override
             public synchronized Boolean get() {
