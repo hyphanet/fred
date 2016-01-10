@@ -152,10 +152,12 @@ public class FCPServer implements Runnable, DownloadCache {
 			this.networkInterface = null;
 		}
 		
-        // We need to start the FCPPluginConnectionTracker no matter whether this.enabled == true:
-        // If networked FCP is disabled, plugins might still communicate via non-networked
-        // intra-node FCP.
-        pluginConnectionTracker.start();
+		if(node.pluginManager.isEnabled()) {
+		    // We need to start the FCPPluginConnectionTracker no matter whether this.enabled == true:
+		    // If networked FCP is disabled, plugins might still communicate via non-networked
+		    // intra-node FCP.
+		    pluginConnectionTracker.start();
+		}
 	}
 
 	@Override
