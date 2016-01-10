@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,6 +24,8 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SparseBitmap;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class NewPacketFormat implements PacketFormat {
 
@@ -507,7 +507,7 @@ public class NewPacketFormat implements PacketFormat {
 		byte[] text = new byte[paddedLen - hmacLength];
 		System.arraycopy(data, hmacLength, text, 0, text.length);
 
-		byte[] hash = HMAC.macWithSHA256(sessionKey.hmacKey, text, hmacLength);
+		byte[] hash = HMAC.macWithSHA256(sessionKey.hmacKey, text);
 
 		System.arraycopy(hash, 0, data, 0, hmacLength);
 

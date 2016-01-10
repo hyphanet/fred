@@ -783,6 +783,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", ":link { cursor: url(\"example.svg#linkcursor\") url(\"hyper.cur\") pointer }");
 		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor), url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\"), url(\"hyper.cur\"), pointer }");
 		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) 2 5, url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\") 2 5, url(\"hyper.cur\"), pointer }");
+        propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) 2, url(hyper.cur), pointer }", ":link { }");
 
 		// UI colors
 		propertyTests.put("p { color: WindowText; background-color: Window }", "p { color: WindowText; background-color: Window }");
@@ -850,6 +851,12 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("div { justify-content: space-between; }", "div { justify-content: space-between; }");
 		propertyTests.put("div { justify-content: space-around; }", "div { justify-content: space-around; }");
 		propertyTests.put("div { justify-items: legacy center; }", "div { justify-items: legacy center; }");
+		propertyTests.put("div { justify-items: auto; }", "div { justify-items: auto; }");
+		propertyTests.put("div { justify-items: baseline; }", "div { justify-items: baseline; }");
+		propertyTests.put("div { justify-items: true left; }", "div { justify-items: true left; }");
+		propertyTests.put("div { justify-items: self-start; }", "div { justify-items: self-start; }");
+		propertyTests.put("div { justify-items: self-start legacy left; }", "div { }");
+		propertyTests.put("div { justify-items: left; }", "div { justify-items: left; }");
 		propertyTests.put("div { align-self: true center; }", "div { align-self: true center; }");
 		propertyTests.put("div { align-self: center true; }", "div { align-self: center true; }");
 		propertyTests.put("div { align-self: center true center; }", "div { }");
@@ -876,7 +883,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("body { nav-down: auto; }",  "body { nav-down: auto; }");
 		propertyTests.put("body { nav-down: h2#java current; }",  "body { nav-down: h2#java current; }");
 		propertyTests.put("body { nav-up: #java root; }",  "body { nav-up: #java root; }");
-		propertyTests.put("body { nav-left: div.bold '<target-name>'; }",  "body { nav-left: div.bold '<target-name>'; }");
+		propertyTests.put("body { nav-left: div.bold '<target-name>'; }",  "body { }");
 		propertyTests.put("button#foo { nav-left: #bar \"sidebar\"; }", "button#foo { nav-left: #bar \"sidebar\"; }");
 		propertyTests.put("button#foo { nav-left: invalidSelector \"sidebar\"; }", "button#foo { }");
 	}

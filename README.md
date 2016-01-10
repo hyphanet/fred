@@ -1,3 +1,5 @@
+![next branch build status](https://travis-ci.org/freenet/fred.svg?branch=next)
+
 ## QUICK START
 
 To install Freenet, use the installer from https://freenetproject.org

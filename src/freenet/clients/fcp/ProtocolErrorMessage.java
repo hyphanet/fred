@@ -61,6 +61,7 @@ public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 	static final int BAD_MIME_TYPE = 35;
 	static final int WRONG_RETURN_TYPE = 36;
 	static final int IO_ERROR = 37;
+	static final int PLUGINS_DISABLED = 38;
 	
 	final int code;
 	final String extra;

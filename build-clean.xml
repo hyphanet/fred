@@ -161,7 +161,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="env">
 		<available property="lib.contrib.present" classname="freenet.node.ExtVersion" classpathref="lib.path"/>
-		<available property="lib.bouncycastle.present" classname="org.bouncycastle.crypto.SkippingStreamCipher" classpathref="lib.path"/>
+		<available property="lib.bouncycastle.present" classname="org.bouncycastle.crypto.signers.HMacDSAKCalculator" classpathref="lib.path"/>
 		<available property="lib.junit.present" classname="org.junit.runners.JUnit4" classpathref="libtest.path"/>
 		<available property="lib.hamcrest.present" classname="org.hamcrest.SelfDescribing" classpathref="libtest.path"/>
 		<available property="lib.findbugs.present" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
@@ -182,7 +182,7 @@ maintainers may prefer to use this instead of build.xml.
 	</target>
 
 	<target name="libdep-bc" depends="env" unless="lib.bouncycastle.present">
-		<fail message="Bouncycastle not available (or not recent enough); try https://downloads.freenetproject.org/latest/${bc.jar}"/>
+		<fail message="Bouncycastle not available (or not recent enough); try https://www.bouncycastle.org/download/${bc.jar}"/>
 	</target>
 
 	<target name="libdep-junit" depends="env" unless="lib.junit.present">
@@ -246,7 +246,7 @@ maintainers may prefer to use this instead of build.xml.
 		<!-- Create the time stamp -->
 		<tstamp/>
 		<!-- Create the build directory structure used by compile -->
-		<javac srcdir="${main.src}" destdir="${main.make}" debug="on" source="1.6" target="1.6" includeAntRuntime="false" encoding="UTF-8">
+		<javac srcdir="${main.src}" destdir="${main.make}" debug="on" source="1.7" target="1.7" includeAntRuntime="false" encoding="UTF-8">
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="lib.path"/>
 			<!-- tell javac to find Version.java in ${main.make}, not ${main.src} -->
@@ -258,7 +258,7 @@ maintainers may prefer to use this instead of build.xml.
 		</javac>
 
 		<!-- Force compile of Version.java in case compile of ${main.src} didn't trigger it -->
-		<javac srcdir="${main.make}" destdir="${main.make}" debug="on" source="1.6" target="1.6" includeAntRuntime="false" encoding="UTF-8">
+		<javac srcdir="${main.make}" destdir="${main.make}" debug="on" source="1.7" target="1.7" includeAntRuntime="false" encoding="UTF-8">
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="lib.path"/>
 			<include name="${version.src}"/>
@@ -311,7 +311,7 @@ maintainers may prefer to use this instead of build.xml.
 	<target name="unit-build" depends="build" unless="${test.skip}">
 		<antcall target="libdep-junit"/>
 		<antcall target="libdep-hamcrest"/>
-		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" source="1.6" target="1.6" includeAntRuntime="false" encoding="UTF-8">
+		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" source="1.7" target="1.7" includeAntRuntime="false" encoding="UTF-8">
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="libtest.path"/>
 			<include name="**/*.java"/>

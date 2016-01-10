@@ -84,6 +84,11 @@ public class LoadPlugin extends FCPMessage {
 		if(!handler.hasFullAccess()) {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "LoadPlugin requires full access", identifier, false);
 		}
+		
+		if(!node.pluginManager.isEnabled()) {
+		    handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.PLUGINS_DISABLED, false, "Plugins disabled", identifier, false));
+		    return;
+		}
 
 		node.executor.execute(new Runnable() {
 			@Override

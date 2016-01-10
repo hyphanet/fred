@@ -29,6 +29,7 @@ import freenet.node.NodeStarter;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
+import freenet.node.PeerTooOldException;
 import freenet.store.KeyCollisionException;
 import freenet.support.Executor;
 import freenet.support.HexUtil;
@@ -83,7 +84,7 @@ public class RealNodeULPRTest extends RealNodeTest {
     public static final int DARKNET_PORT_BASE = RealNodePingTest.DARKNET_PORT_END;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
-    public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, KeyCollisionException, SSKEncodeException, IOException, InterruptedException, SSKVerifyException, InvalidCompressionCodecException {
+    public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, KeyCollisionException, SSKEncodeException, IOException, InterruptedException, SSKVerifyException, InvalidCompressionCodecException, PeerTooOldException {
         System.err.println("ULPR test");
         System.err.println();
     	String testName = "realNodeULPRTest";

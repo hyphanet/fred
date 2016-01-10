@@ -401,7 +401,7 @@ class CSSTokenizerFilter {
 		
 		// <align-items>
 		// auto | stretch | <baseline-position> | [ <item-position> && <overflow-position>? ]
-		auxilaryVerifiers[125] = new CSSPropertyVerifier(Arrays.asList("auto", "stretch", "baseline", "last-baseline", "space-between", "space-around", "space-evenly"), null, null, null, true);
+		auxilaryVerifiers[125] = new CSSPropertyVerifier(Arrays.asList("auto", "stretch", "baseline", "last-baseline"), null, null, null, true);
 		// <item-position> = center | start | end | self-start | self-end | flex-start | flex-end | left | right;
 		auxilaryVerifiers[126] = new CSSPropertyVerifier(Arrays.asList("center", "start", "end", "self-start", "self-end", "flex-start", "flex-end", "left", "right"), null, null, null, true);
 		// [ <item-position> && <overflow-position>? ]
@@ -411,7 +411,7 @@ class CSSTokenizerFilter {
 		// auto | stretch | <baseline-position> | [ <item-position> && <overflow-position>? ] | [ legacy && [ left | right | center ] ]
 		auxilaryVerifiers[128] = new CSSPropertyVerifier(Arrays.asList("legacy"), null, null, null, true);
 		auxilaryVerifiers[129] = new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("4 128", "128 4"), true,true);
-		auxilaryVerifiers[130] = new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("129 126", "126", "126 129"), true,true);
+		auxilaryVerifiers[130] = new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("122 126", "126", "126 122"), true,true);
 		
 		// used in nav-down, nav-left, nav-right and nav-up
 		auxilaryVerifiers[143] = new CSSPropertyVerifier(null, Arrays.asList("se"), null, null, true);
@@ -924,7 +924,7 @@ class CSSTokenizerFilter {
 			//  ] ]
 			auxilaryVerifiers[25]=new CSSPropertyVerifier(null,Arrays.asList("ur"),null,null,true);
 			auxilaryVerifiers[141] = new CSSPropertyVerifier(null, Arrays.asList("in", "re"), null, null, true);
-			auxilaryVerifiers[142] = new CSSPropertyVerifier(null, null, null, Arrays.asList("25 141<0,1> 141<0,1>"), true, true);
+			auxilaryVerifiers[142] = new CSSPropertyVerifier(null, null, null, Arrays.asList("25 141 141", "25"), true, true);
 			auxilaryVerifiers[26] = new CSSPropertyVerifier(
 			Arrays.asList("auto", "default", "none",
 					"context-menu", "help", "pointer", "progress", "wait",
@@ -1678,8 +1678,11 @@ class CSSTokenizerFilter {
 	/*
 	 * This function accepts an HTML element(along with class name, ID, pseudo class and attribute selector) and determines whether it is valid or not.
 	 * Returns null on failure (invalid selector), empty string on banned (but otherwise valid) selector.
+	 * @param elementName A selector which may include an HTML element.
+	 * @param isIDSelector True if we only allow an ID selector, which must include an ID, may 
+	 * include an element name or *, but must not contain anything else.
 	 */
-	public static String HTMLelementVerifier(String elementString)
+	public static String HTMLelementVerifier(String elementString, boolean isIDSelector)
 	{
 //		if(logDEBUG) Logger.debug(this, "varifying element/selector: \""+elementString+"\"");
 		String HTMLelement="",pseudoClass="",className="",id="";
@@ -1688,6 +1691,7 @@ class CSSTokenizerFilter {
 		ArrayList<String> attSelections = null;
 		while(elementString.indexOf('[')!=-1 && elementString.indexOf(']')!=-1 && (elementString.indexOf('[')<elementString.indexOf(']')))
 		{
+		    if(isIDSelector) return null;
 			String attSelection=elementString.substring(elementString.indexOf('[')+1,elementString.indexOf(']')).trim();
 			StringBuilder buf=new StringBuilder(elementString);
 			buf.delete(elementString.indexOf('['), elementString.indexOf(']')+1);
@@ -1698,6 +1702,7 @@ class CSSTokenizerFilter {
 		}
 		if(elementString.indexOf(':')!=-1)
 		{
+		    if(isIDSelector) return null;
 			int index=elementString.indexOf(':');
 			if(index!=elementString.length()-1)
 			{
@@ -1715,6 +1720,7 @@ class CSSTokenizerFilter {
 
 		if(HTMLelement.indexOf('.')!=-1)
 		{
+		    if(isIDSelector) return null;
 			int index=HTMLelement.indexOf('.');
 			if(index!=HTMLelement.length()-1)
 			{
@@ -1726,6 +1732,7 @@ class CSSTokenizerFilter {
 		}
 		else if(HTMLelement.indexOf('#')!=-1)
 		{
+		    // Allowed in an ID selector.
 			int index=HTMLelement.indexOf('#');
 			if(index!=HTMLelement.length()-1)
 			{
@@ -1735,6 +1742,7 @@ class CSSTokenizerFilter {
 			}
 
 		}
+		if(isIDSelector && "".equals(id)) return null; // No ID
 
 		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTag(HTMLelement.toLowerCase())) || 
 				("".equals(HTMLelement.trim()) && 
@@ -1932,14 +1940,14 @@ class CSSTokenizerFilter {
 		if(bracketing != 0) return null; // Mismatched brackets
 
 		if(index == -1)
-			return HTMLelementVerifier(selectorString);
+			return HTMLelementVerifier(selectorString, false);
 
 		String[] parts=new String[2];
 
 		parts[0]=selectorString.substring(0,index).trim();
 		parts[1]=selectorString.substring(index+1,selectorString.length()).trim();
 		if(logDEBUG) Logger.debug(this, "recursiveSelectorVerifier parts[0]=" + parts[0]+" parts[1]="+parts[1]);
-		parts[0]=HTMLelementVerifier(parts[0]);
+		parts[0]=HTMLelementVerifier(parts[0], false);
 		parts[1]=recursiveSelectorVerifier(parts[1]);
 		if(parts[0]!=null && parts[1]!=null)
 			return parts[0]+selector+parts[1];
@@ -3650,7 +3658,7 @@ class CSSTokenizerFilter {
 		public final boolean isAngle;      //an
 		public final boolean isColor;      //co
 		public final boolean isURI;        //ur
-		public final boolean isSelector;   //se
+		public final boolean isIDSelector;   //se
 		public final boolean isShape;      //sh
 		public final boolean isString;     //st
 		public final boolean isCounter;    //co
@@ -3707,10 +3715,10 @@ class CSSTokenizerFilter {
 			this.allowCommaDelimiters = allowCommaDelimiters;
 
 			boolean isInteger, isReal, isPercentage, isLength, isAngle, isColor,
-				isSelector, isURI, isShape, isString, isCounter, isIdentifier,
+				isIDSelector, isURI, isShape, isString, isCounter, isIdentifier,
 				isTime, isFrequency, isTransform;
 			isInteger = isReal = isPercentage = isLength = isAngle = isColor = isURI
-				= isShape = isString = isCounter = isIdentifier = isTime = isSelector
+				= isShape = isString = isCounter = isIdentifier = isTime = isIDSelector
 				= isFrequency = isTransform = false;
 			if(possibleValues != null) {
 				for(String possibleValue : possibleValues) {
@@ -3729,7 +3737,7 @@ class CSSTokenizerFilter {
 					else if("ur".equals(possibleValue))
 						isURI=true;	//ur
 					else if ("se".equals(possibleValue)) {
-						isSelector = true; //se
+						isIDSelector = true; //se
 					}
 					else if("sh".equals(possibleValue))
 						isShape=true;	//sh
@@ -3754,7 +3762,7 @@ class CSSTokenizerFilter {
 			this.isAngle = isAngle;
 			this.isColor = isColor;
 			this.isURI = isURI;
-			this.isSelector = isSelector;
+			this.isIDSelector = isIDSelector;
 			this.isShape = isShape;
 			this.isString = isString;
 			this.isCounter = isCounter;
@@ -3967,8 +3975,15 @@ class CSSTokenizerFilter {
 				return true;
 			}
 			
-			if (isSelector) {
-				String result = HTMLelementVerifier(words[0].original);
+			if (isIDSelector) {
+			    // In accordance with spec for e.g. nav-*, we only allow ID selectors.
+			    // See http://www.w3.org/TR/css3-ui/
+			    // REDFLAG If we allow more general selectors (which some browsers may accept) we 
+			    // have two new problems:
+			    // 1) They may occupy more than one word, which greatly complicates parsing here,
+			    // 2) We should sanitize the selectors, not just pass them on. Which in turn may 
+			    // cause them to take up more than one word!
+				String result = HTMLelementVerifier(words[0].original, true);
 				if (!(result == null || result.equals(""))) {
 					return true;
 				}
@@ -4200,6 +4215,7 @@ class CSSTokenizerFilter {
 		}
 		/**
 		 * Takes b expressions and evaluates them.<br/>
+		 * "&&" means all of the expressions must occur in any order.<br/>
 		 * CSS Grammar <code>list-item && [ block | nonsense ] && [ more ]?</code><br/>
 		 * Will accept the following inputs as valid:<br/>
 		 * <code>list-item block</code><br/>
@@ -4209,12 +4225,9 @@ class CSSTokenizerFilter {
 		 * @param expression the expression, explained above
 		 * @param words tokens to parse
 		 * @param cb
-		 * @return true if all the words were consumed false otherwise.
+		 * @return true if all the verifiers and all the words were consumed, false otherwise.
 		 */
 		public boolean doubleAmpersandVerifier(String expression, ParsedWord[] words, FilterCallback cb) {
-			if(words==null || words.length == 0)
-				return true;
-
 			String ignoredParts="";
 			String firstPart = "";
 			int lastB = -1;

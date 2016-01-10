@@ -253,7 +253,10 @@ public class Announcer {
 			} catch (ReferenceSignatureVerificationException e) {
 				Logger.error(this, "Invalid seed in file: "+e+" for\n"+fs, e);
 				continue;
-			}
+			} catch (PeerTooOldException e) {
+                Logger.error(this, "Invalid seed in file: "+e+" for\n"+fs, e);
+                continue;
+            }
 		}
 		if(logMINOR) Logger.minor(this, "connectSomeNodesInner() returning "+count);
 		return count;
