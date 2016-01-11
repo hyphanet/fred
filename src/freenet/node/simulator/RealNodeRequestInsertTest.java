@@ -120,14 +120,16 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
-        Executor executor = new PooledExecutor();
         int tickerThreads = Runtime.getRuntime().availableProcessors();
+        Executor[] executors = new Executor[tickerThreads];
         PrioritizedTicker[] tickers = new PrioritizedTicker[tickerThreads];
-        for(int i=0;i<tickerThreads;i++)
-            tickers[i] = new PrioritizedTicker(executor);
+        for(int i=0;i<tickerThreads;i++) {
+            executors[i] = new PooledExecutor();
+            tickers[i] = new PrioritizedTicker(executors[i]);
+        }
         for(int i=0;i<NUMBER_OF_NODES;i++) {
-            TestNodeParameters params = getNodeParameters(i, name, nodesRandom, executor, 
-                    tickers[i % tickerThreads]);
+            TestNodeParameters params = getNodeParameters(i, name, nodesRandom, 
+                    executors[i % tickerThreads], tickers[i % tickerThreads]);
             nodes[i] = NodeStarter.createTestNode(params);
             tracker.add(nodes[i]);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
