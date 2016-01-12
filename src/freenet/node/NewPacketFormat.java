@@ -398,7 +398,7 @@ public class NewPacketFormat implements PacketFormat {
 		byte[] payload = Arrays.copyOfRange(buf, offset + hmacLength, offset + length);
 		byte[] hash = Arrays.copyOfRange(buf, offset, offset + hmacLength);
 
-		if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, payload, hash)) return null;
+		if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, payload, hash, hmacLength)) return null;
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.incommingCipher, IV);
 		payloadCipher.blockDecipher(payload, 0, payload.length);
