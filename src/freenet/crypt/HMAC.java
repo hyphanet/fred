@@ -6,11 +6,10 @@ package freenet.crypt;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-
-import org.bouncycastle.util.Arrays;
 
 import freenet.support.Logger;
 
