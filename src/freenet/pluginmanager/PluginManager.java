@@ -187,10 +187,11 @@ public class PluginManager {
 		});
 
 		alwaysLoadOfficialPluginsFromCentralServer = pmconfig.getBoolean("alwaysLoadOfficialPluginsFromCentralServer");
-		if(node.lastVersion <= 1437)
+		if (lastVersion <= 1437) {
 			// Overwrite this setting, since it will have been set by the old callback and then written as it's not default.
 			// FIXME remove back compatibility code.
 			alwaysLoadOfficialPluginsFromCentralServer = false;
+		}
 
 		pmconfig.finishedInitialization();
 
