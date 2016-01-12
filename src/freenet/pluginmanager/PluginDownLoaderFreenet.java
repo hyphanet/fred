@@ -115,4 +115,9 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 			get.cancel(node.clientCore.clientContext);
 	}
 
+	@Override
+	public boolean isLoadingFromFreenet() {
+		return true;
+	}
+
 }

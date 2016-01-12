@@ -44,5 +44,9 @@ public abstract class PluginDownLoader<T> {
 	public boolean isOfficialPluginLoader() {
 		return false;
 	}
-	
+
+	public boolean isLoadingFromFreenet() {
+		return false;
+	}
+
 }

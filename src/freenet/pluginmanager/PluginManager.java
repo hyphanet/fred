@@ -421,8 +421,7 @@ public class PluginManager {
 				}
 			}
 			PluginLoadFailedUserAlert newAlert =
-				new PluginLoadFailedUserAlert(filename,
-						pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, stillTrying, e);
+				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), pdl.isOfficialPluginLoader() && pdl.isLoadingFromFreenet(), stillTrying, e);
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
 			core.alerts.register(newAlert);
 			core.alerts.unregister(oldAlert);
@@ -434,7 +433,7 @@ public class PluginManager {
 			System.err.println("Plugin " + filename + " appears to require a later JVM");
 			Logger.error(this, "Plugin " + filename + " appears to require a later JVM");
 			PluginLoadFailedUserAlert newAlert =
-				new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, false, l10n("pluginReqNewerJVMTitle", "name", filename));
+				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), pdl.isOfficialPluginLoader() && pdl.isLoadingFromFreenet(), false, l10n("pluginReqNewerJVMTitle", "name", filename));
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
 			core.alerts.register(newAlert);
 			core.alerts.unregister(oldAlert);
@@ -445,7 +444,7 @@ public class PluginManager {
 			System.err.println("Plugin "+filename+" is broken, but we want to retry after next startup");
 			Logger.error(this, "Plugin "+filename+" is broken, but we want to retry after next startup");
 			PluginLoadFailedUserAlert newAlert =
-				new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, false, e);
+				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), pdl.isOfficialPluginLoader() && pdl.isLoadingFromFreenet(), false, e);
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
 			core.alerts.register(newAlert);
 			core.alerts.unregister(oldAlert);
