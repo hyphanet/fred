@@ -722,6 +722,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			if(fullFieldSet == null && f != null)
 				fullFieldSet = f;
 		}
+		// If we got here, odds are we should consider writing to the peer-file
+		writePeers();
 		
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
