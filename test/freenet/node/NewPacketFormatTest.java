@@ -3,18 +3,23 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
+import freenet.io.comm.Peer;
 import freenet.support.MutableBoolean;
 import junit.framework.TestCase;
 
 public class NewPacketFormatTest extends TestCase {
-	
+    
 	@Override
 	public void setUp() {
 		// Because we don't call maybeSendPacket, the packet sent times are not updated,
@@ -364,5 +369,71 @@ public class NewPacketFormatTest extends TestCase {
 		byte[] correct = new byte[] {(byte) 0xF7, (byte) 0x95, (byte) 0xBD, (byte) 0x4A};
 
 		assertTrue(Arrays.equals(correct, encrypted));
+	}
+	
+	public void testEncryption() throws BlockedTooLongException, UnknownHostException, InterruptedException {
+	    Random random = new Random(120116);
+	    NullBasePeerNode senderNode = new NullBasePeerNode();
+	    NullBasePeerNode receiverNode = new NullBasePeerNode();
+	    byte[] outgoingKey = new byte[32];
+	    random.nextBytes(outgoingKey);
+	    BlockCipher outgoingCipher = new Rijndael();
+	    outgoingCipher.initialize(outgoingKey);
+	    byte[] incomingKey = new byte[32];
+	    random.nextBytes(incomingKey);
+	    BlockCipher incomingCipher = new Rijndael();
+	    incomingCipher.initialize(incomingKey);
+	    BlockCipher ivCipher = new Rijndael();
+	    byte[] ivKey = new byte[32];
+	    random.nextBytes(ivKey);
+	    ivCipher.initialize(ivKey);
+	    byte[] ivNonce = new byte[16];
+	    random.nextBytes(ivNonce);
+	    byte[] hmacKey = new byte[32];
+	    random.nextBytes(hmacKey);
+	    int senderStartSeq = 1000;
+	    int receiverStartSeq = 2000;
+	    
+	    NewPacketFormatKeyContext senderContext = 
+	            new NewPacketFormatKeyContext(senderStartSeq, receiverStartSeq);
+
+        NewPacketFormatKeyContext receiverContext = 
+                new NewPacketFormatKeyContext(receiverStartSeq, senderStartSeq);
+
+	    SessionKey senderSessionKey = new SessionKey(null, outgoingCipher, outgoingKey,
+	            incomingCipher, incomingKey, ivCipher, ivNonce, hmacKey, senderContext, 0);
+
+        SessionKey receiverSessionKey = new SessionKey(null, incomingCipher, incomingKey,
+                outgoingCipher, outgoingKey, ivCipher, ivNonce, hmacKey, receiverContext, 0);
+
+	    senderNode.currentKey = senderSessionKey;
+	    receiverNode.currentKey = receiverSessionKey;
+	    
+	    NewPacketFormat senderNPF = new NewPacketFormat(senderNode, senderStartSeq, receiverStartSeq);
+	    NewPacketFormat receiverNPF = new NewPacketFormat(receiverNode, receiverStartSeq, senderStartSeq);
+	    
+	    PeerMessageQueue senderQueue = new PeerMessageQueue();
+	    
+	    byte[] message = new byte[1024];
+	    random.nextBytes(message);
+	    byte[] copyOfMessage = Arrays.copyOf(message, message.length);
+	    
+        senderQueue.queueAndEstimateSize(new MessageItem(message, null, false, null, (short) 0, false, false), 1024);
+
+        senderNode.messageQueue = senderQueue;
+        Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
+        senderNPF.maybeSendPacket(System.currentTimeMillis(), false, senderSessionKey);
+        
+        FreenetInetAddress LOCALHOST = new FreenetInetAddress("127.0.0.1", true);
+        Peer PEER = new Peer(LOCALHOST, 1234);
+        
+        byte[] data = senderNode.sentEncryptedPacket;
+        
+        receiverNode.decryptedMessages = new ArrayList<byte[]>();
+        receiverNPF.handleReceivedPacket(data, 0, data.length, System.currentTimeMillis(), PEER);
+        
+        assertEquals(1, receiverNode.decryptedMessages.size());
+        assertTrue(Arrays.equals(message, copyOfMessage));
+        assertTrue(Arrays.equals(message, receiverNode.decryptedMessages.get(0)));
 	}
 }
