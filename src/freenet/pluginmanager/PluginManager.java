@@ -211,9 +211,8 @@ public class PluginManager {
 
 	public void start() {
 		if (!enabled) return;
-		if (toStart == null) {
-			synchronized (loadedPlugins) {
-				started = true;
+		synchronized (loadedPlugins) {
+			if (started) {
 				return;
 			}
 		}
