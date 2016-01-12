@@ -10,6 +10,8 @@ import java.security.NoSuchAlgorithmException;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.util.Arrays;
+
 import freenet.support.Logger;
 
 /**
@@ -53,6 +55,10 @@ public enum HMAC {
     return MessageDigest.isEqual(mac, mac(hash, key, data));
   }
 
+  public static boolean verify(HMAC hash, byte[] key, byte[] data, byte[] mac, int length) {
+    return MessageDigest.isEqual(mac, Arrays.copyOf(mac(hash, key, data), length));
+  }
+
   public static byte[] macWithSHA256(byte[] K, byte[] text) {
     return mac(HMAC.SHA2_256, K, text);
   }
@@ -60,4 +66,9 @@ public enum HMAC {
   public static boolean verifyWithSHA256(byte[] K, byte[] text, byte[] mac) {
     return verify(HMAC.SHA2_256, K, text, mac);
   }
+  
+  public static boolean verifyWithSHA256(byte[] K, byte[] text, byte[] mac, int length) {
+    return verify(HMAC.SHA2_256, K, text, mac, length);
+  }
+
 }	
