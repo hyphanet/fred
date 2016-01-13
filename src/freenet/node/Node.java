@@ -1334,12 +1334,13 @@ public class Node implements TimeSkewDetectorCallback {
 			 }
 
 			 @Override
-			 public void set(String tcName) throws InvalidConfigValueException {
+			 public void set(String tcName) throws InvalidConfigValueException, NodeNeedRestartException {
 				 try {
 					 trafficClass = TrafficClass.fromNameOrValue(tcName);
 				 } catch (IllegalArgumentException e) {
 					 throw new InvalidConfigValueException(e);
 				 }
+				 throw new NodeNeedRestartException("TrafficClass cannot change on the fly");
 			 }
 
 			 @Override
