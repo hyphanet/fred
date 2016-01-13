@@ -20,14 +20,18 @@ public enum TrafficClass {
   DSCP_AF41(0x88),
   DSCP_AF42(0x90),
   DSCP_AF43(0x98),
-  CS0(0),
-  CS1(0x20),
-  CS2(0x40),
-  CS3(0x60),
-  CS4(0x80),
-  CS5(0xA0),
-  CS6(0xC0),
-  CS7(0xE0);
+  DSCP_CS0(0),
+  DSCP_CS1(0x20),
+  DSCP_CS2(0x40),
+  DSCP_CS3(0x60),
+  DSCP_CS4(0x80),
+  DSCP_CS5(0xA0),
+  DSCP_CS6(0xC0),
+  DSCP_CS7(0xE0),
+  RFC1349_IPTOS_LOWCOST(0x02),
+  RFC1349_IPTOS_RELIABILITY(0x04),
+  RFC1349_IPTOS_THROUGHPUT(0x08),
+  RFC1349_IPTOS_LOWDELAY(0x10);
 
   public final int value;
 
@@ -37,7 +41,7 @@ public enum TrafficClass {
 
   public static TrafficClass getDefault() {
     // That's high-throughput, high drop probability
-    return TrafficClass.CS1;
+    return TrafficClass.DSCP_CS1;
   }
 
   public static TrafficClass fromNameOrValue(String tcName) {
