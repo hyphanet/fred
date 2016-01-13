@@ -389,7 +389,7 @@ public class PluginManager {
 			boolean stillTrying = false;
 			if (pdl.isLoadingFromFreenet()) {
 				PluginDownLoaderFreenet downloader = (PluginDownLoaderFreenet) pdl;
-				if(!(downloader.fatalFailure() || downloader.desperate || twoCopiesInStartingPlugins(filename))) {
+				if (!downloader.fatalFailure() && !downloader.desperate && !twoCopiesInStartingPlugins(filename)) {
 					// Retry forever...
 					final PluginDownLoader<?> retry = pdl.getRetryDownloader();
 					stillTrying = true;
