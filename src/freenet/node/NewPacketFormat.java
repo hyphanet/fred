@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -397,8 +398,14 @@ public class NewPacketFormat implements PacketFormat {
 
 		byte[] payload = Arrays.copyOfRange(buf, offset + hmacLength, offset + length);
 		byte[] hash = Arrays.copyOfRange(buf, offset, offset + hmacLength);
+		byte[] localHash = Arrays.copyOf(HMAC.macWithSHA256(sessionKey.hmacKey, payload), HMAC_LENGTH);
+		if (!MessageDigest.isEqual(hash, localHash)) {
+			if (logMINOR) {
+				Logger.minor(this, "Failed to validate the HMAC using TrackerID="+sessionKey.trackerID);
+			}
 
-		if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, payload, hash)) return null;
+			return null;
+		}
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.incommingCipher, IV);
 		payloadCipher.blockDecipher(payload, 0, payload.length);
