@@ -49,4 +49,15 @@ public abstract class PluginDownLoader<T> {
 		return false;
 	}
 
+    /**
+     * Returns a {@link PluginDownLoader} that can be used to restart a plugin download. This
+     * default implementation assumes that the current downloader is stateless so it simply returns
+     * {@code this}.
+     *
+     * @return A plugin downloader suitable for restarting the download
+     */
+    public PluginDownLoader<T> getRetryDownloader() {
+        return this;
+    }
+
 }

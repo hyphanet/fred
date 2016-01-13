@@ -120,4 +120,8 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 		return true;
 	}
 
+	public PluginDownLoader<FreenetURI> getRetryDownloader() {
+		return new PluginDownLoaderFreenet(hlsc, node, true);
+	}
+
 }

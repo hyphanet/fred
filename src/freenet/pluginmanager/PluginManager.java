@@ -387,28 +387,11 @@ public class PluginManager {
 		} catch (PluginNotFoundException e) {
 			Logger.normal(this, "Loading plugin failed (" + filename + ')', e);
 			boolean stillTrying = false;
-			if(pdl instanceof PluginDownLoaderOfficialFreenet) {
-				PluginDownLoaderOfficialFreenet downloader = (PluginDownLoaderOfficialFreenet) pdl;
-				if(!(downloader.fatalFailure() || downloader.desperate || twoCopiesInStartingPlugins(filename))) {
-					// Retry forever...
-					final PluginDownLoaderOfficialFreenet retry =
-						new PluginDownLoaderOfficialFreenet(client, node, true);
-					stillTrying = true;
-					node.getTicker().queueTimedJob(new Runnable() {
-
-						@Override
-						public void run() {
-							realStartPlugin(retry, filename, store, true);
-						}
-
-					}, 0);
-				}
-			} else if(pdl instanceof PluginDownLoaderFreenet) {
+			if (pdl.isLoadingFromFreenet()) {
 				PluginDownLoaderFreenet downloader = (PluginDownLoaderFreenet) pdl;
 				if(!(downloader.fatalFailure() || downloader.desperate || twoCopiesInStartingPlugins(filename))) {
 					// Retry forever...
-					final PluginDownLoaderFreenet retry =
-						new PluginDownLoaderFreenet(client, node, true);
+					final PluginDownLoader<?> retry = pdl.getRetryDownloader();
 					stillTrying = true;
 					node.getTicker().queueTimedJob(new Runnable() {
 
