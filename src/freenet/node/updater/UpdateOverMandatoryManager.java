@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.WeakHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -64,7 +65,6 @@ import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
-import freenet.support.Waiter;
 import freenet.support.WeakHashSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
@@ -1039,7 +1039,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		final ArrayBucket cleanedBlob = new ArrayBucket();
 		
-		final Waiter w = new Waiter();
+		final CountDownLatch w = new CountDownLatch(1);
 
 		ClientGetCallback myCallback = new ClientGetCallback() {
 
@@ -1076,7 +1076,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					cleanedBlob.free();
 				}
 			    } finally {
-			        w.complete();
+			        w.countDown();
 			    }
 			}
 
@@ -1089,7 +1089,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					temp.free();
 				insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation", RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 			    } finally {
-			        w.complete();
+			        w.countDown();
 			    }
 			}
 			
@@ -1109,7 +1109,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
-			if(synchronous) w.waitForCompletion();
+			if(synchronous) w.await();
 		} catch(FetchException e1) {
 			System.err.println("Failed to decode UOM blob: " + e1);
 			e1.printStackTrace();
