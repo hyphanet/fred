@@ -70,6 +70,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         this.preferInsert = preferInsert;
         this.ignoreLowBackoff = ignoreLowBackoff;
         this.realTimeFlag = realTimeFlag;
+        if(data != null && headers != null) collided = true;
     }
     
     @Override
@@ -204,6 +205,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             block = storedBlock;
             data = block.getRawData();
             headers = block.getRawHeaders();
+            collided = true;
 		    sendCollision();
 		}
 		
