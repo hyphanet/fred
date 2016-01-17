@@ -399,11 +399,32 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     }
 
     private void commit() {
-		try {
-			node.store(block, node.shouldStoreDeep(key, source, sender == null ? new PeerNode[0] : sender.getRoutedTo()), collided, false, canWriteDatastore, false);
-		} catch (KeyCollisionException e) {
-			Logger.normal(this, "Collision on "+this);
-		}
+        boolean deep = node.shouldStoreDeep(key, source, sender == null ? new PeerNode[0] : sender.getRoutedTo());
+        try {
+            node.store(block, deep, collided, false, canWriteDatastore, false);
+        } catch (KeyCollisionException e) {
+            Logger.normal(this, "Late collision on "+this);
+            SSKBlock oldBlock = node.fetch(key, true, false, false, canWriteDatastore, false, null);
+            if(oldBlock == null) {
+                // Argh. :(
+                // FIXME We can get rid of much of this complexity when we get rid of 
+                // the pubkey store. At that point we can have KeyCollisionException
+                // include the colliding block.
+                Logger.warning(this, "Key collision but data not in store for "+this);
+                try {
+                    node.store(block, deep, true, false, canWriteDatastore, false);
+                } catch (KeyCollisionException e1) {
+                    // Impossible.
+                }
+            } else {
+                collided = true;
+                this.block = oldBlock;
+                this.data = oldBlock.getRawData();
+                this.headers = oldBlock.getRawHeaders();
+                // Send the collision, but we may still want to send the InsertReply.
+                sendCollision();
+            }
+        }
 	}
 
 	private final Object totalBytesSync = new Object();
