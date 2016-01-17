@@ -201,22 +201,10 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 		SSKBlock storedBlock = node.fetch(key, false, false, false, canWriteDatastore, false, null);
 		
 		if((storedBlock != null) && !storedBlock.equals(block)) {
-			try {
-				RequestHandler.sendSSK(storedBlock.getRawHeaders(), storedBlock.getRawData(), false, pubKey, source, uid, this, realTimeFlag);
-			} catch (NotConnectedException e1) {
-				if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
-				return;
-			} catch (WaitedTooLongException e1) {
-				Logger.error(this, "Took too long to send ssk datareply to "+uid+" (because of throttling)");
-				return;
-			} catch (PeerRestartedException e) {
-				if(logMINOR) Logger.minor(this, "Source restarted on "+uid);
-				return;
-			} catch (SyncSendWaitedTooLongException e) {
-				Logger.error(this, "Took too long to send ssk datareply to "+uid);
-				return;
-			}
-			block = storedBlock;
+            block = storedBlock;
+            data = block.getRawData();
+            headers = block.getRawHeaders();
+		    sendCollision();
 		}
 		
 		if(logMINOR) Logger.minor(this, "Got block for "+key+" for "+uid);
@@ -260,21 +248,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 					// Is verified elsewhere...
 					throw new Error("Impossible: " + e1, e1);
 				}
-				try {
-					RequestHandler.sendSSK(headers, data, false, pubKey, source, uid, this, realTimeFlag);
-				} catch (NotConnectedException e1) {
-					if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
-					return;
-				} catch (WaitedTooLongException e1) {
-					Logger.error(this, "Took too long to send ssk datareply to "+uid+" because of bwlimiting");
-					return;
-				} catch (PeerRestartedException e) {
-					Logger.error(this, "Peer restarted on "+uid);
-					return;
-				} catch (SyncSendWaitedTooLongException e) {
-					Logger.error(this, "Took too long to send ssk datareply to "+uid);
-					return;
-				}
+        		sendCollision();
             }
             
             int status = sender.getStatus();
@@ -376,6 +350,24 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				Logger.error(this, "Took too long to send "+msg+" to "+source);
 			}
             finish(status);
+            return;
+        }
+    }
+
+    private void sendCollision() {
+        try {
+            RequestHandler.sendSSK(headers, data, false, pubKey, source, uid, this, realTimeFlag);
+        } catch (NotConnectedException e1) {
+            if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
+            return;
+        } catch (WaitedTooLongException e1) {
+            Logger.error(this, "Took too long to send ssk datareply to "+uid+" because of bwlimiting");
+            return;
+        } catch (PeerRestartedException e) {
+            Logger.error(this, "Peer restarted on "+uid);
+            return;
+        } catch (SyncSendWaitedTooLongException e) {
+            Logger.error(this, "Took too long to send ssk datareply to "+uid);
             return;
         }
     }
