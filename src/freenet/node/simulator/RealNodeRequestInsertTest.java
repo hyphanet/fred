@@ -333,17 +333,18 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         TreeSet<Long> runningUIDsList = new TreeSet<Long>();
         List<Long> tempRunning = new ArrayList<Long>();
         for(int i=0;i<nodes.length;i++) {
-        	load.append(i);
-        	load.append(':');
         	tempRunning.clear();
         	nodes[i].tracker.addRunningUIDs(tempRunning);
         	int runningUIDsAlt = tempRunning.size();
         	for(Long l : tempRunning) runningUIDsList.add(l);
-        	load.append(runningUIDsAlt);
-        	if(i != nodes.length-1)
-        		load.append(' ');
+        	if(runningUIDsAlt != 0) {
+        	    load.append(i);
+        	    load.append(':');
+        	    load.append(runningUIDsAlt);
+                load.append(' ');
+        	}
         }
-        System.err.println(load.toString());
+        System.err.println(load.toString().trim());
         int totalRunningUIDsAlt = runningUIDsList.size();
         if(totalRunningUIDsAlt != 0)
         	System.err.println("Still running UIDs (alt): "+totalRunningUIDsAlt);
