@@ -1685,6 +1685,14 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	
     public void relayOpennetRef(byte[] newNoderef, final PeerNode next, 
             final RequestHandler handler) throws NotConnectedException {
+        synchronized(this) {
+            if(opennetFinishedRelaying) {
+                Logger.error(this, "Already relayed in relayOpennetRef on "+this+" to "+next, 
+                        new Exception("debug"));
+                opennetFinishedRelaying = true;
+                return;
+            }
+        }
         if(logMINOR) Logger.minor(this, "Relaying noderef from source to data source for "+this);
         OpennetManager om = node.getOpennet();
         om.sendOpennetRef(true, uid, next, newNoderef, this, new AllSentCallback() {
