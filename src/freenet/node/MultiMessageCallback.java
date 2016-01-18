@@ -29,10 +29,11 @@ public abstract class MultiMessageCallback {
 				public void sent() {
 					boolean success;
 					synchronized(MultiMessageCallback.this) {
-						if(finished || sent || !armed) return;
+						if(finished || sent) return;
 						sent = true;
 						waitingForSend--;
 						if(waitingForSend > 0) return;
+                        if(!armed) return;
 						success = !someFailed;
 					}
 					MultiMessageCallback.this.sent(success);
