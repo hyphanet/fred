@@ -1670,9 +1670,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	        if(opennetFinishedRelaying) {
 	            Logger.error(this, "Already relayed in ackOpennet on "+this+" to "+next, 
 	                    new Exception("debug"));
-                opennetFinishedRelaying = true;
 	            return;
 	        }
+            opennetFinishedRelaying = true;
 	    }
 		Message msg = DMT.createFNPOpennetCompletedAck(uid);
 		// We probably should set opennetFinished after the send completes.
@@ -1689,9 +1689,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             if(opennetFinishedRelaying) {
                 Logger.error(this, "Already relayed in relayOpennetRef on "+this+" to "+next, 
                         new Exception("debug"));
-                opennetFinishedRelaying = true;
                 return;
             }
+            opennetFinishedRelaying = true;
         }
         if(logMINOR) Logger.minor(this, "Relaying noderef from source to data source for "+this);
         OpennetManager om = node.getOpennet();
