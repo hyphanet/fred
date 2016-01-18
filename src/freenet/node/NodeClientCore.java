@@ -1377,6 +1377,8 @@ public class NodeClientCore implements Persistable {
 				     * The client layer uses asyncGet(). */
 				    try {
                         rs.waitForOpennetNoderef();
+                        // We can safely ignore the returned noderef if any.
+                        // It has already been rejected by RequestSender.
                     } catch (WaitedTooLongForOpennetNoderefException e1) {
                         // Ignore.
                     }
