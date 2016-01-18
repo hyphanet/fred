@@ -1664,6 +1664,14 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	/** Acknowledge the opennet path folding attempt without sending a reference. Once
 	 * the send completes (asynchronously), unlock everything. */
 	void ackOpennet(final PeerNode next) {
+	    synchronized(this) {
+	        if(opennetFinishedRelaying) {
+	            Logger.error(this, "Already relayed in ackOpennet on "+this+" to "+next, 
+	                    new Exception("debug"));
+                opennetFinishedRelaying = true;
+	            return;
+	        }
+	    }
 		Message msg = DMT.createFNPOpennetCompletedAck(uid);
 		// We probably should set opennetFinished after the send completes.
 		try {
@@ -1783,6 +1791,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     
     /** Have we finished waiting for an opennet noderef? */
     private boolean opennetFinished;
+
+    /** Have we sent an acknowledgement or opennet noderef? */
+    private boolean opennetFinishedRelaying;
     
     /** Did we timeout waiting for opennet noderef? */
     private boolean opennetTimedOut;
