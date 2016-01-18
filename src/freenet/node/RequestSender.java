@@ -1680,8 +1680,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	static final double MAX_PING_TIME = RequestSender.OPENNET_TIMEOUT / 10;
 	
 	private long randomDelayFinishOpennetLocal() {
-	    double pingTime = node.nodeStats.getBwlimitDelayTime() +
-	            node.nodeStats.nodePinger.averagePingTime();
+	    double pingTime = 
+	            Math.max(node.nodeStats.getBwlimitDelayTime(),
+	                    node.nodeStats.nodePinger.averagePingTime());
 	    pingTime = Math.min(pingTime, MAX_PING_TIME);
 	    double delay = 
 	            ((node.random.nextGaussian() * PINGS_STDDEV) + PINGS) * pingTime;
