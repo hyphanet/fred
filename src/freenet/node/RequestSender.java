@@ -1735,7 +1735,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				// Serious race condition not possible here as we set it.
 				if(source == null) {
 				    long delay = randomDelayFinishOpennetLocal();
-				    if(logMINOR) Logger.minor(this, "Delaying opennet completion for "+TimeUtil.formatTime(delay));
+				    if(logMINOR) Logger.minor(this, "Delaying opennet completion for "+TimeUtil.formatTime(delay, 2));
 				    node.ticker.queueTimedJob(new Runnable() {
 
                         @Override
