@@ -22,8 +22,10 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.RetrievalException;
 import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.io.xfer.BlockReceiver;
+import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.BlockReceiver.BlockReceiverCompletion;
 import freenet.io.xfer.BlockReceiver.BlockReceiverTimeoutHandler;
+import freenet.io.xfer.BulkTransmitter.AllSentCallback;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
@@ -1680,8 +1682,24 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			// Ignore.
 		}
 	}
+	
+    public void relayOpennetRef(byte[] newNoderef, final PeerNode next, 
+            final RequestHandler handler) throws NotConnectedException {
+        if(logMINOR) Logger.minor(this, "Relaying noderef from source to data source for "+this);
+        OpennetManager om = node.getOpennet();
+        om.sendOpennetRef(true, uid, next, newNoderef, this, new AllSentCallback() {
 
-	/**
+            @Override
+            public void allSent(
+                    BulkTransmitter bulkTransmitter,
+                    boolean anyFailed) {
+                handler.finishAfterRelaying(next);
+            }
+            
+        });
+    }
+
+    /**
      * Do path folding, maybe.
      * Wait for either a CompletedAck or a ConnectDestination.
      * If the former, exit.
