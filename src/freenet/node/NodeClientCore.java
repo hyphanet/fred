@@ -60,6 +60,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.NodeL10n;
+import freenet.node.OpennetManager.WaitedTooLongForOpennetNoderefException;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPClient;
 import freenet.node.fcp.FCPPersistentRoot;
@@ -1369,7 +1370,16 @@ public class NodeClientCore implements Persistable {
 						}
 					}
 
-				if(status == RequestSender.SUCCESS)
+				if(status == RequestSender.SUCCESS) {
+				    /* Wait for the request to finish, for consistency.
+				     * The data will have already been returned via client-layer 
+				     * callbacks, and this method is only used by simulations anyway.
+				     * The client layer uses asyncGet(). */
+				    try {
+                        rs.waitForOpennetNoderef();
+                    } catch (WaitedTooLongForOpennetNoderefException e1) {
+                        // Ignore.
+                    }
 					try {
 						return new ClientCHKBlock(rs.getPRB().getBlock(), rs.getHeaders(), key, true);
 					} catch(CHKVerifyException e) {
@@ -1379,7 +1389,7 @@ public class NodeClientCore implements Persistable {
 						Logger.error(this, "Impossible: " + e, e);
 						throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 					}
-				else {
+				} else {
 					switch(status) {
 						case RequestSender.NOT_FINISHED:
 							Logger.error(this, "RS still running in getCHK!: " + rs);
