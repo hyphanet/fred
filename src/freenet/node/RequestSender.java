@@ -1674,7 +1674,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	}
 
 	/** Number of ping times to simulate */
-	static final double PINGS = 5.0;
+	static final double PINGS = 3.0;
 	/** Standard deviation in ping times */
 	static final double PINGS_STDDEV = PINGS / 6.0;
 	static final double MAX_PING_TIME = RequestSender.OPENNET_TIMEOUT / 10;
