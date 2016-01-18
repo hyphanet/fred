@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
@@ -329,19 +330,21 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             }
         }
         StringBuilder load = new StringBuilder("Running UIDs for nodes: ");
-        int totalRunningUIDsAlt = 0;
-        List<Long> runningUIDsList = new ArrayList<Long>();
+        TreeSet<Long> runningUIDsList = new TreeSet<Long>();
+        List<Long> tempRunning = new ArrayList<Long>();
         for(int i=0;i<nodes.length;i++) {
         	load.append(i);
         	load.append(':');
-        	nodes[i].tracker.addRunningUIDs(runningUIDsList);
-        	int runningUIDsAlt = nodes[i].tracker.getTotalRunningUIDsAlt();
-        	totalRunningUIDsAlt += runningUIDsAlt;
+        	tempRunning.clear();
+        	nodes[i].tracker.addRunningUIDs(tempRunning);
+        	int runningUIDsAlt = tempRunning.size();
+        	for(Long l : tempRunning) runningUIDsList.add(l);
         	load.append(runningUIDsAlt);
         	if(i != nodes.length-1)
         		load.append(' ');
         }
         System.err.println(load.toString());
+        int totalRunningUIDsAlt = runningUIDsList.size();
         if(totalRunningUIDsAlt != 0)
         	System.err.println("Still running UIDs (alt): "+totalRunningUIDsAlt);
         if(!runningUIDsList.isEmpty()) {

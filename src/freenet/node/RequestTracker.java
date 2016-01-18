@@ -770,13 +770,6 @@ public class RequestTracker {
 		}
 	}
 
-	public int getTotalRunningUIDsAlt() {
-		return this.runningCHKGetUIDsRT.size() + this.runningCHKPutUIDsRT.size() + this.runningSSKGetUIDsRT.size() +
-		this.runningSSKPutUIDsRT.size() + this.runningSSKOfferReplyUIDsRT.size() + this.runningCHKOfferReplyUIDsRT.size() +
-		this.runningCHKGetUIDsBulk.size() + this.runningCHKPutUIDsBulk.size() + this.runningSSKGetUIDsBulk.size() +
-		this.runningSSKPutUIDsBulk.size() + this.runningSSKOfferReplyUIDsBulk.size() + this.runningCHKOfferReplyUIDsBulk.size();
-	}
-
 	private ArrayList<Long> completedBuffer = new ArrayList<Long>();
 
 	// Every this many slots, we tell all the PeerMessageQueue's to remove the old Items for the ID's in question.
