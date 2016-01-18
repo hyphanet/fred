@@ -37,10 +37,11 @@ public abstract class MultiMessageCallback {
                             MultiMessageCallback.this);
 					boolean success;
 					synchronized(MultiMessageCallback.this) {
-						if(finished || sent || !armed) return;
+						if(finished || sent) return;
 						sent = true;
 						waitingForSend--;
 						if(waitingForSend > 0) return;
+                        if(!armed) return;
 						success = !someFailed;
 					}
 					if(logMINOR) Logger.minor(this, "sent() calling sent() for "+this+" for "+
