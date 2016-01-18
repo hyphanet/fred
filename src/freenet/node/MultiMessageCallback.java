@@ -1,9 +1,15 @@
 package freenet.node;
 
 import freenet.io.comm.AsyncMessageCallback;
+import freenet.support.Logger;
 
 /** Waits for multiple asynchronous message sends, then calls finish(). */
 public abstract class MultiMessageCallback {
+    
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerClass(MultiMessageCallback.class);
+    }
 	
 	private int waiting;
 	private int waitingForSend;
@@ -27,6 +33,8 @@ public abstract class MultiMessageCallback {
 				
 				@Override
 				public void sent() {
+                    if(logMINOR) Logger.minor(this, "sent() on "+this+" for "+
+                            MultiMessageCallback.this);
 					boolean success;
 					synchronized(MultiMessageCallback.this) {
 						if(finished || sent || !armed) return;
@@ -35,6 +43,8 @@ public abstract class MultiMessageCallback {
 						if(waitingForSend > 0) return;
 						success = !someFailed;
 					}
+					if(logMINOR) Logger.minor(this, "sent() calling sent() for "+this+" for "+
+					        MultiMessageCallback.this);
 					MultiMessageCallback.this.sent(success);
 				}
 
@@ -54,6 +64,8 @@ public abstract class MultiMessageCallback {
 				}
 				
 				private void complete(boolean success) {
+				    if(logMINOR) Logger.minor(this, "Complete("+success+") on "+this+" for "+
+				            MultiMessageCallback.this);
 					boolean callSent = false;
 					synchronized(MultiMessageCallback.this) {
 						if(finished) return;
@@ -69,8 +81,11 @@ public abstract class MultiMessageCallback {
 						if(!finished()) return;
 						if(someFailed) success = false;
 					}
-					if(callSent)
+					if(callSent) {
+					    if(logMINOR) Logger.minor(this, "complete() calling sent() for "+this+
+					            " for "+MultiMessageCallback.this);
 						MultiMessageCallback.this.sent(success);
+					}
 					finish(success);
 				}
 				
@@ -91,7 +106,11 @@ public abstract class MultiMessageCallback {
 			if(waitingForSend == 0) callSent = true;
 			success = !someFailed;
 		}
-		if(callSent) sent(success);
+		if(callSent) {
+            if(logMINOR) Logger.minor(this, "arm() calling sent() for "+this+
+                    " for "+MultiMessageCallback.this);
+		    sent(success);
+		}
 		if(complete) finish(success);
 	}
 	
