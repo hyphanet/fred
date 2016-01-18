@@ -1711,11 +1711,13 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     }
 
     /**
-     * Do path folding, maybe.
-     * Wait for either a CompletedAck or a ConnectDestination.
-     * If the former, exit.
-     * If we want a connection, reply with a ConnectReply, otherwise send a ConnectRejected and exit.
-     * Add the peer.
+     * Do path folding, maybe:
+     * Wait for either a CompletedAck or a ConnectDestination. If the former, exit.
+     * If we want a connection, reply with a ConnectReply and our noderef and add the
+     * peer. If there is no previous peer, acknowledge it immediately and exit.
+     * Otherwise pass it on to RequestHandler, which is responsible for relaying it
+     * to the requestor, waiting for a response and calling either ackOpennet() or
+     * relayOpennetRef().
      * @return True only if there was a fatal timeout and the caller should not unlock.
      */
     private boolean finishOpennet(PeerNode next) {
