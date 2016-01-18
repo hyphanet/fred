@@ -1707,8 +1707,10 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         		return false;
         	}
         	
-            if(!node.canWriteDatastoreRequest(origHTL))
+            if(!node.canWriteDatastoreRequest(origHTL)) {
                 ackOpennet(next);
+                return false;
+            }
         	
 			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null) {
 				if(logMINOR) Logger.minor(this, "Don't want noderef on "+this);
