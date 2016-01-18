@@ -180,19 +180,6 @@ public abstract class UIDTag {
 		tracker.unlockUID(this, false, noRecordUnlock);
 	}
 
-	public void postUnlock() {
-		PeerNode[] peers;
-		synchronized(this) {
-			if(routedTo != null)
-				peers = routedTo.toArray(new PeerNode[routedTo.size()]);
-			else
-				peers = null;
-		}
-		if(peers != null)
-			for(PeerNode p : peers)
-				p.postUnlock(this);
-	}
-
 	/** Add up the expected transfers in.
 	 * @param ignoreLocalVsRemote If true, pretend that the request is remote even if it's local.
 	 * @param outwardTransfersPerInsert Expected number of outward transfers for an insert.

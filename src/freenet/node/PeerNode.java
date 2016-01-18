@@ -5298,10 +5298,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
 	}
 	
-	public void postUnlock(UIDTag tag) {
-		outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
-	}
-	
 	static SlotWaiter createSlotWaiter(UIDTag tag, RequestType type, boolean offeredKey, boolean realTime, PeerNode source) {
 		return new SlotWaiter(tag, type, offeredKey, realTime, source);
 	}
