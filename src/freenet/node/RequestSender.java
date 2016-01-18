@@ -1781,7 +1781,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 
     // Opennet stuff
     
-    /** Have we finished all opennet-related activities? */
+    /** Have we finished waiting for an opennet noderef? */
     private boolean opennetFinished;
     
     /** Did we timeout waiting for opennet noderef? */
