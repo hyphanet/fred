@@ -1682,8 +1682,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	private long randomDelayFinishOpennetLocal() {
 	    double pingTime = 
 	            // Noderefs are sent as real-time
-	            Math.max(node.nodeStats.getBwlimitDelayTimeRT(),
-	                    node.nodeStats.nodePinger.averagePingTime());
+	            node.nodeStats.getBwlimitDelayTimeRT() +
+	            node.nodeStats.nodePinger.averagePingTime();
 	    pingTime = Math.min(pingTime, MAX_PING_TIME);
 	    double delay = 
 	            ((node.random.nextGaussian() * PINGS_STDDEV) + PINGS) * pingTime;
