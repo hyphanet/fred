@@ -1707,6 +1707,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         		return false;
         	}
         	
+            if(!node.canWriteDatastoreRequest(origHTL))
+                ackOpennet(next);
+        	
 			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null) {
 				if(logMINOR) Logger.minor(this, "Don't want noderef on "+this);
 				// If we don't want it let somebody else have it
@@ -1716,9 +1719,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				// RequestHandler will send a noderef back up, eventually, and will unlockHandler() after that point.
 				// But if this is a local request, we need to send the ack now.
 				// Serious race condition not possible here as we set it.
-				if(!node.canWriteDatastoreRequest(origHTL))
-					ackOpennet(next);
-				else if(origTag.shouldStop()) {
+				if(origTag.shouldStop()) {
 					// Can't pass it on.
 					origTag.finishedWaitingForOpennet(next);
 				}
