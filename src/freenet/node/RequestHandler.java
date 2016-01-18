@@ -939,6 +939,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 						try {
 						    rs.relayOpennetRef(newNoderef, dataSource, RequestHandler.this);
                             // Does not wait for an acknowledgement.
+						    return;
 						} catch(NotConnectedException e) {
 							// How sad
 						}
