@@ -1716,7 +1716,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				// RequestHandler will send a noderef back up, eventually, and will unlockHandler() after that point.
 				// But if this is a local request, we need to send the ack now.
 				// Serious race condition not possible here as we set it.
-				if(source == null)
+				if(!node.canWriteDatastoreRequest(origHTL))
 					ackOpennet(next);
 				else if(origTag.shouldStop()) {
 					// Can't pass it on.
