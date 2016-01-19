@@ -87,6 +87,10 @@ public class RequestTracker {
 		transferringRequestHandlers = new HashSet<Long>();
 	}
 
+	/** Lock a UID.
+	 * @param tag The UIDTag to lock.
+	 * @return True if the UID was locked successfully. False if the UID was already in
+	 * use. */
 	public boolean lockUID(UIDTag tag) {
 		return lockUID(tag.uid, tag.isSSK(), tag.isInsert(), tag.isOfferReply(), tag.wasLocal(), tag.realTimeFlag, tag);
 	}
