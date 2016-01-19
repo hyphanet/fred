@@ -2,14 +2,23 @@ package freenet.node;
 
 import freenet.io.comm.AsyncMessageCallback;
 
-/** Waits for multiple asynchronous message sends, then calls finish(). */
+/** Waits for multiple asynchronous message sends, then calls finish(). 
+ * You should add messages with make() and then call arm(). sent(boolean)
+ * will be called when all the messages have been sent (or failed e.g. 
+ * disconnected) and finish(boolean) will be called when all the messages 
+ * have been acknowledged (or failed). */
 public abstract class MultiMessageCallback {
 	
+    /** Number of messages that have not yet completed */
 	private int waiting;
+	/** Number of messages that have not yet been sent */
 	private int waitingForSend;
 	
+	/** True if arm() has been called. finish(boolean) and sent(boolean) will 
+	 * only be called after arming the callback. */
 	private boolean armed;
 	
+	/** True if some messages have failed to send (e.g. disconnected). */
 	private boolean someFailed;
 	
 	/** This is called when all messages have been acked, or failed */
@@ -18,6 +27,7 @@ public abstract class MultiMessageCallback {
 	/** This is called when all messages have been sent (but not acked) or failed to send */
 	abstract void sent(boolean success);
 
+	/** Add another message. You should call arm() after you have added all messages. */
 	public AsyncMessageCallback make() {
 		synchronized(this) {
 			AsyncMessageCallback cb = new AsyncMessageCallback() {
@@ -82,6 +92,9 @@ public abstract class MultiMessageCallback {
 		}
 	}
 
+	/** Enable the callback. The callbacks sent(boolean) and finish(boolean)
+	 * will only be called after this method has been called, so you should 
+	 * use this to indicate that you won't add any more messages. */
 	public void arm() {
 		boolean success;
 		boolean callSent = false;
@@ -96,6 +109,7 @@ public abstract class MultiMessageCallback {
 		if(complete) finish(success);
 	}
 	
+	/** @return True if the callbacck has finished (and is armed) */
 	protected final synchronized boolean finished() {
 		return armed && waiting == 0;
 	}
