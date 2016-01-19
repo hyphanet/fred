@@ -99,6 +99,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
+import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
@@ -978,7 +979,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @throws NodeInitException If the node initialization fails.
 	 */
 	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, 
-	         NodeStarter ns, Executor executor, PrioritizedTicker ticker) throws NodeInitException {
+	         NodeStarter ns, Executor executor, PrioritizedTicker ticker, TestNodeParameters testingParameters) throws NodeInitException {
 		this.shutdownHook = SemiOrderedShutdownHook.get();
 		this.isTestingVM = NodeStarter.isTestingVM();
 		// Easy stuff
@@ -1656,7 +1657,12 @@ public class Node implements TimeSkewDetectorCallback {
 		// Then read the peers
 		peers = new PeerManager(this, shutdownHook);
 		
-		tracker = new RequestTracker(peers, ticker);
+		if(testingParameters != null && testingParameters.requestTrackerSnooper != null) {
+		    tracker = new SnoopingRequestTracker(peers, ticker, this, 
+		            testingParameters.requestTrackerSnooper);
+		} else {
+		    tracker = new RequestTracker(peers, ticker);
+		}
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 

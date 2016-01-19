@@ -210,7 +210,7 @@ public class NodeStarter implements WrapperListener {
 
 		PrioritizedTicker ticker = new PrioritizedTicker(executor);
 		try {
-			node = new Node(cfg, null, null, logConfigHandler, this, executor, ticker);
+			node = new Node(cfg, null, null, logConfigHandler, this, executor, ticker, null);
 			node.start(false);
 			System.out.println("Node initialization completed.");
 		} catch(NodeInitException e) {
@@ -465,6 +465,7 @@ public class NodeStarter implements WrapperListener {
         public boolean enablePlugins;
         public boolean lazyStartRequestStarters = true;
         public boolean lazyStartDatastoreChecker = true;
+        public RequestTrackerSnooper requestTrackerSnooper = null;
     }
 
     /**
@@ -612,7 +613,7 @@ public class NodeStarter implements WrapperListener {
 
 		PersistentConfig config = new PersistentConfig(configFS);
 
-        Node node = new Node(config, params.random, params.random, null, null, params.executor, params.ticker);
+        Node node = new Node(config, params.random, params.random, null, null, params.executor, params.ticker, params);
 
 		//All testing environments connect the nodes as they want, even if the old setup is restored, it is not desired.
 		node.peers.removeAllPeers();
