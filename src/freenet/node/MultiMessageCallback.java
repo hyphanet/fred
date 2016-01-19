@@ -16,8 +16,8 @@ import freenet.io.comm.AsyncMessageCallback;
  *     // Messages have been sent.
  *   }
  * }
- * pn.sendAsync(m1, mcb, ctr);
- * pn.sendAsync(m2, mcb, ctr);
+ * pn.sendAsync(m1, mcb.make(), ctr);
+ * pn.sendAsync(m2, mcb.make(), ctr);
  * mcb.arm();</pre> */
 public abstract class MultiMessageCallback {
 	
