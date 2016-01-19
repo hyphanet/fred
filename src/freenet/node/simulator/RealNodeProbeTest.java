@@ -90,7 +90,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
         	
             waitForPingAverage(0.5, nodes, new DummyRandomSource(3143), MAX_PINGS, 1000);
             
-            RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, 10, tracker);
+            RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, 10, tracker, null);
             
             waitForAllConnected(nodes);
             

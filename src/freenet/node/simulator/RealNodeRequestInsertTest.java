@@ -128,9 +128,11 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             executors[i] = new PooledExecutor();
             tickers[i] = new PrioritizedTicker(executors[i]);
         }
+        final TotalRequestUIDsCounter overallUIDTagCounter =
+                new TotalRequestUIDsCounter();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             TestNodeParameters params = getNodeParameters(i, name, nodesRandom, 
-                    executors[i % tickerThreads], tickers[i % tickerThreads]);
+                    executors[i % tickerThreads], tickers[i % tickerThreads], overallUIDTagCounter);
             nodes[i] = NodeStarter.createTestNode(params);
             tracker.add(nodes[i]);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
@@ -174,7 +176,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.out.println("Ping average > 95%, lets do some inserts/requests");
         System.out.println();
         
-        RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, TARGET_SUCCESSES, tracker);
+        RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, TARGET_SUCCESSES, tracker, overallUIDTagCounter);
         
         while(true) {
             try {
@@ -189,7 +191,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     }
 
     private static TestNodeParameters getNodeParameters(int i, String name, RandomSource nodesRandom,
-            Executor executor, PrioritizedTicker ticker) {
+            Executor executor, PrioritizedTicker ticker, TotalRequestUIDsCounter overallUIDTagCounter) {
         TestNodeParameters params = new TestNodeParameters();
         params.port = DARKNET_PORT_BASE+i;
         params.baseDirectory = new File(name);
@@ -211,14 +213,25 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         params.longPingTimes = true;
         params.useSlashdotCache = USE_SLASHDOT_CACHE;
         params.writeLocalToDatastore = CACHE_HIGH_HTL;
+        params.requestTrackerSnooper = overallUIDTagCounter;
         return params;
     }
 
-    public RealNodeRequestInsertTest(Node[] nodes, DummyRandomSource random, int targetSuccesses, SimulatorRequestTracker tracker) {
+    /**
+     * @param nodes
+     * @param random
+     * @param targetSuccesses
+     * @param tracker
+     * @param overallUIDTagCounter If not null, we expect all requests to finish after
+     * each cycle, and wait if necessary to achieve this. This should make results more
+     * reproducible. If null, we log any requests still running after each cycle.
+     */
+    public RealNodeRequestInsertTest(Node[] nodes, DummyRandomSource random, int targetSuccesses, SimulatorRequestTracker tracker, TotalRequestUIDsCounter overallUIDTagCounter) {
     	this.nodes = nodes;
     	this.random = random;
     	this.targetSuccesses = targetSuccesses;
     	this.tracker = tracker;
+    	this.overallUIDTagCounter = overallUIDTagCounter;
 	}
 
     private final Node[] nodes;
@@ -230,6 +243,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 	private int fetchSuccesses = 0;
 	private final int targetSuccesses;
 	private final SimulatorRequestTracker tracker;
+	private final TotalRequestUIDsCounter overallUIDTagCounter;
 
 	/**
 	 * @param nodes
@@ -240,8 +254,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 	 * @throws SSKEncodeException
 	 * @throws IOException
 	 * @throws KeyDecodeException
+	 * @throws InterruptedException 
 	 */
-	int insertRequestTest() throws CHKEncodeException, InvalidCompressionCodecException, SSKEncodeException, IOException, KeyDecodeException {
+	int insertRequestTest() throws CHKEncodeException, InvalidCompressionCodecException, SSKEncodeException, IOException, KeyDecodeException, InterruptedException {
 		
         requestNumber++;
         try {
@@ -329,6 +344,18 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 return EXIT_BAD_DATA;
             }
         }
+        if(overallUIDTagCounter != null) {
+            // We expect that there are no requests running.
+            if(isSSK) {
+                // Will have finished already.
+                assert(this.overallUIDTagCounter.getCount() == 0);
+            } else {
+                // CHK requests can take some time to finish due to path folding (even if disabled).
+                overallUIDTagCounter.waitForNoRequests();
+            }
+        } else {
+            // There may be requests running.
+        }
         StringBuilder load = new StringBuilder("Running UIDs for nodes: ");
         TreeSet<Long> runningUIDsList = new TreeSet<Long>();
         List<Long> tempRunning = new ArrayList<Long>();
@@ -346,9 +373,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         }
         System.err.println(load.toString().trim());
         int totalRunningUIDsAlt = runningUIDsList.size();
-        if(totalRunningUIDsAlt != 0)
+        assert(overallUIDTagCounter == null || totalRunningUIDsAlt == 0);
+        if(totalRunningUIDsAlt != 0) {
         	System.err.println("Still running UIDs (alt): "+totalRunningUIDsAlt);
-        if(!runningUIDsList.isEmpty()) {
         	System.err.println("List of running UIDs: "+Arrays.toString(runningUIDsList.toArray()));
         }
         System.err.println("Surplus requests:");
