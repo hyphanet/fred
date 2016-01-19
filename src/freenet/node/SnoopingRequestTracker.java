@@ -5,7 +5,7 @@ import freenet.support.Ticker;
 public class SnoopingRequestTracker extends RequestTracker {
 
     final Node node;
-    RequestTrackerSnooper callback;
+    final RequestTrackerSnooper callback;
     
     public SnoopingRequestTracker(PeerManager peers, Ticker ticker, Node node,
             RequestTrackerSnooper cb) {
