@@ -2,11 +2,9 @@ package freenet.node;
 
 import freenet.io.comm.AsyncMessageCallback;
 
-/** Waits for multiple asynchronous message sends, then calls finish(). 
- * You should add messages with make() and then call arm(). sent(boolean)
- * will be called when all the messages have been sent (or failed e.g. 
- * disconnected) and finish(boolean) will be called when all the messages 
- * have been acknowledged (or failed). Typical usage:
+/** Groups a set of message sends together so that we get a single sent(boolean)
+ * callback after all the messages have been sent, and then later a finished(boolean).
+ * None of the callbacks will be called until after you call arm(). Typical usage:
  * <pre>Message m1 = ...;
  * Message m2 = ...;
  * PeerNode pn = ...;
