@@ -6,7 +6,21 @@ import freenet.io.comm.AsyncMessageCallback;
  * You should add messages with make() and then call arm(). sent(boolean)
  * will be called when all the messages have been sent (or failed e.g. 
  * disconnected) and finish(boolean) will be called when all the messages 
- * have been acknowledged (or failed). */
+ * have been acknowledged (or failed). Typical usage:
+ * <pre>Message m1 = ...;
+ * Message m2 = ...;
+ * PeerNode pn = ...;
+ * MultiMessageCallback mcb = new MultiMessageCallback() {
+ *   protected void finish(boolean success) {
+ *     // Messages have finished.
+ *   }
+ *   protected void sent(boolean success) {
+ *     // Messages have been sent.
+ *   }
+ * }
+ * pn.sendAsync(m1, mcb, ctr);
+ * pn.sendAsync(m2, mcb, ctr);
+ * mcb.arm();</pre> */
 public abstract class MultiMessageCallback {
 	
     /** Number of messages that have not yet completed */
