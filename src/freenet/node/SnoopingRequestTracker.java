@@ -16,9 +16,12 @@ public class SnoopingRequestTracker extends RequestTracker {
     
     @Override
     public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag) {
-        boolean ret = super.lockUID(uid, ssk, insert, offerReply, local, realTimeFlag, tag);
-        callback.onLock(tag, node);
-        return ret;
+        if(super.lockUID(uid, ssk, insert, offerReply, local, realTimeFlag, tag)) {
+            callback.onLock(tag, node);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
