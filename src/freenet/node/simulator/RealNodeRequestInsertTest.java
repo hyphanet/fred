@@ -259,6 +259,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 	int insertRequestTest() throws CHKEncodeException, InvalidCompressionCodecException, SSKEncodeException, IOException, KeyDecodeException, InterruptedException {
 		
         requestNumber++;
+        // TEST [number]: [easy to parse but readable, reproducible output]
+        String prefix = "TEST "+requestNumber+": ";
         try {
             Thread.sleep(100);
         } catch (InterruptedException e1) {
@@ -308,7 +310,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 			return EXIT_INSERT_FAILED;
 		}
 		Key lowLevelKey = block.getKey();
-		tracker.dumpKey(block.getKey(), true, true);
+		tracker.dumpKey(block.getKey(), true, true, true, prefix+"INSERT: ");
 		if(overallUIDTagCounter != null)
 		    overallUIDTagCounter.waitForNoRequests();
         // Pick random node to request from
@@ -322,11 +324,12 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         } catch (LowLevelGetException e) {
         	block = null;
         }
-        tracker.dumpKey(lowLevelKey, false, true);
+        tracker.dumpKey(lowLevelKey, false, true, true, prefix+"REQUEST: ");
         if(block == null) {
 			int percentSuccess=100*fetchSuccesses/insertAttempts;
             Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
-            System.err.println("Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
+            System.err.println(prefix+"Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
+            
             requestsAvg.report(0.0);
         } else {
             byte[] results = block.memoryDecode();
@@ -335,14 +338,14 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 				fetchSuccesses++;
 				int percentSuccess=100*fetchSuccesses/insertAttempts;
                 Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" from node "+node2+" succeeded ("+percentSuccess+"%): "+new String(results));
-                System.err.println("Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): \""+new String(results)+'\"');
+                System.err.println(prefix+"Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): \""+new String(results)+'\"');
                 if(fetchSuccesses == targetSuccesses) {
                 	System.err.println("Succeeded, "+targetSuccesses+" successful fetches");
                 	return 0;
                 }
             } else {
                 Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
-                System.err.println("Returned invalid data!: "+new String(results));
+                System.err.println(prefix+"Returned invalid data!: "+new String(results));
                 return EXIT_BAD_DATA;
             }
         }
@@ -373,10 +376,10 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 load.append(' ');
         	}
         }
-        System.err.println(load.toString().trim());
         int totalRunningUIDsAlt = runningUIDsList.size();
         assert(overallUIDTagCounter == null || totalRunningUIDsAlt == 0);
         if(totalRunningUIDsAlt != 0) {
+            System.err.println(load.toString().trim());
         	System.err.println("Still running UIDs (alt): "+totalRunningUIDsAlt);
         	System.err.println("List of running UIDs: "+Arrays.toString(runningUIDsList.toArray()));
         }

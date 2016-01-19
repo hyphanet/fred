@@ -39,9 +39,11 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
             this.nodeIDsVisited = new ArrayList<Integer>(maxHTL);
         }
         
-        public String dump() {
+        public String dump(boolean noUIDs, String prefix) {
             StringBuilder sb = new StringBuilder();
-            sb.append(uid).append(":\n"); // Separate line for easier diffs.
+            if(prefix != null) sb.append(prefix);
+            if(!noUIDs)
+                sb.append(uid).append(":\n"); // Separate line for easier diffs.
             if(isSSK) sb.append("SSK ");
             else sb.append("CHK ");
             if(isInsert) sb.append("insert");
@@ -142,12 +144,12 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
     
     public synchronized void dumpAndClear() {
         for(Request req : requestsByID.values()) {
-            String s = req.dump();
+            String s = req.dump(false, null);
             System.err.print(s);
             Logger.normal(this, s);
         }
         for(Request req : insertsByID.values()) {
-            String s = req.dump();
+            String s = req.dump(false, null);
             System.err.print(s);
             Logger.normal(this, s);
         }
@@ -157,7 +159,7 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         insertsByKey.clear();
     }
 
-    public synchronized int dumpKey(Key k, boolean insert, boolean remove) {
+    public synchronized int dumpKey(Key k, boolean insert, boolean remove, boolean noUIDs, String prefix) {
         Request[] reqs = insert ? insertsByKey.get(k) : requestsByKey.get(k);
         if(reqs == null) {
             System.err.println("No matches for key "+k);
@@ -165,7 +167,7 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         }
         System.err.println("" + reqs.length + (insert ? " inserts" : " requests") + " for "+k);
         for(Request req : reqs) {
-            String s = req.dump();
+            String s = req.dump(noUIDs, prefix);
             System.err.print(s);
             Logger.normal(this, s);
             if(remove) {
