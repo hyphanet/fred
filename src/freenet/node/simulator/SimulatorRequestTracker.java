@@ -41,7 +41,6 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         
         public String dump(boolean noUIDs, String prefix) {
             StringBuilder sb = new StringBuilder();
-            if(prefix != null) sb.append(prefix);
             if(!noUIDs)
                 sb.append(uid).append(":\n"); // Separate line for easier diffs.
             if(isSSK) sb.append("SSK ");
@@ -51,6 +50,7 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
             sb.append(" for ");
             sb.append(key.toString());
             sb.append("\n");
+            if(prefix != null) sb.append(prefix);
             for(int n : nodeIDsVisited) {
                 sb.append(n);
                 sb.append(" -> ");
