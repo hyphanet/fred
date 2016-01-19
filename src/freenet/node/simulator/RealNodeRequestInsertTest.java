@@ -309,6 +309,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 		}
 		Key lowLevelKey = block.getKey();
 		tracker.dumpKey(block.getKey(), true, true);
+		if(overallUIDTagCounter != null)
+		    overallUIDTagCounter.waitForNoRequests();
         // Pick random node to request from
         int node2;
         do {
