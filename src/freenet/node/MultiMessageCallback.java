@@ -30,6 +30,7 @@ public abstract class MultiMessageCallback {
 	/** Add another message. You should call arm() after you have added all messages. */
 	public AsyncMessageCallback make() {
 		synchronized(this) {
+		    assert(!armed);
 			AsyncMessageCallback cb = new AsyncMessageCallback() {
 
 				private boolean finished;
