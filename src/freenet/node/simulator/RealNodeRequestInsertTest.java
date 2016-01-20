@@ -51,9 +51,9 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 100;
-    static final int DEGREE = 10;
-    static final short MAX_HTL = (short)5;
+    static int NUMBER_OF_NODES = 100;
+    static int DEGREE = 10;
+    static short MAX_HTL = (short)5;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
     static final boolean ENABLE_SWAPPING = false;
@@ -83,8 +83,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     // Set to true to cache everything. This depends on security level.
     static final boolean USE_SLASHDOT_CACHE = false;
     static final boolean REAL_TIME_FLAG = false;
-    static final TestingVMBypass BYPASS_TRANSPORT_LAYER = TestingVMBypass.FAST_QUEUE_BYPASS;
-    static final int PACKET_DROP = 0;
+    static TestingVMBypass BYPASS_TRANSPORT_LAYER = TestingVMBypass.FAST_QUEUE_BYPASS;
+    static int PACKET_DROP = 0;
     
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
@@ -92,13 +92,14 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
     // FIXME: HACK: High bwlimit makes the "other" requests not affect the test requests.
     // Real solution is to get rid of the "other" requests!!
-    static final int BWLIMIT = 1000*1024;
+    static int BWLIMIT = 1000*1024;
     
     //public static final int DARKNET_PORT_BASE = RealNodePingTest.DARKNET_PORT2+1;
     public static final int DARKNET_PORT_BASE = 10000;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
 	public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException {
+	    parseOptions(args);
         String name = "realNodeRequestInsertTest";
         File wd = new File(name);
         if(!FileUtil.removeAll(wd)) {
@@ -187,6 +188,51 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             } catch (Throwable t) {
                 Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
             }
+        }
+    }
+
+    private static void parseOptions(String[] args) {
+        // FIXME Standard way to do this? Don't want to import a new library for a test...
+        for(String s : args) {
+            int x = s.indexOf('=');
+            if(x == -1) {
+                printUsage();
+                System.exit(1);
+            }
+            String arg = s.substring(0, x);
+            String value = s.substring(x+1);
+            parseArgument(arg, value);
+        }
+    }
+
+    private static void printUsage() {
+        System.err.println("java -cp freenet.jar:freenet-ext.jar:bcprov-*.jar " + RealNodeRequestInsertTest.class.getName() + " arg1=blah arg2=blah ...");
+        System.err.println("Arguments:\n");
+        System.err.println("size\tNumber of simulated nodes");
+        System.err.println("degree\tAverage number of peers per node");
+        System.err.println("htl\tMaximum Hops To Live");
+        System.err.println("drop\tDrop one in this many packets (0 = no drop)");
+        System.err.println("bandwidth\tOutput bandwidth limit per node");
+        System.err.println("bypass\tVarious possible bypasses:");
+        for(TestingVMBypass t : TestingVMBypass.values()) {
+            System.err.println("\t" + t.name());
+        }
+    }
+
+    private static void parseArgument(String arg, String value) {
+        arg = arg.toLowerCase();
+        if(arg.equals("bypass")) {
+            BYPASS_TRANSPORT_LAYER = TestingVMBypass.valueOf(value.toUpperCase());
+        } else if(arg.equals("size")) {
+            NUMBER_OF_NODES = Integer.parseInt(value);
+        } else if(arg.equals("degree")) {
+            DEGREE = Integer.parseInt(value);
+        } else if(arg.equals("htl")) {
+            MAX_HTL = Short.parseShort(value);
+        } else if(arg.equals("drop")) {
+            PACKET_DROP = Integer.parseInt(value);
+        } else if(arg.equals("bandwidth")) {
+            BWLIMIT = Integer.parseInt(value);
         }
     }
 
