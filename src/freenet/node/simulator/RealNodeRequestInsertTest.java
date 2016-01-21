@@ -318,7 +318,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             Thread.sleep(100);
         } catch (InterruptedException e1) {
         }
-        String dataString = baseString + requestNumber;
+        String dataString = baseString + requestNumber + ":" + random.nextLong() +":"+random.nextLong();
         // Pick random node to insert to
         int node1 = random.nextInt(NUMBER_OF_NODES);
         Node randomNode = nodes[node1];
