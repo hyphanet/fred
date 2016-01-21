@@ -34,6 +34,7 @@ import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.node.NodeStarter.TestingVMBypass;
 import freenet.node.PeerNode;
 import freenet.support.Executor;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.Logger.LogLevel;
@@ -291,7 +292,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     private final RandomSource random;
     private int requestNumber = 0;
     private RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
-    private String baseString = "Test ";
+    private String baseString = "Test-";
 	private int insertAttempts = 0;
 	private int fetchSuccesses = 0;
 	private final int targetSuccesses;
@@ -318,7 +319,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             Thread.sleep(100);
         } catch (InterruptedException e1) {
         }
-        String dataString = baseString + requestNumber + ":" + random.nextLong() +":"+random.nextLong();
+        byte[] nonce = new byte[8];
+        random.nextBytes(nonce);
+        String dataString = baseString + requestNumber + "-" + HexUtil.bytesToHex(nonce);
         // Pick random node to insert to
         int node1 = random.nextInt(NUMBER_OF_NODES);
         Node randomNode = nodes[node1];
