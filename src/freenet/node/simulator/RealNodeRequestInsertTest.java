@@ -172,10 +172,10 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         
         if(BYPASS_TRANSPORT_LAYER == TestingVMBypass.NONE) {
             // Wait until we are sure it stabilises.
-            waitForPingAverage(0.5, nodes, new DummyRandomSource(3143), MAX_PINGS, 1000);
+            waitForPingAverage(0.5, nodes, new DummyRandomSource(SEED+2), MAX_PINGS, 1000);
         }
         
-        random = new DummyRandomSource(3144);
+        random = new DummyRandomSource(SEED+3);
         
         System.out.println();
         System.out.println("Ping average > 95%, lets do some inserts/requests");
