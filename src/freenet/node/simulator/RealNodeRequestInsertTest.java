@@ -237,6 +237,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             BWLIMIT = Integer.parseInt(value);
         } else if(arg.equals("seed")) {
             SEED = Long.parseLong(value);
+        } else {
+            printUsage();
+            System.exit(2);
         }
     }
 
