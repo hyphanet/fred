@@ -95,6 +95,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     // FIXME: HACK: High bwlimit makes the "other" requests not affect the test requests.
     // Real solution is to get rid of the "other" requests!!
     static int BWLIMIT = 1000*1024;
+    // Bandwidth limit *per connection* for CBR bypass.
+    static int CBR_BWLIMIT = 1000;
     
     //public static final int DARKNET_PORT_BASE = RealNodePingTest.DARKNET_PORT2+1;
     public static final int DARKNET_PORT_BASE = 10000;
@@ -215,6 +217,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.err.println("htl\tMaximum Hops To Live");
         System.err.println("drop\tDrop one in this many packets (0 = no drop)");
         System.err.println("bandwidth\tOutput bandwidth limit per node");
+        System.err.println("bandwidth-cbr\tOutput bandwidth limit per connection if using CBR bypass");
         System.err.println("seed\tRNG seed");
         System.err.println("bypass\tVarious possible bypasses:");
         for(TestingVMBypass t : TestingVMBypass.values()) {
@@ -236,6 +239,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             PACKET_DROP = Integer.parseInt(value);
         } else if(arg.equals("bandwidth")) {
             BWLIMIT = Integer.parseInt(value);
+        } else if(arg.equals("bandwidth-cbr")) {
+            CBR_BWLIMIT = Integer.parseInt(value);
         } else if(arg.equals("seed")) {
             SEED = Long.parseLong(value);
         } else {
@@ -268,6 +273,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         params.useSlashdotCache = USE_SLASHDOT_CACHE;
         params.writeLocalToDatastore = CACHE_HIGH_HTL;
         params.requestTrackerSnooper = overallUIDTagCounter;
+        params.bypassCBRBandwidthLimit = CBR_BWLIMIT;
         return params;
     }
 
