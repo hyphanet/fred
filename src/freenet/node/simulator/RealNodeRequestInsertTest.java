@@ -85,6 +85,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean REAL_TIME_FLAG = false;
     static TestingVMBypass BYPASS_TRANSPORT_LAYER = TestingVMBypass.FAST_QUEUE_BYPASS;
     static int PACKET_DROP = 0;
+    static long SEED = 3141;
     
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
@@ -115,9 +116,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 BYPASS_TRANSPORT_LAYER, null);
         System.out.println("Insert/retrieve test");
         System.out.println();
-        DummyRandomSource nodesRandom = new DummyRandomSource(3142);
-        DummyRandomSource random = new DummyRandomSource(3141);
-        DummyRandomSource topologyRandom = new DummyRandomSource(3143);
+        DummyRandomSource random = new DummyRandomSource(SEED);
+        DummyRandomSource nodesRandom = new DummyRandomSource(SEED+1);
+        DummyRandomSource topologyRandom = new DummyRandomSource(SEED+2);
         SimulatorRequestTracker tracker = new SimulatorRequestTracker(MAX_HTL);
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
@@ -213,6 +214,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.err.println("htl\tMaximum Hops To Live");
         System.err.println("drop\tDrop one in this many packets (0 = no drop)");
         System.err.println("bandwidth\tOutput bandwidth limit per node");
+        System.err.println("seed\tRNG seed");
         System.err.println("bypass\tVarious possible bypasses:");
         for(TestingVMBypass t : TestingVMBypass.values()) {
             System.err.println("\t" + t.name());
@@ -233,6 +235,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             PACKET_DROP = Integer.parseInt(value);
         } else if(arg.equals("bandwidth")) {
             BWLIMIT = Integer.parseInt(value);
+        } else if(arg.equals("seed")) {
+            SEED = Long.parseLong(value);
         }
     }
 
