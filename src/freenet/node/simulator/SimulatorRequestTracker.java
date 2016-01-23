@@ -24,10 +24,10 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
     final short maxHTL;
     
     private class Request {
-        boolean isInsert;
-        boolean isSSK;
-        long uid;
-        Key key;
+        final boolean isInsert;
+        final boolean isSSK;
+        final long uid;
+        final Key key;
         /** Nodes visited in order of receiving the request */
         final List<Integer> nodeIDsVisited;
         
