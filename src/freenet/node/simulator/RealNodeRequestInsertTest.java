@@ -185,7 +185,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         
         while(true) {
             try {
-    			waitForAllConnected(nodes);
+    			waitForAllConnected(nodes, true, true);
     			int status = tester.insertRequestTest();
     			if(status == -1) continue;
     			System.exit(status);

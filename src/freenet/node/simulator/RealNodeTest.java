@@ -26,7 +26,16 @@ import freenet.support.Logger.LogLevel;
  */
 public class RealNodeTest {
 
-	static final int EXIT_BASE = NodeInitException.EXIT_NODE_UPPER_LIMIT;
+	@SuppressWarnings("serial")
+    public static class SimulatorOverloadedException extends Exception {
+
+        public SimulatorOverloadedException(String msg) {
+            super(msg);
+        }
+
+    }
+
+    static final int EXIT_BASE = NodeInitException.EXIT_NODE_UPPER_LIMIT;
 	static final int EXIT_CANNOT_DELETE_OLD_DATA = EXIT_BASE + 3;
 	static final int EXIT_PING_TARGET_NOT_REACHED = EXIT_BASE + 4;
 	static final int EXIT_INSERT_FAILED = EXIT_BASE + 5;
@@ -135,6 +144,25 @@ public class RealNodeTest {
 	}
 	
 	static void waitForAllConnected(Node[] nodes) throws InterruptedException {
+	    try {
+            waitForAllConnected(nodes, false, false);
+        } catch (SimulatorOverloadedException e) {
+            // Impossible unless the booleans are true.
+            throw new Error(e);
+        }
+	}
+	
+	/** Wait until all the nodes are connected.
+	 * @param nodes List of nodes to wait for.
+	 * @param disconnectFatal If true, all the nodes should be connected already, we are
+	 * just checking for CPU overload in a simulation. Throw if any nodes are not connected 
+	 * or have high ping times, which should only happen if there is severe CPU overload. 
+	 * Note that ping times are generally a good proxy for CPU load.
+	 * @param backoffFatal If true, we are doing a sequential simulation, i.e. one request
+	 * at a time, so no requests should be rejected. So throw if any nodes are backed off.
+	 * @throws InterruptedException
+	 */
+	static void waitForAllConnected(Node[] nodes, boolean disconnectFatal, boolean backoffFatal) throws InterruptedException, SimulatorOverloadedException {
 		long tStart = System.currentTimeMillis();
 		while(true) {
 			int countFullyConnected = 0;
@@ -182,6 +210,16 @@ public class RealNodeTest {
 				System.err.println();
 				return;
 			} else {
+			    if(disconnectFatal) {
+			        if(!(countFullyConnected == nodes.length && 
+			            countReallyConnected == nodes.length)) {
+			            throw new SimulatorOverloadedException("Disconnected nodes - possible CPU overload???");
+			        } else if(maxPingTime >= NodeStats.DEFAULT_SUB_MAX_PING_TIME) {
+			            throw new SimulatorOverloadedException("Nodes have high ping time, possible CPU overload?");
+			        }
+			    } else if(backoffFatal && totalBackedOff > 0) {
+			        throw new SimulatorOverloadedException("Backed off nodes not expected in sequential simulation - CPU overload??");
+			    }
 				long tDelta = (System.currentTimeMillis() - tStart)/1000;
 				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total partial "+totalPartialConnections+" compatible "+totalCompatibleConnections+") - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
 				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total partial "+totalPartialConnections+" compatible "+totalCompatibleConnections+") - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
