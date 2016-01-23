@@ -459,6 +459,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 	}
 
     private void dumpRequests(Request[] requests, String prefix) {
+        if(requests.length == 0) throw new AssertionFailedError("Must be some requests!");
         for(Request req : requests) {
             String msg = req.dump(true, prefix);
             Logger.normal(this, msg);

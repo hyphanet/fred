@@ -167,7 +167,6 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
     public synchronized Request[] dumpKey(Key k, boolean insert) {
         Request[] reqs = insert ? insertsByKey.get(k) : requestsByKey.get(k);
         if(reqs == null) {
-            System.err.println("No matches for key "+k);
             return new Request[0];
         }
         System.err.println("" + reqs.length + (insert ? " inserts" : " requests") + " for "+k);
