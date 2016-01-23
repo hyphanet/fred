@@ -142,21 +142,25 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         return node.getDarknetPortNumber();
     }
     
-    public synchronized void dumpAndClear() {
+    public synchronized int dumpAndClear() {
+        int count = 0;
         for(Request req : requestsByID.values()) {
             String s = req.dump(false, null);
             System.err.print(s);
             Logger.normal(this, s);
+            count++;
         }
         for(Request req : insertsByID.values()) {
             String s = req.dump(false, null);
             System.err.print(s);
             Logger.normal(this, s);
+            count++;
         }
         requestsByID.clear();
         insertsByID.clear();
         requestsByKey.clear();
         insertsByKey.clear();
+        return count;
     }
 
     public synchronized int dumpKey(Key k, boolean insert, boolean remove, boolean noUIDs, String prefix) {

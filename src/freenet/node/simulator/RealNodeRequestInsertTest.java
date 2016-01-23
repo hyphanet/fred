@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
 
+import junit.framework.AssertionFailedError;
+
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
@@ -447,7 +449,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         	System.err.println("List of running UIDs: "+Arrays.toString(runningUIDsList.toArray()));
         }
         System.err.println("Surplus requests:");
-        tracker.dumpAndClear();
+        int surplus = tracker.dumpAndClear();
+        // FIXME convert to an assert() when move simulator into test/.
+        if(surplus != 0) throw new AssertionFailedError("Should be no surplus requests");
         return -1;
 	}
 }
