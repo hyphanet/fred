@@ -22,8 +22,9 @@ import freenet.support.Logger;
 public class SimulatorRequestTracker extends MessageDispatchSnooper {
     
     final short maxHTL;
-    
-    private class Request {
+
+    /** Public for API purposes, but only exposed after removing from internal structures */
+    public class Request {
         final boolean isInsert;
         final boolean isSSK;
         final long uid;
@@ -163,31 +164,24 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         return count;
     }
 
-    public synchronized int dumpKey(Key k, boolean insert, boolean remove, boolean noUIDs, String prefix) {
+    public synchronized Request[] dumpKey(Key k, boolean insert) {
         Request[] reqs = insert ? insertsByKey.get(k) : requestsByKey.get(k);
         if(reqs == null) {
             System.err.println("No matches for key "+k);
-            return 0;
+            return new Request[0];
         }
         System.err.println("" + reqs.length + (insert ? " inserts" : " requests") + " for "+k);
         for(Request req : reqs) {
-            String s = req.dump(noUIDs, prefix);
-            System.err.print(s);
-            Logger.normal(this, s);
-            if(remove) {
-                if(insert)
-                    insertsByID.remove(req.uid);
-                else
-                    requestsByID.remove(req.uid);
-            }
-        }
-        if(remove) {
             if(insert)
-                insertsByKey.remove(k);
+                insertsByID.remove(req.uid);
             else
-                requestsByKey.remove(k);
+                requestsByID.remove(req.uid);
         }
-        return reqs.length;
+        if(insert)
+            insertsByKey.remove(k);
+        else
+            requestsByKey.remove(k);
+        return reqs;
     }
     
 }

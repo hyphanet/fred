@@ -35,6 +35,7 @@ import freenet.node.NodeStarter;
 import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.node.NodeStarter.TestingVMBypass;
 import freenet.node.PeerNode;
+import freenet.node.simulator.SimulatorRequestTracker.Request;
 import freenet.support.Executor;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -375,7 +376,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 			return EXIT_INSERT_FAILED;
 		}
 		Key lowLevelKey = block.getKey();
-		tracker.dumpKey(block.getKey(), true, true, true, prefix+"INSERT: ");
+		Request[] inserts = tracker.dumpKey(block.getKey(), true);
+		dumpRequests(inserts, prefix+"INSERT: ");
 		if(overallUIDTagCounter != null)
 		    overallUIDTagCounter.waitForNoRequests();
         // Pick random node to request from
@@ -389,7 +391,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         } catch (LowLevelGetException e) {
         	block = null;
         }
-        tracker.dumpKey(lowLevelKey, false, true, true, prefix+"REQUEST: ");
+        Request[] requests = tracker.dumpKey(lowLevelKey, false);
+        dumpRequests(requests,prefix+"REQUEST: ");
         if(block == null) {
 			int percentSuccess=100*fetchSuccesses/insertAttempts;
             Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
@@ -454,4 +457,12 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         if(surplus != 0) throw new AssertionFailedError("Should be no surplus requests");
         return -1;
 	}
+
+    private void dumpRequests(Request[] requests, String prefix) {
+        for(Request req : requests) {
+            String msg = req.dump(true, prefix);
+            Logger.normal(this, msg);
+            System.err.println(msg);
+        }
+    }
 }
