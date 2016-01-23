@@ -65,6 +65,10 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         public void addNode(int nodeID) {
             nodeIDsVisited.add(nodeID);
         }
+
+        public boolean containsNode(int node) {
+            return nodeIDsVisited.contains(node);
+        }
     }
     
     private final Map<Long, Request> requestsByID;

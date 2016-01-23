@@ -397,7 +397,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 			int percentSuccess=100*fetchSuccesses/insertAttempts;
             Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
             System.err.println(prefix+"Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
-            
+            checkRequestFailure(inserts, requests);
             requestsAvg.report(0.0);
         } else {
             byte[] results = block.memoryDecode();
@@ -411,6 +411,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 	System.err.println("Succeeded, "+targetSuccesses+" successful fetches");
                 	return 0;
                 }
+                checkRequestSuccess(inserts, requests);
             } else {
                 Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
                 System.err.println(prefix+"Returned invalid data!: "+new String(results));
@@ -458,8 +459,66 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         return -1;
 	}
 
-    private void dumpRequests(Request[] requests, String prefix) {
+    private void checkRequestSuccess(Request[] inserts, Request[] requests) {
         if(requests.length == 0) throw new AssertionFailedError("Must be some requests!");
+        if(inserts.length == 0) throw new AssertionFailedError("Must be some inserts!");
+        // Could be more than one request if fork on cacheable is enabled.
+        // FIXME Full support for fork-on-cacheable would require knowing which request
+        // is the post-fork request.
+        boolean foundAtEnd = false;
+        if(!FORK_ON_CACHEABLE) {
+            for(Request insert : inserts) {
+                int length = insert.nodeIDsVisited.size();
+                if(length < MAX_HTL)
+                    throw new AssertionFailedError("Insert path too short");
+            }
+        }
+        for(Request request : requests) {
+            int length = request.nodeIDsVisited.size();
+            for(int i=0;i<length;i++) {
+                int node = request.nodeIDsVisited.get(i);
+                boolean onInsertPath = false;
+                for(Request insert : inserts) {
+                    onInsertPath |= insert.containsNode(node);
+                }
+                if(onInsertPath) {
+                    if(i == length-1) {
+                        foundAtEnd = true;
+                    } else if(!FORK_ON_CACHEABLE) {
+                        // Should have found the data!
+                        throw new AssertionFailedError("Should have found the data on node "+node);
+                    }
+                }
+            }
+        }
+        if(!foundAtEnd)
+            throw new AssertionFailedError("Data not found at end of request path");
+    }
+
+    private void checkRequestFailure(Request[] inserts, Request[] requests) {
+        if(requests.length == 0) throw new AssertionFailedError("Must be some requests!");
+        if(inserts.length == 0) throw new AssertionFailedError("Must be some inserts!");
+        if(FORK_ON_CACHEABLE) return;
+        for(Request insert : inserts) {
+            int length = insert.nodeIDsVisited.size();
+            if(length < MAX_HTL)
+                throw new AssertionFailedError("Insert path too short");
+        }
+        for(Request request : requests) {
+            int length = request.nodeIDsVisited.size();
+            if(length < MAX_HTL)
+                throw new AssertionFailedError("Request path too short");
+            for(int i=0;i<length;i++) {
+                int node = request.nodeIDsVisited.get(i);
+                for(Request insert : inserts) {
+                    if(insert.containsNode(node))
+                        throw new AssertionFailedError("Should have found the data on node "+node);
+                }
+            }
+        }
+    }
+
+    private void dumpRequests(Request[] requests, String prefix) {
         for(Request req : requests) {
             String msg = req.dump(true, prefix);
             Logger.normal(this, msg);
