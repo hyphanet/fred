@@ -4344,10 +4344,15 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean isHasStarted() {
 		return hasStarted;
 	}
+	
+    /** One in this many successful requests is randomly reinserted.
+     * This is probably a good idea anyway but with the split store it's essential. */
+    static final int RANDOM_REINSERT_INTERVAL = 200;
 
-	public void queueRandomReinsert(KeyBlock block) {
-		clientCore.queueRandomReinsert(block);
-	}
+    public void maybeQueueRandomReinsert(KeyBlock block) {
+        if(random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
+            clientCore.queueRandomReinsert(block);
+    }
 
 	public String getExtraPeerDataDir() {
 		return extraPeerDataDir.getPath();

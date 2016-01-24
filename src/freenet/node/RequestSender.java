@@ -68,9 +68,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     final long getOfferedTimeout;
     /** Wait up to this long to get a path folding reply */
     static final long OPENNET_TIMEOUT = MINUTES.toMillis(2);
-    /** One in this many successful requests is randomly reinserted.
-     * This is probably a good idea anyway but with the split store it's essential. */
-    static final int RANDOM_REINSERT_INTERVAL = 200;
     
     // Basics
     final RequestTag origTag;
@@ -1366,8 +1363,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
 			node.storeShallow(block, canWriteClientCache, canWriteDatastore, false);
-			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
-				node.queueRandomReinsert(block);
+			node.maybeQueueRandomReinsert(block);
 			synchronized(this) {
 				finalHeaders = headers;
 				finalSskData = sskData;
@@ -1410,8 +1406,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				finalSskData = sskData;
 			}
 			node.storeShallow(block, canWriteClientCache, canWriteDatastore, tryOffersOnly);
-			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
-				node.queueRandomReinsert(block);
+			node.maybeQueueRandomReinsert(block);
 			finish(SUCCESS, next, true);
 			return true;
 		} catch (SSKVerifyException e) {
@@ -1446,8 +1441,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     		// store; simulations it is best to only include data from requests
     		// which go all the way i.e. inserts.
     		node.storeShallow(block, canWriteClientCache, canWriteDatastore, tryOffersOnly);
-			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
-				node.queueRandomReinsert(block);
+    		node.maybeQueueRandomReinsert(block);
     	} else /*if (key instanceof NodeSSK)*/ {
     		synchronized(this) {
     			finalHeaders = headers;
