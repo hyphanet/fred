@@ -456,13 +456,13 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.err.println("Surplus requests:");
         int surplus = tracker.dumpAndClear();
         // FIXME convert to an assert() when move simulator into test/.
-        if(surplus != 0) throw new AssertionError("Should be no surplus requests");
+        if(surplus != 0) fail("Should be no surplus requests");
         return -1;
 	}
 
     private void checkRequestSuccess(Request[] inserts, Request[] requests) {
-        if(requests.length == 0) throw new AssertionError("Must be some requests!");
-        if(inserts.length == 0) throw new AssertionError("Must be some inserts!");
+        if(requests.length == 0) fail("Must be some requests!");
+        if(inserts.length == 0) fail("Must be some inserts!");
         // Could be more than one request if fork on cacheable is enabled.
         // FIXME Full support for fork-on-cacheable would require knowing which request
         // is the post-fork request.
@@ -471,7 +471,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             for(Request insert : inserts) {
                 int length = insert.nodeIDsVisited.size();
                 if(length < MAX_HTL)
-                    throw new AssertionError("Insert path too short");
+                    fail("Insert path too short");
             }
         }
         for(Request request : requests) {
@@ -487,36 +487,42 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                         foundAtEnd = true;
                     } else if(!FORK_ON_CACHEABLE) {
                         // Should have found the data!
-                        throw new AssertionError("Should have found the data on node "+node);
+                        fail("Should have found the data on node "+node);
                     }
                 }
             }
         }
         if(!foundAtEnd)
-            throw new AssertionError("Data not found at end of request path");
+            fail("Data not found at end of request path");
     }
 
     private void checkRequestFailure(Request[] inserts, Request[] requests) {
-        if(requests.length == 0) throw new AssertionError("Must be some requests!");
-        if(inserts.length == 0) throw new AssertionError("Must be some inserts!");
+        if(requests.length == 0) fail("Must be some requests!");
+        if(inserts.length == 0) fail("Must be some inserts!");
         if(FORK_ON_CACHEABLE) return;
         for(Request insert : inserts) {
             int length = insert.nodeIDsVisited.size();
             if(length < MAX_HTL)
-                throw new AssertionError("Insert path too short");
+                fail("Insert path too short");
         }
         for(Request request : requests) {
             int length = request.nodeIDsVisited.size();
             if(length < MAX_HTL)
-                throw new AssertionError("Request path too short");
+                fail("Request path too short");
             for(int i=0;i<length;i++) {
                 int node = request.nodeIDsVisited.get(i);
                 for(Request insert : inserts) {
                     if(insert.containsNode(node))
-                        throw new AssertionError("Should have found the data on node "+node);
+                        fail("Should have found the data on node "+node);
                 }
             }
         }
+    }
+
+    private void fail(String message) {
+        // FIXME throw new AssertionError(message)
+        // FIXME Change to assertions when moved to test/
+        throw new RuntimeException(message);
     }
 
     private void dumpRequests(Request[] requests, String prefix) {
