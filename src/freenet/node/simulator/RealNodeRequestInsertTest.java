@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -103,6 +104,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     //public static final int DARKNET_PORT_BASE = RealNodePingTest.DARKNET_PORT2+1;
     public static final int DARKNET_PORT_BASE = 10000;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
+    
+    private final HashSet<Key> generatedKeys;
     
 	public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, SSKEncodeException, InvalidCompressionCodecException, IOException, KeyDecodeException {
 	    try {
@@ -302,6 +305,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     	this.targetSuccesses = targetSuccesses;
     	this.tracker = tracker;
     	this.overallUIDTagCounter = overallUIDTagCounter;
+    	generatedKeys = new HashSet<Key>();
 	}
 
     private final Node[] nodes;
@@ -383,6 +387,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 			return EXIT_INSERT_FAILED;
 		}
 		Key lowLevelKey = block.getKey();
+		generatedKeys.add(lowLevelKey);
 		Request[] inserts = tracker.dumpKey(block.getKey(), true);
 		dumpRequests(inserts, prefix+"INSERT: ");
 		if(overallUIDTagCounter != null)
@@ -462,14 +467,26 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         	System.err.println("List of running UIDs: "+Arrays.toString(runningUIDsList.toArray()));
         }
         Request[] surplus = tracker.dumpAndClear();
-        if(shouldBeNoOtherRequests()) {
-            // FIXME convert to an assert() when move simulator into test/.
-            if(surplus.length != 0) {
-                System.err.println("Surplus requests:");
-                for(Request req : surplus)
-                    req.dump(false, prefix+" SURPLUS: ");
-                fail("Should be no surplus requests");
+        boolean anySurplus = false;
+        System.err.println("Surplus requests:");
+        for(Request req : surplus) {
+            if(generatedKeys.contains(req.key)) {
+                if(req.isInsert) {
+                    if(!DISABLE_RANDOM_REINSERT) {
+                        Logger.normal(this, "Still running, possibly random reinsert: "+req.dump(false, ""));
+                        continue; // Reinsert, ignore.
+                    }
+                    System.err.println("Old key insert/request still running?:\n"+req.dump(false, prefix+" SURPLUS: "));
+                } else {
+                    System.err.println("Unknown surplus key:\n"+req.dump(false, prefix+" SURPLUS: "));
+                }
+                anySurplus = true;
             }
+        }
+        
+        if(anySurplus && shouldBeNoOtherRequests()) {
+            // FIXME convert to an assert() when move simulator into test/.
+            fail("Should be no surplus requests");
         }
         return -1;
 	}
