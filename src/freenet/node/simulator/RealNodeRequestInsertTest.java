@@ -466,7 +466,10 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 	}
 
     private void checkRequestSuccess(Request[] inserts, Request[] requests) {
-        // It is possible for there to be no inter-node requests, but must be inserts.
+        if(requests.length == 0) {
+            // It found the data on the first node, so there were no messages.
+            return;
+        }
         if(inserts.length == 0) fail("Must be some inserts!");
         // Could be more than one request if fork on cacheable is enabled.
         // FIXME Full support for fork-on-cacheable would require knowing which request
