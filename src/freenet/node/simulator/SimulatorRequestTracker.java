@@ -9,6 +9,7 @@ import java.util.Map;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
+import freenet.io.comm.Peer;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
@@ -69,6 +70,10 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         public boolean containsNode(int node) {
             return nodeIDsVisited.contains(node);
         }
+
+        public boolean isEmpty() {
+            return nodeIDsVisited.isEmpty();
+        }
     }
     
     private final Map<Long, Request> requestsByID;
@@ -116,8 +121,11 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         }
         key = key.archivalCopy();
         int nodeID = getID(recipient);
+        int originatorID = getPeer(m.getSource().getPeer());
         synchronized(this) {
             Request req = makeRequest(isSSK, isInsert, uid, key);
+            if(req.isEmpty())
+                req.addNode(originatorID);
             req.addNode(nodeID);
         }
     }
@@ -147,6 +155,10 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         return node.getDarknetPortNumber();
     }
     
+    private int getPeer(Peer peer) {
+        return peer.getPort();
+    }
+
     public synchronized int dumpAndClear() {
         int count = 0;
         for(Request req : requestsByID.values()) {
