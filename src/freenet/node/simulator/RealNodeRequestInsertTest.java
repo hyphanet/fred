@@ -384,17 +384,19 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             node2 = random.nextInt(NUMBER_OF_NODES);
         } while(node2 == node1);
         Node fetchNode = nodes[node2];
+        LowLevelGetException error = null;
         try {
         	block = fetchNode.clientCore.realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
         } catch (LowLevelGetException e) {
         	block = null;
+        	error = e;
         }
         Request[] requests = tracker.dumpKey(lowLevelKey, false);
         dumpRequests(requests,prefix+"REQUEST: ");
         if(block == null) {
 			int percentSuccess=100*fetchSuccesses/insertAttempts;
             Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
-            System.err.println(prefix+"Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
+            System.err.println(prefix+"Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2+" : "+LowLevelGetException.getMessage(error.code));
             checkRequestFailure(inserts, requests);
             requestsAvg.report(0.0);
         } else {
