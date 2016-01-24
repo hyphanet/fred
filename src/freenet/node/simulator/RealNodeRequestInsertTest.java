@@ -120,6 +120,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 BYPASS_TRANSPORT_LAYER, null);
         System.out.println("Insert/retrieve test");
         System.out.println();
+        System.err.println("Seed is "+SEED);
         DummyRandomSource random = new DummyRandomSource(SEED);
         DummyRandomSource nodesRandom = new DummyRandomSource(SEED+1);
         DummyRandomSource topologyRandom = new DummyRandomSource(SEED+2);
