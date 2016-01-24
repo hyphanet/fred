@@ -85,6 +85,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     // Set to true to cache everything. This depends on security level.
     static final boolean USE_SLASHDOT_CACHE = false;
     static final boolean REAL_TIME_FLAG = false;
+    static final boolean DISABLE_RANDOM_REINSERT = true;
     static TestingVMBypass BYPASS_TRANSPORT_LAYER = TestingVMBypass.FAST_QUEUE_BYPASS;
     static int PACKET_DROP = 0;
     static long SEED = 3141;
@@ -281,6 +282,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         params.writeLocalToDatastore = CACHE_HIGH_HTL;
         params.requestTrackerSnooper = overallUIDTagCounter;
         params.bypassCBRBandwidthLimit = CBR_BWLIMIT;
+        if(DISABLE_RANDOM_REINSERT)
+            params.randomReinsertInterval = 0;
         return params;
     }
 
@@ -460,10 +463,16 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         }
         System.err.println("Surplus requests:");
         int surplus = tracker.dumpAndClear();
-        // FIXME convert to an assert() when move simulator into test/.
-        if(surplus != 0) fail("Should be no surplus requests");
+        if(shouldBeNoOtherRequests()) {
+            // FIXME convert to an assert() when move simulator into test/.
+            if(surplus != 0) fail("Should be no surplus requests");
+        }
         return -1;
 	}
+
+    private boolean shouldBeNoOtherRequests() {
+        return DISABLE_RANDOM_REINSERT;
+    }
 
     private void checkRequestSuccess(Request[] inserts, Request[] requests) {
         if(requests.length == 0) {

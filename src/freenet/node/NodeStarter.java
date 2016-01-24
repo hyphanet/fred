@@ -466,6 +466,7 @@ public class NodeStarter implements WrapperListener {
         public boolean lazyStartRequestStarters = true;
         public boolean lazyStartDatastoreChecker = true;
         public RequestTrackerSnooper requestTrackerSnooper = null;
+        public int randomReinsertInterval = Node.DEFAULT_RANDOM_REINSERT_INTERVAL;
     }
 
     /**

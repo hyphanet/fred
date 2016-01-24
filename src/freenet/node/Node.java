@@ -798,6 +798,12 @@ public class Node implements TimeSkewDetectorCallback {
 	public static int getMinimumBandwidth() {
 		return minimumBandwidth;
 	}
+	
+    /** One in this many successful requests is randomly reinserted. 0 means never.
+     * This is probably a good idea anyway but with the split store it's essential. */
+    public static final int DEFAULT_RANDOM_REINSERT_INTERVAL = 200;
+    
+    private final int randomReinsertInterval;
 
 	/**
 	 * Returns an exception with an explanation that the given bandwidth limit is too low.
@@ -1664,6 +1670,12 @@ public class Node implements TimeSkewDetectorCallback {
 		    tracker = new RequestTracker(peers, ticker);
 		}
 
+		if(testingParameters != null) {
+		    randomReinsertInterval = testingParameters.randomReinsertInterval;
+		} else {
+		    randomReinsertInterval = DEFAULT_RANDOM_REINSERT_INTERVAL;
+		}
+		
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 
 		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.identityHash);
@@ -4345,12 +4357,9 @@ public class Node implements TimeSkewDetectorCallback {
 		return hasStarted;
 	}
 	
-    /** One in this many successful requests is randomly reinserted.
-     * This is probably a good idea anyway but with the split store it's essential. */
-    static final int RANDOM_REINSERT_INTERVAL = 200;
-
     public void maybeQueueRandomReinsert(KeyBlock block) {
-        if(random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
+        if(randomReinsertInterval == 0) return;
+        if(random.nextInt(randomReinsertInterval) == 0)
             clientCore.queueRandomReinsert(block);
     }
 
