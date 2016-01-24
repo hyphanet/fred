@@ -104,6 +104,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
 	public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, SSKEncodeException, InvalidCompressionCodecException, IOException, KeyDecodeException {
+	    try {
 	    parseOptions(args);
         String name = "realNodeRequestInsertTest";
         File wd = new File(name);
@@ -190,6 +191,14 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             int status = tester.insertRequestTest();
             if(status == -1) continue;
             System.exit(status);
+        }
+        } catch (Throwable t) {
+            // Need to explicitly exit because the wrapper thread may prevent shutdown.
+            // FIXME WTF? Shouldn't be using the wrapper???
+            Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
+            System.err.println(t);
+            t.printStackTrace();
+            System.exit(1);
         }
     }
 
