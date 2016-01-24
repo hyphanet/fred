@@ -47,6 +47,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.OfficialPlugins.OfficialPluginDescription;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.support.HTMLNode;
+import freenet.support.JVMVersion;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.Bucket;
@@ -75,27 +76,25 @@ import freenet.support.io.FileUtil;
 public class NodeUpdateManager {
 
 	/**
-	 * The last build on the old key (/update/), which includes the multi-jar
-	 * updating code, but doesn't require it to work, i.e. it still uses the old
-	 * freenet-ext.jar and doesn't require any other jars. Older nodes can
+	 * The last build on the old key with Java 6 support. Older nodes can
 	 * update to this point via old UOM.
 	 */
-	public final static int TRANSITION_VERSION = 1421;
+	public final static int TRANSITION_VERSION = 1471;
 	/** The freenet-ext.jar build number corresponding to the old key */
 	public final static int TRANSITION_VERSION_EXT = 29;
 
 	/** The URI for post-TRANSITION_VERSION builds' freenet.jar. */
-	public final static String UPDATE_URI = "USK@sabn9HY9MKLbFPp851AO98uKtsCtYHM9rqB~A5cCGW4,3yps2z06rLnwf50QU4HvsILakRBYd4vBlPtLv0elUts,AQACAAE/jar/"
+	public final static String UPDATE_URI = "USK@O~UmMwTeDcyDIW-NsobFBoEicdQcogw7yrLO2H-sJ5Y,JVU4L7m9mNppkd21UNOCzRHKuiTucd6Ldw8vylBOe5o,AQACAAE/jar/"
 			+ Version.buildNumber();
 
 	/** Might as well be the SSK */
-	public final static String LEGACY_UPDATE_URI = "freenet:SSK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/update-"
+	public final static String LEGACY_UPDATE_URI = "freenet:SSK@sabn9HY9MKLbFPp851AO98uKtsCtYHM9rqB~A5cCGW4,3yps2z06rLnwf50QU4HvsILakRBYd4vBlPtLv0elUts,AQACAAE/jar-"
 			+ TRANSITION_VERSION;
 	/**
 	 * Pre-TRANSITION_VERSION builds needed to fetch freenet-ext.jar via an
 	 * updater of its own.
 	 */
-	public final static String LEGACY_EXT_URI = "freenet:SSK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/ext-"
+	public final static String LEGACY_EXT_URI = "freenet:SSK@sabn9HY9MKLbFPp851AO98uKtsCtYHM9rqB~A5cCGW4,3yps2z06rLnwf50QU4HvsILakRBYd4vBlPtLv0elUts,AQACAAE/ext-"
 			+ TRANSITION_VERSION_EXT;
 
 	public final static String REVOCATION_URI = "SSK@tHlY8BK2KFB7JiO2bgeAw~e4sWU43YdJ6kmn73gjrIw,DnQzl0BYed15V8WQn~eRJxxIA-yADuI8XW7mnzEbut8,AQACAAE/revoked";
@@ -238,8 +237,9 @@ public class NodeUpdateManager {
 				new AutoUpdateAllowedCallback());
 		isAutoUpdateAllowed = updaterConfig.getBoolean("autoupdate");
 
+		// Set default update URI for new nodes depending on JVM version.
 		updaterConfig
-				.register("URI", UPDATE_URI, 3, true, true,
+				.register("URI", JVMVersion.isTooOld() ? LEGACY_UPDATE_URI : UPDATE_URI, 3, true, true,
 						"NodeUpdateManager.updateURI",
 						"NodeUpdateManager.updateURILong",
 						new UpdateURICallback());
@@ -250,6 +250,20 @@ public class NodeUpdateManager {
 			throw new InvalidConfigValueException(l10n("invalidUpdateURI",
 					"error", e.getLocalizedMessage()));
 		}
+
+		/*
+		 * The update URI is always written, so override the existing key depending on JVM version.
+		 * Only override the official legacy URI to not interfere with unofficial update keys.
+		 */
+		if (updateURI.equalsKeypair(transitionMainJarURI) && !JVMVersion.isTooOld()) {
+			try {
+				updaterConfig.set("URI", UPDATE_URI);
+			} catch (NodeNeedRestartException e) {
+				// UpdateURICallback.set() does not throw NodeNeedRestartException.
+				Logger.warning(this, "Unexpected failure setting update URI", e);
+			}
+		}
+
 		updateURI = updateURI.setSuggestedEdition(Version.buildNumber());
 		if(updateURI.hasMetaStrings())
 			throw new InvalidConfigValueException(l10n("updateURIMustHaveNoMetaStrings"));
