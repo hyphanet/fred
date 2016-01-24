@@ -159,25 +159,15 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         return peer.getPort();
     }
 
-    public synchronized int dumpAndClear() {
-        int count = 0;
-        for(Request req : requestsByID.values()) {
-            String s = req.dump(false, null);
-            System.err.print(s);
-            Logger.normal(this, s);
-            count++;
-        }
-        for(Request req : insertsByID.values()) {
-            String s = req.dump(false, null);
-            System.err.print(s);
-            Logger.normal(this, s);
-            count++;
-        }
+    public synchronized Request[] dumpAndClear() {
+        ArrayList<Request> reqs = new ArrayList<Request>();
+        reqs.addAll(requestsByID.values());
+        reqs.addAll(insertsByID.values());
         requestsByID.clear();
         insertsByID.clear();
         requestsByKey.clear();
         insertsByKey.clear();
-        return count;
+        return reqs.toArray(new Request[reqs.size()]);
     }
 
     public synchronized Request[] dumpKey(Key k, boolean insert) {

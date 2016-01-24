@@ -461,11 +461,15 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         	System.err.println("Still running UIDs (alt): "+totalRunningUIDsAlt);
         	System.err.println("List of running UIDs: "+Arrays.toString(runningUIDsList.toArray()));
         }
-        System.err.println("Surplus requests:");
-        int surplus = tracker.dumpAndClear();
+        Request[] surplus = tracker.dumpAndClear();
         if(shouldBeNoOtherRequests()) {
             // FIXME convert to an assert() when move simulator into test/.
-            if(surplus != 0) fail("Should be no surplus requests");
+            if(surplus.length != 0) {
+                System.err.println("Surplus requests:");
+                for(Request req : surplus)
+                    req.dump(false, prefix+" SURPLUS: ");
+                fail("Should be no surplus requests");
+            }
         }
         return -1;
 	}
