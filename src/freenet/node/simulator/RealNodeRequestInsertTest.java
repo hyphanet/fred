@@ -103,7 +103,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     public static final int DARKNET_PORT_BASE = 10000;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
-	public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException {
+	public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, SSKEncodeException, InvalidCompressionCodecException, IOException, KeyDecodeException {
 	    parseOptions(args);
         String name = "realNodeRequestInsertTest";
         File wd = new File(name);
@@ -186,14 +186,10 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, TARGET_SUCCESSES, tracker, overallUIDTagCounter);
         
         while(true) {
-            try {
-    			waitForAllConnected(nodes, true, true);
-    			int status = tester.insertRequestTest();
-    			if(status == -1) continue;
-    			System.exit(status);
-            } catch (Throwable t) {
-                Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
-            }
+            waitForAllConnected(nodes, true, true);
+            int status = tester.insertRequestTest();
+            if(status == -1) continue;
+            System.exit(status);
         }
     }
 
