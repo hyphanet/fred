@@ -95,15 +95,11 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
             waitForAllConnected(nodes);
             
             while(true) {
-            	try {
-            		waitForAllConnected(nodes);
-            		int status = tester.insertRequestTest();
-            		if(status == -1) continue;
-            		System.out.println("Insert test completed with status "+status);
-            		break;
-            	} catch (Throwable t) {
-            		Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
-            	}
+                waitForAllConnected(nodes);
+                int status = tester.insertRequestTest();
+                if(status == -1) continue;
+                System.out.println("Insert test completed with status "+status);
+                break;
             }
         }
 
