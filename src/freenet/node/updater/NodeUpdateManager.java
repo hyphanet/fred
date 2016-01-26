@@ -610,20 +610,15 @@ public class NodeUpdateManager {
 	private Message getOldUOMAnnouncement() {
 		boolean mainJarAvailable = transitionMainJarFetcher == null ? false
 				: transitionMainJarFetcher.fetched();
-		boolean extJarAvailable = transitionExtJarFetcher == null ? false
-				: transitionExtJarFetcher.fetched();
-		return DMT.createUOMAnnounce(transitionMainJarURIAsUSK.toString(),
-				transitionExtJarURIAsUSK.toString(),
-				revocationURI.toString(), revocationChecker.hasBlown(),
-				mainJarAvailable ? TRANSITION_VERSION : -1,
-				extJarAvailable ? TRANSITION_VERSION_EXT : -1,
-				revocationChecker.lastSucceededDelta(), revocationChecker
-						.getRevocationDNFCounter(), revocationChecker
-						.getBlobSize(),
-				mainJarAvailable ? transitionMainJarFetcher.getBlobSize() : -1,
-				extJarAvailable ? transitionExtJarFetcher.getBlobSize() : -1,
-				(int) node.nodeStats.getNodeAveragePingTime(),
-				(int) node.nodeStats.getBwlimitDelayTime());
+        return DMT.createUOMAnnouncement(updateURI.toString(), revocationURI
+                .toString(), revocationChecker.hasBlown(), 
+                mainJarAvailable ? TRANSITION_VERSION : -1,
+                revocationChecker.lastSucceededDelta(), revocationChecker
+                .getRevocationDNFCounter(), revocationChecker
+                .getBlobSize(),
+                mainJarAvailable ? transitionMainJarFetcher.getBlobSize() : -1,
+                (int) node.nodeStats.getNodeAveragePingTime(),
+                (int) node.nodeStats.getBwlimitDelayTime());
 	}
 
 	private Message getNewUOMAnnouncement(long blobSize) {
