@@ -15,8 +15,6 @@ Short guidelines for contributing improvements are in CONTRIBUTING.md
 
 ## INTRODUCTION
 
-The Freenet Project is very pleased to announce the release of Freenet 0.7.0.
-
 Freenet is software designed to allow the free exchange of information over the 
 Internet without fear of censorship, or reprisal. To achieve this Freenet makes it 
 very difficult for adversaries to reveal the identity, either of the person 
@@ -31,32 +29,22 @@ to trace, or to destroy. Content will remain in Freenet for as long as people ar
 retrieving it, although Freenet makes no guarantee that content will be stored 
 indefinitely.
 
-The journey towards Freenet 0.7 began in 2005 with the realization that some of 
-Freenet's most vulnerable users needed to hide the fact that they were using 
-Freenet, not just what they were doing with it. The result of this realization was a 
-ground-up redesign and rewrite of Freenet, adding a "darknet" capability, allowing 
-users to limit who their Freenet software would communicate with to trusted friends. 
-This would make it far more difficult for a third-party to determine who is using 
-Freenet.
+Also it allows users to let Freenet connect only to friends. This makes it far more 
+difficult for a third-party to determine who is using Freenet and as such makes it harder
+to punish people just for using Freenet.
 
-Freenet 0.7 also embodies significant improvements to almost every other aspect of 
-Freenet, including efficiency, security, and usability. Freenet is available for Windows, 
-Linux, and OSX. It can be downloaded from:
-
-http://freenetproject.org/download.html
+Get Freenet via https://freenetproject.org/download.html#autostart
 
 If you have any difficulty getting Freenet to work, or any questions not answered in the 
-faq, please join us on IRC in the #freenet channel at irc.freenode.net. Thank you.
+faq, please join us on IRC in the #freenet channel at irc.freenode.net.
 
-This release would not have been possible without the efforts of numerous volunteers, and 
-Matthew Toseland, Freenet's full time developer. Matthew's work is funded through donations 
-via our website (as well as a few larger sponsors from time to time). We ask that anyone 
-who can help us to ensure Matthew's continued employment visit our donations page and 
-make a contribution at:
+Part of our work is funded through donations 
+via our website (as well as a few larger sponsors from time to time). 
+If you can, please visit our donations page and make a contribution at:
 
 http://freenetproject.org/donate.html
 
-Press enquiries should be directed to Ian Clarke.
+Press enquiries should be directed at press@freenetproject.org
 
 ## ALWAYS ON
 On OSX, Freenet will create a configuration file at 
