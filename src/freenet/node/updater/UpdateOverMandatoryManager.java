@@ -1183,8 +1183,15 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 		// Do we have the data?
 
-		File data = updateManager.getCurrentVersionBlobFile();
-		int version = Version.buildNumber();
+		File data;
+		int version;
+		if(source.isUnroutableOlderVersion()) {
+		    data = updateManager.getTransitionMainBlob();
+		    version = NodeUpdateManager.TRANSITION_VERSION;
+		} else {
+		    data = updateManager.getCurrentVersionBlobFile();
+		    version = Version.buildNumber();
+		}
 		
 		if(version != Version.buildNumber()) {
 			Logger.normal(this, "Peer " + source + " asked us for the blob file for the main jar but we are about to update...");
