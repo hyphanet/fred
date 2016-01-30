@@ -1,13 +1,13 @@
 package freenet.node;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 
+import org.junit.After;
 import org.junit.Test;
 
 import freenet.client.FetchContext;
@@ -28,21 +28,22 @@ import freenet.keys.FreenetURI;
 import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.support.Executor;
 import freenet.support.Logger;
-import freenet.support.PooledExecutor;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.PooledExecutor;
+import freenet.support.TestProperty;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
-import freenet.support.TestProperty;
 
 public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
 
+    private static final File dir = new File("test-fetch-pull-blob-single-node");
+    
     @Test
     public void testFetchPullBlobSingleNode() throws InvalidThresholdException, NodeInitException, InsertException, FetchException, IOException, BinaryBlobFormatException {
         if(!TestProperty.EXTENSIVE) return;
         DummyRandomSource random = new DummyRandomSource(25312);
         final Executor executor = new PooledExecutor();
-        File dir = new File("test-fetch-pull-blob-single-node");
         FileUtil.removeAll(dir);
         dir.mkdir();
         NodeStarter.globalTestInit(dir, false, 
@@ -99,6 +100,11 @@ public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
         getter = client2.fetch(uri, FILE_SIZE*2, fw, ctx2, (short)0);
         result = fw.waitForCompletion();
         assertTrue(BucketTools.equalBuckets(result.asBucket(), block.getData()));
+    }
+    
+    @After
+    public void cleanUp() {
+        FileUtil.removeAll(dir);
     }
     
 }

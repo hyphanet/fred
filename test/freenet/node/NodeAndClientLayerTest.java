@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
+import org.junit.After;
 import org.junit.Test;
 
 import freenet.client.ClientMetadata;
@@ -41,12 +42,13 @@ import freenet.support.io.FileUtil;
  */
 public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
 
+    private static final File dir = new File("test-fetch-pull-single-node");
+    
     @Test
     public void testFetchPullSingleNode() throws InvalidThresholdException, NodeInitException, InsertException, FetchException, IOException {
         if(!TestProperty.EXTENSIVE) return;
         DummyRandomSource random = new DummyRandomSource(25312);
         final Executor executor = new PooledExecutor();
-        File dir = new File("test-fetch-pull-single-node");
         FileUtil.removeAll(dir);
         dir.mkdir();
         NodeStarter.globalTestInit(dir, false, 
@@ -73,6 +75,11 @@ public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
         client.fetch(uri, FILE_SIZE*2, fw, ctx, (short)0);
         FetchResult result = fw.waitForCompletion();
         assertTrue(BucketTools.equalBuckets(result.asBucket(), block.getData()));
+    }
+    
+    @After
+    public void cleanUp() {
+        FileUtil.removeAll(dir);
     }
     
 }
