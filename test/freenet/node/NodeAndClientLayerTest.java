@@ -61,7 +61,7 @@ public class NodeAndClientLayerTest {
         TestNodeParameters params = new TestNodeParameters();
         params.random = new DummyRandomSource(253121);
         params.ramStore = true;
-        params.storeSize = FILE_SIZE * 2;
+        params.storeSize = FILE_SIZE * 3;
         params.baseDirectory = dir;
         params.executor = executor;
         Node node = NodeStarter.createTestNode(params);
