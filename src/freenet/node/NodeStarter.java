@@ -411,7 +411,7 @@ public class NodeStarter implements WrapperListener {
         public int dropProb;
         public RandomSource random;
         public Executor executor;
-        public int threadLimit;
+        public int threadLimit = 500;
         public long storeSize;
         public boolean ramStore;
         public boolean enableSwapping;
