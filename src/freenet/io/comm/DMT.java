@@ -1542,23 +1542,6 @@ public class DMT {
 		return msg;
 	}
 
-	// Used by old UOM. We need to distinguish them in NodeDispatcher. FIXME remove eventually.
-	public static final MessageType UOMSendingMain = new MessageType("UOMSendingMain", PRIORITY_LOW) {{
-		addField(UID, Long.class);
-		addField(FILE_LENGTH, Long.class);
-		addField(MAIN_JAR_KEY, String.class);
-		addField(MAIN_JAR_VERSION, Integer.class);
-	}};
-	
-	public static Message createUOMSendingMain(long uid, long length, String key, int version) {
-		Message msg = new Message(UOMSendingMain);
-		msg.set(UID, uid);
-		msg.set(FILE_LENGTH, length);
-		msg.set(MAIN_JAR_KEY, key);
-		msg.set(MAIN_JAR_VERSION, version);
-		return msg;
-	}
-	
 	// Used by new UOM. We need to distinguish them in NodeDispatcher.
 	public static final MessageType UOMSendingMainJar = new MessageType("UOMSendingMainJar", PRIORITY_LOW) {{
 		addField(UID, Long.class);
@@ -1573,23 +1556,6 @@ public class DMT {
 		msg.set(FILE_LENGTH, length);
 		msg.set(MAIN_JAR_KEY, key);
 		msg.set(MAIN_JAR_VERSION, version);
-		return msg;
-	}
-	
-	// Used only by legacy UOM. FIXME remove eventually.
-	public static final MessageType UOMSendingExtra = new MessageType("UOMSendingExtra", PRIORITY_LOW) {{
-		addField(UID, Long.class);
-		addField(FILE_LENGTH, Long.class);
-		addField(EXTRA_JAR_KEY, String.class);
-		addField(EXTRA_JAR_VERSION, Integer.class);
-	}};
-	
-	public static Message createUOMSendingExtra(long uid, long length, String key, int version) {
-		Message msg = new Message(UOMSendingExtra);
-		msg.set(UID, uid);
-		msg.set(FILE_LENGTH, length);
-		msg.set(EXTRA_JAR_KEY, key);
-		msg.set(EXTRA_JAR_VERSION, version);
 		return msg;
 	}
 	
