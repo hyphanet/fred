@@ -1185,12 +1185,15 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		File data;
 		int version;
+		FreenetURI uri;
 		if(source.isUnroutableOlderVersion()) {
 		    data = updateManager.getTransitionMainBlob();
 		    version = NodeUpdateManager.TRANSITION_VERSION;
+		    uri = NodeUpdateManager.transitionMainJarURIAsUSK;
 		} else {
 		    data = updateManager.getCurrentVersionBlobFile();
 		    version = Version.buildNumber();
+            uri = updateManager.getURI();
 		}
 		
 		if(version != Version.buildNumber()) {
@@ -1240,7 +1243,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 			
 			msg =
-				DMT.createUOMSendingMainJar(uid, length, updateManager.getURI().toString(), version);
+				DMT.createUOMSendingMainJar(uid, length, uri.toString(), version);
 			
 		} catch (RuntimeException e) {
 			source.finishedSendingUOMJar(false);
