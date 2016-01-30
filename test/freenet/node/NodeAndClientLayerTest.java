@@ -17,6 +17,8 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.async.BinaryBlobWriter;
+import freenet.client.async.ClientGetter;
 import freenet.crypt.DummyRandomSource;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
@@ -26,29 +28,18 @@ import freenet.support.Logger;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
 
-public class NodeAndClientLayerTest {
+/** Creates a node, inserts data to it, and fetches the data back.
+ * Note that we need one JUnit class per node because we need to actually exit the JVM
+ * to get rid of all the node threads.
+ * @author toad
+ */
+public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
 
-    static final int PORT = 2048;
-    static final int FILE_SIZE = 1024*1024;
-    
-    static RequestClient rc = new RequestClient() {
-
-        @Override
-        public boolean persistent() {
-            return false;
-        }
-
-        @Override
-        public boolean realTimeFlag() {
-            return false;
-        }
-        
-    };
-    
     @Test
     public void testFetchPullSingleNode() throws InvalidThresholdException, NodeInitException, InsertException, FetchException, IOException {
         DummyRandomSource random = new DummyRandomSource(25312);
@@ -82,12 +73,4 @@ public class NodeAndClientLayerTest {
         assertTrue(BucketTools.equalBuckets(result.asBucket(), block.getData()));
     }
     
-    private InsertBlock generateBlock(DummyRandomSource random) throws MalformedURLException {
-        byte[] data = new byte[FILE_SIZE];
-        random.nextBytes(data);
-        RandomAccessBucket bucket = new SimpleReadOnlyArrayBucket(data);
-        FreenetURI uri = InsertableClientSSK.createRandom(random, "test").getInsertURI();
-        return new InsertBlock(bucket, new ClientMetadata(null), uri);
-    }
-
 }
