@@ -80,8 +80,6 @@ public class NodeUpdateManager {
 	 * update to this point via old UOM.
 	 */
 	public final static int TRANSITION_VERSION = 1471;
-	/** The freenet-ext.jar build number corresponding to the old key */
-	public final static int TRANSITION_VERSION_EXT = 29;
 
 	/** The URI for post-TRANSITION_VERSION builds' freenet.jar. */
 	public final static String UPDATE_URI = "USK@O~UmMwTeDcyDIW-NsobFBoEicdQcogw7yrLO2H-sJ5Y,JVU4L7m9mNppkd21UNOCzRHKuiTucd6Ldw8vylBOe5o,AQACAAE/jar/"
@@ -90,12 +88,6 @@ public class NodeUpdateManager {
 	/** Might as well be the SSK */
 	public final static String LEGACY_UPDATE_URI = "freenet:SSK@sabn9HY9MKLbFPp851AO98uKtsCtYHM9rqB~A5cCGW4,3yps2z06rLnwf50QU4HvsILakRBYd4vBlPtLv0elUts,AQACAAE/jar-"
 			+ TRANSITION_VERSION;
-	/**
-	 * Pre-TRANSITION_VERSION builds needed to fetch freenet-ext.jar via an
-	 * updater of its own.
-	 */
-	public final static String LEGACY_EXT_URI = "freenet:SSK@sabn9HY9MKLbFPp851AO98uKtsCtYHM9rqB~A5cCGW4,3yps2z06rLnwf50QU4HvsILakRBYd4vBlPtLv0elUts,AQACAAE/ext-"
-			+ TRANSITION_VERSION_EXT;
 
 	public final static String REVOCATION_URI = "SSK@tHlY8BK2KFB7JiO2bgeAw~e4sWU43YdJ6kmn73gjrIw,DnQzl0BYed15V8WQn~eRJxxIA-yADuI8XW7mnzEbut8,AQACAAE/revoked";
 	// These are necessary to prevent DoS.
@@ -106,26 +98,19 @@ public class NodeUpdateManager {
 	public static final long MAX_MAIN_JAR_LENGTH = 16 * 1024 * 1024; // 16MB
 
 	public static final FreenetURI transitionMainJarURI;
-	public static final FreenetURI transitionExtJarURI;
 	
 	public static final FreenetURI transitionMainJarURIAsUSK;
-	public static final FreenetURI transitionExtJarURIAsUSK;
 	
 
 	public static final String transitionMainJarFilename = "legacy-freenet-jar-"
 			+ TRANSITION_VERSION + ".fblob";
-	public static final String transitionExtJarFilename = "legacy-freenet-ext-jar-"
-			+ TRANSITION_VERSION_EXT + ".fblob";
 	
 	public final File transitionMainJarFile;
-	public final File transitionExtJarFile;
 
 	static {
 		try {
 			transitionMainJarURI = new FreenetURI(LEGACY_UPDATE_URI);
-			transitionExtJarURI = new FreenetURI(LEGACY_EXT_URI);
 			transitionMainJarURIAsUSK = transitionMainJarURI.uskForSSK();
-			transitionExtJarURIAsUSK = transitionExtJarURI.uskForSSK();
 		} catch (MalformedURLException e) {
 			throw new Error(e);
 		}
@@ -135,7 +120,6 @@ public class NodeUpdateManager {
 	private FreenetURI revocationURI;
 
 	private final LegacyJarFetcher transitionMainJarFetcher;
-	private final LegacyJarFetcher transitionExtJarFetcher;
 
 	private MainJarUpdater mainUpdater;
 
@@ -287,9 +271,8 @@ public class NodeUpdateManager {
 
 			@Override
 			public void onSuccess(LegacyJarFetcher fetcher) {
-				if (transitionMainJarFetcher.fetched()
-						&& transitionExtJarFetcher.fetched()) {
-					System.out.println("Got legacy jars, announcing...");
+				if (transitionMainJarFetcher.fetched()) {
+					System.out.println("Got legacy jar, announcing...");
 					broadcastUOMAnnouncesOld();
 				}
 			}
@@ -312,12 +295,8 @@ public class NodeUpdateManager {
 		};
 
 		transitionMainJarFile = new File(node.clientCore.getPersistentTempDir(), transitionMainJarFilename);
-		transitionExtJarFile = new File(node.clientCore.getPersistentTempDir(), transitionExtJarFilename);
 		transitionMainJarFetcher = new LegacyJarFetcher(transitionMainJarURI,
 				transitionMainJarFile, node.clientCore,
-				legacyFetcherCallback);
-		transitionExtJarFetcher = new LegacyJarFetcher(transitionExtJarURI,
-				transitionExtJarFile, node.clientCore,
 				legacyFetcherCallback);
 
 		updaterConfig.register("updateSeednodes", wasEnabledOnStartup, 6, true,
@@ -559,10 +538,8 @@ public class NodeUpdateManager {
 	void broadcastUOMAnnouncesOld() {
 		boolean mainJarAvailable = transitionMainJarFetcher == null ? false
 				: transitionMainJarFetcher.fetched();
-		boolean extJarAvailable = transitionExtJarFetcher == null ? false
-				: transitionExtJarFetcher.fetched();
 		Message msg;
-		if(!(mainJarAvailable && extJarAvailable)) return;
+		if(!mainJarAvailable) return;
 		synchronized (broadcastUOMAnnouncesSync) {
 			if(broadcastUOMAnnouncesOld && !hasBeenBlown) return;
 			broadcastUOMAnnouncesOld = true;
@@ -610,20 +587,15 @@ public class NodeUpdateManager {
 	private Message getOldUOMAnnouncement() {
 		boolean mainJarAvailable = transitionMainJarFetcher == null ? false
 				: transitionMainJarFetcher.fetched();
-		boolean extJarAvailable = transitionExtJarFetcher == null ? false
-				: transitionExtJarFetcher.fetched();
-		return DMT.createUOMAnnounce(transitionMainJarURIAsUSK.toString(),
-				transitionExtJarURIAsUSK.toString(),
-				revocationURI.toString(), revocationChecker.hasBlown(),
-				mainJarAvailable ? TRANSITION_VERSION : -1,
-				extJarAvailable ? TRANSITION_VERSION_EXT : -1,
-				revocationChecker.lastSucceededDelta(), revocationChecker
-						.getRevocationDNFCounter(), revocationChecker
-						.getBlobSize(),
-				mainJarAvailable ? transitionMainJarFetcher.getBlobSize() : -1,
-				extJarAvailable ? transitionExtJarFetcher.getBlobSize() : -1,
-				(int) node.nodeStats.getNodeAveragePingTime(),
-				(int) node.nodeStats.getBwlimitDelayTime());
+        return DMT.createUOMAnnouncement(updateURI.toString(), revocationURI
+                .toString(), revocationChecker.hasBlown(), 
+                mainJarAvailable ? TRANSITION_VERSION : -1,
+                revocationChecker.lastSucceededDelta(), revocationChecker
+                .getRevocationDNFCounter(), revocationChecker
+                .getBlobSize(),
+                mainJarAvailable ? transitionMainJarFetcher.getBlobSize() : -1,
+                (int) node.nodeStats.getNodeAveragePingTime(),
+                (int) node.nodeStats.getBwlimitDelayTime());
 	}
 
 	private Message getNewUOMAnnouncement(long blobSize) {
@@ -732,7 +704,6 @@ public class NodeUpdateManager {
 				main.kill();
 			stopPluginUpdaters(oldPluginUpdaters);
 			transitionMainJarFetcher.stop();
-			transitionExtJarFetcher.stop();
 		} else {
 			// FIXME copy it, dodgy locking.
 			try {
@@ -747,7 +718,6 @@ public class NodeUpdateManager {
 			mainUpdater.start();
 			startPluginUpdaters();
 			transitionMainJarFetcher.start();
-			transitionExtJarFetcher.start();
 		}
 	}
 
@@ -1916,10 +1886,6 @@ public class NodeUpdateManager {
 		// Deploy immediately if the revocation checker has already reported in but we were waiting for deps.
 		// Otherwise wait for the revocation checker.
 		deployOffThread(0, true);
-	}
-
-	public File getTransitionExtBlob() {
-		return transitionExtJarFetcher.getBlobFile();
 	}
 
 	public File getTransitionMainBlob() {

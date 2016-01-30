@@ -154,9 +154,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	 */
 	public boolean handleAnnounce(Message m, final PeerNode source) {
 		
-		/** If it's a UOMAnnounce, we only care about revocations. */
-		boolean fromOldNode = m.getSpec() == DMT.UOMAnnounce;
-		
 		String mainJarKey = m.getString(DMT.MAIN_JAR_KEY);
 		String revocationKey = m.getString(DMT.REVOCATION_KEY);
 		boolean haveRevocationKey = m.getBoolean(DMT.HAVE_REVOCATION_KEY);
@@ -239,10 +236,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		
 		tellFetchers(source);
 		
-		if(fromOldNode)
-			// If it's an old node, we ignore everything except revocations.
-			return true;
-
 		if(updateManager.isBlown())
 			return true; // We already know
 
