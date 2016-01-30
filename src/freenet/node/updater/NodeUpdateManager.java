@@ -587,7 +587,7 @@ public class NodeUpdateManager {
 	private Message getOldUOMAnnouncement() {
 		boolean mainJarAvailable = transitionMainJarFetcher == null ? false
 				: transitionMainJarFetcher.fetched();
-        return DMT.createUOMAnnouncement(updateURI.toString(), revocationURI
+        return DMT.createUOMAnnouncement(transitionMainJarURIAsUSK.toString(), revocationURI
                 .toString(), revocationChecker.hasBlown(), 
                 mainJarAvailable ? TRANSITION_VERSION : -1,
                 revocationChecker.lastSucceededDelta(), revocationChecker
