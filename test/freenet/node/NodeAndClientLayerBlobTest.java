@@ -33,11 +33,13 @@ import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
+import freenet.support.TestProperty;
 
 public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
 
     @Test
     public void testFetchPullBlobSingleNode() throws InvalidThresholdException, NodeInitException, InsertException, FetchException, IOException, BinaryBlobFormatException {
+        if(!TestProperty.EXTENSIVE) return;
         DummyRandomSource random = new DummyRandomSource(25312);
         final Executor executor = new PooledExecutor();
         File dir = new File("test-fetch-pull-blob-single-node");

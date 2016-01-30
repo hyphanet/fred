@@ -25,6 +25,7 @@ import freenet.keys.InsertableClientSSK;
 import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.TestProperty;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleReadOnlyArrayBucket;
@@ -42,6 +43,7 @@ public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
 
     @Test
     public void testFetchPullSingleNode() throws InvalidThresholdException, NodeInitException, InsertException, FetchException, IOException {
+        if(!TestProperty.EXTENSIVE) return;
         DummyRandomSource random = new DummyRandomSource(25312);
         final Executor executor = new PooledExecutor();
         File dir = new File("test-fetch-pull-single-node");
