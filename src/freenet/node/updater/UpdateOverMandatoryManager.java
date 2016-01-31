@@ -1186,7 +1186,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		File data;
 		int version;
 		FreenetURI uri;
-		if(source.isUnroutableOlderVersion()) {
+		if (source.getVersionNumber() < NodeUpdateManager.TRANSITION_VERSION) {
 		    data = updateManager.getTransitionMainBlob();
 		    version = NodeUpdateManager.TRANSITION_VERSION;
 		    uri = NodeUpdateManager.transitionMainJarURIAsUSK;
