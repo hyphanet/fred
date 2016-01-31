@@ -632,10 +632,13 @@ public class NodeUpdateManager {
 		}
 		long size = canAnnounceUOMNew();
 		try {
-			if (sendOld || hasBeenBlown)
-				peer.sendAsync(getOldUOMAnnouncement(), null, ctr);
-			if (sendNew || hasBeenBlown)
-				peer.sendAsync(getNewUOMAnnouncement(size), null, ctr);
+		    if(peer.getVersionNumber() < TRANSITION_VERSION) {
+		        if (sendOld || hasBeenBlown)
+		            peer.sendAsync(getOldUOMAnnouncement(), null, ctr);
+		    } else {
+		        if (sendNew || hasBeenBlown)
+		            peer.sendAsync(getNewUOMAnnouncement(size), null, ctr);
+		    }
 		} catch (NotConnectedException e) {
 			// Sad, but ignore it
 		}
