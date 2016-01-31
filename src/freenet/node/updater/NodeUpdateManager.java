@@ -545,7 +545,7 @@ public class NodeUpdateManager {
 			broadcastUOMAnnouncesOld = true;
 			msg = getOldUOMAnnouncement();
 		}
-		node.peers.localBroadcast(msg, true, true, ctr);
+		node.peers.localBroadcast(msg, true, true, ctr, 0, TRANSITION_VERSION-1);
 	}
 
 	void broadcastUOMAnnouncesNew() {
@@ -559,7 +559,7 @@ public class NodeUpdateManager {
 			msg = getNewUOMAnnouncement(size);
 		}
 		if(logMINOR) Logger.minor(this, "Broadcasting UOM announcements (new)");
-		node.peers.localBroadcast(msg, true, true, ctr);
+		node.peers.localBroadcast(msg, true, true, ctr, TRANSITION_VERSION, Integer.MAX_VALUE);
 	}
 
 	/** Return the length of the data fetched for the current version, or -1. */
