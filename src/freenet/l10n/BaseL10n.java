@@ -83,6 +83,7 @@ public class BaseL10n {
 		// traditional chinese, used in Taiwan, Hong Kong and Macau
 		RUSSIAN("ru", "Русский", "rus", new String[] { "WINDOWS0419" }), // Just one variant for russian. Belorussian is separate, code page 423, speakers may or may not speak russian, I'm not including it.
 		JAPANESE("ja", "日本語", "jpn", new String[] { "WINDOWS0411" }),
+		PORTUGUESE("pt-PT", "Português do Portugal", "pt", new String[] { "WINDOWS0816" }),
 		// TODO: This does not adhere to RFC5646. Fix it as part of changing the whole list to
 		// RFC5646. Find a way to rename this without breaking the language in all plugins.
 		BRAZILIAN_PORTUGUESE("pt-br", "Português do Brasil", "pt-br", new String[] { "WINDOWS0416" }),
