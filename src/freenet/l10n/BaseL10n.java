@@ -63,6 +63,14 @@ public class BaseL10n {
 		// traditional chinese, used in Taiwan, Hong Kong and Macau
 		RUSSIAN("ru", "Русский", "rus", new String[] { "WINDOWS0419" }), // Just one variant for russian. Belorussian is separate, code page 423, speakers may or may not speak russian, I'm not including it.
 		JAPANESE("ja", "日本語", "jpn", new String[] { "WINDOWS0411" }),
+		// pt_PT is not a standard ISO code since there is none, but rather what Transifex uses.
+		// I've chosen to match the Transifex code to ensures that the script for pulling
+		// translations from Transifex will produce a filename which BaseL10n will discover.
+		// By this, maintainers don't have to rename the file and thus cannot forget it.
+		PORTUGUESE("pt_PT", "Português do Portugal", "pt_PT", new String[] { "WINDOWS0816" }),
+		// FIXME: This is neither part of ISO 639-*, nor of the IETF language codes, and also not
+		// what Transifex uses. Stick to a standard, or use the Transifex style for the same reasons
+		// as explained above at pt_PT.
 		BRAZILIAN_PORTUGUESE("pt-br", "Português do Brasil", "pt-br", new String[] { "WINDOWS0416" }),
 		GREEK("el", "Ελληνικά", "ell", new String[] { "WINDOWS0408" }),
 		UNLISTED("unlisted", "unlisted", "unlisted", new String[] {});
