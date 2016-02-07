@@ -45,6 +45,7 @@ public class BaseL10n {
 		// Windows language codes must be preceded with WINDOWS and be in upper case hex, 4 digits.
 		// See http://www.autohotkey.com/docs/misc/Languages.htm
 		
+		CROATIAN("hr", "Hrvatski", "hrv", new String[] { "WINDOWS041A" }),
 		ENGLISH("en", "English", "eng", new String[] { "WINDOWS0409", "WINDOWS0809", "WINDOWS0C09", "WINDOWS1009", "WINDOWS1409", "WINDOWS1809", "WINDOWS1C09", "WINDOWS2009", "WINDOWS2409", "WINDOWS2809", "WINDOWS2C09", "WINDOWS3009", "WINDOWS3409"}),
 		SPANISH("es", "Español", "spa", new String[] { "WINDOWS040A", "WINDOWS080A", "WINDOWS0C0A", "WINDOWS100A", "WINDOWS140A", "WINDOWS180A", "WINDOWS1C0A", "WINDOWS200A", "WINDOWS240A", "WINDOWS280A", "WINDOWS2C0A", "WINDOWS300A", "WINDOWS340A", "WINDOWS380A", "WINDOWS3C0A", "WINDOWS400A", "WINDOWS440A", "WINDOWS480A", "WINDOWS4C0A", "WINDOWS500A"}),
 		DANISH("da", "Dansk", "dan", new String[] { "WINDOWS0406" }),
