@@ -108,12 +108,19 @@ public class BaseL10n {
 
 		public static String[] valuesWithFullNames() {
 			LANGUAGE[] allValues = values();
-			String[] result = new String[allValues.length];
+			ArrayList<String> result = new ArrayList<String>(allValues.length);
 			for (int i = 0; i < allValues.length; i++) {
-				result[i] = allValues[i].fullName;
+				// We will return the full names sorted alphabetically. To esnure that the user
+				// notices the special "UNLISTED" language code, we add it to the end of the list
+				// after sorting, so now we skip it.
+				if(allValues[i] != UNLISTED)
+					result.add(allValues[i].fullName);
 			}
-
-			return result;
+			
+			Collections.sort(result);
+			result.add(UNLISTED.fullName);
+			
+			return (String[])result.toArray(new String[result.size()]);
 		}
 
 		public static LANGUAGE getDefault() {
