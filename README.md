@@ -4,8 +4,8 @@
 
 To install Freenet, use the installer from https://freenetproject.org
 
-If the installer did not do it for you, start Freenet and open a browser pointing
-to http://127.0.0.1:8888/
+If the installer did not open a browser with Freenet, start Freenet and access the
+Freenet web interface at http://127.0.0.1:8888/
 
 ## Contributing
 
@@ -42,7 +42,7 @@ Part of our work is funded through donations
 via our website (as well as a few larger sponsors from time to time). 
 If you can, please visit our donations page and make a contribution at:
 
-http://freenetproject.org/donate.html
+https://freenetproject.org/donate.html
 
 Press enquiries should be directed at press@freenetproject.org
 
@@ -55,33 +55,15 @@ run Freenet as close to 24x7 as possible for good performance. It is however
 possible to remove the plist, to remove the cron job (with the remove cron job
 script in bin/), or to remove the startup shortcut (edit the start menu).
 
-## Basic Security
+## Usage
 The easiest option is to use the system tray applet to launch Freenet. This will try to
-load a browser (Chrome or Firefox) in privacy/incognito mode. If the browser is in privacy
-mode it will tell you. Browser bugs might result in it not being in privacy mode so be
-careful of this.
+load a browser (Chrome or Firefox) in privacy/incognito mode. If this does not work,
+please enable privacy mode manually.
 
-You MUST use a browser in privacy/incognito mode, or ideally use a completely separate
-browser to access Freenet. The reason for this is browser history stealing attacks via CSS
-which enable malicious websites to probe what other websites - and more importantly
-freesites (on-freenet websites) you have been visiting. Many other browser-level attacks
-may also be possible, especially if you use a lot of plugins and add-ons, or other
-software that is accessed through localhost.
+Privacy mode avoids history probing attacks from regular websites (outside freenet).
+Ideally use a completely separate browser to access Freenet.
 
-There are many potentially dangerous features in most browsers which you can disable.
-Most of them will be turned off by privacy/incognito mode, hopefully. Candidates include
-location-based services (geo.enabled) and GoBrowsing (keyword.enabled) in firefox, and 
-probably a number of plugins. Note that this is not unique to Firefox - until version 9
-or so, Internet Explorer had much worse problems. The most fundamental thing is browser
-history probing via CSS. This can be turned off globally and will improve your privacy,
-but it is probably still safer to
-use a separate browser, and the fact that you have turned it off will likely be
-detectable. If you do use a separate browser, you can do some helpful tricks such as
-turning off javascript, not loading any addons or plugins, turning off the cache and
-history, and setting 127.0.0.1:8888 as a proxy server for all protocols (set it
-explicitly for HTTPS even if you set it for all protocols), so that it won't fetch
-anything from the web.
-
+## Security measures
 Freenet will warn you when you try to download a file which may not be safe. Many file
 formats, for instance PDFs, word processor documents, and some types of video, can give
 away your identity. In some cases (such as HTML, PNGs, JPEGs and MP3s), Freenet can
@@ -91,41 +73,31 @@ or up to date versions of the normal tools, to view such content will help. Anot
 option is to create a virtual machine with no internet access, create a clean snapshot
 having installed the software you need, and then use it to browse the content. Once
 finished, reset to the clean snapshot. However, even this is not certain to be
-absolutely secure if there is a buffer overflow or similar severe bug: Breaking out of
-VMs is not completely unheard of; so you will need to secure the VM, or ideally run it
-on a disconnected machine.
+absolutely secure: Breaking out of VMs is not completely unheard of; so you will need to
+ecure the VM, or ideally run it on a disconnected machine.
 
 You are responsible for your computer's physical security. In many hostile environments
 the most likely attack is people busting down your door and stealing your computer -
 perhaps because they know you are using Freenet, or perhaps because they got your name
-from one of your friends who was also a troublemaker! Freenet can encrypt your caches
+from one of your friends who was busted! Freenet can encrypt your caches
 and active downloads/uploads, with a password if you set one, and with a panic button to
 get rid of the evidence quickly, but as soon as anything is saved to disk, Freenet can't
 do anything about it. Freenet can download files to encrypted temporary space ("Fetch"
 instead of "Download"), to limit this, but it will use a bit more disk space and is less
 convenient. If you can encrypt your whole hard drive, e.g. with Truecrypt, that is
 strongly recommended. Even if you can't, we strongly recommend you encrypt your swapfile
-(try "fsutil behavior set encryptpagingfile 1" on Windows 7), or turn it off. Note also
-that many types of file will be automatically saved to disk by your browser without you
-asking it to - mostly these are the kind of files that Freenet will warn you about anyway,
-but there might be exceptions depending on what you are using; it's always going to be
-safest to encrypt everything.
+(try "fsutil behavior set encryptpagingfile 1" on Windows 7), or turn off swap.
 
-## More Security
 If your life or liberty depends on Freenet protecting your anonymity, you should
 seriously evaluate your options, including the option of not posting whatever
-controversial content it is you are thinking of posting. Freenet has not yet
-reached version 1.0, and several important security features have not yet been
-implemented; there are several known attacks which future versions will greatly
-reduce, and there are likely to be (and have been) serious bugs. If you do 
+controversial content it is you are thinking of posting. If you do 
 choose to use Freenet under such circumstances, you  should enable the MAXIMUM 
 network security level and add connections to your friends on the Friends page; 
 connecting only to friends greatly improves your security, making it very hard to
-trace content back to you, and reasonably difficult to find out that you are even
+trace content back to you, and reasonably difficult to find out that you are
 running Freenet, but you should only connect to people you actually know: You are
 vulnerable to those nodes you are connected to (hence in low/normal security, aka
-opennet mode, you have much less security). Plus, connecting to random strangers
-will reduce performance for the network as a whole.
+opennet mode, you have much less security).
 
 A reasonably detailed explanation of how to use Freenet securely is included in
 the first-time wizard, which you see when you first install Freenet, at the bottom
