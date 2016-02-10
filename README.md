@@ -1,6 +1,6 @@
 ![next branch build status](https://travis-ci.org/freenet/fred.svg?branch=next)
 
-## QUICK START
+## Quickstart
 
 To install Freenet, use the installer from https://freenetproject.org
 
@@ -13,7 +13,7 @@ For building Freenet, see README.building.md
 
 Short guidelines for contributing improvements are in CONTRIBUTING.md
 
-## INTRODUCTION
+## Introduction
 
 Freenet is software designed to allow the free exchange of information over the 
 Internet without fear of censorship, or reprisal. To achieve this Freenet makes it 
@@ -46,7 +46,7 @@ http://freenetproject.org/donate.html
 
 Press enquiries should be directed at press@freenetproject.org
 
-## ALWAYS ON
+## Always On
 On OSX, Freenet will create a configuration file at 
 ~/Library/LaunchAgents/com.freenet.startup.plist. On other unix-based systems,
 Freenet will create a cron job to run Freenet on startup. On Windows, Freenet is
@@ -55,7 +55,7 @@ run Freenet as close to 24x7 as possible for good performance. It is however
 possible to remove the plist, to remove the cron job (with the remove cron job
 script in bin/), or to remove the startup shortcut (edit the start menu).
 
-## BASIC SECURITY
+## Basic Security
 The easiest option is to use the system tray applet to launch Freenet. This will try to
 load a browser (Chrome or Firefox) in privacy/incognito mode. If the browser is in privacy
 mode it will tell you. Browser bugs might result in it not being in privacy mode so be
@@ -111,7 +111,7 @@ asking it to - mostly these are the kind of files that Freenet will warn you abo
 but there might be exceptions depending on what you are using; it's always going to be
 safest to encrypt everything.
 
-## MORE SECURITY
+## More Security
 If your life or liberty depends on Freenet protecting your anonymity, you should
 seriously evaluate your options, including the option of not posting whatever
 controversial content it is you are thinking of posting. Freenet has not yet
@@ -133,27 +133,7 @@ of the page asking whether to connect to strangers or just to friends. Mouse ove
 it to read it. If you have already installed Freenet you can still see it here:
 http://127.0.0.1:8888/wizard/?step=OPENNET
 
-## CHANGES FROM 0.5
-This is the 0.7 rewrite of Freenet. This is largely rewritten from scratch, 
-although it pulls in a load of code from Dijjer, and most of the crypto and a 
-few other classes from the 0.5 source.
-
-### Major changes
-- Darknet mode: connect only to your friends, they connect to theirs, this forms
-  a small-world network, which Freenet makes routable by location swapping. This
-  greatly increases the network's robustness as it makes it much harder to find
-  and block Freenet nodes on a national firewall, as well as improving security
-  generally provided that your friends are trustworthy. 
-- Opennet mode (plug and play) is also supported. Just select network security
-  level NORMAL or LOW in the first-time wizard.
-- Freenet now uses UDP, mainly to improve connectivity over NATs and firewalls.
-- Freenet now uses 32kB fixed block sizes, to improve performance and simplify 
-  the code.
-- The Freenet Client Protocol is completely different, see the spec here:
-  https://wiki.freenetproject.org/FCPv2
-- Many more changes...
-
-## LICENSING
+## Licensing
 Freenet is under the GPL, version 2 or later - see LICENSE.Freenet. We use some
 code under the Apache license version 2 (mostly apache commons stuff), and some
 modified BSD code (Mantissa). All of which is compatible with the GPL, although
