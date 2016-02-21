@@ -47,7 +47,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	private final int paddedLength;
 	private byte[] noderefBuf;
 	private short htl;
-	private double target;
+	private final double target;
 	private final AnnouncementCallback cb;
 	private final PeerNode onlyNode;
 	private int forwardedRefs;
@@ -62,6 +62,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		this.xferUID = xferUID;
 		this.paddedLength = paddedLength;
 		this.noderefLength = noderefLength;
+		this.target = target;
 		this.cb = cb;
 	}
 
