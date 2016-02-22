@@ -6,6 +6,7 @@ addons:
     packages:
     - ant
     - ant-optional
+    - junit
     - junit4
     - libhamcrest-java
 
