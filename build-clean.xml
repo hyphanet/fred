@@ -182,7 +182,7 @@ maintainers may prefer to use this instead of build.xml.
 	</target>
 
 	<target name="libdep-bc" depends="env" unless="lib.bouncycastle.present">
-		<fail message="Bouncycastle not available (or not recent enough); try https://www.bouncycastle.org/download/${bc.jar}"/>
+	  <fail message="Bouncycastle not available (or not recent enough); try https://www.bouncycastle.org/download/${bc.jar} and put it in the ./lib/ dir"/>
 	</target>
 
 	<target name="libdep-junit" depends="env" unless="lib.junit.present">
