@@ -990,8 +990,8 @@ public class Node implements TimeSkewDetectorCallback {
 		startupTime = System.currentTimeMillis();
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
 		// Setup node-specific configuration
-		final SubConfig nodeConfig = new SubConfig("node", config);
-		final SubConfig installConfig = new SubConfig("node.install", config);
+		final SubConfig nodeConfig = config.createSubConfig("node");
+		final SubConfig installConfig = config.createSubConfig("node.install");
 
 		int sortOrder = 0;
 
@@ -1024,7 +1024,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		// FProxy config needs to be here too
-		SubConfig fproxyConfig = new SubConfig("fproxy", config);
+		SubConfig fproxyConfig = config.createSubConfig("fproxy");
 		try {
 			toadlets = new SimpleToadletServer(fproxyConfig, new ArrayBucketFactory(), executor, this);
 			fproxyConfig.finishedInitialization();
@@ -1661,7 +1661,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		failureTable = new FailureTable(this);
 
-		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, lastVersion);
+		nodeStats = new NodeStats(this, sortOrder, config.createSubConfig("node.load"), obwLimit, ibwLimit, lastVersion);
 
 		// clientCore needs new load management and other settings from stats.
 		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, databaseKey, db, persistentSecret);
@@ -1686,7 +1686,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Opennet
 
-		final SubConfig opennetConfig = new SubConfig("node.opennet", config);
+		final SubConfig opennetConfig = config.createSubConfig("node.opennet");
 		opennetConfig.register("connectToSeednodes", true, 0, true, false, "Node.withAnnouncement", "Node.withAnnouncementLong", new BooleanCallback() {
 			@Override
 			public Boolean get() {

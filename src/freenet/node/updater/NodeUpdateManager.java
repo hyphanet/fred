@@ -223,7 +223,7 @@ public class NodeUpdateManager {
 		this.alert = new UpdatedVersionAvailableUserAlert(this);
 		alert.isValid(false);
 
-		SubConfig updaterConfig = new SubConfig("node.updater", config);
+		SubConfig updaterConfig = config.createSubConfig("node.updater");
 
 		updaterConfig.register("enabled", true, 1, false, false,
 				"NodeUpdateManager.enabled", "NodeUpdateManager.enabledLong",
