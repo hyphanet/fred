@@ -484,6 +484,15 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	}
 
 	private void rnf(PeerNode next) {
+		synchronized(this) {
+			while(waitingForTransfers > 0) {
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					// Ignore.
+				}
+			}
+		}
 		Message msg = DMT.createFNPRouteNotFound(uid, htl);
 		if(source != null) {
 			try {
