@@ -34,6 +34,8 @@ import freenet.support.io.FileUtil;
  * #EXTINF:<length in seconds>,<title>
  * <path>
  * 
+ * Might be useful to extend to m3u8:
+ * https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/StreamingMediaGuide/HTTPStreamingArchitecture/HTTPStreamingArchitecture.html#//apple_ref/doc/uid/TP40008332-CH101-SW10
  */
 public class M3UFilter implements ContentDataFilter {
 
