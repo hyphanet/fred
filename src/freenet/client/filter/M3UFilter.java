@@ -16,7 +16,10 @@ import freenet.support.io.FileUtil;
 
 /**
  * Content filter for M3Us
- * This one kills every comment and ensures that every file is a URL.
+ * 
+ * This one kills every comment and ensures that every file is a safe
+ * URL. Currently far too strict: allows only relative paths with as
+ * letters alphanumeric or - and exactly one dot.
  * 
  * The structure of a simple M3U is just a list of valid relative
  * URLs.  The structure of an extended M3U is as follows (taken from
