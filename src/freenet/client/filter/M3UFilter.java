@@ -139,6 +139,8 @@ public class M3UFilter implements ContentDataFilter {
                             output.write(nextchar);
                         }
                     }
+                    // skip the newline
+                    readcount = dis.read(nextchar);
                     break;
                 }
             }
