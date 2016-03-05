@@ -46,6 +46,7 @@ public class M3UFilter implements ContentDataFilter {
 	static final byte[] CHAR_CARRIAGE_RETURN =
 		{ (byte)'\r' };
     static final int MAX_URI_LENGTH = 16384;
+    static final String badUriReplacement = "#bad-uri-removed-filter-allows-only-alphanumeric-or-minus-with-exactly-one-dot";
 	// static final int COMMENT_EXT_SIZE = 4;
 	// static final byte[] COMMENT_EXT_START =
 	// 	{ (byte)'#', (byte)'E', (byte)'X', (byte)'T' };
@@ -62,6 +63,8 @@ public class M3UFilter implements ContentDataFilter {
         // TODO: Check the EXTINF headers instead of killing comments.
 		// Check whether the line is a comment
         boolean isComment = false;
+        boolean isBadUri = false;
+        int numberOfDotsInUri = 0;
         int readcount;
         byte[] nextchar = new byte[1];
         byte[] fileUri;
@@ -74,6 +77,9 @@ public class M3UFilter implements ContentDataFilter {
             } else {
                 isComment = false;
             }
+            // read one line as a fileUri
+            numberOfDotsInUri = 0;
+            isBadUri = false;
             fileIndex = 0;
             fileUri = new byte[MAX_URI_LENGTH];
             while (readcount != -1) {
@@ -91,10 +97,38 @@ public class M3UFilter implements ContentDataFilter {
                     if (!isComment) {
                         // remove too long paths
                         if (fileIndex <= MAX_URI_LENGTH) {
-                            // FIXME: slice the fileUri to only the part up to fileIndex (inclusive).
-                            String uri = new String(fileUri, "UTF-8");
-                            // FIXME: filter the URI, i.e. with processURI from GenericReadFilterCallback.
-                            uri = uri;
+                            // overly strict filtering to keep it simple for starters.
+                            // allow only alphanumeric values in UTF-8 encoding and exactly one period in the filename.
+                            final byte utf8A = (byte)'A';
+                            final byte utf8Z = (byte)'Z';
+                            final byte utf8a = (byte)'a';
+                            final byte utf8z = (byte)'z';
+                            final byte utf8dot = (byte)'.';
+                            final byte utf8dash = (byte)'-';
+                            for (int i = 0; i < fileIndex; i++) {
+                                byte b = fileUri[i];
+                                if (!(utf8A < b && b < utf8Z ||
+                                      utf8a < b && b < utf8z ||
+                                      utf8dot == b ||
+                                      utf8dash == b)) {
+                                    isBadUri = true;
+                                    break;
+                                } 
+                                if ((byte)'.' == b) {
+                                    numberOfDotsInUri += 1;
+                                }
+                            }
+                            if (numberOfDotsInUri != 1) {
+                                isBadUri = true;
+                            }
+                            // use only the first fileIndex bytes
+                            String uri;
+                            // TODO: cleanly filter the URI, i.e. with processURI from GenericReadFilterCallback.
+                            if (isBadUri) {
+                                uri = badUriReplacement;
+                            } else {
+                                uri = new String(fileUri, 0, fileIndex, "UTF-8");
+                            }
                             output.write(uri.getBytes("UTF-8"));
                             output.write(nextchar);
                         }
