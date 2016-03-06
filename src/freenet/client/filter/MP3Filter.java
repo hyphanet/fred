@@ -63,6 +63,30 @@ public class MP3Filter implements ContentDataFilter {
 		{44100, 48000, 32000}
 	};
 
+	// Samples per frame for each [version][layer]
+	static final int[][] samplesPerFrame = {
+		// Version 2.5
+		{ 0, 576, 1152, 384 },
+		// Reserved
+		{},
+		// Version 2
+		{ 0, 576, 1152, 384 },
+		// Version 1
+		{ 0, 1152, 1152, 384 }
+	};
+
+	// Bits per slot for each layer
+	static final int[] bitsPerSlot = {
+		// Reserved
+		0,
+		// Layer III
+		8,
+		// Layer II
+		8,
+		// Layer I
+		32
+	};
+
 	@Override
 	public void readFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
@@ -138,14 +162,14 @@ public class MP3Filter implements ContentDataFilter {
 					continue; // Not valid
 				}
 
-				//Generate other values from tables
-				int bitrate = bitRateIndices[version][layer][bitrateIndex]*1000;
-				int samplerate = sampleRateIndices[version][samplerateIndex];
-				int frameLength = 0;
-				if(layer == 1 || layer == 2) {
-					frameLength = 144*bitrate/samplerate+(paddingBit ? 1 : 0);
-				}
-				else if(layer == 3) frameLength = (12*bitrate/samplerate+(paddingBit ? 1 : 0))*4;
+				// Generate other values from tables
+				final int bitrate = bitRateIndices[version][layer][bitrateIndex] * 1000;
+				final int samplerate = sampleRateIndices[version][samplerateIndex];
+				final int samples = samplesPerFrame[version][layer];
+				final int granularity = bitsPerSlot[layer];
+				int frameLength = samples / granularity * bitrate / samplerate;
+				frameLength += paddingBit ? 1 : 0;
+				frameLength *= granularity / 8;
 
 				short crc = 0;
 				
