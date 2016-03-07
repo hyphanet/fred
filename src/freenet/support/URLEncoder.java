@@ -36,7 +36,7 @@ public class URLEncoder {
 		for (int i = 0; i < URL.length(); ++i) {
 			char c = URL.charAt(i);
 			if ((safeURLCharacters.indexOf(c) >= 0
-						|| (!ascii && c >= 0200 && Character.isDefined(c) && !Character.isISOControl(c))
+						|| (!ascii && c >= 128 && Character.isDefined(c) && !Character.isISOControl(c))
 						|| extraSafeChars.indexOf(c) >= 0)
 					&& (force == null || force.indexOf(c) < 0)) {
 				enc.append(c);
