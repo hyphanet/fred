@@ -717,7 +717,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		else
 			sendHandshakeTime = now;  // Be sure we're ready to handshake right away
 		
-		if(messageQueue.neverHandshake())
+		if(neverHandshake())
 		    sendHandshakeTime = Long.MAX_VALUE;
 
 		totalInputSinceStartup = fs.getLong("totalInput", 0);
@@ -5879,7 +5879,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * for packets to send.
 	 */
     public boolean checkForDisconnectionTimeout(long now) {
-        if(messageQueue.neverHandshake()) {
+        if(neverHandshake()) {
             // Transport layer completely bypassed. Do not handshake or send keepalives.
             // Hence no timeouts.
             return true;
@@ -5910,6 +5910,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
             Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible: "+this);
             return true;
         }
+        return false;
+    }
+
+    private boolean neverHandshake() {
+        if(messageQueue.neverHandshake()) return true;
+        if(packetFormat instanceof BypassPacketFormat) return true;
         return false;
     }
 
