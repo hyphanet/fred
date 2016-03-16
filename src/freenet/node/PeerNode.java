@@ -2160,11 +2160,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			if(packetFormat == null) {
 			    packetFormat = makePacketFormat(this, messageQueue, ourInitialMsgID, 
 			            theirInitialMsgID, node, crypto, crypto.ecdsaPubKeyHash, peerECDSAPubKeyHash);
-			    if(messageQueue.neverHandshake()) {
-			        packetFormat = new DummyPacketFormat();
-			    } else {
-			        packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
-			    }
 			}
 			// Completed setup counts as received data packet, for purposes of avoiding spurious disconnections.
 			timeLastReceivedPacket = now;
