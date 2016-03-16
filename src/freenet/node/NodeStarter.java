@@ -72,7 +72,9 @@ public class NodeStarter implements WrapperListener {
 	    /** Deliver messages immediately to the destination Node */
 	    FAST_QUEUE_BYPASS,
 	    /** Message bypass simulating a constant bitrate link */
-	    CBR_QUEUE_BYPASS
+	    CBR_QUEUE_BYPASS,
+	    /** Packet level bypass, has accurate bandwidth sharing and PacketSender */
+	    PACKET_BYPASS
 	}
 	private static TestingVMBypass testingVMEnableBypassConnections;
 	private static final Map<ByteArrayWrapper, Node> testingVMNodesByPubKeyHash = 
@@ -719,6 +721,11 @@ public class NodeStarter implements WrapperListener {
         return testingVMEnableBypassConnections == TestingVMBypass.CBR_QUEUE_BYPASS ||
             testingVMEnableBypassConnections == TestingVMBypass.FAST_QUEUE_BYPASS;
         
+    }
+
+    public synchronized static boolean isPacketBypassEnabled() {
+        assert(isTestingVM());
+        return testingVMEnableBypassConnections == TestingVMBypass.PACKET_BYPASS;
     }
 
 }

@@ -749,6 +749,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	    }
 	    return new PeerMessageQueue();
     }
+	
+	private static PacketFormat makePacketFormat(PeerNode sourcePeerNode, MessageQueue queue, 
+	        int ourInitialMsgID, int theirInitialMsgID, Node sourceNode, 
+	        byte[] sourcePubKeyHash, byte[] targetPubKeyHash) {
+	    if(queue.neverHandshake()) {
+	        return new DummyPacketFormat();
+	    }
+	    if(sourceNode.isTestingVM && NodeStarter.isPacketBypassEnabled()) {
+	        Node targetNode = NodeStarter.maybeGetNode(targetPubKeyHash);
+	        if(targetNode != null) {
+	           return new BypassPacketFormat(queue, sourceNode, targetNode, sourcePubKeyHash, 
+	                   targetPubKeyHash);
+	        }
+	    }
+	    return new NewPacketFormat(sourcePeerNode, ourInitialMsgID, theirInitialMsgID);
+	}
 
     /** @return True if the node has just connected and given us a noderef, and we did not know 
 	 * it beforehand. This makes it a temporary connection. At the moment this only happens on 
@@ -2140,6 +2156,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+previousTracker+" unv "+unverifiedTracker);
 			timeLastSentPacket = now;
 			if(packetFormat == null) {
+			    packetFormat = makePacketFormat(this, messageQueue, ourInitialMsgID, 
+			            theirInitialMsgID, node, crypto.ecdsaPubKeyHash, peerECDSAPubKeyHash);
 			    if(messageQueue.neverHandshake()) {
 			        packetFormat = new DummyPacketFormat();
 			    } else {
@@ -2193,7 +2211,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return trackerID;
 	}
 
-	protected abstract void maybeClearPeerAddedTimeOnConnect();
+    protected abstract void maybeClearPeerAddedTimeOnConnect();
 
 	@Override
 	public long getBootID() {

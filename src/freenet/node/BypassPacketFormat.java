@@ -1,10 +1,12 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import freenet.io.comm.Peer;
+import freenet.io.comm.UdpSocketHandler;
 import freenet.support.Executor;
 import freenet.support.Logger;
 
@@ -20,9 +22,14 @@ public class BypassPacketFormat implements PacketFormat {
     
     private final Executor sourceExecutor;
     private final Executor targetExecutor;
-    private final BasePeerNode sourcePeerNode;
-    private final BasePeerNode targetPeerNode;
     private final MessageQueue messageQueue;
+    private final Node sourceNode;
+    private final Node targetNode;
+    private final byte[] sourcePubKeyHash;
+    private final byte[] targetPubKeyHash;
+    // FIXME merge with similar code in BypassMessageQueue
+    private PeerNode sourcePeerNodeAtTarget;
+    private PeerNode targetPeerNodeAtSource;
     /** Packet size, member variable as it is per-peer */
     private final int maxPacketSize;
     /** Number of bytes sent for each MessageItem in flight. Once it has been sent in its entirety,
@@ -52,9 +59,24 @@ public class BypassPacketFormat implements PacketFormat {
         final MessageItem[] toAck;
     }
 
+    BypassPacketFormat(MessageQueue queue, Node sourceNode, Node targetNode, 
+            byte[] sourcePubKeyHash, byte[] targetPubKeyHash) {
+        this.messageQueue = queue;
+        this.sourceExecutor = sourceNode.executor;
+        this.targetExecutor = targetNode.executor;
+        this.maxPacketSize = UdpSocketHandler.MAX_ALLOWED_MTU;
+        this.sourcePubKeyHash = sourcePubKeyHash;
+        this.targetPubKeyHash = targetPubKeyHash;
+        this.sourceNode = sourceNode;
+        this.targetNode = targetNode;
+        messagesInFlight = new HashMap<MessageItem, Integer>();
+        messagesToAck = new ArrayList<MessageItem>();
+        oldestMessageToAckReceivedTime = Long.MAX_VALUE;
+    }
+    
     @Override
     public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
-        // TODO Auto-generated method stub
+        assert(false);
         return false;
     }
 
@@ -66,6 +88,7 @@ public class BypassPacketFormat implements PacketFormat {
         MessageItem[] toDeliverMessages;
         int length = PACKET_OVERHEAD_SIZE;
         boolean payload = false;
+        PeerNode sourcePeerNode = getTargetPeerNodeAtSource();
         synchronized(this) {
             boolean mustSend = false;
             if(!messagesToAck.isEmpty()) {
@@ -158,6 +181,7 @@ public class BypassPacketFormat implements PacketFormat {
     }
 
     protected void deliverPacket(BypassPacket packet) {
+        PeerNode targetPeerNode = getSourcePeerNodeAtTarget();
         targetPeerNode.receivedPacket(false, packet.toDeliver.length != 0);
         // Deliver messages.
         for(MessageItem item : packet.toDeliver) {
@@ -229,7 +253,7 @@ public class BypassPacketFormat implements PacketFormat {
 
     @Override
     public boolean fullPacketQueued(int maxPacketSize) {
-        return sourcePeerNode.getMessageQueue().
+        return messageQueue.
             mustSendSize(PACKET_OVERHEAD_SIZE /* FIXME estimate headers */, maxPacketSize);
     }
 
@@ -241,6 +265,20 @@ public class BypassPacketFormat implements PacketFormat {
     @Override
     public long timeCheckForLostPackets() {
         return Long.MAX_VALUE;
+    }
+
+    /** PeerNode on the target node which represents the source node */
+    protected synchronized PeerNode getSourcePeerNodeAtTarget() {
+        if(sourcePeerNodeAtTarget != null) return sourcePeerNodeAtTarget;
+        sourcePeerNodeAtTarget = targetNode.peers.getByPubKeyHash(sourcePubKeyHash);
+        return sourcePeerNodeAtTarget;
+    }
+
+    /** PeerNode on the source node which represents the target node */
+    protected synchronized PeerNode getTargetPeerNodeAtSource() {
+        if(targetPeerNodeAtSource != null) return targetPeerNodeAtSource;
+        targetPeerNodeAtSource = sourceNode.peers.getByPubKeyHash(targetPubKeyHash);
+        return targetPeerNodeAtSource;
     }
 
 }
