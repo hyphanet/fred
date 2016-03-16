@@ -239,7 +239,8 @@ public class BypassPacketFormat extends BypassBase implements PacketFormat {
             long d = item.getDeadline();
             if(d < urgent) urgent = d;
         }
-        if(oldestMessageToAckReceivedTime != Long.MAX_VALUE) {
+        if(!messagesToAck.isEmpty()) {
+            assert(oldestMessageToAckReceivedTime != Long.MAX_VALUE);
             urgent = Math.min(urgent, oldestMessageToAckReceivedTime+MAX_ACK_DELAY);
         }
         return urgent;
