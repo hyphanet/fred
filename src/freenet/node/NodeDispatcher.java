@@ -159,9 +159,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.nodeToNodeMessage) {
 			node.receivedNodeToNodeMessage(m, source);
 			return true;
-		} else if(spec == DMT.UOMAnnounce && source.isRealConnection()) {
-			// Treat as a UOMAnnouncement, as it's a strict subset, and new UOM handles revocations.
-			return node.nodeUpdater.uom.handleAnnounce(m, source);
 		} else if(spec == DMT.UOMAnnouncement && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleAnnounce(m, source);
 		} else if(spec == DMT.UOMRequestRevocation && source.isRealConnection()) {
