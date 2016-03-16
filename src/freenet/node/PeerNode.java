@@ -5882,7 +5882,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
         if(neverHandshake()) {
             // Transport layer completely bypassed. Do not handshake or send keepalives.
             // Hence no timeouts.
-            return true;
+            return false;
         }
         // Is the node dead?
         // It might be disconnected in terms of FNP but trying to reconnect via JFK's, so we need to use the time when we last got a *data* packet.
