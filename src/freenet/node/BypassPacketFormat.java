@@ -29,8 +29,6 @@ public class BypassPacketFormat extends BypassBase implements PacketFormat {
     private final Executor sourceExecutor;
     private final Executor targetExecutor;
     private final MessageQueue messageQueue;
-    /** Packet size, member variable as it is per-peer */
-    private final int maxPacketSize;
     /** Number of bytes sent for each MessageItem in flight. Once it has been sent in its entirety,
      * we call the sent callback, and remove it from the map. */
     private final Map<MessageItem,Integer> messagesInFlight;
@@ -64,7 +62,6 @@ public class BypassPacketFormat extends BypassBase implements PacketFormat {
         this.messageQueue = queue;
         this.sourceExecutor = sourceNode.executor;
         this.targetExecutor = targetNode.executor;
-        this.maxPacketSize = UdpSocketHandler.MAX_ALLOWED_MTU;
         messagesInFlight = new HashMap<MessageItem, Integer>();
         messagesToAck = new ArrayList<MessageItem>();
         oldestMessageToAckReceivedTime = Long.MAX_VALUE;
@@ -85,6 +82,7 @@ public class BypassPacketFormat extends BypassBase implements PacketFormat {
         int length = PACKET_OVERHEAD_SIZE;
         boolean payload = false;
         PeerNode sourcePeerNode = getTargetPeerNodeAtSource();
+        int maxPacketSize = sourcePeerNode.getMaxPacketSize();
         synchronized(this) {
             boolean mustSend = false;
             if(!messagesToAck.isEmpty()) {
