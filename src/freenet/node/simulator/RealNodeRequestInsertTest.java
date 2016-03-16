@@ -26,6 +26,7 @@ import freenet.keys.Key;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.SSKEncodeException;
 import freenet.node.BypassMessageQueue;
+import freenet.node.BypassPacketFormat;
 import freenet.node.FSParseException;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
@@ -87,7 +88,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean USE_SLASHDOT_CACHE = false;
     static final boolean REAL_TIME_FLAG = false;
     static final boolean DISABLE_RANDOM_REINSERT = true;
-    static TestingVMBypass BYPASS_TRANSPORT_LAYER = TestingVMBypass.FAST_QUEUE_BYPASS;
+    static TestingVMBypass BYPASS_TRANSPORT_LAYER = TestingVMBypass.PACKET_BYPASS;
     static int PACKET_DROP = 0;
     static long SEED = 3141;
     
@@ -120,7 +121,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         //NOTE: globalTestInit returns in ignored random source
         //String logDetails = "freenet.node.Request:MINOR,freenet.node.CHK:MINOR,freenet.node.SSK:MINOR," +
         //		"freenet.io.comm.MessageCore:MINOR,freenet.node.Peer:MINOR,freenet.node.Node:MINOR";
-        String logDetails = "";
+        //String logDetails = "";
+        String logDetails = "freenet.node.Bypass:MINOR";
         NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, logDetails, true, 
                 BYPASS_TRANSPORT_LAYER, null);
         System.out.println("Insert/retrieve test");
@@ -161,13 +163,24 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         }
         
         if(NodeStarter.isMessageQueueBypassEnabled()) {
-            System.err.println("Starting fake connections...");
+            System.err.println("Starting fake connections (message bypass)...");
             for(int i=0;i<NUMBER_OF_NODES;i++) {
                 Node n = nodes[i];
                 for(PeerNode pnSource : n.getPeerNodes()) {
                     BypassMessageQueue queue = 
                         (BypassMessageQueue) pnSource.getMessageQueue();
                     queue.fakeConnect();
+                }
+                System.err.println("Started fake connections for node "+i+"/"+nodes.length);
+            }
+        } else if(NodeStarter.isPacketBypassEnabled()) {
+            System.err.println("Starting fake connections (packet bypass)...");
+            for(int i=0;i<NUMBER_OF_NODES;i++) {
+                Node n = nodes[i];
+                for(PeerNode pnSource : n.getPeerNodes()) {
+                    BypassPacketFormat bypass =
+                        (BypassPacketFormat) pnSource.getPacketFormat();
+                    bypass.fakeConnect();
                 }
                 System.err.println("Started fake connections for node "+i+"/"+nodes.length);
             }

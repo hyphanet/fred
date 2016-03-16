@@ -5911,4 +5911,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
         }
         return false;
     }
+
+    public PacketFormat getPacketFormat() {
+        return packetFormat;
+    }
 }
