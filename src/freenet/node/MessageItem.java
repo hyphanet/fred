@@ -159,6 +159,19 @@ public class MessageItem {
 		}
 	}
 
+    /** Called the first time we have sent all of the message. */
+    public void onAck() {
+        if(cb != null) {
+            for(AsyncMessageCallback cbi: cb) {
+                try {
+                    cbi.acknowledged();
+                } catch (Throwable t) {
+                    Logger.error(this, "Caught "+t+" calling sent() on "+cbi+" for "+this, t);
+                }
+            }
+        }
+    }
+
 	/** Set the deadline for this message. Called when a message is unqueued, when
 	 * we start to send it. Used if the message does not entirely fit in the 
 	 * packet, and also if it is retransmitted.
