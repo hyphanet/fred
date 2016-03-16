@@ -619,6 +619,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		probeRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS);
 
 		messageQueue = makeMessageQueue(node, crypto, peerECDSAPubKeyHash);
+		if(node.isTestingVM && NodeStarter.isPacketBypassEnabled()) {
+		    // Create the BypassPacketFormat now to let fakeConnect() work.
+		    // packetFormat often persists between connections so this should be OK.
+		    packetFormat = PeerNode.makePacketFormat(this, messageQueue, 0, 0, node, crypto, 
+		            crypto.ecdsaPubKeyHash, peerECDSAPubKeyHash);
+		}
 
 		decrementHTLAtMaximum = node.random.nextFloat() < Node.DECREMENT_AT_MAX_PROB;
 		decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;
