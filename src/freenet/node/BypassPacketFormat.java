@@ -146,7 +146,10 @@ public class BypassPacketFormat extends BypassBase implements PacketFormat {
             toAck = messagesToAck.toArray(new MessageItem[messagesToAck.size()]);
             messagesToAck.clear();
             oldestMessageToAckReceivedTime = Long.MAX_VALUE;
-            toDeliverMessages = toDeliver.toArray(new MessageItem[toDeliver.size()]);
+            if(toDeliver != null)
+                toDeliverMessages = toDeliver.toArray(new MessageItem[toDeliver.size()]);
+            else
+                toDeliverMessages = new MessageItem[0];
         }
         BypassPacket packet = 
             new BypassPacket(toDeliverMessages, toAck);
