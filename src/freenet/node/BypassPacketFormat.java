@@ -18,18 +18,17 @@ import freenet.support.Logger;
  * lost or reordered.
  * @author toad
  */
-public class BypassPacketFormat implements PacketFormat {
+public class BypassPacketFormat extends BypassBase implements PacketFormat {
+    
+    private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
+    static {
+        Logger.registerClass(BypassPacketFormat.class);
+    }
     
     private final Executor sourceExecutor;
     private final Executor targetExecutor;
     private final MessageQueue messageQueue;
-    private final Node sourceNode;
-    private final Node targetNode;
-    private final byte[] sourcePubKeyHash;
-    private final byte[] targetPubKeyHash;
-    // FIXME merge with similar code in BypassMessageQueue
-    private PeerNode sourcePeerNodeAtTarget;
-    private PeerNode targetPeerNodeAtSource;
     /** Packet size, member variable as it is per-peer */
     private final int maxPacketSize;
     /** Number of bytes sent for each MessageItem in flight. Once it has been sent in its entirety,
@@ -61,14 +60,11 @@ public class BypassPacketFormat implements PacketFormat {
 
     BypassPacketFormat(MessageQueue queue, Node sourceNode, Node targetNode, 
             byte[] sourcePubKeyHash, byte[] targetPubKeyHash) {
+        super(sourceNode, targetNode, sourcePubKeyHash, targetPubKeyHash);
         this.messageQueue = queue;
         this.sourceExecutor = sourceNode.executor;
         this.targetExecutor = targetNode.executor;
         this.maxPacketSize = UdpSocketHandler.MAX_ALLOWED_MTU;
-        this.sourcePubKeyHash = sourcePubKeyHash;
-        this.targetPubKeyHash = targetPubKeyHash;
-        this.sourceNode = sourceNode;
-        this.targetNode = targetNode;
         messagesInFlight = new HashMap<MessageItem, Integer>();
         messagesToAck = new ArrayList<MessageItem>();
         oldestMessageToAckReceivedTime = Long.MAX_VALUE;
@@ -156,6 +152,8 @@ public class BypassPacketFormat implements PacketFormat {
         }
         BypassPacket packet = 
             new BypassPacket(toDeliverMessages, toAck);
+        if(logMINOR) Logger.minor(this, "Sending packet with "+toDeliverMessages.length
+                +" messages and "+toAck.length+" acks");
         callSentCallbacks(toDeliverMessages);
         // We do not need to deal with IOStatisticsCollector.
         // The PeerNode methods are sufficient.
@@ -181,6 +179,8 @@ public class BypassPacketFormat implements PacketFormat {
     }
 
     protected void deliverPacket(BypassPacket packet) {
+        if(logMINOR) Logger.minor(this, "Delivering packet with "+packet.toDeliver.length
+                +" messages and "+packet.toAck.length+" acks");
         PeerNode targetPeerNode = getSourcePeerNodeAtTarget();
         targetPeerNode.receivedPacket(false, packet.toDeliver.length != 0);
         // Deliver messages.
@@ -265,20 +265,6 @@ public class BypassPacketFormat implements PacketFormat {
     @Override
     public long timeCheckForLostPackets() {
         return Long.MAX_VALUE;
-    }
-
-    /** PeerNode on the target node which represents the source node */
-    protected synchronized PeerNode getSourcePeerNodeAtTarget() {
-        if(sourcePeerNodeAtTarget != null) return sourcePeerNodeAtTarget;
-        sourcePeerNodeAtTarget = targetNode.peers.getByPubKeyHash(sourcePubKeyHash);
-        return sourcePeerNodeAtTarget;
-    }
-
-    /** PeerNode on the source node which represents the target node */
-    protected synchronized PeerNode getTargetPeerNodeAtSource() {
-        if(targetPeerNodeAtSource != null) return targetPeerNodeAtSource;
-        targetPeerNodeAtSource = sourceNode.peers.getByPubKeyHash(targetPubKeyHash);
-        return targetPeerNodeAtSource;
     }
 
 }

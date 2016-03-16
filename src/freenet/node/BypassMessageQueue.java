@@ -16,19 +16,13 @@ import freenet.support.io.NativeThread;
  * Node's with a single UI / client layer.
  * @author toad
  */
-public class BypassMessageQueue implements MessageQueue {
+public class BypassMessageQueue extends BypassBase implements MessageQueue {
     
     final PacketSocketHandler targetHandler;
-    private final Node targetNode;
-    private final Node sourceNode;
     private final NodeCrypto targetCrypto;
     private final NodeCrypto sourceCrypto;
     private final Executor executor;
     protected final String targetName;
-    private byte[] sourcePubKeyHash;
-    private byte[] targetPubKeyHash;
-    PeerNode sourcePeerNodeAtTarget;
-    PeerNode targetPeerNodeAtSource;
     
     private static volatile boolean logMINOR;
     private static volatile boolean logDEBUG;
@@ -39,16 +33,13 @@ public class BypassMessageQueue implements MessageQueue {
 
     public BypassMessageQueue(Node target, Node source, 
             NodeCrypto targetCrypto, NodeCrypto sourceCrypto) {
-        targetNode = target;
-        sourceNode = source;
+        super(source, target, sourceCrypto.ecdsaPubKeyHash, targetCrypto.ecdsaPubKeyHash);
         this.targetCrypto = targetCrypto;
         this.sourceCrypto = sourceCrypto;
         // Only used for logging.
         targetHandler = targetCrypto.socket;
         executor = target.executor;
         targetName = "node on port " + targetCrypto.portNumber;
-        sourcePubKeyHash = sourceCrypto.ecdsaPubKeyHash;
-        targetPubKeyHash = targetCrypto.ecdsaPubKeyHash;
     }
     
     @Override
@@ -134,20 +125,6 @@ public class BypassMessageQueue implements MessageQueue {
                 it.disconnected();
             }
         }
-    }
-
-    /** PeerNode on the target node which represents the source node */
-    protected synchronized PeerNode getSourcePeerNodeAtTarget() {
-        if(sourcePeerNodeAtTarget != null) return sourcePeerNodeAtTarget;
-        sourcePeerNodeAtTarget = targetNode.peers.getByPubKeyHash(sourcePubKeyHash);
-        return sourcePeerNodeAtTarget;
-    }
-
-    /** PeerNode on the source node which represents the target node */
-    protected synchronized PeerNode getTargetPeerNodeAtSource() {
-        if(targetPeerNodeAtSource != null) return targetPeerNodeAtSource;
-        targetPeerNodeAtSource = sourceNode.peers.getByPubKeyHash(targetPubKeyHash);
-        return targetPeerNodeAtSource;
     }
 
     @Override
