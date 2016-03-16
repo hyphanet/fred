@@ -86,7 +86,7 @@ public class BypassPacketFormat extends BypassBase implements PacketFormat {
         synchronized(this) {
             boolean mustSend = false;
             if(!messagesToAck.isEmpty()) {
-                if(now - oldestMessageToAckReceivedTime > MAX_ACK_DELAY) mustSend = true;
+                if(now - oldestMessageToAckReceivedTime >= MAX_ACK_DELAY) mustSend = true;
                 else if(messagesToAck.size() > MAX_ACKS) mustSend = true;
                 length += messagesToAck.size(); // 1 byte per ack
             }
