@@ -107,7 +107,7 @@ public class MessageCore {
 				} catch (Throwable t) {
 					Logger.error(this, "Failed to remove timed out filters: "+t, t);
 				} finally {
-					ticker.queueTimedJob(this, Math.max(MIN_FILTER_REMOVE_TIME, System.currentTimeMillis() - nextRun));
+					ticker.queueTimedJob(this, Math.max(MIN_FILTER_REMOVE_TIME, nextRun - System.currentTimeMillis()));
 				}
 			}
     		
