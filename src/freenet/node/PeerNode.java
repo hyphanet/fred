@@ -751,16 +751,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
     }
 	
 	private static PacketFormat makePacketFormat(PeerNode sourcePeerNode, MessageQueue queue, 
-	        int ourInitialMsgID, int theirInitialMsgID, Node sourceNode, 
+	        int ourInitialMsgID, int theirInitialMsgID, Node sourceNode, NodeCrypto sourceCrypto, 
 	        byte[] sourcePubKeyHash, byte[] targetPubKeyHash) {
 	    if(queue.neverHandshake()) {
 	        return new DummyPacketFormat();
 	    }
 	    if(sourceNode.isTestingVM && NodeStarter.isPacketBypassEnabled()) {
 	        Node targetNode = NodeStarter.maybeGetNode(targetPubKeyHash);
+            NodeCrypto targetCrypto =
+                sourceCrypto.isOpennet ? targetNode.getOpennet().crypto : targetNode.darknetCrypto;
 	        if(targetNode != null) {
-	           return new BypassPacketFormat(queue, sourceNode, targetNode, sourcePubKeyHash, 
-	                   targetPubKeyHash);
+	           return new BypassPacketFormat(queue, sourceNode, targetNode, sourceCrypto, 
+	                   targetCrypto);
 	        }
 	    }
 	    return new NewPacketFormat(sourcePeerNode, ourInitialMsgID, theirInitialMsgID);
@@ -2157,7 +2159,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			timeLastSentPacket = now;
 			if(packetFormat == null) {
 			    packetFormat = makePacketFormat(this, messageQueue, ourInitialMsgID, 
-			            theirInitialMsgID, node, crypto.ecdsaPubKeyHash, peerECDSAPubKeyHash);
+			            theirInitialMsgID, node, crypto, crypto.ecdsaPubKeyHash, peerECDSAPubKeyHash);
 			    if(messageQueue.neverHandshake()) {
 			        packetFormat = new DummyPacketFormat();
 			    } else {

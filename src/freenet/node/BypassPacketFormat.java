@@ -59,8 +59,8 @@ public class BypassPacketFormat extends BypassBase implements PacketFormat {
     }
 
     BypassPacketFormat(MessageQueue queue, Node sourceNode, Node targetNode, 
-            byte[] sourcePubKeyHash, byte[] targetPubKeyHash) {
-        super(sourceNode, targetNode, sourcePubKeyHash, targetPubKeyHash);
+            NodeCrypto sourceCrypto, NodeCrypto targetCrypto) {
+        super(sourceNode, targetNode, sourceCrypto, targetCrypto);
         this.messageQueue = queue;
         this.sourceExecutor = sourceNode.executor;
         this.targetExecutor = targetNode.executor;
