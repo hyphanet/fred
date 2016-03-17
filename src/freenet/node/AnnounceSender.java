@@ -483,16 +483,18 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		if(cb != null) cb.nodeFailed(next, "timed out");
 	}
 
+        private synchronized void waitForRunningTransfers() {
+           while(waitingForTransfers > 0) {
+              try {
+                 wait();
+              } catch (InterruptedException e) {
+                 // Ignore.
+              }
+           }
+        }
+
 	private void rnf(PeerNode next) {
-		synchronized(this) {
-			while(waitingForTransfers > 0) {
-				try {
-					wait();
-				} catch (InterruptedException e) {
-					// Ignore.
-				}
-			}
-		}
+		waitForRunningTransfers();
 		Message msg = DMT.createFNPRouteNotFound(uid, htl);
 		if(source != null) {
 			try {
@@ -508,15 +510,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	}
 
 	private void complete() {
-		synchronized(this) {
-			while(waitingForTransfers > 0) {
-				try {
-					wait();
-				} catch (InterruptedException e) {
-					// Ignore.
-				}
-			}
-		}
+		waitForRunningTransfers();
 		Message msg = DMT.createFNPOpennetAnnounceCompleted(uid);
 		if(source != null) {
 			try {
