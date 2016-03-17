@@ -35,6 +35,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
+import freenet.node.ProgramDirectory;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
@@ -369,10 +370,16 @@ public class NodeUpdateManager {
 
 		final FreenetURI freenetURI;
 		final String filename;
+		final ProgramDirectory directory;
 
 		public SimplePuller(FreenetURI freenetURI, String filename) {
+		    this(freenetURI, filename, node.runDir());
+		}
+
+		public SimplePuller(FreenetURI freenetURI, String filename, ProgramDirectory directory) {
 			this.freenetURI = freenetURI;
 			this.filename = filename;
+			this.directory = directory;
 		}
 
 		public void start(short priority, long maxSize) {
@@ -404,7 +411,7 @@ public class NodeUpdateManager {
 			File temp;
 			FileOutputStream fos = null;
 			try {
-				temp = File.createTempFile(filename, ".tmp", node.getRunDir());
+				temp = File.createTempFile(filename, ".tmp", directory.dir());
 				temp.deleteOnExit();
 				fos = new FileOutputStream(temp);
 				BucketTools.copyTo(result.asBucket(), fos, -1);
@@ -412,7 +419,7 @@ public class NodeUpdateManager {
 				fos = null;
 				for (int i = 0; i < 10; i++) {
 					// FIXME add a callback in case it's being used on Windows.
-					if (FileUtil.renameTo(temp, node.runDir().file(filename))) {
+					if (FileUtil.renameTo(temp, directory.file(filename))) {
 						System.out.println("Successfully fetched " + filename
 								+ " for version " + Version.buildNumber());
 						break;
@@ -434,7 +441,7 @@ public class NodeUpdateManager {
 						.println("Fetched but failed to write out "
 								+ filename
 								+ " - please check that the node has permissions to write in "
-								+ node.getRunDir()
+								+ directory.dir()
 								+ " and particularly the file " + filename);
 				System.err.println("The error was: " + e);
 				e.printStackTrace();
@@ -502,17 +509,17 @@ public class NodeUpdateManager {
 		
 		enable(wasEnabledOnStartup);
 
-		// Fetch 3 files, each to a file in the runDir.
-
+		// Fetch seednodes to the nodeDir.
 		if (updateSeednodes) {
 
 			SimplePuller seedrefsGetter = new SimplePuller(getSeednodesURI(),
-					Announcer.SEEDNODES_FILENAME);
+					Announcer.SEEDNODES_FILENAME, node.nodeDir());
 			seedrefsGetter.start(
 					RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 					1024 * 1024);
 		}
 
+		// Fetch installers and IP-to-country files to the runDir.
 		if (updateInstallers) {
 			SimplePuller installerGetter = new SimplePuller(
 					getInstallerWindowsURI(), NON_WINDOWS_FILENAME);
