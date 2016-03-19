@@ -79,7 +79,7 @@ public class NodeUpdateManager {
 	 * The last build on the old key with Java 6 support. Older nodes can
 	 * update to this point via old UOM.
 	 */
-	public final static int TRANSITION_VERSION = 1471;
+	public final static int TRANSITION_VERSION = 1472;
 
 	/** The URI for post-TRANSITION_VERSION builds' freenet.jar. */
 	public final static String UPDATE_URI = "USK@O~UmMwTeDcyDIW-NsobFBoEicdQcogw7yrLO2H-sJ5Y,JVU4L7m9mNppkd21UNOCzRHKuiTucd6Ldw8vylBOe5o,AQACAAE/jar/"
