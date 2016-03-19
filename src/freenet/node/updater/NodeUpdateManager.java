@@ -223,7 +223,8 @@ public class NodeUpdateManager {
 
 		// Set default update URI for new nodes depending on JVM version.
 		updaterConfig
-				.register("URI", JVMVersion.isTooOld() ? LEGACY_UPDATE_URI : UPDATE_URI, 3, true, true,
+				.register("URI", JVMVersion.isTooOld() ? transitionMainJarURIAsUSK.toString() : UPDATE_URI,
+				          3, true, true,
 						"NodeUpdateManager.updateURI",
 						"NodeUpdateManager.updateURILong",
 						new UpdateURICallback());
