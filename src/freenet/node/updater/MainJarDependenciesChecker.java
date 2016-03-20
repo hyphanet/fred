@@ -1596,7 +1596,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             super(name);
         }
         
-        static final String RESTART_SCRIPT_NAME = "tempRestartFreenet.sh";
+        static final String RESTART_SCRIPT_NAME = "tempRestartFreenet.cmd";
         
         @Override
         protected boolean deployMultiFileUpdate() {
