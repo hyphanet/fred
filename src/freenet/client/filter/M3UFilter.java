@@ -154,7 +154,7 @@ public class M3UFilter implements ContentDataFilter {
 
 	private void throwHeaderError(String shortReason, String reason) throws DataFilterException {
 		// Throw an exception
-		String message = l10n("notGif");
+		String message = l10n("notM3u");
 		if(reason != null) message += ' ' + reason;
 		if(shortReason != null)
 			message += " - (" + shortReason + ')';
