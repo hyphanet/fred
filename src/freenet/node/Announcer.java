@@ -280,7 +280,7 @@ public class Announcer {
 				} catch (IOException e) {
 					Logger.error(Announcer.class, "Error while reading seednodes from " + file, e);
 					// Continue reading. If this entry failed, we still want the following noderefs.
-					// However, read a line to prevent us getting stuck in an endless loop.
+					// Read a line to advance the parsing position and avoid an endless loop.
 					br.readLine();
 				}
 			}
