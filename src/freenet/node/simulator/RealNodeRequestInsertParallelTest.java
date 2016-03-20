@@ -65,7 +65,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     static int NUMBER_OF_NODES = 100;
     static int DEGREE = 10;
     /** Number of requests to run in parallel */
-    static final int PARALLEL_REQUESTS = 40;
+    static final int PARALLEL_REQUESTS = 5;
     /** Insert the key this far in advance */
     static final int PREINSERT_GAP = PARALLEL_REQUESTS;
     /** Ignore data before this point */
@@ -113,7 +113,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 
     // FIXME: HACK: High bwlimit makes the "other" requests not affect the test requests.
     // Real solution is to get rid of the "other" requests!!
-    static int BWLIMIT = 1000*1024;
+    static int BWLIMIT = 10*1024;
     // Bandwidth limit *per connection* for CBR bypass.
     static int CBR_BWLIMIT = 1000;
     
