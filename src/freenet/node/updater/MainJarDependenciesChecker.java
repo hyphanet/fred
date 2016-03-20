@@ -1611,7 +1611,12 @@ outer:	for(String propName : props.stringPropertyNames()) {
             }
             if(restartScript == null) return false;
             try {
-                if(Runtime.getRuntime().exec(new String[] { restartScript.getAbsolutePath() }) == null) return false;
+                ProcessBuilder pb = new ProcessBuilder("cmd","/c",restartScript.getAbsolutePath());
+                pb.directory(deployer.getNodeDir());
+                pb.redirectErrorStream(true);
+                pb.redirectError(new File(deployer.getNodeDir(), "update-script.log"));
+                pb.redirectInput(new File("NUL:"));
+                if(pb.start() == null) return false;
             } catch (IOException e) {
                 System.err.println("Unable to start restarter script "+restartScript+" -> cannot deploy multi-file update for "+name+" : "+e);
                 Logger.error(this, "Unable to start restarter script "+restartScript+" -> cannot deploy multi-file update for "+name+" : "+e, e);
