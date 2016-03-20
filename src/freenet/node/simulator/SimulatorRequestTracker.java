@@ -74,6 +74,10 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         public boolean isEmpty() {
             return nodeIDsVisited.isEmpty();
         }
+        
+        public int count() {
+            return nodeIDsVisited.size();
+        }
     }
     
     private final Map<Long, Request> requestsByID;

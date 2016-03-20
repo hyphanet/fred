@@ -205,9 +205,9 @@ public class RealNodeTest {
 			double avgPingTime = totalPingTime / nodes.length;
 			if(countFullyConnected == nodes.length && countReallyConnected == nodes.length && totalBackedOff == 0 &&
 					minPingTime < NodeStats.DEFAULT_SUB_MAX_PING_TIME && maxPingTime < NodeStats.DEFAULT_SUB_MAX_PING_TIME && avgPingTime < NodeStats.DEFAULT_SUB_MAX_PING_TIME) {
-				System.err.println("All nodes fully connected");
+				System.out.println("All nodes fully connected");
 				Logger.normal(RealNodeTest.class, "All nodes fully connected");
-				System.err.println();
+				//System.err.println();
 				return;
 			} else {
 			    if(disconnectFatal) {
