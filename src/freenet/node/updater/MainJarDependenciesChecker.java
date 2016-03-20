@@ -169,6 +169,7 @@ public class MainJarDependenciesChecker {
          * @param atomicDeployer
          */
         public void multiFileReplaceReadyToDeploy(AtomicDeployer atomicDeployer);
+        public File getNodeDir();
 	}
 	
 	interface JarFetcher {
@@ -1277,16 +1278,27 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	    if(FileUtil.detectedOS.isUnix || FileUtil.detectedOS.isMac) {
 	        return new UnixRestartingAtomicDeployer(name);
 	    } else if(FileUtil.detectedOS.isWindows) {
-	        System.out.println("Multi-file update for "+name+" not supported on Windows at present, see bug #5883");
-	        // FIXME implement Windows support using bug #5883.
-	        return null;
+	        File tray = getTrayFilename();
+	        if(tray.exists())
+	            return new WindowsRestartingAtomicDeployer(name);
+	        else {
+	            System.out.println("Multi-file update for "+name+" not supported on old Windows install (no "+tray+"), update with update.cmd first");
+	            return null;
+	        }
 	    } else {
             System.out.println("Multi-file update for "+name+" not supported on unknown non-unix non-windows OS "+FileUtil.detectedOS);
 	        return null;
 	    }
 	}
 	
-	/** Deploys a multi-file replace without a restart */
+	static final String TRAY_FILENAME = "bin\\FreenetTray.exe";
+	static final String TRAY_NAME = "FreenetTray.exe";
+	
+	private File getTrayFilename() {
+	    return new File(deployer.getNodeDir(), TRAY_FILENAME);
+    }
+
+    /** Deploys a multi-file replace without a restart */
 	class AtomicDeployer {
 	    
 	    private final Set<AtomicDependency> dependencies = new HashSet<AtomicDependency>();
@@ -1364,7 +1376,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             }
         }
         
-        private synchronized AtomicDependency[] dependencies() {
+        protected synchronized AtomicDependency[] dependencies() {
             return dependencies.toArray(new AtomicDependency[dependencies.size()]);
         }
 
@@ -1576,6 +1588,66 @@ outer:	for(String propName : props.stringPropertyNames()) {
         }
 
 	}
+	
+	/** Deploys a multi-file replace on Windows with a restart, using a simple cmd script.
+	 * Unlike on Unix, we cannot actually move the files first, the script must do that. */
+    private class WindowsRestartingAtomicDeployer extends RestartingAtomicDeployer {
+
+        public WindowsRestartingAtomicDeployer(String name) {
+            super(name);
+        }
+        
+        static final String RESTART_SCRIPT_NAME = "tempRestartFreenet.sh";
+        
+        @Override
+        protected boolean deployMultiFileUpdate() {
+            if(!WrapperManager.isControlledByNativeWrapper()) return false;
+            File restartScript;
+            try {
+                restartScript = createRestartScript();
+            } catch (IOException e) {
+                System.err.println("Unable to deploy multi-file update for "+name+" because cannot write script to restart the wrapper: "+e);
+                Logger.error(this, "Unable to deploy multi-file update for "+name+" because cannot write script to restart the wrapper: "+e, e);
+                return false;
+            }
+            if(restartScript == null) return false;
+            try {
+                if(Runtime.getRuntime().exec(new String[] { restartScript.getAbsolutePath() }) == null) return false;
+            } catch (IOException e) {
+                System.err.println("Unable to start restarter script "+restartScript+" -> cannot deploy multi-file update for "+name+" : "+e);
+                Logger.error(this, "Unable to start restarter script "+restartScript+" -> cannot deploy multi-file update for "+name+" : "+e, e);
+                return false;
+            }
+            System.out.println("Shutting down Freenet for hard restart after deploying multi-file update for "+name+". The script "+restartScript+" should start it back up.");
+            WrapperManager.stop(0);
+            return true;
+        }
+        
+        private File createRestartScript() throws IOException {
+            File restartScript = new File(deployer.getNodeDir(), RESTART_SCRIPT_NAME);
+            restartScript.delete();
+            FileBucket fb = new FileBucket(restartScript, false, true, false, false);
+            OutputStream os = null;
+            try {
+                os = new BufferedOutputStream(fb.getOutputStream());
+                OutputStreamWriter osw = new OutputStreamWriter(os); // Use default locale.
+                osw.write(""+TRAY_FILENAME+" -exit\n");
+                osw.write("taskkill /im "+TRAY_NAME+" /f\n");
+                AtomicDependency[] deps = dependencies();
+                for(AtomicDependency dep : deps) {
+                    osw.write("move /y "+dep.tempFilename+" "+dep.filename+"\n");
+                }
+                osw.write(""+TRAY_FILENAME+" -start\n");
+                osw.close();
+                os = null;
+                return restartScript;
+            } finally {
+                if(os != null) os.close();
+            }
+        }
+        
+    }        
+
 
     public static String getDependencyVersion(File currentFile) {
         // We can't use parseProperties because there are multiple sections.
