@@ -32,6 +32,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.Announcer;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
+import freenet.node.NodeFile;
 import freenet.node.NodeStarter;
 import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
@@ -372,11 +373,11 @@ public class NodeUpdateManager {
 		final String filename;
 		final ProgramDirectory directory;
 
-		public SimplePuller(FreenetURI freenetURI, String filename) {
-		    this(freenetURI, filename, node.runDir());
+		public SimplePuller(FreenetURI freenetURI, NodeFile file) {
+		    this(freenetURI, file.getFilename(), file.getProgramDirectory(node));
 		}
 
-		public SimplePuller(FreenetURI freenetURI, String filename, ProgramDirectory directory) {
+		private SimplePuller(FreenetURI freenetURI, String filename, ProgramDirectory directory) {
 			this.freenetURI = freenetURI;
 			this.filename = filename;
 			this.directory = directory;
@@ -463,12 +464,8 @@ public class NodeUpdateManager {
 
 	}
 
-	public static final String WINDOWS_FILENAME = "freenet-latest-installer-windows.exe";
-	public static final String NON_WINDOWS_FILENAME = "freenet-latest-installer-nonwindows.jar";
-	public static final String IPV4_TO_COUNTRY_FILENAME = "IpToCountry.dat";
-
 	public File getInstallerWindows() {
-		File f = node.runDir().file(WINDOWS_FILENAME);
+		File f = NodeFile.InstallerWindows.getFile(node);
 		if (!(f.exists() && f.canRead() && f.length() > 0))
 			return null;
 		else
@@ -476,7 +473,7 @@ public class NodeUpdateManager {
 	}
 
 	public File getInstallerNonWindows() {
-		File f = node.runDir().file(NON_WINDOWS_FILENAME);
+		File f = NodeFile.InstallerNonWindows.getFile(node);
 		if (!(f.exists() && f.canRead() && f.length() > 0))
 			return null;
 		else
@@ -488,12 +485,12 @@ public class NodeUpdateManager {
 				"seednodes-" + Version.buildNumber());
 	}
 
-	public FreenetURI getInstallerWindowsURI() {
+	public FreenetURI getInstallerNonWindowsURI() {
 		return updateURI.sskForUSK().setDocName(
 				"installer-" + Version.buildNumber());
 	}
 
-	public FreenetURI getInstallerNonWindowsURI() {
+	public FreenetURI getInstallerWindowsURI() {
 		return updateURI.sskForUSK().setDocName(
 				"wininstaller-" + Version.buildNumber());
 	}
@@ -513,7 +510,7 @@ public class NodeUpdateManager {
 		if (updateSeednodes) {
 
 			SimplePuller seedrefsGetter = new SimplePuller(getSeednodesURI(),
-					Announcer.SEEDNODES_FILENAME, node.nodeDir());
+					NodeFile.Seednodes);
 			seedrefsGetter.start(
 					RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 					1024 * 1024);
@@ -522,9 +519,9 @@ public class NodeUpdateManager {
 		// Fetch installers and IP-to-country files to the runDir.
 		if (updateInstallers) {
 			SimplePuller installerGetter = new SimplePuller(
-					getInstallerWindowsURI(), NON_WINDOWS_FILENAME);
+					getInstallerNonWindowsURI(), NodeFile.InstallerNonWindows);
 			SimplePuller wininstallerGetter = new SimplePuller(
-					getInstallerNonWindowsURI(), WINDOWS_FILENAME);
+					getInstallerWindowsURI(), NodeFile.InstallerWindows);
 
 			installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
 					32 * 1024 * 1024);
@@ -535,7 +532,7 @@ public class NodeUpdateManager {
 
 		if (updateIPToCountry) {
 			SimplePuller ip4Getter = new SimplePuller(getIPv4ToCountryURI(),
-					IPV4_TO_COUNTRY_FILENAME);
+					NodeFile.IPv4ToCountry);
 			ip4Getter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
 					8 * 1024 * 1024);
 		}
