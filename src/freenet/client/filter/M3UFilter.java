@@ -72,6 +72,14 @@ public class M3UFilter implements ContentDataFilter {
         byte[] nextchar = new byte[1];
         byte[] fileUri;
         int fileIndex;
+        /* TODO: select the type per suffix. Right now we can get away
+         * with just forcing mp3 since we only have a filter for
+         * that.*/
+        /* We need to force the type, because browsers might use
+         * content type sniffing in the media tag and audio-players,
+         * so people could insert as text/plain to circumvent the
+         * filter.*/
+        String uriForcetypeMp3Suffix = "?type=audio/mpeg";
         readcount = dis.read(nextchar);
         // read each line manually
         while (readcount != -1) {
@@ -134,6 +142,7 @@ public class M3UFilter implements ContentDataFilter {
                                 uri = badUriReplacement;
                             } else {
                                 uri = new String(fileUri, 0, fileIndex, "UTF-8");
+                                uri += uriForcetypeMp3Suffix;
                             }
                             output.write(uri.getBytes("UTF-8"));
                             output.write(nextchar);
