@@ -170,16 +170,19 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         
         private final int req;
         private final Key key;
+        private final boolean log;
 
-        public MyFetchListener(Key key, int req) {
+        public MyFetchListener(Key key, int req, boolean log) {
             this.key = key;
             this.req = req;
+            this.log = log;
         }
 
         @Override
         public void onSucceeded() {
-            System.err.println("Success: "+req);
-            reportSuccess(getHopCount());
+            int hopCount = getHopCount();
+            System.err.println("Success: "+req+" ("+hopCount+" hops)");
+            reportSuccess(hopCount, log);
         }
 
         private int getHopCount() {
@@ -194,7 +197,7 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         public void onFailed(LowLevelGetException e) {
             System.err.println("Failure: "+req+" : "+e);
             e.printStackTrace();
-            reportFailure();
+            reportFailure(log);
         }
 
     }
@@ -204,7 +207,7 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
     
     @Override
     protected void startFetch(int req, Key k, boolean log) {
-        MyFetchListener listener = new MyFetchListener(k, req);
+        MyFetchListener listener = new MyFetchListener(k, req, log);
         spammer2.clientCore.asyncGet(k, false, listener, true, true, false, false, false);
     }
 
