@@ -1291,11 +1291,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	    }
 	}
 	
-	static final String TRAY_FILENAME = "bin\\FreenetTray.exe";
 	static final String TRAY_NAME = "FreenetTray.exe";
 	
 	private File getTrayFilename() {
-	    return new File(deployer.getNodeDir(), TRAY_FILENAME);
+	    return new File(deployer.getNodeDir(), TRAY_NAME);
     }
 
     /** Deploys a multi-file replace without a restart */
@@ -1631,13 +1630,13 @@ outer:	for(String propName : props.stringPropertyNames()) {
             try {
                 os = new BufferedOutputStream(fb.getOutputStream());
                 OutputStreamWriter osw = new OutputStreamWriter(os); // Use default locale.
-                osw.write(""+TRAY_FILENAME+" -exit\n");
+                osw.write(""+TRAY_NAME+" -exit\n");
                 osw.write("taskkill /im "+TRAY_NAME+" /f\n");
                 AtomicDependency[] deps = dependencies();
                 for(AtomicDependency dep : deps) {
                     osw.write("move /y "+dep.tempFilename+" "+dep.filename+"\n");
                 }
-                osw.write(""+TRAY_FILENAME+" -start\n");
+                osw.write(""+TRAY_NAME+" -start\n");
                 osw.close();
                 os = null;
                 return restartScript;
