@@ -1233,6 +1233,20 @@ outer:	for(String propName : props.stringPropertyNames()) {
             }
         }
         
+        /** Temp file will actually be used after restarting, so we need it to not be deleted. 
+         * @throws IOException */
+        File moveTempFile() throws IOException {
+            // Best that these NOT be absolute, want relative filenames for windows updater script.
+            File parent = filename.getParentFile();
+            if(parent == null) parent = new File(".");
+            File newTemp = File.createTempFile(filename.getName(), ".new.tmp", parent);
+            if(File.separatorChar == '\\')
+                newTemp.delete(); // FIXME Needed for Windows, no actual symlink race here AFAICS.
+            if(tempFilename.renameTo(newTemp)) return newTemp;
+            System.err.println("Unable to rename temporary file "+tempFilename+" to "+newTemp);
+            throw new IOException("Unable to rename temporary file "+tempFilename+" to "+newTemp);
+        }
+        
         boolean revertFromBackup() {
             synchronized(this) {
                 assert(succeededFetch);
@@ -1635,13 +1649,39 @@ outer:	for(String propName : props.stringPropertyNames()) {
             try {
                 os = new BufferedOutputStream(fb.getOutputStream());
                 OutputStreamWriter osw = new OutputStreamWriter(os); // Use default locale.
-                osw.write(""+TRAY_NAME+" -exit\r\n");
-                osw.write("taskkill /im "+TRAY_NAME+" /f\r\n");
+                osw.write("@echo off\r\n");
+                osw.write("echo Starting wrapper update script > update-script.log\r\n");
+                
+                osw.write("ping -n 1 127.0.0.1 >nul\r\n");
+                osw.write("echo Asking the tray to terminate >> update-script.log\r\n");
+                osw.write(""+TRAY_NAME+" -exit >nul\r\n");
+                // FIXME With short/no delays, this is not reliable.
+                // FIXME However the worst case is it starts the tray but not the node.
+                // FIXME Maybe freenettray.exe -exit doesn't actually wait for the node to exit?
+                // Make sure not more than one running!
+                osw.write("echo Waiting... >> update-script.log\r\n");
+                osw.write("ping -n 30 127.0.0.1 >nul\r\n");
+                osw.write("echo Forcing the tray to terminate 1 >> update-script.log\r\n");
+                osw.write("taskkill /im "+TRAY_NAME+" /f >>update-script.log 2>&1\r\n");
+                osw.write("ping -n 1 127.0.0.1 >nul\r\n");
+                osw.write("echo Forcing the tray to terminate 2 >> update-script.log\r\n");
+                osw.write("taskkill /im "+TRAY_NAME+" /f >>update-script.log 2>&1\r\n");
+                osw.write("ping -n 1 127.0.0.1 >nul\r\n");
+                osw.write("echo Forcing the tray to terminate 3 >> update-script.log\r\n");
+                osw.write("taskkill /im "+TRAY_NAME+" /f >>update-script.log 2>&1\r\n");
+                osw.write("echo Waiting... >> update-script.log\r\n");
+                osw.write("ping -n 1 127.0.0.1 >nul\r\n"); // FIXME VOODOO!
+                osw.write("echo Moving files >> update-script.log\r\n");
                 AtomicDependency[] deps = dependencies();
                 for(AtomicDependency dep : deps) {
-                    osw.write("move /y "+dep.tempFilename+" "+dep.filename+"\r\n");
+                    File source = dep.moveTempFile();
+                    osw.write("move /y "+source+" "+dep.filename+" >>update-script.log 2>&1\r\n");
                 }
-                osw.write(""+TRAY_NAME+" -start\r\n");
+                osw.write("echo Waiting... >> update-script.log\r\n");
+                osw.write("ping -n 1 127.0.0.1 >nul\r\n"); // FIXME VOODOO!
+                osw.write("echo Starting tray... >> update-script.log\r\n");
+                osw.write(""+TRAY_NAME+" -start >nul\r\n");
+                osw.write("echo Finished >> update-script.log\r\n");
                 osw.close();
                 os = null;
                 return restartScript;
