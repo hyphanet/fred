@@ -1630,13 +1630,13 @@ outer:	for(String propName : props.stringPropertyNames()) {
             try {
                 os = new BufferedOutputStream(fb.getOutputStream());
                 OutputStreamWriter osw = new OutputStreamWriter(os); // Use default locale.
-                osw.write(""+TRAY_NAME+" -exit\n");
-                osw.write("taskkill /im "+TRAY_NAME+" /f\n");
+                osw.write(""+TRAY_NAME+" -exit\r\n");
+                osw.write("taskkill /im "+TRAY_NAME+" /f\r\n");
                 AtomicDependency[] deps = dependencies();
                 for(AtomicDependency dep : deps) {
-                    osw.write("move /y "+dep.tempFilename+" "+dep.filename+"\n");
+                    osw.write("move /y "+dep.tempFilename+" "+dep.filename+"\r\n");
                 }
-                osw.write(""+TRAY_NAME+" -start\n");
+                osw.write(""+TRAY_NAME+" -start\r\n");
                 osw.close();
                 os = null;
                 return restartScript;
