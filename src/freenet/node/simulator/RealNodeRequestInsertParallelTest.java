@@ -55,6 +55,7 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
+import freenet.support.math.SimpleSampleStatistics;
 import freenet.support.math.TrivialRunningAverage;
 
 /**
@@ -225,8 +226,8 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     	this.tracker = tracker;
     	this.overallUIDTagCounter = overallUIDTagCounter;
     	generatedKeys = new HashSet<Key>();
-    	requestHops = new TrivialRunningAverage();
-    	requestSuccess = new TrivialRunningAverage();
+    	requestHops = new SimpleSampleStatistics();
+    	requestSuccess = new SimpleSampleStatistics();
         byte[] nonce = new byte[8];
         random.nextBytes(nonce);
         suffix = "-" + HexUtil.bytesToHex(nonce);
@@ -247,8 +248,8 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 	
 	private int runningRequests = 0;
 	
-	private final RunningAverage requestHops;
-	private final RunningAverage requestSuccess;
+	private final SimpleSampleStatistics requestHops;
+	private final SimpleSampleStatistics requestSuccess;
 
 	/** Run up to PARALLEL_REQUESTS requests simultaneously. Record the success rate and path 
 	 * length, and overall rejection fraction. Initiate requests directly without using 
@@ -285,8 +286,8 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 
     private void dumpStats() {
         System.err.println("Requests: "+reqs);
-        System.err.println("Average request hops: "+requestHops.currentValue());
-        System.err.println("Average request success: "+requestSuccess.currentValue());
+        System.err.println("Average request hops: "+requestHops.mean()+" +/- "+requestHops.stddev());
+        System.err.println("Average request success: "+requestSuccess.mean()+" +/- "+requestHops.stddev());
     }
     
     protected void reportSuccess(int hops, boolean log) {
