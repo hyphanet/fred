@@ -17,7 +17,7 @@ public class SimpleSampleStatistics {
     public synchronized double variance() {
         double x = mean.currentValue();
         double x2 = squaredMean.currentValue();
-        return x*x - x2;
+        return x2 - x*x;
     }
     
     public double stddev() {
