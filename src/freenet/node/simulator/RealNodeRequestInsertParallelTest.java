@@ -263,7 +263,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     private void dumpStats() {
         System.err.println("Requests: "+reqs);
         System.err.println("Average request hops: "+requestHops.mean()+" +/- "+requestHops.stddev());
-        System.err.println("Average request success: "+requestSuccess.mean()+" +/- "+requestHops.stddev());
+        System.err.println("Average request success: "+requestSuccess.mean()+" +/- "+requestSuccess.stddev());
     }
     
     protected void reportSuccess(int hops, boolean log) {
