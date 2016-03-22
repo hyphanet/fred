@@ -39,8 +39,8 @@ import freenet.support.math.SimpleSampleStatistics;
  */
 public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingTest {
 
-    static int NUMBER_OF_NODES = 100;
-    static int DEGREE = 10;
+    static int NUMBER_OF_NODES = 25;
+    static int DEGREE = 5;
     /** Number of requests to run in parallel */
     static final int PARALLEL_REQUESTS = 5;
     /** Insert the key this far in advance */
@@ -49,7 +49,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     static final int PROLOG_SIZE = PARALLEL_REQUESTS*4;
     /** Total number of requests to run */
     static final int TOTAL_REQUESTS = 1000;
-    static short MAX_HTL = (short)5;
+    static short MAX_HTL = (short)4;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
     static final boolean ENABLE_SWAPPING = false;
