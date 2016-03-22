@@ -1248,7 +1248,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             if(parent == null) parent = new File(".");
             File newTemp = File.createTempFile(filename.getName(), 
                     UPDATER_BACKUP_SUFFIX+FileUtil.getExtension(filename), parent);
-            if(File.separatorChar == '\\')
+            if(FileUtil.detectedOS.isWindows)
                 newTemp.delete(); // FIXME Needed for Windows, no actual symlink race here AFAICS.
             if(tempFilename.renameTo(newTemp)) {
                 movedTempFilename = newTemp;
