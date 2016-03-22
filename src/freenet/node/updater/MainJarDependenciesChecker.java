@@ -1704,6 +1704,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 // FIXME Maybe freenettray.exe -exit doesn't actually wait for the node to exit?
                 // Make sure not more than one running!
                 osw.write("echo Waiting... >> update-script.log\r\n");
+                // No "sleep" on Windows, so we abuse ping (not timeout, no console I/O).
+                // Note that localhost is available since Freenet starts up.
                 osw.write("ping -n 30 127.0.0.1 >nul\r\n");
                 osw.write("echo Forcing the tray to terminate 1 >> update-script.log\r\n");
                 osw.write("taskkill /im "+TRAY_NAME+" /f >>update-script.log 2>&1\r\n");
