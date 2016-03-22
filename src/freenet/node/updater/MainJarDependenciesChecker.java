@@ -721,6 +721,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 continue;
             }
             
+            cleanupRestartingAtomicDeployer();
+            
             if(type == DEPENDENCY_TYPE.OPTIONAL_ATOMIC_MULTI_FILES_WITH_RESTART) {
                 parseAtomicMultiFilesWithRestart(props, baseName);
                 continue;
@@ -1467,7 +1469,19 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	    
 	}
 	
-	/** Deploys a multi-file replace on *nix with a restart, using a simple shell script */
+	private void cleanupRestartingAtomicDeployer() {
+	    // Grrr, no static methods on inner classes!
+	    if(FileUtil.detectedOS.isWindows)
+	        cleanupWindowsRestartingAtomicDeployer(deployer.getNodeDir());
+	    else
+	        cleanupUnixRestartingAtomicDeployer(deployer.getNodeDir());
+	}
+	
+	private void cleanupUnixRestartingAtomicDeployer(File nodeDir) {
+	    new File(nodeDir, UnixRestartingAtomicDeployer.RESTART_SCRIPT_NAME).delete();
+    }
+
+    /** Deploys a multi-file replace on *nix with a restart, using a simple shell script */
 	private class UnixRestartingAtomicDeployer extends RestartingAtomicDeployer {
 
         public UnixRestartingAtomicDeployer(String name) {
@@ -1603,6 +1617,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
 
 	}
 	
+    private void cleanupWindowsRestartingAtomicDeployer(File nodeDir) {
+        new File(nodeDir, WindowsRestartingAtomicDeployer.RESTART_SCRIPT_NAME).delete();
+        new File(nodeDir, WindowsRestartingAtomicDeployer.LOG_NAME).delete(); 
+    }
+
 	/** Deploys a multi-file replace on Windows with a restart, using a simple cmd script.
 	 * Unlike on Unix, we cannot actually move the files first, the script must do that. */
     private class WindowsRestartingAtomicDeployer extends RestartingAtomicDeployer {
@@ -1612,6 +1631,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
         }
         
         static final String RESTART_SCRIPT_NAME = "tempRestartFreenet.cmd";
+        static final String LOG_NAME = "update-script.log";
         
         @Override
         protected boolean deployMultiFileUpdate() {
