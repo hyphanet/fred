@@ -1403,6 +1403,14 @@ outer:	for(String propName : props.stringPropertyNames()) {
         protected synchronized AtomicDependency[] dependencies() {
             return dependencies.toArray(new AtomicDependency[dependencies.size()]);
         }
+        
+        protected AtomicDependency getDependencyByName(String trayName) {
+            AtomicDependency[] deps = dependencies();
+            for(AtomicDependency dep : deps) {
+                if(trayName.equalsIgnoreCase(dep.filename.getName())) return dep;
+            }
+            return null;
+        }
 
         public void deployMultiFileUpdateOffThread() {
             executor.execute(new PrioRunnable() {
@@ -1683,7 +1691,14 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 
                 osw.write("ping -n 1 127.0.0.1 >nul\r\n");
                 osw.write("echo Asking the tray to terminate >> update-script.log\r\n");
-                osw.write(""+TRAY_NAME+" -exit >nul\r\n");
+                // FIXME COMPATIBILITY HACK: Use the new FreenetTray.exe if there is one.
+                // This is necessary because old versions of FreenetTray do not wait for the node
+                // to exit on -exit.
+                AtomicDependency trayDep = getDependencyByName(TRAY_NAME);
+                String trayFilename = TRAY_NAME;
+                if(trayDep != null)
+                    trayFilename = trayDep.moveTempFile().getName();
+                osw.write(""+trayFilename+" -exit>nul\r\n");
                 // FIXME With short/no delays, this is not reliable.
                 // FIXME However the worst case is it starts the tray but not the node.
                 // FIXME Maybe freenettray.exe -exit doesn't actually wait for the node to exit?
