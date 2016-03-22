@@ -1239,7 +1239,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
             // Best that these NOT be absolute, want relative filenames for windows updater script.
             File parent = filename.getParentFile();
             if(parent == null) parent = new File(".");
-            File newTemp = File.createTempFile(filename.getName(), ".new.tmp", parent);
+            File newTemp = File.createTempFile(filename.getName(), 
+                    UPDATER_BACKUP_SUFFIX+FileUtil.getExtension(filename), parent);
             if(File.separatorChar == '\\')
                 newTemp.delete(); // FIXME Needed for Windows, no actual symlink race here AFAICS.
             if(tempFilename.renameTo(newTemp)) return newTemp;
