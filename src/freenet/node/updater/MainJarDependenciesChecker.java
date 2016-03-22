@@ -1116,6 +1116,9 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	    private boolean triedDeploy;
 	    private boolean succeededFetch;
 	    private boolean backedUp;
+	    /** If we want to deploy the data after the node has shut down, we need to move it to a new
+	     * location, which won't be deleted on shutdown. */
+	    private File movedTempFilename;
 
         public AtomicDependency(File filename, FreenetURI key, long size, byte[] expectedHash, boolean executable) throws IOException {
             this.filename = filename;
@@ -1236,8 +1239,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
         }
         
         /** Temp file will actually be used after restarting, so we need it to not be deleted. 
+         * Note that this also invalidates tempFilename.
          * @throws IOException */
-        File moveTempFile() throws IOException {
+        synchronized File moveTempFile() throws IOException {
+            if(movedTempFilename != null) return movedTempFilename;
             // Best that these NOT be absolute, want relative filenames for windows updater script.
             File parent = filename.getParentFile();
             if(parent == null) parent = new File(".");
@@ -1245,7 +1250,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
                     UPDATER_BACKUP_SUFFIX+FileUtil.getExtension(filename), parent);
             if(File.separatorChar == '\\')
                 newTemp.delete(); // FIXME Needed for Windows, no actual symlink race here AFAICS.
-            if(tempFilename.renameTo(newTemp)) return newTemp;
+            if(tempFilename.renameTo(newTemp)) {
+                movedTempFilename = newTemp;
+                return newTemp;
+            }
             System.err.println("Unable to rename temporary file "+tempFilename+" to "+newTemp);
             throw new IOException("Unable to rename temporary file "+tempFilename+" to "+newTemp);
         }
