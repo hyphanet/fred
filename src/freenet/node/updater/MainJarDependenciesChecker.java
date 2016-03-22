@@ -1126,7 +1126,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             File[] list = parent.listFiles();
             for(File f : list) {
                 String name = f.getName();
-                if(name.startsWith(filename.getName()) && name.endsWith(UPDATER_BACKUP_SUFFIX)) 
+                if(name.startsWith(filename.getName()) && name.contains(UPDATER_BACKUP_SUFFIX)) 
                     f.delete();
             }
             this.tempFilename = File.createTempFile(filename.getName(), ".tmp", parent);
