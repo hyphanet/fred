@@ -339,9 +339,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private TimeDecayingRunningAverage pRejected;
 
 	/** Bytes received at/before startup */
-	private long bytesInAtStartup;
+	private final long bytesInAtStartup;
 	/** Bytes sent at/before startup */
-	private long bytesOutAtStartup;
+	private final long bytesOutAtStartup;
 
 	/** Times had routable connection when checked */
 	private long hadRoutableConnectionCount;
