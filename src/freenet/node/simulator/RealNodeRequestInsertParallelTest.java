@@ -227,7 +227,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 	private final TotalRequestUIDsCounter overallUIDTagCounter;
 	
 	/** Total number of inserts started so far. Requests started will trail this by PREINSERT_GAP */
-	private int startedInserts=0;
+	private int startedInserts=-1;
 	/** Number of requests running at present. Inserts are not included in this counter. */
 	private int runningRequests = 0;
 	/** Total number of requests completed so far, after the prolog phase. Equal to 
@@ -255,13 +255,13 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         // We insert this far in advance.
         int preinsertID = requestID - PREINSERT_GAP;
         startInsert(preinsertID);
-        if(startedInserts > PREINSERT_GAP) {
+        if(startedInserts >= PREINSERT_GAP) {
             // requestID has been preinserted.
             Key key = waitForInsert(requestID);
             synchronized(this) {
                 runningRequests++;
             }
-            startFetch(requestID, key, requestID > 0);
+            startFetch(requestID, key, requestID >= 0);
         }
         return -1;
     }
