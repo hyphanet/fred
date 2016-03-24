@@ -1285,30 +1285,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			return new RejectReason(ret, true);
 		}
 		
-		// Do we have the bandwidth?
-		// The throttles should not be used much now, the timeout-based 
-		// preemptive rejection and fair sharing code above should catch it in
-		// all cases. FIXME can we get rid of the throttles here?
-		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
-		int expectedSent = (int)Math.max(expected / nonOverheadFraction, 0);
-		if(logMINOR)
-			Logger.minor(this, "Expected sent bytes: "+expected+" -> "+expectedSent);
-		if(!requestOutputThrottle.instantGrab(expectedSent)) {
-			rejected("Insufficient output bandwidth", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
-			return new RejectReason("Insufficient output bandwidth", false);
-			// FIXME slowDown?
-		}
-		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
-		int expectedReceived = (int)Math.max(expected, 0);
-		if(logMINOR)
-			Logger.minor(this, "Expected received bytes: "+expectedReceived);
-		if(!requestInputThrottle.instantGrab(expectedReceived)) {
-			requestOutputThrottle.recycle(expectedSent);
-			rejected("Insufficient input bandwidth", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
-			return new RejectReason("Insufficient input bandwidth", false);
-			// FIXME slowDown?
-		}
-
 		// Message queues - when the link level has far more queued than it
 		// can transmit in a reasonable time, don't accept requests.
 		if(source != null) {
