@@ -226,8 +226,9 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 	private int startedInserts=0;
 	/** Number of requests running at present. Inserts are not included in this counter. */
 	private int runningRequests = 0;
-	/** Total number of requests completed so far. Equal to requestSuccess.countReports(). */
-	private int completedRequests = 0;
+	/** Total number of requests completed so far, after the prolog phase. Equal to 
+	 * requestSuccess.countReports(). */
+	private int loggedRequests = 0;
 	
 	private final SimpleSampleStatistics requestHops;
 	private final SimpleSampleStatistics requestSuccess;
@@ -245,7 +246,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     protected int insertRequestTest() throws InterruptedException, UnsupportedEncodingException, CHKEncodeException, InvalidCompressionCodecException {
         boolean finish;
         synchronized(this) {
-            finish = (completedRequests >= TOTAL_REQUESTS);
+            finish = (loggedRequests >= TOTAL_REQUESTS);
         }
         if(finish) {
             // Terminate.
@@ -270,7 +271,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     }
 
     private synchronized void dumpStats() {
-        System.err.println("Requests: "+startedInserts+" ("+requestSuccess.countReports()+")");
+        System.err.println("Requests: "+loggedRequests+" ("+requestSuccess.countReports()+")");
         System.err.println("Average request hops: "+requestHops.mean()+" +/- "+requestHops.stddev());
         System.err.println("Average request success: "+requestSuccess.mean()+" +/- "+requestSuccess.stddev());
     }
@@ -280,10 +281,10 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             if(log) {
                 requestSuccess.report(1.0);
                 requestHops.report(hops);
+                loggedRequests++;
             }
             runningRequests--;
-            completedRequests++;
-            assert(requestSuccess.countReports() == completedRequests);
+            assert(requestSuccess.countReports() == loggedRequests);
             notifyAll();
         }
     }
@@ -292,10 +293,10 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         synchronized(this) {
             if(log) {
                 requestSuccess.report(0.0);
+                loggedRequests++;
             }
             runningRequests--;
-            completedRequests++;
-            assert(requestSuccess.countReports() == completedRequests);
+            assert(requestSuccess.countReports() == loggedRequests);
             notifyAll();
         }
     }
