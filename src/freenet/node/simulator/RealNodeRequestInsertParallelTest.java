@@ -226,8 +226,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 	private int startedInserts=0;
 	/** Number of requests running at present. Inserts are not included in this counter. */
 	private int runningRequests = 0;
-	/** Total number of requests completed so far. Should be equal to requestSuccess.countReports()
-	 * modulo locking (i.e. eventually consistent). */
+	/** Total number of requests completed so far. Equal to requestSuccess.countReports(). */
 	private int completedRequests = 0;
 	
 	private final SimpleSampleStatistics requestHops;
@@ -270,31 +269,33 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         }
     }
 
-    private void dumpStats() {
+    private synchronized void dumpStats() {
         System.err.println("Requests: "+startedInserts+" ("+requestSuccess.countReports()+")");
         System.err.println("Average request hops: "+requestHops.mean()+" +/- "+requestHops.stddev());
         System.err.println("Average request success: "+requestSuccess.mean()+" +/- "+requestSuccess.stddev());
     }
     
     protected void reportSuccess(int hops, boolean log) {
-        if(log) {
-            requestSuccess.report(1.0);
-            requestHops.report(hops);
-        }
         synchronized(this) {
+            if(log) {
+                requestSuccess.report(1.0);
+                requestHops.report(hops);
+            }
             runningRequests--;
             completedRequests++;
+            assert(requestSuccess.countReports() == completedRequests);
             notifyAll();
         }
     }
     
     protected void reportFailure(boolean log) {
-        if(log) {
-            requestSuccess.report(0.0);
-        }
         synchronized(this) {
+            if(log) {
+                requestSuccess.report(0.0);
+            }
             runningRequests--;
             completedRequests++;
+            assert(requestSuccess.countReports() == completedRequests);
             notifyAll();
         }
     }
