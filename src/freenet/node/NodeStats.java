@@ -585,10 +585,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		chkSuccessRatesByLocation = new Histogram2(10, 1.0);
 
+		long max = Math.max(obwLimit*60, 32768*20);
 		requestOutputThrottle =
-			new TokenBucket(Math.max(obwLimit*60, 32768*20), SECONDS.toNanos(1) / obwLimit, 0);
+			new TokenBucket(max, SECONDS.toNanos(1) / obwLimit, max);
+		max = Math.max(ibwLimit*60, 32768*20);
 		requestInputThrottle =
-			new TokenBucket(Math.max(ibwLimit*60, 32768*20), SECONDS.toNanos(1) / ibwLimit, 0);
+			new TokenBucket(max, SECONDS.toNanos(1) / ibwLimit, max);
 
 		double nodeLoc=node.lm.getLocation();
 		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
