@@ -247,9 +247,9 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     protected int insertRequestTest() throws InterruptedException, UnsupportedEncodingException, CHKEncodeException, InvalidCompressionCodecException {
         startedInserts++;
         waitForFreeRequestSlot();
-        startInsert(startedInserts);
-        if(startedInserts > PREINSERT_GAP) {
-            int request = startedInserts - PREINSERT_GAP;
+        int request = startedInserts - PREINSERT_GAP;
+        startInsert(request);
+        if(request > 0) {
             Key key = waitForInsert(request);
             synchronized(this) {
                 runningRequests++;
