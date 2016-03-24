@@ -226,6 +226,9 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 	private int startedInserts=0;
 	/** Number of requests running at present. Inserts are not included in this counter. */
 	private int runningRequests = 0;
+	/** Total number of requests completed so far. Should be equal to requestSuccess.countReports()
+	 * modulo locking (i.e. eventually consistent). */
+	private int completedRequests = 0;
 	
 	private final SimpleSampleStatistics requestHops;
 	private final SimpleSampleStatistics requestSuccess;
@@ -276,6 +279,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         }
         synchronized(this) {
             runningRequests--;
+            completedRequests++;
             notifyAll();
         }
     }
@@ -286,6 +290,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         }
         synchronized(this) {
             runningRequests--;
+            completedRequests++;
             notifyAll();
         }
     }
