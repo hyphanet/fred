@@ -46,7 +46,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     /** Number of requests to run in parallel */
     static int PARALLEL_REQUESTS = 5;
     /** Ignore data before this point */
-    static final int PROLOG_SIZE = PARALLEL_REQUESTS*4;
+    static int PROLOG_SIZE = PARALLEL_REQUESTS*4;
     /** Total number of requests to run */
     static final int TOTAL_REQUESTS = 1000;
     static short MAX_HTL = (short)4;
@@ -112,6 +112,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             String value = s.substring(x+1);
             parseArgument(arg, value);
         }
+        PROLOG_SIZE = PARALLEL_REQUESTS*4;
     }
 
     private static void printUsage() {
