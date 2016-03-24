@@ -244,30 +244,18 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 	 * @throws UnsupportedEncodingException 
 	 * */
     protected int insertRequestTest() throws InterruptedException, UnsupportedEncodingException, CHKEncodeException, InvalidCompressionCodecException {
-        boolean finish;
-        synchronized(this) {
-            finish = (loggedRequests >= TOTAL_REQUESTS);
-        }
-        if(finish) {
-            // Terminate.
-            dumpStats();
-            return 0;
-        } else {
-            startedInserts++;
-            waitForFreeRequestSlot();
-            startInsert(startedInserts);
-            if(startedInserts > PREINSERT_GAP) {
-                int request = startedInserts - PREINSERT_GAP;
-                Key key = waitForInsert(request);
-                synchronized(this) {
-                    runningRequests++;
-                }
-                startFetch(request, key, request > PROLOG_SIZE);
-                if(request % 100 == 0)
-                    dumpStats();
+        startedInserts++;
+        waitForFreeRequestSlot();
+        startInsert(startedInserts);
+        if(startedInserts > PREINSERT_GAP) {
+            int request = startedInserts - PREINSERT_GAP;
+            Key key = waitForInsert(request);
+            synchronized(this) {
+                runningRequests++;
             }
-            return -1;
+            startFetch(request, key, request > PROLOG_SIZE);
         }
+        return -1;
     }
 
     private synchronized void dumpStats() {
@@ -282,6 +270,12 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
                 requestSuccess.report(1.0);
                 requestHops.report(hops);
                 loggedRequests++;
+                if(loggedRequests >= TOTAL_REQUESTS) {
+                    dumpStats();
+                    System.exit(0);
+                } else if(loggedRequests % 100 == 0)
+                    dumpStats();
+
             }
             runningRequests--;
             assert(requestSuccess.countReports() == loggedRequests);
@@ -294,6 +288,11 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             if(log) {
                 requestSuccess.report(0.0);
                 loggedRequests++;
+                if(loggedRequests >= TOTAL_REQUESTS) {
+                    dumpStats();
+                    System.exit(0);
+                } else if(loggedRequests % 100 == 0)
+                    dumpStats();
             }
             runningRequests--;
             assert(requestSuccess.countReports() == loggedRequests);
