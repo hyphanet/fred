@@ -37,4 +37,8 @@ public class SimpleSampleStatistics {
         report((double)i);
     }
 
+    public synchronized long countReports() {
+        return mean.countReports();
+    }
+
 }
