@@ -44,7 +44,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     static int NUMBER_OF_NODES = 25;
     static int DEGREE = 5;
     /** Number of requests to run in parallel */
-    static final int PARALLEL_REQUESTS = 5;
+    static int PARALLEL_REQUESTS = 5;
     /** Insert the key this far in advance */
     static final int PREINSERT_GAP = PARALLEL_REQUESTS;
     /** Ignore data before this point */
@@ -127,6 +127,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         System.err.println("bandwidth-cbr\tOutput bandwidth limit per connection if using CBR bypass");
         System.err.println("seed\tRNG seed");
         System.err.println("bypass\tVarious possible bypasses:");
+        System.err.println("parallel-requests\tNumber of parallel requests:");
         for(TestingVMBypass t : TestingVMBypass.values()) {
             System.err.println("\t" + t.name());
         }
@@ -150,6 +151,8 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             CBR_BWLIMIT = Integer.parseInt(value);
         } else if(arg.equals("seed")) {
             SEED = Long.parseLong(value);
+        } else if(arg.equals("parallel-requests")) {
+            PARALLEL_REQUESTS = Integer.parseInt(value);
         } else {
             printUsage();
             System.exit(2);
