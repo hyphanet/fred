@@ -222,7 +222,9 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 	protected final SimulatorRequestTracker tracker;
 	private final TotalRequestUIDsCounter overallUIDTagCounter;
 	
+	/** Total number of inserts started so far. Requests started will trail this by PREINSERT_GAP */
 	private int startedInserts=0;
+	/** Number of requests running at present. Inserts are not included in this counter. */
 	private int runningRequests = 0;
 	
 	private final SimpleSampleStatistics requestHops;
