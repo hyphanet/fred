@@ -67,9 +67,11 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
                 BYPASS_TRANSPORT_LAYER, null);
         // Need to call it explicitly because the class is loaded before we clobbered the logger.
         Logger.registerClass(RealNodeSpammerContainmentTest.class);
-        System.out.println("Insert/retrieve test");
+        System.out.println("Parallel insert/retrieve test (single node originator)");
         System.out.println();
         System.err.println("Seed is "+SEED);
+        System.err.println("Parallel requests: "+PARALLEL_REQUESTS);
+        System.err.println("Bypass: "+BYPASS_TRANSPORT_LAYER);
         DummyRandomSource random = new DummyRandomSource(SEED);
         DummyRandomSource nodesRandom = new DummyRandomSource(SEED+1);
         DummyRandomSource topologyRandom = new DummyRandomSource(SEED+2);
