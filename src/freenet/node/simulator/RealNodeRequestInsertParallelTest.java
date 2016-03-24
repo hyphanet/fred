@@ -45,8 +45,6 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     static int DEGREE = 5;
     /** Number of requests to run in parallel */
     static int PARALLEL_REQUESTS = 5;
-    /** Insert the key this far in advance */
-    static final int PREINSERT_GAP = PARALLEL_REQUESTS;
     /** Ignore data before this point */
     static final int PROLOG_SIZE = PARALLEL_REQUESTS*4;
     /** Total number of requests to run */
@@ -173,7 +171,8 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         params.threadLimit = 500*NUMBER_OF_NODES;
         int blockSize = (CHKBlock.DATA_LENGTH+CHKBlock.TOTAL_HEADERS_LENGTH+
                 SSKBlock.DATA_LENGTH+SSKBlock.TOTAL_HEADERS_LENGTH+DSAPublicKey.PADDED_SIZE);
-        params.storeSize = (PARALLEL_REQUESTS+PREINSERT_GAP+1)*blockSize*2;
+        // At worst, we have PARALLEL_REQUESTS inserting and PARALLEL_REQUESTS requesting.
+        params.storeSize = (PARALLEL_REQUESTS*2+1)*blockSize*2;
         params.ramStore = true;
         params.enableSwapping = ENABLE_SWAPPING;
         params.enableULPRs = ENABLE_ULPRS;
@@ -252,8 +251,8 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         waitForFreeRequestSlot();
         // Pre-insert.
         startInsert(startedInserts - PROLOG_SIZE);
-        // Now fetch the key inserted PREINSERT_GAP slots ago.
-        int requestID = startedInserts - PREINSERT_GAP;
+        // Now fetch the key inserted PARALLEL_REQUESTS slots ago.
+        int requestID = startedInserts - PARALLEL_REQUESTS;
         if(requestID >= 0) {
             // requestID has been preinserted.
             Key key = waitForInsert(requestID - PROLOG_SIZE);
