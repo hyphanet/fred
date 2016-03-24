@@ -24,6 +24,7 @@ import freenet.keys.SSKEncodeException;
 import freenet.node.Node;
 import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.node.NodeStarter.TestingVMBypass;
+import freenet.node.simulator.SimulatorRequestTracker.Request;
 import freenet.support.Executor;
 import freenet.support.HexUtil;
 import freenet.support.PrioritizedTicker;
@@ -314,6 +315,13 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         }
         public synchronized void succeeded(Key key) {
             System.err.println("Finished insert "+req+" to "+key);
+            Request[] reqs = tracker.dumpKey(key, true);
+            if(reqs.length == 0)
+                System.err.println("ERROR: Insert succeeded but no trace!");
+            else {
+                for(Request req : reqs)
+                    System.err.print(req.dump(false, "Insert "+this.req+": "));
+            }
             finished = true;
             this.key = key;
             notifyAll();

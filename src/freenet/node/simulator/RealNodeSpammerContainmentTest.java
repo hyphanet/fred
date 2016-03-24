@@ -179,23 +179,26 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
 
         @Override
         public void onSucceeded() {
-            int hopCount = getHopCount();
+            Request request = getRequest();
+            int hopCount = request == null ? 0 : request.count();
             System.err.println("Success: "+req+" ("+hopCount+" hops)");
+            if(request != null)
+                System.err.print(request.dump(false, "Request "+req+" : "));
             reportSuccess(hopCount, log);
         }
-
-        private int getHopCount() {
+        
+        private Request getRequest() {
             Request[] dump = tracker.dumpKey(key, false);
-            if(dump.length == 0) return 0;
+            if(dump.length == 0) return null;
             assert(dump.length == 1);
-            dump[0].dump(false, "Request "+req+" : ");
-            return dump[0].count();
+            return dump[0];
         }
 
         @Override
         public void onFailed(LowLevelGetException e) {
             System.err.println("Failure: "+req+" : "+e);
             e.printStackTrace();
+            System.err.print(getRequest().dump(false, "Request "+req+" : "));
             reportFailure(log);
         }
 
