@@ -41,6 +41,13 @@ import freenet.support.io.FileUtil;
  * slower, non-malicious requests. */
 public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParallelTest {
 
+    private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
+    static {
+        // This doesn't work if the class is loaded before the logger.
+        Logger.registerClass(RealNodeSpammerContainmentTest.class);
+    }
+    
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, SSKEncodeException, InvalidCompressionCodecException, IOException, KeyDecodeException {
         try {
         parseOptions(args);
@@ -58,6 +65,8 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         String logDetails = "freenet.node.Bypass:MINOR";
         NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, logDetails, true, 
                 BYPASS_TRANSPORT_LAYER, null);
+        // Need to call it explicitly because the class is loaded before we clobbered the logger.
+        Logger.registerClass(RealNodeSpammerContainmentTest.class);
         System.out.println("Insert/retrieve test");
         System.out.println();
         System.err.println("Seed is "+SEED);
