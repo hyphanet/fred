@@ -245,7 +245,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     protected int insertRequestTest() throws InterruptedException, UnsupportedEncodingException, CHKEncodeException, InvalidCompressionCodecException {
         boolean finish;
         synchronized(this) {
-            finish = (completedRequests == TOTAL_REQUESTS);
+            finish = (completedRequests >= TOTAL_REQUESTS);
         }
         if(finish) {
             // Terminate.
