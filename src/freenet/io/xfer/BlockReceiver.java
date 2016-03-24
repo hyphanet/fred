@@ -341,6 +341,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 			try {
 				if(_prb.allReceived()) return;
+				if(logMINOR) Logger.minor(this, "Timeout on "+this+" for "+BlockReceiver.this);
 				_prb.abort(RetrievalException.SENDER_DIED, "Sender unresponsive to resend requests", false);
 				complete(RetrievalException.SENDER_DIED,
 						"Sender unresponsive to resend requests");
@@ -587,7 +588,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	static int runningBlockReceives = 0;
 	
 	private void incRunningBlockReceives() {
-		if(logMINOR) Logger.minor(this, "Starting block receive "+_uid);
+		if(logMINOR) Logger.minor(this, "Starting block receive "+_uid+" : "+this);
 		synchronized(BlockReceiver.class) {
 			runningBlockReceives++;
 			if(logMINOR) Logger.minor(BlockTransmitter.class, "Started a block receive, running: "+runningBlockReceives);
