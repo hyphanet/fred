@@ -145,7 +145,7 @@ public class RealNodeTest {
 	
 	static void waitForAllConnected(Node[] nodes) throws InterruptedException {
 	    try {
-            waitForAllConnected(nodes, false, false);
+            waitForAllConnected(nodes, false, false, false);
         } catch (SimulatorOverloadedException e) {
             // Impossible unless the booleans are true.
             throw new Error(e);
@@ -160,9 +160,11 @@ public class RealNodeTest {
 	 * Note that ping times are generally a good proxy for CPU load.
 	 * @param backoffFatal If true, we are doing a sequential simulation, i.e. one request
 	 * at a time, so no requests should be rejected. So throw if any nodes are backed off.
+	 * @param checkOnly If true, don't wait.
 	 * @throws InterruptedException
 	 */
-	static void waitForAllConnected(Node[] nodes, boolean disconnectFatal, boolean backoffFatal) throws InterruptedException, SimulatorOverloadedException {
+	static void waitForAllConnected(Node[] nodes, boolean disconnectFatal, boolean backoffFatal, 
+	        boolean checkOnly) throws InterruptedException, SimulatorOverloadedException {
 		long tStart = System.currentTimeMillis();
 		while(true) {
 			int countFullyConnected = 0;
@@ -218,6 +220,7 @@ public class RealNodeTest {
 			    if(backoffFatal && totalBackedOff > 0) {
 			        throw new SimulatorOverloadedException("Backed off nodes not expected in sequential simulation - CPU overload??");
 			    }
+			    if(checkOnly) return;
 				long tDelta = (System.currentTimeMillis() - tStart)/1000;
 				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total partial "+totalPartialConnections+" compatible "+totalCompatibleConnections+") - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
 				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total partial "+totalPartialConnections+" compatible "+totalCompatibleConnections+") - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');

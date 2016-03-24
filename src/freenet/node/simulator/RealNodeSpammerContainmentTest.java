@@ -137,8 +137,9 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         RealNodeRequestInsertParallelTest tester = 
             new RealNodeSpammerContainmentTest(nodes, random, TARGET_SUCCESSES, tracker, overallUIDTagCounter);
         
+        waitForAllConnected(nodes, true, true, false);
         while(true) {
-            waitForAllConnected(nodes, true, true);
+            waitForAllConnected(nodes, true, false, true);
             int status = tester.insertRequestTest();
             if(status == -1) continue;
             System.exit(status);
