@@ -221,8 +221,8 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 	private final int targetSuccesses;
 	protected final SimulatorRequestTracker tracker;
 	private final TotalRequestUIDsCounter overallUIDTagCounter;
-	private int reqs=0;
 	
+	private int startedInserts=0;
 	private int runningRequests = 0;
 	
 	private final SimpleSampleStatistics requestHops;
@@ -239,16 +239,16 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 	 * @throws UnsupportedEncodingException 
 	 * */
     protected int insertRequestTest() throws InterruptedException, UnsupportedEncodingException, CHKEncodeException, InvalidCompressionCodecException {
-        if(reqs == TOTAL_REQUESTS) {
+        if(startedInserts == TOTAL_REQUESTS) {
             // Terminate.
             dumpStats();
             return 0;
         } else {
-            reqs++;
+            startedInserts++;
             waitForFreeRequestSlot();
-            startInsert(reqs);
-            if(reqs > PREINSERT_GAP) {
-                int request = reqs - PREINSERT_GAP;
+            startInsert(startedInserts);
+            if(startedInserts > PREINSERT_GAP) {
+                int request = startedInserts - PREINSERT_GAP;
                 Key key = waitForInsert(request);
                 synchronized(this) {
                     runningRequests++;
@@ -262,7 +262,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     }
 
     private void dumpStats() {
-        System.err.println("Requests: "+reqs+" ("+requestSuccess.countReports()+")");
+        System.err.println("Requests: "+startedInserts+" ("+requestSuccess.countReports()+")");
         System.err.println("Average request hops: "+requestHops.mean()+" +/- "+requestHops.stddev());
         System.err.println("Average request success: "+requestSuccess.mean()+" +/- "+requestSuccess.stddev());
     }
