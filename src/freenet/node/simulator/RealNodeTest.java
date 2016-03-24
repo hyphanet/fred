@@ -166,7 +166,6 @@ public class RealNodeTest {
 		long tStart = System.currentTimeMillis();
 		while(true) {
 			int countFullyConnected = 0;
-			int countReallyConnected = 0;
 			int totalPeers = 0;
 			int totalConnections = 0;
 			int totalPartialConnections = 0;
@@ -192,7 +191,6 @@ public class RealNodeTest {
 				if(pingTime < minPingTime) minPingTime = pingTime;
 				if(countConnected == countTotal) {
 					countFullyConnected++;
-					if(countBackedOff == 0) countReallyConnected++;
 				} else {
 					if(logMINOR)
 						Logger.minor(RealNodeTest.class, "Connection count for "+nodes[i]+" : "+countConnected+" partial "+countAlmostConnected);
@@ -203,7 +201,7 @@ public class RealNodeTest {
 				}
 			}
 			double avgPingTime = totalPingTime / nodes.length;
-			if(countFullyConnected == nodes.length && countReallyConnected == nodes.length && totalBackedOff == 0 &&
+			if(countFullyConnected == nodes.length && totalBackedOff == 0 &&
 					minPingTime < NodeStats.DEFAULT_SUB_MAX_PING_TIME && maxPingTime < NodeStats.DEFAULT_SUB_MAX_PING_TIME && avgPingTime < NodeStats.DEFAULT_SUB_MAX_PING_TIME) {
 				System.out.println("All nodes fully connected");
 				Logger.normal(RealNodeTest.class, "All nodes fully connected");
@@ -211,13 +209,13 @@ public class RealNodeTest {
 				return;
 			} else {
 			    if(disconnectFatal) {
-			        if(!(countFullyConnected == nodes.length && 
-			            countReallyConnected == nodes.length)) {
+			        if(countFullyConnected != nodes.length) {
 			            throw new SimulatorOverloadedException("Disconnected nodes - possible CPU overload???");
 			        } else if(maxPingTime >= NodeStats.DEFAULT_SUB_MAX_PING_TIME) {
 			            throw new SimulatorOverloadedException("Nodes have high ping time, possible CPU overload?");
 			        }
-			    } else if(backoffFatal && totalBackedOff > 0) {
+			    }
+			    if(backoffFatal && totalBackedOff > 0) {
 			        throw new SimulatorOverloadedException("Backed off nodes not expected in sequential simulation - CPU overload??");
 			    }
 				long tDelta = (System.currentTimeMillis() - tStart)/1000;
