@@ -219,6 +219,7 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
     
     @Override
     protected void startFetch(int req, Key k, boolean log) {
+        if(logMINOR) Logger.minor(this, "Fetching "+k+" for "+req);
         MyFetchListener listener = new MyFetchListener(k, req, log);
         spammer2.clientCore.asyncGet(k, false, listener, true, true, false, false, false);
     }
@@ -234,6 +235,7 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
 
     @Override
     protected void startInsert(ClientKeyBlock block, InsertWrapper insertWrapper) {
+        if(logMINOR) Logger.minor(this, "Inserting "+block.getKey()+" for "+insertWrapper.req);
         Runnable insertJob = new MyInsertJob(block.getBlock(), insertWrapper);
         spammer1.executor.execute(insertJob);
     }
