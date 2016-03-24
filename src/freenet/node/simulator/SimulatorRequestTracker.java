@@ -179,7 +179,6 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         if(reqs == null) {
             return new Request[0];
         }
-        System.err.println("" + reqs.length + (insert ? " inserts" : " requests") + " for "+k);
         for(Request req : reqs) {
             if(insert)
                 insertsByID.remove(req.uid);

@@ -27,6 +27,7 @@ import freenet.node.NodeStarter.TestingVMBypass;
 import freenet.node.simulator.SimulatorRequestTracker.Request;
 import freenet.support.Executor;
 import freenet.support.HexUtil;
+import freenet.support.Logger;
 import freenet.support.PrioritizedTicker;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.compress.InvalidCompressionCodecException;
@@ -326,13 +327,14 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             }
         }
         public synchronized void succeeded(Key key) {
-            System.err.println("Finished insert "+req+" to "+key);
+            Logger.normal(this, "Finished insert "+req+" to "+key);
             Request[] reqs = tracker.dumpKey(key, true);
             if(reqs.length == 0)
                 System.err.println("ERROR: Insert succeeded but no trace!");
             else {
-                for(Request req : reqs)
-                    System.err.print(req.dump(false, "Insert "+this.req+": "));
+                for(Request req : reqs) {
+                    Logger.normal(this, req.dump(false, "Insert "+this.req+": "));
+                }
             }
             finished = true;
             this.key = key;
@@ -343,7 +345,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     private final HashMap<Integer, InsertWrapper> inserts = new HashMap<Integer, InsertWrapper>();
     
     private void startInsert(int req) throws UnsupportedEncodingException, CHKEncodeException, InvalidCompressionCodecException {
-        System.err.println("Starting insert "+req);
+        Logger.normal(this, "Starting insert "+req);
         InsertWrapper insert = new InsertWrapper(req);
         synchronized(this) {
             inserts.put(req, insert);

@@ -191,9 +191,10 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         public void onSucceeded() {
             Request request = getRequest();
             int hopCount = request == null ? 0 : request.count();
-            System.err.println("Success: "+req+" ("+hopCount+" hops)");
-            if(request != null)
-                System.err.print(request.dump(false, "Request "+req+" : "));
+            Logger.normal(this, "Success: "+req+" ("+hopCount+" hops)");
+            if(request != null) {
+                Logger.normal(this, request.dump(false, "Request "+req+" : "));
+            }
             reportSuccess(hopCount, log);
         }
         
@@ -206,9 +207,8 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
 
         @Override
         public void onFailed(LowLevelGetException e) {
-            System.err.println("Failure: "+req+" : "+e);
-            e.printStackTrace();
-            System.err.print(getRequest().dump(false, "Request "+req+" : "));
+            Logger.normal(this, "Failure: "+req+" : "+e);
+            Logger.normal(this, getRequest().dump(false, "Request "+req+" : "));
             reportFailure(log);
         }
 
@@ -260,7 +260,7 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
                     insertWrapper.succeeded(block.getKey());
                     return;
                 } catch (LowLevelPutException e) {
-                    System.err.println("Insert failed for "+insertWrapper.req+" : "+e);
+                    Logger.normal(this, "Insert failed for "+insertWrapper.req+" : "+e);
                     e.printStackTrace();
                 }
             }
