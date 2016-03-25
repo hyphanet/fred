@@ -264,6 +264,10 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         }
         return -1;
     }
+    
+    protected boolean shouldLog(int reqID) {
+        return (reqID + PROLOG_SIZE) >= PARALLEL_REQUESTS;
+    }
 
     private synchronized void dumpStats() {
         System.err.println("Requests: "+loggedRequests+" ("+requestSuccess.countReports()+")");
