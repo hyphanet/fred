@@ -27,6 +27,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -77,6 +78,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.io.comm.TrafficClass;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
@@ -786,6 +788,12 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	private static final int minimumBandwidth = 10 * 1024;
 
+	/** Quality of Service mark we will use for all outgoing packets (opennet/darknet) */
+	private TrafficClass trafficClass;
+	public TrafficClass getTrafficClass() {
+		return trafficClass;
+	}
+
 	/*
 	 * Gets minimum bandwidth in bytes considered usable.
 	 *
@@ -1312,12 +1320,47 @@ public class Node implements TimeSkewDetectorCallback {
 
 					@Override
 					public void set(Short val) throws InvalidConfigValueException {
-						if(maxHTL < 0) throw new InvalidConfigValueException("Impossible max HTL");
+						if(val < 0) throw new InvalidConfigValueException("Impossible max HTL");
 						maxHTL = val;
 					}
 		}, false);
 
 		maxHTL = nodeConfig.getShort("maxHTL");
+
+		 class TrafficClassCallback extends StringCallback implements EnumerableOptionCallback {
+			 @Override
+			 public String get() {
+				 return trafficClass.name();
+			 }
+
+			 @Override
+			 public void set(String tcName) throws InvalidConfigValueException, NodeNeedRestartException {
+				 try {
+					 trafficClass = TrafficClass.fromNameOrValue(tcName);
+				 } catch (IllegalArgumentException e) {
+					 throw new InvalidConfigValueException(e);
+				 }
+				 throw new NodeNeedRestartException("TrafficClass cannot change on the fly");
+			 }
+
+			 @Override
+			 public String[] getPossibleValues() {
+				 ArrayList<String> array = new ArrayList<String>();
+				 for (TrafficClass tc : TrafficClass.values())
+					 array.add(tc.name());
+				 return array.toArray(new String[0]);
+			 }
+		 }
+		 nodeConfig.register("trafficClass", TrafficClass.getDefault().name(), sortOrder++, true, false,
+				     "Node.trafficClass", "Node.trafficClassLong",
+				     new TrafficClassCallback());
+		 String trafficClassValue = nodeConfig.getString("trafficClass");
+		 try {
+			 trafficClass = TrafficClass.fromNameOrValue(trafficClassValue);
+		 } catch (IllegalArgumentException e) {
+			 Logger.error(this, "Invalid trafficClass:"+trafficClassValue+" resetting the value to default.", e);
+			 trafficClass = TrafficClass.getDefault();
+		 }
 
 		// FIXME maybe these should persist? They need to be private.
 		decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
