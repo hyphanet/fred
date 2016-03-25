@@ -705,6 +705,8 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
     }   
     
     /**
+     * Finish registering a request. Please call the methods on ClientRequestScheduler instead,
+     * this is exposed for tests.
      * @param req
      * @param container
      * @param maybeActive Array of requests, can be null, which are being registered
@@ -715,7 +717,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
      * FIXME: Either get rid of the debugging code and therefore get rid of maybeActive,
      * or make req a SendableRequest[] and register them all at once.
      */
-    void innerRegister(SendableRequest req, ClientContext context, SendableRequest[] maybeActive) {
+    public void innerRegister(SendableRequest req, ClientContext context, SendableRequest[] maybeActive) {
         if(isInsertScheduler && req instanceof BaseSendableGet)
             throw new IllegalArgumentException("Adding a SendableGet to an insert scheduler!!");
         if((!isInsertScheduler) && req instanceof SendableInsert)
