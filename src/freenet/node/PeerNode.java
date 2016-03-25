@@ -261,9 +261,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	protected long sendHandshakeTime;
 	/** Version of the node */
 	private String version;
-	/** Total input */
+	/** Total bytes received since startup */
 	private long totalInputSinceStartup;
-	/** Total output */
+	/** Total bytes sent since startup */
 	private long totalOutputSinceStartup;
 	/** Peer node public key; changing this means new noderef */
 	public final ECPublicKey peerECDSAPubKey;
@@ -337,10 +337,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	protected long peerAddedTime = 1;
 	/** Average proportion of requests which are rejected or timed out */
 	private TimeDecayingRunningAverage pRejected;
-	/** Total low-level input bytes */
-	private long totalBytesIn;
-	/** Total low-level output bytes */
-	private long totalBytesOut;
+
+	/** Bytes received at/before startup */
+	private final long bytesInAtStartup;
+	/** Bytes sent at/before startup */
+	private final long bytesOutAtStartup;
+
 	/** Times had routable connection when checked */
 	private long hadRoutableConnectionCount;
 	/** Times checked for routable connection */
@@ -710,8 +712,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		else
 			sendHandshakeTime = now;  // Be sure we're ready to handshake right away
 
-		totalInputSinceStartup = fs.getLong("totalInput", 0);
-		totalOutputSinceStartup = fs.getLong("totalOutput", 0);
+		bytesInAtStartup = fs.getLong("totalInput", 0);
+		bytesOutAtStartup = fs.getLong("totalOutput", 0);
 
 		byte buffer[] = new byte[16];
 		node.random.nextBytes(buffer);
@@ -2772,8 +2774,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		fs.put("opennet", isOpennetForNoderef());
 		fs.put("seed", isSeed());
-		fs.put("totalInput", (getTotalInputSinceStartup()+getTotalInputBytes()));
-		fs.put("totalOutput", (getTotalOutputSinceStartup()+getTotalOutputBytes()));
+		fs.put("totalInput", getTotalInputBytes());
+		fs.put("totalOutput", getTotalOutputBytes());
 		return fs;
 	}
 
@@ -3640,21 +3642,21 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	public synchronized void reportIncomingBytes(int length) {
-		totalBytesIn += length;
+		totalInputSinceStartup += length;
 		totalBytesExchangedWithCurrentTracker += length;
 	}
 
 	public synchronized void reportOutgoingBytes(int length) {
-		totalBytesOut += length;
+		totalOutputSinceStartup += length;
 		totalBytesExchangedWithCurrentTracker += length;
 	}
 
 	public synchronized long getTotalInputBytes() {
-		return totalBytesIn;
+		return bytesInAtStartup + totalInputSinceStartup;
 	}
 
 	public synchronized long getTotalOutputBytes() {
-		return totalBytesOut;
+		return bytesOutAtStartup + totalOutputSinceStartup;
 	}
 
 	public synchronized long getTotalInputSinceStartup() {
