@@ -277,9 +277,15 @@ public class Announcer {
 						list.add(fs);
 				} catch (EOFException e) {
 					return list;
+				} catch (IOException e) {
+					Logger.error(Announcer.class, "Error while reading seednodes from " + file, e);
+					// Continue reading. If this entry failed, we still want the following noderefs.
+					// Read a line to advance the parsing position and avoid an endless loop.
+					br.readLine();
 				}
 			}
 		} catch (IOException e) {
+			Logger.error(Announcer.class, "Unexpected error while reading seednodes from " + file, e);
 			return list;
 		} finally {
 			Closer.close(fis);
