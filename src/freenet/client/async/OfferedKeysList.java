@@ -64,4 +64,9 @@ public class OfferedKeysList extends LowLevelKeyFetcher implements RequestClient
         return null;
     }
 
+    @Override
+    protected boolean offersOnly() {
+        return true;
+    }
+
 }

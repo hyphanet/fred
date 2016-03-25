@@ -133,7 +133,7 @@ public abstract class LowLevelKeyFetcher extends BaseSendableGet implements Requ
     			// Don't let a node force us to start a real request for a specific key.
     			// We check the datastore, take up offers if any (on a short timeout), and then quit if we still haven't fetched the data.
     			// Obviously this may have a marginal impact on load but it should only be marginal.
-    			core.asyncGet(key, true, new RequestCompletionListener() {
+    			core.asyncGet(key, offersOnly(), new RequestCompletionListener() {
     
     				@Override
     				public void onSucceeded() {
@@ -158,6 +158,10 @@ public abstract class LowLevelKeyFetcher extends BaseSendableGet implements Requ
     	};
     }
     
+    /** @return False to do normal requests, true to only query nodes which have offered the key 
+     * already, as in OfferedKeyList. */
+    protected abstract boolean offersOnly();
+
     protected abstract void requestSucceeded(Key key, RequestScheduler sched);
     
     protected abstract void requestFailed(Key key, RequestScheduler sched, LowLevelGetException e);
