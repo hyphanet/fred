@@ -286,6 +286,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
             while(true) {
                 try {
                     realRun();
+                    if(lazyStart) return;
                 } catch (Throwable t) {
                         Logger.error(this, "Caught "+t, t);
                 }
