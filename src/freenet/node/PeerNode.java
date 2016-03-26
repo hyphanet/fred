@@ -2313,8 +2313,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected (" + isConnected + ':' + currentTracker + "!!!: " + e, e);
 		}
 
-		if(isRealConnection())
-			node.nodeUpdater.maybeSendUOMAnnounce(this);
 		sendConnectedDiffNoderef();
 	}
 
@@ -2397,6 +2395,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	*/
 	public void processDiffNoderef(SimpleFieldSet fs) throws FSParseException {
 		processNewNoderef(fs, false, true, false);
+		// Send UOMAnnouncement only *after* we know what the other side's version.
+		if(isRealConnection())
+		    node.nodeUpdater.maybeSendUOMAnnounce(this);
 	}
 
 	/**
