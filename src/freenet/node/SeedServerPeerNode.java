@@ -3,9 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.net.InetAddress;
 import java.util.ArrayList;
 
@@ -16,14 +13,17 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * Sender's representation of a seed node.
  * @author toad
  */
 public class SeedServerPeerNode extends PeerNode {
 
-	public SeedServerPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		super(fs, node2, crypto, peers, fromLocal, false, mangler, true);
+	public SeedServerPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
+		super(fs, node2, crypto, fromLocal);
 	}
 
 	@Override
@@ -130,11 +130,6 @@ public class SeedServerPeerNode extends PeerNode {
 		node.peers.disconnectAndRemove(this, false, false, false);
 		return ret;
 	}
-
-	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return false;
-	}
 	
 	@Override
 	public boolean shouldDisconnectAndRemoveNow() {
@@ -177,5 +172,20 @@ public class SeedServerPeerNode extends PeerNode {
 	boolean dontKeepFullFieldSet() {
 		return false;
 	}
+
+    @Override
+    public boolean isOpennetForNoderef() {
+        return true;
+    }
+
+    @Override
+    public boolean canAcceptAnnouncements() {
+        return false; // We do not accept announcements from a seednode.
+    }
+
+    @Override
+    protected void writePeers() {
+        // Do not write peers, seeds are kept separately.
+    }
 
 }

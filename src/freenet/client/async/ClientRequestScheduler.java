@@ -120,7 +120,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * register the listener once.
 	 * @throws FetchException 
 	 */
-	public void register(final HasKeyListener hasListener, final SendableGet[] getters, final boolean persistent, final BlockSet blocks, final boolean noCheckStore) throws KeyListenerConstructionException {
+	public void register(final HasKeyListener hasListener, final SendableGet[] getters, final boolean persistent, final BlockSet blocks, final boolean noCheckStore) {
 		if(logMINOR)
 			Logger.minor(this, "register("+persistent+","+hasListener+","+Fields.commaList(getters));
 		if(isInsertScheduler) {

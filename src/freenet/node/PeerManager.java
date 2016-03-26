@@ -3,9 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
@@ -18,6 +15,7 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,10 +31,16 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
+import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.useralerts.AbstractUserAlert;
+import freenet.node.useralerts.DroppedOldPeersUserAlert;
 import freenet.node.useralerts.PeerManagerUserAlert;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
@@ -44,6 +48,9 @@ import freenet.support.TimeUtil;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @author amphibian
@@ -174,6 +181,9 @@ public class PeerManager {
 		this.node = node;
 		shutdownHook.addEarlyJob(new Thread() {
 			public void run() {
+				// Ensure we're not waiting 5mins here
+				writePeersDarknet();
+				writePeersOpennet();
 				writePeersNow(false);
 			}
 		});
@@ -198,13 +208,12 @@ public class PeerManager {
 				else
 					darkFilename = filename;
 		}
-		OutgoingPacketMangler mangler = crypto.packetMangler;
 		int maxBackups = isOpennet ? BACKUPS_OPENNET : BACKUPS_DARKNET;
 		for(int i=0;i<=maxBackups;i++) {
 			File peersFile = this.getBackupFilename(filename, i);
 			// Try to read the node list from disk
 			if(peersFile.exists())
-				if(readPeers(peersFile, mangler, crypto, opennet, oldOpennetPeers)) {
+				if(readPeers(peersFile, crypto, opennet, oldOpennetPeers)) {
 					String msg;
 					if(oldOpennetPeers)
 						msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
@@ -222,7 +231,7 @@ public class PeerManager {
 		// The other cases are less important.
 	}
 
-	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
+	private boolean readPeers(File peersFile, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
 		boolean someBroken = false;
 		boolean gotSome = false;
 		FileInputStream fis;
@@ -239,13 +248,15 @@ public class PeerManager {
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e4, e4);
 		}
 		BufferedReader br = new BufferedReader(ris);
+		File brokenPeersFile = new File(peersFile.getPath() + ".broken");
+		DroppedOldPeersUserAlert droppedOldPeers = new DroppedOldPeersUserAlert(brokenPeersFile);
 		try { // FIXME: no better way?
 			while(true) {
 				// Read a single NodePeer
 				SimpleFieldSet fs;
 				fs = new SimpleFieldSet(br, false, true);
 				try {
-					PeerNode pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
+					PeerNode pn = PeerNode.create(fs, node, crypto, opennet, this);
 					if(oldOpennetPeers) {
 					    if(!(pn instanceof OpennetPeerNode))
 					        Logger.error(this, "Darknet node in old opennet peers?!: "+pn);
@@ -275,7 +286,17 @@ public class PeerManager {
 					someBroken = true;
 					continue;
 					// FIXME tell the user???
-				}
+				} catch (PeerTooOldException e) {
+				    if(crypto.isOpennet) {
+				        // Ignore.
+				        Logger.error(this, "Dropping too-old opennet peer");
+				    } else {
+				        // A lot more noisy!
+				        droppedOldPeers.add(e, fs.get("myName"));
+				    }
+                    someBroken = true;
+                    continue;
+                }
 			}
 		} catch(EOFException e) {
 			// End of file, fine
@@ -288,23 +309,31 @@ public class PeerManager {
 			Logger.error(this, "Ignoring " + e3 + " caught reading " + peersFile, e3);
 		}
 		if(someBroken) {
-			File broken = new File(peersFile.getPath()+".broken");
 			try {
-				broken.delete();
-				FileOutputStream fos = new FileOutputStream(broken);
+				brokenPeersFile.delete();
+				FileOutputStream fos = new FileOutputStream(brokenPeersFile);
 				fis = new FileInputStream(peersFile);
 				FileUtil.copy(fis, fos, -1);
 				fos.close();
 				fis.close();
-				System.err.println("Broken peers file copied to "+broken);
+				System.err.println("Broken peers file copied to " + brokenPeersFile);
 			} catch (IOException e) {
 				System.err.println("Unable to copy broken peers file.");
 			}
 		}
+		if(!droppedOldPeers.isEmpty()) {
+		    try {
+		        node.clientCore.alerts.register(droppedOldPeers);
+		        Logger.error(this, droppedOldPeers.getText());
+		    } catch (Throwable t) {
+		        // Startup MUST complete, don't let client layer problems kill it.
+		        Logger.error(this, "Caught error telling user about dropped peers", t);
+		    }
+		}
 		return !someBroken;
 	}
 
-	public boolean addPeer(PeerNode pn) {
+    public boolean addPeer(PeerNode pn) {
 		return addPeer(pn, false, false);
 	}
 
@@ -600,12 +629,13 @@ public class PeerManager {
 
 	/**
 	 * Connect to a node provided the fieldset representing it.
+	 * @throws PeerTooOldException 
 	 */
-	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
 		PeerNode[] peerList = myPeers();
 		for(PeerNode mp: peerList) {
-			if(Arrays.equals(mp.pubKeyHash, pn.pubKeyHash))
+			if(Arrays.equals(mp.peerECDSAPubKeyHash, pn.peerECDSAPubKeyHash))
 				return;
 		}
 		addPeer(pn);
@@ -727,26 +757,6 @@ public class PeerManager {
 		}
 	};
 
-	protected static class LocationUIDPair implements Comparable<LocationUIDPair> {
-		double location;
-		long uid;
-
-		LocationUIDPair(PeerNode pn) {
-			location = pn.getLocation();
-			uid = pn.swapIdentifier;
-		}
-
-		@Override
-		public int compareTo(LocationUIDPair p) {
-			// Compare purely on location, so result is the same as getPeerLocationDoubles()
-			if(p.location > location)
-				return 1;
-			if(p.location < location)
-				return -1;
-			return 0;
-		}
-	}
-
 	/**
 	 * @return An array of the current locations (as doubles) of all
 	 * our connected peers or double[0] if Node.shallWePublishOurPeersLocation() is false
@@ -771,28 +781,6 @@ public class PeerManager {
 			return Arrays.copyOf(locs, x);
 		else
 			return locs;
-	}
-
-	/** Just like getPeerLocationDoubles, except it also
-	 * returns the UID for each node. */
-	public LocationUIDPair[] getPeerLocationsAndUIDs() {
-		PeerNode[] conns;
-		LocationUIDPair[] locPairs;
-		synchronized(this) {
-			conns = myPeers;
-		}
-		locPairs = new LocationUIDPair[conns.length];
-		int x = 0;
-		for(PeerNode conn: conns) {
-			if(conn.isRoutable())
-				locPairs[x++] = new LocationUIDPair(conn);
-		}
-		// Sort it
-		Arrays.sort(locPairs, 0, x);
-		if(x != locPairs.length)
-			return Arrays.copyOf(locPairs, x);
-		else
-			return locPairs;
 	}
 
 	/**
@@ -837,10 +825,19 @@ public class PeerManager {
 		return connectedPeers[node.random.nextInt(lengthWithoutExcluded)];
 	}
 
+	public void localBroadcast(Message msg, boolean ignoreRoutability, 
+	        boolean onlyRealConnections, ByteCounter ctr) {
+	    localBroadcast(msg, ignoreRoutability, onlyRealConnections, ctr, 
+	            Integer.MIN_VALUE, Integer.MAX_VALUE);
+	}
+	
 	/**
 	 * Asynchronously send this message to every connected peer.
+	 * @param maxVersion Only send the message if the version >= maxVersion.
+	 * @param minVersion Only send the message if the version <= minVersion.
 	 */
-	public void localBroadcast(Message msg, boolean ignoreRoutability, boolean onlyRealConnections, ByteCounter ctr) {
+	public void localBroadcast(Message msg, boolean ignoreRoutability, 
+	        boolean onlyRealConnections, ByteCounter ctr, int minVersion, int maxVersion) {
 		// myPeers not connectedPeers as connectedPeers only contains
 		// ROUTABLE peers, and we may want to send to non-routable peers
 		PeerNode[] peers = myPeers();
@@ -853,6 +850,9 @@ public class PeerManager {
 					continue;
 			if(onlyRealConnections && !peer.isRealConnection())
 				continue;
+			int version = peer.getVersionNumber();
+			if(version < minVersion) continue;
+			if(version > maxVersion) continue;
 			try {
 				peer.sendAsync(msg, null, ctr);
 			} catch(NotConnectedException e) {
@@ -1949,6 +1949,9 @@ public class PeerManager {
 		return v.toArray(new DarknetPeerNode[v.size()]);
 	}
 
+	/** Get the currently connected seednodes.
+	 * @param exclude Set of peer public keys to exclude.
+	 */
 	public List<SeedServerPeerNode> getConnectedSeedServerPeersVector(HashSet<ByteArrayWrapper> exclude) {
 		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
@@ -1956,7 +1959,7 @@ public class PeerManager {
 		for(PeerNode p : peers) {
 			if(p instanceof SeedServerPeerNode) {
 				SeedServerPeerNode sspn = (SeedServerPeerNode) p;
-				if(exclude != null && exclude.contains(new ByteArrayWrapper(sspn.getIdentity()))) {
+				if(exclude != null && exclude.contains(new ByteArrayWrapper(sspn.getPubKeyHash()))) {
 					if(logMINOR)
 						Logger.minor(this, "Not including in getConnectedSeedServerPeersVector() as in exclude set: " + sspn.userToString());
 					continue;
@@ -2055,7 +2058,7 @@ public class PeerManager {
 		PeerNode[] peers = pn.isOpennet() ? getOpennetAndSeedServerPeers() : getDarknetPeers();
 
 		for(PeerNode peer: peers)
-			if(Arrays.equals(pn.getIdentity(), peer.getIdentity()))
+			if(Arrays.equals(pn.getPubKeyHash(), peer.getPubKeyHash()))
 				return peer;
 
 		return null;
@@ -2221,7 +2224,7 @@ public class PeerManager {
 	public PeerNode getByPubKeyHash(byte[] pkHash) {
 		PeerNode[] peers = myPeers();
 		for(PeerNode peer : peers) {
-			if(Arrays.equals(peer.getPubKeyHash(), pkHash))
+			if(Arrays.equals(peer.peerECDSAPubKeyHash, pkHash))
 				return peer;
 		}
 		return null;
@@ -2322,5 +2325,5 @@ public class PeerManager {
 			return connections < OUTDATED_MAX_CONNS;
 		} else return false;
 	}
-
+	
 }

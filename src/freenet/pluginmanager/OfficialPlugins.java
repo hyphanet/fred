@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import freenet.keys.FreenetURI;
+import freenet.node.updater.NodeUpdater;
+import freenet.node.updater.PluginJarUpdater;
 
 /**
  * Container for Freenet’s official plugins.
@@ -31,8 +33,8 @@ public class OfficialPlugins {
 					.deprecated();
 			addPlugin("Freemail_wot")
 					.inGroup("communication")
-					.minimumVersion(24)
-					.loadedFrom("CHK@DcKbZCZ0wXfRUUfTXRGIhlqm7dhQ-ZM3VJ1KRFWEfuc,mWbiDOpbujik5VuPoHbyu2aza~fzkdpiDV6ThJLcS8E,AAMC--8/Freemail.jar");
+					.minimumVersion(27)
+					.loadedFrom("CHK@fR~OePzegkidZcKQN3aX-2EmS8RPo6Qj3hNTKf~BmJA,Mb7laJ5Mz0vvnEIhYr6yZbAytgdhQeXxJDA2LL0ziZU,AAMC--8/Freemail-v0.2.7.2.jar");
 			addPlugin("HelloWorld")
 					.inGroup("example")
 					.loadedFrom("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar")
@@ -48,8 +50,8 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@Zgib8xrGxcEuix7AVB4eajton1FpNHbIJeQZgEbHMNU,BQekU261VLSDUBQPOHSMKUF5qxY1v0zjXa33RyoEbYk,AAMC--8/JSTUN.jar");
 			addPlugin("KeyUtils")
 					.inGroup("technical")
-					.minimumVersion(5024)
-					.loadedFrom("CHK@rsRNrCbYJvuCcQa3OC0c9uQh23KtqczNfZSUQfLpiAM,68yt6H-UiG00PWNQWF5uNrhuT5bcWu5CYwP~acTnzEM,AAMC--8/KeyUtils-v5024.jar")
+					.minimumVersion(5026)
+					.loadedFrom("CHK@VGVmYp8qGseh2S7irYSDS7f6Goy0Z7rZcOc-iiQVPXg,Q4VeVf0fhdfejLqXrSYY5TK76f37D34Ly3Npv5X1GMA,AAMC--8/KeyUtils-v5026.jar")
 					.advanced();
 			addPlugin("MDNSDiscovery")
 					.inGroup("connectivity")
@@ -72,10 +74,10 @@ public class OfficialPlugins {
 			addPlugin("UPnP")
 					.inGroup("connectivity")
 					.essential()
-                    .recommendedVersion(10006)
+                    .recommendedVersion(10007)
 					.minimumVersion(10003)
 					.loadedFrom(
-                        "CHK@ICSu1tgnNxJ0bApWkL-fQFswbfi9KPnmWI3Is4eq0iw,Sj1N3zdDHBbL3Uc3~eY4elqWwSP7IR1uHrKVR2-nA0s,AAMC--8/UPnP-10006.jar");
+                        "CHK@ZiX8yeMHTUtNfJAgxpwH~jLRnnbb41BKEkAxOD~33tY,aBTvD3IoPKPLjnHOCNQ4-iRwqVED5kHgkmD4UhGdITk,AAMC--8/UPnP-10007.jar");
 			addPlugin("XMLLibrarian")
 					.inGroup("index")
 					.minimumVersion(26)
@@ -105,14 +107,22 @@ public class OfficialPlugins {
 					.advanced();
 			addPlugin("WebOfTrust")
 					.inGroup("communication")
-					.minimumVersion(15)
+					.minimumVersion(18)
 					.usesXml()
-					.loadedFrom("CHK@1FWUqydeyTbxC3fut51QT8VGnokQFYHMoLsqzP4RU60,BM3ibZYejeo2-sC7WklJ9I8ZJysMpO9~l9MZ8NUzP2c,AAMC--8/WebOfTrust-build0015.jar");
+					.loadedFrom("CHK@qprIfrwqW0zg4izvRqStw0GUR2siJBe6LuDuy-t6D7A,eVd5fUG5nrNnIl7vwlRGzyhTe~TTZwuh6P1oqZH8g0A,AAMC--8/WebOfTrust-build0018.jar");
+			addPlugin("WebOfTrustTesting")
+					.inGroup("communication")
+					.advanced()
+					.experimental()
+					.usesXml()
+					.alwaysFetchLatestVersion()
+					.minimumVersion(17) // When changing this also update edition of USK below!
+					.loadedFrom("USK@QeTBVWTwBldfI-lrF~xf0nqFVDdQoSUghT~PvhyJ1NE,OjEywGD063La2H-IihD7iYtZm3rC0BP6UTvvwyF5Zh4,AQACAAE/WebOfTrustTesting.jar/17");
 			addPlugin("FlogHelper")
 					.inGroup("communication")
-					.minimumVersion(34)
+					.minimumVersion(35)
 					.usesXml()
-					.loadedFrom("CHK@yuiC-Dv0UYNgqRcLq4heCL-y0nHctr2LBcOsBN0ORyM,8M2bv~d7Su~O0MJHz4Tq1g3n4nrAgw-C7dn6mMFQSA4,AAMC--8/FlogHelper-v34.jar");
+					.loadedFrom("CHK@3Ht6otYHogKxa1Z8SC0hz46kV9q1qaSBsjbJxuwPosU,txky3jF33oWU9n6YiGMphiHA1V9q3i4ZN0VPtgElSaI,AAMC--8/FlogHelper-v35.jar");
 		} catch (MalformedURLException mue1) {
 			throw new RuntimeException("Could not create FreenetURI.", mue1);
 		}
@@ -137,7 +147,10 @@ public class OfficialPlugins {
 		private boolean essential;
 		private long minimumVersion = -1;
 		private long recommendedVersion = -1;
+		/** @see OfficialPluginDescription#alwaysFetchLatestVersion */
+		private boolean alwaysFetchLatestVersion;
 		private boolean usesXml;
+		/** @see OfficialPluginDescription#uri */
 		private FreenetURI uri;
 		private boolean deprecated;
 		private boolean experimental;
@@ -173,12 +186,22 @@ public class OfficialPlugins {
 			return this;
 		}
 
+		/** @see OfficialPluginDescription#alwaysFetchLatestVersion */
+		public OfficialPluginBuilder alwaysFetchLatestVersion() {
+			this.alwaysFetchLatestVersion = true;
+			addCurrentPluginDescription();
+			return this;
+		}
+
 		public OfficialPluginBuilder usesXml() {
 			usesXml = true;
 			addCurrentPluginDescription();
 			return this;
 		}
 
+		/**
+		 * ATTENTION: Please read {@link OfficialPluginDescription#uri} before deciding whether
+		 * to use USK or CHK! */
 		public OfficialPluginBuilder loadedFrom(String uri) throws MalformedURLException {
 			this.uri = new FreenetURI(uri);
 			addCurrentPluginDescription();
@@ -218,7 +241,9 @@ public class OfficialPlugins {
 		}
 
 		private OfficialPluginDescription createOfficialPluginDescription() {
-			return new OfficialPluginDescription(name, group, essential, minimumVersion, recommendedVersion, usesXml, uri, deprecated, experimental, advanced, unsupported);
+			return new OfficialPluginDescription(name, group, essential, minimumVersion,
+				recommendedVersion, alwaysFetchLatestVersion, usesXml, uri, deprecated,
+				experimental, advanced, unsupported);
 		}
 
 	}
@@ -253,9 +278,49 @@ public class OfficialPlugins {
 		 * what happens on a USK-based update...
 		 */
 		public final long recommendedVersion;
+		
+		/**
+		 * If true, if during startup we already have a copy of the plugin JAR on disk, the
+		 * {@link PluginManager} will ignore it and redownload the JAR instead so the user gets a
+		 * recent version if there is one.<br><br>
+		 * 
+		 * This is for being used together with plugins which are fetched from a USK {@link #uri},
+		 * and which are not included in the official main Freenet update USK which
+		 * {@link PluginJarUpdater} watches.<br>
+		 * For plugins which are in the main Freenet update USK, setting this to true is usually
+		 * not necessary: The {@link PluginJarUpdater} will update the plugin if there is a new
+		 * version.<br><br>
+		 * 
+		 * In other words: Plugins which are NOT in the official USK but have their own USK will
+		 * not have the {@link PluginJarUpdater} monitor their USK, it only monitors the main
+		 * USK. Thus, the only chance to update them is during startup by ignoring the JAR and
+		 * causing a re-download of it. */
+		public final boolean alwaysFetchLatestVersion;
+		
 		/** Does it use XML? If so, if the JVM is vulnerable, then don't load it */
 		public final boolean usesXML;
-		/** FreenetURI to get the latest version from */
+		/**
+		 * FreenetURI to get the latest version from.<br>
+		 * Typically a CHK, not USK, since updates are deployed using the main Freenet USK of
+		 * {@link NodeUpdater}'s subclass {@link PluginJarUpdater}.<br><br>
+		 * 
+		 * To allow people to insert plugin updates without giving them write access to the main
+		 * USK, this *can* be an USK, but updating when a new version is inserted to the USK will
+		 * only happen at certain points in time:<br>
+		 * - if the plugin is manually unloaded and loaded again.<br>
+		 * - at restart of Freenet if {@link #alwaysFetchLatestVersion} is true. If it is false, the
+		 *   cached local JAR file on disk will prevent updating!<br>
+		 * So to make updating work using USK, set {@link #alwaysFetchLatestVersion} so we check
+		 * for updates when the node is restarted.<br><br>
+		 * 
+		 * NOTICE the conclusion of the above: It is NOT RECOMMENDED to use USKs here: Updates will
+		 * only be delivered at restarts of the node, while the main Freenet USK supports live
+		 * updates; and also there is no revocation mechanism for the USKs. Instead of using USKs
+		 * here, a CHK should be preferred, and new plugin versions then should be inserted at the
+		 * main Freenet update USK of the the {@link NodeUpdater}. A typical usecase for
+		 * nevertheless using an USK here is to allow individual plugin developers to push testing
+		 * versions of their plugin on their own without giving them write-access to the main
+		 * Freenet update USK.*/
 		public final FreenetURI uri;
 		/** If true, the plugin is obsolete. */
 		public final boolean deprecated;
@@ -272,18 +337,34 @@ public class OfficialPlugins {
      */
     public final boolean unsupported;
 
-		OfficialPluginDescription(String name, String group, boolean essential, long minVer, long recVer, boolean usesXML, FreenetURI uri, boolean deprecated, boolean experimental, boolean advanced, boolean unsupported) {
+		OfficialPluginDescription(String name, String group, boolean essential, long minVer,
+				long recVer, boolean alwaysFetchLatestVersion, boolean usesXML, FreenetURI uri,
+				boolean deprecated, boolean experimental, boolean advanced, boolean unsupported) {
+			
 			this.name = name;
 			this.group = group;
 			this.essential = essential;
 			this.minimumVersion = minVer;
 			this.recommendedVersion = recVer;
+			this.alwaysFetchLatestVersion = alwaysFetchLatestVersion;
 			this.usesXML = usesXML;
-			this.uri = uri;
 			this.deprecated = deprecated;
 			this.experimental = experimental;
 			this.advanced = advanced;
       this.unsupported = unsupported;
+
+			if (alwaysFetchLatestVersion && uri != null) {
+				assert(uri.isUSK()) : "Non-USK URIs do not support updates!";
+				
+				// Force fetching the latest edition by setting a negative USK edition.
+				long edition = uri.getSuggestedEdition();
+				if (edition >= 0) {
+					edition = Math.min(-1, -edition);
+				}
+				uri = uri.setSuggestedEdition(edition);
+			}
+			
+			this.uri = uri;
 		}
 
 		public String getLocalisedPluginName() {

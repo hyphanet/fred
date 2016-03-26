@@ -1392,11 +1392,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		try {
 			context.getSskFetchScheduler(realTimeFlag).register(null, new SendableGet[] { runningStoreChecker } , false, null, false);
-		} catch (KeyListenerConstructionException e1) {
-			// Impossible
-			synchronized(this) {
-				runningStoreChecker = null;
-			}
 		} catch (Throwable t) {
 			synchronized(this) {
 				runningStoreChecker = null;
@@ -1563,13 +1558,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	@Override
-	public KeyListener makeKeyListener(ClientContext context, boolean onStartup) throws KeyListenerConstructionException {
+	public KeyListener makeKeyListener(ClientContext context, boolean onStartup) {
 		return this;
-	}
-
-	@Override
-	public void onFailed(KeyListenerConstructionException e, ClientContext context) {
-		Logger.error(this, "Failed to construct KeyListener on USKFetcher: "+e, e);
 	}
 
 	@Override

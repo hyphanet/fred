@@ -13,9 +13,10 @@ import freenet.support.io.NativeThread;
 public class ListPersistentRequestsMessage extends FCPMessage {
 
 	static final String NAME = "ListPersistentRequests";
-	
+	private final String identifier;
+
 	public ListPersistentRequestsMessage(SimpleFieldSet fs) {
-		// Do nothing
+		identifier = fs.get("Identifier");
 	}
 	
 	@Override
@@ -32,11 +33,13 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 
 		final PersistentRequestClient client;
 		final FCPConnectionOutputHandler outputHandler;
+		protected final String listRequestIdentifier;
 		boolean sentRestartJobs;
-		
-		ListJob(PersistentRequestClient client, FCPConnectionOutputHandler outputHandler) {
+
+		ListJob(PersistentRequestClient client, FCPConnectionOutputHandler outputHandler, String listRequestIdentifier) {
 			this.client = client;
 			this.outputHandler = outputHandler;
+			this.listRequestIdentifier = listRequestIdentifier;
 		}
 		
 		int progressCompleted = 0;
@@ -49,7 +52,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 					reschedule(context);
 					return false;
 				}
-				int p = client.queuePendingMessagesOnConnectionRestart(outputHandler, progressCompleted, 30);
+				int p = client.queuePendingMessagesOnConnectionRestart(outputHandler, listRequestIdentifier, progressCompleted, 30);
 				if(p <= progressCompleted) {
 					sentRestartJobs = true;
 					break;
@@ -64,7 +67,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 					reschedule(context);
 					return false;
 				}
-				int p = client.queuePendingMessagesFromRunningRequests(outputHandler, progressRunning, 30);
+				int p = client.queuePendingMessagesFromRunningRequests(outputHandler, listRequestIdentifier, progressRunning, 30);
 				if(p <= progressRunning) {
 					complete(context);
 					return false;
@@ -86,9 +89,9 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 	public static abstract class TransientListJob extends ListJob implements Runnable {
 
 		final ClientContext context;
-		
-		TransientListJob(PersistentRequestClient client, FCPConnectionOutputHandler handler, ClientContext context) {
-			super(client, handler);
+
+		TransientListJob(PersistentRequestClient client, FCPConnectionOutputHandler handler, ClientContext context, String listRequestIdentifier) {
+			super(client, handler, listRequestIdentifier);
 			this.context = context;
 		}
 		
@@ -107,9 +110,9 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 	public static abstract class PersistentListJob extends ListJob implements PersistentJob, Runnable {
 		
 		final ClientContext context;
-		
-		PersistentListJob(PersistentRequestClient client, FCPConnectionOutputHandler handler, ClientContext context) {
-			super(client, handler);
+
+		PersistentListJob(PersistentRequestClient client, FCPConnectionOutputHandler handler, ClientContext context, String listRequestIdentifier) {
+			super(client, handler, listRequestIdentifier);
 			this.context = context;
 		}
 		
@@ -123,7 +126,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		    try {
 		        context.jobRunner.queue(this, NativeThread.HIGH_PRIORITY-1);
 		    } catch (PersistenceDisabledException e) {
-		        outputHandler.queue(new EndListPersistentRequestsMessage());
+		        outputHandler.queue(new EndListPersistentRequestsMessage(listRequestIdentifier));
 		    }
 		}
 		
@@ -134,16 +137,16 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 			throws MessageInvalidException {
 		
 		PersistentRequestClient rebootClient = handler.getRebootClient();
-		
-		TransientListJob job = new TransientListJob(rebootClient, handler.outputHandler, node.clientCore.clientContext) {
+
+		TransientListJob job = new TransientListJob(rebootClient, handler.outputHandler, node.clientCore.clientContext, identifier) {
 
 			@Override
 			void complete(ClientContext context) {
 				
 				if(handler.getRebootClient().watchGlobal) {
 					PersistentRequestClient globalRebootClient = handler.server.globalRebootClient;
-					
-					TransientListJob job = new TransientListJob(globalRebootClient, outputHandler, context) {
+
+					TransientListJob job = new TransientListJob(globalRebootClient, outputHandler, context, listRequestIdentifier) {
 
 						@Override
 						void complete(ClientContext context) {
@@ -165,13 +168,13 @@ public class ListPersistentRequestsMessage extends FCPMessage {
                         	@Override
                         	public boolean run(ClientContext context) {
                         		PersistentRequestClient foreverClient = handler.getForeverClient();
-                        		PersistentListJob job = new PersistentListJob(foreverClient, outputHandler, context) {
+                        		PersistentListJob job = new PersistentListJob(foreverClient, outputHandler, context, listRequestIdentifier) {
 
                         			@Override
                         			void complete(ClientContext context) {
                         				if(handler.getRebootClient().watchGlobal) {
                         					PersistentRequestClient globalForeverClient = handler.server.globalForeverClient;
-                        					PersistentListJob job = new PersistentListJob(globalForeverClient, outputHandler, context) {
+                        					PersistentListJob job = new PersistentListJob(globalForeverClient, outputHandler, context, listRequestIdentifier) {
 
                         						@Override
                         						void complete(
@@ -187,7 +190,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
                         			}
 
                         			private void finishFinal() {
-                        				outputHandler.queue(new EndListPersistentRequestsMessage());
+                        				outputHandler.queue(new EndListPersistentRequestsMessage(listRequestIdentifier));
                         			}
                         			
                         		};
@@ -196,7 +199,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
                         	}
                         }, NativeThread.HIGH_PRIORITY-1);
                     } catch (PersistenceDisabledException e) {
-                        handler.outputHandler.queue(new EndListPersistentRequestsMessage());
+                        handler.outputHandler.queue(new EndListPersistentRequestsMessage(listRequestIdentifier));
                     }
 			}
 			
