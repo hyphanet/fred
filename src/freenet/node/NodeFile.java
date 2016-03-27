@@ -8,38 +8,38 @@ import java.io.File;
 public enum NodeFile {
     Seednodes(InstallDirectory.Node, "seednodes.fref"),
     InstallerWindows(InstallDirectory.Run, "freenet-latest-installer-windows.exe"),
-	InstallerNonWindows(InstallDirectory.Run, "freenet-latest-installer-nonwindows.jar"),
-	IPv4ToCountry(InstallDirectory.Run, "IpToCountry.dat");
+    InstallerNonWindows(InstallDirectory.Run, "freenet-latest-installer-nonwindows.jar"),
+    IPv4ToCountry(InstallDirectory.Run, "IpToCountry.dat");
 
     private final InstallDirectory dir;
     private final String filename;
-    
+
     /**
      * Gets the absolute file path associated with this file for the given node instance.
      */
     public File getFile(Node node) {
         return dir.getDir(node).file(filename);
     }
-    
+
     /**
      * Gets the filename associated with this file.
      */
     public String getFilename() {
         return filename;
     }
-    
+
     /**
      * Gets the base directory with this file for the given node instance.
      */
     public ProgramDirectory getProgramDirectory(Node node) {
         return dir.getDir(node);
     }
-    
+
     private NodeFile(InstallDirectory dir, String filename) {
         this.dir = dir;
         this.filename = filename;
     }
-    
+
     private enum InstallDirectory {
         // node.install.nodeDir
         Node() {
@@ -83,7 +83,7 @@ public enum NodeFile {
                 return node.pluginDir();
             }
         };
-        
+
         abstract ProgramDirectory getDir(Node node);
     }
 }
