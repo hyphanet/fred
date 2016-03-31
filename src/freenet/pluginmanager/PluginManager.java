@@ -129,7 +129,7 @@ public class PluginManager {
 		executor = new SerialExecutor(NativeThread.NORM_PRIORITY);
 		executor.start(node.executor, "PM callback executor");
 
-		pmconfig = new SubConfig("pluginmanager", node.config);
+        pmconfig = node.config.createSubConfig("pluginmanager");
 		
 		pmconfig.register("enabled", true, 0, true, true, "PluginManager.enabled", "PluginManager.enabledLong", new BooleanCallback() {
 

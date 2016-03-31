@@ -155,7 +155,7 @@ public class NodeStarter implements WrapperListener {
 		}
 
 		// First, set up logging. It is global, and may be shared between several nodes.
-		SubConfig loggingConfig = new SubConfig("logger", cfg);
+		SubConfig loggingConfig = cfg.createSubConfig("logger");
 
 		PooledExecutor executor = new PooledExecutor();
 
@@ -207,7 +207,7 @@ public class NodeStarter implements WrapperListener {
 		plug.start();
 
 		// Initialize SSL
-		SubConfig sslConfig = new SubConfig("ssl", cfg);
+		SubConfig sslConfig = cfg.createSubConfig("ssl");
 		SSL.init(sslConfig);
 
 		PrioritizedTicker ticker = new PrioritizedTicker(executor);

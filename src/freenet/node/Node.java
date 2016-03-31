@@ -27,6 +27,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -77,6 +78,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.io.comm.TrafficClass;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
@@ -784,11 +786,17 @@ public class Node implements TimeSkewDetectorCallback {
 	public final boolean isTestingVM;
 
 	/**
-	 * Minimum bandwidth limit in bytes considered usable: 5 KiB. If there is an attempt to set a limit below this -
+	 * Minimum bandwidth limit in bytes considered usable: 10 KiB. If there is an attempt to set a limit below this -
 	 * excluding the reserved -1 for input bandwidth - the callback will throw. See the callbacks for
-	 * outputBandwidthLimit and inputBandwidthLimit.
+	 * outputBandwidthLimit and inputBandwidthLimit. 10 KiB are equivalent to 50 GiB traffic per month.
 	 */
-	private static final int minimumBandwidth = 5 * 1024;
+	private static final int minimumBandwidth = 10 * 1024;
+
+	/** Quality of Service mark we will use for all outgoing packets (opennet/darknet) */
+	private TrafficClass trafficClass;
+	public TrafficClass getTrafficClass() {
+		return trafficClass;
+	}
 
 	/*
 	 * Gets minimum bandwidth in bytes considered usable.
@@ -1003,8 +1011,8 @@ public class Node implements TimeSkewDetectorCallback {
 		startupTime = System.currentTimeMillis();
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
 		// Setup node-specific configuration
-		final SubConfig nodeConfig = new SubConfig("node", config);
-		final SubConfig installConfig = new SubConfig("node.install", config);
+		final SubConfig nodeConfig = config.createSubConfig("node");
+		final SubConfig installConfig = config.createSubConfig("node.install");
 
 		int sortOrder = 0;
 
@@ -1037,7 +1045,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		// FProxy config needs to be here too
-		SubConfig fproxyConfig = new SubConfig("fproxy", config);
+		SubConfig fproxyConfig = config.createSubConfig("fproxy");
 		try {
 			toadlets = new SimpleToadletServer(fproxyConfig, new ArrayBucketFactory(), executor, this);
 			fproxyConfig.finishedInitialization();
@@ -1325,12 +1333,47 @@ public class Node implements TimeSkewDetectorCallback {
 
 					@Override
 					public void set(Short val) throws InvalidConfigValueException {
-						if(maxHTL < 0) throw new InvalidConfigValueException("Impossible max HTL");
+						if(val < 0) throw new InvalidConfigValueException("Impossible max HTL");
 						maxHTL = val;
 					}
 		}, false);
 
 		maxHTL = nodeConfig.getShort("maxHTL");
+
+		 class TrafficClassCallback extends StringCallback implements EnumerableOptionCallback {
+			 @Override
+			 public String get() {
+				 return trafficClass.name();
+			 }
+
+			 @Override
+			 public void set(String tcName) throws InvalidConfigValueException, NodeNeedRestartException {
+				 try {
+					 trafficClass = TrafficClass.fromNameOrValue(tcName);
+				 } catch (IllegalArgumentException e) {
+					 throw new InvalidConfigValueException(e);
+				 }
+				 throw new NodeNeedRestartException("TrafficClass cannot change on the fly");
+			 }
+
+			 @Override
+			 public String[] getPossibleValues() {
+				 ArrayList<String> array = new ArrayList<String>();
+				 for (TrafficClass tc : TrafficClass.values())
+					 array.add(tc.name());
+				 return array.toArray(new String[0]);
+			 }
+		 }
+		 nodeConfig.register("trafficClass", TrafficClass.getDefault().name(), sortOrder++, true, false,
+				     "Node.trafficClass", "Node.trafficClassLong",
+				     new TrafficClassCallback());
+		 String trafficClassValue = nodeConfig.getString("trafficClass");
+		 try {
+			 trafficClass = TrafficClass.fromNameOrValue(trafficClassValue);
+		 } catch (IllegalArgumentException e) {
+			 Logger.error(this, "Invalid trafficClass:"+trafficClassValue+" resetting the value to default.", e);
+			 trafficClass = TrafficClass.getDefault();
+		 }
 
 		// FIXME maybe these should persist? They need to be private.
 		decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
@@ -1677,7 +1720,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		failureTable = new FailureTable(this);
 
-		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, lastVersion);
+		nodeStats = new NodeStats(this, sortOrder, config.createSubConfig("node.load"), obwLimit, ibwLimit, lastVersion);
 
 		// clientCore needs new load management and other settings from stats.
 		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, databaseKey, db, persistentSecret);
@@ -1702,7 +1745,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Opennet
 
-		final SubConfig opennetConfig = new SubConfig("node.opennet", config);
+		final SubConfig opennetConfig = config.createSubConfig("node.opennet");
 		opennetConfig.register("connectToSeednodes", true, 0, true, false, "Node.withAnnouncement", "Node.withAnnouncementLong", new BooleanCallback() {
 			@Override
 			public Boolean get() {
