@@ -733,6 +733,7 @@ public class NodeUpdateManager {
 			mainUpdater.start();
 			startPluginUpdaters();
 			transitionMainJarFetcher.start();
+			startSimpleFetches();
 		}
 	}
 
