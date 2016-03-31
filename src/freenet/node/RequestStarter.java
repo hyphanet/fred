@@ -60,10 +60,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	
     public static final short MINIMUM_FETCHABLE_PRIORITY_CLASS = PREFETCH_PRIORITY_CLASS;
     
-	/** If true, local requests are subject to shouldRejectRequest(). If false, they are only subject to the token
-	 * buckets and the thread limit. FIXME make configurable. */
-	static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
-	
 	public static boolean isValidPriorityClass(int prio) {
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > PAUSED_PRIORITY_CLASS));
 	}
@@ -170,7 +166,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 //				}
 				RejectReason reason;
 				assert(req.realTimeFlag == realTime);
-				if(LOCAL_REQUESTS_COMPETE_FAIRLY && !req.localRequestOnly) {
+				if(!req.localRequestOnly) {
 					reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, 
 							Node.PREFER_INSERT_DEFAULT && isInsert, req.realTimeFlag, null);
 					if(reason != null) {

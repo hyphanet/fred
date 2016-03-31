@@ -1542,20 +1542,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private double getPeerLimit(PeerNode source, double totalGuaranteedBandwidth, boolean input, int transfersPerInsert, boolean realTimeFlag, int peers, double sourceRestarted) {
 		
 		double thisAllocation;
-		
+		double totalAllocation = totalGuaranteedBandwidth;
 		// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
-		if(RequestStarter.LOCAL_REQUESTS_COMPETE_FAIRLY) {
-			thisAllocation = totalGuaranteedBandwidth / (peers + 1);
-		} else {
-			double totalAllocation = totalGuaranteedBandwidth;
-			// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
-			double localAllocation = totalAllocation * 0.5;
-			if(source == null)
-				thisAllocation = localAllocation;
-			else {
-				totalAllocation -= localAllocation;
-				thisAllocation = totalAllocation / peers;
-			}
+		double localAllocation = totalAllocation * 0.5;
+		if(source == null)
+		    thisAllocation = localAllocation;
+		else {
+		    totalAllocation -= localAllocation;
+		    thisAllocation = totalAllocation / peers;
 		}
 		
 		if(logMINOR && sourceRestarted != 0)
