@@ -104,8 +104,8 @@ public class RequestStarterGroup {
 		throttleWindowRequest = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindowRequest"), node);
 		chkRequestThrottleBulk = new MyRequestThrottle(5000, "CHK Request", fs == null ? null : fs.subset("CHKRequestThrottle"), 32768, false);
 		chkRequestThrottleRT = new MyRequestThrottle(5000, "CHK Request (RT)", fs == null ? null : fs.subset("CHKRequestThrottleRT"), 32768, true);
-		chkRequestStarterBulk = new RequestStarter(core, chkRequestThrottleBulk, "CHK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkFetchBytesSentAverage, stats.localChkFetchBytesReceivedAverage, false, false, false, lazyStart);
-		chkRequestStarterRT = new RequestStarter(core, chkRequestThrottleRT, "CHK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkFetchBytesSentAverage, stats.localChkFetchBytesReceivedAverage, false, false, true, lazyStart);
+		chkRequestStarterBulk = new RequestStarter(core, chkRequestThrottleBulk, "CHK Request starter ("+portNumber+ ')', stats.localChkFetchBytesSentAverage, stats.localChkFetchBytesReceivedAverage, false, false, false, lazyStart);
+		chkRequestStarterRT = new RequestStarter(core, chkRequestThrottleRT, "CHK Request starter ("+portNumber+ ')', stats.localChkFetchBytesSentAverage, stats.localChkFetchBytesReceivedAverage, false, false, true, lazyStart);
 		chkFetchSchedulerBulk = new ClientRequestScheduler(false, false, false, random, chkRequestStarterBulk, node, core, "CHKrequester", ctx);
 		chkFetchSchedulerRT = new ClientRequestScheduler(false, false, true, random, chkRequestStarterRT, node, core, "CHKrequester", ctx);
 		chkRequestStarterBulk.setScheduler(chkFetchSchedulerBulk);
@@ -117,8 +117,8 @@ public class RequestStarterGroup {
 		// FIXME reenable the above
 		chkInsertThrottleBulk = new MyRequestThrottle(20000, "CHK Insert", fs == null ? null : fs.subset("CHKInsertThrottle"), 32768, false);
 		chkInsertThrottleRT = new MyRequestThrottle(20000, "CHK Insert (RT)", fs == null ? null : fs.subset("CHKInsertThrottleRT"), 32768, true);
-		chkInsertStarterBulk = new RequestStarter(core, chkInsertThrottleBulk, "CHK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkInsertBytesSentAverage, stats.localChkInsertBytesReceivedAverage, true, false, false, lazyStart);
-		chkInsertStarterRT = new RequestStarter(core, chkInsertThrottleRT, "CHK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkInsertBytesSentAverage, stats.localChkInsertBytesReceivedAverage, true, false, true, lazyStart);
+		chkInsertStarterBulk = new RequestStarter(core, chkInsertThrottleBulk, "CHK Insert starter ("+portNumber+ ')', stats.localChkInsertBytesSentAverage, stats.localChkInsertBytesReceivedAverage, true, false, false, lazyStart);
+		chkInsertStarterRT = new RequestStarter(core, chkInsertThrottleRT, "CHK Insert starter ("+portNumber+ ')', stats.localChkInsertBytesSentAverage, stats.localChkInsertBytesReceivedAverage, true, false, true, lazyStart);
 		chkPutSchedulerBulk = new ClientRequestScheduler(true, false, false, random, chkInsertStarterBulk, node, core, "CHKinserter", ctx);
 		chkPutSchedulerRT = new ClientRequestScheduler(true, false, true, random, chkInsertStarterRT, node, core, "CHKinserter", ctx);
 		chkInsertStarterBulk.setScheduler(chkPutSchedulerBulk);
@@ -128,8 +128,8 @@ public class RequestStarterGroup {
 		
 		sskRequestThrottleBulk = new MyRequestThrottle(5000, "SSK Request", fs == null ? null : fs.subset("SSKRequestThrottle"), 1024, false);
 		sskRequestThrottleRT = new MyRequestThrottle(5000, "SSK Request (RT)", fs == null ? null : fs.subset("SSKRequestThrottleRT"), 1024, true);
-		sskRequestStarterBulk = new RequestStarter(core, sskRequestThrottleBulk, "SSK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskFetchBytesSentAverage, stats.localSskFetchBytesReceivedAverage, false, true, false, lazyStart);
-		sskRequestStarterRT = new RequestStarter(core, sskRequestThrottleRT, "SSK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskFetchBytesSentAverage, stats.localSskFetchBytesReceivedAverage, false, true, true, lazyStart);
+		sskRequestStarterBulk = new RequestStarter(core, sskRequestThrottleBulk, "SSK Request starter ("+portNumber+ ')', stats.localSskFetchBytesSentAverage, stats.localSskFetchBytesReceivedAverage, false, true, false, lazyStart);
+		sskRequestStarterRT = new RequestStarter(core, sskRequestThrottleRT, "SSK Request starter ("+portNumber+ ')', stats.localSskFetchBytesSentAverage, stats.localSskFetchBytesReceivedAverage, false, true, true, lazyStart);
 		sskFetchSchedulerBulk = new ClientRequestScheduler(false, true, false, random, sskRequestStarterBulk, node, core, "SSKrequester", ctx);
 		sskFetchSchedulerRT = new ClientRequestScheduler(false, true, true, random, sskRequestStarterRT, node, core, "SSKrequester", ctx);
 		sskRequestStarterBulk.setScheduler(sskFetchSchedulerBulk);
@@ -141,8 +141,8 @@ public class RequestStarterGroup {
 		// FIXME reenable the above
 		sskInsertThrottleBulk = new MyRequestThrottle(20000, "SSK Insert", fs == null ? null : fs.subset("SSKInsertThrottle"), 1024, false);
 		sskInsertThrottleRT = new MyRequestThrottle(20000, "SSK Insert", fs == null ? null : fs.subset("SSKInsertThrottleRT"), 1024, true);
-		sskInsertStarterBulk = new RequestStarter(core, sskInsertThrottleBulk, "SSK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskInsertBytesSentAverage, stats.localSskFetchBytesReceivedAverage, true, true, false, lazyStart);
-		sskInsertStarterRT = new RequestStarter(core, sskInsertThrottleRT, "SSK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskInsertBytesSentAverage, stats.localSskFetchBytesReceivedAverage, true, true, true, lazyStart);
+		sskInsertStarterBulk = new RequestStarter(core, sskInsertThrottleBulk, "SSK Insert starter ("+portNumber+ ')', stats.localSskInsertBytesSentAverage, stats.localSskFetchBytesReceivedAverage, true, true, false, lazyStart);
+		sskInsertStarterRT = new RequestStarter(core, sskInsertThrottleRT, "SSK Insert starter ("+portNumber+ ')', stats.localSskInsertBytesSentAverage, stats.localSskFetchBytesReceivedAverage, true, true, true, lazyStart);
 		sskPutSchedulerBulk = new ClientRequestScheduler(true, true, false, random, sskInsertStarterBulk, node, core, "SSKinserter", ctx);
 		sskPutSchedulerRT = new ClientRequestScheduler(true, true, true, random, sskInsertStarterRT, node, core, "SSKinserter", ctx);
 		sskInsertStarterBulk.setScheduler(sskPutSchedulerBulk);
