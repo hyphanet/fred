@@ -69,8 +69,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 	
 	final BaseRequestThrottle throttle;
-	final TokenBucket inputBucket;
-	final TokenBucket outputBucket;
 	final RunningAverage averageInputBytesPerRequest;
 	final RunningAverage averageOutputBytesPerRequest;
 	RequestScheduler sched;
@@ -82,14 +80,12 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	
 	static final int MAX_WAITING_FOR_SLOTS = 50;
 	
-	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
+	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, 
 			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK, boolean realTime) {
 		this.core = node;
 		this.stats = core.nodeStats;
 		this.throttle = throttle;
 		this.name = name + (realTime ? " (realtime)" : " (bulk)");
-		this.outputBucket = outputBucket;
-		this.inputBucket = inputBucket;
 		this.averageOutputBytesPerRequest = averageOutputBytesPerRequest;
 		this.averageInputBytesPerRequest = averageInputBytesPerRequest;
 		this.isInsert = isInsert;
@@ -142,10 +138,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					delay = throttle.getDelay();
 					if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
 					long sleepUntil = cycleTime + delay;
-					if(!LOCAL_REQUESTS_COMPETE_FAIRLY) {
-						inputBucket.blockingGrab((int)(Math.max(0, averageInputBytesPerRequest.currentValue())));
-						outputBucket.blockingGrab((int)(Math.max(0, averageOutputBytesPerRequest.currentValue())));
-					}
 					long now;
 					do {
 						now = System.currentTimeMillis();
