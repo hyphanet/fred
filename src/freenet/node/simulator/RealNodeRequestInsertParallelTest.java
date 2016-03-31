@@ -48,7 +48,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     /** Ignore data before this point */
     static int PROLOG_SIZE = PARALLEL_REQUESTS*4;
     /** Total number of requests to run */
-    static final int TOTAL_REQUESTS = 1000;
+    static int TOTAL_REQUESTS = 1000;
     static short MAX_HTL = (short)4;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
@@ -127,6 +127,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         System.err.println("seed\tRNG seed");
         System.err.println("bypass\tVarious possible bypasses:");
         System.err.println("parallel-requests\tNumber of parallel requests:");
+        System.err.println("total-requests\tTotal number of requests for the test:");
         for(TestingVMBypass t : TestingVMBypass.values()) {
             System.err.println("\t" + t.name());
         }
@@ -152,6 +153,8 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             SEED = Long.parseLong(value);
         } else if(arg.equals("parallel-requests")) {
             PARALLEL_REQUESTS = Integer.parseInt(value);
+        } else if(arg.equals("total-requests")) {
+            TOTAL_REQUESTS = Integer.parseInt(value);
         } else {
             printUsage();
             System.exit(2);
