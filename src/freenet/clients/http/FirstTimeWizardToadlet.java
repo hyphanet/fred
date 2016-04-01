@@ -26,6 +26,7 @@ import freenet.clients.http.wizardsteps.SECURITY_PHYSICAL;
 import freenet.clients.http.wizardsteps.Step;
 import freenet.clients.http.wizardsteps.WELCOME;
 import freenet.config.Config;
+import freenet.config.SubConfig;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -33,6 +34,7 @@ import freenet.node.SecurityLevels;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
 
 /**
@@ -81,6 +83,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		this.core = core;
 		Config config = node.config;
 
+		addWizardConfiguration(config);
+
 		//Add step handlers that aren't set by presets
 		steps = new EnumMap<WIZARD_STEP, Step>(WIZARD_STEP.class);
 		steps.put(WIZARD_STEP.WELCOME, new WELCOME(config));
@@ -104,6 +108,47 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	}
 
 	public static final String TOADLET_URL = "/wizard/";
+
+	private void addWizardConfiguration(Config configuration) {
+		SubConfig wizardConfiguration = new SubConfig("firstTimeWizard", configuration);
+		wizardConfiguration.register("loadUPnPPlugin", true, 0, true, false, "FirstTimeWizardToadlet.loadUPnPPlugin", "FirstTimeWizardToadlet.loadUPnPPluginLong", createLoadUPnPPluginCallback());
+		wizardConfiguration.register("enableAutoUpdater", true, 1, true, false, "FirstTimeWizardToadlet.enableAutoUpdater", "FirstTimeWizardToadlet.enableAutoUpdaterLong", createEnableAutoUpdaterCallback());
+		loadUPnPPlugin = wizardConfiguration.getBoolean("loadUPnPPlugin");
+		enableAutoUpdater = wizardConfiguration.getBoolean("enableAutoUpdater");
+		wizardConfiguration.finishedInitialization();
+	}
+
+	private boolean loadUPnPPlugin;
+
+	private BooleanCallback createLoadUPnPPluginCallback() {
+		return new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return loadUPnPPlugin;
+			}
+
+			@Override
+			public void set(Boolean value) {
+				loadUPnPPlugin = value;
+			}
+		};
+	}
+
+	private boolean enableAutoUpdater;
+
+	private BooleanCallback createEnableAutoUpdaterCallback() {
+		return new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return enableAutoUpdater;
+			}
+
+			@Override
+			public void set(Boolean value) {
+				enableAutoUpdater = value;
+			}
+		};
+	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
         if(!ctx.checkFullAccess(this))
@@ -194,16 +239,16 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			//Translate button name to preset value on the query string.
 			if (request.isPartSet("presetLow")) {
 				//Low security preset
-				stepMISC.setUPnP(true);
-				stepMISC.setAutoUpdate(true);
+				stepMISC.setUPnP(loadUPnPPlugin);
+				stepMISC.setAutoUpdate(enableAutoUpdater);
 				redirectTo.append("&preset=LOW&opennet=true");
 				stepSECURITY_NETWORK.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.LOW);
 				stepSECURITY_PHYSICAL.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL,
 				        stepSECURITY_PHYSICAL.getCurrentLevel());
 			} else if (request.isPartSet("presetHigh")) {
 				//High security preset
-				stepMISC.setUPnP(true);
-				stepMISC.setAutoUpdate(true);
+				stepMISC.setUPnP(loadUPnPPlugin);
+				stepMISC.setAutoUpdate(enableAutoUpdater);
 				redirectTo.append("&preset=HIGH&opennet=false");
 			}
 
