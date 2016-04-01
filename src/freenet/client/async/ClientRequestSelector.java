@@ -201,7 +201,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			SelectorReturn r = chooseRequestInner(fuzz, random, offeredKeys, starter, realTime, context, now);
             SendableRequest req = r.req;
 			if(req == null) {
-			    if(r.wakeupTime != Long.MAX_VALUE) {
+			    if(r.wakeupTime != Long.MAX_VALUE && r.wakeupTime > now) {
 			        // Wake up later.
 			        sched.clientContext.ticker.queueTimedJob(new Runnable() {
 			            
