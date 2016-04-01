@@ -199,9 +199,21 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
 			SelectorReturn r = chooseRequestInner(fuzz, random, offeredKeys, starter, realTime, context, now);
-			SendableRequest req = null;
-			if(r != null && r.req != null) req = r.req;
-			if(req == null) continue;
+            SendableRequest req = r.req;
+			if(req == null) {
+			    if(r.wakeupTime != Long.MAX_VALUE) {
+			        // Wake up later.
+			        sched.clientContext.ticker.queueTimedJob(new Runnable() {
+			            
+			            @Override
+			            public void run() {
+			                sched.wakeStarter();
+			            }
+			            
+			        }, r.wakeupTime - now);
+			    }
+			    continue;
+			}
 			if(isInsertScheduler && req instanceof SendableGet) {
 				IllegalStateException e = new IllegalStateException("removeFirstInner returned a SendableGet on an insert scheduler!!");
 				req.internalError(e, sched, context, req.persistent());
@@ -220,6 +232,8 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			return null;
 		}
 		if(req.getWakeupTime(context, now) != 0) {
+		    // Race condition. We don't need to add a wake-up job. FIXME this shouldn't happen 
+		    // because we only consider local requests of the same type?! Add logging and debug!
 			if(logMINOR) Logger.minor(this, "Request is in cooldown: "+req);
 			return null;
 		}
