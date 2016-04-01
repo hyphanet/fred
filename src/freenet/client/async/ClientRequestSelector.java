@@ -306,7 +306,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		long l = choosePriority(fuzz, random, context, now);
 		if(l > Integer.MAX_VALUE) {
 			if(logMINOR) Logger.minor(this, "No priority available for the next "+TimeUtil.formatTime(l - now));
-			return null;
+			return new SelectorReturn(l);
 		}
 		int choosenPriorityClass = (int)l;
 		if(choosenPriorityClass == -1) {
@@ -316,7 +316,8 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			}
 			if(logMINOR)
 				Logger.minor(this, "Nothing to do");
-			return null;
+			// No requests queued at all.
+			return new SelectorReturn(Long.MAX_VALUE);
 		}
 		long wakeupTime = Long.MAX_VALUE;
 outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS;choosenPriorityClass++) {
@@ -438,7 +439,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
 			}
 		}
 		if(logMINOR) Logger.minor(this, "No requests to run");
-		return null;
+		return new SelectorReturn(wakeupTime);
 	}
 	
 	private static final short[] tweakedPrioritySelector = { 
