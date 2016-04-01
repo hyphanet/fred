@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.EOFException;
@@ -14,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
@@ -28,12 +27,13 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.HTMLNode;
 import freenet.support.ListUtils;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.transport.ip.IPUtil;
-import java.util.Arrays;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Decide whether to announce, and announce if necessary to a node in the
@@ -65,7 +65,6 @@ public class Announcer {
 	/** Do not announce if there are more than this many opennet peers connected */
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
 	private static final long NOT_ALL_CONNECTED_DELAY = SECONDS.toMillis(60);
-	public static final String SEEDNODES_FILENAME = "seednodes.fref";
 	private static final long RETRY_MISSING_SEEDNODES_DELAY = SECONDS.toMillis(30);
 	/** Total nodes added by announcement so far */
 	private int announcementAddedNodes;
@@ -123,7 +122,7 @@ public class Announcer {
 		boolean announceNow = false;
 		if(logMINOR)
 			Logger.minor(this, "Connecting some seednodes...");
-		List<SimpleFieldSet> seeds = Announcer.readSeednodes(node.nodeDir().file(SEEDNODES_FILENAME));
+		List<SimpleFieldSet> seeds = Announcer.readSeednodes(NodeFile.Seednodes.getFile(node));
 		System.out.println("Trying to connect to "+seeds.size()+" seednodes...");
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -157,7 +156,7 @@ public class Announcer {
 		List<SeedServerPeerNode> tryingSeeds = node.peers.getSeedServerPeersVector();
 		synchronized(this) {
 			for(SeedServerPeerNode seed : tryingSeeds) {
-				if(!announcedToIdentities.contains(new ByteArrayWrapper(seed.pubKeyHash))) {
+				if(!announcedToIdentities.contains(new ByteArrayWrapper(seed.peerECDSAPubKeyHash))) {
 					// Either:
 					// a) we are still trying to connect to this node,
 					// b) there is a race condition and we haven't sent the announcement yet despite connecting, or
@@ -224,12 +223,12 @@ public class Announcer {
 			try {
 				SeedServerPeerNode seed =
 					new SeedServerPeerNode(fs, node, om.crypto, false);
-				if(node.wantAnonAuth(true) && Arrays.equals(node.getOpennetPubKeyHash(), seed.pubKeyHash)) {
+				if(node.wantAnonAuth(true) && Arrays.equals(node.getOpennetPubKeyHash(), seed.peerECDSAPubKeyHash)) {
                                     if(logMINOR)
                                         Logger.minor("Not adding: I am a seednode attempting to connect to myself!", seed.userToString());
                                     continue;
                                 }
-                                if(announcedToIdentities.contains(new ByteArrayWrapper(seed.pubKeyHash))) {
+                                if(announcedToIdentities.contains(new ByteArrayWrapper(seed.peerECDSAPubKeyHash))) {
 					if(logMINOR)
 						Logger.minor(this, "Not adding: already announced-to: "+seed.userToString());
 					continue;
@@ -253,7 +252,10 @@ public class Announcer {
 			} catch (ReferenceSignatureVerificationException e) {
 				Logger.error(this, "Invalid seed in file: "+e+" for\n"+fs, e);
 				continue;
-			}
+			} catch (PeerTooOldException e) {
+                Logger.error(this, "Invalid seed in file: "+e+" for\n"+fs, e);
+                continue;
+            }
 		}
 		if(logMINOR) Logger.minor(this, "connectSomeNodesInner() returning "+count);
 		return count;
@@ -274,9 +276,15 @@ public class Announcer {
 						list.add(fs);
 				} catch (EOFException e) {
 					return list;
+				} catch (IOException e) {
+					Logger.error(Announcer.class, "Error while reading seednodes from " + file, e);
+					// Continue reading. If this entry failed, we still want the following noderefs.
+					// Read a line to advance the parsing position and avoid an endless loop.
+					br.readLine();
 				}
 			}
 		} catch (IOException e) {
+			Logger.error(Announcer.class, "Unexpected error while reading seednodes from " + file, e);
 			return list;
 		} finally {
 			Closer.close(fis);
@@ -528,7 +536,7 @@ public class Announcer {
 				if(sendAnnouncement(seed)) {
 					sentAnnouncements++;
 					runningAnnouncements++;
-					announcedToIdentities.add(new ByteArrayWrapper(seed.getPubKeyHash()));
+					announcedToIdentities.add(new ByteArrayWrapper(seed.peerECDSAPubKeyHash));
 				}
 			}
 			if(runningAnnouncements >= WANT_ANNOUNCEMENTS) {

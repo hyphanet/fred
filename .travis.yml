@@ -1,0 +1,25 @@
+language: java
+
+sudo: false
+addons:
+  apt:
+    packages:
+    - ant
+    - ant-optional
+    - junit4
+    - libhamcrest-java
+
+cache:
+  apt: true
+  directories:
+  - lib/
+
+before_install:
+  - mkdir -p lib/freenet/ && cd lib/ && if [ ! -e bcprov-jdk15on-154.jar ]; then wget -c https://bouncycastle.org/download/bcprov-jdk15on-154.jar; fi ; cd ..
+
+script: ant -Dlib.contrib.get=true
+
+jdk:
+  - oraclejdk8
+  - oraclejdk7
+  - openjdk7

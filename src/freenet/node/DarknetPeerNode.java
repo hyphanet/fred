@@ -1,7 +1,5 @@
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -46,15 +44,16 @@ import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPUploadedFile;
 import freenet.support.api.RandomAccessBuffer;
 import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessBuffer;
-import freenet.support.io.FileUtil;
 import freenet.support.io.FileRandomAccessBuffer;
+import freenet.support.io.FileUtil;
+
+import static java.util.concurrent.TimeUnit.DAYS;
 
 public class DarknetPeerNode extends PeerNode {
 
@@ -97,7 +96,8 @@ public class DarknetPeerNode extends PeerNode {
 	private FRIEND_VISIBILITY ourVisibility;
 	private FRIEND_VISIBILITY theirVisibility;
 
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+	static { Logger.registerClass(DarknetPeerNode.class); }
 
 	public enum FRIEND_TRUST {
 		LOW,
@@ -158,11 +158,10 @@ public class DarknetPeerNode extends PeerNode {
 	 * @param fs The SimpleFieldSet to parse
 	 * @param node2 The running Node we are part of.
 	 * @param trust If this is a new node, we will use this parameter to set the initial trust level.
+	 * @throws PeerTooOldException 
 	 */
-	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		super(fs, node2, crypto, fromLocal);
-
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
 		String name = fs.get("myName");
 		if(name == null) throw new FSParseException("No name");
@@ -213,7 +212,6 @@ public class DarknetPeerNode extends PeerNode {
 
 		// Setup the queuedToSendN2NMExtraPeerDataFileNumbers
 		queuedToSendN2NMExtraPeerDataFileNumbers = new LinkedHashSet<Integer>();
-
 	}
 
 	/**
@@ -1674,11 +1672,6 @@ public class DarknetPeerNode extends PeerNode {
 	@Override
 	public boolean recordStatus() {
 		return true;
-	}
-
-	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return false;
 	}
 
 	@Override

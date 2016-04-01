@@ -1,6 +1,11 @@
 next ():
 
 - Add a NEWS file
+- Tighten security (Remove DSA and compat code).
+- Only update essential plugins if we have to.
+- Improve translations.
+- Show peer locations, not distance in peer location histogram.
+- Add much more CSS support to the content filter.
 - Fix problems with blank bookmark names. Thanks to _xiaoyu for the report!
 - Fix missing the software category in bookmarks.
 - Sort alerts within a category by time, newest first (including node-to-node messages).

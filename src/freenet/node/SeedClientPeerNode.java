@@ -3,12 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.SimpleFieldSet;
+
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Seed node's representation of a client node connecting in order to announce.
@@ -16,7 +16,7 @@ import freenet.support.SimpleFieldSet;
  */
 public class SeedClientPeerNode extends PeerNode {
 
-	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		super(fs, node2, crypto, false);
 	}
 
@@ -95,11 +95,6 @@ public class SeedClientPeerNode extends PeerNode {
 		boolean ret = super.disconnected(true, true);
 		node.peers.disconnectAndRemove(this, false, false, false);
 		return ret;
-	}
-
-	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return true;
 	}
 
 	@Override
