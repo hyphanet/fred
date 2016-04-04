@@ -134,6 +134,7 @@ public class BypassPacketFormat extends BypassBase implements PacketFormat {
                     int sendBytes = Math.min(itemLength, 
                             maxPacketSize - length - FRAGMENT_HEADER_LENGTH);
                     payload = true;
+                    length += sendBytes + FRAGMENT_HEADER_LENGTH;
                     if(sendBytes == itemLength) {
                         if(toDeliver == null) toDeliver = new ArrayList<MessageItem>();
                         toDeliver.add(item);
