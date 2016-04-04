@@ -28,6 +28,8 @@ public class BypassPacketFormat extends BypassBase implements PacketFormat {
     
     private final Executor sourceExecutor;
     private final Executor targetExecutor;
+    private final int sourceID;
+    private final int targetID;
     private final MessageQueue messageQueue;
     /** Number of bytes sent for each MessageItem in flight. Once it has been sent in its entirety,
      * we call the sent callback, and remove it from the map. */
@@ -62,6 +64,8 @@ public class BypassPacketFormat extends BypassBase implements PacketFormat {
         this.messageQueue = queue;
         this.sourceExecutor = sourceNode.executor;
         this.targetExecutor = targetNode.executor;
+        sourceID = sourceNode.getDarknetPortNumber();
+        targetID = targetNode.getDarknetPortNumber();
         messagesInFlight = new HashMap<MessageItem, Integer>();
         messagesToAck = new ArrayList<MessageItem>();
         oldestMessageToAckReceivedTime = Long.MAX_VALUE;
@@ -155,7 +159,8 @@ public class BypassPacketFormat extends BypassBase implements PacketFormat {
         BypassPacket packet = 
             new BypassPacket(toDeliverMessages, toAck);
         if(logMINOR) Logger.minor(this, "Sending packet with "+toDeliverMessages.length
-                +" messages and "+toAck.length+" acks");
+                +" messages and "+toAck.length+" acks total length "+length+" from "+sourceID
+                +" to "+targetID);
         callSentCallbacks(toDeliverMessages);
         // We do not need to deal with IOStatisticsCollector.
         // The PeerNode methods are sufficient.
