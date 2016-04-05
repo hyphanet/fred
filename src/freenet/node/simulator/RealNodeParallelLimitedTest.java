@@ -42,6 +42,7 @@ import freenet.node.RequestClient;
 import freenet.node.RequestCompletionListener;
 import freenet.node.RequestScheduler;
 import freenet.node.SimpleSendableInsert;
+import freenet.node.simulator.LocalRequestUIDsCounter.NodeStats;
 import freenet.node.simulator.SimulatorRequestTracker.Request;
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -99,8 +100,8 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
             executors[i] = new PooledExecutor();
             tickers[i] = new PrioritizedTicker(executors[i]);
         }
-        final TotalRequestUIDsCounter overallUIDTagCounter =
-                new TotalRequestUIDsCounter();
+        final LocalRequestUIDsCounter overallUIDTagCounter =
+                new LocalRequestUIDsCounter();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             TestNodeParameters params = getNodeParameters(i, name, nodesRandom, 
                     executors[i % tickerThreads], tickers[i % tickerThreads], overallUIDTagCounter);
@@ -180,7 +181,7 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
 
     public RealNodeParallelLimitedTest(Node[] nodes, DummyRandomSource random,
             int targetSuccesses, SimulatorRequestTracker tracker,
-            TotalRequestUIDsCounter overallUIDTagCounter) {
+            LocalRequestUIDsCounter overallUIDTagCounter) {
         super(nodes, random, targetSuccesses, tracker, overallUIDTagCounter);
         spammer1 = nodes[random.nextInt(nodes.length)];
         Node spam2;
@@ -375,6 +376,14 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
     @Override
     public boolean realTimeFlag() {
         return false;
+    }
+    
+    protected synchronized void dumpStats() {
+        super.dumpStats();
+        NodeStats stats = this.overallUIDTagCounter.getStats(spammer2);
+        System.err.println("Running requests overall "+overallUIDTagCounter.getCount());
+        System.err.println("Running local requests on originator "+stats.runningLocalRequests);
+        System.err.println("Running requests on originator "+stats.runningRequests);
     }
     
 }

@@ -203,7 +203,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
      * each cycle, and wait if necessary to achieve this. This should make results more
      * reproducible. If null, we log any requests still running after each cycle.
      */
-    public RealNodeRequestInsertParallelTest(Node[] nodes, DummyRandomSource random, int targetSuccesses, SimulatorRequestTracker tracker, TotalRequestUIDsCounter overallUIDTagCounter) {
+    public RealNodeRequestInsertParallelTest(Node[] nodes, DummyRandomSource random, int targetSuccesses, SimulatorRequestTracker tracker, LocalRequestUIDsCounter overallUIDTagCounter) {
     	this.nodes = nodes;
     	this.random = random;
     	this.targetSuccesses = targetSuccesses;
@@ -227,7 +227,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 	private int fetchSuccesses = 0;
 	private final int targetSuccesses;
 	protected final SimulatorRequestTracker tracker;
-	private final TotalRequestUIDsCounter overallUIDTagCounter;
+	protected final LocalRequestUIDsCounter overallUIDTagCounter;
 	
 	/** Total number of inserts started so far. Requests started will trail this by PREINSERT_GAP */
 	private int startedInserts=-1;
@@ -272,7 +272,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         return (reqID + PROLOG_SIZE) >= PARALLEL_REQUESTS;
     }
 
-    private synchronized void dumpStats() {
+    protected synchronized void dumpStats() {
         System.err.println("Requests: "+loggedRequests+" ("+requestSuccess.countReports()+")");
         System.err.println("Average request hops: "+requestHops.mean()+" +/- "+requestHops.stddev());
         System.err.println("Average request success: "+requestSuccess.mean()+" +/- "+requestSuccess.stddev());
