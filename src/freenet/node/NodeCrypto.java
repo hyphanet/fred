@@ -299,10 +299,14 @@ public class NodeCrypto {
 	}
 
 	public void start() {
+	    // If packet bypass, enable the PacketSender but not the UdpSocketHandler.
+	    boolean enableSocket = !(NodeStarter.isTestingVM() && NodeStarter.isPacketBypassEnabled());
 		socket.calculateMaxPacketSize();
-		socket.setLowLevelFilter(new IncomingPacketFilterImpl(packetMangler, node, this));
+        if(enableSocket)
+            socket.setLowLevelFilter(new IncomingPacketFilterImpl(packetMangler, node, this));
 		packetMangler.start();
-		socket.start();
+		if(enableSocket)
+		    socket.start();
 	}
 
 	public SimpleFieldSet exportPrivateFieldSet() {
