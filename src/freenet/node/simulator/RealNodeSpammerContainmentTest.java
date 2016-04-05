@@ -280,6 +280,9 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         stats = this.overallUIDTagCounter.getStats(spammer1);
         System.err.println("Running local requests on inserter "+stats.runningLocalRequests+" average "+stats.averageRunningLocalRequests);
         System.err.println("Running requests on inserter "+stats.runningRequests+" average "+stats.averageRunningRequests);
+        System.err.println("Running local inserts overall: "+
+                overallUIDTagCounter.getTotalRunningLocalInserts()+" average "+
+                overallUIDTagCounter.getAverageTotalRunningLocalInserts());
     }
     
 }

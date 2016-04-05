@@ -39,6 +39,8 @@ public class LocalRequestUIDsCounter extends TotalRequestUIDsCounter {
     }
     
     private final HashMap<Node, NodeStats> statsByNode = new HashMap<Node, NodeStats>();
+    private int runningLocalInserts;
+    private final TimeRunningAverage averageRunningLocalInserts = new TimeRunningAverage();
     
     private synchronized NodeStats makeStats(Node node) {
         NodeStats stats = statsByNode.get(node);
@@ -60,6 +62,10 @@ public class LocalRequestUIDsCounter extends TotalRequestUIDsCounter {
             stats.totalLocalRequests++;
             stats.runningLocalRequestsAverage.report(stats.runningLocalRequests);
         }
+        if(tag.isLocal() && tag.isInsert()) {
+            runningLocalInserts++;
+            averageRunningLocalInserts.report(runningLocalInserts);
+        }
         super.onLock(tag, node);
     }
 
@@ -72,12 +78,24 @@ public class LocalRequestUIDsCounter extends TotalRequestUIDsCounter {
             stats.runningLocalRequests--;
             stats.runningLocalRequestsAverage.report(stats.runningLocalRequests);
         }
+        if(tag.isLocal() && tag.isInsert()) {
+            runningLocalInserts--;
+            averageRunningLocalInserts.report(runningLocalInserts);
+        }
         super.onUnlock(tag, node);
     }
     
     public synchronized NodeStatsSnapshot getStats(Node node) {
         NodeStats stats = makeStats(node);
         return stats.snapshot();
+    }
+    
+    public synchronized long getTotalRunningLocalInserts() {
+        return runningLocalInserts;
+    }
+    
+    public synchronized double getAverageTotalRunningLocalInserts() {
+        return averageRunningLocalInserts.currentValue();
     }
     
 }
