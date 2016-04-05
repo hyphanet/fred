@@ -254,9 +254,11 @@ public class BypassPacketFormat extends BypassBase implements PacketFormat {
 
     @Override
     public synchronized long timeSendAcks() {
-        if(oldestMessageToAckReceivedTime != Long.MAX_VALUE) {
+        if(!messagesToAck.isEmpty()) {
+            assert(oldestMessageToAckReceivedTime != Long.MAX_VALUE);
             return oldestMessageToAckReceivedTime+MAX_ACK_DELAY;
-        } else return Long.MAX_VALUE;
+        }
+        return Long.MAX_VALUE;
     }
 
     @Override
