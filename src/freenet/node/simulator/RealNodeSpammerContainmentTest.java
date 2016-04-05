@@ -235,22 +235,25 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
     protected ClientKeyBlock generateBlock(int req) throws UnsupportedEncodingException, CHKEncodeException, InvalidCompressionCodecException {
         return generateCHKBlock(req);
     }
-
+    
     @Override
     protected void startInsert(ClientKeyBlock block, InsertWrapper insertWrapper) {
+        Node insertNode = getInsertNode(insertWrapper.req);
         if(logMINOR) Logger.minor(this, "Inserting "+block.getKey()+" for "+insertWrapper.req);
-        Runnable insertJob = new MyInsertJob(block.getBlock(), insertWrapper);
-        spammer1.executor.execute(insertJob);
+        Runnable insertJob = new MyInsertJob(block.getBlock(), insertWrapper, insertNode);
+        insertNode.executor.execute(insertJob);
     }
     
     public class MyInsertJob implements Runnable {
         
         private final KeyBlock block;
         private final InsertWrapper insertWrapper;
+        private final Node insertNode;
 
-        public MyInsertJob(KeyBlock block, InsertWrapper insertWrapper) {
+        public MyInsertJob(KeyBlock block, InsertWrapper insertWrapper, Node insertNode) {
             this.block = block;
             this.insertWrapper = insertWrapper;
+            this.insertNode = insertNode;
         }
 
         @Override
@@ -258,7 +261,7 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
             // FIXME realClientPut isn't asynchronous, although asyncGet is. :(
             while(true) {
                 try {
-                    spammer1.clientCore.realPut(block, true, FORK_ON_CACHEABLE, false, 
+                    insertNode.clientCore.realPut(block, true, FORK_ON_CACHEABLE, false, 
                             false, false);
                     insertWrapper.succeeded(block.getKey());
                     return;

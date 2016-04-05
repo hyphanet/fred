@@ -406,5 +406,11 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         while(runningRequests >= PARALLEL_REQUESTS)
             wait();
     }
-	
+    
+    protected Node getInsertNode(int req) {
+        int insertNodeID = req+PROLOG_SIZE+PARALLEL_REQUESTS;
+        insertNodeID = 1 + (insertNodeID % (nodes.length-1));
+        return nodes[insertNodeID];
+    }
+
 }
