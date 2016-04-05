@@ -263,7 +263,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             synchronized(this) {
                 runningRequests++;
             }
-            startFetch(requestID - PROLOG_SIZE, key, requestID >= 0);
+            startFetch(requestID - PROLOG_SIZE, key, requestID >= PARALLEL_REQUESTS);
         }
         return -1;
     }
