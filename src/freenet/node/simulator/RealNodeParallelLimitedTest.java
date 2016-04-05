@@ -42,7 +42,7 @@ import freenet.node.RequestClient;
 import freenet.node.RequestCompletionListener;
 import freenet.node.RequestScheduler;
 import freenet.node.SimpleSendableInsert;
-import freenet.node.simulator.LocalRequestUIDsCounter.NodeStats;
+import freenet.node.simulator.LocalRequestUIDsCounter.NodeStatsSnapshot;
 import freenet.node.simulator.SimulatorRequestTracker.Request;
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -380,10 +380,10 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
     
     protected synchronized void dumpStats() {
         super.dumpStats();
-        NodeStats stats = this.overallUIDTagCounter.getStats(spammer2);
+        NodeStatsSnapshot stats = this.overallUIDTagCounter.getStats(spammer2);
         System.err.println("Running requests overall "+overallUIDTagCounter.getCount());
-        System.err.println("Running local requests on originator "+stats.runningLocalRequests);
-        System.err.println("Running requests on originator "+stats.runningRequests);
+        System.err.println("Running local requests on originator "+stats.runningLocalRequests+" average "+stats.averageRunningLocalRequests);
+        System.err.println("Running requests on originator "+stats.runningRequests+" average "+stats.averageRunningRequests);
     }
     
 }
