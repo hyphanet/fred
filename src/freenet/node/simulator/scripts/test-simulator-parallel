@@ -1,0 +1,16 @@
+#!/bin/bash
+cd ~/nobackup/testing || exit 1
+rm -Rf bin
+mkdir bin
+cp -a /usr/src/cvs/eclipse-workspace/fred/build/main/ bin/
+cp -a /usr/src/cvs/eclipse-workspace/fred/build/test/ bin/
+rm parallel.csv
+ITERATIONS=10
+for PARALLEL in `seq 5 5 150`
+do
+for ITERATION in `seq $ITERATIONS`; do
+BYPASS=PACKET_BYPASS
+java -cp bin/main/:bin/test/:/usr/src/cvs/eclipse-workspace/fred/lib/freenet/freenet-ext.jar:/usr/src/cvs/eclipse-workspace/fred/lib/bcprov-jdk15on-154.jar freenet.node.simulator.RealNodeSpammerContainmentTest parallel-requests=$PARALLEL bypass=$BYPASS > log 2>log.err
+(echo -n "$PARALLEL,$BYPASS,$ITERATION,"; cat log.err | grep -A2 "Requests: 1000" | tail -n 2 | sed "s/^.*: //;s/ +\\/- /,/" | tr "\n" "," | cut -d "," -f 1-4) >> parallel.csv
+done
+done

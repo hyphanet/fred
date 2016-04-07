@@ -1,0 +1,42 @@
+#!/bin/bash
+#SIZE=100
+for SIZE in `seq 100 100 20000`; do
+HTL=10
+DEGREE=10
+ITERATIONS=10
+BWLIMIT=1024000
+BWLIMIT_CBR=10000
+cd ~/nobackup/testing
+BASE=/usr/src/cvs/eclipse-workspace/fred/
+CLASSPATH="$BASE/build/main/:$BASE/build/test/:$BASE/lib/freenet/freenet-ext.jar:$BASE/lib/bcprov-jdk15on-154.jar"
+#MODES="NONE FAST_QUEUE_BYPASS CBR_QUEUE_BYPASS PACKET_BYPASS"
+#MODES=FAST_QUEUE_BYPASS
+MODES=PACKET_BYPASS
+SUFFIX="size=$SIZE.htl=$HTL.degree=$DEGREE"
+for BYPASS in $MODES
+do
+	echo Trying network size $SIZE with $BYPASS
+	rm test.log.$BYPASS.$SUFFIX test.err.log.$BYPASS.$SUFFIX test.times.$BYPASS.$SUFFIX
+	for x in `seq $ITERATIONS`
+	do
+		#SEED=$((3131+10*$x))
+		SEED=$((3161+10*$x))
+		ARGS="size=$SIZE bypass=$BYPASS htl=$HTL degree=$DEGREE seed=$SEED bandwidth=$BWLIMIT bandwidth-cbr=$BWLIMIT_CBR"
+		echo Running test $BYPASS.$SUFFIX with seed $SEED
+		(time (java -Xmx10G -cp $CLASSPATH freenet.node.simulator.RealNodeRequestInsertTest $ARGS >> test.log.$BYPASS.$SUFFIX.$x 2>> test.err.log.$BYPASS.$SUFFIX.$x)) 2>> test.times.$BYPASS.$SUFFIX
+		if ! grep "Succeeded, 20 successful fetches" test.err.log.$BYPASS.$SUFFIX.$x > /dev/null; then echo "Iteration $x for $BYPASS.$SUFFIX failed"; exit 1; fi
+		rm test.log.$BYPASS.$SUFFIX.$x
+		cat test.err.log.$BYPASS.$SUFFIX.$x >> test.err.log.$BYPASS.$SUFFIX
+		rm test.err.log.$BYPASS.$SUFFIX.$x
+	done
+        cat test.err.log.$BYPASS.$SUFFIX | grep "^TEST " > test.trace.$BYPASS.$SUFFIX
+	rm test.log.$BYPASS.$SUFFIX
+done
+for BYPASS in $MODES
+do
+	cat test.times.$BYPASS.$SUFFIX | tr --squeeze "\n" | (read x; cat) | tr "\t" "," | cut -d "," -f 2 | sed "s/\([0-9]*\)m\([0-9]\)\./\1m0\2\./" | tr -d "s" | tr "m" ":" | (echo "$BYPASS,$SUFFIX,"; echo real,user,sys; while read x; do read y; read z; echo "$x,$y,$z"; done) > times.$BYPASS.$SUFFIX.csv
+done
+paste -d "," times.*.$SUFFIX.csv > times.combined.csv
+echo Completed test for $SIZE with $BYPASS
+done
+echo All done.
