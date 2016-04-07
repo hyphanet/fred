@@ -62,8 +62,8 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         //NOTE: globalTestInit returns in ignored random source
         //String logDetails = "freenet.node.Request:MINOR,freenet.node.CHK:MINOR,freenet.node.SSK:MINOR," +
         //      "freenet.io.comm.MessageCore:MINOR,freenet.node.Peer:MINOR,freenet.node.Node:MINOR";
-        //String logDetails = "";
-        String logDetails = "freenet.node.Bypass:MINOR";
+        //String logDetails = "freenet.node.Bypass:MINOR";
+        String logDetails = "";
         NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, logDetails, true, 
                 BYPASS_TRANSPORT_LAYER, null);
         // Need to call it explicitly because the class is loaded before we clobbered the logger.
