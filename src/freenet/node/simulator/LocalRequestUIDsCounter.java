@@ -100,7 +100,6 @@ public class LocalRequestUIDsCounter extends TotalRequestUIDsCounter {
     
     public synchronized void resetAverages() {
         long now = System.currentTimeMillis();
-        runningLocalInserts = 0;
         averageRunningLocalInserts.reset();
         for(NodeStats stats : statsByNode.values()) {
             stats.runningLocalRequestsAverage.reset(now, stats.runningLocalRequests);
