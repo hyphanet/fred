@@ -274,7 +274,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     }
     
     protected boolean shouldLog(int reqID) {
-        return (reqID + PROLOG_SIZE) >= PARALLEL_REQUESTS;
+        return (reqID + PARALLEL_REQUESTS) >= PROLOG_SIZE;
     }
 
     protected synchronized void dumpStats() {
