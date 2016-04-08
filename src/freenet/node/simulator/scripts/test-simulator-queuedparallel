@@ -4,7 +4,7 @@ rm -Rf bin
 mkdir bin
 cp -a /usr/src/cvs/eclipse-workspace/fred/build/main/ bin/
 cp -a /usr/src/cvs/eclipse-workspace/fred/build/test/ bin/
-rm queued-parallel.csv
+echo "Queued requests,Bypass type,Iteration,Success hops,stddev(success hops),Success rate,stddev(success rate),Running requests overall,Local requests on originator,Average local requests on originator,Requests on originator,average requests on originator" > queued-parallel.csv
 ITERATIONS=10
 REQUESTS=1000
 for PARALLEL in `seq 5 5 150`
