@@ -263,8 +263,11 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             synchronized(this) {
                 runningRequests++;
             }
-            if(shouldLog(requestID) && !shouldLog(requestID-1))
+            if(shouldLog(requestID - PROLOG_SIZE) && !shouldLog(requestID - PROLOG_SIZE - 1)) {
+                System.err.println("Starting first recorded request...");
+                dumpStats();
                 overallUIDTagCounter.resetAverages();
+            }
             startFetch(requestID - PROLOG_SIZE, key, requestID >= PARALLEL_REQUESTS);
         }
         return -1;
