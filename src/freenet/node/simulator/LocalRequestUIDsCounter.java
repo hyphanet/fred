@@ -98,4 +98,16 @@ public class LocalRequestUIDsCounter extends TotalRequestUIDsCounter {
         return averageRunningLocalInserts.currentValue();
     }
     
+    public synchronized void resetAverages() {
+        long now = System.currentTimeMillis();
+        runningLocalInserts = 0;
+        averageRunningLocalInserts.reset();
+        for(NodeStats stats : statsByNode.values()) {
+            stats.runningLocalRequestsAverage.reset(now, stats.runningLocalRequests);
+            stats.runningRequestsAverage.reset(now, stats.runningRequests);
+            stats.totalLocalRequests = stats.runningLocalRequests;
+            stats.totalRequests = stats.runningRequests;
+        }
+    }
+    
 }
