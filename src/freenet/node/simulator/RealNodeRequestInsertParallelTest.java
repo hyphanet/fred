@@ -253,22 +253,22 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     protected int insertRequestTest() throws InterruptedException, UnsupportedEncodingException, CHKEncodeException, InvalidCompressionCodecException {
         startedInserts++;
         waitForFreeRequestSlot();
+        // Key to fetch.
+        int requestID = startedInserts - PARALLEL_REQUESTS - PROLOG_SIZE;
         // Pre-insert.
-        startInsert(startedInserts - PROLOG_SIZE);
-        // Now fetch the key inserted PARALLEL_REQUESTS slots ago.
-        int requestID = startedInserts - PARALLEL_REQUESTS;
-        if(requestID >= 0) {
-            // requestID has been preinserted.
-            Key key = waitForInsert(requestID - PROLOG_SIZE);
+        startInsert(requestID + PARALLEL_REQUESTS);
+        if(requestID + PARALLEL_REQUESTS >= 0) {
+            // reqID has been preinserted.
+            Key key = waitForInsert(requestID);
             synchronized(this) {
                 runningRequests++;
             }
-            if(shouldLog(requestID - PROLOG_SIZE) && !shouldLog(requestID - PROLOG_SIZE - 1)) {
+            if(shouldLog(requestID) && !shouldLog(requestID - 1)) {
                 System.err.println("Starting first recorded request...");
                 dumpStats();
                 overallUIDTagCounter.resetAverages();
             }
-            startFetch(requestID - PROLOG_SIZE, key, requestID >= PARALLEL_REQUESTS);
+            startFetch(requestID, key, shouldLog(requestID));
         }
         return -1;
     }
