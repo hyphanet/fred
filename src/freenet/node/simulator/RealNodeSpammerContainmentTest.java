@@ -263,8 +263,8 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
                     insertWrapper.succeeded(block.getKey());
                     return;
                 } catch (LowLevelPutException e) {
-                    Logger.normal(this, "Insert failed for "+insertWrapper.req+" : "+e);
-                    e.printStackTrace();
+                    System.err.println("Insert "+insertWrapper.req+" failed, retrying: "+e);
+                    Logger.normal(this, "Insert failed for "+insertWrapper.req+" : "+e, e);
                 }
             }
         }
