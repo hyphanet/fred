@@ -339,12 +339,8 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
 
     @Override
     protected void startInsert(ClientKeyBlock block, InsertWrapper insertWrapper) {
-        innerStartInsert(block.getBlock(), insertWrapper);
-    }
-    
-    private void innerStartInsert(KeyBlock block, InsertWrapper insertWrapper) {
         if(logMINOR) Logger.minor(this, "Inserting "+block.getKey()+" for "+insertWrapper.req);
-        MyInsert insert = new MyInsert(block, (short)0, this, 
+        MyInsert insert = new MyInsert(block.getBlock(), (short)0, this, 
                 spammer1.clientCore.clientContext.getChkInsertScheduler(false), insertWrapper);
         insertScheduler.registerInsert(insert, false);
     }
@@ -366,9 +362,7 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
         
         @Override
         public void onFailure(LowLevelPutException e, SendableRequestItem keyNum, ClientContext context) {
-            Logger.normal(this, "Insert failed for "+wrapper.req+", retrying : "+e);
-            System.err.println("Insert failed for "+wrapper.req+", retrying : "+e);
-            innerStartInsert(block, wrapper);
+            wrapper.failed(e.toString());
         }
         
     }

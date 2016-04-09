@@ -358,6 +358,19 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             this.key = key;
             notifyAll();
         }
+        public void failed(String reason) {
+            Logger.normal(this, "Insert failed for "+req+", retrying : "+reason);
+            System.err.println("Insert failed for "+req+", retrying : "+reason);
+            try {
+                startInsert(generateBlock(req), this);
+            } catch (UnsupportedEncodingException e) {
+                throw new Error(e);
+            } catch (CHKEncodeException e) {
+                throw new Error(e);
+            } catch (InvalidCompressionCodecException e) {
+                throw new Error(e);
+            }
+        }
     }
     
     private final HashMap<Integer, InsertWrapper> inserts = new HashMap<Integer, InsertWrapper>();

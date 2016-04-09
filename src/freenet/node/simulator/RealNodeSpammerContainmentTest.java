@@ -255,17 +255,12 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
 
         @Override
         public void run() {
-            // FIXME realClientPut isn't asynchronous, although asyncGet is. :(
-            while(true) {
-                try {
-                    spammer1.clientCore.realPut(block, true, FORK_ON_CACHEABLE, false, 
-                            false, false);
-                    insertWrapper.succeeded(block.getKey());
-                    return;
-                } catch (LowLevelPutException e) {
-                    System.err.println("Insert "+insertWrapper.req+" failed, retrying: "+e);
-                    Logger.normal(this, "Insert failed for "+insertWrapper.req+" : "+e, e);
-                }
+            try {
+                spammer1.clientCore.realPut(block, true, FORK_ON_CACHEABLE, false, 
+                        false, false);
+                insertWrapper.succeeded(block.getKey());
+            } catch (LowLevelPutException e) {
+                insertWrapper.failed(e.toString());
             }
         }
 
