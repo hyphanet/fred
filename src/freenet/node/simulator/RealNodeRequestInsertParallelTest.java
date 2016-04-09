@@ -41,15 +41,15 @@ import freenet.support.math.SimpleSampleStatistics;
  */
 public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingTest {
 
-    static int NUMBER_OF_NODES = 25;
-    static int DEGREE = 5;
+    static int NUMBER_OF_NODES = 100;
+    static int DEGREE = 10;
     /** Number of requests to run in parallel */
     static int PARALLEL_REQUESTS = 5;
     /** Ignore data before this point */
     static int PROLOG_SIZE = PARALLEL_REQUESTS*4;
     /** Total number of requests to run */
     static int TOTAL_REQUESTS = 1000;
-    static short MAX_HTL = (short)4;
+    static short MAX_HTL = (short)5;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
     static final boolean ENABLE_SWAPPING = false;
