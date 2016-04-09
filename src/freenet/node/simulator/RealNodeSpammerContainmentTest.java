@@ -62,8 +62,8 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         //NOTE: globalTestInit returns in ignored random source
         //String logDetails = "freenet.node.Request:MINOR,freenet.node.CHK:MINOR,freenet.node.SSK:MINOR," +
         //      "freenet.io.comm.MessageCore:MINOR,freenet.node.Peer:MINOR,freenet.node.Node:MINOR";
-        //String logDetails = "";
-        String logDetails = "freenet.node.Bypass:MINOR";
+        //String logDetails = "freenet.node.Bypass:MINOR";
+        String logDetails = "";
         NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, logDetails, true, 
                 BYPASS_TRANSPORT_LAYER, null);
         // Need to call it explicitly because the class is loaded before we clobbered the logger.
@@ -283,6 +283,9 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         stats = this.overallUIDTagCounter.getStats(spammer1);
         System.err.println("Running local requests on inserter "+stats.runningLocalRequests+" average "+stats.averageRunningLocalRequests);
         System.err.println("Running requests on inserter "+stats.runningRequests+" average "+stats.averageRunningRequests);
+        System.err.println("Running local inserts overall: "+
+                overallUIDTagCounter.getTotalRunningLocalInserts()+" average "+
+                overallUIDTagCounter.getAverageTotalRunningLocalInserts());
     }
     
 }
