@@ -225,6 +225,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     protected final String suffix;
 	private int insertAttempts = 0;
 	private int fetchSuccesses = 0;
+	private int insertsFailedAtLeastOnce = 0;
 	private final int targetSuccesses;
 	protected final SimulatorRequestTracker tracker;
 	protected final LocalRequestUIDsCounter overallUIDTagCounter;
@@ -281,6 +282,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         System.err.println("Requests: "+loggedRequests+" ("+requestSuccess.countReports()+")");
         System.err.println("Average request hops: "+requestHops.mean()+" +/- "+requestHops.stddev());
         System.err.println("Average request success: "+requestSuccess.mean()+" +/- "+requestSuccess.stddev());
+        System.err.println("Inserts failed: "+insertsFailedAtLeastOnce);
     }
     
     protected void reportSuccess(int hops, boolean log) {
@@ -329,6 +331,8 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         final int req;
         private boolean finished;
         private Key key;
+        /** True if the insert has failed at least once */
+        private boolean hasFailed;
         public InsertWrapper(int req) {
             this.req = req;
         }
@@ -359,6 +363,16 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             notifyAll();
         }
         public void failed(String reason) {
+            boolean newlyFailed = false;
+            synchronized(this) {
+                newlyFailed = !hasFailed;
+                hasFailed = true;
+            }
+            if(newlyFailed && shouldLog(req)) {
+                synchronized(RealNodeRequestInsertParallelTest.class) {
+                    insertsFailedAtLeastOnce++;
+                }
+            }
             Logger.normal(this, "Insert failed for "+req+", retrying : "+reason);
             System.err.println("Insert failed for "+req+", retrying : "+reason);
             try {
