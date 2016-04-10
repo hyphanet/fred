@@ -46,7 +46,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     /** Number of requests to run in parallel */
     static int PARALLEL_REQUESTS = 5;
     /** Ignore data before this point */
-    static int PROLOG_SIZE = PARALLEL_REQUESTS*4;
+    static int NO_STATS_BEFORE = PARALLEL_REQUESTS*4;
     /** Total number of requests to run */
     static int TOTAL_REQUESTS = 1000;
     static short MAX_HTL = (short)5;
@@ -112,7 +112,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             String value = s.substring(x+1);
             parseArgument(arg, value);
         }
-        PROLOG_SIZE = PARALLEL_REQUESTS*4;
+        NO_STATS_BEFORE = PARALLEL_REQUESTS*4;
     }
 
     private static void printUsage() {
@@ -255,7 +255,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         startedInserts++;
         waitForFreeRequestSlot();
         // Key to fetch.
-        int requestID = startedInserts - PARALLEL_REQUESTS - PROLOG_SIZE;
+        int requestID = startedInserts - PARALLEL_REQUESTS - NO_STATS_BEFORE;
         // Pre-insert.
         startInsert(requestID + PARALLEL_REQUESTS);
         if(requestID + PARALLEL_REQUESTS >= 0) {
@@ -275,7 +275,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     }
     
     protected boolean shouldLog(int reqID) {
-        return (reqID + PARALLEL_REQUESTS) >= PROLOG_SIZE;
+        return (reqID + PARALLEL_REQUESTS) >= NO_STATS_BEFORE;
     }
 
     protected synchronized void dumpStats() {
