@@ -179,8 +179,8 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         params.threadLimit = 500*NUMBER_OF_NODES;
         int blockSize = (CHKBlock.DATA_LENGTH+CHKBlock.TOTAL_HEADERS_LENGTH+
                 SSKBlock.DATA_LENGTH+SSKBlock.TOTAL_HEADERS_LENGTH+DSAPublicKey.PADDED_SIZE);
-        // At worst, we have PARALLEL_REQUESTS inserting and PARALLEL_REQUESTS requesting.
-        params.storeSize = (PARALLEL_REQUESTS*2+1)*blockSize*2;
+        // Must cache everything from the oldest insert to the newest request.
+        params.storeSize = (PARALLEL_REQUESTS+INSERT_REQUEST_GAP+1)*blockSize*2;
         params.ramStore = true;
         params.enableSwapping = ENABLE_SWAPPING;
         params.enableULPRs = ENABLE_ULPRS;
