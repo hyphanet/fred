@@ -68,6 +68,8 @@ public class TimeRunningAverage implements RunningAverage, Cloneable {
         lastReportTime = now;
         firstReportTime = now;
         lastReportValue = d;
+        totalTimeTimesValues = 0;
+        reports = 0;
     }
 
 }
