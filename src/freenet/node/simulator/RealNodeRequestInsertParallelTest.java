@@ -33,6 +33,7 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucket;
 import freenet.support.math.SimpleSampleStatistics;
+import freenet.support.math.TimeRunningAverage;
 
 /**
  * @author amphibian
@@ -228,6 +229,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 	private int fetchSuccesses = 0;
 	private int insertsFailedAtLeastOnce = 0;
 	private final int targetSuccesses;
+	private final TimeRunningAverage averageRunningRequests = new TimeRunningAverage();
 	protected final SimulatorRequestTracker tracker;
 	protected final LocalRequestUIDsCounter overallUIDTagCounter;
 	
@@ -264,6 +266,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             Key key = waitForInsert(requestID);
             synchronized(this) {
                 runningRequests++;
+                averageRunningRequests.report(runningRequests);
             }
             if(shouldLog(requestID) && !shouldLog(requestID - 1)) {
                 System.err.println("Starting first recorded request...");
@@ -284,6 +287,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         System.err.println("Average request hops: "+requestHops.mean()+" +/- "+requestHops.stddev());
         System.err.println("Average request success: "+requestSuccess.mean()+" +/- "+requestSuccess.stddev());
         System.err.println("Inserts failed: "+insertsFailedAtLeastOnce);
+        System.err.println("Average requests started: "+averageRunningRequests.currentValue());
     }
     
     protected void reportSuccess(int hops, boolean log) {
@@ -300,6 +304,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 
             }
             runningRequests--;
+            averageRunningRequests.report(runningRequests);
             assert(requestSuccess.countReports() == loggedRequests);
             notifyAll();
         }
@@ -317,6 +322,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
                     dumpStats();
             }
             runningRequests--;
+            averageRunningRequests.report(runningRequests);
             assert(requestSuccess.countReports() == loggedRequests);
             notifyAll();
         }
