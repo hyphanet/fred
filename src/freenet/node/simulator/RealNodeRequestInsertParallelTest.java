@@ -274,6 +274,9 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
                 System.err.println("Starting first recorded request...");
                 dumpStats();
                 overallUIDTagCounter.resetAverages();
+                synchronized(this) {
+                    averageRunningRequests.reset(System.currentTimeMillis(), runningRequests);
+                }
             }
             startFetch(requestID, key, shouldLog(requestID));
         }
