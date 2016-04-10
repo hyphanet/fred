@@ -47,6 +47,9 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     static int PARALLEL_REQUESTS = 5;
     /** Do not record statistics until this many requests have completed. */
     static int NO_STATS_BEFORE = PARALLEL_REQUESTS*4;
+    /** Pre-insert this far ahead. Inserts take longer than requests, so there should be some gap
+     * between the insertion point and the request point. */
+    static int INSERT_REQUEST_GAP = PARALLEL_REQUESTS*5;
     /** Total number of requests to run */
     static int TOTAL_REQUESTS = 1000;
     static short MAX_HTL = (short)5;
@@ -113,6 +116,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             parseArgument(arg, value);
         }
         NO_STATS_BEFORE = PARALLEL_REQUESTS*4;
+        INSERT_REQUEST_GAP = PARALLEL_REQUESTS*5;
     }
 
     private static void printUsage() {
@@ -257,7 +261,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         // Key to fetch.
         int requestID = startedInserts - PARALLEL_REQUESTS - NO_STATS_BEFORE;
         // Pre-insert.
-        startInsert(requestID + PARALLEL_REQUESTS);
+        startInsert(requestID + INSERT_REQUEST_GAP);
         if(requestID + PARALLEL_REQUESTS >= 0) {
             // reqID has been preinserted.
             Key key = waitForInsert(requestID);
