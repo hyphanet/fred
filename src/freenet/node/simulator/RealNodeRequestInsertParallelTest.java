@@ -424,7 +424,6 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     }
     
     private synchronized void reportInsertCompleted(long timeTaken) {
-        runningInserts--;
         averageInsertTime.report(timeTaken);
         notifyAll();
     }
