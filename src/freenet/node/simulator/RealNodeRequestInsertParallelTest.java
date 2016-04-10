@@ -32,8 +32,6 @@ import freenet.support.PrioritizedTicker;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucket;
-import freenet.support.math.RunningAverage;
-import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.SimpleSampleStatistics;
 
 /**
@@ -224,7 +222,6 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     protected final Node[] nodes;
     protected final RandomSource random;
     private int requestNumber = 0;
-    private RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
     protected final String baseString = "Test-";
     protected final String suffix;
 	private int insertAttempts = 0;
