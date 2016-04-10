@@ -74,4 +74,9 @@ public final class TrivialRunningAverage implements RunningAverage, Cloneable {
 			return new TrivialRunningAverage(this);
 		}
 	}
+
+    public synchronized void reset() {
+        total = 0;
+        reports = 0;
+    }
 }
