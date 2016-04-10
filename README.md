@@ -1,4 +1,5 @@
 ![next branch build status](https://travis-ci.org/freenet/fred.svg?branch=next)
+![Coverity status](https://scan.coverity.com/projects/2316/badge.svg?flat=1)
 
 ## Quickstart
 
