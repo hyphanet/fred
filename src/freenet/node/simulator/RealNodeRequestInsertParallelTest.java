@@ -260,10 +260,10 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         startedInserts++;
         waitForFreeRequestSlot();
         // Key to fetch.
-        int requestID = startedInserts - PARALLEL_REQUESTS - NO_STATS_BEFORE;
+        int requestID = startedInserts - INSERT_REQUEST_GAP - NO_STATS_BEFORE;
         // Pre-insert.
         startInsert(requestID + INSERT_REQUEST_GAP);
-        if(requestID + PARALLEL_REQUESTS >= 0) {
+        if(requestID + NO_STATS_BEFORE >= 0) {
             // reqID has been preinserted.
             Key key = waitForInsert(requestID);
             synchronized(this) {
