@@ -45,7 +45,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     static int DEGREE = 10;
     /** Number of requests to run in parallel */
     static int PARALLEL_REQUESTS = 5;
-    /** Ignore data before this point */
+    /** Do not record statistics until this many requests have completed. */
     static int NO_STATS_BEFORE = PARALLEL_REQUESTS*4;
     /** Total number of requests to run */
     static int TOTAL_REQUESTS = 1000;
