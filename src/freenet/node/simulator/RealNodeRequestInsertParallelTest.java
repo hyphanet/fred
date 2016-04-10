@@ -230,6 +230,8 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 	private int insertsFailedAtLeastOnce = 0;
 	private final int targetSuccesses;
 	private final TimeRunningAverage averageRunningRequests = new TimeRunningAverage();
+	/** Number of times waitForInsert(req) has had to sleep */
+	private int waitForInsertSlept = 0;
 	protected final SimulatorRequestTracker tracker;
 	protected final LocalRequestUIDsCounter overallUIDTagCounter;
 	
@@ -288,6 +290,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         System.err.println("Average request success: "+requestSuccess.mean()+" +/- "+requestSuccess.stddev());
         System.err.println("Inserts failed: "+insertsFailedAtLeastOnce);
         System.err.println("Average requests started: "+averageRunningRequests.currentValue());
+        System.err.println("Waited for loggable inserts: "+waitForInsertSlept);
     }
     
     protected void reportSuccess(int hops, boolean log) {
@@ -350,10 +353,16 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         public synchronized Key getKey() {
             return key;
         }
-        public synchronized void waitForSuccess() throws InterruptedException {
+        /** Wait until this insert succeeds.
+         * @return True if the insert has already completed, false if we had to wait.
+         * @throws InterruptedException
+         */
+        public synchronized boolean waitForSuccess() throws InterruptedException {
+            if(finished) return true;
             while(!finished) {
                 wait();
             }
+            return false;
         }
         public synchronized void succeeded(Key key) {
             Logger.normal(this, "Finished insert "+req+" to "+key);
@@ -437,7 +446,11 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         synchronized(this) {
             wrapper = inserts.get(req);
         }
-        wrapper.waitForSuccess();
+        if(!wrapper.waitForSuccess() && shouldLog(req)) {
+            synchronized(this) {
+                this.waitForInsertSlept++;
+            }
+        }
         return wrapper.getKey();
     }
 
