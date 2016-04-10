@@ -253,15 +253,25 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
                 boolean isSSK, boolean realTimeFlag) {
             super(core, random, priorityClass, isSSK, realTimeFlag);
         }
-
+        
+        private final HashMap<Key,Long> startTimes = new HashMap<Key,Long>();
+        
         @Override
         protected void requestSucceeded(Key key, RequestScheduler sched) {
-            reportRequestSucceeded(key, sched);
+            long startTime;
+            synchronized(this) {
+                startTime = startTimes.remove(key);
+            }
+            reportRequestSucceeded(key, sched, System.currentTimeMillis()-startTime);
         }
 
         @Override
         protected void requestFailed(Key key, RequestScheduler sched, LowLevelGetException e) {
-            reportRequestFailed(key, sched, e);
+            long startTime;
+            synchronized(this) {
+                startTime = startTimes.remove(key);
+            }
+            reportRequestFailed(key, sched, e, System.currentTimeMillis() - startTime);
         }
 
         @Override
@@ -271,6 +281,9 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
         
         @Override
         public void queueKey(Key key) {
+            synchronized(this) {
+                startTimes.put(key, System.currentTimeMillis());
+            }
             super.queueKey(key);
             super.clearWakeupTime(spammer2.clientCore.clientContext);
         }
@@ -292,7 +305,7 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
         fetchScheduler.wakeStarter();
     }
 
-    public void reportRequestSucceeded(Key key, RequestScheduler sched) {
+    public void reportRequestSucceeded(Key key, RequestScheduler sched, long timeTaken) {
         if(logMINOR) Logger.minor(this, "Request succeeded for "+key);
         int reqID;
         synchronized(this) {
@@ -301,7 +314,7 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
         Request request = getRequest(key, false);
         if(request != null)
             Logger.normal(this, request.dump(false, "Request "+reqID+" : "));
-        this.reportSuccess(getHops(request), shouldLog(reqID));
+        this.reportSuccess(getHops(request), shouldLog(reqID), timeTaken);
     }
 
     private Request getRequest(Key key, boolean insert) {
@@ -316,7 +329,7 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
         else return request.count();
     }
 
-    public void reportRequestFailed(Key key, RequestScheduler sched, LowLevelGetException e) {
+    public void reportRequestFailed(Key key, RequestScheduler sched, LowLevelGetException e, long timeTaken) {
         if(logMINOR) Logger.minor(this, "Request failed for "+key+" : "+e);
         int reqID;
         synchronized(this) {
@@ -325,7 +338,7 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
         Request request = getRequest(key, false);
         if(request != null)
             Logger.normal(this, request.dump(false, "Request "+reqID+" : "));
-        this.reportFailure(shouldLog(reqID));
+        this.reportFailure(shouldLog(reqID), timeTaken);
     }
 
     private Node randomNode() {

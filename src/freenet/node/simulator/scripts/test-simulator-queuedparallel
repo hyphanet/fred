@@ -12,6 +12,6 @@ do
 for ITERATION in `seq $ITERATIONS`; do
 BYPASS=NONE
 java -cp bin/main/:bin/test/:/usr/src/cvs/eclipse-workspace/fred/lib/freenet/freenet-ext.jar:/usr/src/cvs/eclipse-workspace/fred/lib/bcprov-jdk15on-154.jar freenet.node.simulator.RealNodeParallelLimitedTest parallel-requests=$PARALLEL bypass=$BYPASS total-requests=$REQUESTS > log 2>log.err
-(echo -n "$PARALLEL,$BYPASS,$ITERATION,$REQUESTS,"; cat log.err | grep -A5 "Requests: $REQUESTS" | tail -n 5 | sed "s/^.*: //;s/ +\\/- /,/" | sed "s/Running requests overall //" | sed "s/Running .*requests on originator //" | sed "s/Inserts failed: //" | sed "s/Waited for loggable inserts: //" | sed "s/Average requests started: //" | sed "s/ average /,/" | tr "\n" "," | cut -d "," -f 1-11) >> queued-parallel.csv
+(echo -n "$PARALLEL,$BYPASS,$ITERATION,$REQUESTS,"; cat log.err | grep -A7 "Requests: $REQUESTS" | tail -n 5 | sed "s/^.*: //;s/ +\\/- /,/" | sed "s/Running requests overall //" | sed "s/Running .*requests on originator //" | sed "s/Inserts failed: //" | sed "s/Waited for loggable inserts: //" | sed "s/Average requests started: //" | sed "s/Average .* time: //" | sed "s/ average /,/" | tr "\n" "," | cut -d "," -f 1-13) >> queued-parallel.csv
 done
 done

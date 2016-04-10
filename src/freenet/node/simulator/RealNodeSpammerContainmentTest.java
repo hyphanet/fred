@@ -183,22 +183,25 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         private final int req;
         private final Key key;
         private final boolean log;
+        private final long startTime;
 
         public MyFetchListener(Key key, int req, boolean log) {
             this.key = key;
             this.req = req;
             this.log = log;
+            startTime = System.currentTimeMillis();
         }
 
         @Override
         public void onSucceeded() {
+            long timeTaken = System.currentTimeMillis()-startTime;
             Request request = getRequest();
             int hopCount = request == null ? 0 : request.count();
             Logger.normal(this, "Success: "+req+" ("+hopCount+" hops)");
             if(request != null) {
                 Logger.normal(this, request.dump(false, "Request "+req+" : "));
             }
-            reportSuccess(hopCount, log);
+            reportSuccess(hopCount, log, timeTaken);
         }
         
         private Request getRequest() {
@@ -210,9 +213,10 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
 
         @Override
         public void onFailed(LowLevelGetException e) {
+            long timeTaken = System.currentTimeMillis()-startTime;
             Logger.normal(this, "Failure: "+req+" : "+e);
             Logger.normal(this, getRequest().dump(false, "Request "+req+" : "));
-            reportFailure(log);
+            reportFailure(log, timeTaken);
         }
 
     }
