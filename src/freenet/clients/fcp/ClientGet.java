@@ -359,7 +359,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.minor(this, "Succeeded: "+identifier);
-		Bucket data = result.asBucket();
+		Bucket data = binaryBlob ? state.getBlobBucket() : result.asBucket();
 		synchronized(this) {
 			if(succeeded) {
 				Logger.error(this, "onSuccess called twice for "+this+" ("+identifier+ ')');
