@@ -690,6 +690,7 @@ public class Node implements TimeSkewDetectorCallback {
 	final boolean enablePerNodeFailureTables;
 	final boolean enableULPRDataPropagation;
 	final boolean enableSwapping;
+	final boolean enableRandomRouting;
 	private volatile boolean publishOurPeersLocation;
 	private volatile boolean routeAccordingToOurPeersLocation;
 	boolean enableSwapQueueing;
@@ -1451,6 +1452,27 @@ public class Node implements TimeSkewDetectorCallback {
 			        }
 		});
 		enableSwapping = nodeConfig.getBoolean("enableSwapping");
+		
+		nodeConfig.register("enableRandomRouting", true, sortOrder++, true, false, "Node.enableRandomRouting", "Node.enableRandomRoutingLong", new BooleanCallback() {
+
+            @Override
+            public Boolean get() {
+                return enableRandomRouting;
+            }
+
+            @Override
+            public void set(Boolean val) throws InvalidConfigValueException,
+                    NodeNeedRestartException {
+                throw new InvalidConfigValueException("Cannot change on the fly");
+            }
+            
+            @Override
+            public boolean isReadOnly() {
+                return true;
+            }
+		    
+		});
+		enableRandomRouting = nodeConfig.getBoolean("enableRandomRouting");
 
 		/*
 		 * Publish our peers' locations is enabled, even in MAXIMUM network security and/or HIGH friends security,
@@ -3605,6 +3627,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * the data. It also improves anonymity somewhat. Hence we random route only for bulk requests,
 	 * and for more hops for inserts. */
     public boolean shouldRandomRoute(short htl, boolean insert, boolean ssk, boolean realTimeFlag) {
+        if(!enableRandomRouting) return false;
         if(realTimeFlag) return false; // Real-time requests are latency optimised.
         if(insert) {
             // For inserts, random route at the maximum HTL and the next HTL down.
