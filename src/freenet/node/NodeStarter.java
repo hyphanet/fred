@@ -427,6 +427,7 @@ public class NodeStarter implements WrapperListener {
         public boolean useSlashdotCache;
         public String ipAddressOverride;
         public boolean enableFCP;
+        public boolean enableRandomRouting = false;
     }
 
     /**
@@ -513,6 +514,7 @@ public class NodeStarter implements WrapperListener {
         configFS.put("node.disableProbabilisticHTLs", params.disableProbabilisticHTLs);
 		configFS.put("fproxy.enabled", false);
         configFS.put("fcp.enabled", params.enableFCP);
+        configFS.put("node.enableRandomRouting", params.enableRandomRouting);
 		configFS.put("fcp.port", 9481);
 		configFS.put("fcp.ssl", false);
 		configFS.put("console.enabled", false);
