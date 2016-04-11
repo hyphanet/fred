@@ -351,7 +351,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             
             // Route it
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        2.0, key, htl, 0, source == null, realTimeFlag, r, false, now, newLoadManagement);
+			        2.0, key, htl, 0, source == null, realTimeFlag, r, false, now, newLoadManagement, shouldRandomRoute());
             
             long recentlyFailed = r.recentlyFailed();
             if(recentlyFailed > now) {
@@ -2178,5 +2178,10 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			next.noLongerRoutingTo(origTag, false);
 		}
 	}
+	
+    @Override
+    protected boolean shouldRandomRoute() {
+        return node.shouldRandomRoute(htl, false, isSSK, realTimeFlag);
+    }
 
 }

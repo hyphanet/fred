@@ -884,8 +884,8 @@ public class PeerManager {
 	}
 
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double loc, boolean ignoreSelf, boolean calculateMisrouting,
-	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL, long ignoreBackoffUnder, boolean isLocal, boolean realTime, boolean excludeMandatoryBackoff) {
-		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, false, System.currentTimeMillis(), excludeMandatoryBackoff);
+	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL, long ignoreBackoffUnder, boolean isLocal, boolean realTime, boolean excludeMandatoryBackoff, boolean randomRoute) {
+		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, false, System.currentTimeMillis(), excludeMandatoryBackoff, randomRoute);
 	}
 
 	/**
@@ -912,8 +912,10 @@ public class PeerManager {
 	 */
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double target, boolean ignoreSelf,
 	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, long ignoreBackoffUnder, boolean isLocal, boolean realTime,
-	        RecentlyFailedReturn recentlyFailed, boolean ignoreTimeout, long now, boolean newLoadManagement) {
+	        RecentlyFailedReturn recentlyFailed, boolean ignoreTimeout, long now, boolean newLoadManagement, boolean randomRoute) {
 		
+	    if(randomRoute) calculateMisrouting = false;
+	    
 		int countWaiting = 0;
 		long soonestTimeoutWakeup = Long.MAX_VALUE;
 		
@@ -1035,35 +1037,40 @@ public class PeerManager {
 			//To help avoid odd race conditions, get the location only once and use it for all calculations.
 			double loc = p.getLocation();
 			boolean direct = true;
-			double realDiff = Location.distance(loc, target);
-			double diff = realDiff;
-			
-			double[] peersLocation = p.getPeersLocation();
-			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
-				for(double l : peersLocation) {
-					boolean ignoreLoc = false; // Because we've already been there
-					if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
-							Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
-						ignoreLoc = true;
-					else {
-						for(PeerNode cmpPN : routedTo)
-							if(Math.abs(l - cmpPN.getLocation()) < Double.MIN_VALUE * 2) {
-								ignoreLoc = true;
-								break;
-							}
-					}
-					if(ignoreLoc) continue;
-					double newDiff = Location.distance(l, target);
-					if(newDiff < diff) {
-						loc = l;
-						diff = newDiff;
-						direct = false;
-					}
-				}
-				if(logMINOR)
-					Logger.minor(this, "The peer "+p+" has published his peer's locations and the closest we have found to the target is "+diff+" away.");
+			double diff, realDiff;
+			if(randomRoute) {
+			    realDiff = diff = node.random.nextDouble();
+			} else {
+			    realDiff = Location.distance(loc, target);
+			    diff = realDiff;
+			    
+			    double[] peersLocation = p.getPeersLocation();
+			    if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
+			        for(double l : peersLocation) {
+			            boolean ignoreLoc = false; // Because we've already been there
+			            if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
+			                    Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
+			                ignoreLoc = true;
+			            else {
+			                for(PeerNode cmpPN : routedTo)
+			                    if(Math.abs(l - cmpPN.getLocation()) < Double.MIN_VALUE * 2) {
+			                        ignoreLoc = true;
+			                        break;
+			                    }
+			            }
+			            if(ignoreLoc) continue;
+			            double newDiff = Location.distance(l, target);
+			            if(newDiff < diff) {
+			                loc = l;
+			                diff = newDiff;
+			                direct = false;
+			            }
+			        }
+			        if(logMINOR)
+			            Logger.minor(this, "The peer "+p+" has published his peer's locations and the closest we have found to the target is "+diff+" away.");
+			    }
 			}
-			
+			    
 			if(diff > maxDistance)
 				continue;
 			if((!ignoreSelf) && (diff > maxDiff)) {
@@ -1171,7 +1178,7 @@ public class PeerManager {
 			// Recently failed is possible.
 			// Route twice, each time ignoring timeout.
 			// If both return a node which is in timeout, we should do RecentlyFailed.
-			PeerNode first = closerPeer(pn, routedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now, newLoadManagement);
+			PeerNode first = closerPeer(pn, routedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now, newLoadManagement, randomRoute);
 			if(first != null) {
 				long firstTime;
 				long secondTime;
@@ -1179,7 +1186,7 @@ public class PeerManager {
 					if(logMINOR) Logger.minor(this, "First choice is past now");
 					HashSet<PeerNode> newRoutedTo = new HashSet<PeerNode>(routedTo);
 					newRoutedTo.add(first);
-					PeerNode second = closerPeer(pn, newRoutedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now, newLoadManagement);
+					PeerNode second = closerPeer(pn, newRoutedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now, newLoadManagement, randomRoute);
 					if(second != null) {
 						if((secondTime = entry.getTimeoutTime(first, outgoingHTL, now, false)) > now) {
 							if(logMINOR) Logger.minor(this, "Second choice is past now");
