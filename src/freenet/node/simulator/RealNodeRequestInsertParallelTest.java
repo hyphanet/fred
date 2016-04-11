@@ -272,6 +272,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             Key key = waitForInsert(requestID);
             synchronized(this) {
                 runningRequests++;
+                Logger.error(this, "Parallel requests: "+runningRequests+" (starting)");
                 averageRunningRequests.report(runningRequests);
             }
             if(shouldLog(requestID) && !shouldLog(requestID - 1)) {
@@ -318,6 +319,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 
             }
             runningRequests--;
+            Logger.error(this, "Parallel requests: "+runningRequests+" (succeeded)");
             averageRunningRequests.report(runningRequests);
             assert(requestSuccess.countReports() == loggedRequests);
             averageRequestTime.report(timeTaken);
@@ -337,6 +339,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
                     dumpStats();
             }
             runningRequests--;
+            Logger.error(this, "Parallel requests: "+runningRequests+" (failed)");
             averageRunningRequests.report(runningRequests);
             assert(requestSuccess.countReports() == loggedRequests);
             averageRequestTime.report(timeTaken);
@@ -478,9 +481,10 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     }
 
     private synchronized void waitForFreeRequestSlot() throws InterruptedException {
-        while(runningRequests >= PARALLEL_REQUESTS)
+        while(runningRequests >= PARALLEL_REQUESTS) {
+            Logger.error(this, "Parallel requests: "+runningRequests+" (waiting)");
             wait();
-        Logger.error(this, "Parallel requests: "+runningRequests);
+        }
     }
 	
 }
