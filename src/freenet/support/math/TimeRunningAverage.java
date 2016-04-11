@@ -36,7 +36,7 @@ public class TimeRunningAverage implements RunningAverage, Cloneable {
         if(firstReportTime == 0) {
             reset(now, d);
         } else {
-            assert(lastReportTime < now);
+            assert(lastReportTime <= now);
             totalTimeTimesValues += (now - lastReportTime) * lastReportValue;
             lastReportTime = now;
             lastReportValue = d;
