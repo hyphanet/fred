@@ -195,7 +195,7 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         @Override
         public void onSucceeded() {
             long timeTaken = System.currentTimeMillis()-startTime;
-            System.out.println("Succeeded request for "+req+" in "+timeTaken);
+            Logger.error(this, "Succeeded request for "+req+" in "+timeTaken);
             Request request = getRequest();
             int hopCount = request == null ? 0 : request.count();
             Logger.normal(this, "Success: "+req+" ("+hopCount+" hops)");
@@ -215,7 +215,7 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         @Override
         public void onFailed(LowLevelGetException e) {
             long timeTaken = System.currentTimeMillis()-startTime;
-            System.out.println("Failed request for "+req+" : "+e+" in "+timeTaken);
+            Logger.error(this, "Failed request for "+req+" : "+e+" in "+timeTaken);
             Logger.normal(this, "Failure: "+req+" : "+e);
             Logger.normal(this, getRequest().dump(false, "Request "+req+" : "));
             reportFailure(log, timeTaken);
@@ -262,17 +262,17 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
 
         @Override
         public void run() {
-            System.out.println("Starting insert for "+insertWrapper.req);
+            Logger.error(this, "Starting insert for "+insertWrapper.req);
             try {
                 spammer1.clientCore.realPut(block, true, FORK_ON_CACHEABLE, false, 
                         false, false);
-                System.out.println("Succeeded insert for "+insertWrapper.req);
+                Logger.error(this, "Succeeded insert for "+insertWrapper.req);
                 insertWrapper.succeeded(block.getKey());
             } catch (LowLevelPutException e) {
-                System.out.println("Failed insert for "+insertWrapper.req+" : "+e);
+                Logger.error(this, "Failed insert for "+insertWrapper.req+" : "+e);
                 insertWrapper.failed(e.toString());
             }
-            System.out.println("Finished insert for "+insertWrapper.req);
+            Logger.error(this, "Finished insert for "+insertWrapper.req);
         }
 
     }

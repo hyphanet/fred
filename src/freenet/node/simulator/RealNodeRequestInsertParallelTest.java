@@ -382,8 +382,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         public void succeeded(Key key) {
             long timeTaken = System.currentTimeMillis()-startTime;
             synchronized(this) {
-                Logger.normal(this, "Finished insert "+req+" to "+key);
-                System.out.println("Finished insert "+req+" in "+timeTaken);
+                Logger.error(this, "Finished insert "+req+" to "+key+" in "+timeTaken);
                 Request[] reqs = tracker.dumpKey(key, true);
                 if(reqs.length == 0)
                     System.err.println("ERROR: Insert succeeded but no trace!");
@@ -409,8 +408,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
                     insertsFailedAtLeastOnce++;
                 }
             }
-            Logger.normal(this, "Insert failed for "+req+", retrying : "+reason);
-            System.err.println("Insert failed for "+req+", retrying : "+reason);
+            Logger.error(this, "Insert failed for "+req+", retrying : "+reason);
             try {
                 startInsert(generateBlock(req), this);
             } catch (UnsupportedEncodingException e) {
@@ -482,7 +480,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     private synchronized void waitForFreeRequestSlot() throws InterruptedException {
         while(runningRequests >= PARALLEL_REQUESTS)
             wait();
-        System.out.println("Parallel requests: "+runningRequests);
+        Logger.error(this, "Parallel requests: "+runningRequests);
     }
 	
 }
