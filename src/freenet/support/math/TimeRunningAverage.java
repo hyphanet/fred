@@ -31,7 +31,7 @@ public class TimeRunningAverage implements RunningAverage, Cloneable {
     }
 
     @Override
-    public void report(double d) {
+    public synchronized void report(double d) {
         long now = System.currentTimeMillis();
         if(firstReportTime == 0) {
             reset(now, d);
@@ -63,7 +63,7 @@ public class TimeRunningAverage implements RunningAverage, Cloneable {
         reset(System.currentTimeMillis(), 0);
     }
     
-    public void reset(long now, double d) {
+    public synchronized void reset(long now, double d) {
         // First report.
         lastReportTime = now;
         firstReportTime = now;
