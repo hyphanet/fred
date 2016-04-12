@@ -183,22 +183,26 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         private final int req;
         private final Key key;
         private final boolean log;
+        private final long startTime;
 
         public MyFetchListener(Key key, int req, boolean log) {
             this.key = key;
             this.req = req;
             this.log = log;
+            startTime = System.currentTimeMillis();
         }
 
         @Override
         public void onSucceeded() {
+            long timeTaken = System.currentTimeMillis()-startTime;
+            Logger.error(this, "Succeeded request for "+req+" in "+timeTaken);
             Request request = getRequest();
             int hopCount = request == null ? 0 : request.count();
             Logger.normal(this, "Success: "+req+" ("+hopCount+" hops)");
             if(request != null) {
                 Logger.normal(this, request.dump(false, "Request "+req+" : "));
             }
-            reportSuccess(hopCount, log);
+            reportSuccess(hopCount, log, timeTaken);
         }
         
         private Request getRequest() {
@@ -210,9 +214,11 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
 
         @Override
         public void onFailed(LowLevelGetException e) {
+            long timeTaken = System.currentTimeMillis()-startTime;
+            Logger.error(this, "Failed request for "+req+" : "+e+" in "+timeTaken);
             Logger.normal(this, "Failure: "+req+" : "+e);
             Logger.normal(this, getRequest().dump(false, "Request "+req+" : "));
-            reportFailure(log);
+            reportFailure(log, timeTaken);
         }
 
     }
@@ -222,6 +228,7 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
     
     @Override
     protected void startFetch(int req, Key k, boolean log) {
+        System.out.println("Starting request for "+req);
         if(logMINOR) Logger.minor(this, "Fetching "+k+" for "+req);
         MyFetchListener listener = new MyFetchListener(k, req, log);
         spammer2.clientCore.asyncGet(k, false, listener, true, true, false, false, false);
@@ -259,17 +266,17 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         @Override
         public void run() {
             // FIXME realClientPut isn't asynchronous, although asyncGet is. :(
-            while(true) {
-                try {
-                    insertNode.clientCore.realPut(block, true, FORK_ON_CACHEABLE, false, 
-                            false, false);
-                    insertWrapper.succeeded(block.getKey());
-                    return;
-                } catch (LowLevelPutException e) {
-                    Logger.normal(this, "Insert failed for "+insertWrapper.req+" : "+e);
-                    e.printStackTrace();
-                }
+            Logger.error(this, "Starting insert for "+insertWrapper.req);
+            try {
+                insertNode.clientCore.realPut(block, true, FORK_ON_CACHEABLE, false, 
+                        false, false);
+                Logger.error(this, "Succeeded insert for "+insertWrapper.req);
+                insertWrapper.succeeded(block.getKey());
+            } catch (LowLevelPutException e) {
+                Logger.error(this, "Failed insert for "+insertWrapper.req+" : "+e);
+                insertWrapper.failed(e.toString());
             }
+            Logger.error(this, "Finished insert for "+insertWrapper.req);
         }
 
     }

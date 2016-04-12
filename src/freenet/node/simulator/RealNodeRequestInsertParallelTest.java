@@ -32,24 +32,27 @@ import freenet.support.PrioritizedTicker;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucket;
-import freenet.support.math.RunningAverage;
-import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.SimpleSampleStatistics;
+import freenet.support.math.TimeRunningAverage;
+import freenet.support.math.TrivialRunningAverage;
 
 /**
  * @author amphibian
  */
 public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingTest {
 
-    static int NUMBER_OF_NODES = 25;
-    static int DEGREE = 5;
+    static int NUMBER_OF_NODES = 100;
+    static int DEGREE = 10;
     /** Number of requests to run in parallel */
     static int PARALLEL_REQUESTS = 5;
-    /** Ignore data before this point */
-    static int PROLOG_SIZE = PARALLEL_REQUESTS*4;
+    /** Do not record statistics until this many requests have completed. */
+    static int NO_STATS_BEFORE = PARALLEL_REQUESTS*4;
+    /** Pre-insert this far ahead. Inserts take longer than requests, so there should be some gap
+     * between the insertion point and the request point. */
+    static int INSERT_REQUEST_GAP = PARALLEL_REQUESTS*5;
     /** Total number of requests to run */
     static int TOTAL_REQUESTS = 1000;
-    static short MAX_HTL = (short)4;
+    static short MAX_HTL = (short)5;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
     static final boolean ENABLE_SWAPPING = false;
@@ -112,7 +115,8 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             String value = s.substring(x+1);
             parseArgument(arg, value);
         }
-        PROLOG_SIZE = PARALLEL_REQUESTS*4;
+        NO_STATS_BEFORE = PARALLEL_REQUESTS*4;
+        INSERT_REQUEST_GAP = PARALLEL_REQUESTS*5;
     }
 
     private static void printUsage() {
@@ -175,8 +179,8 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         params.threadLimit = 500*NUMBER_OF_NODES;
         int blockSize = (CHKBlock.DATA_LENGTH+CHKBlock.TOTAL_HEADERS_LENGTH+
                 SSKBlock.DATA_LENGTH+SSKBlock.TOTAL_HEADERS_LENGTH+DSAPublicKey.PADDED_SIZE);
-        // At worst, we have PARALLEL_REQUESTS inserting and PARALLEL_REQUESTS requesting.
-        params.storeSize = (PARALLEL_REQUESTS*2+1)*blockSize*2;
+        // Must cache everything from the oldest insert to the newest request.
+        params.storeSize = (PARALLEL_REQUESTS+INSERT_REQUEST_GAP+1)*blockSize*2;
         params.ramStore = true;
         params.enableSwapping = ENABLE_SWAPPING;
         params.enableULPRs = ENABLE_ULPRS;
@@ -220,12 +224,17 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     protected final Node[] nodes;
     protected final RandomSource random;
     private int requestNumber = 0;
-    private RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
     protected final String baseString = "Test-";
     protected final String suffix;
 	private int insertAttempts = 0;
 	private int fetchSuccesses = 0;
+	private int insertsFailedAtLeastOnce = 0;
 	private final int targetSuccesses;
+	private final TimeRunningAverage averageRunningRequests = new TimeRunningAverage();
+	private final TrivialRunningAverage averageRequestTime = new TrivialRunningAverage();
+	private final TrivialRunningAverage averageInsertTime = new TrivialRunningAverage();
+	/** Number of times waitForInsert(req) has had to sleep */
+	private int waitForInsertSlept = 0;
 	protected final SimulatorRequestTracker tracker;
 	protected final LocalRequestUIDsCounter overallUIDTagCounter;
 	
@@ -254,19 +263,27 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         startedInserts++;
         waitForFreeRequestSlot();
         // Key to fetch.
-        int requestID = startedInserts - PARALLEL_REQUESTS - PROLOG_SIZE;
+        int requestID = startedInserts - INSERT_REQUEST_GAP - NO_STATS_BEFORE;
         // Pre-insert.
-        startInsert(requestID + PARALLEL_REQUESTS);
-        if(requestID + PARALLEL_REQUESTS >= 0) {
+        System.out.println("insertRequestTest: insert "+startedInserts+" request "+requestID);
+        startInsert(requestID + INSERT_REQUEST_GAP);
+        if(requestID + NO_STATS_BEFORE >= 0) {
             // reqID has been preinserted.
             Key key = waitForInsert(requestID);
             synchronized(this) {
                 runningRequests++;
+                Logger.error(this, "Parallel requests: "+runningRequests+" (starting)");
+                averageRunningRequests.report(runningRequests);
             }
             if(shouldLog(requestID) && !shouldLog(requestID - 1)) {
                 System.err.println("Starting first recorded request...");
                 dumpStats();
                 overallUIDTagCounter.resetAverages();
+                averageRequestTime.reset();
+                averageInsertTime.reset();
+                synchronized(this) {
+                    averageRunningRequests.reset(System.currentTimeMillis(), runningRequests);
+                }
             }
             startFetch(requestID, key, shouldLog(requestID));
         }
@@ -274,16 +291,21 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     }
     
     protected boolean shouldLog(int reqID) {
-        return (reqID + PARALLEL_REQUESTS) >= PROLOG_SIZE;
+        return (reqID + PARALLEL_REQUESTS) >= NO_STATS_BEFORE;
     }
 
     protected synchronized void dumpStats() {
         System.err.println("Requests: "+loggedRequests+" ("+requestSuccess.countReports()+")");
         System.err.println("Average request hops: "+requestHops.mean()+" +/- "+requestHops.stddev());
         System.err.println("Average request success: "+requestSuccess.mean()+" +/- "+requestSuccess.stddev());
+        System.err.println("Inserts failed: "+insertsFailedAtLeastOnce);
+        System.err.println("Average requests started: "+averageRunningRequests.currentValue());
+        System.err.println("Waited for loggable inserts: "+waitForInsertSlept);
+        System.err.println("Average request time: "+averageRequestTime.currentValue());
+        System.err.println("Average insert time: "+averageInsertTime.currentValue());
     }
     
-    protected void reportSuccess(int hops, boolean log) {
+    protected void reportSuccess(int hops, boolean log, long timeTaken) {
         synchronized(this) {
             if(log) {
                 requestSuccess.report(1.0);
@@ -297,12 +319,15 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 
             }
             runningRequests--;
+            Logger.error(this, "Parallel requests: "+runningRequests+" (succeeded)");
+            averageRunningRequests.report(runningRequests);
             assert(requestSuccess.countReports() == loggedRequests);
+            averageRequestTime.report(timeTaken);
             notifyAll();
         }
     }
     
-    protected void reportFailure(boolean log) {
+    protected void reportFailure(boolean log, long timeTaken) {
         synchronized(this) {
             if(log) {
                 requestSuccess.report(0.0);
@@ -314,7 +339,10 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
                     dumpStats();
             }
             runningRequests--;
+            Logger.error(this, "Parallel requests: "+runningRequests+" (failed)");
+            averageRunningRequests.report(runningRequests);
             assert(requestSuccess.countReports() == loggedRequests);
+            averageRequestTime.report(timeTaken);
             notifyAll();
         }
     }
@@ -329,8 +357,12 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         final int req;
         private boolean finished;
         private Key key;
+        /** True if the insert has failed at least once */
+        private boolean hasFailed;
+        private final long startTime;
         public InsertWrapper(int req) {
             this.req = req;
+            startTime = System.currentTimeMillis();
         }
         public void start() throws UnsupportedEncodingException, CHKEncodeException, InvalidCompressionCodecException {
             ClientKeyBlock block = generateBlock(req);
@@ -339,25 +371,62 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         public synchronized Key getKey() {
             return key;
         }
-        public synchronized void waitForSuccess() throws InterruptedException {
+        /** Wait until this insert succeeds.
+         * @return True if the insert has already completed, false if we had to wait.
+         * @throws InterruptedException
+         */
+        public synchronized boolean waitForSuccess() throws InterruptedException {
+            if(finished) return true;
             while(!finished) {
                 wait();
             }
+            return false;
         }
-        public synchronized void succeeded(Key key) {
-            Logger.normal(this, "Finished insert "+req+" to "+key);
-            Request[] reqs = tracker.dumpKey(key, true);
-            if(reqs.length == 0)
-                System.err.println("ERROR: Insert succeeded but no trace!");
-            else {
-                for(Request req : reqs) {
-                    Logger.normal(this, req.dump(false, "Insert "+this.req+": "));
+        public void succeeded(Key key) {
+            long timeTaken = System.currentTimeMillis()-startTime;
+            synchronized(this) {
+                Logger.error(this, "Finished insert "+req+" to "+key+" in "+timeTaken);
+                Request[] reqs = tracker.dumpKey(key, true);
+                if(reqs.length == 0)
+                    System.err.println("ERROR: Insert succeeded but no trace!");
+                else {
+                    for(Request req : reqs) {
+                        Logger.normal(this, req.dump(false, "Insert "+this.req+": "));
+                    }
+                }
+                finished = true;
+                this.key = key;
+                notifyAll();
+            }
+            reportInsertCompleted(timeTaken);
+        }
+        public void failed(String reason) {
+            boolean newlyFailed = false;
+            synchronized(this) {
+                newlyFailed = !hasFailed;
+                hasFailed = true;
+            }
+            if(newlyFailed && shouldLog(req)) {
+                synchronized(RealNodeRequestInsertParallelTest.class) {
+                    insertsFailedAtLeastOnce++;
                 }
             }
-            finished = true;
-            this.key = key;
-            notifyAll();
+            Logger.error(this, "Insert failed for "+req+", retrying : "+reason);
+            try {
+                startInsert(generateBlock(req), this);
+            } catch (UnsupportedEncodingException e) {
+                throw new Error(e);
+            } catch (CHKEncodeException e) {
+                throw new Error(e);
+            } catch (InvalidCompressionCodecException e) {
+                throw new Error(e);
+            }
         }
+    }
+    
+    private synchronized void reportInsertCompleted(long timeTaken) {
+        averageInsertTime.report(timeTaken);
+        notifyAll();
     }
     
     private final HashMap<Integer, InsertWrapper> inserts = new HashMap<Integer, InsertWrapper>();
@@ -403,17 +472,23 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         synchronized(this) {
             wrapper = inserts.get(req);
         }
-        wrapper.waitForSuccess();
+        if(!wrapper.waitForSuccess() && shouldLog(req)) {
+            synchronized(this) {
+                this.waitForInsertSlept++;
+            }
+        }
         return wrapper.getKey();
     }
 
     private synchronized void waitForFreeRequestSlot() throws InterruptedException {
-        while(runningRequests >= PARALLEL_REQUESTS)
+        while(runningRequests >= PARALLEL_REQUESTS) {
+            Logger.error(this, "Parallel requests: "+runningRequests+" (waiting)");
             wait();
+        }
     }
     
     protected Node getInsertNode(int req) {
-        int insertNodeID = req+PROLOG_SIZE+PARALLEL_REQUESTS;
+        int insertNodeID = req+INSERT_REQUEST_GAP+NO_STATS_BEFORE;
         insertNodeID = 1 + (insertNodeID % (nodes.length-1));
         return nodes[insertNodeID];
     }

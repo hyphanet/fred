@@ -703,6 +703,7 @@ public class BlockTransmitter {
 		MyAsyncMessageCallback() {
 			synchronized(_senderThread) {
 				blockSendsPending++;
+				if(logMINOR) Logger.minor(this, "Pending send on "+BlockTransmitter.this+" : "+this);
 			}
 		}
 		
@@ -710,7 +711,7 @@ public class BlockTransmitter {
 		
 		@Override
 		public void sent() {
-			if(logMINOR) Logger.minor(this, "Sent block on "+BlockTransmitter.this);
+			if(logMINOR) Logger.minor(this, "Sent block on "+BlockTransmitter.this+" : "+this);
 			// Wait for acknowledged
 		}
 
@@ -732,7 +733,7 @@ public class BlockTransmitter {
 		}
 		
 		private void complete(boolean failed) {
-			if(logMINOR) Logger.minor(this, "Completed send on a block for "+BlockTransmitter.this);
+			if(logMINOR) Logger.minor(this, "Completed send on a block for "+BlockTransmitter.this+" : "+this);
 			boolean success = false;
 			long now = System.currentTimeMillis();
 			boolean callCallback = false;
