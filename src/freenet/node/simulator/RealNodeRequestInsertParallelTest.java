@@ -272,7 +272,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
             Key key = waitForInsert(requestID);
             synchronized(this) {
                 runningRequests++;
-                Logger.error(this, "Parallel requests: "+runningRequests+" (starting)");
+                Logger.normal(this, "Parallel requests: "+runningRequests+" (starting)");
                 averageRunningRequests.report(runningRequests);
             }
             if(shouldLog(requestID) && !shouldLog(requestID - 1)) {
@@ -319,7 +319,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 
             }
             runningRequests--;
-            Logger.error(this, "Parallel requests: "+runningRequests+" (succeeded)");
+            Logger.normal(this, "Parallel requests: "+runningRequests+" (succeeded)");
             averageRunningRequests.report(runningRequests);
             assert(requestSuccess.countReports() == loggedRequests);
             averageRequestTime.report(timeTaken);
@@ -339,7 +339,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
                     dumpStats();
             }
             runningRequests--;
-            Logger.error(this, "Parallel requests: "+runningRequests+" (failed)");
+            Logger.normal(this, "Parallel requests: "+runningRequests+" (failed)");
             averageRunningRequests.report(runningRequests);
             assert(requestSuccess.countReports() == loggedRequests);
             averageRequestTime.report(timeTaken);
@@ -385,7 +385,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
         public void succeeded(Key key) {
             long timeTaken = System.currentTimeMillis()-startTime;
             synchronized(this) {
-                Logger.error(this, "Finished insert "+req+" to "+key+" in "+timeTaken);
+                Logger.normal(this, "Finished insert "+req+" to "+key+" in "+timeTaken);
                 Request[] reqs = tracker.dumpKey(key, true);
                 if(reqs.length == 0)
                     System.err.println("ERROR: Insert succeeded but no trace!");
@@ -411,7 +411,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
                     insertsFailedAtLeastOnce++;
                 }
             }
-            Logger.error(this, "Insert failed for "+req+", retrying : "+reason);
+            Logger.warning(this, "Insert failed for "+req+", retrying : "+reason);
             try {
                 startInsert(generateBlock(req), this);
             } catch (UnsupportedEncodingException e) {
@@ -482,7 +482,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
 
     private synchronized void waitForFreeRequestSlot() throws InterruptedException {
         while(runningRequests >= PARALLEL_REQUESTS) {
-            Logger.error(this, "Parallel requests: "+runningRequests+" (waiting)");
+            Logger.normal(this, "Parallel requests: "+runningRequests+" (waiting)");
             wait();
         }
     }
