@@ -195,7 +195,7 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         @Override
         public void onSucceeded() {
             long timeTaken = System.currentTimeMillis()-startTime;
-            Logger.error(this, "Succeeded request for "+req+" in "+timeTaken);
+            Logger.normal(this, "Succeeded request for "+req+" in "+timeTaken);
             Request request = getRequest();
             int hopCount = request == null ? 0 : request.count();
             Logger.normal(this, "Success: "+req+" ("+hopCount+" hops)");
@@ -215,7 +215,7 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
         @Override
         public void onFailed(LowLevelGetException e) {
             long timeTaken = System.currentTimeMillis()-startTime;
-            Logger.error(this, "Failed request for "+req+" : "+e+" in "+timeTaken);
+            Logger.normal(this, "Failed request for "+req+" : "+e+" in "+timeTaken);
             Logger.normal(this, "Failure: "+req+" : "+e);
             Logger.normal(this, getRequest().dump(false, "Request "+req+" : "));
             reportFailure(log, timeTaken);
@@ -262,17 +262,19 @@ public class RealNodeSpammerContainmentTest extends RealNodeRequestInsertParalle
 
         @Override
         public void run() {
-            Logger.error(this, "Starting insert for "+insertWrapper.req);
+            if(logMINOR)
+                Logger.minor(this, "Starting insert for "+insertWrapper.req);
             try {
                 spammer1.clientCore.realPut(block, true, FORK_ON_CACHEABLE, false, 
                         false, false);
-                Logger.error(this, "Succeeded insert for "+insertWrapper.req);
+                if(logMINOR)
+                    Logger.minor(this, "Succeeded insert for "+insertWrapper.req);
                 insertWrapper.succeeded(block.getKey());
             } catch (LowLevelPutException e) {
-                Logger.error(this, "Failed insert for "+insertWrapper.req+" : "+e);
+                if(logMINOR)
+                    Logger.minor(this, "Failed insert for "+insertWrapper.req+" : "+e);
                 insertWrapper.failed(e.toString());
             }
-            Logger.error(this, "Finished insert for "+insertWrapper.req);
         }
 
     }
