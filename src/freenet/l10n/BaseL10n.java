@@ -120,7 +120,7 @@ public class BaseL10n {
 			Collections.sort(result);
 			result.add(UNLISTED.fullName);
 			
-			return (String[])result.toArray(new String[result.size()]);
+			return result.toArray(new String[result.size()]);
 		}
 
 		public static LANGUAGE getDefault() {
