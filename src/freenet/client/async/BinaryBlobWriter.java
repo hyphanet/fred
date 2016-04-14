@@ -61,6 +61,7 @@ public final class BinaryBlobWriter {
 		_binaryBlobKeysAddedAlready = new HashSet<Key>();
 		_buckets = null;
 		_bf = null;
+		assert out != null;
 		_out = out;
 		_isSingleBucket = true;
 	}

@@ -16,6 +16,8 @@
 package freenet.support;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import freenet.test.*;
 import junit.framework.TestCase;
@@ -31,6 +33,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	public static final String prtblAscii = new String(UTFUtil.PRINTABLE_ASCII);
 	public static final String stressedUTF_8Chars = new String(UTFUtil.STRESSED_UTF);
 	public static final String allCharsExceptNull = new String(UTFUtil.ALL_CHARACTERS).replace("\u0000", "");
+	public static final String allChars = new String(UTFUtil.ALL_CHARACTERS);
 	
 	/**
 	 * Encodes a string of ALL unicode characters except the 0-character and tests whether it is decoded correctly. 
@@ -186,5 +189,16 @@ public class URLEncoderDecoderTest extends TestCase {
 			assertEquals(URLDecoder.decode(toDecode,true),toDecode);
 		} catch (URLEncodedFormatException anException) {
 			fail("Not expected exception thrown : " + anException.getMessage()); }
+	}
+
+	/**
+	 * Tests whether all URL-encoded characters are acceptable to the java.net.URI constructor.
+	 */
+	public void testEncodedUsableInURI() {
+		try {
+			new URI("#" + URLEncoder.encode(allChars, false));
+		} catch (URISyntaxException e) {
+			fail("URLEncoder output rejected by URI constructor");
+		}
 	}
 }

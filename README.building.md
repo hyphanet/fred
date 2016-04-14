@@ -17,7 +17,7 @@ To override values of variables set in build.xml by putting them into the file o
 If sufficient packages for the dependencies are not available, put these jars into the `lib/` directory:
 
 * `junit4.jar` and `hamcrest-core.jar`: See the [download instructions](https://github.com/junit-team/junit/wiki/Download-and-Install)
-* `bcprov-jdk15on-152.jar`: Download Bouncy Castle 1.52: `wget --no-passive-ftp ftp://ftp.bouncycastle.org/pub/release1.52/bcprov-jdk15on-152.jar` or `wget http://www.bouncycastle.org/download/bcprov-jdk15on-152.jar`
+* `bcprov-jdk15on-154.jar`: Download Bouncy Castle 1.54: `wget https://www.bouncycastle.org/download/bcprov-jdk15on-154.jar`
 
 
 ## Building Freenet from source: Using Eclipse

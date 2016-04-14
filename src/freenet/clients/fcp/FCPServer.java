@@ -421,7 +421,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 
 	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config, PersistentRequestRoot root) throws IOException, InvalidConfigValueException {
-		SubConfig fcpConfig = new SubConfig("fcp", config);
+		SubConfig fcpConfig = config.createSubConfig("fcp");
 		short sortOrder = 0;
 		fcpConfig.register("enabled", true, sortOrder++, true, false, "FcpServer.isEnabled", "FcpServer.isEnabledLong", new FCPEnabledCallback(core));
 		fcpConfig.register("ssl", false, sortOrder++, true, true, "FcpServer.ssl", "FcpServer.sslLong", new FCPSSLCallback());

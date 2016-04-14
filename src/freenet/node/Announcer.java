@@ -65,7 +65,6 @@ public class Announcer {
 	/** Do not announce if there are more than this many opennet peers connected */
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
 	private static final long NOT_ALL_CONNECTED_DELAY = SECONDS.toMillis(60);
-	public static final String SEEDNODES_FILENAME = "seednodes.fref";
 	private static final long RETRY_MISSING_SEEDNODES_DELAY = SECONDS.toMillis(30);
 	/** Total nodes added by announcement so far */
 	private int announcementAddedNodes;
@@ -123,7 +122,7 @@ public class Announcer {
 		boolean announceNow = false;
 		if(logMINOR)
 			Logger.minor(this, "Connecting some seednodes...");
-		List<SimpleFieldSet> seeds = Announcer.readSeednodes(node.nodeDir().file(SEEDNODES_FILENAME));
+		List<SimpleFieldSet> seeds = Announcer.readSeednodes(NodeFile.Seednodes.getFile(node));
 		System.out.println("Trying to connect to "+seeds.size()+" seednodes...");
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -277,9 +276,15 @@ public class Announcer {
 						list.add(fs);
 				} catch (EOFException e) {
 					return list;
+				} catch (IOException e) {
+					Logger.error(Announcer.class, "Error while reading seednodes from " + file, e);
+					// Continue reading. If this entry failed, we still want the following noderefs.
+					// Read a line to advance the parsing position and avoid an endless loop.
+					br.readLine();
 				}
 			}
 		} catch (IOException e) {
+			Logger.error(Announcer.class, "Unexpected error while reading seednodes from " + file, e);
 			return list;
 		} finally {
 			Closer.close(fis);

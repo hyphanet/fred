@@ -61,4 +61,10 @@ public class Config {
 	public synchronized SubConfig get(String subConfig){
 		return configsByPrefix.get(subConfig);
 	}
+
+	@SuppressWarnings("deprecation")
+	public SubConfig createSubConfig(String subConfig) {
+		return new SubConfig(subConfig, this);
+	}
+
 }

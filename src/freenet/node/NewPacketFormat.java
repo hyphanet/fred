@@ -3,8 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,9 +26,10 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SparseBitmap;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 public class NewPacketFormat implements PacketFormat {
 
-	private final int hmacLength;
 	private static final int HMAC_LENGTH = 10;
 	// FIXME Use a more efficient structure - int[] or maybe just a big byte[].
 	// FIXME increase this significantly to let it ride over network interruptions.
@@ -115,7 +115,6 @@ public class NewPacketFormat implements PacketFormat {
 		nextMessageID = ourInitialMsgID;
 		messageWindowPtrAcked = ourInitialMsgID;
 		messageWindowPtrReceived = theirInitialMsgID;
-		hmacLength = HMAC_LENGTH;
 	}
 
 	@Override
@@ -366,7 +365,7 @@ public class NewPacketFormat implements PacketFormat {
 			int index = (keyContext.watchListPointer + i) % keyContext.seqNumWatchList.length;
 			if (!Fields.byteArrayEqual(
 						buf, keyContext.seqNumWatchList[index],
-						offset + hmacLength, 0,
+						offset + HMAC_LENGTH, 0,
 						keyContext.seqNumWatchList[index].length))
 				continue;
 			
@@ -395,10 +394,16 @@ public class NewPacketFormat implements PacketFormat {
 
 		ivCipher.encipher(IV, IV);
 
-		byte[] payload = Arrays.copyOfRange(buf, offset + hmacLength, offset + length);
-		byte[] hash = Arrays.copyOfRange(buf, offset, offset + hmacLength);
+		byte[] payload = Arrays.copyOfRange(buf, offset + HMAC_LENGTH, offset + length);
+		byte[] hash = Arrays.copyOfRange(buf, offset, offset + HMAC_LENGTH);
+		byte[] localHash = Arrays.copyOf(HMAC.macWithSHA256(sessionKey.hmacKey, payload), HMAC_LENGTH);
+		if (!MessageDigest.isEqual(hash, localHash)) {
+			if (logMINOR) {
+				Logger.minor(this, "Failed to validate the HMAC using TrackerID="+sessionKey.trackerID);
+			}
 
-		if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, payload, hash)) return null;
+			return null;
+		}
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.incommingCipher, IV);
 		payloadCipher.blockDecipher(payload, 0, payload.length);
@@ -469,10 +474,10 @@ public class NewPacketFormat implements PacketFormat {
 		int maxPacketSize = pn.getMaxPacketSize();
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 
-		NPFPacket packet = createPacket(maxPacketSize - hmacLength, pn.getMessageQueue(), sessionKey, ackOnly, pn.isUseCumulativeAcksSet());
+		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue(), sessionKey, ackOnly, pn.isUseCumulativeAcksSet());
 		if(packet == null) return false;
 
-		int paddedLen = packet.getLength() + hmacLength;
+		int paddedLen = packet.getLength() + HMAC_LENGTH;
 		if(pn.shouldPadDataPackets()) {
 			int packetLength = paddedLen;
 			if(logDEBUG) Logger.debug(this, "Pre-padding length: " + packetLength);
@@ -490,26 +495,26 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		byte[] data = new byte[paddedLen];
-		packet.toBytes(data, hmacLength, pn.paddingGen());
+		packet.toBytes(data, HMAC_LENGTH, pn.paddingGen());
 
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
 		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
 		System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
-		System.arraycopy(data, hmacLength, IV, IV.length - 4, 4);
+		System.arraycopy(data, HMAC_LENGTH, IV, IV.length - 4, 4);
 
 		ivCipher.encipher(IV, IV);
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.outgoingCipher, IV);
-		payloadCipher.blockEncipher(data, hmacLength, paddedLen - hmacLength);
+		payloadCipher.blockEncipher(data, HMAC_LENGTH, paddedLen - HMAC_LENGTH);
 
 		//Add hash
-		byte[] text = new byte[paddedLen - hmacLength];
-		System.arraycopy(data, hmacLength, text, 0, text.length);
+		byte[] text = new byte[paddedLen - HMAC_LENGTH];
+		System.arraycopy(data, HMAC_LENGTH, text, 0, text.length);
 
-		byte[] hash = HMAC.macWithSHA256(sessionKey.hmacKey, text, hmacLength);
+		byte[] hash = HMAC.macWithSHA256(sessionKey.hmacKey, text);
 
-		System.arraycopy(hash, 0, data, 0, hmacLength);
+		System.arraycopy(hash, 0, data, 0, HMAC_LENGTH);
 
 		try {
 			if(logMINOR) {
