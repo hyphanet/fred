@@ -32,9 +32,11 @@ import freenet.l10n.NodeL10n;
 import freenet.node.Announcer;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
+import freenet.node.NodeFile;
 import freenet.node.NodeStarter;
 import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
+import freenet.node.ProgramDirectory;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
@@ -79,7 +81,7 @@ public class NodeUpdateManager {
 	 * The last build on the old key with Java 6 support. Older nodes can
 	 * update to this point via old UOM.
 	 */
-	public final static int TRANSITION_VERSION = 1471;
+	public final static int TRANSITION_VERSION = 1472;
 
 	/** The URI for post-TRANSITION_VERSION builds' freenet.jar. */
 	public final static String UPDATE_URI = "USK@O~UmMwTeDcyDIW-NsobFBoEicdQcogw7yrLO2H-sJ5Y,JVU4L7m9mNppkd21UNOCzRHKuiTucd6Ldw8vylBOe5o,AQACAAE/jar/"
@@ -206,7 +208,7 @@ public class NodeUpdateManager {
 		this.alert = new UpdatedVersionAvailableUserAlert(this);
 		alert.isValid(false);
 
-		SubConfig updaterConfig = new SubConfig("node.updater", config);
+		SubConfig updaterConfig = config.createSubConfig("node.updater");
 
 		updaterConfig.register("enabled", true, 1, false, false,
 				"NodeUpdateManager.enabled", "NodeUpdateManager.enabledLong",
@@ -223,7 +225,8 @@ public class NodeUpdateManager {
 
 		// Set default update URI for new nodes depending on JVM version.
 		updaterConfig
-				.register("URI", JVMVersion.isTooOld() ? LEGACY_UPDATE_URI : UPDATE_URI, 3, true, true,
+				.register("URI", JVMVersion.isTooOld() ? transitionMainJarURIAsUSK.toString() : UPDATE_URI,
+				          3, true, true,
 						"NodeUpdateManager.updateURI",
 						"NodeUpdateManager.updateURILong",
 						new UpdateURICallback());
@@ -369,10 +372,16 @@ public class NodeUpdateManager {
 
 		final FreenetURI freenetURI;
 		final String filename;
+		final ProgramDirectory directory;
 
-		public SimplePuller(FreenetURI freenetURI, String filename) {
+		public SimplePuller(FreenetURI freenetURI, NodeFile file) {
+		    this(freenetURI, file.getFilename(), file.getProgramDirectory(node));
+		}
+
+		private SimplePuller(FreenetURI freenetURI, String filename, ProgramDirectory directory) {
 			this.freenetURI = freenetURI;
 			this.filename = filename;
+			this.directory = directory;
 		}
 
 		public void start(short priority, long maxSize) {
@@ -404,7 +413,7 @@ public class NodeUpdateManager {
 			File temp;
 			FileOutputStream fos = null;
 			try {
-				temp = File.createTempFile(filename, ".tmp", node.getRunDir());
+				temp = File.createTempFile(filename, ".tmp", directory.dir());
 				temp.deleteOnExit();
 				fos = new FileOutputStream(temp);
 				BucketTools.copyTo(result.asBucket(), fos, -1);
@@ -412,7 +421,7 @@ public class NodeUpdateManager {
 				fos = null;
 				for (int i = 0; i < 10; i++) {
 					// FIXME add a callback in case it's being used on Windows.
-					if (FileUtil.renameTo(temp, node.runDir().file(filename))) {
+					if (FileUtil.renameTo(temp, directory.file(filename))) {
 						System.out.println("Successfully fetched " + filename
 								+ " for version " + Version.buildNumber());
 						break;
@@ -434,7 +443,7 @@ public class NodeUpdateManager {
 						.println("Fetched but failed to write out "
 								+ filename
 								+ " - please check that the node has permissions to write in "
-								+ node.getRunDir()
+								+ directory.dir()
 								+ " and particularly the file " + filename);
 				System.err.println("The error was: " + e);
 				e.printStackTrace();
@@ -456,12 +465,8 @@ public class NodeUpdateManager {
 
 	}
 
-	public static final String WINDOWS_FILENAME = "freenet-latest-installer-windows.exe";
-	public static final String NON_WINDOWS_FILENAME = "freenet-latest-installer-nonwindows.jar";
-	public static final String IPV4_TO_COUNTRY_FILENAME = "IpToCountry.dat";
-
 	public File getInstallerWindows() {
-		File f = node.runDir().file(WINDOWS_FILENAME);
+		File f = NodeFile.InstallerWindows.getFile(node);
 		if (!(f.exists() && f.canRead() && f.length() > 0))
 			return null;
 		else
@@ -469,7 +474,7 @@ public class NodeUpdateManager {
 	}
 
 	public File getInstallerNonWindows() {
-		File f = node.runDir().file(NON_WINDOWS_FILENAME);
+		File f = NodeFile.InstallerNonWindows.getFile(node);
 		if (!(f.exists() && f.canRead() && f.length() > 0))
 			return null;
 		else
@@ -481,12 +486,12 @@ public class NodeUpdateManager {
 				"seednodes-" + Version.buildNumber());
 	}
 
-	public FreenetURI getInstallerWindowsURI() {
+	public FreenetURI getInstallerNonWindowsURI() {
 		return updateURI.sskForUSK().setDocName(
 				"installer-" + Version.buildNumber());
 	}
 
-	public FreenetURI getInstallerNonWindowsURI() {
+	public FreenetURI getInstallerWindowsURI() {
 		return updateURI.sskForUSK().setDocName(
 				"wininstaller-" + Version.buildNumber());
 	}
@@ -502,22 +507,22 @@ public class NodeUpdateManager {
 		
 		enable(wasEnabledOnStartup);
 
-		// Fetch 3 files, each to a file in the runDir.
-
+		// Fetch seednodes to the nodeDir.
 		if (updateSeednodes) {
 
 			SimplePuller seedrefsGetter = new SimplePuller(getSeednodesURI(),
-					Announcer.SEEDNODES_FILENAME);
+					NodeFile.Seednodes);
 			seedrefsGetter.start(
 					RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 					1024 * 1024);
 		}
 
+		// Fetch installers and IP-to-country files to the runDir.
 		if (updateInstallers) {
 			SimplePuller installerGetter = new SimplePuller(
-					getInstallerWindowsURI(), NON_WINDOWS_FILENAME);
+					getInstallerNonWindowsURI(), NodeFile.InstallerNonWindows);
 			SimplePuller wininstallerGetter = new SimplePuller(
-					getInstallerNonWindowsURI(), WINDOWS_FILENAME);
+					getInstallerWindowsURI(), NodeFile.InstallerWindows);
 
 			installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
 					32 * 1024 * 1024);
@@ -528,7 +533,7 @@ public class NodeUpdateManager {
 
 		if (updateIPToCountry) {
 			SimplePuller ip4Getter = new SimplePuller(getIPv4ToCountryURI(),
-					IPV4_TO_COUNTRY_FILENAME);
+					NodeFile.IPv4ToCountry);
 			ip4Getter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
 					8 * 1024 * 1024);
 		}

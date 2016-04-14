@@ -7,6 +7,7 @@ import java.net.URI;
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
+import freenet.node.NodeFile;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.support.HTMLNode;
 import freenet.support.SimpleFieldSet;
@@ -29,7 +30,7 @@ public class DarknetAddRefToadlet extends Toadlet {
             return;
 		
 		String path = uri.getPath();
-		if(path.endsWith(NodeUpdateManager.WINDOWS_FILENAME)) {
+		if(path.endsWith(NodeFile.InstallerWindows.getFilename())) {
 			File installer = node.nodeUpdater.getInstallerWindows();
 			if(installer != null) {
 				FileBucket bucket = new FileBucket(installer, true, false, false, false);
@@ -38,7 +39,7 @@ public class DarknetAddRefToadlet extends Toadlet {
 			}
 		}
 		
-		if(path.endsWith(NodeUpdateManager.NON_WINDOWS_FILENAME)) {
+		if(path.endsWith(NodeFile.InstallerNonWindows.getFilename())) {
 			File installer = node.nodeUpdater.getInstallerNonWindows();
 			if(installer != null) {
 				FileBucket bucket = new FileBucket(installer, true, false, false, false);
@@ -60,7 +61,7 @@ public class DarknetAddRefToadlet extends Toadlet {
 		boxContent.addChild("p", l10n("explainBox2"));
 				
 		File installer = node.nodeUpdater.getInstallerWindows();
-		String shortFilename = NodeUpdateManager.WINDOWS_FILENAME;
+		String shortFilename = NodeFile.InstallerWindows.getFilename();
 		
 		HTMLNode p = boxContent.addChild("p");
 		
@@ -71,7 +72,7 @@ public class DarknetAddRefToadlet extends Toadlet {
 			NodeL10n.getBase().addL10nSubstitution(p, "DarknetAddRefToadlet.explainInstallerWindowsNotYet", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/"+node.nodeUpdater.getInstallerWindowsURI().toString()) });
 		
 		installer = node.nodeUpdater.getInstallerNonWindows();
-		shortFilename = NodeUpdateManager.NON_WINDOWS_FILENAME;
+		shortFilename = NodeFile.InstallerNonWindows.getFilename();
 		
 		boxContent.addChild("#", " ");
 		

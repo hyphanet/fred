@@ -35,40 +35,27 @@ package freenet.crypt;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.SoftReference;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
-import java.util.ArrayList;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.node.Node;
 import freenet.node.NodeInitException;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 
 /**
  * @author  Jeroen C. van Gelderen (gelderen@cryptix.org)
  */
 public class SHA256 {
-	private static volatile boolean logMINOR;
-
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
-
 	/** Size (in bytes) of this hash */
 	private static final int HASH_SIZE = 32;
-
-	private static final int MESSAGE_DIGESTS_TO_CACHE = 16;
-	private static final ArrayList<MessageDigest> digests = new ArrayList<MessageDigest>();
+	private static final Queue<SoftReference<MessageDigest>> digests = new ConcurrentLinkedQueue<>();
 
 	/**
 	 * It won't reset the Message Digest for you!
@@ -99,15 +86,14 @@ public class SHA256 {
 	 */
 	public static MessageDigest getMessageDigest() {
 		try {
-			MessageDigest md = null;
-			synchronized(digests) {
-				int x = digests.size();
-				if(x == 0) md = null;
-				else md = digests.remove(x-1);
+			SoftReference<MessageDigest> item = null;
+			while (((item = digests.poll()) != null)) {
+				MessageDigest md = item.get();
+				if (md != null) {
+					return md;
+				}
 			}
-			if(md == null)
-				md = MessageDigest.getInstance("SHA-256", mdProvider);
-			return md;
+			return MessageDigest.getInstance("SHA-256", mdProvider);
 		} catch(NoSuchAlgorithmException e2) {
 			//TODO: maybe we should point to a HOWTO for freejvms
 			Logger.error(Node.class, "Check your JVM settings especially the JCE!" + e2);
@@ -129,27 +115,20 @@ public class SHA256 {
 		if(!(algo.equals("SHA-256") || algo.equals("SHA256")))
 			throw new IllegalArgumentException("Should be SHA-256 but is " + algo);
 		md256.reset();
-		synchronized (digests) {
-			int mdPoolSize = digests.size();
-			if (mdPoolSize > MESSAGE_DIGESTS_TO_CACHE || noCache) { // don't cache too many of them
-				if(logMINOR) Logger.normal(SHA256.class, "Throwing away a SHA256 MessageDigest ("+mdPoolSize+'>'+MESSAGE_DIGESTS_TO_CACHE+')');
-				return;
-			}
-			digests.add(md256);
-		}
+		digests.add(new SoftReference<>(md256));
 	}
 
 	public static byte[] digest(byte[] data) {
-		MessageDigest md = getMessageDigest();
-		byte[] hash = md.digest(data);
-		returnMessageDigest(md);
-		return hash;
+		MessageDigest md = null;
+		try {
+			md = getMessageDigest();
+			return md.digest(data);
+		} finally {
+			returnMessageDigest(md);
+		}
 	}
 
 	public static int getDigestLength() {
 		return HASH_SIZE;
 	}
-	
-	private static boolean noCache = false;
-	
 }

@@ -27,7 +27,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 	 */
 	private static final Double minCap = 2*Node.getMinimumBandwidth()*secondsPerMonth/GB;
 
-	private static final long[] caps = { (long)Math.ceil(minCap), 50, 100, 150 };
+	private static final long[] caps = { (long)Math.ceil(minCap), 100, 150, 250, 500 };
 
 	public BANDWIDTH_MONTHLY(NodeClientCore core, Config config) {
 		super(core, config);

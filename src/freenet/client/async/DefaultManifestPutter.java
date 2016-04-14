@@ -26,7 +26,7 @@ import freenet.support.io.ResumeFailedException;
  
  * <P>pack limits:
  * <UL>
- * <LI>max container size: 2MB (default transparent passtrought for fproxy)
+ * <LI>max container size: 2MB (a CHK manifest with 62 CHK redirects)
  * <LI>max container item size: 1MB. Items &gt;1MB are inserted as externals.
  *                            exception: see rule 1)
  * <LI>container size spare: 15KB. No crystal ball is perfect, so we have space
