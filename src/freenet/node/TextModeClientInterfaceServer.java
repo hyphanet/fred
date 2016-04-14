@@ -64,7 +64,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 
 		TextModeClientInterfaceServer server = null;
 
-		SubConfig TMCIConfig = new SubConfig("console", config);
+		SubConfig TMCIConfig = config.createSubConfig("console");
 
 		TMCIConfig.register("enabled", false, 1, true, true /* FIXME only because can't be changed on the fly */, "TextModeClientInterfaceServer.enabled", "TextModeClientInterfaceServer.enabledLong", new TMCIEnabledCallback(core));
 		TMCIConfig.register("ssl", false, 1, true, true , "TextModeClientInterfaceServer.ssl", "TextModeClientInterfaceServer.sslLong", new TMCISSLCallback());

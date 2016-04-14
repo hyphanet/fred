@@ -67,7 +67,7 @@ public class SecurityLevels {
 	
 	public SecurityLevels(Node node, PersistentConfig config) {
 		this.node = node;
-		SubConfig myConfig = new SubConfig("security-levels", config);
+		SubConfig myConfig = config.createSubConfig("security-levels");
 		int sortOrder = 0;
 		networkThreatLevelCallback = new MyCallback<NETWORK_THREAT_LEVEL>() {
 

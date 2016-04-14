@@ -67,6 +67,11 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		} catch (SocketException e) {
 			throw new RuntimeException(e);
 		}
+		try {
+			_sock.setTrafficClass(node.getTrafficClass().value);
+		} catch (SocketException e) {
+			Logger.error(this, "Failed to setTrafficClass with "+node.getTrafficClass().value,e);
+		}
 //		}
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = node.fastWeakRandom;

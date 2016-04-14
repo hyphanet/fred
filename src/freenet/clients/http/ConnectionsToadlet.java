@@ -32,6 +32,7 @@ import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.NodeFile;
 import freenet.node.NodeStats;
 import freenet.node.PeerManager;
 import freenet.node.PeerNode;
@@ -989,7 +990,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		HTMLNode addressRow = peerRow.addChild("td", "class", "peer-address");
 		// Ip to country + Flags
-		IPConverter ipc = IPConverter.getInstance(node.runDir().file(NodeUpdateManager.IPV4_TO_COUNTRY_FILENAME));
+		IPConverter ipc = IPConverter.getInstance(NodeFile.IPv4ToCountry.getFile(node));
 		byte[] addr = peerNodeStatus.getPeerAddressBytes();
 
 		Country country = ipc.locateIP(addr);
