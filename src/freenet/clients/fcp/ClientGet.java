@@ -205,7 +205,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 		this.extensionCheck = extensionCheck;
 		this.initialMetadata = null;
-		getter = makeGetter(ret);
+		getter = makeGetter(core, ret);
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, 
@@ -265,10 +265,25 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 		this.extensionCheck = extensionCheck;
 		initialMetadata = message.getInitialMetadata();
-		getter = makeGetter(ret);
+        try {
+            getter = makeGetter(core, ret);
+        } catch (IOException e) {
+            Logger.error(this, "Cannot create bucket for temporary storage: "+e, e);
+            // This is *not* a FetchException since we don't register it: it's a protocol error.
+            throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR,
+                    "Cannot create bucket for temporary storage (out of disk space?): " + e, identifier, global);
+        }
 	}
-	
-	private ClientGetter makeGetter(Bucket ret) {
+
+    private ClientGetter makeGetter(Bucket ret) throws IOException {
+        return makeGetter(null, ret);
+    }
+
+    private ClientGetter makeGetter(NodeClientCore core, Bucket ret) throws IOException {
+        if (binaryBlob && ret == null) {
+            ret = core.clientContext.getBucketFactory(persistence == Persistence.FOREVER).makeBucket(fctx.maxOutputLength);
+        }
+
 	    return new ClientGetter(this,
                 uri, fctx, priorityClass,
                 binaryBlob ? new NullBucket() : ret, binaryBlob ? new BinaryBlobWriter(ret) : null, false, initialMetadata, extensionCheck);
@@ -344,7 +359,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.minor(this, "Succeeded: "+identifier);
-		Bucket data = result.asBucket();
+		Bucket data = binaryBlob ? state.getBlobBucket() : result.asBucket();
 		synchronized(this) {
 			if(succeeded) {
 				Logger.error(this, "onSuccess called twice for "+this+" ("+identifier+ ')');

@@ -127,7 +127,7 @@ public class PluginManager {
 		executor = new SerialExecutor(NativeThread.NORM_PRIORITY);
 		executor.start(node.executor, "PM callback executor");
 
-		pmconfig = new SubConfig("pluginmanager", node.config);
+		pmconfig = node.config.createSubConfig("pluginmanager");
 //		pmconfig.register("configfile", "fplugins.ini", 9, true, true, "PluginConfig.configFile", "PluginConfig.configFileLong",
 //				new StringCallback() {
 //			public String get() {

@@ -2,6 +2,7 @@ package freenet.clients.http;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
@@ -229,11 +230,14 @@ public class PproxyToadlet extends Toadlet {
 				reloadContent.addChild("p", l10n("reloadExplanation"));
 				reloadContent.addChild("p", l10n("reloadWarning"));
 				HTMLNode reloadForm = ctx.addFormChild(reloadContent, "/plugins/", "reloadPluginConfirmForm");
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "reloadconfirm", request.getPartAsStringFailsafe("reload", MAX_PLUGIN_NAME_LENGTH) });
+				String pluginIdentifier = request.getPartAsStringFailsafe("reload", MAX_PLUGIN_NAME_LENGTH);
+				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "reloadconfirm", pluginIdentifier });
+				if (!pluginWasLoadedFromLocalDisk(pm, pluginIdentifier)) {
+					HTMLNode tempNode = reloadForm.addChild("p");
+					tempNode.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "purge" });
+					tempNode.addChild("#", l10n("reloadPurgeWarning"));
+				}
 				HTMLNode tempNode = reloadForm.addChild("p");
-				tempNode.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "purge" });
-				tempNode.addChild("#", l10n("reloadPurgeWarning"));
-				tempNode = reloadForm.addChild("p");
 				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", l10n("reload") });
 				tempNode.addChild("#", " ");
 				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel") });
@@ -290,6 +294,18 @@ public class PproxyToadlet extends Toadlet {
 
 		}
 
+	}
+
+	private boolean pluginWasLoadedFromLocalDisk(PluginManager pluginManager, String pluginIdentifier) {
+		for (PluginInfoWrapper pluginInfoWrapper : pluginManager.getPlugins()) {
+			if (pluginInfoWrapper.getThreadName().equals(pluginIdentifier)) {
+				File pluginFile = new File(pluginInfoWrapper.getFilename());
+				if (pluginFile.exists() && pluginFile.isFile()) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**

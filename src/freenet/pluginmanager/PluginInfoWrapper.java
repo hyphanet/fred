@@ -78,7 +78,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		if(isConfigurablePlugin) {
 			config = FilePersistentConfig.constructFilePersistentConfig(new File(node.getCfgDir(), "plugin-"+getPluginClassName()+".ini"),
 			             "config options for plugin: "+getPluginClassName());
-			subconfig = new SubConfig(getPluginClassName(), config);
+			subconfig = config.createSubConfig(getPluginClassName());
 			((FredPluginConfigurable)plug).setupConfig(subconfig);
 			config.finishedInit();
 			configToadlet = new ConfigToadlet(pr.getHLSimpleClient(), config, subconfig, node, node.clientCore, (FredPluginConfigurable)plug);
