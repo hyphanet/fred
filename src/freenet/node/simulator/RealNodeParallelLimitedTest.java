@@ -183,29 +183,21 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
             int targetSuccesses, SimulatorRequestTracker tracker,
             LocalRequestUIDsCounter overallUIDTagCounter) {
         super(nodes, random, targetSuccesses, tracker, overallUIDTagCounter);
-        spammer1 = nodes[random.nextInt(nodes.length)];
-        Node spam2;
-        do {
-            spam2 = nodes[random.nextInt(nodes.length)];
-        } while(spammer1 == spam2);
-        spammer2 = spam2;
+        spammer2 = nodes[0];
         keysFetching = new HashMap<Key,Integer>();
         keysInserting = new HashMap<Key,Integer>();
         fetchClientRequester = new MyRequester();
         fetcher = new MyKeyFetcher(spammer2.clientCore, spammer2.random, (short)0, false, false);
         fetchScheduler = spammer2.clientCore.clientContext.getChkFetchScheduler(false);
         fetchScheduler.getSelector().innerRegister(fetcher, spammer2.clientCore.clientContext, null);
-        insertScheduler = spammer1.clientCore.clientContext.getChkInsertScheduler(false);
     }
 
-    private final Node spammer1;
     private final Node spammer2;
     private final Map<Key,Integer> keysFetching;
     private final Map<Key,Integer> keysInserting;
     private final MyRequester fetchClientRequester;
     private final MyKeyFetcher fetcher;
     private final ClientRequestScheduler fetchScheduler;
-    private final ClientRequestScheduler insertScheduler;
     
     class MyRequester extends ClientRequester {
 
@@ -353,8 +345,10 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
     @Override
     protected void startInsert(ClientKeyBlock block, InsertWrapper insertWrapper) {
         if(logMINOR) Logger.minor(this, "Inserting "+block.getKey()+" for "+insertWrapper.req);
+        Node node = getInsertNode(insertWrapper.req);
+        ClientRequestScheduler insertScheduler = node.clientCore.clientContext.getChkInsertScheduler(false);
         MyInsert insert = new MyInsert(block.getBlock(), (short)0, this, 
-                spammer1.clientCore.clientContext.getChkInsertScheduler(false), insertWrapper);
+                node.clientCore.clientContext.getChkInsertScheduler(false), insertWrapper);
         insertScheduler.registerInsert(insert, false);
     }
     
