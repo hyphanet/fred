@@ -14,12 +14,6 @@ import freenet.support.Logger;
  * Implements the Digital Signature Algorithm (DSA) described in FIPS-186
  *
  * This is legacy and largely deprecated. You shouldn't be using it for new code
- * Several concerns:
- *  - we have no idea of where the DSA group came from
- *  - until recently the code wasn't using deterministic signatures
- *      (and we're not sure about the PRNG either!)
- *  - the group is *way* too small (1024bits)
- *  - the signature masking thingy is dodgy
  */
 public class DSA {
 
