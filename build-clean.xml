@@ -323,6 +323,9 @@ maintainers may prefer to use this instead of build.xml.
 		<copy todir="${test.make}/freenet/client/filter/bmp" overwrite="true">
 			<fileset dir="${test.src}/freenet/client/filter/bmp"/>
 		</copy>
+		<copy todir="${test.make}/freenet/client/filter/m3u" overwrite="true">
+			<fileset dir="${test.src}/freenet/client/filter/m3u"/>
+		</copy>
 		<copy todir="${test.make}/freenet/crypt/ciphers/rijndael-gladman-test-data" overwrite="true">
 			<fileset dir="${test.src}/freenet/crypt/ciphers/rijndael-gladman-test-data"/>
 		</copy>

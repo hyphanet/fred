@@ -1,0 +1,6 @@
+# access external resource
+http://betray.user/simplepathname.mp3
+# access other parts of Freenet
+/Sone/post?I_am=simplepathname2.mp3
+# fake filetype
+simplepathname.mp3?type=text/plain
