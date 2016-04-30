@@ -45,13 +45,13 @@ public class ArrayBucket implements Bucket, Serializable, RandomAccessBucket {
 	@Override
 	public OutputStream getOutputStream() throws IOException {
 		if(readOnly) throw new IOException("Read only");
-		if(freed) throw new IOException("Already fred");
+		if(freed) throw new IOException("Already freed");
 		return new ArrayBucketOutputStream();
 	}
 	
 	@Override
 	public InputStream getInputStream() throws IOException {
-        if(freed) throw new IOException("Already fred");
+        if(freed) throw new IOException("Already freed");
 		return new ByteArrayInputStream(data);
 	}
 
