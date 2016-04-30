@@ -58,6 +58,23 @@ public class M3UFilter implements ContentDataFilter {
     // static final byte[] EXT_HEADER =
     // { (byte)'#', (byte)'E', (byte)'X', (byte)'T', (byte)'M', (byte)'3', (byte)'U' };
         
+    static public boolean isAllowedInUri(byte b) {
+        // overly strict filtering to keep it simple for starters.
+        // allow only alphanumeric values in UTF-8 encoding and exactly one period in the filename.
+        final byte utf80 = (byte)'0';
+        final byte utf89 = (byte)'9';
+        final byte utf8A = (byte)'A';
+        final byte utf8Z = (byte)'Z';
+        final byte utf8a = (byte)'a';
+        final byte utf8z = (byte)'z';
+        final byte utf8dot = (byte)'.';
+        final byte utf8dash = (byte)'-';
+        return ((utf80 <= b && b <= utf89) ||
+                (utf8A <= b && b <= utf8Z) ||
+                (utf8a <= b && b <= utf8z) ||
+                utf8dot == b ||
+                utf8dash == b);
+    }
     
     @Override
     public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
@@ -108,23 +125,9 @@ public class M3UFilter implements ContentDataFilter {
                         if (!isComment) {
                             // remove too long paths
                             if (fileIndex <= MAX_URI_LENGTH) {
-                                // overly strict filtering to keep it simple for starters.
-                                // allow only alphanumeric values in UTF-8 encoding and exactly one period in the filename.
-                                final byte utf80 = (byte)'0';
-                                final byte utf89 = (byte)'9';
-                                final byte utf8A = (byte)'A';
-                                final byte utf8Z = (byte)'Z';
-                                final byte utf8a = (byte)'a';
-                                final byte utf8z = (byte)'z';
-                                final byte utf8dot = (byte)'.';
-                                final byte utf8dash = (byte)'-';
                                 for (int i = 0; i < fileIndex; i++) {
                                     byte b = fileUri[i];
-                                    if (!((utf80 <= b && b <= utf89) ||
-                                          (utf8A <= b && b <= utf8Z) ||
-                                          (utf8a <= b && b <= utf8z) ||
-                                          utf8dot == b ||
-                                          utf8dash == b)) {
+                                    if (!isAllowedInUri(b)) {
                                         isBadUri = true;
                                         break;
                                     } 
