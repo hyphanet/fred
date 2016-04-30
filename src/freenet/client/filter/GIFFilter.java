@@ -33,7 +33,7 @@ public class GIFFilter implements ContentDataFilter {
 		// Check the header
 		byte[] headerCheck = new byte[HEADER_SIZE];
 		dis.readFully(headerCheck);
-		if((!Arrays.equals(headerCheck, gif87aHeader)) && (!Arrays.equals(headerCheck, gif89aHeader))) {
+		if ((!Arrays.equals(headerCheck, gif87aHeader)) && (!Arrays.equals(headerCheck, gif89aHeader))) {
 			throwHeaderError(l10n("invalidHeaderTitle"), l10n("invalidHeader"));
 		}
 		output.write(headerCheck);
@@ -48,9 +48,12 @@ public class GIFFilter implements ContentDataFilter {
 	private void throwHeaderError(String shortReason, String reason) throws DataFilterException {
 		// Throw an exception
 		String message = l10n("notGif");
-		if(reason != null) message += ' ' + reason;
-		if(shortReason != null)
+		if (reason != null) {
+            message += ' ' + reason;
+        }
+		if (shortReason != null) {
 			message += " - (" + shortReason + ')';
+        }
 		throw new DataFilterException(shortReason, shortReason, message);
 	}
 
@@ -58,7 +61,6 @@ public class GIFFilter implements ContentDataFilter {
 	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		output.write(input.read());
-		return;
 	}
 
 }
