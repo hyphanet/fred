@@ -69,11 +69,15 @@ public class M3UFilter implements ContentDataFilter {
         final byte utf8z = (byte)'z';
         final byte utf8dot = (byte)'.';
         final byte utf8dash = (byte)'-';
-        return ((utf80 <= b && b <= utf89) ||
-                (utf8A <= b && b <= utf8Z) ||
-                (utf8a <= b && b <= utf8z) ||
-                utf8dot == b ||
-                utf8dash == b);
+        if ((utf80 <= b && b <= utf89) ||
+            (utf8A <= b && b <= utf8Z) ||
+            (utf8a <= b && b <= utf8z) ||
+            utf8dot == b ||
+            utf8dash == b) {
+            return true;
+        } else {
+            return false;
+        }
     }
     
     @Override
