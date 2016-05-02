@@ -22,8 +22,10 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.RetrievalException;
 import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.io.xfer.BlockReceiver;
+import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.BlockReceiver.BlockReceiverCompletion;
 import freenet.io.xfer.BlockReceiver.BlockReceiverTimeoutHandler;
+import freenet.io.xfer.BulkTransmitter.AllSentCallback;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
@@ -1664,6 +1666,14 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	/** Acknowledge the opennet path folding attempt without sending a reference. Once
 	 * the send completes (asynchronously), unlock everything. */
 	void ackOpennet(final PeerNode next) {
+	    synchronized(this) {
+	        if(opennetFinishedRelaying) {
+	            Logger.error(this, "Already relayed in ackOpennet on "+this+" to "+next, 
+	                    new Exception("debug"));
+	            return;
+	        }
+            opennetFinishedRelaying = true;
+	    }
 		Message msg = DMT.createFNPOpennetCompletedAck(uid);
 		// We probably should set opennetFinished after the send completes.
 		try {
@@ -1672,13 +1682,42 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			// Ignore.
 		}
 	}
+	
+    public void relayOpennetRef(byte[] newNoderef, final PeerNode next, 
+            final RequestHandler handler) throws NotConnectedException {
+        boolean duplicate = false;
+        synchronized(this) {
+            duplicate = opennetFinishedRelaying;
+            opennetFinishedRelaying = true;
+        }
+        if(duplicate) {
+            Logger.error(this, "Already relayed in relayOpennetRef on "+this+" to "+next, 
+                    new Exception("debug"));
+            handler.finishAfterRelaying(next);
+            return;
+        }
+        if(logMINOR) Logger.minor(this, "Relaying noderef from source to data source for "+this);
+        OpennetManager om = node.getOpennet();
+        om.sendOpennetRef(true, uid, next, newNoderef, this, new AllSentCallback() {
 
-	/**
-     * Do path folding, maybe.
-     * Wait for either a CompletedAck or a ConnectDestination.
-     * If the former, exit.
-     * If we want a connection, reply with a ConnectReply, otherwise send a ConnectRejected and exit.
-     * Add the peer.
+            @Override
+            public void allSent(
+                    BulkTransmitter bulkTransmitter,
+                    boolean anyFailed) {
+                handler.finishAfterRelaying(next);
+            }
+            
+        });
+    }
+
+    /**
+     * Do path folding, maybe:
+     * Wait for either a CompletedAck or a ConnectDestination. If the former, exit.
+     * If we want a connection, reply with a ConnectReply and our noderef and add the
+     * peer. If there is no previous peer, acknowledge it immediately and exit.
+     * Otherwise pass it on to RequestHandler, which is responsible for relaying it
+     * to the requestor, waiting for a response and calling either ackOpennet() or
+     * relayOpennetRef().
      * @return True only if there was a fatal timeout and the caller should not unlock.
      */
     private boolean finishOpennet(PeerNode next) {
@@ -1713,7 +1752,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				synchronized(this) {
 					opennetNoderef = noderef;
 				}
-				// RequestHandler will send a noderef back up, eventually, and will unlockHandler() after that point.
+				// RequestHandler will send a noderef back up, eventually, and will 
+				// unlockHandler() after that point.
 				// But if this is a local request, we need to send the ack now.
 				// Serious race condition not possible here as we set it.
 				if(source == null)
@@ -1781,8 +1821,11 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 
     // Opennet stuff
     
-    /** Have we finished all opennet-related activities? */
+    /** Have we finished waiting for an opennet noderef? */
     private boolean opennetFinished;
+
+    /** Have we sent an acknowledgement or opennet noderef? */
+    private boolean opennetFinishedRelaying;
     
     /** Did we timeout waiting for opennet noderef? */
     private boolean opennetTimedOut;

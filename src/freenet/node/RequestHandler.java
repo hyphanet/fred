@@ -777,7 +777,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			noderef = rs.waitForOpennetNoderef();
 		} catch (WaitedTooLongForOpennetNoderefException e) {
 			sendTerminal(DMT.createFNPOpennetCompletedTimeout(uid));
-			rs.ackOpennet(rs.successFrom());
+			// RequestSender will have already acknowledged.
 			return;
 		}
 		if(noderef == null) {
@@ -937,29 +937,14 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					
 					if(OpennetManager.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null) {
 						try {
-							if(logMINOR) Logger.minor(this, "Relaying noderef from source to data source for "+RequestHandler.this);
-							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this, new AllSentCallback() {
-
-								@Override
-								public void allSent(
-										BulkTransmitter bulkTransmitter,
-										boolean anyFailed) {
-									// As soon as the originator receives the three blocks, he can reuse the slot.
-									tag.finishedWaitingForOpennet(dataSource);
-									tag.unlockHandler();
-									applyByteCounts();
-									// Note that sendOpennetRef() does not wait for an acknowledgement or even for the blocks to have been sent!
-									// So this will be called well after gotNoderef() exits.
-								}
-								
-							});
+						    rs.relayOpennetRef(newNoderef, dataSource, RequestHandler.this);
+                            // Does not wait for an acknowledgement.
+						    return;
 						} catch(NotConnectedException e) {
 							// How sad
 						}
 					}
-					tag.finishedWaitingForOpennet(dataSource);
-					tag.unlockHandler();
-					applyByteCounts();
+					finishAfterRelaying(dataSource);
 				}
 			}
 
@@ -985,7 +970,14 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		}, node);
 
 	}
-	private int sentBytes;
+	
+	protected void finishAfterRelaying(PeerNode dataSource) {
+        tag.finishedWaitingForOpennet(dataSource);
+        tag.unlockHandler();
+        applyByteCounts();
+    }
+	
+    private int sentBytes;
 	private int receivedBytes;
 	private volatile Object bytesSync = new Object();
 
