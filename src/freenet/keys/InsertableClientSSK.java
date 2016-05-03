@@ -188,7 +188,6 @@ public class InsertableClientSSK extends ClientSSK {
 			byte[] overallHash = md256.digest();
 			// Now sign it
 			DSASigner dsa = new DSASigner(new HMacDSAKCalculator(new SHA256Digest()));
-			//DSASigner dsa = new DSASigner();
 			dsa.init(true, new DSAPrivateKeyParameters(privKey.getX(), Global.getDSAgroupBigAParameters()));
 			BigInteger[] sig = dsa.generateSignature(Global.truncateHashIfNecessary(pubKey.getQ(), overallHash, false));
 			// Pack R and S into 32 bytes each, and copy to headers.

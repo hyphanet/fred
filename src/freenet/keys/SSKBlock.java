@@ -138,16 +138,21 @@ public class SSKBlock implements KeyBlock {
 			System.arraycopy(headers, x, bufS, 0, SIG_S_LENGTH);
 			x+=SIG_S_LENGTH;
 
-	        MessageDigest md = SHA256.getMessageDigest();
-			md.update(data);
-			byte[] dataHash = md.digest();
-			// All headers up to and not including the signature
-			md.update(headers, 0, headersOffset + ENCRYPTED_HEADERS_LENGTH);
-			// Then the implicit data hash
-			md.update(dataHash);
-			// Makes the implicit overall hash
-			byte[] overallHash = md.digest();
-			SHA256.returnMessageDigest(md);
+			MessageDigest md = null;
+			byte[] overallHash;
+			try {
+				md = SHA256.getMessageDigest();
+				md.update(data);
+				byte[] dataHash = md.digest();
+				// All headers up to and not including the signature
+				md.update(headers, 0, headersOffset + ENCRYPTED_HEADERS_LENGTH);
+				// Then the implicit data hash
+				md.update(dataHash);
+				// Makes the implicit overall hash
+				overallHash = md.digest();
+			} finally {
+				SHA256.returnMessageDigest(md);
+			}
 			
 			// Now verify it
 			BigInteger r = new BigInteger(1, bufR);
