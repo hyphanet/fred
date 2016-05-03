@@ -156,9 +156,9 @@ public class SSKBlock implements KeyBlock {
 			dsa.init(false, new DSAPublicKeyParameters(pubKey.getP(), Global.getDSAgroupBigAParameters()));
 
 			// We probably don't need to try both here... but that's what the legacy code was doing.
-			if(!( (dsa.verifySignature(Global.chopSignatureMask(pubKey.getQ(), overallHash, true), r, s) ||
-			       dsa.verifySignature(overallHash, r, s))
-			)) {
+			if(!(dsa.verifySignature(Global.truncateHashIfNecessary(pubKey.getQ(), overallHash, false), r, s) ||
+			       dsa.verifySignature(Global.truncateHashIfNecessary(pubKey.getQ(), overallHash, true), r, s))
+			  ) {
 				if (dontVerify)
 					Logger.error(this, "DSA verification failed with dontVerify!!!!");
 				throw new SSKVerifyException("Signature verification failed for node-level SSK");
