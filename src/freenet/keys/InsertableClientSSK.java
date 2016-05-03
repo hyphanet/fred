@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
-import net.i2p.util.NativeBigInteger;
-
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.signers.DSASigner;
@@ -92,7 +90,7 @@ public class InsertableClientSSK extends ClientSSK {
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey;
 		try {
-			privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getRoutingKey()), g);
+			privKey = new DSAPrivateKey(new BigInteger(1, uri.getRoutingKey()), g);
 		} catch(IllegalArgumentException e) {
 			// DSAPrivateKey is invalid
 			Logger.error(InsertableClientSSK.class, "Caught "+e, e);
