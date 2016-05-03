@@ -155,7 +155,8 @@ public class SSKBlock implements KeyBlock {
 			DSASigner dsa = new DSASigner();
 			dsa.init(false, new DSAPublicKeyParameters(pubKey.getP(), Global.getDSAgroupBigAParameters()));
 
-			if(!( (dsa.verifySignature(Global.chopSignatureMask(pubKey.getQ(), overallHash), r, s) ||
+			// We probably don't need to try both here... but that's what the legacy code was doing.
+			if(!( (dsa.verifySignature(Global.chopSignatureMask(pubKey.getQ(), overallHash, true), r, s) ||
 			       dsa.verifySignature(overallHash, r, s))
 			)) {
 				if (dontVerify)

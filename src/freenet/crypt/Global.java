@@ -37,9 +37,9 @@ public final class Global {
 	// all SHA-256 output's. Therefore we chop it down to 255 bits.
 	static final BigInteger SIGNATURE_MASK = Util.TWO.pow(255).subtract(BigInteger.ONE);
 
-	public static byte[] chopSignatureMask(BigInteger q, byte[] message) {
+	public static byte[] chopSignatureMask(BigInteger q, byte[] message, boolean force) {
 		BigInteger m = new BigInteger(1, message);
-		if(q.bitLength() == 256)
+		if(q.bitLength() == 256 || force)
 			m = m.and(SIGNATURE_MASK);
 		return m.toByteArray();
 	}
