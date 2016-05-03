@@ -3,14 +3,15 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
+import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.crypto.signers.DSASigner;
+
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
-import net.i2p.util.NativeBigInteger;
-
-import freenet.crypt.DSA;
 import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DSASignature;
+import freenet.crypt.Global;
 import freenet.crypt.SHA256;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -149,10 +150,14 @@ public class SSKBlock implements KeyBlock {
 			SHA256.returnMessageDigest(md);
 			
 			// Now verify it
-			NativeBigInteger r = new NativeBigInteger(1, bufR);
-			NativeBigInteger s = new NativeBigInteger(1, bufS);
-			if(!(DSA.verify(pubKey, new DSASignature(r, s), new NativeBigInteger(1, overallHash), false) ||
-					(DSA.verify(pubKey, new DSASignature(r, s), new NativeBigInteger(1, overallHash), true)))) {
+			BigInteger r = new BigInteger(1, bufR);
+			BigInteger s = new BigInteger(1, bufS);
+			DSASigner dsa = new DSASigner();
+			dsa.init(false, new DSAPublicKeyParameters(pubKey.getP(), Global.getDSAgroupBigAParameters()));
+
+			if(!( (dsa.verifySignature(Global.chopSignatureMask(pubKey.getQ(), overallHash), r, s) ||
+			       dsa.verifySignature(overallHash, r, s))
+			)) {
 				if (dontVerify)
 					Logger.error(this, "DSA verification failed with dontVerify!!!!");
 				throw new SSKVerifyException("Signature verification failed for node-level SSK");

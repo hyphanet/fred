@@ -5,6 +5,10 @@ package freenet.crypt;
 
 import net.i2p.util.NativeBigInteger;
 
+import org.bouncycastle.crypto.params.DSAParameters;
+
+import java.math.BigInteger;
+
 /**
  * This class contains global public keys used by Freenet.  These 
  * include the Diffie-Hellman key exchange modulus, DSA groups, and 
@@ -28,4 +32,18 @@ public final class Global {
 		"00b143368abcd51f58d6440d5417399339a4d15bef096a2c5d8e6df44f52d6d379", 16),
 		new NativeBigInteger( /* g */
 		"51a45ab670c1c9fd10bd395a6805d33339f5675e4b0d35defc9fa03aa5c2bf4ce9cfcdc256781291bfff6d546e67d47ae4e160f804ca72ec3c5492709f5f80f69e6346dd8d3e3d8433b6eeef63bce7f98574185c6aff161c9b536d76f873137365a4246cf414bfe8049ee11e31373cd0a6558e2950ef095320ce86218f992551cc292224114f3b60146d22dd51f8125c9da0c028126ffa85efd4f4bfea2c104453329cc1268a97e9a835c14e4a9a43c6a1886580e35ad8f1de230e1af32208ef9337f1924702a4514e95dc16f30f0c11e714a112ee84a9d8d6c9bc9e74e336560bb5cd4e91eabf6dad26bf0ca04807f8c31a2fc18ea7d45baab7cc997b53c356", 16));
+
+	// FIXME DSAgroupBigA is 256 bits long and therefore cannot accomodate
+	// all SHA-256 output's. Therefore we chop it down to 255 bits.
+	static final BigInteger SIGNATURE_MASK = Util.TWO.pow(255).subtract(BigInteger.ONE);
+
+	public static byte[] chopSignatureMask(BigInteger q, byte[] message) {
+		BigInteger m = new BigInteger(1, message);
+		if(q.bitLength() == 256)
+			m = m.and(SIGNATURE_MASK);
+		return m.toByteArray();
+	}
+	public static final DSAParameters getDSAgroupBigAParameters() {
+		return new DSAParameters(DSAgroupBigA.getP(),DSAgroupBigA.getQ(), DSAgroupBigA.getG());
+	}
 }
