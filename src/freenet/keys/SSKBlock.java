@@ -153,7 +153,7 @@ public class SSKBlock implements KeyBlock {
 			BigInteger r = new BigInteger(1, bufR);
 			BigInteger s = new BigInteger(1, bufS);
 			DSASigner dsa = new DSASigner();
-			dsa.init(false, new DSAPublicKeyParameters(pubKey.getP(), Global.getDSAgroupBigAParameters()));
+			dsa.init(false, new DSAPublicKeyParameters(pubKey.getY(), Global.getDSAgroupBigAParameters()));
 
 			// We probably don't need to try both here... but that's what the legacy code was doing.
 			if(!(dsa.verifySignature(Global.truncateHashIfNecessary(pubKey.getQ(), overallHash, false), r, s) ||
