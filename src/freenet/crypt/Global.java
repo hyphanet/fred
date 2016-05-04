@@ -35,9 +35,9 @@ public final class Global {
 	// So we need to keep that code around
 	static final BigInteger SIGNATURE_MASK = Util.TWO.pow(255).subtract(BigInteger.ONE);
 
-	public static byte[] truncateHashIfNecessary(BigInteger q, byte[] message, boolean force) {
+	public static byte[] truncateHashIfNecessary(BigInteger q, byte[] message, boolean forceMod) {
 		BigInteger m = new BigInteger(1, message);
-		if(q.bitLength() <= m.bitCount()*8 || force)
+		if(q.bitLength() <= m.bitCount()*8 && !forceMod)
 			m = m.and(SIGNATURE_MASK);
 		return m.toByteArray();
 	}
