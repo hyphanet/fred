@@ -109,6 +109,7 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
     static int BWLIMIT = 1000*1024;
     // Bandwidth limit *per connection* for CBR bypass.
     static int CBR_BWLIMIT = 1000;
+    static boolean LESS_LOGGING = false;
     
     //public static final int DARKNET_PORT_BASE = RealNodePingTest.DARKNET_PORT2+1;
     public static final int DARKNET_PORT_BASE = 10000;
@@ -151,7 +152,7 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
         DummyRandomSource nodesRandom = new DummyRandomSource(SEED+1);
         DummyRandomSource topologyRandom = new DummyRandomSource(SEED+2);
         DummyRandomSource globalRandom = new DummyRandomSource(SEED+5);
-        NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, logDetails, true, 
+        NodeStarter.globalTestInit(new File(name), false, LESS_LOGGING ? LogLevel.NONE : LogLevel.ERROR, logDetails, true, 
                 BYPASS_TRANSPORT_LAYER, globalRandom);
         System.out.println("Insert/retrieve test");
         System.out.println();

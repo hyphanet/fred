@@ -26,6 +26,7 @@ public class RealNodeRequestInsertLongTest {
                 new String[] {"size=200","degree=10","htl=5","drop=0",
                 "seed=123456","bypass=FAST_QUEUE_BYPASS"};
         RealNodeRequestInsertTester.TARGET_SUCCESSES = 100;
+        RealNodeRequestInsertTester.LESS_LOGGING = true;
         RealNodeRequestInsertTester.run(args);
     }
     
