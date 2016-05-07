@@ -154,9 +154,11 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
         DummyRandomSource globalRandom = new DummyRandomSource(SEED+5);
         NodeStarter.globalTestInit(new File(name), false, LESS_LOGGING ? LogLevel.NONE : LogLevel.ERROR, logDetails, true, 
                 BYPASS_TRANSPORT_LAYER, globalRandom);
-        System.out.println("Insert/retrieve test");
-        System.out.println();
-        System.err.println("Seed is "+SEED);
+        if(!LESS_LOGGING) {
+            System.out.println("Insert/retrieve test");
+            System.out.println();
+            System.err.println("Seed is "+SEED);
+        }
         SimulatorRequestTracker tracker = new SimulatorRequestTracker(MAX_HTL);
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
@@ -185,11 +187,13 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
         
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i].start(false);
-            System.err.println("Started node "+i+"/"+nodes.length);
+            if(!LESS_LOGGING)
+                System.err.println("Started node "+i+"/"+nodes.length);
         }
         
         if(NodeStarter.isMessageQueueBypassEnabled()) {
-            System.err.println("Starting fake connections (message bypass)...");
+            if(!LESS_LOGGING)
+                System.err.println("Starting fake connections (message bypass)...");
             for(int i=0;i<NUMBER_OF_NODES;i++) {
                 Node n = nodes[i];
                 for(PeerNode pnSource : n.getPeerNodes()) {
@@ -197,10 +201,12 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
                         (BypassMessageQueue) pnSource.getMessageQueue();
                     queue.fakeConnect();
                 }
-                System.err.println("Started fake connections for node "+i+"/"+nodes.length);
+                if(!LESS_LOGGING)
+                    System.err.println("Started fake connections for node "+i+"/"+nodes.length);
             }
         } else if(NodeStarter.isPacketBypassEnabled()) {
-            System.err.println("Starting fake connections (packet bypass)...");
+            if(!LESS_LOGGING)
+                System.err.println("Starting fake connections (packet bypass)...");
             for(int i=0;i<NUMBER_OF_NODES;i++) {
                 Node n = nodes[i];
                 for(PeerNode pnSource : n.getPeerNodes()) {
@@ -208,7 +214,8 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
                         (BypassPacketFormat) pnSource.getPacketFormat();
                     bypass.fakeConnect();
                 }
-                System.err.println("Started fake connections for node "+i+"/"+nodes.length);
+                if(!LESS_LOGGING)
+                    System.err.println("Started fake connections for node "+i+"/"+nodes.length);
             }
         }
         
@@ -223,9 +230,11 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
         
         random = new DummyRandomSource(SEED+3);
         
-        System.out.println();
-        System.out.println("Ping average > 95%, lets do some inserts/requests");
-        System.out.println();
+        if(!LESS_LOGGING) {
+            System.out.println();
+            System.out.println("Ping average > 95%, lets do some inserts/requests");
+            System.out.println();
+        }
         
         RealNodeRequestInsertTester tester = new RealNodeRequestInsertTester(nodes, random, TARGET_SUCCESSES, tracker, overallUIDTagCounter);
         
@@ -420,10 +429,12 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
         	testKey = insertKey.getURI();
         }
         
-        System.err.println();
+        if(!LESS_LOGGING)
+            System.err.println();
         report(prefix+"Created random test key "+testKey);
         Logger.normal(this, "Test key: "+testKey+" = "+fetchKey.getNodeKey(false));
-        System.err.println();
+        if(!LESS_LOGGING)
+            System.err.println();
         
         byte[] data = dataString.getBytes("UTF-8");
         Logger.minor(RealNodeRequestInsertTester.class, "Decoded: "+new String(block.memoryDecode(), "UTF-8"));
@@ -520,7 +531,8 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
         }
         Request[] surplus = tracker.dumpAndClear();
         boolean anySurplus = false;
-        System.err.println("Surplus requests:");
+        if(!LESS_LOGGING)
+            System.err.println("Surplus requests:");
         for(Request req : surplus) {
             if(generatedKeys.contains(req.key)) {
                 if(req.isInsert) {
@@ -627,13 +639,16 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
     
     private void dumpRequests(Request[] requests, String prefix) {
         String msg = dumpRequestsInner(requests, prefix);
-        Logger.normal(this, msg);
-        System.err.print(msg);
+        if(!LESS_LOGGING) {
+            Logger.normal(this, msg);
+            System.err.print(msg);
+        }
         reportWriter.write(msg);
     }
     
     protected void report(String msg) {
-        System.err.println(msg);
+        if(!LESS_LOGGING)
+            System.err.println(msg);
         reportWriter.write(msg);
         reportWriter.write('\n');
     }
