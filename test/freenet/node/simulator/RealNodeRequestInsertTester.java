@@ -109,6 +109,10 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
     static int BWLIMIT = 1000*1024;
     // Bandwidth limit *per connection* for CBR bypass.
     static int CBR_BWLIMIT = 1000;
+    /** True if we are running in a unit test so should be less chatty. False
+     * if invoked directly by the developer or by a script. Note that logging 
+     * here is somewhat different to logging in the node itself. Some of it is
+     * logged even without this, e.g. invocation errors and checksum mismatches. */
     static boolean LESS_LOGGING = false;
     
     //public static final int DARKNET_PORT_BASE = RealNodePingTest.DARKNET_PORT2+1;
