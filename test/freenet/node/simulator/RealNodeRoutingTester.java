@@ -26,7 +26,7 @@ import freenet.support.math.SimpleRunningAverage;
  * 
  * Then run some node-to-node searches.
  */
-public class RealNodeRoutingTest extends RealNodeTest {
+public class RealNodeRoutingTester extends RealNodeTester {
 
 	static final int NUMBER_OF_NODES = 100;
 	static final int DEGREE = 10;
@@ -38,7 +38,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 	static final boolean ENABLE_SWAP_QUEUEING = false;
 	static final boolean ENABLE_FOAF = true;
 	
-	public static int DARKNET_PORT_BASE = RealNodeRequestInsertTest.DARKNET_PORT_END;
+	public static int DARKNET_PORT_BASE = RealNodeRequestInsertTester.DARKNET_PORT_END;
 	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
 
 	public static void main(String[] args) throws Exception {
@@ -57,18 +57,18 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		DummyRandomSource random = new DummyRandomSource(3142);
 		//DiffieHellman.init(random);
 		Node[] nodes = new Node[NUMBER_OF_NODES];
-		Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
+		Logger.normal(RealNodeRoutingTester.class, "Creating nodes...");
 		Executor executor = new PooledExecutor();
 		for(int i = 0; i < NUMBER_OF_NODES; i++) {
 			System.err.println("Creating node " + i);
 			nodes[i] = NodeStarter.createTestNode(DARKNET_PORT_BASE + i, 0, dir, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500 * NUMBER_OF_NODES, 65536, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, 0, ENABLE_FOAF, false, true, false, null);
-			Logger.normal(RealNodeRoutingTest.class, "Created node " + i);
+			Logger.normal(RealNodeRoutingTester.class, "Created node " + i);
 		}
-		Logger.normal(RealNodeRoutingTest.class, "Created " + NUMBER_OF_NODES + " nodes");
+		Logger.normal(RealNodeRoutingTester.class, "Created " + NUMBER_OF_NODES + " nodes");
 		// Now link them up
 		makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, random);
 
-		Logger.normal(RealNodeRoutingTest.class, "Added random links");
+		Logger.normal(RealNodeRoutingTester.class, "Added random links");
 
 		for(int i = 0; i < NUMBER_OF_NODES; i++) {
 			System.err.println("Starting node " + i);
@@ -145,7 +145,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 						randomNode2 = nodes[random.nextInt(nodes.length)];
 					}
 					double loc2 = randomNode2.getLocation();
-					Logger.normal(RealNodeRoutingTest.class, "Pinging " + randomNode2.getDarknetPortNumber() + " @ " + loc2 + " from " + randomNode.getDarknetPortNumber() + " @ " + randomNode.getLocation());
+					Logger.normal(RealNodeRoutingTester.class, "Pinging " + randomNode2.getDarknetPortNumber() + " @ " + loc2 + " from " + randomNode.getDarknetPortNumber() + " @ " + randomNode.getLocation());
 					
 					int hopsTaken = randomNode.routedPing(loc2, randomNode2.getDarknetPubKeyHash());
 					pings++;
@@ -164,7 +164,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 						System.err.println("Routed ping " + pings + " success: " + hopsTaken + ' ' + randomNode.getDarknetPortNumber() + " to " + randomNode2.getDarknetPortNumber() + " (long:" + ratio + ", short:" + avg.currentValue() + ", vague:" + avg2.currentValue() + ')');
 					}
 				} catch(Throwable t) {
-					Logger.error(RealNodeRoutingTest.class, "Caught " + t, t);
+					Logger.error(RealNodeRoutingTester.class, "Caught " + t, t);
 				}
 			}
 			System.err.println("Average path length for successful requests: "+totalHopsTaken/successes);

@@ -44,7 +44,7 @@ import freenet.support.io.FileUtil;
  * days, for n in 0...8.
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
-public class LongTermManySingleBlocksTest extends LongTermTest {
+public class LongTermManySingleBlocksTester extends LongTermTester {
 	
 	public static class InsertBatch {
 

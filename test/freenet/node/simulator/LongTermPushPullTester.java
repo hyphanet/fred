@@ -57,7 +57,7 @@ import freenet.support.io.FileUtil;
  * 
  * @author sdiz
  */
-public class LongTermPushPullTest extends LongTermTest {
+public class LongTermPushPullTester extends LongTermTester {
 	private static final int TEST_SIZE = 64 * 1024;
 
 	private static final int EXIT_NO_SEEDNODES = 257;

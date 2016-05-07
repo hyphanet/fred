@@ -28,7 +28,7 @@ import java.text.NumberFormat;
  *
  * Then present a user interface to run different types of probes from random nodes.
  */
-public class RealNodeProbeTest extends RealNodeRoutingTest {
+public class RealNodeProbeTester extends RealNodeRoutingTester {
 
 	static final int NUMBER_OF_NODES = 100;
 	static final int DEGREE = 10;
@@ -42,7 +42,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 	static final int MAX_PINGS = 2000;
 	static final int OUTPUT_BANDWIDTH_LIMIT = 0; // Can be useful to set this for some tests.
 
-	public static int DARKNET_PORT_BASE = RealNodeRoutingTest.DARKNET_PORT_END;
+	public static int DARKNET_PORT_BASE = RealNodeRoutingTester.DARKNET_PORT_END;
 	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
 
 	public static void main(String[] args) throws Exception {
@@ -62,20 +62,20 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 		// Make the network reproducible so we can easily compare different routing options by specifying a seed.
 		DummyRandomSource random = new DummyRandomSource(3142);
 		Node[] nodes = new Node[NUMBER_OF_NODES];
-		Logger.normal(RealNodeProbeTest.class, "Creating nodes...");
+		Logger.normal(RealNodeProbeTester.class, "Creating nodes...");
 		Executor executor = new PooledExecutor();
         SimulatorRequestTracker tracker = new SimulatorRequestTracker(MAX_HTL);
 		for(int i = 0; i < NUMBER_OF_NODES; i++) {
 			System.err.println("Creating node " + i);
 			nodes[i] = NodeStarter.createTestNode(DARKNET_PORT_BASE + i, 0, dir, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500 * NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, OUTPUT_BANDWIDTH_LIMIT, ENABLE_FOAF, false, true, false, null, i == 0);
 			tracker.add(nodes[i]);
-			Logger.normal(RealNodeProbeTest.class, "Created node " + i);
+			Logger.normal(RealNodeProbeTester.class, "Created node " + i);
 		}
-		Logger.normal(RealNodeProbeTest.class, "Created " + NUMBER_OF_NODES + " nodes");
+		Logger.normal(RealNodeProbeTester.class, "Created " + NUMBER_OF_NODES + " nodes");
 		// Now link them up
 		makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, random);
 
-		Logger.normal(RealNodeProbeTest.class, "Added random links");
+		Logger.normal(RealNodeProbeTester.class, "Added random links");
 
 		for(int i = 0; i < NUMBER_OF_NODES; i++) {
 			System.err.println("Starting node " + i);
@@ -90,7 +90,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
         	
             waitForPingAverage(0.5, nodes, new DummyRandomSource(3143), MAX_PINGS, 1000);
             
-            RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, 10, tracker, null);
+            RealNodeRequestInsertTester tester = new RealNodeRequestInsertTester(nodes, random, 10, tracker, null);
             
             waitForAllConnected(nodes);
             

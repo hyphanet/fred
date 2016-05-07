@@ -24,7 +24,7 @@ import freenet.support.Logger.LogLevel;
  * @author toad
  * @author robert
  */
-public class RealNodeTest {
+public class RealNodeTester {
 
 	@SuppressWarnings("serial")
     public static class SimulatorOverloadedException extends Exception {
@@ -81,7 +81,7 @@ public class RealNodeTest {
 			for(int i=0;i<nodes.length;i++) {
 				int next = (i+1) % nodes.length;
 				connect(nodes[i], nodes[next]);
-                Logger.normal(RealNodeTest.class, "Connecting node "+i+" to node "+next);
+                Logger.normal(RealNodeTester.class, "Connecting node "+i+" to node "+next);
 			}
 		}
 		for (int i=0; i<nodes.length; i++) {
@@ -102,7 +102,7 @@ public class RealNodeTest {
 				for (int n = 0; n < degree / 2; n++) {
 					if (random.nextFloat() < p) {
 						connect(a, b);
-						Logger.normal(RealNodeTest.class, "Connecting node "+i+" to node "+k);
+						Logger.normal(RealNodeTester.class, "Connecting node "+i+" to node "+k);
 						break;
 					}
 				}
@@ -115,13 +115,13 @@ public class RealNodeTest {
 			a.connect (b, trust, visibility);
 			b.connect (a, trust, visibility);
 		} catch (FSParseException e) {
-			Logger.error(RealNodeTest.class, "cannot connect!!!!", e);
+			Logger.error(RealNodeTester.class, "cannot connect!!!!", e);
 		} catch (PeerParseException e) {
-			Logger.error(RealNodeTest.class, "cannot connect #2!!!!", e);
+			Logger.error(RealNodeTester.class, "cannot connect #2!!!!", e);
 		} catch (freenet.io.comm.ReferenceSignatureVerificationException e) {
-			Logger.error(RealNodeTest.class, "cannot connect #3!!!!", e);
+			Logger.error(RealNodeTester.class, "cannot connect #3!!!!", e);
 		} catch (PeerTooOldException e) {
-            Logger.error(RealNodeTest.class, "cannot connect #4!!!!", e);
+            Logger.error(RealNodeTester.class, "cannot connect #4!!!!", e);
         }
 	}
 	
@@ -195,18 +195,18 @@ public class RealNodeTest {
 					countFullyConnected++;
 				} else {
 					if(logMINOR)
-						Logger.minor(RealNodeTest.class, "Connection count for "+nodes[i]+" : "+countConnected+" partial "+countAlmostConnected);
+						Logger.minor(RealNodeTester.class, "Connection count for "+nodes[i]+" : "+countConnected+" partial "+countAlmostConnected);
 				}
 				if(countBackedOff > 0) {
 					if(logMINOR)
-						Logger.minor(RealNodeTest.class, "Backed off: "+nodes[i]+" : "+countBackedOff);
+						Logger.minor(RealNodeTester.class, "Backed off: "+nodes[i]+" : "+countBackedOff);
 				}
 			}
 			double avgPingTime = totalPingTime / nodes.length;
 			if(countFullyConnected == nodes.length && totalBackedOff == 0 &&
 					minPingTime < NodeStats.DEFAULT_SUB_MAX_PING_TIME && maxPingTime < NodeStats.DEFAULT_SUB_MAX_PING_TIME && avgPingTime < NodeStats.DEFAULT_SUB_MAX_PING_TIME) {
 				System.out.println("All nodes fully connected");
-				Logger.normal(RealNodeTest.class, "All nodes fully connected");
+				Logger.normal(RealNodeTester.class, "All nodes fully connected");
 				//System.err.println();
 				return;
 			} else {
@@ -223,7 +223,7 @@ public class RealNodeTest {
 			    if(checkOnly) return;
 				long tDelta = (System.currentTimeMillis() - tStart)/1000;
 				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total partial "+totalPartialConnections+" compatible "+totalCompatibleConnections+") - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
-				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total partial "+totalPartialConnections+" compatible "+totalCompatibleConnections+") - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
+				Logger.normal(RealNodeTester.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total partial "+totalPartialConnections+" compatible "+totalCompatibleConnections+") - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
 				Thread.sleep(1000);
 			}
 		}

@@ -42,7 +42,7 @@ import freenet.support.io.FileUtil;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  *
  */
-public class LongTermMHKTest extends LongTermTest {
+public class LongTermMHKTester extends LongTermTester {
 	
 	private static final int TEST_SIZE = 64 * 1024;
 

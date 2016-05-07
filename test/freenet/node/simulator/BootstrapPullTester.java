@@ -32,7 +32,7 @@ import freenet.support.io.LineReadingInputStream;
  * bootstrap a newbie node and pull it from that.
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
-public class BootstrapPullTest {
+public class BootstrapPullTester {
 
 	public static int TEST_SIZE = 1024*1024;
 

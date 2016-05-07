@@ -1,8 +1,10 @@
 package freenet.node.simulator;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -27,12 +29,18 @@ import freenet.support.io.FileUtil;
 
 /**
  * Push / Pull test over long period of time
+ *
+ * Pushes N CHK's and records both their insert time and their CHKs.
  * 
- * Unlike LongTermPushPullTest, this only inserts one key per day. That key
- * is then re-pulled at increasing intervals.
+ * Pulls CHK's for (2^n)-1 days ago, from 0 to 8, but obviously only if
+ * there is a CHK for the given date in the log.
  */
-public class LongTermPushRepullTest extends LongTermTest {
+public class LongTermPushPullCHKTester extends LongTermTester {
 	private static final int TEST_SIZE = 64 * 1024;
+
+	private static final int EXIT_NO_SEEDNODES = 257;
+	private static final int EXIT_FAILED_TARGET = 258;
+	private static final int EXIT_THREW_SOMETHING = 261;
 
 	private static final int DARKNET_PORT1 = 5010;
 	private static final int OPENNET_PORT1 = 5011;
@@ -91,28 +99,33 @@ public class LongTermPushRepullTest extends LongTermTest {
 			long t2 = System.currentTimeMillis();
 			System.out.println("SEED-TIME:" + (t2 - t1));
 			csvLine.add(String.valueOf(t2 - t1));
+			
+			FreenetURI todaysInsert = null;
 
-			// Push one block only.
-			
-			RandomAccessBucket data = randomData(node);
-			HighLevelSimpleClient client = node.clientCore.makeClient((short) 0, false, false);
-			FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(today.getTime()));
-			System.out.println("PUSHING " + uri);
-			
-			try {
-				InsertBlock block = new InsertBlock(data, new ClientMetadata(), uri);
-				t1 = System.currentTimeMillis();
-				client.insert(block, false, null);
-				t2 = System.currentTimeMillis();
-				
-				System.out.println("PUSH-TIME-" + ":" + (t2 - t1));
-				csvLine.add(String.valueOf(t2 - t1));
-			} catch (InsertException e) {
-				e.printStackTrace();
-				csvLine.add("N/A");
+			// PUSH N+1 BLOCKS
+			for (int i = 0; i <= MAX_N; i++) {
+			    RandomAccessBucket data = randomData(node);
+				HighLevelSimpleClient client = node.clientCore.makeClient((short) 0, false, false);
+				System.out.println("PUSHING " + i);
+
+				try {
+					InsertBlock block = new InsertBlock(data, new ClientMetadata(), FreenetURI.EMPTY_CHK_URI);
+					t1 = System.currentTimeMillis();
+					FreenetURI uri = client.insert(block, false, null);
+					if(i == 0) todaysInsert = uri;
+					t2 = System.currentTimeMillis();
+
+					System.out.println("PUSH-TIME-" + i + ":" + (t2 - t1)+" for "+uri);
+					csvLine.add(String.valueOf(t2 - t1));
+					csvLine.add(uri.toASCIIString());
+				} catch (InsertException e) {
+					e.printStackTrace();
+					csvLine.add("N/A");
+					csvLine.add("N/A");
+				}
+
+				data.free();
 			}
-
-			data.free();
 
 			node.park();
 
@@ -138,11 +151,22 @@ public class LongTermPushRepullTest extends LongTermTest {
 
 			// PULL N+1 BLOCKS
 			for (int i = 0; i <= MAX_N; i++) {
-				client = node2.clientCore.makeClient((short) 0, false, false);
+				HighLevelSimpleClient client = node2.clientCore.makeClient((short) 0, false, false);
 				Calendar targetDate = (Calendar) today.clone();
 				targetDate.add(Calendar.DAY_OF_MONTH, -((1 << i) - 1));
 
-				uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(targetDate.getTime()));
+				FreenetURI uri = null;
+				
+				if(i == 0) uri = todaysInsert;
+				else {
+					uri = getHistoricURI(uid, i, targetDate);
+				}
+				
+				if(uri == null) {
+					System.out.println("SKIPPING PULL FOR "+i);
+					continue;
+				}
+				
 				System.out.println("PULLING " + uri);
 
 				try {
@@ -176,8 +200,30 @@ public class LongTermPushRepullTest extends LongTermTest {
 
 			File file = new File(uid + ".csv");
 			writeToStatusLog(file, csvLine);
-			
 			System.exit(exitCode);
+		}
+	}
+
+	private static FreenetURI getHistoricURI(String uid, int i, Calendar targetDate) throws IOException {
+		// Quick and dirty, since we only have 1...8 it's not worth caching it.
+		File file = new File(uid + ".csv");
+		FileInputStream fis = new FileInputStream(file);
+		try {
+			InputStreamReader isr = new InputStreamReader(fis, ENCODING);
+			BufferedReader br = new BufferedReader(isr);
+			String line = null;
+			String dateString = dateFormat.format(targetDate.getTime());
+			while((line = br.readLine()) != null) {
+				String[] split = line.split("!");
+				if(split.length == 0) continue;
+				if(!dateString.equals(split[0])) continue;
+				int fieldnum = 3 + i * 2;
+				if(line.length() >= fieldnum) continue; // Possible ran twice???
+				return new FreenetURI(split[fieldnum]);
+			}
+			return null;
+		} finally {
+			fis.close();
 		}
 	}
 

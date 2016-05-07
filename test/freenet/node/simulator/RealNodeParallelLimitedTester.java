@@ -55,13 +55,13 @@ import freenet.support.io.FileUtil;
 
 /** Lots of simultaneous request initiated by a single node, but using the client layer to test
  * client-side load limiting. */
-public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTest implements RequestClient {
+public class RealNodeParallelLimitedTester extends RealNodeRequestInsertParallelTester implements RequestClient {
 
     private static volatile boolean logMINOR;
     private static volatile boolean logDEBUG;
     static {
         // This doesn't work if the class is loaded before the logger.
-        Logger.registerClass(RealNodeParallelLimitedTest.class);
+        Logger.registerClass(RealNodeParallelLimitedTester.class);
     }
     
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, SSKEncodeException, InvalidCompressionCodecException, IOException, KeyDecodeException {
@@ -80,7 +80,7 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
         NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, logDetails, true, 
                 BYPASS_TRANSPORT_LAYER, null);
         // Need to call it explicitly because the class is loaded before we clobbered the logger.
-        Logger.registerClass(RealNodeParallelLimitedTest.class);
+        Logger.registerClass(RealNodeParallelLimitedTester.class);
         System.out.println("Parallel insert/retrieve test (single node originator)");
         System.out.println();
         System.err.println("Seed is "+SEED);
@@ -92,7 +92,7 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
         SimulatorRequestTracker tracker = new SimulatorRequestTracker(MAX_HTL);
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
-        Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
+        Logger.normal(RealNodeRoutingTester.class, "Creating nodes...");
         int tickerThreads = Runtime.getRuntime().availableProcessors();
         Executor[] executors = new Executor[tickerThreads];
         PrioritizedTicker[] tickers = new PrioritizedTicker[tickerThreads];
@@ -107,13 +107,13 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
                     executors[i % tickerThreads], tickers[i % tickerThreads], overallUIDTagCounter);
             nodes[i] = NodeStarter.createTestNode(params);
             tracker.add(nodes[i]);
-            Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
+            Logger.normal(RealNodeRoutingTester.class, "Created node "+i);
         }
         
         // Now link them up
         makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, topologyRandom);
 
-        Logger.normal(RealNodeRoutingTest.class, "Added random links");
+        Logger.normal(RealNodeRoutingTester.class, "Added random links");
         
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i].start(false);
@@ -159,8 +159,8 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
         System.out.println("Ping average > 95%, lets do some inserts/requests");
         System.out.println();
         
-        RealNodeRequestInsertParallelTest tester = 
-            new RealNodeParallelLimitedTest(nodes, random, TARGET_SUCCESSES, tracker, overallUIDTagCounter);
+        RealNodeRequestInsertParallelTester tester = 
+            new RealNodeParallelLimitedTester(nodes, random, TARGET_SUCCESSES, tracker, overallUIDTagCounter);
         
         waitForAllConnected(nodes, true, true, false);
         while(true) {
@@ -172,14 +172,14 @@ public class RealNodeParallelLimitedTest extends RealNodeRequestInsertParallelTe
         } catch (Throwable t) {
             // Need to explicitly exit because the wrapper thread may prevent shutdown.
             // FIXME WTF? Shouldn't be using the wrapper???
-            Logger.error(RealNodeRequestInsertParallelTest.class, "Caught "+t, t);
+            Logger.error(RealNodeRequestInsertParallelTester.class, "Caught "+t, t);
             System.err.println(t);
             t.printStackTrace();
             System.exit(1);
         }
     }
 
-    public RealNodeParallelLimitedTest(Node[] nodes, DummyRandomSource random,
+    public RealNodeParallelLimitedTester(Node[] nodes, DummyRandomSource random,
             int targetSuccesses, SimulatorRequestTracker tracker,
             LocalRequestUIDsCounter overallUIDTagCounter) {
         super(nodes, random, targetSuccesses, tracker, overallUIDTagCounter);

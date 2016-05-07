@@ -45,12 +45,12 @@ import freenet.support.LoggerHook.InvalidThresholdException;
 /**
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
-public class SeednodePingTest extends RealNodeTest {
+public class SeednodePingTester extends RealNodeTester {
 
 	static File STATUS_DIR = new File("/var/www/freenet/tests/seednodes/status/");
 	static final long COUNT_SUCCESSES_PERIOD = DAYS.toMillis(7);
 
-	static final int DARKNET_PORT = RealNodeULPRTest.DARKNET_PORT_END;
+	static final int DARKNET_PORT = RealNodeULPRTester.DARKNET_PORT_END;
 	static final int OPENNET_PORT = DARKNET_PORT+1;
 
     public static void main(String[] args) throws FSParseException, IOException, OpennetDisabledException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, NodeInitException, InvalidThresholdException {

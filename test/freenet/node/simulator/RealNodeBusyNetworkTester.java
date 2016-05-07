@@ -39,7 +39,7 @@ import freenet.support.io.FileUtil;
  * load limiting and block transfer.
  * @author toad
  */
-public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
+public class RealNodeBusyNetworkTester extends RealNodeRoutingTester {
 
     static final int NUMBER_OF_NODES = 25;
     static final int DEGREE = 5;
@@ -81,18 +81,18 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         DummyRandomSource random = new DummyRandomSource();
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
-        Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
+        Logger.normal(RealNodeRoutingTester.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] =
             	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, false, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, (CHKBlock.DATA_LENGTH+CHKBlock.TOTAL_HEADERS_LENGTH)*100, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, 8000, ENABLE_FOAF, false, true, false, null);
-            Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
+            Logger.normal(RealNodeRoutingTester.class, "Created node "+i);
         }
 
         // Now link them up
         makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, random);
 
-        Logger.normal(RealNodeRoutingTest.class, "Added random links");
+        Logger.normal(RealNodeRoutingTester.class, "Added random links");
 
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i].start(false);
@@ -131,16 +131,16 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             byte[] encHeaders = block.getHeaders();
             ClientCHKBlock newBlock = new ClientCHKBlock(encData, encHeaders, chk, true);
             keys[i] = chk;
-            Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(newBlock.memoryDecode(), "UTF-8"));
-            Logger.normal(RealNodeRequestInsertTest.class,"CHK: "+chk.getURI());
-            Logger.minor(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
+            Logger.minor(RealNodeRequestInsertTester.class, "Decoded: "+new String(newBlock.memoryDecode(), "UTF-8"));
+            Logger.normal(RealNodeRequestInsertTester.class,"CHK: "+chk.getURI());
+            Logger.minor(RealNodeRequestInsertTester.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
             // Insert it.
 			try {
 				randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
-				Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
-				Logger.minor(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
+				Logger.error(RealNodeRequestInsertTester.class, "Inserted to "+node1);
+				Logger.minor(RealNodeRequestInsertTester.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
 			} catch (freenet.node.LowLevelPutException putEx) {
-				Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
+				Logger.error(RealNodeRequestInsertTester.class, "Insert failed: "+ putEx);
 				System.err.println("Insert failed: "+ putEx);
 				System.exit(EXIT_INSERT_FAILED);
 			}

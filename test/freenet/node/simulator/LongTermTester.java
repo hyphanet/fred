@@ -14,7 +14,7 @@ import java.util.TimeZone;
 import freenet.support.Fields;
 
 /** Base class for long-term tests that use a CSV file to store status */
-public class LongTermTest {
+public class LongTermTester {
 	
 	protected static final DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd", Locale.US);
 	static {

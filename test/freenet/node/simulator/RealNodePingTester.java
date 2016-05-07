@@ -31,10 +31,10 @@ import freenet.support.LoggerHook.InvalidThresholdException;
  * - Prints on the logger when packets are sent, when they are
  *   received, (by both sides), and their sequence numbers.
  */
-public class RealNodePingTest {
+public class RealNodePingTester {
 	
-	public static final int DARKNET_PORT1 = RealNodeBusyNetworkTest.DARKNET_PORT_END;
-	public static final int DARKNET_PORT2 = RealNodeBusyNetworkTest.DARKNET_PORT_END+1;
+	public static final int DARKNET_PORT1 = RealNodeBusyNetworkTester.DARKNET_PORT_END;
+	public static final int DARKNET_PORT2 = RealNodeBusyNetworkTester.DARKNET_PORT_END+1;
 	public static final int DARKNET_PORT_END = DARKNET_PORT2+1;
 	
 	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
@@ -58,18 +58,18 @@ public class RealNodePingTest {
         Thread.sleep(20000);
         //node1.usm.setDropProbability(4);
         while(true) {
-            Logger.error(RealNodePingTest.class, "Sending PING "+pingID);
+            Logger.error(RealNodePingTester.class, "Sending PING "+pingID);
             boolean success;
             try {
                 success = pn.ping(pingID);
             } catch (NotConnectedException e1) {
-                Logger.error(RealNodePingTest.class, "Not connected");
+                Logger.error(RealNodePingTester.class, "Not connected");
                 continue;
             }
             if(success)
-                Logger.error(RealNodePingTest.class, "PING "+pingID+" successful");
+                Logger.error(RealNodePingTester.class, "PING "+pingID+" successful");
             else
-                Logger.error(RealNodePingTest.class, "PING FAILED: "+pingID);
+                Logger.error(RealNodePingTester.class, "PING FAILED: "+pingID);
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {

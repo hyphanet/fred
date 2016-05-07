@@ -39,7 +39,7 @@ import freenet.support.math.TrivialRunningAverage;
 /**
  * @author amphibian
  */
-public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingTest {
+public abstract class RealNodeRequestInsertParallelTester extends RealNodeRoutingTester {
 
     static int NUMBER_OF_NODES = 100;
     static int DEGREE = 10;
@@ -120,7 +120,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
     }
 
     private static void printUsage() {
-        System.err.println("java -cp freenet.jar:freenet-ext.jar:bcprov-*.jar " + RealNodeRequestInsertParallelTest.class.getName() + " arg1=blah arg2=blah ...");
+        System.err.println("java -cp freenet.jar:freenet-ext.jar:bcprov-*.jar " + RealNodeRequestInsertParallelTester.class.getName() + " arg1=blah arg2=blah ...");
         System.err.println("Arguments:\n");
         System.err.println("size\tNumber of simulated nodes");
         System.err.println("degree\tAverage number of peers per node");
@@ -207,7 +207,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
      * each cycle, and wait if necessary to achieve this. This should make results more
      * reproducible. If null, we log any requests still running after each cycle.
      */
-    public RealNodeRequestInsertParallelTest(Node[] nodes, DummyRandomSource random, int targetSuccesses, SimulatorRequestTracker tracker, LocalRequestUIDsCounter overallUIDTagCounter) {
+    public RealNodeRequestInsertParallelTester(Node[] nodes, DummyRandomSource random, int targetSuccesses, SimulatorRequestTracker tracker, LocalRequestUIDsCounter overallUIDTagCounter) {
     	this.nodes = nodes;
     	this.random = random;
     	this.targetSuccesses = targetSuccesses;
@@ -407,7 +407,7 @@ public abstract class RealNodeRequestInsertParallelTest extends RealNodeRoutingT
                 hasFailed = true;
             }
             if(newlyFailed && shouldLog(req)) {
-                synchronized(RealNodeRequestInsertParallelTest.class) {
+                synchronized(RealNodeRequestInsertParallelTester.class) {
                     insertsFailedAtLeastOnce++;
                 }
             }

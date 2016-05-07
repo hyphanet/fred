@@ -53,7 +53,7 @@ import freenet.support.math.SimpleRunningAverage;
 /**
  * @author amphibian
  */
-public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
+public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
 
     static int NUMBER_OF_NODES = 100;
     static int DEGREE = 10;
@@ -134,7 +134,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         SimulatorRequestTracker tracker = new SimulatorRequestTracker(MAX_HTL);
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
-        Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
+        Logger.normal(RealNodeRoutingTester.class, "Creating nodes...");
         int tickerThreads = Runtime.getRuntime().availableProcessors();
         Executor[] executors = new Executor[tickerThreads];
         PrioritizedTicker[] tickers = new PrioritizedTicker[tickerThreads];
@@ -149,13 +149,13 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                     executors[i % tickerThreads], tickers[i % tickerThreads], overallUIDTagCounter);
             nodes[i] = NodeStarter.createTestNode(params);
             tracker.add(nodes[i]);
-            Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
+            Logger.normal(RealNodeRoutingTester.class, "Created node "+i);
         }
         
         // Now link them up
         makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, topologyRandom);
 
-        Logger.normal(RealNodeRoutingTest.class, "Added random links");
+        Logger.normal(RealNodeRoutingTester.class, "Added random links");
         
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i].start(false);
@@ -201,7 +201,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.out.println("Ping average > 95%, lets do some inserts/requests");
         System.out.println();
         
-        RealNodeRequestInsertTest tester = new RealNodeRequestInsertTest(nodes, random, TARGET_SUCCESSES, tracker, overallUIDTagCounter);
+        RealNodeRequestInsertTester tester = new RealNodeRequestInsertTester(nodes, random, TARGET_SUCCESSES, tracker, overallUIDTagCounter);
         
         while(true) {
             waitForAllConnected(nodes, true, true, false);
@@ -212,7 +212,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         } catch (Throwable t) {
             // Need to explicitly exit because the wrapper thread may prevent shutdown.
             // FIXME WTF? Shouldn't be using the wrapper???
-            Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
+            Logger.error(RealNodeRequestInsertTester.class, "Caught "+t, t);
             System.err.println(t);
             t.printStackTrace();
             System.exit(1);
@@ -234,7 +234,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     }
 
     private static void printUsage() {
-        System.err.println("java -cp freenet.jar:freenet-ext.jar:bcprov-*.jar " + RealNodeRequestInsertTest.class.getName() + " arg1=blah arg2=blah ...");
+        System.err.println("java -cp freenet.jar:freenet-ext.jar:bcprov-*.jar " + RealNodeRequestInsertTester.class.getName() + " arg1=blah arg2=blah ...");
         System.err.println("Arguments:\n");
         System.err.println("size\tNumber of simulated nodes");
         System.err.println("degree\tAverage number of peers per node");
@@ -312,7 +312,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
      * each cycle, and wait if necessary to achieve this. This should make results more
      * reproducible. If null, we log any requests still running after each cycle.
      */
-    public RealNodeRequestInsertTest(Node[] nodes, DummyRandomSource random, int targetSuccesses, SimulatorRequestTracker tracker, TotalRequestUIDsCounter overallUIDTagCounter) {
+    public RealNodeRequestInsertTester(Node[] nodes, DummyRandomSource random, int targetSuccesses, SimulatorRequestTracker tracker, TotalRequestUIDsCounter overallUIDTagCounter) {
     	this.nodes = nodes;
     	this.random = random;
     	this.targetSuccesses = targetSuccesses;
@@ -387,15 +387,15 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.err.println();
         
         byte[] data = dataString.getBytes("UTF-8");
-        Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(block.memoryDecode(), "UTF-8"));
-        Logger.normal(RealNodeRequestInsertTest.class,"Insert Key: "+insertKey.getURI());
-        Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: "+fetchKey.getURI());
+        Logger.minor(RealNodeRequestInsertTester.class, "Decoded: "+new String(block.memoryDecode(), "UTF-8"));
+        Logger.normal(RealNodeRequestInsertTester.class,"Insert Key: "+insertKey.getURI());
+        Logger.normal(RealNodeRequestInsertTester.class,"Fetch Key: "+fetchKey.getURI());
 		try {
 			insertAttempts++;
 			randomNode.clientCore.realPut(block.getBlock(), false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
-			Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
+			Logger.error(RealNodeRequestInsertTester.class, "Inserted to "+node1);
 		} catch (freenet.node.LowLevelPutException putEx) {
-			Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
+			Logger.error(RealNodeRequestInsertTester.class, "Insert failed: "+ putEx);
 			System.err.println("Insert failed: "+ putEx);
 			return EXIT_INSERT_FAILED;
 		}
@@ -422,7 +422,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         dumpRequests(requests,prefix+"REQUEST: ");
         if(block == null) {
 			int percentSuccess=100*fetchSuccesses/insertAttempts;
-            Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
+            Logger.error(RealNodeRequestInsertTester.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
             System.err.println(prefix+"Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2+" : "+LowLevelGetException.getMessage(error.code));
             checkRequestFailure(inserts, requests);
             requestsAvg.report(0.0);
@@ -432,7 +432,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
             if(Arrays.equals(results, data)) {
 				fetchSuccesses++;
 				int percentSuccess=100*fetchSuccesses/insertAttempts;
-                Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" from node "+node2+" succeeded ("+percentSuccess+"%): "+new String(results));
+                Logger.error(RealNodeRequestInsertTester.class, "Fetch #"+requestNumber+" from node "+node2+" succeeded ("+percentSuccess+"%): "+new String(results));
                 System.err.println(prefix+"Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): \""+new String(results)+'\"');
                 if(fetchSuccesses == targetSuccesses) {
                 	System.err.println("Succeeded, "+targetSuccesses+" successful fetches");
@@ -440,7 +440,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 }
                 checkRequestSuccess(inserts, requests);
             } else {
-                Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
+                Logger.error(RealNodeRequestInsertTester.class, "Returned invalid data!: "+new String(results));
                 System.err.println(prefix+"Returned invalid data!: "+new String(results));
                 return EXIT_BAD_DATA;
             }

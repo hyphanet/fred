@@ -24,7 +24,7 @@ import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.FileUtil;
 
-public class BootstrapPushPullTest {
+public class BootstrapPushPullTester {
 
 	public static int TEST_SIZE = 1024*1024;
 	

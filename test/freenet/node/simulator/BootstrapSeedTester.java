@@ -16,7 +16,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.io.FileUtil;
 
-public class BootstrapSeedTest {
+public class BootstrapSeedTester {
 
 	public static int EXIT_NO_SEEDNODES = 257;
 	public static int EXIT_FAILED_TARGET = 258;
