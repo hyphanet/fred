@@ -22,29 +22,21 @@ import freenet.support.TestProperty;
 public class RealNodeRequestInsertTest {
 
     @Test
-    public void testSmallNetwork() throws CHKEncodeException, SSKEncodeException, FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, InvalidCompressionCodecException, IOException, KeyDecodeException {
-        try {
-            String[] args = 
-                    new String[] {"size=25","degree=5","htl=4","drop=0",
-                    "seed=12345","bypass=FAST_QUEUE_BYPASS"};
-            RealNodeRequestInsertTester.run(args);
-        } catch (ExitException e) {
-            assertEquals(e.retval, 0);
-        }
+    public void testSmallNetwork() throws CHKEncodeException, SSKEncodeException, FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, InvalidCompressionCodecException, IOException, KeyDecodeException, ExitException {
+        String[] args = 
+                new String[] {"size=25","degree=5","htl=4","drop=0",
+                "seed=12345","bypass=FAST_QUEUE_BYPASS"};
+        RealNodeRequestInsertTester.run(args);
     }
 
     @Test
-    public void testBigNetwork() throws CHKEncodeException, SSKEncodeException, FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, InvalidCompressionCodecException, IOException, KeyDecodeException {
+    public void testBigNetwork() throws CHKEncodeException, SSKEncodeException, FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, InvalidCompressionCodecException, IOException, KeyDecodeException, ExitException {
         if(!TestProperty.EXTENSIVE) return;
-        try {
-            String[] args = 
-                    new String[] {"size=500","degree=10","htl=5","drop=0",
-                    "seed=123456","bypass=FAST_QUEUE_BYPASS"};
-            RealNodeRequestInsertTester.TARGET_SUCCESSES = 100;
-            RealNodeRequestInsertTester.run(args);
-        } catch (ExitException e) {
-            assertEquals(e.retval, 0);
-        }
+        String[] args = 
+                new String[] {"size=500","degree=10","htl=5","drop=0",
+                "seed=123456","bypass=FAST_QUEUE_BYPASS"};
+        RealNodeRequestInsertTester.TARGET_SUCCESSES = 100;
+        RealNodeRequestInsertTester.run(args);
     }
     
 }
