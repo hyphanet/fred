@@ -119,20 +119,21 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
     static final class ExitException extends Exception {
         int retval;
         public ExitException(int retval) {
+            if(retval == 0) throw new IllegalArgumentException();
             this.retval = retval;
         }
     }
     
     public static void main(String[] args) throws CHKEncodeException, SSKEncodeException, FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, InvalidCompressionCodecException, IOException, KeyDecodeException {
         try {
-            int retval = run(args);
-            System.exit(retval);
+            run(args);
+            System.exit(0);
         } catch (ExitException e) {
             System.exit(e.retval);
         }
     }
     
-	public static int run(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, SSKEncodeException, InvalidCompressionCodecException, IOException, KeyDecodeException, ExitException {
+	public static void run(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, SSKEncodeException, InvalidCompressionCodecException, IOException, KeyDecodeException, ExitException {
 	    try {
 	    parseOptions(args);
         String name = "realNodeRequestInsertTest";
@@ -247,9 +248,11 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
                     System.err.println("Report hash is:        "+hash);
                 }
             }
-            return status;
+            if(status != 0) throw new ExitException(status);
+            return;
         }
         } catch (Throwable t) {
+            if(t instanceof ExitException) throw (ExitException) t;
             // Need to explicitly exit because the wrapper thread may prevent shutdown.
             // FIXME WTF? Shouldn't be using the wrapper???
             Logger.error(RealNodeRequestInsertTester.class, "Caught "+t, t);
