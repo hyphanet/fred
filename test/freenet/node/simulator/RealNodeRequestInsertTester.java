@@ -92,7 +92,7 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
     static int PACKET_DROP = 0;
     static long SEED = 3141;
     
-    static final int TARGET_SUCCESSES = 20;
+    static int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
     //static final short MAX_HTL = 10;
 
