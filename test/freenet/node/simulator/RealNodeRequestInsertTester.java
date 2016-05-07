@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -38,6 +40,7 @@ import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.node.NodeStarter.TestingVMBypass;
 import freenet.node.PeerNode;
 import freenet.node.simulator.SimulatorRequestTracker.Request;
+import freenet.node.simulator.SimulatorRequestTracker.RequestComparator;
 import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.HexUtil;
@@ -616,6 +619,7 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
 
     private String dumpRequestsInner(Request[] requests, String prefix) {
         StringBuffer sb = new StringBuffer();
+        Arrays.sort(requests, new RequestComparator());
         for(Request req : requests) {
             sb.append(req.dump(true, prefix));
             sb.append('\n');

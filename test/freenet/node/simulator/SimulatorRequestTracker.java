@@ -2,7 +2,9 @@ package freenet.node.simulator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -192,4 +194,29 @@ public class SimulatorRequestTracker extends MessageDispatchSnooper {
         return reqs;
     }
     
+    public static class RequestComparator implements Comparator<Request> {
+
+        @Override
+        public int compare(Request arg0, Request arg1) {
+            int size0 = arg0.nodeIDsVisited.size();
+            int size1 = arg1.nodeIDsVisited.size();
+            if(size0 > size1) return 1;
+            if(size1 > size0) return -1;
+            LinkedList<Integer> l0 = 
+                    new LinkedList<Integer>(arg0.nodeIDsVisited);
+            LinkedList<Integer> l1 = 
+                    new LinkedList<Integer>(arg1.nodeIDsVisited);
+            while(true) {
+                if(l0.isEmpty() && l1.isEmpty()) return 0;
+                if(!l0.isEmpty() && l1.isEmpty()) return 1;
+                if(l0.isEmpty() && !l1.isEmpty()) return -1;
+                int x = l0.removeFirst();
+                int y = l1.removeFirst();
+                if(x > y) return 1;
+                if(y > x) return -1;
+            }
+        }
+
+    }
+
 }
