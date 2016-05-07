@@ -108,14 +108,29 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
     
     private final HashSet<Key> generatedKeys;
     
-	public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, SSKEncodeException, InvalidCompressionCodecException, IOException, KeyDecodeException {
+    static final class ExitException extends Exception {
+        int retval;
+        public ExitException(int retval) {
+            this.retval = retval;
+        }
+    }
+    
+    public static void main(String[] args) throws CHKEncodeException, SSKEncodeException, FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, InvalidCompressionCodecException, IOException, KeyDecodeException {
+        try {
+            run(args);
+        } catch (ExitException e) {
+            System.exit(e.retval);
+        }
+    }
+    
+	public static void run(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, SSKEncodeException, InvalidCompressionCodecException, IOException, KeyDecodeException, ExitException {
 	    try {
 	    parseOptions(args);
         String name = "realNodeRequestInsertTest";
         File wd = new File(name);
         if(!FileUtil.removeAll(wd)) {
         	System.err.println("Mass delete failed, test may not be accurate.");
-        	System.exit(EXIT_CANNOT_DELETE_OLD_DATA);
+        	throw new ExitException(EXIT_CANNOT_DELETE_OLD_DATA);
         }
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
@@ -207,25 +222,26 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
             waitForAllConnected(nodes, true, true, false);
             int status = tester.insertRequestTest();
             if(status == -1) continue;
-            System.exit(status);
+            throw new ExitException(status);
         }
         } catch (Throwable t) {
+            if(t instanceof ExitException) throw (ExitException) t;
             // Need to explicitly exit because the wrapper thread may prevent shutdown.
             // FIXME WTF? Shouldn't be using the wrapper???
             Logger.error(RealNodeRequestInsertTester.class, "Caught "+t, t);
             System.err.println(t);
             t.printStackTrace();
-            System.exit(1);
+            throw new ExitException(1);
         }
     }
 
-    private static void parseOptions(String[] args) {
+    private static void parseOptions(String[] args) throws ExitException {
         // FIXME Standard way to do this? Don't want to import a new library for a test...
         for(String s : args) {
             int x = s.indexOf('=');
             if(x == -1) {
                 printUsage();
-                System.exit(1);
+                throw new ExitException(1);
             }
             String arg = s.substring(0, x);
             String value = s.substring(x+1);
@@ -249,7 +265,7 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
         }
     }
 
-    private static void parseArgument(String arg, String value) {
+    private static void parseArgument(String arg, String value) throws ExitException {
         arg = arg.toLowerCase();
         if(arg.equals("bypass")) {
             BYPASS_TRANSPORT_LAYER = TestingVMBypass.valueOf(value.toUpperCase());
@@ -269,7 +285,7 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
             SEED = Long.parseLong(value);
         } else {
             printUsage();
-            System.exit(2);
+            throw new ExitException(2);
         }
     }
 
