@@ -240,11 +240,15 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
                         !EXPECTED_REPORT_CHECKSUM.equals(hash)) {
                     System.err.println("Report is not as expected:");
                     System.err.print(report);
-                    System.err.println("Report hash is:        "+hash);
-                    System.err.println("Report hash should be: "+hash);
-                    return EXIT_RESULTS_NOT_AS_EXPECTED;
+                    System.err.println("Report hash is:          \""+hash+"\"");
+                    System.err.println("Report hash should be:   \""+hash+"\"");
+                    throw new ExitException(EXIT_RESULTS_NOT_AS_EXPECTED);
+                } else if(EXPECTED_REPORT_CHECKSUM != null) {
+                    System.err.println("Report hash as expected: \""+hash+"\"");
                 } else {
-                    System.err.println("Report hash is:        "+hash);
+                    System.err.println("Generated report:");
+                    System.err.print(report);
+                    System.err.println("Report hash is:          \""+hash+"\"");
                 }
             }
             if(status != 0) throw new ExitException(status);
