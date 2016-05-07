@@ -134,7 +134,6 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
     }
     
 	public static void run(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, SSKEncodeException, InvalidCompressionCodecException, IOException, KeyDecodeException, ExitException {
-	    try {
 	    parseOptions(args);
         String name = "realNodeRequestInsertTest";
         File wd = new File(name);
@@ -250,15 +249,6 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
             }
             if(status != 0) throw new ExitException(status);
             return;
-        }
-        } catch (Throwable t) {
-            if(t instanceof ExitException) throw (ExitException) t;
-            // Need to explicitly exit because the wrapper thread may prevent shutdown.
-            // FIXME WTF? Shouldn't be using the wrapper???
-            Logger.error(RealNodeRequestInsertTester.class, "Caught "+t, t);
-            System.err.println(t);
-            t.printStackTrace();
-            throw new ExitException(1);
         }
     }
 
