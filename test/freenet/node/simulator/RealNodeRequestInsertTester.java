@@ -5,6 +5,7 @@ package freenet.node.simulator;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,6 +14,7 @@ import java.util.TreeSet;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
+import freenet.crypt.SHA256;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.CHKEncodeException;
@@ -36,6 +38,7 @@ import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.node.NodeStarter.TestingVMBypass;
 import freenet.node.PeerNode;
 import freenet.node.simulator.SimulatorRequestTracker.Request;
+import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -91,6 +94,8 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
     static TestingVMBypass BYPASS_TRANSPORT_LAYER = TestingVMBypass.PACKET_BYPASS;
     static int PACKET_DROP = 0;
     static long SEED = 3141;
+    /** If non-null, we will check that the report checksum is equal to this value. */
+    static String EXPECTED_REPORT_CHECKSUM = null;
     
     static int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
@@ -224,6 +229,21 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
             waitForAllConnected(nodes, true, true, false);
             int status = tester.insertRequestTest();
             if(status == -1) continue;
+            if(status == 0) {
+                String report = tester.reportWriter.toString();
+                byte[] array = report.getBytes("UTF-8");
+                String hash = Base64.encodeStandard(SHA256.digest(array));
+                if(EXPECTED_REPORT_CHECKSUM != null && 
+                        !EXPECTED_REPORT_CHECKSUM.equals(hash)) {
+                    System.err.println("Report is not as expected:");
+                    System.err.print(report);
+                    System.err.println("Report hash is:        "+hash);
+                    System.err.println("Report hash should be: "+hash);
+                    return EXIT_RESULTS_NOT_AS_EXPECTED;
+                } else {
+                    System.err.println("Report hash is:        "+hash);
+                }
+            }
             return status;
         }
         } catch (Throwable t) {
@@ -348,6 +368,7 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
 	private final int targetSuccesses;
 	private final SimulatorRequestTracker tracker;
 	private final TotalRequestUIDsCounter overallUIDTagCounter;
+	private final StringWriter reportWriter = new StringWriter();
 
 	/**
 	 * @param nodes
@@ -399,7 +420,7 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
         }
         
         System.err.println();
-        System.err.println(prefix+"Created random test key "+testKey);
+        report(prefix+"Created random test key "+testKey);
         Logger.normal(this, "Test key: "+testKey+" = "+fetchKey.getNodeKey(false));
         System.err.println();
         
@@ -440,7 +461,7 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
         if(block == null) {
 			int percentSuccess=100*fetchSuccesses/insertAttempts;
             Logger.error(RealNodeRequestInsertTester.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
-            System.err.println(prefix+"Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2+" : "+LowLevelGetException.getMessage(error.code));
+            report(prefix+"Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2+" : "+LowLevelGetException.getMessage(error.code));
             checkRequestFailure(inserts, requests);
             requestsAvg.report(0.0);
         } else {
@@ -450,7 +471,7 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
 				fetchSuccesses++;
 				int percentSuccess=100*fetchSuccesses/insertAttempts;
                 Logger.error(RealNodeRequestInsertTester.class, "Fetch #"+requestNumber+" from node "+node2+" succeeded ("+percentSuccess+"%): "+new String(results));
-                System.err.println(prefix+"Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): \""+new String(results)+'\"');
+                report(prefix+"Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): \""+new String(results)+'\"');
                 if(fetchSuccesses == targetSuccesses) {
                 	System.err.println("Succeeded, "+targetSuccesses+" successful fetches");
                 	return 0;
@@ -458,7 +479,7 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
                 checkRequestSuccess(inserts, requests);
             } else {
                 Logger.error(RealNodeRequestInsertTester.class, "Returned invalid data!: "+new String(results));
-                System.err.println(prefix+"Returned invalid data!: "+new String(results));
+                report(prefix+"Returned invalid data!: "+new String(results));
                 return EXIT_BAD_DATA;
             }
         }
@@ -593,11 +614,25 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
         throw new RuntimeException(message);
     }
 
-    private void dumpRequests(Request[] requests, String prefix) {
+    private String dumpRequestsInner(Request[] requests, String prefix) {
+        StringBuffer sb = new StringBuffer();
         for(Request req : requests) {
-            String msg = req.dump(true, prefix);
-            Logger.normal(this, msg);
-            System.err.println(msg);
+            sb.append(req.dump(true, prefix));
+            sb.append('\n');
         }
+        return sb.toString();
+    }
+    
+    private void dumpRequests(Request[] requests, String prefix) {
+        String msg = dumpRequestsInner(requests, prefix);
+        Logger.normal(this, msg);
+        System.err.print(msg);
+        reportWriter.write(msg);
+    }
+    
+    protected void report(String msg) {
+        System.err.println(msg);
+        reportWriter.write(msg);
+        reportWriter.write('\n');
     }
 }

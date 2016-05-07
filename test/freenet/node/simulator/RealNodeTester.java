@@ -41,6 +41,7 @@ public class RealNodeTester {
 	static final int EXIT_INSERT_FAILED = EXIT_BASE + 5;
 	static final int EXIT_REQUEST_FAILED = EXIT_BASE + 6;
 	static final int EXIT_BAD_DATA = EXIT_BASE + 7;
+	static final int EXIT_RESULTS_NOT_AS_EXPECTED = EXIT_BASE + 8;
 	
 	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
 	static final FRIEND_VISIBILITY visibility = FRIEND_VISIBILITY.NO;
