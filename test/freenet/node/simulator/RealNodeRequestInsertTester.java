@@ -138,14 +138,15 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
         //		"freenet.io.comm.MessageCore:MINOR,freenet.node.Peer:MINOR,freenet.node.Node:MINOR";
         //String logDetails = "freenet.node.Bypass:MINOR";
         String logDetails = "";
-        NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, logDetails, true, 
-                BYPASS_TRANSPORT_LAYER, null);
-        System.out.println("Insert/retrieve test");
-        System.out.println();
-        System.err.println("Seed is "+SEED);
         DummyRandomSource random = new DummyRandomSource(SEED);
         DummyRandomSource nodesRandom = new DummyRandomSource(SEED+1);
         DummyRandomSource topologyRandom = new DummyRandomSource(SEED+2);
+        DummyRandomSource globalRandom = new DummyRandomSource(SEED+5);
+        NodeStarter.globalTestInit(new File(name), false, LogLevel.ERROR, logDetails, true, 
+                BYPASS_TRANSPORT_LAYER, globalRandom);
+        System.out.println("Insert/retrieve test");
+        System.out.println();
+        System.err.println("Seed is "+SEED);
         SimulatorRequestTracker tracker = new SimulatorRequestTracker(MAX_HTL);
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
