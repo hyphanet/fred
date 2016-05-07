@@ -117,13 +117,14 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
     
     public static void main(String[] args) throws CHKEncodeException, SSKEncodeException, FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, InvalidCompressionCodecException, IOException, KeyDecodeException {
         try {
-            run(args);
+            int retval = run(args);
+            System.exit(retval);
         } catch (ExitException e) {
             System.exit(e.retval);
         }
     }
     
-	public static void run(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, SSKEncodeException, InvalidCompressionCodecException, IOException, KeyDecodeException, ExitException {
+	public static int run(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, SSKEncodeException, InvalidCompressionCodecException, IOException, KeyDecodeException, ExitException {
 	    try {
 	    parseOptions(args);
         String name = "realNodeRequestInsertTest";
@@ -223,10 +224,9 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
             waitForAllConnected(nodes, true, true, false);
             int status = tester.insertRequestTest();
             if(status == -1) continue;
-            throw new ExitException(status);
+            return status;
         }
         } catch (Throwable t) {
-            if(t instanceof ExitException) throw (ExitException) t;
             // Need to explicitly exit because the wrapper thread may prevent shutdown.
             // FIXME WTF? Shouldn't be using the wrapper???
             Logger.error(RealNodeRequestInsertTester.class, "Caught "+t, t);
