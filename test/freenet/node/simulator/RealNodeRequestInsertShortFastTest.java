@@ -17,7 +17,7 @@ import freenet.node.simulator.RealNodeTester.SimulatorOverloadedException;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.compress.InvalidCompressionCodecException;
 
-public class RealNodeRequestInsertShortTest extends RealNodeRequestInsertShortTestBase {
+public class RealNodeRequestInsertShortFastTest extends RealNodeRequestInsertShortTestBase {
 
     @Test
     public void testSmallNetwork() throws CHKEncodeException, SSKEncodeException, FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, InvalidCompressionCodecException, IOException, KeyDecodeException, ExitException {
