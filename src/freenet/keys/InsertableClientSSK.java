@@ -189,7 +189,7 @@ public class InsertableClientSSK extends ClientSSK {
 			// Now sign it
 			DSASigner dsa = new DSASigner(new HMacDSAKCalculator(new SHA256Digest()));
 			dsa.init(true, new DSAPrivateKeyParameters(privKey.getX(), Global.getDSAgroupBigAParameters()));
-			BigInteger[] sig = dsa.generateSignature(Global.truncateHashIfNecessary(pubKey.getQ(), overallHash, false));
+			BigInteger[] sig = dsa.generateSignature(Global.truncateHash(overallHash));
 			// Pack R and S into 32 bytes each, and copy to headers.
 			// Then create and return the ClientSSKBlock.
 			byte[] rBuf = truncate(sig[0].toByteArray(), SSKBlock.SIG_R_LENGTH);
