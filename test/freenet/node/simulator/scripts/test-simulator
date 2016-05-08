@@ -18,7 +18,7 @@ do
 		SEED=$((3131+10*$x))
 		ARGS="size=$SIZE bypass=$BYPASS htl=$HTL degree=$DEGREE seed=$SEED bandwidth=$BWLIMIT bandwidth-cbr=$BWLIMIT_CBR"
 		echo Running test $BYPASS.$SUFFIX with seed $SEED
-		(time (java -Xmx10G -cp $CLASSPATH freenet.node.simulator.RealNodeRequestInsertTest $ARGS >> test.log.$BYPASS.$SUFFIX 2>> test.err.log.$BYPASS.$SUFFIX)) 2>> test.times.$BYPASS.$SUFFIX
+		(time (java -Xmx10G -cp $CLASSPATH freenet.node.simulator.RealNodeRequestInsertTester $ARGS >> test.log.$BYPASS.$SUFFIX 2>> test.err.log.$BYPASS.$SUFFIX)) 2>> test.times.$BYPASS.$SUFFIX
 		if ! grep "Succeeded, 20 successful fetches" test.err.log.$BYPASS.$SUFFIX; then echo "Iteration $x for $BYPASS.$SUFFIX failed"; exit 1; fi
 		cat test.err.log.$BYPASS.$SUFFIX | grep "^TEST " > test.trace.$BYPASS.$SUFFIX
 	done
