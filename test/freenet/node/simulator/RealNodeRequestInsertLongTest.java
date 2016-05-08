@@ -18,7 +18,9 @@ import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.TestProperty;
 
 public class RealNodeRequestInsertLongTest {
-
+    
+    protected static final String EXPECTED_RESULTS_HASH =
+            "lURlxz5pns4KYNrmYfAqWzmGeIfynKBvM+a3grEyABg=";
     @Test
     public void testBigNetwork() throws CHKEncodeException, SSKEncodeException, FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, InvalidCompressionCodecException, IOException, KeyDecodeException, ExitException {
         if(!TestProperty.EXTENSIVE) return;
@@ -27,8 +29,7 @@ public class RealNodeRequestInsertLongTest {
                 "seed=123456","bypass=FAST_QUEUE_BYPASS"};
         RealNodeRequestInsertTester.TARGET_SUCCESSES = 100;
         RealNodeRequestInsertTester.LESS_LOGGING = true;
-        RealNodeRequestInsertTester.EXPECTED_REPORT_CHECKSUM =
-                "lURlxz5pns4KYNrmYfAqWzmGeIfynKBvM+a3grEyABg=";
+        RealNodeRequestInsertTester.EXPECTED_REPORT_CHECKSUM = EXPECTED_RESULTS_HASH;
         RealNodeRequestInsertTester.run(args);
     }
     
