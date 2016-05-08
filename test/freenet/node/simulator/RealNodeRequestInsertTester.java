@@ -39,6 +39,7 @@ import freenet.node.NodeStarter;
 import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.node.NodeStarter.TestingVMBypass;
 import freenet.node.PeerNode;
+import freenet.node.SemiOrderedShutdownHook;
 import freenet.node.simulator.SimulatorRequestTracker.Request;
 import freenet.node.simulator.SimulatorRequestTracker.RequestComparator;
 import freenet.support.Base64;
@@ -141,7 +142,7 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
 	public static void run(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, SSKEncodeException, InvalidCompressionCodecException, IOException, KeyDecodeException, ExitException {
 	    parseOptions(args);
         String name = "realNodeRequestInsertTest";
-        File wd = new File(name);
+        final File wd = new File(name);
         if(!FileUtil.removeAll(wd)) {
         	System.err.println("Mass delete failed, test may not be accurate.");
         	throw new ExitException(EXIT_CANNOT_DELETE_OLD_DATA);
@@ -194,6 +195,13 @@ public class RealNodeRequestInsertTester extends RealNodeRoutingTester {
             if(!LESS_LOGGING)
                 System.err.println("Started node "+i+"/"+nodes.length);
         }
+        // Add it here so it runs after all the Node-related jobs.
+        Thread shutdown = new Thread() {
+            public void run() {
+                FileUtil.removeAll(wd);
+            }
+        };
+        SemiOrderedShutdownHook.get().addLateJob(shutdown);
         
         if(NodeStarter.isMessageQueueBypassEnabled()) {
             if(!LESS_LOGGING)
