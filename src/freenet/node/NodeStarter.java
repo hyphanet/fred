@@ -24,6 +24,7 @@ import freenet.crypt.JceLoader;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SSL;
 import freenet.crypt.Yarrow;
+import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Executor;
 import freenet.support.JVMVersion;
@@ -613,7 +614,8 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.respondUptime", true);
         configFS.put("node.scheduler.lazyStart", params.lazyStartRequestStarters);
         configFS.put("node.lazyStartDatastoreChecker", params.lazyStartDatastoreChecker);
-
+        configFS.putSingle("security-levels.physicalThreatLevel", PHYSICAL_THREAT_LEVEL.MAXIMUM.toString());
+        
 		PersistentConfig config = new PersistentConfig(configFS);
 
         Node node = new Node(config, params.random, params.random, null, null, params.executor, params.ticker, params);
