@@ -19,8 +19,8 @@ import freenet.support.compress.InvalidCompressionCodecException;
  * semantics. Uses RealNodeRequestInsertTester to simulate a 25 node network. Will check the output 
  * to ensure that the results are exactly as expected, including the exact path of each request 
  * and insert. Subclasses use different bypass modes, so in extensive mode this also tests the 
- * bypass code, while in a normal build it only runs the fastest test, which still verifies higher
- * level functionality such as routing.
+ * bypass code against full UDP nodes, while in a normal build it only runs the fastest test to 
+ * verify higher level functionality such as routing, assuming that the bypass works.
  * @author toad
  */
 public class RealNodeRequestInsertShortTestBase {
