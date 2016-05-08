@@ -11,24 +11,17 @@ import freenet.keys.KeyDecodeException;
 import freenet.keys.SSKEncodeException;
 import freenet.node.FSParseException;
 import freenet.node.NodeInitException;
+import freenet.node.NodeStarter.TestingVMBypass;
 import freenet.node.simulator.RealNodeRequestInsertTester.ExitException;
 import freenet.node.simulator.RealNodeTester.SimulatorOverloadedException;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.compress.InvalidCompressionCodecException;
 
-public class RealNodeRequestInsertShortTest {
-    
-    protected static final String EXPECTED_RESULTS_HASH =
-            "paooVR07He4wbREce5uz3fXtHKgqpho4jkdbRk0AjRU=";
+public class RealNodeRequestInsertShortTest extends RealNodeRequestInsertShortTestBase {
 
     @Test
     public void testSmallNetwork() throws CHKEncodeException, SSKEncodeException, FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, InvalidCompressionCodecException, IOException, KeyDecodeException, ExitException {
-        String[] args = 
-                new String[] {"size=25","degree=5","htl=4","drop=0",
-                "seed=12345","bypass=FAST_QUEUE_BYPASS"};
-        RealNodeRequestInsertTester.LESS_LOGGING = true;
-        RealNodeRequestInsertTester.EXPECTED_REPORT_CHECKSUM = EXPECTED_RESULTS_HASH;
-        RealNodeRequestInsertTester.run(args);
+        testSmallNetwork(TestingVMBypass.FAST_QUEUE_BYPASS);
     }
     
 }
