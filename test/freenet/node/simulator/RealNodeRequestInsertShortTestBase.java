@@ -2,8 +2,6 @@ package freenet.node.simulator;
 
 import java.io.IOException;
 
-import org.junit.Test;
-
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.CHKEncodeException;
@@ -17,6 +15,14 @@ import freenet.node.simulator.RealNodeTester.SimulatorOverloadedException;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.compress.InvalidCompressionCodecException;
 
+/** Base class for JUnit integration tests for sequential tests, testing routing and basic request
+ * semantics. Uses RealNodeRequestInsertTester to simulate a 25 node network. Will check the output 
+ * to ensure that the results are exactly as expected, including the exact path of each request 
+ * and insert. Subclasses use different bypass modes, so in extensive mode this also tests the 
+ * bypass code, while in a normal build it only runs the fastest test, which still verifies higher
+ * level functionality such as routing.
+ * @author toad
+ */
 public class RealNodeRequestInsertShortTestBase {
 
     protected static final String EXPECTED_RESULTS_HASH =

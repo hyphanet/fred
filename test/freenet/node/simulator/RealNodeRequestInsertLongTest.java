@@ -17,6 +17,10 @@ import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.TestProperty;
 
+/** Simulates sequential requests on a 100 node network with the fast bypass only. Again this 
+ * checks that the results are exactly as expected.
+ * @author toad
+ */
 public class RealNodeRequestInsertLongTest {
     
     protected static final String EXPECTED_RESULTS_HASH =

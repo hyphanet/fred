@@ -23,6 +23,8 @@ public class RealNodeRequestInsertShortFullTest extends RealNodeRequestInsertSho
     @Test
     public void testSmallNetwork() throws CHKEncodeException, SSKEncodeException, FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, SimulatorOverloadedException, InvalidCompressionCodecException, IOException, KeyDecodeException, ExitException {
         if(!TestProperty.EXTENSIVE) return;
+        // Bandwidth limit is arbitrary but must be set small enough to simulate delays between 
+        // blocks etc, and to not break slow CI VMs running the unit tests.
         RealNodeRequestInsertTester.BWLIMIT = 32*1024;
         testSmallNetwork(TestingVMBypass.NONE);
     }
