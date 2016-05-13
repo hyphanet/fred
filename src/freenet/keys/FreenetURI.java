@@ -1130,7 +1130,9 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * to the document name and changing the key type. */
 	public FreenetURI sskForUSK() {
 		if(!keyType.equalsIgnoreCase("USK")) throw new IllegalStateException();
-		return new FreenetURI("SSK", docName+"-"+suggestedEdition, metaStr, routingKey, cryptoKey, extra, 0);
+		long edition = Math.abs(suggestedEdition);
+		if (edition == Long.MIN_VALUE) edition = Long.MAX_VALUE;
+		return new FreenetURI("SSK", docName+"-"+edition, metaStr, routingKey, cryptoKey, extra, 0);
 	}
 
 	private static final Pattern docNameWithEditionPattern;
