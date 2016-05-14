@@ -111,7 +111,7 @@ public class BaseL10n {
 			LANGUAGE[] allValues = values();
 			ArrayList<String> result = new ArrayList<String>(allValues.length);
 			for (int i = 0; i < allValues.length; i++) {
-				// We will return the full names sorted alphabetically. To esnure that the user
+				// We will return the full names sorted alphabetically. To ensure that the user
 				// notices the special "UNLISTED" language code, we add it to the end of the list
 				// after sorting, so now we skip it.
 				if(allValues[i] != UNLISTED)
