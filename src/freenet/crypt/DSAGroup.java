@@ -33,9 +33,9 @@ public class DSAGroup extends CryptoKey {
     }
 
     private DSAGroup(DSAGroup group) {
-    	this.p = new BigInteger(1, group.p.toByteArray());
-    	this.q = new BigInteger(1, group.q.toByteArray());
-    	this.g = new BigInteger(1, group.g.toByteArray());
+        this.p = new BigInteger(1, group.p.toByteArray());
+        this.q = new BigInteger(1, group.q.toByteArray());
+        this.g = new BigInteger(1, group.g.toByteArray());
 	}
     
     protected DSAGroup() {
