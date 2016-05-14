@@ -1687,8 +1687,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         pingTime = Math.min(pingTime, MAX_PING_TIME);
         double delay =
                 ((node.random.nextGaussian() * PINGS_STDDEV) + PINGS) * pingTime;
-        if (delay < 0) delay = 0;
-        return (long) delay;
+        return Math.max((long) delay, 0L);
     }
 
 	/**
