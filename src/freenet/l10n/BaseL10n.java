@@ -117,10 +117,10 @@ public class BaseL10n {
 				if(allValues[i] != UNLISTED)
 					result.add(allValues[i].fullName);
 			}
-			
+
 			Collections.sort(result);
 			result.add(UNLISTED.fullName);
-			
+
 			return result.toArray(new String[result.size()]);
 		}
 
