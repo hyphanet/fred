@@ -1678,19 +1678,19 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	/** Standard deviation in ping times */
 	static final double PINGS_STDDEV = PINGS / 6.0;
 	static final double MAX_PING_TIME = RequestSender.OPENNET_TIMEOUT / 10;
-	
-	private long randomDelayFinishOpennetLocal() {
-	    double pingTime = 
-	            // Noderefs are sent as real-time
-	            node.nodeStats.getBwlimitDelayTimeRT() +
-	            node.nodeStats.nodePinger.averagePingTime();
-	    pingTime = Math.min(pingTime, MAX_PING_TIME);
-	    double delay = 
-	            ((node.random.nextGaussian() * PINGS_STDDEV) + PINGS) * pingTime;
-	    if(delay < 0) delay = 0;
-	    return (long) delay;
-	}
-	
+
+    private long randomDelayFinishOpennetLocal() {
+        double pingTime =
+                // Noderefs are sent as real-time
+                node.nodeStats.getBwlimitDelayTimeRT() +
+                node.nodeStats.nodePinger.averagePingTime();
+        pingTime = Math.min(pingTime, MAX_PING_TIME);
+        double delay =
+                ((node.random.nextGaussian() * PINGS_STDDEV) + PINGS) * pingTime;
+        if (delay < 0) delay = 0;
+        return (long) delay;
+    }
+
 	/**
      * Do path folding, maybe.
      * Wait for either a CompletedAck or a ConnectDestination.
@@ -1734,18 +1734,18 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				// RequestHandler will send a noderef back up, eventually, and will unlockHandler() after that point.
 				// But if this is a local request, we need to send the ack now.
 				// Serious race condition not possible here as we set it.
-				if(source == null) {
-				    long delay = randomDelayFinishOpennetLocal();
-				    if(logMINOR) Logger.minor(this, "Delaying opennet completion for "+TimeUtil.formatTime(delay, 2, true));
-				    node.ticker.queueTimedJob(new Runnable() {
+                if (source == null) {
+                    long delay = randomDelayFinishOpennetLocal();
+                    if (logMINOR) Logger.minor(this, "Delaying opennet completion for "+TimeUtil.formatTime(delay, 2, true));
+                    node.ticker.queueTimedJob(new Runnable() {
 
                         @Override
                         public void run() {
                             ackOpennet(next);
                         }
-				        
-				    }, delay);
-				} else if(origTag.shouldStop()) {
+
+                    }, delay);
+                } else if (origTag.shouldStop()) {
 					// Can't pass it on.
 					origTag.finishedWaitingForOpennet(next);
 				}
