@@ -8,8 +8,6 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.Random;
 
-import net.i2p.util.NativeBigInteger;
-
 import freenet.support.Base64;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
@@ -35,7 +33,7 @@ public class DSAPrivateKey extends CryptoKey {
     public DSAPrivateKey(DSAGroup g, Random r) {
         BigInteger tempX;
         do {
-            tempX = new NativeBigInteger(256, r);
+            tempX = new BigInteger(256, r);
         } while (tempX.compareTo(g.getQ()) > -1 || tempX.compareTo(BigInteger.ZERO) < 1);
         this.x = tempX;
     }
@@ -86,7 +84,7 @@ public class DSAPrivateKey extends CryptoKey {
 	}
 
 	public static DSAPrivateKey create(SimpleFieldSet fs, DSAGroup group) throws IllegalBase64Exception {
-		NativeBigInteger y = new NativeBigInteger(1, Base64.decode(fs.get("x")));
+		BigInteger y = new BigInteger(1, Base64.decode(fs.get("x")));
 		if(y.bitLength() > 512)
 			throw new IllegalBase64Exception("Probably a pubkey");
 		return new DSAPrivateKey(y, group);

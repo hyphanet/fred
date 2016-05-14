@@ -7,8 +7,6 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import net.i2p.util.NativeBigInteger;
-
 import freenet.node.FSParseException;
 import freenet.store.StorableBlock;
 import freenet.support.Base64;
@@ -47,7 +45,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	 * available, will save some conversions and string allocations.
 	 */
 	public DSAPublicKey(DSAGroup g, String yAsHexString) throws NumberFormatException {
-		this.y = new NativeBigInteger(yAsHexString, 16);
+		this.y = new BigInteger(yAsHexString, 16);
 		if(y.signum() != 1)
 			throw new IllegalArgumentException();
 		if(g == Global.DSAgroupBigA) g = null;
@@ -73,7 +71,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	private DSAPublicKey(DSAPublicKey key) {
 		fingerprint = null; // regen when needed
-		this.y = new NativeBigInteger(1, key.y.toByteArray());
+		this.y = new BigInteger(1, key.y.toByteArray());
 		DSAGroup g = key.group;
 		if(g != null) g = g.cloneKey();
 		this.group = g;
@@ -220,9 +218,9 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	}
 
 	public static DSAPublicKey create(SimpleFieldSet set, DSAGroup group) throws FSParseException {
-		NativeBigInteger x;
+		BigInteger x;
 		try {
-			x = new NativeBigInteger(1, Base64.decode(set.get("y")));
+			x = new BigInteger(1, Base64.decode(set.get("y")));
 		} catch (IllegalBase64Exception e) {
 			throw new FSParseException(e);
 		}

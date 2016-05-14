@@ -3,21 +3,20 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
+import org.bouncycastle.crypto.signers.DSASigner;
+import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
+
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
-import net.i2p.util.NativeBigInteger;
-
-import freenet.support.Logger;
-import freenet.support.math.MersenneTwister;
-
-import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DSASignature;
 import freenet.crypt.Global;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
@@ -26,8 +25,10 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.Util;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.compress.InvalidCompressionCodecException;
+import freenet.support.math.MersenneTwister;
 
 /** A ClientSSK that has a private key and therefore can be inserted. */
 public class InsertableClientSSK extends ClientSSK {
@@ -89,7 +90,7 @@ public class InsertableClientSSK extends ClientSSK {
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey;
 		try {
-			privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getRoutingKey()), g);
+			privKey = new DSAPrivateKey(new BigInteger(1, uri.getRoutingKey()), g);
 		} catch(IllegalArgumentException e) {
 			// DSAPrivateKey is invalid
 			Logger.error(InsertableClientSSK.class, "Caught "+e, e);
@@ -186,12 +187,13 @@ public class InsertableClientSSK extends ClientSSK {
 			md256.update(encryptedDataHash);
 			byte[] overallHash = md256.digest();
 			// Now sign it
-			DSASignature sig = DSA.sign(pubKey.getGroup(), privKey, new NativeBigInteger(1, overallHash), r);
+			DSASigner dsa = new DSASigner(new HMacDSAKCalculator(new SHA256Digest()));
+			dsa.init(true, new DSAPrivateKeyParameters(privKey.getX(), Global.getDSAgroupBigAParameters()));
+			BigInteger[] sig = dsa.generateSignature(Global.truncateHash(overallHash));
 			// Pack R and S into 32 bytes each, and copy to headers.
-
 			// Then create and return the ClientSSKBlock.
-			byte[] rBuf = truncate(sig.getR().toByteArray(), SSKBlock.SIG_R_LENGTH);
-			byte[] sBuf = truncate(sig.getS().toByteArray(), SSKBlock.SIG_S_LENGTH);
+			byte[] rBuf = truncate(sig[0].toByteArray(), SSKBlock.SIG_R_LENGTH);
+			byte[] sBuf = truncate(sig[1].toByteArray(), SSKBlock.SIG_S_LENGTH);
 			System.arraycopy(rBuf, 0, headers, x, rBuf.length);
 			x += rBuf.length;
 			System.arraycopy(sBuf, 0, headers, x, sBuf.length);
