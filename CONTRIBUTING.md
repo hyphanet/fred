@@ -43,7 +43,7 @@ and [IRC](https://freenetproject.org/irc.html) are good places to contact us.
 Before submitting a pull request, please:
 
 * add an entry to the [NEWS](/NEWS.md) file if appropriate
-* ensure modified lines meet the project [coding standards](https://google-styleguide.googlecode.com/svn/trunk/javaguide.html)
+* ensure modified lines meet the project [coding standards](https://google.github.io/styleguide/javaguide.html)
 * ensure the commit messages meet the standards:
 
 ## Commit messages
