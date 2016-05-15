@@ -1,4 +1,11 @@
-﻿/* grayandblue-static theme */
+﻿
+/* grayandblue-static theme */
+
+/* Basic CSS functions */
+@import url(/static/baseelements.css);
+@import url(/static/color.css);
+@import url(/static/statusbar.css);
+@import url(/static/bookmark.css);
 
 /* navigation behavior */
 @import url(/static/behavior-static.css);

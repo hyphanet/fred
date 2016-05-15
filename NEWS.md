@@ -1,6 +1,8 @@
 next ():
 
 - Add a NEWS file
+- Sort alerts within a category by time, newest first (including node-to-node messages).
+- Optimize CSS to load everything but the first theme in parallel
 - Tighten security (Remove DSA and compat code).
 - Only update essential plugins if we have to.
 - Improve translations.
@@ -8,7 +10,7 @@ next ():
 - Add much more CSS support to the content filter.
 - Fix problems with blank bookmark names. Thanks to _xiaoyu for the report!
 - Fix missing the software category in bookmarks.
-- Sort alerts within a category by time, newest first (including node-to-node messages).
+- Fix caching of static assets
 
 1470 (2015-08-15):
 
