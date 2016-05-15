@@ -44,7 +44,7 @@ public interface PacketFormat {
 	 * and nothing in flight. 
 	 * @param canSend If false, canSend() has returned false. Some transports will
 	 * want to send a packet anyway e.g. an ack, a resend in some cases. */
-	long timeNextUrgent(boolean canSend);
+	long timeNextUrgent(boolean canSend, long now);
 	
 	/**
 	 * @return The time at which the packet format will want to send an ack. Resends
