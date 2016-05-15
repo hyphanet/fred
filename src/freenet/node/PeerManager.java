@@ -181,6 +181,9 @@ public class PeerManager {
 		this.node = node;
 		shutdownHook.addEarlyJob(new Thread() {
 			public void run() {
+				// Ensure we're not waiting 5mins here
+				writePeersDarknet();
+				writePeersOpennet();
 				writePeersNow(false);
 			}
 		});
@@ -822,10 +825,19 @@ public class PeerManager {
 		return connectedPeers[node.random.nextInt(lengthWithoutExcluded)];
 	}
 
+	public void localBroadcast(Message msg, boolean ignoreRoutability, 
+	        boolean onlyRealConnections, ByteCounter ctr) {
+	    localBroadcast(msg, ignoreRoutability, onlyRealConnections, ctr, 
+	            Integer.MIN_VALUE, Integer.MAX_VALUE);
+	}
+	
 	/**
 	 * Asynchronously send this message to every connected peer.
+	 * @param maxVersion Only send the message if the version >= maxVersion.
+	 * @param minVersion Only send the message if the version <= minVersion.
 	 */
-	public void localBroadcast(Message msg, boolean ignoreRoutability, boolean onlyRealConnections, ByteCounter ctr) {
+	public void localBroadcast(Message msg, boolean ignoreRoutability, 
+	        boolean onlyRealConnections, ByteCounter ctr, int minVersion, int maxVersion) {
 		// myPeers not connectedPeers as connectedPeers only contains
 		// ROUTABLE peers, and we may want to send to non-routable peers
 		PeerNode[] peers = myPeers();
@@ -838,6 +850,9 @@ public class PeerManager {
 					continue;
 			if(onlyRealConnections && !peer.isRealConnection())
 				continue;
+			int version = peer.getVersionNumber();
+			if(version < minVersion) continue;
+			if(version > maxVersion) continue;
 			try {
 				peer.sendAsync(msg, null, ctr);
 			} catch(NotConnectedException e) {

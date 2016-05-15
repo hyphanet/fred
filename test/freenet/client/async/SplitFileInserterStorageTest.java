@@ -225,7 +225,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     public void testSmallSplitfileNoLastBlock() throws IOException, InsertException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
-        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         KeysFetchingLocally keys = new MyKeysFetchingLocally();
@@ -277,7 +277,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     public void testSmallSplitfileHasKeys() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
-        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
@@ -303,7 +303,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     public void testSmallSplitfileCompletion() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
-        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
@@ -330,7 +330,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     public void testSmallSplitfileChooseCompletion() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
-        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
@@ -376,7 +376,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     public void testSmallSplitfileChooseCooldown() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
-        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
@@ -429,7 +429,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     public void testSmallSplitfileChooseCooldownNotRNF() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
-        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
@@ -482,7 +482,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     public void testSmallSplitfileConsecutiveRNFsHack() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
-        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
@@ -531,7 +531,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     public void testSmallSplitfileConsecutiveRNFsHackFailure() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
-        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
@@ -575,7 +575,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     public void testSmallSplitfileFailureMaxRetries() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
-        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
@@ -612,7 +612,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     public void testSmallSplitfileFailureFatalError() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
-        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
@@ -652,9 +652,15 @@ public class SplitFileInserterStorageTest extends TestCase {
         return hashStream.getResults();
     }
 
+    private LockableRandomAccessBuffer generateData(Random random, long size) throws IOException {
+        // Use small factory for anything <= 256KiB
+        LockableRandomAccessBufferFactory f = size > 262144 ? bigRAFFactory : smallRAFFactory;
+        return generateData(random, size, f);
+    }
+
     private LockableRandomAccessBuffer generateData(Random random, long size,
-            LockableRandomAccessBufferFactory smallRAFFactory) throws IOException {
-        LockableRandomAccessBuffer thing = smallRAFFactory.makeRAF(size);
+            LockableRandomAccessBufferFactory factory) throws IOException {
+        LockableRandomAccessBuffer thing = factory.makeRAF(size);
         BucketTools.fill(thing, random, 0, size);
         return new ReadOnlyRandomAccessBuffer(thing);
     }
@@ -737,7 +743,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     
     private void testRoundTripSimpleRandom(long size, CompatibilityMode cmode) throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
         RandomSource r = new DummyRandomSource(12123);
-        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         Bucket dataBucket = new RAFBucket(data);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
@@ -815,7 +821,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     
     private void testResumeCrossSegment(long size) throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
         Random r = new Random(12121);
-        LockableRandomAccessBuffer data = generateData(r, size, bigRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
@@ -870,7 +876,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     
     private void testEncodeAfterShutdownCrossSegment(long size) throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
         Random r = new Random(12121);
-        LockableRandomAccessBuffer data = generateData(r, size, bigRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
@@ -896,7 +902,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     
     private void testRepeatedEncodeAfterShutdownCrossSegment(long size) throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
         Random r = new Random(12121);
-        LockableRandomAccessBuffer data = generateData(r, size, bigRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
@@ -972,7 +978,7 @@ public class SplitFileInserterStorageTest extends TestCase {
 
     private void testRoundTripCrossSegmentRandom(long size) throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
         RandomSource r = new DummyRandomSource(12123);
-        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         Bucket dataBucket = new RAFBucket(data);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
@@ -1052,7 +1058,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     
     private void testRoundTripCrossSegmentDataBlocks(long size) throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
         RandomSource r = new DummyRandomSource(12123);
-        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size);
         Bucket dataBucket = new RAFBucket(data);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
@@ -1333,7 +1339,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     public void testCancel() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12124);
         long size = 32768*6;
-        BarrierRandomAccessBuffer data = new BarrierRandomAccessBuffer(generateData(r, size, smallRAFFactory));
+        BarrierRandomAccessBuffer data = new BarrierRandomAccessBuffer(generateData(r, size));
         HashResult[] hashes = getHashes(data);
         data.pause();
         MyCallback cb = new MyCallback();
@@ -1375,7 +1381,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         // FIXME tricky to wait for "all threads are in pread()", when # threads != # segments.
         // So just set max threads to 1 (only affects this test).
         memoryLimitedJobRunner.setMaxThreads(1);
-        BarrierRandomAccessBuffer data = new BarrierRandomAccessBuffer(generateData(r, size, smallRAFFactory));
+        BarrierRandomAccessBuffer data = new BarrierRandomAccessBuffer(generateData(r, size));
         HashResult[] hashes = getHashes(data);
         data.pause();
         MyCallback cb = new MyCallback();
