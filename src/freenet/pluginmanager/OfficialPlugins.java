@@ -123,6 +123,10 @@ public class OfficialPlugins {
 					.minimumVersion(35)
 					.usesXml()
 					.loadedFrom("CHK@3Ht6otYHogKxa1Z8SC0hz46kV9q1qaSBsjbJxuwPosU,txky3jF33oWU9n6YiGMphiHA1V9q3i4ZN0VPtgElSaI,AAMC--8/FlogHelper-v35.jar");
+			addPlugin("Sharesite")
+					.inGroup("communication")
+					.minimumVersion(2)
+					.loadedFrom("CHK@F2HY72tkYOCjn6JxipG3jumisfczBlDgn7HhQ~tz1zg,3ab-60XR~Zvcidvs0Qjb7rygTTXVrfx9A~3kZBvYT4k,AAMC--8/Sharesite-v0.2.7.jar");
 		} catch (MalformedURLException mue1) {
 			throw new RuntimeException("Could not create FreenetURI.", mue1);
 		}
