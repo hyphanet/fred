@@ -112,7 +112,7 @@ public class HMACTest extends TestCase {
     }
     long BCLength = System.currentTimeMillis() - t1;
     System.out.println("Legacy HMAC took " + TimeUtil.formatTime(legacyLength, 6, true));
-    System.out.println("Current HMAC took " + TimeUtil.formatTime(legacyLength, 6, true));
+    System.out.println("Current HMAC took " + TimeUtil.formatTime(currentLength, 6, true));
     System.out.println("BC HMAC took " + TimeUtil.formatTime(BCLength, 6, true));
   }
 }
