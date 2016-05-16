@@ -78,8 +78,13 @@ public class HMACTest extends TestCase {
     }
 
     int count = 0;
-    int ITERATIONS = 10000000;
     System.out.println("We're getting ready to benchmark HMACs");
+	Random r = new Random(0xBBBBBBBB);
+	for (int len = 8; len <= 32768; len *= 4) {
+		byte [] plaintext = new byte[len];
+		r.nextBytes(plaintext);
+		System.out.println("plaintext len "+len);
+    int ITERATIONS = 10000000/len;
     long t1 = System.currentTimeMillis();
     for (int i = 0; i < ITERATIONS; i++) {
       byte[] r1 = HMAC_legacy.macWithSHA256(knownKey, plaintext, 32);
@@ -114,5 +119,6 @@ public class HMACTest extends TestCase {
     System.out.println("Legacy HMAC took " + TimeUtil.formatTime(legacyLength, 6, true));
     System.out.println("Current HMAC took " + TimeUtil.formatTime(currentLength, 6, true));
     System.out.println("BC HMAC took " + TimeUtil.formatTime(BCLength, 6, true));
+  }
   }
 }
