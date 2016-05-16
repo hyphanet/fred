@@ -255,6 +255,7 @@ public class PeerManager {
 				// Read a single NodePeer
 				SimpleFieldSet fs;
 				fs = new SimpleFieldSet(br, false, true);
+				boolean broken = true;
 				try {
 					PeerNode pn = PeerNode.create(fs, node, crypto, opennet, this);
 					if(oldOpennetPeers) {
@@ -264,39 +265,30 @@ public class PeerManager {
 					        opennet.addOldOpennetNode((OpennetPeerNode)pn);
 					} else
 						addPeer(pn, true, false);
-					gotSome = true;
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					System.err.println("Cannot parse a friend from the peers file: "+e2);
-					someBroken = true;
-					continue;
 				} catch(PeerParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					System.err.println("Cannot parse a friend from the peers file: "+e2);
-					someBroken = true;
-					continue;
 				} catch(ReferenceSignatureVerificationException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					System.err.println("Cannot parse a friend from the peers file: "+e2);
-					someBroken = true;
-					continue;
 				} catch (RuntimeException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					System.err.println("Cannot parse a friend from the peers file: "+e2);
-					someBroken = true;
-					continue;
 					// FIXME tell the user???
-				} catch (PeerTooOldException e) {
-				    if(crypto.isOpennet) {
-				        // Ignore.
-				        Logger.error(this, "Dropping too-old opennet peer");
-				    } else {
-				        // A lot more noisy!
-				        droppedOldPeers.add(e, fs.get("myName"));
-				    }
-                    someBroken = true;
-                    continue;
+                } catch (PeerTooOldException e) {
+                    if(crypto.isOpennet) {
+                        // Ignore.
+                        Logger.error(this, "Dropping too-old opennet peer");
+                    } else {
+                        // A lot more noisy!
+                        droppedOldPeers.add(e, fs.get("myName"));
+                    }
                 }
+				if(broken) someBroken = true;
+				else gotSome = true;
 			}
 		} catch(EOFException e) {
 			// End of file, fine

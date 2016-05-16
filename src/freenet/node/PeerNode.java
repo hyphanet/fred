@@ -266,8 +266,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/** Total bytes sent since startup */
 	private long totalOutputSinceStartup;
 	/** Peer node public key; changing this means new noderef */
-	public final ECPublicKey peerECDSAPubKey;
-	public final byte[] peerECDSAPubKeyHash;
+	final ECPublicKey peerECDSAPubKey;
+	final byte[] peerECDSAPubKeyHash;
 	private boolean isSignatureVerificationSuccessfull;
 	/** Incoming setup key. Used to decrypt incoming auth packets.
 	* Specifically: K_node XOR H(setupKey).
@@ -5833,4 +5833,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	protected final byte[] getPubKeyHash() {
 	    return peerECDSAPubKeyHash;
 	}
+
+	// FIXME Move callers into freenet/node/ (or copy the byte[]).
+    public byte[] getPeerECDSAPubKeyHash() {
+        return peerECDSAPubKeyHash;
+    }
 }

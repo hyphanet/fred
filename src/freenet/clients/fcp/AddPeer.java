@@ -159,7 +159,7 @@ public class AddPeer extends FCPMessage {
 			} catch (PeerTooOldException e) {
                 throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), identifier, false);
             }
-			if(Arrays.equals(pn.peerECDSAPubKeyHash, node.getOpennetPubKeyHash()))
+            if(Arrays.equals(pn.getPeerECDSAPubKeyHash(), node.getOpennetPubKeyHash()))
 				throw new MessageInvalidException(ProtocolErrorMessage.CANNOT_PEER_WITH_SELF, "Node cannot peer with itself", identifier, false);
 			if(!node.addPeerConnection(pn)) {
 				throw new MessageInvalidException(ProtocolErrorMessage.DUPLICATE_PEER_REF, "Node already has a peer with that identity", identifier, false);
@@ -177,7 +177,7 @@ public class AddPeer extends FCPMessage {
 			} catch (PeerTooOldException e) {
                 throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), identifier, false);
             }
-			if(Arrays.equals(pn.peerECDSAPubKeyHash, node.getDarknetPubKeyHash()))
+            if(Arrays.equals(pn.getPeerECDSAPubKeyHash(), node.getDarknetPubKeyHash()))
 				throw new MessageInvalidException(ProtocolErrorMessage.CANNOT_PEER_WITH_SELF, "Node cannot peer with itself", identifier, false);
 			if(!node.addPeerConnection(pn)) {
 				throw new MessageInvalidException(ProtocolErrorMessage.DUPLICATE_PEER_REF, "Node already has a peer with that identity", identifier, false);

@@ -12,8 +12,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -43,10 +43,10 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 	protected long fileRestartCounter;
 	/** Has the bucket been freed? If so, no further operations may be done */
 	private boolean freed;
-	/** Vector of streams (FileBucketInputStream or FileBucketOutputStream) which 
+	/** List of streams (FileBucketInputStream or FileBucketOutputStream) which 
 	 * are open to this file. So we can be sure they are all closed when we free it. 
 	 * Can be null. */
-	private transient Vector<Closeable> streams;
+	private transient ArrayList<Closeable> streams;
 
 	protected static String tempDir = null;
 
@@ -131,7 +131,7 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 		// BaseFileBucket is a very common object, and often very long lived,
 		// so we need to minimize memory usage even at the cost of frequent allocations.
 		if(streams == null)
-			streams = new Vector<Closeable>(1, 1);
+			streams = new ArrayList<Closeable>(1);
 		streams.add(stream);
 	}
 
@@ -139,7 +139,12 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 		// Race condition is possible
 		if(streams == null) return;
 		streams.remove(stream);
-		if(streams.isEmpty()) streams = null;
+		// Important to free up memory ASAP.
+		if(streams.isEmpty()) {
+		    streams = null;
+		} else {
+		    streams.trimToSize();
+		}
 	}
 	
 	/** If true, then the file is temporary and must already exist, so we will just open it. 
