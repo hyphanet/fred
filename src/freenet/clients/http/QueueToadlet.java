@@ -121,8 +121,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		FailedBadMIMEType(false, true, false),
 		FailedUnknownMIMEType(false, true, false),
 		UncompletedDownload(false, false, false),
-		UncompletedUpload(false, true, true),
-		UncompletedDirUpload(false, true, true);
+		UncompletedUpload(false, false, true),
+		UncompletedDirUpload(false, false, true);
 
 		final boolean isCompleted;
 		final boolean isFailed;
