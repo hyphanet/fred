@@ -79,46 +79,46 @@ public class HMACTest extends TestCase {
 
     int count = 0;
     System.out.println("We're getting ready to benchmark HMACs");
-	Random r = new Random(0xBBBBBBBB);
-	for (int len = 8; len <= 32768; len *= 4) {
-		byte [] plaintext = new byte[len];
-		r.nextBytes(plaintext);
-		System.out.println("plaintext len "+len);
-    int ITERATIONS = 10000000/len;
-    long t1 = System.currentTimeMillis();
-    for (int i = 0; i < ITERATIONS; i++) {
-      byte[] r1 = HMAC_legacy.macWithSHA256(knownKey, plaintext, 32);
-      for (int j = 0; j < r1.length; j++) {
-        count += r1[j];
+    Random r = new Random(0xBBBBBBBB);
+    for (int len = 8; len <= 32768; len *= 4) {
+      byte [] plaintext = new byte[len];
+      r.nextBytes(plaintext);
+      System.out.println("plaintext len "+len);
+      int ITERATIONS = 10000000/len;
+      long t1 = System.currentTimeMillis();
+      for (int i = 0; i < ITERATIONS; i++) {
+        byte[] r1 = HMAC_legacy.macWithSHA256(knownKey, plaintext, 32);
+        for (int j = 0; j < r1.length; j++) {
+          count += r1[j];
+        }
       }
-    }
-    long legacyLength = System.currentTimeMillis() - t1;
+      long legacyLength = System.currentTimeMillis() - t1;
 
-    t1 = System.currentTimeMillis();
-    for (int i = 0; i < ITERATIONS; i++) {
-      byte[] r1 = HMAC.macWithSHA256(knownKey, plaintext);
-      for (int j = 0; j < r1.length; j++) {
-        count += r1[j];
+      t1 = System.currentTimeMillis();
+      for (int i = 0; i < ITERATIONS; i++) {
+        byte[] r1 = HMAC.macWithSHA256(knownKey, plaintext);
+        for (int j = 0; j < r1.length; j++) {
+          count += r1[j];
+        }
       }
-    }
-    long currentLength = System.currentTimeMillis() - t1;
+      long currentLength = System.currentTimeMillis() - t1;
 
-    t1 = System.currentTimeMillis();
-    for (int i = 0; i < ITERATIONS; i++) {
-      byte[] r1 = new byte[32];
-      HMac hmac = new HMac(new SHA256Digest());
-      KeyParameter kp = new KeyParameter(knownKey);
-      hmac.init(kp);
-      hmac.update(plaintext, 0, plaintext.length);
-      hmac.doFinal(r1, 0);
-      for (int j = 0; j < r1.length; j++) {
-        count += r1[j];
+      t1 = System.currentTimeMillis();
+      for (int i = 0; i < ITERATIONS; i++) {
+        byte[] r1 = new byte[32];
+        HMac hmac = new HMac(new SHA256Digest());
+        KeyParameter kp = new KeyParameter(knownKey);
+        hmac.init(kp);
+        hmac.update(plaintext, 0, plaintext.length);
+        hmac.doFinal(r1, 0);
+        for (int j = 0; j < r1.length; j++) {
+          count += r1[j];
+        }
       }
+      long BCLength = System.currentTimeMillis() - t1;
+      System.out.println("Legacy HMAC took " + TimeUtil.formatTime(legacyLength, 6, true));
+      System.out.println("Current HMAC took " + TimeUtil.formatTime(currentLength, 6, true));
+      System.out.println("BC HMAC took " + TimeUtil.formatTime(BCLength, 6, true));
     }
-    long BCLength = System.currentTimeMillis() - t1;
-    System.out.println("Legacy HMAC took " + TimeUtil.formatTime(legacyLength, 6, true));
-    System.out.println("Current HMAC took " + TimeUtil.formatTime(currentLength, 6, true));
-    System.out.println("BC HMAC took " + TimeUtil.formatTime(BCLength, 6, true));
-  }
   }
 }
