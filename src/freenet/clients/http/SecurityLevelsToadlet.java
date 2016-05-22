@@ -534,7 +534,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		NodeL10n.getBase().addL10nSubstitution(seclevelGroup.addChild("p").addChild("i"), "SecurityLevels.physicalThreatLevelTruecrypt",
 		        new String[]{"bold", "truecrypt"},
 		        new HTMLNode[]{HTMLNode.STRONG,
-		                HTMLNode.linkInNewWindow(ExternalLinkToadlet.escape("http://www.truecrypt.org/"))});
+		                HTMLNode.linkInNewWindow(ExternalLinkToadlet.escape("https://veracrypt.codeplex.com/"))});
 		HTMLNode swapWarning = seclevelGroup.addChild("p").addChild("i");
 		OperatingSystem os = FileUtil.detectedOS;
 		swapWarning.addChild("#", NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevelSwapfile",
