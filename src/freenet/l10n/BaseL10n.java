@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.NoSuchElementException;
 
@@ -37,9 +38,21 @@ import freenet.support.io.FileUtil;
 public class BaseL10n {
 
 	/**
+	 * Central list of languages and the codes to identify them.
+	 * When adding new ones, use ISO639-2 or 3 if there is a code for the desired language available
+	 * there. If not, fall back to RFC5646 (= "IETF language tags").
+	 * 
+	 * TODO: Code quality: Switch from this manually maintained list to a predefined one. Use
+	 * standard Java class {@link Locale}.
+	 * Discussion at https://github.com/freenet/fred/pull/500 has shown that the IETF list is
+	 * the best choice. It is a combination of ISO639-3 codes (for which we already have class
+	 * {@link ISO639_3}) and a standard country list. And most importantly: It is understood
+	 * by standard Java class {@link Locale}.
+	 * Bugtracker entry for this: https://bugs.freenetproject.org/view.php?id=6857
+	 * 
 	 * @see "http://www.omniglot.com/language/names.htm"
 	 * @see "http://loc.gov/standards/iso639-2/php/code_list.php"
-	 */
+	 * @see "http://tools.ietf.org/html/rfc5646" */
 	public enum LANGUAGE {
 
 		// Windows language codes must be preceded with WINDOWS and be in upper case hex, 4 digits.
@@ -55,15 +68,23 @@ public class BaseL10n {
 		FINNISH("fi", "Suomi", "fin", new String[] { "WINDOWS040B"}),
 		FRENCH("fr", "Français", "fra", new String[] { "WINDOWS040C", "WINDOWS080C", "WINDOWS0C0C", "WINDOWS100C", "WINDOWS140C", "WINDOWS180C"}),
 		ITALIAN("it", "Italiano", "ita", new String[] { "WINDOWS0410", "WINDOWS0810"}),
+		// TODO: This does not adhere to RFC5646. Fix it as part of changing the whole list to
+		// RFC5646. Find a way to rename this without breaking the language in all plugins.
 		NORWEGIAN("nb-no", "Bokmål", "nob", new String[] { "WINDOWS0414", "WINDOWS0814"}),
 		POLISH("pl", "Polski", "pol", new String[] { "WINDOWS0415"}),
 		SWEDISH("sv", "Svenska", "swe", new String[] { "WINDOWS041D", "WINDOWS081D"}),
+		// TODO: This does not adhere to RFC5646. Fix it as part of changing the whole list to
+		// RFC5646. Find a way to rename this without breaking the language in all plugins.
 		CHINESE("zh-cn", "中文(简体)", "chn", new String[] { "WINDOWS0804", "WINDOWS1004" }),
 		// simplified chinese, used on mainland, Singapore and Malaysia
+		// TODO: This does not adhere to RFC5646. Fix it as part of changing the whole list to
+		// RFC5646. Find a way to rename this without breaking the language in all plugins.
 		CHINESE_TAIWAN("zh-tw", "中文(繁體)", "zh-tw", new String[] { "WINDOWS0404", "WINDOWS0C04", "WINDOWS1404" }), 
 		// traditional chinese, used in Taiwan, Hong Kong and Macau
 		RUSSIAN("ru", "Русский", "rus", new String[] { "WINDOWS0419" }), // Just one variant for russian. Belorussian is separate, code page 423, speakers may or may not speak russian, I'm not including it.
 		JAPANESE("ja", "日本語", "jpn", new String[] { "WINDOWS0411" }),
+		// TODO: This does not adhere to RFC5646. Fix it as part of changing the whole list to
+		// RFC5646. Find a way to rename this without breaking the language in all plugins.
 		BRAZILIAN_PORTUGUESE("pt-br", "Português do Brasil", "pt-br", new String[] { "WINDOWS0416" }),
 		GREEK("el", "Ελληνικά", "ell", new String[] { "WINDOWS0408" }),
 		UNLISTED("unlisted", "unlisted", "unlisted", new String[] {});
