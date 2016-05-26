@@ -934,14 +934,20 @@ public abstract class Fields {
 		return 0;
 	}
 	
-	/** Avoid issues with overflow, 2's complement. E.g. 0-Integer.MIN_VALUE = Integer.MIN_VALUE-0. */
+	/**
+	 * Avoid issues with overflow, 2's complement. E.g. 0-Integer.MIN_VALUE = Integer.MIN_VALUE-0.
+	 * @deprecated Use {@link Integer#compare(int, int)} */
+	@Deprecated
 	public static final int compare(int x, int y) {
 		if(x > y) return 1;
 		if(y > x) return -1;
 		return 0;
 	}
 	
-	/** Avoid issues with overflow, 2's complement. */
+	/**
+	 * Avoid issues with overflow, 2's complement.
+	 * @deprecated Use {@link Long#compare(long, long)} */
+	@Deprecated
 	public static final int compare(long x, long y) {
 		if(x > y) return 1;
 		if(y > x) return -1;
