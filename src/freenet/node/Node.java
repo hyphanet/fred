@@ -1582,6 +1582,11 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
+		if (obwLimit < minimumBandwidth) {
+			obwLimit = minimumBandwidth; // upgrade slow nodes automatically
+			Logger.normal(Node.class, "Output bandwidth was lower than minimum bandwidth. Increased to minimum bandwidth.");
+		}
+
 		outputBandwidthLimit = obwLimit;
 		try {
 			checkOutputBandwidthLimit(outputBandwidthLimit);
@@ -1636,6 +1641,10 @@ public class Node implements TimeSkewDetectorCallback {
 		if(ibwLimit == -1) {
 			inputLimitDefault = true;
 			ibwLimit = obwLimit * 4;
+		}
+		else if (ibwLimit < minimumBandwidth) {
+			ibwLimit = minimumBandwidth; // upgrade slow nodes automatically
+			Logger.normal(Node.class, "Input bandwidth was lower than minimum bandwidth. Increased to minimum bandwidth.");
 		}
 		inputBandwidthLimit = ibwLimit;
 		try {
