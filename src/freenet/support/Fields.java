@@ -391,6 +391,8 @@ public abstract class Fields {
 		return 0;
 	}
 
+	/** @deprecated Use {@link Arrays#equals(byte[], byte[])} */
+	@Deprecated
 	public static boolean byteArrayEqual(byte[] a, byte[] b) {
 		if(a.length != b.length)
 			return false;
