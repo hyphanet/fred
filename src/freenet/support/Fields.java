@@ -452,14 +452,16 @@ public abstract class Fields {
 
 	/**
 	 * Long version of above Not believed to be secure in any sense of the word :)
-	 */
+	 * @deprecated Not used by fred. Give plugins some time to migrate before removing it. */
+	@Deprecated
 	public static long longHashCode(byte[] b) {
 		return longHashCode(b, 0, b.length);
 	}
 
 	/**
 	 * Long version of above Not believed to be secure in any sense of the word :)
-	 */
+	 * @deprecated Not used by fred. Give plugins some time to migrate before removing it. */
+	@Deprecated
 	public static long longHashCode(byte[] b, int offset, int length) {
 		long h = 0;
 		for(int i = length - 1; i >= 0; --i) {
