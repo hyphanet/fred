@@ -500,7 +500,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	}
 
 	public static HTMLNode linkInNewWindow(String path) {
-		return new HTMLNode("a", new String[] { "href", "target" }, new String[] { path, "_blank" });
+		return new HTMLNode("a", new String[] { "href", "target", "rel" }, new String[] { path, "_blank", "noreferrer noopener" });
 	}
 
 	public static HTMLNode text(String text) {
