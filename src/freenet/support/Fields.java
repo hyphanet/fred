@@ -8,6 +8,7 @@ import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
@@ -426,13 +427,20 @@ public abstract class Fields {
 		}
 	}
 	
+	/** @deprecated Use {@link Arrays#hashCode(byte[])} */
+	@Deprecated
 	public static int hashCode(byte[] b) {
 		return hashCode(b, 0, b.length);
 	}
 
 	/**
 	 * A generic hashcode suited for byte arrays that are more or less random.
+	 * @deprecated
+	 *     Use {@link Arrays#asList(Object...) Arrays.asList(array)}
+	 *     .{@link List#subList(int, int) subList(from, to)}
+	 *     .{@link List#hashCode() hashCode()}
 	 */
+	@Deprecated
 	public static int hashCode(byte[] b, int ptr, int length) {
 		int h = 0;
 		for(int i = length - 1; i >= 0; --i) {
