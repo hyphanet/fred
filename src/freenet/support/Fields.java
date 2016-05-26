@@ -954,7 +954,13 @@ public abstract class Fields {
 		return 0;
 	}
 
-	/** Avoid issues with NaN's. */
+	/**
+	 * Avoid issues with NaN's.
+	 * @deprecated
+	 *     Use {@link Double#compare(double, double)}. Notice: It may behave differently with
+	 *     regards to special values (e.g. -0.0). Check its source code if you need precisely
+	 *     the same behavior. */
+	@Deprecated
 	public static final int compare(double x, double y) {
 		if(Double.isNaN(x)) {
 			if(Double.isNaN(y)) {
@@ -973,7 +979,13 @@ public abstract class Fields {
 		return 0;
 	}
 
-	/** Avoid issues with NaN's. */
+	/**
+	 * Avoid issues with NaN's.
+	 * @deprecated
+	 *     Use {@link Float#compare(float, float)}. Notice: It may behave differently with
+	 *     regards to special values (e.g. -0.0). Check its source code if you need precisely
+	 *     the same behavior. */
+	@Deprecated
 	public static final int compare(float x, float y) {
 		if(Float.isNaN(x)) {
 			if(Float.isNaN(y)) {
