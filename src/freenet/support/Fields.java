@@ -425,9 +425,7 @@ public abstract class Fields {
 			return compareBytes(o1, o2);
 		}
 	}
-
-	// could add stuff like IntegerComparator, LongComparator etc.
-	// if we need it
+	
 	public static int hashCode(byte[] b) {
 		return hashCode(b, 0, b.length);
 	}
