@@ -122,10 +122,10 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		}
 		/*
 		 * Fraction of total limit used for download. Asymptotically from 0.5 at the minimum cap to 0.8.
-         * 
-         * FIXME: Why do we do this? It does not actually work, since
-         * download cannot be larger than upload for any long amount
-         * of time.
+		 * 
+		 * FIXME: Why do we do this? It does not actually work, since
+		 * download cannot be larger than upload for any long amount
+		 * of time.
 		 *
 		 * This 50/50 split is consistent with the assumption in the definition of minCap that the upload and
 		 * download limits are equal.
