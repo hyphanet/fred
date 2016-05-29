@@ -131,10 +131,11 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		 * download limits are equal.
 		 */
 		double bytesPerSecond = bytesPerMonth/secondsPerMonth;
-        double minBytesPerSecond = Node.getMinimumBandwidth();
-        double bwinc = bytesPerSecond - 2*minBytesPerSecond; // min for up and min for down
-        double dllimit = minBytesPerSecond + (bwinc * ((4./5.)));
-        double ullimit = minBytesPerSecond + (bwinc / 5.);
+		double minBytesPerSecond = Node.getMinimumBandwidth();
+		double bwinc = bytesPerSecond - 2*minBytesPerSecond; // min for up and min for down
+		double asymptoticDlFraction = 4. / 5.;
+		double dllimit = minBytesPerSecond + (bwinc * asymptoticDlFraction);
+		double ullimit = minBytesPerSecond + (bwinc * (1 - asymptoticDlFraction));
 		String downloadLimit = String.valueOf(Math.ceil(dllimit));
 		String uploadLimit = String.valueOf(Math.ceil(ullimit));
 
