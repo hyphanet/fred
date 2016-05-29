@@ -690,6 +690,7 @@ public class Node implements TimeSkewDetectorCallback {
 	final boolean enablePerNodeFailureTables;
 	final boolean enableULPRDataPropagation;
 	final boolean enableSwapping;
+	final boolean enableRandomRouting;
 	private volatile boolean publishOurPeersLocation;
 	private volatile boolean routeAccordingToOurPeersLocation;
 	boolean enableSwapQueueing;
@@ -1451,6 +1452,27 @@ public class Node implements TimeSkewDetectorCallback {
 			        }
 		});
 		enableSwapping = nodeConfig.getBoolean("enableSwapping");
+		
+		nodeConfig.register("enableRandomRouting", true, sortOrder++, true, false, "Node.enableRandomRouting", "Node.enableRandomRoutingLong", new BooleanCallback() {
+
+            @Override
+            public Boolean get() {
+                return enableRandomRouting;
+            }
+
+            @Override
+            public void set(Boolean val) throws InvalidConfigValueException,
+                    NodeNeedRestartException {
+                throw new InvalidConfigValueException("Cannot change on the fly");
+            }
+            
+            @Override
+            public boolean isReadOnly() {
+                return true;
+            }
+		    
+		});
+		enableRandomRouting = nodeConfig.getBoolean("enableRandomRouting");
 
 		/*
 		 * Publish our peers' locations is enabled, even in MAXIMUM network security and/or HIGH friends security,
@@ -3608,6 +3630,25 @@ public class Node implements TimeSkewDetectorCallback {
 		return htl <= (maxHTL - 3);
 	}
 
+	/** Should the request be random routed? Random routing for the first few hops increases the 
+	 * long-link request capacity, that is the number of requests that can run in parallel routed
+	 * to random locations on the network. However it increases the number of hops taken to find 
+	 * the data. It also improves anonymity somewhat. Hence we random route only for bulk requests,
+	 * and for more hops for inserts. */
+    public boolean shouldRandomRoute(short htl, boolean insert, boolean ssk, boolean realTimeFlag) {
+        if(!enableRandomRouting) return false;
+        if(realTimeFlag) return false; // Real-time requests are latency optimised.
+        if(insert) {
+            // For inserts, random route at the maximum HTL and the next HTL down.
+            // Average of 3 hops of random routing, worst case 2.
+            return htl >= (maxHTL - 1);
+        } else {
+            // For requests, random route at the maximum HTL only.
+            // Average of 2 hops of random routing, worst case only the first hop.
+            return htl >= maxHTL;
+        }
+    }
+
 	/**
 	 * Fetch a block from the datastore.
 	 * @param key
@@ -5082,5 +5123,6 @@ public class Node implements TimeSkewDetectorCallback {
     DatabaseKey getDatabaseKey() {
         return databaseKey;
     }
-    
+
+
 }
