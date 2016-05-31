@@ -69,6 +69,15 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     public SplitFileFetcherKeyListener(SplitFileFetcherStorageCallback fetcher, SplitFileFetcherStorage storage, 
             boolean persistent, byte[] localSalt, int origSize, int segBlocks, int segments) 
     throws FetchException {
+        if (origSize <= 0) {
+            throw new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Cannot listen for non-positive number of blocks: " + origSize);
+        }
+        if (segBlocks <= 0) {
+            throw new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Cannot listen for non-positive number of blocks per segment: " + segBlocks);
+        }
+        if (segments <= 0) {
+            throw new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Cannot listen for non-positive number of segments: " + segments);
+        }
         this.fetcher = fetcher;
         this.storage = storage;
         this.localSalt = localSalt;
