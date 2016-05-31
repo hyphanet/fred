@@ -623,7 +623,9 @@ public class Metadata implements Cloneable, Serializable {
 			
 			segments = new SplitFileSegmentKeys[segmentCount];
 			
-			if(segmentCount == 1) {
+			if (segmentCount <= 0) {
+			    throw new MetadataParseException("Splitfile segment count must be strictly positive: " + segmentCount);
+			} else if (segmentCount == 1) {
 				// splitfile* will be overwritten, this is bad
 				// so copy them
 				segments[0] = new SplitFileSegmentKeys(splitfileBlocks, splitfileCheckBlocks, splitfileSingleCryptoKey, splitfileSingleCryptoAlgorithm);

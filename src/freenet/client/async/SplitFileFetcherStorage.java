@@ -340,6 +340,9 @@ public class SplitFileFetcherStorage {
         }
         
         int segmentCount = metadata.getSegmentCount();
+        if (segmentCount <= 0) {
+            throw new AssertionError("A splitfile has to have at least one segment");
+        }
         
         if(splitfileType == SplitfileAlgorithm.NONREDUNDANT) {
             if(splitfileCheckBlocks > 0) {
@@ -756,7 +759,7 @@ public class SplitFileFetcherStorage {
                 throw new StorageFormatException("Invalid compatibility mode "+compatMode);
             finalMinCompatMode = CompatibilityMode.values()[compatMode];
             int segmentCount = dis.readInt();
-            if(segmentCount < 0) throw new StorageFormatException("Invalid segment count "+segmentCount);
+            if(segmentCount <= 0) throw new StorageFormatException("Invalid segment count "+segmentCount);
             this.segments = new SplitFileFetcherSegmentStorage[segmentCount];
             randomSegmentIterator = new RandomArrayIterator<SplitFileFetcherSegmentStorage>(segments);
             long totalDataBlocks = dis.readInt();
@@ -768,6 +771,9 @@ public class SplitFileFetcherStorage {
             int totalCrossCheckBlocks = dis.readInt();
             if(totalCrossCheckBlocks < 0)
                 throw new StorageFormatException("Invalid total cross-check blocks "+totalDataBlocks);
+            if (totalDataBlocks + totalCheckBlocks + totalCrossCheckBlocks <= 0) {
+                throw new StorageFormatException("Total number of blocks in splitfile is non-positive");
+            }
             long dataOffset = 0;
             long crossCheckBlocksOffset;
             if(completeViaTruncation) {
