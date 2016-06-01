@@ -1,5 +1,12 @@
 next ():
 
+- fproxy: fetch key form: preserve anchor and kill host:port
+- fix monthly bandwidth selection bug
+- fix breakage from increased min bandwidth 
+- prevent denial-of-service via misconstructed manifests
+
+1473 (2016-05-22):
+
 - Add a NEWS file
 - Sort alerts within a category by time, newest first (including node-to-node messages).
 - Optimize CSS to load everything but the first theme in parallel
