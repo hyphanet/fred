@@ -502,7 +502,11 @@ public class WelcomeToadlet extends Toadlet {
 		// Fetch-a-key box
 		HTMLNode fetchKeyContent = ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel"), contentNode, "fetch-key", true);
 		fetchKeyContent.addAttribute("id", "keyfetchbox");
-		HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[]{"action", "method"}, new String[]{"/", "get"}).addChild("div");
+		// get the javascript for splitting the key into url and hash
+		fetchKeyContent.addChild("script", new String[] {"type", "src"}, new String[] {"text/javascript",  "/static/js/keyinputform.js"});
+		HTMLNode fetchKeyForm = fetchKeyContent.addChild("form",
+		                                                 new String[]{"action", "method", "onsubmit"},
+		                                                 new String[]{"/", "get", "return sanitizeFormInputKey(this);"}).addChild("div");
 		fetchKeyForm.addChild("span", "class", "fetch-key-label", l10n("keyRequestLabel") + ' ');
 		fetchKeyForm.addChild("input", new String[]{"type", "size", "name"}, new String[]{"text", "80", "key"});
 		fetchKeyForm.addChild("input", new String[]{"type", "value"}, new String[]{"submit", l10n("fetch")});
