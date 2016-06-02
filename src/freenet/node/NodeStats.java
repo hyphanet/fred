@@ -1545,7 +1545,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		double totalAllocation = totalGuaranteedBandwidth;
 		// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
 		double localAllocation = totalAllocation * 0.5;
-		if(source == null)
+		if (source == null)
 		    thisAllocation = localAllocation;
 		else {
 		    totalAllocation -= localAllocation;

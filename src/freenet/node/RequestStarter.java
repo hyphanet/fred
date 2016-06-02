@@ -166,7 +166,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 //				}
 				RejectReason reason;
 				assert(req.realTimeFlag == realTime);
-				if(!req.localRequestOnly) {
+				if (!req.localRequestOnly) {
 					reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, 
 							Node.PREFER_INSERT_DEFAULT && isInsert, req.realTimeFlag, null);
 					if(reason != null) {
