@@ -1181,9 +1181,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.register(seclevels, "FProxyToadlet.categoryConfig", "/seclevels/", true,
 		        "FProxyToadlet.seclevelsTitle", "FProxyToadlet.seclevels", true, null);
 
-		PproxyToadlet pproxy = new PproxyToadlet(client, node);
-		server.register(pproxy, "FProxyToadlet.categoryConfig", "/plugins/", true, "FProxyToadlet.pluginsTitle",
-		        "FProxyToadlet.plugins", true, null);
+		if(node.pluginManager.isEnabled()) {
+		    PproxyToadlet pproxy = new PproxyToadlet(client, node);
+		    server.register(pproxy, "FProxyToadlet.categoryConfig", "/plugins/", true, "FProxyToadlet.pluginsTitle",
+		            "FProxyToadlet.plugins", true, null);
+		}
 
 		SubConfig[] sc = config.getConfigs();
 		Arrays.sort(sc);

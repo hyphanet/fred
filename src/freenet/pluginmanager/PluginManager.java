@@ -103,6 +103,8 @@ public class PluginManager {
 	private boolean alwaysLoadOfficialPluginsFromCentralServer = false;
 
 	static final short PRIO = RequestStarter.INTERACTIVE_PRIORITY_CLASS;
+	/** Is the plugin system enabled? Set at boot time only. Mainly for simulations. */
+	private final boolean enabled;
 
 	public PluginManager(Node node, int lastVersion) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -127,7 +129,24 @@ public class PluginManager {
 		executor = new SerialExecutor(NativeThread.NORM_PRIORITY);
 		executor.start(node.executor, "PM callback executor");
 
-		pmconfig = node.config.createSubConfig("pluginmanager");
+                pmconfig = node.config.createSubConfig("pluginmanager");
+                pmconfig.register("enabled", true, 0, true, true, "PluginManager.enabled", "PluginManager.enabledLong", new BooleanCallback() {
+
+            @Override
+            public synchronized Boolean get() {
+                return enabled;
+            }
+
+            @Override
+            public void set(Boolean val) throws InvalidConfigValueException,
+                    NodeNeedRestartException {
+                if(enabled != val)
+                    throw new NodeNeedRestartException(l10n("changePluginManagerEnabledInConfig"));
+            }
+		    
+		});
+		enabled = pmconfig.getBoolean("enabled");
+		
 //		pmconfig.register("configfile", "fplugins.ini", 9, true, true, "PluginConfig.configFile", "PluginConfig.configFileLong",
 //				new StringCallback() {
 //			public String get() {
@@ -233,6 +252,7 @@ public class PluginManager {
 	private String[] toStart;
 
 	public void start(Config config) {
+	    if(!enabled) return;
 		if (toStart == null) {
 			synchronized (pluginWrappers) {
 				started = true;
@@ -266,6 +286,7 @@ public class PluginManager {
 	}
 
 	public void stop(long maxWaitTime) {
+	    if(!enabled) return;
 		// Stop loading plugins.
 		ArrayList<PluginProgress> matches = new ArrayList<PluginProgress>();
 		synchronized(this) {
@@ -399,6 +420,7 @@ public class PluginManager {
 	}
 
 	private PluginInfoWrapper realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store, boolean ignoreOld) {
+	    if(!enabled) throw new IllegalStateException("Plugins disabled");
 		if(filename.trim().length() == 0)
 			return null;
 		final PluginProgress pluginProgress = new PluginProgress(filename, pdl);
@@ -1757,5 +1779,9 @@ public class PluginManager {
 		if(!reloading)
 			node.nodeUpdater.stopPluginUpdater(wrapper.getFilename());
 	}
+
+    public boolean isEnabled() {
+        return enabled;
+    }
 
 }
