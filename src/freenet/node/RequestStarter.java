@@ -199,8 +199,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					req = sched.grabRequest();
 					if(req == null) {
 						try {
-							wait(SECONDS.toMillis(1)); // this can happen when most but not all stuff is already running but there is still stuff to fetch, so don't wait *too* long.
-							// FIXME increase when we can be *sure* there is nothing left in the queue (especially for transient requests).
+							wait();
 						} catch (InterruptedException e) {
 							// Ignore
 						}
