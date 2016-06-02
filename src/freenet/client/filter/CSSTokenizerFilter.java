@@ -4001,12 +4001,19 @@ class CSSTokenizerFilter {
 
 			/*
 			 * Parser expressions
+			 * Original syntax: http://www.w3.org/TR/CSS2/about.html#value-defs
+			 * We encode it a bit differently...
 			 * 1 || 2 => 1a2
 			 * [1][2] =>1 2
+			 * 1 && 2 => 1b2
 			 * 1<1,4> => 1<1,4>
 			 * 1* => 1<0,65536>
-			 * 1? => 1o
-			 *
+			 * 1? => 1?
+			 * 
+			 * Note that we do not (correctly) implement operator precedence. Brackets must be
+			 * implemented using auxiliary expression verifiers. && and || may only join numbered 
+			 * expressions. There is no support for the single bar, again we use multiple 
+			 * alternative numbered patterns for this.
 			 */
 			/*
 			 * For each parserExpression, recursiveParserExpressionVerifier() would be called with parserExpression and value.
@@ -4024,7 +4031,7 @@ class CSSTokenizerFilter {
 		 * [1][2] => 1 2
 		 * 1<1,4> => 1<1,4>
 		 * 1* => 1<0,65536>
-		 * 1? => 1o
+		 * 1? => 1?
 		 * 1+ => 1<1,65536>
 		 * 1&&2 => 1b2   (see doubleAmpersandVerifier())
 		 * Additional expressions that can be passed to the function
@@ -4068,14 +4075,13 @@ class CSSTokenizerFilter {
 					//Detecting the other end
 					for(int j=0;j<expression.length();j++)
 					{
-						if(expression.charAt(j)=='?' || expression.charAt(j)=='<' || expression.charAt(j)=='>' || expression.charAt(j)==' ')
-						{
+					    char c = expression.charAt(j);
+					    if(c == 'a') {
+                            noOfa++;
+					    } else if(!('0' <= c && '9' >= c)) {
 							endIndex=j;
 							break;
 						}
-						else if(expression.charAt(j)=='a')
-							noOfa++;
-
 					}
 					String firstPart=expression.substring(0,endIndex);
 					String secondPart="";
@@ -4106,8 +4112,10 @@ class CSSTokenizerFilter {
 				} else if (expression.charAt(i) == 'b') {
 					// detecting b which is the && operator
 					int endIndex = expression.length();
+                    // Find the end of a chain of 1b2b3...
 					for (int j = 0; j < expression.length(); j++) {
-						if (expression.charAt(j)=='?' || expression.charAt(j)=='<' || expression.charAt(j)=='>' || expression.charAt(j)==' ') {
+					    char c = expression.charAt(j);
+					    if(!(c == 'b' || '0' <= c && '9' >= c)) {
 							endIndex=j;
 							break;
 						}
