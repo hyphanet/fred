@@ -60,17 +60,11 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	
     public static final short MINIMUM_FETCHABLE_PRIORITY_CLASS = PREFETCH_PRIORITY_CLASS;
     
-	/** If true, local requests are subject to shouldRejectRequest(). If false, they are only subject to the token
-	 * buckets and the thread limit. FIXME make configurable. */
-	static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
-	
 	public static boolean isValidPriorityClass(int prio) {
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > PAUSED_PRIORITY_CLASS));
 	}
 	
 	final BaseRequestThrottle throttle;
-	final TokenBucket inputBucket;
-	final TokenBucket outputBucket;
 	final RunningAverage averageInputBytesPerRequest;
 	final RunningAverage averageOutputBytesPerRequest;
 	RequestScheduler sched;
@@ -82,14 +76,12 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	
 	static final int MAX_WAITING_FOR_SLOTS = 50;
 	
-	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
+	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, 
 			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK, boolean realTime) {
 		this.core = node;
 		this.stats = core.nodeStats;
 		this.throttle = throttle;
 		this.name = name + (realTime ? " (realtime)" : " (bulk)");
-		this.outputBucket = outputBucket;
-		this.inputBucket = inputBucket;
 		this.averageOutputBytesPerRequest = averageOutputBytesPerRequest;
 		this.averageInputBytesPerRequest = averageInputBytesPerRequest;
 		this.isInsert = isInsert;
@@ -142,10 +134,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					delay = throttle.getDelay();
 					if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
 					long sleepUntil = cycleTime + delay;
-					if(!LOCAL_REQUESTS_COMPETE_FAIRLY) {
-						inputBucket.blockingGrab((int)(Math.max(0, averageInputBytesPerRequest.currentValue())));
-						outputBucket.blockingGrab((int)(Math.max(0, averageOutputBytesPerRequest.currentValue())));
-					}
 					long now;
 					do {
 						now = System.currentTimeMillis();
@@ -178,7 +166,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 //				}
 				RejectReason reason;
 				assert(req.realTimeFlag == realTime);
-				if(LOCAL_REQUESTS_COMPETE_FAIRLY && !req.localRequestOnly) {
+				if (!req.localRequestOnly) {
 					reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, 
 							Node.PREFER_INSERT_DEFAULT && isInsert, req.realTimeFlag, null);
 					if(reason != null) {
