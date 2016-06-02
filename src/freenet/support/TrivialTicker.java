@@ -156,4 +156,11 @@ public class TrivialTicker implements Ticker {
 		return executor;
 	}
 
+    @Override
+    public void queueTimedJobAbsolute(Runnable runner, String name, long time,
+            boolean runOnTickerAnyway, boolean noDupes) {
+        queueTimedJobAbsolute(runner, name, time - System.currentTimeMillis(), 
+                runOnTickerAnyway, noDupes);
+    }
+
 }
