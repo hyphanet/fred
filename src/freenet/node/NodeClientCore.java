@@ -188,25 +188,25 @@ public class NodeClientCore implements Persistable {
 		this.random = node.random;
 		this.pluginStores = new PluginStores(node, installConfig);
 		
-		nodeConfig.register("lazyStartDatastoreChecker", false, sortOrder++, true, false, "NodeClientCore.lazyStartDatastoreChecker", "NodeClientCore.lazyStartDatastoreCheckerLong", new BooleanCallback() {
+                nodeConfig.register("lazyStartDatastoreChecker", false, sortOrder++, true, false, "NodeClientCore.lazyStartDatastoreChecker", "NodeClientCore.lazyStartDatastoreCheckerLong", new BooleanCallback() {
 
-            @Override
-            public Boolean get() {
-                synchronized(NodeClientCore.this) {
-                    return lazyStartDatastoreChecker;
-                }
-            }
-
-            @Override
-            public void set(Boolean val) throws InvalidConfigValueException,
-                    NodeNeedRestartException {
-                synchronized(NodeClientCore.this) {
-                    if(val != lazyStartDatastoreChecker) {
-                        lazyStartDatastoreChecker = val;
-                        throw new NodeNeedRestartException(l10n("lazyStartDatastoreCheckerMustRestartNode"));
+                @Override
+                public Boolean get() {
+                    synchronized(NodeClientCore.this) {
+                        return lazyStartDatastoreChecker;
                     }
                 }
-            }
+    
+                @Override
+                public void set(Boolean val) throws InvalidConfigValueException,
+                        NodeNeedRestartException {
+                    synchronized(NodeClientCore.this) {
+                        if(val != lazyStartDatastoreChecker) {
+                            lazyStartDatastoreChecker = val;
+                            throw new NodeNeedRestartException(l10n("lazyStartDatastoreCheckerMustRestartNode"));
+                        }
+                    }
+                }
 		    
 		});
 		lazyStartDatastoreChecker = nodeConfig.getBoolean("lazyStartDatastoreChecker");

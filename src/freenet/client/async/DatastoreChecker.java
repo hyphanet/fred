@@ -251,7 +251,7 @@ public class DatastoreChecker implements PrioRunnable {
 	        if(running) return;
 	    }
 	    running = true;
-		executor.execute(this, threadName);
+            executor.execute(this, threadName);
 	}
 
 	private synchronized boolean isEmpty() {
@@ -261,7 +261,7 @@ public class DatastoreChecker implements PrioRunnable {
 	    return true;
     }
 
-    @Override
+        @Override
 	public int getPriority() {
 		return NativeThread.NORM_PRIORITY;
 	}
