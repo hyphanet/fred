@@ -199,7 +199,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
 			SelectorReturn r = chooseRequestInner(fuzz, random, offeredKeys, starter, realTime, context, now);
-            SendableRequest req = r.req;
+                        SendableRequest req = r.req;
 			if(req == null) {
 			    if(r.wakeupTime != Long.MAX_VALUE && r.wakeupTime > now) {
 			        // Wake up later.
