@@ -176,6 +176,7 @@ public class NodeClientCore implements Persistable {
 	private boolean alwaysCommit;
 	private final PluginStores pluginStores;
 	private final UserAlert migratingAlert;
+	private boolean lazyStartDatastoreChecker;
 	
 	private boolean finishedInitStorage;
 	private boolean finishingInitStorage;
@@ -186,7 +187,31 @@ public class NodeClientCore implements Persistable {
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
 		this.pluginStores = new PluginStores(node, installConfig);
-		storeChecker = new DatastoreChecker(node);
+		
+		nodeConfig.register("lazyStartDatastoreChecker", false, sortOrder++, true, false, "NodeClientCore.lazyStartDatastoreChecker", "NodeClientCore.lazyStartDatastoreCheckerLong", new BooleanCallback() {
+
+            @Override
+            public Boolean get() {
+                synchronized(NodeClientCore.this) {
+                    return lazyStartDatastoreChecker;
+                }
+            }
+
+            @Override
+            public void set(Boolean val) throws InvalidConfigValueException,
+                    NodeNeedRestartException {
+                synchronized(NodeClientCore.this) {
+                    if(val != lazyStartDatastoreChecker) {
+                        lazyStartDatastoreChecker = val;
+                        throw new NodeNeedRestartException(l10n("lazyStartDatastoreCheckerMustRestartNode"));
+                    }
+                }
+            }
+		    
+		});
+		lazyStartDatastoreChecker = nodeConfig.getBoolean("lazyStartDatastoreChecker");
+		
+		storeChecker = new DatastoreChecker(node, lazyStartDatastoreChecker, node.executor, "Datastore checker");
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		compressor = new RealCompressor();
@@ -941,7 +966,7 @@ public class NodeClientCore implements Persistable {
 
 		requestStarters.start();
 
-		storeChecker.start(node.executor, "Datastore checker");
+		storeChecker.start();
 		if(fcpServer != null)
 			fcpServer.maybeStart();
         node.pluginManager.start(node.config);
