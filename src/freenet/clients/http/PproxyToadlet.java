@@ -199,6 +199,9 @@ public class PproxyToadlet extends Toadlet {
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addChild("#", l10n("pluginUnloadedWithName", "name", pluginThreadName));
 				infoboxContent.addChild("br");
+                infoboxContent.addChild("#", l10n("pluginFilesWarning"));
+                infoboxContent.addChild("br");
+                infoboxContent.addChild("br");
 				infoboxContent.addChild("a", "href", "/plugins/", l10n("returnToPluginPage"));
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
