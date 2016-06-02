@@ -219,11 +219,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	/** Node I/O stats update interval (milliseconds) */
 	private static final long nodeIOStatsUpdateInterval = 2000;
 
-	/** Token bucket for output bandwidth used by requests */
-	final TokenBucket requestOutputThrottle;
-	/** Token bucket for input bandwidth used by requests */
-	final TokenBucket requestInputThrottle;
-
 	// various metrics
 	public final RunningAverage routingMissDistanceLocal;
 	public final RunningAverage routingMissDistanceRemote;
@@ -584,11 +579,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		localSSKFetchTimeAverageBulk = new TrivialRunningAverage();
 
 		chkSuccessRatesByLocation = new Histogram2(10, 1.0);
-
-		requestOutputThrottle =
-			new TokenBucket(Math.max(obwLimit*60, 32768*20), SECONDS.toNanos(1) / obwLimit, 0);
-		requestInputThrottle =
-			new TokenBucket(Math.max(ibwLimit*60, 32768*20), SECONDS.toNanos(1) / ibwLimit, 0);
 
 		double nodeLoc=node.lm.getLocation();
 		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
@@ -1283,30 +1273,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			return new RejectReason(ret, true);
 		}
 		
-		// Do we have the bandwidth?
-		// The throttles should not be used much now, the timeout-based 
-		// preemptive rejection and fair sharing code above should catch it in
-		// all cases. FIXME can we get rid of the throttles here?
-		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
-		int expectedSent = (int)Math.max(expected / nonOverheadFraction, 0);
-		if(logMINOR)
-			Logger.minor(this, "Expected sent bytes: "+expected+" -> "+expectedSent);
-		if(!requestOutputThrottle.instantGrab(expectedSent)) {
-			rejected("Insufficient output bandwidth", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
-			return new RejectReason("Insufficient output bandwidth", false);
-			// FIXME slowDown?
-		}
-		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
-		int expectedReceived = (int)Math.max(expected, 0);
-		if(logMINOR)
-			Logger.minor(this, "Expected received bytes: "+expectedReceived);
-		if(!requestInputThrottle.instantGrab(expectedReceived)) {
-			requestOutputThrottle.recycle(expectedSent);
-			rejected("Insufficient input bandwidth", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
-			return new RejectReason("Insufficient input bandwidth", false);
-			// FIXME slowDown?
-		}
-
 		// Message queues - when the link level has far more queued than it
 		// can transmit in a reasonable time, don't accept requests.
 		if(source != null) {
@@ -1576,20 +1542,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private double getPeerLimit(PeerNode source, double totalGuaranteedBandwidth, boolean input, int transfersPerInsert, boolean realTimeFlag, int peers, double sourceRestarted) {
 		
 		double thisAllocation;
-		
+		double totalAllocation = totalGuaranteedBandwidth;
 		// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
-		if(RequestStarter.LOCAL_REQUESTS_COMPETE_FAIRLY) {
-			thisAllocation = totalGuaranteedBandwidth / (peers + 1);
-		} else {
-			double totalAllocation = totalGuaranteedBandwidth;
-			// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
-			double localAllocation = totalAllocation * 0.5;
-			if(source == null)
-				thisAllocation = localAllocation;
-			else {
-				totalAllocation -= localAllocation;
-				thisAllocation = totalAllocation / peers;
-			}
+		double localAllocation = totalAllocation * 0.5;
+		if(source == null)
+		    thisAllocation = localAllocation;
+		else {
+		    totalAllocation -= localAllocation;
+		    thisAllocation = totalAllocation / peers;
 		}
 		
 		if(logMINOR && sourceRestarted != 0)
@@ -2254,17 +2214,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("blockTransferFailTimeout", blockTransferFailTimeout.currentValue());
 
 		return fs;
-	}
-
-	public void setOutputLimit(int obwLimit) {
-		requestOutputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, Math.max(obwLimit*60, 32768*20));
-		if(node.inputLimitDefault) {
-			setInputLimit(obwLimit * 4);
-		}
-	}
-
-	public void setInputLimit(int ibwLimit) {
-		requestInputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / ibwLimit, Math.max(ibwLimit*60, 32768*20));
 	}
 
 	public boolean isTestnetEnabled() {
