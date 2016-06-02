@@ -63,8 +63,8 @@ public class MessageCore {
 	private static final long MAX_UNCLAIMED_FIFO_ITEM_LIFETIME = MINUTES.toMillis(10);  // maybe this should be per message type??
 	// FIXME do we need MIN_FILTER_REMOVE_TIME? Can we make this more efficient?
 	// FIXME may not work well for newly added filters with timeouts close to the minimum, or filters with timeouts close to the minimum in general.
-	private static final long MAX_FILTER_REMOVE_TIME = SECONDS.toMillis(1);
-	private static final long MIN_FILTER_REMOVE_TIME = MILLISECONDS.toMillis(100);
+	private static final long MAX_FILTER_REMOVE_TIME = SECONDS.toMillis(10);
+	private static final long MIN_FILTER_REMOVE_TIME = SECONDS.toMillis(1);
 	private long startedTime;
 	
 	public synchronized long getStartedTime() {
@@ -107,7 +107,7 @@ public class MessageCore {
 				} catch (Throwable t) {
 					Logger.error(this, "Failed to remove timed out filters: "+t, t);
 				} finally {
-					ticker.queueTimedJob(this, Math.max(MIN_FILTER_REMOVE_TIME, System.currentTimeMillis() - nextRun));
+					ticker.queueTimedJob(this, Math.max(MIN_FILTER_REMOVE_TIME, nextRun - System.currentTimeMillis()));
 				}
 			}
     		
