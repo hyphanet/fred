@@ -92,9 +92,9 @@ public class OfficialPlugins {
 					.unsupported();
 			addPlugin("Freereader")
 					.inGroup("index")
-					.minimumVersion(5)
+					.minimumVersion(6)
 					.usesXml()
-					.loadedFrom("CHK@y9HNda2YcAS6a1OnJKHaWn5Q5nhH3dPEo92TdvAjHQ8,my3nX-021MQ--hbP33Ou~eV9o0iVzS3ebfu61BVFPrs,AAMC--8/Freereader-5.jar");
+					.loadedFrom("CHK@SjXgPC5IEZa2g7a6gIKmNuxEKN4~eWrPhIwsznmGV-8,QUxm9R3sp3mNwhEHhL8mlx9zbOhIqIyR93tu7jD~0EU,AAMC--8/Freereader-6.jar");
 			addPlugin("Library")
 					.inGroup("index")
 					.minimumVersion(36)
