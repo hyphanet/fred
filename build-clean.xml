@@ -101,6 +101,7 @@ maintainers may prefer to use this instead of build.xml.
 		<echo message="  skip        Skip all tests"/>
 		<echo message="  verbose     Report additional information"/>
 		<echo message="  benchmark   Run benchmark tests"/>
+		<echo message="  coverage    Run test coverage analysis using Cobertura"/>
 		<echo message="  extensive   Run extensive tests"/>
 		<echo message=""/>
 		<echo message="Misc parameters (-DPARAM=VALUE)"/>
