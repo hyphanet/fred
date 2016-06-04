@@ -389,6 +389,8 @@ maintainers may prefer to use this instead of build.xml.
 			<sysproperty key="test.verbose" value="${test.verbose}"/>
 			<sysproperty key="test.benchmark" value="${test.benchmark}"/>
 			<sysproperty key="test.extensive" value="${test.extensive}"/>
+			<sysproperty if:true="${test.coverage}" key="net.sourceforge.cobertura.datafile"
+				file="${test.coverage.dst}/cobertura.ser" />
 			<!-- TODO source needs to be edited too; the old variables were "benchmark" and "extensiveTesting" -->
 			<assertions><enable/></assertions>
 		</junit>
