@@ -394,6 +394,12 @@ maintainers may prefer to use this instead of build.xml.
 			<!-- TODO source needs to be edited too; the old variables were "benchmark" and "extensiveTesting" -->
 			<assertions><enable/></assertions>
 		</junit>
+
+		<cobertura-report if:true="${test.coverage}"
+			srcdir="${main.src}"
+			datafile="${test.coverage.dst}/cobertura.ser"
+			destdir="${test.coverage.dst}/html"
+			format="html"/>
 	</target>
 
 	<target name="clean" description="clean standard build products">
