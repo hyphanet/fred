@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="freenet" default="package" basedir=".">
+<project name="freenet" default="package" basedir="." xmlns:if="ant:if">
 	<description>
 Freenet is free software that lets you publish and retrieve information without
 fear of censorship. To achieve this, the network is entirely decentralized, and
@@ -368,7 +368,17 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="unit" depends="unit-build, unit-inject-cobertura" unless="${test.skip}">
 		<junit printsummary="yes" haltonfailure="${test.haltonfailure}" logfailedtests="yes" showoutput="yes" filtertrace="no" fork="on" forkmode="perTest" maxmemory="256m" dir="${test.dst}">
-			<classpath refid="libtest.path"/>
+			<classpath>
+				<!-- Cobertura injects its code into copies of the main fred classes. We put the
+				     directory with the copies before the original ones to ensure the copies are
+				     preferred. -->
+				<pathelement if:true="${test.coverage}" location="${test.coverage.make}"/>
+				<!-- Original classes -->
+				<path refid="libtest.path"/>
+				<!-- Cobertura library -->
+				<path if:true="${test.coverage}" refid="libtest.coverage.path"/>
+			</classpath>
+
 			<formatter type="plain" usefile="false"/>
 			<formatter type="xml" if="${test.xml_output}"/>
 			<formatter classname="org.apache.tools.ant.taskdefs.optional.junit.TearDownOnVmCrash" usefile="false"/>
