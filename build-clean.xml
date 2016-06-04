@@ -222,6 +222,8 @@ maintainers may prefer to use this instead of build.xml.
 		<mkdir dir="${main.dst}"/>
 		<mkdir dir="${test.make}"/>
 		<mkdir dir="${test.dst}"/>
+		<mkdir dir="${test.coverage.make}"/>
+		<mkdir dir="${test.coverage.dst}"/>
 	</target>
 
 	<target name="dep" depends="ensure-ext, ensure-bc, ensure-gjs"/>
@@ -357,6 +359,8 @@ maintainers may prefer to use this instead of build.xml.
 		<delete dir="${main.dst}"/>
 		<delete dir="${test.make}"/>
 		<delete dir="${test.dst}"/>
+		<delete dir="${test.coverage.make}"/>
+		<delete dir="${test.coverage.dst}"/>
 	</target>
 
 	<!-- =================================================================== -->
