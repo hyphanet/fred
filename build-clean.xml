@@ -342,7 +342,31 @@ maintainers may prefer to use this instead of build.xml.
 		</copy>
 	</target>
 
-	<target name="unit" depends="unit-build" unless="${test.skip}">
+	<target name="unit-inject-cobertura" depends="build, unit-build" unless="${test.skip}"
+			if="${test.coverage}">
+		
+		<fail unless="${lib.cobertura.present}" message="${libtest.coverage.jars} not found!"/>
+		
+		<taskdef classpathref="libtest.coverage.path" resource="tasks.properties"/>
+		
+		<!-- We must copy the main non-test build output to separate directory as input for
+			 Cobertura: It will inject its code into the class files.
+			 We use overwrite="true" in case we're doing an incremental compilation
+			 - the directory is only used for Cobertura so this shouldn't cause any problems. -->
+		<copy todir="${test.coverage.make}" overwrite="true">
+			<fileset dir="${main.make}">
+				<include name="**/*.class" />
+				<!-- Not necessary: ${main.make} does not contain the tests -->
+				<!-- <exclude name="**/*Test*.class" /> -->
+			</fileset>
+		</copy>
+
+		<cobertura-instrument datafile="${test.coverage.dst}/cobertura.ser">
+			<fileset dir="${test.coverage.make}"/>
+		</cobertura-instrument>
+	</target>
+
+	<target name="unit" depends="unit-build, unit-inject-cobertura" unless="${test.skip}">
 		<junit printsummary="yes" haltonfailure="${test.haltonfailure}" logfailedtests="yes" showoutput="yes" filtertrace="no" fork="on" forkmode="perTest" maxmemory="256m" dir="${test.dst}">
 			<classpath refid="libtest.path"/>
 			<formatter type="plain" usefile="false"/>
