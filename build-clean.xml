@@ -379,6 +379,11 @@ maintainers may prefer to use this instead of build.xml.
 				<path if:true="${test.coverage}" refid="libtest.coverage.path"/>
 			</classpath>
 
+			<!-- Workaround for Cobertura failing on Java 7 with:
+				   "Expecting a stackmap frame at branch target [...]"
+				 TODO: Code quality: Remove if not necessary anymore. Added on 2016-05-31. -->
+			<jvmarg if:true="${test.coverage}" value="-XX:-UseSplitVerifier"/>
+
 			<formatter type="plain" usefile="false"/>
 			<formatter type="xml" if="${test.xml_output}"/>
 			<formatter classname="org.apache.tools.ant.taskdefs.optional.junit.TearDownOnVmCrash" usefile="false"/>
