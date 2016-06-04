@@ -35,6 +35,10 @@ maintainers may prefer to use this instead of build.xml.
 		<pathelement path="${main.make}"/>
 		<pathelement path="${test.make}"/>
 	</path>
+	<path id="libtest.coverage.path">
+		<fileset dir="${lib.dir}" includes="${libtest.coverage.jars}"/>
+		<fileset dir="/usr/share/java" includes="${libtest.coverage.jars}" erroronmissingdir="false"/>
+	</path>
 
 	<property name="gjs.dst" value="${main.src}/freenet/clients/http/staticfiles/freenetjs"/>
 	<property name="gjs.dir" value="generator/js"/>
@@ -164,6 +168,7 @@ maintainers may prefer to use this instead of build.xml.
 		<available property="lib.bouncycastle.present" classname="org.bouncycastle.crypto.signers.HMacDSAKCalculator" classpathref="lib.path"/>
 		<available property="lib.junit.present" classname="org.junit.runners.JUnit4" classpathref="libtest.path"/>
 		<available property="lib.hamcrest.present" classname="org.hamcrest.SelfDescribing" classpathref="libtest.path"/>
+		<available property="lib.cobertura.present" classname="net.sourceforge.cobertura.ant.InstrumentTask" classpathref="libtest.coverage.path"/>
 		<available property="lib.findbugs.present" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
 		<available property="lib.pmd.present" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
 		<available property="lib.cpd.present" classname="net.sourceforge.pmd.cpd.CPDTask" classpathref="pmd.classpath"/>
