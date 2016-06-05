@@ -509,7 +509,14 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 				if(logMINOR) Logger.minor(this, "Redirecting to FreenetURI: "+newURI);
 				String requestedMimeType = httprequest.getParam("type");
-				String location = getLink(newURI, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), maxRetries, overrideSize);
+				String anchor = null;
+				if (httprequest.isParameterSet("anchor")) {
+					anchor = httprequest.getParam("anchor");
+				}
+				String location = getLink(newURI, requestedMimeType, maxSize,
+				                          httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"),
+				                          maxRetries, overrideSize, anchor);
+				
 				writeTemporaryRedirect(ctx, null, location);
 				return;
 			}
@@ -1041,7 +1048,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	}
 
 	private String getLink(FreenetURI uri, String requestedMimeType, long maxSize, String force,
-			boolean forceDownload, int maxRetries, boolean appendMaxSize) {
+	                       boolean forceDownload, int maxRetries, boolean appendMaxSize) {
+		return getLink(uri, requestedMimeType, maxSize, force, forceDownload, maxRetries, appendMaxSize, null);
+	}
+	
+	private String getLink(FreenetURI uri, String requestedMimeType, long maxSize, String force,
+	                       boolean forceDownload, int maxRetries, boolean appendMaxSize, String anchor) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("/");
 		sb.append(uri.toASCIIString());
@@ -1060,6 +1072,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 		if(maxRetries >= -1) {
 			sb.append(c).append("max-retries=").append(maxRetries); c = '&';
+		}
+		// Append an anchor. This MUST come last, because everything
+		// after it will not be part of the key.
+		if(anchor != null) {
+			c = '#';
+			sb.append(c).append(anchor);
 		}
 		return sb.toString();
 	}
