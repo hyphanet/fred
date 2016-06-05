@@ -272,7 +272,7 @@ public class WelcomeToadlet extends Toadlet {
             try {
               key = URLDecoder.decode(new FreenetURI(request.getPartAsStringFailsafe("key", Short.MAX_VALUE)).toURI("/").toString(), false);
             } catch (Exception e) {
-              sendErrorPage(ctx, "Invalid URI", "This URI is invalid!", e);
+              sendErrorPage(ctx, l10n("invalidURI"), l10n("invalidURILong"), e);
               return;
             }
             writeTemporaryRedirect(ctx, "OK", key);
