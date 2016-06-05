@@ -3,13 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
-
-import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClient;
@@ -30,9 +30,9 @@ import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.MultiValueTable;
 import freenet.support.Logger.LogLevel;
-import freenet.support.api.Bucket;
+import freenet.support.MultiValueTable;
+import freenet.support.URLDecoder;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
@@ -216,7 +216,7 @@ public class WelcomeToadlet extends Toadlet {
         	if(!ctx.checkFormPassword(request)) return;
         	// FIXME do we still use this? where?
         	// FIXME If we support it from freesites we need a confirmation page with the formPassword.
-            FreenetURI key = new FreenetURI(request.getPartAsStringFailsafe("key", 128));
+            FreenetURI key = new FreenetURI(request.getPartAsStringFailsafe("key", Short.MAX_VALUE));
             String type = request.getPartAsStringFailsafe("content-type", 128);
             if (type == null) {
                 type = "text/plain";
@@ -265,6 +265,18 @@ public class WelcomeToadlet extends Toadlet {
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             request.freeParts();
             bucket.free();
+            return;
+        } else if (request.isPartSet("key")) {
+            if(!ctx.checkFormPassword(request)) return;
+            String key;
+            try {
+              key = URLDecoder.decode(new FreenetURI(request.getPartAsStringFailsafe("key", Short.MAX_VALUE)).toURI("/").toString(), false);
+            } catch (Exception e) {
+              sendErrorPage(ctx, l10n("invalidURI"), l10n("invalidURILong"), e);
+              return;
+            }
+            writeTemporaryRedirect(ctx, "OK", key);
+            return;
         } else if (request.isPartSet("exit")) {
         	PageNode page = ctx.getPageMaker().getPageNode(l10n("shutdownConfirmTitle"), ctx);
             HTMLNode pageNode = page.outer;
@@ -502,10 +514,11 @@ public class WelcomeToadlet extends Toadlet {
 		// Fetch-a-key box
 		HTMLNode fetchKeyContent = ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel"), contentNode, "fetch-key", true);
 		fetchKeyContent.addAttribute("id", "keyfetchbox");
-		HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[]{"action", "method"}, new String[]{"/", "get"}).addChild("div");
-		fetchKeyForm.addChild("span", "class", "fetch-key-label", l10n("keyRequestLabel") + ' ');
-		fetchKeyForm.addChild("input", new String[]{"type", "size", "name"}, new String[]{"text", "80", "key"});
-		fetchKeyForm.addChild("input", new String[]{"type", "value"}, new String[]{"submit", l10n("fetch")});
+                HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[]{ "method" }, new String[]{ "POST" }).addChild("div");
+                fetchKeyForm.addChild("span", "class", "fetch-key-label", l10n("keyRequestLabel") + ' ');
+                fetchKeyForm.addChild("input", new String[]{ "type", "size", "name" }, new String[]{ "text", "80", "key" });
+                fetchKeyForm.addChild("input", new String[]{ "type", "name", "value" }, new String[]{ "hidden", "formPassword", ctx.getFormPassword() });
+                fetchKeyForm.addChild("input", new String[]{ "type", "value" }, new String[]{ "submit", l10n("fetch") });
 	}
 
     private void sendRestartingPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
