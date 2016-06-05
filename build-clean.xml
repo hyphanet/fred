@@ -314,7 +314,8 @@ maintainers may prefer to use this instead of build.xml.
 		</jar>
 	</target>
 
-	<target name="package" depends="unit, package-only" description="build standard binary packages (Freenet daemon)"/>
+	<target name="package" depends="unit, unit-coverage-report, package-only"
+		description="build standard binary packages (Freenet daemon)"/>
 
 	<target name="unit-build" depends="build" unless="${test.skip}">
 		<antcall target="libdep-junit"/>
@@ -399,8 +400,10 @@ maintainers may prefer to use this instead of build.xml.
 			<!-- TODO source needs to be edited too; the old variables were "benchmark" and "extensiveTesting" -->
 			<assertions><enable/></assertions>
 		</junit>
+	</target>
 
-		<cobertura-report if:true="${test.coverage}"
+	<target name="unit-coverage-report" depends="unit" unless="${test.skip}" if="${test.coverage}">
+		<cobertura-report
 			srcdir="${main.src}"
 			datafile="${test.coverage.dst}/cobertura.ser"
 			destdir="${test.coverage.dst}/html"
