@@ -216,7 +216,7 @@ public class WelcomeToadlet extends Toadlet {
         	if(!ctx.checkFormPassword(request)) return;
         	// FIXME do we still use this? where?
         	// FIXME If we support it from freesites we need a confirmation page with the formPassword.
-            FreenetURI key = new FreenetURI(request.getPartAsStringFailsafe("key", 128));
+            FreenetURI key = new FreenetURI(request.getPartAsStringFailsafe("key", Short.MAX_VALUE));
             String type = request.getPartAsStringFailsafe("content-type", 128);
             if (type == null) {
                 type = "text/plain";
@@ -270,7 +270,7 @@ public class WelcomeToadlet extends Toadlet {
             if(!ctx.checkFormPassword(request)) return;
             String key;
             try {
-              key = URLDecoder.decode(new FreenetURI(request.getPartAsStringFailsafe("key", 256)).toURI("/").toString(), false);
+              key = URLDecoder.decode(new FreenetURI(request.getPartAsStringFailsafe("key", Short.MAX_VALUE)).toURI("/").toString(), false);
             } catch (Exception e) {
               sendErrorPage(ctx, "Invalid URI", "This URI is invalid!", e);
               return;
