@@ -143,8 +143,7 @@ public class InsertContext implements Cloneable, Serializable {
          * new compatibility mode is deployed we may want to keep this at an earlier version to 
          * avoid a period when data inserted with the new/testing builds can't be fetched with 
          * earlier versions. */
-        // FIXME revert to COMPAT_CURRENT after 1468 ships.
-        public static final CompatibilityMode COMPAT_DEFAULT = COMPAT_1416;
+        public static final CompatibilityMode COMPAT_DEFAULT = COMPAT_CURRENT;
         
 	}
 	
