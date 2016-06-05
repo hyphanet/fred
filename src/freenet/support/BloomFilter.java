@@ -51,15 +51,15 @@ public abstract class BloomFilter {
 			throw new IllegalArgumentException("Filter must have postitive or zero hashes");
 		}
 
+		if (length % 8 != 0)
+			length -= length % 8;
+
 		if (length == 0) {
 			// Zero-length filters produce 100% false positives, no need for hashing.
 			// This makes sure that length is strictly positive when k is strictly
 			// positive as well, so nextInt(length) can safely be used.
 			k = 0;
 		}
-
-		if (length % 8 != 0)
-			length -= length % 8;
 
 		this.length = length;
 		this.k = k;
