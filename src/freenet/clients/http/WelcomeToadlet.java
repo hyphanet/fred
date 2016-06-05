@@ -8,7 +8,6 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.List;
 
@@ -34,7 +33,6 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 import freenet.support.URLDecoder;
-import freenet.support.URLEncodedFormatException;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
@@ -273,7 +271,7 @@ public class WelcomeToadlet extends Toadlet {
             String key;
             try {
               key = URLDecoder.decode(new FreenetURI(request.getPartAsStringFailsafe("key", 256)).toURI("/").toString(), false);
-            } catch (URISyntaxException | URLEncodedFormatException e) {
+            } catch (Exception e) {
               sendErrorPage(ctx, "Invalid URI", "This URI is invalid!", e);
               return;
             }
