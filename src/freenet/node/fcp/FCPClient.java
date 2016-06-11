@@ -2,8 +2,6 @@ package freenet.node.fcp;
 
 import java.util.List;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.clients.fcp.PersistentRequestClient;
 import freenet.clients.fcp.PersistentRequestRoot;
@@ -21,16 +19,13 @@ import freenet.support.Logger.LogLevel;
  * Note that anything that modifies a non-transient field on a PERSISTENCE_FOREVER client should be called in a transaction. 
  * Hence the addition of the ObjectContainer parameter to all such methods.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FCPClient {
     
     private FCPClient() {
         // Only read in from database. Is not created.
         throw new UnsupportedOperationException();
     }
-	
-    /** The persistent root object, null if persistence is PERSIST_REBOOT */
-    final FCPPersistentRoot root;
+
 	/** The client's Name sent in the ClientHello message */
 	final String name;
 	/** Currently running persistent requests */
@@ -58,7 +53,7 @@ public class FCPClient {
 	}
 
 	/** Migrate the FCPClient */
-    public boolean migrate(PersistentRequestRoot newRoot, ObjectContainer container, NodeClientCore core,
+    public boolean migrate(PersistentRequestRoot newRoot, NodeClientCore core,
             ClientContext context) {
         int migrated = 0;
         int failed = 0;
@@ -71,11 +66,11 @@ public class FCPClient {
                 newClient = newRoot.registerForeverClient(name, null);
                 Logger.error(this, "Migrating client \""+name+"\"");
             }
-            container.activate(runningPersistentRequests, 2);
+
             for(ClientRequest req : runningPersistentRequests) {
                 if(req == null) continue;
                 try {
-                    freenet.clients.fcp.ClientRequest request = req.migrate(newClient, container, core);
+                    freenet.clients.fcp.ClientRequest request = req.migrate(newClient, core);
                     // FIXME it doesn't count as failure if it's already been migrated
                     if(request == null) {
                         failed++;
@@ -90,11 +85,10 @@ public class FCPClient {
                     failed++;
                 }
             }
-            container.activate(completedUnackedRequests, 2);
             for(ClientRequest req : completedUnackedRequests) {
                 if(req == null) continue;
                 try {
-                    freenet.clients.fcp.ClientRequest request = req.migrate(newClient, container, core);
+                    freenet.clients.fcp.ClientRequest request = req.migrate(newClient, core);
                     // FIXME it doesn't count as failure if it's already been migrated
                     if(request == null) {
                         failed++;

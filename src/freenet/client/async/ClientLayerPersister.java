@@ -1,8 +1,5 @@
 package freenet.client.async;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,14 +33,14 @@ import freenet.support.Logger;
 import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.io.DelayedFree;
-import freenet.support.io.DelayedFreeBucket;
-import freenet.support.io.DelayedFreeRandomAccessBuffer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.PrependLengthOutputStream;
 import freenet.support.io.StorageFormatException;
 import freenet.support.io.TempBucketFactory;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /** Top level of persistence mechanism for ClientRequest's (persistent downloads and uploads).
  * Note that we use three different persistence mechanisms here:

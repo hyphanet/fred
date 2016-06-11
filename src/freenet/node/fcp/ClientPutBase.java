@@ -1,7 +1,5 @@
 package freenet.node.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertContext;
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
@@ -59,12 +57,9 @@ public abstract class ClientPutBase extends ClientRequest {
 		}
 	}
 
-	public FreenetURI getGeneratedURI(ObjectContainer container) {
+	public FreenetURI getGeneratedURI() {
 		if(generatedURI == null) return null;
-		container.activate(generatedURI, Integer.MAX_VALUE);
-		FreenetURI ret = generatedURI.clone();
-		container.deactivate(generatedURI, 1);
-		return ret;
+		return generatedURI.clone();
 	}
 
 	protected abstract String getTypeName();

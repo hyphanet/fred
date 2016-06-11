@@ -2,8 +2,6 @@ package freenet.node.fcp;
 
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.clients.fcp.IdentifierCollisionException;
@@ -125,14 +123,13 @@ public abstract class ClientRequest {
 		return client;
 	}
 	
-	protected boolean isRealTime(ObjectContainer container) {
+	protected boolean isRealTime() {
 	    if(lowLevelClient != null) {
-	        container.activate(lowLevelClient, Integer.MAX_VALUE);
 	        return lowLevelClient.realTimeFlag();
 	    } else return false;
 	}
 
     public abstract freenet.clients.fcp.ClientRequest migrate(PersistentRequestClient newClient, 
-            ObjectContainer container, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException, ResumeFailedException, MetadataUnresolvedException, TooManyFilesInsertException;
+            NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException, ResumeFailedException, MetadataUnresolvedException, TooManyFilesInsertException;
 	
 }

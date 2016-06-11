@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.client.events.FinishedCompressionEvent;
@@ -35,33 +33,27 @@ public class ClientPutDir extends ClientPutBase {
 	private final byte[] overrideSplitfileCryptoKey;
 	
     @Override
-    public ClientRequest migrate(PersistentRequestClient newClient, ObjectContainer container,
+    public ClientRequest migrate(PersistentRequestClient newClient,
             NodeClientCore core) throws IdentifierCollisionException, NotAllowedException,
             IOException, ResumeFailedException, TooManyFilesInsertException {
         ClientContext context = core.clientContext;
-        container.activate(manifestElements, Integer.MAX_VALUE);
         migrateManifestElements(manifestElements, context.getBucketFactory(true), context);
-        container.activate(uri, Integer.MAX_VALUE);
-        container.activate(ctx, Integer.MAX_VALUE);
         freenet.clients.fcp.ClientPutDir put =
             new freenet.clients.fcp.ClientPutDir(newClient, uri, identifier, verbosity, 
                 priorityClass, Persistence.FOREVER, clientToken, ctx.getCHKOnly, ctx.dontCompress,
                 ctx.maxInsertRetries, manifestElements, defaultName, global, ctx.earlyEncode,
                 ctx.canWriteClientCache, ctx.forkOnCacheable, ctx.extraInsertsSingleBlock, 
-                ctx.extraInsertsSplitfileHeaderBlock, isRealTime(container), 
+                ctx.extraInsertsSplitfileHeaderBlock, isRealTime(),
                 this.overrideSplitfileCryptoKey, core);
         if(finished) {
             // Not interested in generated URI if it's not finished.
             if(putFailedMessage != null) {
-                container.activate(putFailedMessage, Integer.MAX_VALUE);
                 if(generatedURI == null) generatedURI = putFailedMessage.expectedURI;
             }
             if(generatedURI != null) {
-                container.activate(generatedURI, Integer.MAX_VALUE);
                 put.onGeneratedURI(generatedURI, null);
             }
             if(generatedMetadata != null) {
-                container.activate(generatedMetadata, Integer.MAX_VALUE);
                 generatedMetadata.onResume(context);
                 put.onGeneratedMetadata(generatedMetadata, null);
             }

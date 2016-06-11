@@ -6,8 +6,6 @@ package freenet.node.fcp;
 import java.io.File;
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientContext;
@@ -54,8 +52,7 @@ public class ClientPut extends ClientPutBase {
 		return "PUT";
 	}
 
-	public FreenetURI getFinalURI(ObjectContainer container) {
-	    container.activate(generatedURI, 5);
+	public FreenetURI getFinalURI() {
 		return generatedURI;
 	}
 	
@@ -67,18 +64,16 @@ public class ClientPut extends ClientPutBase {
 		return uploadFrom == UPLOAD_FROM_DIRECT;
 	}
 
-	public File getOrigFilename(ObjectContainer container) {
+	public File getOrigFilename() {
 		if(uploadFrom != UPLOAD_FROM_DISK)
 			return null;
-		container.activate(origFilename, 5);
 		return origFilename;
 	}
 
-	public long getDataSize(ObjectContainer container) {
+	public long getDataSize() {
 		if(data == null)
 			return finishedSize;
 		else {
-			container.activate(data, 1);
 			return data.size();
 		}
 	}
@@ -97,8 +92,7 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	/** Probably not meaningful for ClientPutDir's */
-	public COMPRESS_STATE isCompressing(ObjectContainer container) {
-		container.activate(ctx, 1);
+	public COMPRESS_STATE isCompressing() {
 		if(ctx.dontCompress) return COMPRESS_STATE.WORKING;
 		synchronized(this) {
 			if(progressMessage == null) return COMPRESS_STATE.WAITING; // An insert starts at compressing
@@ -110,29 +104,21 @@ public class ClientPut extends ClientPutBase {
 	}
 
     @Override
-    public ClientRequest migrate(PersistentRequestClient newClient, ObjectContainer container,
+    public ClientRequest migrate(PersistentRequestClient newClient,
             NodeClientCore core) throws IdentifierCollisionException, NotAllowedException,
             IOException, MetadataUnresolvedException, ResumeFailedException {
         ClientContext context = core.clientContext;
-        if(targetURI != null)
-            container.activate(targetURI, Integer.MAX_VALUE);
-        if(uri != null)
-            container.activate(uri, Integer.MAX_VALUE);
-        container.activate(ctx, Integer.MAX_VALUE);
         ctx.onResume();
         File f = origFilename;
         if(f != null) {
-            container.activate(f, Integer.MAX_VALUE);
             f = new File(f.toString());
             if(!f.exists()) {
                 Logger.error(this, "Not migrating insert as data has been deleted");
                 return null;
             }
         }
-        container.activate(clientMetadata, Integer.MAX_VALUE);
         RandomAccessBucket data;
         if(this.data != null) {
-            container.activate(this.data, Integer.MAX_VALUE);
             if(this.data.size() == 0) {
                 Logger.error(this, "No data migrating insert: "+this.data);
                 return null;
@@ -145,7 +131,6 @@ public class ClientPut extends ClientPutBase {
         }
         byte[] overrideSplitfileKey = null;
         if(putter != null) {
-            container.activate(putter, 1);
             overrideSplitfileKey = putter.getSplitfileCryptoKey();
         }
         freenet.clients.fcp.ClientPut put = new freenet.clients.fcp.ClientPut(newClient, uri, identifier, verbosity, 
@@ -153,19 +138,16 @@ public class ClientPut extends ClientPutBase {
                 ctx.maxInsertRetries, UploadFrom.getByCode(uploadFrom), f, clientMetadata.getMIMEType(), data, targetURI,
                 targetFilename, earlyEncode, ctx.canWriteClientCache, ctx.forkOnCacheable, 
                 ctx.extraInsertsSingleBlock, ctx.extraInsertsSplitfileHeaderBlock, 
-                isRealTime(container), ctx.getCompatibilityMode(), overrideSplitfileKey, binaryBlob, core);
+                isRealTime(), ctx.getCompatibilityMode(), overrideSplitfileKey, binaryBlob, core);
         if(finished) {
             // Not interested in generated URI if it's not finished.
             if(putFailedMessage != null) {
-                container.activate(putFailedMessage, Integer.MAX_VALUE);
                 if(generatedURI == null) generatedURI = putFailedMessage.expectedURI;
             }
             if(generatedURI != null) {
-                container.activate(generatedURI, Integer.MAX_VALUE);
                 put.onGeneratedURI(generatedURI, null);
             }
             if(generatedMetadata != null) {
-                container.activate(generatedMetadata, Integer.MAX_VALUE);
                 generatedMetadata.onResume(context);
                 put.onGeneratedMetadata(generatedMetadata, null);
             }

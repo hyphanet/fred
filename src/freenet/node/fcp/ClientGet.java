@@ -6,8 +6,6 @@ package freenet.node.fcp;
 import java.io.File;
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchException.FetchExceptionMode;
@@ -63,14 +61,11 @@ public class ClientGet extends ClientRequest {
 
     @Override
     public freenet.clients.fcp.ClientGet migrate(PersistentRequestClient newClient, 
-            ObjectContainer container, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException, ResumeFailedException {
-        container.activate(fctx, Integer.MAX_VALUE);
-        container.activate(uri, Integer.MAX_VALUE);
-        container.activate(targetFile, Integer.MAX_VALUE);
+            NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException, ResumeFailedException {
         File f = targetFile;
         if(f != null)
-            f = new File(f.toString()); // Db4o can do odd things with files, best to copy
-        boolean realTime = isRealTime(container);
+            f = new File(f.toString());
+        boolean realTime = isRealTime();
         freenet.clients.fcp.ClientGet ret =
             new freenet.clients.fcp.ClientGet(newClient, uri, fctx.localRequestOnly, fctx.ignoreStore, 
                 fctx.filterData, fctx.maxSplitfileBlockRetries, fctx.maxNonSplitfileRetries, 
@@ -79,7 +74,6 @@ public class ClientGet extends ClientRequest {
         if(finished) {
             ClientContext context = core.clientContext;
             if(getFailedMessage != null) {
-                container.activate(getFailedMessage, Integer.MAX_VALUE);
                 if(getFailedMessage.expectedMimeType != null)
                     this.foundDataMimeType = getFailedMessage.expectedMimeType;
             }
@@ -91,12 +85,10 @@ public class ClientGet extends ClientRequest {
             if(sentToNetwork)
                 ret.receive(new SendingToNetworkEvent(), context);
             if(expectedHashes != null) {
-                container.activate(expectedHashes, Integer.MAX_VALUE);
                 if(expectedHashes.hashes != null)
                     ret.receive(new ExpectedHashesEvent(expectedHashes.hashes), context);
             }
             if(compatMessage != null) {
-                container.activate(compatMessage, Integer.MAX_VALUE);
                 SplitfileCompatibilityModeEvent e = compatMessage.toEvent();
                 ret.receive(e, context);
             }
@@ -104,7 +96,6 @@ public class ClientGet extends ClientRequest {
                 if(foundDataLength <= 0) throw new ResumeFailedException("No data");
                 Bucket data = null;
                 if(returnType == RETURN_TYPE_DIRECT) {
-                    container.activate(allDataPending, Integer.MAX_VALUE);
                     data = allDataPending.bucket;
                     if(data == null) throw new ResumeFailedException("No data");
                     data.onResume(context);

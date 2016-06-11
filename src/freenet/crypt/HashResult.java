@@ -8,7 +8,6 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 import freenet.support.HexUtil;
-import freenet.support.Logger;
 
 public class HashResult implements Comparable<HashResult>, Cloneable, Serializable {
 
@@ -93,24 +92,7 @@ public class HashResult implements Comparable<HashResult>, Cloneable, Serializab
 	}
 
 	public static boolean strictEquals(HashResult[] results, HashResult[] hashes) {
-		if(results.length != hashes.length) {
-			Logger.error(HashResult.class, "Hashes not equal: "+results.length+" hashes vs "+hashes.length+" hashes");
-			return false;
-		}
-		for(int i=0;i<results.length;i++) {
-			if(results[i].type != hashes[i].type) {
-				// FIXME Db4o kludge
-				if(HashType.valueOf(results[i].type.name()) != HashType.valueOf(hashes[i].type.name())) {
-					Logger.error(HashResult.class, "Hashes not the same type: "+results[i].type.name()+" vs "+hashes[i].type.name());
-					return false;
-				}
-			}
-			if(!Arrays.equals(results[i].result, hashes[i].result)) {
-				Logger.error(HashResult.class, "Hash "+results[i].type.name()+" not equal");
-				return false;
-			}
-		}
-		return true;
+		return Arrays.deepEquals(results, hashes);
 	}
 
 	public static boolean contains(HashResult[] hashes, HashType type) {
