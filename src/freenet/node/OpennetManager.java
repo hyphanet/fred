@@ -190,16 +190,20 @@ public class OpennetManager {
 	/** Enable scaling of peers with bandwidth? */
 	public static final boolean ENABLE_PEERS_PER_KB_OUTPUT = true;
 	/** Constant for scaling peers: we multiply bandwidth in kB/sec by this
-	 * and then take the square root. 12 gives 11 at 10K, 15 at 20K, 19 at
-	 * 30K, 26 at 60K, 34 at 100K, 40 at 140K, 100 at 2500K.
-	 * 212 at 30mbit/s (the mean upload in Japan in 2014) and
-	 * 363 at 88mbit/s (the mean upload in Hong Kong in 2014).*/
-	public static final double SCALING_CONSTANT = 12.0;
+	 * and then take the square root. scaling at 4 gives 4 peers at 5K,
+	 * 5 at 7K, 6 at 10K, 9 at 20K, 11 at
+	 * 30K, 15 at 60K, 20 at 100K, 24 at 140K, 100 at 2500K.
+	 * 122 at 30mbit/s (the mean upload in Japan in 2014) and
+	 * 210 at 88mbit/s (the mean upload in Hong Kong in 2014).*/
+	public static final double SCALING_CONSTANT = 4.0;
 	/**
-	 * Minimum number of peers. Do not reduce this: As a rough estimate, because the vast majority
-	 * of requests complete in 5 hops, this gives just one binary decision per hop on average.
+	 * Minimum number of peers. As a rough estimate, because the vast majority
+	 * of requests complete in 5 hops, 10 peers give just one binary decision
+	 * per hop. However the distribution of peers before the link length fix
+ 	 * showed that having 3 short distance peers still worked, since requests
+ 	 * preferentially go through higher capacity nodes with more FOAFs.
 	 */
-	public static final int MIN_PEERS_FOR_SCALING = 10;
+	public static final int MIN_PEERS_FOR_SCALING = 4;
 	/** The maximum possible distance between two nodes in the wrapping [0,1) location space. */
 	public static final double MAX_DISTANCE = 0.5;
 	/** The fraction of nodes which are only a short distance away. */
