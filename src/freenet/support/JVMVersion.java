@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
  * See documentation: http://www.oracle.com/technetwork/java/javase/versioning-naming-139433.html
  */
 public class JVMVersion {
-	public static final String REQUIRED = "1.7";
+	public static final String REQUIRED = "1.8";
 
 	/** Regular expression for versions: major.feature[.maintenance[_update]],
 	 * leading zeroes and optional identifier stripped. */
