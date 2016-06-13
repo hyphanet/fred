@@ -2038,7 +2038,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	@Override
 	public int[] supportedNegTypes(boolean forPublic) {
-		return new int[] { 9, 10 };
+		return new int[] { 10 };
 	}
 
 	@Override
