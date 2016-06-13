@@ -181,11 +181,10 @@ public class NewPacketFormatKeyContext {
 	/** Add as many acks as possible to the packet.
 	 * @return True if there are any old acks i.e. acks that will force us to send a packet
 	 * even if there isn't anything else in it. */
-	public AddedAcks addAcks(NPFPacket packet, int maxPacketSize, long now, boolean useCumulativeAcks) {
+	public AddedAcks addAcks(NPFPacket packet, int maxPacketSize, long now) {
 		boolean mustSend = false;
 		HashMap<Integer, Long> moved = null;
 		int numAcks = 0;
-		packet.setAcknowledgeType(useCumulativeAcks);
 		synchronized(acks) {
 			Iterator<Map.Entry<Integer, Long>> it = acks.entrySet().iterator();
 			while (it.hasNext() && packet.getLength() < maxPacketSize) {

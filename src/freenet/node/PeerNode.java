@@ -367,8 +367,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	long timeLastDisconnect;
 	/** Previous time of disconnection */
 	long timePrevDisconnect;
-	/** Acknowledging mode */
-	private boolean useCumulativeAcks;
 
 	// Burst-only mode
 	/** True if we are currently sending this peer a burst of handshake requests */
@@ -5359,15 +5357,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			if(pf == null) return Long.MAX_VALUE;
 		}
 		return pf.timeCheckForLostPackets();
-	}
-	
-	public void setAcknowledgeType(int negType) {
-		useCumulativeAcks = (negType >= 10);
-	}
-	
-	@Override
-	public boolean isUseCumulativeAcksSet() {
-		return useCumulativeAcks;
 	}
 
 	/** Only called for new format connections, for which we don't care about PacketTracker */
