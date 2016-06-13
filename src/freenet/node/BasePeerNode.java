@@ -82,7 +82,4 @@ public interface BasePeerNode extends PeerContext {
 
 	/** Report when a packet was acked. */
 	void receivedAck(long currentTimeMillis);
-
-	/** Report whether the node is capable of using cumacks. For backward compatibility issues */
-	boolean isUseCumulativeAcksSet();
 }
