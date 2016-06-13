@@ -283,9 +283,4 @@ public class NullBasePeerNode implements BasePeerNode {
 		// Arbitrary.
 		return 10;
 	}
-
-	@Override
-	public boolean isUseCumulativeAcksSet() {
-		return true;
-	}
 }
