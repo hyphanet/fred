@@ -308,9 +308,11 @@ public class NodeClientCore implements Persistable {
         if(maxMemory < 0)
             defaultRamBucketPoolSize = 10;
         else {
-            // 10% of memory above 64MB, with a minimum of 1MB.
-            defaultRamBucketPoolSize = (int)Math.min(Integer.MAX_VALUE, ((maxMemory - 64) / 10));
+            // 5% of memory above 64MB, with a minimum of 1MB.
+            defaultRamBucketPoolSize = Math.min(Integer.MAX_VALUE, (int)((maxMemory - 64) / 20));
             if(defaultRamBucketPoolSize <= 0) defaultRamBucketPoolSize = 1;
+            // Maximum of 128MB for now. FIXME reconsider this.
+            defaultRamBucketPoolSize = Math.min(defaultRamBucketPoolSize, 128);
         }
         
         // Max bucket size 5% of the total, minimum 32KB (one block, vast majority of buckets)
@@ -365,8 +367,26 @@ public class NodeClientCore implements Persistable {
         initDiskSpaceLimits(nodeConfig, sortOrder);
         
         cryptoSecretTransient = new MasterSecret();
-        tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"), minDiskFreeShortTerm, cryptoSecretTransient);
+        
+        nodeConfig.register("migrateOldTempBucketsWhenNotFull", maxMemory < 256, sortOrder++, true, false, "NodeClientCore.migrateOldTempBucketsWhenNotFull", "NodeClientCore.migrateOldTempBucketsWhenNotFullLong", new BooleanCallback() {
 
+            @Override
+            public Boolean get() {
+                return (tempBucketFactory == null ? true : tempBucketFactory.getMigrateWhenNotFull());
+            }
+
+            @Override
+            public void set(Boolean val) throws InvalidConfigValueException,
+                    NodeNeedRestartException {
+                if (get().equals(val) || (tempBucketFactory == null))
+                    return;
+                tempBucketFactory.setMigrateWhenNotFull(val);
+            }
+            
+        });
+        
+        tempBucketFactory = new TempBucketFactory(node.executor, node.ticker, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"), minDiskFreeShortTerm, cryptoSecretTransient, nodeConfig.getBoolean("migrateOldTempBucketsWhenNotFull"));
+        
         bandwidthStatsPutter = new PersistentStatsPutter();
         
 		clientLayerPersister = new ClientLayerPersister(node.executor, node.ticker, 

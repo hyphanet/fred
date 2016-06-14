@@ -20,6 +20,8 @@ import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
 import freenet.support.Executor;
 import freenet.support.SerialExecutor;
+import freenet.support.Ticker;
+import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
 import freenet.support.io.TempBucketFactory.TempBucket;
 
@@ -36,6 +38,7 @@ public class TempBucketTest extends TestSuite {
 	public static class TempBucketMigrationTest extends TestCase {
 		private Random weakPRNG = new Random(12340);
 		private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
+		private Ticker ticker = new TrivialTicker(exec);
 		private FilenameGenerator fg;
 
 		public TempBucketMigrationTest() throws IOException {
@@ -43,7 +46,7 @@ public class TempBucketTest extends TestSuite {
 		}
 
 		public void testRamLimitCreate() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 16, 128, weakPRNG, false, MIN_DISK_SPACE, secret);
+			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 16, 128, weakPRNG, false, MIN_DISK_SPACE, secret, false);
 
 			int maxRamBucket = 128 / 16;
 
@@ -76,7 +79,7 @@ public class TempBucketTest extends TestSuite {
 		}
 
 		public void testWriteExcessConversionFactor() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 16, 128, weakPRNG, false, MIN_DISK_SPACE, secret);
+			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 16, 128, weakPRNG, false, MIN_DISK_SPACE, secret, false);
 
 			TempBucket b = (TempBucket) tbf.makeBucket(16);
 			try {
@@ -97,7 +100,7 @@ public class TempBucketTest extends TestSuite {
 		}
 
 		public void testWriteExcessLimit() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 16, 17, weakPRNG, false, MIN_DISK_SPACE, secret);
+			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 16, 17, weakPRNG, false, MIN_DISK_SPACE, secret, false);
 
 			TempBucket b = (TempBucket) tbf.makeBucket(16);
 			try {
@@ -117,8 +120,7 @@ public class TempBucketTest extends TestSuite {
 		
 		// This CAN happen due to memory pressure.
 		public void testConversionWhileReading() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 1024, 65536, weakPRNG, false, MIN_DISK_SPACE, secret);
-			
+			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 1024, 65536, weakPRNG, false, MIN_DISK_SPACE, secret, false);
 			TempBucket bucket = (TempBucket) tbf.makeBucket(64);
 			OutputStream os = bucket.getOutputStreamUnbuffered();
 			os.write(new byte[16]);
@@ -134,7 +136,7 @@ public class TempBucketTest extends TestSuite {
 		
 		// Do a bigger read, verify contents.
 		public void testBigConversionWhileReading() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 4096, 65536, weakPRNG, false, MIN_DISK_SPACE, secret);
+			TempBucketFactory tbf = new TempBucketFactory(exec, ticker, fg, 4096, 65536, weakPRNG, false, MIN_DISK_SPACE, secret, false);
 			
 			TempBucket bucket = (TempBucket) tbf.makeBucket(2048);
 			OutputStream os = bucket.getOutputStreamUnbuffered();
@@ -158,14 +160,14 @@ public class TempBucketTest extends TestSuite {
 		private RandomSource strongPRNG = new DummyRandomSource(12345);
 		private Random weakPRNG = new DummyRandomSource(54321);
 		private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
+		private Ticker ticker = new TrivialTicker(exec);
 		private FilenameGenerator fg;
 
 		private TempBucketFactory tbf;
 
 		public RealTempBucketTest_(int maxRamSize, int maxTotalRamSize, boolean encrypted) throws IOException {
 			fg = new FilenameGenerator(weakPRNG, false, null, "junit");
-			tbf = new TempBucketFactory(exec, fg, maxRamSize, maxTotalRamSize, weakPRNG, encrypted, MIN_DISK_SPACE, secret);
-
+			tbf = new TempBucketFactory(exec, ticker, fg, maxRamSize, maxTotalRamSize, weakPRNG, encrypted, MIN_DISK_SPACE, secret, false);
 			canOverwrite = false;
 		}
 
@@ -230,5 +232,7 @@ public class TempBucketTest extends TestSuite {
 		suite.addTest(new TestSuite(TempBucketMigrationTest.class));
 		return suite;
 	}
+	
+	// FIXME test migrate when not full.
 
 }

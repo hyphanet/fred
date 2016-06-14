@@ -15,6 +15,8 @@ import freenet.crypt.EncryptedRandomAccessBucket;
 import freenet.crypt.MasterSecret;
 import freenet.support.Executor;
 import freenet.support.SerialExecutor;
+import freenet.support.Ticker;
+import freenet.support.TrivialTicker;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.api.RandomAccessBuffer;
 import freenet.support.io.TempBucketFactory.TempBucket;
@@ -33,6 +35,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
     
     private Random weakPRNG = new Random(12340);
     private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
+    private Ticker ticker = new TrivialTicker(exec);
     private File f = new File("temp-bucket-raf-test");
     private FilenameGenerator fg;
     private TempBucketFactory factory;
@@ -46,7 +49,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
     @Override
     public void setUp() throws IOException {
         fg = new FilenameGenerator(weakPRNG, true, f, "temp-raf-test-");
-        factory = new TempBucketFactory(exec, fg, 4096, 65536, weakPRNG, false, 1024*1024*2, secret);
+        factory = new TempBucketFactory(exec, ticker, fg, 4096, 65536, weakPRNG, false, 1024*1024*2, secret, false);
         factory.setEncryption(enableCrypto());
         assertEquals(factory.getRamUsed(), 0);
         FileUtil.removeAll(f);

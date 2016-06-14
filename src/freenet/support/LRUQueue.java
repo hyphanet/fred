@@ -64,7 +64,8 @@ public class LRUQueue<T> {
 	}
 	
     /**
-     *  @return Least recently pushed Object.
+     * Return and remove the least recently pushed Object.
+     * @return Least recently pushed Object.
      */
 	public final synchronized T pop() {
         if ( list.size() > 0 ) {
@@ -73,6 +74,18 @@ public class LRUQueue<T> {
             return null;
         }
     }
+	
+	/**
+	 * Return the least recently pushed object, without removing it.
+	 * @return The least recently pushed Object.
+	 */
+	public final synchronized T peek() {
+        if ( list.size() > 0 ) {
+			return list.pop().obj;
+        } else {
+            return null;
+        }
+	}
 
     public final int size() {
         return list.size();
