@@ -68,7 +68,7 @@ public class SlashdotStoreTest extends TestCase {
 	public void testDeletion() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException, InterruptedException {
 		CHKStore store = new CHKStore();
 		SpeedyTicker st = new SpeedyTicker();
-		SlashdotStore<CHKBlock> ss = new SlashdotStore<>(store, 10, 1, 100, st, tbf);
+		SlashdotStore<CHKBlock> ss = new SlashdotStore<>(store, 10, 0, 100, st, tbf);
 		
 		// Encode a block
 		String test = "test";
