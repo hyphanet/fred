@@ -10,7 +10,7 @@ import freenet.support.JVMVersion;
 public class JVMVersionAlert extends AbstractUserAlert {
 
 	public JVMVersionAlert() {
-        super(true, null, null, null, null, UserAlert.ERROR, true,
+        super(true, null, null, null, null, UserAlert.WARNING, true,
               NodeL10n.getBase().getString("UserAlert.hide"), true, null);
 	}
 
