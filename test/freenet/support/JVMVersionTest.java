@@ -9,11 +9,11 @@ public class JVMVersionTest extends TestCase {
 		Assert.assertTrue(JVMVersion.isTooOld("1.6.0_32"));
 		Assert.assertTrue(JVMVersion.isTooOld("1.6"));
 		Assert.assertTrue(JVMVersion.isTooOld("1.5"));
+		Assert.assertTrue(JVMVersion.isTooOld("1.7.0_65"));
+		Assert.assertTrue(JVMVersion.isTooOld("1.7"));
 	}
 
 	public void testRecentEnough() {
-		Assert.assertFalse(JVMVersion.isTooOld("1.7.0_65"));
-		Assert.assertFalse(JVMVersion.isTooOld("1.7"));
 		Assert.assertFalse(JVMVersion.isTooOld("1.8.0_9"));
 		Assert.assertFalse(JVMVersion.isTooOld("1.10"));
 	}
