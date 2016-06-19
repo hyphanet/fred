@@ -49,11 +49,11 @@ public class GIFFilter implements ContentDataFilter {
 		// Throw an exception
 		String message = l10n("notGif");
 		if (reason != null) {
-            message += ' ' + reason;
-        }
+			message += ' ' + reason;
+		}
 		if (shortReason != null) {
 			message += " - (" + shortReason + ')';
-        }
+		}
 		throw new DataFilterException(shortReason, shortReason, message);
 	}
 
