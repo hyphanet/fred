@@ -660,16 +660,32 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		try {
 			// UIDs for announcements are separate from those for requests.
 			// So we don't need to, and should not, ask Node.
-			if(!node.nodeStats.shouldAcceptAnnouncement(uid)) {
-				if(om != null && source instanceof SeedClientPeerNode)
+			NodeStats.AnnouncementDecision shouldAcceptAnnouncement = node.nodeStats.shouldAcceptAnnouncement(uid);
+			if (!(NodeStats.AnnouncementDecision.ACCEPT == shouldAcceptAnnouncement)) {
+				if (om != null && source instanceof SeedClientPeerNode)
 					om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
-				Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+				Message msg = null;
+				if (NodeStats.AnnouncementDecision.OVERLOAD == shouldAcceptAnnouncement) {
+					msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+					if (logMINOR)
+						Logger.minor(this,
+							     "Rejected announcement (overall overload) from "
+							     + source);
+				} else if (NodeStats.AnnouncementDecision.LOOP == shouldAcceptAnnouncement) {
+					msg = DMT.createFNPRejectedLoop(uid);
+					if (logMINOR)
+						Logger.minor(this,
+							     "Rejected announcement (loop) from "+
+							     source);
+				} else {
+					throw new Error("This shouldn't happen. Please report");
+				}
+
 				try {
 					source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 				} catch (NotConnectedException e) {
 					// OK
 				}
-				if(logMINOR) Logger.minor(this, "Rejected announcement (overall overload) from "+source);
 				return true;
 			}
 			if(!source.shouldAcceptAnnounce(uid)) {
