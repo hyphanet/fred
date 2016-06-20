@@ -20,15 +20,9 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	private final BigInteger y;
 	public static final int PADDED_SIZE = 1024;
 	public static final int HASH_LENGTH = 32;
-	/** Null means use Global.DSAgroupBigA. This makes persistence simpler. FIXME get rid if
-	 * get rid of db4o. */
+	/** Null means use Global.DSAgroupBigA. This makes persistence simpler. */
 	private final DSAGroup group;
 	private byte[] fingerprint = null;
-	
-	private static final DSAGroup group(DSAGroup g) {
-		if(g == null) return Global.DSAgroupBigA;
-		else return g;
-	}
 	
 	public DSAPublicKey(DSAGroup g, BigInteger y) {
 		if(y.signum() != 1)
@@ -118,21 +112,6 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		else return group;
 	}
 
-//    public void writeForWireWithoutGroup(OutputStream out) throws IOException {
-//		Util.writeMPI(y, out);
-//    }
-//
-//    public void writeForWire(OutputStream out) throws IOException {
-//		Util.writeMPI(y, out);
-//		group.writeForWire(out);
-//    }
-//
-//    public void writeWithoutGroup(OutputStream out) 
-//	throws IOException {
-//		write(out, getClass().getName());
-//		Util.writeMPI(y, out);
-//    }
-//
 	public static CryptoKey read(InputStream i) throws IOException, CryptFormatException {
 		return new DSAPublicKey(i);
 	}
@@ -146,11 +125,6 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		return "y=" + HexUtil.biToHex(y);
 	}
 
-	// this won't correctly read the output from writeAsField
-	//public static CryptoKey readFromField(DSAGroup group, String field) {
-	//    BigInteger y=Util.byteArrayToMPI(Util.hexToBytes(field));
-	//    return new DSAPublicKey(group, y);
-	//}
 	@Override
 	public byte[] asBytes() {
 		byte[] groupBytes = getGroup().asBytes();

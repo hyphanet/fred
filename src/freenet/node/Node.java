@@ -39,18 +39,6 @@ import java.util.Set;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import com.db4o.Db4o;
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-import com.db4o.config.Configuration;
-import com.db4o.config.GlobalOnlyConfigException;
-import com.db4o.diagnostic.ClassHasNoFields;
-import com.db4o.diagnostic.Diagnostic;
-import com.db4o.diagnostic.DiagnosticBase;
-import com.db4o.diagnostic.DiagnosticListener;
-import com.db4o.ext.Db4oException;
-import com.db4o.io.IoAdapter;
-
 import freenet.client.FetchContext;
 import freenet.clients.fcp.FCPMessage;
 import freenet.clients.fcp.FeedMessage;
@@ -446,21 +434,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	final File dbFile; // FIXME remove
-	final File dbFileCrypt; // FIXME remove
-	/** db4o database for node and client layer.
-	 * Other databases can be created for the datastore (since its usage
-	 * patterns and content are completely different), or for plugins (for
-	 * security reasons). FIXME remove. */
-	public ObjectContainer db;
-	private volatile boolean hasPanicked;
-	/** A fixed random number which identifies the top-level objects belonging to
-	 * this node, as opposed to any others that might be stored in the same database
-	 * (e.g. because of many-nodes-in-one-VM). FIXME remove when db4o back compaibility is removed. */
-	public long nodeDBHandle;
-
-	/** Encryption key for client.dat.crypt or client.dat.bak.crypt (and also the old node.db4o.
-	 * crypt) */
+	/** Encryption key for client.dat.crypt or client.dat.bak.crypt */
 	private DatabaseKey databaseKey;
 	
 	/** Encryption keys, if loaded, null if waiting for a password. We must be able to write them, 
@@ -647,6 +621,7 @@ public class Node implements TimeSkewDetectorCallback {
 	final File masterKeysFile;
 	/** Directory to put extra peer data into */
 	final File extraPeerDataDir;
+	private volatile boolean hasPanicked;
 	/** Strong RNG */
 	public final RandomSource random;
 	/** JCA-compliant strong RNG. WARNING: DO NOT CALL THIS ON THE MAIN NETWORK
@@ -1214,9 +1189,6 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		showFriendsVisibilityAlert = nodeConfig.getBoolean("showFriendsVisibilityAlert");
 
-		dbFile = userDir.file("node.db4o");
-		dbFileCrypt = userDir.file("node.db4o.crypt");
-
         byte[] clientCacheKey = null;
         
         MasterSecret persistentSecret = null;
@@ -1246,17 +1218,6 @@ public class Node implements TimeSkewDetectorCallback {
             }
         }
 
-        try {
-            setupDatabase(databaseKey);
-        } catch (MasterKeysWrongPasswordException e2) {
-            System.out.println("Client database node.db4o is encrypted!");
-            databaseAwaitingPassword = true;
-        } catch (MasterKeysFileSizeException e2) {
-            System.err.println("Unable to decrypt database: master.keys file too " + e2.sizeToString() + "!");
-        } catch (IOException e2) {
-            System.err.println("Unable to access master.keys file to decrypt database: "+e2);
-            e2.printStackTrace();
-        }
 		// Boot ID
 		bootID = random.nextLong();
 		// Fixed length file containing boot ID. Accessed with random access file. So hopefully it will always be
@@ -1527,13 +1488,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 		darknetCrypto = new NodeCrypto(this, false, darknetConfig, startupTime, enableARKs);
 
-		nodeDBHandle = darknetCrypto.getNodeHandle(db);
-
-		if(db != null) {
-			db.commit();
-			if(logMINOR) Logger.minor(this, "COMMITTED");
-		}
-
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
 		ps = new PacketSender(this);
@@ -1709,7 +1663,7 @@ public class Node implements TimeSkewDetectorCallback {
 		nodeStats = new NodeStats(this, sortOrder, config.createSubConfig("node.load"), obwLimit, ibwLimit, lastVersion);
 
 		// clientCore needs new load management and other settings from stats.
-		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, databaseKey, db, persistentSecret);
+		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, databaseKey, persistentSecret);
 		toadlets.setCore(clientCore);
 
 		if (JVMVersion.isTooOld()) {
@@ -2671,15 +2625,9 @@ public class Node implements TimeSkewDetectorCallback {
 	public void lateSetupDatabase(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 	    if(clientCore.loadedDatabase()) return;
 		System.out.println("Starting late database initialisation");
-		setupDatabase(databaseKey);
-		nodeDBHandle = darknetCrypto.getNodeHandle(db);
 
-		if(db != null) {
-			db.commit();
-			if(logMINOR) Logger.minor(this, "COMMITTED");
-		}
 		try {
-		    if(!clientCore.lateInitDatabase(nodeDBHandle, db, databaseKey))
+		    if(!clientCore.lateInitDatabase(databaseKey))
 		        failLateInitDatabase();
 		} catch (NodeInitException e) {
 		    failLateInitDatabase();
@@ -2688,202 +2636,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private void failLateInitDatabase() {
 		System.err.println("Failed late initialisation of database, closing...");
-		db.close();
-		db = null;
-	}
-
-	private static class DB4ODiagnosticListener implements DiagnosticListener {
-		private static volatile boolean logDEBUG;
-
-		static {
-			Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-				@Override
-				public void shouldUpdate(){
-					logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
-				}
-			});
-		}
-			@Override
-			public void onDiagnostic(Diagnostic arg0) {
-				if(!logDEBUG)
-					return;
-				if(arg0 instanceof ClassHasNoFields)
-					return; // Ignore
-				if(arg0 instanceof DiagnosticBase) {
-					DiagnosticBase d = (DiagnosticBase) arg0;
-					Logger.debug(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason(), new Exception("debug"));
-				} else
-					Logger.debug(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
-			}
-	}
-	/**
-	 * @param databaseKey The encryption key to the database. Null if the database is not encrypted
-	 * @return A new Db4o Configuration object which is fully configured to Fred's desired database settings.
-	 */
-	private Configuration getNewDatabaseConfiguration(DatabaseKey databaseKey) {
-		Configuration dbConfig = Db4o.newConfiguration();
-		/* On my db4o test node with lots of downloads, and several days old, com.db4o.internal.freespace.FreeSlotNode
-		 * used 73MB out of the 128MB limit (117MB used). This memory was not reclaimed despite constant garbage collection.
-		 * This is unacceptable, hence btree freespace. */
-		dbConfig.freespace().useBTreeSystem();
-		/*
-		 * HashMap: don't enable cascade on update/delete/activate, db4o handles this
-		 * internally through the TMap translator.
-		 */
-		// LAZY appears to cause ClassCastException's relating to db4o objects inside db4o code. :(
-		// Also it causes duplicates if we activate immediately.
-		// And the performance gain for e.g. RegisterMeRunner isn't that great.
-//		dbConfig.queries().evaluationMode(QueryEvaluationMode.LAZY);
-		dbConfig.messageLevel(1);
-		dbConfig.activationDepth(1);
-		/* TURN OFF SHUTDOWN HOOK.
-		 * The shutdown hook does auto-commit. We do NOT want auto-commit: if a
-		 * transaction hasn't commit()ed, it's not safe to commit it. For example,
-		 * a splitfile is started, gets half way through, then we shut down.
-		 * The shutdown hook commits the half-finished transaction. When we start
-		 * back up, we assume the whole transaction has been committed, and end
-		 * up only registering the proportion of segments for which a RegisterMe
-		 * has already been created. Yes, this has happened, yes, it sucks.
-		 * Add our own hook to rollback and close... */
-		dbConfig.automaticShutDown(false);
-		/* Block size 8 should have minimal impact since pointers are this
-		 * long, and allows databases of up to 16GB.
-		 * FIXME make configurable by user. */
-		dbConfig.blockSize(8);
-		dbConfig.diagnostic().addListener(new DB4ODiagnosticListener());
-
-		dbConfig.exceptionsOnNotStorable(false);
-
-		System.err.println("Optimise native queries: "+dbConfig.optimizeNativeQueries());
-		System.err.println("Query activation depth: "+dbConfig.activationDepth());
-
-		// The database is encrypted.
-		if(databaseKey != null) {
-			IoAdapter baseAdapter = dbConfig.io();
-			try {
-				dbConfig.io(databaseKey.createEncryptingDb4oAdapter(baseAdapter));
-			} catch (GlobalOnlyConfigException e) {
-				// Fouled up after encrypting/decrypting.
-				System.err.println("Caught "+e+" opening encrypted database.");
-				e.printStackTrace();
-				WrapperManager.restart();
-				throw e;
-			}
-		}
-
-		return dbConfig;
-	}
-
-	private void setupDatabase(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
-		/* FIXME: Backup the database! */
-
-		ObjectContainer database;
-
-		File dbFileBackup = new File(dbFile.getPath()+".tmp");
-		File dbFileCryptBackup = new File(dbFileCrypt.getPath()+".tmp");
-
-		if(dbFileBackup.exists() && !dbFile.exists()) {
-			if(!dbFileBackup.renameTo(dbFile)) {
-				throw new IOException("Database backup file "+dbFileBackup+" exists but cannot be renamed to "+dbFile+". Not loading database, please fix permissions problems!");
-			}
-		}
-		if(dbFileCryptBackup.exists() && !dbFileCrypt.exists()) {
-			if(!dbFileCryptBackup.renameTo(dbFileCrypt)) {
-				throw new IOException("Database backup file "+dbFileCryptBackup+" exists but cannot be renamed to "+dbFileCrypt+". Not loading database, please fix permissions problems!");
-			}
-		}
-
-		try {
-			if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-			    if(dbFile.exists())
-			        FileUtil.secureDelete(dbFile);
-			    if(dbFileCrypt.exists())
-			        FileUtil.secureDelete(dbFileCrypt);
-                if(dbFileBackup.exists())
-                    FileUtil.secureDelete(dbFile);
-                if(dbFileCryptBackup.exists())
-                    FileUtil.secureDelete(dbFileCrypt);
-			    return; // No need to migrate
-			} else if(dbFile.exists()) {
-				// Just open it.
-				database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
-			} else if((dbFileCrypt.exists())) {
-				// Open encrypted, regardless of seclevel.
-				database = openCryptDatabase(databaseKey);
-			} else return;
-		} catch (Db4oException e) {
-			database = null;
-			System.err.println("Failed to open database: "+e);
-			e.printStackTrace();
-		}
-		// DUMP DATABASE CONTENTS
-		if(logDEBUG && database != null) {
-		try {
-		System.err.println("DUMPING DATABASE CONTENTS:");
-		ObjectSet<Object> contents = database.queryByExample(new Object());
-		Map<String,Integer> map = new HashMap<String, Integer>();
-		for(Object o: contents) {
-			String name = o.getClass().getName();
-			if((map.get(name)) != null) {
-				map.put(name, map.get(name)+1);
-			} else {
-				map.put(name, 1);
-			}
-			// Activated to depth 1
-			try {
-				Logger.minor(this, "DATABASE: "+o.getClass()+":"+o+":"+database.ext().getID(o));
-			} catch (Throwable t) {
-				Logger.minor(this, "CAUGHT "+t+" FOR CLASS "+o.getClass());
-			}
-			database.deactivate(o, 1);
-		}
-		int total = 0;
-		for(Map.Entry<String,Integer> entry : map.entrySet()) {
-			System.err.println(entry.getKey()+" : "+entry.getValue());
-			total += entry.getValue();
-		}
-
-		// Some structures e.g. collections are sensitive to the activation depth.
-		// If they are activated to depth 1, they are broken, and activating them to
-		// depth 2 does NOT un-break them! Hence we need to deactivate (above) and
-		// GC here...
-		System.gc();
-		System.runFinalization();
-		System.gc();
-		System.runFinalization();
-		System.err.println("END DATABASE DUMP: "+total+" objects");
-		} catch (Db4oException e) {
-			System.err.println("Unable to dump database contents. Treating as corrupt database.");
-			e.printStackTrace();
-			try {
-				database.rollback();
-			} catch (Throwable t) {} // ignore, closing
-			try {
-				database.close();
-			} catch (Throwable t) {} // ignore, closing
-			database = null;
-		} catch (IllegalArgumentException e) {
-			// Urrrrgh!
-			System.err.println("Unable to dump database contents. Treating as corrupt database.");
-			e.printStackTrace();
-			try {
-				database.rollback();
-			} catch (Throwable t) {} // ignore, closing
-			try {
-				database.close();
-			} catch (Throwable t) {} // ignore, closing
-			database = null;
-		}
-		}
-
-		db = database;
-
-	}
-
-	private ObjectContainer openCryptDatabase(DatabaseKey databaseKey) throws IOException {
-
-		ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(databaseKey), dbFileCrypt.toString());
-		return database;
 	}
 
 	public void killMasterKeysFile() throws IOException {
@@ -2898,8 +2650,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	/** Called when the client layer (not necessarily the old db4o database) needs the decryption 
-	 * password. */
+	/** Called when the client layer needs the decryption password. */
     void setDatabaseAwaitingPassword() {
         synchronized(this) {
             databaseAwaitingPassword = true;
@@ -3298,7 +3049,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(!NativeThread.HAS_ENOUGH_NICE_LEVELS)
 			clientCore.alerts.register(new NotEnoughNiceLevelsUserAlert());
 
-		this.clientCore.start(config, db);
+		this.clientCore.start(config);
 
 		tracker.startDeadUIDChecker();
 
@@ -4717,11 +4468,6 @@ public class Node implements TimeSkewDetectorCallback {
 		return routeAccordingToOurPeersLocation;
 	}
 
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing Node in database", new Exception("error"));
-		return false;
-	}
-
 	/** Can be called to decrypt client.dat* etc, or can be called when switching from another 
 	 * security level to HIGH. */
 	public void setMasterPassword(String password, boolean inFirstTimeWizard) throws AlreadySetPasswordException, MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
@@ -4807,39 +4553,22 @@ public class Node implements TimeSkewDetectorCallback {
 	public synchronized File getMasterPasswordFile() {
 		return masterKeysFile;
 	}
-	
-    boolean hasPanicked() {
-        return hasPanicked;
-    }
+
+	boolean hasPanicked() {
+		return hasPanicked;
+	}
 
 	public void panic() {
-	    hasPanicked = true;
-	    if(db != null) {
-	        try {
-	            db.close();
-	        } catch (Throwable t) {
-	            // Ignore
-	        }
-	        synchronized(this) {
-	            db = null;
-	        }
-	    }
-		try {
-			FileUtil.secureDelete(dbFile);
-			FileUtil.secureDelete(dbFileCrypt);
-		} catch (IOException e) {
-			// Ignore
-		}
-		dbFile.delete();
-		dbFileCrypt.delete();
+		hasPanicked = true;
 		clientCore.clientLayerPersister.panic();
 		clientCore.clientLayerPersister.killAndWaitForNotRunning();
 		try {
-            MasterKeys.killMasterKeys(getMasterPasswordFile());
-        } catch (IOException e) {
-            System.err.println("Unable to wipe master passwords key file!");
-            System.err.println("Please delete "+getMasterPasswordFile()+" to ensure that nobody can recover your old downloads.");
-        }
+			MasterKeys.killMasterKeys(getMasterPasswordFile());
+		} catch (IOException e) {
+			System.err.println("Unable to wipe master passwords key file!");
+			System.err.println("Please delete " + getMasterPasswordFile()
+					   + " to ensure that nobody can recover your old downloads.");
+		}
 		// persistent-temp will be cleaned on restart.
 	}
 
