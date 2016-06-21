@@ -977,22 +977,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 	}
 
-	/** Returns a sorted list of locations of this PeerNode's peers. */
-	public List<Double> getPeersLocation() {
-		return location.getPeerLocations();
-	}
-
 	/** Returns an array copy of locations of this PeerNode's peers. */
 	double[] getPeersLocationArray() {
-		List<Double> locs = getPeersLocation();
-		if (locs == null) {
-			return null;
-		}
-		double[] result = new double[locs.size()];
-		for (int i = 0; i < locs.size(); i++) {
-			result[i] = locs.get(i);
-		}
-		return result;
+		return location.getPeersLocationArray();
 	}
 
 	/**
