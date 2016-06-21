@@ -977,8 +977,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 	}
 
-	public double[] getPeersLocation() {
+	/** Returns a sorted list of locations of this PeerNode's peers. */
+	public List<Double> getPeersLocation() {
 		return location.getPeerLocations();
+	}
+
+	/** Returns an array copy of locations of this PeerNode's peers. */
+	double[] getPeersLocationArray() {
+		List<Double> locs = getPeersLocation();
+		if (locs == null) {
+			return null;
+		}
+		double[] result = new double[locs.size()];
+		for (int i = 0; i < locs.size(); i++) {
+			result[i] = locs.get(i);
+		}
+		return result;
 	}
 
 	public long getLocSetTime() {
@@ -2712,7 +2726,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			fs.put("hadRoutableConnectionCount", hadRoutableConnectionCount);
 		if(routableConnectionCheckCount > 0)
 			fs.put("routableConnectionCheckCount", routableConnectionCheckCount);
-		double[] peerLocs = getPeersLocation();
+		double[] peerLocs = getPeersLocationArray();
 		if(peerLocs != null)
 			fs.put("peersLocation", peerLocs);
 		return fs;
@@ -5534,7 +5548,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		else
 			prevLoc = -1.0;
 		
-		double[] peersLocation = getPeersLocation();
+		List<Double> peersLocation = getPeersLocation();
 		if((peersLocation != null) && (shallWeRouteAccordingToOurPeersLocation())) {
 			for(double l : peersLocation) {
 				boolean ignoreLoc = false; // Because we've already been there
