@@ -1,15 +1,15 @@
 package freenet.support;
 
+import freenet.support.Logger.LogLevel;
+
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-
-import freenet.support.Logger.LogLevel;
 
 /**
  * Token bucket. Can be used for e.g. bandwidth limiting.
  * Tokens are added once per tick.
  */
-public class TokenBucket {
+@Deprecated public class TokenBucket {
 
 	private static boolean logMINOR;
 	static {
