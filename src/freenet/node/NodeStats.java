@@ -1,10 +1,5 @@
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -45,6 +40,11 @@ import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.math.TrivialRunningAverage;
+
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /** Node (as opposed to NodeClientCore) level statistics. Includes shouldRejectRequest(), but not limited
  * to stuff required to implement that. */
@@ -3632,8 +3632,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	/** To prevent thread overflow */
 	private final static int MAX_ANNOUNCEMENTS = 100;
-	
-	public boolean shouldAcceptAnnouncement(long uid) {
+
+	enum AnnouncementDecision {
+		ACCEPT,
+		OVERLOAD,
+		LOOP
+	}
+	public AnnouncementDecision shouldAcceptAnnouncement(long uid) {
 		int outputPerSecond = node.getOutputBandwidthLimit() / 2; // FIXME: Take overhead into account??? Be careful, it may include announcements and that would cause problems!
 		int inputPerSecond = node.getInputBandwidthLimit() / 2;
 		int limit = Math.min(inputPerSecond, outputPerSecond);
@@ -3642,7 +3647,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			int running = runningAnnouncements.size();
 			if(running >= MAX_ANNOUNCEMENTS) {
 				if(logMINOR) Logger.minor(this, "Too many announcements running: "+running);
-				return false;
+				return AnnouncementDecision.OVERLOAD;
 			}
 			// Liability-style limiting as well.
 			int perTransfer = OpennetManager.PADDED_NODEREF_SIZE;
@@ -3650,11 +3655,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			int bandwidthIn30Secs = limit * 30;
 			if(perTransfer * transfersPerAnnouncement * running > bandwidthIn30Secs) {
 				if(logMINOR) Logger.minor(this, "Can't complete "+running+" announcements in 30 secs");
-				return false;
+				return AnnouncementDecision.OVERLOAD;
 			}
-			runningAnnouncements.add(uid);
-			if(logMINOR) Logger.minor(this, "Accepting announcement "+uid);
-			return true;
+			boolean ret = runningAnnouncements.add(uid);
+			if(logMINOR) {
+				if(ret) Logger.minor(this, "Accepting announcement "+uid);
+				else Logger.minor(this, "Rejecting (loop) announcement "+uid);
+			}
+			return (ret ? AnnouncementDecision.ACCEPT : AnnouncementDecision.LOOP);
 		}
 	}
 	
