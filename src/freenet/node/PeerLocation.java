@@ -1,6 +1,8 @@
 package freenet.node;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import freenet.support.Logger;
 
@@ -8,8 +10,8 @@ public class PeerLocation {
 	
 	/** Current location in the keyspace, or -1 if it is unknown */
 	private double currentLocation;
-	/** Current locations of our peer's peers */
-	private double[] currentPeersLocation;
+	/** Current sorted unmodifiable list of locations of our peer's peers */
+	private List<Double> currentPeersLocation;
 	/** Time the location was set */
 	private long locSetTime;
 
@@ -28,9 +30,7 @@ public class PeerLocation {
 			double[] peerLocations = new double[peerLocationsString.length];
 			for(int i = 0; i < peerLocationsString.length; i++)
 				peerLocations[i] = Location.getLocation(peerLocationsString[i]);
-			synchronized(this) {
-				currentPeersLocation = peerLocations;
-			}
+			updateLocation(currentLocation, peerLocations);
 		}
 	}
 
@@ -38,7 +38,7 @@ public class PeerLocation {
 		return currentLocation;
 	}
 
-	synchronized double[] getPeerLocations() {
+	synchronized List<Double> getPeerLocations() {
 		return currentPeersLocation;
 	}
 
@@ -52,47 +52,46 @@ public class PeerLocation {
 
 	public synchronized int getDegree() {
 		if (currentPeersLocation == null) return 0;
-		return currentPeersLocation.length;
+		return currentPeersLocation.size();
 	}
 
 	boolean updateLocation(double newLoc, double[] newLocs) {
-		if(!Location.isValid(newLoc)) {
+		if (!Location.isValid(newLoc)) {
 			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
 			// Ignore it
 			return false;
 		}
 
-		for(double currentLoc : newLocs) {
-			if(!Location.isValid(currentLoc)) {
-				Logger.error(this, "Invalid location update for " + this + " ("+currentLoc+')', new Exception("error"));
+		ArrayList<Double> newPeersLocation = new ArrayList<Double>(newLocs.length);
+		for (double loc : newLocs) {
+			if (!Location.isValid(loc)) {
+				Logger.error(this, "Invalid location update for " + this + " (" + loc + ")", new Exception("error"));
 				// Ignore it
 				return false;
 			}
+			newPeersLocation.add(loc);
 		}
-
-		Arrays.sort(newLocs);
 		
+		Collections.sort(newPeersLocation);
 		boolean anythingChanged = false;
 
-		synchronized(this) {
-			if(!Location.equals(currentLocation, newLoc))
+		synchronized (this) {
+			if (!Location.equals(currentLocation, newLoc) || currentPeersLocation == null) {
 				anythingChanged = true;
-			currentLocation = newLoc;
-			if(currentPeersLocation == null)
-				anythingChanged = true;
-			else if(currentPeersLocation != null && !anythingChanged) {
-				if(currentPeersLocation.length != newLocs.length)
-					anythingChanged = true;
-				else {
-					for(int i=0;i<currentPeersLocation.length;i++) {
-						if(!Location.equals(currentPeersLocation[i], newLocs[i])) {
-							anythingChanged = true;
-							break;
-						}
+			}
+			if (!anythingChanged) {
+				anythingChanged = currentPeersLocation.size() != newPeersLocation.size();
+			}
+			if (!anythingChanged) {
+				for (int i = 0; i < currentPeersLocation.size(); i++) {
+					if (!Location.equals(currentPeersLocation.get(i), newPeersLocation.get(i))) {
+						anythingChanged = true;
+						break;
 					}
 				}
 			}
-			currentPeersLocation = newLocs;
+			currentLocation = newLoc;
+			currentPeersLocation = Collections.unmodifiableList(newPeersLocation);
 			locSetTime = System.currentTimeMillis();
 		}
 		return anythingChanged;

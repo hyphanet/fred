@@ -1038,7 +1038,7 @@ public class PeerManager {
 			double realDiff = Location.distance(loc, target);
 			double diff = realDiff;
 			
-			double[] peersLocation = p.getPeersLocation();
+			List<Double> peersLocation = p.getPeersLocation();
 			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation(outgoingHTL))) {
 				for(double l : peersLocation) {
 					boolean ignoreLoc = false; // Because we've already been there
@@ -1275,7 +1275,7 @@ public class PeerManager {
 			double realDiff = Location.distance(loc, target);
 			double diff = realDiff;
 			
-			double[] peersLocation = p.getPeersLocation();
+			List<Double> peersLocation = p.getPeersLocation();
 			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation(outgoingHTL))) {
 				for(double l : peersLocation) {
 					boolean ignoreLoc = false; // Because we've already been there
