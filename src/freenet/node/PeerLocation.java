@@ -38,8 +38,11 @@ public class PeerLocation {
 		return currentLocation;
 	}
 
-	/** Returns an array copy of locations of our peer's peers. */
+	/** Returns an array copy of locations of our peer's peers, or null if we don't have them. */
 	public synchronized double[] getPeersLocationArray() {
+		if (currentPeersLocation == null) {
+			return null;
+		}
 		return Arrays.copyOf(currentPeersLocation, currentPeersLocation.length);
 	}
 
