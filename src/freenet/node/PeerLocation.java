@@ -176,12 +176,12 @@ public class PeerLocation {
 			return Double.NaN;
 		}
 		final int closest = findClosestLocation(locs, l);
-		if (exclude == null || !exclude.contains(closest)) {
+		if (exclude == null || !exclude.contains(locs[closest])) {
 			return locs[closest];
 		}
 
-		int left = (closest - 1) % locs.length;
-		int right = (closest + 1) % locs.length;
+		int left = (closest == 0) ? (locs.length - 1) : (closest - 1);
+		int right = (closest == locs.length - 1) ? 0 : (closest + 1);
 		double leftDist = Location.distance(l, locs[left]);
 		double rightDist = Location.distance(l, locs[right]);
 		// Iterate over at most m closest peers
@@ -191,14 +191,14 @@ public class PeerLocation {
 				if (!exclude.contains(loc)) {
 					return loc;
 				}
-				left = (left - 1) % locs.length;
+				left = (left == 0) ? (locs.length - 1) : (left - 1);
 				leftDist = Location.distance(l, locs[left]);
 			} else {
 				final double loc = locs[right];
 				if (!exclude.contains(loc)) {
 					return loc;
 				}
-				right = (right + 1) % locs.length;
+				right = (right == locs.length - 1) ? 0 : (right + 1);
 				rightDist = Location.distance(l, locs[right]);
 			}
 		}
