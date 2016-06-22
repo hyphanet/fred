@@ -5325,7 +5325,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * allow them to reconnect. */
 	public abstract void fatalTimeout();
 	
-	public abstract boolean shallWeRouteAccordingToOurPeersLocation();
+	public abstract boolean shallWeRouteAccordingToOurPeersLocation(int htl);
 	
 	@Override
 	public PeerMessageQueue getMessageQueue() {
@@ -5524,7 +5524,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return false;
 	}
 
-	public void reportRoutedTo(double target, boolean isLocal, boolean realTime, PeerNode prev, Set<PeerNode> routedTo) {
+	public void reportRoutedTo(double target, boolean isLocal, boolean realTime, PeerNode prev, Set<PeerNode> routedTo, int htl) {
 		double distance = Location.distance(target, getLocation());
 		
 		double myLoc = node.getLocation();
@@ -5535,7 +5535,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			prevLoc = -1.0;
 		
 		double[] peersLocation = getPeersLocation();
-		if((peersLocation != null) && (shallWeRouteAccordingToOurPeersLocation())) {
+		if((peersLocation != null) && (shallWeRouteAccordingToOurPeersLocation(htl))) {
 			for(double l : peersLocation) {
 				boolean ignoreLoc = false; // Because we've already been there
 				if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||

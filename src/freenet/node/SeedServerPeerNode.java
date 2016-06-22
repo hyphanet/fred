@@ -164,7 +164,7 @@ public class SeedServerPeerNode extends PeerNode {
 	}
 	
 	@Override
-	public boolean shallWeRouteAccordingToOurPeersLocation() {
+	public boolean shallWeRouteAccordingToOurPeersLocation(int htl) {
 		return false; // Irrelevant
 	}
 

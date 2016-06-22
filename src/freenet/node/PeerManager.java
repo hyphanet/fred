@@ -1039,7 +1039,7 @@ public class PeerManager {
 			double diff = realDiff;
 			
 			double[] peersLocation = p.getPeersLocation();
-			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
+			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation(outgoingHTL))) {
 				for(double l : peersLocation) {
 					boolean ignoreLoc = false; // Because we've already been there
 					if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
@@ -1276,7 +1276,7 @@ public class PeerManager {
 			double diff = realDiff;
 			
 			double[] peersLocation = p.getPeersLocation();
-			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
+			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation(outgoingHTL))) {
 				for(double l : peersLocation) {
 					boolean ignoreLoc = false; // Because we've already been there
 					if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||

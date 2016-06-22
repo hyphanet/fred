@@ -263,8 +263,8 @@ public class OpennetPeerNode extends PeerNode {
 	}
 	
 	@Override
-	public boolean shallWeRouteAccordingToOurPeersLocation() {
-		return node.shallWeRouteAccordingToOurPeersLocation();
+	public boolean shallWeRouteAccordingToOurPeersLocation(int htl) {
+		return node.shallWeRouteAccordingToOurPeersLocation(htl);
 	}
 
 	@Override
