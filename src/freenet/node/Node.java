@@ -4464,8 +4464,8 @@ public class Node implements TimeSkewDetectorCallback {
 		return publishOurPeersLocation;
 	}
 
-	public boolean shallWeRouteAccordingToOurPeersLocation() {
-		return routeAccordingToOurPeersLocation;
+	public boolean shallWeRouteAccordingToOurPeersLocation(int htl) {
+		return routeAccordingToOurPeersLocation && htl > 1;
 	}
 
 	/** Can be called to decrypt client.dat* etc, or can be called when switching from another 

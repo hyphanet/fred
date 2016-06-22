@@ -1727,8 +1727,8 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	public boolean shallWeRouteAccordingToOurPeersLocation() {
-		if(!node.shallWeRouteAccordingToOurPeersLocation()) return false; // Globally disabled
+	public boolean shallWeRouteAccordingToOurPeersLocation(int htl) {
+		if(!node.shallWeRouteAccordingToOurPeersLocation(htl)) return false; // Globally disabled
 		if(trustLevel == FRIEND_TRUST.LOW) return false;
 		return true;
 	}
