@@ -7,6 +7,7 @@ import java.util.Set;
 import junit.framework.TestCase;
 
 public class PeerLocationTest extends TestCase {
+    private static final double EPSILON = 1e-15;
 
     private static final double[][] PEER_LOCATIONS = new double[][] {
         // Must be sorted!
@@ -16,12 +17,14 @@ public class PeerLocationTest extends TestCase {
         { 0.1, 0.3 },
         { 0.1, 0.3, 0.4 },
         { 0.0, 0.1, 0.2, 0.3, 0.3, 0.35, 0.5, 0.5, 0.99 },
-        { 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24 }
+        { 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24 },
+        { 0.0000001, 0.0000003, 0.0001, 0.0002, 0.4, 0.5, 0.999, 0.999999, 0.9999995 },
+        { 0, 0.1, 0.11, 0.9, 0.99, 1 }
     };
 
     private static final double[] TARGET_LOCATIONS = new double[] {
-        0.0, 0.01, 0.05, 0.09, 0.1, 0.11, 0.29, 0.3, 0.31,
-        0.35, 0.4, 0.45, 0.5, 0.51, 0.9, 0.91, 0.9999
+        0.0, 1e-12, 0.01, 0.05, 0.09, 0.1, 0.11, 0.29, 0.3, 0.31,
+        0.35, 0.4, 0.45, 0.5, 0.51, 0.9, 0.91, 0.9999, 1 - 1e-12
     };
 
     public void testFindClosestLocation() {
@@ -29,7 +32,7 @@ public class PeerLocationTest extends TestCase {
             for (double target : TARGET_LOCATIONS) {
                 int closest = PeerLocation.findClosestLocation(peers, target);
                 double ref = trivialFindClosestDistance(peers, target);
-                assertEquals(ref, Location.distance(peers[closest], target));
+                assertEquals(ref, Location.distance(peers[closest], target), EPSILON);
             }
         }
     }
@@ -53,7 +56,7 @@ public class PeerLocationTest extends TestCase {
                             }
                         }
                         assertTrue(isPeer);
-                        assertEquals(ref, Location.distance(closest, target));
+                        assertEquals(ref, Location.distance(closest, target), EPSILON);
                     } else {
                         assertTrue(Double.isNaN(closest));
                     }
