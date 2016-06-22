@@ -977,8 +977,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 	}
 
-	public double[] getPeersLocation() {
-		return location.getPeerLocations();
+	/** Returns an array copy of locations of this PeerNode's peers, or null if unknown. */
+	double[] getPeersLocationArray() {
+		return location.getPeersLocationArray();
+	}
+
+	/**
+	 * Finds the closest non-excluded peer.
+	 * @param exclude the set of locations to exclude, may be null
+	 * @return the closest non-excluded peer's location, or NaN if none is found
+	 */
+	public double getClosestPeerLocation(double l, Set<Double> exclude) {
+		return location.getClosestPeerLocation(l, exclude);
 	}
 
 	public long getLocSetTime() {
@@ -2712,7 +2722,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			fs.put("hadRoutableConnectionCount", hadRoutableConnectionCount);
 		if(routableConnectionCheckCount > 0)
 			fs.put("routableConnectionCheckCount", routableConnectionCheckCount);
-		double[] peerLocs = getPeersLocation();
+		double[] peerLocs = getPeersLocationArray();
 		if(peerLocs != null)
 			fs.put("peersLocation", peerLocs);
 		return fs;
@@ -5533,22 +5543,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			prevLoc = prev.getLocation();
 		else
 			prevLoc = -1.0;
-		
-		double[] peersLocation = getPeersLocation();
-		if((peersLocation != null) && (shallWeRouteAccordingToOurPeersLocation())) {
-			for(double l : peersLocation) {
-				boolean ignoreLoc = false; // Because we've already been there
-				if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
-						Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
-					ignoreLoc = true;
-				else {
-					for(PeerNode cmpPN : routedTo)
-						if(Math.abs(l - cmpPN.getLocation()) < Double.MIN_VALUE * 2) {
-							ignoreLoc = true;
-							break;
-						}
-				}
-				if(ignoreLoc) continue;
+
+		Set<Double> excludeLocations = new HashSet<Double>();
+		excludeLocations.add(myLoc);
+		excludeLocations.add(prevLoc);
+		for (PeerNode routedToNode : routedTo) {
+			excludeLocations.add(routedToNode.getLocation());
+		}
+
+		if (shallWeRouteAccordingToOurPeersLocation()) {
+			double l = getClosestPeerLocation(target, excludeLocations);
+			if (!Double.isNaN(l)) {
 				double newDiff = Location.distance(l, target);
 				if(newDiff < distance) {
 					distance = newDiff;
