@@ -6,15 +6,23 @@ import java.util.regex.Pattern;
 /**
  * JVM version utilities.
  *
- * See documentation: http://www.oracle.com/technetwork/java/javase/versioning-naming-139433.html
+ * See documentation:
+ * http://www.oracle.com/technetwork/java/javase/versioning-naming-139433.html (pre-9)
+ * http://openjdk.java.net/jeps/223 (post-9)
  */
 public class JVMVersion {
 	public static final String REQUIRED = "1.8";
 
-	/** Regular expression for versions: major.feature[.maintenance[_update]],
-	 * leading zeroes and optional identifier stripped. */
+	/**
+	 * Pre-9 is formatted as: major.feature[.maintenance[_update]]-ident
+	 * Post-9 is formatted as: major[.minor[.security[. ...]]]-ident
+	 * For comparison of compatibility, information beyong the major, feature/minor,
+	 * maintenance/security and pre-9 update fields should not be of interest.
+	 * We find a common denominator in major(.a(.b([._]c)?)?)?, skipping any additional postfix.
+	 * The regex omits leading zeroes.
+	 */
 	private static final Pattern VERSION_PATTERN =
-	    Pattern.compile("^0*(\\d+)\\.0*(\\d+)(?:\\.0*(\\d+)(?:_0*(\\d+))?)?(?:-.*)?$");
+	    Pattern.compile("^0*(\\d+)(?:\\.0*(\\d+)(?:\\.0*(\\d+)(?:[_.]0*(\\d+))?)?)?.*$");
 
 	public static boolean isTooOld() {
 		return isTooOld(getCurrent());
