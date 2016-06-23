@@ -266,6 +266,41 @@ public class ECDSA {
 		return verify(curve, key, signature, 0, signature.length, data);
 	}
 
+    /* Calculates the actual signature length based on the encoded length of the DER sequence
+     * contained in the signature. If decoding fails, a SignatureException is thrown. */
+    private static int actualSignatureLength(byte[] signature, int sigOff, int sigLen) throws SignatureException {
+        // SEQUENCE, universal, constructed
+        if (sigLen < 2 || signature[sigOff] != 0x30) {
+            throw new SignatureException("Not a sequence");
+        }
+        int length = signature[1 + sigOff] & 0xFF;
+        if (length == 0x80) {
+            throw new SignatureException("Indefinite length");
+        }
+        if (length <= 127) {
+            return length + 2;
+        }
+        final int size = length & 0x7F;
+        if (size > 4) {
+            throw new SignatureException("Header too big");
+        }
+        if (sigLen < size + 2) {
+            throw new SignatureException("Header out of bounds");
+        }
+        length = 0;
+        for (int i = 0; i < size; i++) {
+            length <<= 8;
+            length += signature[i + sigOff + 2] & 0xFF;
+        }
+        if (length < 0) {
+            throw new SignatureException("Negative sequence length");
+        }
+        if (length > sigLen - 2 - size) {
+            throw new SignatureException("Sequence out of bounds");
+        }
+        return length + 2 + size;
+    }
+
     public static boolean verify(Curves curve, ECPublicKey key, byte[] signature, int sigoffset, int siglen,  byte[]... data) {
         if(key == null || curve == null || signature == null || data == null)
             return false;
@@ -273,8 +308,10 @@ public class ECDSA {
         try {
             Signature sig = Signature.getInstance(curve.defaultHashAlgorithm, curve.sigProvider);
             sig.initVerify(key);
-			for(byte[] d: data)
-				sig.update(d);
+            for(byte[] d: data)
+                sig.update(d);
+            // Strip padding: BC 1.54 cannot deal with it.
+            siglen = actualSignatureLength(signature, sigoffset, siglen);
             result = sig.verify(signature, sigoffset, siglen);
         } catch (NoSuchAlgorithmException e) {
             Logger.error(ECDSA.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
