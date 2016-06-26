@@ -98,31 +98,44 @@ jar {
 }
 jar.dependsOn buildInfo
 
-task copyResourcesToClasses << {
-    copy {
-        from "${projectDir}/src/freenet/"
-        into "${buildDir}/classes/main/freenet/"
-        include 'freenet/l10n/*properties'
-        include 'freenet/l10n/iso-*.tab'
-	include 'freenet/clients/http/staticfiles/**'
-	include 'dependencies.properties'
+task copyResourcesToClasses2 {
+    inputs.dir "${projectDir}/src/freenet/"
+    outputs.dir "${buildDir}/classes/main/"
+    doLast {
+        copy {
+            from "${projectDir}/src"
+            into "${buildDir}/classes/main/"
+            include 'freenet/l10n/*properties'
+            include 'freenet/l10n/iso-*.tab'
+            include 'freenet/clients/http/staticfiles/**'
+            include '../dependencies.properties'
+        }
+        copy {
+            from "${projectDir}/"
+            into "${buildDir}/classes/main/"
+            include 'dependencies.properties'
+        }
     }
 }
-processResources.dependsOn copyResourcesToClasses
+processResources.dependsOn copyResourcesToClasses2
 
-task copyTestResourcesToClasses << {
-    copy {
-        from "${projectDir}/test/"
-        into "${buildDir}/classes/test/"
-        include 'freenet/client/filter/png/**'
-        include 'freenet/client/filter/bmp/**'
-        include 'freenet/client/filter/mp3/**'
-        include 'freenet/crypt/ciphers/rijndael-gladman-test-data/**'
-        include 'freenet/l10n/*properties'
+task copyTestResourcesToClasses2 {
+    inputs.dir "${projectDir}/test/freenet/"
+    outputs.dir "${buildDir}/classes/test/"
+    doLast {
+        copy {
+            from "${projectDir}/test/"
+            into "${buildDir}/classes/test/"
+            include 'freenet/client/filter/png/**'
+            include 'freenet/client/filter/bmp/**'
+            include 'freenet/client/filter/mp3/**'
+            include 'freenet/crypt/ciphers/rijndael-gladman-test-data/**'
+            include 'freenet/l10n/*properties'
+        }
     }
 }
-processTestResources.dependsOn copyResourcesToClasses
-processTestResources.dependsOn copyTestResourcesToClasses
+compileTestJava.dependsOn copyResourcesToClasses2
+compileTestJava.dependsOn copyTestResourcesToClasses2
 
 test {
     minHeapSize = "128m"
@@ -130,8 +143,15 @@ test {
     // no inner class
     include 'freenet/**/*Test.class'
     exclude 'freenet/**/*$*Test.class'
-    workingDir = 'build/classes/test/'
+    workingDir = "${buildDir}/classes/test/"
     scanForTestClasses = false
+    systemProperties += [
+        "test.l10npath_test": "freenet/l10n/",
+        "test.l10npath_main": "../main/freenet/l10n/"
+//	"test.extensive":
+//	"test.verbose":
+//	"test.benchmark":
+    ]
 }
 
 // In this section you declare the dependencies for your production and test code
