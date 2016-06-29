@@ -273,6 +273,7 @@ public class NodeStarter implements WrapperListener {
      * @deprecated Instead use {@link #globalTestInit(File, boolean, LogLevel, String, boolean,
      *             RandomSource)}.
      */
+    @Deprecated
     public static RandomSource globalTestInit(String testName, boolean enablePlug,
             LogLevel logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
 

@@ -845,6 +845,7 @@ final public class FileUtil {
 	}
 
 	/** @deprecated */
+	@Deprecated
     public static void fill(OutputStream os, Random random, long length) throws IOException {
         long moved = 0;
         byte[] buf = new byte[BUFFER_SIZE];
