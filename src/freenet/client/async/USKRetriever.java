@@ -37,6 +37,7 @@ import freenet.support.io.NativeThread;
  * Poll a USK, and when a new slot is found, fetch it. 
  */
 public class USKRetriever extends BaseClientGetter implements USKCallback {
+	private static final long serialVersionUID = 5913500655676487409L;
 
 	/** Context for fetching data */
 	final FetchContext ctx;

@@ -20,6 +20,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue, PutCompletionCallback {
+	private static final long serialVersionUID = -2884613086588264043L;
 
 	final int maxRunning;
 	int counter;

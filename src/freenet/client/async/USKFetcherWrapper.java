@@ -19,6 +19,7 @@ import freenet.support.io.ResumeFailedException;
  * Wrapper for a backgrounded USKFetcher.
  */
 public class USKFetcherWrapper extends BaseClientGetter {
+	private static final long serialVersionUID = -6416069493740293035L;
 
 	final USK usk;
 	
