@@ -64,10 +64,20 @@ public class DatastoreChecker implements PrioRunnable {
             this.keys = keys;
             this.blockSet = blockSet;
 		}
+
+		@Override
 		public boolean equals(Object o) {
 		    // Hack to make queue.remove() work, see removeRequest() below.
 			if(!(o instanceof QueueItem)) return false; // equals() should not throw ClassCastException
 			return this.getter == ((QueueItem)o).getter;
+		}
+
+		@Override
+		public int hashCode() {
+			if (getter == null) {
+				return 0;
+			}
+			return getter.hashCode();
 		}
 	}
 
