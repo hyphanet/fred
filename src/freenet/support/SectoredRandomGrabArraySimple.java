@@ -31,7 +31,7 @@ public class SectoredRandomGrabArraySimple<MyType,ChildType> extends SectoredRan
             rga = new RandomGrabArrayWithObject<ChildType>(client, this, root);
             addElement(client, rga);
         } else {
-            rga = (RandomGrabArrayWithObject<ChildType>) grabArrays[clientIndex];
+            rga = grabArrays[clientIndex];
         }
         if(logMINOR)
             Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);

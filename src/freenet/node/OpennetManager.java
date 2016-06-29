@@ -454,7 +454,7 @@ public class OpennetManager {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			if(allowExisting) {
 				// However, we can reconnect.
-				return (OpennetPeerNode) peersLRU.get(pn);
+				return peersLRU.get(pn);
 			} else {
 				return null;
 			}
