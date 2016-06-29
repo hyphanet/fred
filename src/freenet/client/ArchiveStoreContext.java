@@ -3,8 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.util.LinkedList;
+
 import freenet.keys.FreenetURI;
-import freenet.support.DoublyLinkedListImpl;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -30,7 +31,7 @@ class ArchiveStoreContext {
 	 * Note that we never ever hold this and then take another lock! In particular
 	 * we must not take the ArchiveManager lock while holding this lock. It must be
 	 * the inner lock to avoid deadlocks. */
-	private final DoublyLinkedListImpl<ArchiveStoreItem> myItems;
+	private final LinkedList<ArchiveStoreItem> myItems;
 
         private static volatile boolean logMINOR;
 	static {
@@ -45,7 +46,7 @@ class ArchiveStoreContext {
 	ArchiveStoreContext(FreenetURI key, ArchiveManager.ARCHIVE_TYPE archiveType) {
 		this.key = key;
 		this.archiveType = archiveType;
-		myItems = new DoublyLinkedListImpl<ArchiveStoreItem>();
+		myItems = new LinkedList<ArchiveStoreItem>();
 	}
 
 	/** Returns the size of the archive last time we fetched it, or -1 */
@@ -77,7 +78,7 @@ class ArchiveStoreContext {
 		while(true) {
 			synchronized (myItems) {
 				// removeCachedItem() will call removeItem(), so don't remove it here.
-				item = myItems.head();
+				item = myItems.peek();
 			}
 			if(item == null) break;
 			manager.removeCachedItem(item);
@@ -96,7 +97,7 @@ class ArchiveStoreContext {
 	 * necessary. */
 	void removeItem(ArchiveStoreItem item) {
 		synchronized(myItems) {
-			if(myItems.remove(item) == null) {
+			if (!myItems.remove(item)) {
 				if(logMINOR)
 					Logger.minor(this, "Not removing: "+item+" for "+this+" - already removed");
 				return; // only removed once
