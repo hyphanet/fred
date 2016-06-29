@@ -128,7 +128,7 @@ public class BitArray implements WritableToDataOutputStream {
 	
 	@Override
 	public int hashCode() {
-	    return bits.hashCode() ^ Integer.hashCode(size);
+	    return bits.hashCode() ^ size;
 	}
 
 	public void setAllOnes() {
