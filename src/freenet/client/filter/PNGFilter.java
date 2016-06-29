@@ -209,24 +209,7 @@ public class PNGFilter implements ContentDataFilter {
 						throwError("Width or Height is invalid", "Width or Height is invalid (<1)");
 					int bitDepth = chunkData[8];
 					int colourType = chunkData[9];
-					switch (bitDepth) {
-					case 1:
-					case 2:
-					case 4:
-						if(colourType != 0 && colourType != 3)
-							throwError("Invalid colourType/bitDepth combination!",
-									"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
-						break;
-					case 16:
-						if(colourType == 3)
-							throwError("Invalid colourType/bitDepth combination!",
-									"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
-					case 8:
-						if(colourType == 0 || colourType ==2 || colourType ==3 || colourType ==4|| colourType ==6)
-							break;
-					default: throwError("Invalid colourType/bitDepth combination!",
-							"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
-					}
+					throwOnInvalidColour(bitDepth, colourType);
 					int compressionMethod = chunkData[10];
 					if(compressionMethod != 0)
 						throwError("Invalid CompressionMethod", "Invalid CompressionMethod! "+compressionMethod);
@@ -318,6 +301,28 @@ public class PNGFilter implements ContentDataFilter {
 		} catch (EOFException e) {
 			if(hasSeenIEND && hasSeenIHDR) return;
 			throwError("EOF Exception while filtering", "EOF Exception while filtering");
+		}
+	}
+
+	@SuppressWarnings("fallthrough")
+	private void throwOnInvalidColour(int bitDepth, int colourType) throws DataFilterException {
+		switch (bitDepth) {
+			case 1:
+			case 2:
+			case 4:
+				if(colourType != 0 && colourType != 3)
+					throwError("Invalid colourType/bitDepth combination!",
+							"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
+				break;
+			case 16:
+				if(colourType == 3)
+					throwError("Invalid colourType/bitDepth combination!",
+							"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
+			case 8:
+				if(colourType == 0 || colourType ==2 || colourType ==3 || colourType ==4|| colourType ==6)
+					break;
+			default: throwError("Invalid colourType/bitDepth combination!",
+					"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
 		}
 	}
 
