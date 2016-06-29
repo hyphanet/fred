@@ -25,15 +25,16 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 		Logger.registerClass(SectoredRandomGrabArray.class);
 	}
 
-	protected RemoveRandomWithObject<T>[] grabArrays;
+	protected C[] grabArrays;
 	private T[] grabClients;
 	private RemoveRandomParent parent;
 	protected final ClientRequestSelector root;
 	private long wakeupTime;
-	
+
+	@SuppressWarnings("unchecked")
 	public SectoredRandomGrabArray(RemoveRandomParent parent, ClientRequestSelector root) {
 		grabClients = (T[]) new Object[0];
-		grabArrays = new RemoveRandomWithObject[0];
+		grabArrays = (C[]) new Object[0];
 		this.parent = parent;
 		this.root = root;
 	}
@@ -66,7 +67,7 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 	    synchronized(root) {
 		int idx = haveClient(client);
 		if(idx == -1) return null;
-		else return (C) grabArrays[idx];
+		else return grabArrays[idx];
 	    }
 	}
 	
@@ -122,7 +123,7 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 		for(int i=0;i<grabArrays.length;i++) {
 			x++;
 			if(x >= grabArrays.length) x = 0;
-			RemoveRandomWithObject<T> rga = grabArrays[x];
+			C rga = grabArrays[x];
 			long excludeTime = rga.getWakeupTime(context, now);
 			if(excludeTime > 0) {
 				if(wakeupTime > excludeTime) wakeupTime = excludeTime;
@@ -166,7 +167,7 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 		while(true) {
 			if(grabArrays.length == 0) return null;
 			int x = context.fastWeakRandom.nextInt(grabArrays.length);
-			RemoveRandomWithObject<T> rga = grabArrays[x];
+			C rga = grabArrays[x];
 			if(rga == null) {
 				// We handle this in the other cases so we should handle it here.
 				Logger.error(this, "Slot "+x+" is null for client "+grabClients[x]);
@@ -217,6 +218,7 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 	    }
 	}
 
+	@SuppressWarnings("unchecked")
 	private RemoveRandomReturn removeRandomTwoOnly(
 			RandomGrabArrayItemExclusionList excluding,
 			ClientContext context, long now) {
@@ -224,18 +226,18 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 		long wakeupTime = Long.MAX_VALUE;
 		// Another simple common case
 		int x = context.fastWeakRandom.nextBoolean() ? 1 : 0;
-		RemoveRandomWithObject<T> rga = grabArrays[x];
-		RemoveRandomWithObject<T> firstRGA = rga;
+		C rga = grabArrays[x];
+		C firstRGA = rga;
 		if(rga == null) {
 			Logger.error(this, "rga = null on "+this);
 			if(grabArrays[1-x] == null) {
 				Logger.error(this, "other rga is also null on "+this);
-				grabArrays = (C[]) new RemoveRandomWithObject[0];
+				grabArrays = (C[]) new Object[0];
 				grabClients = (T[]) new Object[0];
 				return null;
 			} else {
 				Logger.error(this, "grabArrays["+(1-x)+"] is valid but ["+x+"] is null, correcting...");
-				grabArrays = (C[]) new RemoveRandomWithObject[] { grabArrays[1-x] };
+				grabArrays = (C[]) new Object[] { grabArrays[1-x] };
 				grabClients = (T[]) new Object[] { grabClients[1-x] };
 				return null;
 			}
@@ -267,7 +269,7 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 			rga = grabArrays[x];
 			if(rga == null) {
 				Logger.error(this, "Other RGA is null later on on "+this);
-				grabArrays = (C[]) new RemoveRandomWithObject[] { grabArrays[1-x] };
+				grabArrays = (C[]) new Object[] { grabArrays[1-x] };
 				grabClients = (T[]) new Object[] { grabClients[1-x] };
                 reduceWakeupTime(wakeupTime, context);
 				return new RemoveRandomReturn(wakeupTime);
@@ -288,11 +290,11 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 			}
 			if(firstRGA != null && firstRGA.isEmpty() && rga != null && rga.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Removing both on "+this+" : "+firstRGA+" and "+rga+" are empty");
-				grabArrays = (C[]) new RemoveRandomWithObject[0];
+				grabArrays = (C[]) new Object[0];
 				grabClients = (T[]) new Object[0];
 			} else if(firstRGA != null && firstRGA.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Removing first: "+firstRGA+" is empty on "+this);
-				grabArrays = (C[]) new RemoveRandomWithObject[] { grabArrays[x] }; // don't use RGA, it may be nulled out
+				grabArrays = (C[]) new Object[] { grabArrays[x] }; // don't use RGA, it may be nulled out
 				grabClients = (T[]) new Object[] { grabClients[x] };
 			}
 			if(logMINOR)
@@ -307,6 +309,7 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 	    }
 	}
 
+	@SuppressWarnings("unchecked")
 	private RemoveRandomReturn removeRandomOneOnly(
 			RandomGrabArrayItemExclusionList excluding,
 			ClientContext context, long now) {
@@ -321,7 +324,7 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 		if(rga == null) {
 			Logger.error(this, "Only one entry and that is null");
 			// We are sure
-			grabArrays = (C[]) new RemoveRandomWithObject[0];
+			grabArrays = (C[]) new Object[0];
 			grabClients = (T[]) new Object[0];
 			return null;
 		}
@@ -337,7 +340,7 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 		if(rga.isEmpty()) {
 			if(logMINOR)
 				Logger.minor(this, "Removing only grab array (0) : "+rga);
-			grabArrays = (C[]) new RemoveRandomWithObject[0];
+			grabArrays = (C[]) new Object[0];
 			grabClients = (T[]) new Object[0];
 		}
 		if(logMINOR)
@@ -353,11 +356,12 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 	    }
 	}
 
+	@SuppressWarnings("unchecked")
 	private void removeElement(int x) {
 	    synchronized(root) {
 		final int grabArraysLength = grabArrays.length;
 		int newLen = grabArraysLength > 1 ? grabArraysLength-1 : 0;
-		C[] newArray = (C[]) new RemoveRandomWithObject[newLen];
+		C[] newArray = (C[]) new Object[newLen];
 		if(x > 0)
 			System.arraycopy(grabArrays, 0, newArray, 0, x);
 		if(x < grabArraysLength-1)

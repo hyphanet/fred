@@ -145,7 +145,7 @@ public class CachingFreenetStoreTracker {
 		while(true) {
 		    // Need to re-check occasionally in case new stores have been added.
 	        synchronized (cachingStores) {
-	            cachingStoresSnapshot = this.cachingStores.toArray(new CachingFreenetStore[cachingStores.size()]);
+	            cachingStoresSnapshot = this.cachingStores.toArray(new CachingFreenetStore<?>[cachingStores.size()]);
 	        }
 			for(CachingFreenetStore<?> cfs : cachingStoresSnapshot) {
 				int k=0;

@@ -151,7 +151,9 @@ public class PrioritizedSerialExecutor implements Executor {
 	 * @param invertOrder Set if the priorities are thread priorities. Unset if they are request priorities. D'oh!
 	 */
 	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder, long jobTimeout, ExecutorIdleCallback callback, NodeStats statistics) {
-		@SuppressWarnings("unchecked") ArrayDeque<Runnable>[] jobs = new ArrayDeque[internalPriorityCount];
+		@SuppressWarnings("unchecked")
+		ArrayDeque<Runnable>[] jobs = (ArrayDeque<Runnable>[])
+			new ArrayDeque<?>[internalPriorityCount];
 		for (int i=0;i<jobs.length;i++) {
 			jobs[i] = new ArrayDeque<Runnable>();
 		}

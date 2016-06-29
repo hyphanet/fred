@@ -55,7 +55,7 @@ public class SubConfig implements Comparable<SubConfig> {
 	 * Used by e.g. webconfig.
 	 */
 	public synchronized Option<?>[] getOptions() {
-		return map.values().toArray(new Option[map.size()]);
+		return map.values().toArray(new Option<?>[map.size()]);
 	}
 
 	public synchronized Option<?> getOption(String option) {
@@ -249,7 +249,7 @@ public class SubConfig implements Comparable<SubConfig> {
     public SimpleFieldSet exportFieldSet(Config.RequestType configRequestType, boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		@SuppressWarnings("unchecked")
-		Map.Entry<String, Option<?>>[] entries = new Map.Entry[map.size()];
+		Map.Entry<String, Option<?>>[] entries = (Map.Entry<String, Option<?>>[])new Map.Entry<?,?>[map.size()];
 		// FIXME is any locking at all necessary here? After it has finished init, it's constant...
 		synchronized(this) {
 			entries = map.entrySet().toArray(entries);

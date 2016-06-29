@@ -52,7 +52,9 @@ import freenet.support.io.TooLongException;
  */
 public class ToadletContextImpl implements ToadletContext {
 	
-	private static final Class<?> HANDLE_PARAMETERS[] = new Class[] {URI.class, HTTPRequest.class, ToadletContext.class};
+	private static final Class<?> HANDLE_PARAMETERS[] = new Class<?>[] {
+		URI.class, HTTPRequest.class, ToadletContext.class
+	};
 
 	/* methods listed here are *not* configurable with
 	 * AllowData annotation

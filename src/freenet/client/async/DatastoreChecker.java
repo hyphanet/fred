@@ -88,7 +88,7 @@ public class DatastoreChecker implements PrioRunnable {
 		this.executor = executor;
 		this.threadName = threadName;
 		int priorities = RequestStarter.NUMBER_OF_PRIORITY_CLASSES;
-		queue = new ArrayDeque[priorities];
+		queue = (ArrayDeque<QueueItem>[])new ArrayDeque<?>[priorities];
 		for(int i=0;i<priorities;i++)
 			queue[i] = new ArrayDeque<QueueItem>();
 	}
@@ -266,7 +266,6 @@ public class DatastoreChecker implements PrioRunnable {
 		return NativeThread.NORM_PRIORITY;
 	}
 
-	@SuppressWarnings("unchecked")
 	public void removeRequest(SendableGet request, boolean persistent, ClientContext context, short prio) {
 		if(logMINOR) Logger.minor(this, "Removing request prio="+prio+" persistent="+persistent);
 		QueueItem requestMatcher = new QueueItem(null, request, null);
