@@ -48,17 +48,51 @@ sourceSets {
 compileJava {
     sourceCompatibility = 1.7
     targetCompatibility = 1.7
-    archivesBaseName = "freenet"
+    archivesBaseName = "freenet-without-version"
 }
 
 def gitrev
+def version_buildir
+def version_src
 task buildInfo {
     try {
         def cmd = "git describe --always --abbrev=4 --dirty"
         def proc = cmd.execute()
         gitrev = proc.text.trim()
+        version_buildir = "$projectDir/build/tmp/compileVersion/"
+        version_src = 'freenet/node/Version.java'
     } catch (java.io.IOException e) {
         gitrev = "@unknown@"
+    }
+}
+
+task compileVersion (type: JavaCompile) {
+    copy {
+        from sourceSets.main.java.srcDirs
+        into "${version_buildir}"
+        include "${version_src}"
+        filter {
+            String line -> line.replaceAll("@custom@","${gitrev}")
+        }
+    }
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
+    source = "${version_buildir}"
+    include "${version_src}"
+    classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDir)
+    destinationDir = file("${version_buildir}")
+}
+compileVersion.dependsOn buildInfo
+processResources.dependsOn compileVersion
+
+task jarWithVersion(type: Jar) {
+    archiveName = "freenet.jar"
+    from (zipTree("$projectDir/build/libs/freenet-without-version.jar")) {
+        exclude 'freenet/node/Version.class'
+        exclude 'freenet/node/Version$1.class'
+    }
+    from ("${version_buildir}") {
+        include 'freenet/node/Version**class'
     }
 }
 
@@ -77,16 +111,19 @@ jar {
                        "Implementation-Vendor": "freenetproject.org",
                    ], "common")
     }
+    doLast {
+        jarWithVersion.execute()
+    }
 }
 jar.dependsOn buildInfo
 
 task copyResourcesToClasses2 {
-    inputs.dir "${projectDir}/src/freenet/"
-    outputs.dir "${buildDir}/classes/main/"
+    inputs.dir sourceSets.main.java.srcDirs
+    outputs.dir sourceSets.main.output.classesDir
     doLast {
         copy {
-            from "${projectDir}/src"
-            into "${buildDir}/classes/main/"
+            from sourceSets.main.java.srcDirs
+            into sourceSets.main.output.classesDir
             include 'freenet/l10n/*properties'
             include 'freenet/l10n/iso-*.tab'
             include 'freenet/clients/http/staticfiles/**'
@@ -94,7 +131,7 @@ task copyResourcesToClasses2 {
         }
         copy {
             from "${projectDir}/"
-            into "${buildDir}/classes/main/"
+            into sourceSets.main.output.classesDir
             include 'dependencies.properties'
         }
     }
@@ -102,12 +139,12 @@ task copyResourcesToClasses2 {
 processResources.dependsOn copyResourcesToClasses2
 
 task copyTestResourcesToClasses2 {
-    inputs.dir "${projectDir}/test/freenet/"
-    outputs.dir "${buildDir}/classes/test/"
+    inputs.dir sourceSets.test.java.srcDirs
+    outputs.dir sourceSets.test.output.classesDir
     doLast {
         copy {
-            from "${projectDir}/test/"
-            into "${buildDir}/classes/test/"
+	    from sourceSets.test.java.srcDirs
+	    into sourceSets.test.output.classesDir
             include 'freenet/client/filter/png/**'
             include 'freenet/client/filter/bmp/**'
             include 'freenet/client/filter/mp3/**'
@@ -125,7 +162,7 @@ test {
     // no inner class
     include 'freenet/**/*Test.class'
     exclude 'freenet/**/*$*Test.class'
-    workingDir = "${buildDir}/classes/test/"
+    workingDir = sourceSets.test.output.classesDir
     scanForTestClasses = false
     systemProperties += [
         "test.l10npath_test": "freenet/l10n/",
