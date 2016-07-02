@@ -78,6 +78,42 @@ public class SparseBitmapTest extends TestCase {
 		assertTrue(s.contains(13, 14));
 	}
 
+	public void testNotOverlapping() {
+		for (int a = 0; a <= 20; a++) {
+			for (int b = a; b <= 20; b++) {
+				SparseBitmap s = new SparseBitmap();
+				s.add(-10, -1);
+				s.add(3, 10);
+				s.add(12, 12);
+				s.add(14, 16);
+				s.add(17, 17);
+				s.add(19, 22);
+
+				assertEquals(6, s.notOverlapping(-10, 22));
+				final int notOverlapping = s.notOverlapping(a, b);
+				final int width = b - a + 1;
+				final int overlapping = width - notOverlapping;
+				assertTrue((notOverlapping == 0) == s.contains(a, b));
+				s.remove(a, b);
+				assertFalse(s.contains(a, b));
+				assertEquals(width, s.notOverlapping(a, b));
+				assertEquals(6 + overlapping, s.notOverlapping(-10, 22));
+				s.remove(a, b);
+				assertFalse(s.contains(a, b));
+				assertEquals(width, s.notOverlapping(a, b));
+				assertEquals(6 + overlapping, s.notOverlapping(-10, 22));
+				s.add(a, b);
+				assertTrue(s.contains(a, b));
+				assertEquals(0, s.notOverlapping(a, b));
+				assertEquals(6 - notOverlapping, s.notOverlapping(-10, 22));
+				s.add(a, b);
+				assertTrue(s.contains(a, b));
+				assertEquals(0, s.notOverlapping(a, b));
+				assertEquals(6 - notOverlapping, s.notOverlapping(-10, 22));
+			}
+		}
+	}
+
 	public void testContainsThrowsOnBadRange() {
 		SparseBitmap s = new SparseBitmap();
 		try {
