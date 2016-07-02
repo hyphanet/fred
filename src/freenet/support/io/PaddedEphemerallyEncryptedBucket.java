@@ -299,7 +299,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 		if(size < minPaddedSize) size = minPaddedSize;
 		if(size == minPaddedSize) return size;
 		long min = minPaddedSize;
-		long max = (long)minPaddedSize << 1;
+		long max = minPaddedSize << 1;
 		while(true) {
 			if(max < 0)
 				throw new Error("Impossible size: "+size+" - min="+min+", max="+max);

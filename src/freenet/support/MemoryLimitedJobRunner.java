@@ -32,7 +32,7 @@ public class MemoryLimitedJobRunner {
     public MemoryLimitedJobRunner(long capacity, int maxThreads, Executor executor, int priorities) {
         this.capacity = capacity;
         this.counter = 0;
-        this.jobs = new ArrayDeque[priorities];
+        this.jobs = (ArrayDeque<MemoryLimitedJob>[])new ArrayDeque<?>[priorities];
         for(int i=0;i<jobs.length;i++) 
             jobs[i] = new ArrayDeque<MemoryLimitedJob>();
         this.executor = executor;

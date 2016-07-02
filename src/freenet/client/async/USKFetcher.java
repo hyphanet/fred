@@ -2112,7 +2112,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				return ((Lookup)o).val == val;
 			} else return false;
 		}
-		
+
+		@Override
+		public int hashCode() {
+			return (int)(val ^ (val >>> 32));
+		}
+
 		@Override
 		public String toString() {
 			return origUSK+":"+val;

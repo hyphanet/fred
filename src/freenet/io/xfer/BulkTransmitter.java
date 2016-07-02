@@ -247,7 +247,7 @@ public class BulkTransmitter {
 		long lastSentPacket = System.currentTimeMillis();
 outer:	while(true) {
 			int max = Math.min(Integer.MAX_VALUE, prb.blocks);
-			max = Math.min(max, (int)Math.min(Integer.MAX_VALUE, peer.getThrottleWindowSize()));
+			max = Math.min(max, peer.getThrottleWindowSize());
 			// FIXME Need to introduce the global limiter of [code]max[/code] for memory management instead of hard-code for each, no? 
 			max = Math.min(max, 100); 
 			if(max < 1) max = 1;

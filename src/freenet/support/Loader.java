@@ -34,7 +34,7 @@ public class Loader {
 	throws InvocationTargetException, NoSuchMethodException, 
 	       InstantiationException, IllegalAccessException,
 	       ClassNotFoundException {
-	return getInstance(classname,new Class[] {}, new Object[] {});
+	return getInstance(classname, new Class<?>[] {}, new Object[] {});
 
     }
 

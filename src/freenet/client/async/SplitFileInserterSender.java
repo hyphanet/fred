@@ -124,7 +124,7 @@ public class SplitFileInserterSender extends SendableInsert {
             try {
                 ClientCHKBlock clientBlock = token.segment.encodeBlock(token.blockNumber);
                 CHKBlock block = clientBlock.getBlock();
-                final ClientCHK key = (ClientCHK) clientBlock.getClientKey();
+                final ClientCHK key = clientBlock.getClientKey();
                 context.getJobRunner(request.isPersistent()).queueNormalOrDrop(new PersistentJob() {
                     
                     @Override

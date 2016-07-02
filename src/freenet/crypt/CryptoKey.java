@@ -37,7 +37,7 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 		try {
 			Class<?> keyClass = Class.forName(type);
 			Method m =
-				keyClass.getMethod("read", new Class[] { InputStream.class });
+				keyClass.getMethod("read", new Class<?>[] { InputStream.class });
 			return (CryptoKey) m.invoke(null, dis);
 		} catch (Exception e) {
 			e.printStackTrace();

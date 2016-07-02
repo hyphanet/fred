@@ -49,7 +49,7 @@ public class OCBBlockCipher_v149
      * KEY-DEPENDENT
      */
     // NOTE: elements are lazily calculated
-    private Vector L;
+    private Vector<byte[]> L;
     private byte[] L_Asterisk, L_Dollar;
 
     /*
@@ -195,7 +195,7 @@ public class OCBBlockCipher_v149
 
         this.L_Dollar = OCB_double(L_Asterisk);
 
-        this.L = new Vector();
+        this.L = new Vector<byte[]>();
         this.L.addElement(OCB_double(L_Dollar));
 
         /*
@@ -456,9 +456,9 @@ public class OCBBlockCipher_v149
     {
         while (n >= L.size())
         {
-            L.addElement(OCB_double((byte[])L.lastElement()));
+            L.addElement(OCB_double(L.lastElement()));
         }
-        return (byte[])L.elementAt(n);
+        return L.elementAt(n);
     }
 
     protected void processHashBlock()

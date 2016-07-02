@@ -296,6 +296,7 @@ public class InsertContext implements Cloneable, Serializable {
     
     /** Call when migrating from db4o era. FIXME remove.
      * @deprecated */
+    @Deprecated
     public void onResume() {
         // Used to encode it as a long.
         if(realCompatMode == null)

@@ -137,7 +137,7 @@ public class FProxyFetchTracker implements Runnable {
 			// Horrible hack, FIXME
 			Enumeration<FreenetURI> e = fetchers.keys();
 			while(e.hasMoreElements()) {
-				FreenetURI uri = (FreenetURI) e.nextElement();
+				FreenetURI uri = e.nextElement();
 				// Really horrible hack, FIXME
 				for(FProxyFetchInProgress f : fetchers.iterateAll(uri)) {
 					// FIXME remove on the fly, although cancel must wait

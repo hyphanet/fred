@@ -582,7 +582,7 @@ public class SplitFileInserterSegmentStorage {
     }
 
     public class MissingKeyException extends Exception {
-        
+        private static final long serialVersionUID = -6695311996193392803L;
     }
 
     /** Has the segment completed all inserts?

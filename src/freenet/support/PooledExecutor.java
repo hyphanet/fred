@@ -23,7 +23,8 @@ public class PooledExecutor implements Executor {
 	private final int[] runningThreads = new int[NativeThread.JAVA_PRIORITY_RANGE + 1];
 	/** Threads waiting for a job */
 	@SuppressWarnings("unchecked")
-	private final ArrayList<MyThread>[] waitingThreads = new ArrayList[runningThreads.length];
+	private final ArrayList<MyThread>[] waitingThreads =
+		(ArrayList<MyThread>[])new ArrayList<?>[runningThreads.length];
 	private volatile int waitingThreadsCount;
 	AtomicLong[] threadCounter = new AtomicLong[runningThreads.length];
 	private long jobCount;

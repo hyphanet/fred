@@ -23,15 +23,12 @@ public class SectoredRandomGrabArraySimple<MyType,ChildType> extends SectoredRan
     /** Add directly to a RandomGrabArrayWithObject under us. */
     public void add(ChildType client, RandomGrabArrayItem item, ClientContext context) {
         synchronized(root) {
-        RandomGrabArrayWithObject<ChildType> rga;
-        int clientIndex = haveClient(client);
-        if(clientIndex == -1) {
+        RandomGrabArrayWithObject<ChildType> rga = getGrabber(client);
+        if(rga == null) {
             if(logMINOR)
                 Logger.minor(this, "Adding new RGAWithClient for "+client+" on "+this+" for "+item);
             rga = new RandomGrabArrayWithObject<ChildType>(client, this, root);
             addElement(client, rga);
-        } else {
-            rga = (RandomGrabArrayWithObject<ChildType>) grabArrays[clientIndex];
         }
         if(logMINOR)
             Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);
@@ -40,7 +37,7 @@ public class SectoredRandomGrabArraySimple<MyType,ChildType> extends SectoredRan
             clearWakeupTime(context);
         }
         if(logMINOR)
-            Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
+            Logger.minor(this, "Size now " + size() + " on " + this);
         }
     }
 

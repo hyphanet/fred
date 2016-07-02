@@ -528,7 +528,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
 			if(getterWaiting != null) {
 			    WeakReference<BaseSendableGet>[] waiting = transientRequestsWaitingForKeysFetching.get(key);
 			    if(waiting == null) {
-			        transientRequestsWaitingForKeysFetching.put(key, new WeakReference[] { new WeakReference<BaseSendableGet>(getterWaiting) });
+			        transientRequestsWaitingForKeysFetching.put(key, (WeakReference<BaseSendableGet>[])new WeakReference<?>[] { new WeakReference<BaseSendableGet>(getterWaiting) });
 			    } else {
 			        for(WeakReference<BaseSendableGet> ref : waiting) {
 			            if(ref.get() == getterWaiting) return true;

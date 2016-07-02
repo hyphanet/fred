@@ -49,6 +49,7 @@ public interface ToadletContext {
      * Write reply headers for either generated content (web interface pages) or static content.
      * Callers should use either sendReplyHeaders() or sendReplyHeadersStatic()!
      */
+    @Deprecated
     void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length, Date mTime) throws ToadletContextClosedException, IOException;
     
 	/**
