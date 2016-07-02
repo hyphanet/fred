@@ -14,7 +14,7 @@ cache:
   - $HOME/.gradle/caches/
   - $HOME/.gradle/wrapper/
 
-before_script: echo -e "tasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n forkEvery=1\n}" > gradle.properties
+before_script: echo -e "tasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
 
 jdk:
   - oraclejdk8

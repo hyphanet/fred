@@ -162,6 +162,7 @@ test {
     // no inner class
     include 'freenet/**/*Test.class'
     exclude 'freenet/**/*$*Test.class'
+    exclude 'freenet/support/io/PooledFileRandomAccessBufferTest.class'
     workingDir = sourceSets.test.output.classesDir
     scanForTestClasses = false
     systemProperties += [
