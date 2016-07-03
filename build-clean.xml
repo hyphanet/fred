@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="freenet" default="package" basedir=".">
+<project name="freenet" default="package" basedir="." xmlns:if="ant:if">
 	<description>
 Freenet is free software that lets you publish and retrieve information without
 fear of censorship. To achieve this, the network is entirely decentralized, and
@@ -34,6 +34,10 @@ maintainers may prefer to use this instead of build.xml.
 		<fileset dir="/usr/share/java" includes="${libtest.jars}" erroronmissingdir="false"/>
 		<pathelement path="${main.make}"/>
 		<pathelement path="${test.make}"/>
+	</path>
+	<path id="libtest.coverage.path">
+		<fileset dir="${lib.dir}" includes="${libtest.coverage.jars}"/>
+		<fileset dir="/usr/share/java" includes="${libtest.coverage.jars}" erroronmissingdir="false"/>
 	</path>
 
 	<property name="gjs.dst" value="${main.src}/freenet/clients/http/staticfiles/freenetjs"/>
@@ -97,6 +101,7 @@ maintainers may prefer to use this instead of build.xml.
 		<echo message="  skip        Skip all tests"/>
 		<echo message="  verbose     Report additional information"/>
 		<echo message="  benchmark   Run benchmark tests"/>
+		<echo message="  coverage    Run test coverage analysis using Cobertura"/>
 		<echo message="  extensive   Run extensive tests"/>
 		<echo message=""/>
 		<echo message="Misc parameters (-DPARAM=VALUE)"/>
@@ -164,6 +169,7 @@ maintainers may prefer to use this instead of build.xml.
 		<available property="lib.bouncycastle.present" classname="org.bouncycastle.crypto.signers.HMacDSAKCalculator" classpathref="lib.path"/>
 		<available property="lib.junit.present" classname="org.junit.runners.JUnit4" classpathref="libtest.path"/>
 		<available property="lib.hamcrest.present" classname="org.hamcrest.SelfDescribing" classpathref="libtest.path"/>
+		<available property="lib.cobertura.present" classname="net.sourceforge.cobertura.ant.InstrumentTask" classpathref="libtest.coverage.path"/>
 		<available property="lib.findbugs.present" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
 		<available property="lib.pmd.present" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
 		<available property="lib.cpd.present" classname="net.sourceforge.pmd.cpd.CPDTask" classpathref="pmd.classpath"/>
@@ -222,6 +228,8 @@ maintainers may prefer to use this instead of build.xml.
 		<mkdir dir="${main.dst}"/>
 		<mkdir dir="${test.make}"/>
 		<mkdir dir="${test.dst}"/>
+		<mkdir dir="${test.coverage.make}"/>
+		<mkdir dir="${test.coverage.dst}"/>
 	</target>
 
 	<target name="dep" depends="ensure-ext, ensure-bc, ensure-gjs"/>
@@ -306,7 +314,8 @@ maintainers may prefer to use this instead of build.xml.
 		</jar>
 	</target>
 
-	<target name="package" depends="unit, package-only" description="build standard binary packages (Freenet daemon)"/>
+	<target name="package" depends="unit, unit-coverage-report, package-only"
+		description="build standard binary packages (Freenet daemon)"/>
 
 	<target name="unit-build" depends="build" unless="${test.skip}">
 		<antcall target="libdep-junit"/>
@@ -334,9 +343,48 @@ maintainers may prefer to use this instead of build.xml.
 		</copy>
 	</target>
 
-	<target name="unit" depends="unit-build" unless="${test.skip}">
+	<target name="unit-inject-cobertura" depends="build, unit-build" unless="${test.skip}"
+			if="${test.coverage}">
+		
+		<fail unless="${lib.cobertura.present}" message="${libtest.coverage.jars} not found!"/>
+		
+		<taskdef classpathref="libtest.coverage.path" resource="tasks.properties"/>
+		
+		<!-- We must copy the main non-test build output to separate directory as input for
+			 Cobertura: It will inject its code into the class files.
+			 We use overwrite="true" in case we're doing an incremental compilation
+			 - the directory is only used for Cobertura so this shouldn't cause any problems. -->
+		<copy todir="${test.coverage.make}" overwrite="true">
+			<fileset dir="${main.make}">
+				<include name="**/*.class" />
+				<!-- Not necessary: ${main.make} does not contain the tests -->
+				<!-- <exclude name="**/*Test*.class" /> -->
+			</fileset>
+		</copy>
+
+		<cobertura-instrument datafile="${test.coverage.dst}/cobertura.ser">
+			<fileset dir="${test.coverage.make}"/>
+		</cobertura-instrument>
+	</target>
+
+	<target name="unit" depends="unit-build, unit-inject-cobertura" unless="${test.skip}">
 		<junit printsummary="yes" haltonfailure="${test.haltonfailure}" logfailedtests="yes" showoutput="yes" filtertrace="no" fork="on" forkmode="perTest" maxmemory="256m" dir="${test.dst}">
-			<classpath refid="libtest.path"/>
+			<classpath>
+				<!-- Cobertura injects its code into copies of the main fred classes. We put the
+				     directory with the copies before the original ones to ensure the copies are
+				     preferred. -->
+				<pathelement if:true="${test.coverage}" location="${test.coverage.make}"/>
+				<!-- Original classes -->
+				<path refid="libtest.path"/>
+				<!-- Cobertura library -->
+				<path if:true="${test.coverage}" refid="libtest.coverage.path"/>
+			</classpath>
+
+			<!-- Workaround for Cobertura failing on Java 7 with:
+				   "Expecting a stackmap frame at branch target [...]"
+				 TODO: Code quality: Remove if not necessary anymore. Added on 2016-05-31. -->
+			<jvmarg if:true="${test.coverage}" value="-XX:-UseSplitVerifier"/>
+
 			<formatter type="plain" usefile="false"/>
 			<formatter type="xml" if="${test.xml_output}"/>
 			<formatter classname="org.apache.tools.ant.taskdefs.optional.junit.TearDownOnVmCrash" usefile="false"/>
@@ -347,9 +395,19 @@ maintainers may prefer to use this instead of build.xml.
 			<sysproperty key="test.verbose" value="${test.verbose}"/>
 			<sysproperty key="test.benchmark" value="${test.benchmark}"/>
 			<sysproperty key="test.extensive" value="${test.extensive}"/>
+			<sysproperty if:true="${test.coverage}" key="net.sourceforge.cobertura.datafile"
+				file="${test.coverage.dst}/cobertura.ser" />
 			<!-- TODO source needs to be edited too; the old variables were "benchmark" and "extensiveTesting" -->
 			<assertions><enable/></assertions>
 		</junit>
+	</target>
+
+	<target name="unit-coverage-report" depends="unit" unless="${test.skip}" if="${test.coverage}">
+		<cobertura-report
+			srcdir="${main.src}"
+			datafile="${test.coverage.dst}/cobertura.ser"
+			destdir="${test.coverage.dst}/html"
+			format="html"/>
 	</target>
 
 	<target name="clean" description="clean standard build products">
@@ -357,6 +415,8 @@ maintainers may prefer to use this instead of build.xml.
 		<delete dir="${main.dst}"/>
 		<delete dir="${test.make}"/>
 		<delete dir="${test.dst}"/>
+		<delete dir="${test.coverage.make}"/>
+		<delete dir="${test.coverage.dst}"/>
 	</target>
 
 	<!-- =================================================================== -->
