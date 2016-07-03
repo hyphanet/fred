@@ -66,10 +66,6 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
 
     /** Test that locking and unlocking do something */
     public void testLock() throws IOException {
-        if(PooledFileRandomAccessBuffer.getOpenFDs() > 0) {
-            System.err.println("There are openFDs already: disabling testLock()!");
-            return;
-        }
         int sz = 1024;
         fds.setMaxFDs(1);
         assertEquals(fds.getOpenFDs(), 0);
