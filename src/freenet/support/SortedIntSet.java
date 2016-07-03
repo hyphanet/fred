@@ -49,10 +49,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 * @return the smallest item, or -1 if the set is empty
 	 */
 	public synchronized int getFirst() {
-		if (data.isEmpty()) {
-			return -1;
-		}
-		return data.get(0);
+		return data.isEmpty() ? -1 : data.get(0);
 	}
 
 	/**
@@ -61,10 +58,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 * @return the largest item, or -1 if the set is empty
 	 */
 	public synchronized int getLast() {
-		if (data.isEmpty()) {
-			return -1;
-		}
-		return data.get(data.size() - 1);
+		return data.isEmpty() ? -1 : data.get(data.size() - 1);
 	}
 
 	/**
@@ -86,10 +80,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 */
 	public synchronized boolean contains(int num) {
 		int x = binarySearch(num);
-		if(x >= 0)
-			return true;
-		else
-			return false;
+		return x >= 0;
 	}
 
 	/**
@@ -107,7 +98,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	}
 
 	private void assertSorted(int[] input) {
-		if (input.length < 2) {
+		if (input.length <= 1) {
 			return;
 		}
 		for (int i = 1; i < input.length; i++) {
