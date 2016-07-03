@@ -1,64 +1,64 @@
 package freenet.support;
 
 import java.util.AbstractCollection;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.SortedSet;
-
-import freenet.support.Logger.LogLevel;
 
 
 /**
  * Sorted array of int's.
+ *
+ * This implementation is synchronized on all operations.
+ * This class does not properly respect the Set interface, and the value -1 is treated as a special
+ * number for some operations.
+ *
+ * @deprecated Use ArrayList<Integer>, TreeSet<Integer> or int[] depending on performance needs
  */
+@Deprecated
 public class SortedIntSet extends AbstractCollection<Integer> implements SortedSet<Integer> {
 
-	private int[] data;
-	private int length;
-	private static final int MIN_SIZE = 32;
+	private final ArrayList<Integer> data;
 	
 	/**
 	 * Default constructor
 	 */
 	public SortedIntSet() {
-		this.data = new int[MIN_SIZE];
-		for(int i=0;i<data.length;i++)
-			data[i] = Integer.MAX_VALUE;
-		length = 0;
+		this.data = new ArrayList<Integer>();
 	}
 	
 	public SortedIntSet(int[] input) {
-		this.data = input;
-		length = input.length;
-		verify();
+		assertSorted(input);
+		data = new ArrayList<Integer>(input.length);
+		for (int i : input) {
+			data.add(i);
+		}
 	}
 	
 	@Override
-	public int size() {
-		return length;
+	public synchronized int size() {
+		return data.size();
 	}
 
 	/**
 	 * Get the smallest item on this set
 	 * 
-	 * @return the smallest item
+	 * @return the smallest item, or -1 if the set is empty
 	 */
 	public synchronized int getFirst() {
-		if(length == 0) return -1;
-		return data[0];
+		return data.isEmpty() ? -1 : data.get(0);
 	}
 
 	/**
 	 * Get the largest item on this set
 	 * 
-	 * @return the largest item
+	 * @return the largest item, or -1 if the set is empty
 	 */
 	public synchronized int getLast() {
-		if(length == 0) return -1;
-		return data[length-1];
+		return data.isEmpty() ? -1 : data.get(data.size() - 1);
 	}
 
 	/**
@@ -69,7 +69,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 */
 	@Override
 	public synchronized boolean isEmpty() {
-		return length == 0;
+		return data.isEmpty();
 	}
 
 	/**
@@ -80,10 +80,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 */
 	public synchronized boolean contains(int num) {
 		int x = binarySearch(num);
-		if(x >= 0)
-			return true;
-		else
-			return false;
+		return x >= 0;
 	}
 
 	/**
@@ -93,44 +90,22 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 *            the item to be removed
 	 */
 	public synchronized boolean remove(int item) {
-		boolean ret = false;
 		int x = binarySearch(item);
 		if(x >= 0) {
-			if(x < length-1)
-				System.arraycopy(data, x+1, data, x, length-x-1);
-			data[--length] = Integer.MAX_VALUE;
-			ret = true;
+			return data.remove(x) != null;
 		}
-		if((length*4 < data.length) && (length > MIN_SIZE)) {
-			int[] newData = new int[Math.max(data.length/2, MIN_SIZE)];
-			System.arraycopy(data, 0, newData, 0, length);
-			for(int i=length;i<newData.length;i++)
-				newData[i] = Integer.MAX_VALUE;
-			data = newData;
-		}
-		
-		assert(verify());
-		return ret;
+		return false;
 	}
 
-	/**
-	 * verify internal state. can be removed without ill effect
-	 */
-	private synchronized boolean verify() { // TODO: Move to a unit test.
-		int lastItem = -1;
-		for(int i=0;i<length;i++) {
-			int item = data[i];
-			if(i>0) {
-				if(item <= lastItem)
-					throw new IllegalStateException("Verify failed!");
-			}
-			lastItem = item;
+	private void assertSorted(int[] input) {
+		if (input.length <= 1) {
+			return;
 		}
-		for(int i=length;i<data.length;i++)
-			if(data[i] != Integer.MAX_VALUE)
-				throw new IllegalStateException("length="+length+", data.length="+data.length+" but ["+i+"] != Integer.MAX_VALUE");
-		
-		return true;
+		for (int i = 1; i < input.length; i++) {
+			if (input[i-1] > input[i]) {
+				throw new IllegalStateException("Input must be sorted");
+			}
+		}
 	}
 
 	/**
@@ -166,22 +141,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	}
 
 	private synchronized void push(int num, int x) {
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Insertion point: "+x+" length "+length+" data.length "+data.length);
-		// Move the data
-		if(length == data.length) {
-			int[] newData = Arrays.copyOf(data, Math.max(length*2, 4));
-			if(logMINOR) Logger.minor(this, "Expanding from "+length+" to "+newData.length);
-			for(int i=length;i<newData.length;i++)
-				newData[i] = Integer.MAX_VALUE;
-			data = newData;
-		}
-		if(x < length)
-			System.arraycopy(data, x, data, x+1, length-x);
-		data[x] = num;
-		length++;
-		
-		assert(verify());
+		data.add(x, num);
 	}
 
 	/**
@@ -200,10 +160,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 */
 	@Override
 	public synchronized void clear() {
-		data = new int[MIN_SIZE];
-		for(int i=0;i<data.length;i++)
-			data[i] = Integer.MAX_VALUE;
-		length = 0;
+		data.clear();
 	}
 
 	/**
@@ -212,7 +169,11 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 * @return sorted array of all items
 	 */
 	public synchronized int[] toIntArray() {
-		return Arrays.copyOf(data, length);
+		int[] result = new int[data.size()];
+		for (int i = 0; i < result.length; i++) {
+			result[i] = data.get(i);
+		}
+		return result;
 	}
 
 	/**
@@ -221,12 +182,11 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 * @return sorted array of all items
 	 */
 	public synchronized int[] toArrayRaw() {
-		if(length == data.length) return data;
 		return toIntArray();
 	}
 
 	private int binarySearch(int key) {
-		return Arrays.binarySearch(data, 0, length, key);
+		return Collections.binarySearch(data, key);
 	}
 
 	@Override
@@ -275,34 +235,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 
 	@Override
 	public Iterator<Integer> iterator() {
-		return new Iterator<Integer>() {
-			
-			int x = 0;
-			int last = -1;
-			boolean hasLast = false;
-
-			@Override
-			public boolean hasNext() {
-				return x < length;
-			}
-
-			@Override
-			public Integer next() {
-				if(x >= length) throw new NoSuchElementException();
-				hasLast = true;
-				last = data[x++];
-				return last;
-			}
-
-			@Override
-			public void remove() {
-				if(!hasLast)
-					throw new IllegalStateException();
-				SortedIntSet.this.remove(last);
-				x--;
-			}
-			
-		};
+		return data.iterator();
 	}
 
 	@Override

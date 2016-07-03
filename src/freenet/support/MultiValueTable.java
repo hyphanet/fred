@@ -1,7 +1,9 @@
 package freenet.support;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.NoSuchElementException;
 import java.util.Vector;
+
 /**
  * A hashtable that can store several values for each entry.
  * 
@@ -73,7 +75,7 @@ public class MultiValueTable<K,V> {
 			v = table.get(key);
 		}
         return (v == null ?
-                new LimitedEnumeration<V>(null) :
+                new EmptyEnumeration<V>() :
                 v.elements());
     }
     
@@ -157,10 +159,22 @@ public class MultiValueTable<K,V> {
     public Enumeration<V> elements() {
 		synchronized (table) {
 			if (table.isEmpty())
-				return new LimitedEnumeration<V>(null);
+				return new EmptyEnumeration<V>();
 			else 
 				return new MultiValueEnumeration();
 		}
+    }
+
+    private static class EmptyEnumeration<E> implements Enumeration<E> {
+        @Override
+        public final boolean hasMoreElements() {
+            return false;
+        }
+
+        @Override
+        public final E nextElement() {
+            throw new NoSuchElementException();
+        }
     }
 
     private class MultiValueEnumeration implements Enumeration<V> {
