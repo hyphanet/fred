@@ -456,6 +456,7 @@ public class Version {
 				+ buildNumber
 				+ " (last good build: "
 				+ lastGoodBuild()
-				+ ')');
+				+ ") "
+				+ cvsRevision);
 	}
 }

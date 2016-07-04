@@ -1,17 +1,16 @@
 package freenet.l10n;
 
+import junit.framework.TestCase;
+
 import java.io.File;
-import java.net.URL;
 import java.util.Iterator;
 
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.support.HTMLNode;
 import freenet.support.SimpleFieldSet;
-import junit.framework.TestCase;
+import freenet.support.TestProperty;
 
 public class BaseL10nTest extends TestCase {
-    private static final String L10N_PATH = "freenet/l10n";
-    private static final String TEST_PATH = "../test";
     
     public void testAddL10nSubstitution() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
@@ -206,20 +205,16 @@ public class BaseL10nTest extends TestCase {
             }
         }
     }
-    
-    private BaseL10n createL10n(LANGUAGE lang) {
-        File overrideFile = new File(L10N_PATH, "freenet.l10n.${lang}.override.properties");
-        return new BaseL10n(L10N_PATH, "freenet.l10n.${lang}.properties",
+
+    public static final BaseL10n createL10n(LANGUAGE lang) {
+        File overrideFile = new File(TestProperty.L10nPath_main, "freenet.l10n.${lang}.override.properties");
+        return new BaseL10n(TestProperty.L10nPath_main, "freenet.l10n.${lang}.properties",
                 overrideFile.getPath(), lang);
     }
-    
-    private BaseL10n createTestL10n(LANGUAGE lang) {
-        String testL10nPath = new File(TEST_PATH, L10N_PATH).getPath();
-        URL classLoaderUrl = getClass().getClassLoader().getResource(".");
-        File classLoaderDir = new File(classLoaderUrl.getPath());
-        File overrideFile = new File(new File(classLoaderDir, testL10nPath),
-                "freenet.l10n.${lang}.override.properties");
-        return new BaseL10n(testL10nPath, "freenet.l10n.${lang}.properties",
+
+    public static final BaseL10n createTestL10n(LANGUAGE lang) {
+        File overrideFile = new File(TestProperty.L10nPath_test, "freenet.l10n.${lang}.override.properties");
+        return new BaseL10n(TestProperty.L10nPath_test, "freenet.l10n.${lang}.properties",
                 overrideFile.getPath(), lang);
     }
 }
