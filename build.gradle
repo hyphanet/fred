@@ -145,9 +145,7 @@ task copyTestResourcesToClasses2 {
         copy {
 	    from sourceSets.test.java.srcDirs
 	    into sourceSets.test.output.classesDir
-            include 'freenet/client/filter/png/**'
-            include 'freenet/client/filter/bmp/**'
-            include 'freenet/client/filter/mp3/**'
+            include 'freenet/client/filter/*/**'
             include 'freenet/crypt/ciphers/rijndael-gladman-test-data/**'
             include 'freenet/l10n/*properties'
         }
