@@ -220,6 +220,7 @@ public class GIFFilter implements ContentDataFilter {
 				writeByte(length);
 				copy(length);
 			}
+			writeByte(0);
 		}
 
 		/* Copy a small number of bytes from input to output. */
