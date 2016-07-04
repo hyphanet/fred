@@ -247,8 +247,7 @@ public class GIFFilter implements ContentDataFilter {
 
 		/** Write an unsigned byte to the output. */
 		protected final void writeByte(int val) throws IOException {
-			assert(val >= 0x00 && val <= 0xFF);
-			output.write(val);
+			output.write(val & 0xFF);
 		}
 
 		/** Read a number of bytes from the input. */
@@ -279,7 +278,6 @@ public class GIFFilter implements ContentDataFilter {
 
 		/** Write a little-endian unsigned short to the output. */
 		protected final void writeShort(int val) throws IOException {
-			assert(val >= 0x0000 && val <= 0xFFFF);
 			output.write(val & 0xFF);
 			output.write((val >>> 8) & 0xFF);
 		}
@@ -461,7 +459,6 @@ public class GIFFilter implements ContentDataFilter {
 
 		/** Writes a complete graphic control block. */
 		private void writeGraphicControl() throws IOException {
-			assert(hasGraphicControl);
 			writeByte(EXTENSION_INTRODUCER);
 			writeByte(GRAPHIC_CONTROL_LABEL);
 			writeByte(4);
