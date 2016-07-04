@@ -54,27 +54,25 @@ public class ContentFilter {
 		register(new FilterMIMEType("text/plain", "txt", new String[0], new String[] { "text", "pot" },
 				true, true, null, false, false, false, false, false, false,
 				l10n("textPlainReadAdvice"),
-				l10n("textPlainWriteAdvice"),
 				true, "US-ASCII", null, false));
 		
 		// GIF - has a filter 
 		register(new FilterMIMEType("image/gif", "gif", new String[0], new String[0], 
 				true, false, new GIFFilter(), false, false, false, false, false, false,
 				l10n("imageGifReadAdvice"),
-				l10n("imageGifWriteAdvice"),
 				false, null, null, false));
 		
 		// JPEG - has a filter
 		register(new FilterMIMEType("image/jpeg", "jpeg", new String[0], new String[] { "jpg" },
 				true, false, new JPEGFilter(true, true), false, false, false, false, false, false,
 				l10n("imageJpegReadAdvice"),
-				l10n("imageJpegWriteAdvice"), false, null, null, false));
+				false, null, null, false));
 		
 		// PNG - has a filter
 		register(new FilterMIMEType("image/png", "png", new String[] { "image/x-png" }, new String[0],
 				true, false, new PNGFilter(true, true, true), false, false, false, false, true, false,
 				l10n("imagePngReadAdvice"),
-				l10n("imagePngWriteAdvice"), false, null, null, false));
+				false, null, null, false));
 
 
 		// BMP - has a filter
@@ -82,7 +80,7 @@ public class ContentFilter {
 		register(new FilterMIMEType("image/bmp", "bmp", new String[] { "image/x-bmp","image/x-bitmap","image/x-xbitmap","image/x-win-bitmap","image/x-windows-bmp","image/ms-bmp","image/x-ms-bmp","application/bmp","application/x-bmp","application/x-win-bitmap"  }, new String[0],
 				true, false, new BMPFilter(), false, false, false, false, true, false,
 				l10n("imageBMPReadAdvice"),
-				l10n("imageBMPWriteAdvice"), false, null, null, false));	
+				false, null, null, false));	
 
 
 		/* MP3
@@ -91,7 +89,7 @@ public class ContentFilter {
 		 */
 		register(new FilterMIMEType("audio/mpeg", "mp3", new String[] {"audio/mp3", "audio/x-mp3", "audio/x-mpeg", "audio/mpeg3", "audio/x-mpeg3", "audio/mpg", "audio/x-mpg", "audio/mpegaudio"},
 				new String[0], true, false, new MP3Filter(), true, true, false, true, false, false,
-				l10n("audioMP3ReadAdvice"), l10n("audioMP3WriteAdvice"), false, null, null, false));
+				l10n("audioMP3ReadAdvice"), false, null, null, false));
 
 		// ICO needs filtering.
 		// Format is not the same as BMP iirc.
@@ -102,13 +100,12 @@ public class ContentFilter {
 //		register(new FilterMIMEType("image/x-icon", "ico", new String[] { "image/vnd.microsoft.icon", "image/ico", "application/ico"}, 
 //				new String[0], true, false, null, null, false, false, false, false, false, false,
 //				l10n("imageIcoReadAdvice"),
-//				l10n("imageIcoWriteAdvice"), false, null, null, false));
+//				false, null, null, false));
 		
 		// PDF - very dangerous - FIXME ideally we would have a filter, this is such a common format...
 		register(new FilterMIMEType("application/pdf", "pdf", new String[] { "application/x-pdf" }, new String[0],
 				false, false, null, true, true, true, false, true, true,
 				l10n("applicationPdfReadAdvice"),
-				l10n("applicationPdfWriteAdvice"),
 				false, null, null, false));
 		
 		// HTML - dangerous if not filtered
@@ -116,7 +113,6 @@ public class ContentFilter {
 				false, false /* maybe? */, new HTMLFilter(),
 				true, true, true, true, true, true, 
 				l10n("textHtmlReadAdvice"),
-				l10n("textHtmlWriteAdvice"),
 				true, "iso-8859-1", new HTMLFilter(), false));
 		
 		// CSS - danagerous if not filtered, not sure about the filter
@@ -124,7 +120,6 @@ public class ContentFilter {
 				false, false /* unknown */, new CSSReadFilter(),
 				true, true, true, true, true, false,
 				l10n("textCssReadAdvice"),
-				l10n("textCssWriteAdvice"),
 				true, "utf-8", new CSSReadFilter(), true));
 		
 	}

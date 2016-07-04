@@ -47,8 +47,6 @@ public class FilterMIMEType {
 	
 	public final String readDescription;
 	
-	public final String writeDescription;
-	
 	public final boolean takesACharset;
 	
 	public final String defaultCharset;
@@ -64,7 +62,7 @@ public class FilterMIMEType {
 			boolean dangerousLinks, boolean dangerousInlines,
 			boolean dangerousScripting, boolean dangerousReadMetadata, 
 			boolean dangerousWriteMetadata, boolean dangerousToWriteEvenWithFilter, 
-			String readDescription, String writeDescription, boolean takesACharset, 
+			String readDescription, boolean takesACharset, 
 			String defaultCharset, CharsetExtractor charsetExtractor, boolean useMaybeCharset) {
 		this.primaryMimeType = type;
 		this.primaryExtension = ext;
@@ -80,7 +78,6 @@ public class FilterMIMEType {
 		this.dangerousWriteMetadata = dangerousWriteMetadata;
 		this.dangerousToWriteEvenWithFilter = dangerousToWriteEvenWithFilter;
 		this.readDescription = readDescription;
-		this.writeDescription = writeDescription;
 		this.takesACharset = takesACharset;
 		this.defaultCharset = defaultCharset;
 		this.charsetExtractor = charsetExtractor;
