@@ -35,19 +35,23 @@ public class GIFFilter implements ContentDataFilter {
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		DataInputStream dis = new DataInputStream(input);
-		// Check the header
-		byte[] headerCheck = new byte[HEADER_SIZE];
-		dis.readFully(headerCheck);
-		final boolean isGIF87a = Arrays.equals(headerCheck, gif87aHeader);
-		final boolean isGIF89a = Arrays.equals(headerCheck, gif89aHeader);
-		if (!isGIF87a && !isGIF89a) {
-			throwDataError(l10n("invalidHeaderTitle"), l10n("invalidHeader"));
-		}
-		output.write(headerCheck);
-		if (isGIF87a) {
-			GIF87aValidator.filter(input, output);
-		} else if (isGIF89a) {
-			GIF89aValidator.filter(input, output);
+		try {
+			// Check the header
+			byte[] headerCheck = new byte[HEADER_SIZE];
+			dis.readFully(headerCheck);
+			final boolean isGIF87a = Arrays.equals(headerCheck, gif87aHeader);
+			final boolean isGIF89a = Arrays.equals(headerCheck, gif89aHeader);
+			if (!isGIF87a && !isGIF89a) {
+				throwDataError(l10n("invalidHeaderTitle"), l10n("invalidHeader"));
+			}
+			output.write(headerCheck);
+			if (isGIF87a) {
+				GIF87aValidator.filter(input, output);
+			} else if (isGIF89a) {
+				GIF89aValidator.filter(input, output);
+			}
+		} catch (EOFException e) {
+			throwDataError("File ended unexpectedly", "The GIF file ended before it was read completely. The file may be truncated, broken or malicious.");
 		}
 		output.flush();
 	}
