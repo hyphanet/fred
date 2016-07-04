@@ -16,7 +16,7 @@ import freenet.support.io.FileUtil;
 
 /**
  * Content filter for GIF's.
- * This throws out all optional non-raster data.
+ * This throws out all optional non-raster data that it cannot validate.
  *
  * References:
  * https://www.w3.org/Graphics/GIF/spec-gif87.txt
