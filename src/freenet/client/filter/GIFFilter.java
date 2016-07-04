@@ -68,7 +68,7 @@ public class GIFFilter implements ContentDataFilter {
 		// ";": GIF terminator
 		private static final int GIF_TERMINATOR = 0x3B;
 		// "!": GIF Extension Block Introducer
-		private static final int EXTENSION_INTRODUCER = 0x21;
+		protected static final int EXTENSION_INTRODUCER = 0x21;
 
 		protected GIFValidator(InputStream input, OutputStream output) {
 			this.input = input;
@@ -93,6 +93,12 @@ public class GIFFilter implements ContentDataFilter {
 		/** Filters the next extension blocks, and skips it when it is unsupported or invalid. */
 		protected void filterExtensionBlock() throws IOException {
 			skipExtensionBlock();
+		}
+
+		/** Signals that image data is found. If the image data is valid, it will be written
+		  * immediately after this method returns. */
+		protected void foundImageData(boolean valid) throws IOException {
+			// Do nothing.
 		}
 
 		protected final void filter() throws IOException, DataFilterException {
@@ -153,6 +159,7 @@ public class GIFFilter implements ContentDataFilter {
 				throwDataError("Unterminated GIF file", "The GIF file does not contain a termination character.");
 			}
 			// There may still be trailing data at this point; we can simply omit it.
+			writeByte(GIF_TERMINATOR);
 		}
 
 		private boolean filterImage() throws IOException, DataFilterException {
@@ -173,9 +180,11 @@ public class GIFFilter implements ContentDataFilter {
 			final int lzwCodeSize = readByte();
 			if (imageLeft + imageWidth > screenWidth || imageTop + imageHeight > screenHeight ||
 					lzwCodeSize < 2 || lzwCodeSize >= 12 || !validateImageFlags(imageFlags)) {
+				foundImageData(false);
 				skipSubBlocks();
 				return false;
 			} else {
+				foundImageData(true);
 				writeByte(0x2c);
 				writeShort(imageLeft);
 				writeShort(imageTop);
@@ -304,6 +313,13 @@ public class GIFFilter implements ContentDataFilter {
 	}
 
 	private static class GIF89aValidator extends GIFValidator {
+		private boolean hasGraphicControl = false;
+		private int gcFlags;
+		private int gcDelayTime;
+		private int gcTransparentColor;
+
+		private static final int GRAPHIC_CONTROL_LABEL = 0xF9;
+
 		private GIF89aValidator(InputStream input, OutputStream output) {
 			super(input, output);
 		}
@@ -315,8 +331,68 @@ public class GIFFilter implements ContentDataFilter {
 
 		@Override
 		protected void filterExtensionBlock() throws IOException {
-			// TODO: allow known and valid extensions
-			super.filterExtensionBlock();
+			int label = readByte();
+			switch (label) {
+				case GRAPHIC_CONTROL_LABEL:
+					readGraphicControl();
+					break;
+				default:
+					skipSubBlocks();
+			}
+		}
+
+		@Override
+		protected void foundImageData(boolean success) throws IOException {
+			if (success && hasGraphicControl) {
+				writeGraphicControl();
+			}
+			// Graphic control only applies to the single following render block; we must drop
+			// it when we encounter an invalid render block.
+			hasGraphicControl = false;
+		}
+
+		private void readGraphicControl() throws IOException {
+			if (hasGraphicControl) {
+				// Graphic control may only appear once per render block.
+				skipSubBlocks();
+				return;
+			}
+			final int length = readByte();
+			if (length != 4) {
+				// Length must be 4.
+				skip(length);
+				skipSubBlocks();
+				return;
+			}
+			gcFlags = readByte();
+			gcDelayTime = readShort();
+			gcTransparentColor = readByte();
+			final int terminator = readByte();
+			if (terminator != 0) {
+				// There is more data: this should not happen. Skip the rest of the stream.
+				skip(terminator);
+				skipSubBlocks();
+				return;
+			}
+
+			final int disposalMethod = (gcFlags & 0x1C) >>> 2;
+			if (disposalMethod >= 4) {
+				// Undefined disposal method.
+				return;
+			}
+
+			hasGraphicControl = true;
+		}
+
+		private void writeGraphicControl() throws IOException {
+			assert(hasGraphicControl);
+			writeByte(EXTENSION_INTRODUCER);
+			writeByte(GRAPHIC_CONTROL_LABEL);
+			writeByte(4);
+			writeByte(gcFlags);
+			writeShort(gcDelayTime);
+			writeByte(gcTransparentColor);
+			writeByte(0);
 		}
 	}
 
