@@ -82,12 +82,9 @@ public class GIFFilter implements ContentDataFilter {
 
 		/** Checks whether the parsed screen descriptor is valid. */
 		protected boolean validateScreenDescriptor() {
-			if (screenBackgroundColor >= screenColors) {
-				// Not in the specification, but here the background color would refer to a color
-				// index not within the bounds of the Global Color Table.
-				return false;
-			}
-			return true;
+			// Not in the specification, but check whether the background color index is within
+			// the bounds of the Global Color Table just to be sure.
+			return screenBackgroundColor < screenColors;
 		}
 
 		/** Checks whether the given image flags are valid. */
