@@ -323,7 +323,19 @@ public class GIFFilter implements ContentDataFilter {
 		private int gcDelayTime;
 		private int gcTransparentColor;
 
+		// Whether the (render, extension) block is yet to be written.
+		private boolean firstBlock = true;
+
 		private static final int GRAPHIC_CONTROL_LABEL = 0xF9;
+		private static final int APPLICATION_LABEL = 0xFF;
+		private static final byte[] NETSCAPE2_0_SIG = new byte[] {
+			(byte)'N', (byte)'E', (byte)'T', (byte)'S', (byte)'C', (byte)'A', (byte)'P',
+			(byte)'E', (byte)'2', (byte)'.', (byte)'0'
+		};
+		private static final byte[] ANIMEXTS1_0_SIG = new byte[] {
+			(byte)'A', (byte)'N', (byte)'I', (byte)'M', (byte)'E', (byte)'X', (byte)'T',
+			(byte)'S', (byte)'1', (byte)'.', (byte)'0'
+		};
 
 		private GIF89aValidator(InputStream input, OutputStream output) {
 			super(input, output);
@@ -341,6 +353,9 @@ public class GIFFilter implements ContentDataFilter {
 				case GRAPHIC_CONTROL_LABEL:
 					readGraphicControl();
 					break;
+				case APPLICATION_LABEL:
+					filterApplicationBlock();
+					break;
 				default:
 					skipSubBlocks();
 			}
@@ -354,6 +369,45 @@ public class GIFFilter implements ContentDataFilter {
 			// Graphic control only applies to the single following render block; we must drop
 			// it when we encounter an invalid render block.
 			hasGraphicControl = false;
+			if (success) {
+				firstBlock = false;
+			}
+		}
+
+		private void filterApplicationBlock() throws IOException {
+			final int length = readByte();
+			final byte[] signature = readBytes(length);
+			final int remaining;
+			if (Arrays.equals(signature, ANIMEXTS1_0_SIG) ||
+					Arrays.equals(signature, NETSCAPE2_0_SIG)) {
+				// Netscape 2.0 / AnimExts 1.0 extension.
+				final int subLength = readByte();
+				if (subLength == 3) {
+					final int subID = readByte();
+					final int loopCount = readShort();
+					remaining = readByte();
+					if (remaining == 0 && subID == 0x01 && firstBlock) {
+						// Valid Loop Extension, and this is the first block.
+						writeByte(EXTENSION_INTRODUCER);
+						writeByte(APPLICATION_LABEL);
+						writeByte(NETSCAPE2_0_SIG.length);
+						writeBytes(NETSCAPE2_0_SIG);
+						writeByte(subLength);
+						writeByte(subID);
+						writeShort(loopCount);
+						writeByte(0);
+						firstBlock = false;
+					}
+				} else {
+					remaining = subLength;
+				}
+			} else {
+				remaining = readByte();
+			}
+			if (remaining != 0) {
+				skip(remaining);
+				skipSubBlocks();
+			}
 		}
 
 		private void readGraphicControl() throws IOException {
@@ -398,6 +452,7 @@ public class GIFFilter implements ContentDataFilter {
 			writeShort(gcDelayTime);
 			writeByte(gcTransparentColor);
 			writeByte(0);
+			firstBlock = false;
 		}
 	}
 
