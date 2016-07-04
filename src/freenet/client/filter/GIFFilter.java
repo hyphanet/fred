@@ -322,7 +322,7 @@ public class GIFFilter implements ContentDataFilter {
 
 		static void filter(InputStream input, OutputStream output)
 				throws IOException, DataFilterException {
-			new GIF87aValidator(input, output);
+			new GIF87aValidator(input, output).filter();
 		}
 	}
 
