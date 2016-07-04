@@ -1,23 +1,20 @@
 language: java
 
 sudo: false
-addons:
-  apt:
-    packages:
-    - ant
-    - ant-optional
-    - junit4
-    - libhamcrest-java
+
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 
 cache:
   apt: true
   directories:
   - lib/
+  - $HOME/.m2
+  - $HOME/.gradle/caches/
+  - $HOME/.gradle/wrapper/
 
-before_install:
-  - mkdir -p lib/freenet/ && cd lib/ && if [ ! -e bcprov-jdk15on-154.jar ]; then wget -c --no-check-certificate https://bouncycastle.org/download/bcprov-jdk15on-154.jar; fi ; cd ..
-
-script: ant -Dlib.contrib.get=true
+before_script: echo -e "tasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
 
 jdk:
   - oraclejdk8

@@ -3,28 +3,24 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import junit.framework.TestCase;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.LinkedHashMap;
 
-import junit.framework.TestCase;
-import freenet.client.filter.ContentFilter;
-import freenet.client.filter.DataFilterException;
-import freenet.client.filter.GenericReadFilterCallback;
-import freenet.client.filter.HTMLFilter;
 import freenet.client.filter.ContentFilter.FilterStatus;
-import freenet.client.filter.HTMLFilter.*;
+import freenet.client.filter.HTMLFilter.ParsedTag;
+import freenet.client.filter.HTMLFilter.TagVerifier;
 import freenet.clients.http.ExternalLinkToadlet;
-import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.io.ArrayBucket;
-
 import freenet.support.TestProperty;
+import freenet.support.io.ArrayBucket;
 
 /**
  * A simple meta-test to track regressions of the content-filter
@@ -126,8 +122,6 @@ public class ContentFilterTest extends TestCase {
 	private static final String CSS_SPEC_EXAMPLE1 = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n<HTML>\n  <HEAD>\n  <TITLE>Bach's home page</TITLE>\n  <STYLE type=\"text/css\">\n    body {\n      font-family: \"Gill Sans\", sans-serif;\n      font-size: 12pt;\n      margin: 3em;\n\n    }\n  </STYLE>\n  </HEAD>\n  <BODY>\n    <H1>Bach's home page</H1>\n    <P>Johann Sebastian Bach was a prolific composer.\n  </BODY>\n</HTML>";
 
 	public void testHTMLFilter() throws Exception {
-		new NodeL10n();
-
 		if (TestProperty.VERBOSE) {
 			Logger.setupStdoutLogging(LogLevel.MINOR, "freenet.client.filter.Generic:DEBUG");
 		}
@@ -211,11 +205,9 @@ public class ContentFilterTest extends TestCase {
 	private static final String META_BOGUS_REDIRECT4 = "<meta http-equiv=\"refresh\" content=\"30; url=//www.google.com\">";
 	private static final String META_BOGUS_REDIRECT5 = "<meta http-equiv=\"refresh\" content=\"30; url=\"/KSK@gpl.txt\"\">";
 	private static final String META_BOGUS_REDIRECT6 = "<meta http-equiv=\"refresh\" content=\"30; /KSK@gpl.txt\">";
-	private static final String META_BOGUS_REDIRECT1_OUT = "<!-- Malformed URL (relative): There is no @ in that URI! ()-->";
-	private static final String META_BOGUS_REDIRECT2_OUT = "<!-- Malformed URL (relative): There is no @ in that URI! (plugins)-->";
+	private static final String META_BOGUS_REDIRECT1_OUT = "<!-- GenericReadFilterCallback.malformedRelativeURL-->";
 	private static final String META_BOGUS_REDIRECT3_OUT = "<meta http-equiv=\"refresh\" content=\"30; url=/external-link/?_CHECKED_HTTP_=http://www.google.com\">";
-	private static final String META_BOGUS_REDIRECT4_OUT = "<!-- Deleted invalid or dangerous URI-->";
-	private static final String META_BOGUS_REDIRECT5_OUT = "<!-- Malformed URL (relative): Invalid key type: \"/KSK-->";
+	private static final String META_BOGUS_REDIRECT4_OUT = "<!-- GenericReadFilterCallback.deletedURI-->";
 	private static final String META_BOGUS_REDIRECT_NO_URL = "<!-- no url but doesn't parse as number in meta refresh -->";
 	
 	public void testMetaRefresh() throws Exception {
@@ -230,10 +222,10 @@ public class ContentFilterTest extends TestCase {
 		assertEquals(META_VALID_REDIRECT, headFilter(META_VALID_REDIRECT));
 		assertEquals(META_VALID_REDIRECT, headFilter(META_VALID_REDIRECT_NOSPACE));
 		assertEquals(META_BOGUS_REDIRECT1_OUT, headFilter(META_BOGUS_REDIRECT1));
-		assertEquals(META_BOGUS_REDIRECT2_OUT, headFilter(META_BOGUS_REDIRECT2));
+		assertEquals(META_BOGUS_REDIRECT1_OUT, headFilter(META_BOGUS_REDIRECT2));
 		assertEquals(META_BOGUS_REDIRECT3_OUT, headFilter(META_BOGUS_REDIRECT3));
 		assertEquals(META_BOGUS_REDIRECT4_OUT, headFilter(META_BOGUS_REDIRECT4));
-		assertEquals(META_BOGUS_REDIRECT5_OUT, headFilter(META_BOGUS_REDIRECT5));
+		assertEquals(META_BOGUS_REDIRECT1_OUT, headFilter(META_BOGUS_REDIRECT5));
 		assertEquals(META_BOGUS_REDIRECT_NO_URL, headFilter(META_BOGUS_REDIRECT6));
 		HTMLFilter.metaRefreshSamePageMinInterval = -1;
 		HTMLFilter.metaRefreshRedirectMinInterval = -1;
