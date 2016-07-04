@@ -28,9 +28,6 @@ public class FilterMIMEType {
 	
 	/** Content filter to make data safe to read */
 	public final ContentDataFilter readFilter;
-	
-	/** Content filter to make data safe to write */
-	public final ContentDataFilter writeFilter;
 
 	// Detail. Not necessarily an exhaustive list.
 	
@@ -64,7 +61,7 @@ public class FilterMIMEType {
 	
 	FilterMIMEType(String type, String ext, String[] extraTypes, String[] extraExts,
 			boolean safeToRead, boolean safeToWrite, ContentDataFilter readFilter,
-			ContentDataFilter writeFilter, boolean dangerousLinks, boolean dangerousInlines,
+			boolean dangerousLinks, boolean dangerousInlines,
 			boolean dangerousScripting, boolean dangerousReadMetadata, 
 			boolean dangerousWriteMetadata, boolean dangerousToWriteEvenWithFilter, 
 			String readDescription, String writeDescription, boolean takesACharset, 
@@ -76,7 +73,6 @@ public class FilterMIMEType {
 		this.safeToRead = safeToRead;
 		this.safeToWrite = safeToWrite;
 		this.readFilter = readFilter;
-		this.writeFilter = writeFilter;
 		this.dangerousLinks = dangerousLinks;
 		this.dangerousInlines = dangerousInlines;
 		this.dangerousScripting = dangerousScripting;

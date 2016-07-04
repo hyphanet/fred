@@ -330,13 +330,6 @@ public class PNGFilter implements ContentDataFilter {
 		return NodeL10n.getBase().getString("PNGFilter." + key);
 	}
 
-	@Override
-	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
-		// TODO Auto-generated method stub
-		return;
-	}
-
 	public static void main(String arg[]) throws Throwable {
 		final File fin = new File("/tmp/test.png");
 		final File fout = new File("/tmp/test2.png");

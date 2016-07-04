@@ -245,13 +245,6 @@ public class MP3Filter implements ContentDataFilter {
 	private String l10n(String key) {
 		return NodeL10n.getBase().getString("MP3Filter."+key);
 	}
-
-	@Override
-	public void writeFilter(InputStream input, OutputStream output,
-			String charset, HashMap<String, String> otherParams,
-			FilterCallback cb) throws DataFilterException, IOException {
-		filter(input, output);
-	}
 	
 	public static void main(String[] args) throws DataFilterException, IOException {
 		File f = new File(args[0]);
