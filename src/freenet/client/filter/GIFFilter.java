@@ -51,7 +51,7 @@ public class GIFFilter implements ContentDataFilter {
 				GIF89aValidator.filter(input, output);
 			}
 		} catch (EOFException e) {
-			throwDataError("File ended unexpectedly", "The GIF file ended before it was read completely. The file may be truncated, broken or malicious.");
+			throwDataError(l10n("unexpectedEOFTitle"), l10n("unexpectedEOF"));
 		}
 		output.flush();
 	}
@@ -162,10 +162,10 @@ public class GIFFilter implements ContentDataFilter {
 				}
 			}
 			if (!imageSeen) {
-				throwDataError("No valid image data", "The GIF file does not contain valid image data.");
+				throwDataError(l10n("noDataTitle"), l10n("noData"));
 			}
 			if (!terminated) {
-				throwDataError("Unterminated GIF file", "The GIF file does not contain a termination character.");
+				throwDataError(l10n("unterminatedGifTitle"), l10n("unterminatedGif"));
 			}
 			// There may still be trailing data at this point; we can simply omit it.
 			writeByte(GIF_TERMINATOR);
