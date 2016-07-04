@@ -192,7 +192,7 @@ public class GIFFilter implements ContentDataFilter {
 				return false;
 			} else {
 				foundImageData(true);
-				writeByte(0x2c);
+				writeByte(IMAGE_SEPARATOR);
 				writeShort(imageLeft);
 				writeShort(imageTop);
 				writeShort(imageWidth);
