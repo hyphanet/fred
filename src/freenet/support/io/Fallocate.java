@@ -3,10 +3,17 @@ package freenet.support.io;
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+
+import freenet.support.math.MersenneTwister;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * Provides access to operating system-specific {@code fallocate} and
@@ -109,6 +116,30 @@ public final class Fallocate {
       return (int) field.get(descriptor);
     } catch (final Exception e) {
       throw new UnsupportedOperationException("unsupported FileDescriptor implementation", e);
+    }
+  }
+
+  public static void legacyFill(FileChannel fc, long newLength, long offset, boolean starting) throws IOException {
+    MersenneTwister mt = new MersenneTwister();
+    byte[] b = new byte[4096];
+    ByteBuffer bb = ByteBuffer.wrap(b);
+    int x = 0;
+    while (offset < newLength) {
+      bb.rewind();
+      mt.nextBytes(b);
+      offset += fc.write(bb, offset);
+      if (offset % (1024 * 1024 * 1024L) == 0) {
+        mt = new MersenneTwister();
+        if (starting) {
+          WrapperManager.signalStarting( (int) MINUTES.toMillis(5));
+          if (x++ % 32 == 0)
+            System.err.println(
+                "Preallocating space : "
+                + offset
+                + "/"
+                + newLength);
+        }
+      }
     }
   }
 }

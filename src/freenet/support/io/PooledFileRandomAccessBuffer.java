@@ -13,7 +13,6 @@ import java.util.Random;
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 import freenet.support.api.LockableRandomAccessBuffer;
-import freenet.support.math.MersenneTwister;
 
 /** Random access files with a limited number of open files, using a pool. 
  * LOCKING OPTIMISATION: Contention on DEFAULT_FDTRACKER likely here. It's not clear how to avoid that, FIXME.
@@ -103,20 +102,7 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
                     Fallocate.forDescriptor(raf.getFD(), forceLength).execute();
                 } else {
                     Logger.normal(this, "fallocate() not supported; using legacy method");
-                    raf.seek(0);
-                    MersenneTwister mt = null;
-                    if(seedRandom != null)
-                        mt = new MersenneTwister(seedRandom.nextLong());
-                    byte[] buf = new byte[4096];
-                    for(long l = 0; l < forceLength; l+=4096) {
-                        if(mt != null)
-                            mt.nextBytes(buf);
-                        int maxWrite = (int)Math.min(4096, forceLength - l);
-                        raf.write(buf, 0, maxWrite);
-                    }
-
-                    assert(raf.getFilePointer() == forceLength);
-                    assert(raf.length() == forceLength);
+                    Fallocate.legacyFill(raf.getChannel(), forceLength, 0, false);
                 }
                 raf.setLength(forceLength); 
                 currentLength = forceLength;

@@ -1081,54 +1081,11 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 * On my test system (phenom 2.2GHz), this does approx 80MB/sec. If I reseed every 2kB from an
 * AES CTR, which is pointless as I just explained, it does 40MB/sec.
 */
-					byte[] b = new byte[4096];
-					ByteBuffer bf = ByteBuffer.wrap(b);
-
 					// start from next 4KB boundary => align to x86 page size
 					oldMetaLen = (oldMetaLen + 4096 - 1) & ~(4096 - 1);
 					currentHdLen = (currentHdLen + 4096 - 1) & ~(4096 - 1);
-
-					storeFileOffsetReady = -1;
-
-					// this may write excess the size, the setLength() would fix it
-					while (oldMetaLen < newMetaLen) {
-						// never write random byte to meta data!
-						// this would screw up the isFree() function
-						bf.rewind();
-						metaFC.write(bf, oldMetaLen);
-						oldMetaLen += 4096;
-					}
-					byte[] seed = new byte[64];
-					random.nextBytes(seed);
-					Random mt = new MersenneTwister(seed);
-					int x = 0;
-					while (currentHdLen < newHdLen) {
-						mt.nextBytes(b);
-						bf.rewind();
-						hdFC.write(bf, currentHdLen);
-						currentHdLen += 4096;
-						if (currentHdLen % (1024 * 1024 * 1024L) == 0) {
-							random.nextBytes(seed);
-							mt = new MersenneTwister(seed);
-							if (starting) {
-								WrapperManager.signalStarting(
-										(int) MINUTES.toMillis(
-												5));
-								if (x++ % 32 == 0)
-									System.err.println(
-											"Preallocating space for "
-											+ name
-											+ ": "
-											+ currentHdLen
-											+ "/"
-											+ newHdLen);
-							}
-						}
-						storeFileOffsetReady =
-								currentHdLen / (headerBlockLength
-										+ dataBlockLength
-										+ hdPadding);
-					}
+					Fallocate.legacyFill(metaFC, newMetaLen, oldMetaLen, starting);
+					Fallocate.legacyFill(hdFC, newHdLen, currentHdLen, starting);
 				}
 			}
 			storeFileOffsetReady = 1 + storeMaxEntries;
