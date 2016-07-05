@@ -75,7 +75,7 @@ public class NativeThread extends Thread {
 		boolean maybeLoadNative = Platform.isLinux();
 		Logger.debug(NativeThread.class, "Run init(): should loadNative="+maybeLoadNative);
 		if(maybeLoadNative) {
-			NATIVE_PRIORITY_BASE = getpriority(0,0);
+			NATIVE_PRIORITY_BASE = LinuxNativeThread.getpriority(0,0);
 			NATIVE_PRIORITY_RANGE = 20 - NATIVE_PRIORITY_BASE;
 			System.out.println("Using the NativeThread implementation (base nice level is "+NATIVE_PRIORITY_BASE+')');
 			// they are 3 main prio levels
@@ -97,12 +97,14 @@ public class NativeThread extends Thread {
 		Logger.minor(NativeThread.class, "Run init(): _loadNative = "+_loadNative);
 	}
 
-	static {
-		Native.register(Platform.C_LIBRARY_NAME);
-	}
+	private static class LinuxNativeThread {
+		static {
+			Native.register(Platform.C_LIBRARY_NAME);
+		}
 
-	private static native int getpriority(int which, int who);
-	private static native int setpriority(int which, int who, int prio);
+		private static native int getpriority(int which, int who);
+		private static native int setpriority(int which, int who, int prio);
+	}
 
 	/**
 	* Creates a new native (reniced) thread
@@ -168,7 +170,7 @@ public class NativeThread extends Thread {
 			Logger.minor(this, "_loadNative is false");
 			return true;
 		}
-		int realPrio = getpriority(0,0);
+		int realPrio = LinuxNativeThread.getpriority(0,0);
 		if(_disabled) {
 			Logger.normal(this, "Not setting native priority as disabled due to renicing");
 			return false;
@@ -194,7 +196,7 @@ public class NativeThread extends Thread {
 				" and shouldn't ever occur in our code. (asked="+prio+':'+linuxPriority+" currentMax="+
 				+currentPriority+':'+NATIVE_PRIORITY_BASE+") SHOUDLN'T HAPPEN, please report!");
 		Logger.minor(this, "Setting native priority to "+linuxPriority+" (base="+NATIVE_PRIORITY_BASE+") for "+this);
-		return (setpriority(0, 0, linuxPriority) > -1 ? true : false);
+		return (LinuxNativeThread.setpriority(0, 0, linuxPriority) > -1 ? true : false);
 	}
 	
 	public int getNativePriority() {
