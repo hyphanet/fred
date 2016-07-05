@@ -99,19 +99,25 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
             if(forceLength >= 0 && forceLength != currentLength) {
                 if(readOnly) throw new IOException("Read only but wrong length");
                 // Preallocate space. We want predictable disk usage, not minimal disk usage, especially for downloads.
-                raf.seek(0);
-                MersenneTwister mt = null;
-                if(seedRandom != null)
-                    mt = new MersenneTwister(seedRandom.nextLong());
-                byte[] buf = new byte[4096];
-                for(long l = 0; l < forceLength; l+=4096) {
-                    if(mt != null)
-                        mt.nextBytes(buf);
-                    int maxWrite = (int)Math.min(4096, forceLength - l);
-                    raf.write(buf, 0, maxWrite);
+                if (Fallocate.isSupported()) {
+                    Fallocate.forDescriptor(raf.getFD(), forceLength).execute();
+                } else {
+                    Logger.normal(this, "fallocate() not supported; using legacy method");
+                    raf.seek(0);
+                    MersenneTwister mt = null;
+                    if(seedRandom != null)
+                        mt = new MersenneTwister(seedRandom.nextLong());
+                    byte[] buf = new byte[4096];
+                    for(long l = 0; l < forceLength; l+=4096) {
+                        if(mt != null)
+                            mt.nextBytes(buf);
+                        int maxWrite = (int)Math.min(4096, forceLength - l);
+                        raf.write(buf, 0, maxWrite);
+                    }
+
+                    assert(raf.getFilePointer() == forceLength);
+                    assert(raf.length() == forceLength);
                 }
-                assert(raf.getFilePointer() == forceLength);
-                assert(raf.length() == forceLength);
                 raf.setLength(forceLength); 
                 currentLength = forceLength;
             }
