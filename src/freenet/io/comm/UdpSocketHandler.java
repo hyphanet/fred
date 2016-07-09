@@ -150,9 +150,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		} catch (SocketException e) {
 			Logger.error(this, "Failed to setTrafficClass with "+node.getTrafficClass().value,e);
 		}
-		if(bindto instanceof Inet6Address) {
-			socketOptions.setAddressPreference(_sock, socketOptions.SOCKET_ADDR_PREFERENCE.IPV6_PREFER_SRC_PUBLIC);
-		}
+		boolean r = socketOptions.setAddressPreference(_sock, socketOptions.SOCKET_ADDR_PREFERENCE.IPV6_PREFER_SRC_PUBLIC);
+		if(logMINOR) Logger.minor(this, "Setting IPV6_PREFER_SRC_PUBLIC for port "+ listenPort + " is a "+(r ? "success" : "failure"));
 //		}
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = node.fastWeakRandom;
