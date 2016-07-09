@@ -14,7 +14,7 @@ import freenet.support.io.FilenameGenerator;
  * request completion) or long term (starting persistent requests).
  * @author toad
  */
-public class DiskSpaceUserAlert implements UserEvent {
+public class DiskSpaceUserAlert implements UserAlert {
     
     final NodeClientCore core;
     private Status status;
@@ -178,10 +178,4 @@ public class DiskSpaceUserAlert implements UserEvent {
     public synchronized long getUpdatedTime() {
         return lastCheckedStatus;
     }
-
-    @Override
-    public Type getEventType() {
-        return null;
-    }
-
 }
