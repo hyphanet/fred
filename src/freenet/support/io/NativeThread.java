@@ -4,7 +4,9 @@
 
 package freenet.support.io;
 
-import freenet.support.LibraryLoader;
+import com.sun.jna.Native;
+import com.sun.jna.Platform;
+
 import freenet.support.Logger;
 
 /**
@@ -70,10 +72,10 @@ public class NativeThread extends Thread {
 	static {
 		Logger.minor(NativeThread.class, "Running init()");
 		// Loading the NativeThread library isn't useful on macos
-		boolean maybeLoadNative = ("Linux".equalsIgnoreCase(System.getProperty("os.name")));
+		boolean maybeLoadNative = Platform.isLinux();
 		Logger.debug(NativeThread.class, "Run init(): should loadNative="+maybeLoadNative);
-		if(maybeLoadNative && LibraryLoader.loadNative("/freenet/support/io/", "NativeThread")) {
-			NATIVE_PRIORITY_BASE = getLinuxPriority();
+		if(maybeLoadNative) {
+			NATIVE_PRIORITY_BASE = LinuxNativeThread.getpriority(0,0);
 			NATIVE_PRIORITY_RANGE = 20 - NATIVE_PRIORITY_BASE;
 			System.out.println("Using the NativeThread implementation (base nice level is "+NATIVE_PRIORITY_BASE+')');
 			// they are 3 main prio levels
@@ -93,6 +95,15 @@ public class NativeThread extends Thread {
 			_loadNative = false;
 		}
 		Logger.minor(NativeThread.class, "Run init(): _loadNative = "+_loadNative);
+	}
+
+	private static class LinuxNativeThread {
+		static {
+			Native.register(Platform.C_LIBRARY_NAME);
+		}
+
+		private static native int getpriority(int which, int who);
+		private static native int setpriority(int which, int who, int prio);
 	}
 
 	/**
@@ -136,18 +147,6 @@ public class NativeThread extends Thread {
 		this.currentPriority = priority;
 		this.dontCheckRenice = dontCheckRenice;
 	}
-
-	/**
-	 * Set linux priority (JNI call)
-	 * 
-	 * @return true if successful, false otherwise.
-	 */
-	private static native boolean setLinuxPriority(int prio);
-	
-	/**
-	 * Get linux priority (JNI call)
-	 */
-	private static native int getLinuxPriority();	
 	
 	@Override
 	public final void run() {
@@ -171,7 +170,7 @@ public class NativeThread extends Thread {
 			Logger.minor(this, "_loadNative is false");
 			return true;
 		}
-		int realPrio = getLinuxPriority();
+		int realPrio = LinuxNativeThread.getpriority(0,0);
 		if(_disabled) {
 			Logger.normal(this, "Not setting native priority as disabled due to renicing");
 			return false;
@@ -197,7 +196,7 @@ public class NativeThread extends Thread {
 				" and shouldn't ever occur in our code. (asked="+prio+':'+linuxPriority+" currentMax="+
 				+currentPriority+':'+NATIVE_PRIORITY_BASE+") SHOUDLN'T HAPPEN, please report!");
 		Logger.minor(this, "Setting native priority to "+linuxPriority+" (base="+NATIVE_PRIORITY_BASE+") for "+this);
-		return setLinuxPriority(linuxPriority);
+		return (LinuxNativeThread.setpriority(0, 0, linuxPriority) > -1 ? true : false);
 	}
 	
 	public int getNativePriority() {
