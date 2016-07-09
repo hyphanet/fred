@@ -123,8 +123,6 @@ public class GIFFilterTest extends TestCase {
                 } catch (DataFilterException e) {
                     // Expected.
                 }
-                inStream.close();
-                outStream.close();
             }
         }
     }
@@ -149,12 +147,8 @@ public class GIFFilterTest extends TestCase {
     /**
      * Checks for equality of Bucket contents.
      */
-    private static boolean equalBuckets(Bucket a, Bucket b) {
-        try {
-            return Arrays.equals(BucketTools.toByteArray(a), BucketTools.toByteArray(b));
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
+    private static boolean equalBuckets(Bucket a, Bucket b) throws IOException {
+        return Arrays.equals(BucketTools.toByteArray(a), BucketTools.toByteArray(b));
     }
 
     /**
@@ -170,9 +164,6 @@ public class GIFFilterTest extends TestCase {
              OutputStream outStream = output.getOutputStream()) {
 
             filter.readFilter(inStream, outStream, "", null, null);
-
-            inStream.close();
-            outStream.close();
         }
 
         return output;
