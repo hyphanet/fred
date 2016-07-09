@@ -132,7 +132,7 @@ public final class Fallocate {
         mt = new MersenneTwister();
         if (starting) {
           WrapperManager.signalStarting( (int) MINUTES.toMillis(5));
-          if (x++ % 32 == 0)
+          if (x++ % 32 == 1)
             System.err.println(
                 "Preallocating space : "
                 + offset
