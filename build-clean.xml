@@ -164,7 +164,8 @@ maintainers may prefer to use this instead of build.xml.
 		<available property="lib.bouncycastle.present" classname="org.bouncycastle.crypto.signers.HMacDSAKCalculator" classpathref="lib.path"/>
 		<available property="lib.jna.present" classname="com.sun.jna.Platform" classpathref="lib.path"/>
 		<available property="lib.junit.present" classname="org.junit.runners.JUnit4" classpathref="libtest.path"/>
-		<available property="lib.hamcrest.present" classname="org.hamcrest.SelfDescribing" classpathref="libtest.path"/>
+		<available property="lib.hamcrest.present" classname="org.hamcrest.Matchers" classpathref="libtest.path"/>
+		<available property="lib.mockito.present" classname="org.mockito.mock.MockName" classpathref="libtest.path"/>
 		<available property="lib.findbugs.present" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
 		<available property="lib.pmd.present" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
 		<available property="lib.cpd.present" classname="net.sourceforge.pmd.cpd.CPDTask" classpathref="pmd.classpath"/>
@@ -195,7 +196,11 @@ maintainers may prefer to use this instead of build.xml.
 	</target>
 
 	<target name="libdep-hamcrest" depends="env" unless="lib.hamcrest.present">
-		<fail message="Hamcrest-core not available"/>
+		<fail message="Hamcrest-all not available"/>
+	</target>
+
+	<target name="libdep-mockito" depends="env" unless="lib.mockito.present">
+		<fail message="Mockito not available"/>
 	</target>
 
 	<target name="libdep-findbugs" depends="env" unless="lib.findbugs.present">
@@ -313,9 +318,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="package" depends="unit, package-only" description="build standard binary packages (Freenet daemon)"/>
 
-	<target name="unit-build" depends="build" unless="${test.skip}">
-		<antcall target="libdep-junit"/>
-		<antcall target="libdep-hamcrest"/>
+	<target name="unit-build" depends="build, libdep-junit, libdep-hamcrest, libdep-mockito" unless="${test.skip}">
 		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" source="1.7" target="1.7" includeAntRuntime="false" encoding="UTF-8">
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="libtest.path"/>
