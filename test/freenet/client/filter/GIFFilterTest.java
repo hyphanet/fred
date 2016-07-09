@@ -1,11 +1,12 @@
 package freenet.client.filter;
 
 import junit.framework.TestCase;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
-import freenet.support.HexUtil;
+
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
@@ -98,42 +99,32 @@ public class GIFFilterTest extends TestCase {
         "share-the-safety-like.truncated.gif"
     };
 
-    public void testKnownGood() {
+    public void testKnownGood() throws IOException {
         for (String good : GOOD) {
             assertEqualAfterFilter(good, good);
         }
     }
 
-    public void testFilterPairs() {
+    public void testFilterPairs() throws IOException {
         for (String[] pair : FILTER_PAIRS) {
             assertEqualAfterFilter(pair[0], pair[1]);
         }
     }
 
-    public void testReject() {
+    public void testReject() throws IOException {
         for (String reject : REJECT) {
-            final InputStream inStream;
-            final NullOutputStream outStream;
-            try {
-                inStream = resourceToBucket(reject).getInputStream();
-                outStream = new NullOutputStream();
-            } catch (IOException e) {
-                throw new AssertionError(e);
-            }
-            ContentDataFilter filter = new GIFFilter();
-            try {
-                filter.readFilter(inStream, outStream, "", null, null);
-                fail("Filter did not fail on reject sample " + reject);
-            } catch (DataFilterException e) {
-                // Expected.
-            } catch (Exception e) {
-                throw new AssertionError("Unexpected exception in the content filter.", e);
-            }
-            try {
+            try (InputStream inStream = resourceToBucket(reject).getInputStream();
+                 NullOutputStream outStream = new NullOutputStream()) {
+
+                ContentDataFilter filter = new GIFFilter();
+                try {
+                    filter.readFilter(inStream, outStream, "", null, null);
+                    fail("Filter did not fail on reject sample " + reject);
+                } catch (DataFilterException e) {
+                    // Expected.
+                }
                 inStream.close();
                 outStream.close();
-            } catch (IOException e) {
-                throw new AssertionError(e);
             }
         }
     }
@@ -145,7 +136,7 @@ public class GIFFilterTest extends TestCase {
      * @param fileUnfiltered  the test file
      * @param fileExpected    the reference file
      */
-    private static void assertEqualAfterFilter(String fileUnfiltered, String fileExpected) {
+    private static void assertEqualAfterFilter(String fileUnfiltered, String fileExpected) throws IOException {
         Bucket input = resourceToBucket(fileUnfiltered);
         Bucket expected = resourceToBucket(fileExpected);
         Bucket filtered = filterGIF(input);
@@ -171,30 +162,17 @@ public class GIFFilterTest extends TestCase {
      *
      * @throws AssertionError on failure
      */
-    private static Bucket filterGIF(Bucket input) {
+    private static Bucket filterGIF(Bucket input) throws IOException {
         ContentDataFilter filter = new GIFFilter();
         Bucket output = new ArrayBucket();
 
-        InputStream inStream;
-        OutputStream outStream;
-        try {
-            inStream = input.getInputStream();
-            outStream = output.getOutputStream();
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
+        try (InputStream inStream = input.getInputStream();
+             OutputStream outStream = output.getOutputStream()) {
 
-        try {
             filter.readFilter(inStream, outStream, "", null, null);
-        } catch (Exception e) {
-            throw new AssertionError("Unexpected exception in the content filter.", e);
-        }
 
-        try {
             inStream.close();
             outStream.close();
-        } catch (IOException e) {
-            throw new AssertionError(e);
         }
 
         return output;
@@ -205,17 +183,11 @@ public class GIFFilterTest extends TestCase {
      *
      * @throws AssertionError on failure
      */
-    private static Bucket resourceToBucket(String filename) {
+    private static Bucket resourceToBucket(String filename) throws IOException {
         InputStream is = GIFFilterTest.class.getResourceAsStream(RESOURCE_PATH + filename);
-        if (is == null) {
-            throw new AssertionError("Test resource could not be opened: " + filename);
-        }
         Bucket ab = new ArrayBucket();
-        try {
-            BucketTools.copyFrom(ab, is, Long.MAX_VALUE);
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
+        BucketTools.copyFrom(ab, is, Long.MAX_VALUE);
+
         return ab;
     }
 }
