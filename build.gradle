@@ -102,6 +102,7 @@ jar {
         attributes("Application-Name": "Freenet REference Daemon")
         attributes("Required-Ext-Version": 29)
         attributes("Recommended-Ext-Version": 29)
+        attributes("Compiled-With": "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})")
         attributes([
                        "Specification-Title": "Freenet",
                        "Specification-Version": "0.7.5",
