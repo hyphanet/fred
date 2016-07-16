@@ -5,6 +5,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import java.io.IOException;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class WrapperKeepalive extends Thread implements AutoCloseable {
   private volatile boolean shutdown = false;
@@ -14,7 +15,7 @@ public class WrapperKeepalive extends Thread implements AutoCloseable {
   public void run() {
     while (!shutdown) {
       try {
-        WrapperManager.signalStarting(INTERVAL);
+        WrapperManager.signalStarting(INTERVAL + (int)SECONDS.toMillis(5));
         Thread.sleep(INTERVAL);
       } catch (InterruptedException e) {}
     }
