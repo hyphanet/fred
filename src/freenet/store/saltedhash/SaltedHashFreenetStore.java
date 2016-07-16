@@ -55,6 +55,7 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.Ticker;
+import freenet.support.WrapperKeepalive;
 import freenet.support.io.Closer;
 import freenet.support.io.Fallocate;
 import freenet.support.io.FileUtil;
@@ -275,7 +276,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				(smallerSize * Entry.METADATA_LENGTH > curMetaFileSize)) {
 			// Pad it up to the minimum size before proceeding.
 			if(longStart) {
-				setStoreFileSize(storeSize, true);
+				setStoreFileSize(storeSize);
 				curStoreFileSize = hdRAF.length();
 				curMetaFileSize = metaRAF.length();
 			} else
@@ -1056,7 +1057,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 *
 	 * @param storeMaxEntries
 	 */
-	private void setStoreFileSize(long storeMaxEntries, boolean starting) {
+	private void setStoreFileSize(long storeMaxEntries) {
 		try {
 			long oldMetaLen = metaRAF.length();
 			long currentHdLen = hdRAF.length();
@@ -1065,11 +1066,15 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			final long newHdLen = (headerBlockLength + dataBlockLength + hdPadding) * storeMaxEntries;
 
 			if (preallocate && (oldMetaLen < newMetaLen || currentHdLen < newHdLen)) {
-				if (Fallocate.isSupported()) {
-					Fallocate.forChannel(metaFC, newMetaLen).execute();
-					Fallocate.forChannel(hdFC, newHdLen).execute();
-				} else {
-					Logger.normal(this, "fallocate() not supported; using legacy method");
+				try (WrapperKeepalive wrapperKeepalive = new WrapperKeepalive();)
+				{
+					wrapperKeepalive.start();
+					if (Fallocate.isSupported()) {
+						Fallocate.forChannel(metaFC, newMetaLen).execute();
+						Fallocate.forChannel(hdFC, newHdLen).execute();
+					} else {
+						Logger.normal(this,
+							      "fallocate() not supported; using legacy method");
 /*
 * Fill the store file with random data. This won't be compressed, unlike filling it with zeros.
 * So the disk space usage of the node will not change (apart from temp files).
@@ -1081,11 +1086,15 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 * On my test system (phenom 2.2GHz), this does approx 80MB/sec. If I reseed every 2kB from an
 * AES CTR, which is pointless as I just explained, it does 40MB/sec.
 */
-					// start from next 4KB boundary => align to x86 page size
-					oldMetaLen = (oldMetaLen + 4096 - 1) & ~(4096 - 1);
-					currentHdLen = (currentHdLen + 4096 - 1) & ~(4096 - 1);
-					Fallocate.legacyFill(metaFC, newMetaLen, oldMetaLen, starting);
-					Fallocate.legacyFill(hdFC, newHdLen, currentHdLen, starting);
+						// start from next 4KB boundary => align to x86 page size
+						oldMetaLen = (oldMetaLen + 4096 - 1) & ~(4096 - 1);
+						currentHdLen =
+								(currentHdLen + 4096 - 1) & ~(4096
+											      - 1);
+						Fallocate.legacyFill(metaFC, newMetaLen,
+								     oldMetaLen);
+						Fallocate.legacyFill(hdFC, newHdLen, currentHdLen);
+					}
 				}
 			}
 			storeFileOffsetReady = 1 + storeMaxEntries;
@@ -1392,7 +1401,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				@Override
 				public void init() {
 					if (storeSize > _prevStoreSize)
-						setStoreFileSize(storeSize, false);
+						setStoreFileSize(storeSize);
 
 					configLock.writeLock().lock();
 					try {
@@ -1451,7 +1460,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 					// shrink data file to current size
 					if (storeSize < _prevStoreSize)
-						setStoreFileSize(Math.max(storeSize, entriesLeft), false);
+						setStoreFileSize(Math.max(storeSize, entriesLeft));
 
 					// try to resolve the list
 					Iterator<Entry> it = oldEntryList.iterator();
