@@ -76,7 +76,7 @@ public final class Fallocate {
       final int result = FallocateHolder.fallocate(fd, mode, offset, length);
       errno = result == 0 ? 0 : Native.getLastError();
     } else {
-      errno = FallocateHolder.posix_fallocate(fd, offset, length);
+      errno = FallocateHolderPOSIX.posix_fallocate(fd, offset, length);
     }
     if (errno != 0) {
       throw new IOException("fallocate returned " + errno);
@@ -84,12 +84,18 @@ public final class Fallocate {
   }
 
   private static class FallocateHolder {
-
     static {
       Native.register(Platform.C_LIBRARY_NAME);
     }
 
     private static native int fallocate(int fd, int mode, long offset, long length);
+  }
+
+  private static class FallocateHolderPOSIX {
+    static {
+      Native.register(Platform.C_LIBRARY_NAME);
+    }
+
     private static native int posix_fallocate(int fd, long offset, long length);
   }
 
