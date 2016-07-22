@@ -3,9 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import com.squareup.jnagmp.GmpInteger;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
 
 import freenet.node.FSParseException;
 import freenet.support.Base64;
@@ -19,12 +20,10 @@ import freenet.support.SimpleFieldSet;
  */
 public class DSAGroup extends CryptoKey {
 	private static final long serialVersionUID = -1;
-	
-	protected static final int Q_BIT_LENGTH = 256;
 
-    private final BigInteger p, q, g;
+    private final GmpInteger p, q, g;
 
-    public DSAGroup(BigInteger p, BigInteger q, BigInteger g) {
+    public DSAGroup(GmpInteger p, GmpInteger q, GmpInteger g) {
         this.p = p;
         this.q = q;
         this.g = g;
@@ -33,36 +32,16 @@ public class DSAGroup extends CryptoKey {
     }
 
     private DSAGroup(DSAGroup group) {
-        this.p = new BigInteger(1, group.p.toByteArray());
-        this.q = new BigInteger(1, group.q.toByteArray());
-        this.g = new BigInteger(1, group.g.toByteArray());
-	}
-    
-    protected DSAGroup() {
-        // For serialization.
-        p = null;
-        q = null;
-        g = null;
+        this.p = new GmpInteger(1, group.p.toByteArray());
+        this.q = new GmpInteger(1, group.q.toByteArray());
+        this.g = new GmpInteger(1, group.g.toByteArray());
     }
 
-	/**
-     * Parses a DSA Group from a string, where p, q, and g are in unsigned
-     * hex-strings, separated by a commas
-     */
-    // see readFromField() below
-    //public static DSAGroup parse(String grp) {
-    //    StringTokenizer str=new StringTokenizer(grp, ",");
-    //    BigInteger p,q,g;
-    //    p = new BigInteger(str.nextToken(), 16);
-    //    q = new BigInteger(str.nextToken(), 16);
-    //    g = new BigInteger(str.nextToken(), 16);
-    //    return new DSAGroup(p,q,g);
-    //}
     public static CryptoKey read(InputStream i) throws IOException, CryptFormatException {
-        BigInteger p, q, g;
-        p = Util.readMPI(i);
-        q = Util.readMPI(i);
-        g = Util.readMPI(i);
+        GmpInteger p, q, g;
+        p = new GmpInteger(Util.readMPI(i));
+        q = new GmpInteger(Util.readMPI(i));
+        g = new GmpInteger(Util.readMPI(i));
         try {
         	DSAGroup group = new DSAGroup(p, q, g);
         	if(group.equals(Global.DSAgroupBigA)) return Global.DSAgroupBigA;
@@ -77,21 +56,21 @@ public class DSAGroup extends CryptoKey {
         return "DSA.g-" + p.bitLength();
     }
 
-    public BigInteger getP() {
+    public GmpInteger getP() {
         return p;
     }
 
-    public BigInteger getQ() {
+    public GmpInteger getQ() {
         return q;
     }
 
-    public BigInteger getG() {
+    public GmpInteger getG() {
         return g;
     }
 
     @Override
-	public byte[] fingerprint() {
-        BigInteger fp[] = new BigInteger[3];
+    public byte[] fingerprint() {
+        GmpInteger fp[] = new GmpInteger[3];
         fp[0] = p;
         fp[1] = q;
         fp[2] = g;
@@ -142,9 +121,9 @@ public class DSAGroup extends CryptoKey {
 		String myQ = fs.get("q");
 		String myG = fs.get("g");
 		if(myP == null || myQ == null || myG == null) throw new FSParseException("The given SFS doesn't contain required fields!");
-		BigInteger p = new BigInteger(1, Base64.decode(myP));
-		BigInteger q = new BigInteger(1, Base64.decode(myQ));
-		BigInteger g = new BigInteger(1, Base64.decode(myG));
+                GmpInteger p = new GmpInteger(1, Base64.decode(myP));
+                GmpInteger q = new GmpInteger(1, Base64.decode(myQ));
+                GmpInteger g = new GmpInteger(1, Base64.decode(myG));
 		DSAGroup dg = new DSAGroup(p, q, g);
 		if(dg.equals(Global.DSAgroupBigA)) return Global.DSAgroupBigA;
 		return dg;

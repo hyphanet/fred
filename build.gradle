@@ -177,6 +177,7 @@ dependencies {
     compile "org.bouncycastle:bcprov-jdk15on:1.54"
     compile "net.java.dev.jna:jna:4.2.2"
     compile "org.freenetproject:freenet-ext@jar"
+    compile "com.squareup.jnagmp:jnagmp:1.1.0"
 
     testCompile 'junit:junit:4.12'
     testCompile "org.mockito:mockito-core:1.9.5"
@@ -191,6 +192,7 @@ dependencyVerification {
         'net.java.dev.jna:jna:1f38af54e06c6e6f6dbf39ba2c052b952dea5dddb4871127b34639ddeb11bdbe',
         'org.freenetproject:freenet-ext:32f2b3d6beedf54137ea2f9a3ebef67666d769f0966b08cd17fd7db59ba4d79f',
         'junit:junit:59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a',
+        'com.squareup.jnagmp:jnagmp:543cc75d72b8670a6f1b9d0dec70830cb5be410bf18866fec5f4dbc026d0e0df',
         'org.mockito:mockito-core:f97483ba0944b9fa133aa29638764ddbeadb51ec3dbc02074c58fa2caecd07fa',
         'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
         'org.hamcrest:hamcrest-core:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9',

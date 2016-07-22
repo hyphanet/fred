@@ -3,10 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
+import com.squareup.jnagmp.GmpInteger;
+
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.signers.DSASigner;
 
-import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
@@ -155,8 +156,8 @@ public class SSKBlock implements KeyBlock {
 			}
 			
 			// Now verify it
-			BigInteger r = new BigInteger(1, bufR);
-			BigInteger s = new BigInteger(1, bufS);
+			GmpInteger r = new GmpInteger(1, bufR);
+			GmpInteger s = new GmpInteger(1, bufS);
 			DSASigner dsa = new DSASigner();
 			dsa.init(false, new DSAPublicKeyParameters(pubKey.getY(), Global.getDSAgroupBigAParameters()));
 
