@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.HMAC;
@@ -60,7 +61,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	/** The actual buffer of outgoing messages that have not yet been acked.
 	 * LOCKING: Protected by sendBufferLock. */
-	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
+	private final ArrayList<ConcurrentSkipListMap<Integer, MessageWrapper>> startedByPrio;
 	/** The next message ID for outgoing messages.
 	 * LOCKING: Protected by (this). */
 	private int nextMessageID;
@@ -103,9 +104,9 @@ public class NewPacketFormat implements PacketFormat {
 	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		this.pn = pn;
 
-		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
+		startedByPrio = new ArrayList<ConcurrentSkipListMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
 		for(int i = 0; i < DMT.NUM_PRIORITIES; i++) {
-			startedByPrio.add(new HashMap<Integer, MessageWrapper>());
+			startedByPrio.add(new ConcurrentSkipListMap<Integer, MessageWrapper>());
 		}
 
 		// Make sure the numbers are within the ranges we want
@@ -605,7 +606,7 @@ public class NewPacketFormat implements PacketFormat {
 					// Always finish what we have started before considering sending more packets.
 					// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
 addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
-						HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
+						ConcurrentSkipListMap<Integer, MessageWrapper> started = startedByPrio.get(i);
 						
 						//Try to finish messages that have been started
 						Iterator<MessageWrapper> it = started.values().iterator();
@@ -835,7 +836,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 							sentPacket.addFragment(frag);
 							
 							//Priority of the one we grabbed might be higher than i
-							HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
+							ConcurrentSkipListMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
 							synchronized(sendBufferLock) {
 								// CONCURRENCY: This could go over the limit if we allow createPacket() for the same node on two threads in parallel. That's probably a bad idea anyway.
 								sendBufferUsed += item.buf.length;
@@ -973,7 +974,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 		// LOCKING: No packet may be sent while connected = false.
 		// So we guarantee that no more packets are sent by setting this here.
 		synchronized(sendBufferLock) {
-			for(HashMap<Integer, MessageWrapper> queue : startedByPrio) {
+			for(ConcurrentSkipListMap<Integer, MessageWrapper> queue : startedByPrio) {
 				if(items == null)
 					items = new ArrayList<MessageItem>();
 				for(MessageWrapper wrapper : queue.values()) {
@@ -1003,7 +1004,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 			// Is there anything in flight?
 			// Packets in flight limit applies even if there is stuff to resend.
 			synchronized(sendBufferLock) {
-				for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+				for(ConcurrentSkipListMap<Integer, MessageWrapper> started : startedByPrio) {
 					for(MessageWrapper wrapper : started.values()) {
 						if(wrapper.allSent()) continue;
 						// We do not reset the deadline when we resend.
@@ -1105,7 +1106,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 		
 		if(!canAllocateID) {
 			synchronized(sendBufferLock) {
-				for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+				for(ConcurrentSkipListMap<Integer, MessageWrapper> started : startedByPrio) {
 					for(MessageWrapper wrapper : started.values()) {
 						if(!wrapper.allSent()) return true;
 					}
@@ -1173,7 +1174,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 					Logger.debug(this, "Acknowledging "+range[0]+" to "+range[1]+" on "+wrapper.getMessageID());
 
 				if(wrapper.ack(range[0], range[1], npf.pn)) {
-					HashMap<Integer, MessageWrapper> started = npf.startedByPrio.get(wrapper.getPriority());
+					ConcurrentSkipListMap<Integer, MessageWrapper> started = npf.startedByPrio.get(wrapper.getPriority());
 					MessageWrapper removed = null;
 					synchronized(npf.sendBufferLock) {
 						removed = started.remove(wrapper.getMessageID());
@@ -1298,7 +1299,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	public int countSendableMessages() {
 		int x = 0;
 		synchronized(sendBufferLock) {
-			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+			for(ConcurrentSkipListMap<Integer, MessageWrapper> started : startedByPrio) {
 				for(MessageWrapper wrapper : started.values()) {
 					if(!wrapper.allSent()) x++;
 				}
