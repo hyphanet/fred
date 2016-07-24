@@ -37,7 +37,7 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
 	// FIXME This should be globally allocated according to available memory etc. For links with
 	// high bandwidth and high latency, and lots of memory, a much bigger buffer would be helpful.
-	static final int MAX_RECEIVE_BUFFER_SIZE = 256 * 1024;
+	private static final int MAX_RECEIVE_BUFFER_SIZE = 256 * 1024;
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
 	static final long NUM_SEQNUMS = 2147483648l;
@@ -101,12 +101,12 @@ public class NewPacketFormat implements PacketFormat {
 	private long timeLastSentPacket;
 	private long timeLastSentPayload;
 
-	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
+	NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		this.pn = pn;
 
-		startedByPrio = new ArrayList(DMT.NUM_PRIORITIES);
+		startedByPrio = new ArrayList<>(DMT.NUM_PRIORITIES);
 		for(int i = 0; i < DMT.NUM_PRIORITIES; i++) {
-			startedByPrio.add(new HashMap());
+			startedByPrio.add(new HashMap<Integer, MessageWrapper>());
 		}
 
 		// Make sure the numbers are within the ranges we want
@@ -976,7 +976,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 		synchronized(sendBufferLock) {
 			for(Map<Integer, MessageWrapper> queue : startedByPrio) {
 				if(items == null)
-					items = new ArrayList();
+					items = new ArrayList<>();
 				for(MessageWrapper wrapper : queue.values()) {
 					items.add(wrapper.getItem());
 					messageSize += wrapper.getLength();
@@ -1146,18 +1146,18 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 
 	static class SentPacket {
 		final SessionKey sessionKey;
-		NewPacketFormat npf;
-		List<MessageWrapper> messages = new ArrayList();
-		List<int[]> ranges = new ArrayList();
+		final NewPacketFormat npf;
+		List<MessageWrapper> messages = new ArrayList<>();
+		List<int[]> ranges = new ArrayList<>();
 		long sentTime;
 		int packetLength;
 
-		public SentPacket(NewPacketFormat npf, SessionKey key) {
+		SentPacket(NewPacketFormat npf, SessionKey key) {
 			this.npf = npf;
 			this.sessionKey = key;
 		}
 
-		public void addFragment(MessageFragment frag) {
+		void addFragment(MessageFragment frag) {
 			messages.add(frag.wrapper);
 			ranges.add(new int[] { frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1 });
 		}
@@ -1238,7 +1238,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 			this.packetLength = length;
 		}
 
-		public long getSentTime() {
+		long getSentTime() {
 			return sentTime;
 		}
 	}
@@ -1294,18 +1294,6 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 
 			return true;
 		}
-	}
-
-	public int countSendableMessages() {
-		int x = 0;
-		synchronized(sendBufferLock) {
-			for(Map<Integer, MessageWrapper> started : startedByPrio) {
-				for(MessageWrapper wrapper : started.values()) {
-					if(!wrapper.allSent()) x++;
-				}
-			}
-		}
-		return x;
 	}
 	
 	@Override
