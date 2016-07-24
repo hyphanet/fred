@@ -73,8 +73,8 @@ public class NewPacketFormat implements PacketFormat {
 	 * LOCKING: Protected by (this). */
 	private final SparseBitmap ackedMessages = new SparseBitmap();
 
-	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
-	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
+	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<>();
+	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<>();
 	/** The first message id that hasn't been fully received */
 	private int messageWindowPtrReceived;
 	private final SparseBitmap receivedMessages= new SparseBitmap();
@@ -160,7 +160,7 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	List<byte[]> handleDecryptedPacket(NPFPacket packet, SessionKey sessionKey) {
-		List<byte[]> fullyReceived = new LinkedList<byte[]>();
+		List<byte[]> fullyReceived = new LinkedList<>();
 
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		for(int ack : packet.getAcks()) {
@@ -176,7 +176,7 @@ public class NewPacketFormat implements PacketFormat {
 		List<byte[]> l = packet.getLossyMessages();
 		if(l != null && !l.isEmpty())
 		{
-		    ArrayList<Message> lossyMessages = new ArrayList<Message>(l.size());
+		    ArrayList<Message> lossyMessages = new ArrayList<>(l.size());
 			for(byte[] buf : l) {
 				// FIXME factor out parsing once we are sure these are not bogus.
 				// For now we have to be careful.
@@ -455,22 +455,22 @@ public class NewPacketFormat implements PacketFormat {
 		SessionKey sessionKey = pn.getPreviousKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
-			if(maybeSendPacket(now, true, sessionKey)) return true;
+			if(maybeSendPacket(true, sessionKey)) return true;
 		}
 		sessionKey = pn.getUnverifiedKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
-			if(maybeSendPacket(now, true, sessionKey)) return true;
+			if(maybeSendPacket(true, sessionKey)) return true;
 		}
 		sessionKey = pn.getCurrentKeyTracker();
 		if(sessionKey == null) {
 			Logger.warning(this, "No key for encrypting hash");
 			return false;
 		}
-		return maybeSendPacket(now, ackOnly, sessionKey);
+		return maybeSendPacket(ackOnly, sessionKey);
 	}
 	
-	public boolean maybeSendPacket(long now, boolean ackOnly, SessionKey sessionKey)
+	boolean maybeSendPacket(boolean ackOnly, SessionKey sessionKey)
 	throws BlockedTooLongException {
 		int maxPacketSize = pn.getMaxPacketSize();
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
@@ -542,7 +542,7 @@ public class NewPacketFormat implements PacketFormat {
 			keyContext.sent(packet.getSequenceNumber(), packet.getLength());
 		}
 
-		now = System.currentTimeMillis();
+		long now = System.currentTimeMillis();
 		pn.sentPacket();
 		pn.reportOutgoingBytes(data.length);
 		if(pn.shouldThrottle()) {
@@ -605,9 +605,7 @@ public class NewPacketFormat implements PacketFormat {
 				synchronized(sendBufferLock) {
 					// Always finish what we have started before considering sending more packets.
 					// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
-addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
-						Map<Integer, MessageWrapper> started = startedByPrio.get(i);
-						
+addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 						//Try to finish messages that have been started
 						Iterator<MessageWrapper> it = started.values().iterator();
 						while(it.hasNext() && packet.getLength() < maxPacketSize) {
@@ -790,8 +788,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 							if(cantSend) break;
 							boolean wasGeneratedPing = false;
 							
-							MessageItem item = null;
-							item = messageQueue.grabQueuedMessageItem(i);
+							MessageItem item = messageQueue.grabQueuedMessageItem(i);
 							if(item == null) {
 								if(mustSendKeepalive && packet.noFragments()) {
 									// Create a ping for keepalive purposes.
@@ -915,12 +912,6 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 		return MAX_RECEIVE_BUFFER_SIZE;
 	}
 
-	/** For unit tests */
-	int countSentPackets(SessionKey key) {
-		NewPacketFormatKeyContext keyContext = key.packetContext;
-		return keyContext.countSentPackets();
-	}
-	
 	@Override
 	public long timeCheckForLostPackets() {
 		long timeCheck = Long.MAX_VALUE;
@@ -1145,16 +1136,13 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	}
 
 	static class SentPacket {
-		final SessionKey sessionKey;
 		final NewPacketFormat npf;
-		List<MessageWrapper> messages = new ArrayList<>();
-		List<int[]> ranges = new ArrayList<>();
+		final List<MessageWrapper> messages = new ArrayList<>();
+		final List<int[]> ranges = new ArrayList<>();
 		long sentTime;
-		int packetLength;
 
 		SentPacket(NewPacketFormat npf, SessionKey key) {
 			this.npf = npf;
-			this.sessionKey = key;
 		}
 
 		void addFragment(MessageFragment frag) {
@@ -1235,7 +1223,6 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 
 		public void sent(int length) {
 			sentTime = System.currentTimeMillis();
-			this.packetLength = length;
 		}
 
 		long getSentTime() {
@@ -1246,7 +1233,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	private static class PartiallyReceivedBuffer {
 		private int messageLength;
 		private byte[] buffer;
-		private NewPacketFormat npf;
+		private final NewPacketFormat npf;
 
 		private PartiallyReceivedBuffer(NewPacketFormat npf) {
 			messageLength = -1;
