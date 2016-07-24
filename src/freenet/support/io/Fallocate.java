@@ -3,8 +3,6 @@ package freenet.support.io;
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
 
-import org.tanukisoftware.wrapper.WrapperManager;
-
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -12,8 +10,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import freenet.support.math.MersenneTwister;
-
-import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * Provides access to operating system-specific {@code fallocate} and
@@ -23,7 +19,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 public final class Fallocate {
 
   private static final boolean IS_LINUX = Platform.isLinux();
-  private static final boolean IS_POSIX = !Platform.isWindows();
+  private static final boolean IS_POSIX = !Platform.isWindows() && !Platform.isMac();
 
   private static final int FALLOC_FL_KEEP_SIZE = 0x01;
 
@@ -80,7 +76,7 @@ public final class Fallocate {
       final int result = FallocateHolder.fallocate(fd, mode, offset, length);
       errno = result == 0 ? 0 : Native.getLastError();
     } else {
-      errno = FallocateHolder.posix_fallocate(fd, offset, length);
+      errno = FallocateHolderPOSIX.posix_fallocate(fd, offset, length);
     }
     if (errno != 0) {
       throw new IOException("fallocate returned " + errno);
@@ -88,12 +84,18 @@ public final class Fallocate {
   }
 
   private static class FallocateHolder {
-
     static {
       Native.register(Platform.C_LIBRARY_NAME);
     }
 
     private static native int fallocate(int fd, int mode, long offset, long length);
+  }
+
+  private static class FallocateHolderPOSIX {
+    static {
+      Native.register(Platform.C_LIBRARY_NAME);
+    }
+
     private static native int posix_fallocate(int fd, long offset, long length);
   }
 
@@ -119,7 +121,7 @@ public final class Fallocate {
     }
   }
 
-  public static void legacyFill(FileChannel fc, long newLength, long offset, boolean starting) throws IOException {
+  public static void legacyFill(FileChannel fc, long newLength, long offset) throws IOException {
     MersenneTwister mt = new MersenneTwister();
     byte[] b = new byte[4096];
     ByteBuffer bb = ByteBuffer.wrap(b);
@@ -130,15 +132,6 @@ public final class Fallocate {
       offset += fc.write(bb, offset);
       if (offset % (1024 * 1024 * 1024L) == 0) {
         mt = new MersenneTwister();
-        if (starting) {
-          WrapperManager.signalStarting( (int) MINUTES.toMillis(5));
-          if (x++ % 32 == 1)
-            System.err.println(
-                "Preallocating space : "
-                + offset
-                + "/"
-                + newLength);
-        }
       }
     }
   }
