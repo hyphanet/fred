@@ -26,21 +26,22 @@ import com.sun.jna.win32.StdCallLibrary;
  */
  
 public class ProcessPriority {
-    private static boolean inited = false;
-    private static boolean background = false;
+    private static volatile boolean logMINOR;
+    private static volatile boolean inited = false;
+    private static volatile boolean background = false;
+    static { Logger.registerClass(ProcessPriority.class); }
     
     /// Windows interface (kernel32.dll) ///
-
     private interface Kernel32 extends StdCallLibrary {
         /* HANDLE -> Pointer, DWORD -> int */
-        public boolean SetPriorityClass(Pointer hProcess, int dwPriorityClass);
-        public Pointer GetCurrentProcess();
-        public int GetLastError();
+        boolean SetPriorityClass(Pointer hProcess, int dwPriorityClass);
+        Pointer GetCurrentProcess();
+        int GetLastError();
 
-        public static int PROCESS_MODE_BACKGROUND_BEGIN         = 0x00100000;
-        public static int PROCESS_MODE_BACKGROUND_END           = 0x00200000;
-        public static int ERROR_PROCESS_MODE_ALREADY_BACKGROUND = 402;
-        public static int ERROR_PROCESS_MODE_NOT_BACKGROUND     = 403;
+        int PROCESS_MODE_BACKGROUND_BEGIN         = 0x00100000;
+        int PROCESS_MODE_BACKGROUND_END           = 0x00200000;
+        int ERROR_PROCESS_MODE_ALREADY_BACKGROUND = 402;
+        int ERROR_PROCESS_MODE_NOT_BACKGROUND     = 403;
     }
 
     private static Kernel32 win = null;
@@ -53,9 +54,10 @@ public class ProcessPriority {
                 if (Platform.isWindows()) {
                     win = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
                     inited = true;
+                    Logger.normal(ProcessPriority.class, "ProcessPriority has initialized successfully");
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Logger.error(ProcessPriority.class, "Error initializing ProcessPriority:" + e.getMessage(), e);
             }
         }
         return inited;
@@ -66,10 +68,13 @@ public class ProcessPriority {
             return false;
         if (!background)
             if (Platform.isWindows())
-                if (win.SetPriorityClass(win.GetCurrentProcess(), Kernel32.PROCESS_MODE_BACKGROUND_BEGIN))
+                if (win.SetPriorityClass(win.GetCurrentProcess(), Kernel32.PROCESS_MODE_BACKGROUND_BEGIN)) {
+                    Logger.normal(ProcessPriority.class, "ProcessPriority.enterBackgroundMode() worked");
                     return background = true;
-                else if (win.GetLastError() == Kernel32.ERROR_PROCESS_MODE_ALREADY_BACKGROUND)
+                } else if (win.GetLastError() == Kernel32.ERROR_PROCESS_MODE_ALREADY_BACKGROUND) {
+                    Logger.error(ProcessPriority.class, "ProcessPriority.enterBackgroundMode() failed : "+win.GetLastError());
                     throw new IllegalStateException();
+                }
         return background;
     }
 
@@ -78,10 +83,13 @@ public class ProcessPriority {
             return false;
         if (background)
             if (Platform.isWindows())
-                if (win.SetPriorityClass(win.GetCurrentProcess(), Kernel32.PROCESS_MODE_BACKGROUND_END))
+                if (win.SetPriorityClass(win.GetCurrentProcess(), Kernel32.PROCESS_MODE_BACKGROUND_END)) {
+                    Logger.normal(ProcessPriority.class, "ProcessPriority.exitBackgroundMode() worked");
                     return background = false;
-                else if (win.GetLastError() == Kernel32.ERROR_PROCESS_MODE_NOT_BACKGROUND)
+                } else if (win.GetLastError() == Kernel32.ERROR_PROCESS_MODE_NOT_BACKGROUND) {
+                    Logger.error(ProcessPriority.class, "ProcessPriority.exitBackgroundMode() failed : "+win.GetLastError());
                     throw new IllegalStateException();
+                }
         return background;
     }
     
@@ -98,6 +106,7 @@ public class ProcessPriority {
     		else
     			exitBackgroundMode();
     	} catch (Exception e) {
+            Logger.error(ProcessPriority.class, "Error setting backgroundMode:" + e.getMessage(), e);
     	}
     	return isBackgroundMode();
     }
