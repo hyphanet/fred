@@ -3,19 +3,18 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
-
-import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.filter.HTMLFilter;
 import freenet.client.filter.LinkFilterExceptionProvider;
@@ -45,8 +44,8 @@ import freenet.support.Executor;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
+import freenet.support.Ticker;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.IntCallback;
@@ -970,11 +969,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 	@Override
 	public void run() {
-		try {
-			networkInterface.setSoTimeout(500);
-		} catch (SocketException e1) {
-			Logger.error(this, "Could not set so-timeout to 500ms; on-the-fly disabling of the interface will not work");
-		}
 		boolean finishedStartup = false;
 		while(true) {
 			synchronized(this) {

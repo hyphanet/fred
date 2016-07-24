@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.HMAC;
@@ -36,7 +37,7 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
 	// FIXME This should be globally allocated according to available memory etc. For links with
 	// high bandwidth and high latency, and lots of memory, a much bigger buffer would be helpful.
-	static final int MAX_RECEIVE_BUFFER_SIZE = 256 * 1024;
+	private static final int MAX_RECEIVE_BUFFER_SIZE = 256 * 1024;
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
 	static final long NUM_SEQNUMS = 2147483648l;
@@ -60,7 +61,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	/** The actual buffer of outgoing messages that have not yet been acked.
 	 * LOCKING: Protected by sendBufferLock. */
-	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
+	private final List<Map<Integer, MessageWrapper>> startedByPrio;
 	/** The next message ID for outgoing messages.
 	 * LOCKING: Protected by (this). */
 	private int nextMessageID;
@@ -72,8 +73,8 @@ public class NewPacketFormat implements PacketFormat {
 	 * LOCKING: Protected by (this). */
 	private final SparseBitmap ackedMessages = new SparseBitmap();
 
-	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
-	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
+	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<>();
+	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<>();
 	/** The first message id that hasn't been fully received */
 	private int messageWindowPtrReceived;
 	private final SparseBitmap receivedMessages= new SparseBitmap();
@@ -100,10 +101,10 @@ public class NewPacketFormat implements PacketFormat {
 	private long timeLastSentPacket;
 	private long timeLastSentPayload;
 
-	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
+	NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		this.pn = pn;
 
-		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
+		startedByPrio = new ArrayList<>(DMT.NUM_PRIORITIES);
 		for(int i = 0; i < DMT.NUM_PRIORITIES; i++) {
 			startedByPrio.add(new HashMap<Integer, MessageWrapper>());
 		}
@@ -159,7 +160,7 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	List<byte[]> handleDecryptedPacket(NPFPacket packet, SessionKey sessionKey) {
-		List<byte[]> fullyReceived = new LinkedList<byte[]>();
+		List<byte[]> fullyReceived = new LinkedList<>();
 
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		for(int ack : packet.getAcks()) {
@@ -175,7 +176,7 @@ public class NewPacketFormat implements PacketFormat {
 		List<byte[]> l = packet.getLossyMessages();
 		if(l != null && !l.isEmpty())
 		{
-		    ArrayList<Message> lossyMessages = new ArrayList<Message>(l.size());
+		    ArrayList<Message> lossyMessages = new ArrayList<>(l.size());
 			for(byte[] buf : l) {
 				// FIXME factor out parsing once we are sure these are not bogus.
 				// For now we have to be careful.
@@ -454,22 +455,22 @@ public class NewPacketFormat implements PacketFormat {
 		SessionKey sessionKey = pn.getPreviousKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
-			if(maybeSendPacket(now, true, sessionKey)) return true;
+			if(maybeSendPacket(true, sessionKey)) return true;
 		}
 		sessionKey = pn.getUnverifiedKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
-			if(maybeSendPacket(now, true, sessionKey)) return true;
+			if(maybeSendPacket(true, sessionKey)) return true;
 		}
 		sessionKey = pn.getCurrentKeyTracker();
 		if(sessionKey == null) {
 			Logger.warning(this, "No key for encrypting hash");
 			return false;
 		}
-		return maybeSendPacket(now, ackOnly, sessionKey);
+		return maybeSendPacket(ackOnly, sessionKey);
 	}
 	
-	public boolean maybeSendPacket(long now, boolean ackOnly, SessionKey sessionKey)
+	boolean maybeSendPacket(boolean ackOnly, SessionKey sessionKey)
 	throws BlockedTooLongException {
 		int maxPacketSize = pn.getMaxPacketSize();
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
@@ -541,7 +542,7 @@ public class NewPacketFormat implements PacketFormat {
 			keyContext.sent(packet.getSequenceNumber(), packet.getLength());
 		}
 
-		now = System.currentTimeMillis();
+		long now = System.currentTimeMillis();
 		pn.sentPacket();
 		pn.reportOutgoingBytes(data.length);
 		if(pn.shouldThrottle()) {
@@ -604,9 +605,7 @@ public class NewPacketFormat implements PacketFormat {
 				synchronized(sendBufferLock) {
 					// Always finish what we have started before considering sending more packets.
 					// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
-addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
-						HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
-						
+addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 						//Try to finish messages that have been started
 						Iterator<MessageWrapper> it = started.values().iterator();
 						while(it.hasNext() && packet.getLength() < maxPacketSize) {
@@ -789,8 +788,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 							if(cantSend) break;
 							boolean wasGeneratedPing = false;
 							
-							MessageItem item = null;
-							item = messageQueue.grabQueuedMessageItem(i);
+							MessageItem item = messageQueue.grabQueuedMessageItem(i);
 							if(item == null) {
 								if(mustSendKeepalive && packet.noFragments()) {
 									// Create a ping for keepalive purposes.
@@ -835,7 +833,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 							sentPacket.addFragment(frag);
 							
 							//Priority of the one we grabbed might be higher than i
-							HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
+							Map<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
 							synchronized(sendBufferLock) {
 								// CONCURRENCY: This could go over the limit if we allow createPacket() for the same node on two threads in parallel. That's probably a bad idea anyway.
 								sendBufferUsed += item.buf.length;
@@ -914,12 +912,6 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 		return MAX_RECEIVE_BUFFER_SIZE;
 	}
 
-	/** For unit tests */
-	int countSentPackets(SessionKey key) {
-		NewPacketFormatKeyContext keyContext = key.packetContext;
-		return keyContext.countSentPackets();
-	}
-	
 	@Override
 	public long timeCheckForLostPackets() {
 		long timeCheck = Long.MAX_VALUE;
@@ -969,13 +961,11 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	@Override
 	public List<MessageItem> onDisconnect() {
 		int messageSize = 0;
-		List<MessageItem> items = null;
+		final List<MessageItem> items = new ArrayList<>();
 		// LOCKING: No packet may be sent while connected = false.
 		// So we guarantee that no more packets are sent by setting this here.
 		synchronized(sendBufferLock) {
-			for(HashMap<Integer, MessageWrapper> queue : startedByPrio) {
-				if(items == null)
-					items = new ArrayList<MessageItem>();
+			for(Map<Integer, MessageWrapper> queue : startedByPrio) {
 				for(MessageWrapper wrapper : queue.values()) {
 					items.add(wrapper.getItem());
 					messageSize += wrapper.getLength();
@@ -1003,7 +993,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 			// Is there anything in flight?
 			// Packets in flight limit applies even if there is stuff to resend.
 			synchronized(sendBufferLock) {
-				for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+				for(Map<Integer, MessageWrapper> started : startedByPrio) {
 					for(MessageWrapper wrapper : started.values()) {
 						if(wrapper.allSent()) continue;
 						// We do not reset the deadline when we resend.
@@ -1105,7 +1095,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 		
 		if(!canAllocateID) {
 			synchronized(sendBufferLock) {
-				for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+				for(Map<Integer, MessageWrapper> started : startedByPrio) {
 					for(MessageWrapper wrapper : started.values()) {
 						if(!wrapper.allSent()) return true;
 					}
@@ -1144,19 +1134,16 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	}
 
 	static class SentPacket {
-		final SessionKey sessionKey;
-		NewPacketFormat npf;
-		List<MessageWrapper> messages = new ArrayList<MessageWrapper>();
-		List<int[]> ranges = new ArrayList<int[]>();
+		final NewPacketFormat npf;
+		final List<MessageWrapper> messages = new ArrayList<>();
+		final List<int[]> ranges = new ArrayList<>();
 		long sentTime;
-		int packetLength;
 
-		public SentPacket(NewPacketFormat npf, SessionKey key) {
+		SentPacket(NewPacketFormat npf, SessionKey key) {
 			this.npf = npf;
-			this.sessionKey = key;
 		}
 
-		public void addFragment(MessageFragment frag) {
+		void addFragment(MessageFragment frag) {
 			messages.add(frag.wrapper);
 			ranges.add(new int[] { frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1 });
 		}
@@ -1173,7 +1160,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 					Logger.debug(this, "Acknowledging "+range[0]+" to "+range[1]+" on "+wrapper.getMessageID());
 
 				if(wrapper.ack(range[0], range[1], npf.pn)) {
-					HashMap<Integer, MessageWrapper> started = npf.startedByPrio.get(wrapper.getPriority());
+					Map<Integer, MessageWrapper> started = npf.startedByPrio.get(wrapper.getPriority());
 					MessageWrapper removed = null;
 					synchronized(npf.sendBufferLock) {
 						removed = started.remove(wrapper.getMessageID());
@@ -1234,10 +1221,9 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 
 		public void sent(int length) {
 			sentTime = System.currentTimeMillis();
-			this.packetLength = length;
 		}
 
-		public long getSentTime() {
+		long getSentTime() {
 			return sentTime;
 		}
 	}
@@ -1245,7 +1231,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	private static class PartiallyReceivedBuffer {
 		private int messageLength;
 		private byte[] buffer;
-		private NewPacketFormat npf;
+		private final NewPacketFormat npf;
 
 		private PartiallyReceivedBuffer(NewPacketFormat npf) {
 			messageLength = -1;
@@ -1293,18 +1279,6 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 
 			return true;
 		}
-	}
-
-	public int countSendableMessages() {
-		int x = 0;
-		synchronized(sendBufferLock) {
-			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
-				for(MessageWrapper wrapper : started.values()) {
-					if(!wrapper.allSent()) x++;
-				}
-			}
-		}
-		return x;
 	}
 	
 	@Override

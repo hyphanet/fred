@@ -432,7 +432,7 @@ public class NewPacketFormatTest extends TestCase {
 
 		senderNode.messageQueue = senderQueue;
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY * 2);
-		senderNPF.maybeSendPacket(System.currentTimeMillis(), false, senderSessionKey);
+		senderNPF.maybeSendPacket(false, senderSessionKey);
 
 		FreenetInetAddress LOCALHOST = new FreenetInetAddress("127.0.0.1", true);
 		Peer PEER = new Peer(LOCALHOST, 1234);
