@@ -961,13 +961,11 @@ addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 	@Override
 	public List<MessageItem> onDisconnect() {
 		int messageSize = 0;
-		List<MessageItem> items = null;
+		final List<MessageItem> items = new ArrayList<>();
 		// LOCKING: No packet may be sent while connected = false.
 		// So we guarantee that no more packets are sent by setting this here.
 		synchronized(sendBufferLock) {
 			for(Map<Integer, MessageWrapper> queue : startedByPrio) {
-				if(items == null)
-					items = new ArrayList<>();
 				for(MessageWrapper wrapper : queue.values()) {
 					items.add(wrapper.getItem());
 					messageSize += wrapper.getLength();
