@@ -7,7 +7,6 @@ package freenet.support;
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
 import com.sun.jna.Pointer;
-import com.sun.jna.win32.StdCallLibrary;
 
 /**
  * A class to control the global priority of the current process.
@@ -16,99 +15,78 @@ import com.sun.jna.win32.StdCallLibrary;
  * rest of the system. This is especially important when freenet is started at
  * system startup.
  * We use JNA to call the OS libraries directly without needing JNI wrappers.
- * Its usage is really simple: just call ProcessPriority.backgroundMode(true).
+ * Its usage is really simple: just call ProcessPriority.enterBackgroundMode().
  * If the OS doesn't support it or if the process doesn't have the appropriate
  * permissions, the above call is simply a no-op.
  *
- * @author Carlo Alberto Ferraris &lt;cafxx@strayorange.com&gt;
- *
- * TODO: emulate the BACKGROUND_MODE priority class on other OSes (linux, mac)
  */
  
 public class ProcessPriority {
-    private static volatile boolean logMINOR;
-    private static volatile boolean inited = false;
     private static volatile boolean background = false;
-    static { Logger.registerClass(ProcessPriority.class); }
     
     /// Windows interface (kernel32.dll) ///
-    private interface Kernel32 extends StdCallLibrary {
+    private static class WindowsHolder {
+        static { Native.register("kernel32"); }
         /* HANDLE -> Pointer, DWORD -> int */
-        boolean SetPriorityClass(Pointer hProcess, int dwPriorityClass);
-        Pointer GetCurrentProcess();
-        int GetLastError();
+        private static native boolean SetPriorityClass(Pointer hProcess, int dwPriorityClass);
+        private static native Pointer GetCurrentProcess();
+        private static native int GetLastError();
 
-        int PROCESS_MODE_BACKGROUND_BEGIN         = 0x00100000;
-        int PROCESS_MODE_BACKGROUND_END           = 0x00200000;
-        int ERROR_PROCESS_MODE_ALREADY_BACKGROUND = 402;
-        int ERROR_PROCESS_MODE_NOT_BACKGROUND     = 403;
+        final static int PROCESS_MODE_BACKGROUND_BEGIN         = 0x00100000;
+        final static int PROCESS_MODE_BACKGROUND_END           = 0x00200000;
+        final static int ERROR_PROCESS_MODE_ALREADY_BACKGROUND = 402;
+        final static int ERROR_PROCESS_MODE_NOT_BACKGROUND     = 403;
     }
 
-    private static Kernel32 win = null;
-    
-    /// Implementation
+    private static class LinuxHolder {
+        static { Native.register(Platform.C_LIBRARY_NAME); }
 
-    private static boolean init() {
-        if (!inited) {
-            try {
-                if (Platform.isWindows()) {
-                    win = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
-                    inited = true;
-                    Logger.normal(ProcessPriority.class, "ProcessPriority has initialized successfully");
+        private static native int setpriority(int which, int who, int prio);
+        final static int PRIO_PROCESS = 0;
+        final static int MYSELF = 0;
+        final static int LOWER_PRIORITY = 10;
+    }
+
+    private static class OSXHolder {
+        static { Native.register(Platform.C_LIBRARY_NAME); }
+
+        private static native int setpriority(int which, int who, int prio);
+        final static int PRIO_DARWIN_THREAD = 3;
+        final static int MYSELF = 0;
+        final static int PRIO_DARWIN_NORMAL = 0;
+        final static int PRIO_DARWIN_BG = 0x1000;
+    }
+
+
+    public static boolean enterBackgroundMode() {
+        if (!background) {
+            if (Platform.isWindows()) {
+                if (WindowsHolder.SetPriorityClass(WindowsHolder.GetCurrentProcess(), WindowsHolder.PROCESS_MODE_BACKGROUND_BEGIN)) {
+                    System.out.println("SetPriorityClass() succeeded!");
+                    return background = true;
+                } else if (WindowsHolder.GetLastError() == WindowsHolder.ERROR_PROCESS_MODE_ALREADY_BACKGROUND) {
+                    System.err.println("SetPriorityClass() failed :"+WindowsHolder.GetLastError());
+                    return false;
                 }
-            } catch (Exception e) {
-                Logger.error(ProcessPriority.class, "Error initializing ProcessPriority:" + e.getMessage(), e);
+            } else if (Platform.isLinux()) {
+                return handleReturn(LinuxHolder.setpriority(LinuxHolder.PRIO_PROCESS, LinuxHolder.MYSELF, LinuxHolder.LOWER_PRIORITY));
+
+            } else if (Platform.isMac()) {
+                return handleReturn(OSXHolder.setpriority(OSXHolder.PRIO_DARWIN_THREAD, OSXHolder.MYSELF, OSXHolder.PRIO_DARWIN_BG));
             }
         }
-        return inited;
-    }
-    
-    private static boolean enterBackgroundMode() throws Exception {
-        if (!init())
-            return false;
-        if (!background)
-            if (Platform.isWindows())
-                if (win.SetPriorityClass(win.GetCurrentProcess(), Kernel32.PROCESS_MODE_BACKGROUND_BEGIN)) {
-                    Logger.normal(ProcessPriority.class, "ProcessPriority.enterBackgroundMode() worked");
-                    return background = true;
-                } else if (win.GetLastError() == Kernel32.ERROR_PROCESS_MODE_ALREADY_BACKGROUND) {
-                    Logger.error(ProcessPriority.class, "ProcessPriority.enterBackgroundMode() failed : "+win.GetLastError());
-                    throw new IllegalStateException();
-                }
         return background;
     }
 
-    private static boolean exitBackgroundMode() throws Exception {
-        if (!init())
+    private static boolean handleReturn(int ret) {
+        if (ret == 0) {
+            System.out.println("setpriority() succeeded!");
+            return background = true;
+        } else {
+            System.err.println("setpriority() failed :"+ret);
             return false;
-        if (background)
-            if (Platform.isWindows())
-                if (win.SetPriorityClass(win.GetCurrentProcess(), Kernel32.PROCESS_MODE_BACKGROUND_END)) {
-                    Logger.normal(ProcessPriority.class, "ProcessPriority.exitBackgroundMode() worked");
-                    return background = false;
-                } else if (win.GetLastError() == Kernel32.ERROR_PROCESS_MODE_NOT_BACKGROUND) {
-                    Logger.error(ProcessPriority.class, "ProcessPriority.exitBackgroundMode() failed : "+win.GetLastError());
-                    throw new IllegalStateException();
-                }
-        return background;
-    }
-    
-    /// Public methods ///////////////////////////////////
-    
-    public static boolean isBackgroundMode() {
-    	return background;
+        }
     }
 
-    public static boolean backgroundMode(boolean bg) {
-    	try {
-    		if (bg)
-    			enterBackgroundMode();
-    		else
-    			exitBackgroundMode();
-    	} catch (Exception e) {
-            Logger.error(ProcessPriority.class, "Error setting backgroundMode:" + e.getMessage(), e);
-    	}
-    	return isBackgroundMode();
-    }
 }
 

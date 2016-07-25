@@ -3,16 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
+import org.tanukisoftware.wrapper.WrapperListener;
+import org.tanukisoftware.wrapper.WrapperManager;
 
 import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Properties;
 import java.util.UUID;
-
-import org.tanukisoftware.wrapper.WrapperListener;
-import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
@@ -28,9 +26,11 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.PooledExecutor;
+import freenet.support.ProcessPriority;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
-import freenet.support.ProcessPriority;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  *  @author nextgens
@@ -109,7 +109,6 @@ public class NodeStarter implements WrapperListener {
 			System.out.println("Usage: $ java freenet.node.Node <configFile>");
 			return Integer.valueOf(-1);
 		}
-
 		String builtWithMessage = "freenet.jar built with freenet-ext.jar Build #" + ExtVersion.buildNumber + " r" + ExtVersion.cvsRevision+" running with ext build "+extBuildNumber+" r" + extRevisionNumber;
 		Logger.normal(this, builtWithMessage);
 		System.out.println(builtWithMessage);
@@ -262,7 +261,7 @@ public class NodeStarter implements WrapperListener {
 	public static void main(String[] args) {
 		// Immediately try entering background mode. This way also class
 		//  loading will be subject to reduced priority. 
-		ProcessPriority.backgroundMode(true);
+		ProcessPriority.enterBackgroundMode();
 		
 		// Start the application.  If the JVM was launched from the native
 		//  Wrapper then the application will wait for the native Wrapper to
