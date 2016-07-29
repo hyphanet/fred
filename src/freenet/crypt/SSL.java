@@ -31,6 +31,7 @@ import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.util.Arrays;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.KeyManagerFactory;
@@ -212,7 +213,10 @@ public class SSL {
 				// If keystore not exist, create keystore and server certificate
 				keystore.load(null, keyStorePass.toCharArray());
 				try {
-					Class<?> certAndKeyGenClazz = Class.forName("sun.security.x509.CertAndKeyGen");
+					Class<?> certAndKeyGenClazz = anyClass(
+						"sun.security.x509.CertAndKeyGen", // Java 7 and earlier
+						"sun.security.tools.keytool.CertAndKeyGen" // Java 8 and later
+					);
 					Constructor<?> certAndKeyGenCtor = certAndKeyGenClazz.getConstructor(String.class, String.class);
 					Object keypair = certAndKeyGenCtor.newInstance("RSA", "SHA1WithRSA");
 
@@ -273,5 +277,16 @@ public class SSL {
 			sslc.init(kmf.getKeyManagers(), null, null);
 			ssf = sslc.getServerSocketFactory();
 		}
+	}
+
+	private static Class<?> anyClass(String... names) throws ClassNotFoundException {
+		for (String clazz : names) {
+			try {
+				return Class.forName(clazz);
+			} catch (ClassNotFoundException e) {
+				Logger.minor(SSL.class, "Class " + clazz + " not found", e);
+			}
+		}
+		throw new ClassNotFoundException("Any of " + Arrays.toString(names));
 	}
 }
