@@ -47,6 +47,15 @@ import java.net.ServerSocket;
 
 public class SSL {
 
+	private static final int RSA_STRENGTH = 2048;
+
+	private static final long CERTIFICATE_LIFETIME = 10 * 365 * 24 * 60 * 60; // 10 years
+	private static final String CERTIFICATE_CN = "Freenet";
+	private static final String CERTIFICATE_OU = "Freenet";
+	private static final String CERTIFICATE_ON = "Freenet";
+
+	private static final String CHAIN_ALIAS = "freenet";
+
 	private static volatile boolean enable;
 	private static KeyStore keystore;
 	private static ServerSocketFactory ssf;
@@ -161,9 +170,9 @@ public class SSL {
 						String oldKeyPass = keyPass;
 						keyPass = newKeyPass;
 						try {
-							Certificate[] chain = keystore.getCertificateChain("freenet");
-							Key privKey = keystore.getKey("freenet", oldKeyPass.toCharArray());
-							keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
+							Certificate[] chain = keystore.getCertificateChain(CHAIN_ALIAS);
+							Key privKey = keystore.getKey(CHAIN_ALIAS, oldKeyPass.toCharArray());
+							keystore.setKeyEntry(CHAIN_ALIAS, privKey, keyPass.toCharArray(), chain);
 							createSSLContext();
 						} catch(Exception e) {
 							keyPass = oldKeyPass;
@@ -223,10 +232,10 @@ public class SSL {
 					Class<?> x500NameClazz = Class.forName("sun.security.x509.X500Name");
 					Constructor<?> x500NameCtor = x500NameClazz.getConstructor(String.class, String.class,
 					        String.class, String.class, String.class, String.class);
-					Object x500Name = x500NameCtor.newInstance("Freenet", "Freenet", "Freenet", "", "", "");
+					Object x500Name = x500NameCtor.newInstance(CERTIFICATE_CN, CERTIFICATE_OU, CERTIFICATE_ON, "", "", "");
 					
 					Method certAndKeyGenGenerate = certAndKeyGenClazz.getMethod("generate", int.class);
-					certAndKeyGenGenerate.invoke(keypair, 2048);
+					certAndKeyGenGenerate.invoke(keypair, RSA_STRENGTH);
 					
 					Method certAndKeyGetPrivateKey = certAndKeyGenClazz.getMethod("getPrivateKey");
 					PrivateKey privKey = (PrivateKey) certAndKeyGetPrivateKey.invoke(keypair);
@@ -234,8 +243,8 @@ public class SSL {
 					Certificate[] chain = new Certificate[1];
 					Method certAndKeyGenGetSelfCertificate = certAndKeyGenClazz.getMethod("getSelfCertificate",
 					        x500NameClazz, long.class);
-					chain[0] = (Certificate) certAndKeyGenGetSelfCertificate.invoke(keypair, x500Name, 10L * 365 * 24
-					        * 60 * 60);
+					chain[0] = (Certificate) certAndKeyGenGetSelfCertificate.invoke(keypair, x500Name,
+						CERTIFICATE_LIFETIME);
 
 					keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
 					storeKeyStore();
