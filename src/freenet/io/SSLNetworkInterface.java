@@ -58,8 +58,7 @@ public class SSLNetworkInterface extends NetworkInterface {
 		serverSocket.setWantClientAuth(false);
 
 		serverSocket.setEnabledCipherSuites(new String[] {
-		    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA", // We want PFS (DHE)
-		    // "TLS_RSA_WITH_AES_256_CBC_SHA",
+		    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
 		});
 
 		return serverSocket;
