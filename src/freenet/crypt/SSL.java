@@ -218,7 +218,7 @@ public class SSL {
 						"sun.security.tools.keytool.CertAndKeyGen" // Java 8 and later
 					);
 					Constructor<?> certAndKeyGenCtor = certAndKeyGenClazz.getConstructor(String.class, String.class);
-					Object keypair = certAndKeyGenCtor.newInstance("RSA", "SHA1WithRSA");
+					Object keypair = certAndKeyGenCtor.newInstance("RSA", "SHA256WithRSA");
 
 					Class<?> x500NameClazz = Class.forName("sun.security.x509.X500Name");
 					Constructor<?> x500NameCtor = x500NameClazz.getConstructor(String.class, String.class,
@@ -271,7 +271,7 @@ public class SSL {
 			kmf.init(keystore, keyPass.toCharArray());
 			// An SSLContext is an environment for implementing JSSE
 			// It is used to create a ServerSocketFactory
-			SSLContext sslc = SSLContext.getInstance("TLSv1");
+			SSLContext sslc = SSLContext.getInstance("TLSv1.2");
 			// Initialize the SSLContext to work with our key managers
 			// FIXME: should we pass yarrow in here?
 			sslc.init(kmf.getKeyManagers(), null, null);
