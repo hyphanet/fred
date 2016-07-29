@@ -234,7 +234,7 @@ public class SSL {
 					Certificate[] chain = new Certificate[1];
 					Method certAndKeyGenGetSelfCertificate = certAndKeyGenClazz.getMethod("getSelfCertificate",
 					        x500NameClazz, long.class);
-					chain[0] = (Certificate) certAndKeyGenGetSelfCertificate.invoke(keypair, x500Name, 1L * 365 * 24
+					chain[0] = (Certificate) certAndKeyGenGetSelfCertificate.invoke(keypair, x500Name, 10L * 365 * 24
 					        * 60 * 60);
 
 					keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
