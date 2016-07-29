@@ -89,7 +89,7 @@ public class SSL {
 							} catch(Exception e) {
 								enable = false;
 								e.printStackTrace(System.out);
-								throw new InvalidConfigValueException("Cannot enabled ssl, config error");
+								throwConfigError("SSL could not be enabled", e);
 							}
 						else {
 							ssf = null;
@@ -117,7 +117,7 @@ public class SSL {
 						} catch(Exception e) {
 							keyStore = oldKeyStore;
 							e.printStackTrace(System.out);
-							throw new InvalidConfigValueException("Cannot change keystore file");
+							throwConfigError("Keystore file could not be changed", e);
 						}
 					}
 				}
@@ -141,7 +141,7 @@ public class SSL {
 						} catch(Exception e) {
 							keyStorePass = oldKeyStorePass;
 							e.printStackTrace(System.out);
-							throw new InvalidConfigValueException("Cannot change keystore password");
+							throwConfigError("Keystore password could not be changed", e);
 						}
 					}
 				}
@@ -168,7 +168,7 @@ public class SSL {
 						} catch(Exception e) {
 							keyPass = oldKeyPass;
 							e.printStackTrace(System.out);
-							throw new InvalidConfigValueException("Cannot change private key password");
+							throwConfigError("Private key password could not be changed", e);
 						}
 					}
 				}
@@ -184,7 +184,7 @@ public class SSL {
 			loadKeyStore();
 			createSSLContext();
 		} catch(Exception e) {
-			Logger.error(SSL.class, "Cannot load keystore, ssl is disable", e);
+			Logger.error(SSL.class, "Keystore cannot be loaded, SSL will be disabled", e);
 		}
 		sslConfig.finishedInitialization();
 
@@ -241,9 +241,9 @@ public class SSL {
 					storeKeyStore();
 					createSSLContext();
 				} catch (ClassNotFoundException cnfe) {
-					throw new UnsupportedOperationException("The JVM you are using is not supported!", cnfe);
+					throw new UnsupportedOperationException("The JVM you are using does not support generating SSL certificates", cnfe);
 				} catch (NoSuchMethodException nsme) {
-					throw new UnsupportedOperationException("The JVM you are using is not supported!", nsme);
+					throw new UnsupportedOperationException("The JVM you are using does not support generating SSL certificates", nsme);
 				}
 			} finally {
 				Closer.close(fis);
@@ -288,5 +288,14 @@ public class SSL {
 			}
 		}
 		throw new ClassNotFoundException("Any of " + Arrays.toString(names));
+	}
+
+	private static void throwConfigError(String message, Throwable cause)
+			throws InvalidConfigValueException {
+		String causeMsg = cause.getMessage();
+		if (causeMsg == null) {
+			causeMsg = cause.toString();
+		}
+		throw new InvalidConfigValueException(String.format("%s: %s", message, causeMsg));
 	}
 }
