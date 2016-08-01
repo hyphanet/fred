@@ -47,7 +47,9 @@ import java.net.ServerSocket;
 
 public class SSL {
 
-	private static final int RSA_STRENGTH = 2048;
+	private static final String KEY_ALGORITHM = "EC";
+	private static final int KEY_SIZE = 256;
+	private static final String SIG_ALGORITHM = "SHA256WithECDSA";
 
 	private static final long CERTIFICATE_LIFETIME = 10 * 365 * 24 * 60 * 60; // 10 years
 	private static final String CERTIFICATE_CN = "Freenet";
@@ -226,8 +228,8 @@ public class SSL {
 						"sun.security.x509.CertAndKeyGen", // Java 7 and earlier
 						"sun.security.tools.keytool.CertAndKeyGen" // Java 8 and later
 					);
-					Constructor<?> certAndKeyGenCtor = certAndKeyGenClazz.getConstructor(String.class, String.class);
-					Object keypair = certAndKeyGenCtor.newInstance("RSA", "SHA256WithRSA");
+					Constructor<?> certAndKeyGenCtor = certAndKeyGenClazz.getConstructor(String.class, String.class, String.class);
+					Object keypair = certAndKeyGenCtor.newInstance(KEY_ALGORITHM, SIG_ALGORITHM, "BC");
 
 					Class<?> x500NameClazz = Class.forName("sun.security.x509.X500Name");
 					Constructor<?> x500NameCtor = x500NameClazz.getConstructor(String.class, String.class,
@@ -235,7 +237,7 @@ public class SSL {
 					Object x500Name = x500NameCtor.newInstance(CERTIFICATE_CN, CERTIFICATE_OU, CERTIFICATE_ON, "", "", "");
 					
 					Method certAndKeyGenGenerate = certAndKeyGenClazz.getMethod("generate", int.class);
-					certAndKeyGenGenerate.invoke(keypair, RSA_STRENGTH);
+					certAndKeyGenGenerate.invoke(keypair, KEY_SIZE);
 					
 					Method certAndKeyGetPrivateKey = certAndKeyGenClazz.getMethod("getPrivateKey");
 					PrivateKey privKey = (PrivateKey) certAndKeyGetPrivateKey.invoke(keypair);
@@ -250,9 +252,9 @@ public class SSL {
 					storeKeyStore();
 					createSSLContext();
 				} catch (ClassNotFoundException cnfe) {
-					throw new UnsupportedOperationException("The JVM you are using does not support generating SSL certificates", cnfe);
+					throw new UnsupportedOperationException("The JVM you are using does not support generating strong SSL certificates", cnfe);
 				} catch (NoSuchMethodException nsme) {
-					throw new UnsupportedOperationException("The JVM you are using does not support generating SSL certificates", nsme);
+					throw new UnsupportedOperationException("The JVM you are using does not support generating strong SSL certificates", nsme);
 				}
 			} finally {
 				Closer.close(fis);

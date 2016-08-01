@@ -58,7 +58,7 @@ public class SSLNetworkInterface extends NetworkInterface {
 		serverSocket.setWantClientAuth(false);
 
 		serverSocket.setEnabledCipherSuites(new String[] {
-		    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+		    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
 		});
 
 		return serverSocket;
