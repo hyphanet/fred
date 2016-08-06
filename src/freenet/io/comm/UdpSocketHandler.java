@@ -114,11 +114,14 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 
 		public static boolean setAddressPreference(DatagramSocket s, SOCKET_ADDR_PREFERENCE p) {
 			if(!Platform.isLinux())
-				return false;
+			    return false;
 			int fd = getFd(s);
 			if(fd <= 2)
-				return false;
-			int ret = socketOptionsHolder.setsockopt(fd, SOCKET_level.IPPROTO_IPV6.linux, p.option_name.linux, new IntByReference(p.linux).getPointer(), Pointer.SIZE);
+			    return false;
+			int ret = -1;
+			try {
+			    ret = socketOptionsHolder.setsockopt(fd, SOCKET_level.IPPROTO_IPV6.linux, p.option_name.linux, new IntByReference(p.linux).getPointer(), Pointer.SIZE);
+			} catch(Exception e) { Logger.normal(UdpSocketHandler.class, e.getMessage(),e); } //if it fails that's fine
 			return (ret == 0 ? true : false);
 		}
 	}
