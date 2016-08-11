@@ -573,17 +573,6 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			return hashCode;
 		}
 
-		/**
-		 * zero arg c'tor for db4o on jamvm
-		 */
-		@SuppressWarnings("unused")
-		private SplitHandler() {
-			persistent = false;
-			origDataLength = 0;
-			origCompressedDataLength = 0;
-			hashCode = 0;
-		}
-
 		public SplitHandler(long origDataLength, long origCompressedDataLength, boolean allowSizes) {
 			// Default constructor
 			this.persistent = SingleFileInserter.this.persistent;
