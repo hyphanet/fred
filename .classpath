@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="lib/hamcrest-core-1.3.jar"/>
 	<classpathentry kind="lib" path="lib/hamcrest-library-1.3.jar"/>
 	<classpathentry kind="lib" path="lib/junit-4.12.jar"/>
+	<classpathentry kind="lib" path="lib/mockito-core-1.9.5.jar"/>
 	<classpathentry kind="output" path="build/main/"/>
 </classpath>
