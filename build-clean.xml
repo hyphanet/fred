@@ -164,7 +164,8 @@ maintainers may prefer to use this instead of build.xml.
 		<available property="lib.bouncycastle.present" classname="org.bouncycastle.crypto.signers.HMacDSAKCalculator" classpathref="lib.path"/>
 		<available property="lib.jna.present" classname="com.sun.jna.Platform" classpathref="lib.path"/>
 		<available property="lib.junit.present" classname="org.junit.runners.JUnit4" classpathref="libtest.path"/>
-		<available property="lib.hamcrest.present" classname="org.hamcrest.Matchers" classpathref="libtest.path"/>
+		<available property="lib.hamcrest.core.present" classname="org.hamcrest.Matcher" classpathref="libtest.path"/>
+		<available property="lib.hamcrest.library.present" classname="org.hamcrest.Matchers" classpathref="libtest.path"/>
 		<available property="lib.objenesis.present" classname="org.objenesis.Objenesis" classpathref="libtest.path"/>
 		<available property="lib.mockito.present" classname="org.mockito.mock.MockName" classpathref="libtest.path"/>
 		<available property="lib.findbugs.present" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
@@ -196,8 +197,12 @@ maintainers may prefer to use this instead of build.xml.
 		<fail message="JUnit4 not available"/>
 	</target>
 
-	<target name="libdep-hamcrest" depends="env" unless="lib.hamcrest.present">
-		<fail message="Hamcrest-all not available"/>
+	<target name="libdep-hamcrest-core" depends="env" unless="lib.hamcrest.core.present">
+		<fail message="Hamcrest-core not available"/>
+	</target>
+
+	<target name="libdep-hamcrest-library" depends="env" unless="lib.hamcrest.library.present">
+		<fail message="Hamcrest-library not available"/>
 	</target>
 
 	<target name="libdep-objenesis" depends="env" unless="lib.objenesis.present">
@@ -323,7 +328,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="package" depends="unit, package-only" description="build standard binary packages (Freenet daemon)"/>
 
-	<target name="unit-build" depends="build, libdep-junit, libdep-hamcrest, libdep-objenesis, libdep-mockito" unless="${test.skip}">
+	<target name="unit-build" depends="build, libdep-junit, libdep-hamcrest-core, libdep-hamcrest-library, libdep-objenesis, libdep-mockito" unless="${test.skip}">
 		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" source="1.7" target="1.7" includeAntRuntime="false" encoding="UTF-8">
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="libtest.path"/>
