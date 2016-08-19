@@ -43,6 +43,7 @@ public class BookmarkItem extends Bookmark {
         assert(key != null);
     }
 
+    /** Please call {@link #registerUserAlert()} afterwards. */
     public BookmarkItem(SimpleFieldSet sfs, BookmarkManager bm, UserAlertManager uam)
             throws FSParseException, MalformedURLException {
         this.name = sfs.get("Name");
@@ -52,6 +53,10 @@ public class BookmarkItem extends Bookmark {
         this.shortDescription = sfs.get("ShortDescription");
         if(shortDescription == null) shortDescription = "";
         this.hasAnActivelink = sfs.getBoolean("hasAnActivelink");
+        // "Updated" was added in 2016-08-19, so we must assume it doesn't exist in previously saved
+        // bookmark databases and provide a default to prevent getBoolean() from throwing.
+        // TODO: Code quality: Remove default after a year or so.
+        this.updated = sfs.getBoolean("Updated", false);
         this.key = new FreenetURI(sfs.get("URI"));
         this.manager = bm;
         this.alerts = uam;
@@ -112,6 +117,7 @@ public class BookmarkItem extends Bookmark {
         @Override
 		public void onDismiss() {
             disableBookmark();
+            manager.storeBookmarks();
         }
 
 		@Override
@@ -149,6 +155,15 @@ public class BookmarkItem extends Bookmark {
         assert(key.isUSK());
         updated = true;
         alerts.register(alert);
+    }
+
+    /**
+     * If this bookmark is marked as updated, registers a {@link UserAlert} which notifies the user.
+     * You usually only need to call this function after having loaded a bookmark from disk using
+     * {@link #BookmarkItem(SimpleFieldSet, BookmarkManager, UserAlertManager)}. */
+    synchronized void registerUserAlert() {
+        if(key.isUSK() && updated)
+            alerts.register(alert);
     }
 
     public String getKey() {
@@ -277,6 +292,7 @@ public class BookmarkItem extends Bookmark {
 	sfs.putSingle("Description", desc);
 	sfs.putSingle("ShortDescription", shortDescription);
 	sfs.put("hasAnActivelink", hasAnActivelink);
+	sfs.put("Updated", updated);
 	sfs.putSingle("URI", key.toString());
 	return sfs;
     }
