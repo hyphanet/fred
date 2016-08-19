@@ -20,6 +20,7 @@ import freenet.support.SimpleFieldSet;
 
 public class BookmarkItem extends Bookmark {
     public static final String NAME = "Bookmark";
+    private final BookmarkManager manager;
     private FreenetURI key;
     private boolean updated;
     private boolean hasAnActivelink = false;
@@ -28,21 +29,22 @@ public class BookmarkItem extends Bookmark {
     protected String desc;
     protected String shortDescription;
 
-    public BookmarkItem(FreenetURI k, String n, String d, String s, boolean hasAnActivelink, UserAlertManager uam)
-            throws MalformedURLException {
-
+    public BookmarkItem(FreenetURI k, String n, String d, String s, boolean hasAnActivelink,
+            BookmarkManager bm, UserAlertManager uam) throws MalformedURLException {
         this.key = k;
         this.name = n;
         this.desc = d;
         this.shortDescription = s;
         this.hasAnActivelink = hasAnActivelink;
+        this.manager = bm;
         this.alerts = uam;
         alert = new BookmarkUpdatedUserAlert();
         assert(name != null);
         assert(key != null);
     }
 
-    public BookmarkItem(SimpleFieldSet sfs, UserAlertManager uam) throws FSParseException, MalformedURLException {
+    public BookmarkItem(SimpleFieldSet sfs, BookmarkManager bm, UserAlertManager uam)
+            throws FSParseException, MalformedURLException {
         this.name = sfs.get("Name");
         if(name == null || name.isEmpty()) name = l10n("unnamedBookmark");
         this.desc = sfs.get("Description");
@@ -51,6 +53,7 @@ public class BookmarkItem extends Bookmark {
         if(shortDescription == null) shortDescription = "";
         this.hasAnActivelink = sfs.getBoolean("hasAnActivelink");
         this.key = new FreenetURI(sfs.get("URI"));
+        this.manager = bm;
         this.alerts = uam;
         this.alert = new BookmarkUpdatedUserAlert();
     }
