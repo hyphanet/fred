@@ -14,7 +14,6 @@ import freenet.node.NodeClientCore;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
-import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -43,18 +42,6 @@ public class BookmarkItem extends Bookmark {
         assert(key != null);
     }
 
-    public BookmarkItem(String line, UserAlertManager uam) throws MalformedURLException {
-        String[] result = line.split("###");
-        this.name = result[0];
-        this.desc = result[1];
-        this.hasAnActivelink = Fields.stringToBool(result[2], false);
-        this.key = new FreenetURI(result[3]);
-        this.alerts = uam;
-        this.alert = new BookmarkUpdatedUserAlert();
-        assert(name != null);
-        assert(key != null);
-    }
-    
     public BookmarkItem(SimpleFieldSet sfs, UserAlertManager uam) throws FSParseException, MalformedURLException {
         this.name = sfs.get("Name");
         if(name == null || name.isEmpty()) name = l10n("unnamedBookmark");
