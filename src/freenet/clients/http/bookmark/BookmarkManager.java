@@ -411,6 +411,7 @@ public class BookmarkManager implements RequestClient {
 						String name = (isRoot ? "" : prefix + category.name) + '/' + item.name;
 						putPaths(name, item);
 						category.addBookmark(item);
+						item.registerUserAlert();
 						subscribeToUSK(item);
 					} catch(MalformedURLException e) {
 						throw new FSParseException(e);
