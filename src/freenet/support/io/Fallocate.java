@@ -72,7 +72,16 @@ public final class Fallocate {
     } else {
       isUnsupported = true;
     }
-    if (isUnsupported || errno == 95) { // EOPNOTSUPP
+    /**
+     * ENOSYS = 38
+     * This kernel does not implement fallocate().
+     *
+     * EOPNOTSUPP = 95
+     * The filesystem containing the file referred to by fd does not support this operation;
+     * or the mode is not supported by the filesystem containing the file referred to by fd.
+     *
+     */
+    if (isUnsupported || errno == 95 || errno == 38) {
       Logger.normal(this, "fallocate() not supported; using legacy method");
       legacyFill(channel, length, offset);
     } else if (errno != 0) {
