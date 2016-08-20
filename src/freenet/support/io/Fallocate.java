@@ -58,7 +58,7 @@ public final class Fallocate {
   }
 
   private void throwUnsupported(String feature) {
-    throw new UnsupportedOperationException(feature + " is not supported on this operating system");
+    throw new UnsupportedOperationException(feature + " is not supported on this file system");
   }
 
   public void execute() throws IOException {
