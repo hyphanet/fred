@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+import freenet.support.Logger;
 import freenet.support.math.MersenneTwister;
 
 /**
@@ -27,25 +28,16 @@ public final class Fallocate {
   private int mode;
   private long offset;
   private final long length;
+  private final FileChannel channel;
 
-  private Fallocate(int fd, long length) {
-    if (!isSupported()) {
-      throwUnsupported("fallocate");
-    }
+  private Fallocate(FileChannel channel, int fd, long length) {
     this.fd = fd;
     this.length = length;
-  }
-
-  public static boolean isSupported() {
-    return IS_POSIX;
+    this.channel = channel;
   }
 
   public static Fallocate forChannel(FileChannel channel, long length) {
-    return new Fallocate(getDescriptor(channel), length);
-  }
-
-  public static Fallocate forDescriptor(FileDescriptor descriptor, long length) {
-    return new Fallocate(getDescriptor(descriptor), length);
+    return new Fallocate(channel, getDescriptor(channel), length);
   }
 
   public Fallocate fromOffset(long offset) {
@@ -66,19 +58,24 @@ public final class Fallocate {
   }
 
   private void throwUnsupported(String feature) {
-    throw new UnsupportedOperationException(feature +
-                                            " is not supported on this operating system");
+    throw new UnsupportedOperationException(feature + " is not supported on this operating system");
   }
 
   public void execute() throws IOException {
-    final int errno;
+    int errno = 0;
+    boolean isUnsupported = false;
     if (IS_LINUX) {
       final int result = FallocateHolder.fallocate(fd, mode, offset, length);
       errno = result == 0 ? 0 : Native.getLastError();
-    } else {
+    } else if (IS_POSIX) {
       errno = FallocateHolderPOSIX.posix_fallocate(fd, offset, length);
+    } else {
+      isUnsupported = true;
     }
-    if (errno != 0) {
+    if (isUnsupported || errno == 95) { // EOPNOTSUPP
+      Logger.normal(this, "fallocate() not supported; using legacy method");
+      legacyFill(channel, length, offset);
+    } else if (errno != 0) {
       throw new IOException("fallocate returned " + errno);
     }
   }
@@ -121,7 +118,7 @@ public final class Fallocate {
     }
   }
 
-  public static void legacyFill(FileChannel fc, long newLength, long offset) throws IOException {
+  private static void legacyFill(FileChannel fc, long newLength, long offset) throws IOException {
     MersenneTwister mt = new MersenneTwister();
     byte[] b = new byte[4096];
     ByteBuffer bb = ByteBuffer.wrap(b);

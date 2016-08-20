@@ -1069,32 +1069,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				try (WrapperKeepalive wrapperKeepalive = new WrapperKeepalive();)
 				{
 					wrapperKeepalive.start();
-					if (Fallocate.isSupported()) {
-						Fallocate.forChannel(metaFC, newMetaLen).execute();
-						Fallocate.forChannel(hdFC, newHdLen).execute();
-					} else {
-						Logger.normal(this,
-							      "fallocate() not supported; using legacy method");
-/*
-* Fill the store file with random data. This won't be compressed, unlike filling it with zeros.
-* So the disk space usage of the node will not change (apart from temp files).
-*
-* Note that MersenneTwister is *not* cryptographically secure, in fact from 2.4KB of output you
-* can predict the rest of the stream! This is okay because an attacker knows which blocks are
-* occupied anyway; it is essential to label them to get good data retention on resizing etc.
-*
-* On my test system (phenom 2.2GHz), this does approx 80MB/sec. If I reseed every 2kB from an
-* AES CTR, which is pointless as I just explained, it does 40MB/sec.
-*/
-						// start from next 4KB boundary => align to x86 page size
-						oldMetaLen = (oldMetaLen + 4096 - 1) & ~(4096 - 1);
-						currentHdLen =
-								(currentHdLen + 4096 - 1) & ~(4096
-											      - 1);
-						Fallocate.legacyFill(metaFC, newMetaLen,
-								     oldMetaLen);
-						Fallocate.legacyFill(hdFC, newHdLen, currentHdLen);
-					}
+					// start from next 4KB boundary => align to x86 page size
+					oldMetaLen = (oldMetaLen + 4096 - 1) & ~(4096 - 1);
+					currentHdLen = (currentHdLen + 4096 - 1) & ~(4096 - 1);
+
+					Fallocate.forChannel(metaFC, newMetaLen).fromOffset(oldMetaLen).execute();
+					Fallocate.forChannel(hdFC, newHdLen).fromOffset(currentHdLen).execute();
 				}
 			}
 			storeFileOffsetReady = 1 + storeMaxEntries;
