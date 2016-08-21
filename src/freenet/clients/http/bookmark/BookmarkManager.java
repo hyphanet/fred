@@ -25,6 +25,7 @@ import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
+import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -109,6 +110,19 @@ public class BookmarkManager implements RequestClient {
 			putPaths("\\", DEFAULT_CATEGORY);
 			readBookmarks(DEFAULT_CATEGORY, DEFAULT_BOOKMARKS);
 		}
+		
+		SemiOrderedShutdownHook.get().addEarlyJob(new Thread() {
+			BookmarkManager bm = BookmarkManager.this;
+			
+			@Override public void run() {
+				// The USKUpdatedCallback only does storeBookmarksLazy() to accumulate changes
+				// before writing to disk until 5 minutes expire. As USK updates are visible in the
+				// UI by notifications, we need to ensure to save them before shutdown to not
+				// confuse the users with disappearing notifications.
+				bm.storeBookmarks();
+				bm = null;
+			}
+		});
 	}
 
 	public void reAddDefaultBookmarks() {
