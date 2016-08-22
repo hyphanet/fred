@@ -1069,10 +1069,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				try (WrapperKeepalive wrapperKeepalive = new WrapperKeepalive();)
 				{
 					wrapperKeepalive.start();
-					// start from next 4KB boundary => align to x86 page size
-					oldMetaLen = (oldMetaLen + 4096 - 1) & ~(4096 - 1);
-					currentHdLen = (currentHdLen + 4096 - 1) & ~(4096 - 1);
-
 					Fallocate.forChannel(metaFC, newMetaLen).fromOffset(oldMetaLen).execute();
 					Fallocate.forChannel(hdFC, newHdLen).fromOffset(currentHdLen).execute();
 				}

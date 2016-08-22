@@ -41,7 +41,7 @@ public final class Fallocate {
   }
 
   public Fallocate fromOffset(long offset) {
-    if(offset < 0) throw new IllegalArgumentException();
+    if(offset < 0 || offset > final_filesize) throw new IllegalArgumentException();
     this.offset = offset;
     return this;
   }
@@ -132,7 +132,6 @@ public final class Fallocate {
     MersenneTwister mt = new MersenneTwister();
     byte[] b = new byte[4096];
     ByteBuffer bb = ByteBuffer.wrap(b);
-    int x = 0;
     while (offset < newLength) {
       bb.rewind();
       mt.nextBytes(b);
