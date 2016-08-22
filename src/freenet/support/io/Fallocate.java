@@ -27,20 +27,21 @@ public final class Fallocate {
   private final int fd;
   private int mode;
   private long offset;
-  private final long length;
+  private final long final_filesize;
   private final FileChannel channel;
 
-  private Fallocate(FileChannel channel, int fd, long length) {
+  private Fallocate(FileChannel channel, int fd, long final_filesize) {
     this.fd = fd;
-    this.length = length;
+    this.final_filesize = final_filesize;
     this.channel = channel;
   }
 
-  public static Fallocate forChannel(FileChannel channel, long length) {
-    return new Fallocate(channel, getDescriptor(channel), length);
+  public static Fallocate forChannel(FileChannel channel, long final_filesize) {
+    return new Fallocate(channel, getDescriptor(channel), final_filesize);
   }
 
   public Fallocate fromOffset(long offset) {
+    if(offset < 0) throw new IllegalArgumentException();
     this.offset = offset;
     return this;
   }
@@ -65,10 +66,10 @@ public final class Fallocate {
     int errno = 0;
     boolean isUnsupported = false;
     if (IS_LINUX) {
-      final int result = FallocateHolder.fallocate(fd, mode, offset, length);
+      final int result = FallocateHolder.fallocate(fd, mode, offset, final_filesize-offset);
       errno = result == 0 ? 0 : Native.getLastError();
     } else if (IS_POSIX) {
-      errno = FallocateHolderPOSIX.posix_fallocate(fd, offset, length);
+      errno = FallocateHolderPOSIX.posix_fallocate(fd, offset, final_filesize-offset);
     } else {
       isUnsupported = true;
     }
@@ -83,7 +84,7 @@ public final class Fallocate {
      */
     if (isUnsupported || errno == 95 || errno == 38) {
       Logger.normal(this, "fallocate() not supported; using legacy method");
-      legacyFill(channel, length, offset);
+      legacyFill(channel, final_filesize, offset);
     } else if (errno != 0) {
       throw new IOException("fallocate returned " + errno);
     }
