@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+import freenet.support.Logger;
 import freenet.support.math.MersenneTwister;
 
 /**
@@ -26,29 +27,21 @@ public final class Fallocate {
   private final int fd;
   private int mode;
   private long offset;
-  private final long length;
+  private final long final_filesize;
+  private final FileChannel channel;
 
-  private Fallocate(int fd, long length) {
-    if (!isSupported()) {
-      throwUnsupported("fallocate");
-    }
+  private Fallocate(FileChannel channel, int fd, long final_filesize) {
     this.fd = fd;
-    this.length = length;
+    this.final_filesize = final_filesize;
+    this.channel = channel;
   }
 
-  public static boolean isSupported() {
-    return IS_POSIX;
-  }
-
-  public static Fallocate forChannel(FileChannel channel, long length) {
-    return new Fallocate(getDescriptor(channel), length);
-  }
-
-  public static Fallocate forDescriptor(FileDescriptor descriptor, long length) {
-    return new Fallocate(getDescriptor(descriptor), length);
+  public static Fallocate forChannel(FileChannel channel, long final_filesize) {
+    return new Fallocate(channel, getDescriptor(channel), final_filesize);
   }
 
   public Fallocate fromOffset(long offset) {
+    if(offset < 0) throw new IllegalArgumentException();
     this.offset = offset;
     return this;
   }
@@ -66,19 +59,33 @@ public final class Fallocate {
   }
 
   private void throwUnsupported(String feature) {
-    throw new UnsupportedOperationException(feature +
-                                            " is not supported on this operating system");
+    throw new UnsupportedOperationException(feature + " is not supported on this file system");
   }
 
   public void execute() throws IOException {
-    final int errno;
+    int errno = 0;
+    boolean isUnsupported = false;
     if (IS_LINUX) {
-      final int result = FallocateHolder.fallocate(fd, mode, offset, length);
+      final int result = FallocateHolder.fallocate(fd, mode, offset, final_filesize-offset);
       errno = result == 0 ? 0 : Native.getLastError();
+    } else if (IS_POSIX) {
+      errno = FallocateHolderPOSIX.posix_fallocate(fd, offset, final_filesize-offset);
     } else {
-      errno = FallocateHolderPOSIX.posix_fallocate(fd, offset, length);
+      isUnsupported = true;
     }
-    if (errno != 0) {
+    /**
+     * ENOSYS = 38
+     * This kernel does not implement fallocate().
+     *
+     * EOPNOTSUPP = 95
+     * The filesystem containing the file referred to by fd does not support this operation;
+     * or the mode is not supported by the filesystem containing the file referred to by fd.
+     *
+     */
+    if (isUnsupported || errno == 95 || errno == 38) {
+      Logger.normal(this, "fallocate() not supported; using legacy method");
+      legacyFill(channel, final_filesize, offset);
+    } else if (errno != 0) {
       throw new IOException("fallocate returned " + errno);
     }
   }
@@ -121,7 +128,7 @@ public final class Fallocate {
     }
   }
 
-  public static void legacyFill(FileChannel fc, long newLength, long offset) throws IOException {
+  private static void legacyFill(FileChannel fc, long newLength, long offset) throws IOException {
     MersenneTwister mt = new MersenneTwister();
     byte[] b = new byte[4096];
     ByteBuffer bb = ByteBuffer.wrap(b);
