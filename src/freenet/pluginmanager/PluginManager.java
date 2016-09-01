@@ -546,6 +546,7 @@ public class PluginManager {
 
 		final String filename;
 		final String message;
+		final StackTraceElement[] stacktrace;
 		final boolean official;
 		final boolean officialFromFreenet;
 		final boolean stillTryingOverFreenet;
@@ -554,6 +555,7 @@ public class PluginManager {
 			this.filename = filename;
 			this.official = official;
 			this.message = message;
+			this.stacktrace = null;
 			this.officialFromFreenet = officialFromFreenet;
 			this.stillTryingOverFreenet = stillTryingOverFreenet;
 		}
@@ -563,11 +565,14 @@ public class PluginManager {
 			this.official = official;
 			this.stillTryingOverFreenet = stillTryingOverFreenet;
 			String msg;
-			if(e instanceof PluginNotFoundException)
+			if(e instanceof PluginNotFoundException) {
 				msg = e.getMessage();
-			else
+				stacktrace = null;
+			} else {
 				// If it's something wierd, we need to know what it is.
 				msg = e.getClass() + ": " + e.getMessage();
+				stacktrace = e.getStackTrace();
+			}
 			if(msg == null) msg = e.toString();
 			this.message = msg;
 			this.officialFromFreenet = officialFromFreenet;
@@ -603,6 +608,15 @@ public class PluginManager {
 			HTMLNode div = new HTMLNode("div");
 			HTMLNode p = div.addChild("p");
 			p.addChild("#", l10n("pluginLoadingFailedWithMessage", new String[] { "name", "message" }, new String[] { filename, message }));
+
+			if(stacktrace != null) {
+				for(StackTraceElement e : stacktrace) {
+					p.addChild("br");
+					p.addChild("%", "&nbsp; &nbsp; &nbsp; &nbsp;");
+					p.addChild("#", "at " + e);
+				}
+			}
+
 			if(stillTryingOverFreenet) {
 				div.addChild("p", l10n("pluginLoadingFailedStillTryingOverFreenet"));
 			}
