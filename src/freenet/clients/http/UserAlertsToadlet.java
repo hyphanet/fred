@@ -5,6 +5,9 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.NoSuchElementException;
+
+import javax.naming.SizeLimitExceededException;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
@@ -47,7 +50,16 @@ public class UserAlertsToadlet extends Toadlet {
 			int userAlertHashCode = request.getIntPart("disable", -1);
 			ctx.getAlertManager().dismissAlert(userAlertHashCode);
 		}
-		headers.put("Location", ".");
+		
+		
+		String redirect;
+		try {
+			redirect = request.getPartAsStringThrowing("redirectToAfterDisable", 1024);
+		} catch (SizeLimitExceededException | NoSuchElementException e) {
+			redirect = ".";
+		}
+		headers.put("Location", redirect);
+		
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 

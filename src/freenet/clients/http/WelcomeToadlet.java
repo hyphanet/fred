@@ -89,7 +89,8 @@ public class WelcomeToadlet extends Toadlet {
                 }
                 cell = row.addChild("td", "style", "border: none");
                 
-                String linkClass = item.hasUpdated() ? "bookmark-title-updated" : "bookmark-title";
+                boolean updated = item.hasUpdated(); // We use it twice so copy for thread safety
+                String linkClass = updated ? "bookmark-title-updated" : "bookmark-title";
                 cell.addChild(
                     "a",
                     new String[]{"href", "title", "class"},
@@ -101,6 +102,12 @@ public class WelcomeToadlet extends Toadlet {
                 	cell.addChild("#", " (");
                 	cell.addChild("#", explain);
                 	cell.addChild("#", ")");
+                }
+
+                if(updated) {
+                    cell = row.addChild("td", "style", "border: none");
+                    cell.addChild(node.clientCore.alerts.renderDismissButton(
+                        item.getUserAlert(), path()));
                 }
             }
         }
