@@ -17,3 +17,7 @@ ul#bookmarks span.actions img {
 	border: 0;
 	margin-left: 3px;
 }
+
+a.bookmark-title-updated {
+	font-weight: bold;
+}
