@@ -166,6 +166,10 @@ public class BookmarkItem extends Bookmark {
             alerts.register(alert);
     }
 
+    public UserAlert getUserAlert() {
+        return alert;
+    }
+
     public String getKey() {
         return key.toString();
     }
