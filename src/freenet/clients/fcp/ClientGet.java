@@ -463,10 +463,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     @Override
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, String listRequestIdentifier, boolean includeData, boolean onlyData) {
 		if(!onlyData) {
-			if (true) {
-				FCPMessage msg = persistentTagMessage();
-				handler.queue(FCPMessage.withListRequestIdentifier(msg, listRequestIdentifier));
-			}
+			FCPMessage msg = persistentTagMessage();
+			handler.queue(FCPMessage.withListRequestIdentifier(msg, listRequestIdentifier));
 			if(progressPending != null) {
 				handler.queue(FCPMessage.withListRequestIdentifier(progressPending, listRequestIdentifier));
 			}

@@ -419,13 +419,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	@Override
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, String listRequestIdentifier, boolean includeData, boolean onlyData) {
-		if (true) {
-			FCPMessage msg = FCPMessage.withListRequestIdentifier(persistentTagMessage(), listRequestIdentifier);
-			handler.queue(msg);
-		}
+		FCPMessage msg = FCPMessage.withListRequestIdentifier(persistentTagMessage(), listRequestIdentifier);
+		handler.queue(msg);
 
 		boolean generated = false;
-		FCPMessage msg = null;
 		boolean fin = false;
 		Bucket meta;
 		synchronized (this) {
