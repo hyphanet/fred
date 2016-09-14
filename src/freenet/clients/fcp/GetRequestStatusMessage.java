@@ -54,7 +54,7 @@ public class GetRequestStatusMessage extends FCPMessage {
                             ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
                             handler.outputHandler.queue(msg);
                         } else {
-                            req.sendPendingMessages(handler.outputHandler, identifier, true, true, onlyData);
+                            req.sendPendingMessages(handler.outputHandler, identifier, true, onlyData);
                         }
                         return false;
                     }
@@ -65,7 +65,7 @@ public class GetRequestStatusMessage extends FCPMessage {
                 handler.outputHandler.queue(msg);
             }
 		} else {
-			req.sendPendingMessages(handler.outputHandler, identifier, true, true, onlyData);
+			req.sendPendingMessages(handler.outputHandler, identifier, true, onlyData);
 		}
 	}
 

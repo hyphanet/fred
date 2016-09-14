@@ -418,8 +418,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	protected abstract FCPMessage persistentTagMessage();
 
 	@Override
-	public void sendPendingMessages(FCPConnectionOutputHandler handler, String listRequestIdentifier, boolean includePersistentRequest, boolean includeData, boolean onlyData) {
-		if(includePersistentRequest) {
+	public void sendPendingMessages(FCPConnectionOutputHandler handler, String listRequestIdentifier, boolean includeData, boolean onlyData) {
+		if (true) {
 			FCPMessage msg = FCPMessage.withListRequestIdentifier(persistentTagMessage(), listRequestIdentifier);
 			handler.queue(msg);
 		}

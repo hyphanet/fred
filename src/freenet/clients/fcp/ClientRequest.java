@@ -177,7 +177,7 @@ public abstract class ClientRequest implements Serializable {
 	public abstract void onLostConnection(ClientContext context);
 
 	/** Send any pending messages for a persistent request e.g. after reconnecting */
-	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, String listRequestIdentifier, boolean includePersistentRequest, boolean includeData, boolean onlyData);
+	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, String listRequestIdentifier, boolean includeData, boolean onlyData);
 
 	// Persistence
 
