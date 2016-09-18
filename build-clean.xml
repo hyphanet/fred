@@ -77,6 +77,15 @@ maintainers may prefer to use this instead of build.xml.
 	<!-- Miscellaneous                                                       -->
 	<!-- =================================================================== -->
 
+	<fail unless="${ant.enable}" message=
+"The Ant builder has been deprecated in favor of the Gradle builder. Please prefer to use that one
+if possible.
+If you really need one of the build targets which are not available in Gradle yet, you may enable
+Ant by passing the parameter '-Dant.enable=true' or setting 'ant.enable=true' in the file
+'override.properties'.
+For how to use Gradle see https://gradle.org/"
+	/>
+
 	<target name="dist" depends="clean-all, all" description="clean-build everything"/>
 
 	<target name="sign" description="Sign the distribution" depends="package">
@@ -164,7 +173,9 @@ maintainers may prefer to use this instead of build.xml.
 		<available property="lib.bouncycastle.present" classname="org.bouncycastle.crypto.signers.HMacDSAKCalculator" classpathref="lib.path"/>
 		<available property="lib.jna.present" classname="com.sun.jna.Platform" classpathref="lib.path"/>
 		<available property="lib.junit.present" classname="org.junit.runners.JUnit4" classpathref="libtest.path"/>
-		<available property="lib.hamcrest.present" classname="org.hamcrest.Matchers" classpathref="libtest.path"/>
+		<available property="lib.hamcrest.core.present" classname="org.hamcrest.Matcher" classpathref="libtest.path"/>
+		<available property="lib.hamcrest.library.present" classname="org.hamcrest.Matchers" classpathref="libtest.path"/>
+		<available property="lib.objenesis.present" classname="org.objenesis.Objenesis" classpathref="libtest.path"/>
 		<available property="lib.mockito.present" classname="org.mockito.mock.MockName" classpathref="libtest.path"/>
 		<available property="lib.findbugs.present" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.path}"/>
 		<available property="lib.pmd.present" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
@@ -195,8 +206,16 @@ maintainers may prefer to use this instead of build.xml.
 		<fail message="JUnit4 not available"/>
 	</target>
 
-	<target name="libdep-hamcrest" depends="env" unless="lib.hamcrest.present">
-		<fail message="Hamcrest-all not available"/>
+	<target name="libdep-hamcrest-core" depends="env" unless="lib.hamcrest.core.present">
+		<fail message="Hamcrest-core not available"/>
+	</target>
+
+	<target name="libdep-hamcrest-library" depends="env" unless="lib.hamcrest.library.present">
+		<fail message="Hamcrest-library not available"/>
+	</target>
+
+	<target name="libdep-objenesis" depends="env" unless="lib.objenesis.present">
+		<fail message="Objenesis not available"/>
 	</target>
 
 	<target name="libdep-mockito" depends="env" unless="lib.mockito.present">
@@ -318,7 +337,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="package" depends="unit, package-only" description="build standard binary packages (Freenet daemon)"/>
 
-	<target name="unit-build" depends="build, libdep-junit, libdep-hamcrest, libdep-mockito" unless="${test.skip}">
+	<target name="unit-build" depends="build, libdep-junit, libdep-hamcrest-core, libdep-hamcrest-library, libdep-objenesis, libdep-mockito" unless="${test.skip}">
 		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" source="1.7" target="1.7" includeAntRuntime="false" encoding="UTF-8">
 			<compilerarg line="${javac.args}"/>
 			<classpath refid="libtest.path"/>
