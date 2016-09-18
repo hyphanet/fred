@@ -107,7 +107,7 @@ public class WelcomeToadlet extends Toadlet {
                 	cell.addChild("#", ")");
                 }
 
-                if(updated) {
+                if (updated) {
                     cell = row.addChild("td", "style", "border: none");
                     cell.addChild(node.clientCore.alerts.renderDismissButton(
                         item.getUserAlert(), path() + "#" + BOOKMARKS_ANCHOR));

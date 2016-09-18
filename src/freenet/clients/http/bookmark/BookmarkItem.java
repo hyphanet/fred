@@ -162,7 +162,7 @@ public class BookmarkItem extends Bookmark {
      * You usually only need to call this function after having loaded a bookmark from disk using
      * {@link #BookmarkItem(SimpleFieldSet, BookmarkManager, UserAlertManager)}. */
     synchronized void registerUserAlert() {
-        if(key.isUSK() && updated)
+        if (key.isUSK() && updated)
             alerts.register(alert);
     }
 

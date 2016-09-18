@@ -236,7 +236,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dismiss-user-alert", userAlert.dismissButtonText() });
 			
-			if(redirectToAfterDisable != null) {
+			if (redirectToAfterDisable != null) {
 				dismissFormNode.addChild("input",
 					new String[] { "type", "name", "value" },
 					new String[] { "hidden", "redirectToAfterDisable", redirectToAfterDisable });
