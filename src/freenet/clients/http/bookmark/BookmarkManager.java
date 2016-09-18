@@ -115,10 +115,6 @@ public class BookmarkManager implements RequestClient {
 			BookmarkManager bm = BookmarkManager.this;
 			
 			@Override public void run() {
-				// The USKUpdatedCallback only does storeBookmarksLazy() to accumulate changes
-				// before writing to disk until 5 minutes expire. As USK updates are visible in the
-				// UI by notifications, we need to ensure to save them before shutdown to not
-				// confuse the users with disappearing notifications.
 				bm.storeBookmarks();
 				bm = null;
 			}
