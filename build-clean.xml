@@ -77,6 +77,15 @@ maintainers may prefer to use this instead of build.xml.
 	<!-- Miscellaneous                                                       -->
 	<!-- =================================================================== -->
 
+	<fail unless="${ant.enable}" message=
+"The Ant builder has been deprecated in favor of the Gradle builder. Please prefer to use that one
+if possible.
+If you really need one of the build targets which are not available in Gradle yet, you may enable
+Ant by passing the parameter '-Dant.enable=true' or setting 'ant.enable=true' in the file
+'override.properties'.
+For how to use Gradle see https://gradle.org/"
+	/>
+
 	<target name="dist" depends="clean-all, all" description="clean-build everything"/>
 
 	<target name="sign" description="Sign the distribution" depends="package">
