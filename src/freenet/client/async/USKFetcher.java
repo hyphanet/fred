@@ -501,7 +501,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			    c = checker;
 			}
 			if(c == null) return;
-			c.onChangedFetchContext(context);
+			c.onChangedFetchContext();
 		}
 	}
 	
