@@ -180,7 +180,7 @@ public class ArchiveManager {
 	 * @param archiveType The archive type, defined in Metadata.
 	 * @return An archive handler.
 	 */
-	synchronized ArchiveStoreContext makeContext(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean returnNullIfNotFound) {
+	synchronized ArchiveStoreContext makeContext(FreenetURI key, ARCHIVE_TYPE archiveType, boolean returnNullIfNotFound) {
 		ArchiveStoreContext handler = null;
 		handler = getCached(key);
 		if(handler != null) return handler;
