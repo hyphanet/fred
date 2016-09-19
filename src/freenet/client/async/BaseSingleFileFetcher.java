@@ -255,8 +255,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public void reschedule(ClientContext context) {
 		getScheduler(context).register(null, new SendableGet[] { this }, persistent, ctx.blocks, true);
 	}
-	
-	public SendableGet getRequest(Key key) {
+
+	public SendableGet getRequest() {
 		return this;
 	}
 
