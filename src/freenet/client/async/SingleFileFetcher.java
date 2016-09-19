@@ -437,7 +437,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Do loop detection on the archive that we are about to fetch.
 					actx.doLoopDetection(thisKey);
 					ah = context.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), metadata.getCompressionCodec(),
-							(parent instanceof ClientGetter ? ((ClientGetter)parent).collectingBinaryBlob() : false), persistent);
+							(parent instanceof ClientGetter ? ((ClientGetter)parent).collectingBinaryBlob() : false));
 				}
 				archiveMetadata = metadata;
 				metadata = null; // Copied to archiveMetadata, so do not need to clear it
