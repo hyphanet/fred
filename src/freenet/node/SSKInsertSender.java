@@ -698,7 +698,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 	}
 
 	@Override
-	protected void timedOutWhileWaiting(double load) {
+	protected void timedOutWhileWaiting() {
 		htl -= (short)Math.max(0, hopsForFatalTimeoutWaitingForPeer());
 		if(htl < 0) htl = 0;
         // Backtrack, i.e. RNF.
