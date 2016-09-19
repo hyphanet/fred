@@ -1072,10 +1072,10 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			}
 			finished = true;
 		}
-		complete(context);
+		complete();
 	}
 
-	private void complete(ClientContext context) {
+	private void complete() {
 		// FIXME we could remove the put handlers after inserting all files but not having finished the insert of the manifest
 		// However it would complicate matters for no real gain in most cases...
 		// Also doing it this way means we don't need to worry about
