@@ -841,9 +841,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         			notifyAll();
         		}
         		fireCHKTransferBegins();
-				
-        		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler, true);
-        		
+
+        		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), realTimeFlag, myTimeoutHandler, true);
+
        			if(logMINOR) Logger.minor(this, "Receiving data (for offer reply)");
        			receivingAsync = true;
        			br.receive(new BlockReceiverCompletion() {
@@ -1097,8 +1097,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     		fireCHKTransferBegins();
     	
     	final long tStart = System.currentTimeMillis();
-    	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler, true);
-    	
+    	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), realTimeFlag, myTimeoutHandler, true);
+
     	if(failNow) {
     		if(logMINOR) Logger.minor(this, "Terminating forked transfer on "+this+" from "+next);
     		prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cancelling fork", true);
