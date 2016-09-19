@@ -759,7 +759,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		if(logMINOR)
 			Logger.minor(this, "Adding key "+block.getClientKey().getURI()+" to "+this, new Exception("debug"));
 		try {
-			binaryBlobWriter.addKey(block, context);
+			binaryBlobWriter.addKey(block);
 		} catch (IOException e) {
 			Logger.error(this, "Failed to write key to binary blob stream: "+e, e);
 			onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null, context);
