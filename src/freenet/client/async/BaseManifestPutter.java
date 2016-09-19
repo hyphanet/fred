@@ -136,7 +136,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
         private static final long serialVersionUID = 1L;
 
-        private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, Object object, HashSet<PutHandler> runningMap) {
+        private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, HashSet<PutHandler> runningMap) {
 			super(bmp, parent, name, null, runningMap);
 			this.origSFI = new ContainerInserter(this, this, data, insertURI, ctx, false, false, null, ARCHIVE_TYPE.TAR, false, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
@@ -1466,7 +1466,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				selfHandle = new ContainerPutHandler(BaseManifestPutter.this,
 						parent, name, _rootDir,
 						(isRoot ? BaseManifestPutter.this.targetURI
-								: FreenetURI.EMPTY_CHK_URI), null, (isRoot ? null : containerPutHandlers));
+								: FreenetURI.EMPTY_CHK_URI), (isRoot ? null : containerPutHandlers));
 			currentDir = _rootDir;
 			if (isRoot) {
 				rootContainerPutHandler = (ContainerPutHandler)selfHandle;
