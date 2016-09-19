@@ -5461,7 +5461,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 	
 	@Override
-	public MessageItem makeLoadStats(boolean realtime, boolean boostPriority, boolean noRemember) {
+	public MessageItem makeLoadStats() {
 	    // FIXME re-enable when try NLM again.
 	    return null;
 //		Message msg = loadSender(realtime).makeLoadStats(System.currentTimeMillis(), node.nodeStats.outwardTransfersPerInsert(), noRemember);

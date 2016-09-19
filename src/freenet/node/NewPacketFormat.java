@@ -637,7 +637,7 @@ addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 				if(!(addStatsBulk || addStatsRT)) break;
 				
 				if(addStatsBulk) {
-					MessageItem item = pn.makeLoadStats(false, false, true);
+					MessageItem item = pn.makeLoadStats();
 					if(item != null) {
 						byte[] buf = item.getData();
 						haveAddedStatsBulk = buf;
@@ -647,7 +647,7 @@ addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 				}
 				
 				if(addStatsRT) {
-					MessageItem item = pn.makeLoadStats(true, false, true);
+					MessageItem item = pn.makeLoadStats();
 					if(item != null) {
 						byte[] buf = item.getData();
 						haveAddedStatsRT = buf;
@@ -747,7 +747,7 @@ addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 		if((!ackOnly) && (!cantSend)) {
 			
 			if(sendStatsBulk) {
-				MessageItem item = pn.makeLoadStats(false, true, false);
+				MessageItem item = pn.makeLoadStats();
 				if(item != null) {
 					if(haveAddedStatsBulk != null) {
 						packet.removeLossyMessage(haveAddedStatsBulk);
@@ -758,7 +758,7 @@ addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 			}
 			
 			if(sendStatsRT) {
-				MessageItem item = pn.makeLoadStats(true, true, false);
+				MessageItem item = pn.makeLoadStats();
 				if(item != null) {
 					if(haveAddedStatsRT != null) {
 						packet.removeLossyMessage(haveAddedStatsRT);
@@ -857,7 +857,7 @@ addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 						if(!(addStatsBulk || addStatsRT)) break;
 						
 						if(addStatsBulk) {
-							MessageItem item = pn.makeLoadStats(false, false, true);
+							MessageItem item = pn.makeLoadStats();
 							if(item != null) {
 								byte[] buf = item.getData();
 								haveAddedStatsBulk = item.buf;
@@ -867,7 +867,7 @@ addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 						}
 						
 						if(addStatsRT) {
-							MessageItem item = pn.makeLoadStats(true, false, true);
+							MessageItem item = pn.makeLoadStats();
 							if(item != null) {
 								byte[] buf = item.getData();
 								haveAddedStatsRT = item.buf;
