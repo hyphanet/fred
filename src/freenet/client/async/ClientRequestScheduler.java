@@ -104,7 +104,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void registerInsert(final SendableRequest req) {
 		if(!isInsertScheduler)
 			throw new IllegalArgumentException("Adding a SendableInsert to a request scheduler!!");
-		selector.innerRegister(req, clientContext, null);
+		selector.innerRegister(req, clientContext);
 		starter.wakeUp();
 	}
 	
@@ -169,7 +169,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(!(getter.isCancelled())) {
 							wereAnyValid = true;
 							if(!getter.preRegister(clientContext, true)) {
-								selector.innerRegister(getter, clientContext, getters);
+								selector.innerRegister(getter, clientContext);
 							}
 						} else
 							getter.preRegister(clientContext, false);
@@ -192,7 +192,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(getter.preRegister(clientContext, true)) continue;
 				}
 				if(!getter.isCancelled())
-					selector.innerRegister(getter, clientContext, getters);
+					selector.innerRegister(getter, clientContext);
 			}
 			starter.wakeUp();
 		}

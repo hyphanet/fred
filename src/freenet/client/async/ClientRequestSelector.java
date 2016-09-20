@@ -395,7 +395,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
 					} else {
 						Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+chosenTracker);
 					}
-					innerRegister(req, context, null);
+					innerRegister(req, context);
 					continue;
 				}
 				
@@ -722,15 +722,8 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
     /**
      * @param req
      * @param container
-     * @param maybeActive Array of requests, can be null, which are being registered
-     * in this group. These will be ignored for purposes of checking whether stuff
-     * is activated when it shouldn't be. It is perfectly okay to have req be a
-     * member of maybeActive.
-     * 
-     * FIXME: Either get rid of the debugging code and therefore get rid of maybeActive,
-     * or make req a SendableRequest[] and register them all at once.
      */
-    void innerRegister(SendableRequest req, ClientContext context, SendableRequest[] maybeActive) {
+    void innerRegister(SendableRequest req, ClientContext context) {
         if(isInsertScheduler && req instanceof BaseSendableGet)
             throw new IllegalArgumentException("Adding a SendableGet to an insert scheduler!!");
         if((!isInsertScheduler) && req instanceof SendableInsert)
