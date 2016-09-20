@@ -599,7 +599,7 @@ public class NodeClientCore implements Persistable {
 		clientContext = new ClientContext(node.bootID, clientLayerPersister, node.executor,
 						  archiveManager, persistentTempBucketFactory,
 						  tempBucketFactory,
-						  persistentTempBucketFactory, healingQueue,
+						  healingQueue,
 						  uskManager, random, node.fastWeakRandom,
 						  node.getTicker(), memoryLimitedJobRunner,
 						  tempFilenameGenerator,
