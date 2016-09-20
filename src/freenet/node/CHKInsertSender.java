@@ -571,7 +571,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		next.successNotOverload(realTimeFlag);
 	}
 
-	private void handleDataInsertRejected(Message msg, PeerNode next, InsertTag thisTag) {
+	private void handleDataInsertRejected(Message msg, PeerNode next) {
 		next.successNotOverload(realTimeFlag);
 		short reason = msg
 				.getShort(DMT.DATA_INSERT_REJECTED_REASON);
@@ -1294,7 +1294,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 							}
 							
 							if (msg.getSpec() == DMT.FNPDataInsertRejected) {
-								handleDataInsertRejected(msg, waitingFor, tag);
+								handleDataInsertRejected(msg, waitingFor);
 								transfer.kill();
 								return; // Don't try another node.
 							}
@@ -1353,7 +1353,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
 			//Can occur after reception of the entire chk block
 			if (msg.getSpec() == DMT.FNPDataInsertRejected) {
-				handleDataInsertRejected(msg, next, thisTag);
+				handleDataInsertRejected(msg, next);
 				transfer.kill();
 				break;
 			}
