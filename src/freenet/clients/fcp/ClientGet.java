@@ -388,8 +388,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(client != null)
 			client.notifySuccess(this);
 	}
-	
-    public void setSuccessForMigration(ClientContext context, long completionTime, Bucket data) throws ResumeFailedException {
+
+    public void setSuccessForMigration(long completionTime, Bucket data) throws ResumeFailedException {
         synchronized(this) {
             succeeded = true;
             started = true;
