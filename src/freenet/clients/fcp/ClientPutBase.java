@@ -139,7 +139,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset,
 			FCPConnectionHandler handler, PersistentRequestClient client, short priorityClass, Persistence persistence, String clientToken,
 			boolean global, boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, String compressorDescriptor, InsertContext.CompatibilityMode compatMode, boolean ignoreUSKDatehints, NodeClientCore core) throws MalformedURLException {
-		super(uri, identifier, verbosity, charset, handler, client, priorityClass, persistence, realTimeFlag, clientToken, global);
+		super(uri, identifier, verbosity, handler, client, priorityClass, persistence, realTimeFlag, clientToken, global);
 		ctx = core.clientContext.getDefaultPersistentInsertContext();
         ctx.getCHKOnly = getCHKOnly;
 		ctx.dontCompress = dontCompress;

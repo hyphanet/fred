@@ -151,7 +151,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			boolean filterData, int maxSplitfileRetries, int maxNonSplitfileRetries,
 			long maxOutputLength, ReturnType returnType, boolean persistRebootOnly, String identifier, int verbosity,
 			short prioClass, File returnFilename, String charset, boolean writeToClientCache, boolean realTimeFlag, boolean binaryBlob, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException {
-		super(uri, identifier, verbosity, charset, null, globalClient,
+		super(uri, identifier, verbosity, null, globalClient,
 				prioClass,
 				(persistRebootOnly ? Persistence.REBOOT : Persistence.FOREVER), realTimeFlag, null, true);
 
