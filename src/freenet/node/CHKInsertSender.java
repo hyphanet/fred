@@ -545,7 +545,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	}
 
 	/** @return True if fatal i.e. we should try another node. */
-	private boolean handleRejectedOverload(Message msg, PeerNode next, InsertTag thisTag) {
+	private boolean handleRejectedOverload(Message msg, PeerNode next) {
 		// Probably non-fatal, if so, we have time left, can try next one
 		if (msg.getBoolean(DMT.IS_LOCAL)) {
 			next.localRejectedOverload("ForwardRejectedOverload6", realTimeFlag);
@@ -1280,7 +1280,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 							}
 
 							if (msg.getSpec() == DMT.FNPRejectedOverload) {
-								if(handleRejectedOverload(msg, waitingFor, tag)) {
+								if(handleRejectedOverload(msg, waitingFor)) {
 									// Already set the status, and handle... will have unlocked the next node, so no need to call finished().
 									transfer.onCompleted();
 									return; // Don't try another node.
@@ -1333,7 +1333,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			}
 
 			if (msg.getSpec() == DMT.FNPRejectedOverload) {
-				if(handleRejectedOverload(msg, next, thisTag)) {
+				if(handleRejectedOverload(msg, next)) {
 					// We have had an Accepted. This happens on a timeout downstream.
 					// They will complete it (finish()), so we need to wait for a transfer completion.
 					// FIXME it might be less confusing and therefore less likely to cause problems
