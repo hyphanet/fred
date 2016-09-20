@@ -644,8 +644,8 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
         }
         return requestGrabber;
     }
-    
-    public void reregisterAll(ClientRequester request, RequestScheduler lock, ClientContext context, short oldPrio) {
+
+    public void reregisterAll(ClientRequester request, ClientContext context, short oldPrio) {
         RequestClient client = request.getClient();
         short newPrio = request.getPriorityClass();
         if(newPrio == oldPrio) {

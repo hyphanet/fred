@@ -266,7 +266,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void reregisterAll(final ClientRequester request, short oldPrio) {
-		selector.reregisterAll(request, this, clientContext, oldPrio);
+		selector.reregisterAll(request, clientContext, oldPrio);
 		starter.wakeUp();
 	}
 	
