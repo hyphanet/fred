@@ -210,7 +210,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, 
 	        NodeClientCore core) throws IdentifierCollisionException, MessageInvalidException {
-		super(message.uri, message.identifier, message.verbosity, message.charset, handler,
+		super(message.uri, message.identifier, message.verbosity, handler,
 				message.priorityClass, message.persistence, message.realTimeFlag, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
