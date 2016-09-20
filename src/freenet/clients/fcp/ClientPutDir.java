@@ -336,8 +336,8 @@ public class ClientPutDir extends ClientPutBase {
 
 	public void onFailure() {}
 
-	public void onSuccess(FetchResult result, ClientGetter state) {}
-	
+	public void onSuccess() {}
+
 	@Override
 	public void onSuccess(BaseClientPutter state) {
 		super.onSuccess(state);
