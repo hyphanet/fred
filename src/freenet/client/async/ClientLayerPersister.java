@@ -526,7 +526,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         if(latest) {
             try {
                 // Don't bother with the buckets to free or the stats unless reading from the latest version (client.dat not client.dat.bak).
-                readStatsAndBuckets(ois, length, context);
+                readStatsAndBuckets(ois, length);
             } catch (Throwable t) {
                 Logger.error(this, "Failed to restore stats and delete old temp files: "+t, t);
             }
@@ -535,7 +535,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         fis = null;
     }
 
-    private void readStatsAndBuckets(ObjectInputStream ois, long length, ClientContext context) throws IOException, ClassNotFoundException {
+    private void readStatsAndBuckets(ObjectInputStream ois, long length) throws IOException, ClassNotFoundException {
         PersistentStatsPutter storedStatsPutter = (PersistentStatsPutter) ois.readObject();
         this.bandwidthStatsPutter.addFrom(storedStatsPutter);
         int count = ois.readInt();
