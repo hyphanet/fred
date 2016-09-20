@@ -30,7 +30,7 @@ public class ChosenBlockImpl extends ChosenBlock {
 
 	public ChosenBlockImpl(SendableRequest req, SendableRequestItem token, Key key, ClientKey ckey, 
 			boolean localRequestOnly, boolean ignoreStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean realTimeFlag, RequestScheduler sched, boolean persistent) {
-		super(token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, forkOnCacheable, realTimeFlag, sched);
+		super(token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, forkOnCacheable, realTimeFlag);
 		this.request = req;
 		this.sched = sched;
 		this.persistent = persistent;
