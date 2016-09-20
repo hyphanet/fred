@@ -30,8 +30,8 @@ public class PlainManifestPutter extends BaseManifestPutter {
 	}
 
 	public PlainManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
-			boolean earlyEncode, boolean persistent, byte [] forceCryptoKey, ClientContext context) throws TooManyFilesInsertException {
-		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, ClientPutter.randomiseSplitfileKeys(target, ctx, persistent), forceCryptoKey, context);
+			boolean earlyEncode, byte [] forceCryptoKey, ClientContext context) throws TooManyFilesInsertException {
+		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, ClientPutter.randomiseSplitfileKeys(target, ctx), forceCryptoKey, context);
 	}
 
 	@Override
