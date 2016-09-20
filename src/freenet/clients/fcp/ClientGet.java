@@ -667,7 +667,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	                
 	                @Override
 	                public boolean run(ClientContext context) {
-	                    innerHandleCompatibilityMode(ce, context);
+	                    innerHandleCompatibilityMode(ce);
 	                    return false;
 	                }
 	                
@@ -676,11 +676,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	            // Not much we can do
 	        }
 	    } else {
-	        innerHandleCompatibilityMode(ce, context);
+	        innerHandleCompatibilityMode(ce);
 	    }
 	}
 
-	private void innerHandleCompatibilityMode(SplitfileCompatibilityModeEvent ce, ClientContext context) {
+	private void innerHandleCompatibilityMode(SplitfileCompatibilityModeEvent ce) {
 	    compatMode.merge(ce.minCompatibilityMode, ce.maxCompatibilityMode, ce.splitfileCryptoKey, ce.dontCompress, ce.bottomLayer);
 	    if(client != null) {
 	        RequestStatusCache cache = client.getRequestStatusCache();
