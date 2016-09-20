@@ -306,10 +306,10 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			pn.noLongerRoutingTo(thisTag, false);
 		}
 	}
-	
-	CHKInsertSender(NodeCHK myKey, long uid, InsertTag tag, byte[] headers, short htl, 
-            PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore,
-            boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
+
+	CHKInsertSender(NodeCHK myKey, long uid, InsertTag tag, byte[] headers, short htl,
+			PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore,
+			boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
 		super(myKey, realTimeFlag, source, node, htl, uid);
         this.origUID = uid;
         this.origTag = tag;
