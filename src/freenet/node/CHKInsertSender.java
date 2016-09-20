@@ -559,7 +559,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		return false; // Wait for any further response
 	}
 
-	private void handleRNF(Message msg, PeerNode next, InsertTag thisTag) {
+	private void handleRNF(Message msg, PeerNode next) {
 		if(logMINOR) Logger.minor(this, "Rejected: RNF");
 		short newHtl = msg.getShort(DMT.HTL);
 		if(newHtl < 0) newHtl = 0;
@@ -1346,7 +1346,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
 			if (msg.getSpec() == DMT.FNPRouteNotFound) {
 				//RNF means that the HTL was not exhausted, but that the data will still be stored.
-				handleRNF(msg, next, thisTag);
+				handleRNF(msg, next);
 				transfer.onCompleted();
 				break;
 			}
