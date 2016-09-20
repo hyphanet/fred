@@ -140,7 +140,7 @@ public class SimpleSendableInsert extends SendableInsert {
 
 	public void schedule() {
 		finished = false; // can reschedule
-		scheduler.registerInsert(this, false);
+		scheduler.registerInsert(this);
 	}
 
 	public void cancel(ClientContext context) {

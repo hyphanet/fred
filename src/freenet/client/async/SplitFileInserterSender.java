@@ -207,7 +207,7 @@ public class SplitFileInserterSender extends SendableInsert {
 
     public void schedule(ClientContext context) {
         if(getParentGrabArray() != null) return; // If change priority will unregister first.
-        context.getChkInsertScheduler(parent.realTime).registerInsert(this, persistent);
+        context.getChkInsertScheduler(parent.realTime).registerInsert(this);
     }
     
     @Override

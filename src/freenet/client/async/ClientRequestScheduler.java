@@ -100,8 +100,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	static final int QUEUE_THRESHOLD = 100;
-	
-	public void registerInsert(final SendableRequest req, boolean persistent) {
+
+	public void registerInsert(final SendableRequest req) {
 		if(!isInsertScheduler)
 			throw new IllegalArgumentException("Adding a SendableInsert to a request scheduler!!");
 		selector.innerRegister(req, clientContext, null);
