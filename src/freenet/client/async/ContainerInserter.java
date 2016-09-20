@@ -98,7 +98,6 @@ public class ContainerInserter implements ClientPutState, Serializable {
 	 * @param reportMetadataOnly2
 	 * @param token2
 	 * @param archiveType2
-	 * @param freeData
 	 * @param forceCryptoKey
 	 * @param cryptoAlgorithm
 	 * @param realTimeFlag
@@ -114,7 +113,6 @@ public class ContainerInserter implements ClientPutState, Serializable {
 			boolean reportMetadataOnly2,
 			Object token2,
 			ARCHIVE_TYPE archiveType2,
-			boolean freeData,
 			byte[] forceCryptoKey,
 			byte cryptoAlgorithm,
 			boolean realTimeFlag) {

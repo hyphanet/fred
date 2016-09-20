@@ -83,7 +83,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
         private ArchivePutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI) {
 			super(bmp, parent, name, null, containerPutHandlers);
-			this.origSFI = new ContainerInserter(this, this, data, insertURI, ctx, false, false, null, ARCHIVE_TYPE.TAR, false, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
+			this.origSFI = new ContainerInserter(this, this, data, insertURI, ctx, false, false, null, ARCHIVE_TYPE.TAR, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
 
 		@Override
@@ -138,7 +138,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
         private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, HashSet<PutHandler> runningMap) {
 			super(bmp, parent, name, null, runningMap);
-			this.origSFI = new ContainerInserter(this, this, data, insertURI, ctx, false, false, null, ARCHIVE_TYPE.TAR, false, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
+			this.origSFI = new ContainerInserter(this, this, data, insertURI, ctx, false, false, null, ARCHIVE_TYPE.TAR, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
 
 		@Override
