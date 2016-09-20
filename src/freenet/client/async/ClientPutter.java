@@ -101,13 +101,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param isMetadata
 	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
 	 * @param binaryBlob
-	 * @param context The client object for purposs of round-robin client balancing.
 	 * @param overrideSplitfileCrypto
 	 * @param metadataThreshold
 	 */
 	public ClientPutter(ClientPutCallback client, RandomAccessBucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass,
-			boolean isMetadata, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto,
+			boolean isMetadata, String targetFilename, boolean binaryBlob, byte[] overrideSplitfileCrypto,
 			long metadataThreshold) {
 		super(priorityClass, client);
 		this.cm = cm;

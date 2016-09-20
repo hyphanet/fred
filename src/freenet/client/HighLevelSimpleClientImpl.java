@@ -255,7 +255,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		PutWaiter pw = new PutWaiter(this);
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata,
 				ctx, priority,
-				isMetadata, filenameHint, false, core.clientContext, forceCryptoKey, -1);
+				isMetadata, filenameHint, false, forceCryptoKey, -1);
 		try {
 			core.clientContext.start(put);
 		} catch (PersistenceDisabledException e) {
@@ -273,7 +273,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public ClientPutter insert(InsertBlock insert, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb, short priority) throws InsertException {
 		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata,
 				ctx, priority,
-				isMetadata, filenameHint, false, core.clientContext, null, -1);
+				isMetadata, filenameHint, false, null, -1);
 		try {
 			core.clientContext.start(put);
 		} catch (PersistenceDisabledException e) {

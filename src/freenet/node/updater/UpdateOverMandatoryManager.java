@@ -1145,7 +1145,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false).getInsertContext(true);
 		ClientPutter putter = new ClientPutter(callback, bucket,
 			FreenetURI.EMPTY_CHK_URI, null, ctx,
-			priority, false, null, true, updateManager.node.clientCore.clientContext, null, -1);
+			priority, false, null, true, null, -1);
 		try {
 			updateManager.node.clientCore.clientContext.start(putter);
 		} catch(InsertException e1) {

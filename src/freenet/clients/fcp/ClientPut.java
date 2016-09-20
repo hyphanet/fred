@@ -148,10 +148,10 @@ public class ClientPut extends ClientPutBase {
 		this.data = tempData;
 		this.clientMetadata = cm;
 
-		putter = new ClientPutter(this, data, this.uri, cm, 
-				ctx, priorityClass, 
-				isMetadata, 
-				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, core.clientContext, overrideSplitfileKey, -1);
+		putter = new ClientPutter(this, data, this.uri, cm,
+				ctx, priorityClass,
+				isMetadata,
+				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, overrideSplitfileKey, -1);
 	}
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, IOException {
@@ -261,7 +261,7 @@ public class ClientPut extends ClientPutBase {
 		putter = new ClientPutter(this, data, this.uri, cm, 
 				ctx, priorityClass, 
 				isMetadata,
-				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, message.overrideSplitfileCryptoKey, message.metadataThreshold);
+				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, message.overrideSplitfileCryptoKey, message.metadataThreshold);
 	}
 	
 	protected ClientPut() {
