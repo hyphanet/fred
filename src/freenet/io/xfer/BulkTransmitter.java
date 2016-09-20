@@ -33,8 +33,8 @@ public class BulkTransmitter {
 	
 	public interface AllSentCallback {
 
-		void allSent(BulkTransmitter bulkTransmitter, boolean anyFailed);
-		
+		void allSent();
+
 	}
 
 	/** If no packets sent in this period, and no completion acknowledgement / cancellation, assume failure. */
@@ -380,7 +380,7 @@ outer:	while(true) {
 
 			@Override
 			public void run() {
-				allSentCallback.allSent(BulkTransmitter.this, anyFailed);
+				allSentCallback.allSent();
 			}
 
 			@Override

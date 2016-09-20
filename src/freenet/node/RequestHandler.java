@@ -15,7 +15,6 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.BlockTransmitter.BlockTransmitterCompletion;
 import freenet.io.xfer.BlockTransmitter.ReceiverAbortHandler;
-import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.BulkTransmitter.AllSentCallback;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.io.xfer.WaitedTooLongException;
@@ -941,9 +940,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this, new AllSentCallback() {
 
 								@Override
-								public void allSent(
-										BulkTransmitter bulkTransmitter,
-										boolean anyFailed) {
+								public void allSent() {
 									// As soon as the originator receives the three blocks, he can reuse the slot.
 									tag.finishedWaitingForOpennet(dataSource);
 									tag.unlockHandler();
