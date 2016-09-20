@@ -339,7 +339,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	/** Queue the offered key */
-	public void queueOfferedKey(final Key key, boolean realTime) {
+	public void queueOfferedKey(final Key key) {
 		if(logMINOR)
 			Logger.minor(this, "queueOfferedKey("+key);
 		offeredKeys.queueKey(key);

@@ -2050,7 +2050,7 @@ public class NodeClientCore implements Persistable {
 	/** Queue the offered key. */
 	public void queueOfferedKey(Key key, boolean realTime) {
 		ClientRequestScheduler sched = requestStarters.getScheduler(key instanceof NodeSSK, false, realTime);
-		sched.queueOfferedKey(key, realTime);
+		sched.queueOfferedKey(key);
 	}
 
 	public void dequeueOfferedKey(Key key) {
