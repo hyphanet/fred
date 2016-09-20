@@ -334,7 +334,7 @@ public class ClientPutDir extends ClientPutBase {
 		return true;
 	}
 
-	public void onFailure(FetchException e, ClientGetter state) {}
+	public void onFailure() {}
 
 	public void onSuccess(FetchResult result, ClientGetter state) {}
 	
