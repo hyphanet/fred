@@ -164,7 +164,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(mimeType.compareTo("application/xhtml+xml")==0){
 				mimeType="text/html";
 			}
-			if(horribleEvilHack(data) && !(mimeType.startsWith("application/rss+xml"))) {
+			if(isSniffedAsFeed(data) && !(mimeType.startsWith("application/rss+xml"))) {
 				PageNode page = context.getPageMaker().getPageNode(l10n("dangerousRSSTitle"), context);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
@@ -399,7 +399,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	 * This is a horrible evil hack; we shouldn't be doing blacklisting, we should be doing whitelisting.
 	 * REDFLAG Expect future security issues!
 	 * @throws IOException */
-	private static boolean horribleEvilHack(Bucket data) throws IOException {
+	private static boolean isSniffedAsFeed(Bucket data) throws IOException {
 		DataInputStream is = null;
 		try {
 			int sz = (int) Math.min(data.size(), 512);
@@ -409,46 +409,88 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			byte[] buf = new byte[sz];
 			// FIXME Fortunately firefox doesn't detect RSS in UTF16 etc ... yet
 			is.readFully(buf);
-			/**
-		 * Look for any of the following strings:
-		 * <rss
-		 * &lt;feed
-		 * &lt;rdf:RDF
-		 *
-		 * If they start at the beginning of the file, or are preceded by one or more &lt;! or &lt;? tags,
-		 * then firefox will read it as RSS. In which case we must force it to be downloaded to disk.
-		 */
-			if(checkForString(buf, "<rss"))
-				return true;
-			if(checkForString(buf, "<feed"))
-				return true;
-			if(checkForString(buf, "<rdf:RDF"))
-				return true;
+			return isSniffedAsFeed(buf);
 		}
 		finally {
 			Closer.close(is);
 		}
-		return false;
 	}
 
-	/** Scan for a US-ASCII (byte = char) string within a given buffer of possibly binary data */
-	private static boolean checkForString(byte[] buf, String find) {
-		int offset = 0;
-		int bufProgress = 0;
-		while(offset < buf.length) {
-			byte b = buf[offset];
-			if(b == find.charAt(bufProgress)) {
-				bufProgress++;
-				if(bufProgress == find.length()) return true;
-				offset++;
-			} else {
-				if(bufProgress == 0)
-					offset++; // Try the next byte.
-				else
-					bufProgress = 0; // Reset to the first char of the keyword.
+	/**
+	 * Look for any of the following strings as top-level XML tags:
+	 * <rss
+	 * &lt;feed
+	 * &lt;rdf:RDF
+	 *
+	 * If they start at the beginning of the file, or are preceded by one or more &lt;! or &lt;? tags,
+	 * then firefox will read it as RSS. In which case we must force it to be downloaded to disk.
+	 */
+	static boolean isSniffedAsFeed(byte[] prefix) {
+		int tlt = indexOfTopLevelTag(prefix);
+		if (tlt == -1) {
+			return false;
+		}
+		return startsWithString(prefix, "<rss", tlt) ||
+					startsWithString(prefix, "<feed", tlt) ||
+					startsWithString(prefix, "<rdf:RDF", tlt);
+	}
+
+	/**
+	 * Finds the smallest index of a top-level XML tag in the data.
+	 * A tag is any sequence that starts with '<'. A top-level tag is any subsequence that is not
+	 * a comment, processing instruction or doctype (e.g. "<?" or "<!") and is not embedded in such
+	 * a tag.
+	 * Returns -1 if no such tag exists in the data.
+	 */
+	private static int indexOfTopLevelTag(byte[] data) {
+		int i = 0;
+		// Scan over all tags in the data.
+		while ((i = indexOf(data, (byte)'<', i)) != -1) {
+			i++;
+			if (i >= data.length) {
+				return -1;
+			}
+			if (data[i] != (byte)'?' && data[i] != (byte)'!') {
+				// Found a top-level tag.
+				return i - 1;
+			}
+			// Found a comment, processing instruction or doctype; proceed to the end of the tag.
+			i = indexOf(data, (byte)'>', i);
+			if (i == -1) {
+				// No end of tag in buffer: we won't find a top-level tag.
+				return -1;
 			}
 		}
-		return false;
+		return -1;
+	}
+
+	/**
+	 * Returns the smallest index of the key in the data array not smaller than fromIndex,
+	 * or -1 if no such index exists.
+	 */
+	private static int indexOf(byte[] data, byte key, int fromIndex) {
+		for (int i = fromIndex; i < data.length; i++) {
+			if (data[i] == key) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * Checks whether the given data starts with the characters in the key value, when starting
+	 * at fromIndex in the data array.
+	 */
+	private static boolean startsWithString(byte[] data, String key, int fromIndex) {
+		if (data.length - fromIndex < key.length()) {
+			return false;
+		}
+		for (int i = 0; i < key.length(); i++) {
+			if (data[i + fromIndex] != key.charAt(i)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest httprequest, ToadletContext ctx)
