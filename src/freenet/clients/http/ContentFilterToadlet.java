@@ -322,14 +322,14 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         try {
             inputStream = input.getInputStream();
             outputStream = output.getOutputStream();
-            return applyFilter(inputStream, outputStream, mimeType, operation, core);
+            return applyFilter(inputStream, outputStream, mimeType, core);
         } finally {
             Closer.close(inputStream);
             Closer.close(outputStream);
         }
     }
-    
-    private FilterStatus applyFilter(InputStream input, OutputStream output, String mimeType, FilterOperation operation, NodeClientCore core)
+
+    private FilterStatus applyFilter(InputStream input, OutputStream output, String mimeType, NodeClientCore core)
             throws UnsafeContentTypeException, IOException {
         URI fakeUri;
         try {
