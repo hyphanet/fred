@@ -422,7 +422,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		int type = m.getInt(DMT.NODE_TO_NODE_MESSAGE_TYPE);
 		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
 		if(messageData.getLength() == 0) return;
-		node.receivedNodeToNodeMessage(source, type, messageData, true);
+		node.receivedNodeToNodeMessage(source, type, messageData);
 	}
 
 	private boolean handleTime(Message m, PeerNode source) {

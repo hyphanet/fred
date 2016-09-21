@@ -3926,10 +3926,10 @@ public class Node implements TimeSkewDetectorCallback {
 	public void receivedNodeToNodeMessage(Message m, PeerNode src) {
 		int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
 		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
-		receivedNodeToNodeMessage(src, type, messageData, false);
+		receivedNodeToNodeMessage(src, type, messageData);
 	}
 
-	public void receivedNodeToNodeMessage(PeerNode src, int type, ShortBuffer messageData, boolean partingMessage) {
+	public void receivedNodeToNodeMessage(PeerNode src, int type, ShortBuffer messageData) {
 		boolean fromDarknet = src instanceof DarknetPeerNode;
 
 		NodeToNodeMessageListener listener = null;
