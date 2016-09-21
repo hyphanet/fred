@@ -136,7 +136,7 @@ public class FailureTable {
 			// We have to do this inside the lock to prevent race condition with the cleaner causing us to get dropped because isEmpty() before updating.
 			entry.failedTo(routedTo, rfTimeout, ftTimeout, now, htl);
 
-			trimEntries(now);
+			trimEntries();
 		}
 	}
 	
@@ -175,12 +175,12 @@ public class FailureTable {
 				entry.failedTo(routedTo, rfTimeout, ftTimeout, now, htl);
 			if(requestor != null)
 				entry.addRequestor(requestor, now, origHTL);
-			
-			trimEntries(now);
+
+			trimEntries();
 		}
 	}
-	
-	private synchronized void trimEntries(long now) {
+
+	private synchronized void trimEntries() {
 		while(entriesByKey.size() > MAX_ENTRIES) {
 			entriesByKey.popKey();
 		}
