@@ -198,7 +198,7 @@ class KeyListenerTracker implements KeySalter {
 		return false;
 	}
 	
-	public synchronized boolean anyProbablyWantKey(Key key, ClientContext context) {
+	public synchronized boolean anyProbablyWantKey(Key key) {
 		assert(key instanceof NodeSSK == isSSKScheduler);
 		byte[] saltedKey = saltKey(key);
 		for (KeyListener listener : keyListeners) {

@@ -288,7 +288,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			offeredKeys.remove(block.getKey());
 		}
 		final Key key = block.getKey();
-		if(schedTransient.anyProbablyWantKey(key, clientContext)) {
+		if(schedTransient.anyProbablyWantKey(key)) {
 			this.clientContext.mainExecutor.execute(new PrioRunnable() {
 
 				@Override
@@ -304,7 +304,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}, "Trip pending key (transient)");
 		}
 		if(schedCore == null) return;
-		if(schedCore.anyProbablyWantKey(key, clientContext)) {
+		if(schedCore.anyProbablyWantKey(key)) {
 			try { 
 			    // This is definitely NOT an internal job. 
 			    // It can wait until after the next checkpoint if necessary. So use queue().
@@ -333,8 +333,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * RequestHandler (onAbort() handler). */
 	@Override
 	public boolean wantKey(Key key) {
-		if(schedTransient.anyProbablyWantKey(key, clientContext)) return true;
-		if(schedCore != null && schedCore.anyProbablyWantKey(key, clientContext)) return true;
+		if(schedTransient.anyProbablyWantKey(key)) return true;
+		if(schedCore != null && schedCore.anyProbablyWantKey(key)) return true;
 		return false;
 	}
 
