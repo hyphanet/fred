@@ -1298,7 +1298,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// Check transfer-based limits, with fair sharing.
 		
 		ret = checkMaxOutputTransfers(maxOutputTransfers, maxTransfersOutUpperLimit, maxTransfersOutLowerLimit, maxTransfersOutPeerLimit,
-				requestsSnapshot, peerRequestsSnapshot, isLocal, realTimeFlag, isInsert, isSSK, isOfferReply, tag);
+				requestsSnapshot, peerRequestsSnapshot, isLocal, realTimeFlag, isInsert, isSSK, isOfferReply);
 		if(ret != null) {
 			return new RejectReason(ret, true);
 		}
@@ -1519,7 +1519,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			int maxTransfersOutPeerLimit,
 			RunningRequestsSnapshot requestsSnapshot,
 			RunningRequestsSnapshot peerRequestsSnapshot, boolean isLocal, boolean realTime,
-			boolean isInsert, boolean isSSK, boolean isOfferReply, UIDTag tag) {
+			boolean isInsert, boolean isSSK, boolean isOfferReply) {
 		if(logMINOR) Logger.minor(this, "Max transfers: congestion control limit "+maxOutputTransfers+
 				" upper "+maxTransfersOutUpperLimit+" lower "+maxTransfersOutLowerLimit+" peer "+maxTransfersOutPeerLimit+" "+(realTime ? "(rt)" : "(bulk)"));
 		int peerOutTransfers = peerRequestsSnapshot.totalOutTransfers();
