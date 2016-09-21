@@ -171,7 +171,7 @@ public class SaltedHashFreenetStoreTest extends TestCase {
 		
 		String test = "test";
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
-		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 		SSKBlock sskBlock = (SSKBlock) block.getBlock();
 		store.put(sskBlock, false, false);
 		
@@ -186,7 +186,7 @@ public class SaltedHashFreenetStoreTest extends TestCase {
 		
 		String test1 = "test1";
 		SimpleReadOnlyArrayBucket bucket1 = new SimpleReadOnlyArrayBucket(test1.getBytes("UTF-8"));
-		ClientSSKBlock block1 = ik.encode(bucket1, false, false, (short)-1, bucket1.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		ClientSSKBlock block1 = ik.encode(bucket1, false, false, (short)-1, bucket1.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 		SSKBlock sskBlock1 = (SSKBlock) block1.getBlock();
 		
 		//if it's different (e.g. different content, same key), there should be a KCE thrown
@@ -228,6 +228,6 @@ public class SaltedHashFreenetStoreTest extends TestCase {
 		byte[] data = test.getBytes("UTF-8");
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
 		InsertableClientSSK ik = InsertableClientSSK.createRandom(random, test);
-		return ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		return ik.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 	}
 }

@@ -170,7 +170,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			return ClientCHKBlock.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, compressorDescriptor, pre1254, cryptoKey, cryptoAlgorithm);
 		} else if(uriType.equals("SSK") || uriType.equals("KSK")) {
 			InsertableClientSSK ik = InsertableClientSSK.create(uri);
-			return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, random, compressorDescriptor, pre1254);
+			return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, compressorDescriptor, pre1254);
 		} else {
 			throw new InsertException(InsertExceptionMode.INVALID_URI, "Unknown keytype "+uriType, null);
 		}

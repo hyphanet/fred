@@ -261,7 +261,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		
 		String test = "test";
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
-		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 		SSKBlock sskBlock = (SSKBlock) block.getBlock();
 		pubkeyCache.cacheKey(sskBlock.getKey().getPubKeyHash(), sskBlock.getPubKey(), false, false, false, false, false);
 		try {
@@ -275,7 +275,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		// Write a colliding key.
 		test = "test1";
 		bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
-		block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		block = ik.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 		sskBlock = (SSKBlock) block.getBlock();
 		try {
 			store.put(sskBlock, false, false);
@@ -297,7 +297,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		DSAPublicKey pubKey2 = new DSAPublicKey(g, privKey2);
 		byte[] pkHash2 = SHA256.digest(pubKey2.asBytes());
 		InsertableClientSSK ik2 = new InsertableClientSSK(docName, pkHash2, pubKey2, privKey2, ckey, Key.ALGO_AES_PCFB_256_SHA256);
-		block = ik2.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		block = ik2.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 		SSKBlock sskBlock2 = (SSKBlock) block.getBlock();
 		pubkeyCache.cacheKey(sskBlock2.getKey().getPubKeyHash(), sskBlock2.getPubKey(), false, false, false, false, false);
 		
@@ -348,7 +348,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		
 		String test = "test";
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
-		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 		SSKBlock sskBlock = (SSKBlock) block.getBlock();
 		pubkeyCache.cacheKey(sskBlock.getKey().getPubKeyHash(), sskBlock.getPubKey(), false, false, false, false, false);
 		try {
@@ -405,7 +405,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		// Write one key to the cache. It will not be written through to disk.
 		String test = "test";
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
-		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 		SSKBlock sskBlock = (SSKBlock) block.getBlock();
 		pubkeyCache.cacheKey(sskBlock.getKey().getPubKeyHash(), sskBlock.getPubKey(), false, false, false, false, false);
 		try {
@@ -431,7 +431,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		// thus must return 0.
 		test = "test1";
 		bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
-		block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		block = ik.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 		SSKBlock sskBlock2 = (SSKBlock) block.getBlock();
 		try {
 			store.put(sskBlock2, false, false);
@@ -725,7 +725,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		
 		String test = "test";
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
-		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		ClientSSKBlock block = ik.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 		SSKBlock sskBlock = (SSKBlock) block.getBlock();
 		store.put(sskBlock, false, false);
 		
@@ -739,7 +739,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		
 		String test1 = "test1";
 		SimpleReadOnlyArrayBucket bucket1 = new SimpleReadOnlyArrayBucket(test1.getBytes("UTF-8"));
-		ClientSSKBlock block1 = ik.encode(bucket1, false, false, (short)-1, bucket1.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		ClientSSKBlock block1 = ik.encode(bucket1, false, false, (short)-1, bucket1.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 		SSKBlock sskBlock1 = (SSKBlock) block1.getBlock();
 		
 		//if it's different (e.g. different content, same key), there should be a KCE thrown
@@ -787,6 +787,6 @@ public class CachingFreenetStoreTest extends TestCase {
 		byte[] data = test.getBytes("UTF-8");
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
 		InsertableClientSSK ik = InsertableClientSSK.createRandom(random, test);
-		return ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
+		return ik.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false);
 	}
 }
