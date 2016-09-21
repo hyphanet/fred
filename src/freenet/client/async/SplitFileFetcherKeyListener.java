@@ -257,7 +257,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     }
 
     @Override
-    public short definitelyWantKey(Key key, byte[] saltedKey, ClientContext context) {
+    public short definitelyWantKey(Key key) {
         // Caller has already called probablyWantKey(), so don't do it again.
         byte[] salted = localSaltKey(key);
         for(int i=0;i<segmentFilters.length;i++) {

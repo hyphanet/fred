@@ -157,7 +157,7 @@ class KeyListenerTracker implements KeySalter {
 		for (KeyListener listener : matches) {
 			short prio;
 			try {
-				prio = listener.definitelyWantKey(key, saltedKey, sched.clientContext);
+				prio = listener.definitelyWantKey(key);
 			} catch (Throwable t) {
 				Logger.error(this, format("Error in definitelyWantKey callback for %s", listener), t);
 				continue;
@@ -187,7 +187,7 @@ class KeyListenerTracker implements KeySalter {
 		if (!matches.isEmpty()) {
 			for (KeyListener listener : matches) {
 				try {
-					if (listener.definitelyWantKey(key, saltedKey, sched.clientContext) >= 0) {
+					if (listener.definitelyWantKey(key) >= 0) {
 						return true;
 					}
 				} catch (Throwable t) {
