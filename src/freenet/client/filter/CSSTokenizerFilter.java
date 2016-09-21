@@ -3991,7 +3991,7 @@ class CSSTokenizerFilter {
 
 			if(isString && words[0] instanceof ParsedString)
 			{
-				if(ElementInfo.ALLOW_ALL_VALID_STRINGS || ElementInfo.isValidStringDecoded(((ParsedString)words[0]).getDecoded()))
+				if(ElementInfo.ALLOW_ALL_VALID_STRINGS || ElementInfo.isValidStringDecoded())
 					return true;
 				else
 					return false;
@@ -4523,7 +4523,7 @@ class CSSTokenizerFilter {
 
 			//String processing
 			if(value[0] instanceof ParsedString) {
-				if(ElementInfo.ALLOW_ALL_VALID_STRINGS || ElementInfo.isValidStringDecoded(((ParsedString)value[0]).getDecoded()))
+				if(ElementInfo.ALLOW_ALL_VALID_STRINGS || ElementInfo.isValidStringDecoded())
 					return true;
 				else
 					return false;
@@ -4550,7 +4550,7 @@ class CSSTokenizerFilter {
 					listStyleType.add("none");
 					if(!listStyleType.contains(counter.listType.getDecoded())) return false;
 				}
-				if(counter.separatorString != null && !(ElementInfo.ALLOW_ALL_VALID_STRINGS || ElementInfo.isValidStringDecoded(counter.separatorString.getDecoded())))
+				if(counter.separatorString != null && !(ElementInfo.ALLOW_ALL_VALID_STRINGS || ElementInfo.isValidStringDecoded()))
 					return false;
 				return true;
 			}
