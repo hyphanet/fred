@@ -1219,7 +1219,7 @@ addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 			}
 		}
 
-		public void sent(int length) {
+		public void sent() {
 			sentTime = System.currentTimeMillis();
 		}
 
