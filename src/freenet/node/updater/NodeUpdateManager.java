@@ -273,7 +273,7 @@ public class NodeUpdateManager {
 		LegacyJarFetcher.LegacyFetchCallback legacyFetcherCallback = new LegacyJarFetcher.LegacyFetchCallback() {
 
 			@Override
-			public void onSuccess(LegacyJarFetcher fetcher) {
+			public void onSuccess() {
 				if (transitionMainJarFetcher.fetched()) {
 					System.out.println("Got legacy jar, announcing...");
 					broadcastUOMAnnouncesOld();
