@@ -286,7 +286,7 @@ public class FCPConnectionHandler implements Closeable {
 		synchronized(FCPConnectionHandler.this) {
 			if(foreverClient != null) return foreverClient;
 		}
-		PersistentRequestClient client = server.registerForeverClient(name, server.core, FCPConnectionHandler.this);
+		PersistentRequestClient client = server.registerForeverClient(name, FCPConnectionHandler.this);
 		synchronized(FCPConnectionHandler.this) {
 			foreverClient = client;
 			FCPConnectionHandler.this.notifyAll();
