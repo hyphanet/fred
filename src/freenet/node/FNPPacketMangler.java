@@ -830,7 +830,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		final long now = System.currentTimeMillis();
 		int modulusLength = getModulusLength();
         // Pre negtype 9 we were sending Ni as opposed to Ni'
-        int nonceSize = getNonceSize(negType);
+        int nonceSize = getNonceSize();
 		
 		KeyAgreementSchemeContext ctx = pn.getKeyAgreementSchemeContext();
             if((ctx == null) || !(ctx instanceof ECDHLightContext) || ((pn.jfkContextLifetime + DH_GENERATION_INTERVAL*DH_CONTEXT_BUFFER_SIZE) < now)) {
@@ -883,7 +883,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) throws NoContextsException {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
 		int modulusLength = getModulusLength();
-		int nonceSize = getNonceSize(negType);
+		int nonceSize = getNonceSize();
 		// g^r
 		// Neg type 8 and later use ECDH for generating the keys.
 		KeyAgreementSchemeContext ctx = getECDHLightContext();
@@ -961,7 +961,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		long t1=System.currentTimeMillis();
 		int modulusLength = getModulusLength();
 		// Pre negtype 9 we were sending Ni as opposed to Ni'
-		int nonceSize = getNonceSize(negType);
+		int nonceSize = getNonceSize();
 		int nonceSizeHashed = HASH_LENGTH;
 		
 		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it - "+pn.getPeer());
@@ -1074,7 +1074,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	{
 		final long t1 = System.currentTimeMillis();
 		int modulusLength = getModulusLength();
-		int nonceSize = getNonceSize(negType);
+		int nonceSize = getNonceSize();
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
 
 		BlockCipher c = null;
@@ -1485,7 +1485,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		// verify the signature
 		int dataLen = hisRef.length + 8 + 9;
-		int nonceSize = getNonceSize(negType);
+		int nonceSize = getNonceSize();
 		int nonceSizeHashed = HASH_LENGTH;
 		byte[] identity = crypto.getIdentity(negType);
 		byte[] locallyGeneratedText = new byte[nonceSizeHashed + nonceSize + modulusLength * 2 + identity.length + dataLen + pn.jfkMyRef.length];
@@ -1607,7 +1607,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn.getPeer());
 		int modulusLength = getModulusLength();
 		int signLength = getSignatureLength();
-		int nonceSize = getNonceSize(negType);
+		int nonceSize = getNonceSize();
         // Pre negtype 9 we were sending Ni as opposed to Ni'
         byte[] nonceInitiatorHashed = SHA256.digest(nonceInitiator);
         
@@ -2289,7 +2289,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	       return ECDSA.Curves.P256.maxSigSize;
 	}
 	
-	private int getNonceSize(int negType) {
+	private int getNonceSize() {
 		return 16;
 	}
 }
