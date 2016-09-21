@@ -1894,7 +1894,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return result;
 	}
 
-	public void waitUntilNotOverloaded(boolean isInsert) {
+	public void waitUntilNotOverloaded() {
 		while(threadLimit < getActiveThreadCount()){
 			try{
 				Thread.sleep(5000);
