@@ -671,7 +671,7 @@ public class FailureTable {
 	}
 
 	/** Called when a node disconnects */
-	public void onDisconnect(final PeerNode pn) {
+	public void onDisconnect() {
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		// FIXME do something (off thread if expensive)
 	}
