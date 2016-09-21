@@ -567,7 +567,7 @@ public class NewPacketFormat implements PacketFormat {
 		checkForLostPackets();
 		
 		NPFPacket packet = new NPFPacket();
-		SentPacket sentPacket = new SentPacket(this, sessionKey);
+		SentPacket sentPacket = new SentPacket(this);
 		
 		boolean mustSend = false;
 		long now = System.currentTimeMillis();
@@ -1139,7 +1139,7 @@ addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 		final List<int[]> ranges = new ArrayList<>();
 		long sentTime;
 
-		SentPacket(NewPacketFormat npf, SessionKey key) {
+		SentPacket(NewPacketFormat npf) {
 			this.npf = npf;
 		}
 
