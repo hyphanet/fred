@@ -2984,7 +2984,7 @@ public class Node implements TimeSkewDetectorCallback {
 			return fs;
 	}
 
-	public void start(boolean noSwaps) throws NodeInitException {
+	public void start() throws NodeInitException {
 		
 		// IMPORTANT: Read the peers only after we have finished initializing Node.
 		// Peer constructors are complex and can call methods on Node.

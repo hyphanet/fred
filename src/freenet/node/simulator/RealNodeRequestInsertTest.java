@@ -106,7 +106,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
         
         for(int i=0;i<NUMBER_OF_NODES;i++) {
-            nodes[i].start(false);
+            nodes[i].start();
             System.err.println("Started node "+i+"/"+nodes.length);
         }
         

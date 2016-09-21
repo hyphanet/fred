@@ -66,7 +66,7 @@ public class BootstrapPushPullTest {
     	//Logger.setupStdoutLogging(LogLevel.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
     	Logger.getChain().setThreshold(LogLevel.ERROR); // kill logging
     	// Start it
-        node.start(true);
+        node.start();
 		if (!TestUtil.waitForNodes(node)) {
 			node.park();
 			System.exit(EXIT_FAILED_TARGET);
@@ -110,7 +110,7 @@ public class BootstrapPushPullTest {
         fis.close();
         executor = new PooledExecutor();
         secondNode = NodeStarter.createTestNode(DARKNET_PORT2, OPENNET_PORT2, dir.getPath(), false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, false, false, ipOverride);        
-        secondNode.start(true);
+        secondNode.start();
 		if (!TestUtil.waitForNodes(secondNode)) {
 			secondNode.park();
 			System.exit(EXIT_FAILED_TARGET);

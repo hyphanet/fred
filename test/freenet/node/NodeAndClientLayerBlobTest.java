@@ -55,7 +55,7 @@ public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
         params.baseDirectory = dir;
         params.executor = executor;
         Node node = NodeStarter.createTestNode(params);
-        node.start(false);
+        node.start();
         HighLevelSimpleClient client = 
                 node.clientCore.makeClient((short)0, false, false);
         // First do an ordinary insert.
@@ -88,7 +88,7 @@ public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
         params.baseDirectory.mkdir();
         params.executor = executor;
         Node node2 = NodeStarter.createTestNode(params);
-        node2.start(false);
+        node2.start();
         HighLevelSimpleClient client2 = 
                 node.clientCore.makeClient((short)0, false, false);
         FetchContext ctx2 = client.getFetchContext(FILE_SIZE*2);

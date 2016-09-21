@@ -212,7 +212,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 			Logger.getChain().setThreshold(LogLevel.ERROR);
 
 			// Start it
-			node.start(true);
+			node.start();
 			t1 = System.currentTimeMillis();
 			if (!TestUtil.waitForNodes(node)) {
 				exitCode = EXIT_FAILED_TARGET;

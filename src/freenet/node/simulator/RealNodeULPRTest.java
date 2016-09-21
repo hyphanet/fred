@@ -142,7 +142,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
         
 		for(Node node: nodes)
-            node.start(false);
+            node.start();
         
         int successfulTests = 0;
         

@@ -60,7 +60,7 @@ public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
         params.baseDirectory = dir;
         params.executor = executor;
         Node node = NodeStarter.createTestNode(params);
-        node.start(false);
+        node.start();
         HighLevelSimpleClient client = 
                 node.clientCore.makeClient((short)0, false, false);
         InsertContext ictx = client.getInsertContext(true);
