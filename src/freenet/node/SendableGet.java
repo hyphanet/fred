@@ -101,7 +101,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	public void unregister(ClientContext context, short oldPrio) {
 		super.unregister(context, oldPrio);
 		ClientRequestScheduler scheduler = getScheduler(context);
-		context.checker.removeRequest(this, persistent, context, oldPrio == -1 ? getPriorityClass() : oldPrio);
+		context.checker.removeRequest(this, persistent, oldPrio == -1 ? getPriorityClass() : oldPrio);
 	}
 	
 	public static FetchException translateException(LowLevelGetException e) {
