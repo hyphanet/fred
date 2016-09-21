@@ -894,7 +894,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] myExponential = ctx.getPublicKeyNetworkFormat();
 		// Neg type 9 and later use ECDSA signature.
 		byte[] sig = ctx.ecdsaSig;
-	    if(sig.length != getSignatureLength(negType))
+	    if(sig.length != getSignatureLength())
 	        throw new IllegalStateException("This shouldn't happen: please report! We are attempting to send "+sig.length+" bytes of signature in JFK2! "+pn.getPeer());
 	    byte[] authenticator = HMAC.macWithSHA256(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()));
 		if(logDEBUG) Logger.debug(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
@@ -982,7 +982,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] hisExponential = Arrays.copyOfRange(payload, inputOffset, inputOffset+modulusLength);
 		inputOffset += modulusLength;
 
-		int sigLength = getSignatureLength(negType);
+		int sigLength = getSignatureLength();
 		byte[] sig = new byte[sigLength];
 		System.arraycopy(payload, inputOffset, sig, 0, sigLength);
 		inputOffset += sigLength;
@@ -1226,7 +1226,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		 * Signature
 		 * Node Data (starting with BootID)
 		 */
-		int sigLength = getSignatureLength(negType);
+		int sigLength = getSignatureLength();
 		byte[] sig = new byte[sigLength];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, sig, 0, sigLength);
 		decypheredPayloadOffset += sigLength;
@@ -1396,7 +1396,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private boolean processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, int negType) {
 		final long t1 = System.currentTimeMillis();
 		int modulusLength = getModulusLength();
-		int signLength = getSignatureLength(negType);
+		int signLength = getSignatureLength();
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it - "+pn.getPeer());
 		if(pn.jfkMyRef == null) {
 			String error = "Got a JFK(4) message but no pn.jfkMyRef for "+pn;
@@ -1606,7 +1606,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	{
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn.getPeer());
 		int modulusLength = getModulusLength();
-		int signLength = getSignatureLength(negType);
+		int signLength = getSignatureLength();
 		int nonceSize = getNonceSize(negType);
         // Pre negtype 9 we were sending Ni as opposed to Ni'
         byte[] nonceInitiatorHashed = SHA256.digest(nonceInitiator);
@@ -2285,7 +2285,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	        return ecdhCurveToUse.modulusSize;
 	}
 	
-	private int getSignatureLength(int negType) {
+	private int getSignatureLength() {
 	       return ECDSA.Curves.P256.maxSigSize;
 	}
 	
