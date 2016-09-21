@@ -1660,7 +1660,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		failureTable = new FailureTable(this);
 
-		nodeStats = new NodeStats(this, sortOrder, config.createSubConfig("node.load"), obwLimit, ibwLimit, lastVersion);
+		nodeStats = new NodeStats(this, sortOrder, config.createSubConfig("node.load"));
 
 		// clientCore needs new load management and other settings from stats.
 		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, toadlets, databaseKey, persistentSecret);

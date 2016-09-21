@@ -323,7 +323,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private volatile boolean enableNewLoadManagementRT;
 	private volatile boolean enableNewLoadManagementBulk;
 
-	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, int lastVersion) throws NodeInitException {
+	NodeStats(Node node, int sortOrder, SubConfig statsConfig) throws NodeInitException {
 		this.node = node;
 		this.peers = node.peers;
 		this.hardRandom = node.random;
