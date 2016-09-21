@@ -266,7 +266,7 @@ public class NodeCryptoConfig {
 		if(crypto != null) throw new IllegalStateException("Replacing existing NodeCrypto "+crypto+" with "+crypto2);
 	}
 	
-	synchronized void maybeStarted(NodeCrypto crypto2) {
+	synchronized void maybeStarted() {
 
 	}
 	

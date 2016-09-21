@@ -154,7 +154,7 @@ public class NodeCrypto {
 			config.stopping(this);
 			throw new Error(e);
 		} finally {
-			config.maybeStarted(this);
+			config.maybeStarted();
 		}
 	}
 
