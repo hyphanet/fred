@@ -402,14 +402,14 @@ public class FailureTable {
 		boolean heAsked = entry.askedByPeer(peer, now);
 		if(!(weAsked || heAsked)) {
 			if(logMINOR) Logger.minor(this, "Not propagating key: weAsked="+weAsked+" heAsked="+heAsked);
-			if(entry.isEmpty(now)) {
+			if(entry.isEmpty()) {
 				synchronized(this) {
 					entriesByKey.removeKey(key);
 				}
 			}
 			return;
 		}
-		if(entry.isEmpty(now)) {
+		if(entry.isEmpty()) {
 			synchronized(this) {
 				entriesByKey.removeKey(key);
 			}
