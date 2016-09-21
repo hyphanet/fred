@@ -1658,7 +1658,7 @@ class CSSTokenizerFilter {
 			if(words.length == important) return true; // Eh? !important on its own!
 			words = Arrays.copyOf(words, words.length-important);
 		}
-		return obj.checkValidity(media, elements, words, cb);
+		return obj.checkValidity(media, words, cb);
 
 	}
 
@@ -3835,16 +3835,16 @@ class CSSTokenizerFilter {
 
 		public boolean checkValidity(ParsedWord[] words, FilterCallback cb)
 		{
-			return this.checkValidity(null,null, words, cb);
+			return this.checkValidity(null, words, cb);
 		}
 
 		public boolean checkValidity(ParsedWord word, FilterCallback cb)
 		{
-			return this.checkValidity(null,null, new ParsedWord[] { word }, cb);
+			return this.checkValidity(null, new ParsedWord[] { word }, cb);
 		}
 
 		// Verifies whether this CSS property can have a value under given media and HTML elements
-		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] words, FilterCallback cb)
+		public boolean checkValidity(String[] media, ParsedWord[] words, FilterCallback cb)
 		{
 
 			if(logDEBUG) Logger.debug(this, "checkValidity for "+toString(words)+" for "+this);
@@ -4512,7 +4512,7 @@ class CSSTokenizerFilter {
 		}
 
 		@Override
-		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value,FilterCallback cb)
+		public boolean checkValidity(String[] media, ParsedWord[] value, FilterCallback cb)
 		{
 			if(logDEBUG) Logger.debug(this, "ContentPropertyVerifier checkValidity called: "+toString(value));
 
@@ -4584,7 +4584,7 @@ class CSSTokenizerFilter {
 		}
 
 		@Override
-		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value,FilterCallback cb)
+		public boolean checkValidity(String[] media, ParsedWord[] value, FilterCallback cb)
 		{
 
 			if(logDEBUG) Logger.debug(this, "FontPartPropertyVerifier called with "+toString(value));
@@ -4631,7 +4631,7 @@ class CSSTokenizerFilter {
 		// Quite possible, but not a high priority, "verdana,arial,times new roman,sans-serif" is not dangerous, it's just hard to parse.
 
 		@Override
-		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value,FilterCallback cb)
+		public boolean checkValidity(String[] media, ParsedWord[] value, FilterCallback cb)
 		{
 			if(logDEBUG) Logger.debug(this, "font verifier: "+toString(value));
 			if(value.length == 1) {
