@@ -270,7 +270,7 @@ public class NodeCryptoConfig {
 
 	}
 	
-	synchronized void stopping(NodeCrypto crypto2) {
+	synchronized void stopping() {
 		crypto = null;
 	}
 	

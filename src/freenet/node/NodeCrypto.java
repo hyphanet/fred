@@ -142,16 +142,16 @@ public class NodeCrypto {
 		anonSetupCipher = new Rijndael(256,256);
 
 		} catch (NodeInitException e) {
-			config.stopping(this);
+			config.stopping();
 			throw e;
 		} catch (RuntimeException e) {
-			config.stopping(this);
+			config.stopping();
 			throw e;
 		} catch (Error e) {
-			config.stopping(this);
+			config.stopping();
 			throw e;
 		} catch (UnsupportedCipherException e) {
-			config.stopping(this);
+			config.stopping();
 			throw new Error(e);
 		} finally {
 			config.maybeStarted();
@@ -458,7 +458,7 @@ public class NodeCrypto {
 	}
 
 	public void stop() {
-		config.stopping(this);
+		config.stopping();
 		socket.close();
 	}
 
