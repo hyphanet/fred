@@ -1894,7 +1894,7 @@ public class NodeClientCore implements Persistable {
 	 * whereas throughput-optimised (bulk) requests can be constant.
 	 */
 	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
-		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, prioClass, forceDontIgnoreTooManyPathComponents, realTimeFlag);
+		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, prioClass, realTimeFlag);
 	}
 
 	public FCPServer getFCPServer() {

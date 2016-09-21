@@ -94,7 +94,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	/*Whether or not to filter fetched content*/
 	static final boolean FILTER_DATA = false;
 
-	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
+	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean realTimeFlag) {
 		this.core = node;
 		this.priorityClass = priorityClass;
 		bucketFactory = bf;
