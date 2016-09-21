@@ -599,7 +599,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		return persistentRoot.registerForeverClient(name, handler);
 	}
 
-    public PersistentRequestClient getForeverClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
+    public PersistentRequestClient getForeverClient(String name, FCPConnectionHandler handler) {
         return persistentRoot.getForeverClient(name, handler);
     }
 

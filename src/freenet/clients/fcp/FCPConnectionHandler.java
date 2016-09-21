@@ -273,7 +273,7 @@ public class FCPConnectionHandler implements Closeable {
 		// Create foreverClient lazily. Everything that needs it (especially creating ClientGet's etc) runs on a database job.
 		if(logMINOR)
 			Logger.minor(this, "Set client name: "+name);
-		PersistentRequestClient client = server.getForeverClient(name, server.core, this);
+		PersistentRequestClient client = server.getForeverClient(name, this);
 		if(client != null) {
 		    synchronized(this) {
 		        foreverClient = client;
