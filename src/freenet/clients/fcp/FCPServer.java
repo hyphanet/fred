@@ -950,13 +950,12 @@ public class FCPServer implements Runnable, DownloadCache {
 	 * it's close...
 	 * @param req The request (insert etc) to start.
 	 * @param container The database handle. This method must be called on a DBJob.
-	 * @param context The client layer context object.
 	 * @throws IdentifierCollisionException If there is already a request with that identifier.
 	 * @throws DatabaseDisabledException If the database is disabled/broken/turned off, 
 	 * if we are shutting down, if we are waiting for the user to give us the decryption 
 	 * password etc.
 	 */
-	public void startBlocking(final ClientRequest req, ClientContext context) throws IdentifierCollisionException, PersistenceDisabledException {
+	public void startBlocking(final ClientRequest req) throws IdentifierCollisionException, PersistenceDisabledException {
 		if(req.persistence == Persistence.REBOOT) {
 			req.start(core.clientContext);
 		} else {
