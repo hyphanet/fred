@@ -1487,7 +1487,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(logMINOR)
 				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation+" total usage is "+bandwidthLiabilityOutput+" of lower limit"+bandwidthAvailableOutputLowerLimit+" upper limit is "+bandwidthAvailableOutputUpperLimit+" for "+name);
 			
-			double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, source, isSSK, transfersPerInsert, input);
+			double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, input);
 			if(peerUsedBytes > thisAllocation) {
 				rejected(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
@@ -1586,14 +1586,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * compared to its peer limit, and if it is higher, the request may be 
 	 * rejected.
 	 * @param requestsSnapshot Snapshot of requests running from the peer.
-	 * @param source The peer.
-	 * @param ignoreLocalVsRemote If true, pretend local requests are remote 
-	 * requests.
-	 * @param transfersOutPerInsert Average number of output transfers from an insert.
 	 * @param input If true, calculate input bytes, if false, calculate output bytes.
 	 * @return
 	 */
-	private double getPeerBandwidthLiability(RunningRequestsSnapshot requestsSnapshot, PeerNode source, boolean ignoreLocalVsRemote, int transfersOutPerInsert, boolean input) {
+	private double getPeerBandwidthLiability(RunningRequestsSnapshot requestsSnapshot, boolean input) {
 		
 		return requestsSnapshot.calculate(input);
 	}
