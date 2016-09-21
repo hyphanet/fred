@@ -1317,8 +1317,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(newTrackerID > 0) {
 
 			// Send reply
-			sendJFKMessage4(1, negType, 3, nonceInitiatorHashed, nonceResponder,initiatorExponential, responderExponential,
-					c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, newTrackerID, newTrackerID == trackerID);
+			sendJFKMessage4(negType, nonceInitiatorHashed, nonceResponder,initiatorExponential, responderExponential,
+					c, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, newTrackerID, newTrackerID == trackerID);
 
 			if(dontWant) {
 				node.peers.disconnectAndRemove(pn, true, true, true); // Let it connect then tell it to remove it.
@@ -1800,7 +1800,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * @param pn The PeerNode to encrypt the auth packet to. Cannot be null, because even in anonymous initiator,
 	 * we will have created one before calling this method.
 	 */
-	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiatorHashed,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, byte[] hisRef, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, long newTrackerID, boolean sameAsOldTrackerID)
+	private void sendJFKMessage4(int negType, byte[] nonceInitiatorHashed, byte[] nonceResponder, byte[] initiatorExponential, byte[] responderExponential, BlockCipher c, byte[] Ka, byte[] authenticator, byte[] hisRef, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, long newTrackerID, boolean sameAsOldTrackerID)
 	{
 		if(logMINOR)
 			Logger.minor(this, "Sending a JFK(4) message to "+pn.getPeer());
