@@ -745,7 +745,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    try {
 		    	sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo, unknownInitiator, setupType, negType);
 		    } catch (NoContextsException e) {
-		    	handleNoContextsException(e, NoContextsException.CONTEXT.REPLYING);
+		    	handleNoContextsException(NoContextsException.CONTEXT.REPLYING);
 		    	return;
 		    }
 
@@ -758,8 +758,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private long lastLoggedNoContexts = -1;
 	private static long LOG_NO_CONTEXTS_INTERVAL = MINUTES.toMillis(1);
 
-	private void handleNoContextsException(NoContextsException e,
-			freenet.node.FNPPacketMangler.NoContextsException.CONTEXT context) {
+	private void handleNoContextsException(NoContextsException.CONTEXT context) {
 		if(node.getUptime() < SECONDS.toMillis(30)) {
 			Logger.warning(this, "No contexts available, unable to handle or send packet ("+context+") on "+this);
 			return;
@@ -2013,7 +2012,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		try {
 			sendJFKMessage1(pn, peer, pn.handshakeUnknownInitiator(), pn.handshakeSetupType(), negType);
 		} catch (NoContextsException e) {
-			handleNoContextsException(e, NoContextsException.CONTEXT.SENDING);
+			handleNoContextsException(NoContextsException.CONTEXT.SENDING);
 			return;
 		}
 		if(logMINOR)
