@@ -1032,7 +1032,7 @@ public class NodeClientCore implements Persistable {
 		}
 	}
 
-	public void start(Config config) throws NodeInitException {
+	public void start() throws NodeInitException {
 	    
 		persister.start();
 
