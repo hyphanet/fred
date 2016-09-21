@@ -558,7 +558,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 						processJFKMessage2(payload, 4, pn, replyTo, true, setupType, negType);
 					} else if(packetType == 3) {
 						// Phase 4
-						processJFKMessage4(payload, 4, pn, replyTo, false, true, setupType, negType);
+						processJFKMessage4(payload, 4, pn, replyTo, false, negType);
 					}
 				}
 				
@@ -677,7 +677,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 						 * using the same keys as in the previous message.
 						 * The signature is non-message recovering
 						 */
-						processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer, false, -1, negType);
+						processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer, negType);
 					}
 				}
 			});
@@ -1393,8 +1393,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * @param pn The PeerNode we are talking to. Cannot be null as we are the initiator.
 	 * @param replyTo The Peer we are replying to.
 	 */
-	private boolean processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType, int negType)
-	{
+	private boolean processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, int negType) {
 		final long t1 = System.currentTimeMillis();
 		int modulusLength = getModulusLength(negType);
 		int signLength = getSignatureLength(negType);
