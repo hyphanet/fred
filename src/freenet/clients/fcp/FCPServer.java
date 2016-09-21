@@ -567,7 +567,7 @@ public class FCPServer implements Runnable, DownloadCache {
                                       .getDefaultSendDirectionAdapter(SendDirection.ToClient);
     }
 
-	public PersistentRequestClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
+	public PersistentRequestClient registerRebootClient(String name, FCPConnectionHandler handler) {
 		PersistentRequestClient oldClient;
 		synchronized(this) {
 			oldClient = rebootClientsByName.get(name);
