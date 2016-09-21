@@ -1097,7 +1097,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			public boolean run(ClientContext context) {
 				FetchResult result = null;
 				try {
-					result = lookup(key, false, context, false, null);
+					result = lookup(key, false, null);
 				} finally {
 					synchronized(ow) {
 						ow.result = result;
@@ -1173,8 +1173,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	@Override
-	public CacheFetchResult lookup(FreenetURI key, boolean noFilter, ClientContext context,
-			boolean mustCopy, Bucket preferred) {
+	public CacheFetchResult lookup(FreenetURI key, boolean mustCopy, Bucket preferred) {
 		if(globalForeverClient == null) return null;
 		ClientGet get = globalForeverClient.getCompletedRequest(key);
 		if(get != null) {
