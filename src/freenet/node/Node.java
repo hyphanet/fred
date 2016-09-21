@@ -2765,7 +2765,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return "-" + getDarknetPortNumber();
 	}
 
-	private void finishInitSaltHashFS(final String suffix, NodeClientCore clientCore) {
+	private void finishInitSaltHashFS(NodeClientCore clientCore) {
 		if(clientCore.alerts == null) throw new NullPointerException();
 		chkDatastore.getStore().setUserAlertManager(clientCore.alerts);
 		chkDatacache.getStore().setUserAlertManager(clientCore.alerts);
@@ -2856,7 +2856,7 @@ public class Node implements TimeSkewDetectorCallback {
 						Node.this.sskDatastore = sskDatastore;
 						Node.this.sskDatacache = sskDatacache;
 
-						finishInitSaltHashFS(suffix, clientCore);
+						finishInitSaltHashFS(clientCore);
 
 						System.err.println("Finishing delayed init of datastore");
 						migrate.run();
@@ -2886,7 +2886,7 @@ public class Node implements TimeSkewDetectorCallback {
 						Node.this.sskDatastore = sskDatastore;
 						Node.this.sskDatacache = sskDatacache;
 
-						finishInitSaltHashFS(suffix, clientCore);
+						finishInitSaltHashFS(clientCore);
 					}
 
 				}, "Start store", 0, true, false);
