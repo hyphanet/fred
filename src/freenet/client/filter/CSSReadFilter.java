@@ -58,7 +58,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 			} catch(UnsupportedEncodingException e) {
 				throw UnknownCharsetException.create(e, charset);
 			}
-			CSSParser parser = new CSSParser(r, w, false, cb, charset, false, false);
+			CSSParser parser = new CSSParser(r, w, cb, charset, false, false);
 			parser.parse();
 		}
 		finally {
@@ -85,7 +85,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 			} catch(UnsupportedEncodingException e) {
 				throw UnknownCharsetException.create(e, charset);
 			}
-			CSSParser parser = new CSSParser(r, w, false, new NullFilterCallback(), null, true, false);
+			CSSParser parser = new CSSParser(r, w, new NullFilterCallback(), null, true, false);
 			parser.parse();
 			r.close();
 			r = null;
