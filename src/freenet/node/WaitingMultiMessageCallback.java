@@ -20,7 +20,7 @@ public class WaitingMultiMessageCallback extends MultiMessageCallback {
 	}
 
 	@Override
-	void sent(boolean success) {
+	void sent() {
 		// Ignore
 	}
 
