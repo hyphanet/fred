@@ -110,7 +110,7 @@ public class FProxyFetchTracker implements Runnable {
 		return null;
 	}
 
-	public void queueCancel(FProxyFetchInProgress progress) {
+	public void queueCancel() {
 		if(logMINOR) Logger.minor(this, "Queueing removal of old FProxyFetchInProgress's");
 		synchronized(this) {
 			if(queuedJob) {
