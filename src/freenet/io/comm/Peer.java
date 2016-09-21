@@ -86,7 +86,7 @@ public class Peer implements WritableToDataOutputStream {
         int offset = physical.lastIndexOf(':'); // ipv6
         if(offset < 0) throw new PeerParseException();
         String host = physical.substring(0, offset);
-        addr = new FreenetInetAddress(host, allowUnknown);
+        addr = new FreenetInetAddress(host);
         String strport = physical.substring(offset+1);
         try {
             _port = Integer.parseInt(strport);

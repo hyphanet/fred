@@ -434,7 +434,7 @@ public class NewPacketFormatTest extends TestCase {
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY * 2);
 		senderNPF.maybeSendPacket(false, senderSessionKey);
 
-		FreenetInetAddress LOCALHOST = new FreenetInetAddress("127.0.0.1", true);
+		FreenetInetAddress LOCALHOST = new FreenetInetAddress("127.0.0.1");
 		Peer PEER = new Peer(LOCALHOST, 1234);
 
 		byte[] data = senderNode.sentEncryptedPacket;
