@@ -1558,7 +1558,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	@Override
-	public KeyListener makeKeyListener(ClientContext context, boolean onStartup) {
+	public KeyListener makeKeyListener() {
 		return this;
 	}
 

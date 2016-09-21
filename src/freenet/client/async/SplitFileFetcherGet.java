@@ -150,7 +150,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
 
     @Override
-    public KeyListener makeKeyListener(ClientContext context, boolean onStartup) {
+    public KeyListener makeKeyListener() {
         return storage.keyListener;
     }
 

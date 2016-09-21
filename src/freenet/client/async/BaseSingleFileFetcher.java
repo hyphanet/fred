@@ -270,7 +270,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	@Override
-	public KeyListener makeKeyListener(ClientContext context, boolean onStartup) {
+	public KeyListener makeKeyListener() {
 		synchronized(this) {
 			if(finished) return null;
 			if(cancelled) return null;

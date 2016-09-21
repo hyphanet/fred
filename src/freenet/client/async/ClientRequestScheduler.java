@@ -129,7 +129,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		final KeyListener listener;
 		if(hasListener != null) {
-		    listener = hasListener.makeKeyListener(clientContext, false);
+		    listener = hasListener.makeKeyListener();
 		    if(listener != null)
 		        (persistent ? schedCore : schedTransient).addPendingKeys(listener);
 		    else
