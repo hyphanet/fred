@@ -248,10 +248,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.FNPSwapComplete) {
 			return node.lm.handleSwapComplete(m, source);
 		} else if(spec == DMT.FNPCHKDataRequest) {
-			handleDataRequest(m, source, false);
+			handleDataRequest(m, false);
 			return true;
 		} else if(spec == DMT.FNPSSKDataRequest) {
-			handleDataRequest(m, source, true);
+			handleDataRequest(m, true);
 			return true;
 		} else if(spec == DMT.FNPInsertRequest) {
 			handleInsertRequest(m, source, false);
@@ -460,7 +460,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	
 	private final ArrayBlockingQueue<Message> requestQueue = new ArrayBlockingQueue<Message>(100);
 	
-	private void handleDataRequest(Message m, PeerNode source, boolean isSSK) {
+	private void handleDataRequest(Message m, boolean isSSK) {
 		// FIXME check probablyInStore and if not, we can handle it inline.
 		// This and DatastoreChecker require that method be implemented...
 		// For now just handle everything on the thread...
