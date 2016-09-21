@@ -1038,7 +1038,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// At this point we know it's from the peer, so we can report a packet received.
 		pn.receivedPacket(true, false);
 
-		sendJFKMessage3(1, negType, 3, myNi, nonceResponder, hisExponential, authenticator, pn, replyTo, unknownInitiator, setupType);
+		sendJFKMessage3(negType, myNi, nonceResponder, hisExponential, authenticator, pn, replyTo, unknownInitiator, setupType);
 
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500) {
@@ -1602,7 +1602,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * @param replyTo The Peer to send the packet to.
 	 */
 
-	private void sendJFKMessage3(int version,final int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, final PeerNode pn, final Peer replyTo, final boolean unknownInitiator, final int setupType)
+	private void sendJFKMessage3(final int negType, byte[] nonceInitiator, byte[] nonceResponder, byte[] hisExponential, byte[] authenticator, final PeerNode pn, final Peer replyTo, final boolean unknownInitiator, final int setupType)
 	{
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn.getPeer());
 		int modulusLength = getModulusLength(negType);
