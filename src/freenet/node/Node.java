@@ -1663,7 +1663,7 @@ public class Node implements TimeSkewDetectorCallback {
 		nodeStats = new NodeStats(this, sortOrder, config.createSubConfig("node.load"), obwLimit, ibwLimit, lastVersion);
 
 		// clientCore needs new load management and other settings from stats.
-		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, databaseKey, persistentSecret);
+		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, toadlets, databaseKey, persistentSecret);
 		toadlets.setCore(clientCore);
 
 		if (JVMVersion.isTooOld()) {
