@@ -241,7 +241,7 @@ class KeyListenerTracker implements KeySalter {
 		return ret;
 	}
 	
-	public SendableGet[] requestsForKey(Key key, ClientContext context) {
+	public SendableGet[] requestsForKey(Key key) {
 		ArrayList<SendableGet> list = new ArrayList<SendableGet>();
 		assert(key instanceof NodeSSK == isSSKScheduler);
 		byte[] saltedKey = saltKey(key);
