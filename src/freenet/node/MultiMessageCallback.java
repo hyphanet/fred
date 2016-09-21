@@ -34,7 +34,7 @@ public abstract class MultiMessageCallback {
 	private boolean someFailed;
 	
 	/** This is called when all messages have been acked, or failed */
-	abstract void finish(boolean success);
+	abstract void finish();
 	
 	/** This is called when all messages have been sent (but not acked) or failed to send */
 	abstract void sent(boolean success);
@@ -95,7 +95,7 @@ public abstract class MultiMessageCallback {
 					}
 					if(callSent)
 						MultiMessageCallback.this.sent(success);
-					finish(success);
+					finish();
 				}
 				
 			};
@@ -119,7 +119,7 @@ public abstract class MultiMessageCallback {
 			success = !someFailed;
 		}
 		if(callSent) sent(success);
-		if(complete) finish(success);
+		if(complete) finish();
 	}
 	
 	/** @return True if the callbacck has finished (and is armed) */

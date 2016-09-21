@@ -535,7 +535,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		MultiMessageCallback mcb = null;
 		mcb = new MultiMessageCallback() {
 			@Override
-			public void finish(boolean success) {
+			public void finish() {
 				sentPayload(data.length); // FIXME report this at the time when that message is acked for more accurate reporting???
 				applyByteCounts();
 				// Will call unlockHandler.

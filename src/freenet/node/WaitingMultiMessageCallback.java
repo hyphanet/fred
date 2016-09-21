@@ -5,7 +5,7 @@ public class WaitingMultiMessageCallback extends MultiMessageCallback {
 	
 	
 	@Override
-	synchronized void finish(boolean success) {
+	synchronized void finish() {
 		notifyAll();
 	}
 
