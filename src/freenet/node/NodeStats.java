@@ -821,13 +821,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			// This implies that the sourceRestarted() requests are not counted when checking whether the peer is over the limit.
 			
 			outputBandwidthUpperLimit = getOutputBandwidthUpperLimit(limit, nonOverheadFraction);
-			outputBandwidthLowerLimit = getLowerLimit(outputBandwidthUpperLimit, peers);
+			outputBandwidthLowerLimit = getLowerLimit(outputBandwidthUpperLimit);
 			
 			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(limit);
-			inputBandwidthLowerLimit = getLowerLimit(inputBandwidthUpperLimit, peers);
+			inputBandwidthLowerLimit = getLowerLimit(inputBandwidthUpperLimit);
 			
 			maxTransfersOutUpperLimit = getMaxTransfersUpperLimit(realTimeFlag, nonOverheadFraction);
-			maxTransfersOutLowerLimit = (int)Math.max(1,getLowerLimit(maxTransfersOutUpperLimit, peers));
+			maxTransfersOutLowerLimit = (int)Math.max(1,getLowerLimit(maxTransfersOutUpperLimit));
 			maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(peer, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, runningLocal.expectedTransfersOutCHKSR + runningLocal.expectedTransfersOutSSKSR));
 			maxTransfersOut = calculateMaxTransfersOut(peer, realTime, nonOverheadFraction, maxTransfersOutUpperLimit);
 			
@@ -1276,7 +1276,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			peerRequestsSnapshot.log(source);
 		
 		int maxTransfersOutUpperLimit = getMaxTransfersUpperLimit(realTimeFlag, nonOverheadFraction);
-		int maxTransfersOutLowerLimit = (int)Math.max(1,getLowerLimit(maxTransfersOutUpperLimit, peers));
+		int maxTransfersOutLowerLimit = (int)Math.max(1,getLowerLimit(maxTransfersOutUpperLimit));
 		int maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(source, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, (peerRequestsSnapshot.expectedTransfersOutCHKSR + peerRequestsSnapshot.expectedTransfersOutSSKSR)));
 		/** Per-peer limit based on current state of the connection. */
 		int maxOutputTransfers = this.calculateMaxTransfersOut(source, realTimeFlag, nonOverheadFraction, maxTransfersOutUpperLimit);
@@ -1356,7 +1356,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	static final double ONE_PEER_MAX_PEERS_EQUIVALENT = 2.0;
 	
-	public double getLowerLimit(double upperLimit, int peerCount) {
+	public double getLowerLimit(double upperLimit) {
 		// Bandwidth scheduling is now unfair, based on deadlines.
 		// Therefore we can allocate a large chunk of our capacity to a single peer.
 		return upperLimit / 2;
@@ -1456,7 +1456,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		String name = input ? "Input" : "Output";
 		int peers = node.peers.countConnectedPeers();
 		
-		double bandwidthAvailableOutputLowerLimit = getLowerLimit(bandwidthAvailableOutputUpperLimit, peers);
+		double bandwidthAvailableOutputLowerLimit = getLowerLimit(bandwidthAvailableOutputUpperLimit);
 		
 		double bandwidthLiabilityOutput = requestsSnapshot.calculate(input);
 		
