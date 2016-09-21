@@ -97,7 +97,7 @@ public class ClientRequestSelectorTest extends TestCase {
         bigRAFFactory = new PooledFileRandomAccessBufferFactory(fg, r);
         smallBucketFactory = new ArrayBucketFactory();
         bigBucketFactory = new TempBucketFactory(executor, fg, 0, 0, r, false, 0, null);
-        baseContext = HighLevelSimpleClientImpl.makeDefaultInsertContext(bigBucketFactory, new SimpleEventProducer());
+        baseContext = HighLevelSimpleClientImpl.makeDefaultInsertContext(new SimpleEventProducer());
         cryptoKey = new byte[32];
         r.nextBytes(cryptoKey);
         checker = new CRCChecksumChecker();

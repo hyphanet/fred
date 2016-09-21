@@ -377,8 +377,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				EXTRA_INSERTS_SPLITFILE_HEADER, InsertContext.CompatibilityMode.COMPAT_DEFAULT);
 	}
 
-    public static InsertContext makeDefaultInsertContext(BucketFactory bucketFactory, 
-            SimpleEventProducer eventProducer) {
+    public static InsertContext makeDefaultInsertContext(SimpleEventProducer eventProducer) {
         return new InsertContext(
                 INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
                 SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
