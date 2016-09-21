@@ -238,7 +238,7 @@ public class NodeClientCore implements Persistable {
 				node.setupProgramDir(installConfig, "tempDir",
 						     node.runDir().file("temp").toString(),
 						     "NodeClientCore.tempDir",
-						     "NodeClientCore.tempDirLong", nodeConfig);
+						     "NodeClientCore.tempDirLong");
 
 		// FIXME remove back compatibility hack.
 		File oldTemp = node.runDir().file("temp-" + node.getDarknetPortNumber());
@@ -296,8 +296,7 @@ public class NodeClientCore implements Persistable {
 						     node.userDir().file("persistent-temp")
 								     .toString(),
 						     "NodeClientCore.persistentTempDir",
-						     "NodeClientCore.persistentTempDirLong",
-						     nodeConfig);
+						     "NodeClientCore.persistentTempDirLong");
 
 		fcpPersistentRoot = new PersistentRequestRoot();
 		try {
@@ -691,8 +690,7 @@ public class NodeClientCore implements Persistable {
 						     node.userDir().file("downloads").getPath(),
 						     "NodeClientCore.downloadsDir",
 						     "NodeClientCore.downloadsDirLong",
-						     l10n("couldNotFindOrCreateDir"),
-						     (SubConfig) null);
+						     l10n("couldNotFindOrCreateDir"));
 
 		// Downloads allowed, uploads allowed
 

@@ -980,15 +980,15 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Directory for node-related files other than store
 		this.userDir = setupProgramDir(installConfig, "userDir", ".",
-		  "Node.userDir", "Node.userDirLong", nodeConfig);
+		  "Node.userDir", "Node.userDirLong");
 		this.cfgDir = setupProgramDir(installConfig, "cfgDir", getUserDir().toString(),
-		  "Node.cfgDir", "Node.cfgDirLong", nodeConfig);
+		  "Node.cfgDir", "Node.cfgDirLong");
 		this.nodeDir = setupProgramDir(installConfig, "nodeDir", getUserDir().toString(),
-		  "Node.nodeDir", "Node.nodeDirLong", nodeConfig);
+		  "Node.nodeDir", "Node.nodeDirLong");
 		this.runDir = setupProgramDir(installConfig, "runDir", getUserDir().toString(),
-		  "Node.runDir", "Node.runDirLong", nodeConfig);
+		  "Node.runDir", "Node.runDirLong");
 		this.pluginDir = setupProgramDir(installConfig, "pluginDir",  userDir().file("plugins").toString(),
-		  "Node.pluginDir", "Node.pluginDirLong", nodeConfig);
+		  "Node.pluginDir", "Node.pluginDirLong");
 
 		// l10n stuffs
 		nodeConfig.register("l10n", Locale.getDefault().getLanguage().toLowerCase(), sortOrder++, false, true,
@@ -2000,7 +2000,7 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		storeSaltHashResizeOnStart = nodeConfig.getBoolean("storeSaltHashResizeOnStart");
 
-		this.storeDir = setupProgramDir(installConfig, "storeDir", userDir().file("datastore").getPath(), "Node.storeDirectory", "Node.storeDirectoryLong", nodeConfig);
+		this.storeDir = setupProgramDir(installConfig, "storeDir", userDir().file("datastore").getPath(), "Node.storeDirectory", "Node.storeDirectoryLong");
 		installConfig.finishedInitialization();
 
 		final String suffix = getStoreSuffix();
@@ -2601,8 +2601,7 @@ public class Node implements TimeSkewDetectorCallback {
 	** parameters.
 	*/
 	public ProgramDirectory setupProgramDir(SubConfig installConfig,
-	  String cfgKey, String defaultValue, String shortdesc, String longdesc, String moveErrMsg,
-	  SubConfig oldConfig) throws NodeInitException {
+	  String cfgKey, String defaultValue, String shortdesc, String longdesc, String moveErrMsg) throws NodeInitException {
 		ProgramDirectory dir = new ProgramDirectory(moveErrMsg);
 		int sortOrder = ProgramDirectory.nextOrder();
 		// forceWrite=true because currently it can't be changed on the fly, also for packages
@@ -2617,9 +2616,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	protected ProgramDirectory setupProgramDir(SubConfig installConfig,
-	  String cfgKey, String defaultValue, String shortdesc, String longdesc,
-	  SubConfig oldConfig) throws NodeInitException {
-		return setupProgramDir(installConfig, cfgKey, defaultValue, shortdesc, longdesc, null, oldConfig);
+	  String cfgKey, String defaultValue, String shortdesc, String longdesc) throws NodeInitException {
+		return setupProgramDir(installConfig, cfgKey, defaultValue, shortdesc, longdesc, null);
 	}
 
 	public void lateSetupDatabase(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
