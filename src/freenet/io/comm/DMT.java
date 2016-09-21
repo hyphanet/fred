@@ -201,8 +201,8 @@ public class DMT {
 	public static final MessageType allSent = new MessageType("allSent", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
 	}};
-	
-	public static Message createAllSent(long uid, boolean realTime) {
+
+	public static Message createAllSent(long uid) {
 		Message msg = new Message(allSent);
 		msg.set(UID, uid);
 		return msg;
