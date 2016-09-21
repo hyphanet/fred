@@ -375,7 +375,7 @@ class FailureTableEntry implements TimedOutNodesList {
 	/**
 	 * Has any node asked for this key?
 	 */
-	public synchronized boolean othersWant(PeerNodeUnlocked peer) {
+	public synchronized boolean othersWant() {
 		boolean anyValid = false;
 		for(int i=0;i<requestorNodes.length;i++) {
 			WeakReference<? extends PeerNodeUnlocked> ref = requestorNodes[i];

@@ -727,7 +727,7 @@ public class FailureTable {
 			entry = entriesByKey.get(key);
 			if(entry == null) return false; // Nobody cares
 		}
-		return entry.othersWant(apartFrom);
+		return entry.othersWant();
 	}
         
         /** @return The lowest HTL at which any peer has requested this key recently */
