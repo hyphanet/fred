@@ -385,7 +385,7 @@ public class Node implements TimeSkewDetectorCallback {
                         throw new InvalidConfigValueException("You must enter the password");
 					}
 					try {
-						initSaltHashClientCacheFS(suffix, true, key);
+						initSaltHashClientCacheFS(true, key);
 					} catch (NodeInitException e) {
 						Logger.error(this, "Unable to create new store", e);
 						System.err.println("Unable to create new store: "+e);
@@ -2254,7 +2254,7 @@ public class Node implements TimeSkewDetectorCallback {
 		        System.err.println("Cannot open client-cache, it is passworded");
 		        setClientCacheAwaitingPassword();
 		    } else {
-		        initSaltHashClientCacheFS(suffix, false, clientCacheKey);
+		        initSaltHashClientCacheFS(false, clientCacheKey);
 		        startedClientCache = true;
 		    }
 		} else if(clientCacheType.equals("none")) {
@@ -2899,7 +2899,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
     }
 
-	private void initSaltHashClientCacheFS(final String suffix, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws NodeInitException {
+	private void initSaltHashClientCacheFS(boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws NodeInitException {
 
 		try {
 			final CHKStore chkClientcache = new CHKStore();
@@ -4516,7 +4516,7 @@ public class Node implements TimeSkewDetectorCallback {
 		Runnable migrate = new MigrateOldStoreData(true);
 		String suffix = getStoreSuffix();
 		try {
-			initSaltHashClientCacheFS(suffix, true, keys.clientCacheMasterKey);
+			initSaltHashClientCacheFS(true, keys.clientCacheMasterKey);
 		} catch (NodeInitException e) {
 			Logger.error(this, "Unable to activate passworded client cache", e);
 			System.err.println("Unable to activate passworded client cache: "+e);
