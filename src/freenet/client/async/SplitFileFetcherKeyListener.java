@@ -270,7 +270,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     }
 
     @Override
-    public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ClientContext context) {
+    public SendableGet[] getRequestsForKey(Key key) {
         // FIXME Ignored. We don't use the cooldown *queue*.
         return null;
     }

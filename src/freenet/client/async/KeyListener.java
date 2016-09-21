@@ -41,7 +41,7 @@ public interface KeyListener {
 	 * Find the requests related to a specific key, used in retrying after cooldown.
 	 * Caller should call probablyWantKey() first.
 	 */
-	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ClientContext context);
+	public SendableGet[] getRequestsForKey(Key key);
 	
 	/**
 	 * Handle the found data, if we really want it.

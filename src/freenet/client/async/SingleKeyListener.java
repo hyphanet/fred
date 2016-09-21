@@ -45,7 +45,7 @@ public class SingleKeyListener implements KeyListener {
 	}
 
 	@Override
-	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ClientContext context) {
+	public SendableGet[] getRequestsForKey(Key key) {
 		if(!key.equals(this.key)) return null;
 		return new SendableGet[] { fetcher };
 	}

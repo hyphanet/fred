@@ -1591,7 +1591,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	@Override
-	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ClientContext context) {
+	public SendableGet[] getRequestsForKey(Key key) {
 		return new SendableGet[0];
 	}
 

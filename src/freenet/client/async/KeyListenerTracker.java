@@ -249,7 +249,7 @@ class KeyListenerTracker implements KeySalter {
 		for (KeyListener listener : matches) {
 			SendableGet[] reqs;
 			try {
-				reqs = listener.getRequestsForKey(key, saltedKey, context);
+				reqs = listener.getRequestsForKey(key);
 			} catch (Throwable t) {
 				Logger.error(this, format("Error in getRequestsForKey callback for %s", listener), t);
 				continue;
