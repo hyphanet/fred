@@ -2189,14 +2189,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			HTMLParseContext pc) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			if (p.startSlash) {
-				return finish(h, hn, pc);
+				return finish(hn, pc);
 			} else {
 				return start(h, hn, pc);
 			}
 		}
 
-		Map<String, Object> finish(Map<String, Object> h, Map<String, Object> hn,
-			HTMLParseContext pc) throws DataFilterException {
+		Map<String, Object> finish(Map<String, Object> hn, HTMLParseContext pc) throws DataFilterException {
 			if(logDEBUG) Logger.debug(this, "Finishing script/style");
 			// Finishing
 			setStyle(false, pc);
