@@ -147,7 +147,7 @@ class KeyListenerTracker implements KeySalter {
 		return true;
 	}
 	
-	public short getKeyPrio(Key key, short priority, ClientContext context) {
+	public short getKeyPrio(Key key, short priority) {
 		assert(key instanceof NodeSSK == isSSKScheduler);
 		byte[] saltedKey = saltKey(key);
 		List<KeyListener> matches = probablyWantKey(key, saltedKey);
