@@ -236,8 +236,8 @@ public class DMT {
 		addField(PACKET_NO, Integer.class);
 		addField(DATA, ShortBuffer.class);
 	}};
-	
-	public static Message createFNPBulkPacketSend(long uid, int packetNo, ShortBuffer data, boolean realTime) {
+
+	public static Message createFNPBulkPacketSend(long uid, int packetNo, ShortBuffer data) {
 		Message msg = new Message(FNPBulkPacketSend);
 		msg.set(UID, uid);
 		msg.set(PACKET_NO, packetNo);
@@ -246,7 +246,7 @@ public class DMT {
 	}
 	
 	public static Message createFNPBulkPacketSend(long uid, int packetNo, byte[] data, boolean realTime) {
-		return createFNPBulkPacketSend(uid, packetNo, new ShortBuffer(data), realTime);
+		return createFNPBulkPacketSend(uid, packetNo, new ShortBuffer(data));
 	}
 	
 	public static final MessageType FNPBulkSendAborted = new MessageType("FNPBulkSendAborted", PRIORITY_UNSPECIFIED) {{
