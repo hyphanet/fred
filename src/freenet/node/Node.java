@@ -2903,11 +2903,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 		try {
 			final CHKStore chkClientcache = new CHKStore();
-			final FreenetStore<CHKBlock> chkDataFS = makeClientcache("CHK", true, chkClientcache, dontResizeOnStart, clientCacheMasterKey);
+			final FreenetStore<CHKBlock> chkDataFS = makeClientcache("CHK", chkClientcache, dontResizeOnStart, clientCacheMasterKey);
 			final PubkeyStore pubKeyClientcache = new PubkeyStore();
-			final FreenetStore<DSAPublicKey> pubkeyDataFS = makeClientcache("PUBKEY", true, pubKeyClientcache, dontResizeOnStart, clientCacheMasterKey);
+			final FreenetStore<DSAPublicKey> pubkeyDataFS = makeClientcache("PUBKEY", pubKeyClientcache, dontResizeOnStart, clientCacheMasterKey);
 			final SSKStore sskClientcache = new SSKStore(getPubKey);
-			final FreenetStore<SSKBlock> sskDataFS = makeClientcache("SSK", true, sskClientcache, dontResizeOnStart, clientCacheMasterKey);
+			final FreenetStore<SSKBlock> sskDataFS = makeClientcache("SSK", sskClientcache, dontResizeOnStart, clientCacheMasterKey);
 
 			boolean delay =
 				chkDataFS.start(ticker, false) |
@@ -2960,7 +2960,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
     }
 
-	private <T extends StorableBlock> FreenetStore<T> makeClientcache(String type, boolean isStore, StoreCallback<T> cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
+	private <T extends StorableBlock> FreenetStore<T> makeClientcache(String type, StoreCallback<T> cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
 		FreenetStore<T> store = makeStore(type, "clientcache", maxClientCacheKeys, cb, dontResizeOnStart, clientCacheMasterKey);
 		return store;
 	}
