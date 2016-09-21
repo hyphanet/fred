@@ -713,7 +713,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private void processJFKMessage1(byte[] payload,int offset,PeerNode pn,Peer replyTo, boolean unknownInitiator, int setupType, int negType)
 	{
 		long t1=System.currentTimeMillis();
-		int modulusLength = getModulusLength(negType);
+		int modulusLength = getModulusLength();
 		// Pre negtype 9 we were sending Ni as opposed to Ni'
 		int nonceSizeHashed = HASH_LENGTH;
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
@@ -828,7 +828,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private void sendJFKMessage1(PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) throws NoContextsException {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+replyTo+" for "+pn.getPeer());
 		final long now = System.currentTimeMillis();
-		int modulusLength = getModulusLength(negType);
+		int modulusLength = getModulusLength();
         // Pre negtype 9 we were sending Ni as opposed to Ni'
         int nonceSize = getNonceSize(negType);
 		
@@ -882,7 +882,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 */
 	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) throws NoContextsException {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
-		int modulusLength = getModulusLength(negType);
+		int modulusLength = getModulusLength();
 		int nonceSize = getNonceSize(negType);
 		// g^r
 		// Neg type 8 and later use ECDH for generating the keys.
@@ -959,7 +959,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private void processJFKMessage2(byte[] payload,int inputOffset,PeerNode pn,Peer replyTo, boolean unknownInitiator, int setupType, int negType)
 	{
 		long t1=System.currentTimeMillis();
-		int modulusLength = getModulusLength(negType);
+		int modulusLength = getModulusLength();
 		// Pre negtype 9 we were sending Ni as opposed to Ni'
 		int nonceSize = getNonceSize(negType);
 		int nonceSizeHashed = HASH_LENGTH;
@@ -1073,7 +1073,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private void processJFKMessage3(byte[] payload, int inputOffset, PeerNode pn,Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType, int negType)
 	{
 		final long t1 = System.currentTimeMillis();
-		int modulusLength = getModulusLength(negType);
+		int modulusLength = getModulusLength();
 		int nonceSize = getNonceSize(negType);
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
 
@@ -1395,7 +1395,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 */
 	private boolean processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, int negType) {
 		final long t1 = System.currentTimeMillis();
-		int modulusLength = getModulusLength(negType);
+		int modulusLength = getModulusLength();
 		int signLength = getSignatureLength(negType);
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it - "+pn.getPeer());
 		if(pn.jfkMyRef == null) {
@@ -1605,7 +1605,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private void sendJFKMessage3(final int negType, byte[] nonceInitiator, byte[] nonceResponder, byte[] hisExponential, byte[] authenticator, final PeerNode pn, final Peer replyTo, final boolean unknownInitiator, final int setupType)
 	{
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn.getPeer());
-		int modulusLength = getModulusLength(negType);
+		int modulusLength = getModulusLength();
 		int signLength = getSignatureLength(negType);
 		int nonceSize = getNonceSize(negType);
         // Pre negtype 9 we were sending Ni as opposed to Ni'
@@ -2281,7 +2281,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	}
 	
 	/** @returns the modulus length in bytes for a given negType */
-	private int getModulusLength(int negType) {
+	private int getModulusLength() {
 	        return ecdhCurveToUse.modulusSize;
 	}
 	
