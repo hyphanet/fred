@@ -167,7 +167,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			if(logMINOR) Logger.minor(this, "Trying exact match");
 			if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2 && !node.isStopping()) {
 				// Might be an auth packet
-				if(tryProcessAuth(buf, offset, length, opn, peer, false, now)) {
+				if(tryProcessAuth(buf, offset, length, opn, peer, false)) {
 					return DECODED.DECODED;
 				}
 				// Might be a reply to us sending an anon auth packet.
@@ -185,7 +185,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				if(pn == opn) continue;
 				if(logDEBUG)
 					Logger.debug(this, "Trying auth with "+pn);
-				if(tryProcessAuth(buf, offset, length, pn, peer,false, now)) {
+				if(tryProcessAuth(buf, offset, length, pn, peer,false)) {
 					return DECODED.DECODED;
 				}
 				if(pn.handshakeUnknownInitiator()) {
@@ -212,7 +212,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				// We want a peer.
 				// Try old connections.
 				for(PeerNode oldPeer: opennet.getOldPeers()) {
-					if(tryProcessAuth(buf, offset, length, oldPeer, peer, true, now)) return DECODED.DECODED;
+					if(tryProcessAuth(buf, offset, length, oldPeer, peer, true)) return DECODED.DECODED;
 				}
 				didntTryOldOpennetPeers = false;
 			} else
@@ -265,10 +265,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * @param length The number of bytes to read
 	 * @param pn The PeerNode we think is responsible
 	 * @param peer The Peer to send a reply to
-	 * @param now The time at which the packet was received
 	 * @return True if we handled a negotiation packet, false otherwise.
 	 */
-	private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode pn, Peer peer, boolean oldOpennetPeer, long now) {
+	private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode pn, Peer peer, boolean oldOpennetPeer) {
 		BlockCipher authKey = pn.incomingSetupCipher;
 		if(logDEBUG) Logger.debug(this, "Decrypt key: "+HexUtil.bytesToHex(pn.incomingSetupKey)+" for "+peer+" : "+pn+" in tryProcessAuth");
 		// Does the packet match IV E( H(data) data ) ?
