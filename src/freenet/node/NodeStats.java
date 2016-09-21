@@ -1283,14 +1283,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		// Check bandwidth-based limits, with fair sharing.
 		
-		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(limit, nonOverheadFraction), requestsSnapshot, peerRequestsSnapshot, false, limit,
-				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit, tag);  
+		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(limit, nonOverheadFraction), requestsSnapshot, peerRequestsSnapshot, false,
+				source, isLocal, isSSK, isInsert, isOfferReply, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);
 		if(ret != null) {
 			return new RejectReason(ret, true);
 		}
 		
-		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), requestsSnapshot, peerRequestsSnapshot, true, limit,
-				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit, tag);  
+		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), requestsSnapshot, peerRequestsSnapshot, true,
+				source, isLocal, isSSK, isInsert, isOfferReply, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);
 		if(ret != null) {
 			return new RejectReason(ret, true);
 		}
@@ -1437,22 +1437,19 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * @param requestsSnapshot The requests running.
 	 * @param peerRequestsSnapshot The requests running to this one peer.
 	 * @param input True if this is input bandwidth, false if it is output bandwidth.
-	 * @param limit The limit period in seconds.
 	 * @param source The source of the request.
 	 * @param isLocal True if the request is local.
 	 * @param isSSK True if it is an SSK request.
 	 * @param isInsert True if it is an insert.
 	 * @param isOfferReply True if it is a GetOfferedKey.
-	 * @param hasInStore True if we have the data in the store, and can return it, so 
-	 * won't need to route it onwards.
 	 * @param transfersPerInsert The average number of outgoing transfers per insert.
 	 * @param realTimeFlag True if this is a real-time request, false if it is a bulk
 	 * request.
 	 * @return A string explaining why, or null if we can accept the request.
 	 */
 	private String checkBandwidthLiability(double bandwidthAvailableOutputUpperLimit,
-			RunningRequestsSnapshot requestsSnapshot, RunningRequestsSnapshot peerRequestsSnapshot, boolean input, long limit,
-			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag, int maxOutputTransfers, int maxOutputTransfersPeerLimit, UIDTag tag) {
+			RunningRequestsSnapshot requestsSnapshot, RunningRequestsSnapshot peerRequestsSnapshot, boolean input,
+			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, int transfersPerInsert, boolean realTimeFlag, int maxOutputTransfers, int maxOutputTransfersPeerLimit) {
 		String name = input ? "Input" : "Output";
 		int peers = node.peers.countConnectedPeers();
 		
