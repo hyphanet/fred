@@ -4998,10 +4998,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			return new IncomingLoadSummaryStats(runningRequests.totalRequests(), 
 					loadStats.outputBandwidthPeerLimit, loadStats.inputBandwidthPeerLimit,
 					loadStats.outputBandwidthUpperLimit, loadStats.inputBandwidthUpperLimit,
-					runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, false),
-					runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, true),
-					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, false),
-					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, true));
+					runningRequests.calculate(false),
+					runningRequests.calculate(true),
+					otherRunningRequests.calculate(false),
+					otherRunningRequests.calculate(true));
 		}
 		
 		/** Can we route the tag to this peer? If so (including if we are accepting because
@@ -5217,12 +5217,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				RunningRequestsSnapshot runningRequests,
 				RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
 				PeerLoadStats stats) {
-			double ourUsage = runningRequests.calculate(ignoreLocalVsRemote, input);
+			double ourUsage = runningRequests.calculate(input);
 			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.peerLimit(input)+" lower limit is "+stats.lowerLimit(input)+" realtime "+realTime+" input "+input);
 			if(ourUsage < stats.peerLimit(input))
 				return RequestLikelyAcceptedState.GUARANTEED;
 			otherRunningRequests.log(PeerNode.this);
-			double theirUsage = otherRunningRequests.calculate(ignoreLocalVsRemote, input);
+			double theirUsage = otherRunningRequests.calculate(input);
 			if(logMINOR) Logger.minor(this, "Their usage is "+theirUsage);
 			if(ourUsage + theirUsage < stats.lowerLimit(input))
 				return RequestLikelyAcceptedState.LIKELY;
