@@ -180,7 +180,7 @@ class KeyListenerTracker implements KeySalter {
 		return count;
 	}
 	
-	public boolean anyWantKey(Key key, ClientContext context) {
+	public boolean anyWantKey(Key key) {
 		assert(key instanceof NodeSSK == isSSKScheduler);
 		byte[] saltedKey = saltKey(key);
 		List<KeyListener> matches = probablyWantKey(key, saltedKey);
