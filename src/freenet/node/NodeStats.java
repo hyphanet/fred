@@ -3585,7 +3585,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return new PeerLoadStats(source, m);
 	}
 
-	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode, int transfersPerInsert, boolean realTimeFlag) {
+	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode, boolean realTimeFlag) {
 		return new RunningRequestsSnapshot(node.tracker, peerNode, true, false, outwardTransfersPerInsert(), realTimeFlag);
 	}
 	

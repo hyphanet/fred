@@ -4992,7 +4992,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				if(lastIncomingLoadStats == null) return null;
 				loadStats = lastIncomingLoadStats;
 			}
-			RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
+			RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime);
 			RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 			boolean ignoreLocalVsRemoteBandwidthLiability = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 			return new IncomingLoadSummaryStats(runningRequests.totalRequests(), 
@@ -5025,7 +5025,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				if(dontSendUnlessGuaranteed)
 					worstAcceptable = RequestLikelyAcceptedState.GUARANTEED;
 				// Requests already running to this node
-				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
+				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime);
 				runningRequests.log(PeerNode.this);
 				// Requests running from its other peers
 				RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
@@ -5161,7 +5161,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 						if(logMINOR) Logger.minor(this, "Checking slot waiters for "+type);
 						foundNone = false;
 						// Requests already running to this node
-						RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
+						RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime);
 						runningRequests.log(PeerNode.this);
 						// Requests running from its other peers
 						RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
