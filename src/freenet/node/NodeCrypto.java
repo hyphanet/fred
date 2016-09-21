@@ -538,7 +538,7 @@ public class NodeCrypto {
 	/**
 	 * Get my identity.
 	 */
-	public byte[] getIdentity(int negType) {
+	public byte[] getIdentity() {
 	    return ecdsaPubKeyHash;
 	}
 
