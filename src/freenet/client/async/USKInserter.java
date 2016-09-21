@@ -289,7 +289,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			parent.addMustSucceedBlocks(1);
 			parent.notifyClients(context);
 		}
-		privUSK = InsertableUSK.createInsertable(uri, persistent);
+		privUSK = InsertableUSK.createInsertable(uri);
 		pubUSK = privUSK.getUSK();
 		edition = pubUSK.suggestedEdition;
 		this.freeData = freeData;
