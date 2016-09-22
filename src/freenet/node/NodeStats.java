@@ -1112,7 +1112,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			return expectedTransfersOutCHK + expectedTransfersOutSSK;
 		}
 
-		public double calculateMinimum(boolean input, boolean ignoreLocalVsRemoteBandwidthLiability, int averageTransfersPerInsert) {
+		public double calculateMinimum(boolean input, int averageTransfersPerInsert) {
 			return new RunningRequestsSnapshot(averageTransfersPerInsert).calculate(input);
 		}
 
