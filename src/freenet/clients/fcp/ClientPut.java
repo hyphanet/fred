@@ -117,7 +117,7 @@ public class ClientPut extends ClientPutBase {
 			String charset, short priorityClass, Persistence persistence, String clientToken,
 			boolean getCHKOnly, boolean dontCompress, int maxRetries, UploadFrom uploadFromType, File origFilename,
 			String contentType, RandomAccessBucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, InsertContext.CompatibilityMode compatMode, byte[] overrideSplitfileKey, boolean binaryBlob, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, MetadataUnresolvedException, IOException {
-		super(uri = checkEmptySSK(uri, targetFilename, core.clientContext), identifier, verbosity, charset, null, globalClient, priorityClass, persistence, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, compatMode, false/*XXX ignoreUSKDatehints*/, core);
+		super(uri = checkEmptySSK(uri, targetFilename, core.clientContext), identifier, verbosity, null, globalClient, priorityClass, persistence, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, compatMode, false/*XXX ignoreUSKDatehints*/, core);
 		if(uploadFromType == UploadFrom.DISK) {
 			if(!core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
