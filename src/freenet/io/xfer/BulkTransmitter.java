@@ -370,12 +370,12 @@ outer:	while(true) {
 				}
 			}
 			if(callAllSent) {
-				callAllSentCallbackInner(anyFailed);
+				callAllSentCallbackInner();
 			}
 		}
 	}
 	
-	private void callAllSentCallbackInner(final boolean anyFailed) {
+	private void callAllSentCallbackInner() {
 		prb.usm.getExecutor().execute(new PrioRunnable() {
 
 			@Override
@@ -468,7 +468,7 @@ outer:	while(true) {
 				anyFailed = failedPacket;
 			}
 			if(logMINOR) Logger.minor(this, "Calling all sent callback on "+this);
-			callAllSentCallbackInner(anyFailed);
+			callAllSentCallbackInner();
 		}
 		
 	}
