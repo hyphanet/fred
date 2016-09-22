@@ -1525,7 +1525,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					System.err.println("Not updating because updater is disabled!");
 					return;
 				}
-				mainUpdater.onSuccess(result, state, cleanedBlobFile, version);
+				mainUpdater.onSuccess(result, cleanedBlobFile, version);
 				temp.delete();
 				
 				maybeInsertMainJar(mainUpdater, source, version);

@@ -256,10 +256,10 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state) {
-		onSuccess(result, state, tempBlobFile, fetchingVersion);
+		onSuccess(result, tempBlobFile, fetchingVersion);
 	}
 
-	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
+	void onSuccess(FetchResult result, File tempBlobFile, int fetchedVersion) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		File blobFile = null;
 		synchronized(this) {
