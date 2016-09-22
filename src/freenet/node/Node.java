@@ -3725,7 +3725,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @param preferInsert
 	 */
 	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, InsertTag tag, PeerNode source,
-			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
+			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
 		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		CHKInsertSender is = null;
 		is = new CHKInsertSender(key, uid, tag, headers, htl, source, this, prb, fromStore, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
