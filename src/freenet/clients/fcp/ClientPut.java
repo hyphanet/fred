@@ -154,7 +154,7 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, IOException {
-		super(checkEmptySSK(message.uri, message.targetFilename, server.core.clientContext), message.identifier, message.verbosity, null, 
+		super(checkEmptySSK(message.uri, message.targetFilename, server.core.clientContext), message.identifier, message.verbosity,
 				handler, message.priorityClass, message.persistence, message.clientToken,
 				message.global, message.getCHKOnly, message.dontCompress, message.localRequestOnly, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, message.realTimeFlag, message.compatibilityMode, message.ignoreUSKDatehints, server);
 		String salt = null;

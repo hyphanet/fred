@@ -59,7 +59,7 @@ public class ClientPutDir extends ClientPutBase {
 
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
 			HashMap<String, Object> manifestElements, boolean wasDiskPut, FCPServer server) throws IdentifierCollisionException, MalformedURLException, TooManyFilesInsertException {
-		super(checkEmptySSK(message.uri, message.targetFilename != null ? message.targetFilename : "site", server.core.clientContext), message.identifier, message.verbosity, null,
+		super(checkEmptySSK(message.uri, message.targetFilename != null ? message.targetFilename : "site", server.core.clientContext), message.identifier, message.verbosity,
 				handler, message.priorityClass, message.persistence, message.clientToken,
 				message.global, message.getCHKOnly, message.dontCompress, message.localRequestOnly, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, message.realTimeFlag, message.compatibilityMode, message.ignoreUSKDatehints, server);
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);

@@ -98,7 +98,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	    
 	}
 	
-	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset, 
+	public ClientPutBase(FreenetURI uri, String identifier, int verbosity,
 			FCPConnectionHandler handler, short priorityClass, Persistence persistence, String clientToken, boolean global,
 			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, InsertContext.CompatibilityMode compatibilityMode, boolean ignoreUSKDatehints, FCPServer server) throws MalformedURLException {
 		super(uri, identifier, verbosity, handler, priorityClass, persistence, realTimeFlag, clientToken, global);
