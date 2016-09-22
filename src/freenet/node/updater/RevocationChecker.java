@@ -63,7 +63,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		this.revocationDNFCounter = 0;
 		this.blobFile = blobFile;
 		this.logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		ctxRevocation = core.makeClient((short)0, true, false).getFetchContext();
+		ctxRevocation = core.makeClient((short)0, false).getFetchContext();
 		// Do not allow redirects etc.
 		// If we allow redirects then it will take too long to download the revocation.
 		// Anyone inserting it should be aware of this fact! 

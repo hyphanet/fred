@@ -2510,7 +2510,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// including the absolutely essential (for most nodes) JSTUN and UPnP.
 		WrapperManager.signalStarting((int) MINUTES.toMillis(2));
 
-		FetchContext ctx = clientCore.makeClient((short)0, true, false).getFetchContext();
+		FetchContext ctx = clientCore.makeClient((short)0, false).getFetchContext();
 
 		ctx.allowSplitfiles = false;
 		ctx.dontEnterImplicitArchives = true;

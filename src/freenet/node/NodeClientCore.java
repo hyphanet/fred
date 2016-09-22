@@ -502,7 +502,7 @@ public class NodeClientCore implements Persistable {
 									    nodeConfig.getBoolean(
 											    "encryptPersistentTempBuckets"));
 		persistentTempBucketFactory.setDiskSpaceChecker(persistentDiskChecker);
-		HighLevelSimpleClient client = makeClient((short) 0, false, false);
+		HighLevelSimpleClient client = makeClient((short) 0, false);
 		FetchContext defaultFetchContext = client.getFetchContext();
 		InsertContext defaultInsertContext = client.getInsertContext(false);
 		int
@@ -1875,13 +1875,7 @@ public class NodeClientCore implements Persistable {
 	/** @deprecated Only provided for compatibility with old plugins! Plugins must specify! */
 	@Deprecated
 	public HighLevelSimpleClient makeClient(short prioClass) {
-		return makeClient(prioClass, false, false);
-	}
-
-	/** @deprecated Only provided for compatibility with old plugins! Plugins must specify! */
-	@Deprecated
-	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents) {
-		return makeClient(prioClass, forceDontIgnoreTooManyPathComponents, false);
+		return makeClient(prioClass, false);
 	}
 
 	/**
@@ -1891,7 +1885,7 @@ public class NodeClientCore implements Persistable {
 	 * but their transfers are faster. Latency-optimised requests are expected to be bursty,
 	 * whereas throughput-optimised (bulk) requests can be constant.
 	 */
-	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
+	public HighLevelSimpleClient makeClient(short prioClass, boolean realTimeFlag) {
 		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, prioClass, realTimeFlag);
 	}
 

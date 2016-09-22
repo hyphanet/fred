@@ -124,7 +124,7 @@ public class LongTermMHKTest extends LongTermTest {
 			
 			for(int i=0;i<mhks.length;i++) mhks[i] = randomData(node);
 			
-			client = node.clientCore.makeClient((short) 0, false, false);
+			client = node.clientCore.makeClient((short) 0, false);
 
 			System.err.println("Inserting single block 3 times");
 			

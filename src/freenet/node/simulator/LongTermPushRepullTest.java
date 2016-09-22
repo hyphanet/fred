@@ -95,7 +95,7 @@ public class LongTermPushRepullTest extends LongTermTest {
 			// Push one block only.
 			
 			RandomAccessBucket data = randomData(node);
-			HighLevelSimpleClient client = node.clientCore.makeClient((short) 0, false, false);
+			HighLevelSimpleClient client = node.clientCore.makeClient((short) 0, false);
 			FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(today.getTime()));
 			System.out.println("PUSHING " + uri);
 			
@@ -138,7 +138,7 @@ public class LongTermPushRepullTest extends LongTermTest {
 
 			// PULL N+1 BLOCKS
 			for (int i = 0; i <= MAX_N; i++) {
-				client = node2.clientCore.makeClient((short) 0, false, false);
+				client = node2.clientCore.makeClient((short) 0, false);
 				Calendar targetDate = (Calendar) today.clone();
 				targetDate.add(Calendar.DAY_OF_MONTH, -((1 << i) - 1));
 

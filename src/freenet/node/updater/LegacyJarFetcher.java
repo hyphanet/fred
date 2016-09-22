@@ -48,7 +48,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 		this.saveTo = saveTo;
 		this.context = core.clientContext;
 		this.cb = cb;
-		ctx = core.makeClient((short) 1, true, false).getFetchContext();
+		ctx = core.makeClient((short) 1, false).getFetchContext();
 		ctx.allowSplitfiles = true;
 		ctx.dontEnterImplicitArchives = false;
 		ctx.maxNonSplitfileRetries = -1;

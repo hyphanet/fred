@@ -123,7 +123,7 @@ public class BookmarkManager implements RequestClient {
 		public void onFoundEdition(long edition, USK key, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			if(!newKnownGood) {
 				FreenetURI uri = key.copy(edition).getURI();
-				node.makeClient(PRIORITY_PROGRESS, false, false).prefetch(uri, MINUTES.toMillis(60), FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, null, PRIORITY_PROGRESS);
+				node.makeClient(PRIORITY_PROGRESS, false).prefetch(uri, MINUTES.toMillis(60), FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, null, PRIORITY_PROGRESS);
 				return;
 			}
 			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();

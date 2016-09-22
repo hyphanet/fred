@@ -385,8 +385,7 @@ public class NodeUpdateManager {
 		}
 
 		public void start(short priority, long maxSize) {
-			HighLevelSimpleClient hlsc = node.clientCore.makeClient(priority,
-					false, false);
+			HighLevelSimpleClient hlsc = node.clientCore.makeClient(priority, false);
 			FetchContext context = hlsc.getFetchContext();
 			context.maxNonSplitfileRetries = -1;
 			context.maxSplitfileBlockRetries = -1;

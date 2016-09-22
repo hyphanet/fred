@@ -82,7 +82,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		this.maxDeployVersion = max;
 		this.minDeployVersion = min;
 
-		FetchContext tempContext = core.makeClient((short) 0, true, false).getFetchContext();
+		FetchContext tempContext = core.makeClient((short) 0, false).getFetchContext();
 		tempContext.allowSplitfiles = true;
 		tempContext.dontEnterImplicitArchives = false;
 		this.ctx = tempContext;

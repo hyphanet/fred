@@ -57,7 +57,7 @@ public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
         Node node = NodeStarter.createTestNode(params);
         node.start();
         HighLevelSimpleClient client = 
-                node.clientCore.makeClient((short)0, false, false);
+                node.clientCore.makeClient((short)0, false);
         // First do an ordinary insert.
         InsertContext ictx = client.getInsertContext(true);
         ictx.localRequestOnly = true;
@@ -90,7 +90,7 @@ public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
         Node node2 = NodeStarter.createTestNode(params);
         node2.start();
         HighLevelSimpleClient client2 = 
-                node.clientCore.makeClient((short)0, false, false);
+                node.clientCore.makeClient((short)0, false);
         FetchContext ctx2 = client.getFetchContext(FILE_SIZE*2);
         SimpleBlockSet blocks = new SimpleBlockSet();
         DataInputStream dis = new DataInputStream(blobBucket.getInputStream());

@@ -86,7 +86,7 @@ public class BootstrapPushPullTest {
         os.close();
 		}
         System.err.println("Inserting test data.");
-        HighLevelSimpleClient client = node.clientCore.makeClient((short)0, false, false);
+        HighLevelSimpleClient client = node.clientCore.makeClient((short)0, false);
         InsertBlock block = new InsertBlock(data, new ClientMetadata(), FreenetURI.EMPTY_CHK_URI);
         long startInsertTime = System.currentTimeMillis();
         FreenetURI uri;
@@ -118,7 +118,7 @@ public class BootstrapPushPullTest {
         
         // Fetch the data
         long startFetchTime = System.currentTimeMillis();
-        client = secondNode.clientCore.makeClient((short)0, false, false);
+        client = secondNode.clientCore.makeClient((short)0, false);
         try {
 			client.fetch(uri);
 		} catch (FetchException e) {

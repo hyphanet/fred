@@ -109,7 +109,7 @@ public class BootstrapPullTest {
 
         // Fetch the data
         long startFetchTime = System.currentTimeMillis();
-        HighLevelSimpleClient client = secondNode.clientCore.makeClient((short)0, false, false);
+        HighLevelSimpleClient client = secondNode.clientCore.makeClient((short)0, false);
         try {
 			client.fetch(uri);
 		} catch (FetchException e) {
