@@ -50,8 +50,7 @@ class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
 	}
 
 	@Override
-	public Bucket getMetadata(ArchiveContext archiveContext,
-			ArchiveManager manager) throws ArchiveFailureException,
+	public Bucket getMetadata(ArchiveManager manager) throws ArchiveFailureException,
 			ArchiveRestartException, MetadataParseException, FetchException {
 		return get(".metadata", manager);
 	}

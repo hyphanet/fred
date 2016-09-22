@@ -443,7 +443,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				metadata = null; // Copied to archiveMetadata, so do not need to clear it
 				// ah is set. This means we are currently handling an archive.
 				Bucket metadataBucket;
-				metadataBucket = ah.getMetadata(actx, context.archiveManager);
+				metadataBucket = ah.getMetadata(context.archiveManager);
 				if(metadataBucket != null) {
 					try {
 						metadata = Metadata.construct(metadataBucket);
