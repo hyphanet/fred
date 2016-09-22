@@ -721,7 +721,7 @@ public class FailureTable {
 		}
 	}
 
-	public boolean peersWantKey(Key key, PeerNode apartFrom) {
+	public boolean peersWantKey(Key key) {
 		FailureTableEntry entry;
 		synchronized(this) {
 			entry = entriesByKey.get(key);

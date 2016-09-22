@@ -4446,7 +4446,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public boolean peersWantKey(Key key) {
-		return failureTable.peersWantKey(key, null);
+		return failureTable.peersWantKey(key);
 	}
 
 	private SimpleUserAlert alertMTUTooSmall;
