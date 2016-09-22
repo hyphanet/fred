@@ -42,8 +42,7 @@ public interface ArchiveHandler {
 	 * @throws FetchException 
 	 * @throws MetadataParseException 
 	 */
-	public abstract Bucket get(String internalName,
-			ArchiveContext archiveContext, ArchiveManager manager)
+	public abstract Bucket get(String internalName, ArchiveManager manager)
 			throws ArchiveFailureException, ArchiveRestartException,
 			MetadataParseException, FetchException;
 

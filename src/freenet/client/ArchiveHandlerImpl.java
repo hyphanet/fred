@@ -31,8 +31,7 @@ class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
 	}
 
 	@Override
-	public Bucket get(String internalName, ArchiveContext archiveContext,
-			ArchiveManager manager)
+	public Bucket get(String internalName, ArchiveManager manager)
 			throws ArchiveFailureException, ArchiveRestartException,
 			MetadataParseException, FetchException {
 
@@ -54,7 +53,7 @@ class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
 	public Bucket getMetadata(ArchiveContext archiveContext,
 			ArchiveManager manager) throws ArchiveFailureException,
 			ArchiveRestartException, MetadataParseException, FetchException {
-		return get(".metadata", archiveContext, manager);
+		return get(".metadata", manager);
 	}
 
 	@Override

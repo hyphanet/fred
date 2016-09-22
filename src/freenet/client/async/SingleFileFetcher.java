@@ -499,7 +499,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					throw new FetchException(FetchExceptionMode.UNKNOWN_METADATA, "Archive redirect not in an archive manifest");
 				String filename = metadata.getArchiveInternalName();
 				if(logMINOR) Logger.minor(this, "Fetching "+filename);
-				Bucket dataBucket = ah.get(filename, actx, context.archiveManager);
+				Bucket dataBucket = ah.get(filename, context.archiveManager);
 				if(dataBucket != null) {
 					if(logMINOR) Logger.minor(this, "Returning data");
 					final Metadata newMetadata;
@@ -572,7 +572,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					throw new FetchException(FetchExceptionMode.UNKNOWN_METADATA, "Archive redirect not in an archive manifest");
 				String filename = metadata.getArchiveInternalName();
 				if(logMINOR) Logger.minor(this, "Fetching "+filename);
-				Bucket dataBucket = ah.get(filename, actx, context.archiveManager);
+				Bucket dataBucket = ah.get(filename, context.archiveManager);
 				if(dataBucket != null) {
 					if(logMINOR) Logger.minor(this, "Returning data");
 					final Bucket out;
