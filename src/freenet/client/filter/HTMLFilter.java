@@ -2315,7 +2315,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		@Override
 		void processStyle(HTMLParseContext pc) {
 			pc.currentStyleScriptChunk =
-				sanitizeScripting(pc.currentStyleScriptChunk);
+				sanitizeScripting();
 		}
 	}
 
@@ -2443,7 +2443,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			for (String name: eventAttrs) {
 				String arg = getHashString(h, name);
 				if (arg != null) {
-					arg = sanitizeScripting(arg);
+					arg = sanitizeScripting();
 					if (arg != null)
 						hn.put(name, arg);
 				}
@@ -3203,7 +3203,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		return buf.toString();
 	}
 
-	static String sanitizeScripting(String script) {
+	static String sanitizeScripting() {
 		// Kill it. At some point we may want to allow certain recipes - FIXME
 		return null;
 	}
