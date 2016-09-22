@@ -859,7 +859,7 @@ public class Node implements TimeSkewDetectorCallback {
 		String suffix = getStoreSuffix();
 		if (val.equals("salt-hash")) {
 			try {
-				initSaltHashFS(suffix, true, null);
+				initSaltHashFS(true, null);
 			} catch (NodeInitException e) {
 				Logger.error(this, "Unable to create new store", e);
 				System.err.println("Unable to create new store: "+e);
@@ -2192,7 +2192,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if (storeType.equals("salt-hash")) {
 			initRAMFS();
-			initSaltHashFS(suffix, false, null);
+			initSaltHashFS(false, null);
 		} else {
 			initRAMFS();
 		}
@@ -2795,7 +2795,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private long cachingFreenetStorePeriod;
 	private CachingFreenetStoreTracker cachingFreenetStoreTracker;
 
-	private void initSaltHashFS(final String suffix, boolean dontResizeOnStart, byte[] masterKey) throws NodeInitException {
+	private void initSaltHashFS(boolean dontResizeOnStart, byte[] masterKey) throws NodeInitException {
 		try {
 			final CHKStore chkDatastore = new CHKStore();
 			final FreenetStore<CHKBlock> chkDataFS = makeStore("CHK", true, chkDatastore, dontResizeOnStart, masterKey);
