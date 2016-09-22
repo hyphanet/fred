@@ -535,7 +535,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					}
 				}
 			}
-			tryComplete(context);
+			tryComplete();
 		}
 
 		@Override
@@ -1043,7 +1043,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 	}
 
-	private void tryComplete(ClientContext context) {
+	private void tryComplete() {
 		//debugDecompose("try complete");
 		if(logDEBUG) Logger.debug(this, "try complete", new Error("trace tryComplete()"));
 		synchronized(this) {
