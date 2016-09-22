@@ -1645,7 +1645,7 @@ class CSSTokenizerFilter {
 	 * value: 10pt
 	 *
 	 */
-	private boolean verifyToken(String[] media,String[] elements,CSSPropertyVerifier obj,ParsedWord[] words)
+	private boolean verifyToken(String[] media, CSSPropertyVerifier obj, ParsedWord[] words)
 	{
 		if(words == null) return false;
 		if(logDEBUG) Logger.debug(this, "verifyToken for "+CSSPropertyVerifier.toString(words));
@@ -2675,7 +2675,7 @@ class CSSTokenizerFilter {
 					if(obj != null) {
 					ParsedWord[] words = split(propertyValue, obj.allowCommaDelimiters);
 					if(logDEBUG) Logger.debug(this, "Split: "+CSSPropertyVerifier.toString(words));
-					if(words != null && !ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia,elements,obj,words))
+					if(words != null && !ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia, obj,words))
 					{
 						if(changedAnything(words)) propertyValue = reconstruct(words);
 						filteredTokens.append(whitespaceBeforeProperty);
@@ -2745,7 +2745,7 @@ class CSSTokenizerFilter {
 						if(obj != null) {
 							ParsedWord[] words = split(propertyValue,obj.allowCommaDelimiters);
 							if(logDEBUG) Logger.debug(this, "Split: "+CSSPropertyVerifier.toString(words));
-							if(!ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia,elements,obj,words))
+							if(!ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia, obj,words))
 							{
 								if(changedAnything(words)) propertyValue = reconstruct(words);
 								filteredTokens.append(whitespaceBeforeProperty);
