@@ -92,7 +92,7 @@ public class PluginJarUpdater extends NodeUpdater {
 	private static final String REQUIRED_NODE_VERSION_PREFIX = "Required-Node-Version: ";
 	
 	@Override
-	protected void maybeParseManifest(FetchResult result, int build) {
+	protected void maybeParseManifest(FetchResult result) {
 		requiredNodeVersion = -1;
 		parseManifest(result);
 		if(requiredNodeVersion != -1) {

@@ -73,7 +73,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	}
 	
 	@Override
-	protected void maybeParseManifest(FetchResult result, int build) {
+	protected void maybeParseManifest(FetchResult result) {
 		// Do nothing.
 	}
 

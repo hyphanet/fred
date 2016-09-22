@@ -303,7 +303,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			System.out.println("Found " + jarName() + " version " + fetchedVersion);
 			if(fetchedVersion > currentVersion)
 				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
-			maybeParseManifest(result, fetchedVersion);
+			maybeParseManifest(result);
 			this.cg = null;
 		}
 		processSuccess(fetchedVersion, result, blobFile);
@@ -314,7 +314,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 	/** Called with locks held 
 	 * @param result */
-	protected abstract void maybeParseManifest(FetchResult result, int build);
+	protected abstract void maybeParseManifest(FetchResult result);
 
 	protected void parseManifest(FetchResult result) {
 		InputStream is = null;
