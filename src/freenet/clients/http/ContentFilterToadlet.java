@@ -231,7 +231,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             }
             String resultFilename = makeResultFilename(filename, mimeType);
             try {
-                handleFilter(bucket, mimeType, filterOperation, resultHandling, resultFilename, ctx, core);
+                handleFilter(bucket, mimeType, resultHandling, resultFilename, ctx, core);
             } catch (FileNotFoundException e) {
                 writeBadRequestError(l10n("errorNoFileOrCannotReadTitle"), l10n("errorNoFileOrCannotRead", "file", filename), ctx, true);
             }
@@ -281,7 +281,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         return filteredFilename;
     }
     
-    private void handleFilter(Bucket data, String mimeType, FilterOperation operation, ResultHandling resultHandling, String resultFilename, ToadletContext ctx, NodeClientCore core)
+    private void handleFilter(Bucket data, String mimeType, ResultHandling resultHandling, String resultFilename, ToadletContext ctx, NodeClientCore core)
             throws ToadletContextClosedException, IOException, BadRequestException {
         Bucket resultBucket = ctx.getBucketFactory().makeBucket(-1);
         String resultMimeType = null;
