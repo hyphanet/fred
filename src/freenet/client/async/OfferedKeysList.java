@@ -58,7 +58,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	private final short priorityClass;
 	private final boolean isSSK;
 	
-	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass, boolean isSSK, boolean realTimeFlag) {
+	OfferedKeysList(RandomSource random, short priorityClass, boolean isSSK, boolean realTimeFlag) {
 		super(false, realTimeFlag);
 		this.keys = new HashSet<Key>();
 		this.keysList = new ArrayList<Key>();

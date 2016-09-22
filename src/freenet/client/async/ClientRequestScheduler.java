@@ -80,7 +80,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		this.choosenPriorityScheduler = PRIORITY_HARD; // Will be reset later.
 		if(!forInserts) {
-			offeredKeys = new OfferedKeysList(core, random, (short)0, forSSKs, forRT);
+			offeredKeys = new OfferedKeysList(random, (short)0, forSSKs, forRT);
 		} else {
 			offeredKeys = null;
 		}
