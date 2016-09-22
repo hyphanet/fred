@@ -245,7 +245,7 @@ public class DMT {
 		return msg;
 	}
 	
-	public static Message createFNPBulkPacketSend(long uid, int packetNo, byte[] data, boolean realTime) {
+	public static Message createFNPBulkPacketSend(long uid, int packetNo, byte[] data) {
 		return createFNPBulkPacketSend(uid, packetNo, new ShortBuffer(data));
 	}
 	
