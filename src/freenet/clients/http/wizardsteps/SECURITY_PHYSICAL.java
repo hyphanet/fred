@@ -223,7 +223,7 @@ public class SECURITY_PHYSICAL implements Step {
 				try {
 					if(oldThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL ||
 					        oldThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW) {
-						core.node.changeMasterPassword("", pass, true);
+						core.node.changeMasterPassword(pass);
 					} else {
 						core.node.setMasterPassword(pass);
 					}
@@ -245,7 +245,7 @@ public class SECURITY_PHYSICAL implements Step {
 			} else if (core.node.getMasterPasswordFile().exists()) {
 				//Old password for decryption specified.
 				try {
-					core.node.changeMasterPassword(pass, "", true);
+					core.node.changeMasterPassword("");
 				} catch (IOException e) {
 					if(!core.node.getMasterPasswordFile().exists()) {
 						// Ok.

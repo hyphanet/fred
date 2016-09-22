@@ -4531,7 +4531,7 @@ public class Node implements TimeSkewDetectorCallback {
 		executor.execute(migrate, "Migrate data from previous store");
 	}
 
-	public void changeMasterPassword(String oldPassword, String newPassword, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException, AlreadySetPasswordException {
+	public void changeMasterPassword(String newPassword) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException, AlreadySetPasswordException {
 		if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM)
 			Logger.error(this, "Changing password while physical threat level is at MAXIMUM???");
 		if(masterKeysFile.exists()) {
