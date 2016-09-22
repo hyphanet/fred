@@ -1153,7 +1153,7 @@ public class NodeUpdateManager {
 		}
 
 		if (writeJars(ctx, deps)) {
-			restart(ctx);
+			restart();
 			return true;
 		} else {
 			if (logMINOR)
@@ -1344,7 +1344,7 @@ public class NodeUpdateManager {
 	}
 
 	/** Restart the node. Does not return. */
-	private void restart(UpdateDeployContext ctx) {
+	private void restart() {
 		if (logMINOR)
 			Logger.minor(this, "Restarting...");
 		node.getNodeStarter().restart();
