@@ -1186,8 +1186,7 @@ public class NodeUpdateManager {
 			File newMainJar = ctx.getNewMainJar();
 			File backupJar = ctx.getBackupJar();
 			try {
-				if (writeJar(mainJar, newMainJar, backupJar, mainUpdater, "main",
-						tryEasyWay))
+				if (writeJar(mainJar, newMainJar, backupJar, tryEasyWay))
 					writtenNewJar = true;
 			} catch (UpdateFailedException e) {
 				failUpdate(e.getMessage());
@@ -1234,11 +1233,6 @@ public class NodeUpdateManager {
 	 *            On Windows, we alternate between freenet.jar and freenet.jar.new, so we do not 
 	 *            need to write a backup - the user can rename between these two. On Unix, we 
 	 *            copy to freenet.jar.bak before updating, in case something horrible happens. 
-	 * @param mainUpdater
-	 *            The NodeUpdater for the file in question, so we can ask it to
-	 *            write the file.
-	 * @param name
-	 *            The name of the jar for logging.
 	 * @param tryEasyWay
 	 *            If true, attempt to rename the new file directly over the old
 	 *            one. This avoids the need to rewrite the wrapper config file.
@@ -1247,9 +1241,7 @@ public class NodeUpdateManager {
 	 * @throws UpdateFailedException
 	 *             If something breaks.
 	 */
-	private boolean writeJar(File mainJar, File newMainJar, File backupMainJar,
-			NodeUpdater mainUpdater, String name, boolean tryEasyWay)
-			throws UpdateFailedException {
+	private boolean writeJar(File mainJar, File newMainJar, File backupMainJar, boolean tryEasyWay) throws UpdateFailedException {
 		boolean writtenToTempFile = false;
 		try {
 			if (newMainJar.exists()) {
