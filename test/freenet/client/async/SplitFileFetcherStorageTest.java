@@ -302,8 +302,8 @@ public class SplitFileFetcherStorageTest extends TestCase {
         }
 
         public FetchContext makeFetchContext() {
-            return HighLevelSimpleClientImpl.makeDefaultFetchContext(Long.MAX_VALUE, Long.MAX_VALUE, 
-                    bf, new SimpleEventProducer());
+            return HighLevelSimpleClientImpl.makeDefaultFetchContext(Long.MAX_VALUE, Long.MAX_VALUE,
+                    new SimpleEventProducer());
         }
 
         public void verifyOutput(SplitFileFetcherStorage storage) throws IOException {

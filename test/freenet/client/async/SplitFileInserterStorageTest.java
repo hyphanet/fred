@@ -778,7 +778,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         
         MyFetchCallback fcb = new MyFetchCallback();
         
-        FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, smallBucketFactory, new SimpleEventProducer());
+        FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, new SimpleEventProducer());
         
         SplitFileFetcherStorage fetcherStorage = new SplitFileFetcherStorage(m1, fcb, new ArrayList<COMPRESSOR_TYPE>(),
                 new ClientMetadata(), false, cmode.code, fctx, false, salt, URI, URI, true, new byte[0],
@@ -1005,7 +1005,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         
         MyFetchCallback fcb = new MyFetchCallback();
         
-        FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, smallBucketFactory, new SimpleEventProducer());
+        FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, new SimpleEventProducer());
         
         short cmode = (short) context.getCompatibilityMode().ordinal();
         
@@ -1085,7 +1085,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         
         MyFetchCallback fcb = new MyFetchCallback();
         
-        FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, smallBucketFactory, new SimpleEventProducer());
+        FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, new SimpleEventProducer());
         
         short cmode = (short) context.getCompatibilityMode().ordinal();
         

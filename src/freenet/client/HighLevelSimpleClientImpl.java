@@ -356,8 +356,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				eventProducer, false, CAN_WRITE_CLIENT_CACHE, null, null);
 	}
 	
-	public static FetchContext makeDefaultFetchContext(long maxLength, long maxTempLength, 
-	        BucketFactory bucketFactory, SimpleEventProducer eventProducer) {
+	public static FetchContext makeDefaultFetchContext(long maxLength, long maxTempLength, SimpleEventProducer eventProducer) {
         return
         new FetchContext(maxLength, maxTempLength, 1024*1024,
             MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES,
