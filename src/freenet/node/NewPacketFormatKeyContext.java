@@ -154,7 +154,7 @@ public class NewPacketFormatKeyContext {
 		}
 	}
 
-	public void sent(int sequenceNumber, int length) {
+	public void sent(int sequenceNumber) {
 		synchronized(sentPackets) {
 			SentPacket sentPacket = sentPackets.get(sequenceNumber);
 			if(sentPacket != null) sentPacket.sent();

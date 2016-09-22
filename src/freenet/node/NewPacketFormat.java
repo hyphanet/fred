@@ -539,7 +539,7 @@ public class NewPacketFormat implements PacketFormat {
 		packet.onSent(data.length, pn);
 
 		if(packet.getFragments().size() > 0) {
-			keyContext.sent(packet.getSequenceNumber(), packet.getLength());
+			keyContext.sent(packet.getSequenceNumber());
 		}
 
 		long now = System.currentTimeMillis();
