@@ -4468,7 +4468,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	/** Can be called to decrypt client.dat* etc, or can be called when switching from another 
 	 * security level to HIGH. */
-	public void setMasterPassword(String password, boolean inFirstTimeWizard) throws AlreadySetPasswordException, MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
+	public void setMasterPassword(String password) throws AlreadySetPasswordException, MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 		MasterKeys k;
 		synchronized(this) {
 		    if(keys == null) {
@@ -4538,7 +4538,7 @@ public class Node implements TimeSkewDetectorCallback {
 			keys.changePassword(masterKeysFile, newPassword, secureRandom);
 			setPasswordInner(keys);
 		} else {
-			setMasterPassword(newPassword, inFirstTimeWizard);
+			setMasterPassword(newPassword);
 		}
 	}
 

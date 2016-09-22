@@ -151,7 +151,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 								if(oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.NORMAL || oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.LOW)
 									core.node.changeMasterPassword("", password, false);
 								else
-									core.node.setMasterPassword(password, false);
+									core.node.setMasterPassword(password);
 							} catch (AlreadySetPasswordException e) {
 								sendChangePasswordForm(ctx, false, false, newPhysicalLevel.name());
 								return;
@@ -307,7 +307,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 				}
 				System.err.println("Setting master password");
 				try {
-					node.setMasterPassword(masterPassword, false);
+					node.setMasterPassword(masterPassword);
 				} catch (AlreadySetPasswordException e) {
 					System.err.println("Already set master password");
 					Logger.error(this, "Already set master password");

@@ -225,7 +225,7 @@ public class SECURITY_PHYSICAL implements Step {
 					        oldThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW) {
 						core.node.changeMasterPassword("", pass, true);
 					} else {
-						core.node.setMasterPassword(pass, true);
+						core.node.setMasterPassword(pass);
 					}
 				} catch (Node.AlreadySetPasswordException e) {
 					// Do nothing, already set a password.
