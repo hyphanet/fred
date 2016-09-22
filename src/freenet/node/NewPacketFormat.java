@@ -895,7 +895,7 @@ addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 		}
 
 		if(packet.getFragments().size() > 0) {
-			keyContext.sent(sentPacket, seqNum, packet.getLength());
+			keyContext.sent(sentPacket, seqNum);
 		}
 
 		return packet;

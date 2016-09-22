@@ -218,7 +218,7 @@ public class NewPacketFormatKeyContext {
 		}
 	}
 
-	public void sent(SentPacket sentPacket, int seqNum, int length) {
+	public void sent(SentPacket sentPacket, int seqNum) {
 	    sentPacket.sent();
 		synchronized(sentPackets) {
 			sentPackets.put(seqNum, sentPacket);
