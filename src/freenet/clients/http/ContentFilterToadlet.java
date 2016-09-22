@@ -287,7 +287,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         String resultMimeType = null;
         boolean unsafe = false;
         try {
-            FilterStatus status = applyFilter(data, resultBucket, mimeType, operation, core);
+            FilterStatus status = applyFilter(data, resultBucket, mimeType, core);
             resultMimeType = status.mimeType;
         } catch (UnsafeContentTypeException e) {
             unsafe = true;
@@ -315,7 +315,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         }
     }
     
-    private FilterStatus applyFilter(Bucket input, Bucket output, String mimeType, FilterOperation operation, NodeClientCore core)
+    private FilterStatus applyFilter(Bucket input, Bucket output, String mimeType, NodeClientCore core)
             throws UnsafeContentTypeException, IOException {
         InputStream inputStream = null;
         OutputStream outputStream = null;
