@@ -172,7 +172,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				}
 				// Might be a reply to us sending an anon auth packet.
 				// I.e. we are not the seednode, they are.
-				if(tryProcessAuthAnonReply(buf, offset, length, opn, peer, now)) {
+				if(tryProcessAuthAnonReply(buf, offset, length, opn, peer)) {
 					return DECODED.DECODED;
 				}
 			}
@@ -191,7 +191,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				if(pn.handshakeUnknownInitiator()) {
 					// Might be a reply to us sending an anon auth packet.
 					// I.e. we are not the seednode, they are.
-					if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
+					if(tryProcessAuthAnonReply(buf, offset, length, pn, peer)) {
 						return DECODED.DECODED;
 					}
 				}
@@ -250,7 +250,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 3) {
 			for(PeerNode pn: anonPeers) {
 				if(pn == opn) continue;
-				if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
+				if(tryProcessAuthAnonReply(buf, offset, length, pn, peer)) {
 					return true;
 				}
 			}
@@ -384,10 +384,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * @param length The number of bytes to read
 	 * @param pn The PeerNode we think is responsible
 	 * @param peer The Peer to send a reply to
-	 * @param now The time at which the packet was received
 	 * @return True if we handled a negotiation packet, false otherwise.
 	 */
-	private boolean tryProcessAuthAnonReply(byte[] buf, int offset, int length, PeerNode pn, Peer peer, long now) {
+	private boolean tryProcessAuthAnonReply(byte[] buf, int offset, int length, PeerNode pn, Peer peer) {
 		BlockCipher authKey = pn.anonymousInitiatorSetupCipher;
 		// Does the packet match IV E( H(data) data ) ?
 		int ivLength = PCFBMode.lengthIV(authKey);
