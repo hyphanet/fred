@@ -4482,10 +4482,10 @@ public class Node implements TimeSkewDetectorCallback {
 		    }
 		    k = keys;
 		}
-		setPasswordInner(k, inFirstTimeWizard);
+		setPasswordInner(k);
 	}
 
-	private void setPasswordInner(MasterKeys keys, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
+	private void setPasswordInner(MasterKeys keys) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 	    MasterSecret secret = keys.getPersistentMasterSecret();
         clientCore.setupMasterSecret(secret);
 		boolean wantClientCache = false;
@@ -4536,7 +4536,7 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.error(this, "Changing password while physical threat level is at MAXIMUM???");
 		if(masterKeysFile.exists()) {
 			keys.changePassword(masterKeysFile, newPassword, secureRandom);
-			setPasswordInner(keys, inFirstTimeWizard);
+			setPasswordInner(keys);
 		} else {
 			setMasterPassword(newPassword, inFirstTimeWizard);
 		}
