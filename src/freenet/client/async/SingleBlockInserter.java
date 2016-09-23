@@ -149,7 +149,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		CompatibilityMode cmode = ctx.getCompatibilityMode();
 		boolean pre1254 = !(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
 		try {
-			return innerEncode(random, uri, sourceData, isMetadata, compressionCodec, sourceLength, ctx.compressorDescriptor, pre1254, cryptoAlgorithm, cryptoKey);
+			return innerEncode(uri, sourceData, isMetadata, compressionCodec, sourceLength, ctx.compressorDescriptor, pre1254, cryptoAlgorithm, cryptoKey);
 		} catch (KeyEncodeException e) {
 			Logger.error(SingleBlockInserter.class, "Caught "+e, e);
 			throw new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null);
@@ -164,7 +164,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			
 	}
 	
-	protected static ClientKeyBlock innerEncode(RandomSource random, FreenetURI uri, Bucket sourceData, boolean isMetadata, short compressionCodec, int sourceLength, String compressorDescriptor, boolean pre1254, byte cryptoAlgorithm, byte[] cryptoKey) throws InsertException, CHKEncodeException, IOException, SSKEncodeException, MalformedURLException, InvalidCompressionCodecException {
+	protected static ClientKeyBlock innerEncode(FreenetURI uri, Bucket sourceData, boolean isMetadata, short compressionCodec, int sourceLength, String compressorDescriptor, boolean pre1254, byte cryptoAlgorithm, byte[] cryptoKey) throws InsertException, CHKEncodeException, IOException, SSKEncodeException, MalformedURLException, InvalidCompressionCodecException {
 		String uriType = uri.getKeyType();
 		if(uriType.equals("CHK")) {
 			return ClientCHKBlock.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, compressorDescriptor, pre1254, cryptoKey, cryptoAlgorithm);
@@ -455,7 +455,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			BlockItem block = (BlockItem) req.token;
 			try {
 				try {
-					encodedBlock = innerEncode(context.random, block.uri, block.copyBucket, block.isMetadata, block.compressionCodec, block.sourceLength, compressorDescriptor, block.pre1254, block.cryptoAlgorithm, block.cryptoKey);
+					encodedBlock = innerEncode(block.uri, block.copyBucket, block.isMetadata, block.compressionCodec, block.sourceLength, compressorDescriptor, block.pre1254, block.cryptoAlgorithm, block.cryptoKey);
 					b = encodedBlock.getBlock();
 				} catch (CHKEncodeException e) {
 					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
