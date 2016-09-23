@@ -667,7 +667,7 @@ public class USKManager {
 		return ret;
 	}
 	
-	public void unsubscribeContent(USK origUSK, USKRetriever ret, boolean runBackgroundFetch) {
+	public void unsubscribeContent(USKRetriever ret) {
 		ret.unsubscribe(this);
 	}
 	

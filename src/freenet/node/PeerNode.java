@@ -2217,7 +2217,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 			@Override
 			public void run() {
-				node.clientCore.uskManager.unsubscribeContent(myARK, unsub, true);
+				node.clientCore.uskManager.unsubscribeContent(unsub);
 			}
 			
 		});
