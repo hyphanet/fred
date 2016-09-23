@@ -251,7 +251,7 @@ public class PluginManager {
 	private boolean stopping;
 	private String[] toStart;
 
-	public void start(Config config) {
+	public void start() {
 	    if(!enabled) return;
 		if (toStart == null) {
 			synchronized (pluginWrappers) {
