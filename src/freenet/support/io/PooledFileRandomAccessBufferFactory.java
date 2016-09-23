@@ -29,7 +29,7 @@ public class PooledFileRandomAccessBufferFactory implements LockableRandomAccess
         File file = fg.getFilename(id);
         LockableRandomAccessBuffer ret = null;
         try {
-            ret = new PooledFileRandomAccessBuffer(file, false, size, enableCrypto ? seedRandom : null, id, true);
+            ret = new PooledFileRandomAccessBuffer(file, false, size, id, true);
             return ret;
         } finally {
             if(ret == null) file.delete();
