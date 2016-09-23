@@ -115,7 +115,7 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
         }
     }
 
-    public PooledFileRandomAccessBuffer(File file, String mode, byte[] initialContents,
+    public PooledFileRandomAccessBuffer(File file, byte[] initialContents,
             int offset, int size, long persistentTempID, boolean deleteOnFree, boolean readOnly) throws IOException {
         this.file = file;
         this.readOnly = readOnly;
