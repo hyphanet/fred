@@ -1757,7 +1757,7 @@ public class SplitFileInserterStorage {
     }
 
     /** @return -1 if the insert has finished, 0 if has blocks to send, otherwise Long.MAX_VALUE. */
-    public long getWakeupTime(ClientContext context, long now) {
+    public long getWakeupTime() {
         // LOCKING: hasFinished() uses (this), separate from cooldownLock.
         // It is safe to use both here (on the request selection thread), one after the other.
         if (hasFinished()) 

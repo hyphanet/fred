@@ -212,6 +212,6 @@ public class SplitFileInserterSender extends SendableInsert {
     
     @Override
     public long getWakeupTime(ClientContext context, long now) {
-        return storage.getWakeupTime(context, now);
+        return storage.getWakeupTime();
     }
 }
