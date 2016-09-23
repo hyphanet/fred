@@ -1600,8 +1600,7 @@ public class SplitFileFetcherStorage {
     private final Object cooldownLock = new Object();
 
     /** Called when a segment goes into overall cooldown. */
-    void increaseCooldown(SplitFileFetcherSegmentStorage splitFileFetcherSegmentStorage,
-            final long cooldownTime) {
+    void increaseCooldown(final long cooldownTime) {
         // Risky locking-wise, so run as a separate job.
         jobRunner.queueNormalOrDrop(new PersistentJob() {
 
