@@ -812,7 +812,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			curLatest = Math.max(lastEd, curLatest);
 			if(logMINOR) Logger.minor(this, "Latest: "+curLatest+" in onSuccess");
 			if(!checkStoreOnly) {
-				killAttempts = cancelBefore(curLatest, context);
+				killAttempts = cancelBefore(curLatest);
 				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(curLatest, context.random, getRunningFetchEditions(), shouldAddRandomEditions(context.random));
 				Lookup[] toPoll = list.toPoll;
 				Lookup[] toFetch = list.toFetch;
@@ -899,7 +899,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		onDNF(attempt, context);
 	}
 
-	private List<USKAttempt> cancelBefore(long curLatest, ClientContext context) {
+	private List<USKAttempt> cancelBefore(long curLatest) {
 		List<USKAttempt> v = null;
 		int count = 0;
 		synchronized(this) {
@@ -1248,7 +1248,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(logMINOR) Logger.minor(this, "Latest: "+ed+" in onFoundEdition");
 			
 			if(!checkStoreOnly) {
-				killAttempts = cancelBefore(ed, context);
+				killAttempts = cancelBefore(ed);
 				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(ed, context.random, getRunningFetchEditions(), shouldAddRandomEditions(context.random));
 				Lookup[] toPoll = list.toPoll;
 				Lookup[] toFetch = list.toFetch;
