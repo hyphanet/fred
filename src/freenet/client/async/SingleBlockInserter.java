@@ -203,7 +203,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 	
-	protected ClientKeyBlock encode(ClientContext context, boolean calledByCB) throws InsertException {
+	protected ClientKeyBlock encode(ClientContext context) throws InsertException {
 		ClientKeyBlock block;
 		boolean shouldSend;
 		synchronized(this) {
@@ -305,7 +305,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			synchronized (this) {
 				if(finished) return null;
 			}
-			return encode(context, calledByCB);
+			return encode(context);
 		} catch (InsertException e) {
 			cb.onFailure(e, this, context);
 			return null;
@@ -578,7 +578,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(finished) return;
 		}
 		try {
-			encode(context, false);
+			encode(context);
 		} catch (InsertException e) {
 			fail(e, context);
 		} catch (Throwable t) {
