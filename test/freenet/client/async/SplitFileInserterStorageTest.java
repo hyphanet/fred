@@ -781,7 +781,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, new SimpleEventProducer());
         
         SplitFileFetcherStorage fetcherStorage = new SplitFileFetcherStorage(m1, fcb, new ArrayList<COMPRESSOR_TYPE>(),
-                new ClientMetadata(), false, cmode.code, fctx, false, salt, URI, URI, true, new byte[0],
+                new ClientMetadata(), false, cmode.code, fctx, salt, URI, URI, true, new byte[0],
                 r, smallBucketFactory, smallRAFFactory, jobRunner, ticker, memoryLimitedJobRunner, 
                 checker, false, null, null, keys);
         
@@ -1010,7 +1010,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         short cmode = (short) context.getCompatibilityMode().ordinal();
         
         SplitFileFetcherStorage fetcherStorage = new SplitFileFetcherStorage(m1, fcb, new ArrayList<COMPRESSOR_TYPE>(),
-                new ClientMetadata(), false, cmode, fctx, false, salt, URI, URI, true, new byte[0],
+                new ClientMetadata(), false, cmode, fctx, salt, URI, URI, true, new byte[0],
                 r, smallBucketFactory, smallRAFFactory, jobRunner, ticker, memoryLimitedJobRunner, 
                 checker, false, null, null, keysFetching);
         
@@ -1090,7 +1090,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         short cmode = (short) context.getCompatibilityMode().ordinal();
         
         SplitFileFetcherStorage fetcherStorage = new SplitFileFetcherStorage(m1, fcb, new ArrayList<COMPRESSOR_TYPE>(),
-                new ClientMetadata(), false, cmode, fctx, false, salt, URI, URI, true, new byte[0],
+                new ClientMetadata(), false, cmode, fctx, salt, URI, URI, true, new byte[0],
                 r, smallBucketFactory, smallRAFFactory, jobRunner, ticker, memoryLimitedJobRunner, 
                 checker, false, null, null, keysFetching);
         

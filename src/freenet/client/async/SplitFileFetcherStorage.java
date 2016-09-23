@@ -236,7 +236,6 @@ public class SplitFileFetcherStorage {
      * @param topDontCompress
      * @param topCompatibilityMode
      * @param origFetchContext
-     * @param realTime
      * @param salt
      * @param thisKey
      * @param origKey
@@ -264,7 +263,7 @@ public class SplitFileFetcherStorage {
     public SplitFileFetcherStorage(Metadata metadata, SplitFileFetcherStorageCallback fetcher, 
             List<COMPRESSOR_TYPE> decompressors, ClientMetadata clientMetadata, 
             boolean topDontCompress, short topCompatibilityMode, FetchContext origFetchContext,
-            boolean realTime, KeySalter salt, FreenetURI thisKey, FreenetURI origKey, 
+            KeySalter salt, FreenetURI thisKey, FreenetURI origKey,
             boolean isFinalFetch, byte[] clientDetails, RandomSource random, 
             BucketFactory tempBucketFactory, LockableRandomAccessBufferFactory rafFactory, 
             PersistentJobRunner exec, Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, 

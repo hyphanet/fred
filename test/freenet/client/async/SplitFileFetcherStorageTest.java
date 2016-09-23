@@ -287,7 +287,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
                 
             };
             return new SplitFileFetcherStorage(metadata, cb, NO_DECOMPRESSORS, metadata.getClientMetadata(), false,
-                    (short) COMPATIBILITY_MODE.ordinal(), ctx, false, salt, URI, URI, true, new byte[0], random, bf,
+                    (short) COMPATIBILITY_MODE.ordinal(), ctx, salt, URI, URI, true, new byte[0], random, bf,
                     f, jobRunner, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), persistent, null, null, fetchingKeys);
         }
 

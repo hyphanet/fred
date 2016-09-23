@@ -143,7 +143,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
             // Construct the storage.
             ChecksumChecker checker = new CRCChecksumChecker();
             storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
-                    topDontCompress, topCompatibilityMode, fetchContext, realTimeFlag, getSalter(),
+                    topDontCompress, topCompatibilityMode, fetchContext, getSalter(),
                     thisKey, parent.getURI(), isFinalFetch, parent.getClientDetail(checker), 
                     context.random, context.tempBucketFactory, 
                     persistent ? context.persistentRAFFactory : context.tempRAFFactory, 
