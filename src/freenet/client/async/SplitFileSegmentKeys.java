@@ -284,7 +284,7 @@ public class SplitFileSegmentKeys implements Cloneable, Serializable {
 		}
 	}
 
-	public NodeCHK[] listNodeKeys(boolean[] foundKeys, boolean copy) {
+	public NodeCHK[] listNodeKeys(boolean[] foundKeys) {
 		ArrayList<NodeCHK> list = new ArrayList<NodeCHK>();
 		for(int i=0;i<dataBlocks+checkBlocks;i++) {
 			NodeCHK k = getNodeKey(i, foundKeys);
