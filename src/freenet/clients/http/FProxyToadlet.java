@@ -814,7 +814,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 				if(needsFetch){
 					//If we don't have the data, then we need to fetch it and block until it is available
-					FetchResult result = fetch(key, maxSize, new RequestClientBuilder().realTime().build(), fctx);
+					FetchResult result = fetch(key, new RequestClientBuilder().realTime().build(), fctx);
 
 					// Now, is it safe?
 
