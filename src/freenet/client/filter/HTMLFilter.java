@@ -78,7 +78,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			r = new BufferedReader(isr, 4096);
 			w = new BufferedWriter(osw, 4096);
 		} catch(UnsupportedEncodingException e) {
-			throw UnknownCharsetException.create(e, charset);
+			throw UnknownCharsetException.create(charset);
 		}
 		HTMLParseContext pc = new HTMLParseContext(r, w, charset, cb, false);
 		pc.run();
