@@ -279,7 +279,7 @@ public class USKManager {
 		}
 	}
 
-	public void startTemporaryBackgroundFetcher(USK usk, ClientContext context, final FetchContext fctx, boolean prefetchContent, boolean realTimeFlag) {
+	public void startTemporaryBackgroundFetcher(USK usk, final FetchContext fctx, boolean prefetchContent, boolean realTimeFlag) {
 		final USK clear = usk.clearCopy();
 		USKFetcher sched = null;
 		ArrayList<USKFetcher> toCancel = null;

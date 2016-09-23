@@ -1187,7 +1187,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Return the latest known version but at least suggestedEdition.
 			long edition = context.uskManager.lookupKnownGood(usk);
 			if(edition <= usk.suggestedEdition) {
-				context.uskManager.startTemporaryBackgroundFetcher(usk, context, ctx, true, realTimeFlag);
+				context.uskManager.startTemporaryBackgroundFetcher(usk, ctx, true, realTimeFlag);
 				edition = context.uskManager.lookupKnownGood(usk);
 				if(edition > usk.suggestedEdition) {
 					if(logMINOR) Logger.minor(SingleFileFetcher.class, "Redirecting to edition "+edition);
