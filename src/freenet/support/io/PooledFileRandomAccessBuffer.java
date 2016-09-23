@@ -80,11 +80,11 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
      * @throws IOException
      */
     public PooledFileRandomAccessBuffer(File file, boolean readOnly, long forceLength, Random seedRandom, long persistentTempID, boolean deleteOnFree) throws IOException {
-        this(file, readOnly, forceLength, seedRandom, persistentTempID, deleteOnFree, DEFAULT_FDTRACKER);
+        this(file, readOnly, forceLength, persistentTempID, deleteOnFree, DEFAULT_FDTRACKER);
     }
 
     // For unit testing
-    PooledFileRandomAccessBuffer(File file, boolean readOnly, long forceLength, Random seedRandom, long persistentTempID, boolean deleteOnFree, FDTracker fds) throws IOException {
+    PooledFileRandomAccessBuffer(File file, boolean readOnly, long forceLength, long persistentTempID, boolean deleteOnFree, FDTracker fds) throws IOException {
         this.file = file;
         this.readOnly = readOnly;
         this.persistentTempID = persistentTempID;
