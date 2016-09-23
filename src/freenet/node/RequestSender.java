@@ -970,7 +970,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		if(logMINOR) Logger.minor(this, "Handling message "+msg+" on "+this);
     	
     	if(msg.getSpec() == DMT.FNPDataNotFound) {
-    		handleDataNotFound(msg, wasFork, source);
+    		handleDataNotFound(wasFork, source);
     		return DO.FINISHED;
     	}
     	
@@ -1271,7 +1271,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		next.noLongerRoutingTo(origTag, false);
 	}
 
-	private void handleDataNotFound(Message msg, boolean wasFork, PeerNode next) {
+	private void handleDataNotFound(boolean wasFork, PeerNode next) {
 		next.successNotOverload(realTimeFlag);
 		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
 		if(!wasFork)
