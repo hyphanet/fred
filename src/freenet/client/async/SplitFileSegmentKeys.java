@@ -140,7 +140,7 @@ public class SplitFileSegmentKeys implements Cloneable, Serializable {
 		return ret;
 	}
 	
-	public NodeCHK getNodeKey(int x, boolean[] ignoreSlots, boolean copy) {
+	public NodeCHK getNodeKey(int x, boolean[] ignoreSlots) {
 		if(ignoreSlots != null) {
 			if(ignoreSlots[x]) return null;
 		}
@@ -287,7 +287,7 @@ public class SplitFileSegmentKeys implements Cloneable, Serializable {
 	public NodeCHK[] listNodeKeys(boolean[] foundKeys, boolean copy) {
 		ArrayList<NodeCHK> list = new ArrayList<NodeCHK>();
 		for(int i=0;i<dataBlocks+checkBlocks;i++) {
-			NodeCHK k = getNodeKey(i, foundKeys, copy);
+			NodeCHK k = getNodeKey(i, foundKeys);
 			if(k == null) continue;
 			list.add(k);
 		}

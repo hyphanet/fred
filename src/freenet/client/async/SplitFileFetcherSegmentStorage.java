@@ -1133,7 +1133,7 @@ public class SplitFileFetcherSegmentStorage {
         SplitFileSegmentKeys keyList = getSegmentKeys();
         for(int i=0;i<totalBlocks();i++) {
             if(!blockChooser.hasSucceeded(i))
-                keys.add(keyList.getNodeKey(i, null, false));
+                keys.add(keyList.getNodeKey(i, null));
         }
     }
 
