@@ -1262,7 +1262,7 @@ public class OpennetManager {
 		}
 	}
 
-	public static SimpleFieldSet validateNoderef(byte[] noderef, int offset, int length, PeerNode from, boolean forceOpennetEnabled) {
+	public static SimpleFieldSet validateNoderef(byte[] noderef, PeerNode from, boolean forceOpennetEnabled) {
     	SimpleFieldSet ref;
 		try {
 			ref = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
