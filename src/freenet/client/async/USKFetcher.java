@@ -1505,7 +1505,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public long countAllKeys(ClientContext context) {
+		public long countAllKeys() {
 			return watchingKeys.size();
 		}
 

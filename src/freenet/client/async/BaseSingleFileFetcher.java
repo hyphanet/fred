@@ -63,7 +63,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
 	@Override
-	public long countAllKeys(ClientContext context) {
+	public long countAllKeys() {
 		return 1;
 	}
 	

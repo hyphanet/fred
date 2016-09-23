@@ -597,7 +597,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	@Override
-	public synchronized long countAllKeys(ClientContext context) {
+	public synchronized long countAllKeys() {
 		return countSendableKeys();
 	}
 

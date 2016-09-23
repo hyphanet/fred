@@ -70,7 +70,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 	
 	/** All key identifiers. Including those not currently eligible to be sent because 
 	 * they are on a cooldown queue, requests for them are in progress, etc. */
-	public abstract long countAllKeys(ClientContext context);
+	public abstract long countAllKeys();
 
 	/** All key identifiers currently eligible to be sent. Does not include those 
 	 * currently running, on the cooldown queue etc. */

@@ -287,7 +287,7 @@ public class ClientRequestSelectorTest extends TestCase {
         }
 
         @Override
-        public long countAllKeys(ClientContext context) {
+        public long countAllKeys() {
             return 0;
         }
 
