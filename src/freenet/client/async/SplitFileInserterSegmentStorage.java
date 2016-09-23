@@ -270,11 +270,11 @@ public class SplitFileInserterSegmentStorage {
     }
     
     static int getKeyLength(SplitFileInserterStorage parent) {
-        return encodeKey(1, 1, ClientCHK.TEST_KEY, parent.hasSplitfileKey(), parent.checker, parent).length;
+        return encodeKey(1, 1, ClientCHK.TEST_KEY, parent.hasSplitfileKey(), parent.checker).length;
     }
     
-    private static byte[] encodeKey(int segNo, int blockNumber, ClientCHK key, 
-            boolean hasSplitfileKey, ChecksumChecker checker, SplitFileInserterStorage parent) {
+    private static byte[] encodeKey(int segNo, int blockNumber, ClientCHK key,
+            boolean hasSplitfileKey, ChecksumChecker checker) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         try {
@@ -329,7 +329,7 @@ public class SplitFileInserterSegmentStorage {
      * @param key The key to write.
      * @throws IOException If we are unable to write the key. */
     void writeKey(int blockNumber, ClientCHK key) throws IOException {
-        byte[] buf = encodeKey(segNo, blockNumber, key, parent.hasSplitfileKey(), parent.checker, parent);
+        byte[] buf = encodeKey(segNo, blockNumber, key, parent.hasSplitfileKey(), parent.checker);
         parent.innerWriteSegmentKey(segNo, blockNumber, buf);
     }
     
