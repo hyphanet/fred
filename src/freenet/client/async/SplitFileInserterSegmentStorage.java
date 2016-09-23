@@ -85,7 +85,7 @@ public class SplitFileInserterSegmentStorage {
     private boolean cancelled;
     
     public SplitFileInserterSegmentStorage(SplitFileInserterStorage parent, int segNo, 
-            boolean persistent, int dataBlocks, int checkBlocks, int crossCheckBlocks, int keyLength,
+            int dataBlocks, int checkBlocks, int crossCheckBlocks, int keyLength,
             byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, Random random, int maxRetries,
             int consecutiveRNFsCountAsSuccess, KeysFetchingLocally keysFetching) {
         this.parent = parent;

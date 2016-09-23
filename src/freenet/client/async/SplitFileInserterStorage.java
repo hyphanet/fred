@@ -1050,7 +1050,7 @@ public class SplitFileInserterStorage {
         if (segCount == 1) {
             // Single segment
             int checkBlocks = codec.getCheckBlocks(dataBlocks + crossCheckBlocks, cmode);
-            segments[0] = new SplitFileInserterSegmentStorage(this, 0, persistent, dataBlocks,
+            segments[0] = new SplitFileInserterSegmentStorage(this, 0, dataBlocks,
                     checkBlocks, crossCheckBlocks, keyLength, splitfileCryptoAlgorithm, splitfileCryptoKey, random, 
                     maxRetries, consecutiveRNFsCountAsSuccess, keysFetching);
         } else {
@@ -1069,7 +1069,7 @@ public class SplitFileInserterStorage {
                     check = codec.getCheckBlocks(data + crossCheckBlocks, cmode);
                 }
                 j = i;
-                segments[segNo] = new SplitFileInserterSegmentStorage(this, segNo, persistent,
+                segments[segNo] = new SplitFileInserterSegmentStorage(this, segNo,
                         data, check, crossCheckBlocks, keyLength, splitfileCryptoAlgorithm, splitfileCryptoKey, 
                         random, maxRetries, consecutiveRNFsCountAsSuccess, keysFetching);
 
