@@ -122,7 +122,7 @@ public class ToadletContextImpl implements ToadletContext {
 		closed = true;
 	}
 	
-	private void sendMethodNotAllowed(String method, boolean shouldDisconnect) throws ToadletContextClosedException, IOException {
+	private void sendMethodNotAllowed(boolean shouldDisconnect) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		MultiValueTable<String,String> mvt = new MultiValueTable<String,String>();
 		mvt.put("Allow", "GET, PUT");
@@ -595,7 +595,7 @@ public class ToadletContextImpl implements ToadletContext {
 					} else {
 						FileUtil.skipFully(is, len);
 						if (method.equals("POST")) {
-							ctx.sendMethodNotAllowed("POST", true);
+							ctx.sendMethodNotAllowed(true);
 						} else {
 							sendError(sock.getOutputStream(), 403, "Forbidden", "Content not allowed in this configuration", true, null);
 						}
@@ -638,7 +638,7 @@ public class ToadletContextImpl implements ToadletContext {
 						// if the Toadlet does not support the method, we don't need to parse the data
 						// also due this pre check a 'NoSuchMethodException' should never appear
 						if (!(t.findSupportedMethods().contains(method))) {
-							ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
+							ctx.sendMethodNotAllowed(ctx.shouldDisconnect);
 							break;
 						}
 
