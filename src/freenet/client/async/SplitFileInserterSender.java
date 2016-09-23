@@ -111,7 +111,7 @@ public class SplitFileInserterSender extends SendableInsert {
     }
 
     @Override
-    public long countSendableKeys(ClientContext context) {
+    public long countSendableKeys() {
         return storage.countSendableKeys();
     }
     

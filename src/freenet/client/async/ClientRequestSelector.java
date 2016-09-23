@@ -707,7 +707,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
                             for(int m=0;m<rga.size();m++) {
                                 SendableRequest req = (SendableRequest) rga.get(m);
                                 if(req == null) continue;
-                                sendable += req.countSendableKeys(context);
+                                sendable += req.countSendableKeys();
                                 all += req.countAllKeys(context);
                             }
                             System.out.println("Sendable keys: "+sendable+" all keys "+all+" diff "+(all-sendable));

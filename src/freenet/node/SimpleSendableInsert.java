@@ -158,7 +158,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public synchronized long countSendableKeys(ClientContext context) {
+	public synchronized long countSendableKeys() {
 		if(finished) return 0;
 		return 1;
 	}

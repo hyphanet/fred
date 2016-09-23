@@ -1510,7 +1510,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public long countSendableKeys(ClientContext context) {
+		public long countSendableKeys() {
 			return 0;
 		}
 

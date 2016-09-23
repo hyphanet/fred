@@ -88,7 +88,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public long countSendableKeys(ClientContext context) {
+	public long countSendableKeys() {
 		// Not supported.
 		throw new UnsupportedOperationException();
 	}

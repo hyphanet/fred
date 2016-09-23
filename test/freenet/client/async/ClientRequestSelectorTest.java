@@ -292,7 +292,7 @@ public class ClientRequestSelectorTest extends TestCase {
         }
 
         @Override
-        public long countSendableKeys(ClientContext context) {
+        public long countSendableKeys() {
             return 0;
         }
 

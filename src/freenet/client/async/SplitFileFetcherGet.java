@@ -111,7 +111,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
 
     @Override
-    public long countSendableKeys(ClientContext context) {
+    public long countSendableKeys() {
         return storage.countSendableKeys();
     }
 
