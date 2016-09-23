@@ -626,7 +626,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 
 	void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) throws ToadletContextClosedException, IOException {
-		HTMLNode page = sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, node.getMasterPasswordFile().getPath(), node);
+		HTMLNode page = sendPasswordFileCorruptedPageInner(ctx, node.getMasterPasswordFile().getPath());
 		writeHTMLReply(ctx, 500, "Internal Server Error", page.generate());
 	}
 
@@ -638,7 +638,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		sendPasswordFileCorruptedPageInner(infoBox, masterPasswordFile);
 	}
 
-	public static HTMLNode sendPasswordFileCorruptedPageInner(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard, String masterPasswordFile, Node node) {
+	public static HTMLNode sendPasswordFileCorruptedPageInner(ToadletContext ctx, String masterPasswordFile) {
 		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordFileCorruptedTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
