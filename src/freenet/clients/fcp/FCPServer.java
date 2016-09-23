@@ -624,7 +624,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	public boolean removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException, PersistenceDisabledException {
-		if(!globalRebootClient.removeByIdentifier(identifier, true, this, core.clientContext)) {
+		if(!globalRebootClient.removeByIdentifier(identifier, true, core.clientContext)) {
 			final CountDownLatch done = new CountDownLatch(1);
 			final AtomicBoolean success = new AtomicBoolean();
 			core.clientContext.jobRunner.queue(new PersistentJob() {
@@ -638,7 +638,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				public boolean run(ClientContext context) {
 					boolean succeeded = false;
 					try {
-						succeeded = globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, core.clientContext);
+						succeeded = globalForeverClient.removeByIdentifier(identifier, true, core.clientContext);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught removing identifier "+identifier+": "+t, t);
 					} finally {

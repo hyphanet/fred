@@ -877,7 +877,7 @@ public class FCPConnectionHandler implements Closeable {
 			getRebootClient();
 		ClientRequest req = client.getRequest(identifier);
 		if(req != null) {
-			client.removeByIdentifier(identifier, true, server, server.core.clientContext);
+			client.removeByIdentifier(identifier, true, server.core.clientContext);
 		}
 		return req;
 	}
@@ -888,7 +888,7 @@ public class FCPConnectionHandler implements Closeable {
 			getForeverClient();
 		ClientRequest req = client.getRequest(identifier);
 		if(req != null) {
-			client.removeByIdentifier(identifier, true, server, server.core.clientContext);
+			client.removeByIdentifier(identifier, true, server.core.clientContext);
 		}
 		return req;
 	}
