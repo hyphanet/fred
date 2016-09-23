@@ -4361,7 +4361,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		private final boolean realTimeFlag;
 		private boolean sendASAP;
 		
-		public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert) {
+		public void onSetPeerAllocation(boolean input, int thisAllocation) {
 			
 			boolean mustSend = false;
 			// FIXME review constants, how often are allocations actually sent?
@@ -4451,7 +4451,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 	
 	public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert, int maxOutputTransfers, boolean realTime) {
-		(realTime ? loadSenderRealTime : loadSenderBulk).onSetPeerAllocation(input, thisAllocation, transfersPerInsert);
+		(realTime ? loadSenderRealTime : loadSenderBulk).onSetPeerAllocation(input, thisAllocation);
 	}
 
 	public class IncomingLoadSummaryStats {
