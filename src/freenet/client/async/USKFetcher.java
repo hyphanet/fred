@@ -495,7 +495,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public synchronized boolean everInCooldown() {
 			return everInCooldown;
 		}
-		public void reloadPollParameters(ClientContext context) {
+		public void reloadPollParameters() {
 			USKChecker c;
 			synchronized(this) {
 			    c = checker;
@@ -1658,7 +1658,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			pollers = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);
 		}
 		for(USKAttempt a : pollers)
-			a.reloadPollParameters(context);
+			a.reloadPollParameters();
 	}
 	
 	/**
