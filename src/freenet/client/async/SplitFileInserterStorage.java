@@ -378,7 +378,7 @@ public class SplitFileInserterStorage {
         keyLength = SplitFileInserterSegmentStorage.getKeyLength(this);
         this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
         segments = makeSegments(segmentSize, segs, totalDataBlocks, crossCheckBlocks,
-                deductBlocksFromSegments, persistent,
+                deductBlocksFromSegments,
                 cmode, random, keysFetching, consecutiveRNFsCountAsSuccess);
         randomSegmentIterator = new RandomArrayIterator<SplitFileInserterSegmentStorage>(segments);
         for (SplitFileInserterSegmentStorage segment : segments) {
@@ -1043,7 +1043,7 @@ public class SplitFileInserterStorage {
     }
 
     private SplitFileInserterSegmentStorage[] makeSegments(int segmentSize, int segCount,
-            int dataBlocks, int crossCheckBlocks, int deductBlocksFromSegments, boolean persistent,
+            int dataBlocks, int crossCheckBlocks, int deductBlocksFromSegments,
             CompatibilityMode cmode, Random random, KeysFetchingLocally keysFetching, 
             int consecutiveRNFsCountAsSuccess) {
         SplitFileInserterSegmentStorage[] segments = new SplitFileInserterSegmentStorage[segCount];
