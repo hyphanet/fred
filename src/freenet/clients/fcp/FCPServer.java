@@ -661,7 +661,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	public boolean removeAllGlobalRequestsBlocking() throws PersistenceDisabledException {
-		globalRebootClient.removeAll(core.clientContext);
+		globalRebootClient.removeAll();
 		final CountDownLatch done = new CountDownLatch(1);
 		final AtomicBoolean success = new AtomicBoolean();
 		core.clientContext.jobRunner.queue(new PersistentJob() {
@@ -675,7 +675,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			public boolean run(ClientContext context) {
 				boolean succeeded = false;
 				try {
-					globalForeverClient.removeAll(core.clientContext);
+					globalForeverClient.removeAll();
 					succeeded = true;
 				} catch (Throwable t) {
 					Logger.error(this, "Caught while processing panic: "+t, t);

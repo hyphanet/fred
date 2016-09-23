@@ -461,7 +461,7 @@ public class PersistentRequestClient {
 		if(completionCallbacks!=null) completionCallbacks.remove(cb);
 	}
 
-	public void removeAll(ClientContext context) {
+	public void removeAll() {
 		HashSet<ClientRequest> toKill = new HashSet<ClientRequest>();
 		if(statusCache != null)
 			statusCache.clear();
