@@ -3570,7 +3570,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return false;
 	}
 
-	final void invalidate(long now) {
+	final void invalidate() {
 		synchronized(this) {
 			isRoutable = false;
 		}
