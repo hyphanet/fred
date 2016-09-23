@@ -404,7 +404,7 @@ public class SplitFileFetcherSegmentStorage {
                 wasCorrupt = corruptMetadata;
                 corruptMetadata = false;
             }
-            parent.restartedAfterDataCorruption(wasCorrupt);
+            parent.restartedAfterDataCorruption();
             return;
         }
         
@@ -470,7 +470,7 @@ public class SplitFileFetcherSegmentStorage {
                 wasCorrupt = corruptMetadata;
                 corruptMetadata = false;
             }
-            parent.restartedAfterDataCorruption(wasCorrupt);
+            parent.restartedAfterDataCorruption();
             return;
         }
         boolean[] dataBlocksPresent = new boolean[dataBlocks.length];

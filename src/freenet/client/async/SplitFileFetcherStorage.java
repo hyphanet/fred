@@ -1582,7 +1582,7 @@ public class SplitFileFetcherStorage {
                 finalMinCompatMode.ordinal() < CompatibilityMode.COMPAT_1416.ordinal());
     }
 
-    public void restartedAfterDataCorruption(boolean wasCorrupt) {
+    public void restartedAfterDataCorruption() {
         jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
