@@ -4262,11 +4262,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * 3. In the near future PacketSender will be responsible for output bandwidth
 	 * throttling.
 	 * So it makes sense to send a single packet and round-robin.
-	 * @param now
 	 * @param ackOnly
 	 * @throws BlockedTooLongException
 	 */
-	public boolean maybeSendPacket(long now, boolean ackOnly) throws BlockedTooLongException {
+	public boolean maybeSendPacket(boolean ackOnly) throws BlockedTooLongException {
 		PacketFormat pf;
 		synchronized(this) {
 			if(packetFormat == null) return false;

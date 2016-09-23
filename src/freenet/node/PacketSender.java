@@ -350,7 +350,7 @@ public class PacketSender implements Runnable {
 		
 		if(toSendPacket != null) {
 			try {
-				if(toSendPacket.maybeSendPacket(now, false)) {
+				if(toSendPacket.maybeSendPacket(false)) {
 					// Round-robin over the loop to update nextActionTime appropriately
 					nextActionTime = now;
 				}
@@ -360,7 +360,7 @@ public class PacketSender implements Runnable {
 			}
 		} else if(toSendAckOnly != null) {
 			try {
-				if(toSendAckOnly.maybeSendPacket(now, true)) {
+				if(toSendAckOnly.maybeSendPacket(true)) {
                     // Round-robin over the loop to update nextActionTime appropriately
                     nextActionTime = now;
 				}
