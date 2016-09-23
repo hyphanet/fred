@@ -186,7 +186,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 						String[] all = fs.getAll("physical.udp");
 						Peer[] peers = new Peer[all.length];
 						for(int i=0;i<all.length;i++)
-							peers[i] = new Peer(all[i], false);
+							peers[i] = new Peer(all[i]);
 						lastInsertedPeers = peers;
 					} catch (PeerParseException e1) {
 						Logger.error(this, "Error parsing own " + darknetOpennetString + " ref: "+e1+" : "+fs.get("physical.udp"), e1);

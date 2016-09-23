@@ -658,7 +658,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 					String detectedUDPString = metadata.get("detected.udp");
 					p = null;
 					if(detectedUDPString != null)
-						p = new Peer(detectedUDPString, false);
+						p = new Peer(detectedUDPString);
 				} catch(UnknownHostException e) {
 					p = null;
 					Logger.error(this, "detected.udp = " + metadata.get("detected.udp") + " - " + e, e);
