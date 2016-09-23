@@ -16,7 +16,7 @@ public class PubkeyStore extends StoreCallback<DSAPublicKey> {
 	}
 
 	@Override
-	public DSAPublicKey construct(byte[] data, byte[] headers, byte[] routingKey,
+	public DSAPublicKey construct(byte[] data, byte[] headers,
 			byte[] fullKey, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta, DSAPublicKey ignored) throws KeyVerifyException {
 		if(data == null) throw new PubkeyVerifyException("Need data to construct pubkey");
 		try {

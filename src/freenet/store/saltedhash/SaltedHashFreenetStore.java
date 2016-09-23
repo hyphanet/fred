@@ -743,7 +743,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			if (!cipherManager.decrypt(this, routingKey))
 				return null;
 
-			T block = callback.construct(data, header, routingKey, fullKey, canReadClientCache, canReadSlashdotCache, meta, knownKey);
+			T block = callback.construct(data, header, fullKey, canReadClientCache, canReadSlashdotCache, meta, knownKey);
 			byte[] blockRoutingKey = block.getRoutingKey();
 
 			if (!Arrays.equals(blockRoutingKey, routingKey)) {
