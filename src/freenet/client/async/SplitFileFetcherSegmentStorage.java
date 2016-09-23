@@ -1259,7 +1259,7 @@ public class SplitFileFetcherSegmentStorage {
     }
 
     /** Called after checking datastore for a datastore-only request. */
-    public void onFinishedCheckingDatastoreNoFetch(ClientContext context) {
+    public void onFinishedCheckingDatastoreNoFetch() {
         synchronized(this) {
             if(tryDecode) return;
             if(succeeded) return;

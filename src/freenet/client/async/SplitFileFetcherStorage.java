@@ -1532,7 +1532,7 @@ public class SplitFileFetcherStorage {
         if(hasFinished()) return; // Don't need to do anything.
         this.errors.inc(FetchExceptionMode.ALL_DATA_NOT_FOUND);
         for(SplitFileFetcherSegmentStorage segment : segments) {
-            segment.onFinishedCheckingDatastoreNoFetch(context);
+            segment.onFinishedCheckingDatastoreNoFetch();
         }
         maybeComplete();
     }
