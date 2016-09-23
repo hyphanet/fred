@@ -1328,7 +1328,7 @@ public class OpennetManager {
 
 	/** Notification that a peer was disconnected. Query the Announcer,
 	 * it may need to rerun. */
-	public void onDisconnect(PeerNode node2) {
+	public void onDisconnect() {
 		if(announcer != null)
 			announcer.maybeSendAnnouncementOffThread();
 	}
