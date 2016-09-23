@@ -1425,7 +1425,7 @@ public class SplitFileFetcherStorage {
         long now = System.currentTimeMillis();
         long total = 0;
         for(SplitFileFetcherSegmentStorage segment : segments)
-            total += segment.countSendableKeys(now, maxRetries);
+            total += segment.countSendableKeys();
         return total;
     }
 

@@ -1121,7 +1121,7 @@ public class SplitFileFetcherSegmentStorage {
         return totalBlocks() - blockChooser.successCount();
     }
 
-    synchronized public long countSendableKeys(long now, int maxRetries) {
+    synchronized public long countSendableKeys() {
         if(finished || tryDecode)
             return 0;
         return blockChooser.countFetchable();
