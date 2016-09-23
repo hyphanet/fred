@@ -76,12 +76,11 @@ public class PNGFilter implements ContentDataFilter {
 	@Override
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
-		readFilter(input, output, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs);
+		readFilter(input, output, deleteText, deleteTimestamp, checkCRCs);
 		output.flush();
 	}
 
-	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-			FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs)
+	public void readFilter(InputStream input, OutputStream output, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs)
 			throws DataFilterException, IOException {
 		DataInputStream dis = null;
 		boolean hasSeenIHDR = false;
