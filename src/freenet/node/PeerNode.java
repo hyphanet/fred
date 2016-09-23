@@ -5202,7 +5202,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		private RequestLikelyAcceptedState getRequestLikelyAcceptedState(RunningRequestsSnapshot runningRequests, RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, PeerLoadStats stats) {
 			RequestLikelyAcceptedState outputState = getRequestLikelyAcceptedStateBandwidth(false, runningRequests, otherRunningRequests, stats);
 			RequestLikelyAcceptedState inputState = getRequestLikelyAcceptedStateBandwidth(true, runningRequests, otherRunningRequests, stats);
-			RequestLikelyAcceptedState transfersState = getRequestLikelyAcceptedStateTransfers(runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
+			RequestLikelyAcceptedState transfersState = getRequestLikelyAcceptedStateTransfers(runningRequests, otherRunningRequests, stats);
 			RequestLikelyAcceptedState ret = inputState;
 			
 			if(outputState.ordinal() > ret.ordinal())
@@ -5232,7 +5232,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		private RequestLikelyAcceptedState getRequestLikelyAcceptedStateTransfers(
 				RunningRequestsSnapshot runningRequests,
-				RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
+				RunningRequestsSnapshot otherRunningRequests,
 				PeerLoadStats stats) {
 			
 			int ourUsage = runningRequests.totalOutTransfers();
