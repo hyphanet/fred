@@ -1148,7 +1148,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							return false;
 						} else /*if(keys)*/ {
 							try {
-								plainText = makeKeysList(context, uploads);
+								plainText = makeKeysList(uploads);
 							} catch (PersistenceDisabledException e) {
 								plainText = null;
 							}
@@ -1201,7 +1201,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	}
 
-	protected String makeKeysList(ClientContext context, boolean inserts) throws PersistenceDisabledException {
+	protected String makeKeysList(boolean inserts) throws PersistenceDisabledException {
 		RequestStatus[] reqs = fcp.getGlobalRequests();
 
 		StringBuilder sb = new StringBuilder();
