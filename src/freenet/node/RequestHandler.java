@@ -461,7 +461,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					return;
 				case RequestSender.SUCCESS:
 					if(key instanceof NodeSSK)
-						sendSSK(rs.getHeaders(), rs.getSSKData(), needsPubKey, (rs.getSSKBlock().getKey()).getPubKey());
+						sendSSK(rs.getHeaders(), rs.getSSKData(), (rs.getSSKBlock().getKey()).getPubKey());
 					else {
 						maybeCompleteTransfer();
 					}
@@ -529,7 +529,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			transferFinished(xferSuccess);
 	}
 	
-	private void sendSSK(byte[] headers, final byte[] data, boolean needsPubKey2, DSAPublicKey pubKey) throws NotConnectedException {
+	private void sendSSK(byte[] headers, final byte[] data, DSAPublicKey pubKey) throws NotConnectedException {
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
 		MultiMessageCallback mcb = null;
@@ -595,7 +595,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	 */
 	private void returnLocalData(KeyBlock block) throws NotConnectedException {
 		if(key instanceof NodeSSK) {
-			sendSSK(block.getRawHeaders(), block.getRawData(), needsPubKey, ((SSKBlock) block).getPubKey());
+			sendSSK(block.getRawHeaders(), block.getRawData(), ((SSKBlock) block).getPubKey());
 			status = RequestSender.SUCCESS; // for byte logging
 			// Assume local SSK sending will succeed?
 			node.nodeStats.remoteRequest(true, true, true, htl, key.toNormalizedDouble(), realTimeFlag, false);
