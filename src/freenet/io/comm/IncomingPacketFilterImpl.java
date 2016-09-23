@@ -68,7 +68,7 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 		} else {
 			Logger.normal(this, "Got packet from unknown address");
 		}
-		DECODED decoded = mangler.process(buf, offset, length, peer, opn, now);
+		DECODED decoded = mangler.process(buf, offset, length, peer, opn);
 		if(decoded == DECODED.DECODED) {
 			if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 		} else if(decoded == DECODED.NOT_DECODED) {

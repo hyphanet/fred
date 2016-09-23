@@ -155,7 +155,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * Packets generated should have a PeerNode on them.
 	 * Note that the buffer can be modified by this method.
 	 */
-	public DECODED process(byte[] buf, int offset, int length, Peer peer, PeerNode opn, long now) {
+	public DECODED process(byte[] buf, int offset, int length, Peer peer, PeerNode opn) {
 
 		if(opn != null && opn.getOutgoingMangler() != this) {
 			Logger.error(this, "Apparently contacted by "+opn+") on "+this, new Exception("error"));
