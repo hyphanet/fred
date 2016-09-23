@@ -2100,7 +2100,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode formDiv = new HTMLNode("div", "class", "request-table-form");
 		HTMLNode form = ctx.addFormChild(formDiv, path(), "request-table-form-"+id+(advancedModeEnabled?"-advanced":"-simple"));
 		
-		createRequestTableButtons(form, pageMaker, ctx, mimeType, hasFriends, advancedModeEnabled, priorityClasses, true, queueType);
+		createRequestTableButtons(form, mimeType, hasFriends, advancedModeEnabled, priorityClasses, true, queueType);
 
 		HTMLNode table = form.addChild("table", "class", "requests");
 		HTMLNode headerRow = table.addChild("tr", "class", "table-header");
@@ -2247,14 +2247,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 			}
 		}
-		createRequestTableButtons(form, pageMaker, ctx, mimeType, hasFriends, advancedModeEnabled, priorityClasses, false, queueType);
+		createRequestTableButtons(form, mimeType, hasFriends, advancedModeEnabled, priorityClasses, false, queueType);
 		return formDiv;
 	}
 
-	private void createRequestTableButtons(HTMLNode form, PageMaker pageMaker,
-			ToadletContext ctx, String mimeType, boolean hasFriends,
-			boolean advancedModeEnabled, String[] priorityClasses,	boolean top,
-			QueueType queueType) {
+	private void createRequestTableButtons(HTMLNode form, String mimeType, boolean hasFriends,
+		   boolean advancedModeEnabled, String[] priorityClasses, boolean top, QueueType queueType) {
 		form.addChild(createDeleteControl(mimeType, queueType));
 		if (hasFriends && !(queueType.isUpload && queueType.isFailed)) {
 			form.addChild(createRecommendControl());
