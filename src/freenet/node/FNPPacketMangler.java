@@ -201,7 +201,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		boolean wantAnonAuthChangeIP = wantAnonAuth && crypto.wantAnonAuthChangeIP();
 		
 		if(wantAnonAuth && wantAnonAuthChangeIP) {
-			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) return DECODED.DECODED;
+			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer)) return DECODED.DECODED;
 		}
 
 		boolean didntTryOldOpennetPeers;
@@ -225,7 +225,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 		
 		if(wantAnonAuth && !wantAnonAuthChangeIP) {
-			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) {
+			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer)) {
 				// This can happen when a node is upgraded from a SeedClientPeerNode to an OpennetPeerNode.
 				//Logger.error(this, "Last resort match anon-auth against all anon setup peernodes succeeded - this should not happen! (It can happen if they change address)");
 				return DECODED.DECODED;
@@ -245,7 +245,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
                 	return DECODED.DIDNT_WANT_OPENNET;
 	}
 	
-	private boolean checkAnonAuthChangeIP(PeerNode opn, byte[] buf, int offset, int length, Peer peer, long now) {
+	private boolean checkAnonAuthChangeIP(PeerNode opn, byte[] buf, int offset, int length, Peer peer) {
 		PeerNode[] anonPeers = crypto.getAnonSetupPeerNodes();
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 3) {
 			for(PeerNode pn: anonPeers) {
