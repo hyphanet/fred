@@ -1892,7 +1892,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 
 	/** Create a delete or restart control at the top of a table. It applies to whichever requests are checked in the table below. */
-	private HTMLNode createDeleteControl(PageMaker pageMaker, ToadletContext ctx, String mimeType, QueueType queueType) {
+	private HTMLNode createDeleteControl(String mimeType, QueueType queueType) {
 		HTMLNode deleteDiv = new HTMLNode("div", "class", "request-delete");
 		if (queueType == QueueType.CompletedDownloadToTemp) {
 			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete_request", l10n("deleteFilesFromTemp") });
@@ -2255,7 +2255,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			ToadletContext ctx, String mimeType, boolean hasFriends,
 			boolean advancedModeEnabled, String[] priorityClasses,	boolean top,
 			QueueType queueType) {
-		form.addChild(createDeleteControl(pageMaker, ctx, mimeType, queueType));
+		form.addChild(createDeleteControl(mimeType, queueType));
 		if (hasFriends && !(queueType.isUpload && queueType.isFailed)) {
 			form.addChild(createRecommendControl());
 		}
