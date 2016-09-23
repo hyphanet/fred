@@ -1234,16 +1234,11 @@ public class SplitFileInserterStorage {
         callback.onFinishedEncode();
     }
     
-    public void onHasKeys(SplitFileInserterSegmentStorage splitFileInserterSegmentStorage) {
+    public void onHasKeys() {
         for (SplitFileInserterSegmentStorage segment : segments) {
             if (!segment.hasKeys())
                 return;
         }
-        onHasKeys();
-    }
-
-    /** Called when we have keys for every block. */
-    private void onHasKeys() {
         callback.onHasKeys();
     }
     

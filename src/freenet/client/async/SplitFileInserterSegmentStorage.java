@@ -342,7 +342,7 @@ public class SplitFileInserterSegmentStorage {
             blocksWithKeysCounter++;
             if(blocksWithKeysCounter != totalBlockCount) return;
         }
-        parent.onHasKeys(this);
+        parent.onHasKeys();
     }
     
     public synchronized boolean hasKeys() {
