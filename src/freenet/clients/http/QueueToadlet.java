@@ -1109,7 +1109,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			try {
 				RequestStatus[] reqs = fcp.getGlobalRequests();
 				MultiValueTable<String, String> pageHeaders = new MultiValueTable<String, String>();
-				HTMLNode pageNode = handleGetInner(pageMaker, reqs, core.clientContext, request, ctx);
+				HTMLNode pageNode = handleGetInner(pageMaker, reqs, request, ctx);
 				writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
 				return;
 			} catch (PersistenceDisabledException e) {
@@ -1224,7 +1224,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return sb.toString();
 	}
 
-	private HTMLNode handleGetInner(PageMaker pageMaker, RequestStatus[] reqs, ClientContext context, final HTTPRequest request, ToadletContext ctx) throws PersistenceDisabledException {
+	private HTMLNode handleGetInner(PageMaker pageMaker, RequestStatus[] reqs, final HTTPRequest request, ToadletContext ctx) throws PersistenceDisabledException {
 
 		// First, get the queued requests, and separate them into different types.
 		LinkedList<DownloadRequestStatus> completedDownloadToDisk = new LinkedList<DownloadRequestStatus>();
