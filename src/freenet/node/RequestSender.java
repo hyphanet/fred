@@ -635,7 +635,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				public void onTimeout() {
 					Logger.warning(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
 					// Two stage timeout.
-					OFFER_STATUS status = handleOfferTimeout(offer, pn, offers);
+					OFFER_STATUS status = handleOfferTimeout(offer, pn);
 					tryOffers(offers, pn, status);
 				}
 				
@@ -679,8 +679,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	}
 	}
 
-	private OFFER_STATUS handleOfferTimeout(final BlockOffer offer, final PeerNode pn,
-			OfferList offers) {
+	private OFFER_STATUS handleOfferTimeout(final BlockOffer offer, final PeerNode pn) {
 		try {
 			node.usm.addAsyncFilter(getOfferedKeyReplyFilter(pn, GET_OFFER_LONG_TIMEOUT), new SlowAsyncMessageFilterCallback() {
 				
