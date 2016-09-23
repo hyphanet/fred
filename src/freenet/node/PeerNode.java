@@ -5029,7 +5029,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				runningRequests.log(PeerNode.this);
 				// Requests running from its other peers
 				RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
-				RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
+				RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, loadStats);
 				if(logMINOR) Logger.minor(this, "Predicted acceptance state for request: "+acceptState+" must beat "+worstAcceptable);
 				if(acceptState.ordinal() > worstAcceptable.ordinal()) return null;
 				if(tag.addRoutedTo(PeerNode.this, offeredKey))
@@ -5165,7 +5165,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 						runningRequests.log(PeerNode.this);
 						// Requests running from its other peers
 						RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
-						acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
+						acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, loadStats);
 						if(acceptState == null || acceptState == RequestLikelyAcceptedState.UNLIKELY) {
 							if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" - not waking up - type is "+type);
 							return;
@@ -5199,7 +5199,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		 * @param runningRequests 
 		 * @param byteCountersInput 
 		 * @param byteCountersOutput */
-		private RequestLikelyAcceptedState getRequestLikelyAcceptedState(RunningRequestsSnapshot runningRequests, RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, PeerLoadStats stats) {
+		private RequestLikelyAcceptedState getRequestLikelyAcceptedState(RunningRequestsSnapshot runningRequests, RunningRequestsSnapshot otherRunningRequests, PeerLoadStats stats) {
 			RequestLikelyAcceptedState outputState = getRequestLikelyAcceptedStateBandwidth(false, runningRequests, otherRunningRequests, stats);
 			RequestLikelyAcceptedState inputState = getRequestLikelyAcceptedStateBandwidth(true, runningRequests, otherRunningRequests, stats);
 			RequestLikelyAcceptedState transfersState = getRequestLikelyAcceptedStateTransfers(runningRequests, otherRunningRequests, stats);
