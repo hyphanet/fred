@@ -995,7 +995,7 @@ public class SplitFileInserterStorage {
         for (int i = 0; i < 10; i++) {
             x = xsRandom.nextInt(segments.length);
             SplitFileInserterSegmentStorage seg = segments[x];
-            int blockNum = seg.allocateCrossDataBlock(segment, xsRandom);
+            int blockNum = seg.allocateCrossDataBlock(xsRandom);
             if (blockNum >= 0) {
                 segment.addDataBlock(seg, blockNum);
                 return;
@@ -1006,7 +1006,7 @@ public class SplitFileInserterStorage {
             if (x == segments.length)
                 x = 0;
             SplitFileInserterSegmentStorage seg = segments[x];
-            int blockNum = seg.allocateCrossDataBlock(segment, xsRandom);
+            int blockNum = seg.allocateCrossDataBlock(xsRandom);
             if (blockNum >= 0) {
                 segment.addDataBlock(seg, blockNum);
                 return;

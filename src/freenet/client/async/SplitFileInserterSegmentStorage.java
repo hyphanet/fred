@@ -166,12 +166,11 @@ public class SplitFileInserterSegmentStorage {
     
     /** Allocate a cross-segment data block. Note that this algorithm must be reproduced exactly 
      * for splitfile compatibility; the Random seed is actually determined by the splitfile metadata.
-     * @param seg The cross-segment to allocate a block for.
-     * @param random PRNG seeded from the splitfile metadata, which determines which blocks to 
+     * @param random PRNG seeded from the splitfile metadata, which determines which blocks to
      * allocate in a deterministic manner.
      * @return The data block number allocated.
      */
-    int allocateCrossDataBlock(SplitFileInserterCrossSegmentStorage seg, Random random) {
+    int allocateCrossDataBlock(Random random) {
         int size = dataBlockCount;
         if(crossDataBlocksAllocatedCount == size) return -1;
         int x = 0;
