@@ -201,7 +201,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
 		}
 		
 		// Treat it as a splitfile for purposes of determining reinsert count.
-		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, realTimeFlag, dc, reportMetadataOnly, token, archiveType, true, null, true, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
+		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, realTimeFlag, reportMetadataOnly, token, archiveType, true, null, true, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
 		if(logMINOR)
 			Logger.minor(this, "Inserting container: "+sfi+" for "+this);
 		cb.onTransition(this, sfi, context);

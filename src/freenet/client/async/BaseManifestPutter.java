@@ -187,7 +187,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
         private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, RandomAccessBucket data, ClientMetadata cm2) {
 			super(bmp, parent, name, cm2, runningPutHandlers);
 			InsertBlock block = new InsertBlock(data, cm, FreenetURI.EMPTY_CHK_URI);
-			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, true, null, null, false, null, false, persistent(), 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
+			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, true, null, null, false, null, false, persistent(), 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
 		}
 
 		@Override
@@ -282,7 +282,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, InsertBlock insertBlock) {
 			super(smp, parent, null, null, null);
 			// Treat as splitfile for purposes of determining number of reinserts.
-			this.origSFI = new SingleFileInserter(this, this, insertBlock, true, ctx, realTimeFlag, false, false, null, null, true, null, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
+			this.origSFI = new SingleFileInserter(this, this, insertBlock, true, ctx, realTimeFlag, false, null, null, true, null, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
 			if(logMINOR) Logger.minor(this, "Inserting root metadata: "+origSFI);
 		}
 
@@ -293,7 +293,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			metadata = toResolve;
 			// Treat as splitfile for purposes of determining number of reinserts.
 			InsertBlock ib = new InsertBlock(b, null, FreenetURI.EMPTY_CHK_URI);
-			this.origSFI = new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, false, toResolve, null, true, null, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
+			this.origSFI = new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, toResolve, null, true, null, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
 			if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+origSFI+" for "+toResolve);
 		}
 

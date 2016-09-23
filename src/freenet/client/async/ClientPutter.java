@@ -196,8 +196,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 						ClientMetadata meta = cm;
 						if(meta != null) meta = persistent() ? meta.clone() : meta;
 						currentState =
-							new SingleFileInserter(this, this, new InsertBlock(data, meta, targetURI), isMetadata, ctx, realTimeFlag, 
-									false, false, null, null, false, targetFilename, false, persistent(), 0, 0, null, cryptoAlgorithm, cryptoKey, metadataThreshold);
+							new SingleFileInserter(this, this, new InsertBlock(data, meta, targetURI), isMetadata, ctx, realTimeFlag,
+                                    false, null, null, false, targetFilename, false, persistent(), 0, 0, null, cryptoAlgorithm, cryptoKey, metadataThreshold);
 					} else
 						currentState =
 							new BinaryBlobInserter(data, this, getClient(), false, priorityClass, ctx, context);
