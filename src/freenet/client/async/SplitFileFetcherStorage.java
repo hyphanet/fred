@@ -426,7 +426,7 @@ public class SplitFileFetcherStorage {
             if((dataBlocks > origFetchContext.maxDataBlocksPerSegment)
                     || (checkBlocks > origFetchContext.maxCheckBlocksPerSegment))
                 throw new FetchException(FetchExceptionMode.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
-            segments[i] = new SplitFileFetcherSegmentStorage(this, i, splitfileType, 
+            segments[i] = new SplitFileFetcherSegmentStorage(this, i,
                     dataBlocks,
                     checkBlocks, crossCheckBlocks, dataOffset, 
                     completeViaTruncation ? crossCheckBlocksOffset : -1, // Put at end if truncating.
