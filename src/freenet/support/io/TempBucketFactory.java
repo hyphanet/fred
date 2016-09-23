@@ -219,7 +219,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 			// Hence we don't need to reset currentSize / _hasTaken() if a bucket is reused.
 			// FIXME we should migrate to disk rather than throwing.
 			hasWritten = true;
-			OutputStream tos = new TempBucketOutputStream(++osIndex);
+			osIndex++;
+			OutputStream tos = new TempBucketOutputStream();
 			if(logMINOR)
 				Logger.minor(this, "Got "+tos+" for "+this, new Exception());
 			return tos;
@@ -229,7 +230,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 		    long lastCheckedSize = 0;
 		    long CHECK_DISK_EVERY = 4096;
 			boolean closed = false;
-			TempBucketOutputStream(short idx) throws IOException {
+			TempBucketOutputStream() throws IOException {
 				if(os == null)
 					os = currentBucket.getOutputStreamUnbuffered();
 			}
