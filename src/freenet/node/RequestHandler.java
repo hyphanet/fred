@@ -860,7 +860,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			}
 
 			@Override
-			public void acked(boolean timedOutMessage) {
+			public void acked() {
 				if(logMINOR) Logger.minor(this, "Noderef acknowledged from "+source+" on "+RequestHandler.this);
 				gotNoderef(null);
 			}
@@ -973,7 +973,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			}
 
 			@Override
-			public void acked(boolean timedOutMessage) {
+			public void acked() {
 				tag.unlockHandler(); // will remove transfer
 				rs.ackOpennet(dataSource);
 				applyByteCounts();
