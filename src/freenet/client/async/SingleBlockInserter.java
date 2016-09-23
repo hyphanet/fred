@@ -300,7 +300,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		cb.onFailure(e, this, context);
 	}
 
-	public ClientKeyBlock getBlock(ClientContext context, boolean calledByCB) {
+	public ClientKeyBlock getBlock(ClientContext context) {
 		try {
 			synchronized (this) {
 				if(finished) return null;
@@ -346,7 +346,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				return resultingKey.getURI();
 			}
 		}
-		getBlock(context, true);
+		getBlock(context);
 		synchronized(this) {
 			// FIXME not really necessary? resultingKey is never dropped, only set.
 		    return resultingKey.getURI();

@@ -264,7 +264,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 					Logger.minor(this, "Inserting without metadata: "+bi+" for "+this);
 				cb.onTransition(this, bi, context);
 				if(ctx.earlyEncode && bi instanceof SingleBlockInserter && isCHK)
-					((SingleBlockInserter)bi).getBlock(context, true);
+					((SingleBlockInserter)bi).getBlock(context);
 				bi.schedule(context);
 				if(!isUSK)
 					cb.onBlockSetFinished(this, context);
@@ -325,7 +325,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 				mcb.arm(context);
 				dataPutter.schedule(context);
 				if(ctx.earlyEncode && metaPutter instanceof SingleBlockInserter)
-					((SingleBlockInserter)metaPutter).getBlock(context, true);
+					((SingleBlockInserter)metaPutter).getBlock(context);
 				metaPutter.schedule(context);
 				if(!isUSK)
 					cb.onBlockSetFinished(this, context);
