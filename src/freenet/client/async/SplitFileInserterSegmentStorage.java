@@ -414,7 +414,7 @@ public class SplitFileInserterSegmentStorage {
                 CheckpointLock lock = null;
                 try {
                     lock = parent.jobRunner.lock();
-                    innerEncode(chunk);
+                    innerEncode();
                 } catch (PersistenceDisabledException e) {
                     // Will be retried on restarting.
                     shutdown = true;
@@ -440,7 +440,7 @@ public class SplitFileInserterSegmentStorage {
         });
     }
 
-    private void innerEncode(MemoryLimitedChunk chunk) {
+    private void innerEncode() {
         RAFLock lock = null;
         try {
             synchronized(this) {
