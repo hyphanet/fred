@@ -1989,7 +1989,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int negType = pn.selectNegType(this);
 		if(negType == -1) {
 			// Pick a random negType from what I do support
-			int[] negTypes = supportedNegTypes(true);
+			int[] negTypes = supportedNegTypes();
 			negType = negTypes[node.random.nextInt(negTypes.length)];
 			Logger.normal(this, "Cannot send handshake to "+pn+" because no common negTypes, choosing random negType of "+negType);
 		}
@@ -2028,7 +2028,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	}
 
 	@Override
-	public int[] supportedNegTypes(boolean forPublic) {
+	public int[] supportedNegTypes() {
 		return new int[] { 10 };
 	}
 

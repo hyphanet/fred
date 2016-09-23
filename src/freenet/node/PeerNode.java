@@ -469,7 +469,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		negTypes = fs.getIntArray("auth.negTypes");
 		if(negTypes == null || negTypes.length == 0) {
 			if(fromAnonymousInitiator())
-				negTypes = outgoingMangler.supportedNegTypes(false); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
+				negTypes = outgoingMangler.supportedNegTypes(); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
 			else
 				throw new FSParseException("No negTypes!");
 		}
@@ -3723,7 +3723,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 */
 	public int selectNegType(OutgoingPacketMangler mangler) {
 		int[] hisNegTypes;
-		int[] myNegTypes = mangler.supportedNegTypes(false);
+		int[] myNegTypes = mangler.supportedNegTypes();
 		synchronized(this) {
 			hisNegTypes = negTypes;
 		}

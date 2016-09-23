@@ -343,7 +343,7 @@ public class NodeCrypto {
 
 	SimpleFieldSet exportPublicCryptoFieldSet(boolean forSetup, boolean forAnonInitiator) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		int[] negTypes = packetMangler.supportedNegTypes(true);
+		int[] negTypes = packetMangler.supportedNegTypes();
 		if(!forSetup) {
 			// These are invariant. They cannot change on connection setup. They can safely be excluded.
 			fs.put("ecdsa", ecdsaP256.asFieldSet(false));
