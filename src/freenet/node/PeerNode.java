@@ -705,7 +705,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 
 		if(fromLocal)
-			innerCalcNextHandshake(false, false, now); // Let them connect so we can recognise we are NATed
+			innerCalcNextHandshake(false, now); // Let them connect so we can recognise we are NATed
 
 		else
 			sendHandshakeTime = now;  // Be sure we're ready to handshake right away
@@ -1462,7 +1462,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/**
 	 * Set sendHandshakeTime, and return whether to fetch the ARK.
 	 */
-	protected boolean innerCalcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, long now) {
+	protected boolean innerCalcNextHandshake(boolean successfulHandshakeSend, long now) {
 		if(isBurstOnly())
 			return calcNextHandshakeBurstOnly(now);
 		synchronized(this) {
@@ -1520,7 +1520,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	protected void calcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, boolean notRegistered) {
 		long now = System.currentTimeMillis();
 		boolean fetchARKFlag = false;
-		fetchARKFlag = innerCalcNextHandshake(successfulHandshakeSend, dontFetchARK, now);
+		fetchARKFlag = innerCalcNextHandshake(successfulHandshakeSend, now);
 		if(!notRegistered)
 			setPeerNodeStatus(now);  // Because of isBursting being set above and it can't hurt others
 		// Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
