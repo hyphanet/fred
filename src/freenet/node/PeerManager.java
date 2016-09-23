@@ -1209,7 +1209,7 @@ public class PeerManager {
 									until = now + FailureTable.RECENTLY_FAILED_TIME;
 								}
 								if(!node.failureTable.hadAnyOffers(key)) {
-									recentlyFailed.fail(countWaiting, until);
+									recentlyFailed.fail(until);
 									return null;
 								} else {
 									if(logMINOR) Logger.minor(this, "Have an offer for the key so not sending RecentlyFailed");
