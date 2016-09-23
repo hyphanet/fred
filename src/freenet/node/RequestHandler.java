@@ -848,7 +848,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 				// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
 				// in all cases he should unlock.
 				if(logMINOR) Logger.minor(this, "Got noderef on "+RequestHandler.this);
-				finishOpennetNoRelayInner(om, noderef);
+				finishOpennetNoRelayInner(noderef);
 				applyByteCounts();
 				unregisterRequestHandlerWithNode();
 			}
@@ -868,7 +868,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		}, node);
 	}
 
-	private void finishOpennetNoRelayInner(OpennetManager om, byte[] noderef) {
+	private void finishOpennetNoRelayInner(byte[] noderef) {
 		if(noderef == null)
 			return;
 
