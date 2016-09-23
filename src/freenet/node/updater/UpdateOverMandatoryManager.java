@@ -1067,7 +1067,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			@Override
 			public void onSuccess(FetchResult result, ClientGetter state) {
 				System.err.println("Got revocation certificate from " + source);
-				updateManager.revocationChecker.onSuccess(result, state, cleanedBlob);
+				updateManager.revocationChecker.onSuccess(result, cleanedBlob);
 				if(!fromDisk)
 					temp.free();
 				insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation", RequestStarter.INTERACTIVE_PRIORITY_CLASS);

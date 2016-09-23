@@ -190,10 +190,10 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state) {
-		onSuccess(result, state, state.getBlobBucket());
+		onSuccess(result, state.getBlobBucket());
 	}
 	
-	void onSuccess(FetchResult result, ClientGetter state, Bucket blob) {
+	void onSuccess(FetchResult result, Bucket blob) {
 		// The key has been blown !
 		// FIXME: maybe we need a bigger warning message.
 		blown = true;
