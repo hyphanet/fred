@@ -975,7 +975,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	}
     	
     	if(msg.getSpec() == DMT.FNPRecentlyFailed) {
-    		handleRecentlyFailed(msg, wasFork, source);
+    		handleRecentlyFailed(msg, source);
     		// We will resolve finish() in routeRequests(), after recomputing.
     		return DO.NEXT_PEER;
     	}
@@ -1280,7 +1280,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			next.noLongerRoutingTo(origTag, false);
 	}
 
-	private void handleRecentlyFailed(Message msg, boolean wasFork, PeerNode next) {
+	private void handleRecentlyFailed(Message msg, PeerNode next) {
 		next.successNotOverload(realTimeFlag);
 		/*
 		 * Must set a correct recentlyFailedTimeLeft before calling this finish(), because it will be
