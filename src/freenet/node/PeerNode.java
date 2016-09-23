@@ -4227,7 +4227,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return (short) (uptime & 0xFF);
 	}
 
-	public void incrementNumberOfSelections(long time) {
+	public void incrementNumberOfSelections() {
 		// TODO: reimplement with a bit field to spare memory
 		synchronized(this) {
 			countSelectionsSinceConnected++;
