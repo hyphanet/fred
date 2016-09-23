@@ -66,12 +66,12 @@ public abstract class ChosenBlock {
 
 	public boolean send(NodeClientCore core, RequestScheduler sched) {
 		ClientContext context = sched.getContext();
-		SendableRequestSender sender = getSender(context);
+		SendableRequestSender sender = getSender();
 		sendIsBlocking = sender.sendIsBlocking();
 		return sender.send(core, sched, context, this);
 	}
 	
-	public abstract SendableRequestSender getSender(ClientContext context);
+	public abstract SendableRequestSender getSender();
 	
 	public void onDumped() {
 		token.dump();
