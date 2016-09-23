@@ -170,7 +170,7 @@ public class SplitFileInserterCrossSegmentStorage {
                 CheckpointLock lock = null;
                 try {
                     lock = parent.jobRunner.lock();
-                    innerEncode(chunk);
+                    innerEncode();
                 } catch (PersistenceDisabledException e) {
                     // Will be retried on restarting.
                     shutdown = true;
@@ -197,7 +197,7 @@ public class SplitFileInserterCrossSegmentStorage {
     }
 
     /** Encode a segment. Much simpler than fetcher! */
-    private void innerEncode(MemoryLimitedChunk chunk) {
+    private void innerEncode() {
         try {
             synchronized(this) {
                 if(cancelled) return;
