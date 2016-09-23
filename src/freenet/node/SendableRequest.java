@@ -79,10 +79,9 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 	/**
 	 * Get or create a SendableRequestSender for this object. This is a non-persistent
 	 * object used to send the requests. @see SendableGet.getSender().
-	 * @param context A client context may also be necessary.
 	 * @return
 	 */
-	public abstract SendableRequestSender getSender(ClientContext context);
+	public abstract SendableRequestSender getSender();
 	
 	/** If true, the request has been cancelled, or has completed, either way it need not
 	 * be registered any more. isEmpty() on the other hand means there are no queued blocks.

@@ -297,7 +297,7 @@ public class ClientRequestSelectorTest extends TestCase {
         }
 
         @Override
-        public SendableRequestSender getSender(ClientContext context) {
+        public SendableRequestSender getSender() {
             return null;
         }
 

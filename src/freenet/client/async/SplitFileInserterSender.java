@@ -181,7 +181,7 @@ public class SplitFileInserterSender extends SendableInsert {
     final MySendableRequestSender sender = new MySendableRequestSender();
     
     @Override
-    public SendableRequestSender getSender(ClientContext context) {
+    public SendableRequestSender getSender() {
         return sender;
     }
 

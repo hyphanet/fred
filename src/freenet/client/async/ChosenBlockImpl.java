@@ -134,7 +134,7 @@ public class ChosenBlockImpl extends ChosenBlock {
 
 	@Override
 	public SendableRequestSender getSender(ClientContext context) {
-		return request.getSender(context);
+		return request.getSender();
 	}
 	
 }

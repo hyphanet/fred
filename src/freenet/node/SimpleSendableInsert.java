@@ -83,7 +83,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public SendableRequestSender getSender(ClientContext context) {
+	public SendableRequestSender getSender() {
 		return new SendableRequestSender() {
 
 			@Override

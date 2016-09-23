@@ -63,7 +63,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	static final SendableGetRequestSender sender = new SendableGetRequestSender();
 	
 	@Override
-	public SendableRequestSender getSender(ClientContext context) {
+	public SendableRequestSender getSender() {
 		return sender;
 	}
 	

@@ -159,7 +159,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 	
 	@Override
-	public SendableRequestSender getSender(ClientContext context) {
+	public SendableRequestSender getSender() {
 		return new SendableRequestSender() {
 
 			@Override

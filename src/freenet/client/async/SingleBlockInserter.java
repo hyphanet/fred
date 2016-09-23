@@ -551,7 +551,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	
 	@Override
-	public SendableRequestSender getSender(ClientContext context) {
+	public SendableRequestSender getSender() {
 		String compress;
 		compress = ctx.compressorDescriptor;
 		return new MySendableRequestSender(compress, this);
