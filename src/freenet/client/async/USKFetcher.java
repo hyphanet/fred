@@ -1722,7 +1722,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				lookedUp > -1 || (backgroundPoll && !firstLoop) || fromSubscribers.isEmpty();
 			
 			if(probeFromLastKnownGood)
-				fromLastKnownSlot.getNextEditions(toFetch, toPoll, lookedUp, alreadyRunning, random);
+				fromLastKnownSlot.getNextEditions(toFetch, toPoll, lookedUp, alreadyRunning);
 			
 			// If we have moved past the origUSK, then clear the KeyList for it.
 			for(Iterator<Entry<Long,KeyList>> it = fromSubscribers.entrySet().iterator();it.hasNext();) {
@@ -1730,7 +1730,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				long l = entry.getKey() - 1;
 				if(l <= lookedUp)
 					it.remove();
-				entry.getValue().getNextEditions(toFetch, toPoll, l-1, alreadyRunning, random);
+				entry.getValue().getNextEditions(toFetch, toPoll, l-1, alreadyRunning);
 			}
 			
 			if(doRandom) {
@@ -1831,9 +1831,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			 * @param toPoll
 			 * @param lookedUp
 			 * @param alreadyRunning
-			 * @param random
 			 */
-			public synchronized void getNextEditions(List<Lookup> toFetch, List<Lookup> toPoll, long lookedUp, List<Lookup> alreadyRunning, Random random) {
+			public synchronized void getNextEditions(List<Lookup> toFetch, List<Lookup> toPoll, long lookedUp, List<Lookup> alreadyRunning) {
 				if(logMINOR) Logger.minor(this, "Getting next editions from "+lookedUp);
 				if(lookedUp < 0) lookedUp = 0;
 				for(int i=1;i<=origMinFailures;i++) {
