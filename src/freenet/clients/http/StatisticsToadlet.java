@@ -128,7 +128,7 @@ public class StatisticsToadlet extends Toadlet {
 
 		if (requestPath.length() > 0) {
 			if(requestPath.equals("requesters.html") || requestPath.equals("/requesters.html")) {
-				showRequesters(request, ctx);
+				showRequesters(ctx);
 				return;
 			}
 		}
@@ -528,7 +528,7 @@ public class StatisticsToadlet extends Toadlet {
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	private void showRequesters(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	private void showRequesters(ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
