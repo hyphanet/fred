@@ -263,10 +263,10 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 
 	@Override
 	public void onFailure(FetchException e, ClientGetter state) {
-		onFailure(e, state, state.getBlobBucket());
+		onFailure(e, state.getBlobBucket());
 	}
 	
-	void onFailure(FetchException e, ClientGetter state, Bucket blob) {
+	void onFailure(FetchException e, Bucket blob) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Revocation fetch failed: "+e);
 		FetchExceptionMode errorCode = e.getMode();

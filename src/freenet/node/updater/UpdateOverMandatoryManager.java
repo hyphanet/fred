@@ -1044,7 +1044,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 					System.err.println("Got revocation certificate from " + source + " (fatal error i.e. someone with the key inserted bad data) : "+e);
 					// Blow the update, and propagate the revocation certificate.
-					updateManager.revocationChecker.onFailure(e, state, cleanedBlob);
+					updateManager.revocationChecker.onFailure(e, cleanedBlob);
 					// Don't delete it if it's from disk, as it's already in the right place.
 					if(!fromDisk)
 						temp.free();
