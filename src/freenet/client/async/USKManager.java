@@ -607,7 +607,7 @@ public class USKManager {
 			}
 			USKFetcher f = backgroundFetchersByClearUSK.get(clear);
 			if(f != null) {
-				f.removeSubscriber(cb, context);
+				f.removeSubscriber(cb);
 				if(!f.hasSubscribers()) {
 						toCancel = f;
 						backgroundFetchersByClearUSK.remove(clear);

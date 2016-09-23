@@ -1197,7 +1197,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		return !callbacks.isEmpty();
 	}
 	
-	public void removeSubscriber(USKCallback cb, ClientContext context) {
+	public void removeSubscriber(USKCallback cb) {
 		Long[] hints;
 		synchronized(this) {
 			subscribers.remove(cb);
