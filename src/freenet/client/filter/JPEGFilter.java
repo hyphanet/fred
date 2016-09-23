@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.LogThresholdCallback;
@@ -68,8 +67,7 @@ public class JPEGFilter implements ContentDataFilter {
 	};
 
 	@Override
-	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-			FilterCallback cb) throws DataFilterException, IOException {
+	public void readFilter(InputStream input, OutputStream output, String charset, FilterCallback cb) throws DataFilterException, IOException {
 		readFilter(input, output, deleteComments, deleteExif);
 		output.flush();
 	}
