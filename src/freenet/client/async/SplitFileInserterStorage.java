@@ -1686,7 +1686,7 @@ public class SplitFileInserterStorage {
         return raf;
     }
 
-    public void onResume(ClientContext context) throws ResumeFailedException {
+    public void onResume() throws ResumeFailedException {
         if(crossSegments != null && status != Status.ENCODED_CROSS_SEGMENTS) {
             this.startCrossSegmentEncode();
         } else {
