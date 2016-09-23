@@ -421,11 +421,11 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         try {
             KeySalter salter = getSalter();
             raf.onResume(context);
-            this.storage = new SplitFileFetcherStorage(raf, realTimeFlag, this, blockFetchContext, 
+            this.storage = new SplitFileFetcherStorage(raf, this, blockFetchContext,
                     context.random, context.jobRunner, 
                     context.getChkFetchScheduler(realTimeFlag).fetchingKeys(), context.ticker, 
                     context.memoryLimitedJobRunner, new CRCChecksumChecker(), 
-                    context.jobRunner.newSalt(), salter, resumed, 
+                    context.jobRunner.newSalt(),
                     callbackCompleteViaTruncation != null);
         } catch (ResumeFailedException e) {
             raf.free();

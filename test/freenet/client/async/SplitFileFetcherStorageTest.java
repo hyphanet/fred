@@ -298,7 +298,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public SplitFileFetcherStorage createStorage(StorageCallback cb, FetchContext ctx,
                 LockableRandomAccessBuffer raf) throws IOException, StorageFormatException, FetchException {
             assertTrue(persistent);
-            return new SplitFileFetcherStorage(raf, false, cb, ctx, random, jobRunner, fetchingKeys, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), false, null, false, false);
+            return new SplitFileFetcherStorage(raf, cb, ctx, random, jobRunner, fetchingKeys, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), false, false);
         }
 
         public FetchContext makeFetchContext() {

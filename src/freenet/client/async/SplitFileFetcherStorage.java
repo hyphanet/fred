@@ -607,17 +607,15 @@ public class SplitFileFetcherStorage {
      * those on ClientContext, i.e. we'd be able to restore the splitfile download without knowing
      * anything about it.
      * @param newSalt True if the global salt has changed.
-     * @param salt The global salter. Should be passed in even if the global salt hasn't changed,
-     * as we may not have completed regenerating bloom filters.
-     * @throws IOException If the restore failed because of a failure to read from disk. 
+     * @throws IOException If the restore failed because of a failure to read from disk.
      * @throws StorageFormatException 
      * @throws FetchException If the request has already failed (but it wasn't processed before 
      * restarting). */
-    public SplitFileFetcherStorage(LockableRandomAccessBuffer raf, boolean realTime,  
+    public SplitFileFetcherStorage(LockableRandomAccessBuffer raf,
             SplitFileFetcherStorageCallback callback, FetchContext origContext,
             RandomSource random, PersistentJobRunner exec, KeysFetchingLocally keysFetching,
             Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker, 
-            boolean newSalt, KeySalter salt, boolean resumed, boolean completeViaTruncation) 
+            boolean newSalt, boolean completeViaTruncation)
     throws IOException, StorageFormatException, FetchException {
         this.persistent = true;
         this.raf = raf;
