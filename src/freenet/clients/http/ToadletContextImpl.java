@@ -183,7 +183,7 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	public void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length, boolean forceDisableJavascript) throws ToadletContextClosedException, IOException {
 	    boolean enableJavascript = (!forceDisableJavascript) && container.isFProxyJavascriptEnabled();
-	    sendReplyHeaders(code, desc, mvt, mimeType, length, null, false, false, enableJavascript);
+	    sendReplyHeaders(code, desc, mvt, mimeType, length, null, false, enableJavascript);
 	}
 
 	@Deprecated
@@ -196,7 +196,7 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	public void sendReplyHeadersStatic(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime) throws ToadletContextClosedException, IOException {
 	    if(mTime == null) throw new IllegalArgumentException();
-	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, mTime, false, false, false);
+	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, mTime, false, false);
 	}
 	
 	@Override
@@ -204,10 +204,10 @@ public class ToadletContextImpl implements ToadletContext {
 	    boolean enableJavascript = false;
 	    if(container.isFProxyWebPushingEnabled() && container.isFProxyJavascriptEnabled())
 	        enableJavascript = true;
-	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null, false, true, enableJavascript);
+	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null, true, enableJavascript);
 	}
 	
-	private void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean isOutlinkConfirmationPage, boolean allowFrames, boolean enableJavascript) throws ToadletContextClosedException, IOException {
+	private void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String, String> mvt, String mimeType, long contentLength, Date mTime, boolean allowFrames, boolean enableJavascript) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		if(firstReplySendingException != null) {
 			throw new IllegalStateException("Already sent headers!", firstReplySendingException);
