@@ -170,7 +170,7 @@ public abstract class BaseSender implements ByteCounter {
 			 */
         	next.sendSync(req, this, realTimeFlag);
                 next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag, source, nodesRoutedTo, htl);
-			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
+			node.peers.incrementSelectionSamples(next);
         } catch (NotConnectedException e) {
         	Logger.minor(this, "Not connected");
         	next.noLongerRoutingTo(origTag, false);

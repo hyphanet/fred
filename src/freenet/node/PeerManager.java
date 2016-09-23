@@ -2225,7 +2225,7 @@ public class PeerManager {
 		return null;
 	}
 	
-	void incrementSelectionSamples(long now, PeerNode pn) {
+	void incrementSelectionSamples(PeerNode pn) {
 		// TODO: reimplement with a bit field to spare memory
 		pn.incrementNumberOfSelections();
 	}
