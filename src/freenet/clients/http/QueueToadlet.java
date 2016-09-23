@@ -1885,7 +1885,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return priorityDiv;
 	}
 	
-	private HTMLNode createRecommendControl(PageMaker pageMaker, ToadletContext ctx) {
+	private HTMLNode createRecommendControl() {
 		HTMLNode recommendDiv = new HTMLNode("div", "class", "request-recommend");
 		recommendDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "recommend_request", l10n("recommendFilesToFriends") });
 		return recommendDiv;
@@ -2257,7 +2257,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			QueueType queueType) {
 		form.addChild(createDeleteControl(pageMaker, ctx, mimeType, queueType));
 		if (hasFriends && !(queueType.isUpload && queueType.isFailed)) {
-			form.addChild(createRecommendControl(pageMaker, ctx));
+			form.addChild(createRecommendControl());
 		}
 		if (!(queueType.isFailed || queueType.isCompleted)) {
 			form.addChild(createPriorityControl(RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, priorityClasses, advancedModeEnabled, queueType.isUpload, top ? "_top" : "_bottom"));
