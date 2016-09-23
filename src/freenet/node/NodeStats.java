@@ -1467,7 +1467,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				source.onSetMaxOutputTransfers(realTimeFlag, maxOutputTransfers);
 				source.onSetMaxOutputTransfersPeerLimit(realTimeFlag, maxOutputTransfersPeerLimit);
 			}
-			source.onSetPeerAllocation(input, (int)thisAllocation, transfersPerInsert, maxOutputTransfers, realTimeFlag);
+			source.onSetPeerAllocation(input, (int)thisAllocation, realTimeFlag);
 		}
 		
 		// Ignore the upper limit.

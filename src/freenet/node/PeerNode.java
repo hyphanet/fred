@@ -4450,7 +4450,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		(realTime ? loadSenderRealTime : loadSenderBulk).onSetMaxOutputTransfersPeerLimit(maxOutputTransfers);
 	}
 	
-	public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert, int maxOutputTransfers, boolean realTime) {
+	public void onSetPeerAllocation(boolean input, int thisAllocation, boolean realTime) {
 		(realTime ? loadSenderRealTime : loadSenderBulk).onSetPeerAllocation(input, thisAllocation);
 	}
 
