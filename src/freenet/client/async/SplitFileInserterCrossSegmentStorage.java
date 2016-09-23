@@ -183,7 +183,7 @@ public class SplitFileInserterCrossSegmentStorage {
                             synchronized(SplitFileInserterCrossSegmentStorage.this) {
                                 encoding = false;
                             }
-                            parent.onFinishedEncoding(SplitFileInserterCrossSegmentStorage.this);
+                            parent.onFinishedEncoding();
                         }
                     } finally {
                         // Callback is part of the persistent job, unlock *after* calling it.

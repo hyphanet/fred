@@ -1149,9 +1149,8 @@ public class SplitFileInserterStorage {
 
     /** Called when a cross-segment finishes encoding blocks. Can be called inside locks as it runs
      * off-thread.
-     * @param completed
      */
-    public void onFinishedEncoding(SplitFileInserterCrossSegmentStorage completed) {
+    public void onFinishedEncoding() {
         jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
