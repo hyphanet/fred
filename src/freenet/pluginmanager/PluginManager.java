@@ -319,7 +319,7 @@ public class PluginManager {
 				for(Iterator<PluginInfoWrapper> it = wrappers.listIterator();it.hasNext();) {
 					PluginInfoWrapper pi = it.next();
 					System.out.println("Waiting for plugin to finish shutting down: "+pi.getFilename());
-					if(pi.finishShutdownPlugin(this, delta, false)) {
+					if(pi.finishShutdownPlugin(delta)) {
 						it.remove();
 					}
 				}
