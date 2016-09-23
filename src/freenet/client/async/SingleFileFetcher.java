@@ -918,10 +918,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					pipeIn = decompressorManager.execute();
 					ClientGetWorkerThread worker = new ClientGetWorkerThread(new BufferedInputStream(pipeIn), output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
 					worker.start();
-					streamGenerator.writeTo(pipeOut, context);
+					streamGenerator.writeTo(pipeOut);
 					decompressorManager.waitFinished();
 					worker.waitFinished();
-				} else streamGenerator.writeTo(output, context);
+				} else streamGenerator.writeTo(output);
 				// We want to see anything thrown when these are closed.
 				output.close(); output = null;
 				pipeOut.close(); pipeOut = null;
@@ -1068,12 +1068,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					pipeIn = decompressorManager.execute();
 					ClientGetWorkerThread worker = new ClientGetWorkerThread(new BufferedInputStream(pipeIn), output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
 					worker.start();
-					streamGenerator.writeTo(pipeOut, context);
+					streamGenerator.writeTo(pipeOut);
 					decompressorManager.waitFinished();
 					worker.waitFinished();
 					// ClientGetWorkerThread will close output.
 				} else {
-				    streamGenerator.writeTo(output, context);
+				    streamGenerator.writeTo(output);
 				    output.close();
 				}
 

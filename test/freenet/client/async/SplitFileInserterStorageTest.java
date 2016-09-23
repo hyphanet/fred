@@ -1158,7 +1158,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         StreamGenerator g = storage.streamGenerator();
         Bucket out = smallBucketFactory.makeBucket(-1);
         OutputStream os = out.getOutputStream();
-        g.writeTo(os, null);
+        g.writeTo(os);
         os.close();
         assertTrue(BucketTools.equalBuckets(originalData, out));
         out.free();

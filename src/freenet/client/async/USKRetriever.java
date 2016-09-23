@@ -144,12 +144,12 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 				pipeIn = decompressorManager.execute();
 				ClientGetWorkerThread worker = new ClientGetWorkerThread(new BufferedInputStream(pipeIn), output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
 				worker.start();
-				streamGenerator.writeTo(pipeOut, context);
+				streamGenerator.writeTo(pipeOut);
 				worker.waitFinished();
 				// If this throws, we want the whole request to fail.
 				pipeOut.close(); pipeOut = null;
 			} else {
-					streamGenerator.writeTo(output, context);
+					streamGenerator.writeTo(output);
 					// If this throws, we want the whole request to fail.
 					output.close(); output = null;
 			}

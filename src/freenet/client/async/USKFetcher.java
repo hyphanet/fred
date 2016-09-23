@@ -228,10 +228,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					pipeIn = decompressorManager.execute();
 					ClientGetWorkerThread worker = new ClientGetWorkerThread(new BufferedInputStream(pipeIn), output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
 					worker.start();
-					streamGenerator.writeTo(pipeOut, context);
+					streamGenerator.writeTo(pipeOut);
 					decompressorManager.waitFinished();
 					worker.waitFinished();
-				} else streamGenerator.writeTo(output, context);
+				} else streamGenerator.writeTo(output);
 
 				output.close();
 				pipeOut.close();

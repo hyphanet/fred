@@ -1170,7 +1170,7 @@ public class SplitFileFetcherStorage {
         return new StreamGenerator() {
 
             @Override
-            public void writeTo(OutputStream os, ClientContext context)
+            public void writeTo(OutputStream os)
                     throws IOException {
                 LockableRandomAccessBuffer.RAFLock lock = raf.lockOpen();
                 try {

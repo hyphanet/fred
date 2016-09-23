@@ -341,7 +341,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 			worker = new ClientGetWorkerThread(new BufferedInputStream(dataInput), output, uri, mimeType, hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
 			worker.start();
 			try {
-				streamGenerator.writeTo(dataOutput, context);
+				streamGenerator.writeTo(dataOutput);
 			} catch(IOException e) {
 				//Check if the worker thread caught an exception
 				worker.getError();
