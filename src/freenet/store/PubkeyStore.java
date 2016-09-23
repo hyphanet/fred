@@ -32,7 +32,7 @@ public class PubkeyStore extends StoreCallback<DSAPublicKey> {
 	
 	final private static byte[] empty = new byte[0];
 	
-	public void put(byte[] hash, DSAPublicKey key, boolean isOldBlock) throws IOException {
+	public void put(DSAPublicKey key, boolean isOldBlock) throws IOException {
 		try {
 			store.put(key, key.asPaddedBytes(), empty, false, isOldBlock);
 		} catch (KeyCollisionException e) {
