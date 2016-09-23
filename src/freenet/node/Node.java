@@ -2976,7 +2976,7 @@ public class Node implements TimeSkewDetectorCallback {
 		System.out.println("Initializing "+type+" Data"+store+" (" + maxStoreKeys + " keys)");
 
 		SaltedHashFreenetStore<T> fs = SaltedHashFreenetStore.<T>construct(getStoreDir(), type+"-"+store, cb,
-		        random, maxKeys, storeUseSlotFilters, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, lateStart ? ticker : null, clientCacheMasterKey);
+		        random, maxKeys, storeUseSlotFilters, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, clientCacheMasterKey);
 		cb.setStore(fs);
 		if(cachingFreenetStoreMaxSize > 0)
 			return new CachingFreenetStore<T>(cb, fs, cachingFreenetStoreTracker);

@@ -79,7 +79,7 @@ public class SaltedHashFreenetStoreTest extends TestCase {
 		FileUtil.removeAll(f);
 
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testSaltedHashFreenetStoreCHK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testSaltedHashFreenetStoreCHK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, null);
 		saltStore.start(null, true);
 
 		for(int i=0;i<5;i++) {
@@ -105,7 +105,7 @@ public class SaltedHashFreenetStoreTest extends TestCase {
 		new RAMFreenetStore<DSAPublicKey>(pk, keys);
 		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
 		SSKStore store = new SSKStore(pubkeyCache);
-		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testSaltedHashFreenetStoreSSK", store, weakPRNG, 20, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testSaltedHashFreenetStoreSSK", store, weakPRNG, 20, false, SemiOrderedShutdownHook.get(), true, true, null);
 		saltStore.start(null, true);
 		RandomSource random = new DummyRandomSource(12345);
 
@@ -155,7 +155,7 @@ public class SaltedHashFreenetStoreTest extends TestCase {
 		new RAMFreenetStore<DSAPublicKey>(pk, keys);
 		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
 		SSKStore store = new SSKStore(pubkeyCache);
-		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testSaltedHashFreenetStoreOnCloseSSK", store, weakPRNG, 10, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testSaltedHashFreenetStoreOnCloseSSK", store, weakPRNG, 10, true, SemiOrderedShutdownHook.get(), true, true, null);
 		saltStore.start(null, true);
 		RandomSource random = new DummyRandomSource(12345);
 		
