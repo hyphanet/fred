@@ -720,7 +720,7 @@ public class USKManager {
 		return context;
 	}
 
-	public void checkUSK(FreenetURI uri, boolean persistent, boolean isMetadata) {
+	public void checkUSK(FreenetURI uri, boolean isMetadata) {
 		try {
 			FreenetURI uu;
 			if(uri.isSSK() && uri.isSSKForUSK()) {

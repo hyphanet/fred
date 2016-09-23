@@ -262,7 +262,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		if(logMINOR)
 			Logger.minor(this, "Succeeded from "+state+" on "+this);
 		// Fetching the container is essentially a full success, we should update the latest known good.
-		context.uskManager.checkUSK(uri, persistent(), false);
+		context.uskManager.checkUSK(uri, false);
 		try {
 			if (binaryBlobWriter != null && !dontFinalizeBlobWriter) binaryBlobWriter.finalizeBucket();
 		} catch (IOException ioe) {
@@ -414,7 +414,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
     @Override
     public void onSuccess(File tempFile, long length, ClientMetadata metadata,
             ClientGetState state, ClientContext context) {
-        context.uskManager.checkUSK(uri, persistent(), false);
+        context.uskManager.checkUSK(uri, false);
         try {
             if (binaryBlobWriter != null && !dontFinalizeBlobWriter) binaryBlobWriter.finalizeBucket();
         } catch (IOException ioe) {
