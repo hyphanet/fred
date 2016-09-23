@@ -1870,7 +1870,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return priorityCell;
 	}
 
-	private HTMLNode createPriorityControl(PageMaker pageMaker, ToadletContext ctx, short priorityClass, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload, String controlSuffix) {
+	private HTMLNode createPriorityControl(short priorityClass, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload, String controlSuffix) {
 		HTMLNode priorityDiv = new HTMLNode("div", "class", "request-priority nowrap");
 		priorityDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "change_priority" + controlSuffix, NodeL10n.getBase().getString(isUpload ? "QueueToadlet.changeUploadPriorities" : "QueueToadlet.changeDownloadPriorities") });
 		HTMLNode prioritySelect = priorityDiv.addChild("select", "name", "priority"+controlSuffix);
@@ -2260,7 +2260,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			form.addChild(createRecommendControl(pageMaker, ctx));
 		}
 		if (!(queueType.isFailed || queueType.isCompleted)) {
-			form.addChild(createPriorityControl(pageMaker, ctx, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, priorityClasses, advancedModeEnabled, queueType.isUpload, top ? "_top" : "_bottom"));
+			form.addChild(createPriorityControl(RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, priorityClasses, advancedModeEnabled, queueType.isUpload, top ? "_top" : "_bottom"));
 		}
 	}
 
