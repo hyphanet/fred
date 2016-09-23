@@ -5200,8 +5200,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		 * @param byteCountersInput 
 		 * @param byteCountersOutput */
 		private RequestLikelyAcceptedState getRequestLikelyAcceptedState(RunningRequestsSnapshot runningRequests, RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, PeerLoadStats stats) {
-			RequestLikelyAcceptedState outputState = getRequestLikelyAcceptedStateBandwidth(false, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
-			RequestLikelyAcceptedState inputState = getRequestLikelyAcceptedStateBandwidth(true, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
+			RequestLikelyAcceptedState outputState = getRequestLikelyAcceptedStateBandwidth(false, runningRequests, otherRunningRequests, stats);
+			RequestLikelyAcceptedState inputState = getRequestLikelyAcceptedStateBandwidth(true, runningRequests, otherRunningRequests, stats);
 			RequestLikelyAcceptedState transfersState = getRequestLikelyAcceptedStateTransfers(runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
 			RequestLikelyAcceptedState ret = inputState;
 			
@@ -5215,7 +5215,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		private RequestLikelyAcceptedState getRequestLikelyAcceptedStateBandwidth(
 				boolean input,
 				RunningRequestsSnapshot runningRequests,
-				RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
+				RunningRequestsSnapshot otherRunningRequests,
 				PeerLoadStats stats) {
 			double ourUsage = runningRequests.calculate(input);
 			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.peerLimit(input)+" lower limit is "+stats.lowerLimit(input)+" realtime "+realTime+" input "+input);
