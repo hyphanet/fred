@@ -322,7 +322,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	 * @param tries The new number of tries after each cooldown. Greater than 0
 	 * and less than 3 or we throw.
 	 */
-	public void changeUSKPollParameters(long time, int tries, ClientContext context) {
+	public void changeUSKPollParameters(long time, int tries) {
 		USKFetcher f;
 		synchronized(this) {
 			f = fetcher;
