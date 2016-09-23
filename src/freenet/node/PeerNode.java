@@ -5342,7 +5342,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return messageQueue;
 	}
 
-	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
+	public boolean handleReceivedPacket(byte[] buf, int offset, int length) {
 		PacketFormat pf;
 		synchronized(this) {
 			pf = packetFormat;
