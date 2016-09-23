@@ -1284,13 +1284,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// Check bandwidth-based limits, with fair sharing.
 		
 		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(limit, nonOverheadFraction), requestsSnapshot, peerRequestsSnapshot, false,
-				source, isLocal, isSSK, isInsert, isOfferReply, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);
+				source, isLocal, isSSK, isInsert, isOfferReply, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);
 		if(ret != null) {
 			return new RejectReason(ret, true);
 		}
 		
 		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), requestsSnapshot, peerRequestsSnapshot, true,
-				source, isLocal, isSSK, isInsert, isOfferReply, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);
+				source, isLocal, isSSK, isInsert, isOfferReply, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);
 		if(ret != null) {
 			return new RejectReason(ret, true);
 		}
@@ -1442,14 +1442,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * @param isSSK True if it is an SSK request.
 	 * @param isInsert True if it is an insert.
 	 * @param isOfferReply True if it is a GetOfferedKey.
-	 * @param transfersPerInsert The average number of outgoing transfers per insert.
 	 * @param realTimeFlag True if this is a real-time request, false if it is a bulk
 	 * request.
 	 * @return A string explaining why, or null if we can accept the request.
 	 */
 	private String checkBandwidthLiability(double bandwidthAvailableOutputUpperLimit,
 			RunningRequestsSnapshot requestsSnapshot, RunningRequestsSnapshot peerRequestsSnapshot, boolean input,
-			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, int transfersPerInsert, boolean realTimeFlag, int maxOutputTransfers, int maxOutputTransfersPeerLimit) {
+			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean realTimeFlag, int maxOutputTransfers, int maxOutputTransfersPeerLimit) {
 		String name = input ? "Input" : "Output";
 		int peers = node.peers.countConnectedPeers();
 		
