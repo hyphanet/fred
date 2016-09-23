@@ -221,7 +221,7 @@ public class StatisticsToadlet extends Toadlet {
 			//HTMLNode storeSizeInfobox = nextTableCell.addChild("div", "class", "infobox");
              HTMLNode storeSizeInfobox = contentNode.addChild("div","class", "infobox");
 			
-			drawStoreSizeBox(storeSizeInfobox, myLocation, nodeUptimeSeconds);
+			drawStoreSizeBox(storeSizeInfobox, nodeUptimeSeconds);
            
 			
 			if(numberOfConnected + numberOfRoutingBackedOff > 0) {
@@ -710,7 +710,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 	}
 
-	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, double loc, long nodeUptimeSeconds) {
+	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, long nodeUptimeSeconds) {
 		storeSizeInfobox.addChild("div", "class", "infobox-header", l10n("datastore"));
 		HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
 
