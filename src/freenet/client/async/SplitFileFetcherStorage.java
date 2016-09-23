@@ -1522,7 +1522,7 @@ public class SplitFileFetcherStorage {
     /** Local only is true and we've finished checking the datastore. If all segments are not 
      * already finished/decoding, we need to fail with DNF. If the segments fail to decode due to
      * data corruption, we will retry as usual. */
-    public void finishedCheckingDatastoreOnLocalRequest(ClientContext context) {
+    public void finishedCheckingDatastoreOnLocalRequest() {
         // At this point, all the blocks will have been processed.
         if(hasFinished()) return; // Don't need to do anything.
         this.errors.inc(FetchExceptionMode.ALL_DATA_NOT_FOUND);
