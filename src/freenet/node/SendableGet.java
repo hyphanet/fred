@@ -81,7 +81,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * @param token
 	 * @return
 	 */
-	public abstract long getCooldownWakeup(SendableRequestItem token, ClientContext context);
+	public abstract long getCooldownWakeup(SendableRequestItem token);
 	
 	/**
 	 * An internal error occurred, effecting this SendableGet, independantly of any ChosenBlock's.

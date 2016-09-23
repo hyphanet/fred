@@ -74,7 +74,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
 
     @Override
-    public long getCooldownWakeup(SendableRequestItem token, ClientContext context) {
+    public long getCooldownWakeup(SendableRequestItem token) {
         MyKey key = (MyKey) token;
         return storage.segments[key.segmentNumber].getCooldownTime(key.blockNumber);
     }
