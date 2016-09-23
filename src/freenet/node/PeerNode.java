@@ -4272,7 +4272,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			if(packetFormat == null) return false;
 			pf = packetFormat;
 		}
-		return pf.maybeSendPacket(now, ackOnly);
+		return pf.maybeSendPacket(ackOnly);
 	}
 
 	/**

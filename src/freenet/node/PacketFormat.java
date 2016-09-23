@@ -16,8 +16,7 @@ public interface PacketFormat {
 	 * </ol>
 	 * @param ackOnly 
 	 */
-	boolean maybeSendPacket(long now, boolean ackOnly)
-	                throws BlockedTooLongException;
+	boolean maybeSendPacket(boolean ackOnly) throws BlockedTooLongException;
 
 	/**
 	 * Called when the peer has been disconnected.

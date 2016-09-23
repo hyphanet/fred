@@ -449,7 +449,7 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	@Override
-	public boolean maybeSendPacket(long now, boolean ackOnly)
+	public boolean maybeSendPacket(boolean ackOnly)
 	throws BlockedTooLongException {
 		SessionKey sessionKey = pn.getPreviousKeyTracker();
 		if(sessionKey != null) {
