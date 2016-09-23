@@ -127,6 +127,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		return true;
 	}
 
+	@SuppressWarnings("UnusedParameters")
 	public void handleMethodPOST(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String ks = uri.getPath();
 

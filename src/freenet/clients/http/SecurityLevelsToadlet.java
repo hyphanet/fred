@@ -57,6 +57,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		this.node = node;
 	}
 
+	@SuppressWarnings("UnusedParameters")
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
         if(!ctx.checkFullAccess(this))
             return;

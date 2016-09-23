@@ -122,6 +122,7 @@ public class N2NTMToadlet extends Toadlet {
 		return infobox;
 	}
 
+	@SuppressWarnings("UnusedParameters")
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException,
 			RedirectException {
