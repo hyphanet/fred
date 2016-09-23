@@ -984,7 +984,7 @@ public class SplitFileFetcherSegmentStorage {
         if(kill) {
             if(crossSegmentsByBlock == null) {
                 // Fail the whole splitfile immediately.
-                parent.failOnSegment(this);
+                parent.failOnSegment();
             } else {
                 // Could still succeed. But we're not gonna find any more blocks.
                 // Similar to DSOnly... finishedEncoding will fail eventually when all segments

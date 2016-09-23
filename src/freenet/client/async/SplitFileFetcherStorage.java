@@ -1366,10 +1366,8 @@ public class SplitFileFetcherStorage {
     }
 
     /** A segment ran out of retries. We have given up on that segment and therefore on the whole
-     * splitfile.
-     * @param segment The segment that failed.
-     */
-    public void failOnSegment(SplitFileFetcherSegmentStorage segment) {
+     * splitfile. */
+    public void failOnSegment() {
         fail(new FetchException(FetchExceptionMode.SPLITFILE_ERROR, errors));
     }
 
