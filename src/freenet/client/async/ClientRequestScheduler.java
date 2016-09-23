@@ -154,7 +154,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			for(SendableGet getter : getters) {
-				getter.internalError(e, this, clientContext, persistent);
+				getter.internalError(e, this, persistent);
 			}
 			throw e;
 		}

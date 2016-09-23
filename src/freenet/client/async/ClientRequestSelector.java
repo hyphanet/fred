@@ -216,7 +216,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			}
 			if(isInsertScheduler && req instanceof SendableGet) {
 				IllegalStateException e = new IllegalStateException("removeFirstInner returned a SendableGet on an insert scheduler!!");
-				req.internalError(e, sched, context, req.persistent());
+				req.internalError(e, sched, req.persistent());
 				throw e;
 			}
 			ChosenBlock block = maybeMakeChosenRequest(req, context, now);

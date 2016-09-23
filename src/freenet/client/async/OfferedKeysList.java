@@ -154,7 +154,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public void internalError(Throwable t, RequestScheduler sched, ClientContext context, boolean persistent) {
+	public void internalError(Throwable t, RequestScheduler sched, boolean persistent) {
 		Logger.error(this, "Internal error: "+t, t);
 	}
 	

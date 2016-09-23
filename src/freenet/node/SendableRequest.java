@@ -151,7 +151,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 	public abstract boolean isInsert();
 	
 	/** Requeue after an internal error */
-	public abstract void internalError(Throwable t, RequestScheduler sched, ClientContext context, boolean persistent);
+	public abstract void internalError(Throwable t, RequestScheduler sched, boolean persistent);
 
 	public boolean realTimeFlag() {
 		return realTimeFlag;
