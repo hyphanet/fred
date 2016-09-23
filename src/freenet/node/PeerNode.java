@@ -5349,7 +5349,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			pf = packetFormat;
 			if(pf == null) return false;
 		}
-		return pf.handleReceivedPacket(buf, offset, length, now, replyTo);
+		return pf.handleReceivedPacket(buf, offset, length);
 	}
 
 	public void checkForLostPackets() {

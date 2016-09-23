@@ -440,8 +440,7 @@ public class NewPacketFormatTest extends TestCase {
 		byte[] data = senderNode.sentEncryptedPacket;
 
 		receiverNode.decryptedMessages = new ArrayList<byte[]>();
-		receiverNPF.handleReceivedPacket(data, 0, data.length, System.currentTimeMillis(),
-						 PEER);
+		receiverNPF.handleReceivedPacket(data, 0, data.length);
 
 		assertEquals(1, receiverNode.decryptedMessages.size());
 		assertTrue(Arrays.equals(message, copyOfMessage));
