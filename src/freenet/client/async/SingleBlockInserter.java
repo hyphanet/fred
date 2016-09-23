@@ -13,7 +13,6 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException.InsertExceptionMode;
-import freenet.crypt.RandomSource;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
@@ -145,7 +144,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		this.cryptoKey = cryptoKey;
 	}
 
-	protected ClientKeyBlock innerEncode(RandomSource random) throws InsertException {
+	protected ClientKeyBlock innerEncode() throws InsertException {
 		CompatibilityMode cmode = ctx.getCompatibilityMode();
 		boolean pre1254 = !(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
 		try {
@@ -213,7 +212,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				Logger.error(this, "Source data is null on "+this+" but not finished!");
 				return null;
 			}
-			block = innerEncode(context.random);
+			block = innerEncode();
 			shouldSend = (resultingKey == null);
 			resultingKey = block.getClientKey();
 		}
