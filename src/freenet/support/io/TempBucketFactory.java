@@ -555,15 +555,6 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 		this.secret = masterSecret;
 	}
 	
-	@Override
-	public RandomAccessBucket makeBucket(long size) throws IOException {
-		return makeBucket(size, DEFAULT_FACTOR, defaultIncrement);
-	}
-
-	public RandomAccessBucket makeBucket(long size, float factor) throws IOException {
-		return makeBucket(size, factor, defaultIncrement);
-	}
-	
 	private synchronized void _hasTaken(long size) {
 		bytesInUse += size;
 	}
@@ -616,14 +607,12 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 	 * 
 	 * @param size
 	 *            Maximum size
-	 * @param factor
-	 *            Factor to increase size by when need more space
 	 * @return A temporary Bucket
 	 * @exception IOException
 	 *                If it is not possible to create a temp bucket due to an
 	 *                I/O error
 	 */
-	public TempBucket makeBucket(long size, float factor, long increment) throws IOException {
+	public TempBucket makeBucket(long size) throws IOException {
 		RandomAccessBucket realBucket = null;
 		boolean useRAMBucket = false;
 		long now = System.currentTimeMillis();
