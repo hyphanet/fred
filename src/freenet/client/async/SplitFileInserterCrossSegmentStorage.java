@@ -54,8 +54,7 @@ public class SplitFileInserterCrossSegmentStorage {
     // FIXME turn off before merging into master.
     static final boolean DEBUG_ENCODE = true;
     
-    public SplitFileInserterCrossSegmentStorage(SplitFileInserterStorage parent, int segNo, 
-            boolean persistent, int segLen, int crossCheckBlocks) {
+    public SplitFileInserterCrossSegmentStorage(SplitFileInserterStorage parent, int segNo, int segLen, int crossCheckBlocks) {
         this.parent = parent;
         this.segNo = segNo;
         this.dataBlockCount = segLen;

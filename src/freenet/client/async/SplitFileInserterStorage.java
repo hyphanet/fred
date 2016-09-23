@@ -404,7 +404,7 @@ public class SplitFileInserterStorage {
                 }
 
                 SplitFileInserterCrossSegmentStorage seg = new SplitFileInserterCrossSegmentStorage(
-                        this, i, persistent, segLen, crossCheckBlocks);
+                        this, i, segLen, crossCheckBlocks);
                 crossSegments[i] = seg;
                 for (int j = 0; j < segLen; j++) {
                     // Allocate random data blocks
