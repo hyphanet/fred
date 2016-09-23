@@ -123,7 +123,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 							sendChangePasswordForm(ctx, true, false, newPhysicalLevel.name());
 							return;
 						} catch (MasterKeysFileSizeException e) {
-							sendPasswordFileCorruptedPage(e.isTooBig(), ctx, false, true);
+							sendPasswordFileCorruptedPage(ctx);
 							if(changedAnything)
 								core.storeConfig();
 							return;
@@ -171,7 +171,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 									core.storeConfig();
 								return;
 							} catch (MasterKeysFileSizeException e) {
-								sendPasswordFileCorruptedPage(e.isTooBig(), ctx, false, true);
+								sendPasswordFileCorruptedPage(ctx);
 								if(changedAnything)
 									core.storeConfig();
 								return;
@@ -233,7 +233,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 									core.storeConfig();
 								return;
 							} catch (MasterKeysFileSizeException e) {
-								sendPasswordFileCorruptedPage(e.isTooBig(), ctx, false, true);
+								sendPasswordFileCorruptedPage(ctx);
 								if(changedAnything)
 									core.storeConfig();
 								return;
@@ -319,7 +319,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 					sendPasswordFormPage(true, ctx);
 					return;
 				} catch (MasterKeysFileSizeException e) {
-					sendPasswordFileCorruptedPage(e.isTooBig(), ctx, false, false);
+					sendPasswordFileCorruptedPage(ctx);
 					return;
 				}
 				MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
@@ -625,7 +625,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		return NodeL10n.getBase().getString("SecurityLevels."+key, pattern, value);
 	}
 
-	void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) throws ToadletContextClosedException, IOException {
+	void sendPasswordFileCorruptedPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		HTMLNode page = sendPasswordFileCorruptedPageInner(ctx, node.getMasterPasswordFile().getPath());
 		writeHTMLReply(ctx, 500, "Internal Server Error", page.generate());
 	}
