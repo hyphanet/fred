@@ -631,7 +631,7 @@ public class PeerManager {
 	 * Connect to a node provided the fieldset representing it.
 	 * @throws PeerTooOldException 
 	 */
-	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
+	public void connect(SimpleFieldSet noderef, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
 		PeerNode[] peerList = myPeers();
 		for(PeerNode mp: peerList) {

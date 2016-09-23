@@ -4214,7 +4214,7 @@ public class Node implements TimeSkewDetectorCallback {
 		peers.addPeer(node,false,false);
 	}
 	public void connect(Node node, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
-		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler, trust, visibility);
+		peers.connect(node.darknetCrypto.exportPublicFieldSet(), trust, visibility);
 	}
 
 	public short maxHTL() {
