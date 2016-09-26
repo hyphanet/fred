@@ -8,6 +8,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
@@ -362,7 +363,12 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     
     /** List of nodes we are waiting for either a transfer completion
      * notice or a transfer completion from. Also used as a sync object for waiting for transfer completion. */
-    private List<BackgroundTransfer> backgroundTransfers;
+    private final List<BackgroundTransfer> backgroundTransfers;
+    
+    private final CopyOnWriteArrayList<InsertSenderListener> listeners = 
+            new CopyOnWriteArrayList<InsertSenderListener>();
+    private boolean calledListenersStatus = false;
+    private boolean calledListenersCompletion = false;
     
     /** Have all transfers completed and all nodes reported completion status? */
     private boolean allTransfersCompleted;
@@ -765,9 +771,11 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     	if(hasForwardedRejectedOverload) return;
     	hasForwardedRejectedOverload = true;
    		notifyAll();
+        for(InsertSenderListener listener : listeners)
+            callListenerOffThreadRejectedOverload(listener);
 	}
 	
-	private void setTransferTimedOut() {
+    private void setTransferTimedOut() {
 		synchronized(this) {
 			if(!transferTimedOut) {
 				transferTimedOut = true;
@@ -801,10 +809,11 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         			throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         	} else {
                 status = code;
+                notifyAll();
+                if(status != NOT_FINISHED)
+                    callListenersOffThread(status);
+                if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
         	}
-        	
-        	notifyAll();
-        	if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
         }
 		
         boolean failedRecv = false; // receiveFailed is protected by backgroundTransfers but status by this
@@ -833,6 +842,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 					status = RECEIVE_FAILED;
 				allTransfersCompleted = true;
 				notifyAll();
+				callListenersOffThread(status);
+				callListenersOffThreadCompletion();
 			}
 		}
         	
@@ -884,6 +895,8 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     		status = RECEIVE_FAILED;
     		allTransfersCompleted = true;
     		notifyAll();
+    		callListenersOffThread(status);
+    		callListenersOffThreadCompletion();
     	}
     	// Do not call finish(), that can only be called on the main thread and it will block.
     }
@@ -937,6 +950,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				synchronized(CHKInsertSender.this) {
 					allTransfersCompleted = true;
 					CHKInsertSender.this.notifyAll();
+					callListenersOffThreadCompletion();
 				}
 			}
 		}
@@ -1213,6 +1227,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				synchronized(this) {
 					status = TIMED_OUT;
 					notifyAll();
+					callListenersOffThread(status);
 				}
 				
 				// Wait for the second timeout off-thread.
@@ -1390,5 +1405,87 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	protected long ignoreLowBackoff() {
 		return ignoreLowBackoff ? Node.LOW_BACKOFF : 0;
 	}
+	
+	public synchronized void addListener(InsertSenderListener listener) {
+	    listeners.add(listener);
+	    if(status != NOT_FINISHED) {
+	        callListenerOffThread(listener, status);
+	    }
+	    if(calledListenersCompletion) {
+	        callListenerOffThreadCompletion(listener);
+	    }
+	    if(hasForwardedRejectedOverload) {
+	        callListenerOffThreadRejectedOverload(listener);
+	    }
+	}
+	
+	private synchronized void callListenersOffThread(final int status) {
+	    assert(status != NOT_FINISHED);
+	    if(calledListenersStatus) {
+	        // Status changed e.g. due to receive failure after InsertReply.
+	        return;
+	    }
+	    // Whether it's legal or not, the listeners only want to be called ONCE.
+	    calledListenersStatus = true;
+	    for(InsertSenderListener listener : listeners)
+	        callListenerOffThread(listener, status);
+	}
+
+    private synchronized void callListenersOffThreadCompletion() {
+        if(calledListenersCompletion) return;
+        calledListenersCompletion = true;
+        for(InsertSenderListener listener : listeners)
+            callListenerOffThreadCompletion(listener);
+    }
+
+    private void callListenerOffThread(final InsertSenderListener listener, final int status) {
+        node.executor.execute(new PrioRunnable() {
+
+            @Override
+            public void run() {
+                listener.onInsertSenderFinished(status, CHKInsertSender.this);
+            }
+ 
+            @Override
+            public int getPriority() {
+                return NativeThread.HIGH_PRIORITY;
+            }
+            
+        }, "CHKInsertHandler callback for "+uid);
+    }
+
+    private void callListenerOffThreadCompletion(final InsertSenderListener listener) {
+        node.executor.execute(new PrioRunnable() {
+
+            @Override
+            public void run() {
+                listener.onCompletion(CHKInsertSender.this);
+            }
+ 
+            @Override
+            public int getPriority() {
+                return NativeThread.HIGH_PRIORITY;
+            }
+            
+        }, "CHKInsertHandler completion callback for "+uid);
+    }
+    
+    private void callListenerOffThreadRejectedOverload(final InsertSenderListener listener) {
+        node.executor.execute(new PrioRunnable() {
+
+            @Override
+            public void run() {
+                listener.onReceivedRejectedOverload(CHKInsertSender.this);
+            }
+ 
+            @Override
+            public int getPriority() {
+                return NativeThread.HIGH_PRIORITY;
+            }
+            
+        }, "CHKInsertHandler rejected overload callback for "+uid);
+    }
+
+
 
 }
