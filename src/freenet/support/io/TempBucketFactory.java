@@ -273,6 +273,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 				synchronized(TempBucket.this) {
                     if(hasBeenFreed) throw new IOException("Already freed");
 					long futureSize = currentSize + 1;
+					if(closed) throw new IOException("Already closed"); // Must throw if already closed
 					_maybeMigrateRamBucket(futureSize);
 					os.write(b);
 					currentSize = futureSize;
@@ -286,6 +287,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 				synchronized(TempBucket.this) {
 				    if(hasBeenFreed) throw new IOException("Already freed");
 					long futureSize = currentSize + len;
+                    if(closed) throw new IOException("Already closed"); // Must throw if already closed
 					_maybeMigrateRamBucket(futureSize);
 					os.write(b, off, len);
 					currentSize = futureSize;
@@ -299,7 +301,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 				synchronized(TempBucket.this) {
 				    if(hasBeenFreed) return;
 					_maybeMigrateRamBucket(currentSize);
-					if(!closed)
+					if(!closed) // Like close().
 						os.flush();
 				}
 			}
@@ -307,7 +309,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 			@Override
 			public final void close() throws IOException {
 				synchronized(TempBucket.this) {
-					if(closed) return;
+					if(closed) return; // Silently return if already closed (convention with AutoCloseable).
 					_maybeMigrateRamBucket(currentSize);
 					os.flush();
 					os.close();
