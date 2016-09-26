@@ -11,6 +11,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.RequestSelectionTreeNode;
 import freenet.client.async.ChosenBlockImpl;
 import freenet.keys.Key;
+import freenet.node.NodeStats.AcceptStatus;
 import freenet.node.NodeStats.RejectReason;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -164,7 +165,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 //					// Note that while waitFor() is blocking, we need such a limit anyway.
 //					if(localRequestsWaitingForSlots > maxWaitingForSlots) continue;
 //				}
-				RejectReason reason;
+				AcceptStatus reason;
 				assert(req.realTimeFlag == realTime);
 				if (!req.localRequestOnly) {
 					reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, 
