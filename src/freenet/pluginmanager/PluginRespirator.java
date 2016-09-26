@@ -332,4 +332,8 @@ public class PluginRespirator {
 	public void storeConfig() {
 		pi.getConfig().store();
 	}
+
+	public boolean isOfficialPlugin() {
+	    return pi.isOfficialPlugin();
+	}
 }
