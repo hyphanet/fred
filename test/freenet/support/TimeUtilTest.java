@@ -15,7 +15,12 @@
  */
 package freenet.support;
 
+import static java.util.Calendar.MILLISECOND;
+
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import junit.framework.TestCase;
 
@@ -145,4 +150,37 @@ public class TimeUtilTest extends TestCase {
 			assertNotNull(anException); }
 	}
 
+	/** Tests {@link TimeUtil#setTimeToZero(Date)} */
+	public void testSetTimeToZero() {
+		// Test whether zeroing doesn't happen when it needs not to.
+		
+		GregorianCalendar c = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+		c.set(2015, 0 /* 0-based! */, 01, 00, 00, 00);
+		c.set(MILLISECOND, 0);
+		
+		Date original = c.getTime();
+		Date zeroed = TimeUtil.setTimeToZero(original);
+		
+		assertEquals(original, zeroed);
+		// Date objects are mutable so their recycling is discouraged, check for it
+		assertNotSame(original, zeroed);
+		
+		// Test whether zeroing happens when it should.
+		
+		c.set(2014, 12 - 1 /* 0-based! */, 31, 23, 59, 59);
+		c.set(MILLISECOND, 999);
+		original = c.getTime();
+		Date originalBackup = (Date)original.clone();
+		
+		c.set(2014, 12 - 1 /* 0-based! */, 31, 00, 00, 00);
+		c.set(MILLISECOND, 0);
+		Date expected = c.getTime();
+		
+		zeroed = TimeUtil.setTimeToZero(original);
+		
+		assertEquals(expected, zeroed);
+		assertNotSame(original, zeroed);
+		// Check for bogus tampering with original object
+		assertEquals(originalBackup, original);
+	}
 }
