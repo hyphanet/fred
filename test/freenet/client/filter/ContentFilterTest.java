@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -20,10 +21,10 @@ import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.client.filter.HTMLFilter.*;
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.l10n.NodeL10n;
+import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.ArrayBucket;
-
 import freenet.support.TestProperty;
 
 /**
@@ -217,7 +218,15 @@ public class ContentFilterTest extends TestCase {
 	private static final String META_BOGUS_REDIRECT4_OUT = "<!-- Deleted invalid or dangerous URI-->";
 	private static final String META_BOGUS_REDIRECT5_OUT = "<!-- Malformed URL (relative): Invalid key type: \"/KSK-->";
 	private static final String META_BOGUS_REDIRECT_NO_URL = "<!-- no url but doesn't parse as number in meta refresh -->";
-	
+
+
+	public void setUp() {
+		// L10n files are located in a different place for unit tests so automatic discovery will
+		// not work. Thus we must manually tell NodeL10n where the files are.
+		File l10nDir = new File(TestProperty.L10nPath_main);
+		new NodeL10n(LANGUAGE.ENGLISH, l10nDir, l10nDir);
+	}
+
 	public void testMetaRefresh() throws Exception {
 		HTMLFilter.metaRefreshSamePageMinInterval = 5;
 		HTMLFilter.metaRefreshRedirectMinInterval = 30;

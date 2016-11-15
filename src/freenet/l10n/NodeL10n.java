@@ -3,8 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.l10n;
 
-import freenet.l10n.BaseL10n.LANGUAGE;
 import java.io.File;
+
+import freenet.l10n.BaseL10n.LANGUAGE;
 
 /**
  * This is the interface used to localize the Node. It just wraps a BaseL10n
@@ -18,6 +19,11 @@ import java.io.File;
  * @author Artefact2
  */
 public class NodeL10n {
+
+	public static final String L10N_FILES_MASK = "freenet.l10n.${lang}.properties";
+
+	public static final String L10N_OVERRIDE_FILES_MASK
+		= "freenet.l10n.${lang}.override.properties";
 
 	private static BaseL10n b;
 
@@ -36,8 +42,16 @@ public class NodeL10n {
 	 * @see LANGUAGE#mapToLanguage(String)
 	 */
 	public NodeL10n(final LANGUAGE lang, File overrideDir) {
-		NodeL10n.b = new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties",
-		  overrideDir.getPath()+File.separator+"freenet.l10n.${lang}.override.properties", lang);
+		NodeL10n.b = new BaseL10n("freenet/l10n/", L10N_FILES_MASK,
+		  overrideDir.getPath()+File.separator+L10N_OVERRIDE_FILES_MASK, lang);
+	}
+
+	/**
+	 * Typically for unit test purposes only:
+	 * Constructor which supports overriding the default directory of the l10n files. */
+	public NodeL10n(final LANGUAGE lang, File l10nDir, File overrideDir) {
+		NodeL10n.b = new BaseL10n(l10nDir.toString(), L10N_FILES_MASK,
+			overrideDir.getPath()+File.separator+L10N_OVERRIDE_FILES_MASK, lang);
 	}
 
 	/**
