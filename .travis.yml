@@ -14,7 +14,7 @@ cache:
   - $HOME/.gradle/caches/
   - $HOME/.gradle/wrapper/
 
-before_script: echo -e "tasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
+before_install: echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
 
 jdk:
   - oraclejdk8
