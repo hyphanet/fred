@@ -261,9 +261,13 @@ public class N2NTMToadlet extends Toadlet {
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 
-	public static void createN2NTMSendForm(HTMLNode pageNode, boolean advancedMode,
+	public void createN2NTMSendForm(HTMLNode pageNode, boolean advancedMode,
 			HTMLNode contentNode, ToadletContext ctx, HashMap<String, String> peers)
 			throws ToadletContextClosedException, IOException {
+		final boolean fProxyJavascriptEnabled = node.isFProxyJavascriptEnabled();
+		if (fProxyJavascriptEnabled) {
+			contentNode.addChild("script", new String[] {"type", "src"}, new String[] {"text/javascript",  "/static/js/countletters.js"});
+		}
 		HTMLNode infobox = contentNode.addChild("div", new String[] { "class",
 				"id" }, new String[] { "infobox", "n2nbox" });
 		infobox.addChild("div", "class", "infobox-header", l10n("sendMessage"));
@@ -285,6 +289,14 @@ public class N2NTMToadlet extends Toadlet {
 		}
 		messageForm.addChild("textarea", new String[] { "id", "name", "rows",
 				"cols" }, new String[] { "n2ntmtext", "message", "8", "74" });
+		if (fProxyJavascriptEnabled) {
+			HTMLNode letterCountInfo = messageForm.addChild("div", new String[] {"class"}, new String[] {"n2ntmcountouter"});
+			letterCountInfo.addChild("#", NodeL10n.getBase().getString("N2NTMToadlet.remainingLetters"));
+			letterCountInfo.addChild("span", new String[] {"id"}, new String[] {"n2ntmcount"});
+			letterCountInfo.addChild("script", new String[] {"type"}, new String[] {"text/javascript"})
+				.addChild("%", "countletters(\"n2ntmtext\", \"n2ntmcount\");");
+		}
+		
 		messageForm.addChild("br");
 		messageForm.addChild("#", NodeL10n.getBase().getString("N2NTMToadlet.mayAttachFile"));
 		if(ctx.isAllowedFullAccess()) {

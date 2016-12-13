@@ -645,3 +645,12 @@ div.n2ntm-message-text {
 #statusbar div.infobox-header {
 	display: none;
 }
+
+.n2ntmcountouter {
+    pointer-events: none;
+    margin-top: -1.5em;
+    max-width: 190px;
+    padding: 0.28em;
+    text-align: left;
+    color: gray;
+}
