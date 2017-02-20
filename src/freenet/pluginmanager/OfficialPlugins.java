@@ -125,8 +125,9 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@3Ht6otYHogKxa1Z8SC0hz46kV9q1qaSBsjbJxuwPosU,txky3jF33oWU9n6YiGMphiHA1V9q3i4ZN0VPtgElSaI,AAMC--8/FlogHelper-v35.jar");
 			addPlugin("Sharesite")
 					.inGroup("communication")
+					.recommendedVersion(4)
 					.minimumVersion(2)
-					.loadedFrom("CHK@F2HY72tkYOCjn6JxipG3jumisfczBlDgn7HhQ~tz1zg,3ab-60XR~Zvcidvs0Qjb7rygTTXVrfx9A~3kZBvYT4k,AAMC--8/Sharesite-v0.2.7.jar");
+					.loadedFrom("CHK@MktEdCJqSCG~5LaI9f~3xoQjejZCEVraQlfzKRs-H3I,yI2mQDrN1omHqD6ZibXDTRqnCK~2ut4Q11p18J1~cGE,AAMC--8/Sharesite-0.4.4.jar");
 		} catch (MalformedURLException mue1) {
 			throw new RuntimeException("Could not create FreenetURI.", mue1);
 		}
