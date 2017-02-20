@@ -41,6 +41,9 @@ import freenet.support.io.LineReadingInputStream;
 
 public class WelcomeToadlet extends Toadlet {
 
+    /** Suffix {@link #path()} with "#" + BOOKMARKS_ANCHOR to deep link to the bookmark list */
+    public static final String BOOKMARKS_ANCHOR = "bookmarks";
+
     final Node node;
 
     private static volatile boolean logMINOR;
@@ -88,12 +91,26 @@ public class WelcomeToadlet extends Toadlet {
                     cell.addChild("#", " ");
                 }
                 cell = row.addChild("td", "style", "border: none");
-                cell.addChild("a", new String[]{"href", "title", "class"}, new String[]{ '/' + item.getKey(), item.getDescription(), "bookmark-title"}, item.getVisibleName());
+                
+                boolean updated = item.hasUpdated(); // We use it twice so copy for thread safety
+                String linkClass = updated ? "bookmark-title-updated" : "bookmark-title";
+                cell.addChild(
+                    "a",
+                    new String[]{"href", "title", "class"},
+                    new String[]{'/' + item.getKey(), item.getDescription(), linkClass},
+                    item.getVisibleName());
+                
                 String explain = item.getShortDescription();
                 if(explain != null && explain.length() > 0) {
                 	cell.addChild("#", " (");
                 	cell.addChild("#", explain);
                 	cell.addChild("#", ")");
+                }
+
+                if (updated) {
+                    cell = row.addChild("td", "style", "border: none");
+                    cell.addChild(node.clientCore.alerts.renderDismissButton(
+                        item.getUserAlert(), path() + "#" + BOOKMARKS_ANCHOR));
                 }
             }
         }
@@ -467,7 +484,7 @@ public class WelcomeToadlet extends Toadlet {
         HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
         
         
-        HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
+        HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", BOOKMARKS_ANCHOR);
 		if (ctx.isAllowedFullAccess() || !ctx.getContainer().publicGatewayMode()) {
 			addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), ctx);
 		}
