@@ -97,9 +97,10 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@SjXgPC5IEZa2g7a6gIKmNuxEKN4~eWrPhIwsznmGV-8,QUxm9R3sp3mNwhEHhL8mlx9zbOhIqIyR93tu7jD~0EU,AAMC--8/Freereader-6.jar");
 			addPlugin("Library")
 					.inGroup("index")
+					.recommendedVersion(37)
 					.minimumVersion(36)
 					.usesXml()
-					.loadedFrom("CHK@DB~oyn9M5B3Yx1B80qJbp-qp~434cxDERtgnxyhSfZ8,WRc11UVdhU4phf688oledQIV8BrNn3nvR9bVCVB-pM0,AAMC--8/Library-v36.jar");
+					.loadedFrom("CHK@qh6MyHn0umAm5luL3Ak1dJxj39vGJeiLp6KdtPTng08,PRwIA7m8bhMsbhMR8M6wWmd4iH~op3ImjsdCW1XBGmQ,AAMC--8/Library-v37.jar");
 			addPlugin("Spider")
 					.inGroup("index")
 					.minimumVersion(52)
