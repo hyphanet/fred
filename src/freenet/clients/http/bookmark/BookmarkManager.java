@@ -25,6 +25,7 @@ import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
+import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -109,6 +110,15 @@ public class BookmarkManager implements RequestClient {
 			putPaths("\\", DEFAULT_CATEGORY);
 			readBookmarks(DEFAULT_CATEGORY, DEFAULT_BOOKMARKS);
 		}
+		
+		SemiOrderedShutdownHook.get().addEarlyJob(new Thread() {
+			BookmarkManager bm = BookmarkManager.this;
+			
+			@Override public void run() {
+				bm.storeBookmarks();
+				bm = null;
+			}
+		});
 	}
 
 	public void reAddDefaultBookmarks() {
@@ -407,10 +417,11 @@ public class BookmarkManager implements RequestClient {
 				for(int i = 0; i < nbBookmarks; i++) {
 					SimpleFieldSet subset = sfs.getSubset(BookmarkItem.NAME + i);
 					try {
-						BookmarkItem item = new BookmarkItem(subset, node.alerts);
+						BookmarkItem item = new BookmarkItem(subset, this, node.alerts);
 						String name = (isRoot ? "" : prefix + category.name) + '/' + item.name;
 						putPaths(name, item);
 						category.addBookmark(item);
+						item.registerUserAlert();
 						subscribeToUSK(item);
 					} catch(MalformedURLException e) {
 						throw new FSParseException(e);

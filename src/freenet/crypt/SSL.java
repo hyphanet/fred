@@ -31,6 +31,7 @@ import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.util.Arrays;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.KeyManagerFactory;
@@ -45,6 +46,17 @@ import freenet.support.io.Closer;
 import java.net.ServerSocket;
 
 public class SSL {
+
+	private static final String KEY_ALGORITHM = "EC";
+	private static final int KEY_SIZE = 256;
+	private static final String SIG_ALGORITHM = "SHA256WithECDSA";
+
+	private static final long CERTIFICATE_LIFETIME = 10 * 365 * 24 * 60 * 60; // 10 years
+	private static final String CERTIFICATE_CN = "Freenet";
+	private static final String CERTIFICATE_OU = "Freenet";
+	private static final String CERTIFICATE_ON = "Freenet";
+
+	private static final String CHAIN_ALIAS = "freenet";
 
 	private static volatile boolean enable;
 	private static KeyStore keystore;
@@ -88,7 +100,7 @@ public class SSL {
 							} catch(Exception e) {
 								enable = false;
 								e.printStackTrace(System.out);
-								throw new InvalidConfigValueException("Cannot enabled ssl, config error");
+								throwConfigError("SSL could not be enabled", e);
 							}
 						else {
 							ssf = null;
@@ -116,7 +128,7 @@ public class SSL {
 						} catch(Exception e) {
 							keyStore = oldKeyStore;
 							e.printStackTrace(System.out);
-							throw new InvalidConfigValueException("Cannot change keystore file");
+							throwConfigError("Keystore file could not be changed", e);
 						}
 					}
 				}
@@ -140,7 +152,7 @@ public class SSL {
 						} catch(Exception e) {
 							keyStorePass = oldKeyStorePass;
 							e.printStackTrace(System.out);
-							throw new InvalidConfigValueException("Cannot change keystore password");
+							throwConfigError("Keystore password could not be changed", e);
 						}
 					}
 				}
@@ -160,14 +172,14 @@ public class SSL {
 						String oldKeyPass = keyPass;
 						keyPass = newKeyPass;
 						try {
-							Certificate[] chain = keystore.getCertificateChain("freenet");
-							Key privKey = keystore.getKey("freenet", oldKeyPass.toCharArray());
-							keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
+							Certificate[] chain = keystore.getCertificateChain(CHAIN_ALIAS);
+							Key privKey = keystore.getKey(CHAIN_ALIAS, oldKeyPass.toCharArray());
+							keystore.setKeyEntry(CHAIN_ALIAS, privKey, keyPass.toCharArray(), chain);
 							createSSLContext();
 						} catch(Exception e) {
 							keyPass = oldKeyPass;
 							e.printStackTrace(System.out);
-							throw new InvalidConfigValueException("Cannot change private key password");
+							throwConfigError("Private key password could not be changed", e);
 						}
 					}
 				}
@@ -183,7 +195,7 @@ public class SSL {
 			loadKeyStore();
 			createSSLContext();
 		} catch(Exception e) {
-			Logger.error(SSL.class, "Cannot load keystore, ssl is disable", e);
+			Logger.error(SSL.class, "Keystore cannot be loaded, SSL will be disabled", e);
 		}
 		sslConfig.finishedInitialization();
 
@@ -212,17 +224,20 @@ public class SSL {
 				// If keystore not exist, create keystore and server certificate
 				keystore.load(null, keyStorePass.toCharArray());
 				try {
-					Class<?> certAndKeyGenClazz = Class.forName("sun.security.x509.CertAndKeyGen");
-					Constructor<?> certAndKeyGenCtor = certAndKeyGenClazz.getConstructor(String.class, String.class);
-					Object keypair = certAndKeyGenCtor.newInstance("RSA", "SHA1WithRSA");
+					Class<?> certAndKeyGenClazz = anyClass(
+						"sun.security.x509.CertAndKeyGen", // Java 7 and earlier
+						"sun.security.tools.keytool.CertAndKeyGen" // Java 8 and later
+					);
+					Constructor<?> certAndKeyGenCtor = certAndKeyGenClazz.getConstructor(String.class, String.class, String.class);
+					Object keypair = certAndKeyGenCtor.newInstance(KEY_ALGORITHM, SIG_ALGORITHM, "BC");
 
 					Class<?> x500NameClazz = Class.forName("sun.security.x509.X500Name");
 					Constructor<?> x500NameCtor = x500NameClazz.getConstructor(String.class, String.class,
 					        String.class, String.class, String.class, String.class);
-					Object x500Name = x500NameCtor.newInstance("Freenet", "Freenet", "Freenet", "", "", "");
+					Object x500Name = x500NameCtor.newInstance(CERTIFICATE_CN, CERTIFICATE_OU, CERTIFICATE_ON, "", "", "");
 					
 					Method certAndKeyGenGenerate = certAndKeyGenClazz.getMethod("generate", int.class);
-					certAndKeyGenGenerate.invoke(keypair, 2048);
+					certAndKeyGenGenerate.invoke(keypair, KEY_SIZE);
 					
 					Method certAndKeyGetPrivateKey = certAndKeyGenClazz.getMethod("getPrivateKey");
 					PrivateKey privKey = (PrivateKey) certAndKeyGetPrivateKey.invoke(keypair);
@@ -230,16 +245,16 @@ public class SSL {
 					Certificate[] chain = new Certificate[1];
 					Method certAndKeyGenGetSelfCertificate = certAndKeyGenClazz.getMethod("getSelfCertificate",
 					        x500NameClazz, long.class);
-					chain[0] = (Certificate) certAndKeyGenGetSelfCertificate.invoke(keypair, x500Name, 1L * 365 * 24
-					        * 60 * 60);
+					chain[0] = (Certificate) certAndKeyGenGetSelfCertificate.invoke(keypair, x500Name,
+						CERTIFICATE_LIFETIME);
 
 					keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
 					storeKeyStore();
 					createSSLContext();
 				} catch (ClassNotFoundException cnfe) {
-					throw new UnsupportedOperationException("The JVM you are using is not supported!", cnfe);
+					throw new UnsupportedOperationException("The JVM you are using does not support generating strong SSL certificates", cnfe);
 				} catch (NoSuchMethodException nsme) {
-					throw new UnsupportedOperationException("The JVM you are using is not supported!", nsme);
+					throw new UnsupportedOperationException("The JVM you are using does not support generating strong SSL certificates", nsme);
 				}
 			} finally {
 				Closer.close(fis);
@@ -267,11 +282,31 @@ public class SSL {
 			kmf.init(keystore, keyPass.toCharArray());
 			// An SSLContext is an environment for implementing JSSE
 			// It is used to create a ServerSocketFactory
-			SSLContext sslc = SSLContext.getInstance("TLSv1");
+			SSLContext sslc = SSLContext.getInstance("TLSv1.2");
 			// Initialize the SSLContext to work with our key managers
 			// FIXME: should we pass yarrow in here?
 			sslc.init(kmf.getKeyManagers(), null, null);
 			ssf = sslc.getServerSocketFactory();
 		}
+	}
+
+	private static Class<?> anyClass(String... names) throws ClassNotFoundException {
+		for (String clazz : names) {
+			try {
+				return Class.forName(clazz);
+			} catch (ClassNotFoundException e) {
+				Logger.minor(SSL.class, "Class " + clazz + " not found", e);
+			}
+		}
+		throw new ClassNotFoundException("Any of " + Arrays.toString(names));
+	}
+
+	private static void throwConfigError(String message, Throwable cause)
+			throws InvalidConfigValueException {
+		String causeMsg = cause.getMessage();
+		if (causeMsg == null) {
+			causeMsg = cause.toString();
+		}
+		throw new InvalidConfigValueException(String.format("%s: %s", message, causeMsg));
 	}
 }

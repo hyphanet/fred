@@ -401,7 +401,10 @@ public class BookmarkEditorToadlet extends Toadlet {
 						if (!isValidName(name)) {
               addNameError(pageMaker, content);
 						} else
-							newBookmark = new BookmarkItem(key, name, req.getPartAsStringFailsafe("descB", MAX_KEY_LENGTH), req.getPartAsStringFailsafe("explain", MAX_EXPLANATION_LENGTH), hasAnActivelink, ctx.getAlertManager());
+							newBookmark = new BookmarkItem(key, name,
+							        req.getPartAsStringFailsafe("descB", MAX_KEY_LENGTH),
+							        req.getPartAsStringFailsafe("explain", MAX_EXPLANATION_LENGTH),
+							        hasAnActivelink, bookmarkManager, ctx.getAlertManager());
 					} else
 						if (!isValidName(name)) {
               addNameError(pageMaker, content);

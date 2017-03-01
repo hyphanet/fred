@@ -24,8 +24,8 @@ import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.FredPluginConfigurable;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.MultiValueTable;
 import freenet.support.Logger.LogLevel;
+import freenet.support.MultiValueTable;
 import freenet.support.URLEncoder;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
@@ -555,8 +555,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				String defaultValue;
 				if (callback instanceof BooleanCallback) {
 					// Only case where values are localised.
-					defaultValue = l10n(Boolean
-							.toString(Boolean.valueOf(value)));
+					defaultValue = l10n(o.getDefault());
 				} else {
 					defaultValue = o.getDefault();
 				}
