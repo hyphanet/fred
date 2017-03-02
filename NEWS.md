@@ -1,16 +1,78 @@
 next ():
 
-- Add a NEWS file
-- Sort alerts within a category by time, newest first (including node-to-node messages).
-- Optimize CSS to load everything but the first theme in parallel
-- Tighten security (Remove DSA and compat code).
-- Only update essential plugins if we have to.
-- Improve translations.
-- Show peer locations, not distance in peer location histogram.
-- Add much more CSS support to the content filter.
-- Fix problems with blank bookmark names. Thanks to _xiaoyu for the report!
-- Fix missing the software category in bookmarks.
-- Fix caching of static assets
+- switch to gradle with witness as build system
+- run in background mode
+- switch from jni to jna
+- Override list request identifier
+- use fallocate
+- ipv6 fixes
+- fix warnings
+- optimization
+
+master ():
+
+- FOAF efficiency enhancements for fast nodes
+- gif filter
+- ssl fixes
+- logger fix
+- spare bitmap efficiency
+- reduce custom code
+- show semi-persistent update info next to bookmarks
+- plugin updates: Sharesite 0.4.4, Library v37, Freereader 6
+
+1475 (2016-06-25):
+
+- 0006745: Disk crypto: Should type password twice when setting it
+- 0006344: Change default compatibility mode to COMPAT_1466
+- 0006488: using “visit freesite” to visit a freesite with a hash (#) fails instead of opening it and jumping to the anchor.
+- fix a critical bug: prevent announcement loops
+- drop support for negtype9 (non-cummulative ack logic)
+- start to warn user that java7 is EOL
+- PluginInfoMessage: Fix wrong "does not provide FCP" info about plugins
+- Stop warning users that java9 isn't recent enough
+- Don't use FOAF if the HTL isn't high enough
+- Attempt to update update.sh
+- l10n improvements
+- cooldown improvements
+- load-limiting changes (token buckets)
+- MessageFilter improvements
+- relax the CSS parser (see https://github.com/freenet/fred/pull/446)
+- support for HTML Audio tags
+- ask/confirm the disk-crypto password in the wizard
+- make the paste-a-key control usable on the WelcomeToadlet
+- the default compatibility mode for inserts is now COMPAT_CURRENT
+- remove the DSA related parameters from noderefs
+- Fix a major bug that might explain the poor connectivity since 1473
+
+1473 (2016-05-22):
+
+- MP3 filter fixes
+- Reduce test memory usage
+- Fix opennet announcements not having location set
+- Fix binary blob download over FCP
+- Add The Filtered Index to the default bookmark list
+- Wait for running transfers on RouteNotFound
+- Mark Freenet traffic with QoS
+- Fix handling of filenames with non-ASCII spaces
+
+1472 (2016-03-19):
+
+- Fix uploads stalling when using MAXIMUM physical security.
+- Fix lots of "setNativePriority(X) has failed!", which was caused by a serious thread priority problem. This might fix nodes unexpectedly losing peers.
+- Order alerts within a category by time: if you have lots of messages from darknet peers they will remain nicely sorted.
+- There is now a caching layer which should significantly reduce I/O load.
+- Update WebOfTrust from build 15 to build 18. Its changelogs are separate, but the changes reduce CPU load. Incremental score recomputation requires roughly 3 percent of the time of full recomputation, and queuing trust lists to disk lowers thread usage.
+- Add partial Greek translation.
+- Update German, Bokmål, Brazilian Portuguese, Simplified Chinese, and Traditional Chinese translations.
+- Fix Bokmål localization loading.
+- Remove Gantros Index from the default bookmark list because it stopped updating.
+- Remove Linkageddon from the default bookmark list because it stopped updating.
+- New version of UPnP to fix some instability and compatibility problems. Thanks to 007pig we have a new UPnP plugin in development which supports UPnP2, but it is not yet included.
+- New version of KeyUtils.
+
+1471 (--):
+
+- (skipped)
 
 1470 (2015-08-15):
 
