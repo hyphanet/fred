@@ -36,3 +36,4 @@ deploy:
   skip_cleanup: true
   on:
     branch: next
+    jdk: oraclejdk7
