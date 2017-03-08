@@ -11,6 +11,16 @@ next ():
 
 master ():
 
+-
+
+1477 (2017-03-09):
+
+- fix clickjacking vulnerability
+- patch open redirect and header injection vulnerability introduced in 1476
+- fix SSL which broke with Java7 due to missing cypher
+
+1476 (2017-03-02):
+
 - FOAF efficiency enhancements for fast nodes
 - gif filter
 - ssl fixes
