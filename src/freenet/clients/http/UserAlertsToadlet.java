@@ -60,9 +60,9 @@ public class UserAlertsToadlet extends Toadlet {
 		}
 		// hard whitelist of allowed origins to avoid https://www.owasp.org/index.php/Unvalidated_Redirects_and_Forwards_Cheat_Sheet
 		// TODO: Parse the URL to ensure that it is a valid fproxy URL
-		if (!("alerts".equals(redirect) |
-		      "".equals(redirect) |
-		      "#bookmarks".equals(redirect))) {
+		if (!("/alerts/".equals(redirect) |
+		      "/".equals(redirect) |
+		      "/#bookmarks".equals(redirect))) {
 		    redirect = ".";
 		}
 		headers.put("Location", redirect);
