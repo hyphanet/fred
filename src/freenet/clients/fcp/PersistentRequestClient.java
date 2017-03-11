@@ -191,7 +191,7 @@ public class PersistentRequestClient {
 		int i = 0;
 		for(i=offset;i<Math.min(reqs.length,offset+max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
-			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, listRequestIdentifier, true, false, false);
+			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, listRequestIdentifier, false, false);
 		}
 		return i;
 	}
@@ -207,7 +207,7 @@ public class PersistentRequestClient {
 		int i = 0;
 		for(i=offset;i<Math.min(reqs.length,offset+max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
-			req.sendPendingMessages(outputHandler, listRequestIdentifier, true, false, false);
+			req.sendPendingMessages(outputHandler, listRequestIdentifier, false, false);
 		}
 		return i;
 	}
