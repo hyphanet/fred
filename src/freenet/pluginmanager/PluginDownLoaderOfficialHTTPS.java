@@ -28,7 +28,9 @@ import freenet.support.io.FileUtil;
 
 public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 	private static final String certurlNew = "freenet/clients/http/staticfiles/globalsign.pem";
-	private static final String[] certURLs = new String[] { certurlNew };
+	// amazon root certificate, so we can rekey the S3-based site more easily
+	private static final String certurl2017 = "freenet/clients/http/staticfiles/rds-ca-2015-root.pem";
+	private static final String[] certURLs = new String[] { certurlNew, certurl2017};
 	public static final String certfileOld = "startssl.pem";
 	private static final String certfile = "sslcerts.pem";
 
