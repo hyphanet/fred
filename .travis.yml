@@ -32,9 +32,16 @@ before_deploy:
   - "./gradlew javadoc"
   - "pip install --user awscli"
 deploy:
-  provider: script
-  script: ~/.local/bin/aws s3 sync --region=us-east-1 --cache-control "public, max-age=86400" --content-encoding utf-8 --delete build/docs/javadoc/ s3://website-javadoc.freenetproject.org
-  skip_cleanup: true
-  on:
-    branch: next
-    jdk: oraclejdk7
+  - provider: script
+    script: ~/.local/bin/aws s3 sync --region=us-east-1 --cache-control "public, max-age=86400" --content-encoding utf-8 --delete build/docs/javadoc/ s3://website-javadoc.freenetproject.org
+    skip_cleanup: true
+    on:
+      branch: next
+      jdk: oraclejdk7
+  - provider: transifex
+    username: freenet_travis
+    password:
+      secure: "LSqNvZhWz3ULX8YnjkqwNLxcdyvTBPJPqleKoyHODJI2blWI5DUyM61RcIn8BlCOl4euShGPcgA4jbjLozWBhpICMdBdwIi8l5eomw9fvFHYAHnaq5kRA5WZ9I6MUHKZhDn2Am8z7FJCgUks6YIq8jmZTrQ1nos6uzSYASnJcSk="
+    on:
+      branch: next
+      jdk: oraclejdk8
