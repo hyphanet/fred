@@ -44,4 +44,4 @@ deploy:
       secure: "LSqNvZhWz3ULX8YnjkqwNLxcdyvTBPJPqleKoyHODJI2blWI5DUyM61RcIn8BlCOl4euShGPcgA4jbjLozWBhpICMdBdwIi8l5eomw9fvFHYAHnaq5kRA5WZ9I6MUHKZhDn2Am8z7FJCgUks6YIq8jmZTrQ1nos6uzSYASnJcSk="
     on:
       branch: next
-      jdk: oraclejdk8
+      jdk: openjdk7
