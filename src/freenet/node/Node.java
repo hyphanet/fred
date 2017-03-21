@@ -1666,7 +1666,7 @@ public class Node implements TimeSkewDetectorCallback {
 		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, databaseKey, persistentSecret);
 		toadlets.setCore(clientCore);
 
-		if (JVMVersion.isTooOld()) {
+		if (JVMVersion.isEOL()) {
 			clientCore.alerts.register(new JVMVersionAlert());
 		}
 
