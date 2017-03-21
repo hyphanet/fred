@@ -16,7 +16,7 @@ public class JVMVersion {
 	/**
 	 * Pre-9 is formatted as: major.feature[.maintenance[_update]]-ident
 	 * Post-9 is formatted as: major[.minor[.security[. ...]]]-ident
-	 * For comparison of compatibility, information beyong the major, feature/minor,
+	 * For comparison of compatibility, information beyond the major, feature/minor,
 	 * maintenance/security and pre-9 update fields should not be of interest.
 	 * We find a common denominator in major(.a(.b([._]c)?)?)?, skipping any additional postfix.
 	 * The regex omits leading zeroes.
