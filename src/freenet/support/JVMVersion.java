@@ -11,7 +11,16 @@ import java.util.regex.Pattern;
  * http://openjdk.java.net/jeps/223 (post-9)
  */
 public class JVMVersion {
-	public static final String REQUIRED = "1.8";
+	/**
+	 * Java version before which to display an End-of-Life warning. Subsequent releases of Freenet will function with
+	 * them, but that may soon not be the case.
+	 */
+	public static final String EOL_THRESHOLD = "1.8";
+
+	/**
+	 * Java version before which to use the legacy updater URI.
+	 */
+	public static final String UPDATER_THRESHOLD = "1.7";
 
 	/**
 	 * Pre-9 is formatted as: major.feature[.maintenance[_update]]-ident
@@ -24,18 +33,30 @@ public class JVMVersion {
 	private static final Pattern VERSION_PATTERN =
 	    Pattern.compile("^0*(\\d+)(?:\\.0*(\\d+)(?:\\.0*(\\d+)(?:[_.]0*(\\d+))?)?)?.*$");
 
-	public static boolean isTooOld() {
-		return isTooOld(getCurrent());
+	public static boolean isEOL() {
+		return isEOL(getCurrent());
+	}
+
+	public static boolean needsLegacyUpdater() {
+		return needsLegacyUpdater(getCurrent());
 	}
 
 	public static String getCurrent() {
 		return System.getProperty("java.version");
 	}
 
-	static boolean isTooOld(String version) {
+	static boolean isEOL(String version) {
 		if (version == null) return false;
 
-		return compareVersion(version, REQUIRED) < 0;
+		return compareVersion(version, EOL_THRESHOLD) < 0;
+	}
+
+	static boolean needsLegacyUpdater(String version) {
+		if (version == null) {
+			return false;
+		}
+
+		return compareVersion(version, UPDATER_THRESHOLD) < 0;
 	}
 
 	public static final boolean is32Bit() {
