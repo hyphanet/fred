@@ -38,9 +38,3 @@ deploy:
     on:
       branch: next
       jdk: oraclejdk7
-  - provider: script
-    script: tx push --source --no-interactive
-    skip_cleanup: true
-    on:
-      branch: next
-      jdk: openjdk7
