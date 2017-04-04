@@ -201,7 +201,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			ret = new NullBucket();
 		} else {
 		    targetFile = null;
-		    ret = null; // Let the ClientGetter allocate the Bucket later on.
+			if(binaryBlob)
+				ret = core.clientContext.getBucketFactory(persistence == Persistence.FOREVER).makeBucket(-1);
+			else
+				ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
 		this.extensionCheck = extensionCheck;
 		this.initialMetadata = null;
@@ -261,7 +264,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			ret = new NullBucket();
         } else {
             targetFile = null;
-            ret = null; // Let the ClientGetter allocate the Bucket later on.
+			if(binaryBlob)
+				try {
+					ret = core.clientContext.getBucketFactory(persistence == Persistence.FOREVER).makeBucket(-1);
+				} catch (IOException e) {
+					Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
+					throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Cannot create bucket for temporary storage (out of disk space???): "+e, identifier, global);
+				}
+			else
+				ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
 		this.extensionCheck = extensionCheck;
 		initialMetadata = message.getInitialMetadata();
