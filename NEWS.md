@@ -13,6 +13,10 @@ master ():
 
 -
 
+1478 (2017-04-05):
+
+- prepare pinned certs for the new Amazon-web-services based site.
+
 1477 (2017-03-09):
 
 - fix clickjacking vulnerability
