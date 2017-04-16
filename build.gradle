@@ -28,7 +28,7 @@ publishing {
     }
     repositories {
         maven {
-            "http://mvn.freenetproject.org"
+            "https://mvn.freenetproject.org"
         }
     }
 }
@@ -45,7 +45,7 @@ repositories {
 uploadArchives {
     repositories {
         mavenDeployer {
-            repository(url: "http://mvn.freenetproject.org")
+            repository(url: "https://mvn.freenetproject.org")
         }
     }
 }
