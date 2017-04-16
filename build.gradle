@@ -13,13 +13,41 @@ configurations {
     compile
 }
 
+group = 'org.freenetproject'
+
 apply plugin: 'witness'
 apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'maven'
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            "http://mvn.freenetproject.org"
+        }
+    }
+}
 
 repositories {
+	flatDir {
+		dirs 'lib/freenet'
+		}
     jcenter()
     mavenLocal() // TODO: use lib/ instead?
     maven { url 'https://mvn.freenetproject.org' }
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "http://mvn.freenetproject.org")
+        }
+    }
 }
 
 sourceSets {
