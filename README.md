@@ -12,7 +12,7 @@ Freenet web interface at http://127.0.0.1:8888/
 
 For building Freenet, see [Building](README.building.md)
 
-Short guidelines for contributing improvements are in [Contirubing](CONTRIBUTING.md)
+Short guidelines for contributing improvements are in [Contributing](CONTRIBUTING.md)
 
 ## Introduction
 
