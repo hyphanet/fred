@@ -41,9 +41,8 @@ faq, please join us on IRC in the #freenet channel at irc.freenode.net.
 
 Part of our work is funded through donations 
 via our website (as well as a few larger sponsors from time to time). 
-If you can, please visit our donations page and make a contribution at:
+If you can, please visit our [Donations](https://freenetproject.org/donate.html) page and make a contribution.
 
-[Donate](https://freenetproject.org/donate.html)
 
 Press enquiries should be directed at press@freenetproject.org
 
