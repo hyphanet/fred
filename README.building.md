@@ -1,8 +1,8 @@
 ## Building Freenet from source: Short version
 
 Install Gradle:
-For Debian based distros, `sudo apt-get install gradle`.
-For CentOS, `sudo yum install gradle` will install all of the above.
+        For Debian based distros, `sudo apt-get install gradle`.
+        For CentOS, `sudo yum install gradle`.
 
 Then just execute `gradle jar`.
 
