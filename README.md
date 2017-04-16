@@ -3,16 +3,16 @@
 
 ## Quickstart
 
-To install Freenet, use the installer from https://freenetproject.org
+To install Freenet, use the installer from [Freenet Project](https://freenetproject.org)
 
 If the installer did not open a browser with Freenet, start Freenet and access the
 Freenet web interface at http://127.0.0.1:8888/
 
 ## Contributing
 
-For building Freenet, see README.building.md
+For building Freenet, see [Building](README.building.md)
 
-Short guidelines for contributing improvements are in CONTRIBUTING.md
+Short guidelines for contributing improvements are in [Contributing](CONTRIBUTING.md)
 
 ## Introduction
 
@@ -34,16 +34,15 @@ Also it allows users to let Freenet connect only to friends. This makes it far m
 difficult for a third-party to determine who is using Freenet and as such makes it harder
 to punish people just for using Freenet.
 
-Get Freenet via https://freenetproject.org/download.html#autostart
+Get Freenet via [Freenet Downloads](https://freenetproject.org/download.html#autostart)
 
 If you have any difficulty getting Freenet to work, or any questions not answered in the 
 faq, please join us on IRC in the #freenet channel at irc.freenode.net.
 
 Part of our work is funded through donations 
 via our website (as well as a few larger sponsors from time to time). 
-If you can, please visit our donations page and make a contribution at:
+If you can, please visit our [Donations](https://freenetproject.org/donate.html) page and make a contribution.
 
-https://freenetproject.org/donate.html
 
 Press enquiries should be directed at press@freenetproject.org
 
