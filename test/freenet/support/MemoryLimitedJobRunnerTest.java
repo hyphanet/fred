@@ -8,24 +8,10 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
     
     final Executor executor = new PooledExecutor();
     
-    class SynchronousJob extends MemoryLimitedJob {
-        
-        private boolean canStart;
-        private boolean isStarted;
-        private boolean canFinish;
-        private boolean isFinished;
-        private final Object completionSemaphore;
+    class SynchronousJob extends MemoryLimitedTestJob {
         
         SynchronousJob(long size, boolean canStart, Object semaphore) {
-            super(size);
-            this.canStart = canStart;
-            canFinish = false;
-            completionSemaphore = semaphore;
-        }
-
-        @Override
-        public int getPriority() {
-            return NativeThread.NORM_PRIORITY;
+            super(size, canStart, semaphore);
         }
 
         @Override
@@ -48,8 +34,28 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
             checkRunner(runner);
             return true;
         }
+    }
 
-        private synchronized void waitForCanFinish() {
+    abstract class MemoryLimitedTestJob extends MemoryLimitedJob {
+        protected boolean canStart;
+        protected boolean isStarted;
+        protected boolean canFinish;
+        protected boolean isFinished;
+        protected final Object completionSemaphore;
+
+        MemoryLimitedTestJob(long size, boolean canStart, Object semaphore) {
+            super(size);
+            this.canStart = canStart;
+            canFinish = false;
+            completionSemaphore = semaphore;
+        }
+
+        @Override
+        public int getPriority() {
+            return NativeThread.NORM_PRIORITY;
+        }
+
+        protected synchronized void waitForCanFinish() {
             while(!canFinish)
                 try {
                     wait();
@@ -58,7 +64,7 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
                 }
         }
 
-        private synchronized void waitForCanStart() {
+        protected synchronized void waitForCanStart() {
             while(!canStart)
                 try {
                     wait();
@@ -111,23 +117,7 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
         SynchronousJob[] jobs = new SynchronousJob[JOB_COUNT];
         final Object completion = new Object();
         for(int i=0;i<jobs.length;i++) jobs[i] = new SynchronousJob(JOB_SIZE, startLive, completion);
-        // If it all fits, run all the jobs at once. If some are going to be queued, use a small thread limit.
-        int maxThreads = JOB_COUNT <= JOB_LIMIT ? JOB_COUNT : 10;
-        MemoryLimitedJobRunner runner = new MemoryLimitedJobRunner(JOB_LIMIT, maxThreads, executor, NativeThread.JAVA_PRIORITY_RANGE);
-        for(SynchronousJob job : jobs)
-            runner.queueJob(job);
-        Thread.sleep(100);
-        assertTrue(noneFinished(jobs));
-        if(!startLive) {
-            for(SynchronousJob job : jobs)
-                job.setCanStart();
-        }
-        if(JOB_COUNT <= JOB_LIMIT)
-            waitForAllStarted(jobs, completion);
-        for(SynchronousJob job : jobs)
-            job.setCanFinish();
-        waitForAllFinished(jobs, completion);
-        waitForZero(runner);
+        runJobs(jobs, JOB_COUNT, JOB_LIMIT, completion, startLive);
     }
     
     private void waitForZero(MemoryLimitedJobRunner runner) {
@@ -143,7 +133,7 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
 
     // FIXME start the executor immediately.
     
-    private void waitForAllFinished(SynchronousJob[] jobs, Object semaphore) {
+    private void waitForAllFinished(MemoryLimitedTestJob[] jobs, Object semaphore) {
         synchronized(semaphore) {
             while(true) {
                 if(allFinished(jobs)) return;
@@ -156,7 +146,7 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
         }
     }
 
-    private void waitForAllStarted(SynchronousJob[] jobs, Object semaphore) {
+    private void waitForAllStarted(MemoryLimitedTestJob[] jobs, Object semaphore) {
         synchronized(semaphore) {
             while(true) {
                 if(allStarted(jobs)) return;
@@ -169,45 +159,31 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
         }
     }
 
-    private boolean allFinished(SynchronousJob[] jobs) {
-        for(SynchronousJob job : jobs) {
+    private boolean allFinished(MemoryLimitedTestJob[] jobs) {
+        for(MemoryLimitedTestJob job : jobs) {
             if(!job.isFinished()) return false;
         }
         return true;
     }
 
-    private boolean allStarted(SynchronousJob[] jobs) {
-        for(SynchronousJob job : jobs) {
+    private boolean allStarted(MemoryLimitedTestJob[] jobs) {
+        for(MemoryLimitedTestJob job : jobs) {
             if(!job.isStarted()) return false;
         }
         return true;
     }
 
-    private boolean noneFinished(SynchronousJob[] jobs) {
-        for(SynchronousJob job : jobs) {
+    private boolean noneFinished(MemoryLimitedTestJob[] jobs) {
+        for(MemoryLimitedTestJob job : jobs) {
             if(job.isFinished()) return false;
         }
         return true;
     }
 
-    class AsynchronousJob extends MemoryLimitedJob {
-        
-        private boolean canStart;
-        private boolean isStarted;
-        private boolean canFinish;
-        private boolean isFinished;
-        private final Object completionSemaphore;
+    class AsynchronousJob extends MemoryLimitedTestJob {
         
         AsynchronousJob(long size, boolean canStart, Object semaphore) {
-            super(size);
-            this.canStart = canStart;
-            canFinish = false;
-            completionSemaphore = semaphore;
-        }
-
-        @Override
-        public int getPriority() {
-            return NativeThread.NORM_PRIORITY;
+            super(size, canStart, semaphore);
         }
 
         @Override
@@ -242,49 +218,6 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
             t.start();
             return false;
         }
-
-        private synchronized void waitForCanFinish() {
-            while(!canFinish)
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    // Ignore.
-                }
-        }
-
-        private synchronized void waitForCanStart() {
-            while(!canStart)
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    // Ignore.
-                }
-        }
-
-        public boolean isFinished() {
-            synchronized(completionSemaphore) {
-                return isFinished;
-            }
-        }
-        
-        public boolean isStarted() {
-            synchronized(completionSemaphore) {
-                return isStarted;
-            }
-        }
-        
-        public synchronized void setCanStart() {
-            if(canStart) throw new IllegalStateException();
-            canStart = true;
-            notify();
-        }
-        
-        public synchronized void setCanFinish() {
-            if(canFinish) throw new IllegalStateException();
-            canFinish = true;
-            notify();
-        }
-        
     }
     
     public void testAsyncQueueingSmallDelayed() throws InterruptedException {
@@ -302,25 +235,30 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
     
     private void innerTestAsyncQueueingSmallDelayed(int JOB_SIZE, int JOB_COUNT, int JOB_LIMIT,
             boolean startLive) throws InterruptedException {
-        SynchronousJob[] jobs = new SynchronousJob[JOB_COUNT];
+        AsynchronousJob[] jobs = new AsynchronousJob[JOB_COUNT];
         final Object completion = new Object();
-        for(int i=0;i<jobs.length;i++) jobs[i] = new SynchronousJob(JOB_SIZE, startLive, completion);
+        for(int i=0;i<jobs.length;i++) jobs[i] = new AsynchronousJob(JOB_SIZE, startLive, completion);
+        runJobs(jobs, JOB_COUNT, JOB_LIMIT, completion, startLive);
+    }
+
+    private void runJobs(MemoryLimitedTestJob[] jobs, int JOB_COUNT, int JOB_LIMIT, Object
+            completionLock, boolean startLive) throws InterruptedException {
         // If it all fits, run all the jobs at once. If some are going to be queued, use a small thread limit.
         int maxThreads = JOB_COUNT <= JOB_LIMIT ? JOB_COUNT : 10;
         MemoryLimitedJobRunner runner = new MemoryLimitedJobRunner(JOB_LIMIT, maxThreads, executor, NativeThread.JAVA_PRIORITY_RANGE);
-        for(SynchronousJob job : jobs)
+        for(MemoryLimitedTestJob job : jobs)
             runner.queueJob(job);
         Thread.sleep(100);
         assertTrue(noneFinished(jobs));
         if(!startLive) {
-            for(SynchronousJob job : jobs)
+            for(MemoryLimitedTestJob job : jobs)
                 job.setCanStart();
         }
         if(JOB_COUNT <= JOB_LIMIT)
-            waitForAllStarted(jobs, completion);
-        for(SynchronousJob job : jobs)
+            waitForAllStarted(jobs, completionLock);
+        for(MemoryLimitedTestJob job : jobs)
             job.setCanFinish();
-        waitForAllFinished(jobs, completion);
+        waitForAllFinished(jobs, completionLock);
         waitForZero(runner);
     }
 
