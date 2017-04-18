@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="freenet-ext">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/freenet/freenet-ext.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/bcprov.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
