@@ -76,7 +76,7 @@ public class N2NTMToadlet extends Toadlet {
 			}
 			HashMap<String, String> peers = new HashMap<String, String>();
 			peers.put(input_hashcode_string, peernode_name);
-			createN2NTMSendForm(pageNode, ctx.isAdvancedModeEnabled(), contentNode, ctx, peers);
+			createN2NTMSendForm(pageNode, ctx.isAdvancedModeEnabled(), contentNode, ctx, peers, node.isFProxyJavascriptEnabled());
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
@@ -261,10 +261,17 @@ public class N2NTMToadlet extends Toadlet {
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 
-	public void createN2NTMSendForm(HTMLNode pageNode, boolean advancedMode,
-			HTMLNode contentNode, ToadletContext ctx, HashMap<String, String> peers)
+	public static void createN2NTMSendForm(HTMLNode pageNode, boolean advancedMode,
+										   HTMLNode contentNode, ToadletContext ctx, HashMap<String, String> peers)
 			throws ToadletContextClosedException, IOException {
-		final boolean fProxyJavascriptEnabled = node.isFProxyJavascriptEnabled();
+		// if we do not know whether javascript is enabled, assume that it is not (provides the old API).
+		createN2NTMSendForm(pageNode, advancedMode, contentNode, ctx, peers, false);
+	}
+	
+	public static void createN2NTMSendForm(HTMLNode pageNode, boolean advancedMode,
+										   HTMLNode contentNode, ToadletContext ctx,
+										   HashMap<String, String> peers, boolean fProxyJavascriptEnabled)
+			throws ToadletContextClosedException, IOException {
 		if (fProxyJavascriptEnabled) {
 			contentNode.addChild("script", new String[] {"type", "src"}, new String[] {"text/javascript",  "/static/js/countletters.js"});
 		}
