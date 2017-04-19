@@ -1,10 +1,11 @@
 /* -*- Mode: java; c-basic-indent: 4; tab-width: 4 -*- */
 package freenet.crypt;
 
+import com.squareup.jnagmp.GmpInteger;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.util.Arrays;
 
 import freenet.node.FSParseException;
@@ -17,14 +18,14 @@ import freenet.support.SimpleFieldSet;
 public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	private static final long serialVersionUID = -1;
-	private final BigInteger y;
+	private final GmpInteger y;
 	public static final int PADDED_SIZE = 1024;
 	public static final int HASH_LENGTH = 32;
 	/** Null means use Global.DSAgroupBigA. This makes persistence simpler. */
 	private final DSAGroup group;
 	private byte[] fingerprint = null;
 	
-	public DSAPublicKey(DSAGroup g, BigInteger y) {
+	public DSAPublicKey(DSAGroup g, GmpInteger y) {
 		if(y.signum() != 1)
 			throw new IllegalArgumentException();
 		this.y = y;
@@ -34,27 +35,27 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 			throw new IllegalArgumentException("y must be < p but y=" + y + " p=" + g.getP());
 	}
 
+	public DSAPublicKey(DSAGroup g, DSAPrivateKey p) {
+		this(g, new GmpInteger(g.getG().modPow(p.getX(), g.getP())));
+	}
+
 	/**
 	 * Use this constructor if you have a Hex:ed version of y already
 	 * available, will save some conversions and string allocations.
 	 */
 	public DSAPublicKey(DSAGroup g, String yAsHexString) throws NumberFormatException {
-		this.y = new BigInteger(yAsHexString, 16);
+		this.y = new GmpInteger(yAsHexString, 16);
 		if(y.signum() != 1)
 			throw new IllegalArgumentException();
 		if(g == Global.DSAgroupBigA) g = null;
 		this.group = g;
 	}
 
-	public DSAPublicKey(DSAGroup g, DSAPrivateKey p) {
-		this(g, g.getG().modPow(p.getX(), g.getP()));
-	}
-
 	public DSAPublicKey(InputStream is) throws IOException, CryptFormatException {
 		DSAGroup g = (DSAGroup) DSAGroup.read(is);
 		if(g == Global.DSAgroupBigA) g = null;
 		group = g;
-		y = Util.readMPI(is);
+		y = new GmpInteger(Util.readMPI(is));
 		if(y.compareTo(getGroup().getP()) > 0)
 			throw new IllegalArgumentException("y must be < p but y=" + y + " p=" + getGroup().getP());
 	}
@@ -65,7 +66,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	private DSAPublicKey(DSAPublicKey key) {
 		fingerprint = null; // regen when needed
-		this.y = new BigInteger(1, key.y.toByteArray());
+		this.y = new GmpInteger(1, key.y.toByteArray());
 		DSAGroup g = key.group;
 		if(g != null) g = g.cloneKey();
 		this.group = g;
@@ -78,26 +79,20 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 			throw new CryptFormatException(e);
 		}
 	}
-	
-	protected DSAPublicKey() {
-	    // For serialization.
-	    y = null;
-	    group = null;
-	}
 
-	public BigInteger getY() {
+	public GmpInteger getY() {
 		return y;
 	}
 
-	public BigInteger getP() {
+	public GmpInteger getP() {
 		return getGroup().getP();
 	}
 
-	public BigInteger getQ() {
+	public GmpInteger getQ() {
 		return getGroup().getQ();
 	}
 
-	public BigInteger getG() {
+	public GmpInteger getG() {
 		return getGroup().getG();
 	}
 
@@ -153,7 +148,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	public byte[] fingerprint() {
 		synchronized(this) {
 			if(fingerprint == null)
-				fingerprint = fingerprint(new BigInteger[]{y});
+				fingerprint = fingerprint(new GmpInteger[]{y});
 			return fingerprint;
 		}
 	}
@@ -192,9 +187,9 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	}
 
 	public static DSAPublicKey create(SimpleFieldSet set, DSAGroup group) throws FSParseException {
-		BigInteger x;
+		GmpInteger x;
 		try {
-			x = new BigInteger(1, Base64.decode(set.get("y")));
+			x = new GmpInteger(1, Base64.decode(set.get("y")));
 		} catch (IllegalBase64Exception e) {
 			throw new FSParseException(e);
 		}
