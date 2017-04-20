@@ -19,12 +19,7 @@ apply plugin: 'java'
 repositories {
     jcenter()
     mavenLocal() // TODO: use lib/ instead?
-    ivy {
-        url 'https://downloads.freenetproject.org/'
-        layout 'pattern', {
-            artifact '/latest/[module][revision].[ext]'
-        }
-    }
+    maven { url 'https://mvn.freenetproject.org' }
 }
 
 sourceSets {
@@ -176,7 +171,7 @@ test {
 dependencies {
     compile "org.bouncycastle:bcprov-jdk15on:1.56"
     compile "net.java.dev.jna:jna:4.2.2"
-    compile "org.freenetproject:freenet-ext@jar"
+    compile "org.freenetproject:freenet-ext:29"
 
     testCompile 'junit:junit:4.12'
     testCompile "org.mockito:mockito-core:1.9.5"
