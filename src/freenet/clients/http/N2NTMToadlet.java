@@ -286,7 +286,7 @@ public class N2NTMToadlet extends Toadlet {
 		for (String peer_name: peers.values()) {
 			messageTargetList.addChild("li", peer_name);
 		}
-		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content n2ntmcountedtext");
 		HTMLNode messageForm = ctx.addFormChild(infoboxContent, "/send_n2ntm/", "sendN2NTMForm");
 		// Iterate peers
 		for (String peerNodeHash : peers.keySet()) {
@@ -294,14 +294,12 @@ public class N2NTMToadlet extends Toadlet {
 					"value" }, new String[] { "hidden", "node_" + peerNodeHash,
 					"1" });
 		}
-		messageForm.addChild("textarea", new String[] { "id", "name", "rows",
-				"cols" }, new String[] { "n2ntmtext", "message", "8", "74" });
+		messageForm.addChild("textarea", new String[] { "id", "class", "name", "rows",
+					"cols" }, new String[] { "n2ntmtext", "n2ntmtextinput", "message", "8", "74" });
 		if (fProxyJavascriptEnabled) {
 			HTMLNode letterCountInfo = messageForm.addChild("div", new String[] {"class"}, new String[] {"n2ntmcountouter"});
 			letterCountInfo.addChild("#", NodeL10n.getBase().getString("N2NTMToadlet.remainingLetters"));
 			letterCountInfo.addChild("span", new String[] {"id"}, new String[] {"n2ntmcount"});
-			letterCountInfo.addChild("script", new String[] {"type"}, new String[] {"text/javascript"})
-				.addChild("%", "countletters(\"n2ntmtext\", \"n2ntmcount\");");
 		}
 		
 		messageForm.addChild("br");
