@@ -299,7 +299,7 @@ public class N2NTMToadlet extends Toadlet {
 		if (fProxyJavascriptEnabled) {
 			HTMLNode letterCountInfo = messageForm.addChild("div", new String[] {"class"}, new String[] {"n2ntmcountouter"});
 			letterCountInfo.addChild("#", NodeL10n.getBase().getString("N2NTMToadlet.remainingLetters"));
-			letterCountInfo.addChild("span", new String[] {"id"}, new String[] {"n2ntmcount"});
+			letterCountInfo.addChild("span", new String[] {"class"}, new String[] {"n2ntmcount"});
 		}
 		
 		messageForm.addChild("br");
