@@ -23,6 +23,9 @@ import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.Map;
 
+import freenet.clients.http.geoip.IPConverter;
+import freenet.clients.http.geoip.IPConverter.Country;
+import freenet.config.SubConfig;
 import freenet.crypt.Util;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -41,7 +44,9 @@ import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.BulkTransmitter.AllSentCallback;
 import freenet.io.xfer.PartiallyReceivedBulk;
+import freenet.node.NodeFile;
 import freenet.node.OpennetPeerNode.NOT_DROP_REASON;
+import freenet.support.api.StringCallback;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.LRUQueue;
@@ -172,6 +177,7 @@ public class OpennetManager {
 	public static final long MIN_TIME_BETWEEN_OFFERS = SECONDS.toMillis(30);
 
 	private static volatile boolean logMINOR;
+	private String[] excludedCountries = null;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
@@ -278,6 +284,33 @@ public class OpennetManager {
 		    peersLRUByDistance.put(l, new LRUQueue<OpennetPeerNode>());
 		oldPeers = new LRUQueue<OpennetPeerNode>();
 		announcer = (enableAnnouncement ? new Announcer(this) : null);
+
+		int sortOrder = 0;
+		final SubConfig sConfig = node.config.get("node.opennet");
+
+		sConfig.register("excludedCountries",  "", sortOrder++, false, false, "Node.opennetExcludedCountriesShort","Node.opennetExcludedCountriesLong",
+		new StringCallback() {
+
+			@Override
+			public String get() {
+				if(excludedCountries == null) return "";
+				else return String.join(",",excludedCountries);
+			}
+
+			@Override
+			public void set(String val) /* throws InvalidConfigValueException, NodeNeedRestartException*/ {
+				if(val != null && !val.equals("")) {
+					excludedCountries = val.split(",");
+				} else {
+					excludedCountries = null;
+				}
+			}
+		});
+		String tempexclude = sConfig.getString("excludedCountries");
+		if(tempexclude !=null && !tempexclude.equals("")) {
+			excludedCountries = tempexclude.split(",");
+		}
+		
 	}
 
 	public void writeFile() {
@@ -544,6 +577,38 @@ public class OpennetManager {
 			if(tooManyOutdatedPeers()) {
 				if(logMINOR) Logger.minor(this, "Rejecting TOO OLD peer from "+connectionType+" (too many already): "+nodeToAddNow);
 				return false;
+			}
+		}
+		// Don't connect to peers in excluded countries
+		if(nodeToAddNow != null && excludedCountries !=null) {
+			Peer[] handshakeIPs = nodeToAddNow.getHandshakeIPs();
+			if(handshakeIPs != null) {
+				for(Peer p : handshakeIPs) {
+					if(p == null) continue;
+					FreenetInetAddress addr = p.getFreenetAddress();
+					if(addr == null) continue;
+					InetAddress a = addr.getAddress(false);
+
+					IPConverter ipc = IPConverter.getInstance(NodeFile.IPv4ToCountry.getFile(node));
+					try {
+						Country c = ipc.locateIP(a.getAddress());
+						if(c !=null) {
+							//Logger.error(this,"Country = "+c.toString());
+							for(String s : excludedCountries) {
+								if(s.equals(c.toString())) {
+									Logger.error(this, "Not connecting to Opennet peer "+a.toString()+" in country "+c.toString());
+									return false;
+								}
+							}
+						} else {
+							Logger.error(this, "Unable to locate country based on IP "+a.toString());
+						}
+					} catch (Exception e) {
+						Logger.error(this, "wantPeer error ",e);
+					}
+				}
+			} else {
+				Logger.error(this, "Handshake IPs are null");
 			}
 		}
 		if(nodeToAddNow != null && crypto.config.oneConnectionPerAddress()) {
