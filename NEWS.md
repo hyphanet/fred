@@ -15,17 +15,17 @@ master ():
 
 1477 (2017-03-09):
 
-- fix clickjacking vulnerability
+- fix a potential clickjacking vulnerability in legacy browsers
 - patch open redirect and header injection vulnerability introduced in 1476
-- fix SSL which broke with Java7 due to missing cypher
+- SSL with RSA certificates on fproxy has been broken in 1475, fix that
 
 1476 (2017-03-02):
 
 - FOAF efficiency enhancements for fast nodes
 - gif filter
-- ssl fixes
+- harden the SSL configuration of fproxy
 - logger fix
-- spare bitmap efficiency
+- spare bitmap efficiency optimization
 - reduce custom code
 - show semi-persistent update info next to bookmarks
 - plugin updates: Sharesite 0.4.4, Library v37, Freereader 6
