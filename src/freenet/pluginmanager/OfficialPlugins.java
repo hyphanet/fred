@@ -97,9 +97,10 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@SjXgPC5IEZa2g7a6gIKmNuxEKN4~eWrPhIwsznmGV-8,QUxm9R3sp3mNwhEHhL8mlx9zbOhIqIyR93tu7jD~0EU,AAMC--8/Freereader-6.jar");
 			addPlugin("Library")
 					.inGroup("index")
+					.recommendedVersion(37)
 					.minimumVersion(36)
 					.usesXml()
-					.loadedFrom("CHK@DB~oyn9M5B3Yx1B80qJbp-qp~434cxDERtgnxyhSfZ8,WRc11UVdhU4phf688oledQIV8BrNn3nvR9bVCVB-pM0,AAMC--8/Library-v36.jar");
+					.loadedFrom("CHK@qh6MyHn0umAm5luL3Ak1dJxj39vGJeiLp6KdtPTng08,PRwIA7m8bhMsbhMR8M6wWmd4iH~op3ImjsdCW1XBGmQ,AAMC--8/Library-v37.jar");
 			addPlugin("Spider")
 					.inGroup("index")
 					.minimumVersion(52)
@@ -125,8 +126,9 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@3Ht6otYHogKxa1Z8SC0hz46kV9q1qaSBsjbJxuwPosU,txky3jF33oWU9n6YiGMphiHA1V9q3i4ZN0VPtgElSaI,AAMC--8/FlogHelper-v35.jar");
 			addPlugin("Sharesite")
 					.inGroup("communication")
+					.recommendedVersion(4)
 					.minimumVersion(2)
-					.loadedFrom("CHK@F2HY72tkYOCjn6JxipG3jumisfczBlDgn7HhQ~tz1zg,3ab-60XR~Zvcidvs0Qjb7rygTTXVrfx9A~3kZBvYT4k,AAMC--8/Sharesite-v0.2.7.jar");
+					.loadedFrom("CHK@MktEdCJqSCG~5LaI9f~3xoQjejZCEVraQlfzKRs-H3I,yI2mQDrN1omHqD6ZibXDTRqnCK~2ut4Q11p18J1~cGE,AAMC--8/Sharesite-0.4.4.jar");
 		} catch (MalformedURLException mue1) {
 			throw new RuntimeException("Could not create FreenetURI.", mue1);
 		}
