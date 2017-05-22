@@ -8,6 +8,7 @@ next ():
 - ipv6 fixes
 - fix warnings
 - optimization
+- Persist "Bookmark Updated" notifications across restarts
 
 master ():
 
