@@ -25,9 +25,8 @@ immediately:
 
     > gradlew.bat jar
 
-We've [configured it](gradle/wrapper/gradle-wrapper.properties) to [verify the checksum]
-(https://docs.gradle.org/3.2/userguide/gradle_wrapper.html#sec:verification) of the archive it
-downloads from `https://services.gradle.org`.
+We've [configured it](gradle/wrapper/gradle-wrapper.properties) to [verify the checksum](https://docs.gradle.org/3.2/userguide/gradle_wrapper.html#sec:verification)
+of the archive it downloads from `https://services.gradle.org`.
 
 ### System Gradle
 
@@ -47,9 +46,8 @@ then:
 To test your version of Freenet, stop your node, replace `freenet.jar` in your
 Freenet directory with `build/libs/freenet.jar`, and start your node again.
 
-To override values set in `build.gradle` put them into [the file](https://docs.gradle.org/3
-.2/userguide/build_environment.html) `gradle.properties` in the format `variable = value`. For
-instance:
+To override values set in `build.gradle` put them into [the file](https://docs.gradle.org/3.2/userguide/build_environment.html)
+`gradle.properties` in the format `variable = value`. For instance:
 
     org.gradle.parallel = true
     org.gradle.daemon = true
