@@ -13,13 +13,38 @@ configurations {
     compile
 }
 
+group 'org.freenetproject'
+
 apply plugin: 'witness'
 apply plugin: 'java'
+apply plugin: 'maven-publish'
+
+archivesBaseName = 'freenet'
+version = '1'
 
 repositories {
     jcenter()
     mavenLocal() // TODO: use lib/ instead?
     maven { url 'https://mvn.freenetproject.org' }
+}
+
+
+// AWS credentials can be set below, gradle.properties or command line
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "s3://mvn.freenetproject.org.s3-website-us-east-1.amazonaws.com/"
+            credentials(AwsCredentials) {
+                accessKey ""
+                secretKey ""
+            }
+        }
+    }
 }
 
 sourceSets {
