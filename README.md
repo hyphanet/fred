@@ -17,11 +17,11 @@ We've included the [Gradle Wrapper](https://docs.gradle.org/3.2/userguide/gradle
 recommended by the Gradle project. If you trust the version we've committed you can build
 immediately:
 
-#### POSIX-based:
+#### POSIX / Windows PowerShell:
 
     $ ./gradlew jar
 
-#### Windows:
+#### Windows cmd:
 
     > gradlew.bat jar
 
@@ -30,7 +30,8 @@ of the archive it downloads from `https://services.gradle.org`.
 
 ### System Gradle
 
-Otherwise you can install Gradle packages:
+If you do not want to use the committed Gradle Wrapper, you can install your system's Gradle packages.
+We only support doing so if the packaged Gradle version is the same as the commited Gradle Wrapper.
 
 * Arch: `sudo pacman -S gradle`
 * CentOS: `sudo yum install gradle`
