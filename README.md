@@ -30,17 +30,13 @@ of the archive it downloads from `https://services.gradle.org`.
 
 ### System Gradle
 
-If you do not want to use the committed Gradle Wrapper, you can install your system's Gradle packages.
+If you do not want to use the committed Gradle Wrapper, you can use your system's Gradle packages.
 We only support doing so if the packaged Gradle version is the same as the commited Gradle Wrapper.
 
 * Arch: `sudo pacman -S gradle`
 * CentOS: `sudo yum install gradle`
 * Debian-based / Ubuntu: `sudo apt-get install gradle`
 * Windows: official installation directions are [here](https://gradle.org/install#manually)
-
-then:
-
-    $ gradle jar
 
 ## Testing
 
