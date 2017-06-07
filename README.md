@@ -11,8 +11,6 @@ Fred stands for Freenet REference Daemon.
 
 ## Building
 
-### Bundled
-
 We've included the [Gradle Wrapper](https://docs.gradle.org/3.2/userguide/gradle_wrapper.html) as
 recommended by the Gradle project. If you trust the version we've committed you can build
 immediately:
