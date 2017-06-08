@@ -418,12 +418,44 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		 * If they start at the beginning of the file, or are preceded by one or more &lt;! or &lt;? tags,
 		 * then firefox will read it as RSS. In which case we must force it to be downloaded to disk.
 		 */
-			if(checkForString(buf, "<rss"))
-				return true;
-			if(checkForString(buf, "<feed"))
-				return true;
-			if(checkForString(buf, "<rdf:RDF"))
-				return true;
+			for (int i=0; i + 1 < buf.length; i++) {
+				if(buf[i] != '<')
+					continue;
+				i++;
+				if(buf[i] == '?' || buf[i] == '!') {
+					// <?...> <!...>
+					for (i++; i + 1 < buf.length; i++)
+						if(buf[i] == '>')
+							break;
+					continue;
+				}
+				// <rss
+				if(buf[i+0] == 'r' &&
+						i+3 < buf.length &&
+						buf[i+1] == 's' &&
+						buf[i+2] == 's')
+					return true;
+				if(checkForString(buf, "<feed"))
+					// <rdf:RDF
+					if(buf[i+0] == 'r' &&
+							i+7 < buf.length &&
+							buf[i+1] == 'd' &&
+							buf[i+2] == 'f' &&
+							buf[i+3] == ':' &&
+							buf[i+4] == 'R' &&
+							buf[i+5] == 'D' &&
+							buf[i+6] == 'F')
+						return true;
+				if(checkForString(buf, "<rdf:RDF"))
+					// <feed
+					if(buf[i+0] == 'f' &&
+							i+4 < buf.length &&
+							buf[i+1] == 'e' &&
+							buf[i+2] == 'e' &&
+							buf[i+3] == 'd')
+						return true;
+				return false;
+			}
 		}
 		finally {
 			Closer.close(is);
