@@ -65,6 +65,8 @@ addons:
       name: "freenet/fred"
       description: "Build submitted via Travis CI"
     notification_email: steve@asksteved.com
-    build_command_prepend: "./gradlew clean"
     build_command:   "./gradlew compileJava compileTestJava"
     branch_pattern: coverity_scan
+    on:
+      branch: coverity_scan
+      jdk: oraclejdk7
