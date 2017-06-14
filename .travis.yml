@@ -31,6 +31,8 @@ jdk:
   - oraclejdk9
   - openjdk8
 
+script: if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then ./gradlew check ; fi
+
 before_deploy:
   - "./gradlew javadoc ; true"
   - "pip install --user awscli"
