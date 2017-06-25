@@ -29,7 +29,11 @@ repositories {
 }
 
 
-// AWS credentials can be set below, gradle.properties or command line
+/*
+ * AWS credentials can be set in gradle.properties or command line:
+ * S3AccessKey=
+ * S3SecretKey=
+ */
 publishing {
     publications {
         mavenJava(MavenPublication) {
@@ -38,10 +42,10 @@ publishing {
     }
     repositories {
         maven {
-            url "s3://mvn.freenetproject.org.s3-website-us-east-1.amazonaws.com/"
+            url "s3://mvn.freenetproject.org/"
             credentials(AwsCredentials) {
-                accessKey ""
-                secretKey ""
+                accessKey S3AccessKey
+                secretKey S3SecretKey
             }
         }
     }
