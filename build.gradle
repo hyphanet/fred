@@ -171,6 +171,7 @@ test {
 dependencies {
     compile "org.bouncycastle:bcprov-jdk15on:1.57"
     compile "net.java.dev.jna:jna:4.2.2"
+    compile "net.java.dev.jna:jna-platform:4.2.2"
     compile "org.freenetproject:freenet-ext:29"
 
     testCompile 'junit:junit:4.12'
