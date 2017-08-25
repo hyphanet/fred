@@ -782,11 +782,11 @@ public class Node implements TimeSkewDetectorCallback {
 	private boolean enableRoutedPing;
 
 	/**
-	 * Minimum bandwidth limit in bytes considered usable: 5 KiB. If there is an attempt to set a limit below this -
+	 * Minimum bandwidth limit in bytes considered usable: 4 KiB. If there is an attempt to set a limit below this -
 	 * excluding the reserved -1 for input bandwidth - the callback will throw. See the callbacks for
-	 * outputBandwidthLimit and inputBandwidthLimit. 5 KiB are equivalent to 25 GiB traffic per month.
+	 * outputBandwidthLimit and inputBandwidthLimit. 4 KiB are equivalent to 20 GiB traffic per month.
 	 */
-	private static final int minimumBandwidth = 5 * 1024;
+	private static final int minimumBandwidth = 4 * 1024;
 
 	/** Quality of Service mark we will use for all outgoing packets (opennet/darknet) */
 	private TrafficClass trafficClass;
