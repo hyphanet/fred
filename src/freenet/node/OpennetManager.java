@@ -209,7 +209,7 @@ public class OpennetManager {
 	/** The fraction of nodes which are only a short distance away. */
 	public static final double SHORT_NODES_FRACTION = LONG_DISTANCE / MAX_DISTANCE;
 	/** The estimated average number of nodes which are active at any given time. */
-	public static final int LAST_NETWORK_SIZE_ESTIMATE = 5000;
+	public static final int LAST_NETWORK_SIZE_ESTIMATE = 3000;
 	/** The estimated number of nodes which are a short distance away. */
 	public static final int AVAILABLE_SHORT_DISTANCE_NODES =
 		(int) (LAST_NETWORK_SIZE_ESTIMATE * SHORT_NODES_FRACTION);
