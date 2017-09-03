@@ -110,7 +110,7 @@ public class OfficialPlugins {
 					.inGroup("communication")
 					.minimumVersion(18)
 					.usesXml()
-					.loadedFrom("CHK@qprIfrwqW0zg4izvRqStw0GUR2siJBe6LuDuy-t6D7A,eVd5fUG5nrNnIl7vwlRGzyhTe~TTZwuh6P1oqZH8g0A,AAMC--8/WebOfTrust-build0018.jar");
+					.loadedFrom("CHK@NnDrHIg3v8FtL2TZjVZrMKEMUbyhUJOal0Gfkx4JKIQ,DJa~kxAXpBD9qPLmAX6h-NC4-vngiHwX1B1CZhDACzM,AAMC--8/WebOfTrust-build0019.jar");
 			addPlugin("WebOfTrustTesting")
 					.inGroup("communication")
 					.advanced()
