@@ -11,6 +11,8 @@ next ():
 
 master ():
 
+- plugins: WebOfTrust build0019
+- plugins: Freemail v0.2.7.3 (new translations)
 - l10n: pull translations from transifex
 
 1478 (2017-04-05):
