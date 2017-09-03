@@ -11,7 +11,7 @@ next ():
 
 master ():
 
--
+- l10n: pull translations from transifex
 
 1478 (2017-04-05):
 
