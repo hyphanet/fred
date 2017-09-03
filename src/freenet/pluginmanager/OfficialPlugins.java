@@ -74,7 +74,7 @@ public class OfficialPlugins {
 			addPlugin("UPnP")
 					.inGroup("connectivity")
 					.essential()
-                    .recommendedVersion(10007)
+					.recommendedVersion(10007)
 					.minimumVersion(10003)
 					.loadedFrom(
                         "CHK@ZiX8yeMHTUtNfJAgxpwH~jLRnnbb41BKEkAxOD~33tY,aBTvD3IoPKPLjnHOCNQ4-iRwqVED5kHgkmD4UhGdITk,AAMC--8/UPnP-10007.jar");
