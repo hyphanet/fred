@@ -300,7 +300,7 @@ public class OpennetManager {
 					if (joined.length() > 0) {
 						joined.append(',');
 					}
-					joined.append(excludedCountry).append(',');
+					joined.append(excludedCountry);
 				}
 				return joined.toString();
 			}
