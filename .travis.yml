@@ -27,7 +27,6 @@ jdk:
   - oraclejdk8
   - oraclejdk9
   - openjdk8
-  - openjdk9
 
 before_deploy:
   - "./gradlew javadoc"
