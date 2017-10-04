@@ -25,8 +25,9 @@ before_install: echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m
 
 jdk:
   - oraclejdk8
-  - oraclejdk7
-  - openjdk7
+  - oraclejdk9
+  - openjdk8
+  - openjdk9
 
 before_deploy:
   - "./gradlew javadoc"
