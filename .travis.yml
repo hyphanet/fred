@@ -37,4 +37,4 @@ deploy:
     skip_cleanup: true
     on:
       branch: next
-      jdk: oraclejdk7
+      jdk: oraclejdk8
