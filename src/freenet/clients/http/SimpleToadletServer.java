@@ -109,6 +109,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private boolean enableInlinePrefetch;
 	private boolean enableActivelinks;
 	private boolean enableExtendedMethodHandling;
+	private boolean enableCachingForChkAndSskKeys;
 	
 	// Something does not really belongs to here
 	volatile static boolean isPanicButtonToBeShown;				// move to QueueToadlet ?
@@ -649,7 +650,19 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		fproxyConfig.register("passthroughMaxSizeProgress", FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSizeProgress", "SimpleToadletServer.passthroughMaxSizeProgressLong", new FProxyPassthruMaxSizeProgress(), true);
 		FProxyToadlet.MAX_LENGTH_WITH_PROGRESS = fproxyConfig.getLong("passthroughMaxSizeProgress");
 		System.out.println("Set fproxy max length to "+FProxyToadlet.MAX_LENGTH_NO_PROGRESS+" and max length with progress to "+FProxyToadlet.MAX_LENGTH_WITH_PROGRESS+" = "+fproxyConfig.getLong("passthroughMaxSizeProgress"));
-		
+
+		fproxyConfig.register("enableCachingForChkAndSskKeys", false, configItemOrder++, true, true, "SimpleToadletServer.enableCachingForChkAndSskKeys", "SimpleToadletServer.enableCachingForChkAndSskKeysLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return enableCachingForChkAndSskKeys;
+			}
+
+			@Override
+			public void set(Boolean value) throws InvalidConfigValueException, NodeNeedRestartException {
+				enableCachingForChkAndSskKeys = value;
+			}
+		});
+		enableCachingForChkAndSskKeys = fproxyConfig.getBoolean("enableCachingForChkAndSskKeys");
 		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedHosts", "SimpleToadletServer.allowedHostsLong",
 				new FProxyAllowedHostsCallback());
 		fproxyConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedFullAccess", 
@@ -1160,6 +1173,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	@Override
 	public boolean enableExtendedMethodHandling() {
 		return enableExtendedMethodHandling;
+	}
+
+	@Override
+	public boolean enableCachingForChkAndSskKeys() {
+		return enableCachingForChkAndSskKeys;
 	}
 
 	@Override
