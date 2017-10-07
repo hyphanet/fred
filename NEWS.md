@@ -16,7 +16,7 @@ master ():
   higher throughput per connection. This allows for less powerful
   devices to join (with low bandwidth settings) and should provide
   better bandwidth utilization for very fast nodes.
-- Re-enable RSA-based ciphers
+- Re-enable RSA-based ciphers for SSL-connections to the node
 
 - add jfniki index bookmark (use "add default bookmarks" to get it)
 - l10n: pull translations from transifex
