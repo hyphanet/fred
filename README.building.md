@@ -11,7 +11,7 @@ Then just execute `ant`.
 You can run your version of Freenet by stopping your node, copying `dist/freenet.jar` into your Freenet folder and starting your node again.
 
 
-To override values of variables set in build.xml by putting them into the file override.properties in the format `variable = value`. To build Freenet without running the tests, use `ant -Dtests.skip=true`.
+To override values of variables set in build.xml by putting them into the file override.properties in the format `variable = value`. To build Freenet without running the tests, use `ant -Dtest.skip=true`.
 
 
 If sufficient packages for the dependencies are not available, put these jars into the `lib/` directory:
