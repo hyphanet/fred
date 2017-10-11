@@ -14,8 +14,8 @@ public abstract class BaseClientGetter extends ClientRequester implements
 		super(priorityClass, cb);
 	}
 	
+	/** Required because we implement {@link Serializable}. */
 	protected BaseClientGetter() {
-	    // For serialization.
 	}
 
 }
