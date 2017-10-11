@@ -125,6 +125,8 @@ public interface ToadletContainer {
 
 	public boolean enableExtendedMethodHandling();
 
+	boolean enableCachingForChkAndSskKeys();
+
 	/** Get the BucketFactory */
 	public BucketFactory getBucketFactory();
 
