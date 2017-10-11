@@ -26,22 +26,6 @@ public class PutFailedMessage extends FCPMessage implements Serializable {
 	final boolean global;
 	final boolean isFatal;
 
-	/**
-	 * zero arg c'tor for db4o on jamvm
-	 */
-	@SuppressWarnings("unused")
-	private PutFailedMessage() {
-		tracker = null;
-		shortCodeDescription = null;
-		isFatal = false;
-		identifier = null;
-		global = false;
-		extraDescription = null;
-		expectedURI = null;
-		codeDescription = null;
-		code = null;
-	}
-
 	public PutFailedMessage(InsertException e, String identifier, boolean global) {
 		this.code = e.getMode();
 		this.codeDescription = InsertException.getMessage(code);

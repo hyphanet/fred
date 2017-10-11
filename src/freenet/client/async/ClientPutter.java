@@ -71,23 +71,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
 		});
 	}
-	
-	/**
-	 * zero arg c'tor for db4o on jamvm
-	 */
-	@SuppressWarnings("unused")
-	private ClientPutter() {
-		targetURI = null;
-		targetFilename = null;
-		overrideSplitfileCrypto = null;
-		isMetadata = false;
-		data = null;
-		ctx = null;
-		cm = null;
-		client = null;
-		binaryBlob = false;
-		metadataThreshold = 0;
-	}
 
 	/**
 	 * @param client The object to call back when we complete, or don't.

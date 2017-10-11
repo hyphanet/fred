@@ -48,15 +48,6 @@ public class InsertException extends Exception implements Cloneable {
 		});
 	}
 
-	/**
-	 * zero arg c'tor for db4o on jamvm
-	 */
-	@SuppressWarnings("unused")
-	private InsertException() {
-		mode = null;
-		extra = null;
-	}
-
 	public InsertException(InsertExceptionMode m, String msg, FreenetURI expectedURI) {
 		super(getMessage(m)+": "+msg);
 		extra = msg;
