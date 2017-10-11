@@ -8,6 +8,7 @@ import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 
 /** @deprecated Usually WriteBlockableFreenetStore is more appropriate. */
+@Deprecated
 public class SleepingFreenetStore<T extends StorableBlock> extends ProxyFreenetStore<T> {
 
 	private final int delay;
