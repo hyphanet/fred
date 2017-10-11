@@ -223,13 +223,26 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		userAlertNode.addChild("div", "class", "infobox-header", userAlert.getTitle());
 		HTMLNode alertContentNode = userAlertNode.addChild("div", "class", "infobox-content");
 		alertContentNode.addChild(userAlert.getHTMLText());
+		alertContentNode.addChild(renderDismissButton(userAlert, null));
+
+		return userAlertNode;
+	}
+
+	public HTMLNode renderDismissButton(UserAlert userAlert, String redirectToAfterDisable) {
+		HTMLNode result = new HTMLNode("div");
 		if (userAlert.userCanDismiss()) {
-			HTMLNode dismissFormNode = alertContentNode.addChild("form", new String[] { "action", "method" }, new String[] { "/alerts/", "post" }).addChild("div");
+			HTMLNode dismissFormNode = result.addChild("form", new String[] { "action", "method" }, new String[] { "/alerts/", "post" }).addChild("div");
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "disable", String.valueOf(userAlert.hashCode()) });
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dismiss-user-alert", userAlert.dismissButtonText() });
+			
+			if (redirectToAfterDisable != null) {
+				dismissFormNode.addChild("input",
+					new String[] { "type", "name", "value" },
+					new String[] { "hidden", "redirectToAfterDisable", redirectToAfterDisable });
+			}
 		}
-		return userAlertNode;
+		return result;
 	}
 
 	private String getAlertLevelName(short level) {
