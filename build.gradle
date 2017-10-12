@@ -197,3 +197,7 @@ dependencyVerification {
         'org.objenesis:objenesis:c5694b55d92527479382f254199b3c6b1d8780f652ad61e9ca59919887f491a8',
     ]
 }
+
+javadoc << {
+    failOnError false
+}
