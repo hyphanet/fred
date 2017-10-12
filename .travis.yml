@@ -38,3 +38,9 @@ deploy:
     on:
       branch: next
       jdk: oraclejdk8
+  - provider: script
+    script: ./gradlew publish
+    skip_cleanup: true
+    on:
+      tags: true
+      jdk: oraclejdk8
