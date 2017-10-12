@@ -43,4 +43,4 @@ deploy:
     skip_cleanup: true
     on:
       tags: true
-      jdk: oraclejdk8
+      jdk: openjdk8
