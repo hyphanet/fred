@@ -15,17 +15,21 @@ configurations {
 
 apply plugin: 'witness'
 apply plugin: 'java'
+apply plugin: 'maven-publish'
 
 repositories {
-    jcenter()
     mavenLocal() // TODO: use lib/ instead?
     maven { url 'https://mvn.freenetproject.org' }
+    jcenter()
 }
 
 sourceSets {
     main.compileClasspath += configurations.provided
     test.compileClasspath += configurations.provided
 }
+
+def version_buildir = "$projectDir/build/tmp/compileVersion/"
+def version_src = 'freenet/node/Version.java'
 
 sourceSets {
     main {
@@ -40,22 +44,12 @@ sourceSets {
     }
 }
 
-compileJava {
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
-    archivesBaseName = "freenet-without-version"
-}
-
 def gitrev
-def version_buildir
-def version_src
 task buildInfo {
     try {
         def cmd = "git describe --always --abbrev=4 --dirty"
         def proc = cmd.execute()
         gitrev = proc.text.trim()
-        version_buildir = "$projectDir/build/tmp/compileVersion/"
-        version_src = 'freenet/node/Version.java'
     } catch (java.io.IOException e) {
         gitrev = "@unknown@"
     }
@@ -80,18 +74,14 @@ task compileVersion (type: JavaCompile) {
 compileVersion.dependsOn buildInfo
 processResources.dependsOn compileVersion
 
-task jarWithVersion(type: Jar) {
-    archiveName = "freenet.jar"
-    from (zipTree("$projectDir/build/libs/freenet-without-version.jar")) {
-        exclude 'freenet/node/Version.class'
-        exclude 'freenet/node/Version$1.class'
-    }
-    from ("${version_buildir}") {
+jar {
+    from (compileVersion) {
         include 'freenet/node/Version**class'
     }
-}
-
-jar {
+    preserveFileTimestamps = true
+    reproducibleFileOrder = true
+    // FIXME: duplicatesStrategy = "exclude"
+    archivesBaseName = "freenet"
     manifest {
         attributes("Permissions": "all-permissions")
         attributes("Application-Name": "Freenet REference Daemon")
@@ -107,10 +97,8 @@ jar {
                        "Implementation-Vendor": "freenetproject.org",
                    ], "common")
     }
-    doLast {
-        jarWithVersion.execute()
-    }
 }
+jar.dependsOn compileVersion
 jar.dependsOn buildInfo
 
 task copyResourcesToClasses2 {
@@ -165,6 +153,22 @@ test {
 //	"test.verbose":
 //	"test.benchmark":
     ]
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId 'org.freenetproject'
+            artifactId "fred"
+            version gitrev
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "s3://mvn.freenetproject.org/"
+        }
+    }
 }
 
 // In this section you declare the dependencies for your production and test code
