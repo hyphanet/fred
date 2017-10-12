@@ -37,10 +37,10 @@ deploy:
     skip_cleanup: true
     on:
       branch: next
-      jdk: oraclejdk8
+      jdk: openjdk8
   - provider: script
     script: ./gradlew -x test publish
     skip_cleanup: true
     on:
       tags: true
-      jdk: openjdk8
+      jdk: oraclejdk8
