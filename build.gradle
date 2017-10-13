@@ -167,6 +167,10 @@ publishing {
     repositories {
         maven {
             url "s3://mvn.freenetproject.org/"
+            credentials(AwsCredentials) {
+                accessKey System.getenv('AWS_ACCESS_KEY_ID')
+                secretKey System.getenv('AWS_SECRET_ACCESS_KEY')
+            }
         }
     }
 }
