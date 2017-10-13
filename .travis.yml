@@ -29,7 +29,7 @@ jdk:
   - openjdk8
 
 before_deploy:
-  - "./gradlew javadoc"
+  - "./gradlew javadoc ; true"
   - "pip install --user awscli"
   - "./gradlew copyRuntimeLib"
 deploy:
@@ -44,7 +44,7 @@ deploy:
     skip_cleanup: true
     on:
       tags: true
-      jdk: oraclejdk8
+      jdk: openjdk8
   - provider: releases
     skip_cleanup: true
     api_key:
@@ -54,4 +54,4 @@ deploy:
     file_glob: true
     on:
       tags: true
-      jdk: oraclejdk8
+      jdk: openjdk8
