@@ -5,7 +5,7 @@ ul#navlist {
 
 /* from base.css */
 #statusbar-container {
-  color: white;
+  color: grey;
   border-bottom-style: solid;
   border-bottom-width: 1px;
   border-top-style: solid;
@@ -485,9 +485,8 @@ div.progressbar .progressbar-min {
 
 div.progressbar .progress_fraction_finalized {
   font-size: 12px;
-  color: #fff;
+  color: grey;
   text-align: center;
-  text-shadow: 0 -1px 0 rgba(0,0,0,0.25);
   font-weight: normal;
   line-height: 20px;
 }
