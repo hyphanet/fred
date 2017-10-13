@@ -78,7 +78,7 @@ jar {
     from (compileVersion) {
         include 'freenet/node/Version**class'
     }
-    preserveFileTimestamps = true
+    preserveFileTimestamps = false
     reproducibleFileOrder = true
     // FIXME: duplicatesStrategy = "exclude"
     archivesBaseName = "freenet"
