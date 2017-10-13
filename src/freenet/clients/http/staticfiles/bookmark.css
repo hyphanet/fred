@@ -18,6 +18,10 @@ ul#bookmarks span.actions img {
 	margin-left: 3px;
 }
 
+ul#bookmarks td img {
+	display: block;
+}
+
 a.bookmark-title-updated {
 	font-weight: bold;
 }
