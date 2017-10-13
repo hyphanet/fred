@@ -69,18 +69,22 @@ task compileVersion (type: JavaCompile) {
     source = "${version_buildir}"
     include "${version_src}"
     classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDir)
-    destinationDir = file("${version_buildir}")
+    destinationDir = file("${buildDir}/java/version/")
 }
 compileVersion.dependsOn buildInfo
 processResources.dependsOn compileVersion
 
-jar {
+task jar (type: Jar, overwrite: true) {
     from (compileVersion) {
         include 'freenet/node/Version**class'
     }
+    from ("${buildDir}/classes/java/main/") {
+        exclude 'freenet/node/Version.class'
+        exclude 'freenet/node/Version$1.class'
+    }
     preserveFileTimestamps = false
     reproducibleFileOrder = true
-    // FIXME: duplicatesStrategy = "exclude"
+    duplicatesStrategy = "exclude"
     archivesBaseName = "freenet"
     manifest {
         attributes("Permissions": "all-permissions")
