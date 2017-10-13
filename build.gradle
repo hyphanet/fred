@@ -171,6 +171,13 @@ publishing {
     }
 }
 
+task copyRuntimeLibs(type: Copy) {
+    into "${buildDir}/output/"
+    from configurations.runtime
+    from jar
+}
+copyRuntimeLibs.dependsOn jar
+
 // In this section you declare the dependencies for your production and test code
 dependencies {
     compile "org.bouncycastle:bcprov-jdk15on:1.58"

@@ -31,6 +31,7 @@ jdk:
 before_deploy:
   - "./gradlew javadoc"
   - "pip install --user awscli"
+  - "./gradlew copyRuntimeLib"
 deploy:
   - provider: script
     script: ~/.local/bin/aws s3 sync --region=us-east-1 --cache-control "public, max-age=86400" --content-encoding utf-8 --delete build/docs/javadoc/ s3://website-javadoc.freenetproject.org
@@ -41,6 +42,16 @@ deploy:
   - provider: script
     script: ./gradlew -x test publish
     skip_cleanup: true
+    on:
+      tags: true
+      jdk: oraclejdk8
+  - provider: releases
+    skip_cleanup: true
+    api_key:
+      - secure: CDYRFrmkAOdn4QJVww6/pziDVdZ67fvRsLOKbilao/oRdP0uvsYS+OfX+Spu/Y0qCY0xSehvqgUoD8KoFqWuhos3iF4N515S5WNuiqOao7Ac2vBCt0ZMJy7MktyE5mYOD1Paf891n6Z+eILWGI54GGEau3JPes0G9jdMphW4ma8=
+    prerelease: true
+    file: build/output/*jar
+    file_glob: true
     on:
       tags: true
       jdk: oraclejdk8
