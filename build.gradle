@@ -103,8 +103,7 @@ task jar (type: Jar, overwrite: true) {
                    ], "common")
     }
 }
-jar.dependsOn compileVersion
-jar.dependsOn buildInfo
+jar.dependsOn processResources
 
 task copyResourcesToClasses2 {
     inputs.dir sourceSets.main.java.srcDirs
