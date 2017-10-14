@@ -107,6 +107,30 @@ task jar (type: Jar, overwrite: true) {
 }
 jar.dependsOn processResources
 
+def jars = []
+gradle.addListener(new TaskExecutionListener() {
+void afterExecute(Task task, TaskState state) {
+    if(task in AbstractArchiveTask) {
+        jars << task.outputs.files.singleFile
+    }
+}
+
+void beforeExecute(Task task) { }
+})
+gradle.addBuildListener(new BuildAdapter() {
+    void buildFinished(BuildResult result) {
+        if(jars) {
+            def hash = {
+                File file -> def sha256 = java.security.MessageDigest.getInstance('SHA-256')
+                file.eachByte(1024 * 4) { buffer, len -> sha256.update(buffer, 0, len) }
+                println "SHA-256 of ${file.name}: ${sha256.digest().encodeHex().toString()}"
+            }
+
+            jars.each { hash(it) }
+        }
+    }
+})
+
 task copyResourcesToClasses2 {
     inputs.dir sourceSets.main.java.srcDirs
     outputs.dir sourceSets.main.output.classesDir
