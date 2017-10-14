@@ -78,13 +78,15 @@ processResources.dependsOn compileVersion
 task jar (type: Jar, overwrite: true) {
     from (compileVersion) {
         include 'freenet/node/Version**class'
+	preserveFileTimestamps = false
+        reproducibleFileOrder = true
     }
     from ("${buildDir}/classes/java/main/") {
         exclude 'freenet/node/Version.class'
         exclude 'freenet/node/Version$1.class'
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
     }
-    preserveFileTimestamps = false
-    reproducibleFileOrder = true
     duplicatesStrategy = "exclude"
     archivesBaseName = "freenet"
     manifest {
