@@ -36,7 +36,7 @@ public class AEADInputStream extends FilterInputStream {
         super(is);
         byte[] nonce = new byte[mainCipher.getBlockSize()];
         new DataInputStream(is).readFully(nonce);
-        if (nonce[0] & 0x80 != 0) {
+        if ((nonce[0] & 0x80) != 0) {
             throw new IOException("Invalid or corrupted cipher nonce value in data stream");
         }
         cipher = new OCBBlockCipher_v149(hashCipher, mainCipher);
