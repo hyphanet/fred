@@ -19,8 +19,8 @@ ul#bookmarks span.actions img {
 }
 
 ul#bookmarks td img {
-    display: block;
-}               
+	display: block;
+}				
 
 a.bookmark-title-updated {
 	font-weight: bold;
