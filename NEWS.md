@@ -21,7 +21,8 @@ master ():
 - add jfniki index bookmark (use "add default bookmarks" to get it)
 - l10n: pull translations from transifex
 
-- plugins: WebOfTrust build0019
+- plugins: WebOfTrust build0019,
+  Changelog: https://github.com/freenet/plugin-WebOfTrust/releases/tag/build0019
   source available at
   CHK@gt~foMPFR5ZAhOhSOsFw68f5PBjJuCYpe~ZXPPA1t6g,pk7h34mG5hRsBPhVFWr5UllVbJXU-PS7tC9rbILvoOk,AAMC--8/WebOfTrust-build0019-source.tar.bz2
 - plugins: Freemail v0.2.7.3 (new translations)
