@@ -11,7 +11,23 @@ next ():
 
 master ():
 
--
+- optimized network settings for the new structure since the link
+  length fix : less peers for the same bandwidth should result in
+  higher throughput per connection. This allows for less powerful
+  devices to join (with low bandwidth settings) and should provide
+  better bandwidth utilization for very fast nodes.
+- Re-enable RSA-based ciphers for SSL-connections to the node
+
+- add jfniki index bookmark (use "add default bookmarks" to get it)
+- l10n: pull translations from transifex
+
+- plugins: WebOfTrust build0019,
+  Changelog: https://github.com/freenet/plugin-WebOfTrust/releases/tag/build0019
+  source available at
+  CHK@gt~foMPFR5ZAhOhSOsFw68f5PBjJuCYpe~ZXPPA1t6g,pk7h34mG5hRsBPhVFWr5UllVbJXU-PS7tC9rbILvoOk,AAMC--8/WebOfTrust-build0019-source.tar.bz2
+- plugins: Freemail v0.2.7.3 (new translations)
+  source available at
+  CHK@ZOfWMdsxhS1Lg6QKWK4CJZvVt9RYkkjFnU6-PCizHbg,zfTEQX6DexdUm9-eGyDSP5vKvp76b38SCBS7W9zkoGE,AAMC--8/Freemail-v0.2.7.3-source.tar.bz2
 
 1478 (2017-04-05):
 

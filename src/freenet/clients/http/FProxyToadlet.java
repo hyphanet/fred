@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -139,7 +140,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 	}
 
-	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx, NodeClientCore core, boolean dontFreeData, String maybeCharset) throws ToadletContextClosedException, IOException {
+	private void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx, NodeClientCore core, boolean dontFreeData, String maybeCharset) throws ToadletContextClosedException, IOException {
 		if(logMINOR)
 			Logger.minor(FProxyToadlet.class, "handleDownload(data.size="+data.size()+", mimeType="+mimeType+", requestedMimeType="+requestedMimeType+", forceDownload="+forceDownload+", basePath="+basePath+", key="+key);
 		String extrasNoMime = extras; // extras will not include MIME type to start with - REDFLAG maybe it should be an array
@@ -273,7 +274,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			} else {
                 MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
                 retHdr.put("X-Content-Type-Options", "nosniff");
-                context.sendReplyHeadersFProxy(200, "OK", retHdr, mimeType, size);
+                if (container.enableCachingForChkAndSskKeys() && (key.isCHK() || key.isSSK())) {
+                    context.sendReplyHeadersStatic(200, "OK", retHdr, mimeType, size, new Date());
+                } else {
+                    context.sendReplyHeadersFProxy(200, "OK", retHdr, mimeType, size);
+                }
 				context.writeData(data);
 			}
 		}
