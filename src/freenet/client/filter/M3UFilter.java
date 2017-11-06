@@ -90,6 +90,11 @@ public class M3UFilter implements ContentDataFilter {
                 } else {
                     isComment = false;
                 }
+                // skip empty lines
+                if (isNewline(nextbyte)) {
+                    readcount = dis.read(nextbyte);
+                    continue;
+                }
                 // read one line as a fileUri
                 numberOfDotsInUri = 0;
                 isBadUri = false;
@@ -101,6 +106,7 @@ public class M3UFilter implements ContentDataFilter {
                         !isCarriageReturn(nextbyte) &&
                         // enforce maximum path length to avoid OOM attacks
                         fileIndex <= MAX_URI_LENGTH) {
+                        // store the read byte
                         fileUri[fileIndex] = nextbyte[0];
                         fileIndex += readcount;
                     }
@@ -109,29 +115,35 @@ public class M3UFilter implements ContentDataFilter {
                         if (!isComment) {
                             // remove too long paths
                             if (fileIndex <= MAX_URI_LENGTH) {
-                                String uri = new String(fileUri, 0, fileIndex, "UTF-8");
+                                String uriold = new String(fileUri, 0, fileIndex, "UTF-8");
+                                // System.out.println(uriold);
+                                String filtered;
                                 try {
-				    if (uri.endsWith(".m3u") || uri.endsWith(".m3u8")) {
-					uri = cb.processURI(uri, "audio/mpegurl");
-				    } else {
-					uri = cb.processURI(uri, "audio/mpeg");
-				    }
+                                    // TODO: maybe prefix the host
+                                    // name if the filtered uri is
+                                    // *not* null after filtering with
+                                    // forBaseHref=true
+                                    if (uriold.endsWith(".m3u") || uriold.endsWith(".m3u8")) {
+                                        filtered = cb.processURI(uriold, "audio/mpegurl");
+                                    } else {
+                                        filtered = cb.processURI(uriold, "audio/mpeg");
+                                    }
                                 } catch (CommentException e) {
-                                    uri = badUriReplacement;
+                                    filtered = badUriReplacement;
                                 }
-                                if (uri == null) {
-                                    uri = badUriReplacement;
+                                if (filtered == null) {
+                                    filtered = badUriReplacement;
                                 }
-                                dos.write(uri.getBytes("UTF-8"));
-				// write the newline if we're not at EOF
-				if (readcount != -1){
-				    dos.write(nextbyte);
-				}
+                                dos.write(filtered.getBytes("UTF-8"));
+                                // write the newline if we're not at EOF
+                                if (readcount != -1){
+                                    dos.write(nextbyte);
+                                }
                             }
                         }
                         // skip the newline
                         readcount = dis.read(nextbyte);
-                        break;
+                        break; // skip to next line
                     }
                 }
             }
@@ -139,15 +151,15 @@ public class M3UFilter implements ContentDataFilter {
     }
 
     private static boolean isCommentStart(byte[] nextbyte) {
-	return Arrays.equals(nextbyte, CHAR_COMMENT_START);
+        return Arrays.equals(nextbyte, CHAR_COMMENT_START);
     }
 
     private static boolean isNewline(byte[] nextbyte) {
-	return Arrays.equals(nextbyte, CHAR_NEWLINE);
+        return Arrays.equals(nextbyte, CHAR_NEWLINE);
     }
 
     private static boolean isCarriageReturn(byte[] nextbyte) {
-	return Arrays.equals(nextbyte, CHAR_CARRIAGE_RETURN);
+        return Arrays.equals(nextbyte, CHAR_CARRIAGE_RETURN);
     }
     
     private static String l10n(String key) {
