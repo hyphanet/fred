@@ -187,14 +187,15 @@ public class M3UFilter implements ContentDataFilter {
     
     private void throwHeaderError(String shortReason, String reason) throws DataFilterException {
         // Throw an exception
-        String message = l10n("notM3u");
+        StringBuilder message;
+        message.append(l10n("notM3u"));
         if (reason != null) {
-            message += ' ' + reason;
+            message.append(' ' + reason);
         }
         if (shortReason != null) {
-            message += " - (" + shortReason + ')';
+            message.append(" - (" + shortReason + ')');
         }
-        throw new DataFilterException(shortReason, shortReason, message);
+        throw new DataFilterException(shortReason, shortReason, message.toString());
     }
     
     @Override
