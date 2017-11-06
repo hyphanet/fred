@@ -59,28 +59,6 @@ public class M3UFilter implements ContentDataFilter {
     // static final byte[] EXT_HEADER =
     // { (byte)'#', (byte)'E', (byte)'X', (byte)'T', (byte)'M', (byte)'3', (byte)'U' };
         
-    // static public boolean isAllowedInUri(byte b) {
-    //     // overly strict filtering to keep it simple for starters.
-    //     // allow only alphanumeric values in UTF-8 encoding and exactly one period in the filename.
-    //     final byte utf80 = (byte)'0';
-    //     final byte utf89 = (byte)'9';
-    //     final byte utf8A = (byte)'A';
-    //     final byte utf8Z = (byte)'Z';
-    //     final byte utf8a = (byte)'a';
-    //     final byte utf8z = (byte)'z';
-    //     final byte utf8dot = (byte)'.';
-    //     final byte utf8dash = (byte)'-';
-    //     if ((utf80 <= b && b <= utf89) ||
-    //         (utf8A <= b && b <= utf8Z) ||
-    //         (utf8a <= b && b <= utf8z) ||
-    //         utf8dot == b ||
-    //         utf8dash == b) {
-    //         return true;
-    //     } else {
-    //         return false;
-    //     }
-    // }
-    
     @Override
     public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
             FilterCallback cb) throws DataFilterException, IOException {
@@ -140,28 +118,6 @@ public class M3UFilter implements ContentDataFilter {
                                 if (uri == null) {
                                     uri = badUriReplacement;
                                 }
-                                // for (int i = 0; i < fileIndex; i++) {
-                                //     byte b = fileUri[i];
-                                //     if (!isAllowedInUri(b)) {
-                                //         isBadUri = true;
-                                //         break;
-                                //     } 
-                                //     if ((byte)'.' == b) {
-                                //         numberOfDotsInUri += 1;
-                                //     }
-                                // }
-                                // if (numberOfDotsInUri != 1) {
-                                //     isBadUri = true;
-                                // }
-                                // // use only the first fileIndex bytes
-                                // String uri;
-                                // // TODO: cleanly filter the URI, i.e. with processURI from GenericReadFilterCallback.
-                                // if (isBadUri) {
-                                //     uri = badUriReplacement;
-                                // } else {
-                                //     uri = new String(fileUri, 0, fileIndex, "UTF-8");
-                                //     uri += uriForcetypeMp3Suffix;
-                                // }
                                 dos.write(uri.getBytes("UTF-8"));
 				// write the newline if we're not at EOF
 				if (readcount != -1){
@@ -183,19 +139,6 @@ public class M3UFilter implements ContentDataFilter {
     
     private static String l10n(String key) {
         return NodeL10n.getBase().getString("M3UFilter."+key);
-    }
-    
-    private void throwHeaderError(String shortReason, String reason) throws DataFilterException {
-        // Throw an exception
-        StringBuilder message;
-        message.append(l10n("notM3u"));
-        if (reason != null) {
-            message.append(' ' + reason);
-        }
-        if (shortReason != null) {
-            message.append(" - (" + shortReason + ')');
-        }
-        throw new DataFilterException(shortReason, shortReason, message.toString());
     }
     
     @Override
