@@ -80,8 +80,8 @@ public class M3UFilter implements ContentDataFilter {
          * so people could insert as text/plain to circumvent the
          * filter.*/
         String uriForcetypeMp3Suffix = "?type=audio/mpeg";
-        DataOutputStream dos = new DataOutputStream(output);
-        try (DataInputStream dis = new DataInputStream(input)) {
+        try (DataInputStream dis = new DataInputStream(input);
+             DataOutputStream dos = new DataOutputStream(output)) {
             readcount = dis.read(nextbyte);
             // read each line manually
             while (readcount != -1) {
@@ -135,9 +135,6 @@ public class M3UFilter implements ContentDataFilter {
                     }
                 }
             }
-        } finally {
-            dos.flush();
-            dos.close();
         }
     }
 
