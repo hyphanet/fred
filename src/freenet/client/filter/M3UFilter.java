@@ -85,7 +85,7 @@ public class M3UFilter implements ContentDataFilter {
             readcount = dis.read(nextbyte);
             // read each line manually
             while (readcount != -1) {
-                if (Arrays.equals(nextbyte, CHAR_COMMENT_START)) {
+                if (isCommentStart(nextbyte)) {
                     isComment = true;
                 } else {
                     isComment = false;
@@ -98,14 +98,14 @@ public class M3UFilter implements ContentDataFilter {
                 while (readcount != -1) {
                     if (!isComment && 
                         // do not include carriage return in filenames
-                        !Arrays.equals(nextbyte, CHAR_CARRIAGE_RETURN) &&
+                        !isCarriageReturn(nextbyte) &&
                         // enforce maximum path length to avoid OOM attacks
                         fileIndex <= MAX_URI_LENGTH) {
                         fileUri[fileIndex] = nextbyte[0];
                         fileIndex += readcount;
                     }
                     readcount = dis.read(nextbyte);
-                    if (Arrays.equals(nextbyte, CHAR_NEWLINE) || readcount == -1) {
+                    if (isNewline(nextbyte) || readcount == -1) {
                         if (!isComment) {
                             // remove too long paths
                             if (fileIndex <= MAX_URI_LENGTH) {
@@ -135,6 +135,18 @@ public class M3UFilter implements ContentDataFilter {
         } finally {
 	    output.flush();
 	}
+    }
+
+    private static boolean isCommentStart(byte[] nextbyte) {
+	return Arrays.equals(nextbyte, CHAR_COMMENT_START);
+    }
+
+    private static boolean isNewline(byte[] nextbyte) {
+	return Arrays.equals(nextbyte, CHAR_NEWLINE);
+    }
+
+    private static boolean isCarriageReturn(byte[] nextbyte) {
+	return Arrays.equals(nextbyte, CHAR_CARRIAGE_RETURN);
     }
     
     private static String l10n(String key) {
