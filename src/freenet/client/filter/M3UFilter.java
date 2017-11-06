@@ -125,7 +125,7 @@ public class M3UFilter implements ContentDataFilter {
                         fileIndex += readcount;
                     }
                     readcount = dis.read(nextbyte);
-                    if (Arrays.equals(nextbyte, CHAR_NEWLINE)) {
+                    if (Arrays.equals(nextbyte, CHAR_NEWLINE) || readcount == -1) {
                         if (!isComment) {
                             // remove too long paths
                             if (fileIndex <= MAX_URI_LENGTH) {
