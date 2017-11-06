@@ -15,7 +15,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.NullBucket;
 
 public class M3UFilterTest extends TestCase {
-    protected static Object[][] testPlaylists = {
+    protected static String[][] testPlaylists = {
         { "./m3u/safe.m3u", "./m3u/safe_madesafe.m3u" },
         { "./m3u/unsafe.m3u", "./m3u/unsafe_madesafe.m3u" },
     };
@@ -28,9 +28,9 @@ public class M3UFilterTest extends TestCase {
     public void testSuiteTest() throws IOException {
 		M3UFilter filter = new M3UFilter();
 
-		for (Object[] test : testPlaylists) {
-			String original = (String) test[0];
-			String correct = (String) test[1];
+		for (String[] test : testPlaylists) {
+			String original = test[0];
+			String correct = test[1];
 			Bucket ibo;
 			Bucket ibprocessed = new ArrayBucket();
 			Bucket ibc;
