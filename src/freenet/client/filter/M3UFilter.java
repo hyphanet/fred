@@ -49,7 +49,7 @@ public class M3UFilter implements ContentDataFilter {
     static final byte[] CHAR_CARRIAGE_RETURN =
         { (byte)'\r' };
     static final int MAX_URI_LENGTH = 16384;
-    static final String badUriReplacement = "#bad-uri-removed-filter-allows-only-alphanumeric-or-minus-with-exactly-one-dot";
+    static final String badUriReplacement = "#bad-uri-removed";
     // TODO: Add parsing of ext-comments to allow for gapless playback.
     // static final int COMMENT_EXT_SIZE = 4;
     // static final byte[] COMMENT_EXT_START =
@@ -58,27 +58,27 @@ public class M3UFilter implements ContentDataFilter {
     // static final byte[] EXT_HEADER =
     // { (byte)'#', (byte)'E', (byte)'X', (byte)'T', (byte)'M', (byte)'3', (byte)'U' };
         
-    static public boolean isAllowedInUri(byte b) {
-        // overly strict filtering to keep it simple for starters.
-        // allow only alphanumeric values in UTF-8 encoding and exactly one period in the filename.
-        final byte utf80 = (byte)'0';
-        final byte utf89 = (byte)'9';
-        final byte utf8A = (byte)'A';
-        final byte utf8Z = (byte)'Z';
-        final byte utf8a = (byte)'a';
-        final byte utf8z = (byte)'z';
-        final byte utf8dot = (byte)'.';
-        final byte utf8dash = (byte)'-';
-        if ((utf80 <= b && b <= utf89) ||
-            (utf8A <= b && b <= utf8Z) ||
-            (utf8a <= b && b <= utf8z) ||
-            utf8dot == b ||
-            utf8dash == b) {
-            return true;
-        } else {
-            return false;
-        }
-    }
+    // static public boolean isAllowedInUri(byte b) {
+    //     // overly strict filtering to keep it simple for starters.
+    //     // allow only alphanumeric values in UTF-8 encoding and exactly one period in the filename.
+    //     final byte utf80 = (byte)'0';
+    //     final byte utf89 = (byte)'9';
+    //     final byte utf8A = (byte)'A';
+    //     final byte utf8Z = (byte)'Z';
+    //     final byte utf8a = (byte)'a';
+    //     final byte utf8z = (byte)'z';
+    //     final byte utf8dot = (byte)'.';
+    //     final byte utf8dash = (byte)'-';
+    //     if ((utf80 <= b && b <= utf89) ||
+    //         (utf8A <= b && b <= utf8Z) ||
+    //         (utf8a <= b && b <= utf8z) ||
+    //         utf8dot == b ||
+    //         utf8dash == b) {
+    //         return true;
+    //     } else {
+    //         return false;
+    //     }
+    // }
     
     @Override
     public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
@@ -94,7 +94,7 @@ public class M3UFilter implements ContentDataFilter {
         byte[] fileUri;
         int fileIndex;
         /* TODO: select the type per suffix. Right now we can get away
-         * with just forcing mp3 since we only have a filter for
+         * with just forcing mbp3 since we only have a filter for
          * that.*/
         /* We need to force the type, because browsers might use
          * content type sniffing in the media tag and audio-players,
@@ -129,28 +129,37 @@ public class M3UFilter implements ContentDataFilter {
                         if (!isComment) {
                             // remove too long paths
                             if (fileIndex <= MAX_URI_LENGTH) {
-                                for (int i = 0; i < fileIndex; i++) {
-                                    byte b = fileUri[i];
-                                    if (!isAllowedInUri(b)) {
-                                        isBadUri = true;
-                                        break;
-                                    } 
-                                    if ((byte)'.' == b) {
-                                        numberOfDotsInUri += 1;
-                                    }
-                                }
-                                if (numberOfDotsInUri != 1) {
-                                    isBadUri = true;
-                                }
-                                // use only the first fileIndex bytes
-                                String uri;
-                                // TODO: cleanly filter the URI, i.e. with processURI from GenericReadFilterCallback.
-                                if (isBadUri) {
+                                String uri = new String(fileUri, 0, fileIndex, "UTF-8");
+                                try {
+                                    uri = cb.processURI(uri, "audio/mpeg");
+                                } catch (CommentException e) {
                                     uri = badUriReplacement;
-                                } else {
-                                    uri = new String(fileUri, 0, fileIndex, "UTF-8");
-                                    uri += uriForcetypeMp3Suffix;
                                 }
+                                if (uri == null) {
+                                    uri = badUriReplacement;
+                                }
+                                // for (int i = 0; i < fileIndex; i++) {
+                                //     byte b = fileUri[i];
+                                //     if (!isAllowedInUri(b)) {
+                                //         isBadUri = true;
+                                //         break;
+                                //     } 
+                                //     if ((byte)'.' == b) {
+                                //         numberOfDotsInUri += 1;
+                                //     }
+                                // }
+                                // if (numberOfDotsInUri != 1) {
+                                //     isBadUri = true;
+                                // }
+                                // // use only the first fileIndex bytes
+                                // String uri;
+                                // // TODO: cleanly filter the URI, i.e. with processURI from GenericReadFilterCallback.
+                                // if (isBadUri) {
+                                //     uri = badUriReplacement;
+                                // } else {
+                                //     uri = new String(fileUri, 0, fileIndex, "UTF-8");
+                                //     uri += uriForcetypeMp3Suffix;
+                                // }
                                 output.write(uri.getBytes("UTF-8"));
                                 output.write(nextbyte);
                             }

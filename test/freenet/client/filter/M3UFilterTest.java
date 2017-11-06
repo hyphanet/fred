@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 
+        
 import junit.framework.TestCase;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
@@ -16,6 +19,11 @@ public class M3UFilterTest extends TestCase {
         { "./m3u/safe.m3u", "./m3u/safe_madesafe.m3u" },
         { "./m3u/unsafe.m3u", "./m3u/unsafe_madesafe.m3u" },
     };
+
+	private static final String BASE_URI_PROTOCOL = "http";
+	private static final String BASE_URI_CONTENT = "localhost:8888";
+	private static final String BASE_KEY = "USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/Ultimate-Freenet-Index/55/";
+	private static final String BASE_URI = BASE_URI_PROTOCOL+"://"+BASE_URI_CONTENT+'/'+BASE_KEY;
 
     public void testSuiteTest() throws IOException {
 		M3UFilter filter = new M3UFilter();
@@ -40,12 +48,15 @@ public class M3UFilterTest extends TestCase {
 			}
 
 			try {
-				filter.readFilter(ibo.getInputStream(), ibprocessed.getOutputStream(), "UTF-8", null, null);
+				filter.readFilter(ibo.getInputStream(), ibprocessed.getOutputStream(), "UTF-8", null,
+                                  new GenericReadFilterCallback(new URI(BASE_URI), null, null, null));
                 String result = bucketToString((ArrayBucket)ibprocessed);
 
-				assertTrue(original + " should be filtered as " + correct + " but was filtered as " + result + " instead of " + bucketToString((ArrayBucket)ibc), result.equals(bucketToString((ArrayBucket)ibc)));
+				assertTrue(original + " should be filtered as " + correct + " but was filtered as\n" + result + "\ninstead of the correct\n" + bucketToString((ArrayBucket)ibc), result.equals(bucketToString((ArrayBucket)ibc)));
 			} catch (DataFilterException dfe) {
 				assertTrue("Filtering " + original + " failed", false);
+			} catch (URISyntaxException use) {
+				assertTrue("Creating URI from BASE_URI " + BASE_URI + " failed", false);
 			}
 		}
 	}
