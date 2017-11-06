@@ -49,8 +49,8 @@ public class M3UFilterTest extends TestCase {
 
 			try {
 				filter.readFilter(ibo.getInputStream(), ibprocessed.getOutputStream(), "UTF-8", null,
-                                  new GenericReadFilterCallback(new URI(BASE_URI), null, null, null));
-                String result = bucketToString((ArrayBucket)ibprocessed);
+						  new GenericReadFilterCallback(new URI(BASE_URI), null, null, null));
+				String result = ibprocessed.toString();
 
 				assertTrue(original + " should be filtered as " + correct + " but was filtered as\n" + result + "\ninstead of the correct\n" + bucketToString((ArrayBucket)ibc), result.equals(bucketToString((ArrayBucket)ibc)));
 			} catch (DataFilterException dfe) {

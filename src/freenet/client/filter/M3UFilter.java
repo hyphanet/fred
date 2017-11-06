@@ -4,6 +4,7 @@
 package freenet.client.filter;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -101,7 +102,8 @@ public class M3UFilter implements ContentDataFilter {
          * so people could insert as text/plain to circumvent the
          * filter.*/
         String uriForcetypeMp3Suffix = "?type=audio/mpeg";
-        try (DataInputStream dis = new DataInputStream(input)) {
+        try (DataInputStream dis = new DataInputStream(input);
+	     DataOutputStream dos = new DataOutputStream(output)) {
             readcount = dis.read(nextbyte);
             // read each line manually
             while (readcount != -1) {
@@ -160,8 +162,11 @@ public class M3UFilter implements ContentDataFilter {
                                 //     uri = new String(fileUri, 0, fileIndex, "UTF-8");
                                 //     uri += uriForcetypeMp3Suffix;
                                 // }
-                                output.write(uri.getBytes("UTF-8"));
-                                output.write(nextbyte);
+                                dos.write(uri.getBytes("UTF-8"));
+				// write the newline if we're not at EOF
+				if (readcount != -1){
+				    dos.write(nextbyte);
+				}
                             }
                         }
                         // skip the newline
@@ -170,8 +175,10 @@ public class M3UFilter implements ContentDataFilter {
                     }
                 }
             }
-        }
-        output.flush();
+	    dos.flush();
+        } finally {
+	    output.flush();
+	}
     }
     
     private static String l10n(String key) {
