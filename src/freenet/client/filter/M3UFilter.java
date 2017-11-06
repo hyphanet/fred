@@ -111,7 +111,11 @@ public class M3UFilter implements ContentDataFilter {
                             if (fileIndex <= MAX_URI_LENGTH) {
                                 String uri = new String(fileUri, 0, fileIndex, "UTF-8");
                                 try {
-                                    uri = cb.processURI(uri, "audio/mpeg");
+				    if (uri.endsWith(".m3u") || uri.endsWith(".m3u8")) {
+					uri = cb.processURI(uri, "audio/mpegurl");
+				    } else {
+					uri = cb.processURI(uri, "audio/mpeg");
+				    }
                                 } catch (CommentException e) {
                                     uri = badUriReplacement;
                                 }
