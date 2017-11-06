@@ -136,9 +136,12 @@ public class ClientGetWorkerThread extends Thread {
 				}
 			} catch (EOFException e) {
 				// Okay.
+			} catch (IOException e) {
+				// Stream closed.
+			} finally {
+				input.close();
+				output.close();
 			}
-			input.close();
-			output.close();
 			if(hashes != null) {
 				HashResult[] results = hashStream.getResults();
 				if(!HashResult.strictEquals(results, hashes)) {
