@@ -119,15 +119,25 @@ public class M3UFilter implements ContentDataFilter {
                                 // System.out.println(uriold);
                                 String filtered;
                                 try {
-                                    // TODO: maybe prefix the host
-                                    // name if the filtered uri is
-                                    // *not* null after filtering with
-                                    // forBaseHref=true
                                     if (uriold.endsWith(".m3u") || uriold.endsWith(".m3u8")) {
                                         filtered = cb.processURI(uriold, "audio/mpegurl");
                                     } else {
                                         filtered = cb.processURI(uriold, "audio/mpeg");
                                     }
+                                    // TODO: add prefix for the host
+                                    // name for absolute path names,
+                                    // because otherwise external
+                                    // clients could be tricked into
+                                    // accessing local files. This can
+                                    // however leak information about
+                                    // the local setup (host and port).
+                                    
+                                    // String withbaseref = cb.processURI(uriold, "audio/mpegurl", true, false);
+                                    // if (withbaseref != null) { // absolute path
+                                    //  // add host prefix
+                                    //  filtered = 
+                                    // }
+
                                 } catch (CommentException e) {
                                     filtered = badUriReplacement;
                                 }
