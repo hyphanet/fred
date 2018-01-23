@@ -33,8 +33,9 @@ public class OfficialPlugins {
 					.deprecated();
 			addPlugin("Freemail_wot")
 					.inGroup("communication")
+					.recommendedVersion(28)
 					.minimumVersion(27)
-					.loadedFrom("CHK@fR~OePzegkidZcKQN3aX-2EmS8RPo6Qj3hNTKf~BmJA,Mb7laJ5Mz0vvnEIhYr6yZbAytgdhQeXxJDA2LL0ziZU,AAMC--8/Freemail-v0.2.7.2.jar");
+					.loadedFrom("CHK@ppSPfHuP5xFDkcQd9t~CrpTxtdrwRihDgBMuk2KWH7Q,jox-Wn0qy8mveaDaZVcGjLfjoQDdjm7r0IQGBo0UToI,AAMC--8/Freemail.jar");
 			addPlugin("HelloWorld")
 					.inGroup("example")
 					.loadedFrom("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar")
@@ -74,7 +75,7 @@ public class OfficialPlugins {
 			addPlugin("UPnP")
 					.inGroup("connectivity")
 					.essential()
-                    .recommendedVersion(10007)
+					.recommendedVersion(10007)
 					.minimumVersion(10003)
 					.loadedFrom(
                         "CHK@ZiX8yeMHTUtNfJAgxpwH~jLRnnbb41BKEkAxOD~33tY,aBTvD3IoPKPLjnHOCNQ4-iRwqVED5kHgkmD4UhGdITk,AAMC--8/UPnP-10007.jar");
@@ -109,8 +110,9 @@ public class OfficialPlugins {
 			addPlugin("WebOfTrust")
 					.inGroup("communication")
 					.minimumVersion(18)
+					.recommendedVersion(19)
 					.usesXml()
-					.loadedFrom("CHK@qprIfrwqW0zg4izvRqStw0GUR2siJBe6LuDuy-t6D7A,eVd5fUG5nrNnIl7vwlRGzyhTe~TTZwuh6P1oqZH8g0A,AAMC--8/WebOfTrust-build0018.jar");
+					.loadedFrom("CHK@NnDrHIg3v8FtL2TZjVZrMKEMUbyhUJOal0Gfkx4JKIQ,DJa~kxAXpBD9qPLmAX6h-NC4-vngiHwX1B1CZhDACzM,AAMC--8/WebOfTrust-build0019.jar");
 			addPlugin("WebOfTrustTesting")
 					.inGroup("communication")
 					.advanced()
