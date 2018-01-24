@@ -165,7 +165,7 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 		File f = File.createTempFile("."+file.getName(), ".freenet-tmp", file.getParentFile());
 		try {
 			Files.setAttribute(f.toPath(), "dos:hidden", true, LinkOption.NOFOLLOW_LINKS);
-		} catch (FileSystemException e) { } //at least we've tried.
+		} catch (FileSystemException|UnsupportedOperationException e) { } //at least we've tried.
 		if(deleteOnExit()) f.deleteOnExit();
 		return f;
 	}
