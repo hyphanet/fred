@@ -229,6 +229,7 @@ dependencyVerification {
     includedConfigurations = [configurations.testCompile]
     verify = [
         'org.bouncycastle:bcprov-jdk15on:eb61ab61065ed96f9f2d5cde94d326233c09fdec9333c1185f2fa65ee88a4236',
+        'net.java.dev.jna:jna-platform:32aca873a4cb14721d939bbc8287a828919c05e8e1040b3fe8290f6128cdecca',
         'net.java.dev.jna:jna:1f38af54e06c6e6f6dbf39ba2c052b952dea5dddb4871127b34639ddeb11bdbe',
         'org.freenetproject:freenet-ext:32f2b3d6beedf54137ea2f9a3ebef67666d769f0966b08cd17fd7db59ba4d79f',
         'junit:junit:59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a',
