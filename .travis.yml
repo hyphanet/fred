@@ -23,7 +23,7 @@ cache:
 
 before_install:
   - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
-  # Workaround for openjdk7: Don't use gradlew. When removing this also replace all instances of the "gradle" command in this file with "./gradlew"!
+  # No need to use the binary Gradle download script we ship, Travis CI has gradle installed already.
   - rm ./gradlew
 install: "gradle jar"
 
