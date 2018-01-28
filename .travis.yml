@@ -21,18 +21,22 @@ cache:
   - $HOME/.gradle/caches/
   - $HOME/.gradle/wrapper/
 
-before_install: echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
-install: "./gradlew jar"
+before_install:
+  - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
+  # No need to use the binary Gradle download script we ship, Travis CI has gradle installed already.
+  - rm ./gradlew
+install: "gradle jar"
 
 jdk:
   - oraclejdk8
   - oraclejdk9
   - openjdk8
+  - openjdk7
 
 before_deploy:
-  - "./gradlew javadoc ; true"
+  - "gradle javadoc ; true"
   - "pip install --user awscli"
-  - "./gradlew copyRuntimeLib"
+  - "gradle copyRuntimeLib"
 deploy:
   - provider: script
     script: ~/.local/bin/aws s3 sync --region=us-east-1 --cache-control "public, max-age=86400" --content-encoding utf-8 --delete build/docs/javadoc/ s3://website-javadoc.freenetproject.org
@@ -41,7 +45,7 @@ deploy:
       branch: next
       jdk: openjdk8
   - provider: script
-    script: ./gradlew -x test publish
+    script: gradle -x test publish
     skip_cleanup: true
     on:
       tags: true
