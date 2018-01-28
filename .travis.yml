@@ -23,8 +23,9 @@ cache:
 
 before_install:
   - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
-  # Workaround for openjdk7: Don't use gradlew. When removing this also replace the below "gradle javadoc" with "./gradlew javadoc"!
+  # Workaround for openjdk7: Don't use gradlew. When removing this also replace all instances of the "gradle" command in this file with "./gradlew"!
   - rm ./gradlew
+install: "gradle jar"
 
 jdk:
   - oraclejdk8
@@ -33,12 +34,29 @@ jdk:
   - openjdk7
 
 before_deploy:
-  - "gradle javadoc"
+  - "gradle javadoc ; true"
   - "pip install --user awscli"
+  - "gradle copyRuntimeLib"
 deploy:
   - provider: script
     script: ~/.local/bin/aws s3 sync --region=us-east-1 --cache-control "public, max-age=86400" --content-encoding utf-8 --delete build/docs/javadoc/ s3://website-javadoc.freenetproject.org
     skip_cleanup: true
     on:
       branch: next
-      jdk: oraclejdk8
+      jdk: openjdk8
+  - provider: script
+    script: gradle -x test publish
+    skip_cleanup: true
+    on:
+      tags: true
+      jdk: openjdk8
+  - provider: releases
+    skip_cleanup: true
+    api_key:
+      - secure: CDYRFrmkAOdn4QJVww6/pziDVdZ67fvRsLOKbilao/oRdP0uvsYS+OfX+Spu/Y0qCY0xSehvqgUoD8KoFqWuhos3iF4N515S5WNuiqOao7Ac2vBCt0ZMJy7MktyE5mYOD1Paf891n6Z+eILWGI54GGEau3JPes0G9jdMphW4ma8=
+    prerelease: true
+    file: build/output/*jar
+    file_glob: true
+    on:
+      tags: true
+      jdk: openjdk8
