@@ -808,38 +808,39 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						public boolean run(ClientContext context) {
 							ClientPutDir clientPutDir;
 							try {
-							try {
-								clientPutDir = new ClientPutDir(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, Persistence.FOREVER, null, false, !compress, -1, file, null, false, /* make include hidden files configurable? FIXME */ false, true, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, overrideSplitfileKey, fcp.core);
-								if(logMINOR) Logger.minor(this, "Started global request to insert dir "+file+" to "+furi+" as "+identifier);
-								if(clientPutDir != null)
-									try {
-										fcp.startBlocking(clientPutDir, context);
-									} catch (IdentifierCollisionException e) {
-										Logger.error(this, "Cannot put same file twice in same millisecond");
-										writePermanentRedirect(ctx, "Done", path());
-										return false;
-									} catch (PersistenceDisabledException e) {
-										sendPersistenceDisabledError(ctx);
-										return false;
-									}
-								writePermanentRedirect(ctx, "Done", path());
-								return true;
-							} catch (IdentifierCollisionException e) {
-								Logger.error(this, "Cannot put same directory twice in same millisecond");
-								writePermanentRedirect(ctx, "Done", path());
-								return false;
-							} catch (MalformedURLException e) {
-								writeError(l10n("errorInvalidURI"), l10n("errorInvalidURIToU"), ctx);
-								return false;
-							} catch (FileNotFoundException e) {
-								writeError(l10n("errorNoFileOrCannotRead"), l10n("errorAccessDeniedFile", "file", file.toString()), ctx);
-								return false;
-							} catch (TooManyFilesInsertException e) {
-								writeError(l10n("tooManyFilesInOneFolder"), l10n("tooManyFilesInOneFolder"), ctx);
-								return false;
-							} finally {
-								done.countDown();
-							}
+                                                        	try {
+                                                                	clientPutDir = new ClientPutDir(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, Persistence.FOREVER, null, false, !compress, -1, file, null, false, /* make include hidden files configurable? FIXME */ false, true, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, overrideSplitfileKey, fcp.core);
+                                                                        if(logMINOR) Logger.minor(this, "Started global request to insert dir "+file+" to "+furi+" as "+identifier);
+                                                                        if(clientPutDir != null) {
+                                                                        	try {
+											fcp.startBlocking(clientPutDir, context);
+                                                                                } catch (IdentifierCollisionException e) {
+                                                                                	Logger.error(this, "Cannot put same file twice in same millisecond");
+											writePermanentRedirect(ctx, "Done", path());
+                                                                                        return false;
+                                                                                } catch (PersistenceDisabledException e) {
+                                                                                	sendPersistenceDisabledError(ctx);
+											return false;
+										}
+                                                                        }
+                                                                	writePermanentRedirect(ctx, "Done", path());
+									return true;
+								} catch (IdentifierCollisionException e) {
+									Logger.error(this, "Cannot put same directory twice in same millisecond");
+									writePermanentRedirect(ctx, "Done", path());
+									return false;
+								} catch (MalformedURLException e) {
+									writeError(l10n("errorInvalidURI"), l10n("errorInvalidURIToU"), ctx);
+									return false;
+								} catch (FileNotFoundException e) {
+									writeError(l10n("errorNoFileOrCannotRead"), l10n("errorAccessDeniedFile", "file", file.toString()), ctx);
+									return false;
+								} catch (TooManyFilesInsertException e) {
+									writeError(l10n("tooManyFilesInOneFolder"), l10n("tooManyFilesInOneFolder"), ctx);
+									return false;
+								} finally {
+									done.countDown();
+								}
 							} catch (IOException e) {
 								// Ignore
 								return false;
@@ -873,7 +874,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				for(String part : request.getParts()) {
 					if(!part.startsWith("identifier-")) continue;
 					String key = request.getPartAsStringFailsafe("key-"+part.substring("identifier-".length()), MAX_KEY_LENGTH);
-					if(key == null || key.equals("")) continue;
+					if(key == null || key.equals("")) {
+                                        	continue;
+                                        }
 					form.addChild("#", l10n("key") + ":");
 					form.addChild("br");
 					form.addChild("#", key);
