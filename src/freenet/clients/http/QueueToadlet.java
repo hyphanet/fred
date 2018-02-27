@@ -880,6 +880,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					form.addChild("br");
 					form.addChild("input", new String[] { "type", "name", "value" },
 							new String[] { "hidden", "key-"+x, key });
+                                        x += 1;
 				}
 				form.addChild("label", "for", "descB", (l10n("recommendDescription") + ' '));
 				form.addChild("br");
@@ -912,7 +913,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
-			} else if(request.isPartSet("recommend_uri") && request.isPartSet("URI")) {
+			} else if(request.isPartSet("recommend_uri")) {
 				String description = request.getPartAsStringFailsafe("description", 32768);
 				ArrayList<FreenetURI> uris = new ArrayList<FreenetURI>();
 				for(String part : request.getParts()) {
@@ -2256,7 +2257,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			boolean advancedModeEnabled, String[] priorityClasses,	boolean top,
 			QueueType queueType) {
 		form.addChild(createDeleteControl(pageMaker, ctx, mimeType, queueType));
-		if (hasFriends && !(queueType.isUpload && queueType.isFailed)) {
+		if (hasFriends && !(queueType.isUpload && !queueType.isCompleted)) {
 			form.addChild(createRecommendControl(pageMaker, ctx));
 		}
 		if (!(queueType.isFailed || queueType.isCompleted)) {
