@@ -2256,7 +2256,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			boolean advancedModeEnabled, String[] priorityClasses,	boolean top,
 			QueueType queueType) {
 		form.addChild(createDeleteControl(pageMaker, ctx, mimeType, queueType));
-		if (hasFriends && !(queueType.isUpload && queueType.isFailed)) {
+		if (hasFriends && !(queueType.isUpload && !queueType.isCompleted)) {
 			form.addChild(createRecommendControl(pageMaker, ctx));
 		}
 		if (!(queueType.isFailed || queueType.isCompleted)) {
