@@ -880,6 +880,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					form.addChild("br");
 					form.addChild("input", new String[] { "type", "name", "value" },
 							new String[] { "hidden", "key-"+x, key });
+                                        x += 1;
 				}
 				form.addChild("label", "for", "descB", (l10n("recommendDescription") + ' '));
 				form.addChild("br");
