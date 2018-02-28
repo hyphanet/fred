@@ -145,7 +145,7 @@ public class N2NTMToadlet extends Toadlet {
 			String message = request.getPartAsStringFailsafe("message", 1024 * 1024);
 			message = message.trim();
 			String messageHead = message.substring(0, Math.min(message.length(), 1024));
-			if (message.length() > 1024 * 512) {
+			if (message.length() > 1024 * 128) {
 				this.writeTextReply(ctx, 400, "Bad request", l10n("tooLong"));
 				return;
 			}

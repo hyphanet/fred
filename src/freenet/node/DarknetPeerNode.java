@@ -1495,9 +1495,13 @@ public class DarknetPeerNode extends PeerNode {
 		List<UserAlert> merged = new ArrayList<>();
 		if (msgid != Long.MAX_VALUE) {
 			// merge existing user alerts
-			// TODO: This costs time linear to the number
+
+                        // TODO: This costs time linear to the number
 			// of known alerts, so receiving a large text
-			// message is quadratic in its size!
+			// message is quadratic in its size! Worst
+			// case cost for transfer of a single huge
+			// n2ntm (when receiving every second message)
+			// is about 0.5 N*N, with N at most 128.
 			for (UserAlert userAlert : node.clientCore.alerts.getAlerts()) {
 				if (!(userAlert instanceof N2NTMUserAlert)) {
 					continue;
