@@ -1408,7 +1408,7 @@ public class DarknetPeerNode extends PeerNode {
 			fs.putSingle("text", Base64.encodeUTF8(messagePart));
 			fs.put("msgid", msgid);
 			// increment compose time to allow sorting messages, this does not change the time for 
-			fs.put("composedTime", now + (requiredN2nCount - i));
+			fs.put("composedTime", now + i);
 			sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
 			this.setPeerNodeStatus(System.currentTimeMillis());
 		}
@@ -1501,23 +1501,28 @@ public class DarknetPeerNode extends PeerNode {
 			// message is quadratic in its size! Worst
 			// case cost for transfer of a single huge
 			// n2ntm (when receiving every second message)
-			// is about 0.5 N*N, with N at most 128.
-			for (UserAlert userAlert : node.clientCore.alerts.getAlerts()) {
-				if (!(userAlert instanceof N2NTMUserAlert)) {
-					continue;
-				}
-				N2NTMUserAlert alert = (N2NTMUserAlert) userAlert;
-				if (msgid == alert.getMsgid()) {
-					// merge a preceding n2ntm
-					if (composedTime == alert.getComposedTime() + 1) {
-						text = alert.getMessageText() + text;
-						merged.add(userAlert);
-					// merge a succeeding n2ntm
-					} else if (composedTime == alert.getComposedTime() - 1) {
-						text = text + alert.getMessageText();
-						merged.add(userAlert);
-					}
-				}
+			// is about 0.5 N*N, with N at most
+			// 128. However even sending a 64kiB file
+			// (DarknetPeerNode.java) does not cause
+			// noticeable load on the receiving system.
+                        synchronized (text) {
+                                for (UserAlert userAlert : node.clientCore.alerts.getAlerts()) {
+                                        if (!(userAlert instanceof N2NTMUserAlert)) {
+                                                continue;
+                                        }
+                                        N2NTMUserAlert alert = (N2NTMUserAlert) userAlert;
+                                        if (msgid == alert.getMsgid()) {
+                                                // merge a preceding n2ntm
+                                                if (composedTime == alert.getComposedTime() + 1) {
+                                                        text = alert.getMessageText() + text;
+                                                        merged.add(userAlert);
+                                                        // merge a succeeding n2ntm
+                                                } else if (composedTime == alert.getComposedTime() - 1) {
+                                                        text = text + alert.getMessageText();
+                                                        merged.add(userAlert);
+                                                }
+                                        }
+                                }
 			}
 		}
 		N2NTMUserAlert userAlert = new N2NTMUserAlert(this, text, fileNumber, composedTime, sentTime, receivedTime, msgid);
