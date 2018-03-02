@@ -294,15 +294,15 @@ public class N2NTMToadlet extends Toadlet {
 		}
 		messageForm.addChild("textarea", new String[] { "id", "name", "rows",
 				"cols" }, new String[] { "n2ntmtext", "message", "8", "74" });
-		messageForm.addChild("br");
-		messageForm.addChild("#", NodeL10n.getBase().getString("N2NTMToadlet.mayAttachFile"));
-		if(ctx.isAllowedFullAccess()) {
+		if(advancedMode){		 
 			messageForm.addChild("br");
-			messageForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
-			messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "n2nm-browse", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseButton") + "..." });
-			messageForm.addChild("br");
-		}
-		if(advancedMode){
+			messageForm.addChild("#", NodeL10n.getBase().getString("N2NTMToadlet.mayAttachFile"));
+			if(ctx.isAllowedFullAccess()) {
+				messageForm.addChild("br");
+				messageForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
+				messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "n2nm-browse", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseButton") + "..." });
+				messageForm.addChild("br");
+			}
 			messageForm.addChild("#", NodeL10n.getBase().getString("N2NTMToadlet.sizeWarning", "limit", SizeUtil.formatSize(maxSize(), true)));
 			messageForm.addChild("br");
 			messageForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileLabel") + ": ");
