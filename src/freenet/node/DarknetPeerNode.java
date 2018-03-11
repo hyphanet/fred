@@ -593,7 +593,6 @@ public class DarknetPeerNode extends PeerNode {
 			Logger.error(this, "Read unknown peer note type '"+peerNoteType+"' from file "+extraPeerDataFile.getPath());
 			return false;
 		} else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NM) {
-			boolean sendSuccess = false;
 			int type = fs.getInt("n2nType");
 			if(isConnected()) {
 				Message n2nm;
@@ -615,24 +614,13 @@ public class DarknetPeerNode extends PeerNode {
 					Logger.error(this, "UnsupportedEncodingException processing extraPeerDataType ("+extraPeerDataTypeString+") in file "+extraPeerDataFile.getPath(), e);
 					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 				}
-
+				// the callback ensures that n2ns are only unqueued after being acknowledged
+				UnqueueMessageOnAckCallback cb = new UnqueueMessageOnAckCallback(this, fileNumber);
 				try {
-					synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
-						node.usm.send(this, n2nm, null);
-						Logger.normal(this, "Sent queued ("+fileNumber+") N2NM to '"+getName()+"': "+n2nm);
-						sendSuccess = true;
-						queuedToSendN2NMExtraPeerDataFileNumbers.remove(fileNumber);
-					}
-					deleteExtraPeerDataFile(fileNumber);
+				  sendAsync(n2nm, cb, null);
+				  Logger.normal(this, "Sending queued ("+fileNumber+") N2NM to '"+getName()+"': "+n2nm);
 				} catch (NotConnectedException e) {
-					sendSuccess = false;  // redundant, but clear
-				}
-			}
-			if(!sendSuccess) {
-				synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
-					fs.putOverwrite("extraPeerDataType", Integer.toString(extraPeerDataType));
-					fs.removeValue("sentTime");
-					queuedToSendN2NMExtraPeerDataFileNumbers.add(Integer.valueOf(fileNumber));
+				  fs.removeValue("sentTime");
 				}
 			}
 			return true;
@@ -834,11 +822,19 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	public void queueN2NM(SimpleFieldSet fs) {
+	public int queueN2NM(SimpleFieldSet fs) {
 		int fileNumber = writeNewExtraPeerDataFile( fs, Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NM);
 		synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
 			queuedToSendN2NMExtraPeerDataFileNumbers.add(fileNumber);
 		}
+		return fileNumber;
+	}
+
+	public void unqueueN2NM(int fileNumber) {
+		synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
+			queuedToSendN2NMExtraPeerDataFileNumbers.add(fileNumber);
+		}
+		deleteExtraPeerDataFile(fileNumber);
 	}
 
 	public void sendQueuedN2NMs() {
@@ -1407,7 +1403,8 @@ public class DarknetPeerNode extends PeerNode {
 			fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_USERALERT);
 			fs.putSingle("text", Base64.encodeUTF8(messagePart));
 			fs.put("msgid", msgid);
-			// increment compose time to allow sorting messages, this does not change the time for 
+			// increment compose time to allow sorting messages, this does not change the time for
+			// TODO: refactor to allow using a message index
 			fs.put("composedTime", now + i);
 			sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
 			this.setPeerNodeStatus(System.currentTimeMillis());
@@ -1456,9 +1453,9 @@ public class DarknetPeerNode extends PeerNode {
 		storeOffers();
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fo.toFieldSet(fs);
-		if(logMINOR)
+		if(logMINOR) {
 			Logger.minor(this, "Sending node to node message (file offer):\n"+fs);
-
+		}
 		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER);
 		sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
 		setPeerNodeStatus(System.currentTimeMillis());
