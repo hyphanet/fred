@@ -1395,9 +1395,9 @@ public class DarknetPeerNode extends PeerNode {
 
 	public int sendTextFeed(String message) {
 		long now = System.currentTimeMillis();
-		long msgid = node.random.nextLong();
+		long msgid = Math.abs(node.random.nextLong());
 		// split large messages
-		int requiredN2nCount = 1 + (message.length() / 1024);
+		int requiredN2nCount = 1 + ((message.length() - 1) / 1024);
 		String messagePart;
 		for (int i = 0; i < requiredN2nCount; i++) {
 			messagePart = message.substring(i * 1024,
