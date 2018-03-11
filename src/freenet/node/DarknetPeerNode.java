@@ -160,7 +160,7 @@ public class DarknetPeerNode extends PeerNode {
 	 * @param fs The SimpleFieldSet to parse
 	 * @param node2 The running Node we are part of.
 	 * @param trust If this is a new node, we will use this parameter to set the initial trust level.
-	 * @throws PeerTooOldException 
+	 * @throws PeerTooOldException
 	 */
 	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		super(fs, node2, crypto, fromLocal);
@@ -1476,7 +1476,7 @@ public class DarknetPeerNode extends PeerNode {
 		return sendFileOffer(fnam, mime, message, data);
 	}
 
-        // handler for sendTextFeed
+	// handler for sendTextFeed
 	public void handleFproxyN2NTM(SimpleFieldSet fs, int fileNumber) {
 		String text = null;
 		long composedTime = fs.getLong("composedTime", -1);
@@ -1495,7 +1495,7 @@ public class DarknetPeerNode extends PeerNode {
 		if (msgid != -1) {
 			// merge existing user alerts
 
-                        // TODO: This costs time linear to the number
+			// TODO: This costs time linear to the number
 			// of known alerts, so receiving a large text
 			// message is quadratic in its size! Worst
 			// case cost for transfer of a single huge
