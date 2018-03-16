@@ -892,7 +892,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					new String[]{"descB", "description", "3", "70"});
 				form.addChild("br");
 				if (core.node.isFProxyJavascriptEnabled()) {
-					form.addChild("script", new String[] {"type", "src"}, new String[] {"text/javascript",	"/static/js/checkall.js"});
+					form.addChild("script", new String[] {"type", "src"}, new String[] {"text/javascript", "/static/js/checkall.js"});
 				}
 				HTMLNode peerTable = form.addChild("table", "class", "darknet_connections");
 				if (core.node.isFProxyJavascriptEnabled()) {
@@ -1591,7 +1591,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode completedUploadInfoboxContent = pageMaker.getInfobox("completed_requests", l10n("completedU", new String[]{ "size" }, new String[]{ String.valueOf(completedUpload.size()) }), contentNode, "download-completed", false);
 			if (advancedModeEnabled) {
 				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new QueueColumn[] { QueueColumn.IDENTIFIER, QueueColumn.FILENAME, QueueColumn.SIZE, QueueColumn.MIME_TYPE, QueueColumn.PERSISTENCE, QueueColumn.KEY }, priorityClasses, advancedModeEnabled, "completed-upload-file", QueueType.CompletedUpload));
-			} else	{
+			} else {
 				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new QueueColumn[] { QueueColumn.FILENAME, QueueColumn.SIZE, QueueColumn.KEY }, priorityClasses, advancedModeEnabled, "completed-upload-file", QueueType.CompletedUpload));
 			}
 		}
@@ -2083,7 +2083,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
     private HTMLNode createLastFailureCell(long now, Date lastFailure) {
 	HTMLNode lastFailureCell = new HTMLNode("td", "class", "request-last-failure");
 	if (lastFailure == null) {
-	    // This is "never"	instead of "unknown" because the backend of RequestStatus uses null
+	    // This is "never" instead of "unknown" because the backend of RequestStatus uses null
 	    // to signalize that no failure has happened yet.
 	    lastFailureCell.addChild("i", l10n("lastFailure.never"));
 	} else {
@@ -2149,7 +2149,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					headerRow.addChild("th", l10n("reason"));
 					break;
 				case LAST_ACTIVITY:
-					headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=lastActivity" : "?sortBy=lastActivity&reversed"),	 l10n("lastActivity"));
+					headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=lastActivity" : "?sortBy=lastActivity&reversed"), l10n("lastActivity"));
 					break;
 		case LAST_FAILURE:
 		    headerRow.addChild("th").addChild("a", "href",
@@ -2255,12 +2255,16 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return formDiv;
 	}
 
+	private boolean queueCannotRecommend(QueueType queueType) {
+		return queueType.isUpload && !queueType.isCompleted;
+	}
+  
 	private void createRequestTableButtons(HTMLNode form, PageMaker pageMaker,
 			ToadletContext ctx, String mimeType, boolean hasFriends,
 			boolean advancedModeEnabled, String[] priorityClasses,	boolean top,
 			QueueType queueType) {
 		form.addChild(createDeleteControl(pageMaker, ctx, mimeType, queueType));
-		if (hasFriends && !(queueType.isUpload && !queueType.isCompleted)) {
+		if (hasFriends && !queueCannotRecommend(queueType)) {
 			form.addChild(createRecommendControl(pageMaker, ctx));
 		}
 		if (!(queueType.isFailed || queueType.isCompleted)) {

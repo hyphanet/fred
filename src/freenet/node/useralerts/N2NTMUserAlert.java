@@ -43,15 +43,7 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 	public N2NTMUserAlert(DarknetPeerNode sourcePeerNode, String message, int fileNumber, long composedTime,
 			long sentTime, long receivedTime) {
 		super(true, null, null, null, null, UserAlert.MINOR, true, null, true, null);
-		this.messageText = message;
-		this.fileNumber = fileNumber;
-		this.composedTime = composedTime;
-		this.sentTime = sentTime;
-		this.receivedTime = receivedTime;
-		this.peerRef = sourcePeerNode.getWeakRef();
-		this.sourceNodeName = sourcePeerNode.getName();
-		this.sourcePeer = sourcePeerNode.getPeer().toString();
-		this.msgid = Long.MAX_VALUE;
+                N2NTMUserAlert(sourcePeerNode, message, fileNumber, composedTime, sentTime, receivedTime, -1);
 	}
 
 	@Override
@@ -131,33 +123,18 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 		return receivedTime;
 	}
 
-	/**
-	 * @return the messageText
-	 */
 	public String getMessageText() {
 		return messageText;
 	}
 
-	/**
-	 * @return the fileNumber
-	 */
 	public int getFileNumber() {
 		return fileNumber;
 	}
 
-	/**
-	 * @return the composedTime
-	 */
 	public long getComposedTime() {
 		return composedTime;
 	}
 
-	/**
-	 * @param composedTime the composedTime to set
-	 */
-	/**
-	 * @return the sentTime
-	 */
 	public long getSentTime() {
 		return sentTime;
 	}
