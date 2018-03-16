@@ -149,7 +149,7 @@ public class N2NTMToadlet extends Toadlet {
 				this.writeTextReply(ctx, 400, "Bad request", l10n("tooLong"));
 				return;
 			}
-			PageNode page =	 ctx.getPageMaker().getPageNode(l10n("processingSend"), ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("processingSend"), ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
