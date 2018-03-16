@@ -190,16 +190,16 @@ public class OpennetManager {
 	/** Enable scaling of peers with bandwidth? */
 	public static final boolean ENABLE_PEERS_PER_KB_OUTPUT = true;
 	/** Constant for scaling peers: we multiply bandwidth in kB/sec by this
-	 * and then take the square root. 12 gives 11 at 10K, 15 at 20K, 19 at
-	 * 30K, 26 at 60K, 34 at 100K, 40 at 140K, 100 at 2500K.
-	 * 212 at 30mbit/s (the mean upload in Japan in 2014) and
-	 * 363 at 88mbit/s (the mean upload in Hong Kong in 2014).*/
-	public static final double SCALING_CONSTANT = 12.0;
+	 * and then take the square root. 7 gives 7 at 7K, 8 at 10K, 12 at 20K, 14 at
+	 * 30K, 20 at 60K, 26 at 100K, 31 at 140K, 132 at 2500K.
+	 * 162 at 30mbit/s (the mean upload in Japan in 2014) and
+	 * 277 at 88mbit/s (the mean upload in Hong Kong in 2014).*/
+	public static final double SCALING_CONSTANT = 7.0;
 	/**
 	 * Minimum number of peers. Do not reduce this: As a rough estimate, because the vast majority
 	 * of requests complete in 5 hops, this gives just one binary decision per hop on average.
 	 */
-	public static final int MIN_PEERS_FOR_SCALING = 10;
+	public static final int MIN_PEERS_FOR_SCALING = 7;
 	/** The maximum possible distance between two nodes in the wrapping [0,1) location space. */
 	public static final double MAX_DISTANCE = 0.5;
 	/** The fraction of nodes which are only a short distance away. */
