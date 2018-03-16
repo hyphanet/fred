@@ -177,7 +177,7 @@ public class N2NTMToadlet extends Toadlet {
 
 					if(filename != null) {
 						try {
-						  status = pn.sendFileOffer(filename, messageHead);
+							status = pn.sendFileOffer(filename, messageHead);
 						} catch (IOException e) {
 							peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));
 							Toadlet.addHomepageLink(peerTableInfobox);
