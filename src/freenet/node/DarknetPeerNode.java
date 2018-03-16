@@ -1403,8 +1403,9 @@ public class DarknetPeerNode extends PeerNode {
 			fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_USERALERT);
 			fs.putSingle("text", Base64.encodeUTF8(messagePart));
 			fs.put("msgid", msgid);
-			// increment compose time to allow sorting messages, this does not change the time for
-			// TODO: refactor to allow using a message index
+			fs.put("requiredParts", requiredN2nCount);
+			fs.put("partIndex", i);
+			// increment compose time to allow sorting messages
 			fs.put("composedTime", now + i);
 			sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
 			this.setPeerNodeStatus(System.currentTimeMillis());
@@ -1419,9 +1420,9 @@ public class DarknetPeerNode extends PeerNode {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED);
 		fs.put("uid", uid);
-		if(logMINOR)
+		if(logMINOR) {
 			Logger.minor(this, "Sending node to node message (file offer accepted):\n"+fs);
-
+		}
 
 		sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
 		setPeerNodeStatus(System.currentTimeMillis());
