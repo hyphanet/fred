@@ -40,10 +40,13 @@ public class WrapperConfig {
 			Logger.normal(WrapperConfig.class, "Cannot alter properties: not running under wrapper");
 			return false;
 		}
-		File f = new File("wrapper.conf");
+		File f = new File("wrapper/wrapper.conf");
 		if(!f.exists()) {
-			Logger.normal(WrapperConfig.class, "Cannot alter properties: wrapper.conf does not exist");
-			return false;
+			f = new File("wrapper.conf");
+			if(!f.exists()) {
+                            Logger.normal(WrapperConfig.class, "Cannot alter properties: wrapper.conf does not exist");
+                            return false;
+ 			}
 		}
 		if(!f.canRead()) {
 			Logger.normal(WrapperConfig.class, "Cannot alter properties: wrapper.conf not readable");
