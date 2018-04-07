@@ -9,7 +9,7 @@ next ():
 - fix warnings
 - optimization
 - Persist "Bookmark Updated" notifications across restarts
-
+- minimum bandwidth increased to 10KiB again
 
 1480:
 
