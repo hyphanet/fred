@@ -11,6 +11,11 @@ next ():
 - Persist "Bookmark Updated" notifications across restarts
 
 
+1480:
+
+- Ship new Windows Installer and Tray
+- Update Freemail to v0.2.7.3-r2
+
 1479:
 
 - optimized network settings for the new structure since the link
