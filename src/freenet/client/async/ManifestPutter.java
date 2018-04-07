@@ -3,13 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.Serializable;
+
 import freenet.client.InsertException;
 
 public abstract class ManifestPutter extends BaseClientPutter {
 	
     private static final long serialVersionUID = 1L;
 
-    protected ManifestPutter() {
+	/** Required because {@link Serializable} is implemented by a parent class. */
+	protected ManifestPutter() {
 	}
 
 	protected ManifestPutter(short priorityClass, ClientBaseCallback cb) {

@@ -1,5 +1,7 @@
 package freenet.support.io;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
@@ -12,10 +14,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.FileSystemException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.util.Arrays;
 import java.util.Vector;
-
-import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.async.ClientContext;
 import freenet.support.LogThresholdCallback;
@@ -159,7 +162,10 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 	 */
 	protected File getTempfile() throws IOException {
 		File file = getFile();
-		File f = File.createTempFile(file.getName(), ".freenet-tmp", file.getParentFile());
+		File f = File.createTempFile("."+file.getName(), ".freenet-tmp", file.getParentFile());
+		try {
+			Files.setAttribute(f.toPath(), "dos:hidden", true, LinkOption.NOFOLLOW_LINKS);
+		} catch (FileSystemException|UnsupportedOperationException e) { } //at least we've tried.
 		if(deleteOnExit()) f.deleteOnExit();
 		return f;
 	}

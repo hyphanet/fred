@@ -5,6 +5,9 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.FileSystemException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.util.List;
 
 import freenet.client.ClientMetadata;
@@ -130,7 +133,10 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
                 File targetFile = fileCallback.getCompletionFile();
                 if(targetFile != null) {
                     callbackCompleteViaTruncation = fileCallback;
-                    fileCompleteViaTruncation = File.createTempFile(targetFile.getName(), ".freenet-tmp", targetFile.getParentFile());
+                    fileCompleteViaTruncation = File.createTempFile("."+targetFile.getName(), ".freenet-tmp", targetFile.getParentFile());
+                    try {
+                        Files.setAttribute(fileCompleteViaTruncation.toPath(), "dos:hidden", true, LinkOption.NOFOLLOW_LINKS);
+                    } catch (FileSystemException e) { } //at least we've tried.
                     // Storage must actually create the RAF since it knows the length.
                 } else {
                     callbackCompleteViaTruncation = null;
