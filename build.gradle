@@ -214,7 +214,7 @@ copyRuntimeLibs.dependsOn jar
 
 // In this section you declare the dependencies for your production and test code
 dependencies {
-    compile "org.bouncycastle:bcprov-jdk15on:1.58"
+    compile "org.bouncycastle:bcprov-jdk15on:1.59"
     compile "net.java.dev.jna:jna:4.2.2"
     compile "net.java.dev.jna:jna-platform:4.2.2"
     compile "org.freenetproject:freenet-ext:29"
@@ -228,7 +228,7 @@ dependencyVerification {
     // testCompile includes all of compile deps... so let's include only these
     includedConfigurations = [configurations.testCompile]
     verify = [
-        'org.bouncycastle:bcprov-jdk15on:eb61ab61065ed96f9f2d5cde94d326233c09fdec9333c1185f2fa65ee88a4236',
+        'org.bouncycastle:bcprov-jdk15on:1c31e44e331d25e46d293b3e8ee2d07028a67db011e74cb2443285aed1d59c85',
         'net.java.dev.jna:jna-platform:32aca873a4cb14721d939bbc8287a828919c05e8e1040b3fe8290f6128cdecca',
         'net.java.dev.jna:jna:1f38af54e06c6e6f6dbf39ba2c052b952dea5dddb4871127b34639ddeb11bdbe',
         'org.freenetproject:freenet-ext:32f2b3d6beedf54137ea2f9a3ebef67666d769f0966b08cd17fd7db59ba4d79f',
