@@ -55,7 +55,6 @@ public class BookmarkItem extends Bookmark {
         this.hasAnActivelink = sfs.getBoolean("hasAnActivelink");
         // "Updated" was added in 2016-08-19, so we must assume it doesn't exist in previously saved
         // bookmark databases and provide a default to prevent getBoolean() from throwing.
-        // TODO: Code quality: Remove default after a year or so.
         this.updated = sfs.getBoolean("Updated", false);
         this.key = new FreenetURI(sfs.get("URI"));
         this.manager = bm;
