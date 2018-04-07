@@ -761,7 +761,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * excluding the reserved -1 for input bandwidth - the callback will throw. See the callbacks for
 	 * outputBandwidthLimit and inputBandwidthLimit. 4 KiB are equivalent to 20 GiB traffic per month.
 	 */
-	private static final int minimumBandwidth = 4 * 1024;
+	private static final int minimumBandwidth = 10 * 1024;
 
 	/** Quality of Service mark we will use for all outgoing packets (opennet/darknet) */
 	private TrafficClass trafficClass;
