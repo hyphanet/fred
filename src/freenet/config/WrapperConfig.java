@@ -139,7 +139,7 @@ public class WrapperConfig {
 			File oldOldConfig = new File(wrapperDir + "/wrapper.conf.old");
 			if(oldOldConfig.exists() && !oldOldConfig.delete())
 				try {
-					oldOldConfig = File.createTempFile(wrapperDir + "wrapper.conf", ".old.tmp", new File("."));
+					oldOldConfig = File.createTempFile(wrapperDir + "/wrapper.conf", ".old.tmp", new File("."));
 				} catch (IOException e) {
 					String error = "Unable to create temporary file and unable to copy wrapper.conf to wrapper.conf.old. Could not update wrapper.conf trying to set property "+name;
 					Logger.error(WrapperConfig.class, error);
