@@ -240,6 +240,29 @@ dependencyVerification {
     ]
 }
 
+task tar(type: Tar) {
+  description = "Build a source release, specifically excluding the build directories and gradle wrapper files"
+  compression = Compression.GZIP
+
+  baseName = "freenet-sources"
+
+  from(project.rootDir) {
+    exclude '**/build'
+    exclude 'build'
+    exclude '.gradle'
+  }
+
+  into(baseName)
+
+  // Set destination directory.
+  destinationDir = file("${project.buildDir}")
+
+  archiveName = "${baseName}.tgz"
+  doLast { // generate md5 checksum
+    ant.checksum file:"$destinationDir/$archiveName"
+  }
+}
+
 javadoc << {
     failOnError false
 }
