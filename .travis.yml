@@ -27,8 +27,6 @@ before_install: echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m
 install: "./gradlew jar"
 
 jdk:
-  - oraclejdk8
-  - oraclejdk9
   - openjdk8
 
 script: if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then ./gradlew check ; fi
