@@ -24,7 +24,7 @@ cache:
   - $HOME/.gradle/wrapper/
 
 before_install: echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
-install: "./gradlew jar"
+install: if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then ./gradlew jar ; fi
 
 jdk:
   - openjdk8
