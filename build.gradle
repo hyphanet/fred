@@ -242,7 +242,7 @@ dependencyVerification {
 
 task tar(type: Tar) {
   description = "Build a source release, specifically excluding the build directories and gradle wrapper files"
-  compression = Compression.GZIP
+  compression = Compression.BZIP2
 
   baseName = "freenet-sources"
 
