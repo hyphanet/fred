@@ -254,6 +254,9 @@ task tar(type: Tar) {
 
   into(baseName)
 
+  preserveFileTimestamps = false
+  reproducibleFileOrder = true
+
   // Set destination directory.
   destinationDir = file("${project.buildDir}")
 
