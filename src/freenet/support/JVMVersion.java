@@ -20,7 +20,7 @@ public class JVMVersion {
 	/**
 	 * Java version before which to use the legacy updater URI.
 	 */
-	public static final String UPDATER_THRESHOLD = "1.7";
+	public static final String UPDATER_THRESHOLD = "1.8";
 
 	/**
 	 * Pre-9 is formatted as: major.feature[.maintenance[_update]]-ident

@@ -17,6 +17,8 @@ public class JVMVersionTest extends TestCase {
 		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.6.0_32"));
 		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.6"));
 		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.5"));
+		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.7.0_65"));
+		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.7"));
 	}
 
 	public void testRecentEnoughWarning() {
@@ -26,8 +28,6 @@ public class JVMVersionTest extends TestCase {
 	}
 
 	public void testRecentEnoughUpdater() {
-		Assert.assertFalse(JVMVersion.needsLegacyUpdater("1.7.0_65"));
-		Assert.assertFalse(JVMVersion.needsLegacyUpdater("1.7"));
 		Assert.assertFalse(JVMVersion.needsLegacyUpdater("1.8.0_9"));
 		Assert.assertFalse(JVMVersion.needsLegacyUpdater("9-ea"));
 		Assert.assertFalse(JVMVersion.needsLegacyUpdater("10"));

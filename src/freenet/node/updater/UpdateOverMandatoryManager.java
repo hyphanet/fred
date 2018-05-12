@@ -1189,7 +1189,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		if (source.getVersionNumber() < NodeUpdateManager.TRANSITION_VERSION) {
 		    data = updateManager.getTransitionMainBlob();
 		    version = NodeUpdateManager.TRANSITION_VERSION;
-		    uri = NodeUpdateManager.transitionMainJarURIAsUSK;
+		    uri = NodeUpdateManager.previousMainJarUSK;
 		} else {
 		    data = updateManager.getCurrentVersionBlobFile();
 		    version = Version.buildNumber();
