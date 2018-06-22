@@ -249,7 +249,7 @@ public class UpdateDeployContext {
 
 		// write the java arguments
 		// As above, we need to write ALL the dependencies BEFORE we write the main jar.
-		int count = 1; // arguments for java are also 1-based.
+		count = 1; // arguments for java are also 1-based.
 		for(String s : additionalJavaArguments) {
 			bw.write("wrapper.java.additional."+count+"="+s+'\n');
 			count++;
