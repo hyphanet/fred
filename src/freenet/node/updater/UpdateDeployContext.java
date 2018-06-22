@@ -256,7 +256,7 @@ public class UpdateDeployContext {
 		}
 		// ensure that we have an entry for the JNA tempdir
 		if (!writtenJnaTmpDir) {
-			bw.write("wrapper.java.additional."+count+"=-Djna.tmpdir=./tmp/"+'\n');
+			bw.write("wrapper.java.additional."+count+"=-Djava.io.tmpdir=./tmp/"+'\n');
 		}
 		
 		for(String s : otherLines)
