@@ -464,7 +464,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 				new FProxyPortCallback(), false);
 		fproxyConfig.register("bindTo", NetworkInterface.DEFAULT_BIND_TO, configItemOrder++, true, true, "SimpleToadletServer.bindTo", "SimpleToadletServer.bindToLong",
 				new FProxyBindtoCallback());
-		fproxyConfig.register("css", "clean-dropdown", configItemOrder++, false, false, "SimpleToadletServer.cssName", "SimpleToadletServer.cssNameLong",
+		fproxyConfig.register("css", PageMaker.THEME.getDefault().code, configItemOrder++, false, false, "SimpleToadletServer.cssName", "SimpleToadletServer.cssNameLong",
 				new FProxyCSSNameCallback());
 		fproxyConfig.register("CSSOverride", "", configItemOrder++, true, false, "SimpleToadletServer.cssOverride", "SimpleToadletServer.cssOverrideLong",
 				new FProxyCSSOverrideCallback());
