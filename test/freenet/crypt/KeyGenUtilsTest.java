@@ -3,7 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -22,7 +26,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Test;
 
 import freenet.support.HexUtil;
-import freenet.support.Logger;
 
 public class KeyGenUtilsTest {
     private static final int trueLength = 16;
