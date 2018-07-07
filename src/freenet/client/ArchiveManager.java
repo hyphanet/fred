@@ -36,7 +36,7 @@ import freenet.support.compress.Compressor;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
-
+import freenet.support.io.SkipShieldingInputStream;
 import net.contrapunctus.lzma.LzmaInputStream;
 
 /**
@@ -348,16 +348,14 @@ public class ArchiveManager {
 				wrapper = null;
 			}
 
-			if(ARCHIVE_TYPE.ZIP == archiveType)
+			if(ARCHIVE_TYPE.ZIP == archiveType) {
 				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit, context);
-			else if(ARCHIVE_TYPE.TAR == archiveType) {
-                                // COMPRESS-449 workaround, see https://freenet.mantishub.io/view.php?id=6921
-                                byte[] buf = new byte[(int) archiveSize];
-                                is.read(buf);
-				handleTARArchive(ctx, key, new ByteArrayInputStream(buf), element, callback, gotElement, throwAtExit, context);
-                        }
-		else
+			} else if(ARCHIVE_TYPE.TAR == archiveType) {
+				 // COMPRESS-449 workaround, see https://freenet.mantishub.io/view.php?id=6921
+				handleTARArchive(ctx, key, new SkipShieldingInputStream(is), element, callback, gotElement, throwAtExit, context);
+			} else {
 				throw new ArchiveFailureException("Unknown or unsupported archive algorithm " + archiveType);
+			}
 			if(wrapper != null) {
 				Exception e = wrapper.get();
 				if(e != null) throw new ArchiveFailureException("An exception occured decompressing: "+e.getMessage(), e);
