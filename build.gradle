@@ -185,6 +185,10 @@ test {
     ]
 }
 
+tasks.withType(Test) {
+    enableAssertions = false
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
