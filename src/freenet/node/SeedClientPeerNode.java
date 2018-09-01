@@ -3,12 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.SimpleFieldSet;
+
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Seed node's representation of a client node connecting in order to announce.
@@ -16,8 +16,8 @@ import freenet.support.SimpleFieldSet;
  */
 public class SeedClientPeerNode extends PeerNode {
 
-	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean noSig, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		super(fs, node2, crypto, peers, fromLocal, noSig, mangler, true);
+	public SeedClientPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
+		super(fs, node2, crypto, false);
 	}
 
 	@Override
@@ -98,11 +98,6 @@ public class SeedClientPeerNode extends PeerNode {
 	}
 
 	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return true;
-	}
-
-	@Override
 	protected boolean ignoreLastGoodVersion() {
 		return true;
 	}
@@ -155,7 +150,7 @@ public class SeedClientPeerNode extends PeerNode {
 	}
 	
 	@Override
-	public boolean shallWeRouteAccordingToOurPeersLocation() {
+	public boolean shallWeRouteAccordingToOurPeersLocation(int htl) {
 		return false; // Irrelevant
 	}
 	
@@ -172,5 +167,19 @@ public class SeedClientPeerNode extends PeerNode {
 		return true;
 	}
 
+    @Override
+    public boolean isOpennetForNoderef() {
+        return true;
+    }
+
+    @Override
+    protected void writePeers() {
+        // Do not write peers as seed clients are not in the peers list and are not saved.
+    }
+
+    @Override
+    protected boolean fromAnonymousInitiator() {
+        return true;
+    }
 
 }

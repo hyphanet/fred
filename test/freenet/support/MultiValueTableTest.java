@@ -31,9 +31,9 @@ import junit.framework.TestCase;
  */
 public class MultiValueTableTest extends TestCase {
 	
-	private final int sampleKeyNumber = 100;
-	private final int sampleMaxValueNumber = 3;
-	private final boolean sampleIsRandom = true;
+	private static final int sampleKeyNumber = 100;
+	private static final int sampleMaxValueNumber = 3;
+	private static final boolean sampleIsRandom = true;
 	private Random rnd = new Random(12345);
 	
 	/**

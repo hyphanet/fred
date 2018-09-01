@@ -3,12 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.regex.Pattern;
-
-import com.db4o.ObjectContainer;
 
 import freenet.support.Fields;
 import freenet.support.Logger;
@@ -21,11 +20,14 @@ import freenet.support.Logger;
  * - Enough information to produce a real SSK.
  * - Site name.
  * - Site edition number.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class USK extends BaseClientKey implements Comparable<USK> {
+public class USK extends BaseClientKey implements Comparable<USK>, Serializable {
 
-	/* The character to separate the site name from the edition number in its SSK form.
+    private static final long serialVersionUID = 1L;
+    /* The character to separate the site name from the edition number in its SSK form.
 	 * I chose "-", because it makes it ludicrously easy to go from the USK form to the
 	 * SSK form, and we don't need to go vice versa.
 	 */
@@ -78,6 +80,16 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 		this.cryptoAlgorithm = cryptoAlgorithm;
 		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^
 			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
+	}
+	
+	protected USK() {
+	    // For serialization.
+        pubKeyHash = null;
+        cryptoKey = null;
+        siteName = null;
+	    suggestedEdition = 0;
+	    cryptoAlgorithm = 0;
+	    hashCode = 0;
 	}
 
 	private static final Pattern badDocNamePattern;
@@ -210,10 +222,6 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 			return new FreenetURI("USK", siteName, uri.getAllMetaStrings(), pubKeyHash, cryptoKey, ClientSSK.getExtraBytes(cryptoAlgorithm), edition);
 		}
 		return uri;
-	}
-
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
 	}
 
 	@Override

@@ -9,8 +9,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.Collection;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -31,8 +29,18 @@ import freenet.support.io.TempBucketFactory;
  * When calling <code>start()</code>, the thread will iterate the first time after <code>getStartupDelay()</code> milliseconds.
  * After each iteration, it will sleep for <code>getSleepTime()</code> milliseconds.
  * 
+ * @deprecated
+ *     This class uses {@link TrivialTicker} in a bogus way.
+ *     See <a href="https://bugs.freenetproject.org/view.php?id=6423">issue 6423</a>.<br>
+ *     Also, it was not used by fred itself but only by Web Of Trust and Freetalk, while not being
+ *     part of the fred official plugin API. Thus it should not be contained in fred.<br>
+ *     If you do continue to need this class for a plugin, please move it to a shared library for
+ *     plugins.<br>
+ *     In that case, please use the version of Web Of Trust as it contains fixes for the existing
+ *     bugs of this version here.
  * @author xor
  */
+@Deprecated
 public abstract class TransferThread implements PrioRunnable, ClientGetCallback, ClientPutCallback {
 	
 	private final String mName;
@@ -107,7 +115,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 			int fcounter = 0;
 			for(ClientGetter fetch : fetches) {
 				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
-				fetch.cancel(null, mNode.clientCore.clientContext);
+				fetch.cancel(mNode.clientCore.clientContext);
 				++fcounter;
 			}
 			
@@ -122,7 +130,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 			int icounter = 0;
 			for(BaseClientPutter insert : inserts) {
 				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
-				insert.cancel(null, mNode.clientCore.clientContext);
+				insert.cancel(mNode.clientCore.clientContext);
 				++icounter;
 			}
 			Logger.debug(this, "Stopped " + icounter + " current inserts.");
@@ -200,13 +208,13 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	 * You have to do "finally { removeFetch() }" when using this function.
 	 */
 	@Override
-	public abstract void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container);
+	public abstract void onSuccess(FetchResult result, ClientGetter state);
 
 	/**
 	 * You have to do "finally { removeFetch() }" when using this function.
 	 */
 	@Override
-	public abstract void onFailure(FetchException e, ClientGetter state, ObjectContainer container);
+	public abstract void onFailure(FetchException e, ClientGetter state);
 
 	/* Inserts */
 	
@@ -214,28 +222,18 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	 * You have to do "finally { removeInsert() }" when using this function.
 	 */
 	@Override
-	public abstract void onSuccess(BaseClientPutter state, ObjectContainer container);
+	public abstract void onSuccess(BaseClientPutter state);
 
 	/**
 	 * You have to do "finally { removeInsert() }" when using this function.
 	 */
 	@Override
-	public abstract void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container);
+	public abstract void onFailure(InsertException e, BaseClientPutter state);
 
 	@Override
-	public abstract void onFetchable(BaseClientPutter state, ObjectContainer container);
+	public abstract void onFetchable(BaseClientPutter state);
 
 	@Override
-	public abstract void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container);
+	public abstract void onGeneratedURI(FreenetURI uri, BaseClientPutter state);
 
-	/** Called when freenet.async thinks that the request should be serialized to
-	 * disk, if it is a persistent request. */
-	@Override
-	public abstract void onMajorProgress(ObjectContainer container);
-
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing TransferThread in database", new Exception("error"));
-		return false;
-	}
-	
 }

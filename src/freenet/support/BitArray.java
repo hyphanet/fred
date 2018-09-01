@@ -23,19 +23,18 @@ import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.BitSet;
 
 import freenet.io.WritableToDataOutputStream;
 
 public class BitArray implements WritableToDataOutputStream {
 
-    public static final String VERSION = "$Id: BitArray.java,v 1.2 2005/08/25 17:28:19 amphibian Exp $";
-
-	private int _size;
-	private byte[] _bits;
+	private int size;
+	private final BitSet bits;
 
 	public BitArray(byte[] data) {
-		_bits = data;
-		_size = data.length*8;
+		this.bits = BitSet.valueOf(data);
+		this.size = data.length * 8;
 	}
 	
 	public BitArray copy() {
@@ -46,55 +45,48 @@ public class BitArray implements WritableToDataOutputStream {
 	 * This constructor does not check for unacceptable sizes, and should only be used on trusted data.
 	 */
 	public BitArray(DataInput dis) throws IOException {
-		_size = dis.readInt();
-		_bits = new byte[(_size + 7) / 8];
-		dis.readFully(_bits);
+		this(dis, Integer.MAX_VALUE);
 	}
 	
 	public BitArray(DataInput dis, int maxSize) throws IOException {
-		_size = dis.readInt();
-		if (_size<=0 || _size>maxSize)
-			throw new IOException("Unacceptable bitarray size: "+_size);
-		_bits = new byte[(_size + 7) / 8];
-		dis.readFully(_bits);
+		this.size = dis.readInt();
+		if (size <= 0 || size > maxSize) {
+			throw new IOException("Unacceptable bitarray size: " + size);
+		}
+		byte[] inputBits = new byte[getByteSize()];
+		dis.readFully(inputBits);
+		this.bits = BitSet.valueOf(inputBits);
+		trimToSize();
 	}
 
 	public BitArray(int size) {
-		_size = size;
-		_bits = new byte[(size + 7) / 8];
+		this.size = size;
+		this.bits = new BitSet(size);
 	}
 
 	public BitArray(BitArray src) {
-		this._size = src._size;
-		this._bits = src._bits.clone();
+		this.size = src.size;
+		this.bits = (BitSet)src.bits.clone();
 	}
-	
+
 	public void setBit(int pos, boolean f) {
-		if(pos > _size) throw new ArrayIndexOutOfBoundsException();
-		int b = unsignedByteToInt(_bits[pos / 8]);
-		int mask = (1 << (pos % 8));
-		if (f) {
-			_bits[pos / 8] = (byte) (b | mask);
-		} else {
-			_bits[pos / 8] = (byte) (b & (~mask));
-		}
+		checkPos(pos);
+		bits.set(pos, f);
 	}
 
 	public boolean bitAt(int pos) {
-		if(pos > _size) throw new ArrayIndexOutOfBoundsException();
-		int b = unsignedByteToInt(_bits[pos / 8]);
-		int mask = (1 << (pos % 8));
-		return (b & mask) != 0;
+		checkPos(pos);
+		return bits.get(pos);
 	}
 
-	public static int unsignedByteToInt(byte b) {
+	static int unsignedByteToInt(byte b) {
 		return b & 0xFF;
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(this._size);
-		for (int x=0; x<_size; x++) {
+		StringBuilder sb = new StringBuilder(this.size);
+		for (int x = 0; x < size; x++) {
 			if (bitAt(x)) {
 				sb.append('1');
 			} else {
@@ -106,16 +98,20 @@ public class BitArray implements WritableToDataOutputStream {
 
 	@Override
 	public void writeToDataOutputStream(DataOutputStream dos) throws IOException {
-		dos.writeInt(_size);
-		dos.write(_bits);
+		dos.writeInt(size);
+		byte[] outputBits = bits.toByteArray();
+		if (outputBits.length != getByteSize()) {
+			outputBits = Arrays.copyOf(outputBits, getByteSize());
+		}
+		dos.write(outputBits);
 	}
 
 	public static int serializedLength(int size) {
-		return ((size + 7) / 8) + 4;
+		return toByteSize(size) + 4;
 	}
 
 	public int getSize() {
-		return _size;
+		return size;
 	}
 	
 	@Override
@@ -127,41 +123,20 @@ public class BitArray implements WritableToDataOutputStream {
 		if (ba.getSize() != getSize()) {
 			return false;
 		}
-		for (int x=0; x<getSize(); x++) {
-			if (ba.bitAt(x) != bitAt(x)) {
-				return false;
-			}
-		}
-		return true;
+		return bits.equals(ba.bits);
 	}
 	
 	@Override
 	public int hashCode() {
-	    return Fields.hashCode(_bits);
+	    return bits.hashCode() ^ size;
 	}
 
 	public void setAllOnes() {
-		for(int i=0;i<_bits.length;i++)
-			_bits[i] = (byte)0xFF;
+		bits.set(0, size);
 	}
 
 	public int firstOne(int start) {
-		int startByte = start/8;
-		int startBit = start%8;
-		for(int i=startByte;i<_bits.length;i++) {
-			byte b = _bits[i];
-			if(b == 0) continue;
-			for(int j=startBit;j<8;j++) {
-				int mask = (1 << j);
-				if((b & mask) != 0) {
-					int x = i*8+j;
-					if(x >= _size) return -1;
-					return x;
-				}
-			}
-			startBit = 0;
-		}
-		return -1;
+		return bits.nextSetBit(start);
 	}
 	
 	public int firstOne() {
@@ -169,58 +144,37 @@ public class BitArray implements WritableToDataOutputStream {
 	}
 
 	public int firstZero(int start) {
-		int startByte = start/8;
-		int startBit = start%8;
-		for(int i=startByte;i<_bits.length;i++) {
-			byte b = _bits[i];
-			if(b == (byte)255) continue;
-			for(int j=startBit;j<8;j++) {
-				int mask = (1 << j);
-				if((b & mask) == 0) {
-					int x = i*8+j;
-					if(x >= _size) return -1;
-					return x;
-				}
-			}
-			startBit = 0;
+		int result = bits.nextClearBit(start);
+		if (result >= size) {
+			return -1;
 		}
-		return -1;
+		return result;
 	}
 
 	public void setSize(int size) {
-		if(_size == size) return;
-		int oldSize = _size;
-		_size = size;
-		int bytes = (size + 7) / 8;
-		if(_bits.length != bytes) {
-			_bits = Arrays.copyOf(_bits, bytes);
-		}
-		if(oldSize < _size && oldSize % 8 != 0) {
-			for(int i=oldSize;i<Math.min(_size, oldSize - oldSize % 8 + 8);i++) {
-				setBit(i, false);
-			}
-		}
+		this.size = size;
+		trimToSize();
 	}
 
 	public int lastOne(int start) {
-		if(start >= _size) start = _size-1;
-		int startByte = start/8;
-		int startBit = start%8;
-		if(startByte >= _bits.length) {
-			System.err.println("Start byte is "+startByte+" _bits.length is "+_bits.length);
-			assert(false);
+		return bits.previousSetBit(start);
+	}
+
+	private void trimToSize() {
+		bits.clear(size, Integer.MAX_VALUE);
+	}
+
+	private int getByteSize() {
+		return toByteSize(size);
+	}
+
+	private static int toByteSize(int bitSize) {
+		return (bitSize + 7) / 8;
+	}
+
+	private void checkPos(int pos) {
+		if (pos > size || pos < 0) {
+			throw new ArrayIndexOutOfBoundsException();
 		}
-		for(int i=startByte;i>=0;i--,startBit=7) {
-			byte b = _bits[i];
-			if(b == (byte)0) continue;
-			for(int j=startBit;j>=0;j--) {
-				int mask = (1 << j);
-				if((b & mask) != 0) {
-					int x = i*8+j;
-					return x;
-				}
-			}
-		}
-		return -1;
 	}
 }

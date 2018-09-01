@@ -35,7 +35,7 @@ public class ConfigTest extends TestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 		conf = new Config();
-		sc = new SubConfig("testing", conf);
+		sc = conf.createSubConfig("testing");
 	}
 	
 	public void testConfig() {
@@ -49,8 +49,8 @@ public class ConfigTest extends TestCase {
 			sb.append(UTFUtil.PRINTABLE_ASCII[i]);
 		for(int i=0; i< UTFUtil.STRESSED_UTF.length; i++)
 			sb.append(UTFUtil.STRESSED_UTF[i]);
-		assertNotNull(new SubConfig(sb.toString(), conf));
-		
+		assertNotNull(conf.createSubConfig(sb.toString()));
+
 		/* test if it prevents multiple registrations */
 		try{
 			conf.register(sc);

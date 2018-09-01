@@ -3,9 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.Serializable;
 import java.util.HashSet;
-
-import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
 
@@ -15,11 +14,14 @@ import freenet.keys.FreenetURI;
  * Object passed down a full fetch, including all the recursion.
  * Used, at present, for detecting archive fetch loops, hence the
  * name.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class ArchiveContext {
+public class ArchiveContext implements Serializable {
 
-	private HashSet<FreenetURI> soFar;
+    private static final long serialVersionUID = 1L;
+    private HashSet<FreenetURI> soFar;
 	final int maxArchiveLevels;
 	final long maxArchiveSize;
 	
@@ -28,40 +30,30 @@ public class ArchiveContext {
 		this.maxArchiveSize = maxArchiveSize;
 	}
 	
+	protected ArchiveContext() {
+	    // For serialization.
+	    maxArchiveLevels = 0;
+	    maxArchiveSize = 0;
+	}
+	
 	/**
 	 * Check for a loop.
 	 *
 	 * The URI provided is expected to be a reasonably unique identifier for the archive.
 	 */
-	public synchronized void doLoopDetection(FreenetURI key, ObjectContainer container) throws ArchiveFailureException {
-		if(container != null)
-			container.activate(soFar, Integer.MAX_VALUE);
+	public synchronized void doLoopDetection(FreenetURI key) throws ArchiveFailureException {
 		if(soFar == null) {
 			soFar = new HashSet<FreenetURI>();
-			if(container != null)
-				container.store(soFar);
 		}
 		if(soFar.size() > maxArchiveLevels)
 			throw new ArchiveFailureException(ArchiveFailureException.TOO_MANY_LEVELS);
 		FreenetURI uri = key;
-		if(container != null)
-			uri = uri.clone();
 		if(!soFar.add(uri)) {
 			throw new ArchiveFailureException(ArchiveFailureException.ARCHIVE_LOOP_DETECTED);
 		}
-		if(container != null) {
-			container.store(uri);
-			container.store(soFar);
-		}
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		if(soFar != null) {
-			for(FreenetURI uri : soFar) {
-				uri.removeFrom(container);
-			}
-			container.delete(soFar);
-		}
-		container.delete(this);
-	}
+    public synchronized void clear() {
+        soFar = null;
+    }
 }

@@ -1,13 +1,14 @@
 package freenet.support;
 
-import com.db4o.ObjectContainer;
+import freenet.client.async.ClientRequestSelector;
 
-public class SectoredRandomGrabArrayWithInt extends SectoredRandomGrabArray implements IntNumberedItem {
+public class SectoredRandomGrabArrayWithInt<T, C extends RemoveRandomWithObject<T>>
+		extends SectoredRandomGrabArray<T, C> implements IntNumberedItem {
 
 	private final int number;
 
-	public SectoredRandomGrabArrayWithInt(int number, boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
-		super(persistent, container, parent);
+	public SectoredRandomGrabArrayWithInt(int number, RemoveRandomParent parent, ClientRequestSelector root) {
+		super(parent, root);
 		this.number = number;
 	}
 

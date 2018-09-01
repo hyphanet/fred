@@ -55,7 +55,9 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.Ticker;
+import freenet.support.WrapperKeepalive;
 import freenet.support.io.Closer;
+import freenet.support.io.Fallocate;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MersenneTwister;
@@ -274,7 +276,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				(smallerSize * Entry.METADATA_LENGTH > curMetaFileSize)) {
 			// Pad it up to the minimum size before proceeding.
 			if(longStart) {
-				setStoreFileSize(storeSize, true);
+				setStoreFileSize(storeSize);
 				curStoreFileSize = hdRAF.length();
 				curMetaFileSize = metaRAF.length();
 			} else
@@ -1055,7 +1057,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 *
 	 * @param storeMaxEntries
 	 */
-	private void setStoreFileSize(long storeMaxEntries, boolean starting) {
+	private void setStoreFileSize(long storeMaxEntries) {
 		try {
 			long oldMetaLen = metaRAF.length();
 			long currentHdLen = hdRAF.length();
@@ -1064,53 +1066,11 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			final long newHdLen = (headerBlockLength + dataBlockLength + hdPadding) * storeMaxEntries;
 
 			if (preallocate && (oldMetaLen < newMetaLen || currentHdLen < newHdLen)) {
-				/*
-				 * Fill the store file with random data. This won't be compressed, unlike filling it with zeros.
-				 * So the disk space usage of the node will not change (apart from temp files).
-				 *
-				 * Note that MersenneTwister is *not* cryptographically secure, in fact from 2.4KB of output you
-				 * can predict the rest of the stream! This is okay because an attacker knows which blocks are
-				 * occupied anyway; it is essential to label them to get good data retention on resizing etc.
-				 *
-				 * On my test system (phenom 2.2GHz), this does approx 80MB/sec. If I reseed every 2kB from an
-				 * AES CTR, which is pointless as I just explained, it does 40MB/sec.
-				 */
-				byte[] b = new byte[4096];
-				ByteBuffer bf = ByteBuffer.wrap(b);
-
-				// start from next 4KB boundary => align to x86 page size
-				oldMetaLen = (oldMetaLen + 4096 - 1) & ~(4096 - 1);
-				currentHdLen = (currentHdLen + 4096 - 1) & ~(4096 - 1);
-
-				storeFileOffsetReady = -1;
-
-				// this may write excess the size, the setLength() would fix it
-				while (oldMetaLen < newMetaLen) {
-					// never write random byte to meta data!
-					// this would screw up the isFree() function
-					bf.rewind();
-					metaFC.write(bf, oldMetaLen);
-					oldMetaLen += 4096;
-				}
-				byte[] seed = new byte[64];
-				random.nextBytes(seed);
-				Random mt = new MersenneTwister(seed);
-				int x = 0;
-				while (currentHdLen < newHdLen) {
-					mt.nextBytes(b);
-					bf.rewind();
-					hdFC.write(bf, currentHdLen);
-					currentHdLen += 4096;
-					if(currentHdLen % (1024*1024*1024L) == 0) {
-						random.nextBytes(seed);
-						mt = new MersenneTwister(seed);
-						if (starting) {
-							WrapperManager.signalStarting((int) MINUTES.toMillis(5));
-							if ( x++ % 32 == 0 )
-								System.err.println("Preallocating space for " + name + ": " + currentHdLen + "/" + newHdLen);
-						}
-					}
-					storeFileOffsetReady = currentHdLen / (headerBlockLength + dataBlockLength + hdPadding);
+				try (WrapperKeepalive wrapperKeepalive = new WrapperKeepalive();)
+				{
+					wrapperKeepalive.start();
+					Fallocate.forChannel(metaFC, newMetaLen).fromOffset(oldMetaLen).execute();
+					Fallocate.forChannel(hdFC, newHdLen).fromOffset(currentHdLen).execute();
 				}
 			}
 			storeFileOffsetReady = 1 + storeMaxEntries;
@@ -1417,7 +1377,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				@Override
 				public void init() {
 					if (storeSize > _prevStoreSize)
-						setStoreFileSize(storeSize, false);
+						setStoreFileSize(storeSize);
 
 					configLock.writeLock().lock();
 					try {
@@ -1476,7 +1436,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 					// shrink data file to current size
 					if (storeSize < _prevStoreSize)
-						setStoreFileSize(Math.max(storeSize, entriesLeft), false);
+						setStoreFileSize(Math.max(storeSize, entriesLeft));
 
 					// try to resolve the list
 					Iterator<Entry> it = oldEntryList.iterator();

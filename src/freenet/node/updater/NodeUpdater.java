@@ -15,16 +15,15 @@ import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.USKCallback;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -37,6 +36,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.Ticker;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
@@ -127,12 +127,12 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 	}
 
-	protected RequestClient getRequestClient() {
+	public RequestClient getRequestClient() {
 		return this;
 	}
 	
 	@Override
-	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+	public void onFoundEdition(long l, USK key, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(newKnownGood && !newSlotToo) return;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
@@ -218,7 +218,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					uri = uri.sskForUSK();
 					cg = new ClientGetter(this,  
 						uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-						this, null, new BinaryBlobWriter(new FileBucket(tempBlobFile, false, false, false, false, false)), null);
+						null, new BinaryBlobWriter(new FileBucket(tempBlobFile, false, false, false, false)), null);
 					toStart = cg;
 				} else {
 					System.err.println("Already fetching "+jarName() + " fetch for " + fetchingVersion + " want "+availableVersion);
@@ -237,23 +237,25 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				synchronized(this) {
 					isFetching = false;
 				}
-			} catch (DatabaseDisabledException e) {
+			} catch (PersistenceDisabledException e) {
 				// Impossible
 			}
 		if(cancelled != null)
-			cancelled.cancel(null, core.clientContext);
+			cancelled.cancel(core.clientContext);
 	}
 
 	final File getBlobFile(int availableVersion) {
 		return new File(node.clientCore.getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
 	}
-	Bucket getBlobBucket(int availableVersion) {
+	
+	RandomAccessBucket getBlobBucket(int availableVersion) {
 		File f = getBlobFile(availableVersion);
 		if(f == null) return null;
-		return new FileBucket(f, true, false, false, false, false);
+		return new FileBucket(f, true, false, false, false);
 	}
+	
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetter state) {
 		onSuccess(result, state, tempBlobFile, fetchingVersion);
 	}
 
@@ -437,11 +439,11 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	private static final int MAX_MANIFEST_SIZE = 1024*1024;
 
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(!isRunning)
 			return;
-		int errorCode = e.getMode();
+		FetchExceptionMode errorCode = e.getMode();
 		tempBlobFile.delete();
 
 		if(logMINOR)
@@ -450,7 +452,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			this.cg = null;
 			isFetching = false;
 		}
-		if(errorCode == FetchException.CANCELLED ||
+		if(errorCode == FetchExceptionMode.CANCELLED ||
 			!e.isFatal()) {
 			Logger.normal(this, "Rescheduling new request");
 			ticker.queueTimedJob(new Runnable() {
@@ -491,7 +493,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				c = cg;
 				cg = null;
 			}
-			c.cancel(null, core.clientContext);
+			c.cancel(core.clientContext);
 		} catch(Exception e) {
 			Logger.minor(this, "Cannot kill NodeUpdater", e);
 		}
@@ -499,11 +501,6 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 	public FreenetURI getUpdateKey() {
 		return URI;
-	}
-
-	@Override
-	public void onMajorProgress(ObjectContainer container) {
-		// Ignore
 	}
 
 	public synchronized boolean canUpdateNow() {
@@ -587,19 +584,13 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			finishOnFoundEdition(callFinishedFound);
 	}
 	
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing NodeUpdater in database", new Exception("error"));
-		return false;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-	
 	@Override
 	public boolean realTimeFlag() {
 		return false;
 	}
-
+	
+    @Override
+    public void onResume(ClientContext context) {
+        // Do nothing. Not persistent.
+    }
 }

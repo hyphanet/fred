@@ -1,8 +1,18 @@
 package freenet.io.comm;
 
+import com.sun.jna.LastErrorException;
+import com.sun.jna.Native;
+import com.sun.jna.Platform;
+import com.sun.jna.Pointer;
+import com.sun.jna.ptr.IntByReference;
+
+import java.io.FileDescriptor;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.DatagramSocketImpl;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -44,6 +54,77 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
         static {
             Logger.registerClass(UdpSocketHandler.class);
         }
+	private static class socketOptions {
+		private static class socketOptionsHolder {
+			static {
+				Native.register(Platform.C_LIBRARY_NAME);
+			}
+			private static native int setsockopt(int fd, int level, int option_name, Pointer option_value, int option_len) throws LastErrorException;
+		}
+
+		public enum SOCKET_level {
+			IPPROTO_IPV6(0x29);
+
+			final int linux;
+			SOCKET_level(int linux) {
+				this.linux = linux;
+			}
+		}
+		public enum SOCKET_option_name {
+			IPV6_ADDR_PREFERENCES(0x48); // rfc5014
+
+			final int linux;
+			SOCKET_option_name(int linux) {
+				this.linux = linux;
+			}
+		}
+		public enum SOCKET_ADDR_PREFERENCE {
+			IPV6_PREFER_SRC_TMP(0x0001),
+			IPV6_PREFER_SRC_PUBLIC(0x0002),
+			IPV6_PREFER_SRC_PUBTMP_DEFAULT(0x0100),
+			IPV6_PREFER_SRC_COA(0x0004),
+			IPV6_PREFER_SRC_HOME(0x0400),
+			IPV6_PREFER_SRC_CGA(0x0008),
+			IPV6_PREFER_SRC_NONCGA(0x0800);
+
+			final SOCKET_option_name option_name = SOCKET_option_name.IPV6_ADDR_PREFERENCES;
+			final int linux;
+			SOCKET_ADDR_PREFERENCE(int linux) {
+				this.linux = linux;
+			}
+		}
+
+		private static int getFd(DatagramSocket s) {
+			int ret = -1;
+			try {
+				Method m = s.getClass().getDeclaredMethod("getImpl");
+				m.setAccessible(true);
+				DatagramSocketImpl impl = (DatagramSocketImpl)m.invoke(s);
+				Field f = DatagramSocketImpl.class.getDeclaredField("fd");
+				f.setAccessible(true);
+				FileDescriptor fdi = (FileDescriptor)f.get(impl);
+				f = FileDescriptor.class.getDeclaredField("fd");
+				f.setAccessible(true);
+				ret = f.getInt(fdi);
+			} catch (Exception e) {
+			   Logger.error(UdpSocketHandler.class, e.getMessage(), e);
+			}
+			return ret;
+		}
+
+		public static boolean setAddressPreference(DatagramSocket s, SOCKET_ADDR_PREFERENCE p) {
+			if(!Platform.isLinux())
+			    return false;
+			int fd = getFd(s);
+			if(fd <= 2)
+			    return false;
+			int ret = -1;
+			try {
+			    ret = socketOptionsHolder.setsockopt(fd, SOCKET_level.IPPROTO_IPV6.linux, p.option_name.linux, new IntByReference(p.linux).getPointer(), Pointer.SIZE);
+			} catch(Exception e) { Logger.normal(UdpSocketHandler.class, e.getMessage(),e); } //if it fails that's fine
+			return (ret == 0 ? true : false);
+		}
+	}
 
 	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title, IOStatisticCollector collector) throws SocketException {
 		this.node = node;
@@ -67,6 +148,13 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		} catch (SocketException e) {
 			throw new RuntimeException(e);
 		}
+		try {
+			_sock.setTrafficClass(node.getTrafficClass().value);
+		} catch (SocketException e) {
+			Logger.error(this, "Failed to setTrafficClass with "+node.getTrafficClass().value,e);
+		}
+		boolean r = socketOptions.setAddressPreference(_sock, socketOptions.SOCKET_ADDR_PREFERENCE.IPV6_PREFER_SRC_PUBLIC);
+		if(logMINOR) Logger.minor(this, "Setting IPV6_PREFER_SRC_PUBLIC for port "+ listenPort + " is a "+(r ? "success" : "failure"));
 //		}
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = node.fastWeakRandom;

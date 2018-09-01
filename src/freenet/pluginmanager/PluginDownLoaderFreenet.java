@@ -7,16 +7,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.FetchWaiter;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.SplitfileProgressEvent;
@@ -58,12 +57,7 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 				hlsc.addEventHook(new ClientEventListener() {
 
 					@Override
-					public void onRemoveEventProducer(ObjectContainer container) {
-						// Ignore
-					}
-
-					@Override
-					public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
+					public void receive(ClientEvent ce, ClientContext context) {
 						if(ce instanceof SplitfileProgressEvent) {
 							SplitfileProgressEvent split = (SplitfileProgressEvent) ce;
 							if(split.finalizedTotal) {
@@ -78,18 +72,18 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 					context.maxNonSplitfileRetries = -1;
 					context.maxSplitfileBlockRetries = -1;
 				}
-				FetchWaiter fw = new FetchWaiter();
+				FetchWaiter fw = new FetchWaiter(node.nonPersistentClientBulk);
 
-				get = new ClientGetter(fw, uri, context, PluginManager.PRIO, node.nonPersistentClientBulk, null, null, null);
+				get = new ClientGetter(fw, uri, context, PluginManager.PRIO, null, null, null);
 				try {
 					node.clientCore.clientContext.start(get);
-				} catch (DatabaseDisabledException e) {
+				} catch (PersistenceDisabledException e) {
 					// Impossible
 				}
 				FetchResult res = fw.waitForCompletion();
 				return res.asBucket().getInputStream();
 			} catch (FetchException e) {
-				if ((e.getMode() == FetchException.PERMANENT_REDIRECT) || (e.getMode() == FetchException.TOO_MANY_PATH_COMPONENTS)) {
+				if ((e.getMode() == FetchExceptionMode.PERMANENT_REDIRECT) || (e.getMode() == FetchExceptionMode.TOO_MANY_PATH_COMPONENTS)) {
 					uri = e.newURI;
 					continue;
 				}
@@ -123,7 +117,7 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 	@Override
 	void tryCancel() {
 		if(get != null)
-			get.cancel(null, node.clientCore.clientContext);
+			get.cancel(node.clientCore.clientContext);
 	}
 
 }

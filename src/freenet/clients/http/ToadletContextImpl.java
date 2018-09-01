@@ -1,7 +1,5 @@
 package freenet.clients.http;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,6 +41,8 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
 import freenet.support.io.TooLongException;
+
+import static java.util.concurrent.TimeUnit.DAYS;
 /**
  * ToadletContext implementation, including all the icky HTTP parsing etc.
  * An actual ToadletContext object represents a request, after we have parsed the 
@@ -52,7 +52,9 @@ import freenet.support.io.TooLongException;
  */
 public class ToadletContextImpl implements ToadletContext {
 	
-	private static final Class<?> HANDLE_PARAMETERS[] = new Class[] {URI.class, HTTPRequest.class, ToadletContext.class};
+	private static final Class<?> HANDLE_PARAMETERS[] = new Class<?>[] {
+		URI.class, HTTPRequest.class, ToadletContext.class
+	};
 
 	/* methods listed here are *not* configurable with
 	 * AllowData annotation
@@ -376,15 +378,29 @@ public class ToadletContextImpl implements ToadletContext {
 			}
 		if(contentLength >= 0)
 			mvt.put("content-length", Long.toString(contentLength));
-		
-		String expiresTime;
+
+		boolean allowCaching; // For privacy reasons, only static
+							  // content may be cached
 		if (mTime == null) {
-			expiresTime = "Thu, 01 Jan 1970 00:00:00 GMT";
+			allowCaching = false;
 		} else {
-			// use an expiry time of 1 day, somewhat arbitrarily
-			expiresTime = TimeUtil.makeHTTPDate(mTime.getTime() + DAYS.toMillis(1));
+			allowCaching = true;
+		}
+		String expiresTime;
+		String cacheControl;
+		if (allowCaching) {
+			// use an expiry time of 30 day from now, about the frequency of Freenet releases
+			// Expires is needed for older browsers
+			expiresTime = TimeUtil.makeHTTPDate(System.currentTimeMillis() + DAYS.toMillis(30));
+			cacheControl = "public, max-age=" + String.valueOf(3600 * 24 * 30);
+		} else {
+			expiresTime = "Thu, 01 Jan 1970 00:00:00 GMT";
+			// no-cache for Internet Explorer, no-store for Firefox
+			cacheControl = "private, max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0";
+			mvt.put("pragma", "no-cache");
 		}
 		mvt.put("expires", expiresTime);
+		mvt.put("cache-control", cacheControl);
 		
 		String nowString = TimeUtil.makeHTTPDate(System.currentTimeMillis());
 		String lastModString;
@@ -396,11 +412,6 @@ public class ToadletContextImpl implements ToadletContext {
 		
 		mvt.put("last-modified", lastModString);
 		mvt.put("date", nowString);
-		if (mTime == null) {
-			mvt.put("pragma", "no-cache");
-			String cacheControl = "max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0";
-			mvt.put("cache-control", cacheControl);
-		}
 		if(disconnect)
 			mvt.put("connection", "close");
 		else
@@ -409,6 +420,7 @@ public class ToadletContextImpl implements ToadletContext {
 		mvt.put("content-security-policy", contentSecurityPolicy);
 		mvt.put("x-content-security-policy", contentSecurityPolicy);
 		mvt.put("x-webkit-csp", contentSecurityPolicy);
+		mvt.put("x-frame-options", allowFrames ? "SAMEORIGIN" : "DENY");
 		StringBuilder buf = new StringBuilder(1024);
 		buf.append("HTTP/1.1 ");
 		buf.append(replyCode);

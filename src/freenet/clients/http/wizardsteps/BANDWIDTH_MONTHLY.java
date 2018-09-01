@@ -27,7 +27,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 	 */
 	private static final Double minCap = 2*Node.getMinimumBandwidth()*secondsPerMonth/GB;
 
-	private static final long[] caps = { (long)Math.ceil(minCap), 50, 100, 150 };
+	private static final long[] caps = { (long)Math.ceil(minCap), 100, 150, 250, 500 };
 
 	public BANDWIDTH_MONTHLY(NodeClientCore core, Config config) {
 		super(core, config);
@@ -121,24 +121,23 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 			return target.toString();
 		}
 		/*
-		 * Fraction of total limit used for download. Linear from 0.5 at the minimum cap to 0.8 at 100 GB.
-		 *
-		 * This is a line between (minCap, minFraction) and (maxScaleCap, maxFraction) which has been shifted
-		 * to the left by minCap.
+		 * Fraction of total limit used for download. Asymptotically from 0.5 at the minimum cap to 0.8.
+		 * 
+		 * FIXME: Why do we do this? It does not actually work, since
+		 * download cannot be larger than upload for any long amount
+		 * of time.
 		 *
 		 * This 50/50 split is consistent with the assumption in the definition of minCap that the upload and
 		 * download limits are equal.
 		 */
-		final double minFraction = 0.5;
-		final double maxFraction = 0.8;
-		final double maxScaleCap = 100;
-		assert minCap < maxScaleCap;
-		double downloadFraction = ((maxFraction-minFraction)/(maxScaleCap - 2*minCap))*(GBPerMonth - minCap) + minFraction;
-		// No minimum fraction clamp: caps less than the minimum get redirected to a warning instead.
-		if (downloadFraction > maxFraction) downloadFraction = maxFraction;
-		double bytesPerSecondTotal = bytesPerMonth/secondsPerMonth;
-		String downloadLimit = String.valueOf(Math.ceil(bytesPerSecondTotal*downloadFraction));
-		String uploadLimit = String.valueOf(Math.ceil(bytesPerSecondTotal*(1-downloadFraction)));
+		double bytesPerSecond = bytesPerMonth/secondsPerMonth;
+		double minBytesPerSecond = Node.getMinimumBandwidth();
+		double bwinc = bytesPerSecond - 2*minBytesPerSecond; // min for up and min for down
+		double asymptoticDlFraction = 4. / 5.;
+		double dllimit = minBytesPerSecond + (bwinc * asymptoticDlFraction);
+		double ullimit = minBytesPerSecond + (bwinc * (1 - asymptoticDlFraction));
+		String downloadLimit = String.valueOf(Math.ceil(dllimit));
+		String uploadLimit = String.valueOf(Math.ceil(ullimit));
 
 		try {
 			setBandwidthLimit(downloadLimit, false);

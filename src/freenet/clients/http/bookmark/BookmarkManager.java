@@ -15,8 +15,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.USKCallback;
 import freenet.clients.http.FProxyToadlet;
@@ -27,6 +25,7 @@ import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
+import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -111,6 +110,15 @@ public class BookmarkManager implements RequestClient {
 			putPaths("\\", DEFAULT_CATEGORY);
 			readBookmarks(DEFAULT_CATEGORY, DEFAULT_BOOKMARKS);
 		}
+		
+		SemiOrderedShutdownHook.get().addEarlyJob(new Thread() {
+			BookmarkManager bm = BookmarkManager.this;
+			
+			@Override public void run() {
+				bm.storeBookmarks();
+				bm = null;
+			}
+		});
 	}
 
 	public void reAddDefaultBookmarks() {
@@ -122,7 +130,7 @@ public class BookmarkManager implements RequestClient {
 	private class USKUpdatedCallback implements USKCallback {
 
 		@Override
-		public void onFoundEdition(long edition, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+		public void onFoundEdition(long edition, USK key, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			if(!newKnownGood) {
 				FreenetURI uri = key.copy(edition).getURI();
 				node.makeClient(PRIORITY_PROGRESS, false, false).prefetch(uri, MINUTES.toMillis(60), FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, null, PRIORITY_PROGRESS);
@@ -409,10 +417,11 @@ public class BookmarkManager implements RequestClient {
 				for(int i = 0; i < nbBookmarks; i++) {
 					SimpleFieldSet subset = sfs.getSubset(BookmarkItem.NAME + i);
 					try {
-						BookmarkItem item = new BookmarkItem(subset, node.alerts);
+						BookmarkItem item = new BookmarkItem(subset, this, node.alerts);
 						String name = (isRoot ? "" : prefix + category.name) + '/' + item.name;
 						putPaths(name, item);
 						category.addBookmark(item);
+						item.registerUserAlert();
 						subscribeToUSK(item);
 					} catch(MalformedURLException e) {
 						throw new FSParseException(e);
@@ -471,11 +480,6 @@ public class BookmarkManager implements RequestClient {
 	@Override
 	public boolean persistent() {
 		return false;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 	@Override

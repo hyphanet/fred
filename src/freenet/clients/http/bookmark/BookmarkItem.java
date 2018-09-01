@@ -14,13 +14,13 @@ import freenet.node.NodeClientCore;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
-import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class BookmarkItem extends Bookmark {
     public static final String NAME = "Bookmark";
+    private final BookmarkManager manager;
     private FreenetURI key;
     private boolean updated;
     private boolean hasAnActivelink = false;
@@ -29,41 +29,35 @@ public class BookmarkItem extends Bookmark {
     protected String desc;
     protected String shortDescription;
 
-    public BookmarkItem(FreenetURI k, String n, String d, String s, boolean hasAnActivelink, UserAlertManager uam)
-            throws MalformedURLException {
-
+    public BookmarkItem(FreenetURI k, String n, String d, String s, boolean hasAnActivelink,
+            BookmarkManager bm, UserAlertManager uam) throws MalformedURLException {
         this.key = k;
         this.name = n;
         this.desc = d;
         this.shortDescription = s;
         this.hasAnActivelink = hasAnActivelink;
+        this.manager = bm;
         this.alerts = uam;
         alert = new BookmarkUpdatedUserAlert();
         assert(name != null);
         assert(key != null);
     }
 
-    public BookmarkItem(String line, UserAlertManager uam) throws MalformedURLException {
-        String[] result = line.split("###");
-        this.name = result[0];
-        this.desc = result[1];
-        this.hasAnActivelink = Fields.stringToBool(result[2], false);
-        this.key = new FreenetURI(result[3]);
-        this.alerts = uam;
-        this.alert = new BookmarkUpdatedUserAlert();
-        assert(name != null);
-        assert(key != null);
-    }
-    
-    public BookmarkItem(SimpleFieldSet sfs, UserAlertManager uam) throws FSParseException, MalformedURLException {
+    /** Please call {@link #registerUserAlert()} afterwards. */
+    public BookmarkItem(SimpleFieldSet sfs, BookmarkManager bm, UserAlertManager uam)
+            throws FSParseException, MalformedURLException {
         this.name = sfs.get("Name");
-        if(name == null) name = "";
+        if(name == null || name.isEmpty()) name = l10n("unnamedBookmark");
         this.desc = sfs.get("Description");
         if(desc == null) desc = "";
         this.shortDescription = sfs.get("ShortDescription");
         if(shortDescription == null) shortDescription = "";
         this.hasAnActivelink = sfs.getBoolean("hasAnActivelink");
+        // "Updated" was added in 2016-08-19, so we must assume it doesn't exist in previously saved
+        // bookmark databases and provide a default to prevent getBoolean() from throwing.
+        this.updated = sfs.getBoolean("Updated", false);
         this.key = new FreenetURI(sfs.get("URI"));
+        this.manager = bm;
         this.alerts = uam;
         this.alert = new BookmarkUpdatedUserAlert();
     }
@@ -122,6 +116,7 @@ public class BookmarkItem extends Bookmark {
         @Override
 		public void onDismiss() {
             disableBookmark();
+            manager.storeBookmarks();
         }
 
 		@Override
@@ -161,6 +156,19 @@ public class BookmarkItem extends Bookmark {
         alerts.register(alert);
     }
 
+    /**
+     * If this bookmark is marked as updated, registers a {@link UserAlert} which notifies the user.
+     * You usually only need to call this function after having loaded a bookmark from disk using
+     * {@link #BookmarkItem(SimpleFieldSet, BookmarkManager, UserAlertManager)}. */
+    synchronized void registerUserAlert() {
+        if (key.isUSK() && updated)
+            alerts.register(alert);
+    }
+
+    public UserAlert getUserAlert() {
+        return alert;
+    }
+
     public String getKey() {
         return key.toString();
     }
@@ -184,7 +192,7 @@ public class BookmarkItem extends Bookmark {
 
     @Override
 	public String getName() {
-        return ("".equals(name) ? l10n("unnamedBookmark") : name);
+        return name;
     }
 
     @Override
@@ -254,6 +262,14 @@ public class BookmarkItem extends Bookmark {
         }
     }
 
+    public boolean hasUpdated() {
+        return updated;
+    }
+
+    public void clearUpdated() {
+        this.updated = false;
+    }
+
     public boolean hasAnActivelink() {
         return hasAnActivelink;
     }
@@ -279,6 +295,7 @@ public class BookmarkItem extends Bookmark {
 	sfs.putSingle("Description", desc);
 	sfs.putSingle("ShortDescription", shortDescription);
 	sfs.put("hasAnActivelink", hasAnActivelink);
+	sfs.put("Updated", updated);
 	sfs.putSingle("URI", key.toString());
 	return sfs;
     }

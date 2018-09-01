@@ -18,7 +18,11 @@ package freenet.io;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.net.ssl.SSLServerSocket;
 
@@ -49,6 +53,7 @@ public class SSLNetworkInterface extends NetworkInterface {
 
 	/**
 	 * {@inheritDoc}
+	 *
 	 */
 	@Override
 	protected ServerSocket createServerSocket() throws IOException {
@@ -57,11 +62,21 @@ public class SSLNetworkInterface extends NetworkInterface {
 		serverSocket.setUseClientMode(false);
 		serverSocket.setWantClientAuth(false);
 
-		serverSocket.setEnabledCipherSuites(new String[] {
-		    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA", // We want PFS (DHE)
-		    // "TLS_RSA_WITH_AES_256_CBC_SHA",
-		});
+		List<String> enabledCiphers = new ArrayList<>();
+		for(String cipher : serverSocket.getSupportedCipherSuites()) {
+			if(ALLOWED_CIPHERS.contains(cipher)) {
+				enabledCiphers.add(cipher);
+			}
+		}
+		serverSocket.setEnabledCipherSuites(enabledCiphers.toArray(new String[0]));
 
 		return serverSocket;
 	}
+	private static final Set<String> ALLOWED_CIPHERS = new HashSet(Arrays.asList(new String[] {
+			"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+			"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+			"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+			"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+			"TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
+	}));
 }

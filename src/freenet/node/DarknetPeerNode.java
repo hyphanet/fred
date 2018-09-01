@@ -1,7 +1,5 @@
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -46,15 +44,16 @@ import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPUploadedFile;
+import freenet.support.api.RandomAccessBuffer;
 import freenet.support.io.BucketTools;
-import freenet.support.io.ByteArrayRandomAccessThing;
+import freenet.support.io.ByteArrayRandomAccessBuffer;
+import freenet.support.io.FileRandomAccessBuffer;
 import freenet.support.io.FileUtil;
-import freenet.support.io.RandomAccessFileWrapper;
-import freenet.support.io.RandomAccessThing;
+
+import static java.util.concurrent.TimeUnit.DAYS;
 
 public class DarknetPeerNode extends PeerNode {
 
@@ -97,7 +96,8 @@ public class DarknetPeerNode extends PeerNode {
 	private FRIEND_VISIBILITY ourVisibility;
 	private FRIEND_VISIBILITY theirVisibility;
 
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+	static { Logger.registerClass(DarknetPeerNode.class); }
 
 	public enum FRIEND_TRUST {
 		LOW,
@@ -158,11 +158,10 @@ public class DarknetPeerNode extends PeerNode {
 	 * @param fs The SimpleFieldSet to parse
 	 * @param node2 The running Node we are part of.
 	 * @param trust If this is a new node, we will use this parameter to set the initial trust level.
+	 * @throws PeerTooOldException 
 	 */
-	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		super(fs, node2, crypto, peers, fromLocal, false, mangler, false);
-
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
+		super(fs, node2, crypto, fromLocal);
 
 		String name = fs.get("myName");
 		if(name == null) throw new FSParseException("No name");
@@ -213,7 +212,6 @@ public class DarknetPeerNode extends PeerNode {
 
 		// Setup the queuedToSendN2NMExtraPeerDataFileNumbers
 		queuedToSendN2NMExtraPeerDataFileNumbers = new LinkedHashSet<Integer>();
-
 	}
 
 	/**
@@ -903,7 +901,7 @@ public class DarknetPeerNode extends PeerNode {
 		final String comment;
 		/** Only valid if amIOffering == false. Set when start receiving. */
 		private File destination;
-		private RandomAccessThing data;
+		private RandomAccessBuffer data;
 		final long size;
 		/** Who is offering it? True = I am offering it, False = I am being offered it */
 		final boolean amIOffering;
@@ -913,7 +911,7 @@ public class DarknetPeerNode extends PeerNode {
 		/** True if the offer has either been accepted or rejected */
 		private boolean acceptedOrRejected;
 
-		FileOffer(long uid, RandomAccessThing data, String filename, String mimeType, String comment) throws IOException {
+		FileOffer(long uid, RandomAccessBuffer data, String filename, String mimeType, String comment) throws IOException {
 			this.uid = uid;
 			this.data = data;
 			this.filename = filename;
@@ -956,8 +954,8 @@ public class DarknetPeerNode extends PeerNode {
 			final File dest = node.clientCore.downloadsDir().file(baseFilename+".part");
 			destination = node.clientCore.downloadsDir().file(baseFilename);
 			try {
-				data = new RandomAccessFileWrapper(dest, "rw");
-			} catch (FileNotFoundException e) {
+				data = new FileRandomAccessBuffer(dest, size, false);
+			} catch (IOException e) {
 				// Impossible
 				throw new Error("Impossible: FileNotFoundException opening with RAF with rw! "+e, e);
 			}
@@ -1435,7 +1433,7 @@ public class DarknetPeerNode extends PeerNode {
 		return getPeerNodeStatus();
 	}
 
-	private int sendFileOffer(String fnam, String mime, String message, RandomAccessThing data) throws IOException {
+	private int sendFileOffer(String fnam, String mime, String message, RandomAccessBuffer data) throws IOException {
 		long uid = node.random.nextLong();
 		long now = System.currentTimeMillis();
 		FileOffer fo = new FileOffer(uid, data, fnam, mime, message);
@@ -1457,14 +1455,14 @@ public class DarknetPeerNode extends PeerNode {
 	public int sendFileOffer(File file, String message) throws IOException {
 		String fnam = file.getName();
 		String mime = DefaultMIMETypes.guessMIMEType(fnam, false);
-		RandomAccessThing data = new RandomAccessFileWrapper(file, "r");
+		RandomAccessBuffer data = new FileRandomAccessBuffer(file, true);
 		return sendFileOffer(fnam, mime, message, data);
 	}
 
 	public int sendFileOffer(HTTPUploadedFile file, String message) throws IOException {
 		String fnam = file.getFilename();
 		String mime = file.getContentType();
-		RandomAccessThing data = new ByteArrayRandomAccessThing(BucketTools.toByteArray(file.getData()));
+		RandomAccessBuffer data = new ByteArrayRandomAccessBuffer(BucketTools.toByteArray(file.getData()));
 		return sendFileOffer(fnam, mime, message, data);
 	}
 
@@ -1677,11 +1675,6 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return false;
-	}
-
-	@Override
 	public boolean equals(Object o) {
 		if(o == this) return true;
 		// Only equal to seednode of its own type.
@@ -1734,8 +1727,8 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
-	public boolean shallWeRouteAccordingToOurPeersLocation() {
-		if(!node.shallWeRouteAccordingToOurPeersLocation()) return false; // Globally disabled
+	public boolean shallWeRouteAccordingToOurPeersLocation(int htl) {
+		if(!node.shallWeRouteAccordingToOurPeersLocation(htl)) return false; // Globally disabled
 		if(trustLevel == FRIEND_TRUST.LOW) return false;
 		return true;
 	}
@@ -1822,7 +1815,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 			byte[] data = baos.toByteArray();
 			long uid = node.fastWeakRandom.nextLong();
-			RandomAccessThing raf = new ByteArrayRandomAccessThing(data);
+			RandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(data);
 			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, data.length, Node.PACKET_SIZE, raf, true);
 			try {
 				sendAsync(DMT.createFNPMyFullNoderef(uid, data.length), null, node.nodeStats.foafCounter);
@@ -1887,7 +1880,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		try {
 			final byte[] data = new byte[length];
-			RandomAccessThing raf = new ByteArrayRandomAccessThing(data);
+			RandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(data);
 			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, length, Node.PACKET_SIZE, raf, false);
 			final BulkReceiver br = new BulkReceiver(prb, this, uid, node.nodeStats.foafCounter);
 			node.executor.execute(new Runnable() {
@@ -1967,4 +1960,19 @@ public class DarknetPeerNode extends PeerNode {
 			}
 		}
 	}
+
+    @Override
+    public boolean isOpennetForNoderef() {
+        return false;
+    }
+
+    @Override
+    public boolean canAcceptAnnouncements() {
+        return node.passOpennetRefsThroughDarknet();
+    }
+
+    @Override
+    protected void writePeers() {
+        node.peers.writePeers(false);
+    }
 }

@@ -111,55 +111,9 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		// produce log and alog tables, needed for multiplying in the
 		// field GF(2^m) (generator = 3)
 		//
-		alog[0] = 1;
-		for (i = 1; i < 256; i++) {
-			j = (alog[i-1] << 1) ^ alog[i-1];
-			if ((j & 0x100) != 0) j ^= ROOT;
-			alog[i] = j;
-		}
-		for (i = 1; i < 255; i++) log[alog[i]] = i;
-		byte[][] A = new byte[][] {
-				{1, 1, 1, 1, 1, 0, 0, 0},
-				{0, 1, 1, 1, 1, 1, 0, 0},
-				{0, 0, 1, 1, 1, 1, 1, 0},
-				{0, 0, 0, 1, 1, 1, 1, 1},
-				{1, 0, 0, 0, 1, 1, 1, 1},
-				{1, 1, 0, 0, 0, 1, 1, 1},
-				{1, 1, 1, 0, 0, 0, 1, 1},
-				{1, 1, 1, 1, 0, 0, 0, 1}
-		};
-		byte[] B = new byte[] { 0, 1, 1, 0, 0, 0, 1, 1};
+        generateLogAndAlogTables(ROOT);
+        generateSBoxes();
 
-		//
-		// substitution box based on F^{-1}(x)
-		//
-		int t;
-		byte[][] box = new byte[256][8];
-		box[1][7] = 1;
-		for (i = 2; i < 256; i++) {
-			j = alog[255 - log[i]];
-			for (t = 0; t < 8; t++)
-				box[i][t] = (byte)((j >>> (7 - t)) & 0x01);
-		}
-		//
-		// affine transform:  box[i] <- B + A*box[i]
-		//
-		byte[][] cox = new byte[256][8];
-		for (i = 0; i < 256; i++)
-			for (t = 0; t < 8; t++) {
-				cox[i][t] = B[t];
-				for (j = 0; j < 8; j++)
-					cox[i][t] ^= A[t][j] * box[i][j];
-			}
-		//
-		// S-boxes and inverse S-boxes
-		//
-		for (i = 0; i < 256; i++) {
-			S[i] = (byte)(cox[i][0] << 7);
-			for (t = 1; t < 8; t++)
-				S[i] ^= cox[i][t] << (7-t);
-			Si[S[i] & 0xFF] = (byte) i;
-		}
 		//
 		// T-boxes
 		//
@@ -169,69 +123,15 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 				{1, 3, 2, 1},
 				{1, 1, 3, 2}
 		};
-		byte[][] AA = new byte[4][8];
-		for (i = 0; i < 4; i++) {
-			for (j = 0; j < 4; j++) AA[i][j] = G[i][j];
-			AA[i][i+4] = 1;
-		}
-		byte pivot, tmp;
-		byte[][] iG = new byte[4][4];
-		for (i = 0; i < 4; i++) {
-			pivot = AA[i][i];
-			if (pivot == 0) {
-				t = i + 1;
-				while ((AA[t][i] == 0) && (t < 4))
-					t++;
-				if (t == 4)
-					throw new RuntimeException("G matrix is not invertible");
-				else {
-					for (j = 0; j < 8; j++) {
-						tmp = AA[i][j];
-						AA[i][j] = AA[t][j];
-						AA[t][j] = tmp;
-					}
-					pivot = AA[i][i];
-				}
-			}
-			for (j = 0; j < 8; j++)
-				if (AA[i][j] != 0)
-					AA[i][j] = (byte)
-					alog[(255 + log[AA[i][j] & 0xFF] - log[pivot & 0xFF]) % 255];
-			for (t = 0; t < 4; t++)
-				if (i != t) {
-					for (j = i+1; j < 8; j++)
-						AA[t][j] ^= mul(AA[i][j], AA[t][i]);
-					AA[t][i] = 0;
-				}
-		}
-		for (i = 0; i < 4; i++)
-			for (j = 0; j < 4; j++) iG[i][j] = AA[i][j + 4];
+        byte[][] iG = generateInvertedGMatrix(G);
+        generateTBoxes(G, iG);
 
-		int s;
-		for (t = 0; t < 256; t++) {
-			s = S[t];
-			T1[t] = mul4(s, G[0]);
-			T2[t] = mul4(s, G[1]);
-			T3[t] = mul4(s, G[2]);
-			T4[t] = mul4(s, G[3]);
-
-			s = Si[t];
-			T5[t] = mul4(s, iG[0]);
-			T6[t] = mul4(s, iG[1]);
-			T7[t] = mul4(s, iG[2]);
-			T8[t] = mul4(s, iG[3]);
-
-			U1[t] = mul4(t, iG[0]);
-			U2[t] = mul4(t, iG[1]);
-			U3[t] = mul4(t, iG[2]);
-			U4[t] = mul4(t, iG[3]);
-		}
 		//
 		// round constants
 		//
 		rcon[0] = 1;
 		int r = 1;
-		for (t = 1; t < 30; ) rcon[t++] = (byte)(r = mul(2, r));
+		for (int t = 1; t < 30; ) rcon[t++] = (byte)(r = mul(2, r));
 
 		time = System.currentTimeMillis() - time;
 
@@ -281,6 +181,123 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			System.out.println();
 		}
 	}
+
+    private static void generateLogAndAlogTables(int ROOT) {
+        alog[0] = 1;
+        for (int i = 1; i < 256; i++) {
+            int j = (alog[i-1] << 1) ^ alog[i-1];
+            if ((j & 0x100) != 0) j ^= ROOT;
+            alog[i] = j;
+        }
+        for (int i = 1; i < 255; i++) log[alog[i]] = i;
+    }
+
+    private static void generateSBoxes() {
+        byte[][] A = new byte[][] {
+                {1, 1, 1, 1, 1, 0, 0, 0},
+                {0, 1, 1, 1, 1, 1, 0, 0},
+                {0, 0, 1, 1, 1, 1, 1, 0},
+                {0, 0, 0, 1, 1, 1, 1, 1},
+                {1, 0, 0, 0, 1, 1, 1, 1},
+                {1, 1, 0, 0, 0, 1, 1, 1},
+                {1, 1, 1, 0, 0, 0, 1, 1},
+                {1, 1, 1, 1, 0, 0, 0, 1}
+        };
+        byte[] B = new byte[] { 0, 1, 1, 0, 0, 0, 1, 1};
+
+        //
+        // substitution box based on F^{-1}(x)
+        //
+        byte[][] box = new byte[256][8];
+        box[1][7] = 1;
+        for (int i = 2; i < 256; i++) {
+            int j = alog[255 - log[i]];
+            for (int t = 0; t < 8; t++)
+                box[i][t] = (byte)((j >>> (7 - t)) & 0x01);
+        }
+        //
+        // affine transform:  box[i] <- B + A*box[i]
+        //
+        byte[][] cox = new byte[256][8];
+        for (int i = 0; i < 256; i++)
+            for (int t = 0; t < 8; t++) {
+                cox[i][t] = B[t];
+                for (int j = 0; j < 8; j++)
+                    cox[i][t] ^= A[t][j] * box[i][j];
+            }
+        //
+        // S-boxes and inverse S-boxes
+        //
+        for (int i = 0; i < 256; i++) {
+            S[i] = (byte)(cox[i][0] << 7);
+            for (int t = 1; t < 8; t++)
+                S[i] ^= cox[i][t] << (7-t);
+            Si[S[i] & 0xFF] = (byte) i;
+        }
+    }
+
+    private static byte[][] generateInvertedGMatrix(byte[][] gMatrix) {
+        byte[][] AA = new byte[4][8];
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) AA[i][j] = gMatrix[i][j];
+            AA[i][i+4] = 1;
+        }
+        byte pivot, tmp;
+        byte[][] iG = new byte[4][4];
+        for (int i = 0; i < 4; i++) {
+            pivot = AA[i][i];
+            if (pivot == 0) {
+                int t = i + 1;
+                while ((AA[t][i] == 0) && (t < 4))
+                    t++;
+                if (t == 4)
+                    throw new RuntimeException("G matrix is not invertible");
+                else {
+                    for (int j = 0; j < 8; j++) {
+                        tmp = AA[i][j];
+                        AA[i][j] = AA[t][j];
+                        AA[t][j] = tmp;
+                    }
+                    pivot = AA[i][i];
+                }
+            }
+            for (int j = 0; j < 8; j++)
+                if (AA[i][j] != 0)
+                    AA[i][j] = (byte)
+                            alog[(255 + log[AA[i][j] & 0xFF] - log[pivot & 0xFF]) % 255];
+            for (int t = 0; t < 4; t++)
+                if (i != t) {
+                    for (int j = i+1; j < 8; j++)
+                        AA[t][j] ^= mul(AA[i][j], AA[t][i]);
+                    AA[t][i] = 0;
+                }
+        }
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++) iG[i][j] = AA[i][j + 4];
+
+        return iG;
+    }
+
+    private static void generateTBoxes(byte[][] g, byte[][] iG) {
+        for (int t = 0; t < 256; t++) {
+            int s = S[t];
+            T1[t] = mul4(s, g[0]);
+            T2[t] = mul4(s, g[1]);
+            T3[t] = mul4(s, g[2]);
+            T4[t] = mul4(s, g[3]);
+
+            s = Si[t];
+            T5[t] = mul4(s, iG[0]);
+            T6[t] = mul4(s, iG[1]);
+            T7[t] = mul4(s, iG[2]);
+            T8[t] = mul4(s, iG[3]);
+
+            U1[t] = mul4(t, iG[0]);
+            U2[t] = mul4(t, iG[1]);
+            U3[t] = mul4(t, iG[2]);
+            U4[t] = mul4(t, iG[3]);
+        }
+    }
 
 	// multiply two elements of GF(2^m)
 	private static int mul(int a, int b) {

@@ -67,7 +67,7 @@ public class SecurityLevels {
 	
 	public SecurityLevels(Node node, PersistentConfig config) {
 		this.node = node;
-		SubConfig myConfig = new SubConfig("security-levels", config);
+		SubConfig myConfig = config.createSubConfig("security-levels");
 		int sortOrder = 0;
 		networkThreatLevelCallback = new MyCallback<NETWORK_THREAT_LEVEL>() {
 
@@ -314,6 +314,7 @@ public class SecurityLevels {
 		if(newThreatLevel == null) throw new NullPointerException();
 		NETWORK_THREAT_LEVEL oldLevel;
 		synchronized(this) {
+            if(networkThreatLevel == newThreatLevel) return;
 			oldLevel = networkThreatLevel;
 			networkThreatLevel = newThreatLevel;
 		}
@@ -324,6 +325,7 @@ public class SecurityLevels {
 		if(newThreatLevel == null) throw new NullPointerException();
 		PHYSICAL_THREAT_LEVEL oldLevel;
 		synchronized(this) {
+		    if(physicalThreatLevel == newThreatLevel) return;
 			oldLevel = physicalThreatLevel;
 			physicalThreatLevel = newThreatLevel;
 		}

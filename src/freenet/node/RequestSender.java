@@ -1673,6 +1673,23 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		}
 	}
 
+	/** Number of ping times to simulate */
+	static final double PINGS = 3.0;
+	/** Standard deviation in ping times */
+	static final double PINGS_STDDEV = PINGS / 6.0;
+	static final double MAX_PING_TIME = RequestSender.OPENNET_TIMEOUT / 10;
+
+    private long randomDelayFinishOpennetLocal() {
+        double pingTime =
+                // Noderefs are sent as real-time
+                node.nodeStats.getBwlimitDelayTimeRT() +
+                node.nodeStats.nodePinger.averagePingTime();
+        pingTime = Math.min(pingTime, MAX_PING_TIME);
+        double delay =
+                ((node.random.nextGaussian() * PINGS_STDDEV) + PINGS) * pingTime;
+        return Math.max((long) delay, 0L);
+    }
+
 	/**
      * Do path folding, maybe.
      * Wait for either a CompletedAck or a ConnectDestination.
@@ -1681,7 +1698,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
      * Add the peer.
      * @return True only if there was a fatal timeout and the caller should not unlock.
      */
-    private boolean finishOpennet(PeerNode next) {
+    private boolean finishOpennet(final PeerNode next) {
     	
     	OpennetManager om;
     	
@@ -1716,9 +1733,18 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				// RequestHandler will send a noderef back up, eventually, and will unlockHandler() after that point.
 				// But if this is a local request, we need to send the ack now.
 				// Serious race condition not possible here as we set it.
-				if(source == null)
-					ackOpennet(next);
-				else if(origTag.shouldStop()) {
+                if (source == null) {
+                    long delay = randomDelayFinishOpennetLocal();
+                    if (logMINOR) Logger.minor(this, "Delaying opennet completion for "+TimeUtil.formatTime(delay, 2, true));
+                    node.ticker.queueTimedJob(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            ackOpennet(next);
+                        }
+
+                    }, delay);
+                } else if (origTag.shouldStop()) {
 					// Can't pass it on.
 					origTag.finishedWaitingForOpennet(next);
 				}

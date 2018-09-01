@@ -41,17 +41,10 @@ class NPFPacket {
 	private int length = 5; //Sequence number (4), numAcks(1)
 	private int ackRangeCount = 0;
 	private int ackBlockByteSize = 0;
-	private boolean useCumulativeAcks = true;
-
-	public void setAcknowledgeType(boolean useCumulativeAcks) {
-		this.useCumulativeAcks = useCumulativeAcks;
-	}
 	
 	public static NPFPacket create(byte[] plaintext, BasePeerNode pn) {
 		NPFPacket packet = new NPFPacket();
 		if (pn == null) throw new IllegalArgumentException("Can't estimate an ack type of received packet");
-		boolean useCumAcks = pn.isUseCumulativeAcksSet();
-		packet.setAcknowledgeType(useCumAcks);
 		int offset = 0;
 
 		if(plaintext.length < (offset + 5)) { //Sequence number + the number of acks
@@ -66,7 +59,7 @@ class NPFPacket {
 		offset += 4;
 
 		//Process received acks
-		if (useCumAcks) {
+
 			int numAckRanges = plaintext[offset++] & 0xFF;
 			if (numAckRanges > 0) {
 				try {
@@ -106,31 +99,6 @@ class NPFPacket {
 					return packet;
 				}
 			}
-		} else {
-			// Old format for compatibility
-			int numAcks = plaintext[offset++] & 0xFF;
-			if(plaintext.length < (offset + numAcks + (numAcks > 0 ? 3 : 0))) {
-				packet.error = true;
-				return packet;
-			}
-
-			int prevAck = 0;
-			for(int i = 0; i < numAcks; i++) {
-				int ack = 0;
-				if(i == 0) {
-					ack = ((plaintext[offset] & 0xFF) << 24)
-							| ((plaintext[offset + 1] & 0xFF) << 16)
-							| ((plaintext[offset + 2] & 0xFF) << 8)
-							| (plaintext[offset + 3] & 0xFF);
-					offset += 4;
-			} else {
-				ack = prevAck + (plaintext[offset++] & 0xFF);
-			}
-				packet.acks.add(ack);
-				prevAck = ack;
-			}
-		}
-		
 
 		//Handle received message fragments
 		int prevFragmentID = -1;
@@ -265,7 +233,7 @@ class NPFPacket {
 		offset += 4;
 
 		//Add acks
-		if (useCumulativeAcks) {
+
 			buf[offset++] = (byte) (ackRangeCount);
 			Iterator<Integer> acksIterator = acks.iterator();
 			if(acksIterator.hasNext()) {
@@ -315,26 +283,6 @@ class NPFPacket {
 					}
 				}
 			}
-		} else {
-			// Use old format
-			buf[offset++] = (byte) (acks.size());
-			int prevAck;
-			Iterator<Integer> acksIterator = acks.iterator();
-			if(acksIterator.hasNext()) {
-				prevAck = acksIterator.next();
-				buf[offset] = (byte) (prevAck >>> 24);
-				buf[offset + 1] = (byte) (prevAck >>> 16);
-				buf[offset + 2] = (byte) (prevAck >>> 8);
-				buf[offset + 3] = (byte) (prevAck);
-				offset += 4;
-	
-				while(acksIterator.hasNext()) {
-					int ack = acksIterator.next();
-					buf[offset++] = (byte) (ack - prevAck);
-					prevAck = ack;
-				}
-			}
-		}
 		
 		//Add fragments
 		int prevFragmentID = -1;
@@ -412,7 +360,6 @@ class NPFPacket {
 		if(ack < 0) throw new IllegalArgumentException("Got negative ack: " + ack);
 		if(acks.contains(ack)) return true;
 		
-		if (useCumulativeAcks) {
 			acks.add(ack);
 			int nearRangeCount = 0, farRangeCount = 0;
 	
@@ -452,21 +399,7 @@ class NPFPacket {
 			length = finalLength;
 			ackBlockByteSize = blockSize;
 			ackRangeCount = farRangeCount + nearRangeCount;
-		} else {
-			// Use old format
-			if(acks.size() >= 255) return false;
 
-			if(acks.size() == 0) {
-				length += 3;
-			} else if(ack < acks.first()) {
-				if((acks.first() - ack) > 255) return false;
-			} else if(ack > acks.last()) {
-				if((ack - acks.last()) > 255) return false;
-			}
-			acks.add(ack);
-			length++;
-		}
-		
 		return true;
 	}
 

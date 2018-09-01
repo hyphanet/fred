@@ -13,22 +13,23 @@
  * <li>@see ClientPutState The current stage in an insert. E.g. insert a single block (@see 
  * SingleBlockInserter), or a splitfile (@see SplitFileInserter).</li>
  * <li>Code for actually choosing which request to start. ClientRequestScheduler is an interface 
- * class, the actual request selection trees are on ClientRequestSchedulerCore for persistent
- * requests and ClientRequestSchedulerNonPersistent for transient requests. Requests are chosen by
- * ClientRequestSelector and TransientChosenBlock, PersistentChosenRequest and PersistentChosenBlock
- * represent individual requests or blocks which have been chosen to be sent soon.</li>
- * <li>The cooldown queue: @see PersistentCooldownQueue and @see RequestCooldownQueue. This is used 
- * to ensure that we don't keep on selecting the same request repeatedly. 
+ * class, the actual request selection tree is on ClientRequestSelector. We keep a separate 
+ * structure (mostly Bloom filters) using KeyListeners to identify which block belongs to which
+ * client, as we will often be offered blocks, or fetch them on behalf of other nodes. This is kept
+ * by ClientRequestSchedulerCore for persistent requests and ClientRequestSchedulerNonPersistent 
+ * for transient requests.</li>
+ * <li>The cooldown queue: @see CooldownTracker. This is used to ensure that we don't keep on 
+ * selecting the same request repeatedly, while choosing requests efficiently. 
  * @see freenet.node.FailureTable for a closely related mechanism at the node level.</li>
  * <li>USK-related code</li>
  * <li>The healing queue</li>
- * <li>Misc db4o-related code</li>
+ * <li>Misc persistence-related code, @see ClientLayerPersister for the persistence architecture.</li>
  * </ul>
  * 
  * <p>The main connections to other layers: Code which uses the client layer:</p>
  * <ul><li>@see freenet.client.HighLevelSimpleClient (a lightweight API used both internally and 
  * by some plugins)</li>
- * <li>@see freenet.node.fcp The interface to external FCP clients</li>
+ * <li>@see freenet.clients.fcp The interface to external FCP clients</li>
  * <li>Some code and plugins use the classes here directly.</li></ul>
  * <p>Code which the client layer uses:</p>
  * <ul><li>@see freenet.client Support classes for MIME type handling, container handling, etc</li>

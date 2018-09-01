@@ -4,6 +4,7 @@
 package freenet.client.filter;
 
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 
@@ -41,7 +42,7 @@ public class UnknownContentTypeException extends UnsafeContentTypeException {
 	}
 
 	@Override
-	public int getFetchErrorCode() {
-		return FetchException.CONTENT_VALIDATION_UNKNOWN_MIME;
+	public FetchExceptionMode getFetchErrorCode() {
+		return FetchExceptionMode.CONTENT_VALIDATION_UNKNOWN_MIME;
 	}
 }

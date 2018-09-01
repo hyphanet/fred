@@ -8,9 +8,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.NoSuchElementException;
 
 import freenet.clients.http.TranslationToadlet;
 import freenet.support.HTMLEncoder;
@@ -35,15 +38,29 @@ import freenet.support.io.FileUtil;
 public class BaseL10n {
 
 	/**
+	 * Central list of languages and the codes to identify them.
+	 * When adding new ones, use ISO639-2 or 3 if there is a code for the desired language available
+	 * there. If not, fall back to RFC5646 (= "IETF language tags").
+	 * 
+	 * TODO: Code quality: Switch from this manually maintained list to a predefined one. Use
+	 * standard Java class {@link Locale}.
+	 * Discussion at https://github.com/freenet/fred/pull/500 has shown that the IETF list is
+	 * the best choice. It is a combination of ISO639-3 codes (for which we already have class
+	 * {@link ISO639_3}) and a standard country list. And most importantly: It is understood
+	 * by standard Java class {@link Locale}.
+	 * Bugtracker entry for this: https://bugs.freenetproject.org/view.php?id=6857
+	 * 
 	 * @see "http://www.omniglot.com/language/names.htm"
 	 * @see "http://loc.gov/standards/iso639-2/php/code_list.php"
-	 */
+	 * @see "http://tools.ietf.org/html/rfc5646" */
 	public enum LANGUAGE {
 
 		// Windows language codes must be preceded with WINDOWS and be in upper case hex, 4 digits.
 		// See http://www.autohotkey.com/docs/misc/Languages.htm
 		
+		CROATIAN("hr", "Hrvatski", "hrv", new String[] { "WINDOWS041A" }),
 		ENGLISH("en", "English", "eng", new String[] { "WINDOWS0409", "WINDOWS0809", "WINDOWS0C09", "WINDOWS1009", "WINDOWS1409", "WINDOWS1809", "WINDOWS1C09", "WINDOWS2009", "WINDOWS2409", "WINDOWS2809", "WINDOWS2C09", "WINDOWS3009", "WINDOWS3409"}),
+		HUNGARIAN("hu", "magyar", "hun", new String[] { "WINDOWS040E" }),
 		SPANISH("es", "Español", "spa", new String[] { "WINDOWS040A", "WINDOWS080A", "WINDOWS0C0A", "WINDOWS100A", "WINDOWS140A", "WINDOWS180A", "WINDOWS1C0A", "WINDOWS200A", "WINDOWS240A", "WINDOWS280A", "WINDOWS2C0A", "WINDOWS300A", "WINDOWS340A", "WINDOWS380A", "WINDOWS3C0A", "WINDOWS400A", "WINDOWS440A", "WINDOWS480A", "WINDOWS4C0A", "WINDOWS500A"}),
 		DANISH("da", "Dansk", "dan", new String[] { "WINDOWS0406" }),
 		DUTCH("nl", "Nederlands", "nld", new String[] { "WINDOWS0413", "WINDOWS0813"}),
@@ -51,16 +68,26 @@ public class BaseL10n {
 		FINNISH("fi", "Suomi", "fin", new String[] { "WINDOWS040B"}),
 		FRENCH("fr", "Français", "fra", new String[] { "WINDOWS040C", "WINDOWS080C", "WINDOWS0C0C", "WINDOWS100C", "WINDOWS140C", "WINDOWS180C"}),
 		ITALIAN("it", "Italiano", "ita", new String[] { "WINDOWS0410", "WINDOWS0810"}),
-		NORWEGIAN("no", "Norsk", "nor", new String[] { "WINDOWS0414", "WINDOWS0814"}),
+		// TODO: This does not adhere to RFC5646. Fix it as part of changing the whole list to
+		// RFC5646. Find a way to rename this without breaking the language in all plugins.
+		NORWEGIAN("nb-no", "Bokmål", "nob", new String[] { "WINDOWS0414", "WINDOWS0814"}),
 		POLISH("pl", "Polski", "pol", new String[] { "WINDOWS0415"}),
 		SWEDISH("sv", "Svenska", "swe", new String[] { "WINDOWS041D", "WINDOWS081D"}),
+		// TODO: This does not adhere to RFC5646. Fix it as part of changing the whole list to
+		// RFC5646. Find a way to rename this without breaking the language in all plugins.
 		CHINESE("zh-cn", "中文(简体)", "chn", new String[] { "WINDOWS0804", "WINDOWS1004" }),
 		// simplified chinese, used on mainland, Singapore and Malaysia
+		// TODO: This does not adhere to RFC5646. Fix it as part of changing the whole list to
+		// RFC5646. Find a way to rename this without breaking the language in all plugins.
 		CHINESE_TAIWAN("zh-tw", "中文(繁體)", "zh-tw", new String[] { "WINDOWS0404", "WINDOWS0C04", "WINDOWS1404" }), 
 		// traditional chinese, used in Taiwan, Hong Kong and Macau
 		RUSSIAN("ru", "Русский", "rus", new String[] { "WINDOWS0419" }), // Just one variant for russian. Belorussian is separate, code page 423, speakers may or may not speak russian, I'm not including it.
 		JAPANESE("ja", "日本語", "jpn", new String[] { "WINDOWS0411" }),
+		PORTUGUESE("pt-PT", "Português do Portugal", "pt", new String[] { "WINDOWS0816" }),
+		// TODO: This does not adhere to RFC5646. Fix it as part of changing the whole list to
+		// RFC5646. Find a way to rename this without breaking the language in all plugins.
 		BRAZILIAN_PORTUGUESE("pt-br", "Português do Brasil", "pt-br", new String[] { "WINDOWS0416" }),
+		GREEK("el", "Ελληνικά", "ell", new String[] { "WINDOWS0408" }),
 		UNLISTED("unlisted", "unlisted", "unlisted", new String[] {});
 		/** The identifier we use internally : MUST BE UNIQUE! */
 		public final String shortCode;
@@ -105,19 +132,87 @@ public class BaseL10n {
 
 		public static String[] valuesWithFullNames() {
 			LANGUAGE[] allValues = values();
-			String[] result = new String[allValues.length];
+			ArrayList<String> result = new ArrayList<String>(allValues.length);
 			for (int i = 0; i < allValues.length; i++) {
-				result[i] = allValues[i].fullName;
+				// We will return the full names sorted alphabetically. To ensure that the user
+				// notices the special "UNLISTED" language code, we add it to the end of the list
+				// after sorting, so now we skip it.
+				if(allValues[i] != UNLISTED)
+					result.add(allValues[i].fullName);
 			}
 
-			return result;
+			Collections.sort(result);
+			result.add(UNLISTED.fullName);
+
+			return result.toArray(new String[result.size()]);
 		}
 
 		public static LANGUAGE getDefault() {
 			return ENGLISH;
 		}
 	}
-	
+    
+    /**
+     * State enum for {@link L10nStringIterator}. Declared here for
+     * {@link #getStrings(String, FallbackState)}.
+     */
+    private enum FallbackState {
+        CURRENT_LANG,
+        FALLBACK_LANG,
+        KEY,
+        END
+    }
+    
+    /**
+     * Iterator that returns the strings associated with a key in order of preference. First the
+     * value in the current language (if any), then the value in the fallback language (if any),
+     * and then just the key itself.
+     */
+    private class L10nStringIterator implements Iterator<String> {
+        private final String key;
+        private FallbackState state;
+        
+        public L10nStringIterator(String key, FallbackState state) {
+            this.key = key;
+            this.state = state;
+        }
+        
+        @Override
+        public boolean hasNext() {
+            return state != FallbackState.END;
+        }
+        
+        @Override
+        public String next() {
+            if (state == FallbackState.CURRENT_LANG) { 
+                state = FallbackState.FALLBACK_LANG;
+                String value = getString(key, true);
+                if (value != null) {
+                    return value;
+                }
+            }
+            if (state == FallbackState.FALLBACK_LANG) {
+                state = FallbackState.KEY;
+                if (getSelectedLanguage() != LANGUAGE.getDefault()) {
+                    String value = getFallbackString(key);
+                    if (value != null) {
+                        return value;
+                    }
+                }
+            }
+            if (state == FallbackState.KEY) {
+                state = FallbackState.END;
+                return key;
+            }
+            throw new NoSuchElementException();
+        }
+        
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+    
 	private LANGUAGE lang;
 	private String l10nFilesBasePath;
 	private String l10nFilesMask;
@@ -330,8 +425,7 @@ public class BaseL10n {
 
 		try {
 			// We don't set deleteOnExit on it : if the save operation fails, we want a backup
-			// FIXME: REDFLAG: not symlink-race proof!
-			File tempFile = new File(finalFile.getParentFile(), finalFile.getName() + ".bak");
+			File tempFile = File.createTempFile(finalFile.getName(), ".bak", finalFile.getParentFile());;
 			Logger.minor(this.getClass(), "The temporary filename is : " + tempFile);
 
 			fos = new FileOutputStream(tempFile);
@@ -381,7 +475,7 @@ public class BaseL10n {
 	 * @return String
 	 */
 	public String getString(String key) {
-		return getString(key, false);
+        return getStrings(key).iterator().next();
 	}
 
 	/**
@@ -391,6 +485,10 @@ public class BaseL10n {
 	 * @return String
 	 */
 	public String getString(String key, boolean returnNullIfNotFound) {
+        if (!returnNullIfNotFound) {
+            return getString(key);
+        }
+        
 		String result = null;
 		if (this.translationOverride != null) {
 			result = this.translationOverride.get(key);
@@ -404,17 +502,35 @@ public class BaseL10n {
 			result = this.currentTranslation.get(key);
 		}
 
-		if (result != null) {
-			return result;
-		} else {
+        if (result == null) {
 			Logger.normal(this.getClass(), "The translation for " + key + " hasn't been found (" + this.getSelectedLanguage() + ")! please tell the maintainer.");
-			return (returnNullIfNotFound ? null : this.getDefaultString(key));
 		}
+        return result;
 	}
+    
+    /**
+     * Enumerate strings associated with a key in order of preference.
+     */
+    private Iterable<String> getStrings(final String key) {
+        return getStrings(key, FallbackState.CURRENT_LANG);
+    }
+    
+    /**
+     * Enumerate strings associated with a key in order of preference, starting with a specified
+     * one.
+     */
+    private Iterable<String> getStrings(final String key, final FallbackState initialState) {
+        return new Iterable<String>() {
+            @Override
+            public Iterator<String> iterator() {
+                return new L10nStringIterator(key, initialState);
+            }
+        };
+    }
 
 	/**
 	 * Get a localized string and put it in a HTMLNode for the translation page.
-	 * @param values Values to replace patterns with.
+	 * @param key Key to search for.
 	 * @return HTMLNode
 	 */
 	public HTMLNode getHTMLNode(String key) {
@@ -445,6 +561,22 @@ public class BaseL10n {
 
 		return translationField;
 	}
+    
+    /**
+     * Get the value for a key in the fallback translation, or null.
+     */
+    private String getFallbackString(String key) {
+        this.loadFallback();
+
+        String result = this.fallbackTranslation.get(key);
+
+        if (result == null) {
+            Logger.error(this.getClass(), "The default translation for " + key + " hasn't been found!");
+            System.err.println("The default translation for " + key + " hasn't been found!");
+            new Exception().printStackTrace();
+        }
+        return result;
+    }
 
 	/**
 	 * Get the default value for a key.
@@ -452,19 +584,7 @@ public class BaseL10n {
 	 * @return String
 	 */
 	public String getDefaultString(String key) {
-		String result = null;
-		this.loadFallback();
-
-		result = this.fallbackTranslation.get(key);
-
-
-		if (result != null) {
-			return result;
-		}
-		Logger.error(this.getClass(), "The default translation for " + key + " hasn't been found!");
-		System.err.println("The default translation for " + key + " hasn't been found!");
-		new Exception().printStackTrace();
-		return key;
+        return getStrings(key, FallbackState.FALLBACK_LANG).iterator().next();
 	}
 
 	/**
@@ -546,6 +666,7 @@ public class BaseL10n {
 	 * @param key Key to search for.
 	 * @param patterns Patterns to replace, ${ and } are not included.
 	 * @param values Replacement values.
+	 * @deprecated Use {@link #addL10nSubstitution(HTMLNode, String, String[], HTMLNode[])} instead.
 	 */
 	@Deprecated
 	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, String[] values) {
@@ -556,15 +677,15 @@ public class BaseL10n {
 		}
 		node.addChild("%", result);
 	}
-	
-	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, HTMLNode[] values) {
-		String value = getString(key);
-		addL10nSubstitutionInner(node, key, value, patterns, values);
-	}
-	
-	/** This is *much* safer. Callers won't accidentally pass in unencoded strings and
-	 * cause vulnerabilities. Callers should try to reuse parameters if possible. We 
-	 * automatically close each tag: When a pattern ${name} is matched, we search for
+
+	/**
+	 * Loads an L10n string, replaces variables such as ${link} or ${bold} in it with {@link HTMLNode}s
+	 * and adds the result to the given HTMLNode.
+	 * 
+	 * This is *much* safer than the deprecated {@link #addL10nSubstitution(HTMLNode, String, String[], String[])}. 
+	 * Callers won't accidentally pass in unencoded strings and cause vulnerabilities.
+	 * Callers should try to reuse parameters if possible.
+	 * We automatically close each tag: When a pattern ${name} is matched, we search for
 	 * ${/name}. If we find it, we make the tag enclose everything between the two; if we
 	 * can't find it, we just add it with no children. It is not possible to create an
 	 * HTMLNode representing a tag closure, so callers will need to change their code to
@@ -572,14 +693,73 @@ public class BaseL10n {
 	 * strings themselves to always close the tag properly, rather than using a generic
 	 * /link for multiple links as we use in some places.
 	 * 
-	 * Example:
+	 * <p><b>Examples</b>:
+	 * <p>TranslationLookup.string=This is a ${link}link${/link} about ${text}.</p>
+	 * <p>
+	 * <code>addL10nSubstitution(html, "TranslationLookup.string", new String[] { "link", "text" },
+	 *   new HTMLNode[] { HTMLNode.link("/KSK@gpl.txt"), HTMLNode.text("blah") });</code>
+	 * </p>
+	 * <br>
+	 * <p>TranslationLookup.string=${bold}This${/bold} is a bold text.</p>
+	 * <p>
+	 * <code>addL10nSubstitution(html, "TranslationLookup.string", new String[] { "bold" },
+	 *   new HTMLNode[] { HTMLNode.STRONG });</code>
+	 * </p>
 	 * 
-	 * addL10nSubstitution(html, "TranslationLookup.string", new String[] { "link", "text" },
-	 *   new HTMLNode[] { HTMLNode.link("/KSK@gpl.txt"), HTMLNode.text("blah") })
-	 * 
-	 * TranslationLookup.string=This is a ${link}link${/link} about ${text}.
+	 * @param node The {@link HTMLNode} to which the L10n should be added after substitution was done.
+	 * @param key The key of the L10n string which shall be used. 
+	 * @param patterns Specifies things such as ${link} which shall be replaced in the L10n string with {@link HTMLNode}s.
+	 * @param values For each entry in the previous array parameter, this array specifies the {@link HTMLNode} with which it shall be replaced. 
 	 */
-	private void addL10nSubstitutionInner(HTMLNode node, String key, String value, String[] patterns, HTMLNode[] values) {
+	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, HTMLNode[] values) {
+        List<HTMLNode> newContent = getHTMLWithSubstitutions(key, patterns, values);
+        node.addChildren(newContent);
+	}
+    
+    /**
+     * Attempt to parse any substitution variables found in a l10n string. Intended for use in
+     * tests.
+     */
+    void attemptParse(String value) throws L10nParseException {
+        String[] patterns = new String[0];
+        HTMLNode[] values = new HTMLNode[0];
+        performHTMLSubstitutions(value, patterns, values);
+    }
+    
+    /**
+     * Look up a l10n string and replace substitution variables to generate a list of
+     * {@link HTMLNode}s.
+     */
+    private List<HTMLNode> getHTMLWithSubstitutions(String key, String[] patterns, HTMLNode[] values) {
+        for (String value : getStrings(key)) {
+            // catch errors caused by bad translation strings
+            try {
+                return performHTMLSubstitutions(value, patterns, values);
+            } catch (L10nParseException e) {
+                Logger.error(this, "Error in l10n value \""+value+"\" for "+key, e);
+            }
+        }
+        // this should never happen, because the last item from getStrings() will be the key itself
+        return Collections.singletonList(new HTMLNode("#"));
+    }
+    
+    /**
+     * Convert a string to a list of {@link HTMLNode}s, replacing substitution variables found in
+     * {@code patterns} with corresponding nodes from {@code values}.
+     */
+    private List<HTMLNode> performHTMLSubstitutions(String value, String[] patterns,
+            HTMLNode[] values) throws L10nParseException {
+        HTMLNode tempNode = new HTMLNode("#");
+        addHTMLSubstitutions(tempNode, value, patterns, values);
+        return tempNode.getChildren();
+    }
+
+    /**
+     * Adds a string to an {@link HTMLNode}, replacing substitution variables found in
+     * {@code patterns} with corresponding nodes from {@code values}.
+     */
+    private void addHTMLSubstitutions(HTMLNode node, String value,
+            String[] patterns, HTMLNode[] values) throws L10nParseException {
 		int x;
 		while(!value.equals("") && (x = value.indexOf("${")) != -1) {
 			String before = value.substring(0, x);
@@ -588,14 +768,12 @@ public class BaseL10n {
 			value = value.substring(x);
 			int y = value.indexOf('}');
 			if(y == -1) {
-				Logger.error(this, "Unclosed braces in l10n value \""+value+"\" for "+key);
-				return;
+                throw new L10nParseException("Unclosed braces");
 			}
 			String lookup = value.substring(2, y);
 			value = value.substring(y+1);
 			if(lookup.startsWith("/")) {
-				Logger.error(this, "Starts with / in "+key);
-				return;
+                throw new L10nParseException("Starts with /");
 			}
 			
 			HTMLNode subnode = null;
@@ -612,7 +790,7 @@ public class BaseL10n {
 			if(x == -1) {
 				// It goes up to the end of the tag. It has no contents.
 				if(subnode != null) {
-					node.addChild(subnode);
+                    node.addChild(subnode.clone());
 				}
 			} else {
 				// It has contents. Must recurse.
@@ -621,10 +799,10 @@ public class BaseL10n {
 				if(subnode != null) {
 					subnode = subnode.clone();
 					node.addChild(subnode);
-					addL10nSubstitutionInner(subnode, key, inner, patterns, values);
 				} else {
-					addL10nSubstitutionInner(node, key, inner, patterns, values);
+                    subnode = node;
 				}
+                addHTMLSubstitutions(subnode, inner, patterns, values);
 				value = rest;
 			}
 		}

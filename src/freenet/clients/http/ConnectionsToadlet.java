@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.fcp.AddPeer;
 import freenet.clients.http.geoip.IPConverter;
 import freenet.clients.http.geoip.IPConverter.Country;
 import freenet.io.comm.PeerParseException;
@@ -31,13 +32,13 @@ import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.NodeFile;
 import freenet.node.NodeStats;
 import freenet.node.PeerManager;
 import freenet.node.PeerNode;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
 import freenet.node.PeerNodeStatus;
 import freenet.node.Version;
-import freenet.node.fcp.AddPeer;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
@@ -396,6 +397,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				jsBuf.append( "    theobj.value=\"update_notes\";\n" );
 				jsBuf.append( "  }\n" );
 				contentNode.addChild("script", "type", "text/javascript").addChild("%", jsBuf.toString());
+				contentNode.addChild("script", new String[] {"type", "src"}, new String[] {"text/javascript",  "/static/js/checkall.js"});
 			}
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
@@ -431,8 +433,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTable = peerTableInfoboxContent.addChild("table", "class", "darknet_connections");
 				}
 				HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
-				if(enablePeerActions)
-					peerTableHeaderRow.addChild("th");
+				if(enablePeerActions) {
+					if(fProxyJavascriptEnabled) {
+						peerTableHeaderRow.addChild("th").addChild("input", new String[] { "type", "onclick" }, new String[] { "checkbox", "checkAll(this, 'darknet_connections')" });
+					} else {
+						peerTableHeaderRow.addChild("th");
+					}
+				}
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "status")).addChild("#", l10n("statusTitle"));
 				if(hasNameColumn())
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "name")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("nameClickToMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("nameTitle"));
@@ -796,7 +803,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
             Logger.error(this, "Internal error adding reference :" + t.getMessage(), t);
 			return PeerAdditionReturnCodes.INTERNAL_ERROR;
 		}
-		if(Arrays.equals(pn.getPubKeyHash(), node.getDarknetPubKeyHash())) {
+		if(Arrays.equals(pn.peerECDSAPubKeyHash, node.getDarknetPubKeyHash())) {
 			return PeerAdditionReturnCodes.TRY_TO_ADD_SELF;
 		}
 		if(!this.node.addPeerConnection(pn)) {
@@ -983,7 +990,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		HTMLNode addressRow = peerRow.addChild("td", "class", "peer-address");
 		// Ip to country + Flags
-		IPConverter ipc = IPConverter.getInstance(node.runDir().file(NodeUpdateManager.IPV4_TO_COUNTRY_FILENAME));
+		IPConverter ipc = IPConverter.getInstance(NodeFile.IPv4ToCountry.getFile(node));
 		byte[] addr = peerNodeStatus.getPeerAddressBytes();
 
 		Country country = ipc.locateIP(addr);

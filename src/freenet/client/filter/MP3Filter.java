@@ -63,6 +63,30 @@ public class MP3Filter implements ContentDataFilter {
 		{44100, 48000, 32000}
 	};
 
+	// Samples per frame for each [version][layer]
+	static final int[][] samplesPerFrame = {
+		// Version 2.5
+		{ 0, 576, 1152, 384 },
+		// Reserved
+		{},
+		// Version 2
+		{ 0, 576, 1152, 384 },
+		// Version 1
+		{ 0, 1152, 1152, 384 }
+	};
+
+	// Bits per slot for each layer
+	static final int[] bitsPerSlot = {
+		// Reserved
+		0,
+		// Layer III
+		8,
+		// Layer II
+		8,
+		// Layer I
+		32
+	};
+
 	@Override
 	public void readFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
@@ -84,89 +108,107 @@ public class MP3Filter implements ContentDataFilter {
 		try {
 		int frameHeader = in.readInt();
 		foundStream = (frameHeader & 0xffe00000) == 0xffe00000;
-		//Seek ahead until we find the Frame sync
-		// FIXME surely the sync should be 0xffe00000 ? First 11 bits set, right?
-		while(true) {
-			if(foundStream && (frameHeader & 0xffe00000) == 0xffe00000){
-				//Populate header details
-				byte version = (byte) ((frameHeader & 0x00180000) >>> 19); //2 bits
-				if(version == 1) {
+		// Seek ahead until we find the Frame sync
+		while (true) {
+			if (foundStream && (frameHeader & 0xffe00000) == 0xffe00000) {
+				// Populate header details
+				final byte version = (byte) ((frameHeader & 0x00180000) >>> 19); //2 bits
+				if (version == 1) {
 					foundStream = false;
 					continue; // Not valid
 				}
-				byte layer = (byte) ((frameHeader & 0x00060000) >>> 17); //2 bits
-				if(layer == 0) {
+				final byte layer = (byte) ((frameHeader & 0x00060000) >>> 17); //2 bits
+				if (layer == 0) {
 					foundStream = false;
 					continue; // Not valid
 				}
 				// WARNING: layer is encoded! 1 = layer 3, 2 = layer 2, 3 = layer 1!
-				boolean hasCRC = ((frameHeader & 0x00010000) >>> 16) == 1 ? false : true; //1 bit, but inverted
-				byte bitrateIndex = (byte) ((frameHeader & 0x0000f000) >>> 12); //4 bits
-				if(bitrateIndex == 0) {
+				final boolean hasCRC = ((frameHeader & 0x00010000) >>> 16) != 1; //1 bit, but inverted
+				final byte bitrateIndex = (byte) ((frameHeader & 0x0000f000) >>> 12); //4 bits
+				if (bitrateIndex == 0) {
 					// FIXME It looks like it would be very hard to support free bitrate.
 					// Unfortunately, this is used occasionally e.g. on the chaosradio mp3's.
-//					if(!foundStream) {
-						// Probably just noise.
-						foundStream = false;
-						countFreeBitrate++;
-						continue; // Not valid
-//					}
-//					// FIXME l10n
-//					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
+					foundStream = false;
+					countFreeBitrate++;
+					continue; // Not valid
 				}
-				if(bitrateIndex == 15) {
+				if (bitrateIndex == 15) {
 					foundStream = false;
 					continue; // Not valid
 				}
-				byte samplerateIndex = (byte) ((frameHeader & 0x0000c0000) >>> 10); //2 bits
-				if(samplerateIndex == 3) continue; // Not valid
-				boolean paddingBit = ((frameHeader & 0x00000300) >>> 9) == 1 ? true : false;
-				// FIXME can we do anything with these?
-//				boolean privateBit = ((frameHeader & 0x00000100) >>> 8) == 1 ? true : false;
-//				byte channelMode = (byte) ((frameHeader & 0x000000c0) >>> 6); //2 bits
-//				byte modeExtension = (byte) ((frameHeader & 0x00000030) >>> 4); //2 bits
-				/* FIXME A small boost in security might be gained by flipping the next
-				 * two bits to false. */
-//				boolean copyright = ((frameHeader & 0x00000008) >>> 3) == 1 ? true : false;
-//				boolean original = ((frameHeader & 0x00000004) >>> 2) == 1 ? true : false;
-				byte emphasis = (byte) ((frameHeader & 0x00000002));
-				if(emphasis == 2) {
+				final byte samplerateIndex = (byte) ((frameHeader & 0x00000c00) >>> 10); //2 bits
+				if (samplerateIndex == 3) {
+					foundStream = false;
+					continue; // Not valid
+				}
+				final boolean paddingBit = ((frameHeader & 0x00000200) >>> 9) == 1;
+				// We skip the following bits here (listed for future reference):
+				// Private         0x00000100  (1 bit)
+				// Channel mode    0x000000c0  (2 bits)
+				// Mode extension  0x00000030  (2 bits)
+				// Copyright       0x00000008  (1 bit)
+				// Original        0x00000004  (1 bit)
+				// FIXME A small boost in security might be gained by clearing the latter two.
+				byte emphasis = (byte) ((frameHeader & 0x00000003));
+				if (emphasis == 2) {
 					foundStream = false;
 					continue; // Not valid
 				}
 
-				//Generate other values from tables
-				int bitrate = bitRateIndices[version][layer][bitrateIndex]*1000;
-				int samplerate = sampleRateIndices[version][samplerateIndex];
-				int frameLength = 0;
-				if(layer == 1 || layer == 2) {
-					frameLength = 144*bitrate/samplerate+(paddingBit ? 1 : 0);
-				}
-				else if(layer == 3) frameLength = (12*bitrate/samplerate+(paddingBit ? 1 : 0))*4;
+				// Generate other values from tables
+				final int bitrate = bitRateIndices[version][layer][bitrateIndex] * 1000;
+				final int samplerate = sampleRateIndices[version][samplerateIndex];
+				final int samples = samplesPerFrame[version][layer];
+				final int granularity = bitsPerSlot[layer];
+				int frameLength = samples / granularity * bitrate / samplerate;
+				frameLength += paddingBit ? 1 : 0;
+				frameLength *= granularity / 8;
 
 				short crc = 0;
-				
-				if(hasCRC) {
+				if (hasCRC) {
 					totalCRCs++;
 					crc = in.readShort();
 					Logger.normal(this, "Found a CRC");
 					// FIXME calculate the CRC. It applies to a large number of frames, dependant on the format.
 				}
-				//Write out the frame
+				// Write out the frame
 				byte[] frame = null;
 				frame = new byte[frameLength-4];
 				in.readFully(frame);
 				out.writeInt(frameHeader);
 				// FIXME CRCs may or may not work. I have not been able to find an mp3 file with CRCs but without free bitrate.
-				if(hasCRC)
+				if (hasCRC)
 					out.writeShort(crc);
 				out.write(frame);
 				totalFrames++;
 				foundFrames++;
-				if(countLostSyncBytes != 0)
+				if (countLostSyncBytes != 0)
 					Logger.normal(this, "Lost sync for "+countLostSyncBytes+" bytes");
 				countLostSyncBytes = 0;
 				frameHeader = in.readInt();
+			} else if (!foundStream && (frameHeader & 0xffffff00) == 0x49443300) {
+				// This is an ID3v2 header, see http://id3.org/id3v2.3.0#ID3v2_header
+				// Skip minor version, flags
+				in.skip(2);
+				// ID3 tag size
+				byte[] encodedSize = new byte[4];
+				in.readFully(encodedSize);
+				int size = 0;
+				size |= (encodedSize[0] & 0x7F) << 21;
+				size |= (encodedSize[1] & 0x7F) << 14;
+				size |= (encodedSize[2] & 0x7F) << 7;
+				size |= (encodedSize[3] & 0x7F);
+				in.skip(size);
+				Logger.normal(this, "Skipped " + size + " bytes of ID3v2 data");
+				frameHeader = in.readInt();
+				foundStream = (frameHeader & 0xffe00000) == 0xffe00000;
+			} else if (!foundStream && (frameHeader & 0xffffff00) == 0x54414700) {
+				// This is an ID3v1 header
+				// ID3v1 is of fixed length (128 bytes), from which we have already read the first 4
+				in.skip(124);
+				Logger.normal(this, "Skipped an ID3v1 TAG");
+				frameHeader = in.readInt();
+				foundStream = (frameHeader & 0xffe00000) == 0xffe00000;
 			} else {
 				if(foundFrames != 0)
 					Logger.normal(this, "Series of frames: "+foundFrames);
@@ -202,13 +244,6 @@ public class MP3Filter implements ContentDataFilter {
 
 	private String l10n(String key) {
 		return NodeL10n.getBase().getString("MP3Filter."+key);
-	}
-
-	@Override
-	public void writeFilter(InputStream input, OutputStream output,
-			String charset, HashMap<String, String> otherParams,
-			FilterCallback cb) throws DataFilterException, IOException {
-		filter(input, output);
 	}
 	
 	public static void main(String[] args) throws DataFilterException, IOException {

@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import freenet.crypt.RandomSource;
 import freenet.io.comm.NotConnectedException;
@@ -26,6 +27,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.Announcer;
 import freenet.node.FSParseException;
 import freenet.node.Node;
+import freenet.node.NodeFile;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.OpennetDisabledException;
@@ -62,7 +64,7 @@ public class SeednodePingTest extends RealNodeTest {
 	node = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, "seednode-pingtest", false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, false, false, false, false, false, false, 0, false, false, false, false, null);
 	// Connect & ping
 	List<SeedServerTestPeerNode> seedNodes = new ArrayList<SeedServerTestPeerNode>();
-	List<SimpleFieldSet> seedNodesAsSFS = Announcer.readSeednodes(new File("/tmp/", Announcer.SEEDNODES_FILENAME));
+	List<SimpleFieldSet> seedNodesAsSFS = Announcer.readSeednodes(new File("/tmp/", NodeFile.Seednodes.getFilename()));
 	int numberOfNodesInTheFile = 0;
 	for(SimpleFieldSet sfs : seedNodesAsSFS) {
 		numberOfNodesInTheFile++;
@@ -122,8 +124,8 @@ public class SeednodePingTest extends RealNodeTest {
 			System.out.println(seednode.getIdentityString() + " : "+fate+ " : "+seednode.getPeerNodeStatusString());
 		}
 		System.out.println("TOTALS:");
-		for(FATE fate : totals.keySet()) {
-			System.out.println(fate + " : "+totals.get(fate));
+		for (Entry<FATE, Integer> fateEntry : totals.entrySet()) {
+			System.out.println(fateEntry.getKey() + " : " + fateEntry.getValue());
 		}
 		System.out.println("################## ("+node.peers.countConnectedPeers()+") "+countConnectedSeednodes+'/'+node.peers.countSeednodes());
 		Thread.sleep(SECONDS.toMillis(5));

@@ -159,23 +159,14 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.nodeToNodeMessage) {
 			node.receivedNodeToNodeMessage(m, source);
 			return true;
-		} else if(spec == DMT.UOMAnnounce && source.isRealConnection()) {
-			// Treat as a UOMAnnouncement, as it's a strict subset, and new UOM handles revocations.
-			return node.nodeUpdater.uom.handleAnnounce(m, source);
 		} else if(spec == DMT.UOMAnnouncement && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleAnnounce(m, source);
 		} else if(spec == DMT.UOMRequestRevocation && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleRequestRevocation(m, source);
 		} else if(spec == DMT.UOMSendingRevocation && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
-		} else if(spec == DMT.UOMRequestMain && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
-			node.nodeUpdater.legacyUOM.handleRequestJar(m, source, false);
-			return true;
 		} else if(spec == DMT.UOMRequestMainJar && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			node.nodeUpdater.uom.handleRequestJar(m, source);
-			return true;
-		} else if(spec == DMT.UOMRequestExtra && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
-			node.nodeUpdater.legacyUOM.handleRequestJar(m, source, true);
 			return true;
 		} else if(spec == DMT.UOMSendingMainJar && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingMain(m, source);
@@ -240,8 +231,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				rejectRequest(m, node.nodeStats.sskInsertCtr);
 			} else if(spec == DMT.FNPGetOfferedKey) {
 				rejectRequest(m, node.failureTable.senderCounter);
+			} else {
+				return false;
 			}
-			return false;
+			return true;
 		}
 
 		if(spec == DMT.FNPSwapRequest) {
@@ -422,8 +415,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		boolean purge = m.getBoolean(DMT.PURGE);
 		if(purge) {
 			OpennetManager om = node.getOpennet();
-			if(om != null)
-				om.purgeOldOpennetPeer(source);
+			if(om != null && source instanceof OpennetPeerNode)
+				om.purgeOldOpennetPeer((OpennetPeerNode)source);
 		}
 		// Process parting message
 		int type = m.getInt(DMT.NODE_TO_NODE_MESSAGE_TYPE);
@@ -667,16 +660,32 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		try {
 			// UIDs for announcements are separate from those for requests.
 			// So we don't need to, and should not, ask Node.
-			if(!node.nodeStats.shouldAcceptAnnouncement(uid)) {
-				if(om != null && source instanceof SeedClientPeerNode)
+			NodeStats.AnnouncementDecision shouldAcceptAnnouncement = node.nodeStats.shouldAcceptAnnouncement(uid);
+			if (!(NodeStats.AnnouncementDecision.ACCEPT == shouldAcceptAnnouncement)) {
+				if (om != null && source instanceof SeedClientPeerNode)
 					om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
-				Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+				Message msg = null;
+				if (NodeStats.AnnouncementDecision.OVERLOAD == shouldAcceptAnnouncement) {
+					msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+					if (logMINOR)
+						Logger.minor(this,
+							     "Rejected announcement (overall overload) from "
+							     + source);
+				} else if (NodeStats.AnnouncementDecision.LOOP == shouldAcceptAnnouncement) {
+					msg = DMT.createFNPRejectedLoop(uid);
+					if (logMINOR)
+						Logger.minor(this,
+							     "Rejected announcement (loop) from "+
+							     source);
+				} else {
+					throw new Error("This shouldn't happen. Please report");
+				}
+
 				try {
 					source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 				} catch (NotConnectedException e) {
 					// OK
 				}
-				if(logMINOR) Logger.minor(this, "Rejected announcement (overall overload) from "+source);
 				return true;
 			}
 			if(!source.shouldAcceptAnnounce(uid)) {

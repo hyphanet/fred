@@ -9,7 +9,7 @@ import freenet.io.xfer.PacketThrottle;
 import freenet.node.NewPacketFormat.SentPacket;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SentTimes;
+import freenet.support.SentTimeCache;
 import freenet.support.Logger.LogLevel;
 
 /** NewPacketFormat's context for each SessionKey. Specifically, packet numbers are unique
@@ -31,12 +31,11 @@ public class NewPacketFormatKeyContext {
 	
 	private final TreeMap<Integer, Long> acks = new TreeMap<Integer, Long>();
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
-	/** Keep this many sent times even if the packets are not acked, so we can compute an
-	 * accurate round trip time if they are acked after we had decided they were lost. */
-	private static final int MAX_SENT_TIMES = 16384;
-	/** This must be memory efficient. Given we have one per peer, a TreeMap would be way
-	 * too big. */
-	private final SentTimes sentTimes = new SentTimes(MAX_SENT_TIMES);
+	/** Keep this many sent times for lost packets, so we can compute an accurate round trip time if
+	 * they are acked after we had decided they were lost. */
+	private static final int MAX_LOST_SENT_TIMES = 128;
+	/** We add all lost packets sequence numbers and the corresponding sent time to this cache. */
+	private final SentTimeCache lostSentTimes = new SentTimeCache(MAX_LOST_SENT_TIMES);
 	
 	private final Object sequenceNumberLock = new Object();
 	
@@ -104,48 +103,43 @@ public class NewPacketFormatKeyContext {
 		}
 	}
 
-	/** One of our outgoing packets has been acknowledged.
-	 * @return False if we have already acked the packet */
+	/** One of our outgoing packets has been acknowledged. */
 	public void ack(int ack, BasePeerNode pn, SessionKey key) {
 		long rtt;
 		int maxSize;
-		boolean lostBeforeAcked = false;
 		boolean validAck = false;
+		long ackReceived = System.currentTimeMillis();
+		if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack+" from "+pn);
+		SentPacket sent;
 		synchronized(sentPackets) {
-			if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack+" from "+pn);
-			SentPacket sent = sentPackets.remove(ack);
-			if(sent != null) {
-				rtt = sent.acked(key);
-				maxSize = (maxSeenInFlight * 2) + 10;
-				sentTimes.removeTime(ack);
-				validAck = true;
-			} else {
-				if(logDEBUG) Logger.debug(this, "Already acked or lost "+ack);
-				lostBeforeAcked = true;
-				long l = sentTimes.removeTime(ack);
-				if(l < 0) {
-					if(logDEBUG) Logger.debug(this, "No time for "+ack+" - maybe acked twice?");
-					return;
-				} else {
-					rtt = System.currentTimeMillis() - l;
-					maxSize = (maxSeenInFlight * 2) + 10;
-				}
+			sent = sentPackets.remove(ack);
+			maxSize = (maxSeenInFlight * 2) + 10;
+		}
+		if(sent != null) {
+			rtt = sent.acked(key);
+			validAck = true;
+		} else {
+			if(logDEBUG) Logger.debug(this, "Already acked or lost "+ack);
+			long packetSent = lostSentTimes.queryAndRemove(ack);
+			if(packetSent < 0) {
+				if(logDEBUG) Logger.debug(this, "No time for "+ack+" - maybe acked twice?");
+				return;
 			}
+			rtt = ackReceived - packetSent;
 		}
-		
+
+		if(pn == null)
+			return;
 		int rt = (int) Math.min(rtt, Integer.MAX_VALUE);
-		PacketThrottle throttle = null;
-		if(pn != null) {
-			pn.reportPing(rt);
-			throttle = pn.getThrottle();
-			if(validAck)
-				pn.receivedAck(System.currentTimeMillis());
-		}
-		if(throttle != null) {
-			throttle.setRoundTripTime(rt);
-			if(!lostBeforeAcked)
-				throttle.notifyOfPacketAcknowledged(maxSize);
-		}
+		pn.reportPing(rt);
+		if(validAck)
+			pn.receivedAck(ackReceived);
+		PacketThrottle throttle = pn.getThrottle();
+		if(throttle == null)
+			return;
+		throttle.setRoundTripTime(rt);
+		if(validAck)
+			throttle.notifyOfPacketAcknowledged(maxSize);
 	}
 
 	/** Queue an ack.
@@ -187,11 +181,10 @@ public class NewPacketFormatKeyContext {
 	/** Add as many acks as possible to the packet.
 	 * @return True if there are any old acks i.e. acks that will force us to send a packet
 	 * even if there isn't anything else in it. */
-	public AddedAcks addAcks(NPFPacket packet, int maxPacketSize, long now, boolean useCumulativeAcks) {
+	public AddedAcks addAcks(NPFPacket packet, int maxPacketSize, long now) {
 		boolean mustSend = false;
 		HashMap<Integer, Long> moved = null;
 		int numAcks = 0;
-		packet.setAcknowledgeType(useCumulativeAcks);
 		synchronized(acks) {
 			Iterator<Map.Entry<Integer, Long>> it = acks.entrySet().iterator();
 			while (it.hasNext() && packet.getLength() < maxPacketSize) {
@@ -226,32 +219,32 @@ public class NewPacketFormatKeyContext {
 	}
 
 	public void sent(SentPacket sentPacket, int seqNum, int length) {
+	    sentPacket.sent(length);
 		synchronized(sentPackets) {
-			if(!sentPacket.messages.isEmpty()) {
-				sentTimes.add(seqNum, System.currentTimeMillis());
-			}
-			sentPacket.sent(length);
 			sentPackets.put(seqNum, sentPacket);
 			int inFlight = sentPackets.size();
 			if(inFlight > maxSeenInFlight) {
 				maxSeenInFlight = inFlight;
-				if(logDEBUG) Logger.debug(this, "Max seen in flight new record: "+maxSeenInFlight+" for "+this);
+				if (logDEBUG) {
+					Logger.debug(this, "Max seen in flight new record: " + maxSeenInFlight +
+							" for " + this);
+				}
 			}
 		}
 	}
 	
 	public long timeCheckForLostPackets(double averageRTT) {
 		long timeCheck = Long.MAX_VALUE;
+		// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the
+		// actual ack delay, we don't need to add it on here.
+		double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
+		long maxDelay = (long)(avgRtt + MAX_ACK_DELAY * 1.1);
 		synchronized(sentPackets) {
-			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
-			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
-			
-			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
-			while(it.hasNext()) {
-				Map.Entry<Integer, SentPacket> e = it.next();
-				SentPacket s = e.getValue();
-				long t = (long) (s.getSentTime() + (avgRtt + MAX_ACK_DELAY * 1.1));
-				if(t < timeCheck) timeCheck = t;
+			for (SentPacket s : sentPackets.values()) {
+				long t = s.getSentTime() + maxDelay;
+				if (t < timeCheck) {
+				    timeCheck = t;
+			    }
 			}
 		}
 		return timeCheck;
@@ -261,35 +254,44 @@ public class NewPacketFormatKeyContext {
 		//Mark packets as lost
 		int bigLostCount = 0;
 		int count = 0;
+		
+		// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the
+		// actual ack delay, we don't need to add it on here.
+		double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
+		long maxDelay = (long)(avgRtt + MAX_ACK_DELAY * 1.1);
+		long threshold = curTime - maxDelay;
+		
 		synchronized(sentPackets) {
-			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
-			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
-
 			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
 			while(it.hasNext()) {
 				Map.Entry<Integer, SentPacket> e = it.next();
 				SentPacket s = e.getValue();
-				if(s.getSentTime() < (curTime - (avgRtt + MAX_ACK_DELAY * 1.1))) {
-					if(logMINOR) {
+				if (s.getSentTime() < threshold) {
+					if (logMINOR) {
 						Logger.minor(this, "Assuming packet " + e.getKey() + " has been lost. "
 						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
-						                + "threshold " + (avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
+						                + "threshold " + threshold + "ms");
 					}
-					s.lost();
+					// Store the packet sentTime in our lost sent times cache, so we can calculate
+					// RTT if an ack may surface later on.
+					if(!s.messages.isEmpty()) {
+				        lostSentTimes.report(e.getKey(), s.getSentTime());
+			        }
+			        // Mark the packet as lost and remove it from our active packets.
+			        s.lost();
 					it.remove();
 					bigLostCount++;
-				} else
+				} else {
 					count++;
+				}
 			}
-			if(count > 0 && logMINOR)
-				Logger.minor(this, ""+count+" packets in flight with threshold "+(avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 		}
+		if(count > 0 && logMINOR)
+			Logger.minor(this, "" + count + " packets in flight with threshold " + maxDelay + "ms");
 		if(bigLostCount != 0 && pn != null) {
 			PacketThrottle throttle = pn.getThrottle();
 			if(throttle != null) {
-				for(int i=0;i<bigLostCount;i++) {
-					throttle.notifyOfPacketLost();
-				}
+				throttle.notifyOfPacketsLost(bigLostCount);
 			}
 			pn.backoffOnResend();
 		}
@@ -308,14 +310,11 @@ public class NewPacketFormatKeyContext {
 
 	public void disconnected() {
 		synchronized(sentPackets) {
-			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
-			while(it.hasNext()) {
-				Map.Entry<Integer, SentPacket> e = it.next();
-				SentPacket s = e.getValue();
+			for (SentPacket s: sentPackets.values()) {
 				s.lost();
 			}
 			sentPackets.clear();
 		}
 	}
-
 }
+

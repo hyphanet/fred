@@ -43,7 +43,8 @@ public final class PageMaker {
 		SKY_STATIC("sky-static", "Sky (Static menu)", "", false, false),
 		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue", false, false),
 		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true),
-		RABBIT_HOLE("rabbit-hole", "Into the Rabbit Hole", "Simple and clean theme", false, false);
+		RABBIT_HOLE("rabbit-hole", "Into the Rabbit Hole", "Simple and clean theme", false, false),
+		WINTERFACEY("winterfacey", "Winterfacey", "2016th-theme, based on Winterface (Bootstrap)", false, false);
 
 		
 		public static final String[] possibleValues = {
@@ -69,7 +70,8 @@ public final class PageMaker {
 			SKY_STATIC.code,
 			MINIMALBLUE.code,
 			MINIMALISTIC.code,
-			RABBIT_HOLE.code
+			RABBIT_HOLE.code,
+			WINTERFACEY.code
 		};
 		
 		public final String code;  // the internal name
@@ -110,7 +112,7 @@ public final class PageMaker {
 		}
 
 		public static THEME getDefault() {
-			return THEME.CLEAN;
+			return THEME.SKY_STATIC;
 		}
 	}	
 	
@@ -347,7 +349,7 @@ public final class PageMaker {
 		Toadlet t;
 		if (ctx != null) {
 			t = ctx.activeToadlet();
-			t = t.showAsToadlet();
+			t = t.showAsToadlet(ctx);
 		} else
 			t = null;
 		String activePath = "";

@@ -10,6 +10,7 @@ import java.util.List;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
@@ -21,7 +22,7 @@ import freenet.node.Version;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
-import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.FileUtil;
 
 /**
@@ -93,7 +94,7 @@ public class LongTermPushRepullTest extends LongTermTest {
 
 			// Push one block only.
 			
-			Bucket data = randomData(node);
+			RandomAccessBucket data = randomData(node);
 			HighLevelSimpleClient client = node.clientCore.makeClient((short) 0, false, false);
 			FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(today.getTime()));
 			System.out.println("PUSHING " + uri);
@@ -152,8 +153,8 @@ public class LongTermPushRepullTest extends LongTermTest {
 					System.out.println("PULL-TIME-" + i + ":" + (t2 - t1));
 					csvLine.add(String.valueOf(t2 - t1));
 				} catch (FetchException e) {
-					if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-					        && e.getMode() != FetchException.DATA_NOT_FOUND)
+					if (e.getMode() != FetchExceptionMode.ALL_DATA_NOT_FOUND
+					        && e.getMode() != FetchExceptionMode.DATA_NOT_FOUND)
 						e.printStackTrace();
 					csvLine.add(FetchException.getShortMessage(e.getMode()));
 				}
@@ -180,8 +181,8 @@ public class LongTermPushRepullTest extends LongTermTest {
 		}
 	}
 
-	private static Bucket randomData(Node node) throws IOException {
-		Bucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
+	private static RandomAccessBucket randomData(Node node) throws IOException {
+	    RandomAccessBucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
 		OutputStream os = data.getOutputStream();
 		try {
 		byte[] buf = new byte[4096];

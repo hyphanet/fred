@@ -6,12 +6,10 @@ package freenet.node;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
-import freenet.client.async.HasCooldownCacheItem;
-import freenet.client.async.TransientChosenBlock;
+import freenet.client.async.RequestSelectionTreeNode;
+import freenet.client.async.ChosenBlockImpl;
 import freenet.keys.Key;
 import freenet.node.NodeStats.RejectReason;
 import freenet.support.LogThresholdCallback;
@@ -56,21 +54,17 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	/** Prefetch */
 	public static final short PREFETCH_PRIORITY_CLASS = 5;
 	/** Anything less important than prefetch (redundant??) */
-	public static final short MINIMUM_PRIORITY_CLASS = 6;
+	public static final short PAUSED_PRIORITY_CLASS = 6;
 	
-	public static final short NUMBER_OF_PRIORITY_CLASSES = MINIMUM_PRIORITY_CLASS - MAXIMUM_PRIORITY_CLASS + 1; // include 0 and max !!
+	public static final short NUMBER_OF_PRIORITY_CLASSES = PAUSED_PRIORITY_CLASS - MAXIMUM_PRIORITY_CLASS + 1; // include 0 and max !!
 	
-	/** If true, local requests are subject to shouldRejectRequest(). If false, they are only subject to the token
-	 * buckets and the thread limit. FIXME make configurable. */
-	static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
-	
+    public static final short MINIMUM_FETCHABLE_PRIORITY_CLASS = PREFETCH_PRIORITY_CLASS;
+    
 	public static boolean isValidPriorityClass(int prio) {
-		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
+		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > PAUSED_PRIORITY_CLASS));
 	}
 	
 	final BaseRequestThrottle throttle;
-	final TokenBucket inputBucket;
-	final TokenBucket outputBucket;
 	final RunningAverage averageInputBytesPerRequest;
 	final RunningAverage averageOutputBytesPerRequest;
 	RequestScheduler sched;
@@ -82,14 +76,12 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	
 	static final int MAX_WAITING_FOR_SLOTS = 50;
 	
-	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
+	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, 
 			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK, boolean realTime) {
 		this.core = node;
 		this.stats = core.nodeStats;
 		this.throttle = throttle;
 		this.name = name + (realTime ? " (realtime)" : " (bulk)");
-		this.outputBucket = outputBucket;
-		this.inputBucket = inputBucket;
 		this.averageOutputBytesPerRequest = averageOutputBytesPerRequest;
 		this.averageInputBytesPerRequest = averageInputBytesPerRequest;
 		this.isInsert = isInsert;
@@ -102,9 +94,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 	
 	void start() {
-		sched.start(core);
 		core.getExecutor().execute(this, name);
-		sched.queueFillRequestStarterQueue();
 	}
 	
 	final String name;
@@ -144,10 +134,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					delay = throttle.getDelay();
 					if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
 					long sleepUntil = cycleTime + delay;
-					if(!LOCAL_REQUESTS_COMPETE_FAIRLY) {
-						inputBucket.blockingGrab((int)(Math.max(0, averageInputBytesPerRequest.currentValue())));
-						outputBucket.blockingGrab((int)(Math.max(0, averageOutputBytesPerRequest.currentValue())));
-					}
 					long now;
 					do {
 						now = System.currentTimeMillis();
@@ -180,7 +166,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 //				}
 				RejectReason reason;
 				assert(req.realTimeFlag == realTime);
-				if(LOCAL_REQUESTS_COMPETE_FAIRLY && !req.localRequestOnly) {
+				if (!req.localRequestOnly) {
 					reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, 
 							Node.PREFER_INSERT_DEFAULT && isInsert, req.realTimeFlag, null);
 					if(reason != null) {
@@ -201,8 +187,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					req = sched.grabRequest();
 					if(req == null) {
 						try {
-							wait(SECONDS.toMillis(1)); // this can happen when most but not all stuff is already running but there is still stuff to fetch, so don't wait *too* long.
-							// FIXME increase when we can be *sure* there is nothing left in the queue (especially for transient requests).
+							wait();
 						} catch (InterruptedException e) {
 							// Ignore
 						}
@@ -231,8 +216,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				req.onDumped();
 				return false;
 			}
-		} else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert) {
-			if(!sched.addTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token.getKey())) {
+		} else if(((ChosenBlockImpl)req).request instanceof SendableInsert) {
+			if(!sched.addRunningInsert((SendableInsert)(((ChosenBlockImpl)req).request), req.token.getKey())) {
 				req.onDumped();
 				return false;
 			}
@@ -266,7 +251,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 
 		@Override
 		public void run() {
-			try {
 		    freenet.support.Logger.OSThread.logPID(this);
 		    // FIXME ? key is not known for inserts here
 		    if (key != null)
@@ -279,16 +263,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			}
 			if(logMINOR) 
 				Logger.minor(this, "Finished "+req);
-			} finally {
-				if(req.sendIsBlocking()) {
-					if(key != null) sched.removeFetchingKey(key);
-					else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert)
-						sched.removeTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token.getKey());
-					// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
-					// so wake the starter thread.
-					wakeUp();
-				}
-			}
 		}
 		
 	}
@@ -301,11 +275,10 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		}
 	}
 
-	/** Can this item be excluded, based on e.g. already running requests? It must have 
-	 * been activated already if it is persistent.
+	/** Can this item be excluded, based on e.g. already running requests?
 	 */
 	@Override
-	public long exclude(RandomGrabArrayItem item, ObjectContainer container, ClientContext context, long now) {
+	public long exclude(RandomGrabArrayItem item, ClientContext context, long now) {
 		if(sched.isRunningOrQueuedPersistentRequest((SendableRequest)item)) {
 			Logger.normal(this, "Excluding already-running request: "+item, new Exception("debug"));
 			return Long.MAX_VALUE;
@@ -316,16 +289,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			return -1;
 		}
 		BaseSendableGet get = (BaseSendableGet) item;
-		return get.getCooldownTime(container, context, now);
-	}
-
-	/** Can this item be excluded based solely on the cooldown queue?
-	 * @return -1 if the item can be run now, or the time at which it is on the cooldown queue until.
-	 */
-	@Override
-	public long excludeSummarily(HasCooldownCacheItem item,
-			HasCooldownCacheItem parent, ObjectContainer container, boolean persistent, long now) {
-		return core.clientContext.cooldownTracker.getCachedWakeup(item, persistent, container, now);
+		return get.getWakeupTime(context, now);
 	}
 
 }

@@ -7,10 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 
-import net.i2p.util.NativeBigInteger;
-
-import com.db4o.ObjectContainer;
-
 import freenet.node.FSParseException;
 import freenet.support.Base64;
 import freenet.support.HexUtil;
@@ -37,10 +33,17 @@ public class DSAGroup extends CryptoKey {
     }
 
     private DSAGroup(DSAGroup group) {
-    	this.p = new NativeBigInteger(1, group.p.toByteArray());
-    	this.q = new NativeBigInteger(1, group.q.toByteArray());
-    	this.g = new NativeBigInteger(1, group.g.toByteArray());
+        this.p = new BigInteger(1, group.p.toByteArray());
+        this.q = new BigInteger(1, group.q.toByteArray());
+        this.g = new BigInteger(1, group.g.toByteArray());
 	}
+    
+    protected DSAGroup() {
+        // For serialization.
+        p = null;
+        q = null;
+        g = null;
+    }
 
 	/**
      * Parses a DSA Group from a string, where p, q, and g are in unsigned
@@ -139,9 +142,9 @@ public class DSAGroup extends CryptoKey {
 		String myQ = fs.get("q");
 		String myG = fs.get("g");
 		if(myP == null || myQ == null || myG == null) throw new FSParseException("The given SFS doesn't contain required fields!");
-		BigInteger p = new NativeBigInteger(1, Base64.decode(myP));
-		BigInteger q = new NativeBigInteger(1, Base64.decode(myQ));
-		BigInteger g = new NativeBigInteger(1, Base64.decode(myG));
+		BigInteger p = new BigInteger(1, Base64.decode(myP));
+		BigInteger q = new BigInteger(1, Base64.decode(myQ));
+		BigInteger g = new BigInteger(1, Base64.decode(myG));
 		DSAGroup dg = new DSAGroup(p, q, g);
 		if(dg.equals(Global.DSAgroupBigA)) return Global.DSAgroupBigA;
 		return dg;
@@ -166,16 +169,4 @@ public class DSAGroup extends CryptoKey {
 		return new DSAGroup(this);
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		if(this == Global.DSAgroupBigA) return; // It will only be stored once, so it's okay.
-		container.delete(p);
-		container.delete(q);
-		container.delete(g);
-		container.delete(this);
-	}
-	
-	public boolean objectCanDeactivate(ObjectContainer container) {
-		if(this == Global.DSAgroupBigA) return false;
-		return true;
-	}
 }

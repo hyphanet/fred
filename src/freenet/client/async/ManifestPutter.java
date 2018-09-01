@@ -3,43 +3,28 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
+import java.io.Serializable;
 
 import freenet.client.InsertException;
-import freenet.node.RequestClient;
 
 public abstract class ManifestPutter extends BaseClientPutter {
 	
+    private static final long serialVersionUID = 1L;
+
+	/** Required because {@link Serializable} is implemented by a parent class. */
 	protected ManifestPutter() {
 	}
 
-	protected ManifestPutter(short priorityClass, RequestClient context) {
-		super(priorityClass, context);
+	protected ManifestPutter(short priorityClass, ClientBaseCallback cb) {
+		super(priorityClass, cb);
 	}
 
 	public abstract int countFiles();
 	public abstract long totalSize();
-	public abstract void start(ObjectContainer container, ClientContext context) throws InsertException;
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		super.removeFrom(container, context);
-	}
+	public abstract void start(ClientContext context) throws InsertException;
 	
 	public byte[] getSplitfileCryptoKey() {
 		return null;
-	}
-	
-	public static final short MANIFEST_SIMPLEPUTTER = 0;
-	public static final short MANIFEST_DEFAULTPUTTER = 1;
-	
-	public static String manifestPutterTypeString(short type) {
-		switch(type) {
-		case MANIFEST_SIMPLEPUTTER:
-			return "Simple";
-		case MANIFEST_DEFAULTPUTTER:
-			return "Default";
-		default:
-			return Short.toString(type);
-		}
 	}
 	
 }

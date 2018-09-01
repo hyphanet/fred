@@ -7,14 +7,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
-import freenet.node.RequestClient;
 import freenet.support.ContainerSizeEstimator;
 import freenet.support.Logger;
 import freenet.support.ContainerSizeEstimator.ContainerSize;
+import freenet.support.api.ManifestElement;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * <P>The default manifest putter. It should be choosen if no alternative putter
@@ -27,7 +26,7 @@ import freenet.support.ContainerSizeEstimator.ContainerSize;
  
  * <P>pack limits:
  * <UL>
- * <LI>max container size: 2MB (default transparent passtrought for fproxy)
+ * <LI>max container size: 2MB (a CHK manifest with 62 CHK redirects)
  * <LI>max container item size: 1MB. Items &gt;1MB are inserted as externals.
  *                            exception: see rule 1)
  * <LI>container size spare: 15KB. No crystal ball is perfect, so we have space
@@ -50,7 +49,8 @@ import freenet.support.ContainerSizeEstimator.ContainerSize;
 
 public class DefaultManifestPutter extends BaseManifestPutter {
 
-	private static volatile boolean logMINOR;
+    private static final long serialVersionUID = 1L;
+    private static volatile boolean logMINOR;
 
 	static {
 		Logger.registerClass(DefaultManifestPutter.class);
@@ -63,19 +63,19 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	// this should prevent to big containers
 	public static final long DEFAULT_CONTAINERSIZE_SPARE = 196*1024;
 
-	public DefaultManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
-			RequestClient clientContext, boolean earlyEncode, boolean persistent, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
+	public DefaultManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, 
+			boolean persistent, byte[] forceCryptoKey, ClientContext context) throws TooManyFilesInsertException {
 		// If the top level key is an SSK, all CHK blocks and particularly splitfiles below it should have
 		// randomised keys. This substantially improves security by making it impossible to identify blocks
 		// even if you know the content. In the user interface, we will offer the option of inserting as a
 		// random SSK to take advantage of this.
-		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container), forceCryptoKey, container, context);
+		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, ClientPutter.randomiseSplitfileKeys(target, ctx, persistent), forceCryptoKey, context);
 	}
 	
 	/**
 	 * Implements the pack logic.
 	 * @throws TooManyFilesInsertException 
-	 * @see freenet.client.async.BaseManifestPutter#makePutHandlers(java.util.HashMap, java.util.HashMap)
+	 * @see freenet.client.async.BaseManifestPutter#makePutHandlers(java.util.HashMap, String)
 	 */
 	@Override
 	protected void makePutHandlers(HashMap<String,Object> manifestElements, String defaultName) throws TooManyFilesInsertException {
@@ -414,4 +414,10 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			}
 		}	
 	}
+
+    @Override
+    public void innerOnResume(ClientContext context) throws ResumeFailedException {
+        super.innerOnResume(context);
+        notifyClients(context);
+    }
 }

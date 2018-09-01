@@ -40,7 +40,7 @@ import freenet.support.Logger.LogLevel;
 
 final public class FileUtil {
 
-	private static final int BUFFER_SIZE = 32*1024;
+	public static final int BUFFER_SIZE = 32*1024;
 
 	/**
 	 * Returns a line reading stream for the content of <code>logfile</code>. The stream will
@@ -397,8 +397,6 @@ final public class FileUtil {
 			while ((len = dis.read(buffer)) > 0) {
 				fos.write(buffer, 0, len);
 			}
-		} catch (IOException e) {
-			throw e;
 		} finally {
 			if(dis != null) dis.close();
 			if(fos != null) fos.close();
@@ -443,8 +441,9 @@ final public class FileUtil {
 
         /**
          * Like renameTo(), but can move across filesystems, by copying the data.
-         * @param f
-         * @param file
+         * @param orig
+         * @param dest
+         * @param overwrite
          */
     	public static boolean moveTo(File orig, File dest, boolean overwrite) {
             if(orig.equals(dest))
@@ -703,34 +702,11 @@ final public class FileUtil {
 			throw new IOException("Unable to delete file "+file);
 	}
 
-	/** @Deprecated */
+	@Deprecated
     public static void secureDelete(File file, Random random) throws IOException {
         secureDelete(file);
     }
     
-	public static long getFreeSpace(File dir) {
-		// Use JNI to find out the free space on this partition.
-		long freeSpace = -1;
-		try {
-			Class<? extends File> c = dir.getClass();
-			Method m = c.getDeclaredMethod("getFreeSpace");
-			if(m != null) {
-				Long lFreeSpace = (Long) m.invoke(dir);
-				if(lFreeSpace != null) {
-					freeSpace = lFreeSpace.longValue();
-					System.err.println("Found free space on node's partition: on " + dir + " = " + SizeUtil.formatSize(freeSpace));
-				}
-			}
-		} catch(NoSuchMethodException e) {
-			// Ignore
-			freeSpace = -1;
-		} catch(Throwable t) {
-			System.err.println("Trying to access 1.6 getFreeSpace(), caught " + t);
-			freeSpace = -1;
-		}
-		return freeSpace;
-	}
-
 	/**
 	** Set owner-only RW on the given file.
 	*/
@@ -788,6 +764,8 @@ final public class FileUtil {
 	}
 
 	public static boolean equals(File a, File b) {
+	    if(a == b) return true;
+	    if(a.equals(b)) return true;
 		a = getCanonicalFile(a);
 		b = getCanonicalFile(b);
 		return a.equals(b);
@@ -804,8 +782,8 @@ final public class FileUtil {
 	public static boolean copyFile(File copyFrom, File copyTo) {
 		copyTo.delete();
 		boolean executable = copyFrom.canExecute();
-		FileBucket outBucket = new FileBucket(copyTo, false, true, false, false, false);
-		FileBucket inBucket = new FileBucket(copyFrom, true, false, false, false, false);
+		FileBucket outBucket = new FileBucket(copyTo, false, true, false, false);
+		FileBucket inBucket = new FileBucket(copyFrom, true, false, false, false);
 		try {
 			BucketTools.copy(inBucket, outBucket);
 			if(executable) {
@@ -867,6 +845,7 @@ final public class FileUtil {
 	}
 
 	/** @deprecated */
+	@Deprecated
     public static void fill(OutputStream os, Random random, long length) throws IOException {
         long moved = 0;
         byte[] buf = new byte[BUFFER_SIZE];

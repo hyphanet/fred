@@ -214,7 +214,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 			System.err.println("Anything else to exit.");
 			System.err.println("Select: ");
 			try {
-				int selection = Integer.valueOf(r.readLine());
+				int selection = Integer.parseInt(r.readLine());
 				if (selection == types.length) {
 					System.err.print("Enter new node index ([0-" + (NUMBER_OF_NODES - 1) + "]):");
 					index = Integer.valueOf(r.readLine());

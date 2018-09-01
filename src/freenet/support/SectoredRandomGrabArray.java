@@ -2,90 +2,44 @@ package freenet.support;
 
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
-import freenet.client.async.HasCooldownCacheItem;
+import freenet.client.async.ClientRequestSelector;
+import freenet.client.async.RequestSelectionTreeNode;
 
 /**
  * Like RandomGrabArray, but there is an equal chance of any given client's requests being
- * returned.
+ * returned. Again, not persistent; this is reconstructed on restart.
+ * 
+ * LOCKING: There is a single lock for the entire tree, the ClientRequestSelector. This must be 
+ * taken before calling any methods on RGA or SRGA. See the javadocs there for deeper explanation.
+ * 
+ * A lot of this is over-complicated and over-expensive because of db4o. A lot of it is O(n).
+ * This is all kept in RAM now so we can change it at will, plus there is only one object 
+ * queued per splitfile now, so memory pressure is much less of an issue. 
+ * FIXME Simplify and improve performance!
  */
-public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent, HasCooldownCacheItem {
+public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> implements RemoveRandom, RemoveRandomParent, RequestSelectionTreeNode {
 	private static volatile boolean logMINOR;
 	
 	static {
 		Logger.registerClass(SectoredRandomGrabArray.class);
 	}
-	
 
-	/*
-	 * Yes, this is O(n). No, I don't care.
-	 * 
-	 * Using a Db4oMap results in stuff getting reactivated during the commit
-	 * phase, and not deactivated. This makes keeping stuff that shouldn't be
-	 * activated deactivated impossible, resulting in more memory usage. more
-	 * Full GC's, more object churn, and hence more CPU usage. Also Db4oMap is
-	 * deprecated.
-	 * 
-	 * Using a HashMap populated in objectOnActivate() doesn't work either,
-	 * because it ends up comparing deactivated clients with activated ones.
-	 * This will result in NPEs, and unnecessary code complexity to fix them.
-	 * 
-	 * IMHO it's not worth bothering with a hashtable if it's less than 1000
-	 * or so items anyway. If size does become a problem we will need to 
-	 * implement our own activation aware hashtable class, which stores the 
-	 * full hashCode, and matches on == object identity, so that we don't need
-	 * to activate on comparison.
-	 */
-	private RemoveRandomWithObject[] grabArrays;
-	private Object[] grabClients;
-	protected final boolean persistent;
+	private RemoveRandomWithObject<T>[] grabArrays;
+	private T[] grabClients;
 	private RemoveRandomParent parent;
-	
-	public SectoredRandomGrabArray(boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
-		this.persistent = persistent;
-		grabClients = new Object[0];
-		grabArrays = new RemoveRandomWithObject[0];
+	protected final ClientRequestSelector root;
+	private long wakeupTime;
+
+	public SectoredRandomGrabArray(RemoveRandomParent parent, ClientRequestSelector root) {
+		grabClients = newClientArray(0);
+		grabArrays = newGrabberArray(0);
 		this.parent = parent;
+		this.root = root;
 	}
 
-	/** Add directly to a RandomGrabArrayWithClient under us. */
-	public synchronized void add(Object client, RandomGrabArrayItem item, ObjectContainer container, ClientContext context) {
-		if(item.persistent() != persistent) throw new IllegalArgumentException("item.persistent()="+item.persistent()+" but array.persistent="+persistent+" item="+item+" array="+this);
-		RandomGrabArrayWithClient rga;
-		int clientIndex = haveClient(client);
-		if(clientIndex == -1) {
-			if(logMINOR)
-				Logger.minor(this, "Adding new RGAWithClient for "+client+" on "+this+" for "+item);
-			rga = new RandomGrabArrayWithClient(client, persistent, container, this);
-			addElement(client, rga);
-			if(persistent) {
-				container.store(rga);
-				container.store(this);
-			}
-		} else {
-			rga = (RandomGrabArrayWithClient) grabArrays[clientIndex];
-			if(persistent)
-				container.activate(rga, 1);
-		}
-		if(logMINOR)
-			Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);
-		rga.add(item, container, context);
-		if(persistent)
-			container.deactivate(rga, 1);
-		if(context != null) {
-			// It's safest to always clear the parent too if we have one.
-			// FIXME strictly speaking it shouldn't be necessary, investigate callers of clearCachedWakeup(), but be really careful to avoid stalling!
-			context.cooldownTracker.clearCachedWakeup(this, persistent, container);
-			if(parent != null)
-				context.cooldownTracker.clearCachedWakeup(parent, persistent, container);
-		}
-		if(logMINOR)
-			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
-	}
-
-	private synchronized void addElement(Object client, RemoveRandomWithObject rga) {
+	protected void addElement(T client, C rga) {
+	    synchronized(root) {
 		final int len = grabArrays.length;
 
 		grabArrays = Arrays.copyOf(grabArrays, len+1);
@@ -93,87 +47,93 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		
 		grabClients = Arrays.copyOf(grabClients, len+1);
 		grabClients[len] = client;
+	    }
 	}
 
-	private synchronized int haveClient(Object client) {
+	protected int haveClient(T client) {
+	    synchronized(root) {
 		for(int i=0;i<grabClients.length;i++) {
 			if(grabClients[i] == client) return i;
 		}
 		return -1;
+	    }
 	}
 
 	/**
-	 * Get a grabber. This lets us use things other than RandomGrabArrayWithClient's, so don't mix calls
-	 * to add() with calls to getGrabber/addGrabber!
+	 * Get a grabber.
 	 */
-	public synchronized RemoveRandomWithObject getGrabber(Object client) {
+	@SuppressWarnings("unchecked")
+	public C getGrabber(T client) {
+	    synchronized(root) {
 		int idx = haveClient(client);
 		if(idx == -1) return null;
-		else return grabArrays[idx];
+		else return (C)grabArrays[idx];
+	    }
 	}
 	
-	public synchronized Object getClient(int x) {
+	public T getClient(int x) {
+	    synchronized(root) {
 		return grabClients[x];
+	    }
 	}
 
 	/**
-	 * Put a grabber. This lets us use things other than RandomGrabArrayWithClient's, so don't mix calls
-	 * to add() with calls to getGrabber/addGrabber!
+	 * Put a grabber.
 	 */
-	public synchronized void addGrabber(Object client, RemoveRandomWithObject requestGrabber, ObjectContainer container, ClientContext context) {
+	public void addGrabber(T client, C requestGrabber, ClientContext context) {
+	    synchronized(root) {
 		if(requestGrabber.getObject() != client)
 			throw new IllegalArgumentException("Client not equal to RemoveRandomWithObject's client: client="+client+" rr="+requestGrabber+" his object="+requestGrabber.getObject());
 		addElement(client, requestGrabber);
-		if(persistent) container.store(this);
 		if(context != null) {
-			context.cooldownTracker.clearCachedWakeup(this, persistent, container);
-			if(parent != null)
-				context.cooldownTracker.clearCachedWakeup(parent, persistent, container);
+		    clearWakeupTime(context);
 		}
+	    }
 	}
 
 	@Override
-	public synchronized RemoveRandomReturn removeRandom(RandomGrabArrayItemExclusionList excluding, ObjectContainer container, ClientContext context, long now) {
+	public RemoveRandomReturn removeRandom(RandomGrabArrayItemExclusionList excluding, ClientContext context, long now) {
+	    synchronized(root) {
 		while(true) {
 			if(grabArrays.length == 0) return null;
 			if(grabArrays.length == 1) {
-				return removeRandomOneOnly(excluding, container, context, now);
+				return removeRandomOneOnly(excluding, context, now);
 			}
 			if(grabArrays.length == 2) {
-				RemoveRandomReturn ret = removeRandomTwoOnly(excluding, container, context, now);
+				RemoveRandomReturn ret = removeRandomTwoOnly(excluding, context, now);
 				if(ret == null) continue; // Go around loop again, it has reduced to 1 or 0.
 				return ret;
 			}
-			RandomGrabArrayItem item = removeRandomLimited(excluding, container, context, now);
+			RandomGrabArrayItem item = removeRandomLimited(excluding, context, now);
 			if(item != null)
 				return new RemoveRandomReturn(item);
 			else
-				return removeRandomExhaustive(excluding, container, context, now);
+				return removeRandomExhaustive(excluding, context, now);
 		}
+	    }
 	}
 
-	private synchronized RemoveRandomReturn removeRandomExhaustive(
+	private RemoveRandomReturn removeRandomExhaustive(
 			RandomGrabArrayItemExclusionList excluding,
-			ObjectContainer container, ClientContext context, long now) {
+			ClientContext context, long now) {
+	    synchronized(root) {
 		long wakeupTime = Long.MAX_VALUE;
 		if(grabArrays.length == 0) return null;
 		int x = context.fastWeakRandom.nextInt(grabArrays.length);
 		for(int i=0;i<grabArrays.length;i++) {
 			x++;
 			if(x >= grabArrays.length) x = 0;
-			RemoveRandomWithObject rga = grabArrays[x];
-			long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
+			RemoveRandomWithObject<T> rga = grabArrays[x];
+			long excludeTime = rga.getWakeupTime(context, now);
 			if(excludeTime > 0) {
 				if(wakeupTime > excludeTime) wakeupTime = excludeTime;
 				continue;
 			}
-			if(persistent)
-				container.activate(rga, 1);
 			if(logMINOR)
 				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" on "+this);
 			
 			RandomGrabArrayItem item = null;
-			RemoveRandomReturn val = rga.removeRandom(excluding, container, context, now);
+			RemoveRandomReturn val = rga.removeRandom(excluding, context, now);
 			if(val != null) {
 				if(val.item != null)
 					item = val.item;
@@ -183,37 +143,31 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			}
 			if(logMINOR)
 				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
-						" rga.isEmpty="+rga.isEmpty(container));
+						" rga.isEmpty="+rga.isEmpty());
 			if(item != null) {
-				if(persistent)
-					container.deactivate(rga, 1);
 				return new RemoveRandomReturn(item);
-			} else if(rga.isEmpty(container)) {
+			} else if(rga.isEmpty()) {
 				if(logMINOR)
 					Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
 				removeElement(x);
-				if(persistent) {
-					container.store(this);
-					rga.removeFrom(container);
-				}
-				if(persistent)
-					container.deactivate(rga, 1);
 			}
 		}
-		context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container, context);
+		reduceWakeupTime(wakeupTime, context);
 		return new RemoveRandomReturn(wakeupTime);
+	    }
 	}
 
-	private synchronized RandomGrabArrayItem removeRandomLimited(
+	private RandomGrabArrayItem removeRandomLimited(
 			RandomGrabArrayItemExclusionList excluding,
-			ObjectContainer container, ClientContext context, long now) {
+			ClientContext context, long now) {
+	    synchronized(root) {
 		/** Count of arrays that have items but didn't return anything because of exclusions */
 		final int MAX_EXCLUDED = 10;
 		int excluded = 0;
 		while(true) {
 			if(grabArrays.length == 0) return null;
 			int x = context.fastWeakRandom.nextInt(grabArrays.length);
-			RemoveRandomWithObject rga = grabArrays[x];
+			RemoveRandomWithObject<T> rga = grabArrays[x];
 			if(rga == null) {
 				// We handle this in the other cases so we should handle it here.
 				Logger.error(this, "Slot "+x+" is null for client "+grabClients[x]);
@@ -224,7 +178,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				}
 				continue;
 			}
-			long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
+			long excludeTime = rga.getWakeupTime(context, now);
 			if(excludeTime > 0) {
 				excluded++;
 				if(excluded > MAX_EXCLUDED) {
@@ -233,84 +187,70 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				}
 				continue;
 			}
-			if(persistent)
-				container.activate(rga, 1);
 			if(logMINOR)
 				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" on "+this);
 			
 			RandomGrabArrayItem item = null;
-			RemoveRandomReturn val = rga.removeRandom(excluding, container, context, now);
+			RemoveRandomReturn val = rga.removeRandom(excluding, context, now);
 			if(val != null && val.item != null) item = val.item;
 			if(logMINOR)
 				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
-						" rga.isEmpty="+rga.isEmpty(container));
+						" rga.isEmpty="+rga.isEmpty());
 			// If it is not empty but returns null we exclude it, and count the exclusion.
 			// If it is empty we remove it, and don't count the exclusion.
 			if(item != null) {
-				if(persistent)
-					container.deactivate(rga, 1);
 				return item;
 			} else {
-				if(rga.isEmpty(container)) {
+				if(rga.isEmpty()) {
 					if(logMINOR)
 						Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
 					removeElement(x);
-					if(persistent) {
-						container.store(this);
-						rga.removeFrom(container);
-					}
 				} else {
 					excluded++;
 					if(excluded > MAX_EXCLUDED) {
 						Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
-						if(persistent)
-							container.deactivate(rga, 1);
 						return null;
 					}
 				}
-				if(persistent)
-					container.deactivate(rga, 1);
 				continue;
 			}
 		}
+	    }
 	}
 
-	private synchronized RemoveRandomReturn removeRandomTwoOnly(
+	private RemoveRandomReturn removeRandomTwoOnly(
 			RandomGrabArrayItemExclusionList excluding,
-			ObjectContainer container, ClientContext context, long now) {
+			ClientContext context, long now) {
+	    synchronized(root) {
 		long wakeupTime = Long.MAX_VALUE;
 		// Another simple common case
 		int x = context.fastWeakRandom.nextBoolean() ? 1 : 0;
-		RemoveRandomWithObject rga = grabArrays[x];
-		RemoveRandomWithObject firstRGA = rga;
+		RemoveRandomWithObject<T> rga = grabArrays[x];
+		RemoveRandomWithObject<T> firstRGA = rga;
 		if(rga == null) {
 			Logger.error(this, "rga = null on "+this);
 			if(grabArrays[1-x] == null) {
 				Logger.error(this, "other rga is also null on "+this);
-				grabArrays = new RemoveRandomWithObject[0];
-				grabClients = new Object[0];
-				if(persistent) container.store(this);
+				grabArrays = newGrabberArray(0);
+				grabClients = newClientArray(0);
 				return null;
 			} else {
 				Logger.error(this, "grabArrays["+(1-x)+"] is valid but ["+x+"] is null, correcting...");
-				grabArrays = new RemoveRandomWithObject[] { grabArrays[1-x] };
-				grabClients = new Object[] { grabClients[1-x] };
-				if(persistent) container.store(this);
+				grabArrays = asGrabberArray(grabArrays[1-x]);
+				grabClients = asClientArray(grabClients[1-x]);
 				return null;
 			}
 		}
 		RandomGrabArrayItem item = null;
 		RemoveRandomReturn val = null;
 		if(logMINOR) Logger.minor(this, "Only 2, trying "+rga);
-		long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
+		long excludeTime = rga.getWakeupTime(context, now);
 		if(excludeTime > 0) {
 			wakeupTime = excludeTime;
 			rga = null;
 			firstRGA = null;
 		} else {
-			if(persistent)
-				container.activate(rga, 1);
-			val = rga.removeRandom(excluding, container, context, now);
+			val = rga.removeRandom(excluding, context, now);
 			if(val != null) {
 				if(val.item != null)
 					item = val.item;
@@ -320,8 +260,6 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			}
 		}
 		if(item != null) {
-			if(persistent)
-				container.deactivate(rga, 1);
 			if(logMINOR)
 				Logger.minor(this, "Returning (two items only) "+item+" for "+rga);
 			return new RemoveRandomReturn(item);
@@ -330,20 +268,17 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			rga = grabArrays[x];
 			if(rga == null) {
 				Logger.error(this, "Other RGA is null later on on "+this);
-				grabArrays = new RemoveRandomWithObject[] { grabArrays[1-x] };
-				grabClients = new Object[] { grabClients[1-x] };
-				if(persistent) container.store(this);
-				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container, context);
+				grabArrays = asGrabberArray(grabArrays[1-x]);
+				grabClients = asClientArray(grabClients[1-x]);
+                reduceWakeupTime(wakeupTime, context);
 				return new RemoveRandomReturn(wakeupTime);
 			}
-			excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
+			excludeTime = rga.getWakeupTime(context, now);
 			if(excludeTime > 0) {
 				if(wakeupTime > excludeTime) wakeupTime = excludeTime;
 				rga = null;
 			} else {
-				if(persistent)
-					container.activate(rga, 1);
-				val = rga.removeRandom(excluding, container, context, now);
+				val = rga.removeRandom(excluding, context, now);
 				if(val != null) {
 					if(val.item != null)
 						item = val.item;
@@ -352,61 +287,46 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 					}
 				}
 			}
-			if(firstRGA != null && firstRGA.isEmpty(container) && rga != null && rga.isEmpty(container)) {
+			if(firstRGA != null && firstRGA.isEmpty() && rga != null && rga.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Removing both on "+this+" : "+firstRGA+" and "+rga+" are empty");
-				grabArrays = new RemoveRandomWithObject[0];
-				grabClients = new Object[0];
-				if(persistent) {
-					container.store(this);
-					firstRGA.removeFrom(container);
-					rga.removeFrom(container);
-				}
-			} else if(firstRGA != null && firstRGA.isEmpty(container)) {
+				grabArrays = newGrabberArray(0);
+				grabClients = newClientArray(0);
+			} else if(firstRGA != null && firstRGA.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Removing first: "+firstRGA+" is empty on "+this);
-				grabArrays = new RemoveRandomWithObject[] { grabArrays[x] }; // don't use RGA, it may be nulled out
-				grabClients = new Object[] { grabClients[x] };
-				if(persistent) {
-					container.store(this);
-					firstRGA.removeFrom(container);
-				}
-			}
-			if(persistent) {
-				if(rga != null) container.deactivate(rga, 1);
-				if(firstRGA != null) container.deactivate(firstRGA, 1);
+				grabArrays = asGrabberArray(grabArrays[x]); // don't use RGA, it may be nulled out
+				grabClients = asClientArray(grabClients[x]);
 			}
 			if(logMINOR)
 				Logger.minor(this, "Returning (two items only) "+item+" for "+rga);
 			if(item == null) {
 				if(grabArrays.length == 0)
 					return null; // Remove this as well
-				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container, context);
+                reduceWakeupTime(wakeupTime, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else return new RemoveRandomReturn(item);
 		}
+	    }
 	}
 
-	private synchronized RemoveRandomReturn removeRandomOneOnly(
+	private RemoveRandomReturn removeRandomOneOnly(
 			RandomGrabArrayItemExclusionList excluding,
-			ObjectContainer container, ClientContext context, long now) {
+			ClientContext context, long now) {
+	    synchronized(root) {
 		long wakeupTime = Long.MAX_VALUE;
 		// Optimise the common case
-		RemoveRandomWithObject rga = grabArrays[0];
+		RemoveRandomWithObject<T> rga = grabArrays[0];
 		if(logMINOR) Logger.minor(this, "Only one RGA: "+rga);
-		long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
+		long excludeTime = rga.getWakeupTime(context, now);
 		if(excludeTime > 0)
 			return new RemoveRandomReturn(excludeTime);
 		if(rga == null) {
-			Logger.error(this, "Only one entry and that is null; persistent="+persistent);
-			if(container == null) {
-				// We are sure
-				grabArrays = new RemoveRandomWithObject[0];
-				grabClients = new Object[0];
-			}
+			Logger.error(this, "Only one entry and that is null");
+			// We are sure
+			grabArrays = newGrabberArray(0);
+			grabClients = newClientArray(0);
 			return null;
 		}
-		if(persistent)
-			container.activate(rga, 1);
-		RemoveRandomReturn val = rga.removeRandom(excluding, container, context, now);
+		RemoveRandomReturn val = rga.removeRandom(excluding, context, now);
 		RandomGrabArrayItem item = null;
 		if(val != null) { // val == null => remove it
 			if(val.item != null)
@@ -415,15 +335,11 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				wakeupTime = val.wakeupTime;
 			}
 		}
-		if(rga.isEmpty(container)) {
+		if(rga.isEmpty()) {
 			if(logMINOR)
 				Logger.minor(this, "Removing only grab array (0) : "+rga);
-			grabArrays = new RemoveRandomWithObject[0];
-			grabClients = new Object[0];
-			if(persistent) {
-				container.store(this);
-				rga.removeFrom(container);
-			}
+			grabArrays = newGrabberArray(0);
+			grabClients = newClientArray(0);
 		}
 		if(logMINOR)
 			Logger.minor(this, "Returning (one item only) "+item+" for "+rga);
@@ -432,72 +348,49 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				if(logMINOR) Logger.minor(this, "Arrays are empty on "+this);
 				return null; // Remove this as well
 			}
-			context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container, context);
+            reduceWakeupTime(wakeupTime, context);
 			return new RemoveRandomReturn(wakeupTime);
 		} else return new RemoveRandomReturn(item);
+	    }
 	}
 
-	private synchronized void removeElement(int x) {
+	private void removeElement(int x) {
+	    synchronized(root) {
 		final int grabArraysLength = grabArrays.length;
 		int newLen = grabArraysLength > 1 ? grabArraysLength-1 : 0;
-		RemoveRandomWithObject[] newArray = new RemoveRandomWithObject[newLen];
+		RemoveRandomWithObject<T>[] newArray = newGrabberArray(newLen);
 		if(x > 0)
 			System.arraycopy(grabArrays, 0, newArray, 0, x);
 		if(x < grabArraysLength-1)
 			System.arraycopy(grabArrays, x+1, newArray, x, grabArraysLength - (x+1));
 		grabArrays = newArray;
 		
-		Object[] newClients = new Object[newLen];
+		T[] newClients = newClientArray(newLen);
 		if(x > 0)
 			System.arraycopy(grabClients, 0, newClients, 0, x);
 		if(x < grabArraysLength-1)
 			System.arraycopy(grabClients, x+1, newClients, x, grabArraysLength - (x+1));
 		grabClients = newClients;
+	    }
 	}
 
-	public synchronized boolean isEmpty(ObjectContainer container) {
-		if(container != null && !persistent) {
-			boolean stored = container.ext().isStored(this);
-			boolean active = container.ext().isActive(this);
-			if(stored && !active) {
-				Logger.error(this, "Not empty because not active on "+this);
-				return false;
-			} else if(!stored) {
-				Logger.error(this, "Not stored yet passed in container on "+this, new Exception("debug"));
-			} else if(stored) {
-				throw new IllegalStateException("Stored but not persistent on "+this);
-			}
-		}
+	public boolean isEmpty() {
+	    synchronized(root) {
 		return grabArrays.length == 0;
+	    }
 	}
 	
-	@Override
-	public boolean persistent() {
-		return persistent;
-	}
-
-	public synchronized int size() {
+	public int size() {
+	    synchronized(root) {
 		return grabArrays.length;
+	    }
 	}
 	
 	@Override
-	public void removeFrom(ObjectContainer container) {
-		if(grabArrays != null && grabArrays.length != 0) {
-			for(RemoveRandomWithObject rr : grabArrays) {
-				if(rr != null) {
-					Logger.error(this, "NOT EMPTY REMOVING "+this+" : "+rr);
-					return;
-				}
-			}
-		}
-		container.delete(this);
-	}
-
-	@Override
-	public void maybeRemove(RemoveRandom r, ObjectContainer container, ClientContext context) {
+	public void maybeRemove(RemoveRandom r, ClientContext context) {
 		int count = 0;
 		int finalSize;
-		synchronized(this) {
+		synchronized(root) {
 			while(true) {
 				int found = -1;
 				for(int i=0;i<grabArrays.length;i++) {
@@ -520,88 +413,78 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			// This is not unusual, it was e.g. removed because of being empty.
 			// And it has already been removeFrom()'ed.
 			if(logMINOR) Logger.minor(this, "Not in parent: "+r+" for "+this, new Exception("error"));
-			context.cooldownTracker.removeCachedWakeup(r, persistent, container);
-		} else if(persistent) {
-			container.store(this);
-			r.removeFrom(container);
 		}
 		if(finalSize == 0 && parent != null) {
-			boolean active = true;
-			if(persistent) active = container.ext().isActive(parent);
-			if(!active) container.activate(parent, 1);
-			context.cooldownTracker.removeCachedWakeup(this, persistent, container);
-			parent.maybeRemove(this, container, context);
-			if(!active) container.deactivate(parent, 1);
-		}
-	}
-
-	public void moveElementsTo(SectoredRandomGrabArray newTopLevel,
-			ObjectContainer container, boolean canCommit) {
-		for(int i=0;i<grabArrays.length;i++) {
-			RemoveRandomWithObject grabber = grabArrays[i];
-			Object client = grabClients[i];
-			if(grabber == null && client == null) continue;
-			if(grabber == null && client != null) {
-				System.err.println("Grabber is null but client is not null? client is "+client);
-				continue;
-			}
-			if(grabber != null && client == null) {
-				System.err.println("Client is null but grabber is not? grabber is "+grabber);
-			}
-			RemoveRandomWithObject existingGrabber = newTopLevel.getGrabber(client);
-			if(persistent()) container.activate(client, 1);
-			if(existingGrabber != null)
-				System.out.println("Merging with existing grabber for client "+client);
-			if(persistent()) container.deactivate(client, 1);
-			if(existingGrabber != null) {
-				if(persistent) {
-					container.activate(grabber, 1);
-					container.activate(existingGrabber, 1);
-				}
-				grabber.moveElementsTo(existingGrabber, container, canCommit);
-				grabber.removeFrom(container);
-				if(persistent) {
-					container.deactivate(grabber, 1);
-					container.deactivate(existingGrabber, 1);
-				}
-			} else {
-				if(persistent) container.activate(grabber, 1);
-				grabber.setParent(newTopLevel, container);
-				if(grabber.getObject() == null && client != null) {
-					Logger.error(this, "Minor corruption on migration: client is "+client+" but grabber reports null, correcting");
-					grabber.setObject(client, container);
-				}
-				newTopLevel.addGrabber(client, grabber, container, null);
-				if(persistent) container.deactivate(grabber, 1);
-			}
-			grabArrays[i] = null;
-			grabClients[i] = null;
-			if(persistent) {
-				container.store(this);
-				if(canCommit) container.commit();
-			}
-		}
-		grabArrays = new RemoveRandomWithObject[0];
-		grabClients = new Object[0];
-		if(persistent) {
-			container.store(this);
-			if(canCommit) container.commit();
+			parent.maybeRemove(this, context);
 		}
 	}
 
 	@Override
-	public void moveElementsTo(RemoveRandom existingGrabber,
-			ObjectContainer container, boolean canCommit) {
-		if(existingGrabber instanceof SectoredRandomGrabArray)
-			moveElementsTo((SectoredRandomGrabArray)existingGrabber, container, canCommit);
-		else
-			throw new IllegalArgumentException();
-	}
-
-	@Override
-	public void setParent(RemoveRandomParent newParent, ObjectContainer container) {
+	public void setParent(RemoveRandomParent newParent) {
+	    synchronized(root) {
 		this.parent = newParent;
-		if(persistent()) container.store(this);
+	    }
 	}
+
+    @Override
+    public RequestSelectionTreeNode getParentGrabArray() {
+        synchronized(root) {
+            return parent;
+        }
+    }
 	
+    @Override
+    public long getWakeupTime(ClientContext context, long now) {
+        synchronized(root) {
+            if(wakeupTime < now) wakeupTime = 0;
+            return wakeupTime;
+        }
+    }
+    
+    @Override
+    public boolean reduceWakeupTime(long wakeupTime, ClientContext context) {
+        if(logMINOR) Logger.minor(this, "reduceCooldownTime("+(wakeupTime-System.currentTimeMillis())+") on "+this);
+        boolean reachedRoot = false;
+        synchronized(root) {
+            if(this.wakeupTime > wakeupTime) {
+                this.wakeupTime = wakeupTime;
+                if(parent != null) parent.reduceWakeupTime(wakeupTime, context);
+                else reachedRoot = true; // Even if it reduces it we need to wake it up.
+            } else return false;
+        }
+        if(reachedRoot)
+            root.wakeUp(context);
+        return true;
+    }
+    
+    @Override
+    public void clearWakeupTime(ClientContext context) {
+        if(logMINOR) Logger.minor(this, "clearCooldownTime() on "+this);
+        synchronized(root) {
+            wakeupTime = 0;
+            if(parent != null) parent.clearWakeupTime(context);
+        }
+    }
+
+    private T[] asClientArray(T client) {
+        T[] clients = newClientArray(1);
+        clients[0] = client;
+        return clients;
+    }
+
+    @SuppressWarnings("unchecked")
+    private T[] newClientArray(int length) {
+        return (T[])new Object[length];
+    }
+
+    private RemoveRandomWithObject<T>[] asGrabberArray(RemoveRandomWithObject<T> grabber) {
+        RemoveRandomWithObject<T>[] grabbers = newGrabberArray(1);
+        grabbers[0] = grabber;
+        return grabbers;
+    }
+
+    @SuppressWarnings("unchecked")
+    private RemoveRandomWithObject<T>[] newGrabberArray(int length) {
+        return (RemoveRandomWithObject<T>[])new RemoveRandomWithObject<?>[length];
+    }
 }

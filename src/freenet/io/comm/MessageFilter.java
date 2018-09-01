@@ -19,8 +19,7 @@
 
 package freenet.io.comm;
 
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import freenet.node.PrioRunnable;
@@ -46,8 +45,8 @@ public final class MessageFilter {
     private boolean _matched;
     private PeerContext _droppedConnection;
     private MessageType _type;
-    private final HashMap<String, Object> _fields = new HashMap<String, Object>();
-    private final List<String> _fieldList = new LinkedList<String>();
+    private final List<Object> _fields = new ArrayList<Object>();
+    private final List<String> _fieldNames = new ArrayList<String>();
     private PeerContext _source;
     private long _timeout;
     /** If true, timeouts are relative to the start of waiting, if false, they are relative to
@@ -164,8 +163,13 @@ public final class MessageFilter {
 			throw new IncorrectTypeException("Got " + fieldValue.getClass() + ", expected " + _type.typeOf(fieldName) + " for " + _type.getName());
 		}
 		synchronized (_fields) {
-			if(_fields.put(fieldName, fieldValue) == null)
-				_fieldList.add(fieldName);
+		    final int i = _fieldNames.indexOf(fieldName);
+		    if (i >= 0) {
+		        _fields.set(i, fieldValue);
+		    } else {
+		        _fieldNames.add(fieldName);
+		        _fields.add(fieldValue);
+		    }
 		}
 		return this;
 	}
@@ -211,29 +215,22 @@ public final class MessageFilter {
 			if(matched != MATCHED.NONE)
 				return matched; // Filter is matched once only. That includes timeouts.
 		}
-		
-		if ((_type != null) && (!_type.equals(m.getSpec()))) {
+
+		final MATCHED resultNoMatch = _timeout < now ? MATCHED.TIMED_OUT : MATCHED.NONE;
+		if ((_type != null && !_type.equals(m.getSpec())) ||
+				(_source != null && !_source.equals(m.getSource()))) {
 			// Timeout immediately, but don't check the callback, so we still need the periodic check.
-			if(_timeout < now)
-				return MATCHED.TIMED_OUT;
-			return MATCHED.NONE;
-		}
-		if ((_source != null) && (!_source.equals(m.getSource()))) {
-			if(_timeout < now)
-				return MATCHED.TIMED_OUT;
-			return MATCHED.NONE;
+			return resultNoMatch;
 		}
 		synchronized (_fields) {
-			for (String fieldName : _fieldList) {
+			for (int i = 0; i < _fieldNames.size(); i++) {
+				final String fieldName = _fieldNames.get(i);
 				if (!m.isSet(fieldName)) {
-					if(_timeout < now)
-						return MATCHED.TIMED_OUT;
-					return MATCHED.NONE;
+					return resultNoMatch;
 				}
-				if (!_fields.get(fieldName).equals(m.getFromPayload(fieldName))) {
-					if(_timeout < now)
-						return MATCHED.TIMED_OUT;
-					return MATCHED.NONE;
+				final Object fieldValue = _fields.get(i);
+				if (!fieldValue.equals(m.getFromPayload(fieldName))) {
+					return resultNoMatch;
 				}
 			}
 		}

@@ -24,8 +24,8 @@ import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.FredPluginConfigurable;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.MultiValueTable;
 import freenet.support.Logger.LogLevel;
+import freenet.support.MultiValueTable;
 import freenet.support.URLEncoder;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
@@ -253,23 +253,25 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		// constructing params string. It always constructs it, then redirects
 		// if it turns out to be needed.
 		boolean directorySelector = false;
-		String params = "?";
+		StringBuilder paramsBuilder = new StringBuilder();
+		paramsBuilder.append('?');
 		String value;
 		for (String key : request.getParts()) {
 			// Prepare parts for page selection redirect:
 			// Extract option and put into "select-for"; preserve others.
 			value = request.getPartAsStringFailsafe(key, MAX_PARAM_VALUE_SIZE);
 			if (key.startsWith("select-directory.")) {
-				params += "select-for="
-						+ URLEncoder.encode(
-								key.substring("select-directory.".length()),
-								true) + '&';
+				paramsBuilder
+					.append("select-for=")
+					.append(URLEncoder.encode(key.substring("select-directory.".length()), true))
+					.append('&');
 				directorySelector = true;
 			} else {
-				params += URLEncoder.encode(key, true) + '='
-						+ URLEncoder.encode(value, true) + '&';
+				paramsBuilder.append(URLEncoder.encode(key, true)).append('=')
+					.append(URLEncoder.encode(value, true)).append('&');
 			}
 		}
+		String params = paramsBuilder.toString();
 		if (directorySelector) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>(
 					1);
@@ -553,8 +555,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				String defaultValue;
 				if (callback instanceof BooleanCallback) {
 					// Only case where values are localised.
-					defaultValue = l10n(Boolean
-							.toString(Boolean.valueOf(value)));
+					defaultValue = l10n(o.getDefault());
 				} else {
 					defaultValue = o.getDefault();
 				}

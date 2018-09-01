@@ -11,18 +11,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.async.CacheFetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.ExpectedFileSizeEvent;
@@ -123,6 +122,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	/** Stores the fetch context this class was created with*/
 	private FetchContext fctx;
 	private boolean cancelled = false;
+	private final RequestClient rc;
 	
 	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc, REFILTER_POLICY refilter) {
 		this.refilterPolicy = refilter;
@@ -131,12 +131,13 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		this.maxSize = maxSize2;
 		this.timeStarted = System.currentTimeMillis();
 		this.fctx = fctx;
-		FetchContext alteredFctx = new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null);
+        this.rc = rc;
+		FetchContext alteredFctx = new FetchContext(fctx, FetchContext.IDENTICAL_MASK);
 		alteredFctx.maxOutputLength = fctx.maxTempLength = maxSize;
 		alteredFctx.eventProducer.addEventListener(this);
 		waiters = new ArrayList<FProxyFetchWaiter>();
 		results = new ArrayList<FProxyFetchResult>();
-		getter = new ClientGetter(this, uri, alteredFctx, FProxyToadlet.PRIORITY, rc, null, null, null);
+		getter = new ClientGetter(this, uri, alteredFctx, FProxyToadlet.PRIORITY, null, null, null);
 	}
 	
 	public synchronized FProxyFetchWaiter getWaiter() {
@@ -180,11 +181,11 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				this.failed = e;
 				this.finished = true;
 			}
-		} catch (DatabaseDisabledException e) {
+		} catch (PersistenceDisabledException e) {
 			// Impossible
 			Logger.error(this, "Failed to start: "+e);
 			synchronized(this) {
-				this.failed = new FetchException(FetchException.INTERNAL_ERROR, e);
+				this.failed = new FetchException(FetchExceptionMode.INTERNAL_ERROR, e);
 				this.finished = true;
 			}
 		}
@@ -204,12 +205,12 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				// Works as-is.
 				// Any time we re-use old content we need to remove the tracker because it may not remain available.
 				tracker.removeFetcher(this);
-				onSuccess(result, null, null);
+				onSuccess(result, null);
 				return true;
 			} else if(fctx.overrideMIME != null && !fctx.overrideMIME.equals(result.getMimeType())) {
 				// Change the MIME type.
 				tracker.removeFetcher(this);
-				onSuccess(new FetchResult(new ClientMetadata(fctx.overrideMIME), result.asBucket()), null, null);
+				onSuccess(new FetchResult(new ClientMetadata(fctx.overrideMIME), result.asBucket()), null);
 				return true;
 			} 
 		} else if(result.alreadyFiltered) {
@@ -220,7 +221,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				if(shouldAcceptCachedFilteredData(fctx, result)) {
 					if(refilterPolicy == REFILTER_POLICY.ACCEPT_OLD) {
 						tracker.removeFetcher(this);
-						onSuccess(result, null, null);
+						onSuccess(result, null);
 						return true;
 					} // else re-filter
 				} else
@@ -244,11 +245,11 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		if(type == null || ((!type.safeToRead) && type.readFilter == null)) {
 			UnknownContentTypeException e = new UnknownContentTypeException(mimeType);
 			data.free();
-			onFailure(new FetchException(e.getFetchErrorCode(), data.size(), e, mimeType), null, null);
+			onFailure(new FetchException(e.getFetchErrorCode(), data.size(), e, mimeType), null);
 			return true;
 		} else if(type.safeToRead) {
 			tracker.removeFetcher(this);
-			onSuccess(new FetchResult(new ClientMetadata(mimeType), data), null, null);
+			onSuccess(new FetchResult(new ClientMetadata(mimeType), data), null);
 			return true;
 		} else {
 			// Try to filter it.
@@ -265,7 +266,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				os.close();
 				os = null;
 				// Since we are not re-using the data bucket, we can happily stay in the FProxyFetchTracker.
-				this.onSuccess(new FetchResult(new ClientMetadata(fullMimeType), output), null, null);
+				this.onSuccess(new FetchResult(new ClientMetadata(fullMimeType), output), null);
 				output = null;
 				return true;
 			} catch (IOException e) {
@@ -322,12 +323,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 
 	@Override
-	public void onRemoveEventProducer(ObjectContainer container) {
-		// Impossible
-	}
-
-	@Override
-	public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
+	public void receive(ClientEvent ce, ClientContext context) {
 		try{
 			if(ce instanceof SplitfileProgressEvent) {
 				SplitfileProgressEvent split = (SplitfileProgressEvent) ce;
@@ -383,7 +379,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		synchronized(this) {
 			this.failed = e;
 			this.finished = true;
@@ -393,12 +389,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 
 	@Override
-	public void onMajorProgress(ObjectContainer container) {
-		// Ignore
-	}
-
-	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetter state) {
 		Bucket droppedData = null;
 		synchronized(this) {
 			if(cancelled)
@@ -453,7 +444,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	public void finishCancel() {
 		if(logMINOR) Logger.minor(this, "Finishing cancel for "+this+" : "+uri+" : "+maxSize);
 		try {
-			getter.cancel(null, tracker.context);
+			getter.cancel(tracker.context);
 		} catch (Throwable t) {
 			// Ensure we get to the next bit
 			Logger.error(this, "Failed to cancel: "+t, t);
@@ -554,5 +545,15 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		if(this.fctx.overrideMIME != null && !this.fctx.overrideMIME.equals(context.overrideMIME)) return false;
 		return true;
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        throw new UnsupportedOperationException(); // Not persistent.
+    }
+
+    @Override
+    public RequestClient getRequestClient() {
+        return rc;
+    }
 
 }

@@ -33,7 +33,7 @@ public class NodeL10n {
 	 * Initialize the Node localization. You must also call that constructor
 	 * if you want to change the language.
 	 * @param lang Language to use.
-	 * @see LANGUAGE.mapToLanguage(String)
+	 * @see LANGUAGE#mapToLanguage(String)
 	 */
 	public NodeL10n(final LANGUAGE lang, File overrideDir) {
 		NodeL10n.b = new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties",

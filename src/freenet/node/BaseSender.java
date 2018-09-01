@@ -1,7 +1,5 @@
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -21,6 +19,8 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.TimeUtil;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /** Base class for request and insert senders.
  * Mostly concerned with what happens *before and up to* we get the Accepted.
@@ -169,7 +169,7 @@ public abstract class BaseSender implements ByteCounter {
 			 * Don't use sendAsync().
 			 */
         	next.sendSync(req, this, realTimeFlag);
-        	next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag, source, nodesRoutedTo);
+                next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag, source, nodesRoutedTo, htl);
 			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
         } catch (NotConnectedException e) {
         	Logger.minor(this, "Not connected");
@@ -502,7 +502,7 @@ loadWaiterLoop:
     			 * Don't use sendAsync().
     			 */
     			if(logMINOR) Logger.minor(this, "Sending "+req+" to "+next);
-    			next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag, source, nodesRoutedTo);
+                        next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag, source, nodesRoutedTo, htl);
     			next.sendSync(req, this, realTimeFlag);
     		} catch (NotConnectedException e) {
     			Logger.minor(this, "Not connected");

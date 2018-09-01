@@ -388,10 +388,4 @@ public class JPEGFilter implements ContentDataFilter {
 		throw e;
 	}
 
-	@Override
-	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-			FilterCallback cb) throws DataFilterException, IOException {
-		return;
-	}
-
 }

@@ -6,15 +6,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.async.BinaryBlobWriter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
@@ -23,13 +23,14 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.MediaType;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
+import freenet.support.api.RandomAccessBuffer;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.ByteArrayRandomAccessThing;
+import freenet.support.io.ByteArrayRandomAccessBuffer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
-import freenet.support.io.RandomAccessFileWrapper;
-import freenet.support.io.RandomAccessThing;
+import freenet.support.io.FileRandomAccessBuffer;
 
 /**
  * Fetches the revocation key. Each time it starts, it will try to fetch it until it has 3 DNFs. If it ever finds it, it will
@@ -87,7 +88,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		if(blobFile.exists()) {
 			ArrayBucket bucket = new ArrayBucket();
 			try {
-				BucketTools.copy(new FileBucket(blobFile, true, false, false, false, true), bucket);
+				BucketTools.copy(new FileBucket(blobFile, true, false, false, true), bucket);
 				// Allow to free if bogus.
 				manager.uom.processRevocationBlob(bucket, "disk", true);
 			} catch (IOException e) {
@@ -142,19 +143,19 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 					cg = revocationGetter = new ClientGetter(this, 
 							manager.getRevocationURI(), ctxRevocation, 
 							aggressive ? RequestStarter.MAXIMUM_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-							this, null, new BinaryBlobWriter(new ArrayBucket()), null);
+							null, new BinaryBlobWriter(new ArrayBucket()), null);
 					if(logMINOR) Logger.minor(this, "Queued another revocation fetcher (count="+revocationDNFCounter+")");
 				}
 			}
 			if(toCancel != null)
-				toCancel.cancel(null, core.clientContext);
+				toCancel.cancel(core.clientContext);
 			if(cg != null) {
 				core.clientContext.start(cg);
 				if(logMINOR) Logger.minor(this, "Started revocation fetcher");
 			}
 			return wasRunning;
 		} catch (FetchException e) {
-			if(e.mode == FetchException.RECENTLY_FAILED) {
+			if(e.mode == FetchExceptionMode.RECENTLY_FAILED) {
 				Logger.error(this, "Cannot start revocation fetcher because recently failed");
 			} else {
 				Logger.error(this, "Cannot start fetch for the auto-update revocation key: "+e, e);
@@ -166,7 +167,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				}
 			}
 			return false;
-		} catch (DatabaseDisabledException e) {
+		} catch (PersistenceDisabledException e) {
 			// Impossible
 			return false;
 		}
@@ -188,7 +189,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	}
 
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetter state) {
 		onSuccess(result, state, state.getBlobBucket());
 	}
 	
@@ -250,7 +251,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			}
 			System.out.println("Unexpected blob file in revocation checker: "+tmpBlob);
 		}
-		FileBucket fb = new FileBucket(blobFile, false, false, false, false, false);
+		FileBucket fb = new FileBucket(blobFile, false, false, false, false);
 		try {
 			BucketTools.copy(tmpBlob, fb);
 		} catch (IOException e) {
@@ -261,17 +262,17 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	}
 
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		onFailure(e, state, state.getBlobBucket());
 	}
 	
 	void onFailure(FetchException e, ClientGetter state, Bucket blob) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Revocation fetch failed: "+e);
-		int errorCode = e.getMode();
+		FetchExceptionMode errorCode = e.getMode();
 		boolean completed = false;
 		long now = System.currentTimeMillis();
-		if(errorCode == FetchException.CANCELLED) {
+		if(errorCode == FetchExceptionMode.CANCELLED) {
 			return; // cancelled by us above, or killed; either way irrelevant and doesn't need to be restarted
 		}
 		if(e.isFatal()) {
@@ -298,7 +299,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			manager.blow("Revocation URI redirecting to "+e.newURI+" - maybe you set the revocation URI to the update URI?", false);
 		}
 		synchronized(this) {
-			if(errorCode == FetchException.DATA_NOT_FOUND){
+			if(errorCode == FetchExceptionMode.DATA_NOT_FOUND){
 				revocationDNFCounter++;
 				if(logMINOR) Logger.minor(this, "Incremented DNF counter to "+revocationDNFCounter);
 			}
@@ -312,7 +313,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		if(completed)
 			manager.noRevocationFound();
 		else {
-			if(errorCode == FetchException.RECENTLY_FAILED) {
+			if(errorCode == FetchExceptionMode.RECENTLY_FAILED) {
 				// Try again in 1 second.
 				// This ensures we don't constantly start them, fail them, and start them again.
 				this.manager.node.ticker.queueTimedJob(new Runnable() {
@@ -334,22 +335,16 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				pattern, value);
 	}
 
-	@Override
-	public void onMajorProgress(ObjectContainer container) {
-		// TODO Auto-generated method stub
-		
-	}
-
 	public void kill() {
 		if(revocationGetter != null)
-			revocationGetter.cancel(null, core.clientContext);
+			revocationGetter.cancel(core.clientContext);
 	}
 
 	public long getBlobSize() {
 		return blobFile.length();
 	}
 
-	public Bucket getBlobBucket() {
+	public RandomAccessBucket getBlobBucket() {
 		if(!manager.isBlown()) return null;
 		synchronized(this) {
 			if(blobBucket != null)
@@ -357,25 +352,33 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		}
 		File f = getBlobFile();
 		if(f == null) return null;
-		return new FileBucket(f, true, false, false, false, false);
+		return new FileBucket(f, true, false, false, false);
 	}
 	
-	public RandomAccessThing getBlobThing() {
+	public RandomAccessBuffer getBlobBuffer() {
 		if(!manager.isBlown()) return null;
 		synchronized(this) {
 			if(blobBucket != null) {
-				ByteArrayRandomAccessThing t = new ByteArrayRandomAccessThing(blobBucket.toByteArray());
-				t.setReadOnly();
-				return t;
+			    try {
+			        ByteArrayRandomAccessBuffer t = new ByteArrayRandomAccessBuffer(blobBucket.toByteArray());
+			        t.setReadOnly();
+			        return t;
+			    } catch (IOException e) {
+			        Logger.error(this, "Impossible: "+e, e);
+			        return null;
+			    }
 			}
 		}
 		File f = getBlobFile();
 		if(f == null) return null;
 		try {
-			return new RandomAccessFileWrapper(f, "r");
+			return new FileRandomAccessBuffer(f, true);
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "We do not have the blob file for the revocation even though we have successfully downloaded it!", e);
 			return null;
+		} catch (IOException e) {
+            Logger.error(this, "Error reading downloaded revocation blob file: "+e, e);
+            return null;
 		}
 	}
 	
@@ -391,13 +394,18 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	}
 
 	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public boolean realTimeFlag() {
 		return false;
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Do nothing. Not persistent.
+    }
+
+    @Override
+    public RequestClient getRequestClient() {
+        return this;
+    }
 
 }

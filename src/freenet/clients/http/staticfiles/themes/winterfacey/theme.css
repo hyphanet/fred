@@ -1,0 +1,713 @@
+body,
+ul#navlist {
+  margin: 0px 0px 0px 0px;
+}
+
+/* from base.css */
+#statusbar-container {
+  color: grey;
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 18;
+}
+
+#statusbar {
+  text-align: center;
+}
+
+#statusbar > div {
+  display: inline-block;
+  font-size: 0.9em;
+  vertical-align: bottom;
+}
+
+div.progressbar {
+  border-style: solid;
+  border-width: 1px;
+  position: relative;
+  width: 8.864em;
+}
+
+div.progressbar,
+div.progressbar-done,
+div.progressbar-min,
+div.progressbar-failed,
+div.progressbar-failed2 {
+  float: left;
+  height: 1.227em;
+}
+
+div.progress_fraction_finalized,
+div.progress_fraction_not_finalized {
+  position: absolute;
+  left: 0.333em;
+}
+
+div.progress_fraction_finalized {
+  font-weight: bold;
+}
+
+div.progress_fraction_not_finalized {
+  font-style: italic;
+}
+
+/* override any padding that the infobox divs might have */
+#statusbar div {
+   padding: 0px;
+}
+
+/* this is needed for inheritance reasons */
+#statusbar div.progressbar div {
+  font-size: 1em;
+}
+
+#statusbar div.progressbar {
+  float: none;
+  margin-bottom: 0;
+}
+
+#statusbar div.separator {
+  height: 1.5em;
+  margin-left: 0.666em;
+  margin-right: 0.667em;
+  width: 1px;
+}
+
+#statusbar div.infobox-header {
+  display: none;
+}
+
+div#selected-subnavbar {
+  display: none;
+}
+
+ul.subnavlist,
+ul.subnavlist-selected,
+ul.subnavlist > li, 
+ul.subnavlist-selected > li {
+  list-style-type: none;
+}
+
+/* only display submenus on hover */
+
+ul.subnavlist,
+ul.subnavlist-selected {
+  display: none;
+}
+
+ul.subnavlist:hover,
+li.navlist-not-selected:hover ul.subnavlist,
+li.navlist-selected:hover ul.subnavlist-selected {
+  display: block;
+}
+
+/* move the content window to the left side of the screen */
+
+div#content {
+  position: relative;
+  top: 5px;
+  left: 0px;
+  padding-bottom: 3em;
+}
+
+/* move the navbar to the top of the screen */
+
+div#navbar {
+  float: none;
+  text-align: center;
+  padding: 0px;
+  position: relative;
+  top: 5px;
+  left: 0px;
+}
+
+div#navbar a {
+   padding-left: 5px;
+   padding-right: 5px;
+}
+
+#navlist li a {
+   padding-bottom: 5px;
+}
+
+/* make the top level menu items display horizontally instead of vertically */
+
+li.navlist-selected,
+li.navlist-not-selected {
+  display: inline-block !important;
+  margin: 0 1em 0 1em !important;
+  padding: 0 0 0 0 !important;
+  position: relative !important;
+}
+
+/* adjust positioning of submenus */
+
+ul.subnavlist-selected,
+ul.subnavlist {
+  margin: 0 !important;
+  position: absolute !important;
+  top: 2.5em;
+  left: -1.5em !important;
+  padding: 0 0 0 0 !important;
+  text-align: left !important;
+  width: 12em !important;
+  z-index: 20 !important;
+}
+
+/*
+ *
+ * Mostly stolen/adapted from Winterface
+ *
+ */
+
+body {
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+  background-color: White;
+}
+
+a {
+  color: #08c;
+}
+
+a:hover {
+  color: #005580;
+}
+
+.bookmarks-header-text {
+  color: #333;
+  font-size: 21px;
+  font-weight: 200;
+  line-height: 30px;
+  padding-bottom: 30px;
+  padding-bottom: 9px;
+  margin: 20px 0 30px;
+  margin-right: 1em;
+  background: none;
+}
+
+#topbar {
+  display: none;
+}
+
+/*
+ *
+ * Navbar
+ *
+ */
+
+#navbar:before {
+  display: block;
+  float: left;
+  content: url("/static/logo.png");
+  margin-left: 5px;
+  margin-top: 2px;
+  width: 50px;
+  height: 35px;
+}
+
+div#page div#navbar {
+  position: sticky;
+  top: 0px;
+}
+
+#navbar {
+  border-bottom: 1px solid rgb(37, 37, 37);
+  background-color: rgb(27, 27, 27);
+  z-index: 9999;
+}
+
+#navbar,
+#navlist,
+#navbar li {
+  min-height: 40px;
+  line-height: 40px;
+}
+
+#navbar #navlist li a {
+  color: rgb(153, 153, 153);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 14px;
+}
+
+input,
+select {
+  padding: 0.5em 0.5em 0.5em 0.5em;
+  border-radius: 4px;
+  border: 1px solid #cccccc;
+  background-color: white;
+}
+
+input[type="submit"],
+input[type="reset"],
+button {
+  border-radius: 6px;
+  border: none;
+  background-color: #5EB95E;
+  color: white;
+  margin: 0.5em 0.25em;
+}
+
+input[type="submit"]:hover,
+input[type="reset"]:hover,
+button:hover {
+  background-color: #2D9F2D;
+}
+
+ul.config {
+  padding-left: inherit;
+}
+
+.configprefix {
+  font-family: Tahoma, Geneva, sans-serif;
+  font-size: 150%;
+  margin-top: 0.5em;
+  border-bottom: 1px solid #eee;
+}
+
+.config li {
+  list-style-type: none;
+  margin-left: 0px;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+
+.config li:nth-of-type(2n) {
+  background: #eeeeee;
+}
+
+.config li input,
+.config li select {
+  float: right;
+  margin-right: 1ex;
+}
+
+.config input[alt="SimpleToadletServer.cssOverride"] {
+  width: 60ex;
+}
+
+.config li:after {
+  display: block;
+  clear: both;
+}
+
+.config .configshortdesc {
+  margin-left: 1ex;
+  font-size: 150%;
+}
+
+.config .configlongdesc {
+  display: block;
+  margin-left: 4ex;
+}
+
+/*
+ *
+ * Second level
+ *
+ */
+#navbar #navlist .subnavlist,
+#navbar #navlist .subnavlist-selected,
+#navbar #navlist .subnavlist-not-selected {
+  background-color: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+  vertical-align: middle;
+}
+
+#navbar #navlist li ul,
+#navbar #navlist li ul li,
+#navbar #navlist li ul li a {
+  font-size: 14px;
+  text-transform: none;
+  color: #333;
+}
+
+#navbar ul#navlist li ul li {
+  text-align: left;
+  border-bottom: 1px solid;
+  border-image: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 50%, rgba(51,51,51,0) 100%);
+}
+
+#navbar ul#navlist li ul li a {
+  display: block;
+  padding-left: 0.75em;
+  line-height: 3em;
+}
+
+#navbar ul#navlist li ul {
+  background-color: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+#navbar ul#navlist li a:hover,
+#navbar ul#navlist li.navlist-not-selected a:hover,
+#navbar ul#navlist li a:hover {
+  background: none;
+}
+
+#navbar ul#navlist li ul li:hover {
+  color:#fff;
+  text-decoration:none;
+  background-color:#0081c2;
+  background-image:-moz-linear-gradient(top,#08c,#0077b3);
+  background-image:-webkit-gradient(linear,0 0,0 100%,from(#08c),to(#0077b3));
+  background-image:-webkit-linear-gradient(top,#08c,#0077b3);
+  background-image:-o-linear-gradient(top,#08c,#0077b3);
+  background-image:linear-gradient(to bottom,#08c,#0077b3);
+  background-repeat:repeat-x;
+  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff0088cc',endColorstr='#ff0077b3',GradientType=0)
+}
+
+#navbar ul#navlist li a {
+  display: inline;
+}
+
+#navbar ul#navlist li a:hover,
+#navbar ul#navlist li ul li a:hover {
+  color:#fff;
+}
+
+ul#navlist li ul li:first-child {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+ul#navlist li ul li:last-child {
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+/*
+ *
+ * Infoboxes
+ *
+ */
+.infobox-header,
+.infobox-content {
+  margin-left: 2ex;
+  padding-bottom: 0.5em;
+}
+
+.infobox-alert {
+  background-color: #eeaaaa;
+}
+
+.infobox-header {
+  font-family: Tahoma, Geneva, sans-serif;
+}
+
+.infobox-content {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+div.infobox-information div.infobox-header {
+  background-color: #e8e8f0;
+}
+
+div.infobox-warning div.infobox-header {
+  background-color: #f8f8c0;
+}
+
+div.infobox-alert {
+  background-color: #f0e8e8;
+}
+
+div.infobox-alert div.infobox-header {
+  background-color: #ffd0d0;
+}
+
+div.infobox-error {
+  background-color: #f0e8e8;
+}
+
+div.infobox-error div.infobox-header {
+  background-color: #ffd0d0;
+}
+
+div.infobox-query div.infobox-header {
+  background-color: #f0f0e8;
+}
+
+div.infobox-success div.infobox-header {
+  background-color: #e8f0e8;
+}
+
+div.infobox-header,
+.bookmarks-box ul#bookmarks li.cat {
+  color: #333;
+  font-size: 21px;
+  font-weight: 200;
+  line-height: 30px;
+  padding: 1ex;
+  margin: 1em 0 0.5em;
+  border-bottom: 1px solid #eee;
+  background: none;
+}
+
+/*
+ *
+ * Progress Bar
+ *
+ */
+
+div.progressbar {
+  height: 20px;
+  overflow: hidden;
+  background-color: #f7f7f7;
+  background-image: linear-gradient(to bottom,#f5f5f5,#f9f9f9);
+  background-repeat: repeat-x;
+  border-radius: 4px;
+  border: none;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+
+div.progressbar .progressbar-done {
+  background-color: #5eb95e;
+  background-image: linear-gradient(to bottom,#62c462,#57a957);
+  background-repeat: repeat-x;
+  height: 100%;
+}
+
+div.progressbar .progressbar-min {
+  height: 100%;
+}
+
+div.progressbar .progress_fraction_finalized {
+  font-size: 12px;
+  color: grey;
+  text-align: center;
+  font-weight: normal;
+  line-height: 20px;
+}
+
+/*
+ *
+ * Status bar
+ *
+ */
+
+div#statusbar {
+  border-top: 4px solid #eee;
+  background-color: White;
+}
+
+div#statusbar div.progressbar {
+  margin-top: 0.125em;
+  margin-bottom: 0.125em;
+}
+
+div#statusbar #statusbar-alerts,
+div#statusbar .infobox-content {
+  height: 100%;
+}
+
+div#statusbar a {
+  line-height: 200%;
+  font-size: 11.9px;
+}
+
+table.plugins,
+table.requests {
+  border-collapse: collapse;
+  padding: 0.5ex;
+}
+
+table.requests,
+table.queue {
+  width: 100%;
+}
+
+table.requests td,
+table.queue td {
+  height: 3em;
+}
+
+/*
+ *
+ * Priority Legend
+ *
+ */
+table.queue {
+  width: 100%;
+  height: 40px;
+  border-collapse: collapse;
+}
+
+table.queue td {
+  text-align: center;
+  font-size: 16px;
+  text-transform: uppercase;
+  margin: 0px;
+  border: none;
+}
+
+/*
+ *
+ * General Tables
+ *
+ */
+
+table tbody tr:nth-child(2n) {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/*
+ *
+ * Downloads/Uploads table
+ *
+ */
+td.priority0,
+tr.priority0 {
+  background-color: #ffb7b7;
+}
+
+td.priority1,
+tr.priority1 {
+  background-color: #ffcea7;
+}
+
+td.priority2,
+tr.priority2 {
+  background-color: #ffeba7;
+}
+
+td.priority3,
+tr.priority3 {
+  background-color: #ddffa7;
+}
+
+td.priority4,
+tr.priority4 {
+  background-color: #a7ffbc;
+}
+
+td.priority5,
+tr.priority5 {
+  background-color: #a7fff8;
+}
+
+td.priority6,
+tr.priority6 {
+  background-color: #a7caff;
+}
+table tbody tr.priority0:nth-child(2n) {
+  background-color: #E69E9E;
+}
+table tbody tr.priority1:nth-child(2n) {
+  background-color: #E6B58E;
+}
+table tbody tr.priority2:nth-child(2n) {
+  background-color: #E6D28E;
+}
+table tbody tr.priority3:nth-child(2n) {
+  background-color: #C4E68E;
+}
+table tbody tr.priority4:nth-child(2n) {
+  background-color: #8EE6A3;
+}
+table tbody tr.priority5:nth-child(2n) {
+  background-color: #8EE6DF;
+}
+table tbody tr.priority6:nth-child(2n) {
+  background-color: #8EB1E6;
+}
+
+/*
+ *
+ * Bookmarks
+ *
+ */
+#bookmarks,
+#bookmarks ul {
+  padding-left: 0px;
+  list-style-type: none;
+}
+
+#bookmarks table tbody {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: left;
+  align-content: center;
+  align-items: center;
+}
+
+#bookmarks table tr {
+  display: block;
+  flex: 0 1 auto;
+  align-self: auto;
+  min-width: 0;
+  min-height: 196px;
+  max-height: 256px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+  background: none;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  margin-top: 1em;
+
+  padding: 0.25em;
+}
+
+#bookmarks table td {
+  display: block;
+  width: 256px;
+  background: none;
+}
+
+#bookmarks table td:nth-child(1) {
+  width: auto;
+  float: left;
+  clear: none;
+}
+
+#bookmarks table td a {
+  font-size: 21px;
+  font-weight: 200;
+  display: block;
+}
+
+#bookmarks td a img {
+  margin-right: 1ex;
+}
+
+/*
+ *
+ * Sone
+ *
+ */
+.reply,
+.click-to-show {
+  border-radius: 6px;
+}
+
+/* A bit hack-ey but it only applies to Sone pages! */
+body[id*="Sone"] {
+  background-color: #3a87ad;
+}
+
+#sone #notification-area {
+  margin-top: 0px;
+}
+
+#sone {
+  padding-top: 1em;
+  background-color: #fff;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+}
+
+#page div#content {
+  top: 0px !important;
+  margin-top: 0px;
+}

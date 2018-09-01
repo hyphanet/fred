@@ -13,8 +13,9 @@ import freenet.support.api.Bucket;
  * see plugins.FCPHello for a simple sample.
  * 
  * @author saces
- *
+ * @deprecated Use {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} instead
  */
+@Deprecated
 public interface FredPluginFCP {
 	
 	public static final int ACCESS_DIRECT = 0;

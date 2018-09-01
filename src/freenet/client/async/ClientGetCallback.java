@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 
@@ -14,9 +12,9 @@ import freenet.client.FetchResult;
 public interface ClientGetCallback extends ClientBaseCallback {
 	/** Called on successful fetch. Caller should schedule a job on the Ticker
 	 * or Executor (on the ClientContext) if it needs to do much work. */
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container);
+	public void onSuccess(FetchResult result, ClientGetter state);
 
 	/** Called on failed/canceled fetch. Caller should schedule a job on the Ticker
 	 * or Executor (on the ClientContext) if it needs to do much work. */
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container);
+	public void onFailure(FetchException e, ClientGetter state);
 }

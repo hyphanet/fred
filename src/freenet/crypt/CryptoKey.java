@@ -6,6 +6,7 @@ package freenet.crypt;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -14,9 +15,10 @@ import java.security.NoSuchAlgorithmException;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
-public abstract class CryptoKey implements CryptoElement {
+public abstract class CryptoKey implements CryptoElement, Serializable {
 
-	protected static final MessageDigest shactx;
+    private static final long serialVersionUID = 1L;
+    protected static final MessageDigest shactx;
 	static {
 		try {
 			shactx = MessageDigest.getInstance("SHA1", Util.mdProviders.get("SHA1"));
@@ -35,7 +37,7 @@ public abstract class CryptoKey implements CryptoElement {
 		try {
 			Class<?> keyClass = Class.forName(type);
 			Method m =
-				keyClass.getMethod("read", new Class[] { InputStream.class });
+				keyClass.getMethod("read", new Class<?>[] { InputStream.class });
 			return (CryptoKey) m.invoke(null, dis);
 		} catch (Exception e) {
 			e.printStackTrace();

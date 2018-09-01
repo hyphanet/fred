@@ -2,6 +2,7 @@ package freenet.clients.http;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
@@ -198,6 +199,9 @@ public class PproxyToadlet extends Toadlet {
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addChild("#", l10n("pluginUnloadedWithName", "name", pluginThreadName));
 				infoboxContent.addChild("br");
+                                infoboxContent.addChild("#", l10n("pluginFilesWarning"));
+                                infoboxContent.addChild("br");
+                                infoboxContent.addChild("br");
 				infoboxContent.addChild("a", "href", "/plugins/", l10n("returnToPluginPage"));
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
@@ -229,11 +233,14 @@ public class PproxyToadlet extends Toadlet {
 				reloadContent.addChild("p", l10n("reloadExplanation"));
 				reloadContent.addChild("p", l10n("reloadWarning"));
 				HTMLNode reloadForm = ctx.addFormChild(reloadContent, "/plugins/", "reloadPluginConfirmForm");
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "reloadconfirm", request.getPartAsStringFailsafe("reload", MAX_PLUGIN_NAME_LENGTH) });
+				String pluginIdentifier = request.getPartAsStringFailsafe("reload", MAX_PLUGIN_NAME_LENGTH);
+				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "reloadconfirm", pluginIdentifier });
+				if (!pluginWasLoadedFromLocalDisk(pm, pluginIdentifier)) {
+					HTMLNode tempNode = reloadForm.addChild("p");
+					tempNode.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "purge" });
+					tempNode.addChild("#", l10n("reloadPurgeWarning"));
+				}
 				HTMLNode tempNode = reloadForm.addChild("p");
-				tempNode.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "purge" });
-				tempNode.addChild("#", l10n("reloadPurgeWarning"));
-				tempNode = reloadForm.addChild("p");
 				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", l10n("reload") });
 				tempNode.addChild("#", " ");
 				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel") });
@@ -290,6 +297,18 @@ public class PproxyToadlet extends Toadlet {
 
 		}
 
+	}
+
+	private boolean pluginWasLoadedFromLocalDisk(PluginManager pluginManager, String pluginIdentifier) {
+		for (PluginInfoWrapper pluginInfoWrapper : pluginManager.getPlugins()) {
+			if (pluginInfoWrapper.getThreadName().equals(pluginIdentifier)) {
+				File pluginFile = new File(pluginInfoWrapper.getFilename());
+				if (pluginFile.exists() && pluginFile.isFile()) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -517,7 +536,7 @@ public class PproxyToadlet extends Toadlet {
 					pluginRow.addChild("td");
 				} else {
 					if (pi.isPproxyPlugin()) {
-						HTMLNode visitForm = pluginRow.addChild("td").addChild("form", new String[] { "method", "action", "target" }, new String[] { "get", pi.getPluginClassName(), "_blank" });
+						HTMLNode visitForm = pluginRow.addChild("td").addChild("form", new String[] { "method", "action", "target", "rel" }, new String[] { "get", pi.getPluginClassName(), "_blank", "noreferrer noopener" });
 						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", ctx.getFormPassword() });
 						visitForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", NodeL10n.getBase().getString("PluginToadlet.visit") });
 					} else
@@ -579,6 +598,9 @@ public class PproxyToadlet extends Toadlet {
 			HTMLNode pluginGroupNode = addOfficialForm.addChild("div", "class", "plugin-group");
 			pluginGroupNode.addChild("div", "class", "plugin-group-title", l10n("pluginGroupTitle", "pluginGroup", groupPlugins.getKey()));
 			for (OfficialPluginDescription pluginDescription : notLoadedPlugins) {
+        if (pluginDescription.unsupported) {
+          continue;
+        }
 				HTMLNode pluginNode = pluginGroupNode.addChild("div", "class", "plugin");
 				HTMLNode option = pluginNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "plugin-name", pluginDescription.name });
 				option.addChild("i", pluginDescription.getLocalisedPluginName());
@@ -587,7 +609,7 @@ public class PproxyToadlet extends Toadlet {
 				if(pluginDescription.experimental)
 					option.addChild("b", " ("+l10n("loadLabelExperimental")+")");
 				if (advancedModeEnabled && pluginDescription.minimumVersion >= 0) {
-					option.addChild("#", " ("+l10n("pluginVersion")+" " + pluginDescription.minimumVersion + ")");
+					option.addChild("#", " ("+l10n("pluginVersion")+" " + pluginDescription.recommendedVersion + ")");
 				}
 				option.addChild("#", " - "+pluginDescription.getLocalisedPluginDescription());
 			}

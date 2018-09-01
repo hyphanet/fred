@@ -1,15 +1,16 @@
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.OpennetManager.ConnectionType;
+import freenet.node.OpennetManager.LinkLengthClass;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.UpdateOverMandatoryManager;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class OpennetPeerNode extends PeerNode {
 
@@ -18,8 +19,8 @@ public class OpennetPeerNode extends PeerNode {
 	// Not persisted across restart, since after restart grace periods don't apply anyway (except disconnection, which is really separate anyway).
 	private ConnectionType opennetNodeAddedReason;
 	
-	public OpennetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		super(fs, node2, crypto, peers, fromLocal, false, mangler, true);
+	public OpennetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
+		super(fs, node2, crypto, fromLocal);
 
 		if (fromLocal) {
 			SimpleFieldSet metadata = fs.subset("metadata");
@@ -148,11 +149,6 @@ public class OpennetPeerNode extends PeerNode {
 	public boolean recordStatus() {
 		return true;
 	}
-
-	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return false;
-	}
  
 	@Override
 	public boolean equals(Object o) {
@@ -267,13 +263,40 @@ public class OpennetPeerNode extends PeerNode {
 	}
 	
 	@Override
-	public boolean shallWeRouteAccordingToOurPeersLocation() {
-		return node.shallWeRouteAccordingToOurPeersLocation();
+	public boolean shallWeRouteAccordingToOurPeersLocation(int htl) {
+		return node.shallWeRouteAccordingToOurPeersLocation(htl);
 	}
 
 	@Override
 	boolean dontKeepFullFieldSet() {
 		return true;
 	}
+	
+    public LinkLengthClass linkLengthClass() {
+        if(!Location.isValid(getLocation())) {
+            Logger.error(this, "No location on "+this, new Exception("debug"));
+            return LinkLengthClass.SHORT; // FIXME add unknown to enum? Would need more complex error handling...
+        }
+        // FIXME OPTIMISE This should not change since we don't swap on opennet.
+        if(Location.distance(this, opennet.node.getLocation()) > OpennetManager.LONG_DISTANCE)
+            return LinkLengthClass.LONG;
+        else
+            return LinkLengthClass.SHORT;
+    }
+
+    @Override
+    public boolean isOpennetForNoderef() {
+        return true;
+    }
+
+    @Override
+    public boolean canAcceptAnnouncements() {
+        return true;
+    }
+
+    @Override
+    protected void writePeers() {
+        node.peers.writePeers(true);
+    }
 
 }

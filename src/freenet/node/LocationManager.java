@@ -32,7 +32,6 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
-import freenet.node.PeerManager.LocationUIDPair;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
@@ -326,8 +325,7 @@ public class LocationManager implements ByteCounter {
 
             long random = r.nextLong();
             double myLoc = getLocation();
-            LocationUIDPair[] friendLocsAndUIDs = node.peers.getPeerLocationsAndUIDs();
-            double[] friendLocs = extractLocs(friendLocsAndUIDs);
+            double[] friendLocs = node.peers.getPeerLocationDoubles(false);
             long[] myValueLong = new long[1+1+friendLocs.length];
             myValueLong[0] = random;
             myValueLong[1] = Double.doubleToLongBits(myLoc);
@@ -473,8 +471,7 @@ public class LocationManager implements ByteCounter {
                 // pretend that they're locked
                 long random = r.nextLong();
                 double myLoc = getLocation();
-                LocationUIDPair[] friendLocsAndUIDs = node.peers.getPeerLocationsAndUIDs();
-                double[] friendLocs = extractLocs(friendLocsAndUIDs);
+                double[] friendLocs = node.peers.getPeerLocationDoubles(false);
                 long[] myValueLong = new long[1+1+friendLocs.length];
                 myValueLong[0] = random;
                 myValueLong[1] = Double.doubleToLongBits(myLoc);
@@ -1090,10 +1087,11 @@ public class LocationManager implements ByteCounter {
         }
         item.lastMessageTime = System.currentTimeMillis();
         // Returning to source - use incomingID
-        m.set(DMT.UID, item.incomingID);
+        byte[] hisHash = ((ShortBuffer)m.getObject(DMT.HASH)).getData();
+        Message fwd = DMT.createFNPSwapReply(item.incomingID, hisHash);
         if(logMINOR) Logger.minor(this, "Forwarding SwapReply "+uid+" from "+source+" to "+item.requestSender);
         try {
-            item.requestSender.sendAsync(m, null, this);
+            item.requestSender.sendAsync(fwd, null, this);
         } catch (NotConnectedException e) {
         	if(logMINOR) Logger.minor(this, "Lost connection forwarding SwapReply "+uid+" to "+item.requestSender);
         }
@@ -1361,26 +1359,12 @@ public class LocationManager implements ByteCounter {
     /**
      * Method called by Node.getKnownLocations(long timestamp)
      *
-     * @Return an array containing two cells : Locations and their last seen time for a given timestamp.
+     * @return an array containing two cells : Locations and their last seen time for a given timestamp.
      */
     public Object[] getKnownLocations(long timestamp) {
     	synchronized (knownLocs) {
     		return knownLocs.pairsAfter(timestamp, new Double[knownLocs.size()]);
     	}
-	}
-
-	static double[] extractLocs(LocationUIDPair[] pairs) {
-		double[] locs = new double[pairs.length];
-		for(int i=0;i<pairs.length;i++)
-			locs[i] = pairs[i].location;
-		return locs;
-	}
-
-	static long[] extractUIDs(LocationUIDPair[] pairs) {
-		long[] uids = new long[pairs.length];
-		for(int i=0;i<pairs.length;i++)
-			uids[i] = pairs[i].uid;
-		return uids;
 	}
 
 	public static double[] extractLocs(PeerNode[] peers, boolean indicateBackoff) {

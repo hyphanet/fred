@@ -110,7 +110,8 @@ public class FailureTable {
 	 * @param key
 	 * @param routedTo
 	 * @param htl
-	 * @param timeout
+	 * @param rfTimeout
+	 * @param ftTimeout
 	 */
 	public void onFailed(Key key, PeerNode routedTo, short htl, long rfTimeout, long ftTimeout) {
 		if(ftTimeout < 0 || ftTimeout > REJECT_TIME) {

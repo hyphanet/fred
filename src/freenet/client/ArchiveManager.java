@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -16,21 +18,17 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import net.contrapunctus.lzma.LzmaInputStream;
-
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-
-import com.db4o.ObjectContainer;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.support.ExceptionWrapper;
 import freenet.support.LRUMap;
 import freenet.support.Logger;
-import freenet.support.MutableBoolean;
 import freenet.support.Logger.LogLevel;
+import freenet.support.MutableBoolean;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
@@ -38,6 +36,8 @@ import freenet.support.compress.Compressor;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import freenet.support.io.SkipShieldingInputStream;
+import net.contrapunctus.lzma.LzmaInputStream;
 
 /**
  * Cache of recently decoded archives:
@@ -54,7 +54,7 @@ public class ArchiveManager {
 	private static boolean logMINOR;
 
 	public enum ARCHIVE_TYPE {
-		// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
+	    // WARNING: This enum is persisted. Changing member names may break downloads/uploads.
 		ZIP((short)0, new String[] { "application/zip", "application/x-zip" }), 	/* eventually get rid of ZIP support at some point */
 		TAR((short)1, new String[] { "application/x-tar" });
 
@@ -139,9 +139,7 @@ public class ArchiveManager {
 	 * @param maxCachedElements The maximum number of cached elements (an element is a
 	 * file extracted from an archive. It is stored, encrypted and padded, in a single
 	 * file.
-	 * @param cacheDir The directory in which to store cached data.
-	 * @param random A cryptographicaly secure random source
-	 * @param weakRandom A weak and cheap random source
+	 * @param tempBucketFactory
 	 */
 	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchivedFileSize, int maxCachedElements, BucketFactory tempBucketFactory) {
 		maxArchiveHandlers = maxHandlers;
@@ -202,7 +200,7 @@ public class ArchiveManager {
 	 * @return An archive handler.
 	 */
 	public ArchiveHandler makeHandler(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean forceRefetch, boolean persistent) {
-		return new ArchiveHandlerImpl(persistent ? key.clone() : key, archiveType, ctype, forceRefetch);
+		return new ArchiveHandlerImpl(key, archiveType, ctype, forceRefetch);
 	}
 
 	/**
@@ -256,12 +254,8 @@ public class ArchiveManager {
 	 * @throws ArchiveRestartException
 	 * @throws ArchiveRestartException If the request needs to be restarted because the archive
 	 * changed.
-	 *
-	 * FIXME: This method *can* be called from the database thread, however it isn't at
-	 * present (check the call stack). Maybe we should get rid of the ObjectContainer?
-	 * OTOH maybe extracting inline on the database thread for small containers would be useful?
 	 */
-	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, final Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
+	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, final Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
 		MutableBoolean gotElement = element != null ? new MutableBoolean() : null;
@@ -317,8 +311,9 @@ public class ArchiveManager {
 				// LZMA internally uses pipe streams, so we may as well do it here.
 				// In fact we need to for LZMA_NEW, because of the properties bytes.
 				PipedInputStream pis = new PipedInputStream();
-				final PipedOutputStream pos = new PipedOutputStream();
+				PipedOutputStream pos = new PipedOutputStream();
 				pis.connect(pos);
+				final OutputStream os = new BufferedOutputStream(pos);
 				wrapper = new ExceptionWrapper();
 				context.mainExecutor.execute(new Runnable() {
 
@@ -326,7 +321,7 @@ public class ArchiveManager {
 					public void run() {
 						InputStream is = null;
 						try {
-							Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(is = data.getInputStream(), pos, data.size(), expectedSize);
+							Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(is = data.getInputStream(), os, data.size(), expectedSize);
 						} catch (CompressionOutputSizeException e) {
 							Logger.error(this, "Failed to decompress archive: "+e, e);
 							wrapper.set(e);
@@ -335,7 +330,7 @@ public class ArchiveManager {
 							wrapper.set(e);
 						} finally {
 							try {
-								pos.close();
+								os.close();
 							} catch (IOException e) {
 								Logger.error(this, "Failed to close PipedOutputStream: "+e, e);
 							}
@@ -353,12 +348,14 @@ public class ArchiveManager {
 				wrapper = null;
 			}
 
-			if(ARCHIVE_TYPE.ZIP == archiveType)
-				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit, container, context);
-			else if(ARCHIVE_TYPE.TAR == archiveType)
-				handleTARArchive(ctx, key, is, element, callback, gotElement, throwAtExit, container, context);
-		else
+			if(ARCHIVE_TYPE.ZIP == archiveType) {
+				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit, context);
+			} else if(ARCHIVE_TYPE.TAR == archiveType) {
+				 // COMPRESS-449 workaround, see https://freenet.mantishub.io/view.php?id=6921
+				handleTARArchive(ctx, key, new SkipShieldingInputStream(is), element, callback, gotElement, throwAtExit, context);
+			} else {
 				throw new ArchiveFailureException("Unknown or unsupported archive algorithm " + archiveType);
+			}
 			if(wrapper != null) {
 				Exception e = wrapper.get();
 				if(e != null) throw new ArchiveFailureException("An exception occured decompressing: "+e.getMessage(), e);
@@ -370,7 +367,7 @@ public class ArchiveManager {
 	}
 	}
 
-	private void handleTARArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
+	private void handleTARArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
 		if(logMINOR) Logger.minor(this, "Handling a TAR Archive");
 		TarArchiveInputStream tarIS = null;
 		try {
@@ -426,12 +423,12 @@ outerTAR:		while(true) {
 						if(out != null) out.close();
 					}
 					if(size <= maxArchivedFileSize) {
-						addStoreElement(ctx, key, name, output, gotElement, element, callback, container, context);
+						addStoreElement(ctx, key, name, output, gotElement, element, callback, context);
 						names.add(name);
 						trimStoredData();
 					} else {
 						// We are here because they asked for this file.
-						callback.gotBucket(output, container, context);
+						callback.gotBucket(output, context);
 						gotElement.value = true;
 						addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
 					}
@@ -440,13 +437,13 @@ outerTAR:		while(true) {
 
 			// If no metadata, generate some
 			if(!gotMetadata) {
-				generateMetadata(ctx, key, names, gotElement, element, callback, container, context);
+				generateMetadata(ctx, key, names, gotElement, element, callback, context);
 				trimStoredData();
 			}
 			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
 
 			if((!gotElement.value) && element != null)
-				callback.notInArchive(container, context);
+				callback.notInArchive(context);
 
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
@@ -455,7 +452,7 @@ outerTAR:		while(true) {
 		}
 	}
 
-	private void handleZIPArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
+	private void handleZIPArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
 		if(logMINOR) Logger.minor(this, "Handling a ZIP Archive");
 		ZipInputStream zis = null;
 		try {
@@ -506,12 +503,12 @@ outerZIP:		while(true) {
 						if(out != null) out.close();
 					}
 					if(size <= maxArchivedFileSize) {
-						addStoreElement(ctx, key, name, output, gotElement, element, callback, container, context);
+						addStoreElement(ctx, key, name, output, gotElement, element, callback, context);
 						names.add(name);
 						trimStoredData();
 					} else {
 						// We are here because they asked for this file.
-						callback.gotBucket(output, container, context);
+						callback.gotBucket(output, context);
 						gotElement.value = true;
 						addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
 					}
@@ -520,13 +517,13 @@ outerZIP:		while(true) {
 
 			// If no metadata, generate some
 			if(!gotMetadata) {
-				generateMetadata(ctx, key, names, gotElement, element, callback, container, context);
+				generateMetadata(ctx, key, names, gotElement, element, callback, context);
 				trimStoredData();
 			}
 			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
 
 			if((!gotElement.value) && element != null)
-				callback.notInArchive(container, context);
+				callback.notInArchive(context);
 
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
@@ -557,7 +554,7 @@ outerZIP:		while(true) {
 	 * @param callbackName If we generate a
 	 * @throws ArchiveFailureException
 	 */
-	private ArchiveStoreItem generateMetadata(ArchiveStoreContext ctx, FreenetURI key, Set<String> names, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException {
+	private ArchiveStoreItem generateMetadata(ArchiveStoreContext ctx, FreenetURI key, Set<String> names, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ClientContext context) throws ArchiveFailureException {
 		/* What we have to do is to:
 		 * - Construct a filesystem tree of the names.
 		 * - Turn each level of the tree into a Metadata object, including those below it, with
@@ -576,11 +573,11 @@ outerZIP:		while(true) {
 		Bucket bucket = null;
 		while(true) {
 			try {
-				bucket = BucketTools.makeImmutableBucket(tempBucketFactory, metadata.writeToByteArray());
-				return addStoreElement(ctx, key, ".metadata", bucket, gotElement, element2, callback, container, context);
+				bucket = metadata.toBucket(tempBucketFactory);
+				return addStoreElement(ctx, key, ".metadata", bucket, gotElement, element2, callback, context);
 			} catch (MetadataUnresolvedException e) {
 				try {
-					x = resolve(e, x, bucket, ctx, key, gotElement, element2, callback, container, context);
+					x = resolve(e, x, tempBucketFactory, ctx, key, gotElement, element2, callback, context);
 				} catch (IOException e1) {
 					throw new ArchiveFailureException("Failed to create metadata: "+e1, e1);
 				}
@@ -591,22 +588,14 @@ outerZIP:		while(true) {
 		}
 	}
 
-	private int resolve(MetadataUnresolvedException e, int x, Bucket bucket, ArchiveStoreContext ctx, FreenetURI key, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws IOException, ArchiveFailureException {
+	private int resolve(MetadataUnresolvedException e, int x, BucketFactory bf, ArchiveStoreContext ctx, FreenetURI key, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ClientContext context) throws IOException, ArchiveFailureException {
 		for(Metadata m: e.mustResolve) {
-			byte[] buf;
 			try {
-				buf = m.writeToByteArray();
+			    addStoreElement(ctx, key, ".metadata-"+(x++), m.toBucket(bf), gotElement, element2, callback, context);
 			} catch (MetadataUnresolvedException e1) {
-				x = resolve(e, x, bucket, ctx, key, gotElement, element2, callback, container, context);
+				x = resolve(e, x, bf, ctx, key, gotElement, element2, callback, context);
 				continue;
 			}
-			OutputStream os = bucket.getOutputStream();
-			try {
-			os.write(buf);
-			} finally {
-			os.close();
-			}
-			addStoreElement(ctx, key, ".metadata-"+(x++), bucket, gotElement, element2, callback, container, context);
 		}
 		return x;
 	}
@@ -647,6 +636,7 @@ outerZIP:		while(true) {
 	 */
 	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error, boolean tooBig) {
 		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error, tooBig);
+		element.addToContext();
 		if(logMINOR) Logger.minor(this, "Adding error element: "+element+" for "+key+ ' ' +name);
 		ArchiveStoreItem oldItem;
 		synchronized (this) {
@@ -671,8 +661,9 @@ outerZIP:		while(true) {
 	 * @throws ArchiveFailureException If a failure occurred resulting in the data not being readable. Only happens if
 	 * callback != null.
 	 */
-	private ArchiveStoreItem addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, Bucket temp, MutableBoolean gotElement, String callbackName, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException {
+	private ArchiveStoreItem addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, Bucket temp, MutableBoolean gotElement, String callbackName, ArchiveExtractCallback callback, ClientContext context) throws ArchiveFailureException {
 		RealArchiveStoreItem element = new RealArchiveStoreItem(ctx, key, name, temp);
+		element.addToContext();
 		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" size "+element.spaceUsed()+" )");
 		ArchiveStoreItem oldItem;
 		// Let it throw, if it does something is drastically wrong
@@ -691,7 +682,7 @@ outerZIP:		while(true) {
 			}
 		}
 		if(matchBucket != null) {
-			callback.gotBucket(matchBucket, container, context);
+			callback.gotBucket(matchBucket, context);
 			gotElement.value = true;
 		}
 		return element;
@@ -723,28 +714,4 @@ outerZIP:		while(true) {
 		}
 	}
 
-	public static void init(ObjectContainer container, ClientContext context, final long nodeDBHandle) {
-		ArchiveHandlerImpl.init(container, context, nodeDBHandle);
-	}
-
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing ArchiveManager in database", new Exception("error"));
-		return false;
-	}
-	
-	public boolean objectCanUpdate(ObjectContainer container) {
-		Logger.error(this, "Trying to store an ArchiveManager!", new Exception("error"));
-		return false;
-	}
-	
-	public boolean objectCanActivate(ObjectContainer container) {
-		Logger.error(this, "Trying to store an ArchiveManager!", new Exception("error"));
-		return false;
-	}
-	
-	public boolean objectCanDeactivate(ObjectContainer container) {
-		Logger.error(this, "Trying to store an ArchiveManager!", new Exception("error"));
-		return false;
-	}
-	
 }

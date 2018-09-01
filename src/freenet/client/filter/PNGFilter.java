@@ -209,24 +209,7 @@ public class PNGFilter implements ContentDataFilter {
 						throwError("Width or Height is invalid", "Width or Height is invalid (<1)");
 					int bitDepth = chunkData[8];
 					int colourType = chunkData[9];
-					switch (bitDepth) {
-					case 1:
-					case 2:
-					case 4:
-						if(colourType != 0 && colourType != 3)
-							throwError("Invalid colourType/bitDepth combination!",
-									"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
-						break;
-					case 16:
-						if(colourType == 3)
-							throwError("Invalid colourType/bitDepth combination!",
-									"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
-					case 8:
-						if(colourType == 0 || colourType ==2 || colourType ==3 || colourType ==4|| colourType ==6)
-							break;
-					default: throwError("Invalid colourType/bitDepth combination!",
-							"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
-					}
+					throwOnInvalidColour(bitDepth, colourType);
 					int compressionMethod = chunkData[10];
 					if(compressionMethod != 0)
 						throwError("Invalid CompressionMethod", "Invalid CompressionMethod! "+compressionMethod);
@@ -321,23 +304,38 @@ public class PNGFilter implements ContentDataFilter {
 		}
 	}
 
-	private String l10n(String key) {
-		return NodeL10n.getBase().getString("PNGFilter." + key);
+	@SuppressWarnings("fallthrough")
+	private void throwOnInvalidColour(int bitDepth, int colourType) throws DataFilterException {
+		switch (bitDepth) {
+			case 1:
+			case 2:
+			case 4:
+				if(colourType != 0 && colourType != 3)
+					throwError("Invalid colourType/bitDepth combination!",
+							"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
+				break;
+			case 16:
+				if(colourType == 3)
+					throwError("Invalid colourType/bitDepth combination!",
+							"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
+			case 8:
+				if(colourType == 0 || colourType ==2 || colourType ==3 || colourType ==4|| colourType ==6)
+					break;
+			default: throwError("Invalid colourType/bitDepth combination!",
+					"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
+		}
 	}
 
-	@Override
-	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
-		// TODO Auto-generated method stub
-		return;
+	private String l10n(String key) {
+		return NodeL10n.getBase().getString("PNGFilter." + key);
 	}
 
 	public static void main(String arg[]) throws Throwable {
 		final File fin = new File("/tmp/test.png");
 		final File fout = new File("/tmp/test2.png");
 		fout.delete();
-		final Bucket inputBucket = new FileBucket(fin, true, false, false, false, false);
-		final Bucket outputBucket = new FileBucket(fout, false, true, false, false, false);
+		final Bucket inputBucket = new FileBucket(fin, true, false, false, false);
+		final Bucket outputBucket = new FileBucket(fout, false, true, false, false);
 		InputStream inputStream = null;
 		OutputStream outputStream = null;
 		try {
