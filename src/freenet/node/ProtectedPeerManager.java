@@ -9,7 +9,7 @@ import freenet.io.comm.ByteCounter;
  */
 interface ProtectedPeerManager extends PeerManager {
 
-    long timeFirstAnyConnections = 0;
+    long getTimeFirstAnyConnections();
 
     void tryReadPeers(String filename, NodeCrypto crypto, OpennetManager opennet, boolean isOpennet, boolean oldOpennetPeers);
 

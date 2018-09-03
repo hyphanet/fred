@@ -1384,7 +1384,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		double totalCouldSend = Math.max(totalSent,
 				(((node.getOutputBandwidthLimit() * uptime))/1000.0));
 		double nonOverheadFraction = (totalCouldSend - totalOverhead) / totalCouldSend;
-		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
+		long timeFirstAnyConnections = peers.getTimeFirstAnyConnections();
 		if(timeFirstAnyConnections > 0) {
 			long time = now - timeFirstAnyConnections;
 			if(time < DEFAULT_ONLY_PERIOD) {
