@@ -71,7 +71,7 @@ public class OpennetManager {
 
 	final Node node;
 	final ProtectedPeerManager peerManager;
-	final NodeCrypto crypto;
+	final ProtectedNodeCrypto crypto;
 	final Announcer announcer;
 	final SeedAnnounceTracker seedTracker = new SeedAnnounceTracker();
 
@@ -251,7 +251,7 @@ public class OpennetManager {
 		this.node = node;
 		this.peerManager = (ProtectedPeerManager) node.getPeerManager();
 		crypto =
-			new NodeCrypto(node, true, opennetConfig, startupTime, node.enableARKs);
+			newNodeCrypto(node, true, opennetConfig, startupTime, node.enableARKs);
 
 		timeLastDropped = new EnumMap<ConnectionType,Long>(ConnectionType.class);
 		connectionAttempts = new EnumMap<ConnectionType,Long>(ConnectionType.class);
@@ -270,8 +270,8 @@ public class OpennetManager {
 			successCount.put(c, 0L);
 		}
 
-		File nodeFile = node.nodeDir().file("opennet-"+crypto.portNumber);
-		File backupNodeFile = node.nodeDir().file("opennet-"+crypto.portNumber+".bak");
+		File nodeFile = node.nodeDir().file("opennet-"+crypto.getPortNumber());
+		File backupNodeFile = node.nodeDir().file("opennet-"+crypto.getPortNumber()+".bak");
 
 		// Keep opennet crypto details in a separate file
 		try {
@@ -291,8 +291,8 @@ public class OpennetManager {
 	}
 
 	public void writeFile() {
-		File nodeFile = node.nodeDir().file("opennet-"+crypto.portNumber);
-		File backupNodeFile = node.nodeDir().file("opennet-"+crypto.portNumber+".bak");
+		File nodeFile = node.nodeDir().file("opennet-"+crypto.getPortNumber());
+		File backupNodeFile = node.nodeDir().file("opennet-"+crypto.getPortNumber()+".bak");
 		writeFile(nodeFile, backupNodeFile);
 	}
 
@@ -341,7 +341,7 @@ public class OpennetManager {
 				} catch (PeerParseException e) {
 					throw (IOException)new IOException().initCause(e);
 				}
-				if(p.getPort() == crypto.portNumber) {
+				if(p.getPort() == crypto.getPortNumber()) {
 					// DNSRequester doesn't deal with our own node
 					node.ipDetector.setOldIPAddress(p.getFreenetAddress());
 					break;
@@ -357,7 +357,7 @@ public class OpennetManager {
 			stopping = false;
 		}
 		// Do this outside the constructor, since the constructor is called by the Node constructor, and callbacks may make assumptions about data structures being ready.
-		peerManager.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
+		peerManager.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.getPortNumber()).toString(), crypto, this, true, false);
 		OpennetPeerNode[] nodes = node.getPeerManager().getOpennetPeers();
 		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
 			@Override
@@ -400,7 +400,7 @@ public class OpennetManager {
 		dropAllExcessPeers();
 		writeFile();
 		// Read old peers
-		peerManager.tryReadPeers(node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString(), crypto, this, true, true);
+		peerManager.tryReadPeers(node.nodeDir().file("openpeers-old-"+crypto.getPortNumber()).toString(), crypto, this, true, true);
 		crypto.start();
 		if(announcer!= null)
 			announcer.start();
@@ -418,7 +418,7 @@ public class OpennetManager {
 		crypto.stop();
 		if(purge)
 			node.getPeerManager().removeOpennetPeers();
-		crypto.socket.getAddressTracker().setPresumedInnocent();
+		crypto.getSocket().getAddressTracker().setPresumedInnocent();
 	}
 	
 	synchronized boolean stopping() {
@@ -454,7 +454,7 @@ public class OpennetManager {
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType, boolean allowExisting) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		try {
 		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, false);
-		if(Arrays.equals(pn.peerECDSAPubKeyHash, crypto.ecdsaPubKeyHash)) {
+		if(Arrays.equals(pn.peerECDSAPubKeyHash, crypto.getEcdsaPubKeyHash())) {
 			if(logMINOR) Logger.minor(this, "Not adding self as opennet peer");
 			return null; // Equal to myself
 		}
@@ -556,7 +556,7 @@ public class OpennetManager {
 				return false;
 			}
 		}
-		if(nodeToAddNow != null && crypto.config.oneConnectionPerAddress()) {
+		if(nodeToAddNow != null && crypto.getConfig().oneConnectionPerAddress()) {
 			boolean okay = false;
 			boolean any = false;
 			Peer[] handshakeIPs = nodeToAddNow.getHandshakeIPs();
@@ -958,7 +958,7 @@ public class OpennetManager {
 	}
 
 	final String getOldPeersFilename() {
-		return node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString();
+		return node.nodeDir().file("openpeers-old-"+crypto.getPortNumber()).toString();
 	}
 
 	synchronized int countOldOpennetPeers() {
@@ -1408,5 +1408,9 @@ public class OpennetManager {
             dropAllExcessPeers();
         }
     }
+
+    protected ProtectedNodeCrypto newNodeCrypto(final Node node, final boolean isOpennet, NodeCryptoConfig config, long startupTime, boolean enableARKs) throws NodeInitException {
+    	return (ProtectedNodeCrypto) new NodeCryptoImpl(node, isOpennet, config, startupTime, enableARKs);
+	}
 
 }

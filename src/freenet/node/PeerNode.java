@@ -379,7 +379,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private Set<PeerStatusChangeListener> listeners=Collections.synchronizedSet(new WeakHashSet<PeerStatusChangeListener>());
 
 	// NodeCrypto for the relevant node reference for this peer's type (Darknet or Opennet at this time))
-	protected final NodeCrypto crypto;
+	protected final ProtectedNodeCrypto crypto;
 
 	/**
 	 * Some alchemy we use in PeerNode.shouldBeExcludedFromPeerList()
@@ -425,16 +425,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* should not contain metadata, and will be signed. 
 	* @throws PeerTooOldException If the peer is so old that it can no longer be parsed, e.g. 
 	* because it hasn't been connected since the last major crypto change. */
-	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal) 
+	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal)
 	                throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator()) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
 		this.checkStatusAfterBackoff = new PeerNodeBackoffStatusChecker(myRef);
-		this.outgoingMangler = crypto.packetMangler;
+		this.outgoingMangler = ((ProtectedNodeCrypto) crypto).getPacketMangler();
 		this.node = node2;
-		this.crypto = crypto;
-		assert(crypto.isOpennet == isOpennetForNoderef());
+		this.crypto = (ProtectedNodeCrypto) crypto;
+		assert(this.crypto.isOpennet() == isOpennetForNoderef());
 		this.peers = (ProtectedPeerManager) node.getPeerManager();
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
@@ -531,8 +531,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		hashCode = Fields.hashCode(peerECDSAPubKeyHash);
 
 		// Setup incoming and outgoing setup ciphers
-		byte[] nodeKey = crypto.identityHash;
-		byte[] nodeKeyHash = crypto.identityHashHash;
+		byte[] nodeKey = this.crypto.getIdentityHash();
+		byte[] nodeKeyHash = this.crypto.getIdentityHashHash();
 
 		int digestLength = SHA256.getDigestLength();
 		incomingSetupKey = new byte[digestLength];
@@ -542,7 +542,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		for(int i = 0; i < outgoingSetupKey.length; i++)
 			outgoingSetupKey[i] = (byte) (nodeKeyHash[i] ^ identityHash[i]);
 		if(logMINOR)
-			Logger.minor(this, "Keys:\nIdentity:  " + HexUtil.bytesToHex(crypto.myIdentity) +
+			Logger.minor(this, "Keys:\nIdentity:  " + HexUtil.bytesToHex(this.crypto.getMyIdentity()) +
 				"\nThisIdent: " + HexUtil.bytesToHex(identity) +
 				"\nNode:      " + HexUtil.bytesToHex(nodeKey) +
 				"\nNode hash: " + HexUtil.bytesToHex(nodeKeyHash) +
@@ -3802,7 +3802,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * @throws PeerTooOldException 
 	 */
 	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
-		if(crypto.isOpennet)
+		if(((ProtectedNodeCrypto) crypto).isOpennet())
 			return new OpennetPeerNode(fs, node2, crypto, opennet, true);
 		else
 			return new DarknetPeerNode(fs, node2, crypto, true, null, null);
@@ -5392,22 +5392,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	
 	@Override
 	public void handleMessage(Message m) {
-		node.usm.checkFilters(m, crypto.socket);
+		node.usm.checkFilters(m, crypto.getSocket());
 	}
 
 	@Override
 	public void sendEncryptedPacket(byte[] data) throws LocalAddressException {
-		crypto.socket.sendPacket(data, getPeer(), allowLocalAddresses());
+		crypto.getSocket().sendPacket(data, getPeer(), allowLocalAddresses());
 	}
 	
 	@Override
 	public int getMaxPacketSize() {
-		return crypto.socket.getMaxPacketSize();
+		return crypto.getSocket().getMaxPacketSize();
 	}
 	
 	@Override
 	public boolean shouldPadDataPackets() {
-		return crypto.config.paddDataPackets();
+		return crypto.getConfig().paddDataPackets();
 	}
 	
 	@Override

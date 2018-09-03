@@ -635,7 +635,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	// Darknet stuff
 
-	NodeCrypto darknetCrypto;
+	ProtectedNodeCrypto darknetCrypto;
 	// Back compat
 	private boolean showFriendsVisibilityAlert;
 
@@ -835,7 +835,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		darknetCrypto.readCrypto(fs);
 
-		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
+		swapIdentifier = Fields.bytesToLong(darknetCrypto.getIdentityHashHash());
 		String loc = fs.get("location");
 		double locD = Location.getLocation(loc);
 		if (locD == -1.0)
@@ -919,7 +919,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Don't need to set getDarknetPortNumber()
 		// FIXME use a real IP!
 		darknetCrypto.initCrypto();
-		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
+		swapIdentifier = Fields.bytesToLong(darknetCrypto.getIdentityHashHash());
 		myName = newName();
 	}
 
@@ -1486,7 +1486,7 @@ public class Node implements TimeSkewDetectorCallback {
 		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++, false, securityLevels);
 		sortOrder += NodeCryptoConfig.OPTION_COUNT;
 
-		darknetCrypto = new NodeCrypto(this, false, darknetConfig, startupTime, enableARKs);
+		darknetCrypto = newNodeCrypto(this, false, darknetConfig, startupTime, enableARKs);
 
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
@@ -1655,7 +1655,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 
-		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.identityHash);
+		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.getIdentityHash());
 
 		// ULPRs
 
@@ -1824,7 +1824,7 @@ public class Node implements TimeSkewDetectorCallback {
 		acceptSeedConnections = opennetConfig.getBoolean("acceptSeedConnections");
 
 		if(acceptSeedConnections && opennet != null)
-			opennet.crypto.socket.getAddressTracker().setHugeTracker();
+			opennet.crypto.getSocket().getAddressTracker().setHugeTracker();
 
 		opennetConfig.finishedInitialization();
 
@@ -4185,7 +4185,7 @@ public class Node implements TimeSkewDetectorCallback {
 		peers.addPeer(node,false,false);
 	}
 	public void connect(Node node, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
-		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler, trust, visibility);
+		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.getPacketMangler(), trust, visibility);
 	}
 
 	public short maxHTL() {
@@ -4193,7 +4193,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public int getDarknetPortNumber() {
-		return darknetCrypto.portNumber;
+		return darknetCrypto.getPortNumber();
 	}
 
 	public synchronized int getOutputBandwidthLimit() {
@@ -4257,11 +4257,11 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public byte[] getOpennetPubKeyHash() {
-		return opennet.crypto.ecdsaPubKeyHash;
+		return opennet.crypto.getEcdsaPubKeyHash();
 	}
 
 	public byte[] getDarknetPubKeyHash() {
-		return darknetCrypto.ecdsaPubKeyHash;
+		return darknetCrypto.getEcdsaPubKeyHash();
 	}
 
 	public synchronized boolean isOpennetEnabled() {
@@ -4299,7 +4299,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public int getOpennetFNPPort() {
 		if(opennet == null) return -1;
-		return opennet.crypto.portNumber;
+		return opennet.crypto.getPortNumber();
 	}
 
 	public OpennetManager getOpennet() {
@@ -4318,11 +4318,11 @@ public class Node implements TimeSkewDetectorCallback {
 	public Set<ForwardPort> getPublicInterfacePorts() {
 		HashSet<ForwardPort> set = new HashSet<ForwardPort>();
 		// FIXME IPv6 support
-		set.add(new ForwardPort("darknet", false, ForwardPort.PROTOCOL_UDP_IPV4, darknetCrypto.portNumber));
+		set.add(new ForwardPort("darknet", false, ForwardPort.PROTOCOL_UDP_IPV4, darknetCrypto.getPortNumber()));
 		if(opennet != null) {
-			NodeCrypto crypto = opennet.crypto;
+			ProtectedNodeCrypto crypto = opennet.crypto;
 			if(crypto != null) {
-				set.add(new ForwardPort("opennet", false, ForwardPort.PROTOCOL_UDP_IPV4, crypto.portNumber));
+				set.add(new ForwardPort("opennet", false, ForwardPort.PROTOCOL_UDP_IPV4, crypto.getPortNumber()));
 			}
 		}
 		return set;
@@ -4340,10 +4340,10 @@ public class Node implements TimeSkewDetectorCallback {
 	public synchronized UdpSocketHandler[] getPacketSocketHandlers() {
 		// FIXME better way to get these!
 		if(opennet != null) {
-			return new UdpSocketHandler[] { darknetCrypto.socket, opennet.crypto.socket };
+			return new UdpSocketHandler[] { darknetCrypto.getSocket(), opennet.crypto.getSocket() };
 			// TODO Auto-generated method stub
 		} else {
-			return new UdpSocketHandler[] { darknetCrypto.socket };
+			return new UdpSocketHandler[] { darknetCrypto.getSocket() };
 		}
 	}
 
@@ -4437,7 +4437,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return routeAccordingToOurPeersLocation && htl > 1;
 	}
 
-	/** Can be called to decrypt client.dat* etc, or can be called when switching from another 
+	/** Can be called to decrypt client.dat* etc, or can be called when switching from another
 	 * security level to HIGH. */
 	public void setMasterPassword(String password, boolean inFirstTimeWizard) throws AlreadySetPasswordException, MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 		MasterKeys k;
@@ -4556,7 +4556,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean wantEncryptedDatabase() {
 	    return this.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW;
 	}
-	
+
 	public boolean wantNoPersistentDatabase() {
 	    return this.securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM;
 	}
@@ -4646,9 +4646,9 @@ public class Node implements TimeSkewDetectorCallback {
 		}, 0);
 		registerFriendsVisibilityAlert();
 	}
-	
+
 	private UserAlert visibilityAlert = new SimpleUserAlert(true, l10n("pleaseSetPeersVisibilityAlertTitle"), l10n("pleaseSetPeersVisibilityAlert"), l10n("pleaseSetPeersVisibilityAlert"), UserAlert.ERROR) {
-		
+
 		@Override
 		public void onDismiss() {
 			synchronized(Node.this) {
@@ -4657,9 +4657,9 @@ public class Node implements TimeSkewDetectorCallback {
 			config.store();
 			unregisterFriendsVisibilityAlert();
 		}
-		
+
 	};
-	
+
 	private void registerFriendsVisibilityAlert() {
 		if(clientCore == null || clientCore.alerts == null) {
 			// Wait until startup completed.
@@ -4669,13 +4669,13 @@ public class Node implements TimeSkewDetectorCallback {
 				public void run() {
 					registerFriendsVisibilityAlert();
 				}
-				
+
 			}, 0);
 			return;
 		}
 		clientCore.alerts.register(visibilityAlert);
 	}
-	
+
 	private void unregisterFriendsVisibilityAlert() {
 		clientCore.alerts.unregister(visibilityAlert);
 	}
@@ -4694,10 +4694,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 
 	public void updateMTU() {
-		this.darknetCrypto.socket.calculateMaxPacketSize();
+		this.darknetCrypto.getSocket().calculateMaxPacketSize();
 		OpennetManager om = opennet;
 		if(om != null) {
-			om.crypto.socket.calculateMaxPacketSize();
+			om.crypto.getSocket().calculateMaxPacketSize();
 		}
 	}
 
@@ -4786,4 +4786,11 @@ public class Node implements TimeSkewDetectorCallback {
 		return peers;
 	}
 
+	private ProtectedNodeCrypto newNodeCrypto(final Node node, final boolean isOpennet, NodeCryptoConfig config, long startupTime, boolean enableARKs) throws NodeInitException {
+	    return (ProtectedNodeCrypto) new NodeCryptoImpl(node, isOpennet, config, startupTime, enableARKs);
+    }
+
+    public NodeCrypto getDarknetCrypto() {
+	    return darknetCrypto;
+    }
 }

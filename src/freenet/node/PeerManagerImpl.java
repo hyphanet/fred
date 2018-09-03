@@ -167,7 +167,12 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 		});
 	}
 
-	/**
+    @Override
+    public long getTimeFirstAnyConnections() {
+        return timeFirstAnyConnections;
+    }
+
+    /**
 	 * Attempt to read a file full of noderefs. Try the file as named first, then the .bak if it is empty or
 	 * otherwise doesn't work. WARNING: Only call this AFTER the Node constructor has completed! Methods may 
 	 * be called on Node!
@@ -191,7 +196,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 			File peersFile = this.getBackupFilename(filename, i);
 			// Try to read the node list from disk
 			if(peersFile.exists())
-				if(readPeers(peersFile, crypto, opennet, oldOpennetPeers)) {
+				if(readPeers(peersFile, (ProtectedNodeCrypto) crypto, opennet, oldOpennetPeers)) {
 					String msg;
 					if(oldOpennetPeers)
 						msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
@@ -209,7 +214,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 		// The other cases are less important.
 	}
 
-	private boolean readPeers(File peersFile, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
+	private boolean readPeers(File peersFile, ProtectedNodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
 		boolean someBroken = false;
 		boolean gotSome = false;
 		FileInputStream fis;
@@ -265,7 +270,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 					continue;
 					// FIXME tell the user???
 				} catch (PeerTooOldException e) {
-				    if(crypto.isOpennet) {
+				    if(crypto.isOpennet()) {
 				        // Ignore.
 				        Logger.error(this, "Dropping too-old opennet peer");
 				    } else {
@@ -1602,14 +1607,14 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 		if(om != null) {
 			opennetEnabled = true;
 			opennetDefinitelyPortForwarded = om.crypto.definitelyPortForwarded();
-			opennetAssumeNAT = om.crypto.config.alwaysHandshakeAggressively();
+			opennetAssumeNAT = om.crypto.getConfig().alwaysHandshakeAggressively();
 		} else {
 			opennetEnabled = false;
 			opennetDefinitelyPortForwarded = false;
 			opennetAssumeNAT = false;
 		}
 		boolean darknetDefinitelyPortForwarded = node.darknetDefinitelyPortForwarded();
-		boolean darknetAssumeNAT = node.darknetCrypto.config.alwaysHandshakeAggressively();
+		boolean darknetAssumeNAT = ((ProtectedNodeCrypto) node.getDarknetCrypto()).getConfig().alwaysHandshakeAggressively();
 		synchronized(ua) {
 			ua.opennetDefinitelyPortForwarded = opennetDefinitelyPortForwarded;
 			ua.darknetDefinitelyPortForwarded = darknetDefinitelyPortForwarded;

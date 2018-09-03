@@ -198,7 +198,7 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	protected void onConnect() {
 		super.onConnect();
-		opennet.crypto.socket.getAddressTracker().setPresumedGuiltyAt(System.currentTimeMillis() + HOURS.toMillis(1));
+		opennet.crypto.getSocket().getAddressTracker().setPresumedGuiltyAt(System.currentTimeMillis() + HOURS.toMillis(1));
 	}
 	
 	private boolean wasDropped;

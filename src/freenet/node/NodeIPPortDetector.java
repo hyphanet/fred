@@ -28,7 +28,7 @@ public class NodeIPPortDetector {
 	/** The NodeIPDetector which determines the node's IP address but not its port number */
 	final NodeIPDetector ipDetector;
 	/** The NodeCrypto with the node's port number and list of peers */
-	final NodeCrypto crypto;
+	final ProtectedNodeCrypto crypto;
 	/** ARK inserter. */
 	private final NodeARKInserter arkPutter;
 	/** Last detected IP address */
@@ -44,7 +44,7 @@ public class NodeIPPortDetector {
 		});
 	}
 	
-	NodeIPPortDetector(Node node, NodeIPDetector ipDetector, NodeCrypto crypto, boolean enableARKs) {
+	NodeIPPortDetector(Node node, NodeIPDetector ipDetector, ProtectedNodeCrypto crypto, boolean enableARKs) {
 		this.node = node;
 		this.ipDetector = ipDetector;
 		this.crypto = crypto;
@@ -63,7 +63,7 @@ public class NodeIPPortDetector {
 			// he is on a multi-homed box where only one IP can be used for Freenet.
 			return new FreenetInetAddress[] { addr };
 		}
-		return ipDetector.detectPrimaryIPAddress(!crypto.config.includeLocalAddressesInNoderefs);
+		return ipDetector.detectPrimaryIPAddress(!crypto.getConfig().includeLocalAddressesInNoderefs);
 	}
 
 	/**
@@ -77,7 +77,7 @@ public class NodeIPPortDetector {
 		ArrayList<Peer> addresses = new ArrayList<Peer>();
 		FreenetInetAddress[] addrs = detectPrimaryIPAddress();
 		for(FreenetInetAddress addr: addrs) {
-			addresses.add(new Peer(addr, crypto.portNumber));
+			addresses.add(new Peer(addr, crypto.getPortNumber()));
 			if(logMINOR)
 				Logger.minor(this, "Adding "+addr);
 		}
@@ -143,7 +143,7 @@ public class NodeIPPortDetector {
 								
 								ipDetector.setMaybeSymmetric();
 								
-								Peer p = new Peer(best.getFreenetAddress(), crypto.portNumber);
+								Peer p = new Peer(best.getFreenetAddress(), crypto.getPortNumber());
 								if(!addresses.contains(p))
 									addresses.add(p);
 
@@ -155,7 +155,7 @@ public class NodeIPPortDetector {
 		}
 		lastPeers = addresses.toArray(new Peer[addresses.size()]);
 		if(logMINOR)
-			Logger.minor(this, "Returning for port "+crypto.portNumber+" : "+Arrays.toString(lastPeers));
+			Logger.minor(this, "Returning for port "+crypto.getPortNumber()+" : "+Arrays.toString(lastPeers));
 		return lastPeers;
 	}
 	

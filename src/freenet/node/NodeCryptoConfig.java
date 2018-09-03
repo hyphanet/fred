@@ -34,7 +34,7 @@ public class NodeCryptoConfig {
 	private int dropProbability;
 	
 	/** The NodeCrypto, if there is one */
-	private NodeCrypto crypto;
+	private ProtectedNodeCrypto crypto;
 	
 	/** Whether we should prevent multiple connections to the same IP (taking into account other
 	 * NodeCrypto's - this will usually be set for opennet but not for darknet). */
@@ -63,7 +63,7 @@ public class NodeCryptoConfig {
 			public Integer get() {
 				synchronized(NodeCryptoConfig.class) {
 					if(crypto != null)
-						portNumber = crypto.portNumber;
+						portNumber = crypto.getPortNumber();
 					return portNumber;
 				}
 			}
@@ -257,7 +257,7 @@ public class NodeCryptoConfig {
 	/** The number of config options i.e. the amount to increment sortOrder by */
 	public static final int OPTION_COUNT = 3;
 	
-	synchronized void starting(NodeCrypto crypto2) {
+	synchronized void starting(ProtectedNodeCrypto crypto2) {
 		if(crypto != null) throw new IllegalStateException("Replacing existing NodeCrypto "+crypto+" with "+crypto2);
 		crypto = crypto2;
 	}
