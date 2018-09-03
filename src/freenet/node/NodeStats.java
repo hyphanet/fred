@@ -1993,16 +1993,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				numberOfSeedClients++;
 		}
 
-		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_CONNECTED);
-		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
-		int numberOfTooNew = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_TOO_NEW);
-		int numberOfTooOld = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_TOO_OLD);
-		int numberOfDisconnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_DISCONNECTED);
-		int numberOfNeverConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_NEVER_CONNECTED);
-		int numberOfDisabled = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_DISABLED);
-		int numberOfBursting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_BURSTING);
-		int numberOfListening = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_LISTENING);
-		int numberOfListenOnly = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_LISTEN_ONLY);
+		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONNECTED);
+		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+		int numberOfTooNew = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_TOO_NEW);
+		int numberOfTooOld = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_TOO_OLD);
+		int numberOfDisconnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTED);
+		int numberOfNeverConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED);
+		int numberOfDisabled = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISABLED);
+		int numberOfBursting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_BURSTING);
+		int numberOfListening = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTENING);
+		int numberOfListenOnly = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTEN_ONLY);
 
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly;

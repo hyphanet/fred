@@ -368,7 +368,7 @@ public class Announcer {
 				// is enabled.
 				if(killedAnnouncementTooOld) return true;
 			}
-			if(node.getPeerManager().getPeerNodeStatusSize(PeerManagerImpl.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
+			if(node.getPeerManager().getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
 				synchronized(this) {
 					if(killedAnnouncementTooOld) return true;
 					killedAnnouncementTooOld = true;
@@ -405,7 +405,7 @@ public class Announcer {
 				node.clientCore.alerts.unregister(announcementDisabledAlert);
 			if(node.nodeUpdater.isEnabled() && node.nodeUpdater.isArmed() &&
 					node.nodeUpdater.uom.fetchingFromTwo() &&
-					node.getPeerManager().getPeerNodeStatusSize(PeerManagerImpl.PEER_NODE_STATUS_TOO_NEW, false) > 5) {
+					node.getPeerManager().getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 5) {
 				// No point announcing at the moment, but we might need to if a transfer falls through.
 				return true;
 			}

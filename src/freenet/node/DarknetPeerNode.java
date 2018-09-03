@@ -302,23 +302,23 @@ public class DarknetPeerNode extends PeerNode {
 	@Override
 	protected synchronized int getPeerNodeStatus(long now, long backedOffUntilRT, long backedOffUntilBulk, boolean overPingThreshold, boolean noLoadStats) {
 		if(isDisabled) {
-			return PeerManagerImpl.PEER_NODE_STATUS_DISABLED;
+			return PeerManager.PEER_NODE_STATUS_DISABLED;
 		}
 		int status = super.getPeerNodeStatus(now, backedOffUntilRT, backedOffUntilBulk, overPingThreshold, noLoadStats);
-		if(status == PeerManagerImpl.PEER_NODE_STATUS_CONNECTED ||
-				status == PeerManagerImpl.PEER_NODE_STATUS_CLOCK_PROBLEM ||
-				status == PeerManagerImpl.PEER_NODE_STATUS_ROUTING_BACKED_OFF ||
-				status == PeerManagerImpl.PEER_NODE_STATUS_CONN_ERROR ||
-				status == PeerManagerImpl.PEER_NODE_STATUS_TOO_NEW ||
-				status == PeerManagerImpl.PEER_NODE_STATUS_TOO_OLD ||
-				status == PeerManagerImpl.PEER_NODE_STATUS_ROUTING_DISABLED ||
-				status == PeerManagerImpl.PEER_NODE_STATUS_DISCONNECTING ||
-				status == PeerManagerImpl.PEER_NODE_STATUS_NO_LOAD_STATS)
+		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED ||
+				status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM ||
+				status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF ||
+				status == PeerManager.PEER_NODE_STATUS_CONN_ERROR ||
+				status == PeerManager.PEER_NODE_STATUS_TOO_NEW ||
+				status == PeerManager.PEER_NODE_STATUS_TOO_OLD ||
+				status == PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED ||
+				status == PeerManager.PEER_NODE_STATUS_DISCONNECTING ||
+				status == PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS)
 			return status;
 		if(isListenOnly)
-			return PeerManagerImpl.PEER_NODE_STATUS_LISTEN_ONLY;
+			return PeerManager.PEER_NODE_STATUS_LISTEN_ONLY;
 		if(isBurstOnly)
-			return PeerManagerImpl.PEER_NODE_STATUS_LISTENING;
+			return PeerManager.PEER_NODE_STATUS_LISTENING;
 		return status;
 	}
 

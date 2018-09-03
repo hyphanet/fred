@@ -206,7 +206,7 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
                             try {
                                 boolean myFlag = false;
                                 double myLoc = getLocation();
-                                for(PeerNode pn: ((PeerManagerImpl) node.getPeerManager()).connectedPeers()) {
+                                for(PeerNode pn: ((ProtectedPeerManager) node.getPeerManager()).connectedPeers()) {
                                 	PeerLocation l = pn.location;
                                     if(pn.isRoutable()) {
                                     	synchronized(l) {

@@ -4734,7 +4734,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(om.announcer != null && om.announcer.isWaitingForUpdater())
 				return true;
 		}
-		if(peers.getPeerNodeStatusSize(PeerManagerImpl.PEER_NODE_STATUS_TOO_NEW, true) > PeerManagerImpl.OUTDATED_MIN_TOO_NEW_DARKNET)
+		if(peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) > PeerManager.OUTDATED_MIN_TOO_NEW_DARKNET)
 			return true;
 		return false;
 	}
