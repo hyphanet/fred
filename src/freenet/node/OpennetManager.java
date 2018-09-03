@@ -70,6 +70,7 @@ import freenet.support.transport.ip.IPUtil;
 public class OpennetManager {
 
 	final Node node;
+	final ProtectedPeerManager peerManager;
 	final NodeCrypto crypto;
 	final Announcer announcer;
 	final SeedAnnounceTracker seedTracker = new SeedAnnounceTracker();
@@ -248,6 +249,7 @@ public class OpennetManager {
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig, long startupTime, boolean enableAnnouncement) throws NodeInitException {
 		this.creationTime = System.currentTimeMillis();
 		this.node = node;
+		this.peerManager = (ProtectedPeerManager) node.getPeerManager();
 		crypto =
 			new NodeCrypto(node, true, opennetConfig, startupTime, node.enableARKs);
 
@@ -355,8 +357,8 @@ public class OpennetManager {
 			stopping = false;
 		}
 		// Do this outside the constructor, since the constructor is called by the Node constructor, and callbacks may make assumptions about data structures being ready.
-		node.peers.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
-		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
+		peerManager.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
+		OpennetPeerNode[] nodes = node.getPeerManager().getOpennetPeers();
 		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
 			@Override
 			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
@@ -388,7 +390,7 @@ public class OpennetManager {
 		    if(Location.isValid(opn.getLocation()))
 		        lruQueue(opn).push(opn);
 		    else
-		        node.peers.disconnectAndRemove(opn, false, false, false);
+		        node.getPeerManager().disconnectAndRemove(opn, false, false, false);
 		}
 		if(logMINOR) {
 			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
@@ -398,7 +400,7 @@ public class OpennetManager {
 		dropAllExcessPeers();
 		writeFile();
 		// Read old peers
-		node.peers.tryReadPeers(node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString(), crypto, this, true, true);
+		peerManager.tryReadPeers(node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString(), crypto, this, true, true);
 		crypto.start();
 		if(announcer!= null)
 			announcer.start();
@@ -415,7 +417,7 @@ public class OpennetManager {
 			announcer.stop();
 		crypto.stop();
 		if(purge)
-			node.peers.removeOpennetPeers();
+			node.getPeerManager().removeOpennetPeers();
 		crypto.socket.getAddressTracker().setPresumedInnocent();
 	}
 	
@@ -620,7 +622,7 @@ public class OpennetManager {
 			nodeToAddNow.setAddedReason(connectionType);
 		if(notMany) {
 			if(nodeToAddNow != null) {
-				node.peers.addPeer(nodeToAddNow, true, true); // Add to peers outside the OM lock
+				peerManager.addPeer(nodeToAddNow, true, true); // Add to peers outside the OM lock
 			}
 			return true;
 		}
@@ -699,7 +701,7 @@ public class OpennetManager {
 				}
 			}
 		}
-		if(nodeToAddNow != null && canAdd && !node.peers.addPeer(nodeToAddNow, true, true)) {
+		if(nodeToAddNow != null && canAdd && !peerManager.addPeer(nodeToAddNow, true, true)) {
 			if(logMINOR)
 				Logger.minor(this, "Already in global peers list: "+nodeToAddNow+" when adding opennet node");
 			// Just because it's in the global peers list doesn't mean its in the LRU, it may be an old-opennet-peers reconnection.
@@ -708,7 +710,7 @@ public class OpennetManager {
 		for(OpennetPeerNode pn : dropList) {
 			if(logMINOR) Logger.minor(this, "Dropping LRU opennet peer: "+pn);
 			pn.setAddedReason(null);
-			node.peers.disconnectAndRemove(pn, true, true, true);
+			node.getPeerManager().disconnectAndRemove(pn, true, true, true);
 		}
 		return canAdd;
 	}
@@ -721,7 +723,7 @@ public class OpennetManager {
 	    // This does not check whether they are short or long as it is irrelevant for outdated peers.
 		int maxTooOldPeers = maxOutdatedPeers();
 		int count = 0;
-		OpennetPeerNode[] peers = node.peers.getOpennetPeers();
+		OpennetPeerNode[] peers = node.getPeerManager().getOpennetPeers();
 		for(OpennetPeerNode pn : peers) {
 			if(pn.isUnroutableOlderVersion()) {
 				count++;
@@ -794,7 +796,7 @@ public class OpennetManager {
 			}
 			if(logMINOR)
 				Logger.minor(this, "Dropping "+toDrop);
-			node.peers.disconnectAndRemove(toDrop, true, true, true);
+			node.getPeerManager().disconnectAndRemove(toDrop, true, true, true);
 		}
 	}
 
@@ -918,7 +920,7 @@ public class OpennetManager {
 			}
 		}
 		if(!wantPeer(pn, false, false, false, ConnectionType.RECONNECT, distance)) // Start at top as it just succeeded
-			node.peers.disconnectAndRemove(pn, true, false, true);
+			node.getPeerManager().disconnectAndRemove(pn, true, false, true);
 	}
 
 	public void onRemove(OpennetPeerNode pn) {
@@ -994,7 +996,7 @@ public class OpennetManager {
 	
 	public int getNumberOfConnectedPeersToAim() {
 		int max = getNumberOfConnectedPeersToAimIncludingDarknet();
-		return max - node.peers.countConnectedDarknetPeers();
+		return max - node.getPeerManager().countConnectedDarknetPeers();
 	}
 
 	public void sendOpennetRef(boolean isReply, long uid, PeerNode peer, byte[] noderef, ByteCounter ctr) throws NotConnectedException {

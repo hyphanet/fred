@@ -85,7 +85,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 			SimpleFieldSet fs = new SimpleFieldSet(true);
 			fs.putOverwrite("physical.udp", entries);
 			if(logMINOR) Logger.minor(this, darknetOpennetString + " ref's physical.udp is '" + fs.toString() + "'");
-			node.peers.locallyBroadcastDiffNodeRef(fs, !crypto.isOpennet, crypto.isOpennet);
+			node.getPeerManager().locallyBroadcastDiffNodeRef(fs, !crypto.isOpennet, crypto.isOpennet);
 		} else {
 			if(logMINOR) Logger.minor(this, darknetOpennetString + " ref's physical.udp is null");
 		}
@@ -247,7 +247,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 			// We'll broadcast the new ARK edition to our connected peers via a differential node reference
 			SimpleFieldSet fs = new SimpleFieldSet(true);
 			fs.put("ark.number", crypto.myARKNumber);
-			node.peers.locallyBroadcastDiffNodeRef(fs, !crypto.isOpennet, crypto.isOpennet);
+			node.getPeerManager().locallyBroadcastDiffNodeRef(fs, !crypto.isOpennet, crypto.isOpennet);
 		}
 	}
 

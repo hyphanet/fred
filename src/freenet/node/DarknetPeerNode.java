@@ -302,23 +302,23 @@ public class DarknetPeerNode extends PeerNode {
 	@Override
 	protected synchronized int getPeerNodeStatus(long now, long backedOffUntilRT, long backedOffUntilBulk, boolean overPingThreshold, boolean noLoadStats) {
 		if(isDisabled) {
-			return PeerManager.PEER_NODE_STATUS_DISABLED;
+			return PeerManagerImpl.PEER_NODE_STATUS_DISABLED;
 		}
 		int status = super.getPeerNodeStatus(now, backedOffUntilRT, backedOffUntilBulk, overPingThreshold, noLoadStats);
-		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED ||
-				status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM ||
-				status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF ||
-				status == PeerManager.PEER_NODE_STATUS_CONN_ERROR ||
-				status == PeerManager.PEER_NODE_STATUS_TOO_NEW ||
-				status == PeerManager.PEER_NODE_STATUS_TOO_OLD ||
-				status == PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED ||
-				status == PeerManager.PEER_NODE_STATUS_DISCONNECTING ||
-				status == PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS)
+		if(status == PeerManagerImpl.PEER_NODE_STATUS_CONNECTED ||
+				status == PeerManagerImpl.PEER_NODE_STATUS_CLOCK_PROBLEM ||
+				status == PeerManagerImpl.PEER_NODE_STATUS_ROUTING_BACKED_OFF ||
+				status == PeerManagerImpl.PEER_NODE_STATUS_CONN_ERROR ||
+				status == PeerManagerImpl.PEER_NODE_STATUS_TOO_NEW ||
+				status == PeerManagerImpl.PEER_NODE_STATUS_TOO_OLD ||
+				status == PeerManagerImpl.PEER_NODE_STATUS_ROUTING_DISABLED ||
+				status == PeerManagerImpl.PEER_NODE_STATUS_DISCONNECTING ||
+				status == PeerManagerImpl.PEER_NODE_STATUS_NO_LOAD_STATS)
 			return status;
 		if(isListenOnly)
-			return PeerManager.PEER_NODE_STATUS_LISTEN_ONLY;
+			return PeerManagerImpl.PEER_NODE_STATUS_LISTEN_ONLY;
 		if(isBurstOnly)
-			return PeerManager.PEER_NODE_STATUS_LISTENING;
+			return PeerManagerImpl.PEER_NODE_STATUS_LISTENING;
 		return status;
 	}
 
@@ -327,7 +327,7 @@ public class DarknetPeerNode extends PeerNode {
 			isDisabled = false;
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeersDarknetUrgent();
+		((ProtectedPeerManager) node.getPeerManager()).writePeersDarknetUrgent();
 	}
 
 	public void disablePeer() {
@@ -339,7 +339,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		stopARKFetcher();
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeersDarknetUrgent();
+		((ProtectedPeerManager) node.getPeerManager()).writePeersDarknetUrgent();
 	}
 
 	@Override
@@ -358,7 +358,7 @@ public class DarknetPeerNode extends PeerNode {
 			stopARKFetcher();
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeersDarknetUrgent();
+		((ProtectedPeerManager) node.getPeerManager()).writePeersDarknetUrgent();
 	}
 
 	public synchronized boolean isListenOnly() {
@@ -379,7 +379,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 		}
 		setPeerNodeStatus(now);
-		node.peers.writePeersDarknetUrgent();
+		((ProtectedPeerManager) node.getPeerManager()).writePeersDarknetUrgent();
 	}
 
 	public void setIgnoreSourcePort(boolean setting) {
@@ -413,7 +413,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeersDarknetUrgent();
+		((ProtectedPeerManager) node.getPeerManager()).writePeersDarknetUrgent();
 
 	}
 
@@ -442,7 +442,7 @@ public class DarknetPeerNode extends PeerNode {
 		synchronized(this) {
 			allowLocalAddresses = setting;
 		}
-		node.peers.writePeersDarknetUrgent();
+		((ProtectedPeerManager) node.getPeerManager()).writePeersDarknetUrgent();
 	}
 
 	public boolean readExtraPeerData() {
@@ -1826,7 +1826,7 @@ public class DarknetPeerNode extends PeerNode {
 		synchronized(this) {
 			trustLevel = trust;
 		}
-		node.peers.writePeersDarknetUrgent();
+		((ProtectedPeerManager) node.getPeerManager()).writePeersDarknetUrgent();
 	}
 
 	/** FIXME This should be the worse of our visibility for the peer and that which the peer has told us.
@@ -1846,7 +1846,7 @@ public class DarknetPeerNode extends PeerNode {
 			if(ourVisibility == visibility) return;
 			ourVisibility = visibility;
 		}
-		node.peers.writePeersDarknetUrgent();
+		((ProtectedPeerManager) node.getPeerManager()).writePeersDarknetUrgent();
 		try {
 			sendVisibility();
 		} catch (NotConnectedException e) {
@@ -1868,7 +1868,7 @@ public class DarknetPeerNode extends PeerNode {
 			if(theirVisibility == v) return;
 			theirVisibility = v;
 		}
-		node.peers.writePeersDarknet();
+		((ProtectedPeerManager) node.getPeerManager()).writePeersDarknet();
 	}
 
 	public synchronized FRIEND_VISIBILITY getTheirVisibility() {
@@ -2009,7 +2009,7 @@ public class DarknetPeerNode extends PeerNode {
 							synchronized(DarknetPeerNode.this) {
 								fullFieldSet = fs;
 							}
-							node.peers.writePeersDarknet();
+							((ProtectedPeerManager) node.getPeerManager()).writePeersDarknet();
 						} else {
 							Logger.error(this, "Failed to receive noderef from "+DarknetPeerNode.this);
 						}
@@ -2062,6 +2062,6 @@ public class DarknetPeerNode extends PeerNode {
 
     @Override
     protected void writePeers() {
-	node.peers.writePeers(false);
+		((ProtectedPeerManager) node.getPeerManager()).writePeers(false);
     }
 }

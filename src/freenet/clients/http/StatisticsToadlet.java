@@ -25,18 +25,7 @@ import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.l10n.NodeL10n;
 import freenet.keys.FreenetURI;
-import freenet.node.Location;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.NodeStarter;
-import freenet.node.NodeStats;
-import freenet.node.OpennetManager;
-import freenet.node.PeerManager;
-import freenet.node.PeerNodeStatus;
-import freenet.node.RequestClient;
-import freenet.node.RequestStarterGroup;
-import freenet.node.RequestTracker;
-import freenet.node.Version;
+import freenet.node.*;
 import freenet.node.stats.DataStoreInstanceType;
 import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.StatsNotAvailableException;
@@ -80,7 +69,7 @@ public class StatisticsToadlet extends Toadlet {
 		this.node = n;
 		this.core = core;
 		stats = node.nodeStats;
-		peers = node.peers;
+		peers = node.getPeerManager();
 	}
 
 	/**
@@ -184,8 +173,8 @@ public class StatisticsToadlet extends Toadlet {
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(ctx.getAlertManager().createSummary());
 
-		double swaps = node.getSwaps();
-		double noSwaps = node.getNoSwaps();
+		double swaps = node.getLocationManager().getSwaps();
+		double noSwaps = node.getLocationManager().getNoSwaps();
 
 		HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
 
@@ -860,11 +849,11 @@ public class StatisticsToadlet extends Toadlet {
 	private void drawSwapStatsBox(HTMLNode locationSwapInfobox, double location, long nodeUptimeSeconds, double swaps, double noSwaps) {
 		
 		locationSwapInfobox.addChild("div", "class", "infobox-header", "Location swaps");
-		int startedSwaps = node.getStartedSwaps();
-		int swapsRejectedAlreadyLocked = node.getSwapsRejectedAlreadyLocked();
-		int swapsRejectedNowhereToGo = node.getSwapsRejectedNowhereToGo();
-		int swapsRejectedRateLimit = node.getSwapsRejectedRateLimit();
-		int swapsRejectedRecognizedID = node.getSwapsRejectedRecognizedID();
+		int startedSwaps = node.getLocationManager().getStartedSwaps();
+		int swapsRejectedAlreadyLocked = node.getLocationManager().getSwapsRejectedAlreadyLocked();
+		int swapsRejectedNowhereToGo = node.getLocationManager().getSwapsRejectedNowhereToGo();
+		int swapsRejectedRateLimit = node.getLocationManager().getSwapsRejectedRateLimit();
+		int swapsRejectedRecognizedID = node.getLocationManager().getSwapsRejectedRecognizedID();
 		double locChangeSession = node.getLocationChangeSession();
 		int averageSwapTime = node.getAverageOutgoingSwapTime();
 		long sendSwapInterval = node.getSendSwapInterval();
@@ -1213,7 +1202,7 @@ public class StatisticsToadlet extends Toadlet {
 		int bwlimitDelayTimeBulk = (int) stats.getBwlimitDelayTimeBulk();
 		int bwlimitDelayTimeRT = (int) stats.getBwlimitDelayTimeRT();
 		int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
-		double numberOfRemotePeerLocationsSeenInSwaps = node.getNumberOfRemotePeerLocationsSeenInSwaps();
+		double numberOfRemotePeerLocationsSeenInSwaps = node.getLocationManager().getNumberOfRemotePeerLocationsSeenInSwaps();
 
 		// Darknet
 		int darknetSizeEstimateSession = stats.getDarknetSizeEstimate(-1);

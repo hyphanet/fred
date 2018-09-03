@@ -350,7 +350,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             long now = System.currentTimeMillis();
             
             // Route it
-            next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+            next = node.getPeerManager().closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
 			        2.0, key, htl, 0, source == null, realTimeFlag, r, false, now, newLoadManagement);
             
             long recentlyFailed = r.recentlyFailed();

@@ -48,7 +48,7 @@ public class RequestTracker {
 	private final HashMap<Long,OfferReplyTag> runningCHKOfferReplyUIDsRT;
 	private final HashMap<Long,OfferReplyTag> runningSSKOfferReplyUIDsRT;
 	
-	private final PeerManager peers;
+	private final ProtectedPeerManager peers;
 	private final Ticker ticker;
 
 	/** RequestSender's currently transferring, by key */
@@ -57,7 +57,7 @@ public class RequestTracker {
 	/** UIDs of RequestHandler's currently transferring */
 	private final HashSet<Long> transferringRequestHandlers;
 	
-	RequestTracker(PeerManager peers, Ticker ticker) {
+	RequestTracker(ProtectedPeerManager peers, Ticker ticker) {
 		this.peers = peers;
 		this.ticker = ticker;
 		runningCHKGetUIDsRT = new HashMap<Long,RequestTag>();

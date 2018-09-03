@@ -11,7 +11,7 @@ class PeerStatusTracker<K extends Object> {
 	
     private static volatile boolean logMINOR;
     static {
-        Logger.registerClass(PeerManager.class);
+        Logger.registerClass(PeerManagerImpl.class);
     }
 
 	/** PeerNode statuses, by status. WARNING: LOCK THIS LAST. Must NOT call PeerNode inside this lock. */

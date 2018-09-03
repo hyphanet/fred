@@ -65,7 +65,6 @@ import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
-import freenet.node.PeerManager.PeerStatusChangeListener;
 import freenet.support.Base64;
 import freenet.support.BooleanLastTrueTracker;
 import freenet.support.Fields;
@@ -236,7 +235,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/** The Node we serve */
 	final Node node;
 	/** The PeerManager we serve */
-	final PeerManager peers;
+	final ProtectedPeerManager peers;
 	/** MessageItem's to send ASAP.
 	 * LOCKING: Lock on self, always take that lock last. Sometimes used inside PeerNode.this lock. */
 	private final PeerMessageQueue messageQueue;
@@ -377,7 +376,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private int listeningHandshakeBurstSize;
 
 	/** The set of the listeners that needs to be notified when status changes. It uses WeakReference, so there is no need to deregister*/
-	private Set<PeerManager.PeerStatusChangeListener> listeners=Collections.synchronizedSet(new WeakHashSet<PeerStatusChangeListener>());
+	private Set<PeerStatusChangeListener> listeners=Collections.synchronizedSet(new WeakHashSet<PeerStatusChangeListener>());
 
 	// NodeCrypto for the relevant node reference for this peer's type (Darknet or Opennet at this time))
 	protected final NodeCrypto crypto;
@@ -436,7 +435,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		this.node = node2;
 		this.crypto = crypto;
 		assert(crypto.isOpennet == isOpennetForNoderef());
-		this.peers = node.peers;
+		this.peers = (ProtectedPeerManager) node.getPeerManager();
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
@@ -1237,7 +1236,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(dumpMessageQueue)
 			node.tracker.onRestartOrDisconnect(this);
 		node.failureTable.onDisconnect(this);
-		node.peers.disconnected(this);
+		node.getPeerManager().disconnected(this);
 		node.nodeUpdater.disconnected(this);
 		boolean ret;
 		SessionKey cur, prev, unv;
@@ -1294,7 +1293,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(unv != null) unv.disconnected();
 		if(_lastThrottle != null)
 			_lastThrottle.maybeDisconnected();
-		node.lm.lostOrRestartedNode(this);
+		node.getLocationManager().lostOrRestartedNode(this);
 		if(peers.havePeer(this))
 			setPeerNodeStatus(now);
 		if(!dumpMessageQueue) {
@@ -1743,7 +1742,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	public void updateLocation(double newLoc, double[] newLocs) {
 		boolean anythingChanged = location.updateLocation(newLoc, newLocs);
-		node.peers.updatePMUserAlert();
+		node.getPeerManager().updatePMUserAlert();
 		if(anythingChanged)
 		    writePeers();
 		setPeerNodeStatus(System.currentTimeMillis());
@@ -1984,7 +1983,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				isConnected.set(false, now);
 			}
 			Logger.error(this, "Failed to parse new noderef for " + this + ": " + e1, e1);
-			node.peers.disconnected(this);
+			node.getPeerManager().disconnected(this);
 			return -1;
 		}
 		boolean routable = true;
@@ -2141,7 +2140,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 
 		if(bootIDChanged) {
-			node.lm.lostOrRestartedNode(this);
+			node.getLocationManager().lostOrRestartedNode(this);
 			node.usm.onRestart(this);
 			node.tracker.onRestartOrDisconnect(this);
 		}
@@ -2165,9 +2164,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		setPeerNodeStatus(now);
 
 		if(newer || older || !isConnected())
-			node.peers.disconnected(this);
+			node.getPeerManager().disconnected(this);
 		else if(!wasARekey) {
-			node.peers.addConnectedPeer(this);
+			node.getPeerManager().addConnectedPeer(this);
 			maybeOnConnect();
 		}
 		
@@ -2258,7 +2257,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	protected void sendInitialMessages() {
 		loadSender(true).setSendASAP();
 		loadSender(false).setSendASAP();
-		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocationDoubles(true));
+		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.getLocationManager().getLocation(), node.getPeerManager().getPeerLocationDoubles(true));
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
 		Message dRoutingMsg = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
@@ -2313,7 +2312,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		maybeSendInitialMessages();
 		setPeerNodeStatus(now);
-		node.peers.addConnectedPeer(this);
+		node.getPeerManager().addConnectedPeer(this);
 		maybeOnConnect();
 		if(completelyDeprecatedTracker != null) {
 			completelyDeprecatedTracker.disconnected();
@@ -2634,7 +2633,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 				@Override
 				public void run() {
-					node.peers.updatePMUserAlert();
+					node.getPeerManager().updatePMUserAlert();
 				}
 				
 			});
@@ -4311,14 +4310,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	/** Registers a listener that will be notified when status changes. Only the WeakReference of it is stored, so there is no need for deregistering
 	 * @param listener - The listener to be registered*/
-	public void registerPeerNodeStatusChangeListener(PeerManager.PeerStatusChangeListener listener){
+	public void registerPeerNodeStatusChangeListener(PeerStatusChangeListener listener){
 		listeners.add(listener);
 	}
 
 	/** Notifies the listeners that status has been changed*/
 	private void notifyPeerNodeStatusChangeListeners(){
 		synchronized (listeners) {
-			for(PeerManager.PeerStatusChangeListener l:listeners){
+			for(PeerStatusChangeListener l:listeners){
 				l.onPeerStatusChange();
 			}
 		}
@@ -5571,7 +5570,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		node.nodeStats.routingMissDistanceOverall.report(distance);
 		(isLocal ? node.nodeStats.routingMissDistanceLocal : node.nodeStats.routingMissDistanceRemote).report(distance);
 		(realTime ? node.nodeStats.routingMissDistanceRT : node.nodeStats.routingMissDistanceBulk).report(distance);
-		node.peers.incrementSelectionSamples(System.currentTimeMillis(), this);
+		peers.incrementSelectionSamples(System.currentTimeMillis(), this);
 	}
 
 	private long maxPeerPingTime() {

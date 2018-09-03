@@ -252,7 +252,7 @@ public class SecurityLevels {
 		HTMLNode parent = new HTMLNode("div");
 		if((newThreatLevel == NETWORK_THREAT_LEVEL.HIGH && networkThreatLevel != NETWORK_THREAT_LEVEL.MAXIMUM) || 
 				newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
-			if(node.peers.getDarknetPeers().length == 0) {
+			if(node.getPeerManager().getDarknetPeers().length == 0) {
 				parent.addChild("p", l10n("noFriendsWarning"));
 				if(newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
 					HTMLNode p = parent.addChild("p");
@@ -261,8 +261,8 @@ public class SecurityLevels {
 				}
 				parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("noFriendsCheckbox"));
 				return parent;
-			} else if(node.peers.countConnectedDarknetPeers() == 0) {
-				parent.addChild("p", l10n("noConnectedFriendsWarning", "added", Integer.toString(node.peers.getDarknetPeers().length)));
+			} else if(node.getPeerManager().countConnectedDarknetPeers() == 0) {
+				parent.addChild("p", l10n("noConnectedFriendsWarning", "added", Integer.toString(node.getPeerManager().getDarknetPeers().length)));
 				if(newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
 					HTMLNode p = parent.addChild("p");
 					NodeL10n.getBase().addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold" },
@@ -270,8 +270,8 @@ public class SecurityLevels {
 				}
 				parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("noConnectedFriendsCheckbox"));
 				return parent;
-			} else if(node.peers.countConnectedDarknetPeers() < 10) {
-				parent.addChild("p", l10n("fewConnectedFriendsWarning", new String[] { "connected", "added" }, new String[] { Integer.toString(node.peers.countConnectedDarknetPeers()), Integer.toString(node.peers.getDarknetPeers().length)}));
+			} else if(node.getPeerManager().countConnectedDarknetPeers() < 10) {
+				parent.addChild("p", l10n("fewConnectedFriendsWarning", new String[] { "connected", "added" }, new String[] { Integer.toString(node.getPeerManager().countConnectedDarknetPeers()), Integer.toString(node.getPeerManager().getDarknetPeers().length)}));
 				if(newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
 					HTMLNode p = parent.addChild("p");
 					NodeL10n.getBase().addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold" },

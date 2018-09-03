@@ -238,15 +238,15 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 
 		if(spec == DMT.FNPSwapRequest) {
-			return node.lm.handleSwapRequest(m, source);
+			return node.getLocationManager().handleSwapRequest(m, source);
 		} else if(spec == DMT.FNPSwapReply) {
-			return node.lm.handleSwapReply(m, source);
+			return node.getLocationManager().handleSwapReply(m, source);
 		} else if(spec == DMT.FNPSwapRejected) {
-			return node.lm.handleSwapRejected(m, source);
+			return node.getLocationManager().handleSwapRejected(m, source);
 		} else if(spec == DMT.FNPSwapCommit) {
-			return node.lm.handleSwapCommit(m, source);
+			return node.getLocationManager().handleSwapCommit(m, source);
 		} else if(spec == DMT.FNPSwapComplete) {
-			return node.lm.handleSwapComplete(m, source);
+			return node.getLocationManager().handleSwapComplete(m, source);
 		} else if(spec == DMT.FNPCHKDataRequest) {
 			handleDataRequest(m, source, false);
 			return true;
@@ -403,7 +403,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// Otherwise just dump all current connection state and keep trying to connect.
 		boolean remove = m.getBoolean(DMT.REMOVE);
 		if(remove) {
-			node.peers.disconnectAndRemove(source, false, false, false);
+			node.getPeerManager().disconnectAndRemove(source, false, false, false);
 			if(source instanceof DarknetPeerNode)
 				// FIXME remove, dirty logs.
 				// FIXME add a useralert?
@@ -907,7 +907,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// source == null => originated locally, keep full htl
 		double target = m.getDouble(DMT.TARGET_LOCATION);
 		if(logMINOR) Logger.minor(this, "id "+id+" from "+source+" htl "+htl+" target "+target);
-		if(Math.abs(node.lm.getLocation() - target) <= Double.MIN_VALUE) {
+		if(Math.abs(node.getLocationManager().getLocation() - target) <= Double.MIN_VALUE) {
 			if(logMINOR) Logger.minor(this, "Dispatching "+m.getSpec()+" on "+node.getDarknetPortNumber());
 			// Handle locally
 			// Message type specific processing
@@ -951,13 +951,13 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// Forward
 		m = preForward(m, htl);
 		while(true) {
-			PeerNode next = node.peers.getByPubKeyHash(targetIdentity);
+			PeerNode next = node.getPeerManager().getByPubKeyHash(targetIdentity);
 			if(next != null && !next.isConnected()) {
 				Logger.error(this, "Found target but disconnected!: "+next);
 				next = null;
 			}
 			if(next == null)
-			next = node.peers.closerPeer(pn, ctx.routedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+			next = node.getPeerManager().closerPeer(pn, ctx.routedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
 				        null, htl, 0, pn == null, false, false);
 			if(logMINOR) Logger.minor(this, "Next: "+next+" message: "+m);
 			if(next != null) {

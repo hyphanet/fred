@@ -412,14 +412,14 @@ public final class PageMaker {
 
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 
-				final int connectedPeers = node.peers.countConnectedPeers();
+				final int connectedPeers = node.getPeerManager().countConnectedPeers();
 				int darknetTotal = 0;
-				for(DarknetPeerNode n : node.peers.getDarknetPeers()) {
+				for(DarknetPeerNode n : node.getPeerManager().getDarknetPeers()) {
 					if(n == null) continue;
 					if(n.isDisabled()) continue;
 					darknetTotal++;
 				}
-				final int connectedDarknetPeers = node.peers.countConnectedDarknetPeers();
+				final int connectedDarknetPeers = node.getPeerManager().countConnectedDarknetPeers();
 				final int totalPeers = (node.getOpennet() == null) ? (darknetTotal > 0 ? darknetTotal : Integer.MAX_VALUE) : node.getOpennet().getNumberOfConnectedPeersToAimIncludingDarknet();
 				final double connectedRatio = ((double)connectedPeers) / (double)totalPeers;
 				final String additionalClass;
@@ -453,7 +453,7 @@ public final class PageMaker {
 						Math.min(100,Math.floor(100*connectedRatio)) + "%;" });
 
 				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", NodeL10n.getBase().getString("StatusBar.connectedPeers", new String[]{"X", "Y"},
-						new String[]{Integer.toString(node.peers.countConnectedDarknetPeers()), Integer.toString(node.peers.countConnectedOpennetPeers())}) },
+						new String[]{Integer.toString(node.getPeerManager().countConnectedDarknetPeers()), Integer.toString(node.getPeerManager().countConnectedOpennetPeers())}) },
 						Integer.toString(connectedPeers) + ((totalPeers != Integer.MAX_VALUE) ? " / " + Integer.toString(totalPeers) : ""));
 			}
 		}

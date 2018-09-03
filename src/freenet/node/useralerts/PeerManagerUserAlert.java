@@ -237,7 +237,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		synchronized(this) {
 			if(tooNewPeersDarknet >= PeerManager.OUTDATED_MIN_TOO_NEW_DARKNET)
 				return true;
-			return conns < PeerManager.OUTDATED_MAX_CONNS && 
+			return conns < PeerManager.OUTDATED_MAX_CONNS &&
 				tooNewPeersTotal >= PeerManager.OUTDATED_MIN_TOO_NEW_TOTAL;
 		}
 	}
@@ -306,7 +306,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	private void update() {
 		bwlimitDelayTime = (int) n.getBwlimitDelayTime();
 		nodeAveragePingTime = (int) n.getNodeAveragePingTime();
-		oldestNeverConnectedPeerAge = (int) n.peers.getOldestNeverConnectedDarknetPeerAge();
+		oldestNeverConnectedPeerAge = (int) n.getPeerManager().getOldestNeverConnectedDarknetPeerAge();
 		bwlimitDelayAlertRelevant = n.bwlimitDelayAlertRelevant;
 		nodeAveragePingAlertRelevant = n.nodeAveragePingAlertRelevant;
 		isOutdated = calculateIsOutdated();

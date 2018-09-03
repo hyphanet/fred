@@ -7,14 +7,9 @@ import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
-import freenet.node.DarknetPeerNode;
+import freenet.node.*;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
-import freenet.node.DarknetPeerNodeStatus;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.PeerManager;
-import freenet.node.PeerNodeStatus;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -130,7 +125,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 
 	@Override
 	protected PeerNodeStatus[] getPeerNodeStatuses(boolean noHeavy) {
-		return node.peers.getDarknetPeerNodeStatuses(noHeavy);
+		return node.getPeerManager().getDarknetPeerNodeStatuses(noHeavy);
 	}
 
 	@Override

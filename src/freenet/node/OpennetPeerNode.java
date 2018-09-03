@@ -75,12 +75,12 @@ public class OpennetPeerNode extends PeerNode {
 		int status = getPeerNodeStatus();
 		long age = now - getPeerAddedTime();
 		if(age < OpennetManager.DROP_MIN_AGE) {
-			if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED) {
+			if(status == PeerManagerImpl.PEER_NODE_STATUS_NEVER_CONNECTED) {
 				// New peer, never connected.
 				// Allow it 1 minute to connect.
 				if(age < OpennetManager.DROP_MIN_AGE_DISCONNECTED)
 					return NOT_DROP_REASON.TOO_NEW_PEER;
-			} else if(status != PeerManager.PEER_NODE_STATUS_DISCONNECTED) {
+			} else if(status != PeerManagerImpl.PEER_NODE_STATUS_DISCONNECTED) {
 				// Based on the time added, *not* the last connected time.
 				// This prevents various dubious ways of staying connected while not delivering anything useful.
 				return NOT_DROP_REASON.TOO_NEW_PEER; // New node
@@ -97,7 +97,7 @@ public class OpennetPeerNode extends PeerNode {
 		synchronized(this) {
 			// This only applies after it has connected, and only if !ignoreDisconnect.
 			// Hence only DISCONNECTED and not NEVER CONNECTED.
-			if((status == PeerManager.PEER_NODE_STATUS_DISCONNECTED) && (!super.neverConnected()) && 
+			if((status == PeerManagerImpl.PEER_NODE_STATUS_DISCONNECTED) && (!super.neverConnected()) &&
 					now - timeLastDisconnect < OpennetManager.DROP_DISCONNECT_DELAY &&
 					now - timePrevDisconnect > OpennetManager.DROP_DISCONNECT_DELAY_COOLDOWN) {
 				// Grace period for node restarting
@@ -296,7 +296,7 @@ public class OpennetPeerNode extends PeerNode {
 
     @Override
     protected void writePeers() {
-        node.peers.writePeers(true);
+		((ProtectedPeerManager) node.getPeerManager()).writePeers(true);
     }
 
 }

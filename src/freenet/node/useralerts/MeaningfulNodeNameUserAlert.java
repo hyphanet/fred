@@ -62,6 +62,6 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 
 	@Override
 	public boolean isValid() {
-		return node.peers.anyDarknetPeers();
+		return node.getPeerManager().anyDarknetPeers();
 	}
 }

@@ -51,7 +51,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 	public boolean isValid() {
 		if(node.isOpennetEnabled())
 			return false;
-		if(node.peers.countConnectiblePeers() >= 5 && (node.getUptime() < MINUTES.toMillis(1) || node.ipDetector.isDetecting()))
+		if(node.getPeerManager().countConnectiblePeers() >= 5 && (node.getUptime() < MINUTES.toMillis(1) || node.ipDetector.isDetecting()))
 			return false;
 		return true;
 	}
@@ -66,7 +66,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 				new String[] { "link" },
 				new HTMLNode[] { HTMLNode.link("/config/"+sc.getPrefix()) });
 		
-		int peers = node.peers.getDarknetPeers().length;
+		int peers = node.getPeerManager().getDarknetPeers().length;
 		if(peers > 0)
 			textNode.addChild("p", l10n("noIPMaybeFromPeers", "number", Integer.toString(peers)));
 		

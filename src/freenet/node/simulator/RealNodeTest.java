@@ -145,11 +145,11 @@ public class RealNodeTest {
 			double maxPingTime = 0.0;
 			double minPingTime = Double.MAX_VALUE;
 			for(int i=0;i<nodes.length;i++) {
-				int countConnected = nodes[i].peers.countConnectedDarknetPeers();
-				int countAlmostConnected = nodes[i].peers.countAlmostConnectedDarknetPeers();
-				int countTotal = nodes[i].peers.countValidPeers();
-				int countBackedOff = nodes[i].peers.countBackedOffPeers(false);
-				int countCompatible = nodes[i].peers.countCompatibleDarknetPeers();
+				int countConnected = nodes[i].getPeerManager().countConnectedDarknetPeers();
+				int countAlmostConnected = nodes[i].getPeerManager().countAlmostConnectedDarknetPeers();
+				int countTotal = nodes[i].getPeerManager().countValidPeers();
+				int countBackedOff = nodes[i].getPeerManager().countBackedOffPeers(false);
+				int countCompatible = nodes[i].getPeerManager().countCompatibleDarknetPeers();
 				totalPeers += countTotal;
 				totalConnections += countConnected;
 				totalPartialConnections += countAlmostConnected;

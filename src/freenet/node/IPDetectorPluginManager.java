@@ -310,7 +310,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 */
 	public int[] getUDPPortsNotForwarded() {
 		OpennetManager om = node.getOpennet();
-		Status darknetStatus = (node.peers.anyDarknetPeers() ? node.darknetCrypto.getDetectedConnectivityStatus() : AddressTracker.Status.DONT_KNOW);
+		Status darknetStatus = (node.getPeerManager().anyDarknetPeers() ? node.darknetCrypto.getDetectedConnectivityStatus() : AddressTracker.Status.DONT_KNOW);
 		Status opennetStatus = om == null ? Status.DONT_KNOW : om.crypto.getDetectedConnectivityStatus();
 		if(om == null || opennetStatus.ordinal() >= AddressTracker.Status.DONT_KNOW.ordinal()) {
 			if(darknetStatus.ordinal() >= AddressTracker.Status.DONT_KNOW.ordinal()) {
@@ -453,7 +453,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		if(logMINOR) Logger.minor(this, "Maybe running IP detection plugins", new Exception("debug"));
 		PeerNode[] peers = node.getPeerNodes();
 		PeerNode[] conns = node.getConnectedPeers();
-		int peerCount = node.peers.countValidPeers();
+		int peerCount = node.getPeerManager().countValidPeers();
 		FreenetInetAddress[] nodeAddrs = detector.getPrimaryIPAddress(true);
 		long now = System.currentTimeMillis();
 		synchronized(this) {

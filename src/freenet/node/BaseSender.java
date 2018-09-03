@@ -170,7 +170,7 @@ public abstract class BaseSender implements ByteCounter {
 			 */
         	next.sendSync(req, this, realTimeFlag);
                 next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag, source, nodesRoutedTo, htl);
-			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
+			((ProtectedPeerManager) node.getPeerManager()).incrementSelectionSamples(System.currentTimeMillis(), next);
         } catch (NotConnectedException e) {
         	Logger.minor(this, "Not connected");
         	next.noLongerRoutingTo(origTag, false);
@@ -557,7 +557,7 @@ loadWaiterLoop:
 	}
     
     private PeerNode closerPeer(HashSet<PeerNode> exclude, long now, boolean newLoadManagement) {
-		return node.peers.closerPeer(sourceForRouting(), exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
+		return node.getPeerManager().closerPeer(sourceForRouting(), exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
 				2.0, isInsert() ? null : key, htl, ignoreLowBackoff(), source == null, realTimeFlag, null, false, now, newLoadManagement);
 	}
 

@@ -81,8 +81,8 @@ public class Announcer {
 
 	protected void start() {
 		if(!node.isOpennetEnabled()) return;
-		int darkPeers = node.peers.getDarknetPeers().length;
-		int openPeers = node.peers.getOpennetPeers().length;
+		int darkPeers = node.getPeerManager().getDarknetPeers().length;
+		int openPeers = node.getPeerManager().getOpennetPeers().length;
 		int oldOpenPeers = om.countOldOpennetPeers();
 		if(darkPeers + openPeers + oldOpenPeers == 0) {
 			// We know opennet is enabled.
@@ -153,7 +153,7 @@ public class Announcer {
 
 		int count = connectSomeNodesInner(seeds);
 		boolean stillConnecting = false;
-		List<SeedServerPeerNode> tryingSeeds = node.peers.getSeedServerPeersVector();
+		List<SeedServerPeerNode> tryingSeeds = node.getPeerManager().getSeedServerPeersVector();
 		synchronized(this) {
 			for(SeedServerPeerNode seed : tryingSeeds) {
 				if(!announcedToIdentities.contains(new ByteArrayWrapper(seed.peerECDSAPubKeyHash))) {
@@ -235,7 +235,7 @@ public class Announcer {
 				}
 				if(logMINOR)
 					Logger.minor(this, "Trying to connect to seednode "+seed);
-				if(node.peers.addPeer(seed)) {
+				if(node.getPeerManager().addPeer(seed)) {
 					count++;
 					if(logMINOR)
 						Logger.minor(this, "Connecting to seednode "+seed);
@@ -347,7 +347,7 @@ public class Announcer {
 	boolean enoughPeers() {
 		if(om.stopping()) return true;
 		// Do we want to send an announcement to the node?
-		int opennetCount = node.peers.countConnectedPeers();
+		int opennetCount = node.getPeerManager().countConnectedPeers();
 		int target = getAnnouncementThreshold();
 		if(opennetCount >= target) {
 			if(logMINOR)
@@ -368,7 +368,7 @@ public class Announcer {
 				// is enabled.
 				if(killedAnnouncementTooOld) return true;
 			}
-			if(node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
+			if(node.getPeerManager().getPeerNodeStatusSize(PeerManagerImpl.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
 				synchronized(this) {
 					if(killedAnnouncementTooOld) return true;
 					killedAnnouncementTooOld = true;
@@ -387,11 +387,11 @@ public class Announcer {
 
 				@Override
 				public void run() {
-					for(OpennetPeerNode pn : node.peers.getOpennetPeers()) {
-						node.peers.disconnectAndRemove(pn, true, true, true);
+					for(OpennetPeerNode pn : node.getPeerManager().getOpennetPeers()) {
+						node.getPeerManager().disconnectAndRemove(pn, true, true, true);
 					}
-					for(SeedServerPeerNode pn : node.peers.getSeedServerPeersVector()) {
-						node.peers.disconnectAndRemove(pn, true, true, true);
+					for(SeedServerPeerNode pn : node.getPeerManager().getSeedServerPeersVector()) {
+						node.getPeerManager().disconnectAndRemove(pn, true, true, true);
 					}
 				}
 				
@@ -405,7 +405,7 @@ public class Announcer {
 				node.clientCore.alerts.unregister(announcementDisabledAlert);
 			if(node.nodeUpdater.isEnabled() && node.nodeUpdater.isArmed() &&
 					node.nodeUpdater.uom.fetchingFromTwo() &&
-					node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 5) {
+					node.getPeerManager().getPeerNodeStatusSize(PeerManagerImpl.PEER_NODE_STATUS_TOO_NEW, false) > 5) {
 				// No point announcing at the moment, but we might need to if a transfer falls through.
 				return true;
 			}
@@ -442,8 +442,8 @@ public class Announcer {
 				running = runningAnnouncements;
 			}
 			if(enoughPeers()) {
-				for(SeedServerPeerNode pn : node.peers.getConnectedSeedServerPeersVector(null)) {
-					node.peers.disconnectAndRemove(pn, true, true, false);
+				for(SeedServerPeerNode pn : node.getPeerManager().getConnectedSeedServerPeersVector(null)) {
+					node.getPeerManager().disconnectAndRemove(pn, true, true, false);
 				}
 				// Re-check every minute. Something bad might happen (e.g. cpu starvation), causing us to have to reseed.
 				node.getTicker().queueTimedJob(new Runnable() {
@@ -517,7 +517,7 @@ public class Announcer {
 				return;
 			}
 			// Now find a node to announce to
-			List<SeedServerPeerNode> seeds = node.peers.getConnectedSeedServerPeersVector(announcedToIdentities);
+			List<SeedServerPeerNode> seeds = node.getPeerManager().getConnectedSeedServerPeersVector(announcedToIdentities);
 			while(sentAnnouncements < WANT_ANNOUNCEMENTS) {
 				if(seeds.isEmpty()) {
 					if(logMINOR)
@@ -647,7 +647,7 @@ public class Announcer {
 				// If it takes more than COOLING_OFF_PERIOD to disconnect, we might not be able to reannounce to this
 				// node. However, we can't reannounce to it anyway until announcedTo is cleared, which probably will
 				// be more than that period in the future.
-				node.peers.disconnectAndRemove(seed, true, false, false);
+				node.getPeerManager().disconnectAndRemove(seed, true, false, false);
 				int shallow=node.maxHTL()-(totalAdded+totalNotWanted);
 				if(acceptedSomewhere)
 					System.out.println("Announcement to "+seed.userToString()+" completed ("+totalAdded+" added, "+totalNotWanted+" not wanted, "+shallow+" shallow)");
@@ -736,7 +736,7 @@ public class Announcer {
 					runningAnnouncements = Announcer.this.runningAnnouncements;
 
 				}
-				List<SeedServerPeerNode> nodes = node.peers.getSeedServerPeersVector();
+				List<SeedServerPeerNode> nodes = node.getPeerManager().getSeedServerPeersVector();
 				for(SeedServerPeerNode seed : nodes) {
 					if(seed.isConnected())
 						connectedSeednodes++;

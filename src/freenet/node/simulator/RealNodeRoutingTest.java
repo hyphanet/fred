@@ -7,7 +7,6 @@ import java.io.File;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
-import freenet.node.LocationManager;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.support.Executor;
@@ -85,6 +84,62 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		System.exit(0);
 	}
 
+	static int getTotalSwaps(Node[] nodes) {
+		int result = 0;
+		for (Node node : nodes) {
+			result += node.getLocationManager().getSwaps();
+		}
+		return result;
+	}
+
+	static int getTotalStartedSwaps(Node[] nodes) {
+		int result = 0;
+		for (Node node : nodes) {
+			result += node.getLocationManager().getStartedSwaps();
+		}
+		return result;
+	}
+
+	static int getTotalNoSwaps(Node[] nodes) {
+		int result = 0;
+		for (Node node : nodes) {
+			result += node.getLocationManager().getNoSwaps();
+		}
+		return result;
+	}
+
+	static int getTotalSwapsRejectedAlreadyLocked(Node[] nodes) {
+		int result = 0;
+		for (Node node : nodes) {
+			result += node.getLocationManager().getSwapsRejectedAlreadyLocked();
+		}
+		return result;
+	}
+
+	static int getTotalSwapsRejectedNowhereToGo(Node[] nodes) {
+		int result = 0;
+		for (Node node : nodes) {
+			result += node.getLocationManager().getSwapsRejectedNowhereToGo();
+		}
+		return result;
+	}
+
+	static int getTotalSwapsRejectedRateLimit(Node[] nodes) {
+		int result = 0;
+		for (Node node : nodes) {
+			result += node.getLocationManager().getSwapsRejectedRateLimit();
+		}
+		return result;
+	}
+
+	static int getTotalSwapsRejectedRecognizedID(Node[] nodes) {
+		int result = 0;
+		for (Node node : nodes) {
+			result += node.getLocationManager().getSwapsRejectedRecognizedID();
+		}
+		return result;
+	}
+
 	static void waitForPingAverage(double accuracy, Node[] nodes, RandomSource random, int maxTests, int sleepTime) throws InterruptedException {
 		int totalHopsTaken = 0;
 		int cycleNumber = 0;
@@ -105,26 +160,26 @@ public class RealNodeRoutingTest extends RealNodeTest {
 			for(int i = 0; i < nodes.length; i++) {
 				System.err.println("Cycle " + cycleNumber + " node " + i + ": " + nodes[i].getLocation());
 			}
-			int newSwaps = LocationManager.swaps;
-			int totalStarted = LocationManager.startedSwaps;
-			int noSwaps = LocationManager.noSwaps;
+			int newSwaps = getTotalSwaps(nodes);
+			int totalStarted = getTotalStartedSwaps(nodes);
+			int noSwaps = getTotalNoSwaps(nodes);
 			System.err.println("Swaps: " + (newSwaps - lastSwaps));
 			System.err.println("\nTotal swaps: Started*2: " + totalStarted * 2 + ", succeeded: " + newSwaps + ", last minute failures: " + noSwaps +
 				", ratio " + (double) noSwaps / (double) newSwaps + ", early failures: " + ((totalStarted * 2) - (noSwaps + newSwaps)));
 			System.err.println("This cycle ratio: " + ((double) (noSwaps - lastNoSwaps)) / ((double) (newSwaps - lastSwaps)));
 			lastNoSwaps = noSwaps;
-			System.err.println("Swaps rejected (already locked): " + LocationManager.swapsRejectedAlreadyLocked);
-			System.err.println("Swaps rejected (nowhere to go): " + LocationManager.swapsRejectedNowhereToGo);
-			System.err.println("Swaps rejected (rate limit): " + LocationManager.swapsRejectedRateLimit);
-			System.err.println("Swaps rejected (recognized ID):" + LocationManager.swapsRejectedRecognizedID);
-			System.err.println("Swaps failed:" + LocationManager.noSwaps);
-			System.err.println("Swaps succeeded:" + LocationManager.swaps);
+			System.err.println("Swaps rejected (already locked): " + getTotalSwapsRejectedAlreadyLocked(nodes));
+			System.err.println("Swaps rejected (nowhere to go): " + getTotalSwapsRejectedNowhereToGo(nodes));
+			System.err.println("Swaps rejected (rate limit): " + getTotalSwapsRejectedRateLimit(nodes));
+			System.err.println("Swaps rejected (recognized ID):" + getTotalSwapsRejectedRecognizedID(nodes));
+			System.err.println("Swaps failed:" + getTotalNoSwaps(nodes));
+			System.err.println("Swaps succeeded:" + getTotalSwaps(nodes));
 
 			double totalSwapInterval = 0.0;
 			double totalSwapTime = 0.0;
 			for(int i = 0; i < nodes.length; i++) {
-				totalSwapInterval += nodes[i].lm.getSendSwapInterval();
-				totalSwapTime += nodes[i].lm.getAverageSwapTime();
+				totalSwapInterval += nodes[i].getLocationManager().getSendSwapInterval();
+				totalSwapTime += nodes[i].getLocationManager().getAverageSwapTime();
 			}
 			System.err.println("Average swap time: " + (totalSwapTime / nodes.length));
 			System.err.println("Average swap sender interval: " + (totalSwapInterval / nodes.length));
@@ -175,13 +230,13 @@ public class RealNodeRoutingTest extends RealNodeTest {
 				System.err.println("Network size: " + nodes.length);
 				System.err.println("Maximum HTL: " + MAX_HTL);
 				System.err.println("Average path length for successful requests: "+totalHopsTaken/successes);
-				System.err.println("Total started swaps: " + LocationManager.startedSwaps);
-				System.err.println("Total rejected swaps (already locked): " + LocationManager.swapsRejectedAlreadyLocked);
-				System.err.println("Total swaps rejected (nowhere to go): " + LocationManager.swapsRejectedNowhereToGo);
-				System.err.println("Total swaps rejected (rate limit): " + LocationManager.swapsRejectedRateLimit);
-				System.err.println("Total swaps rejected (recognized ID):" + LocationManager.swapsRejectedRecognizedID);
-				System.err.println("Total swaps failed:" + LocationManager.noSwaps);
-				System.err.println("Total swaps succeeded:" + LocationManager.swaps);
+				System.err.println("Total started swaps: " + getTotalStartedSwaps(nodes));
+				System.err.println("Total rejected swaps (already locked): " + getTotalSwapsRejectedAlreadyLocked(nodes));
+				System.err.println("Total swaps rejected (nowhere to go): " + getTotalSwapsRejectedNowhereToGo(nodes));
+				System.err.println("Total swaps rejected (rate limit): " + getTotalSwapsRejectedRateLimit(nodes));
+				System.err.println("Total swaps rejected (recognized ID):" + getTotalSwapsRejectedRecognizedID(nodes));
+				System.err.println("Total swaps failed:" + getTotalNoSwaps(nodes));
+				System.err.println("Total swaps succeeded:" + getTotalSwaps(nodes));
 				return;
 			}
 		}

@@ -603,9 +603,9 @@ public class Node implements TimeSkewDetectorCallback {
 	 * topology can be reconstructed. */
 	public long swapIdentifier;
 	private String myName;
-	public final LocationManager lm;
+	final private LocationManager lm;
 	/** My peers */
-	public final PeerManager peers;
+	final private ProtectedPeerManager peers;
 	/** Node-reference directory (node identity, peers, etc) */
 	final ProgramDirectory nodeDir;
 	/** Config directory (l10n overrides, etc) */
@@ -1121,7 +1121,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		this.config = config;
-		lm = new LocationManager(random, this);
+		lm = newLocationManager(random, this);
 
 		try {
 			localhostAddress = InetAddress.getByName("127.0.0.1");
@@ -1647,8 +1647,9 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 
-		// Then read the peers
-		peers = new PeerManager(this, shutdownHook);
+		// Calling newPeerManager instead of using "new" directly allows us to override
+		// the instantiation of the peer manager, thus we can employ a dummy manager during unit tests
+		peers = newPeerManager();
 		
 		tracker = new RequestTracker(peers, ticker);
 
@@ -3868,7 +3869,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		try {
 			Message msg = DMT.createFNPDisconnect(false, false, -1, new ShortBuffer(new byte[0]));
-			peers.localBroadcast(msg, true, false, peers.ctrDisconn);
+			peers.localBroadcast(msg, true, false, peers.getDisconnectionCounter());
 		} catch (Throwable t) {
 			try {
 				// E.g. if we haven't finished startup
@@ -4056,34 +4057,6 @@ public class Node implements TimeSkewDetectorCallback {
 		return lm;
 	}
 
-	public int getSwaps() {
-		return LocationManager.swaps;
-	}
-
-	public int getNoSwaps() {
-		return LocationManager.noSwaps;
-	}
-
-	public int getStartedSwaps() {
-		return LocationManager.startedSwaps;
-	}
-
-	public int getSwapsRejectedAlreadyLocked() {
-		return LocationManager.swapsRejectedAlreadyLocked;
-	}
-
-	public int getSwapsRejectedNowhereToGo() {
-		return LocationManager.swapsRejectedNowhereToGo;
-	}
-
-	public int getSwapsRejectedRateLimit() {
-		return LocationManager.swapsRejectedRateLimit;
-	}
-
-	public int getSwapsRejectedRecognizedID() {
-		return LocationManager.swapsRejectedRecognizedID;
-	}
-
 	public PeerNode[] getPeerNodes() {
 		return peers.myPeers();
 	}
@@ -4148,10 +4121,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public long getSendSwapInterval() {
 		return lm.getSendSwapInterval();
-	}
-
-	public int getNumberOfRemotePeerLocationsSeenInSwaps() {
-		return lm.numberOfRemotePeerLocationsSeenInSwaps;
 	}
 
 	public boolean isAdvancedModeEnabled() {
@@ -4765,7 +4734,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(om.announcer != null && om.announcer.isWaitingForUpdater())
 				return true;
 		}
-		if(peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) > PeerManager.OUTDATED_MIN_TOO_NEW_DARKNET)
+		if(peers.getPeerNodeStatusSize(PeerManagerImpl.PEER_NODE_STATUS_TOO_NEW, true) > PeerManagerImpl.OUTDATED_MIN_TOO_NEW_DARKNET)
 			return true;
 		return false;
 	}
@@ -4804,5 +4773,17 @@ public class Node implements TimeSkewDetectorCallback {
     DatabaseKey getDatabaseKey() {
         return databaseKey;
     }
-    
+
+    protected ProtectedLocationManager newLocationManager(RandomSource r, Node node) {
+		return new LocationManagerImpl(r, node);
+	}
+
+    protected ProtectedPeerManager newPeerManager() {
+		return new PeerManagerImpl(this, shutdownHook);
+	}
+
+    public PeerManager getPeerManager() {
+		return peers;
+	}
+
 }

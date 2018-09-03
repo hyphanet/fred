@@ -29,13 +29,13 @@ class PeerNodeBackoffStatusChecker implements Runnable {
 		PeerNode pn = ref.get();
 		if(pn == null) return;
 		if(pn.cachedRemoved()) {
-			if(logMINOR && pn.node.peers.havePeer(pn)) {
+			if(logMINOR && ((ProtectedPeerManager) pn.node.getPeerManager()).havePeer(pn)) {
 				Logger.error(this, "Removed flag is set yet is in peers table?!: "+pn);
 			} else {
 				return;
 			}
 		}
-		if(!pn.node.peers.havePeer(pn)) {
+		if(!((ProtectedPeerManager) pn.node.getPeerManager()).havePeer(pn)) {
 			if(!pn.cachedRemoved())
 				Logger.error(this, "Not in peers table but not flagged as removed: "+pn);
 			return;

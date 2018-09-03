@@ -26,20 +26,10 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.l10n.NodeL10n;
-import freenet.node.DarknetPeerNode;
+import freenet.node.*;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
-import freenet.node.FSParseException;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.NodeFile;
-import freenet.node.NodeStats;
-import freenet.node.PeerManager;
-import freenet.node.PeerNode;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
-import freenet.node.PeerNodeStatus;
-import freenet.node.Version;
-import freenet.node.updater.NodeUpdateManager;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -172,7 +162,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		this.node = n;
 		this.core = core;
 		this.stats = n.nodeStats;
-		this.peers = n.peers;
+		this.peers = n.getPeerManager();
 	    REF_LINK = HTMLNode.link(path()+"myref.fref").setReadOnly();
 	    REFTEXT_LINK = HTMLNode.link(path()+"myref.txt").setReadOnly();
 	}
@@ -486,7 +476,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 				double totalSelectionRate = 0.0;
 				//calculate the total selection rate using all peers, not just the peers for the current mode,
-				PeerNodeStatus[] allPeerNodeStatuses = node.peers.getPeerNodeStatuses(true);
+				PeerNodeStatus[] allPeerNodeStatuses = node.getPeerManager().getPeerNodeStatuses(true);
 				for(PeerNodeStatus status : allPeerNodeStatuses) {
 					totalSelectionRate += status.getSelectionRate();
 				}

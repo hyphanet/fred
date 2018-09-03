@@ -31,7 +31,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.StringCounter;
 import freenet.support.TimeUtil;
-import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -127,7 +126,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	final Node node;
 	private MemoryChecker myMemoryChecker;
-	public final PeerManager peers;
+	final ProtectedPeerManager peers;
 
 	final RandomSource hardRandom;
 
@@ -325,7 +324,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, int lastVersion) throws NodeInitException {
 		this.node = node;
-		this.peers = node.peers;
+		this.peers = (ProtectedPeerManager) node.getPeerManager();
 		this.hardRandom = node.random;
 		this.routingMissDistanceLocal = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.routingMissDistanceRemote = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
@@ -610,7 +609,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		chkSuccessRatesByLocation = new Histogram2(10, 1.0);
 
-		double nodeLoc=node.lm.getLocation();
+		double nodeLoc=node.getLocationManager().getLocation();
 		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
 		this.avgStoreCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreCHKLocation"));
 		this.avgSlashdotCacheCHKLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageSlashdotCacheCHKLocation"));
@@ -812,7 +811,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node.tracker, peer, false, ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
 			
-			int peers = node.peers.countConnectedPeers();
+			int peers = node.getPeerManager().countConnectedPeers();
 			
 			// Peer limits are adjusted to deduct any requests already allocated by sourceRestarted() requests.
 			// I.e. requests which were sent before the peer restarted, which it doesn't know about or failed for when the bootID changed.
@@ -1256,7 +1255,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(logMINOR) Logger.minor(this, "Maybe accepting extra request due to it being in datastore (limit now "+limit+"s)...");
 		}
 		
-		int peers = node.peers.countConnectedPeers();
+		int peers = node.getPeerManager().countConnectedPeers();
 		
 		// These limits are by transfers.
 		// We limit the total number of transfers running in parallel to ensure
@@ -1454,7 +1453,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			RunningRequestsSnapshot requestsSnapshot, RunningRequestsSnapshot peerRequestsSnapshot, boolean input, long limit,
 			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag, int maxOutputTransfers, int maxOutputTransfersPeerLimit, UIDTag tag) {
 		String name = input ? "Input" : "Output";
-		int peers = node.peers.countConnectedPeers();
+		int peers = node.getPeerManager().countConnectedPeers();
 		
 		double bandwidthAvailableOutputLowerLimit = getLowerLimit(bandwidthAvailableOutputUpperLimit, peers);
 		
@@ -1731,11 +1730,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return node.opennet.getNetworkSizeEstimate(timestamp);
 	}
 	public int getDarknetSizeEstimate(long timestamp) {
-		return node.lm.getNetworkSizeEstimate( timestamp );
+		return node.getLocationManager().getNetworkSizeEstimate( timestamp );
 	}
 
 	public Object[] getKnownLocations(long timestamp) {
-		return node.lm.getKnownLocations( timestamp );
+		return node.getLocationManager().getKnownLocations( timestamp );
 	}
 
 	public double pRejectIncomingInstantly() {
@@ -1994,16 +1993,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				numberOfSeedClients++;
 		}
 
-		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONNECTED);
-		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
-		int numberOfTooNew = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_TOO_NEW);
-		int numberOfTooOld = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_TOO_OLD);
-		int numberOfDisconnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTED);
-		int numberOfNeverConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED);
-		int numberOfDisabled = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISABLED);
-		int numberOfBursting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_BURSTING);
-		int numberOfListening = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTENING);
-		int numberOfListenOnly = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_LISTEN_ONLY);
+		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_CONNECTED);
+		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+		int numberOfTooNew = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_TOO_NEW);
+		int numberOfTooOld = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_TOO_OLD);
+		int numberOfDisconnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_DISCONNECTED);
+		int numberOfNeverConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_NEVER_CONNECTED);
+		int numberOfDisabled = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_DISABLED);
+		int numberOfBursting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_BURSTING);
+		int numberOfListening = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_LISTENING);
+		int numberOfListenOnly = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManagerImpl.PEER_NODE_STATUS_LISTEN_ONLY);
 
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly;
@@ -2109,9 +2108,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			}
 		}
 
-		double swaps = node.getSwaps();
-		double noSwaps = node.getNoSwaps();
-		double numberOfRemotePeerLocationsSeenInSwaps = node.getNumberOfRemotePeerLocationsSeenInSwaps();
+		double swaps = node.getLocationManager().getSwaps();
+		double noSwaps = node.getLocationManager().getNoSwaps();
+		double numberOfRemotePeerLocationsSeenInSwaps = ((ProtectedLocationManager) node.getLocationManager()).getNumberOfRemotePeerLocationsSeenInSwaps();
 		fs.put("numberOfRemotePeerLocationsSeenInSwaps", numberOfRemotePeerLocationsSeenInSwaps);
 		double avgConnectedPeersPerNode = 0.0;
 		if ((numberOfRemotePeerLocationsSeenInSwaps > 0.0) && ((swaps > 0.0) || (noSwaps > 0.0))) {
@@ -2119,11 +2118,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 		fs.put("avgConnectedPeersPerNode", avgConnectedPeersPerNode);
 
-		int startedSwaps = node.getStartedSwaps();
-		int swapsRejectedAlreadyLocked = node.getSwapsRejectedAlreadyLocked();
-		int swapsRejectedNowhereToGo = node.getSwapsRejectedNowhereToGo();
-		int swapsRejectedRateLimit = node.getSwapsRejectedRateLimit();
-		int swapsRejectedRecognizedID = node.getSwapsRejectedRecognizedID();
+		int startedSwaps = node.getLocationManager().getStartedSwaps();
+		int swapsRejectedAlreadyLocked = node.getLocationManager().getSwapsRejectedAlreadyLocked();
+		int swapsRejectedNowhereToGo = node.getLocationManager().getSwapsRejectedNowhereToGo();
+		int swapsRejectedRateLimit = node.getLocationManager().getSwapsRejectedRateLimit();
+		int swapsRejectedRecognizedID = node.getLocationManager().getSwapsRejectedRecognizedID();
 		double locationChangePerSession = node.getLocationChangeSession();
 		double locationChangePerSwap = 0.0;
 		double locationChangePerMinute = 0.0;
@@ -3198,7 +3197,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3232,7 +3231,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3266,7 +3265,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3300,7 +3299,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3334,7 +3333,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3368,7 +3367,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3402,7 +3401,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3436,7 +3435,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3851,4 +3850,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return usedBytes / upperLimit;
 	}
 
+	public PeerManager getPeerManager() {
+	    return peers;
+    }
 }
