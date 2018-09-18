@@ -158,7 +158,7 @@ public class HourlyStatsRecord {
 		int totalSSKRS = 0;
 		int totalSSKT = 0;
 		synchronized(this) {
-			for(int htl = byHTL.length - 1; htl >= 0; htl--) {
+			for(int htl = byHTL.length - 1; htl > 0; htl--) {
 				row = table.addChild("tr");
 				row.addChild("td", Integer.toString(htl));
 				StatsLine line = byHTL[htl];
