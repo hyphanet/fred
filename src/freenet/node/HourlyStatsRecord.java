@@ -149,7 +149,6 @@ public class HourlyStatsRecord {
 		row.addChild("th", "HTL");
 		row.addChild("th", "CHKs");
 		row.addChild("th", "SSKs");
-		row = table.addChild("tr");
 		char nbsp = (char)160;
 		int totalCHKLS = 0;
 		int totalCHKRS = 0;
