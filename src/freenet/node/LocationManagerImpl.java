@@ -93,10 +93,10 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
     private static boolean logMINOR;
     final RandomSource r;
     final SwapRequestSender sender;
-    final Node node;
+    final ProtectedNode node;
     long timeLastSuccessfullySwapped;
 
-    public LocationManagerImpl(RandomSource r, Node node) {
+    public LocationManagerImpl(RandomSource r, ProtectedNode node) {
         loc = r.nextDouble();
         sender = new SwapRequestSender();
         this.r = r;
@@ -150,9 +150,9 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
      */
     @Override
     public void start() {
-    	if(node.enableSwapping)
+    	if(node.enableSwapping())
     		node.getTicker().queueTimedJob(sender, STARTUP_DELAY);
-		node.ticker.queueTimedJob(new Runnable() {
+		node.getTicker().queueTimedJob(new Runnable() {
 
 			@Override
 			public void run() {
@@ -160,7 +160,7 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
 					clearOldSwapChains();
 					removeTooOldQueuedItems();
 				} finally {
-					node.ticker.queueTimedJob(this, SECONDS.toMillis(10));
+					node.getTicker().queueTimedJob(this, SECONDS.toMillis(10));
 				}
 			}
 
@@ -230,7 +230,7 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
                                     }
                                 }
                                 if(myFlag) {
-                                    setLocation(node.random.nextDouble());
+                                    setLocation(node.getRNG().nextDouble());
                                     announceLocChange(true, true, true);
                                     node.writeNodeFile();
                                 }
@@ -255,7 +255,7 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
      * the wilderness.
      */
     private void startSwapRequest() {
-    	node.executor.execute(new OutgoingSwapRequestHandler(),
+    	node.getExecutor().execute(new OutgoingSwapRequestHandler(),
                 "Outgoing swap request handler for port "+node.getDarknetPortNumber());
     }
 
@@ -346,11 +346,11 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
             MessageFilter filter =
                 MessageFilter.create().setType(DMT.FNPSwapCommit).setField(DMT.UID, uid).setTimeout(TIMEOUT).setSource(pn);
 
-            node.usm.send(pn, m, LocationManagerImpl.this);
+            node.getUSM().send(pn, m, LocationManagerImpl.this);
 
             Message commit;
             try {
-                commit = node.usm.waitFor(filter, LocationManagerImpl.this);
+                commit = node.getUSM().waitFor(filter, LocationManagerImpl.this);
             } catch (DisconnectedException e) {
             	if(logMINOR) Logger.minor(this, "Disconnected from "+pn+" while waiting for SwapCommit");
                 return;
@@ -415,7 +415,7 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
             Message confirm = DMT.createFNPSwapComplete(uid, myValue);
             //confirm.addSubMessage(DMT.createFNPSwapLocations(extractUIDs(friendLocsAndUIDs)));
 
-            node.usm.send(pn, confirm, LocationManagerImpl.this);
+            node.getUSM().send(pn, confirm, LocationManagerImpl.this);
 
             boolean shouldSwap = shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom);
 
@@ -438,8 +438,8 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
             reachedEnd = true;
 
             // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
-            if(node.random.nextInt(SWAP_RESET) == 0) {
-                setLocation(node.random.nextDouble());
+            if(node.getRNG().nextInt(SWAP_RESET) == 0) {
+                setLocation(node.getRNG().nextDouble());
                 announceLocChange(true, true, false);
                 node.writeNodeFile();
             }
@@ -505,12 +505,12 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
                     MessageFilter.create().setType(DMT.FNPSwapReply).setField(DMT.UID, uid).setSource(pn).setTimeout(TIMEOUT);
                 MessageFilter filter = filter1.or(filter2);
 
-                node.usm.send(pn, m, LocationManagerImpl.this);
+                node.getUSM().send(pn, m, LocationManagerImpl.this);
 
                 if(logMINOR) Logger.minor(this, "Waiting for SwapReply/SwapRejected on "+uid);
                 Message reply;
                 try {
-                    reply = node.usm.waitFor(filter, LocationManagerImpl.this);
+                    reply = node.getUSM().waitFor(filter, LocationManagerImpl.this);
                 } catch (DisconnectedException e) {
                 	if(logMINOR) Logger.minor(this, "Disconnected while waiting for SwapReply/SwapRejected for "+uid);
                     return;
@@ -541,12 +541,12 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
                 MessageFilter filter3 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPSwapComplete).setTimeout(TIMEOUT).setSource(pn);
                 filter = filter1.or(filter3);
 
-                node.usm.send(pn, confirm, LocationManagerImpl.this);
+                node.getUSM().send(pn, confirm, LocationManagerImpl.this);
 
                 if(logMINOR) Logger.minor(this, "Waiting for SwapComplete: uid = "+uid);
 
                 try {
-                    reply = node.usm.waitFor(filter, LocationManagerImpl.this);
+                    reply = node.getUSM().waitFor(filter, LocationManagerImpl.this);
                 } catch (DisconnectedException e) {
                 	if(logMINOR) Logger.minor(this, "Disconnected waiting for SwapComplete on "+uid);
                     return;
@@ -632,8 +632,8 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
                 reachedEnd = true;
 
                 // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
-                if(node.random.nextInt(SWAP_RESET) == 0) {
-                    setLocation(node.random.nextDouble());
+                if(node.getRNG().nextInt(SWAP_RESET) == 0) {
+                    setLocation(node.getRNG().nextDouble());
                     announceLocChange(true, true, false);
                     node.writeNodeFile();
                 }
@@ -664,7 +664,7 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
     }
 
     private void recordLocChange(final boolean randomReset, final boolean fromDupLocation) {
-        node.executor.execute(new Runnable() {
+        node.getExecutor().execute(new Runnable() {
 
 			@Override
 			public void run() {
@@ -947,7 +947,7 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
         	htl = SWAP_MAX_HTL;
         }
         htl--;
-        if(!node.enableSwapping || htl <= 0 && swappingDisabled()) {
+        if(!node.enableSwapping() || htl <= 0 && swappingDisabled()) {
             // Reject
             Message reject = DMT.createFNPSwapRejected(oldID);
             try {
@@ -1016,7 +1016,7 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
     	        lockedTime = System.currentTimeMillis();
     		} else {
     			// Locked.
-    			if((!node.enableSwapQueueing) ||
+    			if((!node.enableSwapQueueing()) ||
     					incomingMessageQueue.size() > MAX_INCOMING_QUEUE_LENGTH) {
     				// Reject anyway.
     				reject = true;
@@ -1056,7 +1056,7 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
         IncomingSwapRequestHandler isrh =
             new IncomingSwapRequestHandler(m, pn, item);
         if(logMINOR) Logger.minor(this, "Handling... "+oldID+" from "+pn);
-        node.executor.execute(isrh, "Incoming swap request handler for port "+node.getDarknetPortNumber());
+        node.getExecutor().execute(isrh, "Incoming swap request handler for port "+node.getDarknetPortNumber());
 	}
 
 	private RecentlyForwardedItem addForwardedItem(long uid, long oid, PeerNode pn, PeerNode randomPeer) {
@@ -1415,12 +1415,12 @@ class LocationManagerImpl implements ByteCounter, LocationManager, ProtectedLoca
 
 	@Override
 	public void receivedBytes(int x) {
-		node.nodeStats.swappingReceivedBytes(x);
+		node.getNodeStats().swappingReceivedBytes(x);
 	}
 
 	@Override
 	public void sentBytes(int x) {
-		node.nodeStats.swappingSentBytes(x);
+		node.getNodeStats().swappingSentBytes(x);
 	}
 
 	@Override

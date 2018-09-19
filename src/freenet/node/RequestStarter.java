@@ -4,11 +4,9 @@
 package freenet.node;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
-import freenet.client.async.RequestSelectionTreeNode;
 import freenet.client.async.ChosenBlockImpl;
 import freenet.keys.Key;
 import freenet.node.NodeStats.RejectReason;
@@ -16,7 +14,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArrayItem;
 import freenet.support.RandomGrabArrayItemExclusionList;
-import freenet.support.TokenBucket;
 import freenet.support.Logger.LogLevel;
 import freenet.support.math.RunningAverage;
 
@@ -79,7 +76,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, 
 			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK, boolean realTime) {
 		this.core = node;
-		this.stats = core.nodeStats;
+		this.stats = core.getNode().getNodeStats();
 		this.throttle = throttle;
 		this.name = name + (realTime ? " (realtime)" : " (bulk)");
 		this.averageOutputBytesPerRequest = averageOutputBytesPerRequest;
@@ -94,7 +91,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 	
 	void start() {
-		core.getExecutor().execute(this, name);
+		core.getNode().getExecutor().execute(this, name);
 	}
 	
 	final String name;
@@ -111,7 +108,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		while(true) {
 			// Allow 5 minutes before we start killing requests due to not connecting.
 			OpennetManager om;
-			if(core.node.getPeerManager().countConnectedPeers() < 3 && (om = core.node.getOpennet()) != null &&
+			if(core.getNode().getPeerManager().countConnectedPeers() < 3 && (om = core.getNode().getOpennet()) != null &&
 					System.currentTimeMillis() - om.getCreationTime() < MINUTES.toMillis(5)) {
 				try {
 					synchronized(this) {
@@ -223,7 +220,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			}
 		}
 		if(logMINOR) Logger.minor(this, "Running request "+req+" priority "+req.getPriority());
-		core.getExecutor().execute(new SenderThread(req, req.key), "RequestStarter$SenderThread for "+req);
+		core.getNode().getExecutor().execute(new SenderThread(req, req.key), "RequestStarter$SenderThread for "+req);
 		return true;
 	}
 

@@ -42,7 +42,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class Announcer {
 	private static boolean logMINOR;
-	private final Node node;
+	private final ProtectedNode node;
 	private final OpennetManager om;
 	private static final int STATUS_LOADING = 0;
 	private static final int STATUS_CONNECTING_SEEDNODES = 1;
@@ -114,7 +114,7 @@ public class Announcer {
 	}
 
 	private void registerEvent(int eventStatus) {
-		node.clientCore.alerts.register(new AnnouncementUserEvent(eventStatus));
+		node.getClientCore().alerts.register(new AnnouncementUserEvent(eventStatus));
 	}
 
 	private void connectSomeSeednodes() {
@@ -198,7 +198,7 @@ public class Announcer {
 				}
 			}
 		}
-		node.dnsr.forceRun();
+		node.getDNSRequester().forceRun();
 		// If none connect in a minute, try some more.
 		node.getTicker().queueTimedJob(new Runnable() {
 			@Override
@@ -219,7 +219,7 @@ public class Announcer {
 		int count = 0;
 		while(count < CONNECT_AT_ONCE) {
 			if(seeds.isEmpty()) break;
-			SimpleFieldSet fs = ListUtils.removeRandomBySwapLastSimple(node.random, seeds);
+			SimpleFieldSet fs = ListUtils.removeRandomBySwapLastSimple(node.getRNG(), seeds);
 			try {
 				SeedServerPeerNode seed =
 					new SeedServerPeerNode(fs, node, om.crypto, false);
@@ -312,7 +312,7 @@ public class Announcer {
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			div.addChild("#", l10n("announceDisabledTooOld"));
-			if(!node.nodeUpdater.isEnabled()) {
+			if(!node.getNodeUpdater().isEnabled()) {
 				div.addChild("#", " ");
 				NodeL10n.getBase().addL10nSubstitution(div, "Announcer.announceDisabledTooOldUpdateDisabled", new String[] { "config" }, new HTMLNode[] { HTMLNode.link("/config/node.updater") });
 			}
@@ -325,7 +325,7 @@ public class Announcer {
 			StringBuilder sb = new StringBuilder();
 			sb.append(l10n("announceDisabledTooOld"));
 			sb.append(" ");
-			if(!node.nodeUpdater.isEnabled()) {
+			if(!node.getNodeUpdater().isEnabled()) {
 				sb.append(l10n("announceDisabledTooOldUpdateDisabled", new String[] { "config", "/config" }, new String[] { "", "" }));
 			}
 			return sb.toString();
@@ -333,7 +333,7 @@ public class Announcer {
 		
 		@Override
 		public boolean isValid() {
-			if(node.nodeUpdater.isEnabled()) return false;
+			if(node.getNodeUpdater().isEnabled()) return false;
 			// If it is enabled but not armed there will be a message from the updater.
 			synchronized(Announcer.this) {
 				return killedAnnouncementTooOld;
@@ -359,8 +359,8 @@ public class Announcer {
 			return true;
 		}
 		boolean killAnnouncement = false;
-		if((!node.nodeUpdater.isEnabled()) ||
-				(node.nodeUpdater.canUpdateNow() && !node.nodeUpdater.isArmed())) {
+		if((!node.getNodeUpdater().isEnabled()) ||
+				(node.getNodeUpdater().canUpdateNow() && !node.getNodeUpdater().isArmed())) {
 			// If we also have 10 TOO_NEW peers, we should shut down the announcement,
 			// because we're obviously broken and would only be spamming the seednodes
 			synchronized(this) {
@@ -376,14 +376,14 @@ public class Announcer {
 				}
 				Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
 				System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
-				if(node.clientCore != null)
-					node.clientCore.alerts.register(announcementDisabledAlert);
+				if(node.getClientCore() != null)
+					node.getClientCore().alerts.register(announcementDisabledAlert);
 			}
 
 		}
 		
 		if(killAnnouncement) {
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {
@@ -401,10 +401,10 @@ public class Announcer {
 			synchronized(this) {
 				killedAnnouncementTooOld = false;
 			}
-			if(node.clientCore != null)
-				node.clientCore.alerts.unregister(announcementDisabledAlert);
-			if(node.nodeUpdater.isEnabled() && node.nodeUpdater.isArmed() &&
-					node.nodeUpdater.uom.fetchingFromTwo() &&
+			if(node.getClientCore() != null)
+				node.getClientCore().alerts.unregister(announcementDisabledAlert);
+			if(node.getNodeUpdater().isEnabled() && node.getNodeUpdater().isArmed() &&
+					node.getNodeUpdater().uom.fetchingFromTwo() &&
 					node.getPeerManager().getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 5) {
 				// No point announcing at the moment, but we might need to if a transfer falls through.
 				return true;
@@ -524,7 +524,7 @@ public class Announcer {
 						Logger.minor(this, "No more seednodes, announcedTo = "+announcedToIdentities.size());
 					break;
 				}
-				final SeedServerPeerNode seed = ListUtils.removeRandomBySwapLastSimple(node.random, seeds);
+				final SeedServerPeerNode seed = ListUtils.removeRandomBySwapLastSimple(node.getRNG(), seeds);
 				InetAddress[] addrs = seed.getInetAddresses();
 				if(!newAnnouncedIPs(addrs)) {
 					if(logMINOR)
@@ -682,7 +682,7 @@ public class Announcer {
 				Logger.error(this, "Announcement to "+seed.userToString()+" : RELAYED ?!?!?!");
 			}
 		}, seed);
-		node.executor.execute(sender, "Announcer to "+seed);
+		node.getExecutor().execute(sender, "Announcer to "+seed);
 		return true;
 	}
 
@@ -719,7 +719,7 @@ public class Announcer {
 			if(status == STATUS_LOADING) {
 				return l10n("announceLoading");
 			}
-			if(node.clientCore.isAdvancedModeEnabled()) {
+			if(node.getClientCore().isAdvancedModeEnabled()) {
 				// Detail
 				sb.append(' ');
 				int addedNodes;

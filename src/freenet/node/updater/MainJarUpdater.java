@@ -57,7 +57,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		dependencyCtx.maxNonSplitfileRetries = -1;
 		dependencyCtx.maxSplitfileBlockRetries = -1;
 		clientContext = core.clientContext;
-		dependencies = new MainJarDependenciesChecker(this, manager.node.executor);
+		dependencies = new MainJarDependenciesChecker(this, manager.node.getExecutor());
 	}
 
 	private final MainJarDependenciesChecker dependencies;
@@ -154,7 +154,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				fetched = true;
 				f = uomFetcher;
 			}
-			MainJarUpdater.this.node.executor.execute(new Runnable() {
+			MainJarUpdater.this.node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {
@@ -362,7 +362,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
         } else {
             final long now = System.currentTimeMillis();
             System.err.println("Not deploying multi-file update for "+atomicDeployer.name+" because auto-update is not enabled.");
-            node.clientCore.alerts.register(new UserAlert() {
+            node.getClientCore().alerts.register(new UserAlert() {
 
                 private String l10n(String key) {
                     return NodeL10n.getBase().getString("MainJarUpdater.ConfirmMultiFileUpdater."+key);

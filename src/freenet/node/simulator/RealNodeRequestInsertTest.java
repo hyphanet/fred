@@ -22,11 +22,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.SSKEncodeException;
-import freenet.node.FSParseException;
-import freenet.node.LowLevelGetException;
-import freenet.node.Node;
-import freenet.node.NodeInitException;
-import freenet.node.NodeStarter;
+import freenet.node.*;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
@@ -91,7 +87,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         DummyRandomSource random = new DummyRandomSource(3142);
         DummyRandomSource topologyRandom = new DummyRandomSource(3143);
         //DiffieHellman.init(random);
-        Node[] nodes = new Node[NUMBER_OF_NODES];
+        Node[] nodes = new NodeImpl[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
@@ -204,7 +200,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: "+fetchKey.getURI());
 		try {
 			insertAttempts++;
-			randomNode.clientCore.realPut(block.getBlock(), false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
+			randomNode.getClientCore().realPut(block.getBlock(), false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
 			Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
 		} catch (freenet.node.LowLevelPutException putEx) {
 			Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
@@ -218,7 +214,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         } while(node2 == node1);
         Node fetchNode = nodes[node2];
         try {
-        	block = fetchNode.clientCore.realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
+        	block = fetchNode.getClientCore().realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
         } catch (LowLevelGetException e) {
         	block = null;
         }
@@ -251,8 +247,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         for(int i=0;i<nodes.length;i++) {
         	load.append(i);
         	load.append(':');
-        	nodes[i].tracker.addRunningUIDs(runningUIDsList);
-        	int runningUIDsAlt = nodes[i].tracker.getTotalRunningUIDsAlt();
+        	nodes[i].getRequestTracker().addRunningUIDs(runningUIDsList);
+        	int runningUIDsAlt = nodes[i].getRequestTracker().getTotalRunningUIDsAlt();
         	totalRunningUIDsAlt += runningUIDsAlt;
         	load.append(totalRunningUIDsAlt);
         	if(i != nodes.length-1)

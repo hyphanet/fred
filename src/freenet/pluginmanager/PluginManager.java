@@ -31,6 +31,7 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
+import freenet.node.*;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.HighLevelSimpleClient;
@@ -45,11 +46,6 @@ import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.l10n.NodeL10n;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.RequestClient;
-import freenet.node.RequestClientBuilder;
-import freenet.node.RequestStarter;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.OfficialPlugins.OfficialPluginDescription;
@@ -99,7 +95,7 @@ public class PluginManager {
 		// config
 
 		this.node = node;
-		this.core = node.clientCore;
+		this.core = node.getClientCore();
 
 		if(logMINOR)
 			Logger.minor(this, "Starting Plugin Manager");
@@ -111,9 +107,9 @@ public class PluginManager {
 
 		// callback executor
 		executor = new SerialExecutor(PriorityLevel.NORM_PRIORITY.value);
-		executor.start(node.executor, "PM callback executor");
+		executor.start(node.getExecutor(), "PM callback executor");
 
-        SubConfig pmconfig = node.config.createSubConfig("pluginmanager");
+        SubConfig pmconfig = node.getConfig().createSubConfig("pluginmanager");
         pmconfig.register("enabled", true, 0, true, true, "PluginManager.enabled", "PluginManager.enabledLong", new BooleanCallback() {
 
             @Override
@@ -187,7 +183,7 @@ public class PluginManager {
 		});
 
 		alwaysLoadOfficialPluginsFromCentralServer = pmconfig.getBoolean("alwaysLoadOfficialPluginsFromCentralServer");
-		if (lastVersion <= 1437) {
+		if(node.getLastVersion() <= 1437) {
 			// Overwrite this setting, since it will have been set by the old callback and then written as it's not default.
 			// FIXME remove back compatibility code.
 			alwaysLoadOfficialPluginsFromCentralServer = false;
@@ -195,7 +191,7 @@ public class PluginManager {
 
 		pmconfig.finishedInitialization();
 
-		fproxyTheme = THEME.themeFromName(node.config.get("fproxy").getString("css"));
+		fproxyTheme = THEME.themeFromName(node.getConfig().get("fproxy").getString("css"));
 		selfinstance = this;
 	}
 
@@ -219,7 +215,7 @@ public class PluginManager {
 
 		final Semaphore startingPlugins = new Semaphore(0);
 			for(final String name : toStart) {
-			    core.getExecutor().execute(new Runnable() {
+			    node.getExecutor().execute(new Runnable() {
 
                     @Override
                     public void run() {
@@ -230,7 +226,7 @@ public class PluginManager {
 			    });
 			}
 
-		core.getExecutor().execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 			@Override
 			public void run() {
 				startingPlugins.acquireUninterruptibly(toStart.length);
@@ -440,7 +436,7 @@ public class PluginManager {
 				core.storeConfig();
 		}
 		if(pi != null)
-			node.nodeUpdater.startPluginUpdater(filename);
+			node.getNodeUpdater().startPluginUpdater(filename);
 		return pi;
 	}
 
@@ -499,7 +495,7 @@ public class PluginManager {
 		@Override
 		public void onDismiss() {
 			loadedPlugins.removeFailedPlugin(filename);
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {
@@ -540,14 +536,14 @@ public class PluginManager {
 					p.addChild("#", l10n("officialPluginLoadFailedSuggestTryAgainHTTPS"));
 
 				HTMLNode reloadForm = div.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.getClientCore().formPassword });
 				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "plugin-name", filename });
 				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "pluginSource", "https" });
 				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("officialPluginLoadFailedTryAgain") });
 
 				if(!stillTryingOverFreenet) {
 					reloadForm = div.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
-					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.getClientCore().formPassword });
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "plugin-name", filename });
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "pluginSource", "freenet" });
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("officialPluginLoadFailedTryAgainFreenet") });
@@ -623,7 +619,7 @@ public class PluginManager {
 			// malicious plugins could try to hijack node config
 			// pages, to ill effect. Let's avoid that.
 			boolean pluginIsTryingToHijackNodeConfig = false;
-			for(SubConfig subconfig : node.config.getConfigs()) {
+			for(SubConfig subconfig : node.getConfig().getConfigs()) {
 				if(pi.getPluginClassName().equals(subconfig.getPrefix())) {
 					pluginIsTryingToHijackNodeConfig = true;
 					break;
@@ -638,11 +634,11 @@ public class PluginManager {
 		}
 
 		if(pi.isIPDetectorPlugin())
-			node.ipDetector.registerIPDetectorPlugin((FredPluginIPDetector) plug);
+			node.getIPDetector().registerIPDetectorPlugin((FredPluginIPDetector) plug);
 		if(pi.isPortForwardPlugin())
-			node.ipDetector.registerPortForwardPlugin((FredPluginPortForward) plug);
+			node.getIPDetector().registerPortForwardPlugin((FredPluginPortForward) plug);
 		if(pi.isBandwidthIndicator())
-			node.ipDetector.registerBandwidthIndicatorPlugin((FredPluginBandwidthIndicator) plug);
+			node.getIPDetector().registerBandwidthIndicatorPlugin((FredPluginBandwidthIndicator) plug);
 	}
 
 	public void cancelRunningLoads(String filename, PluginProgress exceptFor) {
@@ -1592,13 +1588,13 @@ public class PluginManager {
 			core.getToadletContainer().unregister(wrapper.getConfigToadlet());
 		}
 		if(wrapper.isIPDetectorPlugin())
-			node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
+			node.getIPDetector().unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
 		if(wrapper.isPortForwardPlugin())
-			node.ipDetector.unregisterPortForwardPlugin((FredPluginPortForward)plug);
+			node.getIPDetector().unregisterPortForwardPlugin((FredPluginPortForward)plug);
 		if(wrapper.isBandwidthIndicator())
-			node.ipDetector.unregisterBandwidthIndicatorPlugin((FredPluginBandwidthIndicator)plug);
+			node.getIPDetector().unregisterBandwidthIndicatorPlugin((FredPluginBandwidthIndicator)plug);
 		if(!reloading)
-			node.nodeUpdater.stopPluginUpdater(wrapper.getFilename());
+			node.getNodeUpdater().stopPluginUpdater(wrapper.getFilename());
 	}
 
     public boolean isEnabled() {

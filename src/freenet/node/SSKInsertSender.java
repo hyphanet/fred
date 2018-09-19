@@ -79,7 +79,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     /** Could not get off the node at all! */
     static final int ROUTE_REALLY_NOT_FOUND = 6;
     
-    SSKInsertSender(SSKBlock block, long uid, InsertTag tag, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
+    SSKInsertSender(SSKBlock block, long uid, InsertTag tag, short htl, PeerNode source, ProtectedNode node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
     	super(block.getKey(), realTimeFlag, source, node, htl, uid);
     	this.fromStore = fromStore;
     	this.origUID = uid;
@@ -102,7 +102,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     }
 
     void start() {
-    	node.executor.execute(this, "SSKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
+    	node.getExecutor().execute(this, "SSKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
     }
     
 	@Override
@@ -181,7 +181,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
             	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
             	// Both local and remote inserts can be forked here: If it has reached this HTL, it means it's already been routed to some nodes.
             	
-            	uid = node.clientCore.makeUID();
+            	uid = node.getClientCore().makeUID();
             	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE, source, realTimeFlag, uid, node);
             	forkedRequestTag.reassignToSelf();
             	forkedRequestTag.startedSender();
@@ -189,7 +189,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 				forkedRequestTag.setAccepted();
             	Logger.normal(this, "FORKING SSK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
-            	node.tracker.lockUID(forkedRequestTag);
+            	node.getRequestTracker().lockUID(forkedRequestTag);
             }
             
             // Route it
@@ -302,7 +302,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		// Somewhat intricate logic to try to avoid fatalTimeout() if at all possible.
 		MessageFilter mf = makeAcceptedRejectedFilter(next, TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT, tag);
 		try {
-			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+			node.getUSM().addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 
 				@Override
 				public void onMatched(Message m) {
@@ -458,7 +458,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		MessageFilter mfData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SSKInsertHandler.DATA_INSERT_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
 		Message dataMessage;
 		try {
-			dataMessage = node.usm.waitFor(mfData, this);
+			dataMessage = node.getUSM().waitFor(mfData, this);
 		} catch (DisconnectedException e) {
 			if(logMINOR)
 				Logger.minor(this, "Disconnected: "+next+" getting datareply for "+this);
@@ -631,7 +631,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
 		}
-		node.nodeStats.insertSentBytes(true, x);
+		node.getNodeStats().insertSentBytes(true, x);
 	}
 	
 	public int getTotalSentBytes() {
@@ -647,7 +647,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
 		}
-		node.nodeStats.insertReceivedBytes(true, x);
+		node.getNodeStats().insertReceivedBytes(true, x);
 	}
 	
 	public int getTotalReceivedBytes() {
@@ -659,7 +659,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 	@Override
 	public void sentPayload(int x) {
 		node.sentPayload(x);
-		node.nodeStats.insertSentBytes(true, -x);
+		node.getNodeStats().insertSentBytes(true, -x);
 	}
 
 	@Override
@@ -769,7 +769,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
         	
         	Message newAck;
 			try {
-				newAck = node.usm.waitFor(mf1, this);
+				newAck = node.getUSM().waitFor(mf1, this);
 			} catch (DisconnectedException e) {
 				if(logMINOR) Logger.minor(this, "Disconnected from "+next);
 				next.noLongerRoutingTo(thisTag, false);
@@ -793,7 +793,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
         while (true) {
         	Message msg;
 			try {
-				msg = node.usm.waitFor(mf, this);
+				msg = node.getUSM().waitFor(mf, this);
 			} catch (DisconnectedException e) {
 				Logger.normal(this, "Disconnected from " + next
 						+ " while waiting for InsertReply on " + this);
@@ -813,7 +813,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 				while(true) {
 					
 					try {
-						msg = node.usm.waitFor(mf, this);
+						msg = node.getUSM().waitFor(mf, this);
 					} catch (DisconnectedException e) {
 						Logger.normal(this, "Disconnected from " + next
 								+ " while waiting for InsertReply on " + this);

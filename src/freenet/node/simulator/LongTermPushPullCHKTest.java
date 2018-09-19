@@ -19,6 +19,7 @@ import freenet.client.InsertException;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
 import freenet.support.Logger;
@@ -83,7 +84,7 @@ public class LongTermPushPullCHKTest extends LongTermTest {
 			fis.close();
 
 			// Create one node
-			node = NodeStarter.createTestNode(DARKNET_PORT1, OPENNET_PORT1, dir.getPath(), false, Node.DEFAULT_MAX_HTL,
+			node = NodeStarter.createTestNode(DARKNET_PORT1, OPENNET_PORT1, dir.getPath(), false, NodeImpl.DEFAULT_MAX_HTL,
 			        0, random, new PooledExecutor(), 1000, 4 * 1024 * 1024, true, true, true, true, true, true, true,
 			        12 * 1024, true, true, false, false, null);
 			Logger.getChain().setThreshold(LogLevel.ERROR);
@@ -105,7 +106,7 @@ public class LongTermPushPullCHKTest extends LongTermTest {
 			// PUSH N+1 BLOCKS
 			for (int i = 0; i <= MAX_N; i++) {
 			    RandomAccessBucket data = randomData(node);
-				HighLevelSimpleClient client = node.clientCore.makeClient((short) 0, false, false);
+				HighLevelSimpleClient client = node.getClientCore().makeClient((short) 0, false, false);
 				System.out.println("PUSHING " + i);
 
 				try {
@@ -136,7 +137,7 @@ public class LongTermPushPullCHKTest extends LongTermTest {
 			FileUtil.writeTo(fis, new File(innerDir2, "seednodes.fref"));
 			fis.close();
 			node2 = NodeStarter.createTestNode(DARKNET_PORT2, OPENNET_PORT2, dir.getPath(), false,
-			        Node.DEFAULT_MAX_HTL, 0, random, new PooledExecutor(), 1000, 5 * 1024 * 1024, true, true, true,
+			        NodeImpl.DEFAULT_MAX_HTL, 0, random, new PooledExecutor(), 1000, 5 * 1024 * 1024, true, true, true,
 			        true, true, true, true, 12 * 1024, false, true, false, false, null);
 			node2.start(true);
 
@@ -151,7 +152,7 @@ public class LongTermPushPullCHKTest extends LongTermTest {
 
 			// PULL N+1 BLOCKS
 			for (int i = 0; i <= MAX_N; i++) {
-				HighLevelSimpleClient client = node2.clientCore.makeClient((short) 0, false, false);
+				HighLevelSimpleClient client = node2.getClientCore().makeClient((short) 0, false, false);
 				Calendar targetDate = (Calendar) today.clone();
 				targetDate.add(Calendar.DAY_OF_MONTH, -((1 << i) - 1));
 
@@ -228,12 +229,12 @@ public class LongTermPushPullCHKTest extends LongTermTest {
 	}
 
 	private static RandomAccessBucket randomData(Node node) throws IOException {
-	    RandomAccessBucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
+	    RandomAccessBucket data = node.getClientCore().tempBucketFactory.makeBucket(TEST_SIZE);
 		OutputStream os = data.getOutputStream();
 		try {
 		byte[] buf = new byte[4096];
 		for (long written = 0; written < TEST_SIZE;) {
-			node.fastWeakRandom.nextBytes(buf);
+			node.getWeakRNG().nextBytes(buf);
 			int toWrite = (int) Math.min(TEST_SIZE - written, buf.length);
 			os.write(buf, 0, toWrite);
 			written += toWrite;

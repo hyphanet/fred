@@ -310,7 +310,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 */
 	public int[] getUDPPortsNotForwarded() {
 		OpennetManager om = node.getOpennet();
-		Status darknetStatus = (node.getPeerManager().anyDarknetPeers() ? node.darknetCrypto.getDetectedConnectivityStatus() : AddressTracker.Status.DONT_KNOW);
+		Status darknetStatus = (node.getPeerManager().anyDarknetPeers() ? node.getDarknetCrypto().getDetectedConnectivityStatus() : AddressTracker.Status.DONT_KNOW);
 		Status opennetStatus = om == null ? Status.DONT_KNOW : om.crypto.getDetectedConnectivityStatus();
 		if(om == null || opennetStatus.ordinal() >= AddressTracker.Status.DONT_KNOW.ordinal()) {
 			if(darknetStatus.ordinal() >= AddressTracker.Status.DONT_KNOW.ordinal()) {
@@ -344,8 +344,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 * is one, and if it is necessary to do so. */
 	void start() {
 		// Cannot be initialized until UserAlertManager has been created.
-		proxyAlert = new ProxyUserAlert(node.clientCore.alerts, false);
-		node.clientCore.alerts.register(portForwardAlert);
+		proxyAlert = new ProxyUserAlert(node.getClientCore().alerts, false);
+		node.getClientCore().alerts.register(portForwardAlert);
 		started = true;
 		tryMaybeRun();
 	}
@@ -690,7 +690,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				if(runners.containsKey(plugin)) continue;
 				DetectorRunner d = new DetectorRunner(plugin);
 				runners.put(plugin, d);
-				node.executor.execute(d, "Plugin detector runner for "+plugin.getClass());
+				node.getExecutor().execute(d, "Plugin detector runner for "+plugin.getClass());
 			}
 		}
 	}
@@ -704,7 +704,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 
 		public void kill() {
-			node.pluginManager.killPlugin((FredPlugin)plugin, 0);
+			node.getPluginManager().killPlugin((FredPlugin)plugin, 0);
 		}
 
 		@Override
@@ -846,7 +846,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 								new SimpleUserAlert(false, l10n("noConnectivityTitle"), l10n("noConnectivity"), l10n("noConnectivityShort"), UserAlert.ERROR);
 					}
 					if(toRegister != null)
-						node.clientCore.alerts.register(toRegister);
+						node.getClientCore().alerts.register(toRegister);
 				} else {
 					UserAlert toKill;
 					synchronized(this) {
@@ -854,7 +854,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 						noConnectivityAlert = null;
 					}
 					if(toKill != null)
-						node.clientCore.alerts.unregister(toKill);
+						node.getClientCore().alerts.unregister(toKill);
 				}
 			} finally {
 				boolean finished;
@@ -910,7 +910,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			plugins = portForwardPlugins;
 		}
 		for(final FredPluginPortForward plugin: plugins) {
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {
@@ -945,7 +945,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			// Not much more we can do / want to do for now
 			// FIXME use status.externalPort.
 		}
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 			@Override
 			public void run() {
 				maybeRun();
@@ -958,18 +958,18 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	}
 
 	public void addConnectionTypeBox(HTMLNode contentNode) {
-		if(node.clientCore == null) return;
-		if(node.clientCore.alerts == null) return;
+		if(node.getClientCore() == null) return;
+		if(node.getClientCore().alerts == null) return;
 		if(proxyAlert == null) {
 			Logger.error(this, "start() not called yet?", new Exception("debug"));
 			return;
 		}
 		if(proxyAlert.isValid())
-			contentNode.addChild(node.clientCore.alerts.renderAlert(proxyAlert));
+			contentNode.addChild(node.getClientCore().alerts.renderAlert(proxyAlert));
 	}
 
 	public boolean hasJSTUN() {
-		return node.pluginManager.isPluginLoadedOrLoadingOrWantLoad("JSTUN");
+		return node.getPluginManager().isPluginLoadedOrLoadingOrWantLoad("JSTUN");
 	}
 	
 }

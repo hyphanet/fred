@@ -63,7 +63,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	public void update() {
 		// Called by detector code, which is critical and convoluted.
 		// Run off-thread, break locks, avoid stalling caller.
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 
 			@Override
 			public void run() {
@@ -168,15 +168,15 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		
 		if(logMINOR) Logger.minor(this, "Inserting " + darknetOpennetString + " ARK: " + uri + "  contents:\n" + s);
 		
-		InsertContext ctx = node.clientCore.makeClient((short)0, true, false).getInsertContext(true);
+		InsertContext ctx = node.getClientCore().makeClient((short)0, true, false).getInsertContext(true);
 		inserter = new ClientPutter(this, b, uri,
 					null, // Modern ARKs easily fit inside 1KB so should be pure SSKs => no MIME type; this improves fetchability considerably
 					ctx,
-					RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, null, false, node.clientCore.clientContext, null, -1);
+					RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, null, false, node.getClientCore().clientContext, null, -1);
 		
 		try {
 			
-			node.clientCore.clientContext.start(inserter);
+			node.getClientCore().clientContext.start(inserter);
 			
 			synchronized (this) {
 				if(fs.get("physical.udp") == null)

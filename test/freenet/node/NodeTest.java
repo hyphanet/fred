@@ -15,9 +15,9 @@ public class NodeTest extends TestCase {
      * Tests for sanity of default store sizes.
      */
     public void testDefaultStoreSizeSanity() {
-        assertTrue(Node.MIN_STORE_SIZE <= Node.DEFAULT_STORE_SIZE);
-        assertTrue(Node.MIN_CLIENT_CACHE_SIZE <= Node.DEFAULT_CLIENT_CACHE_SIZE);
-        assertTrue(Node.MIN_SLASHDOT_CACHE_SIZE <= Node.DEFAULT_SLASHDOT_CACHE_SIZE);
+        assertTrue(NodeImpl.MIN_STORE_SIZE <= NodeImpl.DEFAULT_STORE_SIZE);
+        assertTrue(NodeImpl.MIN_CLIENT_CACHE_SIZE <= NodeImpl.DEFAULT_CLIENT_CACHE_SIZE);
+        assertTrue(NodeImpl.MIN_SLASHDOT_CACHE_SIZE <= NodeImpl.DEFAULT_SLASHDOT_CACHE_SIZE);
     }
 }
 

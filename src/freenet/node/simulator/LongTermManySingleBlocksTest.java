@@ -27,11 +27,7 @@ import freenet.client.InsertException;
 import freenet.client.InsertException.InsertExceptionMode;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
-import freenet.node.Node;
-import freenet.node.NodeStarter;
-import freenet.node.RequestClient;
-import freenet.node.RequestClientBuilder;
-import freenet.node.Version;
+import freenet.node.*;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
@@ -223,7 +219,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 			System.out.println("SEED-TIME:" + (t2 - t1));
 			csvLine.add(String.valueOf(t2 - t1));
 
-			HighLevelSimpleClient client = node.clientCore.makeClient((short) 0, false, false);
+			HighLevelSimpleClient client = node.getClientCore().makeClient((short) 0, false, false);
 
 			int successes = 0;
 			
@@ -439,12 +435,12 @@ loopOverLines:
 	}	
 	
 	private static RandomAccessBucket randomData(Node node) throws IOException {
-	    RandomAccessBucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
+	    RandomAccessBucket data = node.getClientCore().tempBucketFactory.makeBucket(TEST_SIZE);
 		OutputStream os = data.getOutputStream();
 		try {
 		byte[] buf = new byte[4096];
 		for (long written = 0; written < TEST_SIZE;) {
-			node.fastWeakRandom.nextBytes(buf);
+			node.getWeakRNG().nextBytes(buf);
 			int toWrite = (int) Math.min(TEST_SIZE - written, buf.length);
 			os.write(buf, 0, toWrite);
 			written += toWrite;

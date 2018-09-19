@@ -5,15 +5,9 @@ package freenet.node.simulator;
 
 import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
-import freenet.node.FSParseException;
-import freenet.node.Location;
-import freenet.node.Node;
-import freenet.node.NodeInitException;
-import freenet.node.NodeStats;
-import freenet.node.PeerNode;
+import freenet.node.*;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
-import freenet.node.PeerTooOldException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -155,7 +149,7 @@ public class RealNodeTest {
 				totalPartialConnections += countAlmostConnected;
 				totalCompatibleConnections += countCompatible;
 				totalBackedOff += countBackedOff;
-				double pingTime = nodes[i].nodeStats.getNodeAveragePingTime();
+				double pingTime = nodes[i].getNodeStats().getNodeAveragePingTime();
 				totalPingTime += pingTime;
 				if(pingTime > maxPingTime) maxPingTime = pingTime;
 				if(pingTime < minPingTime) minPingTime = pingTime;

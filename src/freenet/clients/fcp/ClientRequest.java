@@ -389,7 +389,7 @@ public abstract class ClientRequest implements Serializable {
 			
 		}, NativeThread.HIGH_PRIORITY);
 		} else {
-			server.core.getExecutor().execute(new PrioRunnable() {
+			server.core.getNode().getExecutor().execute(new PrioRunnable() {
 
 				@Override
 				public int getPriority() {

@@ -191,7 +191,7 @@ public class NodeStarter implements WrapperListener {
 		SSL.init(sslConfig);
 
 		try {
-			node = new Node(cfg, null, null, logConfigHandler, this, executor);
+			node = makeNewNode(cfg, null, null, logConfigHandler, this, executor);
 			node.start(false);
 			System.out.println("Node initialization completed.");
 		} catch(NodeInitException e) {
@@ -378,12 +378,12 @@ public class NodeStarter implements WrapperListener {
      */
     @Deprecated
 	public static Node createTestNode(int port, int opennetPort, String testName, boolean disableProbabilisticHTLs,
-	                                  short maxHTL, int dropProb, RandomSource random,
-	                                  Executor executor, int threadLimit, long storeSize, boolean ramStore,
-	                                  boolean enableSwapping, boolean enableARKs, boolean enableULPRs, boolean enablePerNodeFailureTables,
-	                                  boolean enableSwapQueueing, boolean enablePacketCoalescing,
-	                                  int outputBandwidthLimit, boolean enableFOAF,
-	                                  boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache, String ipAddressOverride) throws NodeInitException {
+                                          short maxHTL, int dropProb, RandomSource random,
+                                          Executor executor, int threadLimit, long storeSize, boolean ramStore,
+                                          boolean enableSwapping, boolean enableARKs, boolean enableULPRs, boolean enablePerNodeFailureTables,
+                                          boolean enableSwapQueueing, boolean enablePacketCoalescing,
+                                          int outputBandwidthLimit, boolean enableFOAF,
+                                          boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache, String ipAddressOverride) throws NodeInitException {
 		return createTestNode(port, opennetPort, testName, disableProbabilisticHTLs, maxHTL, dropProb, random, executor,
 		    threadLimit, storeSize, ramStore, enableSwapping, enableARKs, enableULPRs, enablePerNodeFailureTables,
 		    enableSwapQueueing, enablePacketCoalescing, outputBandwidthLimit, enableFOAF, connectToSeednodes,
@@ -446,13 +446,13 @@ public class NodeStarter implements WrapperListener {
      */
     @Deprecated
     public static Node createTestNode(int port, int opennetPort, String testName,
-            boolean disableProbabilisticHTLs, short maxHTL, int dropProb, RandomSource random,
-            Executor executor, int threadLimit, long storeSize, boolean ramStore,
-            boolean enableSwapping, boolean enableARKs, boolean enableULPRs,
-            boolean enablePerNodeFailureTables, boolean enableSwapQueueing,
-            boolean enablePacketCoalescing, int outputBandwidthLimit, boolean enableFOAF,
-            boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache,
-            String ipAddressOverride, boolean enableFCP)
+                                          boolean disableProbabilisticHTLs, short maxHTL, int dropProb, RandomSource random,
+                                          Executor executor, int threadLimit, long storeSize, boolean ramStore,
+                                          boolean enableSwapping, boolean enableARKs, boolean enableULPRs,
+                                          boolean enablePerNodeFailureTables, boolean enableSwapQueueing,
+                                          boolean enablePacketCoalescing, int outputBandwidthLimit, boolean enableFOAF,
+                                          boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache,
+                                          String ipAddressOverride, boolean enableFCP)
                 throws NodeInitException {
 
         TestNodeParameters params = new TestNodeParameters();
@@ -576,7 +576,7 @@ public class NodeStarter implements WrapperListener {
 
 		PersistentConfig config = new PersistentConfig(configFS);
 
-        Node node = new Node(config, params.random, params.random, null, null, params.executor);
+        Node node = makeNewNode(config, params.random, params.random, null, null, params.executor);
 
 		//All testing environments connect the nodes as they want, even if the old setup is restored, it is not desired.
 		node.getPeerManager().removeAllPeers();
@@ -643,4 +643,7 @@ public class NodeStarter implements WrapperListener {
 	    return globalSecureRandom;
 	}
 
+	static ProtectedNode makeNewNode(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
+	    return new NodeImpl(config, r, weakRandom, lc, ns, executor);
+    }
 }

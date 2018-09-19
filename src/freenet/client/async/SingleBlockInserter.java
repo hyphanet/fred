@@ -28,16 +28,7 @@ import freenet.keys.KeyEncodeException;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKEncodeException;
-import freenet.node.KeysFetchingLocally;
-import freenet.node.LowLevelPutException;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.RequestClient;
-import freenet.node.RequestScheduler;
-import freenet.node.SendableInsert;
-import freenet.node.SendableRequestItem;
-import freenet.node.SendableRequestItemKey;
-import freenet.node.SendableRequestSender;
+import freenet.node.*;
 import freenet.store.KeyCollisionException;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
@@ -487,15 +478,15 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				});
 				if(req.localRequestOnly)
 					try {
-						core.node.store(b, false, req.canWriteClientCache, true, false);
+						core.getNode().store(b, false, req.canWriteClientCache, true, false);
 					} catch (KeyCollisionException e) {
 						LowLevelPutException failed = new LowLevelPutException(LowLevelPutException.COLLISION);
-						KeyBlock collided = core.node.fetch(k.getNodeKey(), true, req.canWriteClientCache, false, false, null);
+						KeyBlock collided = core.getNode().fetch(k.getNodeKey(), true, req.canWriteClientCache, false, false, null);
 						if(collided == null) {
 							Logger.error(this, "Collided but no key?!");
 							// Could be a race condition.
 							try {
-								core.node.store(b, false, req.canWriteClientCache, true, false);
+								core.getNode().store(b, false, req.canWriteClientCache, true, false);
 							} catch (KeyCollisionException e2) {
 								Logger.error(this, "Collided but no key and still collided!");
 								throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, "Collided, can't find block, but still collides!", e);
@@ -506,7 +497,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						throw failed;
 					}
 				else
-					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, req.realTimeFlag);
+					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, NodeImpl.PREFER_INSERT_DEFAULT, NodeImpl.IGNORE_LOW_BACKOFF_DEFAULT, req.realTimeFlag);
 			} catch (LowLevelPutException e) {
 				if(logMINOR) Logger.minor(this, "Caught "+e, e);
 				if(e.code == LowLevelPutException.COLLISION) {

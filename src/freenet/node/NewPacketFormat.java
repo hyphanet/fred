@@ -698,7 +698,7 @@ addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 					if(now - timeLastSentPacket > Node.KEEPALIVE_INTERVAL)
 						mustSend = true;
 				}
-				if((!ackOnly) && now - timeLastSentPayload > Node.KEEPALIVE_INTERVAL && 
+				if((!ackOnly) && now - timeLastSentPayload > Node.KEEPALIVE_INTERVAL &&
 						packet.getFragments().isEmpty())
 					mustSendKeepalive = true;
 			}

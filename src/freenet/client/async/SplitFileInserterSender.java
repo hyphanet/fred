@@ -8,15 +8,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
-import freenet.node.KeysFetchingLocally;
-import freenet.node.LowLevelPutException;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.RequestClient;
-import freenet.node.RequestScheduler;
-import freenet.node.SendableInsert;
-import freenet.node.SendableRequestItem;
-import freenet.node.SendableRequestSender;
+import freenet.node.*;
 import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
 import freenet.support.io.ResumeFailedException;
@@ -136,12 +128,12 @@ public class SplitFileInserterSender extends SendableInsert {
                 });
                 if(request.localRequestOnly) {
                     try {
-                        node.node.store(block, false, request.canWriteClientCache, true, false);
+                        node.getNode().store(block, false, request.canWriteClientCache, true, false);
                     } catch (KeyCollisionException e) {
                         throw new LowLevelPutException(LowLevelPutException.COLLISION);
                     }
                 } else {
-                    node.realPut(block, request.canWriteClientCache, request.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, request.realTimeFlag);
+                    node.realPut(block, request.canWriteClientCache, request.forkOnCacheable, NodeImpl.PREFER_INSERT_DEFAULT, NodeImpl.IGNORE_LOW_BACKOFF_DEFAULT, request.realTimeFlag);
                 }
                 request.onInsertSuccess(key, context);
                 return true;

@@ -27,11 +27,7 @@ import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.USKCallback;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.RequestClient;
-import freenet.node.RequestStarter;
-import freenet.node.Version;
+import freenet.node.*;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.Ticker;
@@ -71,8 +67,8 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		this.manager = manager;
 		this.node = manager.node;
 		this.URI = URI.setSuggestedEdition(Version.buildNumber() + 1);
-		this.ticker = node.ticker;
-		this.core = node.clientCore;
+		this.ticker = node.getTicker();
+		this.core = node.getClientCore();
 		this.currentVersion = current;
 		this.availableVersion = -1;
 		this.isRunning = true;
@@ -105,7 +101,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		if(oldBlob.exists()) {
 			File temp;
 			try {
-				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", core.getPersistentTempDir());
 			} catch (IOException e) {
 				Logger.error(this, "Unable to process old blob: "+e, e);
 				return;
@@ -213,7 +209,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					if(availableVersion > currentVersion)
 						System.err.println("Starting " + jarName() + " fetch for " + availableVersion);
 					tempBlobFile =
-						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", core.getPersistentTempDir());
 					FreenetURI uri = URI.setSuggestedEdition(availableVersion);
 					uri = uri.sskForUSK();
 					cg = new ClientGetter(this,  
@@ -231,7 +227,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		}
 		if(toStart != null)
 			try {
-				node.clientCore.clientContext.start(toStart);
+				core.clientContext.start(toStart);
 			} catch(FetchException e) {
 				Logger.error(this, "Error while starting the fetching: " + e, e);
 				synchronized(this) {
@@ -245,7 +241,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	}
 
 	final File getBlobFile(int availableVersion) {
-		return new File(node.clientCore.getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
+		return new File(core.getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
 	}
 	
 	RandomAccessBucket getBlobBucket(int availableVersion) {
@@ -278,7 +274,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				System.err.println("Cannot update: result either null or empty for " + availableVersion);
 				// Try again
 				if(result == null || result.asBucket() == null || availableVersion > fetchedVersion)
-					node.ticker.queueTimedJob(new Runnable() {
+					ticker.queueTimedJob(new Runnable() {
 
 						@Override
 						public void run() {

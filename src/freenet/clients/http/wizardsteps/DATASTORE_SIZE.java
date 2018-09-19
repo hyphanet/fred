@@ -5,15 +5,14 @@ import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.Option;
 import freenet.l10n.NodeL10n;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
-import freenet.support.io.FileUtil;
 
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.
@@ -155,7 +154,7 @@ public class DATASTORE_SIZE implements Step {
         if (!config.get("node").getOption("storeSize").isDefault())
             return -1;
 
-        long freeSpace = core.node.getStoreDir().getUsableSpace();
+        long freeSpace = core.getNode().getStoreDir().getUsableSpace();
 
         if (freeSpace <= 0) {
             return -1;

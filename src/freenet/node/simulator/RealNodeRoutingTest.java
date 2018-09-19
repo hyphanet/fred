@@ -8,6 +8,7 @@ import java.io.File;
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.node.NodeStarter;
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -55,7 +56,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		// Make the network reproducible so we can easily compare different routing options by specifying a seed.
 		DummyRandomSource random = new DummyRandomSource(3142);
 		//DiffieHellman.init(random);
-		Node[] nodes = new Node[NUMBER_OF_NODES];
+		Node[] nodes = new NodeImpl[NUMBER_OF_NODES];
 		Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
 		Executor executor = new PooledExecutor();
 		for(int i = 0; i < NUMBER_OF_NODES; i++) {

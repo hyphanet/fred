@@ -69,7 +69,7 @@ import freenet.support.transport.ip.IPUtil;
  */
 public class OpennetManager {
 
-	final Node node;
+	final ProtectedNode node;
 	final ProtectedPeerManager peerManager;
 	final ProtectedNodeCrypto crypto;
 	final Announcer announcer;
@@ -246,12 +246,12 @@ public class OpennetManager {
 	
 	private boolean stopping;
 
-	public OpennetManager(Node node, NodeCryptoConfig opennetConfig, long startupTime, boolean enableAnnouncement) throws NodeInitException {
+	public OpennetManager(ProtectedNode node, NodeCryptoConfig opennetConfig, long startupTime, boolean enableAnnouncement) throws NodeInitException {
 		this.creationTime = System.currentTimeMillis();
 		this.node = node;
 		this.peerManager = (ProtectedPeerManager) node.getPeerManager();
 		crypto =
-			newNodeCrypto(node, true, opennetConfig, startupTime, node.enableARKs);
+			newNodeCrypto(node, true, opennetConfig, startupTime, node.ARKsEnabled());
 
 		timeLastDropped = new EnumMap<ConnectionType,Long>(ConnectionType.class);
 		connectionAttempts = new EnumMap<ConnectionType,Long>(ConnectionType.class);
@@ -343,7 +343,7 @@ public class OpennetManager {
 				}
 				if(p.getPort() == crypto.getPortNumber()) {
 					// DNSRequester doesn't deal with our own node
-					node.ipDetector.setOldIPAddress(p.getFreenetAddress());
+					node.getIPDetector().setOldIPAddress(p.getFreenetAddress());
 					break;
 				}
 			}
@@ -469,7 +469,7 @@ public class OpennetManager {
 				return null;
 			}
 		}
-		if(pn.isUnroutableOlderVersion() && node.nodeUpdater != null && node.nodeUpdater.dontAllowUOM()) {
+		if(pn.isUnroutableOlderVersion() && node.getNodeUpdater() != null && node.getNodeUpdater().dontAllowUOM()) {
 			// We can't send the UOM to it, so we should not accept it.
 			// Plus, some versions around 1320 had big problems with being connected both as a seednode and as an opennet peer.
 			return null;
@@ -968,7 +968,7 @@ public class OpennetManager {
 	OpennetPeerNode randomOldOpennetNode() {
 		OpennetPeerNode[] nodes = getUnsortedOldPeers();
 		if(nodes.length == 0) return null;
-		return nodes[node.random.nextInt(nodes.length)];
+		return nodes[node.getRNG().nextInt(nodes.length)];
 	}
 
 	public synchronized void purgeOldOpennetPeer(OpennetPeerNode source) {
@@ -1019,8 +1019,8 @@ public class OpennetManager {
 			return false;
 		}
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
-		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length-noderef.length);
-		long xferUID = node.random.nextLong();
+		Util.randomBytes(node.getWeakRNG(), padded, noderef.length, padded.length-noderef.length);
+		long xferUID = node.getRNG().nextLong();
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
 		peer.sendAsync(msg2, null, ctr);
@@ -1040,7 +1040,7 @@ public class OpennetManager {
 		ByteArrayRandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(padded);
 		raf.setReadOnly();
 		PartiallyReceivedBulk prb =
-			new PartiallyReceivedBulk(node.usm, padded.length, Node.PACKET_SIZE, raf, true);
+			new PartiallyReceivedBulk(node.getUSM(), padded.length, Node.PACKET_SIZE, raf, true);
 		try {
 			BulkTransmitter bt =
 				new BulkTransmitter(prb, peer, xferUID, true, ctr, true, cb);
@@ -1052,7 +1052,7 @@ public class OpennetManager {
 
 	public long startSendAnnouncementRequest(long uid, PeerNode peer, byte[] noderef, ByteCounter ctr,
 			double target, short htl) throws NotConnectedException {
-		long xferUID = node.random.nextLong();
+		long xferUID = node.getRNG().nextLong();
 		Message msg = DMT.createFNPOpennetAnnounceRequest(uid, xferUID, noderef.length,
 				paddedSize(noderef.length), target, htl);
 		peer.sendAsync(msg, null, ctr);
@@ -1063,7 +1063,7 @@ public class OpennetManager {
 			long xferUID) throws NotConnectedException {
 		byte[] padded = new byte[paddedSize(noderef.length)];
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
-		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length-noderef.length);
+		Util.randomBytes(node.getWeakRNG(), padded, noderef.length, padded.length-noderef.length);
 		innerSendOpennetRef(xferUID, padded, peer, ctr, null);
 	}
 
@@ -1083,7 +1083,7 @@ public class OpennetManager {
 			return;
 		}
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
-		long xferUID = node.random.nextLong();
+		long xferUID = node.getRNG().nextLong();
 		Message msg = DMT.createFNPOpennetAnnounceReply(uid, xferUID, noderef.length,
 				padded.length);
 		peer.sendAsync(msg, null, ctr);
@@ -1173,7 +1173,7 @@ public class OpennetManager {
 		
 		mf = mfAck.or(mfAckTimeout.or(mf));
 		try {
-			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+			node.getUSM().addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 				
 				boolean completed;
 
@@ -1241,7 +1241,7 @@ public class OpennetManager {
 	static byte[] innerWaitForOpennetNoderef(long xferUID, int paddedLength, int realLength, PeerNode source, boolean isReply, long uid, boolean sendReject, ByteCounter ctr, Node node) {
 		byte[] buf = new byte[paddedLength];
 		ByteArrayRandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(buf);
-		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
+		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.getUSM(), buf.length, Node.PACKET_SIZE, raf, false);
 		BulkReceiver br = new BulkReceiver(prb, source, xferUID, ctr);
 		if (logMINOR) {
 			Logger.minor(OpennetManager.class, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
@@ -1303,7 +1303,7 @@ public class OpennetManager {
 	 * and we can do a much more effective announcement this way. */
 	public void announce(double target, AnnouncementCallback cb) {
 		AnnounceSender sender = new AnnounceSender(target, this, node, cb, null);
-		node.executor.execute(sender, "Announcement to "+target);
+		node.getExecutor().execute(sender, "Announcement to "+target);
 	}
 
 	public long getCreationTime() {
@@ -1409,7 +1409,7 @@ public class OpennetManager {
         }
     }
 
-    protected ProtectedNodeCrypto newNodeCrypto(final Node node, final boolean isOpennet, NodeCryptoConfig config, long startupTime, boolean enableARKs) throws NodeInitException {
+    protected ProtectedNodeCrypto newNodeCrypto(final ProtectedNode node, final boolean isOpennet, NodeCryptoConfig config, long startupTime, boolean enableARKs) throws NodeInitException {
     	return (ProtectedNodeCrypto) new NodeCryptoImpl(node, isOpennet, config, startupTime, enableARKs);
 	}
 

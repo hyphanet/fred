@@ -124,7 +124,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private volatile long subMaxPingTime;
 	private volatile long maxPingTime;
 
-	final Node node;
+	final ProtectedNode node;
 	private MemoryChecker myMemoryChecker;
 	final ProtectedPeerManager peers;
 
@@ -322,16 +322,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private volatile boolean enableNewLoadManagementRT;
 	private volatile boolean enableNewLoadManagementBulk;
 
-	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, int lastVersion) throws NodeInitException {
+	NodeStats(ProtectedNode node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, int lastVersion) throws NodeInitException {
 		this.node = node;
 		this.peers = (ProtectedPeerManager) node.getPeerManager();
-		this.hardRandom = node.random;
-		this.routingMissDistanceLocal = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
-		this.routingMissDistanceRemote = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
-		this.routingMissDistanceOverall = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
-		this.routingMissDistanceBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
-		this.routingMissDistanceRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
-		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		this.hardRandom = node.getRNG();
+		this.routingMissDistanceLocal = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node.getTimeSkewDetectorCallback());
+		this.routingMissDistanceRemote = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node.getTimeSkewDetectorCallback());
+		this.routingMissDistanceOverall = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node.getTimeSkewDetectorCallback());
+		this.routingMissDistanceBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node.getTimeSkewDetectorCallback());
+		this.routingMissDistanceRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node.getTimeSkewDetectorCallback());
+		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node.getTimeSkewDetectorCallback());
 		preemptiveRejectReasons = new StringCounter();
 		localPreemptiveRejectReasons = new StringCounter();
 		pInstantRejectIncomingOverall = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 1000, null);
@@ -493,7 +493,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// This is a *network* level setting, because it affects the rate at which we initiate local
 		// requests, which could be seen by distant nodes.
 
-		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+		node.getSecurityLevels().addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
 			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
@@ -537,7 +537,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		});
 		enableNewLoadManagementBulk = statsConfig.getBoolean("enableNewLoadManagementBulk");
 		
-        if(node.lastVersion <= 1455 && (enableNewLoadManagementRT || enableNewLoadManagementBulk)) {
+        if(node.getLastVersion() <= 1455 && (enableNewLoadManagementRT || enableNewLoadManagementBulk)) {
             // FIXME remove
             enableNewLoadManagementRT = false;
             enableNewLoadManagementBulk = false;
@@ -546,42 +546,42 @@ public class NodeStats implements Persistable, BlockTimeCallback {
         }
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false,
-				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ticker, node.getRunDir());
+				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.getTicker(), node.getRunDir());
 
 		SimpleFieldSet throttleFS = persister.read();
 		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
 
 		// Guesstimates. Hopefully well over the reality.
-		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesSentAverage"), node);
-		localSskFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesSentAverage"), node);
-		localChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesSentAverage"), node);
-		localSskInsertBytesSentAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalSskInsertBytesSentAverage"), node);
-		localChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+2048/*path folding*/, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesReceivedAverage"), node);
-		localSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesReceivedAverage"), node);
-		localChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"), node);
-		localSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"), node);
+		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		localSskFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		localChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		localSskInsertBytesSentAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalSskInsertBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		localChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+2048/*path folding*/, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
+		localSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
+		localChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
+		localSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
 
-		remoteChkFetchBytesSentAverage = new TimeDecayingRunningAverage(32768+1024+500+2048/*path folding*/, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesSentAverage"), node);
-		remoteSskFetchBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesSentAverage"), node);
-		remoteChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768+32768+1024, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesSentAverage"), node);
-		remoteSskInsertBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesSentAverage"), node);
-		remoteChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500+2048/*path folding*/, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesReceivedAverage"), node);
-		remoteSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesReceivedAverage"), node);
-		remoteChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesReceivedAverage"), node);
-		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesReceivedAverage"), node);
+		remoteChkFetchBytesSentAverage = new TimeDecayingRunningAverage(32768+1024+500+2048/*path folding*/, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		remoteSskFetchBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		remoteChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768+32768+1024, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		remoteSskInsertBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		remoteChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500+2048/*path folding*/, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
+		remoteSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
+		remoteChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
+		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
 
-		successfulChkFetchBytesSentAverage = new TimeDecayingRunningAverage(32768+1024+500+2048/*path folding*/, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkFetchBytesSentAverage"), node);
-		successfulSskFetchBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskFetchBytesSentAverage"), node);
-		successfulChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768+32768+1024, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkInsertBytesSentAverage"), node);
-		successfulSskInsertBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskInsertBytesSentAverage"), node);
-		successfulChkOfferReplyBytesSentAverage = new TimeDecayingRunningAverage(32768+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("successfulChkOfferReplyBytesSentAverage"), node);
-		successfulSskOfferReplyBytesSentAverage = new TimeDecayingRunningAverage(3072, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("successfulSskOfferReplyBytesSentAverage"), node);
-		successfulChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500+2048/*path folding*/, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkFetchBytesReceivedAverage"), node);
-		successfulSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskFetchBytesReceivedAverage"), node);
-		successfulChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkInsertBytesReceivedAverage"), node);
-		successfulSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskInsertBytesReceivedAverage"), node);
-		successfulChkOfferReplyBytesReceivedAverage = new TimeDecayingRunningAverage(32768+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("successfulChkOfferReplyBytesReceivedAverage"), node);
-		successfulSskOfferReplyBytesReceivedAverage = new TimeDecayingRunningAverage(3072, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("successfulSskOfferReplyBytesReceivedAverage"), node);
+		successfulChkFetchBytesSentAverage = new TimeDecayingRunningAverage(32768+1024+500+2048/*path folding*/, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkFetchBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		successfulSskFetchBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskFetchBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		successfulChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768+32768+1024, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkInsertBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		successfulSskInsertBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskInsertBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		successfulChkOfferReplyBytesSentAverage = new TimeDecayingRunningAverage(32768+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("successfulChkOfferReplyBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		successfulSskOfferReplyBytesSentAverage = new TimeDecayingRunningAverage(3072, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("successfulSskOfferReplyBytesSentAverage"), node.getTimeSkewDetectorCallback());
+		successfulChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500+2048/*path folding*/, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkFetchBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
+		successfulSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskFetchBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
+		successfulChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulChkInsertBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
+		successfulSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("SuccessfulSskInsertBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
+		successfulChkOfferReplyBytesReceivedAverage = new TimeDecayingRunningAverage(32768+500, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("successfulChkOfferReplyBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
+		successfulSskOfferReplyBytesReceivedAverage = new TimeDecayingRunningAverage(3072, 180000, 0.0, 200*1024, throttleFS == null ? null : throttleFS.subset("successfulSskOfferReplyBytesReceivedAverage"), node.getTimeSkewDetectorCallback());
 
 		globalFetchPSuccess = new TrivialRunningAverage();
 		chkLocalFetchPSuccess = new TrivialRunningAverage();
@@ -666,7 +666,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public void start() throws NodeInitException {
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 			@Override
 			public void run() {
 				nodePinger.start();
@@ -809,7 +809,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			boolean ignoreLocalVsRemote = ignoreLocalVsRemoteBandwidthLiability();
 			
-			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node.tracker, peer, false, ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
+			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node.getRequestTracker(), peer, false, ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
 			
 			int peers = node.getPeerManager().countConnectedPeers();
 			
@@ -835,7 +835,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			this.averageTransfersOutPerInsert = transfersPerInsert;
 			
-			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node.tracker, ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
+			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node.getRequestTracker(), ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
 			expectedTransfersInCHK = runningGlobal.expectedTransfersInCHK - runningLocal.expectedTransfersInCHK;
 			expectedTransfersInSSK = runningGlobal.expectedTransfersInSSK - runningLocal.expectedTransfersInSSK;
 			expectedTransfersOutCHK = runningGlobal.expectedTransfersOutCHK - runningLocal.expectedTransfersOutCHK;
@@ -1239,7 +1239,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		int transfersPerInsert = outwardTransfersPerInsert();
 		
 		/** Requests running, globally */
-		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node.tracker, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
+		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node.getRequestTracker(), ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
 		
 		// Don't need to decrement because it won't be counted until setAccepted() below.
 
@@ -1270,7 +1270,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		 * which are not included in the count, and are decremented from the peer limit
 		 * before it is used and sent to the peer. This ensures that the peer
 		 * doesn't use more than it should after a restart. */
-		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node.tracker, source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
+		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node.getRequestTracker(), source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
 		if(logMINOR)
 			peerRequestsSnapshot.log(source);
 		
@@ -1372,7 +1372,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	private double getNonOverheadFraction(long now) {
 		
-		long[] total = node.collector.getTotalIO();
+		long[] total = node.getStatisticCollector().getTotalIO();
 		long totalSent = total[0];
 		long totalOverhead = getSentOverhead();
 		long uptime = node.getUptime();
@@ -1725,9 +1725,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public int getOpennetSizeEstimate(long timestamp) {
-		if (node.opennet == null)
+		if (node.getOpennet() == null)
 			return 0;
-		return node.opennet.getNetworkSizeEstimate(timestamp);
+		return node.getOpennet().getNetworkSizeEstimate(timestamp);
 	}
 	public int getDarknetSizeEstimate(long timestamp) {
 		return node.getLocationManager().getNetworkSizeEstimate( timestamp );
@@ -1871,7 +1871,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public void maybeUpdateNodeIOStats(long now) {
 		if(now > nextNodeIOStatsUpdateTime) {
-			long[] io_stats = node.collector.getTotalIO();
+			long[] io_stats = node.getStatisticCollector().getTotalIO();
 			long outdiff;
 			long indiff;
 			synchronized(ioStatSync) {
@@ -1912,15 +1912,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public int getActiveThreadCount() {
-		return rootThreadGroup.activeCount() - node.executor.getWaitingThreadsCount();
+		return rootThreadGroup.activeCount() - node.getExecutor().getWaitingThreadsCount();
 	}
 
 	public int[] getActiveThreadsByPriority() {
-		return node.executor.runningThreads();
+		return node.getExecutor().runningThreads();
 	}
 
 	public int[] getWaitingThreadsByPriority() {
-		return node.executor.waitingThreads();
+		return node.getExecutor().waitingThreads();
 	}
 
 	public int getThreadLimit() {
@@ -1950,8 +1950,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("isUsingWrapper", node.isUsingWrapper());
 		long nodeUptimeSeconds = 0;
 		synchronized(this) {
-			fs.put("startupTime", node.startupTime);
-			nodeUptimeSeconds = (now - node.startupTime) / 1000;
+			fs.put("startupTime", node.getStartupTime());
+			nodeUptimeSeconds = (now - node.getStartupTime()) / 1000;
 			if (nodeUptimeSeconds == 0) nodeUptimeSeconds = 1;	// prevent division by zero
 			fs.put("uptimeSeconds", nodeUptimeSeconds);
 		}
@@ -1978,8 +1978,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		fs.put("backedOffPercent", backedOffPercent.currentValue());
 		fs.put("pInstantReject", pRejectIncomingInstantly());
-		fs.put("unclaimedFIFOSize", node.usm.getUnclaimedFIFOSize());
-		fs.put("RAMBucketPoolSize", node.clientCore.tempBucketFactory.getRamUsed());
+		fs.put("unclaimedFIFOSize", node.getUSM().getUnclaimedFIFOSize());
+		fs.put("RAMBucketPoolSize", node.getClientCore().tempBucketFactory.getRamUsed());
 
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
@@ -2023,11 +2023,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("numberOfSimpleConnected", numberOfSimpleConnected);
 		fs.put("numberOfNotConnected", numberOfNotConnected);
 
-		fs.put("numberOfTransferringRequestSenders", node.tracker.getNumTransferringRequestSenders());
+		fs.put("numberOfTransferringRequestSenders", node.getRequestTracker().getNumTransferringRequestSenders());
 		fs.put("numberOfARKFetchers", node.getNumARKFetchers());
-		fs.put("bandwidthLiabilityUsageOutputBulk", node.nodeStats.getBandwidthLiabilityUsage());
+		fs.put("bandwidthLiabilityUsageOutputBulk", node.getNodeStats().getBandwidthLiabilityUsage());
 		
-		RequestTracker tracker = node.tracker;
+		RequestTracker tracker = node.getRequestTracker();
 
 		fs.put("numberOfLocalCHKInserts", tracker.getNumLocalCHKInserts());
 		fs.put("numberOfRemoteCHKInserts", tracker.getNumRemoteCHKInserts());
@@ -2037,7 +2037,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("numberOfRemoteCHKRequests", tracker.getNumRemoteCHKRequests());
 		fs.put("numberOfLocalSSKRequests", tracker.getNumLocalSSKRequests());
 		fs.put("numberOfRemoteSSKRequests", tracker.getNumRemoteSSKRequests());
-		fs.put("numberOfTransferringRequestHandlers", node.tracker.getNumTransferringRequestHandlers());
+		fs.put("numberOfTransferringRequestHandlers", node.getRequestTracker().getNumTransferringRequestHandlers());
 		fs.put("numberOfCHKOfferReplys", tracker.getNumCHKOfferReplies());
 		fs.put("numberOfSSKOfferReplys", tracker.getNumSSKOfferReplies());
 
@@ -2067,7 +2067,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("unsuccessfulLocalSSKFetchTimeBulk", unsuccessfulLocalSSKFetchTimeAverageBulk.currentValue());
 		fs.put("unsuccessfulLocalSSKFetchTimeRT", unsuccessfulLocalSSKFetchTimeAverageRT.currentValue());
 
-		long[] total = node.collector.getTotalIO();
+		long[] total = node.getStatisticCollector().getTotalIO();
 		long total_output_rate = (total[0]) / nodeUptimeSeconds;
 		long total_input_rate = (total[1]) / nodeUptimeSeconds;
 		long totalPayloadOutput = node.getTotalPayloadSent();
@@ -2246,7 +2246,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public boolean isTestnetEnabled() {
-		return Node.isTestnetEnabled();
+		return NodeImpl.isTestnetEnabled();
 	}
 
 	public boolean getRejectReasonsTable(HTMLNode table) {
@@ -3595,7 +3595,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode, int transfersPerInsert, boolean realTimeFlag) {
-		return new RunningRequestsSnapshot(node.tracker, peerNode, true, false, outwardTransfersPerInsert(), realTimeFlag);
+		return new RunningRequestsSnapshot(node.getRequestTracker(), peerNode, true, false, outwardTransfersPerInsert(), realTimeFlag);
 	}
 	
 	public boolean ignoreLocalVsRemoteBandwidthLiability() {
@@ -3702,7 +3702,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public void drawNewLoadManagementDelayTimes(HTMLNode content) {
-		WaitingForSlots waitingSlots = node.tracker.countRequestsWaitingForSlots();
+		WaitingForSlots waitingSlots = node.getRequestTracker().countRequestsWaitingForSlots();
 		content.addChild("p").addChild("#", l10n("slotsWaiting", new String[] { "local", "remote" }, new String[] { Integer.toString(waitingSlots.local), Integer.toString(waitingSlots.remote) }));
 		HTMLNode table = content.addChild("table", "border", "0");
 		HTMLNode header = table.addChild("tr");
@@ -3793,7 +3793,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 					}
 				}
 			} finally {
-				node.ticker.queueTimedJob(this, rejectStatsUpdateInterval);
+				node.getTicker().queueTimedJob(this, rejectStatsUpdateInterval);
 			}
 		}
 		
@@ -3827,7 +3827,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * @return Value +/- Gaussian percentage.
 	 */
 	public final double randomNoise(final double input, final double sigma) {
-		double multiplier = (node.random.nextGaussian() * sigma) + 1.0;
+		double multiplier = (node.getRNG().nextGaussian() * sigma) + 1.0;
 
 		/*
 		 * Cap noise to [0.5, 1.5]. Such amounts are very rare (5 sigma at 10%) and serve only to throw off the
@@ -3843,7 +3843,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		long now = System.currentTimeMillis();
 		long limit = getLimitSeconds(false);
 		int transfersPerInsert = outwardTransfersPerInsert();
-		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node.tracker, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, false);
+		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node.getRequestTracker(), ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, false);
 		double usedBytes = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, false);
 		double nonOverheadFraction = getNonOverheadFraction(now);
 		double upperLimit = getOutputBandwidthUpperLimit(limit, nonOverheadFraction);

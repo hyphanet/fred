@@ -24,15 +24,7 @@ import freenet.crypt.RandomSource;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.node.Announcer;
-import freenet.node.FSParseException;
-import freenet.node.Node;
-import freenet.node.NodeFile;
-import freenet.node.NodeInitException;
-import freenet.node.NodeStarter;
-import freenet.node.OpennetDisabledException;
-import freenet.node.SeedServerPeerNode;
-import freenet.node.SeedServerTestPeerNode;
+import freenet.node.*;
 import freenet.node.SeedServerTestPeerNode.FATE;
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -61,7 +53,7 @@ public class SeednodePingTest extends RealNodeTest {
         RandomSource random = NodeStarter.globalTestInit("seednode-pingtest", false, LogLevel.ERROR, "", false);
         // Create one node
         Executor executor = new PooledExecutor();
-	node = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, "seednode-pingtest", false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, false, false, false, false, false, false, 0, false, false, false, false, null);
+	node = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, "seednode-pingtest", false, NodeImpl.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, false, false, false, false, false, false, 0, false, false, false, false, null);
 	// Connect & ping
 	List<SeedServerTestPeerNode> seedNodes = new ArrayList<SeedServerTestPeerNode>();
 	List<SimpleFieldSet> seedNodesAsSFS = Announcer.readSeednodes(new File("/tmp/", NodeFile.Seednodes.getFilename()));

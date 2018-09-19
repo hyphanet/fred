@@ -134,9 +134,7 @@ public class NodeClientCore implements Persistable {
 	private final DiskSpaceCheckingRandomAccessBufferFactory persistentDiskChecker;
 	public final MaybeEncryptedRandomAccessBufferFactory persistentRAFFactory;
 	public final ClientLayerPersister clientLayerPersister;
-	public final Node node;
-	public final RequestTracker tracker;
-	final NodeStats nodeStats;
+	private final ProtectedNode node;
 	public final RandomSource random;
 	final ProgramDirectory tempDir;	// Persistent temporary buckets
 	final ProgramDirectory persistentTempDir;
@@ -174,11 +172,9 @@ public class NodeClientCore implements Persistable {
 	private boolean finishedInitStorage;
 	private boolean finishingInitStorage;
 
-	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, DatabaseKey databaseKey, MasterSecret persistentSecret) throws NodeInitException {
+	NodeClientCore(ProtectedNode node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, DatabaseKey databaseKey, MasterSecret persistentSecret) throws NodeInitException {
 		this.node = node;
-		this.tracker = node.tracker;
-		this.nodeStats = node.nodeStats;
-		this.random = node.random;
+		this.random = node.getRNG();
 		this.pluginStores = new PluginStores(node, installConfig);
 
 		nodeConfig.register("lazyStartDatastoreChecker", false, sortOrder++, true, false,
@@ -210,7 +206,7 @@ public class NodeClientCore implements Persistable {
 		lazyStartDatastoreChecker = nodeConfig.getBoolean("lazyStartDatastoreChecker");
 
 		storeChecker =
-				new DatastoreChecker(node, lazyStartDatastoreChecker, node.executor,
+				new DatastoreChecker(node, lazyStartDatastoreChecker, node.getExecutor(),
 						     "Datastore checker");
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
@@ -223,7 +219,7 @@ public class NodeClientCore implements Persistable {
 							  false,
 							  "NodeClientCore.fileForClientStats",
 							  "NodeClientCore.fileForClientStatsLong",
-							  node.ticker, node.getRunDir());
+							  node.getTicker(), node.getRunDir());
 
 		SimpleFieldSet throttleFS = persister.read();
 		if (logMINOR)
@@ -304,8 +300,8 @@ public class NodeClientCore implements Persistable {
 			this.persistentTempBucketFactory =
 					new PersistentTempBucketFactory(persistentTempDir.dir(),
 									"freenet-temp-",
-									node.random,
-									node.fastWeakRandom,
+									node.getRNG(),
+									node.getWeakRNG(),
 									nodeConfig.getBoolean(
 											"encryptPersistentTempBuckets"));
 			this.persistentFilenameGenerator = persistentTempBucketFactory.fg;
@@ -422,16 +418,16 @@ public class NodeClientCore implements Persistable {
 
 		cryptoSecretTransient = new MasterSecret();
 		tempBucketFactory =
-				new TempBucketFactory(node.executor, tempFilenameGenerator,
+				new TempBucketFactory(node.getExecutor(), tempFilenameGenerator,
 						      nodeConfig.getLong("maxRAMBucketSize"),
 						      nodeConfig.getLong("RAMBucketPoolSize"),
-						      node.fastWeakRandom,
+						      node.getWeakRNG(),
 						      nodeConfig.getBoolean("encryptTempBuckets"),
 						      minDiskFreeShortTerm, cryptoSecretTransient);
 
 		bandwidthStatsPutter = new PersistentStatsPutter();
 
-		clientLayerPersister = new ClientLayerPersister(node.executor, node.ticker,
+		clientLayerPersister = new ClientLayerPersister(node.getExecutor(), node.getTicker(),
 								node, this,
 								persistentTempBucketFactory,
 								tempBucketFactory,
@@ -490,7 +486,7 @@ public class NodeClientCore implements Persistable {
 
 		PooledFileRandomAccessBufferFactory raff =
 				new PooledFileRandomAccessBufferFactory(persistentFilenameGenerator,
-									node.fastWeakRandom);
+									node.getWeakRNG());
 		persistentDiskChecker =
 				new DiskSpaceCheckingRandomAccessBufferFactory(raff,
 									       persistentTempDir
@@ -512,7 +508,7 @@ public class NodeClientCore implements Persistable {
 				/ 2; // Some disk I/O ... tunable REDFLAG
 		maxMemoryLimitedJobThreads =
 				Math.min(maxMemoryLimitedJobThreads,
-					 node.nodeStats.getThreadLimit() / 20);
+					 node.getNodeStats().getThreadLimit() / 20);
 		maxMemoryLimitedJobThreads = Math.max(1, maxMemoryLimitedJobThreads);
 		// FIXME review thread limits. This isn't just memory, it's CPU and disk as well, so we don't want it too big??
 		// FIXME l10n the errors?
@@ -574,7 +570,7 @@ public class NodeClientCore implements Persistable {
 				new MemoryLimitedJobRunner(
 						nodeConfig.getLong("memoryLimitedJobMemoryLimit"),
 						nodeConfig.getInt("memoryLimitedJobThreadLimit"),
-						node.executor,
+						node.getExecutor(),
 						RequestStarter.NUMBER_OF_PRIORITY_CLASSES);
 		shutdownHook.addEarlyJob(
 				new NativeThread("Shutdown FEC", NativeThread.HIGH_PRIORITY, true) {
@@ -596,11 +592,11 @@ public class NodeClientCore implements Persistable {
 					}
 
 				});
-		clientContext = new ClientContext(node.bootID, clientLayerPersister, node.executor,
+		clientContext = new ClientContext(node.getBootID(), clientLayerPersister, node.getExecutor(),
 						  archiveManager, persistentTempBucketFactory,
 						  tempBucketFactory,
 						  persistentTempBucketFactory, healingQueue,
-						  uskManager, random, node.fastWeakRandom,
+						  uskManager, random, node.getWeakRNG(),
 						  node.getTicker(), memoryLimitedJobRunner,
 						  tempFilenameGenerator,
 						  persistentFilenameGenerator, tempBucketFactory,
@@ -637,7 +633,7 @@ public class NodeClientCore implements Persistable {
 			node.setDatabaseAwaitingPassword();
 		}
 
-		node.securityLevels.addPhysicalThreatLevelListener(
+		node.getSecurityLevels().addPhysicalThreatLevelListener(
 				new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
 
 					@Override
@@ -802,7 +798,7 @@ public class NodeClientCore implements Persistable {
 		// FCP (including persistent requests so needs to start before FProxy)
 		try {
 			fcpServer =
-					FCPServer.maybeCreate(node, this, node.config,
+					FCPServer.maybeCreate(node, this, node.getConfig(),
 							      fcpPersistentRoot);
 			clientContext.setDownloadCache(fcpServer);
 			if (!killedDatabase())
@@ -961,7 +957,7 @@ public class NodeClientCore implements Persistable {
 	 * @throws MasterKeysWrongPasswordException If it needs an encryption key.
 	 */
 	private void initStorage(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException {
-	    clientLayerPersister.setFilesAndLoad(node.nodeDir.dir(), "client.dat", 
+	    clientLayerPersister.setFilesAndLoad(node.getNodeDir(), "client.dat",
 	            node.wantEncryptedDatabase(), node.wantNoPersistentDatabase(), databaseKey, clientContext, requestStarters, random);
 	}
 	
@@ -1043,12 +1039,12 @@ public class NodeClientCore implements Persistable {
 		storeChecker.start();
 		if(fcpServer != null)
 			fcpServer.maybeStart();
-        node.pluginManager.start();
-        node.ipDetector.ipDetectorManager.start();
+        node.getPluginManager().start();
+        node.getIPDetector().ipDetectorManager.start();
 		if(tmci != null)
 			tmci.start();
 
-		node.executor.execute(new PrioRunnable() {
+		node.getExecutor().execute(new PrioRunnable() {
 
 			@Override
 			public void run() {
@@ -1109,7 +1105,7 @@ public class NodeClientCore implements Persistable {
 		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
 		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag, uid, node);
-		if(!tracker.lockUID(uid, isSSK, false, false, true, realTimeFlag, tag)) {
+		if(!node.getRequestTracker().lockUID(uid, isSSK, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "Could not lock random UID - serious PRNG problem???"));
 			return;
@@ -1120,7 +1116,7 @@ public class NodeClientCore implements Persistable {
 		// us to cache it in the datastore. Find the lowest HTL fetching the key in that period,
 		// and use that for purposes of deciding whether to cache it in the store.
 		if(offersOnly) {
-			htl = node.failureTable.minOfferedHTL(key, htl);
+			htl = node.getFailureTable().minOfferedHTL(key, htl);
 			if(logMINOR) Logger.minor(this, "Using old HTL for GetOfferedKey: "+htl);
 		}
 		final long startTime = System.currentTimeMillis();
@@ -1173,12 +1169,12 @@ public class NodeClientCore implements Persistable {
 				if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
 					if(logMINOR)
 						Logger.minor(this, (isSSK ? "SSK" : "CHK") + " fetch cost " + rs.getTotalSentBytes() + '/' + rs.getTotalReceivedBytes() + " bytes (" + status + ')');
-					(isSSK ? nodeStats.localSskFetchBytesSentAverage : nodeStats.localChkFetchBytesSentAverage).report(rs.getTotalSentBytes());
-					(isSSK ? nodeStats.localSskFetchBytesReceivedAverage : nodeStats.localChkFetchBytesReceivedAverage).report(rs.getTotalReceivedBytes());
+					(isSSK ? node.getNodeStats().localSskFetchBytesSentAverage : node.getNodeStats().localChkFetchBytesSentAverage).report(rs.getTotalSentBytes());
+					(isSSK ? node.getNodeStats().localSskFetchBytesReceivedAverage : node.getNodeStats().localChkFetchBytesReceivedAverage).report(rs.getTotalReceivedBytes());
 					if(status == RequestSender.SUCCESS)
 						// See comments above declaration of successful* : We don't report sent bytes here.
-						//nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
-						(isSSK ? nodeStats.successfulSskFetchBytesReceivedAverage : nodeStats.successfulChkFetchBytesReceivedAverage).report(rs.getTotalReceivedBytes());
+						//node.getNodeStats().successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+						(isSSK ? node.getNodeStats().successfulSskFetchBytesReceivedAverage : node.getNodeStats().successfulChkFetchBytesReceivedAverage).report(rs.getTotalReceivedBytes());
 				}
 
 				if((status == RequestSender.TIMED_OUT) ||
@@ -1192,9 +1188,9 @@ public class NodeClientCore implements Persistable {
 						long rtt = System.currentTimeMillis() - startTime;
 						double targetLocation=key.toNormalizedDouble();
 						if(isSSK) {
-							node.nodeStats.reportSSKOutcome(rtt, false, realTimeFlag);
+							node.getNodeStats().reportSSKOutcome(rtt, false, realTimeFlag);
 						} else {
-							node.nodeStats.reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
+							node.getNodeStats().reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
 						}
 					}
 				} else
@@ -1212,9 +1208,9 @@ public class NodeClientCore implements Persistable {
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.getThrottle(isSSK, false, realTimeFlag).successfulCompletion(rtt);
 						if(isSSK) {
-							node.nodeStats.reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
+							node.getNodeStats().reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
 						} else {
-							node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
+							node.getNodeStats().reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
 						}
 						if(status == RequestSender.SUCCESS) {
 							Logger.minor(this, "Successful " + (isSSK ? "SSK" : "CHK") + " fetch took "+rtt);
@@ -1350,7 +1346,7 @@ public class NodeClientCore implements Persistable {
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
 		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
-		if(!tracker.lockUID(uid, false, false, false, true, realTimeFlag, tag)) {
+		if(!node.getRequestTracker().lockUID(uid, false, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
@@ -1390,12 +1386,12 @@ public class NodeClientCore implements Persistable {
 				if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
 					if(logMINOR)
 						Logger.minor(this, "CHK fetch cost " + rs.getTotalSentBytes() + '/' + rs.getTotalReceivedBytes() + " bytes (" + status + ')');
-					nodeStats.localChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
-					nodeStats.localChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+					node.getNodeStats().localChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+					node.getNodeStats().localChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
 					if(status == RequestSender.SUCCESS)
 						// See comments above declaration of successful* : We don't report sent bytes here.
-						//nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
-						nodeStats.successfulChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+						//node.getNodeStats().successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+						node.getNodeStats().successfulChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
 				}
 
 				if((status == RequestSender.TIMED_OUT) ||
@@ -1406,7 +1402,7 @@ public class NodeClientCore implements Persistable {
 						rejectedOverload = true;
 						long rtt = System.currentTimeMillis() - startTime;
 						double targetLocation=key.getNodeCHK().toNormalizedDouble();
-						node.nodeStats.reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
+						node.getNodeStats().reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
 					}
 				} else
 					if(rs.hasForwarded() &&
@@ -1422,7 +1418,7 @@ public class NodeClientCore implements Persistable {
 							requestStarters.requestCompleted(false, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.getThrottle(false, false, realTimeFlag).successfulCompletion(rtt);
-						node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
+						node.getNodeStats().reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
 						if(status == RequestSender.SUCCESS) {
 							Logger.minor(this, "Successful CHK fetch took "+rtt);
 						}
@@ -1475,7 +1471,7 @@ public class NodeClientCore implements Persistable {
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
 		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
-		if(!tracker.lockUID(uid, true, false, false, true, realTimeFlag, tag)) {
+		if(!node.getRequestTracker().lockUID(uid, true, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
@@ -1513,13 +1509,13 @@ public class NodeClientCore implements Persistable {
 				if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
 					if(logMINOR)
 						Logger.minor(this, "SSK fetch cost " + rs.getTotalSentBytes() + '/' + rs.getTotalReceivedBytes() + " bytes (" + status + ')');
-					nodeStats.localSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
-					nodeStats.localSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+					node.getNodeStats().localSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
+					node.getNodeStats().localSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
 					if(status == RequestSender.SUCCESS)
 						// See comments above successfulSskFetchBytesSentAverage : we don't relay the data, so
 						// reporting the sent bytes would be inaccurate.
-						//nodeStats.successfulSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
-						nodeStats.successfulSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+						//node.getNodeStats().successfulSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
+						node.getNodeStats().successfulSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
 				}
 
 				long rtt = System.currentTimeMillis() - startTime;
@@ -1529,7 +1525,7 @@ public class NodeClientCore implements Persistable {
 						requestStarters.rejectedOverload(true, false, realTimeFlag);
 						rejectedOverload = true;
 					}
-					node.nodeStats.reportSSKOutcome(rtt, false, realTimeFlag);
+					node.getNodeStats().reportSSKOutcome(rtt, false, realTimeFlag);
 				} else
 					if(rs.hasForwarded() &&
 						((status == RequestSender.DATA_NOT_FOUND) ||
@@ -1543,7 +1539,7 @@ public class NodeClientCore implements Persistable {
 							requestStarters.requestCompleted(true, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.getThrottle(true, false, realTimeFlag).successfulCompletion(rtt);
-						node.nodeStats.reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
+						node.getNodeStats().reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
 					}
 
 				if(rs.getStatus() == RequestSender.SUCCESS)
@@ -1610,7 +1606,7 @@ public class NodeClientCore implements Persistable {
 		CHKInsertSender is;
 		long uid = makeUID();
 		InsertTag tag = new InsertTag(false, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
-		if(!tracker.lockUID(uid, false, true, false, true, realTimeFlag, tag)) {
+		if(!node.getRequestTracker().lockUID(uid, false, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
@@ -1678,11 +1674,11 @@ public class NodeClientCore implements Persistable {
 				int received = is.getTotalReceivedBytes();
 				if(logMINOR)
 					Logger.minor(this, "Local CHK insert cost " + sent + '/' + received + " bytes (" + status + ')');
-				nodeStats.localChkInsertBytesSentAverage.report(sent);
-				nodeStats.localChkInsertBytesReceivedAverage.report(received);
+				node.getNodeStats().localChkInsertBytesSentAverage.report(sent);
+				node.getNodeStats().localChkInsertBytesReceivedAverage.report(received);
 				if(status == CHKInsertSender.SUCCESS)
 					// Only report Sent bytes because we did not receive the data.
-					nodeStats.successfulChkInsertBytesSentAverage.report(sent);
+					node.getNodeStats().successfulChkInsertBytesSentAverage.report(sent);
 			}
 
 			boolean deep = node.shouldStoreDeep(block.getKey(), null, is == null ? new PeerNode[0] : is.getRoutedTo());
@@ -1730,7 +1726,7 @@ public class NodeClientCore implements Persistable {
 		SSKInsertSender is;
 		long uid = makeUID();
 		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
-		if(!tracker.lockUID(uid, true, true, false, true, realTimeFlag, tag)) {
+		if(!node.getRequestTracker().lockUID(uid, true, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
@@ -1796,11 +1792,11 @@ public class NodeClientCore implements Persistable {
 				int received = is.getTotalReceivedBytes();
 				if(logMINOR)
 					Logger.minor(this, "Local SSK insert cost " + sent + '/' + received + " bytes (" + status + ')');
-				nodeStats.localSskInsertBytesSentAverage.report(sent);
-				nodeStats.localSskInsertBytesReceivedAverage.report(received);
+				node.getNodeStats().localSskInsertBytesSentAverage.report(sent);
+				node.getNodeStats().localSskInsertBytesReceivedAverage.report(received);
 				if(status == SSKInsertSender.SUCCESS)
 					// Only report Sent bytes as we haven't received anything.
-					nodeStats.successfulSskInsertBytesSentAverage.report(sent);
+					node.getNodeStats().successfulSskInsertBytesSentAverage.report(sent);
 			}
 
 			boolean deep = node.shouldStoreDeep(block.getKey(), null, is == null ? new PeerNode[0] : is.getRoutedTo());
@@ -1956,11 +1952,11 @@ public class NodeClientCore implements Persistable {
 
 	public void storeConfig() {
 		Logger.normal(this, "Trying to write config to disk", new Exception("debug"));
-		node.config.store();
+		node.getConfig().store();
 	}
 
 	public boolean isTestnetEnabled() {
-		return Node.isTestnetEnabled();
+		return NodeImpl.isTestnetEnabled();
 	}
 
 	public boolean isAdvancedModeEnabled() {
@@ -1988,7 +1984,7 @@ public class NodeClientCore implements Persistable {
 	}
 
 	public boolean allowDownloadTo(File filename) {
-		PHYSICAL_THREAT_LEVEL physicalThreatLevel = node.securityLevels.getPhysicalThreatLevel();
+		PHYSICAL_THREAT_LEVEL physicalThreatLevel = node.getSecurityLevels().getPhysicalThreatLevel();
 		if(physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) return false;
 		synchronized(this) {
 			if(downloadAllowedEverywhere) return true;
@@ -2029,14 +2025,6 @@ public class NodeClientCore implements Persistable {
 	@Override
 	public SimpleFieldSet persistThrottlesToFieldSet() {
 		return requestStarters.persistToFieldSet();
-	}
-
-	public Ticker getTicker() {
-		return node.getTicker();
-	}
-
-	public Executor getExecutor() {
-		return node.executor;
 	}
 
 	public File getPersistentTempDir() {
@@ -2131,4 +2119,5 @@ public class NodeClientCore implements Persistable {
         return clientLayerPersister.hasLoaded();
     }
 
+    public Node getNode() { return node; };
 }

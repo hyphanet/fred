@@ -12,7 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import freenet.clients.http.StaticToadlet;
-import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 
@@ -195,7 +195,7 @@ public class IPConverter {
 	 * Constructs a new {@link IPConverter}
 	 * 
 	 * @param node
-	 *            reference to freenet {@link Node}
+	 *            reference to freenet {@link NodeImpl}
 	 */
 	private IPConverter(File dbFile) {
 		this.dbFile = dbFile;

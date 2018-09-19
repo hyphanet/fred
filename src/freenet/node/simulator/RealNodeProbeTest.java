@@ -6,6 +6,7 @@ package freenet.node.simulator;
 import freenet.config.SubConfig;
 import freenet.crypt.DummyRandomSource;
 import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.node.NodeStarter;
 import freenet.node.probe.Error;
 import freenet.node.probe.Listener;
@@ -61,7 +62,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 		NodeStarter.globalTestInit(dir, false, LogLevel.ERROR, "", true);
 		// Make the network reproducible so we can easily compare different routing options by specifying a seed.
 		DummyRandomSource random = new DummyRandomSource(3142);
-		Node[] nodes = new Node[NUMBER_OF_NODES];
+		Node[] nodes = new NodeImpl[NUMBER_OF_NODES];
 		Logger.normal(RealNodeProbeTest.class, "Creating nodes...");
 		Executor executor = new PooledExecutor();
 		for(int i = 0; i < NUMBER_OF_NODES; i++) {
@@ -223,7 +224,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 					System.err.print("Enter new HTL: ");
 					htl = Byte.valueOf(r.readLine());
 				} else if (selection == types.length+2) {
-					SubConfig nodeConfig = nodes[index].config.get("node");
+					SubConfig nodeConfig = nodes[index].getConfig().get("node");
 					String[] options = { "probeBandwidth", "probeBuild", "probeIdentifier", "probeLinkLengths", "probeLinkLengths", "probeUptime" };
 					for (String option : options) {
 						System.err.print(option + ": ");

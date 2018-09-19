@@ -49,19 +49,19 @@ public class ReloadPlugin extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "LoadPlugin requires full access", identifier, false);
 		}
 
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 			@Override
 			public void run() {
-				PluginInfoWrapper pi = node.pluginManager.getPluginInfo(plugname);
+				PluginInfoWrapper pi = node.getPluginManager().getPluginInfo(plugname);
 				if (pi == null) {
 					handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
 				} else {
 					String source = pi.getFilename();
-					pi.stopPlugin(node.pluginManager, maxWaitTime, true);
+					pi.stopPlugin(node.getPluginManager(), maxWaitTime, true);
 					if (purge) {
-						node.pluginManager.removeCachedCopy(pi.getFilename());
+						node.getPluginManager().removeCachedCopy(pi.getFilename());
 					}
-					pi = node.pluginManager.startPluginAuto(source, store);
+					pi = node.getPluginManager().startPluginAuto(source, store);
 					if (pi == null) {
 						handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
 					} else {

@@ -11,6 +11,7 @@ import freenet.client.InsertException;
 import freenet.client.InsertException.InsertExceptionMode;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.support.SimpleFieldSet;
 
 public class PutFailedMessage extends FCPMessage implements Serializable {

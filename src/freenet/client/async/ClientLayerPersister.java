@@ -22,12 +22,7 @@ import freenet.clients.fcp.RequestIdentifier;
 import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
-import freenet.node.DatabaseKey;
-import freenet.node.MasterKeysWrongPasswordException;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.NodeInitException;
-import freenet.node.RequestStarterGroup;
+import freenet.node.*;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Ticker;
@@ -114,8 +109,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
      * hooks. We don't explicitly save it; it must be populated lazily in onResume() like 
      * everything else. */
     public ClientLayerPersister(Executor executor, Ticker ticker, Node node, NodeClientCore core,
-            PersistentTempBucketFactory persistentTempFactory, TempBucketFactory tempBucketFactory,
-            PersistentStatsPutter stats) {
+                                PersistentTempBucketFactory persistentTempFactory, TempBucketFactory tempBucketFactory,
+                                PersistentStatsPutter stats) {
         super(executor, ticker, INTERVAL);
         this.node = node;
         this.clientCore = core;

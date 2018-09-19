@@ -8,13 +8,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
-import java.util.HashMap;
-import java.util.Map;
 
 import freenet.clients.fcp.ClientGet.ReturnType;
 import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.node.RequestStarter;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;

@@ -4,6 +4,7 @@
 package freenet.clients.fcp;
 
 import freenet.node.Node;
+import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
 public class NodeData extends FCPMessage {

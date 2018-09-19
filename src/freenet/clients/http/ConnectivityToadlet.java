@@ -28,6 +28,7 @@ import freenet.io.comm.UdpSocketHandler;
 import freenet.l10n.NodeL10n;
 import freenet.node.FSParseException;
 import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.support.HTMLNode;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
@@ -65,9 +66,9 @@ public class ConnectivityToadlet extends Toadlet {
 		portInfobox.addChild("div", "class", "infobox-header", l10nConn("nodePortsTitle"));
 		HTMLNode portInfoboxContent = portInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode portInfoList = portInfoboxContent.addChild("ul");
-		SimpleFieldSet fproxyConfig = node.config.get("fproxy").exportFieldSet(true);
-		SimpleFieldSet fcpConfig = node.config.get("fcp").exportFieldSet(true);
-		SimpleFieldSet tmciConfig = node.config.get("console").exportFieldSet(true);
+		SimpleFieldSet fproxyConfig = node.getConfig().get("fproxy").exportFieldSet(true);
+		SimpleFieldSet fcpConfig = node.getConfig().get("fcp").exportFieldSet(true);
+		SimpleFieldSet tmciConfig = node.getConfig().get("console").exportFieldSet(true);
 		portInfoList.addChild("li", NodeL10n.getBase().getString("DarknetConnectionsToadlet.darknetFnpPort", new String[] { "port" }, new String[] { Integer.toString(node.getFNPPort()) }));
 		int opennetPort = node.getOpennetFNPPort();
 		if(opennetPort > 0)
@@ -94,7 +95,7 @@ public class ConnectivityToadlet extends Toadlet {
 		
 		// Add connection type box.
 		
-		node.ipDetector.addConnectionTypeBox(contentNode);
+		node.getIPDetector().addConnectionTypeBox(contentNode);
 		
 		UdpSocketHandler[] handlers = node.getPacketSocketHandlers();
 		

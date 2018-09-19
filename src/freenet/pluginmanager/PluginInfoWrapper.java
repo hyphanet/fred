@@ -11,6 +11,7 @@ import freenet.config.FilePersistentConfig;
 import freenet.config.SubConfig;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
@@ -81,7 +82,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 			subconfig = config.createSubConfig(getPluginClassName());
 			((FredPluginConfigurable)plug).setupConfig(subconfig);
 			config.finishedInit();
-			configToadlet = new ConfigToadlet(pr.getHLSimpleClient(), config, subconfig, node, node.clientCore, (FredPluginConfigurable)plug);
+			configToadlet = new ConfigToadlet(pr.getHLSimpleClient(), config, subconfig, node, node.getClientCore(), (FredPluginConfigurable)plug);
 		} else {
 			config = null;
 			subconfig = null;

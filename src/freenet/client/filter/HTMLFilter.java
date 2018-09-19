@@ -33,6 +33,7 @@ import java.util.StringTokenizer;
 
 import freenet.clients.http.ToadletContextImpl;
 import freenet.l10n.NodeL10n;
+import freenet.node.NodeImpl;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
@@ -222,7 +223,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				 * TODO: remove this when the gcj bug is fixed and the affected gcj versions are outdated. 
 				 */
 				catch(java.io.CharConversionException cce) {
-					if(freenet.node.Node.checkForGCJCharConversionBug()) /* only ignore the exception on affected libgcj */
+					if(NodeImpl.checkForGCJCharConversionBug()) /* only ignore the exception on affected libgcj */
 						x = -1; 
 					else
 						throw cce;

@@ -24,18 +24,13 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.RequestClient;
-import freenet.node.RequestScheduler;
-import freenet.node.RequestStarter;
+import freenet.node.*;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.compress.Compressor;
-import freenet.support.io.BucketTools;
 import freenet.support.io.NullBucket;
 import freenet.support.io.PersistentFileTracker;
 
@@ -374,7 +369,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return new InsertContext(
 				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-				eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Node.FORK_ON_CACHEABLE_DEFAULT, false, 
+				eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, NodeImpl.FORK_ON_CACHEABLE_DEFAULT, false,
 				Compressor.DEFAULT_COMPRESSORDESCRIPTOR, EXTRA_INSERTS_SINGLE_BLOCK, 
 				EXTRA_INSERTS_SPLITFILE_HEADER, InsertContext.CompatibilityMode.COMPAT_DEFAULT);
 	}
@@ -384,7 +379,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
         return new InsertContext(
                 INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
                 SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-                eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Node.FORK_ON_CACHEABLE_DEFAULT, false, 
+                eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, NodeImpl.FORK_ON_CACHEABLE_DEFAULT, false,
                 Compressor.DEFAULT_COMPRESSORDESCRIPTOR, EXTRA_INSERTS_SINGLE_BLOCK, 
                 EXTRA_INSERTS_SPLITFILE_HEADER, InsertContext.CompatibilityMode.COMPAT_DEFAULT);
     }
@@ -407,7 +402,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		FetchContext ctx = getFetchContext(maxSize);
 		ctx.allowedMIMETypes = allowedTypes;
 		final ClientGetter get = new ClientGetter(nullCallback, uri, ctx, prio, new NullBucket(), null, null);
-		core.getTicker().queueTimedJob(new Runnable() {
+		core.getNode().getTicker().queueTimedJob(new Runnable() {
 			@Override
 			public void run() {
 				get.cancel(core.clientContext);

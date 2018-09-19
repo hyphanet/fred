@@ -38,7 +38,7 @@ public class DNSRequester implements Runnable {
     void start() {
     	Logger.normal(this, "Starting DNSRequester");
     	System.out.println("Starting DNSRequester");
-    	node.executor.execute(this, "DNSRequester thread for "+node.getDarknetPortNumber());
+    	node.getExecutor().execute(this, "DNSRequester thread for "+node.getDarknetPortNumber());
     }
 
     @Override

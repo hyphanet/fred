@@ -11,17 +11,7 @@ import freenet.client.FetchContext;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
-import freenet.node.BaseSendableGet;
-import freenet.node.KeysFetchingLocally;
-import freenet.node.Node;
-import freenet.node.RequestClient;
-import freenet.node.RequestScheduler;
-import freenet.node.RequestStarter;
-import freenet.node.SendableGet;
-import freenet.node.SendableInsert;
-import freenet.node.SendableRequest;
-import freenet.node.SendableRequestItem;
-import freenet.node.SendableRequestItemKey;
+import freenet.node.*;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -279,7 +269,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 					realTimeFlag = ((SendableInsert)req).realTimeFlag();
 				} else {
 					canWriteClientCache = false;
-					forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
+					forkOnCacheable = NodeImpl.FORK_ON_CACHEABLE_DEFAULT;
 					localRequestOnly = false;
 					realTimeFlag = false;
 				}
@@ -596,7 +586,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
 	@Override
 	public long checkRecentlyFailed(Key key, boolean realTime) {
 		Node node = sched.getNode();
-		return node.clientCore.checkRecentlyFailed(key, realTime);
+		return node.getClientCore().checkRecentlyFailed(key, realTime);
 	}
 	
 	   /** Add a request (or insert) to the request selection tree.

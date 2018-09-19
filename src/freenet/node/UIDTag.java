@@ -62,7 +62,7 @@ public abstract class UIDTag {
 		this.sourceRef = source == null ? null : source.myRef;
 		wasLocal = source == null;
 		this.realTimeFlag = realTimeFlag;
-		this.tracker = node.tracker;
+		this.tracker = node.getRequestTracker();
 		this.uid = uid;
 		if(logMINOR)
 			Logger.minor(this, "Created "+this);

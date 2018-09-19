@@ -72,12 +72,12 @@ public class BootstrapPushPullTest {
 			System.exit(EXIT_FAILED_TARGET);
 		}
         System.err.println("Creating test data: "+TEST_SIZE+" bytes.");
-        RandomAccessBucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
+        RandomAccessBucket data = node.getClientCore().tempBucketFactory.makeBucket(TEST_SIZE);
         OutputStream os = data.getOutputStream();
 		try {
         byte[] buf = new byte[4096];
         for(long written = 0; written < TEST_SIZE;) {
-        	node.fastWeakRandom.nextBytes(buf);
+        	node.getWeakRNG().nextBytes(buf);
         	int toWrite = (int) Math.min(TEST_SIZE - written, buf.length);
         	os.write(buf, 0, toWrite);
         	written += toWrite;
@@ -86,7 +86,7 @@ public class BootstrapPushPullTest {
         os.close();
 		}
         System.err.println("Inserting test data.");
-        HighLevelSimpleClient client = node.clientCore.makeClient((short)0, false, false);
+        HighLevelSimpleClient client = node.getClientCore().makeClient((short)0, false, false);
         InsertBlock block = new InsertBlock(data, new ClientMetadata(), FreenetURI.EMPTY_CHK_URI);
         long startInsertTime = System.currentTimeMillis();
         FreenetURI uri;
@@ -109,7 +109,7 @@ public class BootstrapPushPullTest {
         FileUtil.writeTo(fis, new File(secondInnerDir, "seednodes.fref"));
         fis.close();
         executor = new PooledExecutor();
-        secondNode = NodeStarter.createTestNode(DARKNET_PORT2, OPENNET_PORT2, dir.getPath(), false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, false, false, ipOverride);        
+        secondNode = NodeStarter.createTestNode(DARKNET_PORT2, OPENNET_PORT2, dir.getPath(), false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, false, false, ipOverride);
         secondNode.start(true);
 		if (!TestUtil.waitForNodes(secondNode)) {
 			secondNode.park();
@@ -118,7 +118,7 @@ public class BootstrapPushPullTest {
         
         // Fetch the data
         long startFetchTime = System.currentTimeMillis();
-        client = secondNode.clientCore.makeClient((short)0, false, false);
+        client = secondNode.getClientCore().makeClient((short)0, false, false);
         try {
 			client.fetch(uri);
 		} catch (FetchException e) {

@@ -60,13 +60,13 @@ public class PacketSender implements Runnable {
 	 * this many milliseconds. */
 	static final long MIN_OLD_OPENNET_CONNECT_DELAY = SECONDS.toMillis(60);
 	final NativeThread myThread;
-	final Node node;
+	final ProtectedNode node;
 	NodeStats stats;
 	long lastReportedNoPackets;
 	long lastReceivedPacketFromAnyNode;
 	private MersenneTwister localRandom;
 
-	PacketSender(Node node) {
+	PacketSender(ProtectedNode node) {
 		this.node = node;
 		myThread = new NativeThread(this, "PacketSender thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
@@ -82,7 +82,7 @@ public class PacketSender implements Runnable {
 
 	private void schedulePeriodicJob() {
 		
-		node.ticker.queueTimedJob(new Runnable() {
+		node.getTicker().queueTimedJob(new Runnable() {
 
 			@Override
 			public void run() {
@@ -103,7 +103,7 @@ public class PacketSender implements Runnable {
 								"Finished running shedulePeriodicJob() at "
 										+ System.currentTimeMillis());
 				} finally {
-					node.ticker.queueTimedJob(this, 1000);
+					node.getTicker().queueTimedJob(this, 1000);
 				}
 			}
 		}, 1000);
@@ -158,12 +158,12 @@ public class PacketSender implements Runnable {
 
 		final boolean canSendThrottled;
 
-		int MAX_PACKET_SIZE = node.darknetCrypto.getSocket().getMaxPacketSize();
-		long count = node.outputThrottle.getCount();
+		int MAX_PACKET_SIZE = node.getInternalDarknetCrypto().getSocket().getMaxPacketSize();
+		long count = node.getOutputThrottle().getCount();
 		if(count > MAX_PACKET_SIZE)
 			canSendThrottled = true;
 		else {
-			long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
+			long canSendAt = node.getOutputThrottle().getNanosPerTick() * (MAX_PACKET_SIZE - count);
 			canSendAt = MILLISECONDS.convert(canSendAt + MILLISECONDS.toNanos(1) - 1, NANOSECONDS);
 			if(logMINOR)
 				Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
@@ -453,7 +453,7 @@ public class PacketSender implements Runnable {
 		// MAX_COALESCING_DELAYms maximum sleep time - same as the maximum coalescing delay
 		sleepTime = Math.min(sleepTime, MAX_COALESCING_DELAY);
 
-		if(now - node.startupTime > MINUTES.toMillis(5))
+		if(now - node.getStartupTime() > MINUTES.toMillis(5))
 			if(now - lastReceivedPacketFromAnyNode > Node.ALARM_TIME) {
 				Logger.error(this, "Have not received any packets from any node in last " + SECONDS.convert(Node.ALARM_TIME, MILLISECONDS) + " seconds");
 				lastReportedNoPackets = now;

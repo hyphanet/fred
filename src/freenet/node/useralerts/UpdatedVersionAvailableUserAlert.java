@@ -89,7 +89,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		
 		if(ut.formText != null) {
 			alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", ut.formText });
-			alertNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", updater.node.clientCore.formPassword });
+			alertNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", updater.node.getClientCore().formPassword });
 		}
 
 		int version;

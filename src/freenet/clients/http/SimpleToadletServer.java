@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import freenet.node.*;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import java.io.File;
@@ -32,10 +33,6 @@ import freenet.io.NetworkInterface;
 import freenet.io.SSLNetworkInterface;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.PrioRunnable;
-import freenet.node.SecurityLevelListener;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.useralerts.UserAlertManager;
@@ -257,8 +254,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			cssTheme = THEME.themeFromName(CSSName);
 			pageMaker.setTheme(cssTheme);
 			NodeClientCore core = SimpleToadletServer.this.core;
-			if (core.node.pluginManager != null)
-				core.node.pluginManager.setFProxyTheme(cssTheme);
+			if (core.getNode().getPluginManager() != null)
+				core.getNode().getPluginManager().setFProxyTheme(cssTheme);
 		}
 
 		@Override
@@ -417,7 +414,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 	public void createFproxy() {
 		NodeClientCore core = this.core;
-		Node node = core.node;
+		Node node = core.getNode();
 		synchronized(this) {
 			if(haveCalledFProxy) return;
 			haveCalledFProxy = true;
@@ -427,7 +424,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		intervalPushManager=new IntervalPusherManager(getTicker(), pushDataManager);
 		bookmarkManager = new BookmarkManager(core, publicGatewayMode());
 		try {
-			FProxyToadlet.maybeCreateFProxyEtc(core, node, node.config, this);
+			FProxyToadlet.maybeCreateFProxyEtc(core, node, node.getConfig(), this);
 		} catch (IOException e) {
 			Logger.error(this, "Could not start fproxy: "+e, e);
 			System.err.println("Could not start fproxy:");
@@ -445,7 +442,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	 * Create a SimpleToadletServer, using the settings from the SubConfig (the fproxy.*
 	 * config).
 	 */
-	public SimpleToadletServer(SubConfig fproxyConfig, BucketFactory bucketFactory, Executor executor, Node node) throws IOException, InvalidConfigValueException {
+	public SimpleToadletServer(SubConfig fproxyConfig, BucketFactory bucketFactory, Executor executor, NodeImpl node) throws IOException, InvalidConfigValueException {
 
 		this.executor = executor;
 		this.core = null; // setCore() will be called later. 
@@ -853,7 +850,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 	
 	public void finishStart() {
-		core.node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+		core.getNode().getSecurityLevels().addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
 			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel,
@@ -869,7 +866,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			}
 			
 		});
-		core.node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
+		core.getNode().getSecurityLevels().addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
 
 			@Override
 			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
@@ -947,7 +944,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 		// Show the wizard until dismissed by the user (See bug #2624)
 		NodeClientCore core = this.core;
-		if(core != null && core.node != null && !fproxyHasCompletedWizard) {
+		if(core != null && core.getNode() != null && !fproxyHasCompletedWizard) {
 			//If the user has not completed the wizard, only allow access to the wizard and static
 			//resources. Anything else redirects to the first page of the wizard.
 			if (!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
@@ -1085,7 +1082,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			if(advancedModeEnabled == enabled) return;
 			advancedModeEnabled = enabled;
 		}
-		core.node.config.store();
+		core.getNode().getConfig().store();
 	}
 
 	@Override
@@ -1206,7 +1203,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 	
 	public Ticker getTicker(){
-		return core.node.getTicker();
+		return core.getNode().getTicker();
 	}
 	
 	public NodeClientCore getCore(){

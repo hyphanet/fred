@@ -2,7 +2,6 @@ package freenet.node;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.EOFException;
@@ -94,7 +93,7 @@ public class TextModeClientInterface implements Runnable {
     
     public TextModeClientInterface(TextModeClientInterfaceServer server, InputStream in, OutputStream out) {
     	this.n = server.n;
-    	this.core = server.n.clientCore;
+    	this.core = server.n.getClientCore();
     	this.r = server.r;
         client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true, false);
     	this.downloadsDir = server.downloadsDir;
@@ -109,7 +108,7 @@ public class TextModeClientInterface implements Runnable {
 
     public TextModeClientInterface(Node n, NodeClientCore core, HighLevelSimpleClient c, File downloadDir, InputStream in, OutputStream out) {
     	this.n = n;
-    	this.r = n.random;
+    	this.r = n.getRNG();
     	this.core = core;
     	this.client = c;
     	this.downloadsDir = downloadDir;
@@ -220,7 +219,7 @@ public class TextModeClientInterface implements Runnable {
         if(core != null && core.directTMCI != this) {
           sb.append("QUIT - close the socket\r\n");
         }
-        if(Node.isTestnetEnabled()) {
+        if(NodeImpl.isTestnetEnabled()) {
         	sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\r\n");
         }
         sw.write(sb.toString());
@@ -320,7 +319,7 @@ public class TextModeClientInterface implements Runnable {
 	        		FetchWaiter fw = new FetchWaiter((RequestClient)client);
 	        		ClientGetter get = new ClientGetter(fw, uri, context, RequestStarter.INTERACTIVE_PRIORITY_CLASS, null, null, null);
 	        		get.setMetaSnoop(new DumperSnoopMetadata());
-	            	get.start(n.clientCore.clientContext);
+	            	get.start(n.getClientCore().clientContext);
 					FetchResult result = fw.waitForCompletion();
 					ClientMetadata cm = result.getMetadata();
 	                outsb.append("Content MIME type: ").append(cm.getMIMEType());
@@ -425,7 +424,7 @@ public class TextModeClientInterface implements Runnable {
     } else if(uline.startsWith("UPDATE")) {
     	outsb.append("starting the update process");
     	// FIXME run on separate thread
-    	n.ticker.queueTimedJob(new Runnable() {
+    	n.getTicker().queueTimedJob(new Runnable() {
     		@Override
     		public void run() {
     		    freenet.support.Logger.OSThread.logPID(this);
@@ -937,16 +936,16 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PLUGLOAD")) {
         	if(uline.startsWith("PLUGLOAD:O:")) {
         		String name = line.substring("PLUGLOAD:O:".length()).trim();
-        		n.pluginManager.startPluginOfficial(name, true, false, false);
+        		n.getPluginManager().startPluginOfficial(name, true, false, false);
         	} else if(uline.startsWith("PLUGLOAD:F:")) {
         		String name = line.substring("PLUGLOAD:F:".length()).trim();
-        		n.pluginManager.startPluginFile(name, true);
+        		n.getPluginManager().startPluginFile(name, true);
         	} else if(uline.startsWith("PLUGLOAD:U:")) {
         		String name = line.substring("PLUGLOAD:U:".length()).trim();
-        		n.pluginManager.startPluginURL(name, true);
+        		n.getPluginManager().startPluginURL(name, true);
         	} else if(uline.startsWith("PLUGLOAD:K:")) {
         		String name = line.substring("PLUGLOAD:K:".length()).trim();
-        		n.pluginManager.startPluginFreenet(name, true);
+        		n.getPluginManager().startPluginFreenet(name, true);
         	} else {
         		outsb.append("  PLUGLOAD:O: pluginName         - Load official plugin from freenetproject.org\r\n");
         		outsb.append("  PLUGLOAD:F: file://<filename>  - Load plugin from file\r\n");
@@ -954,9 +953,9 @@ public class TextModeClientInterface implements Runnable {
         		outsb.append("  PLUGLOAD:K: freenet key        - Load plugin from freenet uri\r\n");
         	}
         } else if(uline.startsWith("PLUGLIST")) {
-        	outsb.append(n.pluginManager.dumpPlugins());
+        	outsb.append(n.getPluginManager().dumpPlugins());
         } else if(uline.startsWith("PLUGKILL:")) {
-        	n.pluginManager.killPlugin(line.substring("PLUGKILL:".length()).trim(), MINUTES.toMillis(1), false);
+        	n.getPluginManager().killPlugin(line.substring("PLUGKILL:".length()).trim(), MINUTES.toMillis(1), false);
         } else if(uline.startsWith("ANNOUNCE")) {
         	OpennetManager om = n.getOpennet();
         	if(om == null) {
@@ -968,7 +967,7 @@ public class TextModeClientInterface implements Runnable {
         	if(uline.charAt(0) == ':') {
         		target = Double.parseDouble(uline.substring(1));
         	} else {
-        		target = n.random.nextDouble();
+        		target = n.getRNG().nextDouble();
         	}
         	om.announce(target, new AnnouncementCallback() {
         		private void write(String msg) {

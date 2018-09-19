@@ -47,16 +47,16 @@ public class RemovePlugin extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "LoadPlugin requires full access", identifier, false);
 		}
 
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 			@Override
 			public void run() {
-				PluginInfoWrapper pi = node.pluginManager.getPluginInfo(plugname);
+				PluginInfoWrapper pi = node.getPluginManager().getPluginInfo(plugname);
 				if (pi == null) {
 					handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
 				} else {
-					pi.stopPlugin(node.pluginManager, maxWaitTime, false);
+					pi.stopPlugin(node.getPluginManager(), maxWaitTime, false);
 					if (purge) {
-						node.pluginManager.removeCachedCopy(pi.getFilename());
+						node.getPluginManager().removeCachedCopy(pi.getFilename());
 					}
 					handler.send(new PluginRemovedMessage(plugname, identifier));
 				}

@@ -41,7 +41,7 @@ public class NodeCryptoImpl implements NodeCrypto, ProtectedNodeCrypto {
 
 	/** Length of a node identity */
 
-	final Node node;
+	final ProtectedNode node;
 	final boolean isOpennet;
 	final RandomSource random;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
@@ -80,11 +80,11 @@ public class NodeCryptoImpl implements NodeCrypto, ProtectedNodeCrypto {
 	 * Get port number from a config, create socket and packet mangler
 	 * @throws NodeInitException
 	 */
-	public NodeCryptoImpl(final Node node, final boolean isOpennet, NodeCryptoConfig config, long startupTime, boolean enableARKs) throws NodeInitException {
+	public NodeCryptoImpl(final ProtectedNode node, final boolean isOpennet, NodeCryptoConfig config, long startupTime, boolean enableARKs) throws NodeInitException {
 
 		this.node = node;
 		this.config = config;
-		random = node.random;
+		random = node.getRNG();
 		this.isOpennet = isOpennet;
 
 		config.starting((ProtectedNodeCrypto) this);
@@ -104,7 +104,7 @@ public class NodeCryptoImpl implements NodeCrypto, ProtectedNodeCrypto {
 			for(int i=0;i<200000;i++) {
 				int portNo = 1024 + random.nextInt(65535-1024);
 				try {
-					u = new UdpSocketHandler(portNo, bindto.getAddress(), node, startupTime, getTitle(portNo), node.collector);
+					u = new UdpSocketHandler(portNo, bindto.getAddress(), node, startupTime, getTitle(portNo), node.getStatisticCollector());
 					port = u.getPortNumber();
 					break;
 				} catch (Exception e) {
@@ -118,7 +118,7 @@ public class NodeCryptoImpl implements NodeCrypto, ProtectedNodeCrypto {
 				throw new NodeInitException(NodeInitException.EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
 		} else {
 			try {
-				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime, getTitle(port), node.collector);
+				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime, getTitle(port), node.getStatisticCollector());
 			} catch (Exception e) {
 				Logger.error(this, "Caught "+e, e);
 				System.err.println(e);
@@ -137,7 +137,7 @@ public class NodeCryptoImpl implements NodeCrypto, ProtectedNodeCrypto {
 
 		packetMangler = new FNPPacketMangler(node, this, socket);
 
-		detector = new NodeIPPortDetector(node, node.ipDetector, this, enableARKs);
+		detector = new NodeIPPortDetector(node, node.getIPDetector(), this, enableARKs);
 
 		anonSetupCipher = new Rijndael(256,256);
 
@@ -240,7 +240,7 @@ public class NodeCryptoImpl implements NodeCrypto, ProtectedNodeCrypto {
 			}
 		} else {
 			clientNonce = new byte[32];
-			node.random.nextBytes(clientNonce);
+			node.getRNG().nextBytes(clientNonce);
 		}
 
 	}
@@ -255,9 +255,9 @@ public class NodeCryptoImpl implements NodeCrypto, ProtectedNodeCrypto {
 		myARK = InsertableClientSSK.createRandom(random, "ark");
 		myARKNumber = 0;
 		clientNonce = new byte[32];
-		node.random.nextBytes(clientNonce);
+		node.getRNG().nextBytes(clientNonce);
 		myIdentity = new byte[IDENTITY_LENGTH];
-		node.random.nextBytes(myIdentity);
+		node.getRNG().nextBytes(myIdentity);
 		identityHash = SHA256.digest(myIdentity);
 		identityHashHash = SHA256.digest(identityHash);
 		anonSetupCipher.initialize(identityHash);
@@ -316,7 +316,7 @@ public class NodeCryptoImpl implements NodeCrypto, ProtectedNodeCrypto {
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		if(!forAnonInitiator)
 			fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
-		if(Node.isTestnetEnabled()) {
+		if(NodeImpl.isTestnetEnabled()) {
 			fs.put("testnet", true);
 			//fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
 		}

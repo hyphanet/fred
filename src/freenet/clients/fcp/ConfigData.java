@@ -39,49 +39,49 @@ public class ConfigData extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		if(withCurrent) {
-			SimpleFieldSet current = node.config.exportFieldSet(Config.RequestType.CURRENT_SETTINGS, true);
+			SimpleFieldSet current = node.getConfig().exportFieldSet(Config.RequestType.CURRENT_SETTINGS, true);
 			if(!current.isEmpty()) {
 				fs.put("current", current);
 			}
 		}
 		if(withDefaults) {
-			SimpleFieldSet defaultSettings = node.config.exportFieldSet(Config.RequestType.DEFAULT_SETTINGS, false);
+			SimpleFieldSet defaultSettings = node.getConfig().exportFieldSet(Config.RequestType.DEFAULT_SETTINGS, false);
 			if(!defaultSettings.isEmpty()) {
 				fs.put("default", defaultSettings);
 			}
 		}
 		if(withSortOrder) {
-			SimpleFieldSet sortOrder = node.config.exportFieldSet(Config.RequestType.SORT_ORDER, false);
+			SimpleFieldSet sortOrder = node.getConfig().exportFieldSet(Config.RequestType.SORT_ORDER, false);
 			if(!sortOrder.isEmpty()) {
 				fs.put("sortOrder", sortOrder);
 			}
 		}
 		if(withExpertFlag) {
-			SimpleFieldSet expertFlag = node.config.exportFieldSet(Config.RequestType.EXPERT_FLAG, false);
+			SimpleFieldSet expertFlag = node.getConfig().exportFieldSet(Config.RequestType.EXPERT_FLAG, false);
 			if(!expertFlag.isEmpty()) {
 				fs.put("expertFlag", expertFlag);
 			}
 		}
 		if(withForceWriteFlag) {
-			SimpleFieldSet forceWriteFlag = node.config.exportFieldSet(Config.RequestType.FORCE_WRITE_FLAG, false);
+			SimpleFieldSet forceWriteFlag = node.getConfig().exportFieldSet(Config.RequestType.FORCE_WRITE_FLAG, false);
 			if(!forceWriteFlag.isEmpty()) {
 				fs.put("forceWriteFlag", forceWriteFlag);
 			}
 		}
 		if(withShortDescription) {
-			SimpleFieldSet shortDescription = node.config.exportFieldSet(Config.RequestType.SHORT_DESCRIPTION, false);
+			SimpleFieldSet shortDescription = node.getConfig().exportFieldSet(Config.RequestType.SHORT_DESCRIPTION, false);
 			if(!shortDescription.isEmpty()) {
 				fs.put("shortDescription", shortDescription);
 			}
 		}
 		if(withLongDescription) {
-			SimpleFieldSet longDescription = node.config.exportFieldSet(Config.RequestType.LONG_DESCRIPTION, false);
+			SimpleFieldSet longDescription = node.getConfig().exportFieldSet(Config.RequestType.LONG_DESCRIPTION, false);
 			if(!longDescription.isEmpty()) {
 				fs.put("longDescription", longDescription);
 			}
 		}
 		if(withDataTypes) {
-			SimpleFieldSet type = node.config.exportFieldSet(Config.RequestType.DATA_TYPE, false);
+			SimpleFieldSet type = node.getConfig().exportFieldSet(Config.RequestType.DATA_TYPE, false);
 			if(!type.isEmpty()) {
 				fs.put("dataType", type);
 			}

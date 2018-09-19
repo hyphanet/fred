@@ -77,8 +77,8 @@ public class BookmarkManager implements RequestClient {
 	public BookmarkManager(NodeClientCore n, boolean publicGateway) {
 		putPaths("/", MAIN_CATEGORY);
 		this.node = n;
-		this.bookmarksFile = n.node.userDir().file("bookmarks.dat");
-		this.backupBookmarksFile = n.node.userDir().file("bookmarks.dat.bak");
+		this.bookmarksFile = n.getNode().userDir().file("bookmarks.dat");
+		this.backupBookmarksFile = n.getNode().userDir().file("bookmarks.dat.bak");
 
 		try {
 			// Read the backup file if necessary
@@ -344,7 +344,7 @@ public class BookmarkManager implements RequestClient {
 		synchronized(bookmarks) {
 			if(isSavingBookmarksLazy) return;
 			isSavingBookmarksLazy = true;
-			node.node.ticker.queueTimedJob(new Runnable() {
+			node.getNode().getTicker().queueTimedJob(new Runnable() {
 
 				@Override
 				public void run() {

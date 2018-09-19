@@ -4,6 +4,7 @@ import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.InvalidConfigValueException;
 import freenet.node.NodeClientCore;
+import freenet.node.NodeImpl;
 import freenet.pluginmanager.FredPluginBandwidthIndicator;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -26,7 +27,7 @@ public abstract class BandwidthManipulator {
 	 * @param limit To parse limit from. Can include SI or IEC units, but not /s.
 	 * @param setOutputLimit If true, output limit is set. If false, input limit is set.
 	 * @throws freenet.config.InvalidConfigValueException If the value is negative, a number cannot be parsed from it, or the value is too low to be usable.
-	 * @see freenet.node.Node#minimumBandwidth
+	 * @see NodeImpl#minimumBandwidth
 	 */
 	protected void setBandwidthLimit (String limit, boolean setOutputLimit) throws InvalidConfigValueException {
 		String limitType = setOutputLimit ? "outputBandwidthLimit" : "inputBandwidthLimit";
@@ -62,7 +63,7 @@ public abstract class BandwidthManipulator {
 
 	protected BandwidthLimit getCurrentBandwidthLimitsOrNull() {
 		if (!config.get("node").getOption("outputBandwidthLimit").isDefault()) {
-			return new BandwidthLimit(core.node.getInputBandwidthLimit(), core.node.getOutputBandwidthLimit(), "bandwidthCurrent", false);
+			return new BandwidthLimit(core.getNode().getInputBandwidthLimit(), core.getNode().getOutputBandwidthLimit(), "bandwidthCurrent", false);
 		}
 		return null;
 	}
@@ -75,7 +76,7 @@ public abstract class BandwidthManipulator {
 	 * -3 if the UPnP plugin is not loaded or done starting up.
 	 */
 	protected BandwidthLimit detectBandwidthLimits() {
-		FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
+		FredPluginBandwidthIndicator bwIndicator = core.getNode().getIPDetector().getBandwidthIndicator();
 		if (bwIndicator == null) {
 			Logger.normal(this, "The node does not have a bandwidthIndicator.");
 			return new BandwidthLimit(-3, -3, "bandwidthDetected", false);

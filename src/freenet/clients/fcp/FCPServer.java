@@ -14,6 +14,8 @@ import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import freenet.node.Node;
+import freenet.node.NodeImpl;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.ClientMetadata;
@@ -37,7 +39,6 @@ import freenet.io.NetworkInterface;
 import freenet.io.SSLNetworkInterface;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
@@ -121,9 +122,9 @@ public class FCPServer implements Runnable, DownloadCache {
 		NetworkInterface tempNetworkInterface = null;
 		try {
 			if(ssl) {
-				tempNetworkInterface = SSLNetworkInterface.create(port, bindTo, allowedHosts, node.executor, true);
+				tempNetworkInterface = SSLNetworkInterface.create(port, bindTo, allowedHosts, node.getExecutor(), true);
 			} else {
-				tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts, node.executor, true);
+				tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts, node.getExecutor(), true);
 			}
 		} catch (IOException be) {
 			Logger.error(this, "Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.", be);
@@ -152,7 +153,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			this.networkInterface = null;
 		}
 		
-		if(node.pluginManager.isEnabled()) {
+		if(node.getPluginManager().isEnabled()) {
 		    // We need to start the FCPPluginConnectionTracker no matter whether this.enabled == true:
 		    // If networked FCP is disabled, plugins might still communicate via non-networked
 		    // intra-node FCP.
@@ -501,7 +502,7 @@ public class FCPServer implements Runnable, DownloadCache {
             throws PluginNotFoundException {
         
         FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForNetworkedFCP(
-            pluginConnectionTracker, node.executor, node.pluginManager,
+            pluginConnectionTracker, node.getExecutor(), node.getPluginManager(),
             serverPluginName, messageHandler);
         // The constructor function already did this for us
         /* pluginConnectionTracker.registerConnection(connection); */
@@ -540,7 +541,7 @@ public class FCPServer implements Runnable, DownloadCache {
                 throws PluginNotFoundException {
         
         FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForIntraNodeFCP(
-            pluginConnectionTracker, node.executor, node.pluginManager,
+            pluginConnectionTracker, node.getExecutor(), node.getPluginManager(),
             serverPluginName, messageHandler);
         // The constructor function already did this for us
         /* pluginConnectionTracker.registerConnection(connection); */

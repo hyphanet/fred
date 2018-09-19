@@ -112,7 +112,7 @@ public class USKManager {
 		backgroundFetchersByClearUSK = new TreeMap<USK, USKFetcher>(USK.FAST_COMPARATOR);
 		temporaryBackgroundFetchersLRU = LRUMap.createSafeMap(USK.FAST_COMPARATOR);
 		temporaryBackgroundFetchersPrefetch = new WeakHashMap<USK, Long>();
-		executor = core.getExecutor();
+		executor = core.getNode().getExecutor();
 	}
 
 	public void init(ClientContext context) {

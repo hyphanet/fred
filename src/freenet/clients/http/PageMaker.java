@@ -9,7 +9,7 @@ import java.util.Map;
 import freenet.client.filter.PushingTagReplacerCallback;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
-import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.node.SecurityLevels;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
@@ -124,7 +124,7 @@ public final class PageMaker {
 
 	private THEME theme;
 	private String override;
-	private final Node node;
+	private final NodeImpl node;
 	
 	private List<SubMenu> menuList = new ArrayList<SubMenu>();
 	private Map<String, SubMenu> subMenus = new HashMap<String, SubMenu>();
@@ -177,7 +177,7 @@ public final class PageMaker {
 
 	}
 	
-	protected PageMaker(THEME t, Node n) {
+	protected PageMaker(THEME t, NodeImpl n) {
 		setTheme(t);
 		this.node = n;
 	}
@@ -372,7 +372,7 @@ public final class PageMaker {
 		if (renderParameters.isRenderStatus() && fullAccess) {
 			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
 
-			 if (node != null && node.clientCore != null) {
+			 if (node != null && node.getClientCore() != null) {
 				 final HTMLNode alerts = ctx.getAlertManager().createSummary(true);
 				 if (alerts != null) {
 					 statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
@@ -383,7 +383,7 @@ public final class PageMaker {
 
 			statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", NodeL10n.getBase().getSelectedLanguage().fullName);
 
-			if (node.clientCore != null && ctx != null && renderParameters.isRenderModeSwitch()) {
+			if (node.getClientCore() != null && ctx != null && renderParameters.isRenderModeSwitch()) {
 				boolean isAdvancedMode = ctx.isAdvancedModeEnabled();
 				String uri = ctx.getUri().getQuery();
 				Map<String, List<String>> parameters = HTTPRequestImpl.parseUriParameters(uri, true);
@@ -398,17 +398,17 @@ public final class PageMaker {
 				switchMode.addChild("a", "href", "?" + HTTPRequestImpl.createQueryString(parameters, false), isAdvancedMode ? NodeL10n.getBase().getString("StatusBar.switchToSimpleMode") : NodeL10n.getBase().getString("StatusBar.switchToAdvancedMode"));
 			}
 
-			if (node != null && node.clientCore != null) {
+			if (node != null && node.getClientCore() != null) {
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 				final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", NodeL10n.getBase().getString("SecurityLevels.statusBarPrefix"));
 
-				final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getNetworkThreatLevel()) + "\u00a0");
+				final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.getSecurityLevels().getNetworkThreatLevel()) + "\u00a0");
 				network.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.networkThreatLevelShort"));
-				network.addAttribute("class", node.securityLevels.getNetworkThreatLevel().toString().toLowerCase());
+				network.addAttribute("class", node.getSecurityLevels().getNetworkThreatLevel().toString().toLowerCase());
 
-				final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getPhysicalThreatLevel()));
+				final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.getSecurityLevels().getPhysicalThreatLevel()));
 				physical.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevelShort"));
-				physical.addAttribute("class", node.securityLevels.getPhysicalThreatLevel().toString().toLowerCase());
+				physical.addAttribute("class", node.getSecurityLevels().getPhysicalThreatLevel().toString().toLowerCase());
 
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 

@@ -61,7 +61,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
             Logger.registerClass(PeerManagerImpl.class);
         }
 	/** Our Node */
-	final Node node;
+	final ProtectedNode node;
 	/** All the peers we want to connect to */
 	private PeerNode[] myPeers;
 	/** All the peers we are actually connected to */
@@ -147,7 +147,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 	 * @param node
 	 * @param shutdownHook
 	 */
-	public PeerManagerImpl(Node node, SemiOrderedShutdownHook shutdownHook) {
+	public PeerManagerImpl(ProtectedNode node, SemiOrderedShutdownHook shutdownHook) {
 		Logger.normal(this, "Creating PeerManager");
 		peerNodeRoutingBackoffReasonsRT = new PeerStatusTracker<String>();
 		peerNodeRoutingBackoffReasonsBulk = new PeerStatusTracker<String>();
@@ -306,7 +306,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 		}
 		if(!droppedOldPeers.isEmpty()) {
 		    try {
-		        node.clientCore.alerts.register(droppedOldPeers);
+		        node.getClientCore().alerts.register(droppedOldPeers);
 		        Logger.error(this, droppedOldPeers.getText());
 		    } catch (Throwable t) {
 		        // Startup MUST complete, don't let client layer problems kill it.
@@ -362,7 +362,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 		notifyPeerStatusChangeListeners();
 		if(!pn.isSeed()) {
 			// LOCKING: addPeer() can be called inside PM lock, so must do this on a separate thread.
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 				
 				@Override
 				public void run() {
@@ -732,12 +732,12 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 
 		@Override
 		public void receivedBytes(int x) {
-			node.nodeStats.disconnBytesReceived(x);
+			node.getNodeStats().disconnBytesReceived(x);
 		}
 
 		@Override
 		public void sentBytes(int x) {
-			node.nodeStats.disconnBytesSent(x);
+			node.getNodeStats().disconnBytesSent(x);
 		}
 
 		@Override
@@ -785,7 +785,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 		if(connectedPeers.length == 0)
 			return null;
 		for(int i = 0; i < 5; i++) {
-			PeerNode pn = connectedPeers[node.random.nextInt(connectedPeers.length)];
+			PeerNode pn = connectedPeers[node.getRNG().nextInt(connectedPeers.length)];
 			if(pn == exclude)
 				continue;
 			if(pn.isRoutable())
@@ -815,7 +815,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 		connectedPeers = newConnectedPeers;
 		if(lengthWithoutExcluded == 0)
 			return null;
-		return connectedPeers[node.random.nextInt(lengthWithoutExcluded)];
+		return connectedPeers[node.getRNG().nextInt(lengthWithoutExcluded)];
 	}
 
 	@Override
@@ -917,7 +917,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 		long soonestTimeoutWakeup = Long.MAX_VALUE;
 		
 		PeerNode[] peers = connectedPeers();
-		if(!node.enablePerNodeFailureTables)
+		if(!node.enablePerNodeFailureTables())
 			key = null;
 		if(logMINOR)
 			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length+" key "+key);
@@ -963,7 +963,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 		TimedOutNodesList entry = null;
 
 		if(key != null)
-			entry = node.failureTable.getTimedOutNodesList(key);
+			entry = node.getFailureTable().getTimedOutNodesList(key);
 		
 		double[] selectionRates = new double[peers.length];
 		double totalSelectionRate = 0.0;
@@ -1164,7 +1164,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 			Logger.minor(this, "Count waiting: "+countWaiting);
       int maxCountWaiting = maxCountWaiting(peers);
 		if(recentlyFailed != null && countWaiting >= maxCountWaiting && 
-				node.enableULPRDataPropagation /* dangerous to do RecentlyFailed if we won't track/propagate offers */) {
+				node.enableULPRDataPropagation() /* dangerous to do RecentlyFailed if we won't track/propagate offers */) {
 			// Recently failed is possible.
 			// Route twice, each time ignoring timeout.
 			// If both return a node which is in timeout, we should do RecentlyFailed.
@@ -1208,7 +1208,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 									Logger.error(this, "Wakeup time is too long: "+TimeUtil.formatTime(until-now));
 									until = now + FailureTable.RECENTLY_FAILED_TIME;
 								}
-								if(!node.failureTable.hadAnyOffers(key)) {
+								if(!node.getFailureTable().hadAnyOffers(key)) {
 									recentlyFailed.fail(countWaiting, until);
 									return null;
 								} else {
@@ -1235,7 +1235,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 				int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false);
 				int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
 				if(numberOfRoutingBackedOff + numberOfConnected > 0)
-					node.nodeStats.backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
+					node.getNodeStats().backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
 			}
 			//racy... getLocation() could have changed
 			if(addUnpickedLocsTo != null)
@@ -1396,7 +1396,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 	}
 	
 	void writePeersOpennetUrgent() {
-		node.executor.execute(new PrioRunnable() {
+		node.getExecutor().execute(new PrioRunnable() {
 
 			@Override
 			public void run() {
@@ -1412,7 +1412,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 	}
 
 	public void writePeersDarknetUrgent() {
-		node.executor.execute(new PrioRunnable() {
+		node.getExecutor().execute(new PrioRunnable() {
 
 			@Override
 			public void run() {
@@ -1677,9 +1677,9 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 
 	@Override
 	public void start() {
-		ua = new PeerManagerUserAlert(node.nodeStats, node.nodeUpdater);
+		ua = new PeerManagerUserAlert(node.getNodeStats(), node.getNodeUpdater());
 		updatePMUserAlert();
-		node.clientCore.alerts.register(ua);
+		node.getClientCore().alerts.register(ua);
 		node.getTicker().queueTimedJob(writePeersRunnable, 0);
 	}
 
@@ -1822,7 +1822,7 @@ class PeerManagerImpl implements PeerManager, ProtectedPeerManager {
 		this.allPeersStatuses.changePeerNodeStatus(peerNode, oldStatus, newStatus, noLog);
 		if(!peerNode.isOpennet())
 			this.darknetPeersStatuses.changePeerNodeStatus(peerNode, oldStatus, newStatus, noLog);
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 
 			@Override
 			public void run() {

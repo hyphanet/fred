@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;

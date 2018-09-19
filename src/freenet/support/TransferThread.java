@@ -19,7 +19,7 @@ import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
 import freenet.keys.FreenetURI;
-import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.node.PrioRunnable;
 import freenet.support.io.TempBucketFactory;
 
@@ -44,7 +44,7 @@ import freenet.support.io.TempBucketFactory;
 public abstract class TransferThread implements PrioRunnable, ClientGetCallback, ClientPutCallback {
 	
 	private final String mName;
-	protected final Node mNode;
+	protected final NodeImpl mNode;
 	protected final HighLevelSimpleClient mClient;
 	protected final ClientContext mClientContext;
 	protected final TempBucketFactory mTBF;
@@ -54,14 +54,14 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	private final Collection<ClientGetter> mFetches = createFetchStorage();
 	private final Collection<BaseClientPutter> mInserts = createInsertStorage();
 	
-	public TransferThread(Node myNode, HighLevelSimpleClient myClient, String myName) {
+	public TransferThread(NodeImpl myNode, HighLevelSimpleClient myClient, String myName) {
 		mNode = myNode;
 		mClient = myClient;
-		mClientContext = mNode.clientCore.clientContext;
-		mTBF = mNode.clientCore.tempBucketFactory;
+		mClientContext = mNode.getClientCore().clientContext;
+		mTBF = mNode.getClientCore().tempBucketFactory;
 		mName = myName;
 		
-		mTicker = new TrivialTicker(mNode.executor);
+		mTicker = new TrivialTicker(mNode.getExecutor());
 	}
 	
 	/**
@@ -115,7 +115,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 			int fcounter = 0;
 			for(ClientGetter fetch : fetches) {
 				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
-				fetch.cancel(mNode.clientCore.clientContext);
+				fetch.cancel(mNode.getClientCore().clientContext);
 				++fcounter;
 			}
 			
@@ -130,7 +130,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 			int icounter = 0;
 			for(BaseClientPutter insert : inserts) {
 				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
-				insert.cancel(mNode.clientCore.clientContext);
+				insert.cancel(mNode.getClientCore().clientContext);
 				++icounter;
 			}
 			Logger.debug(this, "Stopped " + icounter + " current inserts.");

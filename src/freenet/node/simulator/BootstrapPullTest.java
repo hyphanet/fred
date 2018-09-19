@@ -10,13 +10,13 @@ import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 
+import freenet.node.Node;
 import freenet.support.math.MersenneTwister;
 
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
-import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.support.PooledExecutor;
@@ -109,7 +109,7 @@ public class BootstrapPullTest {
 
         // Fetch the data
         long startFetchTime = System.currentTimeMillis();
-        HighLevelSimpleClient client = secondNode.clientCore.makeClient((short)0, false, false);
+        HighLevelSimpleClient client = secondNode.getClientCore().makeClient((short)0, false, false);
         try {
 			client.fetch(uri);
 		} catch (FetchException e) {

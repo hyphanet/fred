@@ -8,7 +8,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -17,7 +16,6 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
-import freenet.io.comm.UdpSocketHandler;
 import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.InvalidAddressOverrideUserAlert;
@@ -157,7 +155,7 @@ public class NodeIPDetector {
 			addedValidIP |= innerDetect(addresses);
 		}
 		
-	   	if(node.clientCore != null) {
+	   	if(node.getClientCore() != null) {
 	   		boolean hadValidIP;
 	   		synchronized(this) {
 	   			hadValidIP = hasValidIP;
@@ -204,12 +202,12 @@ public class NodeIPDetector {
 	}
 	
 	private void onAddedValidIP() {
-		node.clientCore.alerts.unregister(primaryIPUndetectedAlert);
+		node.getClientCore().alerts.unregister(primaryIPUndetectedAlert);
 		node.onAddedValidIP();
 	}
 	
 	private void onNotAddedValidIP() {
-		node.clientCore.alerts.register(primaryIPUndetectedAlert);
+		node.getClientCore().alerts.register(primaryIPUndetectedAlert);
 	}
 	
 	/**
@@ -367,7 +365,7 @@ public class NodeIPDetector {
 	}
 	
 	public boolean hasDirectlyDetectedIP() {
-		InetAddress[] addrs = ipDetector.getAddress(node.executor);
+		InetAddress[] addrs = ipDetector.getAddress(node.getExecutor());
 		if(addrs == null || addrs.length == 0) return false;
 		for(InetAddress addr: addrs) {
 			if(IPUtil.isValidAddress(addr, false)) {
@@ -539,7 +537,7 @@ public class NodeIPDetector {
 		if(!haveValidAddressOverride) {
 			onNotGetValidAddressOverride();
 		}
-		node.executor.execute(ipDetector, "IP address re-detector");
+		node.getExecutor().execute(ipDetector, "IP address re-detector");
 		redetectAddress();
 		// 60 second delay for inserting ARK to avoid reinserting more than necessary if we don't detect IP on startup.
 		// Not a FastRunnable as it can take a while to start the insert
@@ -560,7 +558,7 @@ public class NodeIPDetector {
 		// Run off thread, but at high priority.
 		// Initial messages don't need an up to date IP for the node itself, but
 		// announcements do. However announcements are not sent instantly.
-		node.executor.execute(new PrioRunnable() {
+		node.getExecutor().execute(new PrioRunnable() {
 
 			@Override
 			public void run() {
@@ -609,11 +607,11 @@ public class NodeIPDetector {
 				maybeSymmetricAlert = new SimpleUserAlert(true, l10n("maybeSymmetricTitle"), 
 						l10n("maybeSymmetric"), l10n("maybeSymmetricShort"), UserAlert.ERROR);
 			}
-			if(node.clientCore != null && node.clientCore.alerts != null)
-				node.clientCore.alerts.register(maybeSymmetricAlert);
+			if(node.getClientCore() != null && node.getClientCore().alerts != null)
+				node.getClientCore().alerts.register(maybeSymmetricAlert);
 		} else {
 			if(maybeSymmetricAlert != null)
-				node.clientCore.alerts.unregister(maybeSymmetricAlert);
+				node.getClientCore().alerts.unregister(maybeSymmetricAlert);
 		}
 	}
 
@@ -644,11 +642,11 @@ public class NodeIPDetector {
 	}
 	
 	private void onGetValidAddressOverride() {
-		node.clientCore.alerts.unregister(invalidAddressOverrideAlert);
+		node.getClientCore().alerts.unregister(invalidAddressOverrideAlert);
 	}
 	
 	private void onNotGetValidAddressOverride() {
-		node.clientCore.alerts.register(invalidAddressOverrideAlert);
+		node.getClientCore().alerts.register(invalidAddressOverrideAlert);
 	}
 
 	public void addConnectionTypeBox(HTMLNode contentNode) {

@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.support.SimpleFieldSet;
 
 import org.junit.Test;
@@ -59,7 +59,7 @@ public class FCPMessageTest {
     public void wrappedMessageDelegatesRun() throws MessageInvalidException {
         FCPMessage wrappedMessage = FCPMessage.withListRequestIdentifier(originalMessage, IDENTIFIER);
         FCPConnectionHandler connectionHandler = mock(FCPConnectionHandler.class);
-        Node node = mock(Node.class);
+        NodeImpl node = mock(NodeImpl.class);
         wrappedMessage.run(connectionHandler, node);
         verify(originalMessage).run(connectionHandler, node);
     }

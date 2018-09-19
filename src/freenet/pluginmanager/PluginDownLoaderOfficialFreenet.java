@@ -3,6 +3,7 @@ package freenet.pluginmanager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.pluginmanager.OfficialPlugins.OfficialPluginDescription;
 
 public class PluginDownLoaderOfficialFreenet extends PluginDownLoaderFreenet {
@@ -18,7 +19,7 @@ public class PluginDownLoaderOfficialFreenet extends PluginDownLoaderFreenet {
 		if(desc.uri != null)
 			return desc.uri;
 		else {
-			return node.nodeUpdater.getURI().setDocName(source).setSuggestedEdition(desc.recommendedVersion).sskForUSK();
+			return node.getNodeUpdater().getURI().setDocName(source).setSuggestedEdition(desc.recommendedVersion).sskForUSK();
 		}
 	}
 	

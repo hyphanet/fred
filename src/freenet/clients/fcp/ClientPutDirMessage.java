@@ -9,7 +9,7 @@ import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
-import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.node.RequestStarter;
 import freenet.support.HexUtil;
 import freenet.support.SimpleFieldSet;
@@ -167,7 +167,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		if(fs.get("ForkOnCacheable") != null)
 			forkOnCacheable = fs.getBoolean("ForkOnCacheable", false);
 		else
-			forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
+			forkOnCacheable = NodeImpl.FORK_ON_CACHEABLE_DEFAULT;
 		extraInsertsSingleBlock = fs.getInt("ExtraInsertsSingleBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK);
 		extraInsertsSplitfileHeaderBlock = fs.getInt("ExtraInsertsSplitfileHeaderBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER);
 		realTimeFlag = fs.getBoolean("RealTimeFlag", false);

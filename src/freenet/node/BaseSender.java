@@ -44,14 +44,14 @@ public abstract class BaseSender implements ByteCounter {
     final double target;
     final boolean isSSK;
     protected final short origHTL;
-    final Node node;
+    final ProtectedNode node;
     protected final long startTime;
     long uid;
     static final long SEARCH_TIMEOUT_BULK = MINUTES.toMillis(10);
     static final long SEARCH_TIMEOUT_REALTIME = MINUTES.toMillis(1);
     final int incomingSearchTimeout;
     
-    BaseSender(Key key, boolean realTimeFlag, PeerNode source, Node node, short htl, long uid) {
+    BaseSender(Key key, boolean realTimeFlag, PeerNode source, ProtectedNode node, short htl, long uid) {
     	if(key.getRoutingKey() == null) throw new NullPointerException();
     	startTime = System.currentTimeMillis();
     	this.uid = uid;
@@ -593,7 +593,7 @@ loadWaiterLoop:
         	Logger.warning(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));            	
         else if(logMINOR && (waitedForLoadManagement || retriedForLoadManagement))
         	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));
-        node.nodeStats.reportNLMDelay(delta, realTimeFlag, source == null);
+        node.getNodeStats().reportNLMDelay(delta, realTimeFlag, source == null);
 	}
 	
 	private int rejectedLoops;
@@ -607,7 +607,7 @@ loadWaiterLoop:
     		MessageFilter mf = makeAcceptedRejectedFilter(next, getAcceptedTimeout(), origTag);
     		
     		try {
-    			msg = node.usm.waitFor(mf, this);
+    			msg = node.getUSM().waitFor(mf, this);
     			if(logMINOR) Logger.minor(this, "first part got "+msg);
     		} catch (DisconnectedException e) {
     			Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
@@ -621,7 +621,7 @@ loadWaiterLoop:
     			next.localRejectedOverload("AcceptedTimeout", realTimeFlag);
     			forwardRejectedOverload();
     			int t = timeSinceSent();
-    			node.failureTable.onFailed(key, next, htl, t, t);
+    			node.getFailureTable().onFailed(key, next, htl, t, t);
     			synchronized(this) {
     				rejectedLoops++;
     			}
@@ -634,7 +634,7 @@ loadWaiterLoop:
     			if(logMINOR) Logger.minor(this, "Rejected loop");
     			next.successNotOverload(realTimeFlag);
     			int t = timeSinceSent();
-    			node.failureTable.onFailed(key, next, htl, t, t);
+    			node.getFailureTable().onFailed(key, next, htl, t, t);
     			// Find another node to route to
     			next.noLongerRoutingTo(origTag, false);
     			return DO.NEXT_PEER;
@@ -673,7 +673,7 @@ loadWaiterLoop:
         			forwardRejectedOverload();
     				next.localRejectedOverload("ForwardRejectedOverload", realTimeFlag);
     				int t = timeSinceSent();
-    				node.failureTable.onFailed(key, next, htl, t, t);
+    				node.getFailureTable().onFailed(key, next, htl, t, t);
     				if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
     				// Give up on this one, try another
     				next.noLongerRoutingTo(origTag, false);

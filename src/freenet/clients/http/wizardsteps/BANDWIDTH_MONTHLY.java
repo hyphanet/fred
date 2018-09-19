@@ -25,7 +25,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 	/*
 	 * Bandwidth used if both the upload and download limit are at the minimum. In GB. Assumes 24/7 uptime.
 	 */
-	private static final Double minCap = 2*Node.getMinimumBandwidth()*secondsPerMonth/GB;
+	private static final Double minCap = 2* Node.minimumBandwidth*secondsPerMonth/GB;
 
 	private static final long[] caps = { (long)Math.ceil(minCap), 100, 150, 250, 500 };
 
@@ -131,7 +131,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		 * download limits are equal.
 		 */
 		double bytesPerSecond = bytesPerMonth/secondsPerMonth;
-		double minBytesPerSecond = Node.getMinimumBandwidth();
+		double minBytesPerSecond = Node.minimumBandwidth;
 		double bwinc = bytesPerSecond - 2*minBytesPerSecond; // min for up and min for down
 		double asymptoticDlFraction = 4. / 5.;
 		double dllimit = minBytesPerSecond + (bwinc * asymptoticDlFraction);

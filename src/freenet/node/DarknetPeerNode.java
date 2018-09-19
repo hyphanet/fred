@@ -162,7 +162,7 @@ public class DarknetPeerNode extends PeerNode {
 	 * @param trust If this is a new node, we will use this parameter to set the initial trust level.
 	 * @throws PeerTooOldException
 	 */
-	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, boolean fromLocal, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
+	public DarknetPeerNode(SimpleFieldSet fs, ProtectedNode node2, NodeCrypto crypto, boolean fromLocal, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		super(fs, node2, crypto, fromLocal);
 
 		String name = fs.get("myName");
@@ -182,7 +182,7 @@ public class DarknetPeerNode extends PeerNode {
 			if(s != null) {
 				trustLevel = FRIEND_TRUST.valueOf(s);
 			} else {
-				trustLevel = node.securityLevels.getDefaultFriendTrust();
+				trustLevel = node.getSecurityLevels().getDefaultFriendTrust();
 				System.err.println("Assuming friend ("+name+") trust is opposite of friend seclevel: "+trustLevel);
 			}
 			s = metadata.get("ourVisibility");
@@ -407,7 +407,7 @@ public class DarknetPeerNode extends PeerNode {
 		if(localRequest) {
 			Message msg = DMT.createRoutingStatus(shouldRoute);
 			try {
-				sendAsync(msg, null, node.nodeStats.setRoutingStatusCtr);
+				sendAsync(msg, null, node.getNodeStats().setRoutingStatusCtr);
 			} catch(NotConnectedException e) {
 			// ok
 			}
@@ -949,18 +949,18 @@ public class DarknetPeerNode extends PeerNode {
 		public void accept() {
 			acceptedOrRejected = true;
 			final String baseFilename = "direct-"+FileUtil.sanitize(getName())+"-"+filename;
-			final File dest = node.clientCore.downloadsDir().file(baseFilename+".part");
-			destination = node.clientCore.downloadsDir().file(baseFilename);
+			final File dest = node.getClientCore().downloadsDir().file(baseFilename+".part");
+			destination = node.getClientCore().downloadsDir().file(baseFilename);
 			try {
 				data = new FileRandomAccessBuffer(dest, size, false);
 			} catch (IOException e) {
 				// Impossible
 				throw new Error("Impossible: FileNotFoundException opening with RAF with rw! "+e, e);
 			}
-			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, false);
+			prb = new PartiallyReceivedBulk(node.getUSM(), size, Node.PACKET_SIZE, data, false);
 			receiver = new BulkReceiver(prb, DarknetPeerNode.this, uid, null);
 			// FIXME make this persistent
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 				@Override
 				public void run() {
 					if(logMINOR)
@@ -973,7 +973,7 @@ public class DarknetPeerNode extends PeerNode {
 							onReceiveFailure();
 						} else {
 							data.close();
-							if(!dest.renameTo(node.clientCore.downloadsDir().file(baseFilename))){
+							if(!dest.renameTo(node.getClientCore().downloadsDir().file(baseFilename))){
 								Logger.error(this, "Failed to rename "+dest.getName()+" to remove .part suffix.");
 							}
 							onReceiveSuccess();
@@ -1001,11 +1001,11 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		public void send() throws DisconnectedException {
-			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, true);
-			transmitter = new BulkTransmitter(prb, DarknetPeerNode.this, uid, false, node.nodeStats.nodeToNodeCounter, false);
+			prb = new PartiallyReceivedBulk(node.getUSM(), size, Node.PACKET_SIZE, data, true);
+			transmitter = new BulkTransmitter(prb, DarknetPeerNode.this, uid, false, node.getNodeStats().nodeToNodeCounter, false);
 			if(logMINOR)
 				Logger.minor(this, "Sending "+uid);
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 				@Override
 				public void run() {
 					if(logMINOR)
@@ -1128,7 +1128,7 @@ public class DarknetPeerNode extends PeerNode {
 				}
 
 			};
-			node.clientCore.alerts.register(alert);
+			node.getClientCore().alerts.register(alert);
 		}
 
 		private void onReceiveSuccess() {
@@ -1200,7 +1200,7 @@ public class DarknetPeerNode extends PeerNode {
 				}
 
 			};
-			node.clientCore.alerts.register(alert);
+			node.getClientCore().alerts.register(alert);
 		}
 
 		/** Ask the user whether (s)he wants to download a file from a direct peer */
@@ -1222,7 +1222,7 @@ public class DarknetPeerNode extends PeerNode {
 					// Accept/reject form
 
 					// Hopefully we will have a container when this function is called!
-					HTMLNode form = node.clientCore.getToadletContainer().addFormChild(div, "/friends/", "f2fFileOfferAcceptForm");
+					HTMLNode form = node.getClientCore().getToadletContainer().addFormChild(div, "/friends/", "f2fFileOfferAcceptForm");
 
 					// FIXME node_ is inefficient
 					form.addChild("input", new String[] { "type", "name" },
@@ -1257,7 +1257,7 @@ public class DarknetPeerNode extends PeerNode {
 				@Override
 				public boolean isValid() {
 					if(acceptedOrRejected) {
-						node.clientCore.alerts.unregister(this);
+						node.getClientCore().alerts.unregister(this);
 						return false;
 					}
 					return true;
@@ -1391,7 +1391,7 @@ public class DarknetPeerNode extends PeerNode {
 
 	public int sendTextFeed(String message) {
 		long now = System.currentTimeMillis();
-		long msgid = Math.abs(node.random.nextLong());
+		long msgid = Math.abs(node.getWeakRNG().nextLong());
 		// split large messages
 		int requiredN2nCount = 1 + ((message.length() - 1) / 1024);
 		String messagePart;
@@ -1445,7 +1445,7 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	private int sendFileOffer(String fnam, String mime, String message, RandomAccessBuffer data) throws IOException {
-		long uid = node.random.nextLong();
+		long uid = node.getRNG().nextLong();
 		long now = System.currentTimeMillis();
 		FileOffer fo = new FileOffer(uid, data, fnam, mime, message);
 		synchronized(this) {
@@ -1505,8 +1505,8 @@ public class DarknetPeerNode extends PeerNode {
 			// 128. However even sending a 64kiB file
 			// (DarknetPeerNode.java) does not cause
 			// noticeable load on the receiving system.
-			synchronized (node.clientCore.alerts) {
-				for (UserAlert userAlert : node.clientCore.alerts.getAlerts()) {
+			synchronized (node.getClientCore().alerts) {
+				for (UserAlert userAlert : node.getClientCore().alerts.getAlerts()) {
 					if (!(userAlert instanceof N2NTMUserAlert)) {
 						continue;
 					}
@@ -1563,10 +1563,10 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		// show the alert
 		N2NTMUserAlert userAlert = new N2NTMUserAlert(this, newText, newFileNumber, composedTime, sentTime, receivedTime, msgid);
-		node.clientCore.alerts.register(userAlert);
+		node.getClientCore().alerts.register(userAlert);
 		// remove the merged alerts
 		for (UserAlert alert : merged) {
-			node.clientCore.alerts.dismissAlert(alert.hashCode());
+			node.getClientCore().alerts.dismissAlert(alert.hashCode());
 		}
 	}
 
@@ -1590,7 +1590,7 @@ public class DarknetPeerNode extends PeerNode {
 
 		UserAlert alert = offer.askUserUserAlert();
 
-		node.clientCore.alerts.register(alert);
+		node.getClientCore().alerts.register(alert);
 	}
 
 	public void acceptTransfer(long id) {
@@ -1639,7 +1639,7 @@ public class DarknetPeerNode extends PeerNode {
 		if(fo == null) {
 			Logger.error(this, "No such offer: "+uid);
 			try {
-				sendAsync(DMT.createFNPBulkSendAborted(uid), null, node.nodeStats.nodeToNodeCounter);
+				sendAsync(DMT.createFNPBulkSendAborted(uid), null, node.getNodeStats().nodeToNodeCounter);
 			} catch (NotConnectedException e) {
 				// Fine by me!
 			}
@@ -1692,7 +1692,7 @@ public class DarknetPeerNode extends PeerNode {
 			return;
 		}
 		BookmarkFeedUserAlert userAlert = new BookmarkFeedUserAlert(this, name, description, hasAnActiveLink, fileNumber, uri, composedTime, sentTime, receivedTime);
-		node.clientCore.alerts.register(userAlert);
+		node.getClientCore().alerts.register(userAlert);
 	}
 
 	public void handleFproxyDownloadFeed(SimpleFieldSet fs, int fileNumber) {
@@ -1714,7 +1714,7 @@ public class DarknetPeerNode extends PeerNode {
 			return;
 		}
 		DownloadFeedUserAlert userAlert = new DownloadFeedUserAlert(this, description, fileNumber, uri, composedTime, sentTime, receivedTime);
-		node.clientCore.alerts.register(userAlert);
+		node.getClientCore().alerts.register(userAlert);
 	}
 
 	@Override
@@ -1855,7 +1855,7 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	private void sendVisibility() throws NotConnectedException {
-		sendAsync(DMT.createFNPVisibility(getOurVisibility().code), null, node.nodeStats.initialMessagesCtr);
+		sendAsync(DMT.createFNPVisibility(getOurVisibility().code), null, node.getNodeStats().initialMessagesCtr);
 	}
 
 	public void handleVisibility(Message m) {
@@ -1903,11 +1903,11 @@ public class DarknetPeerNode extends PeerNode {
 				return;
 			}
 			byte[] data = baos.toByteArray();
-			long uid = node.fastWeakRandom.nextLong();
+			long uid = node.getWeakRNG().nextLong();
 			RandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(data);
-			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, data.length, Node.PACKET_SIZE, raf, true);
+			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.getUSM(), data.length, Node.PACKET_SIZE, raf, true);
 			try {
-				sendAsync(DMT.createFNPMyFullNoderef(uid, data.length), null, node.nodeStats.foafCounter);
+				sendAsync(DMT.createFNPMyFullNoderef(uid, data.length), null, node.getNodeStats().foafCounter);
 			} catch (NotConnectedException e1) {
 				// Ignore
 				synchronized(this) {
@@ -1917,14 +1917,14 @@ public class DarknetPeerNode extends PeerNode {
 			}
 			final BulkTransmitter bt;
 			try {
-				bt = new BulkTransmitter(prb, this, uid, false, node.nodeStats.foafCounter, false);
+				bt = new BulkTransmitter(prb, this, uid, false, node.getNodeStats().foafCounter, false);
 			} catch (DisconnectedException e) {
 				synchronized(this) {
 					sendingFullNoderef = false;
 				}
 				return;
 			}
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {
@@ -1970,9 +1970,9 @@ public class DarknetPeerNode extends PeerNode {
 		try {
 			final byte[] data = new byte[length];
 			RandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(data);
-			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, length, Node.PACKET_SIZE, raf, false);
-			final BulkReceiver br = new BulkReceiver(prb, this, uid, node.nodeStats.foafCounter);
-			node.executor.execute(new Runnable() {
+			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.getUSM(), length, Node.PACKET_SIZE, raf, false);
+			final BulkReceiver br = new BulkReceiver(prb, this, uid, node.getNodeStats().foafCounter);
+			node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {
@@ -2043,7 +2043,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		if(!dontKeepFullFieldSet()) {
 			try {
-				sendAsync(DMT.createFNPGetYourFullNoderef(), null, node.nodeStats.foafCounter);
+				sendAsync(DMT.createFNPGetYourFullNoderef(), null, node.getNodeStats().foafCounter);
 			} catch (NotConnectedException e) {
 				// Ignore
 			}

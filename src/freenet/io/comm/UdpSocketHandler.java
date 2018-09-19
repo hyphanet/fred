@@ -22,6 +22,7 @@ import java.util.Random;
 import freenet.io.AddressTracker;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
@@ -157,8 +158,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		if(logMINOR) Logger.minor(this, "Setting IPV6_PREFER_SRC_PUBLIC for port "+ listenPort + " is a "+(r ? "success" : "failure"));
 //		}
 		// Only used for debugging, no need to seed from Yarrow
-		dropRandom = node.fastWeakRandom;
-		tracker = AddressTracker.create(node.lastBootID, node.runDir(), listenPort);
+		dropRandom = node.getWeakRNG();
+		tracker = AddressTracker.create(node.getLastBootID(), node.runDir(), listenPort);
 		tracker.startSend(startupTime);
 	}
 
@@ -400,7 +401,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			_started = true;
 			startTime = System.currentTimeMillis();
 		}
-		node.executor.execute(this, "UdpSocketHandler for port "+listenPort);
+		node.getExecutor().execute(this, "UdpSocketHandler for port "+listenPort);
 	}
 
 	public void close() {
@@ -418,7 +419,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				}
 			}
 		}
-		tracker.storeData(node.bootID, node.runDir(), listenPort);
+		tracker.storeData(node.getBootID(), node.runDir(), listenPort);
 	}
 
 	public int getDropProbability() {

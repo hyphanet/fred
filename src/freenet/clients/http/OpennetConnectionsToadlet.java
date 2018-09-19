@@ -6,10 +6,7 @@ import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.OpennetPeerNodeStatus;
-import freenet.node.PeerNodeStatus;
+import freenet.node.*;
 import freenet.support.HTMLNode;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;

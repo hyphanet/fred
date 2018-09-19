@@ -6,10 +6,7 @@ package freenet.io.comm;
 import java.util.concurrent.atomic.AtomicLong;
 
 import freenet.crypt.EntropySource;
-import freenet.node.FNPPacketMangler;
-import freenet.node.Node;
-import freenet.node.NodeCrypto;
-import freenet.node.PeerNode;
+import freenet.node.*;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -57,7 +54,7 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 	@Override
 	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
 		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
-		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
+		node.getRNG().acceptTimerEntropy(fnpTimingSource, 0.25);
 		PeerNode opn = node.getPeerManager().getByPeer(peer, mangler);
 
 		if(opn != null) {

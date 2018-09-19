@@ -7,6 +7,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
 import freenet.node.Node;
+import freenet.node.NodeImpl;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
 
@@ -131,14 +132,14 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		}
 		
 	}
-	
+
 	@Override
 	public void run(final FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		
 		PersistentRequestClient rebootClient = handler.getRebootClient();
 
-		TransientListJob job = new TransientListJob(rebootClient, handler.outputHandler, node.clientCore.clientContext, identifier) {
+		TransientListJob job = new TransientListJob(rebootClient, handler.outputHandler, node.getClientCore().clientContext, identifier) {
 
 			@Override
 			void complete(ClientContext context) {

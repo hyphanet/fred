@@ -57,7 +57,7 @@ public class ExternalLinkToadlet extends Toadlet {
 
 		//Confirm whether the user really means to access an HTTP link.
 		//Only render status and navigation bars if the user has completed the wizard.
-		boolean renderBars = node.clientCore.getToadletContainer().fproxyHasCompletedWizard();
+		boolean renderBars = node.getClientCore().getToadletContainer().fproxyHasCompletedWizard();
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmExternalLinkTitle"), ctx, new RenderParameters().renderNavigationLinks(renderBars).renderStatus(renderBars));
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;

@@ -17,13 +17,9 @@ import java.util.Arrays;
 
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.node.*;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
-import freenet.node.FSParseException;
-import freenet.node.Node;
-import freenet.node.OpennetDisabledException;
-import freenet.node.PeerNode;
-import freenet.node.PeerTooOldException;
 import freenet.support.MediaType;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;

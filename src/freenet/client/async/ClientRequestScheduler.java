@@ -7,19 +7,7 @@ import freenet.client.FetchException;
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
-import freenet.node.BaseSendableGet;
-import freenet.node.KeysFetchingLocally;
-import freenet.node.LowLevelGetException;
-import freenet.node.LowLevelPutException;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.PrioRunnable;
-import freenet.node.RequestScheduler;
-import freenet.node.RequestStarter;
-import freenet.node.SendableGet;
-import freenet.node.SendableInsert;
-import freenet.node.SendableRequest;
-import freenet.node.SendableRequestItemKey;
+import freenet.node.*;
 import freenet.support.Fields;
 import freenet.support.IdentityHashSet;
 import freenet.support.Logger;
@@ -464,8 +452,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return persistent ? schedCore.saltKey(key) : schedTransient.saltKey(key);
 	}
 
-	/** Only used in rare special cases e.g. ClientRequestSelector.
-	 * FIXME add some interfaces to get rid of this gross layer violation. */
+	/** Only used in rare special cases e.g. ClientRequestSelector. */
 	Node getNode() {
 		return node;
 	}

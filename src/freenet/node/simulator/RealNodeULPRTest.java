@@ -21,15 +21,10 @@ import freenet.keys.InsertableClientSSK;
 import freenet.keys.Key;
 import freenet.keys.SSKEncodeException;
 import freenet.keys.SSKVerifyException;
-import freenet.node.FSParseException;
-import freenet.node.LowLevelGetException;
-import freenet.node.Node;
-import freenet.node.NodeInitException;
-import freenet.node.NodeStarter;
+import freenet.node.*;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
-import freenet.node.PeerTooOldException;
 import freenet.store.KeyCollisionException;
 import freenet.support.Executor;
 import freenet.support.HexUtil;
@@ -104,7 +99,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         NodeStarter.globalTestInit(testName, false, LogLevel.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.NodeDispatcher:NORMAL,freenet.node.FailureTable:MINOR,freenet.node.Node:MINOR,freenet.node.Request:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR,freenet.io.xfer.PacketThrottle:MINOR,freenet.node.PeerManager:MINOR,freenet.client.async:MINOR", true);
         // For testing low-level stuff (connection bugs)
         //NodeStarter.globalTestInit(testName, false, LogLevel.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.Node:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR,freenet.node.FNP:MINOR,freenet.io.xfer.PacketThrottle:MINOR,freenet.node.PeerManager:MINOR", true);
-        Node[] nodes = new Node[NUMBER_OF_NODES];
+        Node[] nodes = new NodeImpl[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
@@ -217,7 +212,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         for(int i=0;i<nodes.length;i++) {
         	System.out.println("Searching from node "+i);
         	try {
-        		nodes[i%nodes.length].clientCore.realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
+        		nodes[i%nodes.length].getClientCore().realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
         		System.err.println("TEST FAILED: KEY ALREADY PRESENT!!!"); // impossible!
         		System.exit(EXIT_KEY_EXISTS);
         	} catch (LowLevelGetException e) {

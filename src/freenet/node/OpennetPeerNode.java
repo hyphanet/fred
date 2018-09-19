@@ -19,7 +19,7 @@ public class OpennetPeerNode extends PeerNode {
 	// Not persisted across restart, since after restart grace periods don't apply anyway (except disconnection, which is really separate anyway).
 	private ConnectionType opennetNodeAddedReason;
 	
-	public OpennetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
+	public OpennetPeerNode(SimpleFieldSet fs, ProtectedNode node2, NodeCrypto crypto, OpennetManager opennet, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		super(fs, node2, crypto, fromLocal);
 
 		if (fromLocal) {
@@ -91,7 +91,7 @@ public class OpennetPeerNode extends PeerNode {
 				opennetNodeAddedReason = null;
 			}
 		}
-		if(now - node.usm.getStartedTime() < OpennetManager.DROP_STARTUP_DELAY)
+		if(now - node.getUSM().getStartedTime() < OpennetManager.DROP_STARTUP_DELAY)
 			return NOT_DROP_REASON.TOO_LOW_UPTIME; // Give them time to connect after we startup
 		if(!ignoreDisconnect) {
 		synchronized(this) {
@@ -179,7 +179,7 @@ public class OpennetPeerNode extends PeerNode {
 		// FIXME remove, paranoia
 		if(uptime < HOURS.toMillis(1))
 			return false;
-		NodeUpdateManager updater = node.nodeUpdater;
+		NodeUpdateManager updater = node.getNodeUpdater();
 		if(updater == null) return true; // Not going to UOM.
 		UpdateOverMandatoryManager uom = updater.uom;
 		if(uom == null) return true; // Not going to UOM

@@ -28,7 +28,7 @@ public class SymlinkerToadlet extends Toadlet {
 	public SymlinkerToadlet(HighLevelSimpleClient client,final Node node) {
 		super(client);
 		this.node = node;
-		tslconfig = node.config.createSubConfig("toadletsymlinker");
+		tslconfig = node.getConfig().createSubConfig("toadletsymlinker");
 		tslconfig.register("symlinks", null, 9, true, false, "SymlinkerToadlet.symlinks", "SymlinkerToadlet.symlinksLong", 
         		new StringArrCallback() {
 			@Override
@@ -73,7 +73,7 @@ public class SymlinkerToadlet extends Toadlet {
 			}
 			Logger.normal(this, "Adding link: " + alias + " => " + target);
 		}
-		if(store) node.clientCore.storeConfig();
+		if(store) node.getClientCore().storeConfig();
 		return ret;
 	}
 	
@@ -88,7 +88,7 @@ public class SymlinkerToadlet extends Toadlet {
 			
 			Logger.normal(this, "Removing link: " + alias + " => " + o);
 		}
-		if(store) node.clientCore.storeConfig();
+		if(store) node.getClientCore().storeConfig();
 		return ret;
 	}
 	

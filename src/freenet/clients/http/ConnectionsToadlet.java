@@ -161,7 +161,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		super(client);
 		this.node = n;
 		this.core = core;
-		this.stats = n.nodeStats;
+		this.stats = n.getNodeStats();
 		this.peers = n.getPeerManager();
 	    REF_LINK = HTMLNode.link(path()+"myref.fref").setReadOnly();
 	    REFTEXT_LINK = HTMLNode.link(path()+"myref.txt").setReadOnly();
@@ -248,7 +248,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(advancedMode) {
 
 				/* node status values */
-				long nodeUptimeSeconds = SECONDS.convert(now - node.startupTime, MILLISECONDS);
+				long nodeUptimeSeconds = SECONDS.convert(now - node.getStartupTime(), MILLISECONDS);
 				int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
 				int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
 				int networkSizeEstimateSession = stats.getDarknetSizeEstimate(-1);

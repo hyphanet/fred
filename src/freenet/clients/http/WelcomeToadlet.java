@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import freenet.node.*;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import java.io.File;
@@ -22,10 +23,6 @@ import freenet.clients.http.bookmark.BookmarkItem;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.node.DarknetPeerNode;
-import freenet.node.Node;
-import freenet.node.NodeStarter;
-import freenet.node.Version;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
@@ -109,7 +106,7 @@ public class WelcomeToadlet extends Toadlet {
 
                 if (updated) {
                     cell = row.addChild("td", "style", "border: none");
-                    cell.addChild(node.clientCore.alerts.renderDismissButton(
+                    cell.addChild(node.getClientCore().alerts.renderDismissButton(
                         item.getUserAlert(), path() + "#" + BOOKMARKS_ANCHOR));
                 }
             }
@@ -129,15 +126,15 @@ public class WelcomeToadlet extends Toadlet {
 
     public boolean showSearchBox() {
         // Only show it if Library is loaded.
-        return (node.pluginManager != null &&
-                node.pluginManager.isPluginLoaded("plugins.Library.Main"));
+        return (node.getPluginManager() != null &&
+                node.getPluginManager().isPluginLoaded("plugins.Library.Main"));
     }
     
     public boolean showSearchBoxLoading() {
         // Only show it if Library is loaded.
-        return (node.pluginManager == null ||
-                (!node.pluginManager.isPluginLoaded("plugins.Library.Main") &&
-                 node.pluginManager.isPluginLoadedOrLoadingOrWantLoad("Library")));
+        return (node.getPluginManager() == null ||
+                (!node.getPluginManager().isPluginLoaded("plugins.Library.Main") &&
+                 node.getPluginManager().isPluginLoadedOrLoadingOrWantLoad("Library")));
     }
 
     public void addSearchBox(HTMLNode contentNode) {
@@ -310,7 +307,7 @@ public class WelcomeToadlet extends Toadlet {
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?terminated&formPassword=" + ctx.getFormPassword());
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-            node.ticker.queueTimedJob(new Runnable() {
+            node.getTicker().queueTimedJob(new Runnable() {
 
 				@Override
                         public void run() {
@@ -334,7 +331,7 @@ public class WelcomeToadlet extends Toadlet {
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?restarted&formPassword=" + ctx.getFormPassword());
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-            node.ticker.queueTimedJob(new Runnable() {
+            node.getTicker().queueTimedJob(new Runnable() {
 
 				@Override
                         public void run() {
@@ -359,7 +356,7 @@ public class WelcomeToadlet extends Toadlet {
         if (ctx.isAllowedFullAccess()) {
 
             if (request.isParameterSet("latestlog")) {
-                final File logs = new File(node.config.get("logger").getString("dirname") + File.separator + "freenet-latest.log");
+                final File logs = new File(node.getConfig().get("logger").getString("dirname") + File.separator + "freenet-latest.log");
                 String text = readLogTail(logs, 100000);
                 this.writeTextReply(ctx, 200, "OK", text);
                 return;
