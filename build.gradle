@@ -55,6 +55,9 @@ task buildInfo {
     }
 }
 
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
 task compileVersion (type: JavaCompile) {
     copy {
         from sourceSets.main.java.srcDirs
