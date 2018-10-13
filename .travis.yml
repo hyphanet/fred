@@ -1,6 +1,13 @@
 language: java
 
 sudo: false
+matrix:
+  include:
+    - jdk: oraclejdk9
+    - jdk: oraclejdk8
+    - jdk: openjdk8
+    - jdk: openjdk7
+      sudo: true
 
 env:
   global:
@@ -21,13 +28,18 @@ cache:
   - $HOME/.gradle/caches/
   - $HOME/.gradle/wrapper/
 
-before_install: echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
+before_install:
+  - if [[ "${JAVA_HOME}" == *java-7-openjdk* ]]; then
+        sudo apt-get update && sudo apt-get install openjdk-7-jdk;
+        jdk_switcher use openjdk7;
+        export _JAVA_OPTIONS="-Xmx2048m -Xms512m -Djava.security.properties==${PWD}/java.security-openjdk-7";
+        sudo wget "https://bouncycastle.org/download/bcprov-ext-jdk15on-159.jar" -O "${JAVA_HOME}/jre/lib/ext/bcprov-ext-jdk15on-159.jar";
+        fi
+  - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
+
 install: "./gradlew jar"
 
-jdk:
-  - oraclejdk8
-  - oraclejdk9
-  - openjdk8
+script: "./gradlew check"
 
 before_deploy:
   - "./gradlew javadoc ; true"
