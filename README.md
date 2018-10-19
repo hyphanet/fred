@@ -28,7 +28,22 @@ of the archive it downloads from `https://services.gradle.org`.
 
 ## Testing
 
-To test your version of Freenet, stop your node, replace `freenet.jar` in your
+### Run Tests
+
+To run all unit tests, use
+
+    ./gradlew --parallel test
+
+You can run specifics tests with a test filter similar to the following:
+
+    ./gradlew --parallel test --tests *M3UFilterTest
+
+TODO: how to run integration tests.
+
+### Run your changes as node
+
+To test your version of Freenet, build it with ,./gradlew jar`,
+stop your node, replace `freenet.jar` in your
 Freenet directory with `build/libs/freenet.jar`, and start your node again.
 
 To override values set in `build.gradle` put them into [the file](https://docs.gradle.org/3.2/userguide/build_environment.html)
