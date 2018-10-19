@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.BufferedReader;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -117,26 +118,40 @@ public class M3UFilter implements ContentDataFilter {
                             if (fileIndex <= MAX_URI_LENGTH) {
                                 String uriold = new String(fileUri, 0, fileIndex, "UTF-8");
                                 // System.out.println(uriold);
+                                // clean up the URL: allow sub-m3us and mp3s
                                 String filtered;
                                 try {
+                                    String subMimetype;
                                     if (uriold.endsWith(".m3u") || uriold.endsWith(".m3u8")) {
-                                        filtered = cb.processURI(uriold, "audio/mpegurl");
+                                        subMimetype = "audio/mpegurl";
                                     } else {
-                                        filtered = cb.processURI(uriold, "audio/mpeg");
+                                        subMimetype = "audio/mpeg";
                                     }
-                                    // TODO: add prefix for the host
-                                    // name for absolute path names,
+                                    filtered = cb.processURI(uriold, subMimetype);
+                                    // add prefix for the host name
+                                    // for absolute path names,
                                     // because otherwise external
                                     // clients could be tricked into
-                                    // accessing local files. This can
-                                    // however leak information about
-                                    // the local setup (host and port).
+                                    // accessing local files (and some
+                                    // just don't work, especially not
+                                    // with downloaded files). This
+                                    // can however make downloaded
+                                    // files leak information about
+                                    // the local setup (host and
+                                    // port).
 
-                                    // String withbaseref = cb.processURI(uriold, "audio/mpegurl", true, false);
-                                    // if (withbaseref != null) { // absolute path
-                                    //  // add host prefix
-                                    //  filtered =
-                                    // }
+                                    // mirroring tools like `wget -mk`
+                                    // strip the absolute path again,
+                                    // so mirroring should not be
+                                    // impaired.
+                                    if (cb instanceof GenericReadFilterCallback) {
+                                        try {
+                                            filtered = ((GenericReadFilterCallback)cb).makeURIAbsolute(filtered);
+                                        } catch (URISyntaxException e) {
+                                            filtered = badUriReplacement;
+                                        }
+                                    }
+
 
                                 } catch (CommentException e) {
                                     filtered = badUriReplacement;
