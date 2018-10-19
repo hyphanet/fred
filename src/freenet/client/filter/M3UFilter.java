@@ -83,113 +83,121 @@ public class M3UFilter implements ContentDataFilter {
          * so people could insert as text/plain to circumvent the
          * filter.*/
         String uriForcetypeMp3Suffix = "?type=audio/mpeg";
-        try (DataInputStream dis = new DataInputStream(input);
-             DataOutputStream dos = new DataOutputStream(output)) {
-            readcount = dis.read(nextbyte);
-            // read each line manually
+        DataInputStream dis = new DataInputStream(input);
+        DataOutputStream dos = new DataOutputStream(output);
+        readcount = dis.read(nextbyte);
+        // read each line manually
+        while (readcount != -1) {
+            if (isCommentStart(nextbyte)) {
+                isComment = true;
+            } else {
+                isComment = false;
+            }
+            // skip empty lines
+            if (isNewline(nextbyte)) {
+                readcount = dis.read(nextbyte);
+                continue;
+            }
+            // read one line as a fileUri
+            numberOfDotsInUri = 0;
+            isBadUri = false;
+            fileIndex = 0;
+            fileUri = new byte[MAX_URI_LENGTH];
             while (readcount != -1) {
-                if (isCommentStart(nextbyte)) {
-                    isComment = true;
-                } else {
-                    isComment = false;
+                if (!isComment &&
+                    // do not include carriage return in filenames
+                    !isCarriageReturn(nextbyte) &&
+                    // enforce maximum path length to avoid OOM attacks
+                    fileIndex <= MAX_URI_LENGTH) {
+                    // store the read byte
+                    fileUri[fileIndex] = nextbyte[0];
+                    fileIndex += readcount;
                 }
-                // skip empty lines
-                if (isNewline(nextbyte)) {
-                    readcount = dis.read(nextbyte);
-                    continue;
-                }
-                // read one line as a fileUri
-                numberOfDotsInUri = 0;
-                isBadUri = false;
-                fileIndex = 0;
-                fileUri = new byte[MAX_URI_LENGTH];
-                while (readcount != -1) {
-                    if (!isComment &&
-                        // do not include carriage return in filenames
-                        !isCarriageReturn(nextbyte) &&
-                        // enforce maximum path length to avoid OOM attacks
-                        fileIndex <= MAX_URI_LENGTH) {
-                        // store the read byte
-                        fileUri[fileIndex] = nextbyte[0];
-                        fileIndex += readcount;
-                    }
-                    readcount = dis.read(nextbyte);
-                    if (isNewline(nextbyte) || readcount == -1) {
-                        if (!isComment) {
-                            // remove too long paths
-                            if (fileIndex <= MAX_URI_LENGTH) {
-                                String uriold = new String(fileUri, 0, fileIndex, "UTF-8");
-                                // System.out.println(uriold);
-                                // clean up the URL: allow sub-m3us and mp3s
-                                String filtered;
-                                try {
-                                    String subMimetype;
-                                    if (uriold.endsWith(".m3u") || uriold.endsWith(".m3u8")) {
-                                        subMimetype = "audio/mpegurl";
+                readcount = dis.read(nextbyte);
+                if (isNewline(nextbyte) || readcount == -1) {
+                    if (!isComment) {
+                        // remove too long paths
+                        if (fileIndex <= MAX_URI_LENGTH) {
+                            String uriold = new String(fileUri, 0, fileIndex, "UTF-8");
+                            // System.out.println(uriold);
+                            // clean up the URL: allow sub-m3us and mp3s
+                            String filtered;
+                            try {
+                                String subMimetype;
+                                if (uriold.endsWith(".m3u") || uriold.endsWith(".m3u8")) {
+                                    subMimetype = "audio/mpegurl";
+                                } else {
+                                    subMimetype = "audio/mpeg";
+                                }
+                                filtered = cb.processURI(uriold, subMimetype);
+                                // add prefix for the host name
+                                // for absolute path names,
+                                // because otherwise external
+                                // clients could be tricked into
+                                // accessing local files (and some
+                                // just don't work, especially not
+                                // with downloaded files). This
+                                // can however make downloaded
+                                // files leak information about
+                                // the local setup (host and
+                                // port).
+
+                                // mirroring tools like `wget -mk`
+                                // strip the absolute path again,
+                                // so mirroring should not be
+                                // impaired.
+                                if (cb instanceof GenericReadFilterCallback) {
+                                    try {
+                                        filtered = ((GenericReadFilterCallback)cb).makeURIAbsolute(filtered);
+                                    } catch (URISyntaxException e) {
+                                        filtered = badUriReplacement;
+                                    }
+                                }
+                                // allow transparent pass through
+                                // for all but the largest files,
+                                // but not for external
+                                // links. This check is safe,
+                                // since false positives will just
+                                // lead to a file to not be played
+                                // (players will get progress-bar
+                                // HTML content instead).
+                                if (!filtered.contains(ExternalLinkToadlet.PATH) && !filtered.contains(ExternalLinkToadlet.magicHTTPEscapeString)) {
+                                    if (filtered.contains("?")) {
+                                        filtered += "&";
                                     } else {
-                                        subMimetype = "audio/mpeg";
+                                        filtered += "?";
                                     }
-                                    filtered = cb.processURI(uriold, subMimetype);
-                                    // add prefix for the host name
-                                    // for absolute path names,
-                                    // because otherwise external
-                                    // clients could be tricked into
-                                    // accessing local files (and some
-                                    // just don't work, especially not
-                                    // with downloaded files). This
-                                    // can however make downloaded
-                                    // files leak information about
-                                    // the local setup (host and
-                                    // port).
-
-                                    // mirroring tools like `wget -mk`
-                                    // strip the absolute path again,
-                                    // so mirroring should not be
-                                    // impaired.
-                                    if (cb instanceof GenericReadFilterCallback) {
-                                        try {
-                                            filtered = ((GenericReadFilterCallback)cb).makeURIAbsolute(filtered);
-                                        } catch (URISyntaxException e) {
-                                            filtered = badUriReplacement;
-                                        }
-                                    }
-                                    // allow transparent pass through
-                                    // for all but the largest files,
-                                    // but not for external
-                                    // links. This check is safe,
-                                    // since false positives will just
-                                    // lead to a file to not be played
-                                    // (players will get progress-bar
-                                    // HTML content instead).
-                                    if (!filtered.contains(ExternalLinkToadlet.PATH) && !filtered.contains(ExternalLinkToadlet.magicHTTPEscapeString)) {
-                                        if (filtered.contains("?")) {
-                                            filtered += "&";
-                                        } else {
-                                            filtered += "?";
-                                        }
-                                        filtered += "max-size=" + Long.valueOf(MAX_LENGTH_NO_PROGRESS).toString();
-                                    }
-
-                                } catch (CommentException e) {
-                                    filtered = badUriReplacement;
+                                    filtered += "max-size=" + Long.valueOf(MAX_LENGTH_NO_PROGRESS).toString();
                                 }
-                                if (filtered == null) {
-                                    filtered = badUriReplacement;
-                                }
+
+                            } catch (CommentException e) {
+                                filtered = badUriReplacement;
+                            } catch (Exception e) {
+                                filtered = badUriReplacement;
+                            }
+                            if (filtered == null) {
+                                filtered = badUriReplacement;
+                            }
+                            try {
                                 dos.write(filtered.getBytes("UTF-8"));
-                                // write the newline if we're not at EOF
-                                if (readcount != -1){
-                                    dos.write(nextbyte);
-                                }
+                            } catch (Exception e) {
+                                dos.write(badUriReplacement.getBytes("UTF-8"));
+                            }
+                            // write the newline if we're not at EOF
+                            if (readcount != -1){
+                                dos.write(nextbyte);
                             }
                         }
-                        // skip the newline
-                        readcount = dis.read(nextbyte);
-                        break; // skip to next line
                     }
+                    // skip the newline
+                    readcount = dis.read(nextbyte);
+                    break; // skip to next line
                 }
             }
         }
+        dos.flush();
+        dos.close();
+        output.flush();
     }
 
     private static boolean isCommentStart(byte[] nextbyte) {

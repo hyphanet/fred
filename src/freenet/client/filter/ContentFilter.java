@@ -85,7 +85,7 @@ public class ContentFilter {
 
 		// M3U - strict filter
 		register(new FilterMIMEType("audio/mpegurl", "m3u", new String[] {"application/vnd.apple.mpegurl","application/mpegurl","application/x-mpegurl","audio/x-mpegurl"}, new String[] {"m3u8"},
-				true, false, new M3UFilter(), true, true, false, false, false, false,
+				false, false, new M3UFilter(), false, false, false, false, false, false,
 				l10n("audioM3UReadAdvice"),
 				false, "utf-8", null, false));
 
