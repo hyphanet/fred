@@ -18,7 +18,7 @@ public class ExternalLinkToadlet extends Toadlet {
 
 	private static final int MAX_URL_LENGTH = 1024 * 1024;
 	public static final String PATH = "/external-link/";
-	private static final String magicHTTPEscapeString = "_CHECKED_HTTP_";
+	public static final String magicHTTPEscapeString = "_CHECKED_HTTP_";
 
 	private final Node node;
 

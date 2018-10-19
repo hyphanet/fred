@@ -15,6 +15,7 @@ import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.io.FileUtil;
+import freenet.clients.http.ExternalLinkToadlet;
 
 /**
  * Content filter for M3Us
@@ -52,6 +53,7 @@ public class M3UFilter implements ContentDataFilter {
         { (byte)'\r' };
     static final int MAX_URI_LENGTH = 16384;
     static final String badUriReplacement = "#bad-uri-removed";
+    private final long MAX_LENGTH_NO_PROGRESS = (100*1024*1024 * 11) / 10; // 100MiB: playlists are a different usecase, and we want to allow transparent pass-through for most files accessed via a playlist, likely through an external palyer. See FProxyToadlet.MAX_LENGTH_NO_PROGRESS for the default. This value must be synchronized with the test data!
     // TODO: Add parsing of ext-comments to allow for gapless playback.
     // static final int COMMENT_EXT_SIZE = 4;
     // static final byte[] COMMENT_EXT_START =
@@ -151,7 +153,22 @@ public class M3UFilter implements ContentDataFilter {
                                             filtered = badUriReplacement;
                                         }
                                     }
-
+                                    // allow transparent pass through
+                                    // for all but the largest files,
+                                    // but not for external
+                                    // links. This check is safe,
+                                    // since false positives will just
+                                    // lead to a file to not be played
+                                    // (players will get progress-bar
+                                    // HTML content instead).
+                                    if (!filtered.contains(ExternalLinkToadlet.PATH) && !filtered.contains(ExternalLinkToadlet.magicHTTPEscapeString)) {
+                                        if (filtered.contains("?")) {
+                                            filtered += "&";
+                                        } else {
+                                            filtered += "?";
+                                        }
+                                        filtered += "max-size=" + Long.valueOf(MAX_LENGTH_NO_PROGRESS).toString();
+                                    }
 
                                 } catch (CommentException e) {
                                     filtered = badUriReplacement;
