@@ -194,7 +194,7 @@ public class OpennetManager {
      * 
      * (define (peers kbps) (sqrt (* kbps scaling)))
      * 
-     * Scaling at 2.5 gives 4 peers at 5K (min peers),
+     * Scaling at 1.61803 gives 4 peers at 5K (min peers),
 	 * 4 at 7K, 4 at 10K, 6 at 20K, 7 at 30K, 10 at 60K, 
      * 13 at 100K, 15 at 140K, 63 at 2500K.
 	 * 78 at 30mbit/s (the mean upload in Japan in 2014) and
