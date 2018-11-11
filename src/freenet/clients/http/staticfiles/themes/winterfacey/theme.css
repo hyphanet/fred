@@ -5,7 +5,7 @@ ul#navlist {
 
 /* from base.css */
 #statusbar-container {
-  color: grey;
+  color: gray;
   border-bottom-style: solid;
   border-bottom-width: 1px;
   border-top-style: solid;
@@ -23,7 +23,8 @@ ul#navlist {
 
 #statusbar > div {
   display: inline-block;
-  font-size: 0.9em;
+  font-size: 1em;
+  font-weight: bold;
   vertical-align: bottom;
 }
 
@@ -107,6 +108,7 @@ li.navlist-selected:hover ul.subnavlist-selected {
   display: block;
 }
 
+
 /* move the content window to the left side of the screen */
 
 div#content {
@@ -134,6 +136,7 @@ div#navbar a {
 
 #navlist li a {
    padding-bottom: 5px;
+   text-align: left;
 }
 
 /* make the top level menu items display horizontally instead of vertically */
@@ -181,7 +184,7 @@ a:hover {
 
 .bookmarks-header-text {
   color: #333;
-  font-size: 21px;
+  font-size: 18px;
   font-weight: 200;
   line-height: 30px;
   padding-bottom: 30px;
@@ -248,11 +251,12 @@ select {
 input[type="submit"],
 input[type="reset"],
 button {
+  display: block;
   border-radius: 6px;
   border: none;
   background-color: #5EB95E;
   color: white;
-  margin: 0.5em 0.25em;
+  margin: 0.5em 0.25em 0.5em 2em;
 }
 
 input[type="submit"]:hover,
@@ -267,7 +271,7 @@ ul.config {
 
 .configprefix {
   font-family: Tahoma, Geneva, sans-serif;
-  font-size: 150%;
+  font-size: 100%;
   margin-top: 0.5em;
   border-bottom: 1px solid #eee;
 }
@@ -300,7 +304,7 @@ ul.config {
 
 .config .configshortdesc {
   margin-left: 1ex;
-  font-size: 150%;
+  font-size: 100%;
 }
 
 .config .configlongdesc {
@@ -446,10 +450,11 @@ div.infobox-success div.infobox-header {
 div.infobox-header,
 .bookmarks-box ul#bookmarks li.cat {
   color: #333;
-  font-size: 21px;
-  font-weight: 200;
+  font-size: 18px;
+  font-weight: bold;
+  font-style: italic;
   line-height: 30px;
-  padding: 1ex;
+  text-align: center;
   margin: 1em 0 0.5em;
   border-bottom: 1px solid #eee;
   background: none;
@@ -485,9 +490,9 @@ div.progressbar .progressbar-min {
 
 div.progressbar .progress_fraction_finalized {
   font-size: 12px;
-  color: grey;
+  color: black;
   text-align: center;
-  font-weight: normal;
+  font-weight: bold;
   line-height: 20px;
 }
 
@@ -514,7 +519,7 @@ div#statusbar .infobox-content {
 
 div#statusbar a {
   line-height: 200%;
-  font-size: 11.9px;
+  font-size: 14px;
 }
 
 table.plugins,
@@ -637,9 +642,10 @@ table tbody tr.priority6:nth-child(2n) {
 #bookmarks table tbody {
   display: flex;
   flex-flow: row wrap;
-  justify-content: left;
+  justify-content: center;
   align-content: center;
   align-items: center;
+  padding: 0% 10% 0% 10%;
 }
 
 #bookmarks table tr {
@@ -656,14 +662,16 @@ table tbody tr.priority6:nth-child(2n) {
   margin-left: 0.5em;
   margin-right: 0.5em;
   margin-top: 1em;
-
   padding: 0.25em;
 }
 
 #bookmarks table td {
-  display: block;
+  display: table;
   width: 256px;
   background: none;
+  text-align: left;
+  padding: 0 1% 0 1%;
+  word-wrap: break-word;
 }
 
 #bookmarks table td:nth-child(1) {
@@ -673,13 +681,16 @@ table tbody tr.priority6:nth-child(2n) {
 }
 
 #bookmarks table td a {
-  font-size: 21px;
+  font-size: 16px;
   font-weight: 200;
   display: block;
+  text-align: center;
 }
 
 #bookmarks td a img {
-  margin-right: 1ex;
+  display: block;
+  margin-left: 39%;
+  margin-right: auto;
 }
 
 /*
