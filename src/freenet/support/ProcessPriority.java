@@ -13,7 +13,7 @@ import com.sun.jna.platform.win32.WinDef.DWORD;
 
 /**
  * A class to control the global priority of the current process.
- * Microsoft suggests flagging daemon/server processes with the BACKGROUND_MODE
+ * Microsoft suggests flagging daemon/server processes with the BELOW_NORMAL_PRIORITY_CLASS
  * priority class so that they don't interfere with the responsiveness of the
  * rest of the system. This is especially important when freenet is started at
  * system startup.
@@ -35,10 +35,7 @@ public class ProcessPriority {
         HANDLE GetCurrentProcess();
         DWORD GetLastError();
 
-        DWORD PROCESS_MODE_BACKGROUND_BEGIN         = new DWORD(0x00100000);
-        DWORD PROCESS_MODE_BACKGROUND_END           = new DWORD(0x00200000);
-        DWORD ERROR_PROCESS_MODE_ALREADY_BACKGROUND = new DWORD(402);
-        DWORD ERROR_PROCESS_MODE_NOT_BACKGROUND     = new DWORD(403);
+        DWORD BELOW_NORMAL_PRIORITY_CLASS           = new DWORD(0x00004000);
     }
 
     private static class LinuxHolder {
@@ -66,10 +63,10 @@ public class ProcessPriority {
             if (Platform.isWindows()) {
                 WindowsHolder lib = WindowsHolder.INSTANCE;
 
-                if (lib.SetPriorityClass(lib.GetCurrentProcess(), WindowsHolder.PROCESS_MODE_BACKGROUND_BEGIN)) {
+                if (lib.SetPriorityClass(lib.GetCurrentProcess(), WindowsHolder.BELOW_NORMAL_PRIORITY_CLASS)) {
                     System.out.println("SetPriorityClass() succeeded!");
                     return background = true;
-                } else if (lib.GetLastError().equals(WindowsHolder.ERROR_PROCESS_MODE_ALREADY_BACKGROUND)) {
+                } else {
                     System.err.println("SetPriorityClass() failed :"+lib.GetLastError());
                     return false;
                 }
