@@ -44,7 +44,7 @@ public final class PageMaker {
 		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue", false, false),
 		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true),
 		RABBIT_HOLE("rabbit-hole", "Into the Rabbit Hole", "Simple and clean theme", false, false),
-		WINTERFACEY("winterfacey", "Winterfacey", "2016th-theme, based on Winterface (Bootstrap)", false, false);
+		WINTERFACEY("winterfacey", "Winterfacey", "2016th-theme, based on Winterface (Bootstrap)", true, false);
 
 		
 		public static final String[] possibleValues = {
