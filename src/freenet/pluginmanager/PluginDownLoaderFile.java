@@ -34,15 +34,15 @@ public class PluginDownLoaderFile extends PluginDownLoader<File> {
 	String getSHA1sum() throws PluginNotFoundException {
 		return null;
 	}
-	
-	@Override
-	String getSHA256sum() throws PluginNotFoundException {
-		return null;
-	}
 
 	@Override
 	void tryCancel() {
 		// Definitely not supported.
+	}
+
+	@Override
+	public boolean isCachingProhibited() {
+		return true;
 	}
 
 }
