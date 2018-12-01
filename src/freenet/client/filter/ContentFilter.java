@@ -103,6 +103,13 @@ public class ContentFilter {
 				l10n("audioFLACReadAdvice"),
 				false, null, null, false));
 
+		// M3U - strict filter
+		register(new FilterMIMEType("audio/mpegurl", "m3u", new String[] {"application/vnd.apple.mpegurl","application/mpegurl","application/x-mpegurl","audio/x-mpegurl"}, new String[] {"m3u8"},
+				false, false, new M3UFilter(), false, false, false, false, false, false,
+				l10n("audioM3UReadAdvice"),
+				false, "utf-8", null, false));
+
+
 		/* MP3
 		 *
 		 * Reference: http://www.mp3-tech.org/programmer/frame_header.html
@@ -290,7 +297,7 @@ public class ContentFilter {
 					byte[] charsetBuffer = new byte[bufferSize];
 					int bytesRead = 0, offset = 0, toread=0;
 					while(true) {
-                                                toread = bufferSize - offset;
+						toread = bufferSize - offset;
 						bytesRead = input.read(charsetBuffer, offset, toread);
 						if(bytesRead == -1 || toread == 0) break;
 						offset += bytesRead;
