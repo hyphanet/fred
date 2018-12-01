@@ -1,5 +1,14 @@
 next ():
 
+- plugin manager cleanup: more readable code
+- now ogg theora, vorbis, flag filter: can show ogg-files!
+- m3u filter: can stream playlists
+- make winterfacey theme the default
+
+1483:
+
+- new default theme: sky static
+- included experimental winterfacey theme
 - switch to gradle with witness as build system
 - run in background mode
 - switch from jni to jna
