@@ -76,7 +76,7 @@ public class M3UFilter implements ContentDataFilter {
         byte[] fileUri;
         int fileIndex;
         /* TODO: select the type per suffix. Right now we can get away
-         * with just forcing mbp3 since we only have a filter for
+         * with just forcing mp3 since we only have a filter for
          * that.*/
         /* We need to force the type, because browsers might use
          * content type sniffing in the media tag and audio-players,
@@ -126,7 +126,15 @@ public class M3UFilter implements ContentDataFilter {
                                 String subMimetype;
                                 if (uriold.endsWith(".m3u") || uriold.endsWith(".m3u8")) {
                                     subMimetype = "audio/mpegurl";
-                                } else {
+				} else if (uriold.endsWith(".flac")) {
+                                    subMimetype = "audio/flac";
+				} else if (uriold.endsWith(".oga")) {
+                                    subMimetype = "audio/ogg";
+				} else if (uriold.endsWith(".ogv")) {
+                                    subMimetype = "video/ogg";
+				} else if (uriold.endsWith(".ogg")) {
+                                    subMimetype = "application/ogg";
+                                } else { // force mp3 for anything we do not know
                                     subMimetype = "audio/mpeg";
                                 }
                                 filtered = cb.processURI(uriold, subMimetype);
