@@ -82,6 +82,26 @@ public class ContentFilter {
 				l10n("imageBMPReadAdvice"),
 				false, null, null, false));	
 
+		/* Ogg - has a filter
+		 * Xiph's container format. Contains one or more logical bitstreams.
+		 * Each type of bitstream will likely require additional processing,
+		 * on top of that needed for the Ogg container itself.
+		 * Reference: http://xiph.org/ogg/doc/rfc3533.txt
+		 */
+		register(new FilterMIMEType("application/ogg", "ogx", new String[] {"video/ogg", "audio/ogg"}, new String[]{"ogg", "oga", "ogv"},
+				true, false, new OggFilter(), true, true, false, true, false, false,
+				l10n("containerOggReadAdvice"),false, null, null, false));
+
+		/* FLAC - Needs filter
+		 * Lossless audio format. This data is sometimes encapsulated inside
+		 * of ogg containers. It is, however, not currently supported, and
+		 * is very dangerous, as it may specify URLs from which album art
+		 * will be dwonloaded from
+		 */
+		register(new FilterMIMEType("audio/flac", "flac", new String[] {"application/x-flac"}, new String[0],
+				true, true, new FlacFilter(),  true, true, false, true, false, false,
+				l10n("audioFLACReadAdvice"),
+				false, null, null, false));
 
 		/* MP3
 		 *
@@ -282,6 +302,7 @@ public class ContentFilter {
 					handler.readFilter.readFilter(input, output, charset, otherParams, filterCallback);
 				}
 				catch(EOFException e) {
+					Logger.error(ContentFilter.class, "EOFException caught: "+e,e);
 					throw new DataFilterException(l10n("EOFMessage"), l10n("EOFMessage"), l10n("EOFDescription"));
 				}
 				catch(IOException e) {
