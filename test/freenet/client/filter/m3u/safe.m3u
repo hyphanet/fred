@@ -6,6 +6,10 @@ simplepathname.mp3
 # unimportant comment
 simplepathname2.mp3
 simplepathname3.m3u
+simplepathname3.ogg
+simplepathname3.oga
+simplepathname3.ogv
+simplepathname3.flac
 # absolute links are shifted to the host and port of the visitor
 http://127.0.0.1:8888/CHK@qtpnyOzrg~aiAbnw6AoKbX8ZlTCwznjY4G1y-JiiCgg,b0wkEgRPKWMvedueAKLkyv0S83xOrGUT4S7FaN5J3nI,AAMC--8/Infinite-Hands-free-software.mp3
 http://127.0.0.1:8888/CHK@qtpnyOzrg~aiAbnw6AoKbX8ZlTCwznjY4G1y-JiiCgg,b0wkEgRPKWMvedueAKLkyv0S83xOrGUT4S7FaN5J3nI,AAMC--8/next.m3u

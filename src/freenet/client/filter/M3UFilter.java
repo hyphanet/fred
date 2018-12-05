@@ -118,9 +118,9 @@ public class M3UFilter implements ContentDataFilter {
                     if (!isComment) {
                         // remove too long paths
                         if (fileIndex <= MAX_URI_LENGTH) {
-                            String uriold = new String(fileUri, 0, fileIndex, "UTF-8").trim();
+                            String uriold = new String(fileUri, 0, fileIndex, "UTF-8");
                             // System.out.println(uriold);
-                            // clean up the URL: allow sub-m3us and mp3s
+                            // clean up the URL: allow sub-m3us and mp3/ogg/flac (what we can filter)
                             String filtered;
                             try {
                                 String subMimetype;
