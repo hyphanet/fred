@@ -1249,38 +1249,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
-				"video",
-				new CoreTagVerifier(
-					"video",
-					new String[] {"width", "height" },
-					emptyStringArray,
-					new String[] { "src", "poster" },
-					emptyStringArray,
-					new String[] {"preload", "loop", "controls"}));
-			allowedTagsVerifiers.put(
-					"audio",
-					new CoreTagVerifier(
-						"audio",
-						emptyStringArray,
-						emptyStringArray,
-						new String[] { "src" },
-						emptyStringArray,
-						new String[] {"preload", "loop", "controls"}));
-			allowedTagsVerifiers.put(
-					"source",
-					new CoreTagVerifier(
-						"source",
-						new String[] {"type", "media" },
-						emptyStringArray,
-						new String[] { "src",},
-						emptyStringArray,
-						emptyStringArray));
-		// FIXME: object tag -
-		// http://www.w3.org/TR/html4/struct/objects.html#h-13.3
-		// FIXME: param tag -
-		// http://www.w3.org/TR/html4/struct/objects.html#h-13.3.2
-		// applet tag PROHIBITED - we do not support applets (FIXME?)
-		allowedTagsVerifiers.put(
 			"map",
 			new CoreTagVerifier(
 				"map",
@@ -1309,12 +1277,38 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			"audio", // currently just minimal support
 			new MediaTagVerifier(
 				"audio",
-				new String[] { // allowed tags
-					"preload",
-					"controls"},
+				emptyStringArray,
 				emptyStringArray, // uris
 				new String[] { "src" }, // inline uris
+				emptyStringArray,
+				new String[] { // boolean attributes
+					"preload",
+					"controls",
+				    "loop"}));
+		allowedTagsVerifiers.put(
+			"video", // currently just minimal support
+			new MediaTagVerifier(
+				"video",
+				new String[] {"width", "height" },
+				emptyStringArray, // uris
+				new String[] { "src", "poster" }, // inline uris
+				emptyStringArray,
+				new String[] { // boolean attributes
+					"preload",
+					"controls",
+				    "loop"}));
+		allowedTagsVerifiers.put(
+			"source", // currently just minimal support
+			new MediaTagVerifier(
+				"source",
+				emptyStringArray, // media is disallowed because it might leak device info, type is disallowed because it could allow tricking a browser into interpreting a file with another mime-type.
+				emptyStringArray, // uris
+				new String[] { "src" }, // inline uris
+				emptyStringArray,
 				emptyStringArray));
+		// TODO: param tag?
+		// http://www.w3.org/TR/html4/struct/objects.html#h-13.3.2
+		// applet tag PROHIBITED - we do not support applets
 		allowedTagsVerifiers.put("style", new StyleTagVerifier());
 		allowedTagsVerifiers.put(
 			"font",
@@ -2804,8 +2798,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] allowedAttrs,
 			String[] uriAttrs,
 			String[] inlineURIAttrs,
-			String[] eventAttrs) {
-			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs, emptyStringArray);
+			String[] eventAttrs,
+			String[] booleanAttrs) {
+			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs, booleanAttrs);
 			for(String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
 			}
