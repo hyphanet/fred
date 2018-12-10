@@ -1272,7 +1272,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "href" },
 				emptyStringArray,
 				new String[] { "onfocus", "onblur" },
-                emptyStringArray));
+				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"audio", // currently just minimal support
 			new MediaTagVerifier(
@@ -1284,7 +1284,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { // boolean attributes
 					"preload",
 					"controls",
-				    "loop"}));
+					"loop"}));
 		allowedTagsVerifiers.put(
 			"video", // currently just minimal support
 			new MediaTagVerifier(
@@ -1296,7 +1296,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { // boolean attributes
 					"preload",
 					"controls",
-				    "loop"}));
+					"loop"}));
 		allowedTagsVerifiers.put(
 			"source", // currently just minimal support
 			new MediaTagVerifier(
