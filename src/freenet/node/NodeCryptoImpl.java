@@ -6,7 +6,9 @@ package freenet.node;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.SocketException;
 import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.zip.DeflaterOutputStream;
@@ -19,10 +21,7 @@ import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.AddressTracker.Status;
-import freenet.io.comm.FreenetInetAddress;
-import freenet.io.comm.IncomingPacketFilterImpl;
-import freenet.io.comm.Peer;
-import freenet.io.comm.UdpSocketHandler;
+import freenet.io.comm.*;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.support.Base64;
@@ -65,7 +64,7 @@ public class NodeCryptoImpl implements NodeCrypto, ProtectedNodeCrypto {
 	/** My ARK sequence number */
 	long myARKNumber;
 	final NodeCryptoConfig config;
-	final NodeIPPortDetector detector;
+	final ProtectedNodeIPPortDetector detector;
 	final BlockCipher anonSetupCipher;
 
 	// Noderef related
@@ -104,7 +103,7 @@ public class NodeCryptoImpl implements NodeCrypto, ProtectedNodeCrypto {
 			for(int i=0;i<200000;i++) {
 				int portNo = 1024 + random.nextInt(65535-1024);
 				try {
-					u = new UdpSocketHandler(portNo, bindto.getAddress(), node, startupTime, getTitle(portNo), node.getStatisticCollector());
+					u = newUdpSocketHandler(portNo, bindto.getAddress(), node, startupTime, getTitle(portNo), node.getStatisticCollector());
 					port = u.getPortNumber();
 					break;
 				} catch (Exception e) {
@@ -118,7 +117,7 @@ public class NodeCryptoImpl implements NodeCrypto, ProtectedNodeCrypto {
 				throw new NodeInitException(NodeInitException.EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
 		} else {
 			try {
-				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime, getTitle(port), node.getStatisticCollector());
+				u = newUdpSocketHandler(port, bindto.getAddress(), node, startupTime, getTitle(port), node.getStatisticCollector());
 			} catch (Exception e) {
 				Logger.error(this, "Caught "+e, e);
 				System.err.println(e);
@@ -137,7 +136,7 @@ public class NodeCryptoImpl implements NodeCrypto, ProtectedNodeCrypto {
 
 		packetMangler = new FNPPacketMangler(node, this, socket);
 
-		detector = new NodeIPPortDetector(node, node.getIPDetector(), this, enableARKs);
+		detector = newNodeIPPortDetector(node, node.getIPDetector(), this, enableARKs);
 
 		anonSetupCipher = new Rijndael(256,256);
 
@@ -647,6 +646,15 @@ public class NodeCryptoImpl implements NodeCrypto, ProtectedNodeCrypto {
 	@Override
 	public InsertableClientSSK getMyARK() {
 		return myARK;
+	}
+
+	protected UdpSocketHandler newUdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title, IOStatisticCollector collector) throws SocketException {
+		UdpSocketHandler result = new UdpSocketHandlerImpl(listenPort, bindto, node, startupTime, title, collector);
+		return result;
+	}
+
+	protected ProtectedNodeIPPortDetector newNodeIPPortDetector(Node node, NodeIPDetector ipDetector, ProtectedNodeCrypto crypto, boolean enableARKs) {
+		return new NodeIPPortDetectorImpl(node, ipDetector, crypto, enableARKs);
 	}
 }
 

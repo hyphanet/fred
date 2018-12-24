@@ -32,7 +32,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	private final Node node;
 	private final ProtectedNodeCrypto crypto;
 	private final String darknetOpennetString;
-	private final NodeIPPortDetector detector;
+	private final ProtectedNodeIPPortDetector detector;
 	private static boolean logMINOR;
 	private final boolean enabled;
 
@@ -40,7 +40,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	 * @param node
 	 * @param old If true, use the old ARK rather than the new ARK
 	 */
-	NodeARKInserter(Node node, NodeCrypto crypto, NodeIPPortDetector detector, boolean enableARKs) {
+	NodeARKInserter(Node node, NodeCrypto crypto, ProtectedNodeIPPortDetector detector, boolean enableARKs) {
 		this.node = node;
 		this.crypto = (ProtectedNodeCrypto) crypto;
 		this.detector = detector;

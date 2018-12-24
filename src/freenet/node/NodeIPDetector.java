@@ -110,8 +110,8 @@ public class NodeIPDetector {
 	private boolean hasDetectedPM;
 	/** Have we checked peers and local interfaces for our IP address? */
 	private boolean hasDetectedIAD;
-	/** Subsidiary detectors: NodeIPPortDetector's which rely on this object */
-	private NodeIPPortDetector[] portDetectors;
+	/** Subsidiary detectors: NodeIPPortDetectorImpl's which rely on this object */
+	private ProtectedNodeIPPortDetector[] portDetectors;
 	private boolean hasValidIP;
 	private boolean firstDetection = true;
 	
@@ -123,12 +123,16 @@ public class NodeIPDetector {
 		ipDetector = new IPAddressDetector(SECONDS.toMillis(10), this);
 		invalidAddressOverrideAlert = new InvalidAddressOverrideUserAlert(node);
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert(node);
-		portDetectors = new NodeIPPortDetector[0];
+		portDetectors = initializeIPPortDetectors();
 	}
 
-	public synchronized void addPortDetector(NodeIPPortDetector detector) {
+	public synchronized void addPortDetector(NodeIPPortDetectorImpl detector) {
 		portDetectors = Arrays.copyOf(portDetectors, portDetectors.length+1);
 		portDetectors[portDetectors.length - 1] = detector;
+	}
+
+	private ProtectedNodeIPPortDetector[] initializeIPPortDetectors() {
+		return new NodeIPPortDetectorImpl[0];
 	}
 	
 	/**
@@ -406,13 +410,13 @@ public class NodeIPDetector {
 
 	public void redetectAddress() {
 		FreenetInetAddress[] newIP = detectPrimaryIPAddress(false);
-		NodeIPPortDetector[] detectors;
+		ProtectedNodeIPPortDetector[] detectors;
 		synchronized(this) {
 			if(Arrays.equals(newIP, lastIP)) return;
 			lastIP = newIP;
 			detectors = portDetectors;
 		}
-		for(NodeIPPortDetector detector: detectors)
+		for(ProtectedNodeIPPortDetector detector: detectors)
 			detector.update();
 		node.writeNodeFile();
 	}
@@ -544,11 +548,11 @@ public class NodeIPDetector {
 		node.getTicker().queueTimedJob(new Runnable() {
 			@Override
 			public void run() {
-				NodeIPPortDetector[] detectors;
+				ProtectedNodeIPPortDetector[] detectors;
 				synchronized(this) {
 					detectors = portDetectors;
 				}
-				for(NodeIPPortDetector detector: detectors)
+				for(ProtectedNodeIPPortDetector detector: detectors)
 					detector.startARK();
 			}
 		}, SECONDS.toMillis(60));
