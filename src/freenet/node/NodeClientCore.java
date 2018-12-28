@@ -1956,7 +1956,7 @@ public class NodeClientCore implements Persistable {
 	}
 
 	public boolean isTestnetEnabled() {
-		return NodeImpl.isTestnetEnabled();
+		return node.isTestnetEnabled();
 	}
 
 	public boolean isAdvancedModeEnabled() {

@@ -1013,4 +1013,9 @@ public class StubNode implements ProtectedNode {
     public SecurityLevels getSecurityLevels() {
         return null;
     }
+    
+    @Override
+    public boolean isTestnetEnabled() {
+        return false;
+    }
 }

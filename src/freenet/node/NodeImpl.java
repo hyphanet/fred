@@ -855,10 +855,6 @@ public class NodeImpl implements TimeSkewDetectorCallback, Node, ProtectedNode {
 		return nodeStarter;
 	}
 
-   public static boolean isTestnetEnabled() {
-      return false;
-   }
-
 	/**
 	 * Create a Node from a Config object.
 	 * @param config The Config object for this node.
@@ -4862,163 +4858,167 @@ public class NodeImpl implements TimeSkewDetectorCallback, Node, ProtectedNode {
         return nodeStats;
     }
 
-	@Override
-	public int getLastVersion() {
-		return lastVersion;
-	}
+    @Override
+    public int getLastVersion() {
+            return lastVersion;
+    }
 
-	@Override
-	public RequestTracker getRequestTracker() {
-		return tracker;
-	}
+    @Override
+    public RequestTracker getRequestTracker() {
+            return tracker;
+    }
 
-	@Override
-	public DNSRequester getDNSRequester() {
-		return dnsr;
-	}
+    @Override
+    public DNSRequester getDNSRequester() {
+            return dnsr;
+    }
 
-	@Override
-	public boolean ARKsEnabled() {
-		return enableARKs;
-	}
+    @Override
+    public boolean ARKsEnabled() {
+            return enableARKs;
+    }
 
-	@Override
-	public IOStatisticCollector getStatisticCollector() {
-		return collector;
-	}
+    @Override
+    public IOStatisticCollector getStatisticCollector() {
+            return collector;
+    }
 
-	@Override
-	public long getLastBootID() {
-		return lastBootID;
-	}
+    @Override
+    public long getLastBootID() {
+            return lastBootID;
+    }
 
-	@Override
-	public long getBootID() {
-		return bootID;
-	}
+    @Override
+    public long getBootID() {
+            return bootID;
+    }
 
-	@Override
-	public boolean throttleLocalData() {
-		return throttleLocalData;
-	}
+    @Override
+    public boolean throttleLocalData() {
+            return throttleLocalData;
+    }
 
-	@Override
-	public TokenBucket getOutputThrottle() {
-		return outputThrottle;
-	}
+    @Override
+    public TokenBucket getOutputThrottle() {
+            return outputThrottle;
+    }
 
-	@Override
-	public long getStartupTime() {
-		return startupTime;
-	}
+    @Override
+    public long getStartupTime() {
+            return startupTime;
+    }
 
-	@Override
-	public TimeSkewDetectorCallback getTimeSkewDetectorCallback() {
-		return this;
-	}
+    @Override
+    public TimeSkewDetectorCallback getTimeSkewDetectorCallback() {
+            return this;
+    }
 
-	@Override
-	public InetAddress getLocalHostAddress() {
-		return localhostAddress;
-	}
+    @Override
+    public InetAddress getLocalHostAddress() {
+            return localhostAddress;
+    }
 
-	@Override
-	public FreenetInetAddress getLocalHostFreenetAddress() {
-		return fLocalhostAddress;
-	}
+    @Override
+    public FreenetInetAddress getLocalHostFreenetAddress() {
+            return fLocalhostAddress;
+    }
 
-	@Override
-	public boolean enablePacketCoalescing() {
-		return enablePacketCoalescing;
-	}
+    @Override
+    public boolean enablePacketCoalescing() {
+            return enablePacketCoalescing;
+    }
 
-	@Override
-	public PacketSender getPacketSender() {
-		return ps;
-	}
+    @Override
+    public PacketSender getPacketSender() {
+            return ps;
+    }
 
-	@Override
-	public FailureTable getFailureTable() {
-		return failureTable;
-	}
+    @Override
+    public FailureTable getFailureTable() {
+            return failureTable;
+    }
 
-	@Override
-	public NodeDispatcher getDispatcher() {
-		return dispatcher;
-	}
+    @Override
+    public NodeDispatcher getDispatcher() {
+            return dispatcher;
+    }
 
-	@Override
-	public boolean disableProbabilisticHTLs() {
-		return disableProbabilisticHTLs;
-	}
+    @Override
+    public boolean disableProbabilisticHTLs() {
+            return disableProbabilisticHTLs;
+    }
 
-	@Override
-	public FetchContext getARKFetcherContext() {
-		return arkFetcherContext;
-	}
+    @Override
+    public FetchContext getARKFetcherContext() {
+            return arkFetcherContext;
+    }
 
-	@Override
-	public RequestClient getNonPersistentClientRT() {
-		return nonPersistentClientRT;
-	}
+    @Override
+    public RequestClient getNonPersistentClientRT() {
+            return nonPersistentClientRT;
+    }
 
-	@Override
-	public UptimeEstimator getUptimeEstimator() {
-		return uptime;
-	}
+    @Override
+    public UptimeEstimator getUptimeEstimator() {
+            return uptime;
+    }
 
-	@Override
-	public PersistentConfig getConfig() {
-		return config;
-	}
+    @Override
+    public PersistentConfig getConfig() {
+            return config;
+    }
 
-	@Override
-	public NodeGetPubkey getGetPubkey() {
-		return getPubKey;
-	}
+    @Override
+    public NodeGetPubkey getGetPubkey() {
+            return getPubKey;
+    }
 
-	@Override
-	public ProtectedNodeCrypto getInternalDarknetCrypto() {
-		return (ProtectedNodeCrypto) getDarknetCrypto();
-	}
+    @Override
+    public ProtectedNodeCrypto getInternalDarknetCrypto() {
+            return (ProtectedNodeCrypto) getDarknetCrypto();
+    }
 
-	@Override
-	public SecurityLevels getSecurityLevels() {
-		return securityLevels;
-	}
+    @Override
+    public SecurityLevels getSecurityLevels() {
+            return securityLevels;
+    }
 
-	@Override
-	public PubkeyStore getOldPK() {
-		return oldPK;
-	}
+    @Override
+    public PubkeyStore getOldPK() {
+            return oldPK;
+    }
 
-	@Override
-	public PubkeyStore getOldPKCache() {
-		return oldPKCache;
-	}
+    @Override
+    public PubkeyStore getOldPKCache() {
+            return oldPKCache;
+    }
 
-	@Override
-	public PubkeyStore getOldPKClientCache() {
-		return oldPKClientCache;
-	}
+    @Override
+    public PubkeyStore getOldPKClientCache() {
+            return oldPKClientCache;
+    }
 
-	@Override
-	public boolean enableULPRDataPropagation() {
-		return enableULPRDataPropagation;
-	}
+    @Override
+    public boolean enableULPRDataPropagation() {
+            return enableULPRDataPropagation;
+    }
 
-	@Override
-	public boolean enablePerNodeFailureTables() {
-		return enablePerNodeFailureTables;
-	}
+    @Override
+    public boolean enablePerNodeFailureTables() {
+            return enablePerNodeFailureTables;
+    }
 
-	@Override
-	public boolean enableSwapping() {
-		return enableSwapping;
-	}
+    @Override
+    public boolean enableSwapping() {
+            return enableSwapping;
+    }
 
-	@Override
-	public boolean enableSwapQueueing() {
-		return enableSwapQueueing;
-	}
+    @Override
+    public boolean enableSwapQueueing() {
+            return enableSwapQueueing;
+    }
+    
+    public boolean isTestnetEnabled() {
+        return false;
+    }
 }

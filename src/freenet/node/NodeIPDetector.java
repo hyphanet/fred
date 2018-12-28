@@ -400,7 +400,7 @@ public class NodeIPDetector {
 	}
 
 	/**
-	 * Is called by IPAddressDetector to inform NodeIPDetector about the MTU
+	 * Is called by IPAddressDetectorImpl to inform NodeIPDetector about the MTU
 	 * associated to this interface
 	 */
         public void reportMTU(int mtu, boolean forIPv6) {

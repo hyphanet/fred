@@ -122,6 +122,8 @@ public interface Node {
      */
     int minimumBandwidth = 10 * 1024;
 
+    boolean isTestnetEnabled();
+
     <T extends StorableBlock> void closeOldStore(StoreCallback<T> old);
 
     TrafficClass getTrafficClass();

@@ -24,9 +24,11 @@ public class NodeHelloMessage extends FCPMessage {
 	public static final String NAME = "NodeHello";
 	
 	private final String id;
+        private final boolean testnet;
 		
-	public NodeHelloMessage(String id) {
+	public NodeHelloMessage(String id, boolean testnetMode) {
 		this.id = id;
+                this.testnet = testnetMode;
 	}
 	
 	@Override
@@ -40,7 +42,7 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.putSingle("Revision", Version.cvsRevision());
 		sfs.put("ExtBuild", NodeStarter.extBuildNumber);
 		sfs.putSingle("ExtRevision", NodeStarter.extRevisionNumber);
-		sfs.put("Testnet", NodeImpl.isTestnetEnabled());
+		sfs.put("Testnet", testnet);
 		sfs.putSingle("CompressionCodecs", Compressor.COMPRESSOR_TYPE.getHelloCompressorDescriptor());
 		sfs.putSingle("ConnectionIdentifier", id);
 		sfs.putSingle("NodeLanguage", NodeL10n.getBase().getSelectedLanguage().toString());

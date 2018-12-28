@@ -219,7 +219,7 @@ public class TextModeClientInterface implements Runnable {
         if(core != null && core.directTMCI != this) {
           sb.append("QUIT - close the socket\r\n");
         }
-        if(NodeImpl.isTestnetEnabled()) {
+        if(core.isTestnetEnabled()) {
         	sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\r\n");
         }
         sw.write(sb.toString());

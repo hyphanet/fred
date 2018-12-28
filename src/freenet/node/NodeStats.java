@@ -2246,7 +2246,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public boolean isTestnetEnabled() {
-		return NodeImpl.isTestnetEnabled();
+		return node.isTestnetEnabled();
 	}
 
 	public boolean getRejectReasonsTable(HTMLNode table) {
