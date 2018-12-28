@@ -33,6 +33,7 @@ import freenet.support.api.StringCallback;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPAddressDetector;
+import freenet.support.transport.ip.IPAddressDetectorImpl;
 import freenet.support.transport.ip.IPUtil;
 
 /**
@@ -120,13 +121,13 @@ public class NodeIPDetector {
 	public NodeIPDetector(Node node) {
 		this.node = node;
 		ipDetectorManager = new IPDetectorPluginManager(node, this);
-		ipDetector = new IPAddressDetector(SECONDS.toMillis(10), this);
+		ipDetector = newIPAddressDetector(SECONDS.toMillis(10));
 		invalidAddressOverrideAlert = new InvalidAddressOverrideUserAlert(node);
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert(node);
 		portDetectors = initializeIPPortDetectors();
 	}
 
-	public synchronized void addPortDetector(NodeIPPortDetectorImpl detector) {
+	public synchronized void addPortDetector(ProtectedNodeIPPortDetector detector) {
 		portDetectors = Arrays.copyOf(portDetectors, portDetectors.length+1);
 		portDetectors[portDetectors.length - 1] = detector;
 	}
@@ -134,7 +135,11 @@ public class NodeIPDetector {
 	private ProtectedNodeIPPortDetector[] initializeIPPortDetectors() {
 		return new NodeIPPortDetectorImpl[0];
 	}
-	
+
+	private IPAddressDetector newIPAddressDetector(long interval) {
+		return new IPAddressDetectorImpl(interval, this);
+	}
+
 	/**
 	 * What is my IP address? Use all globally available information (everything which isn't
 	 * specific to a given port i.e. opennet or darknet) to determine our current IP addresses.
