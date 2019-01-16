@@ -29,7 +29,7 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
     
     private static final long serialVersionUID = 1L;
 
-    static class FDTracker {
+    static class FDTracker implements Serializable {
         private int maxOpenFDs;
         private int totalOpenFDs = 0;
         private final LinkedHashSet<PooledFileRandomAccessBuffer> closables = new LinkedHashSet<PooledFileRandomAccessBuffer>();
