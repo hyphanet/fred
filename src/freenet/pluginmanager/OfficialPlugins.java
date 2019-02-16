@@ -130,7 +130,7 @@ public class OfficialPlugins {
 					.inGroup("communication")
 					.recommendedVersion(4)
 					.minimumVersion(2)
-					.loadedFrom("CHK@MktEdCJqSCG~5LaI9f~3xoQjejZCEVraQlfzKRs-H3I,yI2mQDrN1omHqD6ZibXDTRqnCK~2ut4Q11p18J1~cGE,AAMC--8/Sharesite-0.4.4.jar");
+					.loadedFrom("CHK@TW50Qa8ZDSMJLBhtZBJwhhK3FLpK6agYbu0uuDxE93o,bXtOUidMj9qmFto723R8uODc4GBFwk8tZ43DOwwVahE,AAMC--8/Sharesite-0.4.7.jar");
 		} catch (MalformedURLException mue1) {
 			throw new RuntimeException("Could not create FreenetURI.", mue1);
 		}
