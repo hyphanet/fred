@@ -2,7 +2,7 @@ next ():
 
 - increase scaling to 3 again because 1480 nodes otherwise slow down updated nodes
 - plugin manager cleanup: more readable code
-- now ogg theora, vorbis, flag filter: can show ogg-files!
+- new ogg theora, vorbis, flac filter: can show ogg-files!
 - m3u filter: can stream playlists
 - make winterfacey theme the default
 
