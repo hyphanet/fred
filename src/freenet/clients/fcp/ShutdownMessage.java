@@ -29,7 +29,7 @@ public class ShutdownMessage extends FCPMessage{
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Shutdown requires full access", null, false);
 		}
 		FCPMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.SHUTTING_DOWN,true,"The node is shutting down","Node",false);
-		handler.outputHandler.queue(msg);
+		handler.send(msg);
 		node.exit("Received FCP shutdown message");
 	}
 

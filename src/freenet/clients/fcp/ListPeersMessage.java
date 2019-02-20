@@ -39,10 +39,10 @@ public class ListPeersMessage extends FCPMessage {
 		}
 		PeerNode[] nodes = node.getPeerNodes();
 		for(PeerNode pn: nodes) {
-			handler.outputHandler.queue(new PeerMessage(pn, withMetadata, withVolatile, identifier));
+			handler.send(new PeerMessage(pn, withMetadata, withVolatile, identifier));
 		}
 		
-		handler.outputHandler.queue(new EndListPeersMessage(identifier));
+		handler.send(new EndListPeersMessage(identifier));
 	}
 
 }

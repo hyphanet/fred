@@ -199,7 +199,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
                         	}
                         }, NativeThread.HIGH_PRIORITY-1);
                     } catch (PersistenceDisabledException e) {
-                        handler.outputHandler.queue(new EndListPersistentRequestsMessage(listRequestIdentifier));
+                        handler.send(new EndListPersistentRequestsMessage(listRequestIdentifier));
                     }
 			}
 			

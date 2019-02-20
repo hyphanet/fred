@@ -42,10 +42,10 @@ public class ListPeerMessage extends FCPMessage {
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
 			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier, identifier);
-			handler.outputHandler.queue(msg);
+			handler.send(msg);
 			return;
 		}
-		handler.outputHandler.queue(new PeerMessage(pn, true, true, identifier));
+		handler.send(new PeerMessage(pn, true, true, identifier));
 	}
 
 }

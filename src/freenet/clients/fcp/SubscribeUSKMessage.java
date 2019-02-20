@@ -79,11 +79,11 @@ public class SubscribeUSKMessage extends FCPMessage {
 		try {
 			new SubscribeUSK(this, node.clientCore, handler);
 		} catch (IdentifierCollisionException e) {
-			handler.outputHandler.queue(new IdentifierCollisionMessage(identifier, false));
+			handler.send(new IdentifierCollisionMessage(identifier, false));
 			return;
 		}
 		SubscribedUSKMessage reply = new SubscribedUSKMessage(this);
-		handler.outputHandler.queue(reply);
+		handler.send(reply);
 	}
 
 }

@@ -184,7 +184,7 @@ public class AddPeer extends FCPMessage {
 			}
 			System.out.println("Added darknet peer: "+pn);
 		}
-		handler.outputHandler.queue(new PeerMessage(pn, true, true, identifier));
+		handler.send(new PeerMessage(pn, true, true, identifier));
 	}
 
 }

@@ -41,7 +41,7 @@ public class GetNode extends FCPMessage {
 		if(!handler.hasFullAccess()) {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "GetNode requires full access", identifier, false);
 		}
-		handler.outputHandler.queue(new NodeData(node, giveOpennetRef, withPrivate, withVolatile, identifier));
+		handler.send(new NodeData(node, giveOpennetRef, withPrivate, withVolatile, identifier));
 	}
 
 }
