@@ -110,9 +110,9 @@ public class OfficialPlugins {
 			addPlugin("WebOfTrust")
 					.inGroup("communication")
 					.minimumVersion(18)
-					.recommendedVersion(19)
+					.recommendedVersion(20)
 					.usesXml()
-					.loadedFrom("CHK@NnDrHIg3v8FtL2TZjVZrMKEMUbyhUJOal0Gfkx4JKIQ,DJa~kxAXpBD9qPLmAX6h-NC4-vngiHwX1B1CZhDACzM,AAMC--8/WebOfTrust-build0019.jar");
+					.loadedFrom("CHK@5c0yqhe9lcM~dXWeM5jZkZAeTpsAIxozHU5j1-BvhQY,7dwiZkEwyceOfDotFe4fDeySyXFQH990~AKySmDGGrI,AAMC--8/WebOfTrust-build0020.jar");
 			addPlugin("WebOfTrustTesting")
 					.inGroup("communication")
 					.advanced()
