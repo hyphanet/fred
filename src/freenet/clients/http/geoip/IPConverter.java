@@ -143,7 +143,7 @@ public class IPConverter {
 		public void renderFlagIcon(HTMLNode parent) {
 			String flagPath = getFlagIconPath();
 			if(flagPath != null)
-				parent.addChild("img", new String[] { "src", "title" }, new String[] { StaticToadlet.ROOT_URL + flagPath, getName()});
+				parent.addChild("img", new String[] { "src", "class", "title" }, new String[] { StaticToadlet.ROOT_URL + flagPath, "flag", getName()});
 		}
 		
 		public boolean hasFlagIcon() {

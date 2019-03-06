@@ -482,6 +482,11 @@ table.darknet_connections span.peer_disconnected {
 	text-transform: uppercase;
 }
 
+/* add some space between flag and IP address */
+.peer-address .flag {
+	padding-right: 0.5ex;
+}
+
 /*FIXME magic keystone - remove these rules and the entire
  * page collapses */
 div.infobox-content ul {
