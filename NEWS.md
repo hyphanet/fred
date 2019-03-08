@@ -5,6 +5,10 @@ next ():
 - new ogg theora, vorbis, flac filter: can show ogg-files!
 - m3u filter: can stream playlists
 - make winterfacey theme the default
+- update WoT to build 20.
+- update Sharesite version to 0.4.7
+- avoid losing download state on restart
+- re-apply much less recently failed
 
 1483:
 
