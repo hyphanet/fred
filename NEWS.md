@@ -9,6 +9,7 @@ next ():
 - update Sharesite version to 0.4.7
 - avoid losing download state on restart
 - re-apply much less recently failed
+- only FMS and Sone on ChatForums page to fit the projects stance
 
 1483:
 
