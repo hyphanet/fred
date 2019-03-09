@@ -11,6 +11,7 @@ next ():
 - re-apply much less recently failed
 - only FMS and Sone on ChatForums suggestion page to fit the projects longstanding stance. If you disagree, you can create a freesite to promote it.
 - update included seednodes
+- prevent content type guessing of Firefox for text/plain files
 
 1483:
 
