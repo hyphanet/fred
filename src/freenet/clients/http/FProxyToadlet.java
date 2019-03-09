@@ -236,6 +236,16 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		} else {
 			// Send the data, intact
 			MultiValueTable<String, String> hdr = context.getHeaders();
+
+			MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
+			/*
+			 * Firefox and its derivatives may use the MIME type implied by the filename extension for
+			 * plain text, unless a Content-Encoding is specified.
+			 *
+			 * See https://developer.mozilla.org/en-US/docs/Mozilla/How_Mozilla_determines_MIME_Types#HTTP
+			 */
+			retHdr.put("Content-Encoding", "identity");
+
 			String rangeStr = hdr.get("range");
 			// was a range request
 			if (rangeStr != null) {
@@ -266,13 +276,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					Closer.close(is);
 					Closer.close(os);
 				}
-				MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
 				retHdr.put("Content-Range", "bytes " + range[0] + "-" + range[1] + "/" + size);
                 retHdr.put("X-Content-Type-Options", "nosniff");
 				context.sendReplyHeadersFProxy(206, "Partial content", retHdr, mimeType, tmpRange.size());
 				context.writeData(tmpRange);
 			} else {
-                MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
                 retHdr.put("X-Content-Type-Options", "nosniff");
                 if (container.enableCachingForChkAndSskKeys() && (key.isCHK() || key.isSSK())) {
                     context.sendReplyHeadersStatic(200, "OK", retHdr, mimeType, size, new Date());
