@@ -52,7 +52,7 @@ public class ContentFilter {
 		
 		// Plain text
 		register(new FilterMIMEType("text/plain", "txt", new String[0], new String[] { "text", "pot" },
-				true, true, null, false, false, false, false, false, false,
+				true, true, new TXTFilter(), false, false, false, false, false, false,
 				l10n("textPlainReadAdvice"),
 				true, "US-ASCII", null, false));
 		
