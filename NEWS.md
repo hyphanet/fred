@@ -12,6 +12,7 @@ next ():
 - only FMS and Sone on ChatForums suggestion page to fit the projects longstanding stance. If you disagree, you can create a freesite to promote it.
 - update included seednodes
 - prevent content sniffing in FF
+- remove the 1024 limit for node-to-node messages
 
 1483:
 
