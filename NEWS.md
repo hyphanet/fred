@@ -15,6 +15,7 @@ next ():
 - remove the 1024 limit for node-to-node messages
 - peer list: Add spacing between flag and IP address
 - replace handler.outputHandler.queue by handler.send - thanks to patheticcockroach
+- add "send confidential message" button to friends page
 
 1483:
 
@@ -31,7 +32,6 @@ next ():
 - Persist "Bookmark Updated" notifications across restarts
 - minimum bandwidth increased to 10KiB again
 - undo update of pinned SSL certificates (site no longer exists)
-- add "send confidential message" button to friends page
 
 1480:
 
