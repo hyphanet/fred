@@ -5,7 +5,7 @@ next ():
 - new ogg theora, vorbis, flac filter: can show ogg-files!
 - m3u filter: can stream playlists
 - make winterfacey theme the default
-- update WoT to build 20.
+- update WoT plugin to build 20.
 - update Sharesite version to 0.4.7
 - avoid losing download state on restart
 - re-apply much less recently failed
@@ -13,6 +13,7 @@ next ():
 - update included seednodes
 - prevent content sniffing in FF
 - remove the 1024 limit for node-to-node messages
+- peer list: Add spacing between flag and IP address
 
 1483:
 
