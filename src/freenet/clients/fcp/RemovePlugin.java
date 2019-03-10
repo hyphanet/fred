@@ -52,13 +52,13 @@ public class RemovePlugin extends FCPMessage {
 			public void run() {
 				PluginInfoWrapper pi = node.pluginManager.getPluginInfo(plugname);
 				if (pi == null) {
-					handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
+					handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
 				} else {
 					pi.stopPlugin(node.pluginManager, maxWaitTime, false);
 					if (purge) {
 						node.pluginManager.removeCachedCopy(pi.getFilename());
 					}
-					handler.outputHandler.queue(new PluginRemovedMessage(plugname, identifier));
+					handler.send(new PluginRemovedMessage(plugname, identifier));
 				}
 			}
 		}, "Remove Plugin");

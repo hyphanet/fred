@@ -84,7 +84,7 @@ public class ModifyPersistentRequest extends FCPMessage {
                         if(req==null){
                             Logger.error(this, "Huh ? the request is null!");
                             ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-                            handler.outputHandler.queue(msg);
+                            handler.send(msg);
                             return false;
                         } else {
                             req.modifyRequest(clientToken, priorityClass, handler.server);
@@ -95,7 +95,7 @@ public class ModifyPersistentRequest extends FCPMessage {
                 }, NativeThread.NORM_PRIORITY);
             } catch (PersistenceDisabledException e) {
                 ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-                handler.outputHandler.queue(msg);
+                handler.send(msg);
             }
 		} else {
 			req.modifyRequest(clientToken, priorityClass, node.clientCore.getFCPServer());

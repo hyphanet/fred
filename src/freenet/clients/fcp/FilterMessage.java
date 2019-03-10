@@ -189,7 +189,7 @@ public class FilterMessage extends DataCarryingMessage {
 			Closer.close(output);
 		}
 		FilterResultMessage response = new FilterResultMessage(identifier, resultCharset, resultMimeType, unsafe, resultBucket);
-		handler.outputHandler.queue(response);
+		handler.send(response);
 	}
 	
 	private FilterStatus applyFilter(InputStream input, OutputStream output, ClientContext clientContext) throws MessageInvalidException, UnsafeContentTypeException, IOException {

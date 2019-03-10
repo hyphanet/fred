@@ -79,58 +79,58 @@ public class ProbeRequest extends FCPMessage {
 		Listener listener = new Listener() {
 			@Override
 			public void onError(Error error, Byte code, boolean local) {
-				handler.outputHandler.queue(new ProbeError(identifier, error, code, local));
+				handler.send(new ProbeError(identifier, error, code, local));
 			}
 
 			@Override
 			public void onRefused() {
-				handler.outputHandler.queue(new ProbeRefused(identifier));
+				handler.send(new ProbeRefused(identifier));
 			}
 
 			@Override
 			public void onOutputBandwidth(float outputBandwidth) {
-				handler.outputHandler.queue(new ProbeBandwidth(identifier, outputBandwidth));
+				handler.send(new ProbeBandwidth(identifier, outputBandwidth));
 			}
 
 			@Override
 			public void onBuild(int build) {
-				handler.outputHandler.queue(new ProbeBuild(identifier, build));
+				handler.send(new ProbeBuild(identifier, build));
 			}
 
 			@Override
 			public void onIdentifier(long probeIdentifier, byte percentageUptime) {
-				handler.outputHandler.queue(new ProbeIdentifier(identifier, probeIdentifier, percentageUptime));
+				handler.send(new ProbeIdentifier(identifier, probeIdentifier, percentageUptime));
 			}
 
 			@Override
 			public void onLinkLengths(float[] linkLengths) {
-				handler.outputHandler.queue(new ProbeLinkLengths(identifier, linkLengths));
+				handler.send(new ProbeLinkLengths(identifier, linkLengths));
 			}
 
 			@Override
 			public void onLocation(float location) {
-				handler.outputHandler.queue(new ProbeLocation(identifier, location));
+				handler.send(new ProbeLocation(identifier, location));
 			}
 
 			@Override
 			public void onStoreSize(float storeSize) {
-				handler.outputHandler.queue(new ProbeStoreSize(identifier, storeSize));
+				handler.send(new ProbeStoreSize(identifier, storeSize));
 			}
 
 			@Override
 			public void onUptime(float uptimePercent) {
-				handler.outputHandler.queue(new ProbeUptime(identifier, uptimePercent));
+				handler.send(new ProbeUptime(identifier, uptimePercent));
 			}
 
 			@Override
 			public void onRejectStats(byte[] stats) {
-				handler.outputHandler.queue(new ProbeRejectStats(identifier, stats));
+				handler.send(new ProbeRejectStats(identifier, stats));
 			}
 
 			@Override
 			public void onOverallBulkOutputCapacity(
 					byte bandwidthClassForCapacityUsage, float capacityUsage) {
-				handler.outputHandler.queue(new ProbeOverallBulkOutputCapacityUsage(identifier, bandwidthClassForCapacityUsage, capacityUsage));
+				handler.send(new ProbeOverallBulkOutputCapacityUsage(identifier, bandwidthClassForCapacityUsage, capacityUsage));
 			}
 		};
 		node.startProbe(htl, node.random.nextLong(), type, listener);

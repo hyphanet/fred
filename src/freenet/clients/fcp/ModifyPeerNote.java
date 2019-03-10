@@ -47,7 +47,7 @@ public class ModifyPeerNote extends FCPMessage {
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
 			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier, identifier);
-			handler.outputHandler.queue(msg);
+			handler.send(msg);
 			return;
 		}
 		if(!(pn instanceof DarknetPeerNode)) {
@@ -76,10 +76,10 @@ public class ModifyPeerNote extends FCPMessage {
 			dpn.setPrivateDarknetCommentNote(noteText);
 		} else {
 			FCPMessage msg = new UnknownPeerNoteTypeMessage(peerNoteType, identifier);
-			handler.outputHandler.queue(msg);
+			handler.send(msg);
 			return;
 		}
-		handler.outputHandler.queue(new PeerNote(nodeIdentifier, noteText, peerNoteType, identifier));
+		handler.send(new PeerNote(nodeIdentifier, noteText, peerNoteType, identifier));
 	}
 
 }
