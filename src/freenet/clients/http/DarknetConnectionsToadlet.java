@@ -151,9 +151,13 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 
 	@Override
 	protected void drawPeerActionSelectBox(HTMLNode peerForm, boolean advancedModeEnabled) {
+		peerForm.addChild("input",
+			 new String[] { "type", "name", "value" },
+			 new String[] { "submit", "doSendMessageToPeers", l10n("sendConfidentialMessage") });
+		peerForm.addChild("br");
+
 		HTMLNode actionSelect = peerForm.addChild("select", new String[] { "id", "name" }, new String[] { "action", "action" });
 		actionSelect.addChild("option", "value", "", l10n("selectAction"));
-		actionSelect.addChild("option", "value", "send_n2ntm", l10n("sendMessageToPeers"));
 		actionSelect.addChild("option", "value", "update_notes", l10n("updateChangedPrivnotes"));
 		if(advancedModeEnabled) {
 			actionSelect.addChild("option", "value", "enable", l10n("peersEnable"));
@@ -209,7 +213,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	 */
 	@Override
 	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
-		if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("send_n2ntm")) {
+		if (request.isPartSet("doSendMessageToPeers")) {
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;

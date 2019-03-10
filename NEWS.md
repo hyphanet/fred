@@ -31,6 +31,7 @@ next ():
 - Persist "Bookmark Updated" notifications across restarts
 - minimum bandwidth increased to 10KiB again
 - undo update of pinned SSL certificates (site no longer exists)
+- add "send confidential message" button to friends page
 
 1480:
 
