@@ -15,7 +15,8 @@ next ():
 - remove the 1024 limit for node-to-node messages
 - peer list: Add spacing between flag and IP address
 - replace handler.outputHandler.queue by handler.send - thanks to patheticcockroach
-- add "send confidential message" button to friends page
+- add "send confidential message" button to friends page. See CVE-2019-9673 for details.
+
 
 1483:
 
