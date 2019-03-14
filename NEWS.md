@@ -11,7 +11,7 @@ next ():
 - re-apply much less recently failed - thanks to toad
 - only FMS and Sone on ChatForums suggestion page to fit the projects longstanding stance. If you disagree, you can create a freesite to promote it.
 - update included seednodes
-- prevent content sniffing in FF. See CVE-2019-9673 for details.
+- prevent content sniffing in FF. See CVE-2019-9673 for details. Thanks to thensark and operhiem1
 - remove the 1024 limit for node-to-node messages
 - peer list: Add spacing between flag and IP address - Thanks to Bombe
 - replace handler.outputHandler.queue by handler.send - thanks to patheticcockroach
