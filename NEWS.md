@@ -1,22 +1,21 @@
 next ():
 
 - increase scaling to 3 again because 1480 nodes otherwise slow down updated nodes
-- plugin manager cleanup: more readable code
-- new ogg theora, vorbis, flac filter: can show ogg-files!
+- plugin manager cleanup: more readable code 
+- new ogg theora, vorbis, flac filter: can show ogg-files! - thanks to Spencer Jackson, finally merged it
 - m3u filter: can stream playlists
 - make winterfacey theme the default
-- update WoT plugin to build 20.
+- update WoT plugin to build 20. Thanks to xor.
 - update Sharesite version to 0.4.7
-- avoid losing download state on restart
-- re-apply much less recently failed
+- avoid losing download state on restart - thanks to ChristmasMuch from FMS
+- re-apply much less recently failed - thanks to toad
 - only FMS and Sone on ChatForums suggestion page to fit the projects longstanding stance. If you disagree, you can create a freesite to promote it.
 - update included seednodes
-- prevent content sniffing in FF
+- prevent content sniffing in FF. See CVE-2019-9673 for details.
 - remove the 1024 limit for node-to-node messages
-- peer list: Add spacing between flag and IP address
+- peer list: Add spacing between flag and IP address - Thanks to Bombe
 - replace handler.outputHandler.queue by handler.send - thanks to patheticcockroach
-- add "send confidential message" button to friends page. See CVE-2019-9673 for details.
-
+- add "send confidential message" button to friends page - thanks to Redwerk
 
 1483:
 
