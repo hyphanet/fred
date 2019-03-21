@@ -467,7 +467,7 @@ public class WelcomeToadlet extends Toadlet {
 			contentNode.addChild(ctx.getAlertManager().createSummary());
         }
 		
-        if (ctx.getPageMaker().getTheme().fetchKeyBoxAboveBookmarks) {
+        if (node.config.get("fproxy").getBoolean("fetchKeyBoxAboveBookmarks")) {
             this.putFetchKeyBox(ctx, contentNode);
         }
         
@@ -498,7 +498,7 @@ public class WelcomeToadlet extends Toadlet {
         }
 
         // Fetch key box if the theme wants it below the bookmarks.
-        if (!ctx.getPageMaker().getTheme().fetchKeyBoxAboveBookmarks) {
+        if (!node.config.get("fproxy").getBoolean("fetchKeyBoxAboveBookmarks")) {
             this.putFetchKeyBox(ctx, contentNode);
         }
 

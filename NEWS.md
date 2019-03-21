@@ -11,6 +11,7 @@ next ():
 - Persist "Bookmark Updated" notifications across restarts
 - minimum bandwidth increased to 10KiB again
 - undo update of pinned SSL certificates (site no longer exists)
+- add config option to move the fetch key box above the bookmarks
 
 1480:
 
