@@ -1043,7 +1043,7 @@ public class NodeClientCore implements Persistable {
 		storeChecker.start();
 		if(fcpServer != null)
 			fcpServer.maybeStart();
-        node.pluginManager.start(node.config);
+        node.pluginManager.start();
         node.ipDetector.ipDetectorManager.start();
 		if(tmci != null)
 			tmci.start();

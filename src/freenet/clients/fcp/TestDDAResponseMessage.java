@@ -57,7 +57,7 @@ public class TestDDAResponseMessage extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "You need to send " + READ_CONTENT + " back to the node if you specify " + TestDDARequestMessage.WANT_READ + " in " + TestDDARequestMessage.NAME + '.', identifier, false);
 		
 		TestDDACompleteMessage reply = new TestDDACompleteMessage(handler, job, readContent);
-		handler.outputHandler.queue(reply);
+		handler.send(reply);
 	}
 
 }

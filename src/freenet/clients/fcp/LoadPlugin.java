@@ -86,8 +86,8 @@ public class LoadPlugin extends FCPMessage {
 		}
 		
 		if(!node.pluginManager.isEnabled()) {
-		    handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.PLUGINS_DISABLED, false, "Plugins disabled", identifier, false));
-		    return;
+			handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.PLUGINS_DISABLED, false, "Plugins disabled", identifier, false));
+			return;
 		}
 
 		node.executor.execute(new Runnable() {
@@ -116,7 +116,7 @@ public class LoadPlugin extends FCPMessage {
 						}
 					}
 					if (type == null) {
-						handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.INVALID_FIELD, false, "Was not able to guess the URL type from URL, check the URL or add a 'URLType' field", identifier, false));
+						handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.INVALID_FIELD, false, "Was not able to guess the URL type from URL, check the URL or add a 'URLType' field", identifier, false));
 						return;
 					}
 				} else {
@@ -133,13 +133,13 @@ public class LoadPlugin extends FCPMessage {
 					pi = node.pluginManager.startPluginURL(pluginURL, store);
 				} else {
 					Logger.error(this, "This should really not happen!", new Exception("FIXME"));
-					handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.INTERNAL_ERROR, false, "This should really not happen! See logs for details.", identifier, false));
+					handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.INTERNAL_ERROR, false, "This should really not happen! See logs for details.", identifier, false));
 					return;
 				}
 				if (pi == null) {
-					handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ pluginURL + "' does not exist or is not a FCP plugin", identifier, false));
+					handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ pluginURL + "' does not exist or is not a FCP plugin", identifier, false));
 				} else {
-					handler.outputHandler.queue(new PluginInfoMessage(pi, identifier, true));
+					handler.send(new PluginInfoMessage(pi, identifier, true));
 				}
 			}
 		}, "Load Plugin");

@@ -104,11 +104,6 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 	String getSHA1sum() throws PluginNotFoundException {
 		return null;
 	}
-	
-	@Override
-	String getSHA256sum() throws PluginNotFoundException {
-		return null;
-	}
 
 	public boolean fatalFailure() {
 		return fatalFailure;
@@ -118,6 +113,15 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 	void tryCancel() {
 		if(get != null)
 			get.cancel(node.clientCore.clientContext);
+	}
+
+	@Override
+	public boolean isLoadingFromFreenet() {
+		return true;
+	}
+
+	public PluginDownLoader<FreenetURI> getRetryDownloader() {
+		return new PluginDownLoaderFreenet(hlsc, node, true);
 	}
 
 }

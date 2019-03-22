@@ -4025,14 +4025,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			Message n2nm;
 			n2nm = DMT.createNodeToNodeMessage(
 					n2nType, fs.toString().getBytes("UTF-8"));
+			UnqueueMessageOnAckCallback cb = null;
+			if (isDarknet() && queueOnNotConnected) {
+				int fileNumber = queueN2NM(fs);
+				cb = new UnqueueMessageOnAckCallback((DarknetPeerNode)this, fileNumber);
+			}
 			try {
-				sendAsync(n2nm, null, node.nodeStats.nodeToNodeCounter);
+				sendAsync(n2nm, cb, node.nodeStats.nodeToNodeCounter);
 			} catch (NotConnectedException e) {
 				if(includeSentTime) {
 					fs.removeValue("sentTime");
-				}
-				if(isDarknet() && queueOnNotConnected) {
-					queueN2NM(fs);
 				}
 			}
 		} catch (UnsupportedEncodingException e) {
@@ -4041,10 +4043,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	/**
-	 * A method to queue an N2NM in a extra peer data file, only implemented by DarknetPeerNode
+	 * A method to queue an N2NM in a extra peer data file, only implemented by DarknetPeerNode.
+	 *
+	 * Returns the fileNumber of the created n2nm, -1 if no file was created.
 	 */
-	public void queueN2NM(SimpleFieldSet fs) {
-		// Do nothing in the default impl
+	public int queueN2NM(SimpleFieldSet fs) {
+		return -1; // Do nothing in the default impl
 	}
 
 	/**

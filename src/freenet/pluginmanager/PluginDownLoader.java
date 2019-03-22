@@ -33,14 +33,31 @@ public abstract class PluginDownLoader<T> {
 	abstract String getPluginName(String source) throws PluginNotFoundException;
 	
 	abstract String getSHA1sum() throws PluginNotFoundException;
-	
-	abstract String getSHA256sum() throws PluginNotFoundException;
 
 	/** Cancel the load if possible */
 	abstract void tryCancel();
 
+	public boolean isCachingProhibited() {
+		return false;
+	}
+
 	public boolean isOfficialPluginLoader() {
 		return false;
 	}
-	
+
+	public boolean isLoadingFromFreenet() {
+		return false;
+	}
+
+    /**
+     * Returns a {@link PluginDownLoader} that can be used to restart a plugin download. This
+     * default implementation assumes that the current downloader is stateless so it simply returns
+     * {@code this}.
+     *
+     * @return A plugin downloader suitable for restarting the download
+     */
+    public PluginDownLoader<T> getRetryDownloader() {
+        return this;
+    }
+
 }

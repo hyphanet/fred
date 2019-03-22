@@ -33,9 +33,9 @@ public class OfficialPlugins {
 					.deprecated();
 			addPlugin("Freemail_wot")
 					.inGroup("communication")
-					.recommendedVersion(28)
+					.recommendedVersion(29)
 					.minimumVersion(27)
-					.loadedFrom("CHK@ppSPfHuP5xFDkcQd9t~CrpTxtdrwRihDgBMuk2KWH7Q,jox-Wn0qy8mveaDaZVcGjLfjoQDdjm7r0IQGBo0UToI,AAMC--8/Freemail.jar");
+					.loadedFrom("CHK@KinTJQQAWRqBsz2P1X9-0SoBrSfOvyC3Cp~qaNE04wk,PdNhAxf3RljniEkVqOX9vYhuXw8XE07Jh-gSHhSH6vg,AAMC--8/Freemail-v0.2.7.4.jar");
 			addPlugin("HelloWorld")
 					.inGroup("example")
 					.loadedFrom("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar")
@@ -110,9 +110,9 @@ public class OfficialPlugins {
 			addPlugin("WebOfTrust")
 					.inGroup("communication")
 					.minimumVersion(18)
-					.recommendedVersion(19)
+					.recommendedVersion(20)
 					.usesXml()
-					.loadedFrom("CHK@NnDrHIg3v8FtL2TZjVZrMKEMUbyhUJOal0Gfkx4JKIQ,DJa~kxAXpBD9qPLmAX6h-NC4-vngiHwX1B1CZhDACzM,AAMC--8/WebOfTrust-build0019.jar");
+					.loadedFrom("CHK@5c0yqhe9lcM~dXWeM5jZkZAeTpsAIxozHU5j1-BvhQY,7dwiZkEwyceOfDotFe4fDeySyXFQH990~AKySmDGGrI,AAMC--8/WebOfTrust-build0020.jar");
 			addPlugin("WebOfTrustTesting")
 					.inGroup("communication")
 					.advanced()
@@ -130,7 +130,7 @@ public class OfficialPlugins {
 					.inGroup("communication")
 					.recommendedVersion(4)
 					.minimumVersion(2)
-					.loadedFrom("CHK@MktEdCJqSCG~5LaI9f~3xoQjejZCEVraQlfzKRs-H3I,yI2mQDrN1omHqD6ZibXDTRqnCK~2ut4Q11p18J1~cGE,AAMC--8/Sharesite-0.4.4.jar");
+					.loadedFrom("CHK@TW50Qa8ZDSMJLBhtZBJwhhK3FLpK6agYbu0uuDxE93o,bXtOUidMj9qmFto723R8uODc4GBFwk8tZ43DOwwVahE,AAMC--8/Sharesite-0.4.7.jar");
 		} catch (MalformedURLException mue1) {
 			throw new RuntimeException("Could not create FreenetURI.", mue1);
 		}

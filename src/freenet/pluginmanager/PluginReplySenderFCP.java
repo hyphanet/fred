@@ -34,6 +34,6 @@ public class PluginReplySenderFCP extends PluginReplySender {
 		// instead fcp connection errors 
 		if (handler.isClosed()) throw new PluginNotFoundException("FCP connection closed");
         FCPPluginServerMessage reply = new FCPPluginServerMessage(pluginname, clientSideIdentifier, params, bucket);
-		handler.outputHandler.queue(reply);
+		handler.send(reply);
 	}
 }

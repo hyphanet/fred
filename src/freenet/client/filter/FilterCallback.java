@@ -20,6 +20,8 @@ public interface FilterCallback {
 	 * Process a URI.
 	 * If it cannot be turned into something sufficiently safe, then return null.
 	 * @param overrideType Force the return type.
+	 * @param noRelative TODO
+	 * @param inline TODO
 	 * @throws CommentException If the URI is nvalid or unacceptable in some way.
 	 */
 	public String processURI(String uri, String overrideType, boolean noRelative, boolean inline) throws CommentException;

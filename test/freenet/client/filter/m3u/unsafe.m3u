@@ -1,0 +1,11 @@
+# accessing external resource must be secured with /external-link/
+http://betray.user/simplepathname.mp3
+# access other parts of Freenet
+/Sone/post?I_am=simplepathname2.mp3
+# same with a relative link
+../../seclevels/?fakefile=foo.mp3
+# fake filetype must be corrected to keep players safe
+simplepathname.mp3?type=text/plain
+# relative paths moving to higher levels could be dangerous
+../../betray.user/simplepathname.mp3
+../betray.user/simplepathname.mp3

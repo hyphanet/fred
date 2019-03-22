@@ -43,13 +43,13 @@ public abstract class SendPeerMessage extends DataCarryingMessage {
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if (pn == null) {
 			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier, identifier);
-			handler.outputHandler.queue(msg);
+			handler.send(msg);
 		} else if (!(pn instanceof DarknetPeerNode)) {
 			throw new MessageInvalidException(ProtocolErrorMessage.DARKNET_ONLY,
 					getName() + " only available for darknet peers", identifier, false);
 		} else {
 			int nodeStatus = handleFeed(((DarknetPeerNode) pn));
-			handler.outputHandler.queue(new SentPeerMessage(identifier, nodeStatus));
+			handler.send(new SentPeerMessage(identifier, nodeStatus));
 		}
 	}
 

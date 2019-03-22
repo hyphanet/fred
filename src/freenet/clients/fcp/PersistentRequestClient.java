@@ -374,7 +374,7 @@ public class PersistentRequestClient {
 			return;
 		FCPConnectionHandler conn = getConnection();
 		if(conn != null) {
-			conn.outputHandler.queue(msg);
+			conn.send(msg);
 		}
 		PersistentRequestClient[] clients;
 		if(isGlobalQueue) {

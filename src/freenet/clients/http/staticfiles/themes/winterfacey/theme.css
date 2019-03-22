@@ -251,7 +251,6 @@ select {
 input[type="submit"],
 input[type="reset"],
 button {
-  display: block;
   border-radius: 6px;
   border: none;
   background-color: #5EB95E;
@@ -295,6 +294,11 @@ ul.config {
 
 .config input[alt="SimpleToadletServer.cssOverride"] {
   width: 60ex;
+}
+
+.config  input[alt="NodeUpdateManager.updateURI"],
+.config  input[alt="NodeUpdateManager.revocationURI"] {
+  width: 108ex;
 }
 
 .config li:after {
@@ -649,12 +653,11 @@ table tbody tr.priority6:nth-child(2n) {
 }
 
 #bookmarks table tr {
-  display: block;
   flex: 0 1 auto;
   align-self: auto;
   min-width: 0;
-  min-height: 196px;
-  max-height: 256px;
+  min-height: 6em;
+  max-height: 9em;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 6px;
   box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
@@ -663,20 +666,24 @@ table tbody tr.priority6:nth-child(2n) {
   margin-right: 0.5em;
   margin-top: 1em;
   padding: 0.25em;
+  overflow: hidden;
+  overflow-y: auto;
+  float: left;
+  display: block;
 }
 
 #bookmarks table td {
-  display: table;
   width: 256px;
-  background: none;
-  text-align: left;
+  background: none; 
+  text-align: center;
   padding: 0 1% 0 1%;
   word-wrap: break-word;
+  display: block;
 }
 
 #bookmarks table td:nth-child(1) {
-  width: auto;
   float: left;
+  height: 36px;
   clear: none;
 }
 
@@ -689,8 +696,11 @@ table tbody tr.priority6:nth-child(2n) {
 
 #bookmarks td a img {
   display: block;
-  margin-left: 39%;
-  margin-right: auto;
+  margin-left: auto;
+  margin-right: -2px;
+  margin-top: -4px;
+  width: 108px;
+  height: 36px;
 }
 
 /*
