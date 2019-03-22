@@ -17,6 +17,7 @@ next ():
 - replace handler.outputHandler.queue by handler.send - thanks to patheticcockroach
 - add "send confidential message" button to friends page - thanks to Redwerk
 - update plugin Freemail_wot to v0.2.7.4 with better detection of contacts missing from WoT - thanks to Redwerk
+- improvement in Winterfacey
 
 1483:
 

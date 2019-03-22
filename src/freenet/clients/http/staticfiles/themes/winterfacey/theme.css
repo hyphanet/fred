@@ -1,6 +1,6 @@
 body,
 ul#navlist {
-  margin: 0px 0px 0px 0px;
+  margin: 0;
 }
 
 /* from base.css */
@@ -60,7 +60,7 @@ div.progress_fraction_not_finalized {
 
 /* override any padding that the infobox divs might have */
 #statusbar div {
-   padding: 0px;
+   padding: 0;
 }
 
 /* this is needed for inheritance reasons */
@@ -114,7 +114,7 @@ li.navlist-selected:hover ul.subnavlist-selected {
 div#content {
   position: relative;
   top: 5px;
-  left: 0px;
+  left: 0;
   padding-bottom: 3em;
 }
 
@@ -123,10 +123,10 @@ div#content {
 div#navbar {
   float: none;
   text-align: center;
-  padding: 0px;
+  padding: 0;
   position: relative;
   top: 5px;
-  left: 0px;
+  left: 0;
 }
 
 div#navbar a {
@@ -159,7 +159,6 @@ ul.subnavlist {
   left: -1.5em !important;
   padding: 0 0 0 0 !important;
   text-align: left !important;
-  width: 12em !important;
   z-index: 20 !important;
 }
 
@@ -187,10 +186,8 @@ a:hover {
   font-size: 18px;
   font-weight: 200;
   line-height: 30px;
-  padding-bottom: 30px;
   padding-bottom: 9px;
-  margin: 20px 0 30px;
-  margin-right: 1em;
+  margin: 20px 0 30px 1em;
   background: none;
 }
 
@@ -207,16 +204,18 @@ a:hover {
 #navbar:before {
   display: block;
   float: left;
-  content: url("/static/logo.png");
+  content: "";
   margin-left: 5px;
   margin-top: 2px;
+  background-image: url("/static/logo.png");
+  background-size: 50px 35px;
   width: 50px;
   height: 35px;
 }
 
 div#page div#navbar {
   position: sticky;
-  top: 0px;
+  top: 0;
 }
 
 #navbar {
@@ -246,6 +245,7 @@ select {
   border-radius: 4px;
   border: 1px solid #cccccc;
   background-color: white;
+  margin-right: 1.5em;
 }
 
 input[type="submit"],
@@ -255,7 +255,7 @@ button {
   border: none;
   background-color: #5EB95E;
   color: white;
-  margin: 0.5em 0.25em 0.5em 2em;
+  margin: 0.5em 0.25em 0.5em 0;
 }
 
 input[type="submit"]:hover,
@@ -277,7 +277,7 @@ ul.config {
 
 .config li {
   list-style-type: none;
-  margin-left: 0px;
+  margin-left: 0;
   padding-top: 0.5em;
   padding-bottom: 0.5em;
 }
@@ -327,7 +327,7 @@ ul.config {
   background-color: #FFFFFF;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 6px;
-  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
   vertical-align: middle;
 }
 
@@ -349,13 +349,15 @@ ul.config {
   display: block;
   padding-left: 0.75em;
   line-height: 3em;
+  padding-right: 0.75em;
+  white-space: nowrap;
 }
 
 #navbar ul#navlist li ul {
   background-color: #FFFFFF;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 6px;
-  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 }
 
 #navbar ul#navlist li a:hover,
@@ -557,7 +559,7 @@ table.queue td {
   text-align: center;
   font-size: 16px;
   text-transform: uppercase;
-  margin: 0px;
+  margin: 0;
   border: none;
 }
 
@@ -639,8 +641,12 @@ table tbody tr.priority6:nth-child(2n) {
  */
 #bookmarks,
 #bookmarks ul {
-  padding-left: 0px;
+  padding-left: 0;
   list-style-type: none;
+}
+
+#bookmarks table {
+  width: 100%;
 }
 
 #bookmarks table tbody {
@@ -648,8 +654,8 @@ table tbody tr.priority6:nth-child(2n) {
   flex-flow: row wrap;
   justify-content: center;
   align-content: center;
-  align-items: center;
-  padding: 0% 10% 0% 10%;
+  padding: 0 10%;
+  align-items: stretch;
 }
 
 #bookmarks table tr {
@@ -657,10 +663,9 @@ table tbody tr.priority6:nth-child(2n) {
   align-self: auto;
   min-width: 0;
   min-height: 6em;
-  max-height: 9em;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 6px;
-  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
   background: none;
   margin-left: 0.5em;
   margin-right: 0.5em;
@@ -672,13 +677,19 @@ table tbody tr.priority6:nth-child(2n) {
   display: block;
 }
 
+#bookmarks table tr td div {
+  margin: 0 auto;
+}
+
 #bookmarks table td {
   width: 256px;
-  background: none; 
+  background: none;
   text-align: center;
   padding: 0 1% 0 1%;
   word-wrap: break-word;
   display: block;
+  margin: .3em 0;
+  line-height: 1.35;
 }
 
 #bookmarks table td:nth-child(1) {
@@ -692,6 +703,7 @@ table tbody tr.priority6:nth-child(2n) {
   font-weight: 200;
   display: block;
   text-align: center;
+  clear: both;
 }
 
 #bookmarks td a img {
@@ -719,16 +731,16 @@ body[id*="Sone"] {
 }
 
 #sone #notification-area {
-  margin-top: 0px;
+  margin-top: 0;
 }
 
 #sone {
   padding-top: 1em;
   background-color: #fff;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 #page div#content {
-  top: 0px !important;
-  margin-top: 0px;
+  top: 0 !important;
+  margin-top: 0;
 }
