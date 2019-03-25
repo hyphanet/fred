@@ -1,0 +1,95 @@
+<div style="margin: 30px;">
+    <form method="post">
+        <fieldset>
+            <legend>#{networkSecurityPageTitle}</legend>
+            <input id="knowSomeone" name="knowSomeone" type="checkbox" ${knowSomeone}>
+            <label for="knowSomeone">#{networkSecurityIKnowSomeoneWhoRunsFreenet}</label>
+            <div id="noDarknet">
+                <p>#{networkSecurityFreenetWillConnectToStrangers}</p>
+            </div>
+            <div id="checkDarknet" hidden="true">
+                <p>
+                    <input id="connectToStrangers" name="connectToStrangers" type="checkbox" ${connectToStrangers}>
+                    <label for="connectToStrangers">#{networkSecurityIWantToConnectToUntrustedStrangers}</label>
+                </p>
+            </div>
+        </fieldset>
+        <fieldset>
+            <legend>#{bandwidth}</legend>
+            <input id="haveMonthlyLimit" name="haveMonthlyLimit" type="checkbox" ${haveMonthlyLimit}>
+            <label for="haveMonthlyLimit">#{bandwidthMonthlyLimitTitle}</label>
+            <div id="monthlyLimitChecked" hidden="true">
+                <p>#{bandwidthMonthlyLimit}
+                    <input id="monthlyLimit" name="monthlyLimit" type="number" value="${bandwidthMonthlyLimit}">
+                    #{bandwidthMonthlyLimitBaseUnit}.
+                </p>
+            </div>
+            <div id="monthlyLimitUnchecked">
+                <p>
+                    <!-- TODO: Populated by the node with autodetected limits into HTML. -->
+                    <input id="downLimit" name="downLimit" type="number" value="${downloadLimit}">
+                    #{bandwidthDownLimitBaseUnit}.
+                    <input id="upLimit" name="upLimit" type="number" value="${uploadLimit}">
+                    #{bandwidthUpLimitBaseUnit}.
+                <p>
+                <h4>#{bandwidthCommonInternetConnectionSpeeds}</h4>
+                <table>
+                    <tr>
+                        <th>#{bandwidthCommonInternetConnectionSpeedsConnectionType}</th>
+                        <th>#{bandwidthCommonInternetConnectionSpeedsDownloadLimit}</th>
+                        <th>#{bandwidthCommonInternetConnectionSpeedsDownloadLimit}</th>
+                    </tr>
+                    <!-- TODO: This will be a template loop over a container of common speeds provided by the node. .type, .down, .up per row. -->
+                    <tr>
+                        <td>#{bandwidthCommonInternetConnectionSpeedsDetected}</td>
+                        <td>1024 #{bandwidthCommonInternetConnectionSpeedsKibps}</td>
+                        <td>100 #{bandwidthCommonInternetConnectionSpeedsKibps}</td>
+                    </tr>
+                    <tr>
+                        <td>#{bandwidthCommonInternetConnectionSpeeds4Mbit}</td>
+                        <td>256 #{bandwidthCommonInternetConnectionSpeedsKibps}
+                            (2 #{bandwidthCommonInternetConnectionSpeedsMibs})
+                        </td>
+                        <td>16 #{bandwidthCommonInternetConnectionSpeedsKibps}</td>
+                    </tr>
+                    <tr>
+                        <td>#{bandwidthCommonInternetConnectionSpeeds6Mbit}</td>
+                        <td>384 #{bandwidthCommonInternetConnectionSpeedsKibps}
+                            (3 #{bandwidthCommonInternetConnectionSpeedsMibs})
+                        </td>
+                        <td>16 #{bandwidthCommonInternetConnectionSpeedsKibps}</td>
+                    </tr>
+                </table>
+                </p>
+                </p>
+            </div>
+        </fieldset>
+        <fieldset>
+            <legend>#{storage}</legend>
+            <p>Give
+                <!-- TODO: Ppulated by the node with some percentage of free space. -->
+                <!-- TODO: Possibly attach this number with a slider of percentage of free space. -->
+                <input id="storage" name="storage" type="number" value="${storageLimit}"> #{storageLimitDescription}
+            </p>
+            <input id="setPassword" name="setPassword" type="checkbox" ${setPassword}>
+            <label for="setPassword">#{requirePassword}</label>
+            <div id="passwordboxcontainer">
+                <div id="givePassword" hidden="true">
+                    <div class="give-password-wrap" style="text-align: right; display: inline-block;">
+                        <p>
+                            <label for="password">#{password}</label>
+                            <input id="password" name="password" type="password">
+                        </p>
+                        <p>
+                            <label for="confirmPassword">#{confirmPassword}</label>
+                            <input id="confirmPassword" name="confirmPassword" type="password">
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+        <input type="submit" value="Save">
+    </form>
+</div>
+<script src="/static/js/firsttimewizard.js"></script>
