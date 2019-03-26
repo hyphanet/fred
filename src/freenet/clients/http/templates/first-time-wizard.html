@@ -19,17 +19,21 @@
             <input id="haveMonthlyLimit" name="haveMonthlyLimit" type="checkbox" ${haveMonthlyLimit}>
             <label for="haveMonthlyLimit">#{bandwidthMonthlyLimitTitle}</label>
             <div id="monthlyLimitChecked" hidden="true">
-                <p>#{bandwidthMonthlyLimit}
-                    <input id="monthlyLimit" name="monthlyLimit" type="number" value="${bandwidthMonthlyLimit}">
+                <p>
+                    <div class="error">${bandwidthMonthlyLimitError}</div>
+                    #{bandwidthMonthlyLimit}
+                    <input id="monthlyLimit" name="monthlyLimit" type="number" min="0" value="${bandwidthMonthlyLimit}">
                     #{bandwidthMonthlyLimitBaseUnit}.
                 </p>
             </div>
             <div id="monthlyLimitUnchecked">
                 <p>
                     <!-- TODO: Populated by the node with autodetected limits into HTML. -->
-                    <input id="downLimit" name="downLimit" type="number" value="${downloadLimit}">
+                    <div class="error">${downloadLimitError}</div>
+                    <div class="error">${uploadLimitError}</div>
+                    <input id="downLimit" name="downLimit" type="number" min="0" value="${downloadLimit}">
                     #{bandwidthDownLimitBaseUnit}.
-                    <input id="upLimit" name="upLimit" type="number" value="${uploadLimit}">
+                    <input id="upLimit" name="upLimit" type="number" min="0" value="${uploadLimit}">
                     #{bandwidthUpLimitBaseUnit}.
                 <p>
                 <h4>#{bandwidthCommonInternetConnectionSpeeds}</h4>
@@ -66,10 +70,12 @@
         </fieldset>
         <fieldset>
             <legend>#{storage}</legend>
-            <p>Give
+            <p>
+                <div class="error">${storageLimitError}</div>
+                Give
                 <!-- TODO: Ppulated by the node with some percentage of free space. -->
                 <!-- TODO: Possibly attach this number with a slider of percentage of free space. -->
-                <input id="storage" name="storage" type="number" value="${storageLimit}"> #{storageLimitDescription}
+                <input id="storage" name="storage" type="number" min="0" value="${storageLimit}"> #{storageLimitDescription}
             </p>
             <input id="setPassword" name="setPassword" type="checkbox" ${setPassword}>
             <label for="setPassword">#{requirePassword}</label>

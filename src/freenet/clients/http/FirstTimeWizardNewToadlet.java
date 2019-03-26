@@ -47,8 +47,9 @@ public class FirstTimeWizardNewToadlet extends WebPage {
 
     private void showForm(ToadletContext ctx, Map<String, Object> model)
             throws IOException, ToadletContextClosedException {
-        PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString(l10nPrefix + "homepageTitle"), ctx,
+        PageNode page = ctx.getPageMaker().getPageNode(l10n("homepageTitle"), ctx,
                 new PageMaker.RenderParameters().renderNavigationLinks(false).renderStatus(false));
+        page.addCustomStyleSheet("/static/first-time-wizard.css");
         addChild(page.content, "first-time-wizard", model, l10nPrefix);
         this.writeHTMLReply(ctx, 200, "OK", page.outer.generate());
     }
@@ -61,6 +62,10 @@ public class FirstTimeWizardNewToadlet extends WebPage {
     @Override
     public String path() {
         return TOADLET_URL;
+    }
+
+    private static String l10n(String key) {
+        return NodeL10n.getBase().getString(l10nPrefix + key);
     }
 
     private class FormModel {
@@ -101,7 +106,44 @@ public class FirstTimeWizardNewToadlet extends WebPage {
             password = request.getPartAsStringFailsafe("password", 100);
             passwordConfirmation = request.getPartAsStringFailsafe("confirmPassword", 100);
 
-            // TODO: validate
+            // validate
+            try {
+                int downloadLimit = Integer.parseInt(this.downloadLimit);
+                if (downloadLimit < 0)
+                    errors.put("downloadLimitError", FirstTimeWizardNewToadlet.l10n("valid.downloadLimit"));
+            } catch (NumberFormatException e) {
+                errors.put("downloadLimitError",
+                        FirstTimeWizardNewToadlet.l10n("valid.number.prefix.downloadLimit") + " " + e.getMessage());
+            }
+
+            try {
+                int uploadLimit = Integer.parseInt(this.uploadLimit);
+                if (uploadLimit < 0)
+                    errors.put("uploadLimitError", FirstTimeWizardNewToadlet.l10n("valid.uploadLimit"));
+            } catch (NumberFormatException e) {
+                errors.put("uploadLimitError",
+                        FirstTimeWizardNewToadlet.l10n("valid.number.prefix.uploadLimit") + " " + e.getMessage());
+            }
+
+            try {
+                int monthlyLimit = Integer.parseInt(bandwidthMonthlyLimit);
+                if (monthlyLimit < 0)
+                    errors.put("bandwidthMonthlyLimitError", FirstTimeWizardNewToadlet.l10n("valid.bandwidthMonthlyLimit"));
+            } catch (NumberFormatException e) {
+                errors.put("bandwidthMonthlyLimitError",
+                        FirstTimeWizardNewToadlet.l10n("valid.number.prefix.bandwidthMonthlyLimit") + " " + e.getMessage());
+            }
+
+            try {
+                int storageLimit = Integer.parseInt(this.storageLimit);
+                if (storageLimit < 0)
+                    errors.put("storageLimitError", FirstTimeWizardNewToadlet.l10n("valid.storageLimit"));
+            } catch (NumberFormatException e) {
+                errors.put("storageLimitError",
+                        FirstTimeWizardNewToadlet.l10n("valid.number.prefix.storageLimit") + " " + e.getMessage());
+            }
+
+            // TODO: validate password
             errors.put("1", "1");
         }
 
@@ -120,7 +162,7 @@ public class FirstTimeWizardNewToadlet extends WebPage {
                 put("storageLimit", storageLimit);
                 put("setPassword", setPassword.length() > 0 ? "checked" : "");
             }};
-            model.putAll(errors);
+            model.put("errors", errors);
             return model;
         }
 
