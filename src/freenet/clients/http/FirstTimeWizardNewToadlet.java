@@ -1,13 +1,13 @@
 package freenet.clients.http;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.wizardsteps.DATASTORE_SIZE;
 import freenet.config.Config;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.support.Fields;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.DatastoreUtil;
 
 import java.io.IOException;
 import java.net.URI;
@@ -100,7 +100,7 @@ public class FirstTimeWizardNewToadlet extends WebPage {
         private Map<String, String> errors = new HashMap<>();
 
         FormModel() {
-            long autodetectedDatastoreSize = DATASTORE_SIZE.autodetectDatastoreSize(core, config);
+            long autodetectedDatastoreSize = DatastoreUtil.autodetectDatastoreSize(core, config);
             if (autodetectedDatastoreSize > 0)
                 storageLimit = Long.toString(autodetectedDatastoreSize);
         }
@@ -149,10 +149,10 @@ public class FirstTimeWizardNewToadlet extends WebPage {
                 long maxDatastoreSize;
                 long storageLimit = Fields.parseLong(this.storageLimit + "GiB");
                 if (storageLimit < Node.MIN_STORE_SIZE)
-                    errors.put("storageLimitError", NodeL10n.getBase().getString("Node.invalidStoreSize"));
-                else if (storageLimit > (maxDatastoreSize = DATASTORE_SIZE.maxDatastoreSize()))
+                    errors.put("storageLimitError", NodeL10n.getBase().getString("Node.invalidMinStoreSize"));
+                else if (storageLimit > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize()))
                     errors.put("storageLimitError",
-                            FirstTimeWizardNewToadlet.l10n("valid.storageLimitMax") + " " + maxDatastoreSize);
+                            NodeL10n.getBase().getString("Node.invalidMaxStoreSize", Long.toString(maxDatastoreSize)));
             } catch (NumberFormatException e) {
                 errors.put("storageLimitError",
                         FirstTimeWizardNewToadlet.l10n("valid.number.prefix.storageLimit") + " " + e.getMessage());

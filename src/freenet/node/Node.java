@@ -37,6 +37,7 @@ import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
 
+import freenet.support.io.*;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.FetchContext;
@@ -142,10 +143,6 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.ShortCallback;
 import freenet.support.api.StringCallback;
-import freenet.support.io.ArrayBucketFactory;
-import freenet.support.io.Closer;
-import freenet.support.io.FileUtil;
-import freenet.support.io.NativeThread;
 import freenet.support.math.MersenneTwister;
 import freenet.support.transport.ip.HostnameSyntaxException;
 
@@ -1899,8 +1896,13 @@ public class Node implements TimeSkewDetectorCallback {
 
 					@Override
 					public void set(Long storeSize) throws InvalidConfigValueException {
+						long maxDatastoreSize;
 						if(storeSize < MIN_STORE_SIZE)
-							throw new InvalidConfigValueException(l10n("invalidStoreSize"));
+							throw new InvalidConfigValueException(l10n("invalidMinStoreSize"));
+						if(storeSize > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize()))
+							throw new InvalidConfigValueException(
+									l10n("invalidMaxStoreSize", Long.toString(maxDatastoreSize)));
+
 						long newMaxStoreKeys = storeSize / sizePerKey;
 						if(newMaxStoreKeys == maxTotalKeys) return;
 						// Update each datastore
@@ -3177,6 +3179,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private String l10n(String key) {
 		return NodeL10n.getBase().getString("Node."+key);
+	}
+
+	private String l10n(String key, String replacementValue) {
+		return NodeL10n.getBase().getString("Node."+key, replacementValue);
 	}
 
 	private String l10n(String key, String pattern, String value) {
