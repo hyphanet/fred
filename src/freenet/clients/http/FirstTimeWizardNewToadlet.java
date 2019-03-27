@@ -1,8 +1,11 @@
 package freenet.clients.http;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.wizardsteps.DATASTORE_SIZE;
+import freenet.config.Config;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
+import freenet.support.Fields;
 import freenet.support.api.HTTPRequest;
 
 import java.io.IOException;
@@ -16,11 +19,14 @@ public class FirstTimeWizardNewToadlet extends WebPage {
 
     private final NodeClientCore core;
 
+    private final Config config;
+
     private static final String l10nPrefix = "FirstTimeWizardToadlet.";
 
-    FirstTimeWizardNewToadlet(HighLevelSimpleClient client, NodeClientCore core) {
+    FirstTimeWizardNewToadlet(HighLevelSimpleClient client, NodeClientCore core, Config config) {
         super(client);
         this.core = core;
+        this.config = config;
     }
 
     @Override
@@ -92,7 +98,12 @@ public class FirstTimeWizardNewToadlet extends WebPage {
 
         private Map<String, String> errors = new HashMap<>();
 
-        FormModel() {}
+        FormModel() {
+            long autodetectedDatastoreSize = DATASTORE_SIZE.autodetectDatastoreSize(core, config);
+            System.out.println("autodetectedDatastoreSize: " + autodetectedDatastoreSize); // todo tmp
+            if (autodetectedDatastoreSize > 0)
+                storageLimit = Long.toString(autodetectedDatastoreSize);
+        }
 
         FormModel(HTTPRequest request) {
             knowSomeone = request.getPartAsStringFailsafe("knowSomeone", 20);
@@ -135,16 +146,20 @@ public class FirstTimeWizardNewToadlet extends WebPage {
             }
 
             try {
-                int storageLimit = Integer.parseInt(this.storageLimit);
+                long storageLimit = Fields.parseLong(this.storageLimit + "GiB");
+                System.out.println("storageLimit: " + storageLimit); // todo tmp
+                long maxDatastoreSize = DATASTORE_SIZE.maxDatastoreSize();
+                System.out.println("maxDatastoreSize: " + maxDatastoreSize); // todo tmp
                 if (storageLimit < 0)
-                    errors.put("storageLimitError", FirstTimeWizardNewToadlet.l10n("valid.storageLimit"));
+                    errors.put("storageLimitError", FirstTimeWizardNewToadlet.l10n("valid.storageLimitMin"));
+                else if (storageLimit > maxDatastoreSize)
+                    errors.put("storageLimitError", FirstTimeWizardNewToadlet.l10n("valid.storageLimitMax") + " " + maxDatastoreSize + "KiB");
             } catch (NumberFormatException e) {
                 errors.put("storageLimitError",
                         FirstTimeWizardNewToadlet.l10n("valid.number.prefix.storageLimit") + " " + e.getMessage());
             }
 
             // TODO: validate password
-            errors.put("1", "1");
         }
 
         boolean isValid() {
@@ -167,7 +182,7 @@ public class FirstTimeWizardNewToadlet extends WebPage {
         }
 
         void save() {
-            // TODO
+            DATASTORE_SIZE.setDatastoreSize(storageLimit + "GiB", config, this); // TODO
         }
     }
 }

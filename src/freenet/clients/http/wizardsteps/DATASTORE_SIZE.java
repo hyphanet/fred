@@ -3,6 +3,7 @@ package freenet.clients.http.wizardsteps;
 import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.config.Config;
 import freenet.config.ConfigException;
+import freenet.config.InvalidConfigValueException;
 import freenet.config.Option;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
@@ -95,8 +96,18 @@ public class DATASTORE_SIZE implements Step {
 	}
 
 	private void _setDatastoreSize(String selectedStoreSize) {
+		setDatastoreSize(selectedStoreSize, config, this);
+	}
+
+	public static void setDatastoreSize(String selectedStoreSize, Config config, Object callback) {
 		try {
 			long size = Fields.parseLong(selectedStoreSize);
+
+			long maxDatastoreSize = maxDatastoreSize();
+			if (size > maxDatastoreSize)
+				throw new InvalidConfigValueException("Attempting to set DatastoreSize (" + size
+						+ ") larger than maxDatastoreSize (" + maxDatastoreSize + ")");
+
 			// client cache: 10% up to 200MB
 			long clientCacheSize = Math.min(size / 10, 200*1024*1024);
 			// recent requests cache / slashdot cache / ULPR cache
@@ -128,13 +139,13 @@ public class DATASTORE_SIZE implements Step {
 			config.get("node").set("slashdotCacheSize", Fields.longToString(slashdotCacheSize, true));
 
 
-			Logger.normal(this, "The storeSize has been set to " + selectedStoreSize);
+			Logger.normal(callback, "The storeSize has been set to " + selectedStoreSize);
 		} catch(ConfigException e) {
-			Logger.error(this, "Should not happen, please report!" + e, e);
+			Logger.error(callback, "Should not happen, please report!" + e, e);
 		}
 	}
 
-	private long maxDatastoreSize() {
+	public static long maxDatastoreSize() {
 		long maxMemory = NodeStarter.getMemoryLimitBytes();
 		if(maxMemory == Long.MAX_VALUE) return 1024*1024*1024; // Treat as don't know.
 		if(maxMemory < 128*1024*1024) return 1024*1024*1024; // 1GB default if don't know or very small memory.
@@ -151,7 +162,11 @@ public class DATASTORE_SIZE implements Step {
 		return slots * Node.sizePerKey;
 	}
 
-    private long canAutoconfigureDatastoreSize() {
+	private long canAutoconfigureDatastoreSize() {
+		return autodetectDatastoreSize(core, config);
+	}
+
+    public static long autodetectDatastoreSize(NodeClientCore core, Config config) {
         if (!config.get("node").getOption("storeSize").isDefault())
             return -1;
 

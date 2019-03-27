@@ -52,7 +52,7 @@ abstract class WebPage extends Toadlet {
                 for (Object errKey : errors.keySet())
                     template = template.replaceAll("\\$\\{" + errKey + "}", errors.get(errKey).toString());
             }
-            template = template.replaceAll("\\$\\{.*}", ""); // remove unused error placeholders
+            template = template.replaceAll("\\$\\{.*Error}", ""); // remove unused error placeholders
 
             parent.addChild("%", template);
         }
