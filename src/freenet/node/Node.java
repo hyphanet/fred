@@ -498,7 +498,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private boolean storeSaltHashResizeOnStart;
 	
 	/** Minimum total datastore size */
-	static final long MIN_STORE_SIZE = 32 * 1024 * 1024;
+	public static final long MIN_STORE_SIZE = 32 * 1024 * 1024;
 	/** Default datastore size (must be at least MIN_STORE_SIZE) */
 	static final long DEFAULT_STORE_SIZE = 32 * 1024 * 1024;
 	/** Minimum client cache size */
