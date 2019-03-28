@@ -7,7 +7,7 @@
             <div id="noDarknet">
                 <p>#{networkSecurityFreenetWillConnectToStrangers}</p>
             </div>
-            <div id="checkDarknet" hidden="true">
+            <div id="checkDarknet" hidden="hidden">
                 <p>
                     <input id="connectToStrangers" name="connectToStrangers" type="checkbox" ${connectToStrangers}>
                     <label for="connectToStrangers">#{networkSecurityIWantToConnectToUntrustedStrangers}</label>
@@ -18,7 +18,7 @@
             <legend>#{bandwidth}</legend>
             <input id="haveMonthlyLimit" name="haveMonthlyLimit" type="checkbox" ${haveMonthlyLimit}>
             <label for="haveMonthlyLimit">#{bandwidthMonthlyLimitTitle}</label>
-            <div id="monthlyLimitChecked" hidden="true">
+            <div id="monthlyLimitChecked" hidden="hidden">
                 <p>
                     <div class="error">${bandwidthMonthlyLimitError}</div>
                     #{bandwidthMonthlyLimit}
@@ -80,9 +80,10 @@
             <input id="setPassword" name="setPassword" type="checkbox" ${setPassword}>
             <label for="setPassword">#{requirePassword}</label>
             <div id="passwordboxcontainer">
-                <div id="givePassword" hidden="true">
+                <div id="givePassword" hidden="hidden">
                     <div class="give-password-wrap">
                         <p>
+                            <div class="error">${passwordError}</div>
                             <label for="password">#{password}</label>
                             <input id="password" name="password" type="password">
                         </p>

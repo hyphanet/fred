@@ -161,7 +161,12 @@ public class FirstTimeWizardNewToadlet extends WebPage {
                         FirstTimeWizardNewToadlet.l10n("valid.number.prefix.storageLimit") + " " + e.getMessage());
             }
 
-            // TODO: validate password
+            if (!setPassword.isEmpty()) {
+                if (password.isEmpty())
+                    errors.put("passwordError", NodeL10n.getBase().getString("SecurityLevels.passwordNotZeroLength"));
+                if (!password.equals(passwordConfirmation))
+                    errors.put("passwordError", NodeL10n.getBase().getString("SecurityLevels.passwordsDoNotMatch"));
+            }
         }
 
         boolean isValid() {
@@ -183,10 +188,33 @@ public class FirstTimeWizardNewToadlet extends WebPage {
             }};
         }
 
+        // TODO
         void save() {
-            DATASTORE_SIZE.setDatastoreSize(storageLimit + "GiB", config, this);
+            if (knowSomeone.isEmpty()) {
+                // Opennet
+            } else {
+                if (connectToStrangers.isEmpty()) {
+                    // Darknet
+                }
+                else {
+                    // Opennet + Darknet
+                }
+            }
 
-            // TODO
+            if (haveMonthlyLimit.isEmpty()) {
+                // save downloadLimit & uploadLimit
+            } else {
+                // save bandwidthMonthlyLimit
+            }
+
+//            DATASTORE_SIZE.setDatastoreSize(storageLimit + "GiB", config, this);
+
+            if (setPassword.isEmpty()) {
+                // set password requirements settings
+            } else {
+                // save password
+                // set password requirements settings
+            }
         }
     }
 }
