@@ -59,7 +59,6 @@ public class DatastoreUtil {
             return -1;
         } else {
             long shortSize;
-            long oneGiB = 1024 * 1024 * 1024L;
             // Maximum for Freenet: 256GB. That's a 128MiB bloom filter.
             long bloomFilter128MiBMax = 256 * oneGiB;
             // Maximum to suggest to keep Disk I/O managable. This
@@ -80,10 +79,10 @@ public class DatastoreUtil {
                 shortSize = Math.max(freeSpace / 5, 2 * oneGiB);
             } else if (freeSpace > 2 * oneGiB) {
                 // > 2 GiB: 512 MiB.
-                shortSize = 512 * (1024 * 1024);
+                shortSize = 512 * oneMiB;
             } else {
                 // <= 2 GiB: 256 MiB.
-                shortSize = 256 * (1024 * 1024);
+                shortSize = 256 * oneMiB;
             }
 
             return shortSize;

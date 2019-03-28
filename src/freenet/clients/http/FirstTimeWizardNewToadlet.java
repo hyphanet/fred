@@ -1,6 +1,7 @@
 package freenet.clients.http;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.wizardsteps.DATASTORE_SIZE;
 import freenet.config.Config;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
@@ -49,6 +50,7 @@ public class FirstTimeWizardNewToadlet extends WebPage {
             super.writeTemporaryRedirect(ctx, "Wizard complete", WelcomeToadlet.PATH);
         }
 
+        // form model not valid
         showForm(ctx, formModel.toModel());
     }
 
@@ -89,7 +91,7 @@ public class FirstTimeWizardNewToadlet extends WebPage {
 
         private String bandwidthMonthlyLimit = "0";
 
-        private String storageLimit = "30"; // TODO: if less available
+        private String storageLimit = "1";
 
         private String setPassword = "";
 
@@ -102,7 +104,7 @@ public class FirstTimeWizardNewToadlet extends WebPage {
         FormModel() {
             long autodetectedDatastoreSize = DatastoreUtil.autodetectDatastoreSize(core, config);
             if (autodetectedDatastoreSize > 0)
-                storageLimit = Long.toString(autodetectedDatastoreSize);
+                storageLimit = String.format("%.2f", (float) autodetectedDatastoreSize / DatastoreUtil.oneGiB);
         }
 
         FormModel(HTTPRequest request) {
@@ -163,11 +165,11 @@ public class FirstTimeWizardNewToadlet extends WebPage {
         }
 
         boolean isValid() {
-            return errors.size() == 0;
+            return errors.isEmpty();
         }
 
         Map<String, Object> toModel() {
-            Map<String, Object> model = new HashMap<String, Object>() {{
+            return new HashMap<String, Object>() {{
                 put("knowSomeone", knowSomeone.length() > 0 ? "checked" : "");
                 put("connectToStrangers", connectToStrangers.length() > 0 ? "checked" : "");
                 put("haveMonthlyLimit", haveMonthlyLimit.length() > 0 ? "checked" : "");
@@ -176,13 +178,15 @@ public class FirstTimeWizardNewToadlet extends WebPage {
                 put("bandwidthMonthlyLimit", bandwidthMonthlyLimit);
                 put("storageLimit", storageLimit);
                 put("setPassword", setPassword.length() > 0 ? "checked" : "");
+
+                put("errors", errors);
             }};
-            model.put("errors", errors);
-            return model;
         }
 
         void save() {
-//            DATASTORE_SIZE.setDatastoreSize(storageLimit + "GiB", config, this); // TODO
+            DATASTORE_SIZE.setDatastoreSize(storageLimit + "GiB", config, this);
+
+            // TODO
         }
     }
 }
