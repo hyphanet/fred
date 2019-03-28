@@ -7,21 +7,35 @@ import freenet.node.NodeStarter;
 
 public class DatastoreUtil {
 
+    public static final long oneMiB = 1024 * 1024;
+    public static final long oneGiB = 1024 * 1024 * 1024;
+
     public static long maxDatastoreSize() {
+        long maxDatastoreSize;
+
+        // Check RAM limitations
         long maxMemory = NodeStarter.getMemoryLimitBytes();
-        if(maxMemory == Long.MAX_VALUE) return 1024*1024*1024; // Treat as don't know.
-        if(maxMemory < 128*1024*1024) return 1024*1024*1024; // 1GB default if don't know or very small memory.
-        // Don't use the first 100MB for slot filters.
-        long available = maxMemory - 100*1024*1024;
-        // Don't use more than 50% of available memory for slot filters.
-        available = available / 2;
-        // Slot filters are 4 bytes per slot.
-        long slots = available / 4;
-        // There are 3 types of keys. We want the number of { SSK, CHK, pubkey } i.e. the number of slots in each store.
-        slots /= 3;
-        // We return the total size, so we don't need to worry about cache vs store or even client cache.
-        // One key of all 3 types combined uses Node.sizePerKey bytes on disk. So we get a size.
-        return slots * Node.sizePerKey;
+        if (maxMemory == Long.MAX_VALUE || maxMemory < 128 * oneMiB)
+            maxDatastoreSize = oneGiB; // 1GB default if don't know or very small memory.
+        else {
+            // Don't use the first 100MB for slot filters.
+            long available = maxMemory - 100 * oneMiB;
+            // Don't use more than 50% of available memory for slot filters.
+            available = available / 2;
+            // Slot filters are 4 bytes per slot.
+            long slots = available / 4;
+            // There are 3 types of keys. We want the number of { SSK, CHK, pubkey } i.e. the number of slots in each store.
+            slots /= 3;
+            // We return the total size, so we don't need to worry about cache vs store or even client cache.
+            // One key of all 3 types combined uses Node.sizePerKey bytes on disk. So we get a size.
+            maxDatastoreSize = slots * Node.sizePerKey; // in total this is (RAM - 100 MiB) / 24 * ~32 KiB
+        }
+
+        // TODO: check free disc space
+        // on comp with small ssd (100 GiB) and 500 MiB jvm ram limit this is:
+        // (500 MiB - 100 MiB) / 24 * 32 KiB = ~506 GiB
+
+        return maxDatastoreSize;
     }
 
     public static long autodetectDatastoreSize(NodeClientCore core, Config config) {
