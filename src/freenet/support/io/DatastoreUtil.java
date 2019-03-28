@@ -4,6 +4,11 @@ import freenet.config.Config;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
+import freenet.support.Logger;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class DatastoreUtil {
 
@@ -13,7 +18,7 @@ public class DatastoreUtil {
     public static long maxDatastoreSize() {
         long maxDatastoreSize;
 
-        // Check RAM limitations
+        // check ram limitations
         long maxMemory = NodeStarter.getMemoryLimitBytes();
         if (maxMemory == Long.MAX_VALUE || maxMemory < 128 * oneMiB)
             maxDatastoreSize = oneGiB; // 1GB default if don't know or very small memory.
@@ -31,9 +36,15 @@ public class DatastoreUtil {
             maxDatastoreSize = slots * Node.sizePerKey; // in total this is (RAM - 100 MiB) / 24 * ~32 KiB
         }
 
-        // TODO: check free disc space
-        // on comp with small ssd (100 GiB) and 500 MiB jvm ram limit this is:
-        // (500 MiB - 100 MiB) / 24 * 32 KiB = ~506 GiB
+        // check free disc space
+        try {
+            long unallocatedSpace = Files.getFileStore(Paths.get("")).getUnallocatedSpace();
+            // TODO: leave some free space
+            // probably limit 256GB see comments of the autodetectDatastoreSize method
+            return unallocatedSpace < maxDatastoreSize ? unallocatedSpace : maxDatastoreSize;
+        } catch (IOException e) {
+            Logger.error(DatastoreUtil.class, "Error querying space", e);
+        }
 
         return maxDatastoreSize;
     }

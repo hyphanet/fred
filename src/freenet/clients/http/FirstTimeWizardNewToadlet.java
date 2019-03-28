@@ -152,7 +152,8 @@ public class FirstTimeWizardNewToadlet extends WebPage {
                     errors.put("storageLimitError", NodeL10n.getBase().getString("Node.invalidMinStoreSize"));
                 else if (storageLimit > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize()))
                     errors.put("storageLimitError",
-                            NodeL10n.getBase().getString("Node.invalidMaxStoreSize", Long.toString(maxDatastoreSize)));
+                            NodeL10n.getBase().getString("Node.invalidMaxStoreSize",
+                                    String.format("%.2f", (float) maxDatastoreSize / DatastoreUtil.oneGiB)));
             } catch (NumberFormatException e) {
                 errors.put("storageLimitError",
                         FirstTimeWizardNewToadlet.l10n("valid.number.prefix.storageLimit") + " " + e.getMessage());
