@@ -1,12 +1,15 @@
 package freenet.clients.http;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.wizardsteps.BandwidthLimit;
 import freenet.clients.http.wizardsteps.DATASTORE_SIZE;
 import freenet.config.Config;
+import freenet.config.ConfigException;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.support.Fields;
+import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.DatastoreUtil;
 
@@ -77,6 +80,10 @@ public class FirstTimeWizardNewToadlet extends WebPage {
         return NodeL10n.getBase().getString(l10nPrefix + key);
     }
 
+    private static String l10n(String key, String value) {
+        return NodeL10n.getBase().getString(l10nPrefix + key, value);
+    }
+
     private class FormModel {
 
         private String knowSomeone = "";
@@ -89,7 +96,7 @@ public class FirstTimeWizardNewToadlet extends WebPage {
 
         private String uploadLimit = "300";
 
-        private String bandwidthMonthlyLimit = "0";
+        private String bandwidthMonthlyLimit = "50";
 
         private String storageLimit = "1";
 
@@ -120,31 +127,38 @@ public class FirstTimeWizardNewToadlet extends WebPage {
             passwordConfirmation = request.getPartAsStringFailsafe("confirmPassword", 100);
 
             // validate
-            try {
-                int downloadLimit = Integer.parseInt(this.downloadLimit);
-                if (downloadLimit < 0)
-                    errors.put("downloadLimitError", FirstTimeWizardNewToadlet.l10n("valid.downloadLimit"));
-            } catch (NumberFormatException e) {
-                errors.put("downloadLimitError",
-                        FirstTimeWizardNewToadlet.l10n("valid.number.prefix.downloadLimit") + " " + e.getMessage());
+            if (haveMonthlyLimit.isEmpty()) {
+                try {
+                    long downloadLimit = Fields.parseLong(this.downloadLimit + "KiB");
+                    if (downloadLimit < Node.getMinimumBandwidth())
+                        errors.put("downloadLimitError",
+                                FirstTimeWizardNewToadlet.l10n("valid.downloadLimit", Integer.toString(Node.getMinimumBandwidth() / 1024)));
+                } catch (NumberFormatException e) {
+                    errors.put("downloadLimitError",
+                            FirstTimeWizardNewToadlet.l10n("valid.number.prefix.downloadLimit") + " " + e.getMessage());
+                }
+
+                try {
+                    long uploadLimit = Fields.parseLong(this.uploadLimit + "KiB");
+                    if (uploadLimit < Node.getMinimumBandwidth())
+                        errors.put("uploadLimitError",
+                                FirstTimeWizardNewToadlet.l10n("valid.uploadLimit", Integer.toString(Node.getMinimumBandwidth() / 1024)));
+                } catch (NumberFormatException e) {
+                    errors.put("uploadLimitError",
+                            FirstTimeWizardNewToadlet.l10n("valid.number.prefix.uploadLimit") + " " + e.getMessage());
+                }
             }
 
-            try {
-                int uploadLimit = Integer.parseInt(this.uploadLimit);
-                if (uploadLimit < 0)
-                    errors.put("uploadLimitError", FirstTimeWizardNewToadlet.l10n("valid.uploadLimit"));
-            } catch (NumberFormatException e) {
-                errors.put("uploadLimitError",
-                        FirstTimeWizardNewToadlet.l10n("valid.number.prefix.uploadLimit") + " " + e.getMessage());
-            }
-
-            try {
-                int monthlyLimit = Integer.parseInt(bandwidthMonthlyLimit);
-                if (monthlyLimit < 0)
-                    errors.put("bandwidthMonthlyLimitError", FirstTimeWizardNewToadlet.l10n("valid.bandwidthMonthlyLimit"));
-            } catch (NumberFormatException e) {
-                errors.put("bandwidthMonthlyLimitError",
-                        FirstTimeWizardNewToadlet.l10n("valid.number.prefix.bandwidthMonthlyLimit") + " " + e.getMessage());
+            if (!haveMonthlyLimit.isEmpty()) {
+                try {
+                    double monthlyLimit = Double.parseDouble(bandwidthMonthlyLimit);
+                    if (monthlyLimit < BandwidthLimit.minMonthlyLimit)
+                        errors.put("bandwidthMonthlyLimitError",
+                                FirstTimeWizardNewToadlet.l10n("valid.bandwidthMonthlyLimit", Double.toString(BandwidthLimit.minMonthlyLimit)));
+                } catch (NumberFormatException e) {
+                    errors.put("bandwidthMonthlyLimitError",
+                            FirstTimeWizardNewToadlet.l10n("valid.number.prefix.bandwidthMonthlyLimit") + " " + e.getMessage());
+                }
             }
 
             try {
@@ -201,10 +215,17 @@ public class FirstTimeWizardNewToadlet extends WebPage {
                 }
             }
 
-            if (haveMonthlyLimit.isEmpty()) {
-                // save downloadLimit & uploadLimit
-            } else {
-                // save bandwidthMonthlyLimit
+            try {
+                if (haveMonthlyLimit.isEmpty()) { // save download & uploadLimit
+                    config.get("node").set("inputBandwidthLimit", downloadLimit + "KiB");
+                    config.get("node").set("outputBandwidthLimit", uploadLimit + "KiB");
+                } else { // save bandwidthMonthlyLimit
+                    BandwidthLimit bandwidth = new BandwidthLimit(Fields.parseLong(bandwidthMonthlyLimit + "GiB"));
+                    config.get("node").set("inputBandwidthLimit", Long.toString(bandwidth.downBytes));
+                    config.get("node").set("outputBandwidthLimit", Long.toString(bandwidth.upBytes));
+                }
+            } catch (ConfigException e) {
+                Logger.error(this, "Should not happen, please report! " + e, e);
             }
 
 //            DATASTORE_SIZE.setDatastoreSize(storageLimit + "GiB", config, this);
