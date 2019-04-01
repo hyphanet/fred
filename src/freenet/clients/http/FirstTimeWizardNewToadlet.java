@@ -8,6 +8,7 @@ import freenet.config.ConfigException;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.SecurityLevels;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -206,14 +207,18 @@ public class FirstTimeWizardNewToadlet extends WebPage {
         void save() {
             if (knowSomeone.isEmpty()) {
                 // Opennet
+                core.node.securityLevels.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.LOW);
             } else {
                 if (connectToStrangers.isEmpty()) {
                     // Darknet
+                    core.node.securityLevels.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.HIGH);
                 }
                 else {
                     // Opennet + Darknet
+                    core.node.securityLevels.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.NORMAL);
                 }
             }
+            core.storeConfig();
 
             try {
                 if (haveMonthlyLimit.isEmpty()) { // save download & uploadLimit
