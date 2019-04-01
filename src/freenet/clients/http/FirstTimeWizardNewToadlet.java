@@ -6,9 +6,7 @@ import freenet.clients.http.wizardsteps.DATASTORE_SIZE;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.l10n.NodeL10n;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.SecurityLevels;
+import freenet.node.*;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -69,7 +67,7 @@ public class FirstTimeWizardNewToadlet extends WebPage {
 
     @Override
     public boolean allowPOSTWithoutPassword() {
-        return true;
+        return true; // TODO
     }
 
     @Override
@@ -105,14 +103,14 @@ public class FirstTimeWizardNewToadlet extends WebPage {
 
         private String password = "";
 
-        private String passwordConfirmation = "";
-
         private Map<String, String> errors = new HashMap<>();
 
         FormModel() {
             long autodetectedDatastoreSize = DatastoreUtil.autodetectDatastoreSize(core, config);
             if (autodetectedDatastoreSize > 0)
                 storageLimit = String.format("%.2f", (float) autodetectedDatastoreSize / DatastoreUtil.oneGiB);
+
+            // TODO: autodetect downloadLimit & uploadLimit
         }
 
         FormModel(HTTPRequest request) {
@@ -124,8 +122,8 @@ public class FirstTimeWizardNewToadlet extends WebPage {
             bandwidthMonthlyLimit = request.getPartAsStringFailsafe("monthlyLimit", 100);
             storageLimit = request.getPartAsStringFailsafe("storage", 100);
             setPassword = request.getPartAsStringFailsafe("setPassword", 20);
-            password = request.getPartAsStringFailsafe("password", 100);
-            passwordConfirmation = request.getPartAsStringFailsafe("confirmPassword", 100);
+            password = request.getPartAsStringFailsafe("password", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH + 1);
+            String passwordConfirmation = request.getPartAsStringFailsafe("confirmPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
 
             // validate
             if (haveMonthlyLimit.isEmpty()) {
@@ -148,9 +146,7 @@ public class FirstTimeWizardNewToadlet extends WebPage {
                     errors.put("uploadLimitError",
                             FirstTimeWizardNewToadlet.l10n("valid.number.prefix.uploadLimit") + " " + e.getMessage());
                 }
-            }
-
-            if (!haveMonthlyLimit.isEmpty()) {
+            } else {
                 try {
                     double monthlyLimit = Double.parseDouble(bandwidthMonthlyLimit);
                     if (monthlyLimit < BandwidthLimit.minMonthlyLimit)
@@ -179,6 +175,8 @@ public class FirstTimeWizardNewToadlet extends WebPage {
             if (!setPassword.isEmpty()) {
                 if (password.isEmpty())
                     errors.put("passwordError", NodeL10n.getBase().getString("SecurityLevels.passwordNotZeroLength"));
+                if (password.length() > SecurityLevelsToadlet.MAX_PASSWORD_LENGTH)
+                    errors.put("passwordError", NodeL10n.getBase().getString("SecurityLevels.passwordTooLong"));
                 if (!password.equals(passwordConfirmation))
                     errors.put("passwordError", NodeL10n.getBase().getString("SecurityLevels.passwordsDoNotMatch"));
             }
@@ -203,7 +201,6 @@ public class FirstTimeWizardNewToadlet extends WebPage {
             }};
         }
 
-        // TODO
         void save() {
             if (knowSomeone.isEmpty()) {
                 // Opennet
@@ -218,7 +215,6 @@ public class FirstTimeWizardNewToadlet extends WebPage {
                     core.node.securityLevels.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.NORMAL);
                 }
             }
-            core.storeConfig();
 
             try {
                 if (haveMonthlyLimit.isEmpty()) { // save download & uploadLimit
@@ -235,12 +231,25 @@ public class FirstTimeWizardNewToadlet extends WebPage {
 
 //            DATASTORE_SIZE.setDatastoreSize(storageLimit + "GiB", config, this);
 
-            if (setPassword.isEmpty()) {
-                // set password requirements settings
-            } else {
-                // save password
-                // set password requirements settings
+            // TODO: not sure
+            try {
+                if (setPassword.isEmpty()) {
+                    core.node.securityLevels.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL);
+                    core.node.setMasterPassword("", true);
+                } else {
+                    SecurityLevels.PHYSICAL_THREAT_LEVEL oldPhysicalLevel = core.node.securityLevels.getPhysicalThreatLevel();
+                    core.node.securityLevels.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH);
+                        if(oldPhysicalLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL ||
+                                oldPhysicalLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW)
+                            core.node.changeMasterPassword("", password, true);
+                        else
+                            core.node.setMasterPassword(password, true);
+                }
+            } catch (Node.AlreadySetPasswordException | MasterKeysWrongPasswordException | MasterKeysFileSizeException | IOException e) {
+                Logger.error(this, "Should not happen, please report! " + e, e);
             }
+
+            core.storeConfig();
         }
     }
 }
