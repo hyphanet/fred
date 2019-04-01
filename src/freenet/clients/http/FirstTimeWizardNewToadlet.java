@@ -58,16 +58,12 @@ public class FirstTimeWizardNewToadlet extends WebPage {
 
     private void showForm(ToadletContext ctx, Map<String, Object> model)
             throws IOException, ToadletContextClosedException {
+        model.put("formPassword", core.getToadletContainer().getFormPassword());
         PageNode page = ctx.getPageMaker().getPageNode(l10n("homepageTitle"), ctx,
                 new PageMaker.RenderParameters().renderNavigationLinks(false).renderStatus(false));
         page.addCustomStyleSheet("/static/first-time-wizard.css");
         addChild(page.content, "first-time-wizard", model, l10nPrefix);
         this.writeHTMLReply(ctx, 200, "OK", page.outer.generate());
-    }
-
-    @Override
-    public boolean allowPOSTWithoutPassword() {
-        return true; // TODO
     }
 
     @Override
