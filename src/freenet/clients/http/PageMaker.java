@@ -112,7 +112,7 @@ public final class PageMaker {
 		}
 
 		public static THEME getDefault() {
-			return THEME.SKY_STATIC;
+			return THEME.WINTERFACEY;
 		}
 	}	
 	
