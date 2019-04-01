@@ -81,13 +81,16 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		headerRow.addChild("th", WizardL10n.l10n("bandwidthSelect"));
 
 		boolean addedDefault = false;
-		
-		BandwidthLimit detected = detectBandwidthLimits();
-		if (detected.downBytes > 0 && detected.upBytes > 0) {
+
+		try {
+			BandwidthLimit detected = detectBandwidthLimits(core.node.ipDetector.getBandwidthIndicator());
+
 			//Detected limits reasonable; add half of both as recommended option.
 			BandwidthLimit usable = new BandwidthLimit(detected.downBytes/2, detected.upBytes/2, "bandwidthDetected", true);
 			addLimitRow(table, helper, usable, true, true);
 			addedDefault = true;
+		} catch (Exception e) {
+			Logger.normal(this, e.getMessage(), e);
 		}
 
 		BandwidthLimit current = getCurrentBandwidthLimitsOrNull();

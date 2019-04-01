@@ -69,48 +69,32 @@ public abstract class BandwidthManipulator {
 	
 	/**
 	 * Attempts to detect upstream and downstream bandwidth limits.
-	 * @return Upstream and downstream bandwidth in bytes per second. If a limit is set to -1, it is unavailable or
-	 * nonsensically low. In case of error, both values are set to:
-	 * -2 if the upstream bandwidth setting has already been configured.
-	 * -3 if the UPnP plugin is not loaded or done starting up.
+	 * @return Upstream and downstream bandwidth in bytes per second.
+	 * @throws Exception if the UPnP plugin is not loaded or done starting up.
+	 * @throws Exception if a limitis unavailable or nonsensically low.
 	 */
-	protected BandwidthLimit detectBandwidthLimits() {
-		FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
-		if (bwIndicator == null) {
-			Logger.normal(this, "The node does not have a bandwidthIndicator.");
-			return new BandwidthLimit(-3, -3, "bandwidthDetected", false);
-		}
+	public static BandwidthLimit detectBandwidthLimits(FredPluginBandwidthIndicator bwIndicator) throws Exception {
+		if (bwIndicator == null)
+			throw new Exception("The node does not have a bandwidthIndicator.");
 
 		int downstreamBits = bwIndicator.getDownstreamMaxBitRate();
 		int upstreamBits = bwIndicator.getUpstramMaxBitRate();
-		Logger.normal(this, "bandwidthIndicator reports downstream " + downstreamBits + " bits/s and upstream "+upstreamBits+" bits/s.");
+		Logger.normal(bwIndicator, "bandwidthIndicator reports downstream " + downstreamBits + " bits/s and upstream "+upstreamBits+" bits/s.");
 
-		int downstreamBytes, upstreamBytes;
+		if (downstreamBits < 0 || upstreamBits < 0)
+			throw new Exception("Reported unavailable.");
 
 		//For readability, in bits.
 		final int KiB = 8192;
 
-		if (downstreamBits < 0) {
-			//Reported unavailable.
-			downstreamBytes = -1;
-		} else if (downstreamBits < 8*KiB) {
-			//Nonsensically slow.
-			System.err.println("Detected downstream of "+downstreamBits+" bits/s is nonsensically slow, ignoring.");
-			downstreamBytes = -1;
-		} else {
-			downstreamBytes = downstreamBits/8;
-		}
+		if (downstreamBits < 8*KiB)
+			throw new Exception("Detected downstream of "+downstreamBits+" bits/s is nonsensically slow, ignoring.");
 
-		if (upstreamBits < 0) {
-			//Reported unavailable..
-			upstreamBytes = -1;
-		} else if (upstreamBits < KiB) {
-			//Nonsensically slow.
-			System.err.println("Detected upstream of "+upstreamBits+" bits/s is nonsensically slow, ignoring.");
-			upstreamBytes = -1;
-		} else {
-			upstreamBytes = upstreamBits/8;
-		}
+		if (upstreamBits < KiB)
+			throw new Exception("Detected upstream of "+upstreamBits+" bits/s is nonsensically slow, ignoring.");
+
+		int downstreamBytes = downstreamBits/8;
+		int upstreamBytes = upstreamBits/8;
 
 		return new BandwidthLimit(downstreamBytes, upstreamBytes, "bandwidthDetected", false);
 	}

@@ -2,6 +2,7 @@ package freenet.clients.http;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.wizardsteps.BandwidthLimit;
+import freenet.clients.http.wizardsteps.BandwidthManipulator;
 import freenet.clients.http.wizardsteps.DATASTORE_SIZE;
 import freenet.config.Config;
 import freenet.config.ConfigException;
@@ -106,7 +107,16 @@ public class FirstTimeWizardNewToadlet extends WebPage {
             if (autodetectedDatastoreSize > 0)
                 storageLimit = String.format("%.2f", (float) autodetectedDatastoreSize / DatastoreUtil.oneGiB);
 
-            // TODO: autodetect downloadLimit & uploadLimit
+            try {
+                BandwidthLimit detected =
+                        BandwidthManipulator.detectBandwidthLimits(core.node.ipDetector.getBandwidthIndicator());
+
+                //Detected limits reasonable; add half of both as recommended option.
+                downloadLimit = Long.toString(detected.downBytes / 2 / 1024);
+                uploadLimit = Long.toString(detected.upBytes / 2 / 1024);
+            } catch (Exception e) {
+                Logger.normal(this, e.getMessage(), e);
+            }
         }
 
         FormModel(HTTPRequest request) {
@@ -225,7 +235,7 @@ public class FirstTimeWizardNewToadlet extends WebPage {
                 Logger.error(this, "Should not happen, please report! " + e, e);
             }
 
-//            DATASTORE_SIZE.setDatastoreSize(storageLimit + "GiB", config, this);
+            DATASTORE_SIZE.setDatastoreSize(storageLimit + "GiB", config, this);
 
             // TODO: not sure
             try {
