@@ -16,6 +16,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 	State currentState = State.UNINITIALIZED;
 
 	public CodecPacket parse(CodecPacket packet) throws IOException {
+		if (true) return packet; // TODO
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		//Assemble the Theora packets
 		DataInputStream input = new DataInputStream(new ByteArrayInputStream(packet.payload));
