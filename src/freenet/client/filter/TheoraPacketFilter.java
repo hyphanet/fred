@@ -16,7 +16,6 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 	State currentState = State.UNINITIALIZED;
 
 	public CodecPacket parse(CodecPacket packet) throws IOException {
-		if (true) return packet; // TODO
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		//Assemble the Theora packets
 		DataInputStream input = new DataInputStream(new ByteArrayInputStream(packet.payload));
@@ -69,7 +68,19 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 					if(PICY > FMBH*16-PICY) return null;
 					if(FRN == 0) return null;
 					if(FRD == 0) return null;
-					if(!(CS == 1 || CS == 2)) return null;
+
+					/* This is a value from an enumerated list of the available color spaces, given in Table.
+					 * The 'Undefined' value indicates that color space information was not available to the encoder.
+					 * It MAY be specified by the application via an external means.
+					 * If a 'Reserved' value is given, a decoder MAY refuse to decode the stream.
+					 * Value Color Space
+					 *  0     Undefined.
+					 *  1     Rec. 470M.
+					 *  2     Rec. 470BG.
+					 *  3     Reserved.
+					 * https://www.theora.org/doc/Theora.pdf CHAPTER 6. BITSTREAM HEADERS page 44 */
+					if(!(CS == 0 || CS == 1 || CS == 2)) return null;
+
 					if(PF == 1) return null;
 					if(Res != 0) return null;
 
