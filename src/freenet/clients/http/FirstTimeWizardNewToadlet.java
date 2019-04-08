@@ -18,7 +18,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
-public class FirstTimeWizardNewToadlet extends WebPage {
+public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
     static final String TOADLET_URL = "/wiz/";
 

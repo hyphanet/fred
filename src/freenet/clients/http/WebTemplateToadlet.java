@@ -5,6 +5,7 @@ import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -12,14 +13,33 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-abstract class WebPage extends Toadlet {
+/**
+ * Simplest template engine.
+ * <p>
+ * Expression syntax:
+ * <ul>
+ * <li>${...} - Variable expressions.
+ * <li>#{...} - Message (l10n) expressions.
+ * <li>${...Error} - Placeholder for errors. Template try to get errors from model.errors map.
+ * Unused error placeholders will be removed from the page.
+ * </ul>
+ */
+abstract class WebTemplateToadlet extends Toadlet {
 
-    private static final String ROOT_PATH = "templates/";
+    private static final String ROOT_PATH = "templates" + File.separator;
 
-    WebPage(HighLevelSimpleClient client) {
+    WebTemplateToadlet(HighLevelSimpleClient client) {
         super(client);
     }
 
+    /**
+     * Add html from template to {@code parent} node.
+     *
+     * @param parent Parent html node.
+     * @param templateName Html page name (without extension) that located in src/freenet/clients/http/templates.
+     * @param model The map with all variables that template should use.
+     * @throws IOException If the template cannot be read.
+     */
     void addChild(HTMLNode parent, String templateName, Map<String, Object> model) throws IOException {
         addChild(parent, templateName, model, "");
     }
