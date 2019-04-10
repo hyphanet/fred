@@ -1,192 +1,199 @@
+import java.security.MessageDigest
+import org.gradle.crypto.checksum.Checksum
+
 buildscript {
-    repositories {
-        mavenCentral()
-    }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.9.+'
-        classpath files('gradle/gradle-witness.jar')
+        classpath files('gradle/gradle-witness.jar') // github.com/akwizgran/gradle-witness
     }
 }
 
-configurations {
-    provided
-    compile
+plugins {
+    id "java"
+    id "maven-publish"
+    id "com.palantir.git-version"   version "0.12.0-rc2" // java implementation of git for versioning
+    id "org.gradle.crypto.checksum" version "1.2.0"      // replaces ant.checksum
 }
 
-apply plugin: 'witness'
-apply plugin: 'java'
-apply plugin: 'maven-publish'
+dependencies {
+    implementation "org.bouncycastle:bcprov-jdk15on:1.59",
+                   "net.java.dev.jna:jna:4.2.2",
+                   "net.java.dev.jna:jna-platform:4.2.2",
+                   "org.freenetproject:freenet-ext:29"
+
+    testImplementation "junit:junit:4.12",
+                       "org.mockito:mockito-core:1.9.5",
+                       "org.hamcrest:hamcrest-library:1.3"
+}
 
 repositories {
-    mavenLocal() // TODO: use lib/ instead?
     maven { url 'https://mvn.freenetproject.org' }
     jcenter()
 }
 
+apply plugin: 'witness'
+dependencyVerification {
+    verify = [
+    'org.bouncycastle:bcprov-jdk15on:1.59:bcprov-jdk15on-1.59.jar:1c31e44e331d25e46d293b3e8ee2d07028a67db011e74cb2443285aed1d59c85',
+    'net.java.dev.jna:jna-platform:4.2.2:jna-platform-4.2.2.jar:32aca873a4cb14721d939bbc8287a828919c05e8e1040b3fe8290f6128cdecca',
+    'net.java.dev.jna:jna:4.2.2:jna-4.2.2.jar:1f38af54e06c6e6f6dbf39ba2c052b952dea5dddb4871127b34639ddeb11bdbe',
+    'org.freenetproject:freenet-ext:29:freenet-ext-29.jar:32f2b3d6beedf54137ea2f9a3ebef67666d769f0966b08cd17fd7db59ba4d79f',
+    'junit:junit:4.12:junit-4.12.jar:59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a',
+    'org.mockito:mockito-core:1.9.5:mockito-core-1.9.5.jar:f97483ba0944b9fa133aa29638764ddbeadb51ec3dbc02074c58fa2caecd07fa',
+    'org.hamcrest:hamcrest-library:1.3:hamcrest-library-1.3.jar:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
+    'org.hamcrest:hamcrest-core:1.3:hamcrest-core-1.3.jar:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9',
+    'org.objenesis:objenesis:1.0:objenesis-1.0.jar:c5694b55d92527479382f254199b3c6b1d8780f652ad61e9ca59919887f491a8',
+    ]
+}
+
+// Configuration
+
 sourceSets {
-    main.compileClasspath += configurations.provided
-    test.compileClasspath += configurations.provided
+    main.java.srcDirs = ['src']
+    test.java.srcDirs = ['test']
 }
 
-def version_buildir = "$projectDir/build/tmp/compileVersion/"
-def version_src = 'freenet/node/Version.java'
-
-sourceSets {
-    main {
-        java {
-            srcDir 'src/'
-        }
-    }
-    test {
-        java {
-            srcDir 'test/'
-        }
-    }
+tasks.withType(JavaCompile) {
+    //options.compilerArgs += ['-Xlint:unchecked']
+    options.encoding = 'UTF-8'
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+tasks.withType(Javadoc) {
+    options.encoding = 'UTF-8'
+    failOnError = false
 }
 
-def gitrev
-task buildInfo {
-    try {
-        def cmd = "git describe --always --abbrev=4 --dirty"
-        def proc = cmd.execute()
-        gitrev = proc.text.trim()
-    } catch (java.io.IOException e) {
-        gitrev = "@unknown@"
-    }
-}
+// Tasks
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
-
-task compileVersion (type: JavaCompile) {
+def gitrev = gitVersion().replaceAll('.dirty','')
+tasks.register('compileVersion', JavaCompile) {
     copy {
-        from sourceSets.main.java.srcDirs
-        into "${version_buildir}"
-        include "${version_src}"
+        from sourceSets.main.java.srcDirs[0]
+        into "${buildDir}/tmp/compileVersion"
+        include 'freenet/node/Version.java'
         filter {
             String line -> line.replaceAll("@custom@","${gitrev}")
         }
     }
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
-    source = "${version_buildir}"
-    include "${version_src}"
-    classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDir)
-    destinationDir = file("${buildDir}/java/version/")
+    source = fileTree(dir: "${buildDir}/tmp/compileVersion", include: '**/*.java')
+    classpath = files(sourceSets.main.output.classesDirs[0])
+    destinationDir = sourceSets.main.output.classesDirs[0]
 }
-compileVersion.dependsOn buildInfo
-compileVersion.dependsOn compileJava
-processResources.dependsOn compileVersion
 
-task jar (type: Jar, overwrite: true) {
-    from (compileVersion) {
-        include 'freenet/node/Version**class'
-	preserveFileTimestamps = false
-        reproducibleFileOrder = true
+tasks.register('copyResourcesToClasses', Copy) {
+    from sourceSets.main.java.srcDirs[0]
+    into sourceSets.main.output.classesDirs[0]
+    include([
+        'freenet/l10n/*properties',
+        'freenet/l10n/iso-*.tab',
+        'freenet/clients/http/staticfiles/**',
+    ])
+
+    from projectDir
+    into sourceSets.main.output.classesDirs[0]
+    include 'dependencies.properties'
+}
+processResources.dependsOn 'copyResourcesToClasses'
+
+tasks.register('copyTestResourcesToClasses', Copy) {
+    from sourceSets.test.java.srcDirs[0]
+    into sourceSets.test.output.classesDirs[0]
+    include([
+        'freenet/client/filter/*/**',
+        'freenet/crypt/ciphers/rijndael-gladman-test-data/**',
+        'freenet/l10n/*properties',
+    ])
+}
+
+tasks.register('copyRuntimeLibs', Copy) {
+    dependsOn 'jar'
+    into "${buildDir}/output"
+    from configurations.runtimeClasspath
+    from jar
+}
+
+tasks.register('tar', Tar) {
+    finalizedBy 'tarChecksum'
+    compression = Compression.BZIP2
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+
+    archiveFileName = 'freenet-sources.tar.bz2'
+    destinationDir = buildDir
+
+    from(project.rootDir) {
+        exclude([
+            'build',
+            '.git',
+            '.gradle',
+        ])
     }
-    from ("${buildDir}/classes/java/main/") {
-        exclude 'freenet/node/Version.class'
-        exclude 'freenet/node/Version$1.class'
-        preserveFileTimestamps = false
-        reproducibleFileOrder = true
-    }
-    duplicatesStrategy = "exclude"
-    archivesBaseName = "freenet"
+}
+
+tasks.register('tarChecksum', Checksum) {
+    files = tar.outputs.files
+    outputDir = buildDir
+    algorithm = Checksum.Algorithm.SHA256
+}
+
+jar {
+    dependsOn 'compileVersion'
+    archivesBaseName = 'freenet'
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
-        attributes("Permissions": "all-permissions")
-        attributes("Application-Name": "Freenet REference Daemon")
-        attributes("Required-Ext-Version": 29)
-        attributes("Recommended-Ext-Version": 29)
-        attributes("Compiled-With": "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})")
         attributes([
-                       "Specification-Title": "Freenet",
-                       "Specification-Version": "0.7.5",
-                       "Specification-Vendor": "freenetproject.org",
-                       "Implementation-Title": "Freenet",
-                       "Implementation-Version": "0.7.5 ${gitrev}",
-                       "Implementation-Vendor": "freenetproject.org",
-                   ], "common")
+          "Permissions": "all-permissions",
+          "Application-Name": "Freenet REference Daemon",
+          "Required-Ext-Version": 29,
+          "Recommended-Ext-Version": 29,
+          "Compiled-With": "${System.properties['java.version']} ${System.properties['os.arch']} (${System.properties['java.vendor']})",
+        ])
+        attributes([
+          "Specification-Title": "Freenet",
+          "Specification-Version": "0.7.5",
+          "Specification-Vendor": "freenetproject.org",
+          "Implementation-Title": "Freenet",
+          "Implementation-Version": "0.7.5 ${gitrev}",
+          "Implementation-Vendor": "freenetproject.org",
+        ], "common")
     }
-}
-jar.dependsOn processResources
 
-def jars = []
-gradle.addListener(new TaskExecutionListener() {
-void afterExecute(Task task, TaskState state) {
-    if(task in AbstractArchiveTask) {
-        jars << task.outputs.files.singleFile
-    }
-}
-
-void beforeExecute(Task task) { }
-})
-gradle.addBuildListener(new BuildAdapter() {
-    void buildFinished(BuildResult result) {
-        if(jars) {
-            def hash = {
-                File file -> def sha256 = java.security.MessageDigest.getInstance('SHA-256')
-                file.eachByte(1024 * 4) { buffer, len -> sha256.update(buffer, 0, len) }
-                println "SHA-256 of ${file.name}: ${sha256.digest().encodeHex().toString()}"
-            }
-
-            jars.each { hash(it) }
-        }
-    }
-})
-
-task copyResourcesToClasses2 {
-    inputs.dir sourceSets.main.java.srcDirs
-    outputs.dir sourceSets.main.output.classesDir
     doLast {
-        copy {
-            from sourceSets.main.java.srcDirs
-            into sourceSets.main.output.classesDir
-            include 'freenet/l10n/*properties'
-            include 'freenet/l10n/iso-*.tab'
-            include 'freenet/clients/http/staticfiles/**'
-            include '../dependencies.properties'
-        }
-        copy {
-            from "${projectDir}/"
-            into sourceSets.main.output.classesDir
-            include 'dependencies.properties'
-        }
+        def file = file("${buildDir}/libs/freenet.jar")
+        MessageDigest md = MessageDigest.getInstance("SHA-256")
+        file.eachByte 4096, {bytes, len -> md.update(bytes, 0, len)}
+        println "SHA-256 of ${file.name}: ${md.digest().encodeHex().toString()}"
     }
 }
-processResources.dependsOn copyResourcesToClasses2
-
-task copyTestResourcesToClasses2 {
-    inputs.dir sourceSets.test.java.srcDirs
-    outputs.dir sourceSets.test.output.classesDir
-    doLast {
-        copy {
-	    from sourceSets.test.java.srcDirs
-	    into sourceSets.test.output.classesDir
-            include 'freenet/client/filter/*/**'
-            include 'freenet/crypt/ciphers/rijndael-gladman-test-data/**'
-            include 'freenet/l10n/*properties'
-        }
-    }
-}
-compileTestJava.dependsOn copyResourcesToClasses2
-compileTestJava.dependsOn copyTestResourcesToClasses2
 
 test {
-    minHeapSize = "128m"
-    maxHeapSize = "512m"
-    // no inner class
-    include 'freenet/**/*Test.class'
-    exclude 'freenet/**/*$*Test.class'
-    workingDir = sourceSets.test.output.classesDir
+    minHeapSize = '128m'
+    maxHeapSize = '512m'
+
+    workingDir = sourceSets.test.output.classesDirs[0]
     scanForTestClasses = false
+
+    include 'freenet/**/*Test.class'
+    exclude([
+        'freenet/**/*$*Test.class',
+        //'freenet/client/async/**StorageTest.java',
+        //'freenet/client/async/ClientRequestSelectorTest.java',
+    ])
     systemProperties += [
         "test.l10npath_test": "freenet/l10n/",
-        "test.l10npath_main": "../main/freenet/l10n/"
-//	"test.extensive":
-//	"test.verbose":
-//	"test.benchmark":
+        "test.l10npath_main": "../main/freenet/l10n/",
     ]
+    beforeTest { descriptor ->
+        logger.lifecycle("Running test: " + descriptor)
+    }
+    onOutput { descriptor, event ->
+        logger.lifecycle("Test: " + descriptor + ": " + event.message )
+    }
 }
+compileTestJava.dependsOn 'copyTestResourcesToClasses'
+compileTestJava.dependsOn 'copyResourcesToClasses'
 
 publishing {
     publications {
@@ -206,69 +213,4 @@ publishing {
             }
         }
     }
-}
-
-task copyRuntimeLibs(type: Copy) {
-    into "${buildDir}/output/"
-    from configurations.runtime
-    from jar
-}
-copyRuntimeLibs.dependsOn jar
-
-// In this section you declare the dependencies for your production and test code
-dependencies {
-    compile "org.bouncycastle:bcprov-jdk15on:1.59"
-    compile "net.java.dev.jna:jna:4.2.2"
-    compile "net.java.dev.jna:jna-platform:4.2.2"
-    compile "org.freenetproject:freenet-ext:29"
-
-    testCompile 'junit:junit:4.12'
-    testCompile "org.mockito:mockito-core:1.9.5"
-    testCompile "org.hamcrest:hamcrest-library:1.3"
-}
-
-dependencyVerification {
-    // testCompile includes all of compile deps... so let's include only these
-    includedConfigurations = [configurations.testCompile]
-    verify = [
-        'org.bouncycastle:bcprov-jdk15on:1c31e44e331d25e46d293b3e8ee2d07028a67db011e74cb2443285aed1d59c85',
-        'net.java.dev.jna:jna-platform:32aca873a4cb14721d939bbc8287a828919c05e8e1040b3fe8290f6128cdecca',
-        'net.java.dev.jna:jna:1f38af54e06c6e6f6dbf39ba2c052b952dea5dddb4871127b34639ddeb11bdbe',
-        'org.freenetproject:freenet-ext:32f2b3d6beedf54137ea2f9a3ebef67666d769f0966b08cd17fd7db59ba4d79f',
-        'junit:junit:59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a',
-        'org.mockito:mockito-core:f97483ba0944b9fa133aa29638764ddbeadb51ec3dbc02074c58fa2caecd07fa',
-        'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
-        'org.hamcrest:hamcrest-core:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9',
-        'org.objenesis:objenesis:c5694b55d92527479382f254199b3c6b1d8780f652ad61e9ca59919887f491a8',
-    ]
-}
-
-task tar(type: Tar) {
-  description = "Build a source release, specifically excluding the build directories and gradle wrapper files"
-  compression = Compression.BZIP2
-
-  baseName = "freenet-sources"
-
-  from(project.rootDir) {
-    exclude '**/build'
-    exclude 'build'
-    exclude '.gradle'
-  }
-
-  into(baseName)
-
-  preserveFileTimestamps = false
-  reproducibleFileOrder = true
-
-  // Set destination directory.
-  destinationDir = file("${project.buildDir}")
-
-  archiveName = "${baseName}.tgz"
-  doLast { // generate md5 checksum
-    ant.checksum file:"$destinationDir/$archiveName"
-  }
-}
-
-javadoc << {
-    failOnError false
 }
