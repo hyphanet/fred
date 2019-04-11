@@ -1,5 +1,29 @@
-/bin
-/build
+# Intellij
+*.iml
+*.ipr
+*.iws
+*.swp
+.idea
+*.eml
+.shelf
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# Gradle & builds
+build
+build-cache
+target
+out
+.gradle
+classes
+.gradletasknamecache
+*.log
+override.properties
+
 /dist
 /freenet-*
 /javadoc
@@ -10,13 +34,5 @@
 /generator/js/tests/bin
 /generator/js/gwt-unitCache/
 /run
-.classpath
-*.swp
-*.iml
-*.ipr
-*.iws
-.*
 *~
 \#*\#
-/override.properties
-/gradle.properties
