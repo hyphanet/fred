@@ -80,7 +80,7 @@ def buildenv = "${System.properties['java.version']} ${System.properties['os.arc
 tasks.register('compileVersion', JavaCompile) {
     //options.errorprone.enabled = true
     copy {
-        from sourceSets.main.java.srcDirs[0]
+        from sourceSets.main.java.srcDirs
         into "${buildDir}/tmp/compileVersion"
         include 'freenet/node/Version.java'
         filter {
@@ -88,33 +88,30 @@ tasks.register('compileVersion', JavaCompile) {
         }
     }
     source = fileTree(dir: "${buildDir}/tmp/compileVersion", include: '**/*.java')
-    classpath = files(sourceSets.main.output.classesDirs[0])
+    classpath = files(sourceSets.main.output.classesDirs)
     destinationDir = sourceSets.main.output.classesDirs[0]
 }
 
-tasks.register('copyResourcesToClasses', Copy) {
-    from sourceSets.main.java.srcDirs[0]
-    into sourceSets.main.output.classesDirs[0]
-    include([
-        'freenet/l10n/*properties',
-        'freenet/l10n/iso-*.tab',
-        'freenet/clients/http/staticfiles/**',
-    ])
-
-    from projectDir
-    into sourceSets.main.output.classesDirs[0]
-    include 'dependencies.properties'
+processResources {
+    from(sourceSets.main.java.srcDirs) {
+        include([
+            'freenet/l10n/*properties',
+            'freenet/l10n/iso-*.tab',
+            'freenet/clients/http/staticfiles/**',
+        ])
+    }
+    from(projectDir) {
+        include 'dependencies.properties'
+    }
 }
-processResources.dependsOn 'copyResourcesToClasses'
-
-tasks.register('copyTestResourcesToClasses', Copy) {
-    from sourceSets.test.java.srcDirs[0]
-    into sourceSets.test.output.classesDirs[0]
-    include([
-        'freenet/client/filter/*/**',
-        'freenet/crypt/ciphers/rijndael-gladman-test-data/**',
-        'freenet/l10n/*properties',
-    ])
+processTestResources {
+    from(sourceSets.test.java.srcDirs) {
+        include([
+            'freenet/client/filter/*/**',
+            'freenet/crypt/ciphers/rijndael-gladman-test-data/**',
+            'freenet/l10n/*properties',
+        ])
+    }
 }
 
 tasks.register('copyRuntimeLibs', Copy) {
@@ -133,7 +130,7 @@ tasks.register('tar', Tar) {
     archiveFileName = 'freenet-sources.tar.bz2'
     destinationDir = buildDir
 
-    from(rootDir) {
+    from(projectDir) {
         exclude([
             'build',
             '.git',
@@ -178,6 +175,7 @@ jar {
         MessageDigest md = MessageDigest.getInstance("SHA-256")
         file.eachByte 4096, {bytes, len -> md.update(bytes, 0, len)}
         println "SHA-256 of ${file.name}: ${md.digest().encodeHex().toString()}"
+        println "Version: ${gitrev}"
         println "Compiled With: ${buildenv}"
     }
 }
@@ -203,8 +201,6 @@ test {
         "test.l10npath_main": "../main/freenet/l10n/",
     ]
 }
-compileTestJava.dependsOn 'copyTestResourcesToClasses'
-compileTestJava.dependsOn 'copyResourcesToClasses'
 
 publishing {
     publications {
