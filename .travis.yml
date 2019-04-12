@@ -1,7 +1,5 @@
 language: java
 
-sudo: false
-
 env:
   global:
     - "AWS_ACCESS_KEY_ID=AKIAJQUIQIL3XTBHT3DA"
@@ -21,18 +19,22 @@ cache:
   - $HOME/.gradle/caches/
   - $HOME/.gradle/wrapper/
 
-before_install: echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
-install: "./gradlew jar"
+before_install: - echo -e "org.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\n" >override.properties
+install:
+  - true
+script:
+  - ./gradlew build
 
 jdk:
   - oraclejdk8
   - oraclejdk9
   - openjdk8
+  - openjdk11
 
 before_deploy:
   - "./gradlew javadoc ; true"
   - "pip install --user awscli"
-  - "./gradlew copyRuntimeLib"
+  - "./gradlew copyRuntimeLibs"
 deploy:
   - provider: script
     script: ~/.local/bin/aws s3 sync --region=us-east-1 --cache-control "public, max-age=86400" --content-encoding utf-8 --delete build/docs/javadoc/ s3://website-javadoc.freenetproject.org
