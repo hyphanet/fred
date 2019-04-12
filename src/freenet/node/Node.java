@@ -660,6 +660,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean throttleLocalData;
 	private int outputBandwidthLimit;
 	private int inputBandwidthLimit;
+	private boolean connectionSpeedDetection;
 	boolean inputLimitDefault;
 	final boolean enableARKs;
 	final boolean enablePerNodeFailureTables;
@@ -1600,6 +1601,23 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, e.getMessage());
 		}
 
+		nodeConfig.register("connectionSpeedDetection", true, sortOrder++,
+			true, true, "Node.connectionSpeedDetection",
+			"Node.connectionSpeedDetectionLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return connectionSpeedDetection;
+			}
+			@Override
+			public void set(Boolean connectionSpeedDetection) {
+				synchronized(Node.this) {
+					Node.this.connectionSpeedDetection = connectionSpeedDetection;
+				}
+			}
+		});
+
+		connectionSpeedDetection = nodeConfig.getBoolean("connectionSpeedDetection");
+
 		nodeConfig.register("throttleLocalTraffic", false, sortOrder++, true, false, "Node.throttleLocalTraffic", "Node.throttleLocalTrafficLong", new BooleanCallback() {
 
 			@Override
@@ -2537,6 +2555,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
+
+		new BandwidthManager(this).start();
 	}
 
     /** Delete files from old BDB-index datastore. */
