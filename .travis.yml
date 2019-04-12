@@ -19,7 +19,7 @@ cache:
   - $HOME/.gradle/caches/
   - $HOME/.gradle/wrapper/
 
-before_install: - echo -e "org.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\n" >override.properties
+before_install: echo -e "org.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\n" >override.properties
 install:
   - true
 script:
