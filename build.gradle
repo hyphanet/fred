@@ -190,11 +190,13 @@ test {
     minHeapSize = '128m'
     maxHeapSize = '512m'
 
-    workingDir = sourceSets.test.output.classesDirs[0]
-    scanForTestClasses = false
-
+    workingDir = sourceSets.test.output.resourcesDir
     include 'freenet/**/*Test.class'
-    exclude 'freenet/**/*$*Test.class'
+
+    // gradle test -PexcludeTests="freenet.client.async.SplitFileFetcherStorageTest,freenet.client.async.SplitFileInserterStorageTest"
+    project.properties['excludeTests']?.replaceAll('\\.', '\\/')?.split('[,;]').each {
+        exclude "${it}.class"
+    }
 
     systemProperties += [
         "test.l10npath_test": "freenet/l10n/",
