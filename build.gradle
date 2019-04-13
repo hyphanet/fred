@@ -179,8 +179,6 @@ jar {
         MessageDigest md = MessageDigest.getInstance("SHA-256")
         file.eachByte 4096, {bytes, len -> md.update(bytes, 0, len)}
         println "SHA-256 of ${file.name}: ${md.digest().encodeHex().toString()}"
-        println "Version: ${gitrev}"
-        println "Compiled With: ${buildenv}"
     }
 }
 
