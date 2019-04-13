@@ -4,9 +4,12 @@ jdk:
   - openjdk8
   - openjdk11
   - openjdk12
+  - openjdk-ea
 
-allow_failures:
+matrix:
+  allow_failures:
     - jdk: openjdk12
+    - jdk: openjdk-ea
 
 env:
   global:
