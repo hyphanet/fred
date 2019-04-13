@@ -1,5 +1,13 @@
 language: java
 
+jdk:
+  - openjdk8
+  - openjdk11
+  - openjdk12
+
+allow_failures:
+    - jdk: openjdk12
+
 env:
   global:
     - "AWS_ACCESS_KEY_ID=AKIAJQUIQIL3XTBHT3DA"
@@ -19,17 +27,14 @@ cache:
   - $HOME/.gradle/caches/
   - $HOME/.gradle/wrapper/
 
-before_install: echo -e "org.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\n" >override.properties
 install:
   - true
+
+before_script:
+  - echo -e "org.gradle.jvmargs=-Xmx512m "-XX:MaxMetaspaceSize=256m"\n" >gradle.properties
 script:
   - ./gradlew build
 
-jdk:
-  - oraclejdk8
-  - oraclejdk9
-  - openjdk8
-  - openjdk11
 
 before_deploy:
   - "./gradlew javadoc ; true"
