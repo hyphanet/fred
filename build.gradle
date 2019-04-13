@@ -13,6 +13,7 @@ buildscript {
 plugins {
     id "java"
     id "maven-publish"
+    id "jacoco"
     id "com.palantir.git-version"   version "0.12.0-rc2" // java implementation of git for versioning
     id "org.gradle.crypto.checksum" version "1.2.0"      // replaces ant.checksum
     id "com.adarshr.test-logger"    version "1.6.0"      // better test logging console output
@@ -74,6 +75,10 @@ tasks.withType(Javadoc) {
     options.addStringOption('Xdoclint:none', '-quiet') // turn off overly pedantic lint checking
     options.encoding = 'UTF-8'
 }
+tasks.withType(AbstractArchiveTask) {
+    preserveFileTimestamps false
+    reproducibleFileOrder  true
+}
 
 // output: build01484-13-g5831bbf
 def gitrev = gitVersion().replaceAll('.dirty','')
@@ -128,10 +133,8 @@ tasks.register('copyRuntimeLibs', Copy) {
 
 tasks.register('tar', Tar) {
     finalizedBy 'tarChecksum'
-    compression = Compression.BZIP2
-    preserveFileTimestamps = false
-    reproducibleFileOrder = true
 
+    compression = Compression.BZIP2
     archiveFileName = 'freenet-sources.tar.bz2'
     destinationDir = buildDir
 
@@ -153,8 +156,6 @@ tasks.register('tarChecksum', Checksum) {
 jar {
     dependsOn 'compileVersion'
     archivesBaseName = 'freenet'
-    preserveFileTimestamps = false
-    reproducibleFileOrder = true
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes([
@@ -184,13 +185,23 @@ jar {
 
 test {
     useJUnitPlatform()
+    finalizedBy 'jacocoTestReport'
+
+    jacoco {
+        jacocoTestReport.reports {
+            html.destination = file("${buildDir}/reports/jacoco/html")
+        }
+    }
+    reports {
+        html.destination = file("${buildDir}/reports/junit/html")
+    }
     testlogger {
         theme 'standard-parallel'
         slowThreshold 10000
         showFailedStandardStreams true
     }
 
-    workingDir = sourceSets.test.output.resourcesDir
+    workingDir sourceSets.test.output.resourcesDir
     include 'freenet/**/*Test.class'
 
     // adds ability to exlude tests from command line options
