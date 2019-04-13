@@ -65,14 +65,15 @@ sourceSets {
 }
 
 tasks.withType(JavaCompile) {
-    //options.compilerArgs += ['-Xlint:unchecked', '-Xlint:deprecation']
+    //options.compilerArgs += ['-Xlint:unchecked']
     options.encoding = 'UTF-8'
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 tasks.withType(Javadoc) {
+    // turn off overly pedantic lint checking
+    options.addStringOption('Xdoclint:none', '-quiet')
     options.encoding = 'UTF-8'
-    failOnError = false
 }
 
 // Tasks
@@ -191,9 +192,6 @@ test {
         slowThreshold 10000
         showFailedStandardStreams true
     }
-
-    minHeapSize = '128m'
-    maxHeapSize = '512m'
 
     workingDir = sourceSets.test.output.resourcesDir
     include 'freenet/**/*Test.class'
