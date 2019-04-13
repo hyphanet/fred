@@ -42,7 +42,7 @@ repositories {
     jcenter()
 }
 
-apply plugin: 'witness'
+apply plugin: 'witness' // gradle -q calculateChecksums
 dependencyVerification {
     verify = [
     'org.bouncycastle:bcprov-jdk15on:1.59:bcprov-jdk15on-1.59.jar:1c31e44e331d25e46d293b3e8ee2d07028a67db011e74cb2443285aed1d59c85',
@@ -66,32 +66,33 @@ sourceSets {
 
 tasks.withType(JavaCompile) {
     //options.compilerArgs += ['-Xlint:unchecked']
-    options.encoding = 'UTF-8'
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
+    options.encoding = 'UTF-8'
 }
 tasks.withType(Javadoc) {
-    // turn off overly pedantic lint checking
-    options.addStringOption('Xdoclint:none', '-quiet')
+    options.addStringOption('Xdoclint:none', '-quiet') // turn off overly pedantic lint checking
     options.encoding = 'UTF-8'
 }
 
-// Tasks
-
+// output: build01484-13-g5831bbf
 def gitrev = gitVersion().replaceAll('.dirty','')
+// output: 11.0.3 amd64 (Oracle Corporation)
 def buildenv = "${System.properties['java.version']} ${System.properties['os.arch']} (${System.properties['java.vendor']})"
+
+// Tasks
 
 tasks.register('compileVersion', JavaCompile) {
     //options.errorprone.enabled = true
     copy {
         from sourceSets.main.java.srcDirs
-        into "${buildDir}/tmp/compileVersion"
+        into temporaryDir
         include 'freenet/node/Version.java'
         filter {
             String line -> line.replaceAll("@custom@","${gitrev}")
         }
     }
-    source = fileTree(dir: "${buildDir}/tmp/compileVersion", include: '**/*.java')
+    source = fileTree(dir: temporaryDir, include: '**/*.java')
     classpath = files(sourceSets.main.output.classesDirs)
     destinationDir = sourceSets.main.output.classesDirs[0]
 }
@@ -139,7 +140,6 @@ tasks.register('tar', Tar) {
             'build',
             '.git',
             '.gradle',
-            'override.properties'
         ])
     }
 }
@@ -184,7 +184,6 @@ jar {
 
 test {
     useJUnitPlatform()
-
     testlogger {
         theme 'standard-parallel'
         slowThreshold 10000
@@ -194,11 +193,11 @@ test {
     workingDir = sourceSets.test.output.resourcesDir
     include 'freenet/**/*Test.class'
 
-    // gradle test -PexcludeTests="freenet.client.async.SplitFileFetcherStorageTest,freenet.client.async.SplitFileInserterStorageTest"
+    // adds ability to exlude tests from command line options
+    // example: gradle test -PexcludeTests="freenet.client.async.SplitFileFetcherStorageTest,freenet.client.async.SplitFileInserterStorageTest"
     project.properties['excludeTests']?.replaceAll('\\.', '\\/')?.split('[,;]').each {
         exclude "${it}.class"
     }
-
     systemProperties += [
         "test.l10npath_test": "freenet/l10n/",
         "test.l10npath_main": "../main/freenet/l10n/",
