@@ -204,7 +204,7 @@ test {
         showFailedStandardStreams true
     }
 
-    if (project.findProperty('parallelTests').compareTo('true') == 0)
+    if (project.findProperty('parallelTests')?:'false'.compareTo('true') == 0)
         maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
 
     systemProperty 'java.io.tmpdir', file("$buildDir/tmp")
