@@ -4,38 +4,37 @@ clone_folder: c:\projects\fred
 clone_depth: 1
 
 image: Visual Studio 2017
-max_jobs: 3
 
 cache:
   - '%USERPROFILE%/.gradle/caches'
   - '%USERPROFILE%/.gradle/wrapper'
 
-# environment variables
 environment:
-  APPVEYOR_SAVE_CACHE_ON_ERROR: true
   APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -m0=lzma2 -mx=9
-  GRADLE_OPTS: -Dorg.gradle.daemon=true -Dorg.gradle.caching=false -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
+  GRADLE_OPTS: -Dorg.gradle.daemon=true -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
   JAVA_OPTS: -Xmx512m "-XX:MaxMetaspaceSize=256m"
 
   matrix:
-    - JAVA_HOME: C:\Program Files (x86)\Java\jdk1.8.0
     - JAVA_HOME: C:\Program Files\Java\jdk1.8.0
     - JAVA_HOME: C:\Program Files\Java\jdk11
 
 # scripts that are called at very beginning, before repo cloning
 init:
-# scripts that run after cloning repository
+# scripts that run after cloning repo
 install:
 
-# scripts to run before build
 before_build:
+  - del gradle.properties
   - gradlew.bat -vq
 
-# to run your custom scripts instead of automatic MSBuild
 build_script:
-  - gradlew.bat test -PexcludeTests="freenet.store.saltedhash.SaltedHashFreenetStoreTest;freenet.store.RAMSaltMigrationTest;freenet.store.caching.CachingFreenetStoreTest"
+  - gradlew.bat jar test -PexcludeTests="freenet.store.RAMSaltMigrationTest;freenet.store.caching.CachingFreenetStoreTest"
 
+# kill all java process that might be holding a lock on files
+# which prevent accessing them 'sometimes' cause... windows
+after_build:
+  - ps: wmic process where "name like '%java%'" delete
 
 artifacts:
-  - path: 'build\libs\freenet.jar'
-    name: freenet
+  - path: build\libs\freenet.jar
+  - path: build\reports
