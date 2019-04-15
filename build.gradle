@@ -207,14 +207,25 @@ test {
     if (project.findProperty('parallelTests').compareTo('true') == 0)
         maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
 
+    systemProperty 'java.io.tmpdir', file("$buildDir/tmp")
+
     workingDir sourceSets.test.output.resourcesDir
     include 'freenet/**/*Test.class'
+    exclude 'freenet/**/*$*Test.class'
 
     // adds ability to exlude tests from command line options
     // example: gradle test -PexcludeTests="freenet.client.async.SplitFileFetcherStorageTest,test2,etc"
     project.properties['excludeTests']?.replaceAll('\\.', '\\/')?.split('[,;]').each {
         exclude "${it}.class"
     }
+
+    // TODO: these tests hang on windows
+    if (org.gradle.internal.os.OperatingSystem.current().isWindows())
+        exclude([
+            'freenet/store/RAMSaltMigrationTest*',
+            'freenet/store/caching/CachingFreenetStoreTest*',
+        ])
+
     systemProperties += [
         "test.l10npath_test": "freenet/l10n/",
         "test.l10npath_main": "../main/freenet/l10n/",
