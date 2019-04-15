@@ -6,7 +6,8 @@ import org.gradle.crypto.checksum.Checksum
 
 buildscript {
     dependencies {
-        classpath files('gradle/gradle-witness.jar') // github.com/akwizgran/gradle-witness
+        // github.com/akwizgran/gradle-witness
+        classpath files('gradle/gradle-witness.jar')
     }
 }
 
@@ -43,7 +44,8 @@ repositories {
     jcenter()
 }
 
-apply plugin: 'witness' // gradle -q calculateChecksums
+// Create the verification array with: gradle -q calculateChecksums
+apply plugin: 'witness'
 dependencyVerification {
     verify = [
     'org.bouncycastle:bcprov-jdk15on:1.59:bcprov-jdk15on-1.59.jar:1c31e44e331d25e46d293b3e8ee2d07028a67db011e74cb2443285aed1d59c85',
@@ -72,7 +74,8 @@ tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 tasks.withType(Javadoc) {
-    options.addStringOption('Xdoclint:none', '-quiet') // turn off overly pedantic lint checking
+    // turn off overly pedantic lint checking
+    options.addStringOption('Xdoclint:none', '-quiet')
     options.encoding = 'UTF-8'
 }
 tasks.withType(AbstractArchiveTask) {
@@ -184,8 +187,8 @@ jar {
 }
 
 test {
-    useJUnitPlatform()
     finalizedBy 'jacocoTestReport'
+    useJUnitPlatform()
 
     jacoco {
         jacocoTestReport.reports {
@@ -201,11 +204,14 @@ test {
         showFailedStandardStreams true
     }
 
+    if (project.findProperty('parallelTests').compareTo('true') == 0)
+        maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+
     workingDir sourceSets.test.output.resourcesDir
     include 'freenet/**/*Test.class'
 
     // adds ability to exlude tests from command line options
-    // example: gradle test -PexcludeTests="freenet.client.async.SplitFileFetcherStorageTest,freenet.client.async.SplitFileInserterStorageTest"
+    // example: gradle test -PexcludeTests="freenet.client.async.SplitFileFetcherStorageTest,test2,etc"
     project.properties['excludeTests']?.replaceAll('\\.', '\\/')?.split('[,;]').each {
         exclude "${it}.class"
     }
