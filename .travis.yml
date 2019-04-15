@@ -4,7 +4,7 @@ dist: xenial
 services: haveged
 
 git:
-  depth: 10
+  depth: 1
   quiet: true
 
 cache:
@@ -24,14 +24,13 @@ install:
   - true
 
 before_script:
-  - echo -e "org.gradle.caching=false\norg.gradle.daemon=true" >gradle.properties
+  - ./gradlew -vq
 
 script:
   - ./gradlew jar
 
 matrix:
   include:
-
     - name: 'openjdk8'
       jdk: openjdk8
     - name: 'openjdk11'
@@ -66,7 +65,8 @@ matrix:
 
 env:
   global:
-    - "AWS_ACCESS_KEY_ID=AKIAJQUIQIL3XTBHT3DA"
+    - GRADLE_OPTS="-Dorg.gradle.caching=false -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false"
+    - AWS_ACCESS_KEY_ID="AKIAJQUIQIL3XTBHT3DA"
     - secure: "C5Y0miWN35KMpWNT/r3n31J/JjUJA6a9I/w5DUkm5xFLv1oStOvNL9KykRQIL4+9yW7hYUcGOI0iP9ZjtbxRouP5//PCjhlgzIGJ3WImVZq4fLNl3sq3DYtgZJT5rUeXn8r8cKE3/sloEbcbz7dFNXmbSACuaZ0/T3IZpgP/Yrs="
 
 before_deploy:
