@@ -1,22 +1,43 @@
-/bin
-/build
-/dist
-/freenet-*
-/javadoc
-/junitvmwatcher*
-/lib
-/generator/js/lib
-/generator/js/tests/lib
-/generator/js/tests/bin
-/generator/js/gwt-unitCache/
-/run
-.classpath
-*.swp
+freenet-*
+junitvmwatcher*
+lib/
+contrib/
+generator/js/lib
+generator/js/tests/lib
+generator/js/tests/bin
+generator/js/gwt-unitCache/
+
+# Intellij
+.idea/
 *.iml
 *.ipr
 *.iws
-.*
-*~
-\#*\#
-/override.properties
-/gradle.properties
+*.swp
+*.eml
+
+# Eclipse
+.settings
+.classpath
+.project
+.settings
+.externalToolBuilders
+
+# SonarQube
+.sonar/
+.scannerwork/
+
+# Gradle
+build/
+.gradle/
+.gradletasknamecache
+*.class
+
+# Log Files
+*.log
+
+# OS X
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
