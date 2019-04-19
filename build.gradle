@@ -15,6 +15,8 @@ plugins {
     id "java"
     id "maven-publish"
 
+    id "com.github.spotbugs"     version "1.7.1"
+    id "org.sonarqube"           version "2.7"
     id "com.adarshr.test-logger" version "1.6.0"
     id "org.ajoberstar.grgit"    version "3.1.1"
 }
@@ -36,6 +38,7 @@ sourceSets {
 }
 
 // Configuration
+apply from: "$rootDir/gradle/analysis.gradle"
 
 // output: build01484-13-g5831bbf
 String gitrev = grgit.open(dir: project.rootDir).describe()
