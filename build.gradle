@@ -3,7 +3,6 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL.
  */
-import java.security.MessageDigest
 
 buildscript {
     dependencies {
@@ -161,10 +160,9 @@ jar {
     }
 
     doLast {
-        File file = file("${buildDir}/libs/freenet.jar")
-        MessageDigest md = MessageDigest.getInstance("SHA-256")
-        file.eachByte 4096, {bytes, len -> md.update(bytes, 0, len)}
-        println "SHA-256 of ${file.name}: ${md.digest().encodeHex().toString()}"
+        ant.checksum(file: "${buildDir}/libs/freenet.jar",
+                     algorithm:'sha-256', property:'hash')
+        println "SHA-256 of freenet.jar: ${ant.properties['hash']}"
     }
 }
 
