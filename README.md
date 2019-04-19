@@ -1,69 +1,83 @@
-[![Build Status](https://travis-ci.org/freenet/fred.svg?branch=next)](https://travis-ci.org/freenet/fred)
-[![Coverity status](https://scan.coverity.com/projects/2316/badge.svg?flat=1)](https://scan.coverity.com/projects/freenet-fred)
+# __Freenet__ ![logo][logo]
 
-# Freenet
+[![Chat](https://img.shields.io/badge/chat-on_freenode-blue.svg)](http://webchat.freenode.net?randomnick=1&channels=%23freenet&prompt=1)
+[![Bugtracker](https://img.shields.io/badge/bugs-mantishub-blue.svg)](https://freenet.mantishub.io)
+[![Build Status](https://travis-ci.org/freenet/fred.svg?branch=next)](https://travis-ci.org/freenet/fred)
+[![Build status windows](https://ci.appveyor.com/api/projects/status/r34ek9a06wdrahfn?svg=true)](https://ci.appveyor.com/project/freenet/fred)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=freenet_fred&metric=coverage)](https://sonarcloud.io/dashboard?id=freenet_fred)
+
+> Fred stands for Freenet REference Daemon
 
 Freenet is a platform for censorship-resistant communication and publishing. It is peer-to-peer
 software which provides a distributed, encrypted, decentralized datastore. Websites and applications
 providing things like forums and chat are built on top of it.
 
-Fred stands for Freenet REference Daemon.
-
 ## Building
 
-We've included the [Gradle Wrapper](https://docs.gradle.org/3.2/userguide/gradle_wrapper.html) as
-recommended by the Gradle project. If you trust the version we've committed you can build
-immediately:
-
-#### POSIX / Windows PowerShell:
-
-    $ ./gradlew jar
-
-#### Windows cmd:
-
-    > gradlew jar
-
-We've [configured it](gradle/wrapper/gradle-wrapper.properties) to [verify the checksum](https://docs.gradle.org/3.2/userguide/gradle_wrapper.html#sec:verification)
+We've included the [Gradle Wrapper][gradle_wrapper] as recommended by the Gradle project.
+We've [configured it](gradle/wrapper/gradle-wrapper.properties) to [verify the checksum][gradle_verify]
 of the archive it downloads from `https://services.gradle.org`.
+If you trust the version we've committed you can build immediately:
+
+#### with command-line interface:
+    git clone https://github.com/freenet/fred.git
+    cd fred
+    ./gradlew jar
 
 ## Testing
+You can view html test reports in the `build/reports` directory
 
-### Run Tests
+To run all unit tests:
 
-To run all unit tests, use
+    ./gradlew test
 
-    ./gradlew --parallel test
+You can run specific tests with a filter similar to the following:
 
-You can run specifics tests with a test filter similar to the following:
+    ./gradlew test --tests *M3UFilterTest
 
-    ./gradlew --parallel test --tests *M3UFilterTest
+Or to exclude some tests from being run:
 
-TODO: how to run integration tests.
+    ./gradlew test -PexcludeTests="freenet.client.async.SplitFileFetcherStorageTest,Test2,..."
 
-### Run your changes as node
+### Additional Tests
 
-To test your version of Freenet, build it with ,./gradlew jar`,
+    jacocoTestReport - Generates a code coverage report
+    pmdMain - Runs PMD source code analyzer
+    spotbugsMain - Runs SpotBugs byte-code analyzer
+
+### Run your changes
+To test your version of Freenet, build it with `./gradlew jar`,
 stop your node, replace `freenet.jar` in your
 Freenet directory with `build/libs/freenet.jar`, and start your node again.
 
-To override values set in `build.gradle` put them into [the file](https://docs.gradle.org/3.2/userguide/build_environment.html)
-`gradle.properties` in the format `variable = value`. For instance:
+To override values set in `build.gradle` add or edit the existing values from 
+`gradle.properties` in [the format][gradle_config] `variable = value`. For instance:
+```ini
+org.gradle.daemon   = true
+org.gradle.jvmargs  = -Xmx2g "-XX:MaxMetaspaceSize=512m"
+org.gradle.caching  = false
+targetJavaVersion   = 11
+parallelTests       = true
+```
 
-    org.gradle.parallel = true
-    org.gradle.daemon = true
-    org.gradle.jvmargs=-Xms256m -Xmx1024m
-    org.gradle.configureondemand=true
-
-    tasks.withType(Test)  {
-      maxParallelForks = Runtime.runtime.availableProcessors()
-    }
-
-## Contributing
-
-See our [contributor guidelines](CONTRIBUTING.md).
+## Getting Involved
+* See our [Guide to Contributing](CONTRIBUTING.md)
+* Open issues: https://freenet.mantishub.io/view_all_bug_page.php?filter=5cb54b4ec29b7
+* Project wiki: https://github.com/freenet/wiki/wiki
+* Mailing list: [devl@freenetproject.org][mailinglist]
+    * archive: https://www.mail-archive.com/devl@freenetproject.org
+* IRC: #freenet on chat.freenode.net
 
 ## Licensing
-Freenet is under the GPL, version 2 or later - see LICENSE.Freenet. We use some
-code under the Apache license version 2 (mostly apache commons stuff), and some
-modified BSD code (Mantissa). All of which is compatible with the GPL, although
-arguably ASL2 is only compatible with GPL3. Some plugins are GPL3.
+Freenet is licensed under the GPL, version 2 or later. We use some code under the
+Apache license version 2 (mostly apache commons stuff), and some modified BSD code (Mantissa).
+All of which is compatible with the GPL, although arguably ASL2 is only compatible with GPL3.
+Some plugins are GPL3.
+See [LICENSE](LICENSE)
+
+
+[logo]: https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Freenet_logo.svg/50px-Freenet_logo.svg.png
+[gradle_wrapper]: https://docs.gradle.org/5.3/userguide/gradle_wrapper.html
+[gradle_verify]:  https://docs.gradle.org/5.3/userguide/gradle_wrapper.html#sec:verification
+[gradle_config]:  https://docs.gradle.org/5.3/userguide/build_environment.html#sec:gradle_configuration_properties
+[mailinglist]: https://ml.freenetproject.org/v1
