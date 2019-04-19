@@ -1,7 +1,8 @@
 version: "#{build}"
 
-clone_folder: c:\projects\fred
-clone_depth: 1
+clone_depth: 10
+skip_commits:
+  message: /\[ci skip\]/
 
 image: Visual Studio 2017
 
@@ -11,30 +12,46 @@ cache:
 
 environment:
   APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -m0=lzma2 -mx=9
-  GRADLE_OPTS: -Dorg.gradle.daemon=true -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
+  GRADLE_OPTS: -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
   JAVA_OPTS: -Xmx512m "-XX:MaxMetaspaceSize=256m"
 
   matrix:
+    - JAVA_HOME: C:\Program Files (x86)\Java\jdk1.8.0
     - JAVA_HOME: C:\Program Files\Java\jdk1.8.0
     - JAVA_HOME: C:\Program Files\Java\jdk11
 
 # scripts that are called at very beginning, before repo cloning
 init:
+
 # scripts that run after cloning repo
 install:
 
 before_build:
-  - del gradle.properties
-  - gradlew.bat -vq
+  - gradlew.bat -v
 
 build_script:
-  - gradlew.bat jar test -PexcludeTests="freenet.store.RAMSaltMigrationTest;freenet.store.caching.CachingFreenetStoreTest"
+  - gradlew.bat --no-build-cache --no-daemon jar
 
-# kill all java process that might be holding a lock on files
-# which prevent accessing them 'sometimes' cause... windows
-after_build:
-  - ps: wmic process where "name like '%java%'" delete
+test_script:
+  - gradlew.bat --no-build-cache --no-daemon test
+
+after_test:
+  - ps: del "$env:USERPROFILE\.gradle\caches\modules-2\modules-2.lock"
+  - ps: del -Recurse "$env:USERPROFILE\.gradle\caches\*\plugin-resolution"
+  - ps: del -Recurse "$env:USERPROFILE\.gradle\caches\*\scripts"
+
+on_finish:
+  - ps: |
+      $wc = New-Object 'System.Net.WebClient'
+      $url = "https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)"
+      $files = Get-ChildItem -Include 'TEST-*.xml' -Recurse
+      $filesCount = $files.Count
+      echo "Uploading JUnit test results to AppVeyor ($filesCount files)..."
+      for ($I = 1; $I -le ($filesCount - 1); $I++) {
+        $file = $files.Get($I)
+        $wc.UploadFile($url, (Resolve-Path $file))
+      }
+      echo "JUnit test results uploaded correctly"
 
 artifacts:
   - path: build\libs\freenet.jar
-  - path: build\reports

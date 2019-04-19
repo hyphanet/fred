@@ -1,0 +1,84 @@
+buildscript {
+    repositories {
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath scriptDependencies.spotbugs
+    }
+}
+
+apply plugin: 'com.github.spotbugs'
+spotbugs {
+    toolVersion = tools.spotbugs
+    ignoreFailures = true
+    effort = 'max'
+    reportLevel = 'medium'
+    jvmArgs = ['-Xmx1g']
+    excludeFilter = file("${project.rootDir}/gradle/findbugs-filter.xml")
+}
+tasks.withType(com.github.spotbugs.SpotBugsTask) {
+    reports {
+        html.enabled = true
+        xml.enabled  = true
+    }
+    pluginClasspath = project.configurations.spotbugsPlugins
+}
+
+
+apply plugin: "jacoco"
+jacoco {
+    toolVersion = tools.jacoco
+    reportsDir = file("$buildDir/reports/jacoco")
+}
+jacocoTestReport {
+    classDirectories = fileTree(
+        dir: "${buildDir}/classes",
+        excludes: ['**/Manifest*.*']
+    )
+    reports {
+        xml.enabled  = true
+        html.enabled = true
+    }
+}
+test {
+    jacoco {
+        // https://github.com/gradle/gradle/issues/5184#issuecomment-391982009
+        includeNoLocationClasses = true
+        excludes = ['jdk.internal.*']
+    }
+}
+
+
+apply plugin: 'pmd'
+pmd {
+    toolVersion = tools.pmd
+    ignoreFailures = true
+    rulePriority = 3
+    ruleSets = []
+    ruleSetFiles = files("${project.rootDir}/gradle/pmd-rules.xml")
+    reportsDir = file("$buildDir/reports/pmd")
+}
+tasks.withType(Pmd) {
+    reports {
+        xml.enabled  = true
+        html.enabled = true
+    }
+}
+
+
+apply plugin: 'org.sonarqube'
+sonarqube {
+    properties {
+        property 'sonar.login', System.getenv('SONAR_LOGIN')
+        property 'sonar.projectKey', 'skydrome_fred'
+        property 'sonar.organization', 'skydrome-github'
+
+        property 'sonar.verbose', 'true'
+        property 'sonar.sourceEncoding', 'UTF-8'
+        property 'sonar.exclusions', '**/*.xml, **/*.js, **/*.css, **/*.sql, **/*.html'
+        property 'sonar.host.url', 'https://sonarcloud.io'
+
+        property 'sonar.java.pmd.reportPaths', "$buildDir/reports/pmd/main.xml"
+        property 'sonar.java.spotbugs.reportPaths', "$buildDir/reports/spotbugs/main.xml"
+    }
+}

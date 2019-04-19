@@ -4,32 +4,37 @@ dist: xenial
 services: haveged
 
 git:
-  depth: 1
+  depth: 10
   quiet: true
 
 cache:
   directories:
-    - $HOME/.m2
+    - $HOME/.sonar
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+  - rm -rf $HOME/.gradle/caches/*/plugin-resolution/
+  - rm -rf $HOME/.gradle/caches/*/fileHashes/
+  - rm -rf $HOME/.gradle/caches/*/scripts*/
 
 before_install:
-  - wget https://github.com/sormuras/bach/raw/master/install-jdk.sh
+  - wget https://raw.githubusercontent.com/sormuras/bach/master/install-jdk.sh
 
 install:
-  - true
+  - echo -e "org.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m\norg.gradle.caching=false" >>gradle.properties
 
 before_script:
-  - ./gradlew -vq
+  - ./gradlew -v
 
 script:
   - ./gradlew jar
 
 matrix:
+  allow_failures:
+    - name: 'openjdk13'
+    - name: 'Every Task'
   include:
     - name: 'openjdk8'
       jdk: openjdk8
@@ -38,15 +43,27 @@ matrix:
     - name: 'openjdk12'
       jdk: openjdk12
 
-    - name: '1.8.0_112-b16'
-      os: macos
-      osx_image: xcode9.3
-    - name: '11.0.1+13'
-      os: macos
-      osx_image: xcode10.1
-    - name: '12+33'
-      os: macos
-      osx_image: xcode10.2
+    # - name: 'openjdk13'
+    #   jdk: openjdk8
+    #   install:
+    #     - bash install-jdk.sh -F 13
+    #     - echo -e "javaHome=/home/travis/jdk-13\ntargetJavaVersion=13" >>gradle.properties
+    #   script: ./gradlew jar
+    # - name: 'Every Task'
+    #   jdk: openjdk8
+    #   script:
+    #     - ./gradlew clean
+    #     - ./gradlew jar test jacocoTestReport pmdMain pmdTest spotbugsMain spotbugsTest javadoc tar sonarqube
+
+    # - name: '1.8.0_112-b16'
+    #   os: osx
+    #   osx_image: xcode9.3
+    # - name: '11.0.1+13'
+    #   os: osx
+    #   osx_image: xcode10.1
+    # - name: '12+33'
+    #   os: osx
+    #   osx_image: xcode10.2
 
     # - name: 'openjdk11-hotspot'
     #   install: . install-jdk.sh --url 'https://api.adoptopenjdk.net/v2/binary/releases/openjdk11?openjdk_impl=hotspot&os=linux&arch=x64&release=latest&heap_size=normal&type=jdk'
@@ -62,10 +79,9 @@ matrix:
     # - name: 'amazon-corretto-jdk11+9'
     #   install: . install-jdk.sh --url https://d3pxv6yz143wms.cloudfront.net/11.0.2.9.3/amazon-corretto-11.0.2.9.3-linux-x64.tar.gz
 
-
 env:
   global:
-    - GRADLE_OPTS="-Dorg.gradle.caching=false -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false"
+    - GRADLE_OPTS="-Dorg.gradle.internal.launcher.welcomeMessageEnabled=false"
     - AWS_ACCESS_KEY_ID="AKIAJQUIQIL3XTBHT3DA"
     - secure: "C5Y0miWN35KMpWNT/r3n31J/JjUJA6a9I/w5DUkm5xFLv1oStOvNL9KykRQIL4+9yW7hYUcGOI0iP9ZjtbxRouP5//PCjhlgzIGJ3WImVZq4fLNl3sq3DYtgZJT5rUeXn8r8cKE3/sloEbcbz7dFNXmbSACuaZ0/T3IZpgP/Yrs="
 

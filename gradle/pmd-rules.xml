@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<ruleset name="Custom ruleset"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 http://pmd.sourceforge.net/ruleset_2_0_0.xsd"
+         xsi:noNamespaceSchemaLocation="http://pmd.sourceforge.net/ruleset_2_0_0.xsd">
+
+    <description>Java</description>
+
+    <rule ref="category/java/multithreading.xml" />
+    <rule ref="category/java/security.xml" />
+
+
+    <rule ref="category/java/errorprone.xml">
+        <exclude name="BeanMembersShouldSerialize" />
+        <exclude name="DataflowAnomalyAnalysis" />
+        <exclude name="AvoidLiteralsInIfCondition"/>
+        <exclude name="MissingBreakInSwitch"/>
+        <!--<exclude name="NullAssignment"/>-->
+        <exclude name="UseProperClassLoader"/>
+    </rule>
+    <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
+        <properties>
+            <!-- Annotations like '@SuppressWarnings' don't need to be checked, it is better to keep their
+             strings connected to the annotation instead of separating. -->
+            <property name="skipAnnotations" value="true"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
+        <properties>
+            <property name="allowCommentedBlocks" value="true"/>
+        </properties>
+    </rule>
+
+
+    <rule ref="category/java/design.xml">
+        <exclude name="LawOfDemeter" />
+        <exclude name="CyclomaticComplexity" />
+        <exclude name="LoosePackageCoupling" />
+        <exclude name="UseUtilityClass" />
+        <exclude name="DataClass" />
+        <exclude name="GodClass"/>
+    </rule>
+    <rule ref="category/java/design.xml/CyclomaticComplexity">
+        <properties>
+            <property name="classReportLevel" value="70"/>
+            <property name="methodReportLevel" value="10"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/design.xml/NcssCount">
+        <properties>
+            <property name="methodReportLevel" value="32"/>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/bestpractices.xml">
+        <exclude name="JUnitAssertionsShouldIncludeMessage" />
+        <exclude name="UseAssertTrueInsteadOfAssertEquals" />
+        <exclude name="UseAssertNullInsteadOfAssertTrue" />
+        <exclude name="AccessorMethodGeneration"/>
+        <exclude name="GuardLogStatement"/>
+        <exclude name="LooseCoupling"/>
+        <exclude name="SystemPrintln"/>
+    </rule>
+
+    <rule ref="category/java/performance.xml" >
+        <exclude name="AvoidInstantiatingObjectsInLoops"/>
+        <exclude name="UseStringBufferForStringAppends"/>
+    </rule>
+
+
+    <rule ref="category/java/documentation.xml">
+        <exclude name="CommentSize"/>
+    </rule>
+    <rule ref="category/java/documentation.xml/CommentRequired">
+        <properties>
+            <property name="fieldCommentRequirement" value="Ignored" />
+            <property name="protectedMethodCommentRequirement" value="Ignored" />
+            <property name="publicMethodCommentRequirement" value="Ignored" />
+            <property name="serialVersionUIDCommentRequired" value="Ignored" />
+            <property name="serialVersionUIDCommentRequired" value="Ignored" />
+            <property name="enumCommentRequirement" value="Ignored" />
+            <property name="headerCommentRequirement" value="Ignored" />
+            <property name="methodWithOverrideCommentRequirement" value="Ignored" />
+            <property name="accessorCommentRequirement" value="Ignored" />
+        </properties>
+    </rule>
+</ruleset>
