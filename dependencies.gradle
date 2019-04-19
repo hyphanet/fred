@@ -27,13 +27,10 @@ ext {
             jna          : [group: 'net.java.dev.jna', name: 'jna', version: version.jna],
             jnaplatform  : [group: 'net.java.dev.jna', name: 'jna-platform', version: version.jna],
             freenet      : [group: 'org.freenetproject', name: 'freenet-ext', version: 29],
-
             junit        : [group: 'junit', name: 'junit', version: version.jUnit],
             mockito      : [group: 'org.mockito', name: 'mockito-core', version: version.mockito],
             hamcrest     : [group: 'org.hamcrest', name: 'hamcrest-library', version: version.hamcrest],
-
             junitvintage : [group: 'org.junit.vintage', name: 'junit-vintage-engine', version: version.jUnitVintage],
-
             findsecbugs  : [group: 'com.h3xstream.findsecbugs', name: 'findsecbugs-plugin', version: version.findSecBugs],
     ]
 
@@ -42,13 +39,10 @@ ext {
             [config: "implementation", dep: libs.jna],
             [config: "implementation", dep: libs.jnaplatform],
             [config: "implementation", dep: libs.freenet],
-
             [config: "testImplementation", dep: libs.junit],
             [config: "testImplementation", dep: libs.mockito],
             [config: "testImplementation", dep: libs.hamcrest],
-
             [config: "testRuntimeOnly", dep: libs.junitvintage],
-
             [config: "spotbugsPlugins", dep: libs.findsecbugs],
     ]
 }

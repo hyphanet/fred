@@ -10,7 +10,6 @@
     <rule ref="category/java/multithreading.xml" />
     <rule ref="category/java/security.xml" />
 
-
     <rule ref="category/java/errorprone.xml">
         <exclude name="BeanMembersShouldSerialize" />
         <exclude name="DataflowAnomalyAnalysis" />
@@ -31,7 +30,6 @@
             <property name="allowCommentedBlocks" value="true"/>
         </properties>
     </rule>
-
 
     <rule ref="category/java/design.xml">
         <exclude name="LawOfDemeter" />
@@ -68,7 +66,6 @@
         <exclude name="UseStringBufferForStringAppends"/>
     </rule>
 
-
     <rule ref="category/java/documentation.xml">
         <exclude name="CommentSize"/>
     </rule>
@@ -85,4 +82,5 @@
             <property name="accessorCommentRequirement" value="Ignored" />
         </properties>
     </rule>
+
 </ruleset>
