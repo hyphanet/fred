@@ -19,10 +19,13 @@ public class TheoraBitstreamFilter extends OggBitstreamFilter {
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		page = super.parse(page);
 		if(!isValidStream) return null;
-		ArrayList<CodecPacket> parsedPackets = new ArrayList<CodecPacket>();
+		ArrayList<CodecPacket> parsedPackets = new ArrayList<>();
 		for(CodecPacket packet : page.asPackets()) {
-			packet = parser.parse(packet);
-			if(packet != null) parsedPackets.add(packet);
+			try {
+				parsedPackets.add(parser.parse(packet));
+			} catch (DataFilterException ignored) {
+				// skip packet
+			}
 		}
 		page = new OggPage(page, parsedPackets);
 		return page;
