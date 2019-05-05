@@ -423,7 +423,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	/**
 	 * Look for any of the following strings as top-level XML tags:
-	 * <rss
+	 * &lt;rss
 	 * &lt;feed
 	 * &lt;rdf:RDF
 	 *
