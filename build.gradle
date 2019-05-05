@@ -16,11 +16,21 @@ configurations {
 apply plugin: 'witness'
 apply plugin: 'java'
 apply plugin: 'maven-publish'
+apply plugin: 'jacoco'
 
 repositories {
     mavenLocal() // TODO: use lib/ instead?
     maven { url 'https://mvn.freenetproject.org' }
     jcenter()
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.destination file("${buildDir}/coverage")
+    }
+    
 }
 
 sourceSets {
