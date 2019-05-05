@@ -3,7 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
-import static org.junit.Assert.*;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Hex;
+import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -13,11 +15,13 @@ import java.security.Security;
 
 import javax.crypto.spec.IvParameterSpec;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.encoders.Hex;
-import org.junit.Test;
-
 import freenet.support.Fields;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class MessageAuthCodeTest{
     static private final MACType[] types = MACType.values();
@@ -25,7 +29,7 @@ public class MessageAuthCodeTest{
         { Hex.decode("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"), 
         Hex.decode("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"),
         Hex.decode("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"),
-        Hex.decode("e69dae0aab9f91c03a325dcc9436fa903ef49901c8e11c000430d90ad45e7603")};
+        Hex.decode("e285000e6080a701a410040f4814470b568d149b821f99d41319e6410094a760")};
     static private final byte[] hmacMessage;
     static{
         byte[] temp = null;
@@ -36,7 +40,7 @@ public class MessageAuthCodeTest{
         }
         hmacMessage = temp;
     }
-    static private byte[][] messages = { hmacMessage, hmacMessage, hmacMessage, 
+    static private byte[][] messages = { hmacMessage, hmacMessage, hmacMessage,
         Hex.decode("66f75c0e0c7a406586")};
     static private final IvParameterSpec[] IVs = 
         { null, null, null, new IvParameterSpec(Hex.decode("166450152e2394835606a9d1dd2cdc8b"))};
@@ -46,7 +50,7 @@ public class MessageAuthCodeTest{
                 + "f4af152e8b2fa9cb6"),
         Hex.decode("87aa7cdea5ef619d4ff0b4241a1d6cb02379f4e2ce4ec2787ad0b30545e17cdedaa833b7d6b8a70"
                 + "2038b274eaea3f4e4be9d914eeb61f1702e696c203a126854"),
-        Hex.decode("2924f51b9c2eff5df09db61dd03a9ca1")};
+        Hex.decode("1644272eee3b30b7f82568425e817756")};
     static private final byte[][] falseMacs = 
         { Hex.decode("4bb5e21dd13001ed5faccfcfdaf8a854881dc200c9833da726e9376c2e32cff7"),
         Hex.decode("4bb5e21dd13001ed5faccfcfdaf8a854881dc200c9833da726e9376c2e32cff7faea9ea9076ede7"
@@ -404,7 +408,7 @@ public class MessageAuthCodeTest{
         assertArrayEquals(IVs[3].getIV(), mac.getIv().getIV());
     }
 
-    @Test (expected = IllegalArgumentException.class)
+    @Test (expected = InvalidAlgorithmParameterException.class)
     public void testSetIVIvParameterSpecNullInput() 
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         IvParameterSpec nullInput = null;
@@ -436,5 +440,4 @@ public class MessageAuthCodeTest{
         MessageAuthCode mac = new MessageAuthCode(types[0], keys[0]);
         mac.genIV();
     }
-
 }

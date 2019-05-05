@@ -4,7 +4,7 @@
 package freenet.client;
 
 import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -18,19 +18,17 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import net.contrapunctus.lzma.LzmaInputStream;
-
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.support.ExceptionWrapper;
 import freenet.support.LRUMap;
 import freenet.support.Logger;
-import freenet.support.MutableBoolean;
 import freenet.support.Logger.LogLevel;
+import freenet.support.MutableBoolean;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
@@ -38,6 +36,8 @@ import freenet.support.compress.Compressor;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import freenet.support.io.SkipShieldingInputStream;
+import net.contrapunctus.lzma.LzmaInputStream;
 
 /**
  * Cache of recently decoded archives:
@@ -348,12 +348,14 @@ public class ArchiveManager {
 				wrapper = null;
 			}
 
-			if(ARCHIVE_TYPE.ZIP == archiveType)
+			if(ARCHIVE_TYPE.ZIP == archiveType) {
 				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit, context);
-			else if(ARCHIVE_TYPE.TAR == archiveType)
-				handleTARArchive(ctx, key, is, element, callback, gotElement, throwAtExit, context);
-		else
+			} else if(ARCHIVE_TYPE.TAR == archiveType) {
+				 // COMPRESS-449 workaround, see https://freenet.mantishub.io/view.php?id=6921
+				handleTARArchive(ctx, key, new SkipShieldingInputStream(is), element, callback, gotElement, throwAtExit, context);
+			} else {
 				throw new ArchiveFailureException("Unknown or unsupported archive algorithm " + archiveType);
+			}
 			if(wrapper != null) {
 				Exception e = wrapper.get();
 				if(e != null) throw new ArchiveFailureException("An exception occured decompressing: "+e.getMessage(), e);

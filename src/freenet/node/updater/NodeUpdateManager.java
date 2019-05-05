@@ -78,17 +78,24 @@ import freenet.support.io.FileUtil;
 public class NodeUpdateManager {
 
 	/**
-	 * The last build on the old key with Java 6 support. Older nodes can
+	 * The last build on the previous key with Java 7 support. Older nodes can
 	 * update to this point via old UOM.
 	 */
-	public final static int TRANSITION_VERSION = 1472;
+	public final static int TRANSITION_VERSION = 1481;
 
-	/** The URI for post-TRANSITION_VERSION builds' freenet.jar. */
-	public final static String UPDATE_URI = "USK@O~UmMwTeDcyDIW-NsobFBoEicdQcogw7yrLO2H-sJ5Y,JVU4L7m9mNppkd21UNOCzRHKuiTucd6Ldw8vylBOe5o,AQACAAE/jar/"
+	/** The URI for post-TRANSITION_VERSION builds' freenet.jar on modern JVMs. */
+	public final static String UPDATE_URI = "USK@vCKGjQtKuticcaZ-dwOgmkYPVLj~N1dm9mb3j3Smg4Y,-wz5IYtd7PlhI2Kx4cAwpUu13fW~XBglPyOn8wABn60,AQACAAE/jar/"
 			+ Version.buildNumber();
 
-	/** Might as well be the SSK */
-	public final static String LEGACY_UPDATE_URI = "freenet:SSK@sabn9HY9MKLbFPp851AO98uKtsCtYHM9rqB~A5cCGW4,3yps2z06rLnwf50QU4HvsILakRBYd4vBlPtLv0elUts,AQACAAE/jar-"
+	/** The URI for post-TRANSITION_VERSION builds' freenet.jar on EoL JVMs. */
+	public final static String LEGACY_UPDATE_URI = "SSK@ugWS2VICgMcQ5ptmEE1mAvHgUn2OSCOogJIUAvbL090,ZKO1pZRI9oaBuBQuWFL4bK3K0blvmEdqYgiIJF5GcjQ,AQACAAE/jar-"
+			+ TRANSITION_VERSION;
+
+	/**
+	 * The URI for freenet.jar before the updater was rekeyed. Unless both the EoL and modern keys rekey this is
+	 * LEGACY_UPDATE_URI.
+	 */
+	public final static String PREVIOUS_UPDATE_URI = "SSK@O~UmMwTeDcyDIW-NsobFBoEicdQcogw7yrLO2H-sJ5Y,JVU4L7m9mNppkd21UNOCzRHKuiTucd6Ldw8vylBOe5o,AQACAAE/jar-"
 			+ TRANSITION_VERSION;
 
 	public final static String REVOCATION_URI = "SSK@tHlY8BK2KFB7JiO2bgeAw~e4sWU43YdJ6kmn73gjrIw,DnQzl0BYed15V8WQn~eRJxxIA-yADuI8XW7mnzEbut8,AQACAAE/revoked";
@@ -99,10 +106,11 @@ public class NodeUpdateManager {
 
 	public static final long MAX_MAIN_JAR_LENGTH = 16 * 1024 * 1024; // 16MB
 
-	public static final FreenetURI transitionMainJarURI;
-	
-	public static final FreenetURI transitionMainJarURIAsUSK;
-	
+	static final FreenetURI legacyMainJarSSK;
+	static final FreenetURI legacyMainJarUSK;
+
+	static final FreenetURI previousMainJarSSK;
+	static final FreenetURI previousMainJarUSK;
 
 	public static final String transitionMainJarFilename = "legacy-freenet-jar-"
 			+ TRANSITION_VERSION + ".fblob";
@@ -111,8 +119,10 @@ public class NodeUpdateManager {
 
 	static {
 		try {
-			transitionMainJarURI = new FreenetURI(LEGACY_UPDATE_URI);
-			transitionMainJarURIAsUSK = transitionMainJarURI.uskForSSK();
+			legacyMainJarSSK = new FreenetURI(LEGACY_UPDATE_URI);
+			legacyMainJarUSK = legacyMainJarSSK.uskForSSK();
+			previousMainJarSSK = new FreenetURI(PREVIOUS_UPDATE_URI);
+			previousMainJarUSK = previousMainJarSSK.uskForSSK();
 		} catch (MalformedURLException e) {
 			throw new Error(e);
 		}
@@ -225,7 +235,7 @@ public class NodeUpdateManager {
 
 		// Set default update URI for new nodes depending on JVM version.
 		updaterConfig
-				.register("URI", JVMVersion.isTooOld() ? transitionMainJarURIAsUSK.toString() : UPDATE_URI,
+				.register("URI", JVMVersion.needsLegacyUpdater() ? legacyMainJarUSK.toString() : UPDATE_URI,
 				          3, true, true,
 						"NodeUpdateManager.updateURI",
 						"NodeUpdateManager.updateURILong",
@@ -240,15 +250,16 @@ public class NodeUpdateManager {
 
 		/*
 		 * The update URI is always written, so override the existing key depending on JVM version.
-		 * Only override the official legacy URI to not interfere with unofficial update keys.
+		 * Only override official URIs to avoid interfering with unofficial update keys.
+		 *
+		 * An up-to-date JVM must update the legacy URI (in addition to the previous URI) in case a node was
+		 * run with an EoL JVM that was subsequently upgraded.
 		 */
-		if (updateURI.equalsKeypair(transitionMainJarURI) && !JVMVersion.isTooOld()) {
-			try {
-				updaterConfig.set("URI", UPDATE_URI);
-			} catch (NodeNeedRestartException e) {
-				// UpdateURICallback.set() does not throw NodeNeedRestartException.
-				Logger.warning(this, "Unexpected failure setting update URI", e);
-			}
+		if (JVMVersion.needsLegacyUpdater()) {
+			transitionKey(updaterConfig, previousMainJarSSK, legacyMainJarUSK.toString());
+		} else {
+			transitionKey(updaterConfig, previousMainJarSSK, UPDATE_URI);
+			transitionKey(updaterConfig, legacyMainJarSSK, UPDATE_URI);
 		}
 
 		updateURI = updateURI.setSuggestedEdition(Version.buildNumber());
@@ -298,7 +309,7 @@ public class NodeUpdateManager {
 		};
 
 		transitionMainJarFile = new File(node.clientCore.getPersistentTempDir(), transitionMainJarFilename);
-		transitionMainJarFetcher = new LegacyJarFetcher(transitionMainJarURI,
+		transitionMainJarFetcher = new LegacyJarFetcher(previousMainJarSSK,
 				transitionMainJarFile, node.clientCore,
 				legacyFetcherCallback);
 
@@ -366,6 +377,19 @@ public class NodeUpdateManager {
 
 		this.uom = new UpdateOverMandatoryManager(this);
 		this.uom.removeOldTempFiles();
+	}
+
+	private void transitionKey(SubConfig updaterConfig, FreenetURI from, String to)
+			throws InvalidConfigValueException {
+
+		if (updateURI.equalsKeypair(from)) {
+			try {
+				updaterConfig.set("URI", to);
+			} catch (NodeNeedRestartException e) {
+				// UpdateURICallback.set() does not throw NodeNeedRestartException.
+				Logger.warning(this, "Unexpected failure setting update URI", e);
+			}
+		}
 	}
 
 	class SimplePuller implements ClientGetCallback {
@@ -592,7 +616,7 @@ public class NodeUpdateManager {
 	private Message getOldUOMAnnouncement() {
 		boolean mainJarAvailable = transitionMainJarFetcher == null ? false
 				: transitionMainJarFetcher.fetched();
-        return DMT.createUOMAnnouncement(transitionMainJarURIAsUSK.toString(), revocationURI
+        return DMT.createUOMAnnouncement(previousMainJarUSK.toString(), revocationURI
                 .toString(), revocationChecker.hasBlown(), 
                 mainJarAvailable ? TRANSITION_VERSION : -1,
                 revocationChecker.lastSucceededDelta(), revocationChecker

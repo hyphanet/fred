@@ -158,13 +158,18 @@ public abstract class UIDTag {
 	 * @param next The node we are no longer routing to.
 	 */
 	public void removeRoutingTo(PeerNode next) {
-		if(logMINOR)
+		if(logMINOR) {
 			Logger.minor(this, "No longer routing to "+next+" on "+this, new Exception("debug"));
+		}
 		boolean noRecordUnlock;
 		synchronized(this) {
-			if(currentlyRoutingTo == null) return;
+			if(currentlyRoutingTo == null) {
+				return;
+			}
 			if(!currentlyRoutingTo.remove(next)) {
-				Logger.warning(this, "Removing wrong node or removing twice? on "+this+" : "+next, new Exception("debug"));
+				if(logMINOR) {
+					Logger.minor(this, "Removing wrong node or removing twice? on "+this+" : "+next, new Exception("debug"));
+				}
 			}
 			if(handlingTimeouts != null) {
 				handlingTimeouts.remove(next);
@@ -172,7 +177,9 @@ public abstract class UIDTag {
 			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
-		if(logMINOR) Logger.minor(this, "Unlocking "+this);
+		if(logMINOR) {
+			Logger.minor(this, "Unlocking "+this);
+		}
 		innerUnlock(noRecordUnlock);
 	}
 	

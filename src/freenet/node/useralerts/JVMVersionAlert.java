@@ -24,7 +24,7 @@ public class JVMVersionAlert extends AbstractUserAlert {
 		return NodeL10n.getBase().getString("JavaEOLAlert.body",
 		                                    new String[] {"current", "new"},
 		                                    new String[] {JVMVersion.getCurrent(),
-		                                                  JVMVersion.REQUIRED});
+		                                                  JVMVersion.EOL_THRESHOLD});
 	}
 
 	@Override

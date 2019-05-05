@@ -51,9 +51,10 @@ public class UpdateDeployContext {
 	final MainJarDependencies deps;
 	
 	UpdateDeployContext(MainJarDependencies deps) throws UpdaterParserException {
-		Properties p = WrapperManager.getProperties();
 		this.deps = deps;
-		
+
+		// find the name or path used for the freenet main jar
+		Properties p = WrapperManager.getProperties();
 		for(int propNo=1;true;propNo++) {
 			String prop = p.getProperty("wrapper.java.classpath."+propNo);
 			if(prop == null) break;
@@ -143,6 +144,8 @@ public class UpdateDeployContext {
 		boolean writtenAnchor = false;
 		/** Write the anchor polling interval too if it doesn't exist already */
 		boolean writtenAnchorInterval = false;
+		/** Add the relative JNA tempdir if it does not exist already */
+		boolean writtenJnaTmpDir = false;
 		
 		String newMain = mainJarAbsolute ? newMainJar.getAbsolutePath() : newMainJar.getPath();
 		
@@ -150,6 +153,7 @@ public class UpdateDeployContext {
 		
 		ArrayList<String> otherLines = new ArrayList<String>();
 		ArrayList<String> classpath = new ArrayList<String>();
+		ArrayList<String> additionalJavaArguments = new ArrayList<String>();
 		
 		// We MUST put the ext (and all other dependencies) before the main jar, 
 		// or auto-update of freenet-ext.jar on Windows won't work.
@@ -195,6 +199,19 @@ public class UpdateDeployContext {
 						}
 					}
 				}
+			} else if(lowcaseLine.startsWith("wrapper.java.additional.")) {
+			    // get existing java arguments
+			    line = line.substring("wrapper.java.additional.".length());
+			    int idx = line.indexOf('=');
+			    if(idx != -1) {
+				 // Ignore the numbers.
+				 String rhs = line.substring(idx+1);
+				 dontWrite = true;
+				 additionalJavaArguments.add(rhs);
+				 if (rhs.startsWith("-Djava.io.tmpdir=")) {
+				       writtenJnaTmpDir = true;
+				 }
+			    }
 			} else if(lowcaseLine.equals("wrapper.restart.reload_configuration=true")) {
 				writtenReload = true;
 			} else if(lowcaseLine.startsWith("wrapper.anchorfile=")) {
@@ -228,6 +245,18 @@ public class UpdateDeployContext {
 		for(String s : classpath) {
 			bw.write("wrapper.java.classpath."+count+"="+s+'\n');
 			count++;
+		}
+
+		// write the java arguments
+		// As above, we need to write ALL the dependencies BEFORE we write the main jar.
+		count = 1; // arguments for java are also 1-based.
+		for(String s : additionalJavaArguments) {
+			bw.write("wrapper.java.additional."+count+"="+s+'\n');
+			count++;
+		}
+		// ensure that we have an entry for the JNA tempdir
+		if (!writtenJnaTmpDir) {
+			bw.write("wrapper.java.additional."+count+"=-Djava.io.tmpdir=./tmp/"+'\n');
 		}
 		
 		for(String s : otherLines)

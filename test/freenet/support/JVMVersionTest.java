@@ -5,22 +5,45 @@ import junit.framework.TestCase;
 
 public class JVMVersionTest extends TestCase {
 
-	public void testTooOld() {
-		Assert.assertTrue(JVMVersion.isTooOld("1.6.0_32"));
-		Assert.assertTrue(JVMVersion.isTooOld("1.6"));
-		Assert.assertTrue(JVMVersion.isTooOld("1.5"));
-		Assert.assertTrue(JVMVersion.isTooOld("1.7.0_65"));
-		Assert.assertTrue(JVMVersion.isTooOld("1.7"));
+	public void testTooOldWarning() {
+		Assert.assertTrue(JVMVersion.isEOL("1.6.0_32"));
+		Assert.assertTrue(JVMVersion.isEOL("1.6"));
+		Assert.assertTrue(JVMVersion.isEOL("1.5"));
+		Assert.assertTrue(JVMVersion.isEOL("1.7.0_65"));
+		Assert.assertTrue(JVMVersion.isEOL("1.7"));
 	}
 
-	public void testRecentEnough() {
-		Assert.assertFalse(JVMVersion.isTooOld("1.8.0_9"));
-		Assert.assertFalse(JVMVersion.isTooOld("9-ea"));
-		Assert.assertFalse(JVMVersion.isTooOld("10"));
+	public void testTooOldUpdater() {
+		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.6.0_32"));
+		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.6"));
+		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.5"));
+		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.7.0_65"));
+		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.7"));
+	}
+
+	public void testRecentEnoughWarning() {
+		Assert.assertFalse(JVMVersion.isEOL("1.8.0_9"));
+		Assert.assertFalse(JVMVersion.isEOL("9-ea"));
+		Assert.assertFalse(JVMVersion.isEOL("10"));
+	}
+
+	public void testRecentEnoughUpdater() {
+		Assert.assertFalse(JVMVersion.needsLegacyUpdater("1.8.0_9"));
+		Assert.assertFalse(JVMVersion.needsLegacyUpdater("9-ea"));
+		Assert.assertFalse(JVMVersion.needsLegacyUpdater("10"));
+	}
+
+	public void testRelative() {
+		/*
+		 * Being at too old a version for the modern updater URI must produce a warning, but a warning can be shown for
+		 * a version not yet too old for the modern updater URI.
+		 */
+		Assert.assertTrue(JVMVersion.compareVersion(JVMVersion.UPDATER_THRESHOLD, JVMVersion.EOL_THRESHOLD) <= 0);
 	}
 
 	public void testNull() {
-		Assert.assertFalse(JVMVersion.isTooOld(null));
+		Assert.assertFalse(JVMVersion.isEOL(null));
+		Assert.assertFalse(JVMVersion.needsLegacyUpdater(null));
 	}
 
 	public void testCompare() {

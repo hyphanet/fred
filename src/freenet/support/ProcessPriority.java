@@ -6,11 +6,14 @@ package freenet.support;
 
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
-import com.sun.jna.Pointer;
+
+import com.sun.jna.win32.*;
+import com.sun.jna.platform.win32.WinNT.HANDLE;
+import com.sun.jna.platform.win32.WinDef.DWORD;
 
 /**
  * A class to control the global priority of the current process.
- * Microsoft suggests flagging daemon/server processes with the BACKGROUND_MODE
+ * Microsoft suggests flagging daemon/server processes with the BELOW_NORMAL_PRIORITY_CLASS
  * priority class so that they don't interfere with the responsiveness of the
  * rest of the system. This is especially important when freenet is started at
  * system startup.
@@ -25,17 +28,14 @@ public class ProcessPriority {
     private static volatile boolean background = false;
     
     /// Windows interface (kernel32.dll) ///
-    private static class WindowsHolder {
-        static { Native.register("kernel32"); }
-        /* HANDLE -> Pointer, DWORD -> int */
-        private static native boolean SetPriorityClass(Pointer hProcess, int dwPriorityClass);
-        private static native Pointer GetCurrentProcess();
-        private static native int GetLastError();
+    public interface WindowsHolder extends StdCallLibrary {
+        WindowsHolder INSTANCE = (WindowsHolder) Native.loadLibrary("kernel32", WindowsHolder.class);
 
-        final static int PROCESS_MODE_BACKGROUND_BEGIN         = 0x00100000;
-        final static int PROCESS_MODE_BACKGROUND_END           = 0x00200000;
-        final static int ERROR_PROCESS_MODE_ALREADY_BACKGROUND = 402;
-        final static int ERROR_PROCESS_MODE_NOT_BACKGROUND     = 403;
+        boolean SetPriorityClass(HANDLE hProcess, DWORD dwPriorityClass);
+        HANDLE GetCurrentProcess();
+        DWORD GetLastError();
+
+        DWORD BELOW_NORMAL_PRIORITY_CLASS           = new DWORD(0x00004000);
     }
 
     private static class LinuxHolder {
@@ -61,11 +61,13 @@ public class ProcessPriority {
     public static boolean enterBackgroundMode() {
         if (!background) {
             if (Platform.isWindows()) {
-                if (WindowsHolder.SetPriorityClass(WindowsHolder.GetCurrentProcess(), WindowsHolder.PROCESS_MODE_BACKGROUND_BEGIN)) {
+                WindowsHolder lib = WindowsHolder.INSTANCE;
+
+                if (lib.SetPriorityClass(lib.GetCurrentProcess(), WindowsHolder.BELOW_NORMAL_PRIORITY_CLASS)) {
                     System.out.println("SetPriorityClass() succeeded!");
                     return background = true;
-                } else if (WindowsHolder.GetLastError() == WindowsHolder.ERROR_PROCESS_MODE_ALREADY_BACKGROUND) {
-                    System.err.println("SetPriorityClass() failed :"+WindowsHolder.GetLastError());
+                } else {
+                    System.err.println("SetPriorityClass() failed :"+lib.GetLastError());
                     return false;
                 }
             } else if (Platform.isLinux()) {

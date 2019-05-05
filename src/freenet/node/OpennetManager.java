@@ -190,22 +190,30 @@ public class OpennetManager {
 	/** Enable scaling of peers with bandwidth? */
 	public static final boolean ENABLE_PEERS_PER_KB_OUTPUT = true;
 	/** Constant for scaling peers: we multiply bandwidth in kB/sec by this
-	 * and then take the square root. 12 gives 11 at 10K, 15 at 20K, 19 at
-	 * 30K, 26 at 60K, 34 at 100K, 40 at 140K, 100 at 2500K.
-	 * 212 at 30mbit/s (the mean upload in Japan in 2014) and
-	 * 363 at 88mbit/s (the mean upload in Hong Kong in 2014).*/
-	public static final double SCALING_CONSTANT = 12.0;
+	 * and then take the square root. Minimum is MIN_PEERs_FOR_SCALING.
+     * 
+     * (define (peers kbps) (sqrt (* kbps scaling)))
+     * 
+     * Scaling at 1.61803 gives 4 peers at 5K (min peers),
+	 * 4 at 7K, 4 at 10K, 6 at 20K, 7 at 30K, 10 at 60K, 
+     * 13 at 100K, 15 at 140K, 63 at 2500K.
+	 * 78 at 30mbit/s (the mean upload in Japan in 2014) and
+	 * 133 at 88mbit/s (the mean upload in Hong Kong in 2014).*/
+	public static final double SCALING_CONSTANT = 1.61803; // for Euclid and Pythagoras!
 	/**
-	 * Minimum number of peers. Do not reduce this: As a rough estimate, because the vast majority
-	 * of requests complete in 5 hops, this gives just one binary decision per hop on average.
+	 * Minimum number of peers. As a rough estimate, because the vast majority
+	 * of requests complete in 5 hops, 10 peers give just one binary decision
+	 * per hop. However the distribution of peers before the link length fix
+ 	 * showed that having 3 short distance peers still worked, since requests
+ 	 * preferentially go through higher capacity nodes with more FOAFs.
 	 */
-	public static final int MIN_PEERS_FOR_SCALING = 10;
+	public static final int MIN_PEERS_FOR_SCALING = 4;
 	/** The maximum possible distance between two nodes in the wrapping [0,1) location space. */
 	public static final double MAX_DISTANCE = 0.5;
 	/** The fraction of nodes which are only a short distance away. */
 	public static final double SHORT_NODES_FRACTION = LONG_DISTANCE / MAX_DISTANCE;
 	/** The estimated average number of nodes which are active at any given time. */
-	public static final int LAST_NETWORK_SIZE_ESTIMATE = 5000;
+	public static final int LAST_NETWORK_SIZE_ESTIMATE = 3000;
 	/** The estimated number of nodes which are a short distance away. */
 	public static final int AVAILABLE_SHORT_DISTANCE_NODES =
 		(int) (LAST_NETWORK_SIZE_ESTIMATE * SHORT_NODES_FRACTION);

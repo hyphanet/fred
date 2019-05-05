@@ -168,8 +168,8 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		this.forceCompatibleExtension = forceCompatibleExtension;
 	}
 	
+	/** Required because we implement {@link Serializable}. */
 	protected ClientGetter() {
-	    // For serialization.
 	    clientCallback = null;
 	    ctx = null;
 	    actx = null;
