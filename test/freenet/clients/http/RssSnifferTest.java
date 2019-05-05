@@ -12,7 +12,7 @@ import org.junit.Test;
 /**
  * Test cases for the RSS feed sniffing logic in FProxyToadlet.
  */
-public class RssSniffTest {
+public class RssSnifferTest {
 
 	@Test
 	public void correctTopLevelRssTagIsRecognized() {
