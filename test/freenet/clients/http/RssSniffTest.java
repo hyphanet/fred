@@ -103,7 +103,7 @@ public class RssSniffTest {
 		return new TypeSafeDiagnosingMatcher<String>() {
 			@Override
 			protected boolean matchesSafely(String item, Description mismatchDescription) {
-				if (!FProxyToadlet.isSniffedAsFeed(item.getBytes(UTF_8))) {
+				if (!RssSniffer.isSniffedAsFeed(item.getBytes(UTF_8))) {
 					mismatchDescription.appendValue(item).appendText(" was not sniffed as feed");
 					return false;
 				}
