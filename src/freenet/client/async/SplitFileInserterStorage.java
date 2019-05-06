@@ -223,7 +223,7 @@ public class SplitFileInserterStorage {
     
     private final Object cooldownLock = new Object();
     private boolean noBlocksToSend;
-    
+
     /**
      * Create a SplitFileInserterStorage.
      * 
@@ -619,7 +619,13 @@ public class SplitFileInserterStorage {
         } catch (IllegalArgumentException e) {
             throw new StorageFormatException("Bad checksum type");
         }
-        InputStream is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), 1024*1024);
+
+        // TODO: understand what it is
+        // https://github.com/freenet/fred/commit/84e78990755ccd8f46b579371704e45635d414fe#diff-b97d16885afea196ae54570584a79269R583
+        long maxLength = 1024 * 1024;
+        maxLength = Long.MAX_VALUE;
+
+        InputStream is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), maxLength);
         dis = new DataInputStream(is);
         int version = dis.readInt();
         if(version != VERSION)
@@ -734,7 +740,7 @@ public class SplitFileInserterStorage {
         else
             crossSegments = null;
         // Read offsets.
-        is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), 1024*1024);
+        is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), maxLength);
         dis = new DataInputStream(is);
         if(hasPaddedLastBlock) {
             offsetPaddedLastBlock = readOffset(dis, rafLength, "offsetPaddedLastBlock");
@@ -773,7 +779,7 @@ public class SplitFileInserterStorage {
         dis.close();
         // Set up segments...
         underlyingOffsetDataSegments = new long[segmentCount];
-        is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), 1024*1024);
+        is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), maxLength);
         dis = new DataInputStream(is);
         long blocks = 0;
         for(int i=0;i<segmentCount;i++) {
@@ -787,7 +793,7 @@ public class SplitFileInserterStorage {
         if(blocks != totalDataBlocks)
             throw new StorageFormatException("Total data blocks should be "+totalDataBlocks+" but is "+blocks);
         if(crossSegments != null) {
-            is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), 1024*1024);
+            is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), maxLength);
             dis = new DataInputStream(is);
             for(int i=0;i<crossSegments.length;i++) {
                 crossSegments[i] = new SplitFileInserterCrossSegmentStorage(this, dis, i);
@@ -796,7 +802,7 @@ public class SplitFileInserterStorage {
         }
         ois.close();
         ois = new RAFInputStream(raf, offsetOverallStatus, rafLength - offsetOverallStatus);
-        dis = new DataInputStream(checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), 1024*1024));
+        dis = new DataInputStream(checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), maxLength));
         errors = new FailureCodeTracker(true, dis);
         dis.close();
         for(SplitFileInserterSegmentStorage segment : segments) {

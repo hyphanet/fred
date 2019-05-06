@@ -101,6 +101,7 @@ public class InsertCompressor implements CompressJob {
 		try {
 			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressorDescriptor, pre1254);
 			boolean first = true;
+			// TODO: this job takes a lot of time
 			for (final COMPRESSOR_TYPE comp : comps) {
 				boolean shouldFreeOnFinally = true;
 				RandomAccessBucket result = null;
