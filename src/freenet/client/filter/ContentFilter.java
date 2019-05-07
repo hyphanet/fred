@@ -88,7 +88,7 @@ public class ContentFilter {
 		 * on top of that needed for the Ogg container itself.
 		 * Reference: http://xiph.org/ogg/doc/rfc3533.txt
 		 */
-		register(new FilterMIMEType("application/ogg", "ogx", new String[] {"video/ogg", "audio/ogg"}, new String[]{"ogg", "oga", "ogv"},
+		register(new FilterMIMEType("application/ogg", "ogx", new String[] {"video/ogg", "audio/ogg"}, new String[]{"ogg", "ogv", "oga"},
 				true, false, new OggFilter(), true, true, false, true, false, false,
 				l10n("containerOggReadAdvice"),false, null, null, false));
 
