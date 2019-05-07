@@ -157,6 +157,10 @@ public class M3UFilter implements ContentDataFilter {
                                 if (cb instanceof GenericReadFilterCallback) {
                                     try {
                                         filtered = ((GenericReadFilterCallback)cb).makeURIAbsolute(filtered);
+                                        // FIXME: this hardcodes the address. Better get the localhost and port defined in freenet.ini. This is just to try whether it allows mpv to simply play the m3u.
+                                        if (filtered.startsWith("/")) {
+                                            filtered = "http://127.0.0.1:8888/" + filtered;
+                                        }
                                     } catch (URISyntaxException e) {
                                         filtered = badUriReplacement;
                                     }
