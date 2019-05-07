@@ -2814,14 +2814,23 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String hreflang = getHashString(h, "hreflang");
 			String charset = null;
 			String maybecharset = null;
-            /* TODO: get the type from the filename. Currently we only
-             * have a filter for mp3, so this is the simplest possible
-             * solution.*/
-            String type = "audio/mpeg";
 
 			String src = getHashString(h, "src");
 			if (src != null) {
 				src = HTMLDecoder.decode(src);
+                String type;
+                if (src.endsWith(".ogv")) {
+                    type = "video/ogg";
+                } else if (src.endsWith(".oga")) {
+                    type = "audio/ogg";
+                } else if (src.endsWith(".ogg")) {
+                    type = "application/ogg";
+                } else if (src.endsWith(".flac")) {
+                    type = "audio/flac";
+                } else { // default case plays it safe: mp3
+                    type = "audio/mpeg";
+                }
+                
                 src = htmlSanitizeURI(src, type, null, null, pc.cb, pc, false);
 				if (src != null) {
 					src = HTMLEncoder.encode(src);
