@@ -192,7 +192,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		// Convert localhost uri's to relative internal ones.
 		
 		String host = uri.getHost();
-		if(host != null && (host.equals("localhost") || host.equals("127.0.0.1")) && uri.getPort() == 8888) {
+		if(host != null && (host.equals("localhost") || host.startsWith("127."))) {
 			try {
 				uri = new URI(null, null, null, -1, uri.getPath(), uri.getQuery(), uri.getFragment());
 			} catch (URISyntaxException e) {
