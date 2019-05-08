@@ -9,7 +9,6 @@ import freenet.client.InsertException.InsertExceptionMode;
 import freenet.crypt.HashResult;
 import freenet.crypt.MultiHashInputStream;
 import freenet.keys.CHKBlock;
-import freenet.keys.SSKBlock;
 import freenet.node.PrioRunnable;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -19,6 +18,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.compress.CompressJob;
 import freenet.support.compress.CompressionOutputSizeException;
+import freenet.support.compress.CompressionRatioException;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.Closer;
@@ -101,7 +101,6 @@ public class InsertCompressor implements CompressJob {
 		try {
 			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressorDescriptor, pre1254);
 			boolean first = true;
-			// TODO: this job takes a lot of time
 			for (final COMPRESSOR_TYPE comp : comps) {
 				boolean shouldFreeOnFinally = true;
 				RandomAccessBucket result = null;
@@ -140,19 +139,19 @@ public class InsertCompressor implements CompressJob {
 						}
 						try {
 							comp.compress(is, os, origSize, bestCompressedDataSize);
-						} catch (RuntimeException e) {
-							// ArithmeticException has been seen in bzip2 codec.
-							Logger.error(this, "Compression failed with codec "+comp+" : "+e, e);
-							// Try the next one
-							// RuntimeException is iffy, so lets not try the hasher.
-							continue;
-						} catch (CompressionOutputSizeException e) {
+						} catch (CompressionOutputSizeException | CompressionRatioException e) {
 							if(hasher != null) {
 								is.skip(Long.MAX_VALUE);
 								hashes = hasher.getResults();
 								first = false;
 							}
 							continue; // try next compressor type
+						} catch (RuntimeException e) {
+							// ArithmeticException has been seen in bzip2 codec.
+							Logger.error(this, "Compression failed with codec "+comp+" : "+e, e);
+							// Try the next one
+							// RuntimeException is iffy, so lets not try the hasher.
+							continue;
 						}
 						if(hasher != null) {
 							hashes = hasher.getResults();

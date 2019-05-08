@@ -12,6 +12,7 @@ import java.io.OutputStream;
 
 import SevenZip.Compression.LZMA.Decoder;
 import SevenZip.Compression.LZMA.Encoder;
+import SevenZip.ICodeProgress;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -21,7 +22,7 @@ import freenet.support.io.Closer;
 import freenet.support.io.CountedInputStream;
 import freenet.support.io.CountedOutputStream;
 
-public class NewLZMACompressor implements Compressor {
+public class NewLZMACompressor extends AbstractCompressor {
 	
     // Dictionary size 1MB, this is equivalent to lzma -4, it uses 16MB to compress and 2MB to decompress.
     // Next one up is 2MB = -5 = 26M compress, 3M decompress.
@@ -61,7 +62,7 @@ public class NewLZMACompressor implements Compressor {
 	}
 	
 	@Override
-	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException {
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
 		cis = new CountedInputStream(is);
@@ -78,7 +79,17 @@ public class NewLZMACompressor implements Compressor {
         }
         encoder.SetDictionarySize( dictionarySize );
         encoder.WriteCoderProperties(os);
-        encoder.Code( cis, cos, maxReadLength, maxWriteLength, null );
+        encoder.Code(cis, cos, maxReadLength, maxWriteLength, new ICodeProgress() {
+			boolean compressionEffectNotChecked = true;
+
+			@Override
+			public void SetProgress(long processedInSize, long processedOutSize) {
+				if (compressionEffectNotChecked && processedInSize > 8388608) { // 8 MiB
+					checkCompressionEffect(processedInSize, processedOutSize);
+					compressionEffectNotChecked = false;
+				}
+			}
+		});
 		if(cos.written() > maxWriteLength)
 			throw new CompressionOutputSizeException(cos.written());
         cos.flush();

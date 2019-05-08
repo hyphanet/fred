@@ -27,7 +27,7 @@ import freenet.support.io.HeaderStreams;
 ** rather than commons-compress) the compressed streams **DO NOT** have the
 ** standard "BZ" header.
 */
-public class Bzip2Compressor implements Compressor {
+public class Bzip2Compressor extends AbstractCompressor {
 
 	final public static byte[] BZ_HEADER;
 	static {
@@ -58,7 +58,7 @@ public class Bzip2Compressor implements Compressor {
 	}
 	
 	@Override
-	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException {
 		if(maxReadLength <= 0)
 			throw new IllegalArgumentException();
 		BZip2CompressorOutputStream bz2os = null;
@@ -69,6 +69,7 @@ public class Bzip2Compressor implements Compressor {
 			// Bigger input buffer, so can compress all at once.
 			// Won't hurt on I/O either, although most OSs will only return a page at a time.
 			byte[] buffer = new byte[32768];
+			int i = 0;
 			while(true) {
 				int l = (int) Math.min(buffer.length, maxReadLength - read);
 				int x = l == 0 ? -1 : is.read(buffer, 0, buffer.length);
@@ -78,6 +79,9 @@ public class Bzip2Compressor implements Compressor {
 				read += x;
 				if(cos.written() > maxWriteLength)
 					throw new CompressionOutputSizeException();
+
+				if (++i == 256) // 8 MiB
+					checkCompressionEffect(read, cos.written());
 			}
 			bz2os.flush();
 			cos.flush();

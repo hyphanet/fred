@@ -14,7 +14,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 
-public class GzipCompressor implements Compressor {
+public class GzipCompressor extends AbstractCompressor {
 
 	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
@@ -36,7 +36,7 @@ public class GzipCompressor implements Compressor {
 	}
 	
 	@Override
-	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException {
 		if(maxReadLength < 0)
 			throw new IllegalArgumentException();
 		GZIPOutputStream gos = null;
@@ -47,6 +47,7 @@ public class GzipCompressor implements Compressor {
 			// Bigger input buffer, so can compress all at once.
 			// Won't hurt on I/O either, although most OSs will only return a page at a time.
 			byte[] buffer = new byte[32768];
+			int i = 0;
 			while(true) {
 				int l = (int) Math.min(buffer.length, maxReadLength - read);
 				int x = l == 0 ? -1 : is.read(buffer, 0, l);
@@ -56,6 +57,9 @@ public class GzipCompressor implements Compressor {
 				read += x;
 				if(cos.written() > maxWriteLength)
 					throw new CompressionOutputSizeException();
+
+				if (++i == 256) // 8 MiB
+					checkCompressionEffect(read, cos.written());
 			}
 			gos.flush();
 			gos.finish();
