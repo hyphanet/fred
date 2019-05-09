@@ -3,6 +3,7 @@ package freenet.client.async;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.TimeUnit;
 
 import freenet.client.InsertException;
 import freenet.client.InsertException.InsertExceptionMode;
@@ -102,6 +103,7 @@ public class InsertCompressor implements CompressJob {
 			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressorDescriptor, pre1254);
 			boolean first = true;
 			for (final COMPRESSOR_TYPE comp : comps) {
+				long compressionStartTime = System.currentTimeMillis();
 				boolean shouldFreeOnFinally = true;
 				RandomAccessBucket result = null;
 				try {
@@ -166,8 +168,7 @@ public class InsertCompressor implements CompressJob {
 					// minSize is {SSKBlock,CHKBlock}.MAX_COMPRESSED_DATA_LENGTH
 					if(resultSize <= minSize) {
 						if(logMINOR)
-							Logger.minor(this, "New size " + resultSize + " smaller then minSize "
-											   + minSize);
+							Logger.minor(this, "New size " + resultSize + " smaller then minSize " + minSize);
 
 						bestCodec = comp;
 						if(bestCompressedData != null && bestCompressedData != origData)
@@ -200,6 +201,10 @@ public class InsertCompressor implements CompressJob {
 					if(shouldFreeOnFinally && (result != null) && result != origData)
 						result.free();
 				}
+
+				// if one iteration of compression took a lot of time, then we will not try other algorithms
+				if (System.currentTimeMillis() - compressionStartTime > TimeUnit.MINUTES.toMillis(20))
+					break;
 			}
 			
 			final CompressionOutput output = new CompressionOutput(bestCompressedData, bestCodec, hashes);
