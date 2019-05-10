@@ -497,7 +497,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						throw failed;
 					}
 				else
-					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, NodeImpl.PREFER_INSERT_DEFAULT, NodeImpl.IGNORE_LOW_BACKOFF_DEFAULT, req.realTimeFlag);
+					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, NodeImpl.IGNORE_LOW_BACKOFF_DEFAULT, req.realTimeFlag);
 			} catch (LowLevelPutException e) {
 				if(logMINOR) Logger.minor(this, "Caught "+e, e);
 				if(e.code == LowLevelPutException.COLLISION) {

@@ -30,7 +30,6 @@ import freenet.config.SubConfig;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
-import freenet.node.NodeImpl;
 import freenet.node.SecurityLevels;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;

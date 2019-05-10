@@ -6,7 +6,6 @@ package freenet.client.async;
 import java.io.Serializable;
 
 import freenet.node.Node;
-import freenet.node.NodeImpl;
 import freenet.support.BandwidthStatsContainer;
 import freenet.support.UptimeContainer;
 

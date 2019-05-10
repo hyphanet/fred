@@ -42,7 +42,7 @@ import java.security.Provider;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import freenet.node.NodeImpl;
+import freenet.node.Node;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.node.NodeInitException;
@@ -96,7 +96,7 @@ public class SHA256 {
 			return MessageDigest.getInstance("SHA-256", mdProvider);
 		} catch(NoSuchAlgorithmException e2) {
 			//TODO: maybe we should point to a HOWTO for freejvms
-			Logger.error(NodeImpl.class, "Check your JVM settings especially the JCE!" + e2);
+			Logger.error(Node.class, "Check your JVM settings especially the JCE!" + e2);
 			System.err.println("Check your JVM settings especially the JCE!" + e2);
 			e2.printStackTrace();
 		}

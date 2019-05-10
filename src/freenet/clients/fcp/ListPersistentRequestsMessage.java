@@ -7,7 +7,6 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
 import freenet.node.Node;
-import freenet.node.NodeImpl;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
 

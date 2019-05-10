@@ -15,7 +15,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import freenet.node.Node;
-import freenet.node.NodeImpl;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.ClientMetadata;

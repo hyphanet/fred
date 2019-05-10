@@ -4,7 +4,7 @@ import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.InvalidConfigValueException;
 import freenet.node.NodeClientCore;
-import freenet.node.NodeImpl;
+import freenet.node.Node;
 import freenet.pluginmanager.FredPluginBandwidthIndicator;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -27,7 +27,7 @@ public abstract class BandwidthManipulator {
 	 * @param limit To parse limit from. Can include SI or IEC units, but not /s.
 	 * @param setOutputLimit If true, output limit is set. If false, input limit is set.
 	 * @throws freenet.config.InvalidConfigValueException If the value is negative, a number cannot be parsed from it, or the value is too low to be usable.
-	 * @see NodeImpl#minimumBandwidth
+	 * @see Node#minimumBandwidth
 	 */
 	protected void setBandwidthLimit (String limit, boolean setOutputLimit) throws InvalidConfigValueException {
 		String limitType = setOutputLimit ? "outputBandwidthLimit" : "inputBandwidthLimit";
