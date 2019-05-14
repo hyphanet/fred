@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import freenet.client.InsertException;
 import freenet.client.InsertException.InsertExceptionMode;
+import freenet.config.Config;
 import freenet.crypt.HashResult;
 import freenet.crypt.MultiHashInputStream;
 import freenet.keys.CHKBlock;
@@ -48,6 +49,7 @@ public class InsertCompressor implements CompressJob {
 	private static volatile boolean logMINOR;
 	private final long generateHashes;
 	private final boolean pre1254;
+	private final Config config;
 	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
@@ -59,15 +61,17 @@ public class InsertCompressor implements CompressJob {
 		});
 	}
 	
-	public InsertCompressor(SingleFileInserter inserter2, RandomAccessBucket origData2, int minSize2, BucketFactory bf, boolean persistent, long generateHashes, boolean pre1254) {
-		this.inserter = inserter2;
-		this.origData = origData2;
-		this.minSize = minSize2;
+	public InsertCompressor(SingleFileInserter inserter, RandomAccessBucket origData, int minSize, BucketFactory bf,
+							boolean persistent, long generateHashes, boolean pre1254, Config config) {
+		this.inserter = inserter;
+		this.origData = origData;
+		this.minSize = minSize;
 		this.bucketFactory = bf;
 		this.persistent = persistent;
 		this.compressorDescriptor = inserter.ctx.compressorDescriptor;
 		this.generateHashes = generateHashes;
 		this.pre1254 = pre1254;
+		this.config = config;
 	}
 
 	public void init(final ClientContext ctx) {
@@ -140,7 +144,13 @@ public class InsertCompressor implements CompressJob {
 							is = hasher = new MultiHashInputStream(is, generateHashes);
 						}
 						try {
-							comp.compress(is, os, origSize, bestCompressedDataSize);
+							long amountOfDataToCheckCompressionRatio =
+									config.get("node").getLong("amountOfDataToCheckCompressionRatio");
+							int minimumCompressionPercentage =
+									config.get("node").getInt("minimumCompressionPercentage");
+
+							comp.compress(is, os, origSize, bestCompressedDataSize,
+									amountOfDataToCheckCompressionRatio, minimumCompressionPercentage);
 						} catch (CompressionOutputSizeException | CompressionRatioException e) {
 							if(hasher != null) {
 								is.skip(Long.MAX_VALUE);
@@ -250,7 +260,7 @@ public class InsertCompressor implements CompressJob {
 			fail(new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null), context, bestCompressedData);
 		} catch (final IOException e) {
 			fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context, bestCompressedData);
-		}	
+		}
 	}
 
 	private void fail(final InsertException ie, ClientContext context, Bucket bestCompressedData) {
@@ -287,9 +297,9 @@ public class InsertCompressor implements CompressJob {
 	 * @param pre1254
 	 * @return
 	 */
-	public static InsertCompressor start(ClientContext ctx, SingleFileInserter inserter, 
-	        RandomAccessBucket origData, int minSize, BucketFactory bf, boolean persistent, long generateHashes, boolean pre1254) {
-		InsertCompressor compressor = new InsertCompressor(inserter, origData, minSize, bf, persistent, generateHashes, pre1254);
+	public static InsertCompressor start(ClientContext ctx, SingleFileInserter inserter, RandomAccessBucket origData,
+				int minSize, BucketFactory bf, boolean persistent, long generateHashes, boolean pre1254, final Config config) {
+		InsertCompressor compressor = new InsertCompressor(inserter, origData, minSize, bf, persistent, generateHashes, pre1254, config);
 		compressor.init(ctx);
 		return compressor;
 	}

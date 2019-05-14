@@ -62,7 +62,8 @@ public class NewLZMACompressor extends AbstractCompressor {
 	}
 	
 	@Override
-	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException {
+	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength,
+						 final long amountOfDataToCheckCompressionRatio, final int minimumCompressionPercentage) throws IOException {
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
 		cis = new CountedInputStream(is);
@@ -84,8 +85,8 @@ public class NewLZMACompressor extends AbstractCompressor {
 
 			@Override
 			public void SetProgress(long processedInSize, long processedOutSize) {
-				if (compressionEffectNotChecked && processedInSize > 8388608) { // 8 MiB
-					checkCompressionEffect(processedInSize, processedOutSize);
+				if (compressionEffectNotChecked && processedInSize > amountOfDataToCheckCompressionRatio) {
+					checkCompressionEffect(processedInSize, processedOutSize, minimumCompressionPercentage);
 					compressionEffectNotChecked = false;
 				}
 			}

@@ -660,6 +660,8 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean throttleLocalData;
 	private int outputBandwidthLimit;
 	private int inputBandwidthLimit;
+	private long amountOfDataToCheckCompressionRatio;
+	private int minimumCompressionPercentage;
 	boolean inputLimitDefault;
 	final boolean enableARKs;
 	final boolean enablePerNodeFailureTables;
@@ -1599,6 +1601,45 @@ public class Node implements TimeSkewDetectorCallback {
 		} catch (InvalidConfigValueException e) {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, e.getMessage());
 		}
+
+		nodeConfig.register("amountOfDataToCheckCompressionRatio", "8MiB", sortOrder++,
+				true, true, "Node.amountOfDataToCheckCompressionRatio",
+				"Node.amountOfDataToCheckCompressionRatioLong", new LongCallback() {
+			@Override
+			public Long get() {
+				return amountOfDataToCheckCompressionRatio;
+			}
+			@Override
+			public void set(Long amountOfDataToCheckCompressionRatio) {
+				synchronized(Node.this) {
+					Node.this.amountOfDataToCheckCompressionRatio = amountOfDataToCheckCompressionRatio;
+				}
+			}
+		}, true);
+
+		amountOfDataToCheckCompressionRatio = nodeConfig.getLong("amountOfDataToCheckCompressionRatio");
+
+		nodeConfig.register("minimumCompressionPercentage", "10", sortOrder++,
+				true, true, "Node.minimumCompressionPercentage",
+				"Node.minimumCompressionPercentageLong", new IntCallback() {
+			@Override
+			public Integer get() {
+				return minimumCompressionPercentage;
+			}
+			@Override
+			public void set(Integer minimumCompressionPercentage) {
+				synchronized(Node.this) {
+					if (minimumCompressionPercentage < 0 || minimumCompressionPercentage > 100) {
+						Logger.normal(Node.class, "Wrong minimum compression percentage" + minimumCompressionPercentage);
+						return;
+					}
+
+					Node.this.minimumCompressionPercentage = minimumCompressionPercentage;
+				}
+			}
+		}, true);
+
+		 minimumCompressionPercentage = nodeConfig.getInt("minimumCompressionPercentage");
 
 		nodeConfig.register("throttleLocalTraffic", false, sortOrder++, true, false, "Node.throttleLocalTraffic", "Node.throttleLocalTrafficLong", new BooleanCallback() {
 

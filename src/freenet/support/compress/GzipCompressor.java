@@ -36,7 +36,8 @@ public class GzipCompressor extends AbstractCompressor {
 	}
 	
 	@Override
-	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException {
+	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength,
+						 long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage) throws IOException {
 		if(maxReadLength < 0)
 			throw new IllegalArgumentException();
 		GZIPOutputStream gos = null;
@@ -46,7 +47,9 @@ public class GzipCompressor extends AbstractCompressor {
 			long read = 0;
 			// Bigger input buffer, so can compress all at once.
 			// Won't hurt on I/O either, although most OSs will only return a page at a time.
-			byte[] buffer = new byte[32768];
+			int bufferSize = 32768;
+			byte[] buffer = new byte[bufferSize];
+			long iterationToCheckCompressionRatio = amountOfDataToCheckCompressionRatio / bufferSize;
 			int i = 0;
 			while(true) {
 				int l = (int) Math.min(buffer.length, maxReadLength - read);
@@ -58,8 +61,8 @@ public class GzipCompressor extends AbstractCompressor {
 				if(cos.written() > maxWriteLength)
 					throw new CompressionOutputSizeException();
 
-				if (++i == 256) // 8 MiB
-					checkCompressionEffect(read, cos.written());
+				if (++i == iterationToCheckCompressionRatio)
+					checkCompressionEffect(read, cos.written(), minimumCompressionPercentage);
 			}
 			gos.flush();
 			gos.finish();
