@@ -620,10 +620,7 @@ public class SplitFileInserterStorage {
             throw new StorageFormatException("Bad checksum type");
         }
 
-        // TODO: understand what it is
-        // https://github.com/freenet/fred/commit/84e78990755ccd8f46b579371704e45635d414fe#diff-b97d16885afea196ae54570584a79269R583
-        long maxLength = 1024 * 1024;
-        maxLength = Long.MAX_VALUE;
+        long maxLength = Long.MAX_VALUE;
 
         InputStream is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), maxLength);
         dis = new DataInputStream(is);

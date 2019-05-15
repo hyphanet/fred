@@ -774,7 +774,7 @@ public abstract class Fields {
 
 	public static int parseInt(String s, Dimension dimension) throws NumberFormatException {
 		switch (dimension) {
-			case NOT_SIZE:
+			case NOT:
 			case SIZE:
 				return parseInt(s);
 			case DURATION:
@@ -857,7 +857,7 @@ public abstract class Fields {
 
 	public static String intToString(int val, Dimension dimension) {
 		switch (dimension) {
-			case NOT_SIZE:
+			case NOT:
 				return intToString(val, false);
 			case SIZE:
 				return intToString(val, true);

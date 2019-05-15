@@ -1633,7 +1633,7 @@ public class Node implements TimeSkewDetectorCallback {
 					Node.this.minimumCompressionPercentage = minimumCompressionPercentage;
 				}
 			}
-		}, Dimension.NOT_SIZE);
+		}, Dimension.NOT);
 
 		minimumCompressionPercentage = nodeConfig.getInt("minimumCompressionPercentage");
 

@@ -2,5 +2,5 @@ package freenet.config;
 
 public enum Dimension {
 
-    NOT_SIZE, SIZE, DURATION
+    NOT, SIZE, DURATION
 }

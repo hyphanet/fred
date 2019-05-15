@@ -24,7 +24,7 @@ public class IntOption extends Option<Integer> {
 	public IntOption(SubConfig conf, String optionName, String defaultValueString, int sortOrder, boolean expert,
 	        boolean forceWrite, String shortDesc, String longDesc, IntCallback cb, boolean isSize) {
 		this(conf, optionName, defaultValueString, sortOrder, expert, forceWrite, shortDesc, longDesc, cb,
-				isSize ? Dimension.SIZE : Dimension.NOT_SIZE);
+				isSize ? Dimension.SIZE : Dimension.NOT);
 	}
 
 	public IntOption(SubConfig conf, String optionName, Integer defaultValue, int sortOrder, boolean expert,
@@ -42,7 +42,7 @@ public class IntOption extends Option<Integer> {
 	public IntOption(SubConfig conf, String optionName, Integer defaultValue, int sortOrder, boolean expert,
 					 boolean forceWrite, String shortDesc, String longDesc, IntCallback cb, boolean isSize) {
 		this(conf, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb,
-				isSize ? Dimension.SIZE : Dimension.NOT_SIZE);
+				isSize ? Dimension.SIZE : Dimension.NOT);
 	}
 
 	@Override
@@ -67,6 +67,6 @@ public class IntOption extends Option<Integer> {
 
 	@Override
 	protected String toString(Integer val) {
-		return Fields.intToString(val, Dimension.NOT_SIZE);
+		return Fields.intToString(val, Dimension.NOT);
 	}
 }

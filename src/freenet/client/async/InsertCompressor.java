@@ -106,6 +106,8 @@ public class InsertCompressor implements CompressJob {
 		try {
 			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressorDescriptor, pre1254);
 			boolean first = true;
+			long amountOfDataToCheckCompressionRatio = config.get("node").getLong("amountOfDataToCheckCompressionRatio");
+			int minimumCompressionPercentage = config.get("node").getInt("minimumCompressionPercentage");
 			int maxTimeForSingleCompressor = config.get("node").getInt("maxTimeForSingleCompressor");
 			for (final COMPRESSOR_TYPE comp : comps) {
 				long compressionStartTime = System.currentTimeMillis();
@@ -145,11 +147,6 @@ public class InsertCompressor implements CompressJob {
 							is = hasher = new MultiHashInputStream(is, generateHashes);
 						}
 						try {
-							long amountOfDataToCheckCompressionRatio =
-									config.get("node").getLong("amountOfDataToCheckCompressionRatio");
-							int minimumCompressionPercentage =
-									config.get("node").getInt("minimumCompressionPercentage");
-
 							comp.compress(is, os, origSize, bestCompressedDataSize,
 									amountOfDataToCheckCompressionRatio, minimumCompressionPercentage);
 						} catch (CompressionOutputSizeException | CompressionRatioException e) {
