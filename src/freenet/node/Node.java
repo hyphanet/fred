@@ -44,12 +44,7 @@ import freenet.clients.fcp.FCPMessage;
 import freenet.clients.fcp.FeedMessage;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
-import freenet.config.EnumerableOptionCallback;
-import freenet.config.FreenetFilePersistentConfig;
-import freenet.config.InvalidConfigValueException;
-import freenet.config.NodeNeedRestartException;
-import freenet.config.PersistentConfig;
-import freenet.config.SubConfig;
+import freenet.config.*;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.ECDH;
 import freenet.crypt.MasterSecret;
@@ -662,6 +657,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private int inputBandwidthLimit;
 	private long amountOfDataToCheckCompressionRatio;
 	private int minimumCompressionPercentage;
+	private int maxTimeForSingleCompressor;
 	boolean inputLimitDefault;
 	final boolean enableARKs;
 	final boolean enablePerNodeFailureTables;
@@ -1637,9 +1633,26 @@ public class Node implements TimeSkewDetectorCallback {
 					Node.this.minimumCompressionPercentage = minimumCompressionPercentage;
 				}
 			}
-		}, true);
+		}, Dimension.NOT_SIZE);
 
-		 minimumCompressionPercentage = nodeConfig.getInt("minimumCompressionPercentage");
+		minimumCompressionPercentage = nodeConfig.getInt("minimumCompressionPercentage");
+
+		nodeConfig.register("maxTimeForSingleCompressor", "20min", sortOrder++,
+				true, true, "Node.maxTimeForSingleCompressor",
+				"Node.maxTimeForSingleCompressorLong", new IntCallback() {
+			@Override
+			public Integer get() {
+						 return maxTimeForSingleCompressor;
+					 }
+			@Override
+			public void set(Integer maxTimeForSingleCompressor) {
+				synchronized(Node.this) {
+					Node.this.maxTimeForSingleCompressor = maxTimeForSingleCompressor;
+				}
+			}
+		}, Dimension.DURATION);
+
+		maxTimeForSingleCompressor = nodeConfig.getInt("maxTimeForSingleCompressor");
 
 		nodeConfig.register("throttleLocalTraffic", false, sortOrder++, true, false, "Node.throttleLocalTraffic", "Node.throttleLocalTrafficLong", new BooleanCallback() {
 

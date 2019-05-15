@@ -106,6 +106,7 @@ public class InsertCompressor implements CompressJob {
 		try {
 			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressorDescriptor, pre1254);
 			boolean first = true;
+			int maxTimeForSingleCompressor = config.get("node").getInt("maxTimeForSingleCompressor");
 			for (final COMPRESSOR_TYPE comp : comps) {
 				long compressionStartTime = System.currentTimeMillis();
 				boolean shouldFreeOnFinally = true;
@@ -213,7 +214,7 @@ public class InsertCompressor implements CompressJob {
 				}
 
 				// if one iteration of compression took a lot of time, then we will not try other algorithms
-				if (System.currentTimeMillis() - compressionStartTime > TimeUnit.MINUTES.toMillis(20))
+				if (System.currentTimeMillis() - compressionStartTime > maxTimeForSingleCompressor)
 					break;
 			}
 			
