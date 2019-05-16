@@ -1637,7 +1637,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		minimumCompressionPercentage = nodeConfig.getInt("minimumCompressionPercentage");
 
-		nodeConfig.register("maxTimeForSingleCompressor", "20min", sortOrder++,
+		nodeConfig.register("maxTimeForSingleCompressor", "20m", sortOrder++,
 				true, true, "Node.maxTimeForSingleCompressor",
 				"Node.maxTimeForSingleCompressorLong", new IntCallback() {
 			@Override

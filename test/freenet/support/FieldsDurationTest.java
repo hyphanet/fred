@@ -11,12 +11,12 @@ public class FieldsDurationTest extends TestCase {
     /**
      * Duration input with and without various d|h|min|s.
      */
-    private static final String[] durations = { "2d", "3h", "20min", "56s", "7890" };
+    private static final String[] durations = { "2d", "3h", "20m", "56s", "1h30m" };
 
     /**
      * Correct result in millis matched by index with input.
      */
-    private static final int[] durationsInMillis = { 172800000, 10800000, 1200000, 56000, 7890 };
+    private static final int[] durationsInMillis = { 172800000, 10800000, 1200000, 56000, 5400000 };
 
     public void test() {
         assert durations.length == durationsInMillis.length;

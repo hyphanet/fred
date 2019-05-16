@@ -9,7 +9,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
 
 import freenet.config.Dimension;
 import freenet.l10n.NodeL10n;
@@ -356,62 +355,6 @@ public abstract class Fields {
 			dateString = dateString.substring(0, 8);
 
 		return dateString;
-	}
-
-	/**
-	 * Accepted format is {integer}{d|h|min|s}
-	 */
-	public static int durationToMillis(String duration) {
-		if (duration.length() == 0)
-			throw new NumberFormatException("Duration empty");
-
-		if (duration.matches("[0-9]+"))
-			return Integer.parseInt(duration);
-
-		if (duration.contains("s"))
-			return longToInt(TimeUnit.MILLISECONDS.convert(Integer.parseInt(duration.substring(0, duration.length() - 1)),
-					TimeUnit.SECONDS));
-
-		if (duration.contains("min"))
-			return longToInt(TimeUnit.MILLISECONDS.convert(Integer.parseInt(duration.substring(0, duration.length() - 3)),
-					TimeUnit.MINUTES));
-
-		if (duration.contains("h"))
-			return longToInt(TimeUnit.MILLISECONDS.convert(Integer.parseInt(duration.substring(0, duration.length() - 1)),
-					TimeUnit.HOURS));
-
-		if (duration.contains("d"))
-			return longToInt(TimeUnit.MILLISECONDS.convert(Integer.parseInt(duration.substring(0, duration.length() - 1)),
-					TimeUnit.DAYS));
-
-		throw new NumberFormatException("Unknown format");
-	}
-
-	private static int longToInt(long n) {
-		if ((int) n == n)
-			return (int) n;
-		throw new ArithmeticException("integer overflow");
-	}
-
-	public static String millisToDuration(int millis) {
-		if (millis % 1000 == 0) {
-			int s = millis / 1000;
-
-			if (s % 60 == 0) {
-				int min = s / 60;
-
-				if (min % 60 == 0) {
-					int h = min / 60;
-
-					if (h % 24 == 0)
-						return h / 24 + "d";
-					return h + "h";
-				}
-				return min + "min";
-			}
-			return s + "s";
-		}
-		return Integer.toString(millis);
 	}
 
 	public static int compareBytes(byte[] b1, byte[] b2) {
@@ -778,7 +721,10 @@ public abstract class Fields {
 			case SIZE:
 				return parseInt(s);
 			case DURATION:
-				return durationToMillis(s);
+				long durationInMillis = TimeUtil.toMillis(s);
+				if ((int) durationInMillis == durationInMillis)
+					return (int) durationInMillis;
+				throw new ArithmeticException("integer overflow");
 		}
 		throw new AssertionError("Unknown dimension " + dimension);
 	}
@@ -862,7 +808,7 @@ public abstract class Fields {
 			case SIZE:
 				return intToString(val, true);
 			case DURATION:
-				return millisToDuration(val);
+				return TimeUtil.formatTime(val, 6, false);
 		}
 		throw new AssertionError("Unknown dimension " + dimension);
 	}
