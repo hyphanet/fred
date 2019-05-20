@@ -488,22 +488,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.advancedMode", "SimpleToadletServer.advancedModeLong",
 				new FProxyAdvancedModeEnabledCallback(this));
 
-		fproxyConfig.register("fetchKeyBoxAboveBookmarks", false, configItemOrder++,
-				true, false, "SimpleToadletServer.fetchKeyBoxAboveBookmarks",
-				"SimpleToadletServer.fetchKeyBoxAboveBookmarksLong", new BooleanCallback() {
-			@Override
-			public Boolean get() {
-				return fetchKeyBoxAboveBookmarks;
-			}
-
-			@Override
-			public void set(Boolean val) {
-				if(get().equals(val)) return;
-				fetchKeyBoxAboveBookmarks = val;
-			}
-		});
-		fetchKeyBoxAboveBookmarks = fproxyConfig.getBoolean("fetchKeyBoxAboveBookmarks");
-
 		fproxyConfig.register("enableExtendedMethodHandling", false, configItemOrder++, true, false, "SimpleToadletServer.enableExtendedMethodHandling", "SimpleToadletServer.enableExtendedMethodHandlingLong",
 				new BooleanCallback() {
 					@Override
@@ -799,6 +783,22 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			cssOverride = null;
 			pageMaker.setOverride(null);
 		}
+
+		fproxyConfig.register("fetchKeyBoxAboveBookmarks", cssTheme.fetchKeyBoxAboveBookmarks, configItemOrder++,
+				true, false, "SimpleToadletServer.fetchKeyBoxAboveBookmarks",
+				"SimpleToadletServer.fetchKeyBoxAboveBookmarksLong", new BooleanCallback() {
+					@Override
+					public Boolean get() {
+						return fetchKeyBoxAboveBookmarks;
+					}
+
+					@Override
+					public void set(Boolean val) {
+						if(get().equals(val)) return;
+						fetchKeyBoxAboveBookmarks = val;
+					}
+				});
+		fetchKeyBoxAboveBookmarks = fproxyConfig.getBoolean("fetchKeyBoxAboveBookmarks");
 		
 		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");
 		toadlets = new LinkedList<ToadletElement>();
