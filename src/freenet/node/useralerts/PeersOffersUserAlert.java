@@ -3,6 +3,7 @@ package freenet.node.useralerts;
 import freenet.clients.http.ConnectionsToadlet;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.support.HTMLNode;
 
@@ -19,16 +20,13 @@ public class PeersOffersUserAlert extends AbstractUserAlert {
 
     @Override
     public String getTitle() {
-        return "peers-offers/*.fref files";
+        return l10n("title");
     }
 
     @Override
     public HTMLNode getHTMLText() {
         HTMLNode content = new HTMLNode("div");
-        content.addChild("p",
-                "If there are *.fref files in a peers-offers/ folder, ask user whether " +
-                "to connect to them. That would be a step towards introduction bundles: " +
-                "You can manually build an installer which auto-connects to you.");
+        content.addChild("p", l10n("text"));
         content.addChild("p", frefFiles);
         HTMLNode form = content.addChild("form",
                 new String[] {"action", "method"},
@@ -79,5 +77,9 @@ public class PeersOffersUserAlert extends AbstractUserAlert {
     @Override
     public boolean shouldUnregisterOnDismiss() {
         return true;
+    }
+
+    private String l10n(String key) {
+        return NodeL10n.getBase().getString("PeersOffersUserAlert." + key);
     }
 }
