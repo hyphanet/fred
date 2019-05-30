@@ -1,11 +1,15 @@
 package freenet.node.useralerts;
 
-import freenet.clients.http.ConnectionsToadlet;
+import freenet.clients.http.complexhtmlnodes.PeerTrustInputForAddPeerBoxNode;
+import freenet.clients.http.complexhtmlnodes.PeerVisibilityInputForAddPeerBoxNode;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
+
+import java.io.File;
 
 public class PeersOffersUserAlert extends AbstractUserAlert {
 
@@ -13,9 +17,27 @@ public class PeersOffersUserAlert extends AbstractUserAlert {
 
     private final Node node;
 
-    public PeersOffersUserAlert(String frefFiles, Node node) {
+    private PeersOffersUserAlert(Node node, String frefFiles) {
         this.frefFiles = frefFiles;
         this.node = node;
+    }
+
+    public static void createAlert(Node node) {
+        File[] files = node.runDir().file("peers-offers").listFiles();
+        if (files != null && files.length > 0) {
+            StringBuilder frefFiles = new StringBuilder();
+            String prefix = "";
+            for (final File file : files) {
+                if (file.isFile()) {
+                    String filename = file.getName();
+                    if (filename.endsWith(".fref")) {
+                        frefFiles.append(prefix).append(file.getName());
+                        prefix = ", ";
+                    }
+                }
+            }
+            node.clientCore.alerts.register(new PeersOffersUserAlert(node, frefFiles.toString()));
+        }
     }
 
     @Override
@@ -38,8 +60,8 @@ public class PeersOffersUserAlert extends AbstractUserAlert {
                 new String[] {"type", "name", "value"},
                 new String[] {"hidden", "peers-offers-files", "true"});
 
-        ConnectionsToadlet.drawPeerTrustInputForAddPeerBox(form);
-        ConnectionsToadlet.drawPeerVisibilityInputForAddPeerBox(form);
+        form.addChild(new PeerTrustInputForAddPeerBoxNode("DarknetConnectionsToadlet."));
+        form.addChild(new PeerVisibilityInputForAddPeerBoxNode("DarknetConnectionsToadlet."));
 
         form.addChild("input",
                         new String[] {"type", "name", "value"},
@@ -49,15 +71,8 @@ public class PeersOffersUserAlert extends AbstractUserAlert {
     }
 
     @Override
-    public boolean isValid() {
-        if (node.config.get("node").getBoolean("peersOffersDismissed"))
-            valid = false;
-        return valid;
-    }
-
-    @Override
     public String dismissButtonText() {
-        return "No, thanks";
+        return NodeL10n.getBase().getString("Toadlet.no");
     }
 
     @Override
@@ -65,7 +80,9 @@ public class PeersOffersUserAlert extends AbstractUserAlert {
         try {
             node.config.get("node").set("peersOffersDismissed", true);
         } catch (InvalidConfigValueException | NodeNeedRestartException e) {
-            e.printStackTrace();
+            if (Logger.shouldLog(Logger.LogLevel.MINOR, this))
+                Logger.minor(this, e.getLocalizedMessage());
+            valid = false;
         }
     }
 

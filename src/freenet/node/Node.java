@@ -2474,7 +2474,10 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		updateMTU();
 
-		processPeersOffersFrefFiles(nodeConfig, sortOrder++);
+		// peers-offers/*.fref files
+		peersOffersFrefFilesConfiguration(nodeConfig, sortOrder++);
+		if (!peersOffersDismissed && checkPeersOffersFrefFiles())
+			PeersOffersUserAlert.createAlert(this);
 		
 		/* Take care that no configuration options are registered after this point; they will not persist
 		 * between restarts.
@@ -2533,44 +2536,42 @@ public class Node implements TimeSkewDetectorCallback {
 		System.out.println("Node constructor completed");
 	}
 
-	// peers-offers/*.fref files
-	private void processPeersOffersFrefFiles(SubConfig nodeConfig, int configOptionSortOrder) {
+	private void peersOffersFrefFilesConfiguration(SubConfig nodeConfig, int configOptionSortOrder) {
+	 	final Node node = this;
 		nodeConfig.register("peersOffersDismissed", false, configOptionSortOrder, true, true,
 				"Node.peersOffersDismissed", "Node.peersOffersDismissedLong", new BooleanCallback() {
 
 					@Override
 					public Boolean get() {
-						synchronized(Node.this) {
-							return peersOffersDismissed;
-						}
+						return peersOffersDismissed;
 					}
 
 					@Override
 					public void set(Boolean val) {
-						synchronized(Node.this) {
-							peersOffersDismissed = val;
-						}
+						if (val) {
+							for (UserAlert alert : clientCore.alerts.getAlerts())
+								if (alert instanceof PeersOffersUserAlert)
+									clientCore.alerts.unregister(alert);
+						} else
+							PeersOffersUserAlert.createAlert(node);
+						peersOffersDismissed = val;
 					}
 				});
 		peersOffersDismissed = nodeConfig.getBoolean("peersOffersDismissed");
+	}
 
-		if (peersOffersDismissed) return;
-
+	private boolean checkPeersOffersFrefFiles() {
 		File[] files = runDir.file("peers-offers").listFiles();
 		if (files != null && files.length > 0) {
-			StringBuilder frefFiles = new StringBuilder();
-			String prefix = "";
-			for (final File file : files) {
+			for (File file : files) {
 				if (file.isFile()) {
 					String filename = file.getName();
-					if (filename.contains(".") && "fref".equals(filename.substring(filename.lastIndexOf(".") + 1))) {
-						frefFiles.append(prefix).append(file.getName());
-						prefix = ", ";
-					}
+					if (filename.endsWith(".fref"))
+						return true;
 				}
 			}
-			this.clientCore.alerts.register(new PeersOffersUserAlert(frefFiles.toString(), this));
 		}
+		return false;
 	}
 
     /** Delete files from old BDB-index datastore. */

@@ -15,10 +15,11 @@ import java.util.*;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.fcp.AddPeer;
+import freenet.clients.http.complexhtmlnodes.PeerTrustInputForAddPeerBoxNode;
+import freenet.clients.http.complexhtmlnodes.PeerVisibilityInputForAddPeerBoxNode;
 import freenet.clients.http.geoip.IPConverter;
 import freenet.clients.http.geoip.IPConverter.Country;
-import freenet.config.InvalidConfigValueException;
-import freenet.config.NodeNeedRestartException;
+import freenet.config.ConfigException;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.PacketThrottle;
@@ -46,6 +47,7 @@ import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 /** Base class for DarknetConnectionsToadlet and OpennetConnectionsToadlet */
 public abstract class ConnectionsToadlet extends Toadlet {
@@ -613,7 +615,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	/** Where to redirect to if there is an error */
 	protected abstract String defaultRedirectLocation();
 
-	public void handleMethodPOST(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodPOST(URI uri, final HTTPRequest request, ToadletContext ctx)
+			throws ToadletContextClosedException, IOException, RedirectException, ConfigException {
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
 		if(!acceptRefPosts()) {
@@ -645,21 +648,14 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					for (final File file : files) {
 						if (file.isFile()) {
 							String filename = file.getName();
-							if (filename.contains(".") && "fref".equals(filename.substring(filename.lastIndexOf(".") + 1))) {
-								try (Scanner scanner = new Scanner(file)) {
-									peersOffersFilesContent.append(scanner.useDelimiter("\\A").next());
-								}
-							}
+							if (filename.endsWith(".fref"))
+								peersOffersFilesContent.append(FileUtil.readUTF(file));
 						}
 					}
 					reftext = peersOffersFilesContent.toString();
 				}
 
-				try {
-					node.config.get("node").set("peersOffersDismissed", true);
-				} catch (InvalidConfigValueException | NodeNeedRestartException e) {
-					e.printStackTrace();
-				}
+				node.config.get("node").set("peersOffersDismissed", true);
 			}
 			
 			String trustS = request.getPartAsStringFailsafe("trust", 10);
@@ -926,8 +922,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
 		peerAdditionForm.addChild("br");
 		if(!isOpennet) {
-			drawPeerTrustInputForAddPeerBox(peerAdditionForm);
-			drawPeerVisibilityInputForAddPeerBox(peerAdditionForm);
+			peerAdditionForm.addChild(new PeerTrustInputForAddPeerBoxNode(l10n("")));
+			peerAdditionForm.addChild(new PeerVisibilityInputForAddPeerBoxNode(l10n("")));
 		}
 		
 		if(!isOpennet) {
@@ -936,38 +932,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			peerAdditionForm.addChild("br");
 		}
 		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", l10n("add") });
-	}
-
-	public static void drawPeerTrustInputForAddPeerBox(HTMLNode form) {
-		form.addChild("b", l10n("peerTrustTitle"));
-		form.addChild("#", " ");
-		form.addChild("#", l10n("peerTrustIntroduction"));
-		for(FRIEND_TRUST trust : FRIEND_TRUST.valuesBackwards()) { // FIXME reverse order
-			HTMLNode input = form.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "trust", trust.name() });
-			if (trust.isDefaultValue()) {
-				input.addAttribute("checked", "checked");
-			}
-			input.addChild("b", l10n("peerTrust."+trust.name())); // FIXME l10n
-			input.addChild("#", ": ");
-			input.addChild("#", l10n("peerTrustExplain."+trust.name()));
-		}
-		form.addChild("br");
-	}
-
-	public static void drawPeerVisibilityInputForAddPeerBox(HTMLNode form) {
-		form.addChild("b", l10n("peerVisibilityTitle"));
-		form.addChild("#", " ");
-		form.addChild("#", l10n("peerVisibilityIntroduction"));
-		for(FRIEND_VISIBILITY visibility : FRIEND_VISIBILITY.values()) { // FIXME reverse order
-			HTMLNode input = form.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "visibility", visibility.name() });
-			if (visibility.isDefaultValue()) {
-				input.addAttribute("checked", "checked");
-			}
-			input.addChild("b", l10n("peerVisibility."+visibility.name())); // FIXME l10n
-			input.addChild("#", ": ");
-			input.addChild("#", l10n("peerVisibilityExplain."+visibility.name()));
-		}
-		form.addChild("br");
 	}
 
 	protected Comparator<PeerNodeStatus> comparator(String sortBy, boolean reversed) {
