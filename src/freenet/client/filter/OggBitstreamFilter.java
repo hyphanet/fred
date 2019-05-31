@@ -47,11 +47,11 @@ public class OggBitstreamFilter {
 	public static OggBitstreamFilter getBitstreamFilter(OggPage page) {
 		for(int i = 0; i <= VorbisPacketFilter.magicNumber.length; i++) {
 			if(i == VorbisPacketFilter.magicNumber.length) return new VorbisBitstreamFilter(page);
-			if(page.payload[i+1] != VorbisPacketFilter.magicNumber[i]) break;
+			if(page.payload.length < i+1 || page.payload[i+1] != VorbisPacketFilter.magicNumber[i]) break;
 		}
 		for(int i = 0; i <= TheoraPacketFilter.magicNumber.length; i++) {
 			if(i == TheoraPacketFilter.magicNumber.length) return new TheoraBitstreamFilter(page);
-			if(page.payload[i+1] != TheoraPacketFilter.magicNumber[i]) break;
+			if(page.payload.length < i+1 || page.payload[i+1] != TheoraPacketFilter.magicNumber[i]) break;
 		}
 		return null;
 	}
