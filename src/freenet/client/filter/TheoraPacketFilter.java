@@ -8,20 +8,19 @@ import java.io.IOException;
 
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.io.Closer;
 
 public class TheoraPacketFilter implements CodecPacketFilter {
-	enum State {UNINITIALIZED, IDENTIFICATION_FOUND, COMMENT_FOUND};
+	enum State {UNINITIALIZED, IDENTIFICATION_FOUND, COMMENT_FOUND}
 	static final byte[] magicNumber = new byte[] {0x74, 0x68, 0x65, 0x6f, 0x72, 0x61};
-	State currentState = State.UNINITIALIZED;
+	private State currentState = State.UNINITIALIZED;
 
 	public CodecPacket parse(CodecPacket packet) throws IOException {
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		//Assemble the Theora packets
 		DataInputStream input = new DataInputStream(new ByteArrayInputStream(packet.payload));
-		byte[] magicHeader = null;
-			try {
-				switch(currentState) {
+		byte[] magicHeader;
+		try {
+			switch(currentState) {
 				case UNINITIALIZED:
 					//The first header must be an identification header
 
@@ -31,10 +30,9 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 					magicHeader = new byte[1+magicNumber.length];
 					input.readFully(magicHeader);
 					if(logMINOR) Logger.minor(this, "Header type: "+magicHeader[0]);
-					if(magicHeader[0] != -128) return null;
-					for(int i=0; i < magicNumber.length; i++) {
-						if(magicHeader[i+1] != magicNumber[i]) return null;
-					}
+					if(magicHeader[0] != -128) throw new UnknownContentTypeException("First header type: " + magicHeader[0]);
+					checkMagicHeader(magicHeader);
+
 					//Assemble identification header
 					int VMAJ = input.readUnsignedByte();
 					int VMIN = input.readUnsignedByte();
@@ -57,20 +55,34 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 					byte PF = (byte) (unalignedBytes & 0x1800);
 					byte Res = (byte) (unalignedBytes & 0xE000);
 
-					if(VMAJ != 3) return null;
-					if(VMIN != 2) return null;
-					if(VREV > 1) return null;
-					if(FMBW == 0) return null;
-					if(FMBH == 0) return null;
-					if(PICW > FMBW*16) return null;
-					if(PICH > FMBH*16) return null;
-					if(PICX > FMBW*16-PICX) return null;
-					if(PICY > FMBH*16-PICY) return null;
-					if(FRN == 0) return null;
-					if(FRD == 0) return null;
-					if(!(CS == 1 || CS == 2)) return null;
-					if(PF == 1) return null;
-					if(Res != 0) return null;
+					if(VMAJ != 3) throw new UnknownContentTypeException("Header VMAJ: " + VMAJ);
+					if(VMIN != 2) throw new UnknownContentTypeException("Header VMIN: " + VMIN);
+					if(VREV > 1) throw new UnknownContentTypeException("Header VREV: " + VREV);
+					if(FMBW == 0) throw new UnknownContentTypeException("Header FMBW: " + FMBW);
+					if(FMBH == 0) throw new UnknownContentTypeException("Header FMBH: " + FMBH);
+					if(PICW > FMBW*16) throw new UnknownContentTypeException("Header PICW: " + PICW + "; FMBW: " + FMBW);
+					if(PICH > FMBH*16) throw new UnknownContentTypeException("Header PICH: " + PICH + "; FMBH: " + FMBH);
+					if(PICX > FMBW*16-PICX)
+						throw new UnknownContentTypeException("Header PICX: " + PICX + "; FMBW: " + FMBW + "; PICX: " + PICX);
+					if(PICY > FMBH*16-PICY)
+						throw new UnknownContentTypeException("Header PICY: " + PICY + "; FMBH: " + FMBH + "; PICY: " + PICY);
+					if(FRN == 0) throw new UnknownContentTypeException("Header FRN: " + FRN);
+					if(FRD == 0) throw new UnknownContentTypeException("Header FRN: " + FRN);
+
+					/* This is a value from an enumerated list of the available color spaces, given in Table.
+					 * The 'Undefined' value indicates that color space information was not available to the encoder.
+					 * It MAY be specified by the application via an external means.
+					 * If a 'Reserved' value is given, a decoder MAY refuse to decode the stream.
+					 * Value Color Space
+					 *  0     Undefined.
+					 *  1     Rec. 470M.
+					 *  2     Rec. 470BG.
+					 *  3     Reserved.
+					 * https://www.theora.org/doc/Theora.pdf CHAPTER 6. BITSTREAM HEADERS page 44 */
+					if(!(CS == 0 || CS == 1 || CS == 2)) throw new UnknownContentTypeException("Header CS: " + CS);
+
+					if(PF == 1) throw new UnknownContentTypeException("Header PF: " + PF);
+					if(Res != 0) throw new UnknownContentTypeException("Header Res: " + Res);
 
 					currentState = State.IDENTIFICATION_FOUND;
 					break;
@@ -79,9 +91,11 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 					magicHeader = new byte[1+magicNumber.length];
 					input.readFully(magicHeader);
 					Logger.minor(this, "Header type: "+magicHeader[0]);
-					if(magicHeader[0] != -127) return null;
-					for(int i=0; i < magicNumber.length; i++) {
-						if(magicHeader[i+1] != magicNumber[i]) return null;
+					if(magicHeader[0] != -127) throw new DataFilterException("Header type: " + magicHeader[0]);
+					try {
+						checkMagicHeader(magicHeader);
+					} catch (UnknownContentTypeException e) {
+						throw new DataFilterException(e.getType());
 					}
 
 					long vendor_length = decode32bitIntegerFrom8BitChunks(input); //Represents the vendor length
@@ -97,27 +111,22 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 						}
 					}
 
-					DataOutputStream output = null;
-					try {
-						ByteArrayOutputStream data = new ByteArrayOutputStream();
-						output = new DataOutputStream(data);
+					try (ByteArrayOutputStream data = new ByteArrayOutputStream();
+						 DataOutputStream output = new DataOutputStream(data)) {
 						output.write(magicHeader);
 						output.writeInt(0);
 						output.writeInt(0);
 						packet = new CodecPacket(data.toByteArray());
-						output.close();
-					} finally {
-						Closer.close(output);
 					}
 					currentState=State.COMMENT_FOUND;
 					break;
 				case COMMENT_FOUND:
 					break;
-				}
-			} catch(IOException e) {
-				if(logMINOR) Logger.minor(this, "In theora parser caught "+e, e);
-				throw e;
 			}
+		} catch(IOException e) {
+			if(logMINOR) Logger.minor(this, "In theora parser caught "+e, e);
+			throw e;
+		}
 
 		return packet;
 	}
@@ -127,7 +136,13 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 		int LEN1 = input.readUnsignedByte();
 		int LEN2 = input.readUnsignedByte();
 		int LEN3 = input.readUnsignedByte();
-		int LEN = LEN0|(LEN1 << 8)|(LEN2 << 16)|(LEN3 << 24);
-		return LEN;
+		return LEN0|(LEN1 << 8)|(LEN2 << 16)|(LEN3 << 24);
+	}
+
+	private void checkMagicHeader(byte[] typeAndMagicHeader) throws IOException {
+		for(int i=0; i < magicNumber.length; i++) {
+			if(typeAndMagicHeader[i+1] != magicNumber[i])
+				throw new UnknownContentTypeException("Packet header magicNumber[" + i + "]: " + typeAndMagicHeader[i+1]);
+		}
 	}
 }
