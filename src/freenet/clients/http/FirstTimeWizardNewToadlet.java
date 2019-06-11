@@ -100,6 +100,10 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
         private String password = "";
 
+        private String downloadLimitDetected;
+
+        private String uploadLimitDetected;
+
         private Map<String, String> errors = new HashMap<>();
 
         FormModel() {
@@ -107,16 +111,11 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             if (autodetectedDatastoreSize > 0)
                 storageLimit = String.format("%.2f", (float) autodetectedDatastoreSize / DatastoreUtil.oneGiB);
 
-            try {
-                BandwidthLimit detected =
-                        BandwidthManipulator.detectBandwidthLimits(core.node.ipDetector.getBandwidthIndicator());
-
-                //Detected limits reasonable; add half of both as recommended option.
-                downloadLimit = Long.toString(detected.downBytes / 2 / 1024);
-                uploadLimit = Long.toString(detected.upBytes / 2 / 1024);
-            } catch (Exception e) {
-                Logger.normal(this, e.getMessage(), e);
-            }
+            detectBandwidthLimit();
+            if (downloadLimitDetected != null)
+                downloadLimit = downloadLimitDetected;
+            if (uploadLimitDetected != null)
+                uploadLimit = uploadLimitDetected;
         }
 
         FormModel(HTTPRequest request) {
@@ -188,26 +187,46 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             }
         }
 
-        boolean isValid() {
+        private boolean isValid() {
             return errors.isEmpty();
         }
 
-        Map<String, Object> toModel() {
-            return new HashMap<String, Object>() {{
-                put("knowSomeone", knowSomeone.length() > 0 ? "checked" : "");
-                put("connectToStrangers", connectToStrangers.length() > 0 ? "checked" : "");
-                put("haveMonthlyLimit", haveMonthlyLimit.length() > 0 ? "checked" : "");
-                put("downloadLimit", downloadLimit);
-                put("uploadLimit", uploadLimit);
-                put("bandwidthMonthlyLimit", bandwidthMonthlyLimit);
-                put("storageLimit", storageLimit);
-                put("setPassword", setPassword.length() > 0 ? "checked" : "");
+        private void detectBandwidthLimit() {
+            final int KiB = 1024;
+            try {
+                BandwidthLimit detected =
+                        BandwidthManipulator.detectBandwidthLimits(core.node.ipDetector.getBandwidthIndicator());
 
-                put("errors", errors);
-            }};
+                // Detected limits reasonable; add half of both as recommended option.
+                downloadLimitDetected = Long.toString(detected.downBytes / 2 / KiB);
+                uploadLimitDetected = Long.toString(detected.upBytes / 2 / KiB);
+            } catch (Exception e) {
+                Logger.normal(this, e.getMessage(), e);
+            }
         }
 
-        void save() {
+        private Map<String, Object> toModel() {
+            HashMap<String, Object> model = new HashMap<>();
+            model.put("knowSomeone", knowSomeone.length() > 0 ? "checked" : "");
+            model.put("connectToStrangers", connectToStrangers.length() > 0 ? "checked" : "");
+            model.put("haveMonthlyLimit", haveMonthlyLimit.length() > 0 ? "checked" : "");
+            model.put("downloadLimit", downloadLimit);
+            model.put("uploadLimit", uploadLimit);
+            model.put("bandwidthMonthlyLimit", bandwidthMonthlyLimit);
+            model.put("storageLimit", storageLimit);
+            model.put("setPassword", setPassword.length() > 0 ? "checked" : "");
+
+            if (downloadLimitDetected == null || uploadLimitDetected == null)
+                detectBandwidthLimit();
+            model.put("downloadLimitDetected", downloadLimitDetected != null ? downloadLimitDetected : l10n("bandwidthCommonInternetConnectionSpeedsDetectedUnavailable"));
+            model.put("uploadLimitDetected", uploadLimitDetected != null ? uploadLimitDetected : l10n("bandwidthCommonInternetConnectionSpeedsDetectedUnavailable"));
+
+            model.put("errors", errors);
+
+            return model;
+        }
+
+        private void save() {
             if (knowSomeone.isEmpty()) {
                 // Opennet
                 core.node.securityLevels.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.LOW);

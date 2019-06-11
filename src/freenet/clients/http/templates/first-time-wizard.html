@@ -42,14 +42,14 @@
                     <tr>
                         <th>#{bandwidthCommonInternetConnectionSpeedsConnectionType}</th>
                         <th>#{bandwidthCommonInternetConnectionSpeedsDownloadLimit}</th>
-                        <th>#{bandwidthCommonInternetConnectionSpeedsDownloadLimit}</th>
+                        <th>#{bandwidthCommonInternetConnectionSpeedsUploadLimit}</th>
                     </tr>
-                    <!-- TODO: This will be a template loop over a container of common speeds provided by the node. .type, .down, .up per row. -->
                     <tr>
                         <td>#{bandwidthCommonInternetConnectionSpeedsDetected}</td>
-                        <td>1024 #{bandwidthCommonInternetConnectionSpeedsKibps}</td>
-                        <td>100 #{bandwidthCommonInternetConnectionSpeedsKibps}</td>
+                        <td>${downloadLimitDetected} #{bandwidthCommonInternetConnectionSpeedsKibps}</td>
+                        <td>${uploadLimitDetected} #{bandwidthCommonInternetConnectionSpeedsKibps}</td>
                     </tr>
+                    <!-- TODO: This will be a template loop over a container of common speeds provided by the node. .type, .down, .up per row. -->
                     <tr>
                         <td>#{bandwidthCommonInternetConnectionSpeeds4Mbit}</td>
                         <td>256 #{bandwidthCommonInternetConnectionSpeedsKibps}
