@@ -76,7 +76,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 
 	// Socket / Binding
-	private final int port;
+	private int port;
 	private String bindTo;
 	private String allowedHosts;
 	private NetworkInterface networkInterface;
@@ -199,6 +199,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		@Override
 		public void set(Integer newPort) throws NodeNeedRestartException {
 			if(port != newPort) {
+				port = newPort;
 				throw new NodeNeedRestartException("Port cannot change on the fly");
 			}
 		}
