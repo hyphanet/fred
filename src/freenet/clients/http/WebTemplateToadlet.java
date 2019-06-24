@@ -5,7 +5,6 @@ import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -26,7 +25,7 @@ import java.util.regex.Pattern;
  */
 abstract class WebTemplateToadlet extends Toadlet {
 
-    private static final String ROOT_PATH = "templates" + File.separator;
+    private static final String ROOT_PATH = "templates/";
 
     WebTemplateToadlet(HighLevelSimpleClient client) {
         super(client);
