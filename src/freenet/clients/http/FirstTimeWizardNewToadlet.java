@@ -6,6 +6,7 @@ import freenet.clients.http.wizardsteps.BandwidthManipulator;
 import freenet.clients.http.wizardsteps.DATASTORE_SIZE;
 import freenet.config.Config;
 import freenet.config.ConfigException;
+import freenet.config.Option;
 import freenet.l10n.NodeL10n;
 import freenet.node.*;
 import freenet.support.Fields;
@@ -94,7 +95,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
         private String bandwidthMonthlyLimit = "50";
 
-        private String storageLimit = "1";
+        private String storageLimit;
 
         private String setPassword = "";
 
@@ -107,9 +108,17 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
         private Map<String, String> errors = new HashMap<>();
 
         FormModel() {
-            long autodetectedDatastoreSize = DatastoreUtil.autodetectDatastoreSize(core, config);
-            if (autodetectedDatastoreSize > 0)
-                storageLimit = String.format("%.2f", (float) autodetectedDatastoreSize / DatastoreUtil.oneGiB);
+            float storage = 1;
+            @SuppressWarnings("unchecked")
+            Option<Long> sizeOption = (Option<Long>) config.get("node").getOption("storeSize");
+            if(!sizeOption.isDefault())
+                storage = (float) sizeOption.getValue() / DatastoreUtil.oneGiB;
+            else {
+                long autodetectedDatastoreSize = DatastoreUtil.autodetectDatastoreSize(core, config);
+                if (autodetectedDatastoreSize > 0)
+                    storage = (float) autodetectedDatastoreSize / DatastoreUtil.oneGiB;
+            }
+            storageLimit = String.format("%.2f", storage);
 
             detectBandwidthLimit();
             if (downloadLimitDetected != null)
@@ -133,7 +142,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             // validate
             if (haveMonthlyLimit.isEmpty()) {
                 try {
-                    long downloadLimit = Fields.parseLong(this.downloadLimit + "KiB");
+                    long downloadLimit = this.downloadLimit.isEmpty() ? 0 : Fields.parseLong(this.downloadLimit + "KiB");
                     if (downloadLimit < Node.getMinimumBandwidth())
                         errors.put("downloadLimitError",
                                 FirstTimeWizardNewToadlet.l10n("valid.downloadLimit", Integer.toString(Node.getMinimumBandwidth() / 1024)));
@@ -143,7 +152,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
                 }
 
                 try {
-                    long uploadLimit = Fields.parseLong(this.uploadLimit + "KiB");
+                    long uploadLimit = this.uploadLimit.isEmpty() ? 0 : Fields.parseLong(this.uploadLimit + "KiB");
                     if (uploadLimit < Node.getMinimumBandwidth())
                         errors.put("uploadLimitError",
                                 FirstTimeWizardNewToadlet.l10n("valid.uploadLimit", Integer.toString(Node.getMinimumBandwidth() / 1024)));
@@ -165,7 +174,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
             try {
                 long maxDatastoreSize;
-                long storageLimit = Fields.parseLong(this.storageLimit + "GiB");
+                long storageLimit = this.storageLimit.isEmpty() ? 0 : Fields.parseLong(this.storageLimit + "GiB");
                 if (storageLimit < Node.MIN_STORE_SIZE)
                     errors.put("storageLimitError", NodeL10n.getBase().getString("Node.invalidMinStoreSize"));
                 else if (storageLimit > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize()))
