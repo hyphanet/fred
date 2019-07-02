@@ -111,8 +111,14 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             float storage = 1;
             @SuppressWarnings("unchecked")
             Option<Long> sizeOption = (Option<Long>) config.get("node").getOption("storeSize");
-            if(!sizeOption.isDefault())
-                storage = (float) sizeOption.getValue() / DatastoreUtil.oneGiB;
+            if(!sizeOption.isDefault()) {
+                @SuppressWarnings("unchecked")
+                Option<Long> clientCacheSizeOption = (Option<Long>) config.get("node").getOption("clientCacheSize");
+                @SuppressWarnings("unchecked")
+                Option<Long> slashdotCacheSizeOption = (Option<Long>) config.get("node").getOption("slashdotCacheSize");
+                long totalSize = sizeOption.getValue() + clientCacheSizeOption.getValue() + slashdotCacheSizeOption.getValue();
+                storage = (float) totalSize / DatastoreUtil.oneGiB;
+            }
             else {
                 long autodetectedDatastoreSize = DatastoreUtil.autodetectDatastoreSize(core, config);
                 if (autodetectedDatastoreSize > 0)
@@ -175,8 +181,8 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             try {
                 long maxDatastoreSize;
                 long storageLimit = this.storageLimit.isEmpty() ? 0 : Fields.parseLong(this.storageLimit + "GiB");
-                if (storageLimit < Node.MIN_STORE_SIZE)
-                    errors.put("storageLimitError", NodeL10n.getBase().getString("Node.invalidMinStoreSize"));
+                if (storageLimit < Node.MIN_STORE_SIZE * 5 / 4) // min store size + 10% for client cache + 10% for slashdot cache
+                    errors.put("storageLimitError", NodeL10n.getBase().getString("Node.invalidMinStoreSizeWithCaches"));
                 else if (storageLimit > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize()))
                     errors.put("storageLimitError",
                             NodeL10n.getBase().getString("Node.invalidMaxStoreSize",
