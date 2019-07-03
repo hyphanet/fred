@@ -113,7 +113,41 @@ public class BitInputStream implements Closeable {
             b[i] = (byte) readInt(8);
     }
 
-    public int available() throws IOException {
-        return in.available();
+    /**
+     * @param n the number of bits to be skipped.
+     * @return the actual number of bits skipped.
+     */
+    public long skip(long n) throws IOException {
+        if (n <= 0) return 0;
+
+        long remaining = n;
+
+        if (bitsLeft > 0) {
+            if (bitsLeft > remaining) {
+                readInt((int) remaining);
+                return remaining;
+            } else {
+                remaining -= bitsLeft;
+                readInt(bitsLeft);
+            }
+        }
+
+        while (remaining >= 8) {
+            if (in.read() == -1)
+                return n - remaining;
+
+            remaining -= 8;
+        }
+
+        while (remaining > 0) {
+            try {
+                readBit();
+                remaining--;
+            } catch (EOFException ignored) {
+                return n - remaining;
+            }
+        }
+
+        return remaining;
     }
 }

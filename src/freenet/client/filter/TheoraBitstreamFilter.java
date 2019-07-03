@@ -8,7 +8,6 @@ import java.util.List;
 
 public class TheoraBitstreamFilter extends OggBitstreamFilter {
 	private final TheoraPacketFilter parser;
-	private boolean logMINOR = Logger.shouldLog(Logger.LogLevel.MINOR, this);
 
 	protected TheoraBitstreamFilter(OggPage page) {
 		super(page);
@@ -24,8 +23,7 @@ public class TheoraBitstreamFilter extends OggBitstreamFilter {
 			try {
 				parsedPackets.add(parser.parse(packet));
 			} catch (DataFilterException e) { // skip packet
-				if (logMINOR)
-					Logger.minor(this, e.getLocalizedMessage());
+				Logger.minor(this, e.getLocalizedMessage());
 			}
 		}
 		page = new OggPage(page, parsedPackets);

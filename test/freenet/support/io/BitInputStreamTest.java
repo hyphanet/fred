@@ -132,4 +132,16 @@ public class BitInputStreamTest {
             in.readInt(-1);
         }
     }
+
+    @Test
+    public void skipTest() throws IOException {
+        try (BitInputStream in = new BitInputStream(new ByteArrayInputStream(new byte[10]))) {
+            assertEquals(0, in.readBit());
+            in.skip(75);
+            in.skip(3);
+            assertEquals(0, in.readBit());
+            assertEquals(0, in.skip(8));
+            assertEquals(0, in.skip(4));
+        }
+    }
 }
