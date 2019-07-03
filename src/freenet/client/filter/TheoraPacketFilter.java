@@ -2,6 +2,7 @@ package freenet.client.filter;
 
 import java.io.*;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import freenet.support.Logger;
@@ -108,7 +109,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 		int vendorLength = input.readInt(32, ByteOrder.LITTLE_ENDIAN);
 		byte[] vendor = new byte[vendorLength];
 		input.readFully(vendor);
-		Logger.minor(this, "Vendor string is: " + new String(vendor));
+		Logger.minor(this, "Vendor string is: " + new String(vendor, StandardCharsets.UTF_8));
 		int numberOfComments = input.readInt(32, ByteOrder.LITTLE_ENDIAN);
 		for (long i = 0; i < numberOfComments; i++) {
 			int commentLength = input.readInt(32, ByteOrder.LITTLE_ENDIAN);
