@@ -31,7 +31,7 @@ public class BitInputStreamTest {
 
     @Test
     public void readFullyTest() throws IOException {
-        byte[] ba = { 5, 4, 3, 2, 1 };
+        byte[] ba = {5, 4, 3, 2, 1};
         try (BitInputStream in = new BitInputStream(new ByteArrayInputStream(ba))) {
             byte[] a = new byte[3];
             in.readFully(a);
@@ -111,7 +111,7 @@ public class BitInputStreamTest {
 
     @Test(expected = EOFException.class)
     public void endOfStreamTest() throws IOException {
-        byte[] ba = { 0 };
+        byte[] ba = {0};
         try (BitInputStream in = new BitInputStream(new ByteArrayInputStream(ba))) {
             in.readInt(9);
         }
@@ -119,7 +119,7 @@ public class BitInputStreamTest {
 
     @Test(expected = EOFException.class)
     public void readFully_endOfStreamTest() throws IOException {
-        byte[] ba = { 0 };
+        byte[] ba = {0};
         try (BitInputStream in = new BitInputStream(new ByteArrayInputStream(ba))) {
             in.readFully(new byte[2]);
         }
@@ -127,7 +127,7 @@ public class BitInputStreamTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void readNegativeNumberOfBitsTest() throws IOException {
-        byte[] ba = { 0 };
+        byte[] ba = {0};
         try (BitInputStream in = new BitInputStream(new ByteArrayInputStream(ba))) {
             in.readInt(-1);
         }
