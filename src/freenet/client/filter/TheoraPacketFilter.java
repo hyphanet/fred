@@ -106,16 +106,30 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 		input.readFully(magicHeader);
 		checkMagicHeader(magicHeader, (byte) 0x81); // -127
 
+		final int MAX_COMMENT_LENGTH = 256;
+		int skipBytes = 0;
 		int vendorLength = input.readInt(32, ByteOrder.LITTLE_ENDIAN);
+		if (vendorLength > MAX_COMMENT_LENGTH) {
+			skipBytes = vendorLength - MAX_COMMENT_LENGTH;
+			vendorLength = MAX_COMMENT_LENGTH;
+		}
 		byte[] vendor = new byte[vendorLength];
 		input.readFully(vendor);
+		if (skipBytes > 0)
+			input.skip(skipBytes * 8);
 		Logger.minor(this, "Vendor string is: " + new String(vendor, StandardCharsets.UTF_8));
 		int numberOfComments = input.readInt(32, ByteOrder.LITTLE_ENDIAN);
 		for (long i = 0; i < numberOfComments; i++) {
 			int commentLength = input.readInt(32, ByteOrder.LITTLE_ENDIAN);
+			if (commentLength > MAX_COMMENT_LENGTH) {
+				skipBytes = vendorLength - MAX_COMMENT_LENGTH;
+				commentLength = MAX_COMMENT_LENGTH;
+			}
 			byte[] comment = new byte[commentLength];
 			input.readFully(comment);
-			Logger.minor(this, "Comment string is: " + new String(comment));
+			if (skipBytes > 0)
+				input.skip(skipBytes * 8);
+			Logger.minor(this, "Comment string is: " + new String(comment, StandardCharsets.UTF_8));
 		}
 
 		try {
