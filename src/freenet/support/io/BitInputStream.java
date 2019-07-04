@@ -32,8 +32,9 @@ public class BitInputStream implements Closeable {
 
     public int readBit() throws IOException {
         if (bitsLeft == 0) {
-            if ((bitsBuffer = in.read()) < 0)
+            if ((bitsBuffer = in.read()) < 0) {
                 throw new EOFException();
+            }
             bitsLeft = 8;
         }
         int bitIdx = (streamBitOrder == ByteOrder.BIG_ENDIAN ? --bitsLeft : 8 - bitsLeft--);
@@ -45,58 +46,72 @@ public class BitInputStream implements Closeable {
     }
 
     public int readInt(int length, ByteOrder bitOrder) throws IOException {
-        if (length == 0) return 0;
+        if (length == 0) {
+            return 0;
+        }
 
-        if (length < 0)
+        if (length < 0) {
             throw new IllegalArgumentException("Invalid length: " + length + " (must be positive)");
+        }
 
-        if (bitsLeft == 0)
+        if (bitsLeft == 0) {
             switch (length) {
                 case 8: {
                     int b;
-                    if ((b = in.read()) < 0)
+                    if ((b = in.read()) < 0) {
                         throw new EOFException();
+                    }
                     return b;
                 }
                 case 16: {
                     int b, b2;
-                    if (((b = in.read()) | (b2 = in.read())) < 0)
+                    if (((b = in.read()) | (b2 = in.read())) < 0) {
                         throw new EOFException();
-                    if (bitOrder == ByteOrder.BIG_ENDIAN)
+                    }
+                    if (bitOrder == ByteOrder.BIG_ENDIAN) {
                         return b << 8 | b2;
-                    else
+                    } else {
                         return b | b2 << 8;
+                    }
                 }
                 case 24: {
                     int b, b2, b3;
-                    if (((b = in.read()) | (b2 = in.read()) | (b3 = in.read())) < 0)
+                    if (((b = in.read()) | (b2 = in.read()) | (b3 = in.read())) < 0) {
                         throw new EOFException();
-                    if (bitOrder == ByteOrder.BIG_ENDIAN)
+                    }
+                    if (bitOrder == ByteOrder.BIG_ENDIAN) {
                         return b << 16 | b2 << 8 | b3;
-                    else
+                    } else {
                         return b | b2 << 8 | b3 << 16;
+                    }
                 }
                 case 32: {
                     int b, b2, b3, b4;
-                    if (((b = in.read()) | (b2 = in.read()) | (b3 = in.read()) | (b4 = in.read())) < 0)
+                    if (((b = in.read()) | (b2 = in.read()) | (b3 = in.read()) | (b4 = in.read())) < 0) {
                         throw new EOFException();
-                    if (bitOrder == ByteOrder.BIG_ENDIAN)
+                    }
+                    if (bitOrder == ByteOrder.BIG_ENDIAN) {
                         return b << 24 | b2 << 16 | b3 << 8 | b4;
-                    else
+                    } else {
                         return b | b2 << 8 | b3 << 16 | b4 << 24;
+                    }
                 }
             }
+        }
 
         int value = 0;
-        if (bitOrder == ByteOrder.BIG_ENDIAN)
-            for (int i = 0; i < length; i++)
+        if (bitOrder == ByteOrder.BIG_ENDIAN) {
+            for (int i = 0; i < length; i++) {
                 value = value << 1 | readBit();
-        else {
-            if (length % 8 == 0)
+            }
+        } else {
+            if (length % 8 == 0) {
                 throw new UnsupportedOperationException("Not implemented, yet");
+            }
 
-            for (int i = 0; i < length; i++)
+            for (int i = 0; i < length; i++) {
                 value |= readBit() << i;
+            }
         }
 
         return value;
@@ -104,13 +119,15 @@ public class BitInputStream implements Closeable {
 
     public void readFully(byte[] b) throws IOException {
         if (bitsLeft == 0) {
-            if (in.read(b) < b.length)
+            if (in.read(b) < b.length) {
                 throw new EOFException();
+            }
             return;
         }
 
-        for (int i = 0; i < b.length; i++)
+        for (int i = 0; i < b.length; i++) {
             b[i] = (byte) readInt(8);
+        }
     }
 
     /**
@@ -118,7 +135,9 @@ public class BitInputStream implements Closeable {
      * @return the actual number of bits skipped.
      */
     public long skip(long n) throws IOException {
-        if (n <= 0) return 0;
+        if (n <= 0) {
+            return 0;
+        }
 
         long remaining = n;
 
@@ -133,8 +152,9 @@ public class BitInputStream implements Closeable {
         }
 
         while (remaining >= 8) {
-            if (in.read() == -1)
+            if (in.read() == -1) {
                 return n - remaining;
+            }
 
             remaining -= 8;
         }

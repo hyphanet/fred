@@ -94,8 +94,9 @@ public class BitInputStreamTest {
         int[] nmbrs = new int[n];
         int nBits = in.readInt(4);
         System.out.println("nBits: " + nBits + " = 0b" + BigInteger.valueOf(nBits).toString(2));
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < n; i++) {
             nmbrs[i] = in.readInt(nBits);
+        }
         return nmbrs;
     }
 
