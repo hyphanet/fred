@@ -1,8 +1,6 @@
 package freenet.client.filter;
 
 import java.io.*;
-import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import freenet.support.Logger;
@@ -146,40 +144,6 @@ public class TheoraPacketFilter implements CodecPacketFilter {
         input.readFully(magicHeader);
         if (!Arrays.equals(magicNumber, magicHeader)) {
             throw new UnknownContentTypeException("Packet magicHeader: " + Arrays.toString(magicHeader) + "; expected: " + Arrays.toString(magicNumber));
-        }
-
-        final int MAX_COMMENT_LENGTH = 256;
-        int skipBytes = 0;
-        int vendorLength = input.readInt(32, ByteOrder.LITTLE_ENDIAN);
-        if (vendorLength > MAX_COMMENT_LENGTH) {
-            skipBytes = vendorLength - MAX_COMMENT_LENGTH;
-            vendorLength = MAX_COMMENT_LENGTH;
-        }
-        byte[] vendor = new byte[vendorLength];
-        input.readFully(vendor);
-        if (skipBytes > 0) {
-            input.skip(skipBytes * 8);
-        }
-        Logger.minor(this, "Vendor string is: " + new String(vendor, StandardCharsets.UTF_8));
-        int numberOfComments = input.readInt(32, ByteOrder.LITTLE_ENDIAN);
-        for (long i = 0; i < numberOfComments; i++) {
-            int commentLength = input.readInt(32, ByteOrder.LITTLE_ENDIAN);
-            if (commentLength > MAX_COMMENT_LENGTH) {
-                skipBytes = vendorLength - MAX_COMMENT_LENGTH;
-                commentLength = MAX_COMMENT_LENGTH;
-            }
-            byte[] comment = new byte[commentLength];
-            input.readFully(comment);
-            if (skipBytes > 0) {
-                input.skip(skipBytes * 8);
-            }
-            Logger.minor(this, "Comment string is: " + new String(comment, StandardCharsets.UTF_8));
-        }
-
-        try {
-            input.readBit();
-            Logger.minor(this, "COMMENT_HEADER contains redundant bits");
-        } catch (EOFException ignored) { // should be eof
         }
 
         // skip vendor string and comments
