@@ -48,9 +48,15 @@ public class TheoraPacketFilter implements CodecPacketFilter {
         Logger.minor(this, "IDENTIFICATION_HEADER");
 
         // The header packets begin with the header type and the magic number. Validate both.
-        byte[] magicHeader = new byte[1 + magicNumber.length];
+        int headerType = input.readInt(8);
+        if (headerType != 0x80) {
+            throw new UnknownContentTypeException("Header type: " + headerType + "; expected: -128");
+        }
+        byte[] magicHeader = new byte[magicNumber.length];
         input.readFully(magicHeader);
-        checkMagicHeader(magicHeader, (byte) 0x80); // -128
+        if (!Arrays.equals(magicNumber, magicHeader)) {
+            throw new UnknownContentTypeException("Packet magicHeader: " + Arrays.toString(magicHeader) + "; expected: " + Arrays.toString(magicNumber));
+        }
 
         int VMAJ = input.readInt(8);
         if (VMAJ != 3) {
@@ -132,9 +138,15 @@ public class TheoraPacketFilter implements CodecPacketFilter {
     private CodecPacket parseCommentHeader(BitInputStream input) throws IOException {
         Logger.minor(this, "COMMENT_HEADER");
 
-        byte[] magicHeader = new byte[1 + magicNumber.length];
+        int headerType = input.readInt(8);
+        if (headerType != 0x81) {
+            throw new UnknownContentTypeException("Header type: " + headerType + "; expected: -127");
+        }
+        byte[] magicHeader = new byte[magicNumber.length];
         input.readFully(magicHeader);
-        checkMagicHeader(magicHeader, (byte) 0x81); // -127
+        if (!Arrays.equals(magicNumber, magicHeader)) {
+            throw new UnknownContentTypeException("Packet magicHeader: " + Arrays.toString(magicHeader) + "; expected: " + Arrays.toString(magicNumber));
+        }
 
         final int MAX_COMMENT_LENGTH = 256;
         int skipBytes = 0;
@@ -186,9 +198,15 @@ public class TheoraPacketFilter implements CodecPacketFilter {
     private void parseSetupHeader(BitInputStream input) throws IOException {
         Logger.minor(this, "SETUP_HEADER");
 
-        byte[] magicHeader = new byte[1 + magicNumber.length];
+        int headerType = input.readInt(8);
+        if (headerType != 0x82) {
+            throw new UnknownContentTypeException("Header type: " + headerType + "; expected: -126");
+        }
+        byte[] magicHeader = new byte[magicNumber.length];
         input.readFully(magicHeader);
-        checkMagicHeader(magicHeader, (byte) 0x82); // -126
+        if (!Arrays.equals(magicNumber, magicHeader)) {
+            throw new UnknownContentTypeException("Packet magicHeader: " + Arrays.toString(magicHeader) + "; expected: " + Arrays.toString(magicNumber));
+        }
 
         int NBITS = input.readInt(3);
         for (int i = 0; i < 64; i++) {
@@ -294,18 +312,6 @@ public class TheoraPacketFilter implements CodecPacketFilter {
         }
 
         expectedPacket = Packet.FRAME;
-    }
-
-    private void checkMagicHeader(byte[] typeAndMagicHeader, byte expectedType) throws IOException {
-        if (typeAndMagicHeader[0] != expectedType) {
-            throw new UnknownContentTypeException("Header type: " + typeAndMagicHeader[0] + ", expected: " + expectedType);
-        }
-
-        for (int i = 0; i < magicNumber.length; i++) {
-            if (typeAndMagicHeader[i + 1] != magicNumber[i]) {
-                throw new UnknownContentTypeException("Packet header magicNumber[" + i + "]: " + typeAndMagicHeader[i + 1]);
-            }
-        }
     }
 
     // The minimum number of bits required to store a positive integer `a` in
