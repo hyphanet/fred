@@ -165,7 +165,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(mimeType.compareTo("application/xhtml+xml")==0){
 				mimeType="text/html";
 			}
-			if(horribleEvilHack(data) && !(mimeType.startsWith("application/rss+xml"))) {
+			if(isSniffedAsFeed(data) && !(mimeType.startsWith("application/rss+xml"))) {
 				PageNode page = context.getPageMaker().getPageNode(l10n("dangerousRSSTitle"), context);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
@@ -412,7 +412,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	 * This is a horrible evil hack; we shouldn't be doing blacklisting, we should be doing whitelisting.
 	 * REDFLAG Expect future security issues!
 	 * @throws IOException */
-	private static boolean horribleEvilHack(Bucket data) throws IOException {
+	private static boolean isSniffedAsFeed(Bucket data) throws IOException {
 		DataInputStream is = null;
 		try {
 			int sz = (int) Math.min(data.size(), 512);
@@ -422,46 +422,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			byte[] buf = new byte[sz];
 			// FIXME Fortunately firefox doesn't detect RSS in UTF16 etc ... yet
 			is.readFully(buf);
-			/**
-		 * Look for any of the following strings:
-		 * <rss
-		 * &lt;feed
-		 * &lt;rdf:RDF
-		 *
-		 * If they start at the beginning of the file, or are preceded by one or more &lt;! or &lt;? tags,
-		 * then firefox will read it as RSS. In which case we must force it to be downloaded to disk.
-		 */
-			if(checkForString(buf, "<rss"))
-				return true;
-			if(checkForString(buf, "<feed"))
-				return true;
-			if(checkForString(buf, "<rdf:RDF"))
-				return true;
+			return RssSniffer.isSniffedAsFeed(buf);
 		}
 		finally {
 			Closer.close(is);
 		}
-		return false;
-	}
-
-	/** Scan for a US-ASCII (byte = char) string within a given buffer of possibly binary data */
-	private static boolean checkForString(byte[] buf, String find) {
-		int offset = 0;
-		int bufProgress = 0;
-		while(offset < buf.length) {
-			byte b = buf[offset];
-			if(b == find.charAt(bufProgress)) {
-				bufProgress++;
-				if(bufProgress == find.length()) return true;
-				offset++;
-			} else {
-				if(bufProgress == 0)
-					offset++; // Try the next byte.
-				else
-					bufProgress = 0; // Reset to the first char of the keyword.
-			}
-		}
-		return false;
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest httprequest, ToadletContext ctx)
