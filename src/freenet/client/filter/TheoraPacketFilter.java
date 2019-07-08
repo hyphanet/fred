@@ -264,13 +264,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
             return 0;
         }
 
-        int n = 0;
-        while (a > 0) {
-            a >>= 1;
-            n++;
-        }
-
-        return n;
+        return 32 - Integer.numberOfLeadingZeros(a);
     }
 
     private int[] readHuffmanTable(int HBITSLength, int[] HTS, BitInputStream input) throws IOException {
