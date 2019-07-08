@@ -22,14 +22,21 @@ public class TheoraPacketFilter implements CodecPacketFilter {
         try {
             switch (expectedPacket) {
                 case IDENTIFICATION_HEADER: // must be first
-                    parseIdentificationHeader(input);
+                    Logger.minor(this, "IDENTIFICATION_HEADER");
+                    verifyIdentificationHeader(input);
+                    expectedPacket = Packet.COMMENT_HEADER;
                     break;
 
                 case COMMENT_HEADER: // must be second
-                    return parseCommentHeader(input);
+                    Logger.minor(this, "COMMENT_HEADER");
+                    verifyTypeAndHeader(input, 0x81); // expected -127
+                    expectedPacket = Packet.SETUP_HEADER;
+                    return constructCommentHeaderWithEmptyVendorStringAndComments();
 
                 case SETUP_HEADER: // must be third
-                    parseSetupHeader(input);
+                    Logger.minor(this, "SETUP_HEADER");
+                    verifySetupHeader(input);
+                    expectedPacket = Packet.FRAME;
                     break;
 
                 case FRAME:
@@ -42,9 +49,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
         return packet;
     }
 
-    private void parseIdentificationHeader(BitInputStream input) throws IOException {
-        Logger.minor(this, "IDENTIFICATION_HEADER");
-
+    private void verifyIdentificationHeader(BitInputStream input) throws IOException {
         verifyTypeAndHeader(input, 0x80); // expected -128
 
         int VMAJ = input.readInt(8);
@@ -120,32 +125,9 @@ public class TheoraPacketFilter implements CodecPacketFilter {
         if (Res != 0) {
             throw new UnknownContentTypeException("Header Res: " + Res);
         }
-
-        expectedPacket = Packet.COMMENT_HEADER;
     }
 
-    private CodecPacket parseCommentHeader(BitInputStream input) throws IOException {
-        Logger.minor(this, "COMMENT_HEADER");
-
-        verifyTypeAndHeader(input, 0x81); // expected -127
-
-        // skip vendor string and comments
-        try (ByteArrayOutputStream data = new ByteArrayOutputStream();
-             DataOutputStream output = new DataOutputStream(data)) {
-            output.write(0x81);
-            output.write(magicNumber);
-            output.writeInt(0);
-            output.writeInt(0);
-
-            expectedPacket = Packet.SETUP_HEADER;
-
-            return new CodecPacket(data.toByteArray());
-        }
-    }
-
-    private void parseSetupHeader(BitInputStream input) throws IOException {
-        Logger.minor(this, "SETUP_HEADER");
-
+    private void verifySetupHeader(BitInputStream input) throws IOException {
         verifyTypeAndHeader(input, 0x82); // expected -126
 
         int NBITS = input.readInt(3);
@@ -250,8 +232,6 @@ public class TheoraPacketFilter implements CodecPacketFilter {
             Logger.minor(this, "SETUP_HEADER contains redundant bits");
         } catch (EOFException ignored) { // should be eof
         }
-
-        expectedPacket = Packet.FRAME;
     }
 
     // The header packets begin with the header type and the magic number. Validate both.
@@ -267,6 +247,14 @@ public class TheoraPacketFilter implements CodecPacketFilter {
             throw new UnknownContentTypeException(
                     "Packet magicHeader: " + Arrays.toString(magicHeader) + "; expected: " + Arrays.toString(magicNumber));
         }
+    }
+
+    private CodecPacket constructCommentHeaderWithEmptyVendorStringAndComments() {
+        // headerType - magicNumber - vendorStringLength (4 bytes, value 0) - userCommentsNumber (4 bytes, value 0)
+        byte[] emptyCommentHeader = new byte[magicNumber.length + 9];
+        emptyCommentHeader[0] = (byte) 0x81;
+        System.arraycopy(magicNumber, 0, emptyCommentHeader, 1, magicNumber.length);
+        return new CodecPacket(emptyCommentHeader);
     }
 
     // The minimum number of bits required to store a positive integer `a` in
