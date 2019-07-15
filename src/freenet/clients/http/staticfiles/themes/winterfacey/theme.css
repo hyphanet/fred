@@ -685,6 +685,7 @@ table tbody tr.priority6:nth-child(2n) {
   margin-left: 0.5em;
   margin-right: 0.5em;
   margin-top: 1em;
+  word-break: break-word;
   padding: 0.25em;
   overflow: hidden;
   overflow-y: auto;
@@ -994,5 +995,30 @@ body[id*="Sone"] {
     position: static !important;
     transform: translateY(0%);
   }
+}
 
+@media (max-width: 700px) {
+  div#content {
+    padding-bottom: 6em;
+  }
+}
+
+@media (max-width: 700px) {
+  div#content {
+    padding-bottom: 6em;
+  }
+
+  #bookmarks table tbody {
+    padding: 0;
+  }
+
+  .infobox-content {
+    padding: 0.5em;
+  }
+}
+
+@media (max-width: 420px) {
+  div#content {
+    padding-bottom: 8em;
+  }
 }
