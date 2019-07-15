@@ -338,7 +338,16 @@ public final class PageMaker {
 				headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
 			}
 		}
-		
+
+		if (ctx != null && ctx.getContainer().isFProxyJavascriptEnabled()) {
+			URL themeJsUrl = getClass().getResource("staticfiles/themes/" + theme.code + "/script.js");
+			if (themeJsUrl != null) {
+				headNode.addChild("script",
+						new String[]{"type", "language", "src"},
+						new String[]{"text/javascript", "javascript", "/static/themes/" + theme.code + "/script.js"});
+			}
+		}
+
 		boolean webPushingEnabled = 
 			ctx != null && ctx.getContainer().isFProxyJavascriptEnabled() && ctx.getContainer().isFProxyWebPushingEnabled();
 		
