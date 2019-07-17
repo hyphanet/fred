@@ -95,9 +95,11 @@ public class SubConfig implements Comparable<SubConfig> {
 		register(new BandwidthOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 
-	public void register(String optionName, String defaultValueString, int sortOrder,
-						 boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb, Dimension dimension) {
-		if(cb == null) cb = new NullIntCallback();
+	public void register(String optionName, String defaultValueString, int sortOrder, boolean expert,
+						 boolean forceWrite, String shortDesc, String longDesc, IntCallback cb, Dimension dimension) {
+		if (cb == null) {
+			cb = new NullIntCallback();
+		}
 		register(new IntOption(this, optionName, defaultValueString, sortOrder, expert, forceWrite, shortDesc, longDesc, cb, dimension));
 	}
 

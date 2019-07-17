@@ -12,7 +12,8 @@ abstract class AbstractCompressor implements Compressor {
 
     void checkCompressionEffect(long rawDataVolume, long compressedDataVolume, int minimumCompressionPercentage) {
         long compressionPercentage = 100 - compressedDataVolume * 100 / rawDataVolume;
-        if (compressionPercentage < minimumCompressionPercentage)
+        if (compressionPercentage < minimumCompressionPercentage) {
             throw new CompressionRatioException("Compression has no effect. Compression percentage: " + compressionPercentage);
+        }
     }
 }

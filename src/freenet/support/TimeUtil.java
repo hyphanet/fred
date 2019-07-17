@@ -162,10 +162,11 @@ public class TimeUtil {
                     millis += MILLISECONDS.convert(Short.parseShort(term.substring(0, term.length() - 1)), MINUTES);
                     break;
                 case 's':
-                    if (term.contains("."))
+                    if (term.contains(".")) {
                         millis += Integer.parseInt(term.replaceAll("[a-z.]", ""));
-                    else
+                    } else {
                         millis += MILLISECONDS.convert(Short.parseShort(term.substring(0, term.length() - 1)), SECONDS);
+                    }
                     break;
                 default:
                     throw new NumberFormatException("Unknown format: " + (sign > 0 ? "" : "-") + timeInterval);

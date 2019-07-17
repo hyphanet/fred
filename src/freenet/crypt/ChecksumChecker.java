@@ -73,8 +73,9 @@ public abstract class ChecksumChecker {
         // IMHO it is better to implement this with copying, because then we don't start 
         // constructing objects from bad data...
         long length = new DataInputStream(dis).readLong();
-        if(length < 0 || length > maxLength)
+        if(length < 0 || length > maxLength) {
             throw new IOException("Bad length: " + length + "; maxLength: " + maxLength);
+        }
         final Bucket bucket = bf.makeBucket(-1);
         OutputStream os = bucket.getOutputStream();
         copyAndStripChecksum(dis, os, length);

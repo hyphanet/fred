@@ -74,8 +74,9 @@ public class Bzip2Compressor extends AbstractCompressor {
 				if(cos.written() > maxWriteLength)
 					throw new CompressionOutputSizeException();
 
-				if (++i == iterationToCheckCompressionRatio)
+				if (++i == iterationToCheckCompressionRatio) {
 					checkCompressionEffect(read, cos.written(), minimumCompressionPercentage);
+				}
 			}
 			bz2os.flush();
 			cos.flush();
