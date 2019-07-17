@@ -74,24 +74,28 @@ public abstract class BandwidthManipulator {
 	 * @throws Exception if a limitis unavailable or nonsensically low.
 	 */
 	public static BandwidthLimit detectBandwidthLimits(FredPluginBandwidthIndicator bwIndicator) throws Exception {
-		if (bwIndicator == null)
+		if (bwIndicator == null) {
 			throw new Exception("The node does not have a bandwidthIndicator.");
+		}
 
 		int downstreamBits = bwIndicator.getDownstreamMaxBitRate();
 		int upstreamBits = bwIndicator.getUpstramMaxBitRate();
 		Logger.normal(bwIndicator, "bandwidthIndicator reports downstream " + downstreamBits + " bits/s and upstream "+upstreamBits+" bits/s.");
 
-		if (downstreamBits < 0 || upstreamBits < 0)
+		if (downstreamBits < 0 || upstreamBits < 0) {
 			throw new Exception("Reported unavailable.");
+		}
 
 		//For readability, in bits.
 		final int KiB = 8192;
 
-		if (downstreamBits < 8*KiB)
+		if (downstreamBits < 8*KiB) {
 			throw new Exception("Detected downstream of "+downstreamBits+" bits/s is nonsensically slow, ignoring.");
+		}
 
-		if (upstreamBits < KiB)
+		if (upstreamBits < KiB) {
 			throw new Exception("Detected upstream of "+upstreamBits+" bits/s is nonsensically slow, ignoring.");
+		}
 
 		int downstreamBytes = downstreamBits/8;
 		int upstreamBytes = upstreamBits/8;

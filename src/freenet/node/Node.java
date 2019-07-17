@@ -1897,11 +1897,13 @@ public class Node implements TimeSkewDetectorCallback {
 					@Override
 					public void set(Long storeSize) throws InvalidConfigValueException {
 						long maxDatastoreSize;
-						if(storeSize < MIN_STORE_SIZE)
+						if(storeSize < MIN_STORE_SIZE) {
 							throw new InvalidConfigValueException(l10n("invalidMinStoreSize"));
-						if(storeSize > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize()))
+						}
+						if(storeSize > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize())) {
 							throw new InvalidConfigValueException(
 									l10n("invalidMaxStoreSize", Long.toString(maxDatastoreSize)));
+						}
 
 						long newMaxStoreKeys = storeSize / sizePerKey;
 						if(newMaxStoreKeys == maxTotalKeys) return;

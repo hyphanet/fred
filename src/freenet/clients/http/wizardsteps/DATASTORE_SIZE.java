@@ -102,9 +102,10 @@ public class DATASTORE_SIZE implements Step {
 			long size = Fields.parseLong(selectedStoreSize);
 
 			long maxDatastoreSize = DatastoreUtil.maxDatastoreSize();
-			if (size > maxDatastoreSize)
+			if (size > maxDatastoreSize) {
 				throw new InvalidConfigValueException("Attempting to set DatastoreSize (" + size
 						+ ") larger than maxDatastoreSize (" + maxDatastoreSize + ")");
+			}
 
 			// client cache: 10% up to 200MB
 			long clientCacheSize = Math.min(size / 10, 200*1024*1024);

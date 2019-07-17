@@ -50,26 +50,30 @@ abstract class WebTemplateToadlet extends Toadlet {
 
             int len;
             byte[] contentBytes = new byte[1024];
-            while ((len = stream.read(contentBytes)) != -1)
+            while ((len = stream.read(contentBytes)) != -1) {
                 content.write(contentBytes, 0, len);
+            }
 
             String template = content.toString(StandardCharsets.UTF_8.name());
 
             // replace variables in html
-            for (Map.Entry<String, Object> entry : model.entrySet())
+            for (Map.Entry<String, Object> entry : model.entrySet()) {
                 template = template.replaceAll("\\$\\{" + entry.getKey() + "}", String.valueOf(entry.getValue()));
+            }
 
             // replace l10n in html
             String key;
-            while ((key = getL10nKey(template)) != null)
+            while ((key = getL10nKey(template)) != null) {
                 template = template.replaceAll("#\\{" + key + "}", NodeL10n.getBase().getString(l10nPrefix + key));
+            }
 
             // replace form errors in html
             Object errorsObject = model.get("errors");
             if (errorsObject instanceof Map) {
                 Map errors = (Map) errorsObject;
-                for (Object errKey : errors.keySet())
+                for (Object errKey : errors.keySet()) {
                     template = template.replaceAll("\\$\\{" + errKey + "}", errors.get(errKey).toString());
+                }
             }
             template = template.replaceAll("\\$\\{.*Error}", ""); // remove unused error placeholders
 

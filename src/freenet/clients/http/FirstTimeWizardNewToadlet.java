@@ -38,14 +38,18 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
     @Override
     public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx)
             throws ToadletContextClosedException, IOException {
-        if(!ctx.checkFullAccess(this)) return;
+        if(!ctx.checkFullAccess(this)) {
+            return;
+        }
 
         showForm(ctx, new FormModel().toModel());
     }
 
     public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx)
             throws ToadletContextClosedException, IOException {
-        if(!ctx.checkFullAccess(this)) return;
+        if(!ctx.checkFullAccess(this)) {
+            return;
+        }
 
         FormModel formModel = new FormModel(request);
 
@@ -121,16 +125,19 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             }
             else {
                 long autodetectedDatastoreSize = DatastoreUtil.autodetectDatastoreSize(core, config);
-                if (autodetectedDatastoreSize > 0)
+                if (autodetectedDatastoreSize > 0) {
                     storage = (float) autodetectedDatastoreSize / DatastoreUtil.oneGiB;
+                }
             }
             storageLimit = String.format("%.2f", storage);
 
             detectBandwidthLimit();
-            if (downloadLimitDetected != null)
+            if (downloadLimitDetected != null) {
                 downloadLimit = downloadLimitDetected;
-            if (uploadLimitDetected != null)
+            }
+            if (uploadLimitDetected != null) {
                 uploadLimit = uploadLimitDetected;
+            }
         }
 
         FormModel(HTTPRequest request) {
@@ -149,9 +156,10 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             if (haveMonthlyLimit.isEmpty()) {
                 try {
                     long downloadLimit = this.downloadLimit.isEmpty() ? 0 : Fields.parseLong(this.downloadLimit + "KiB");
-                    if (downloadLimit < Node.getMinimumBandwidth())
+                    if (downloadLimit < Node.getMinimumBandwidth()) {
                         errors.put("downloadLimitError",
                                 FirstTimeWizardNewToadlet.l10n("valid.downloadLimit", Integer.toString(Node.getMinimumBandwidth() / 1024)));
+                    }
                 } catch (NumberFormatException e) {
                     errors.put("downloadLimitError",
                             FirstTimeWizardNewToadlet.l10n("valid.number.prefix.downloadLimit") + " " + e.getMessage());
@@ -159,9 +167,10 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
                 try {
                     long uploadLimit = this.uploadLimit.isEmpty() ? 0 : Fields.parseLong(this.uploadLimit + "KiB");
-                    if (uploadLimit < Node.getMinimumBandwidth())
+                    if (uploadLimit < Node.getMinimumBandwidth()) {
                         errors.put("uploadLimitError",
                                 FirstTimeWizardNewToadlet.l10n("valid.uploadLimit", Integer.toString(Node.getMinimumBandwidth() / 1024)));
+                    }
                 } catch (NumberFormatException e) {
                     errors.put("uploadLimitError",
                             FirstTimeWizardNewToadlet.l10n("valid.number.prefix.uploadLimit") + " " + e.getMessage());
@@ -169,9 +178,10 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             } else {
                 try {
                     double monthlyLimit = Double.parseDouble(bandwidthMonthlyLimit);
-                    if (monthlyLimit < BandwidthLimit.minMonthlyLimit)
+                    if (monthlyLimit < BandwidthLimit.minMonthlyLimit) {
                         errors.put("bandwidthMonthlyLimitError",
                                 FirstTimeWizardNewToadlet.l10n("valid.bandwidthMonthlyLimit", Double.toString(BandwidthLimit.minMonthlyLimit)));
+                    }
                 } catch (NumberFormatException e) {
                     errors.put("bandwidthMonthlyLimitError",
                             FirstTimeWizardNewToadlet.l10n("valid.number.prefix.bandwidthMonthlyLimit") + " " + e.getMessage());
@@ -181,24 +191,28 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             try {
                 long maxDatastoreSize;
                 long storageLimit = this.storageLimit.isEmpty() ? 0 : Fields.parseLong(this.storageLimit + "GiB");
-                if (storageLimit < Node.MIN_STORE_SIZE * 5 / 4) // min store size + 10% for client cache + 10% for slashdot cache
+                if (storageLimit < Node.MIN_STORE_SIZE * 5 / 4) { // min store size + 10% for client cache + 10% for slashdot cache
                     errors.put("storageLimitError", NodeL10n.getBase().getString("Node.invalidMinStoreSizeWithCaches"));
-                else if (storageLimit > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize()))
+                } else if (storageLimit > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize())) {
                     errors.put("storageLimitError",
                             NodeL10n.getBase().getString("Node.invalidMaxStoreSize",
                                     String.format("%.2f", (float) maxDatastoreSize / DatastoreUtil.oneGiB)));
+                }
             } catch (NumberFormatException e) {
                 errors.put("storageLimitError",
                         FirstTimeWizardNewToadlet.l10n("valid.number.prefix.storageLimit") + " " + e.getMessage());
             }
 
             if (!setPassword.isEmpty()) {
-                if (password.isEmpty())
+                if (password.isEmpty()) {
                     errors.put("passwordError", NodeL10n.getBase().getString("SecurityLevels.passwordNotZeroLength"));
-                if (password.length() > SecurityLevelsToadlet.MAX_PASSWORD_LENGTH)
+                }
+                if (password.length() > SecurityLevelsToadlet.MAX_PASSWORD_LENGTH) {
                     errors.put("passwordError", NodeL10n.getBase().getString("SecurityLevels.passwordTooLong"));
-                if (!password.equals(passwordConfirmation))
+                }
+                if (!password.equals(passwordConfirmation)) {
                     errors.put("passwordError", NodeL10n.getBase().getString("SecurityLevels.passwordsDoNotMatch"));
+                }
             }
         }
 
@@ -231,8 +245,9 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             model.put("storageLimit", storageLimit);
             model.put("setPassword", setPassword.length() > 0 ? "checked" : "");
 
-            if (downloadLimitDetected == null || uploadLimitDetected == null)
+            if (downloadLimitDetected == null || uploadLimitDetected == null) {
                 detectBandwidthLimit();
+            }
             model.put("downloadLimitDetected", downloadLimitDetected != null ? downloadLimitDetected : l10n("bandwidthCommonInternetConnectionSpeedsDetectedUnavailable"));
             model.put("uploadLimitDetected", uploadLimitDetected != null ? uploadLimitDetected : l10n("bandwidthCommonInternetConnectionSpeedsDetectedUnavailable"));
 
@@ -249,8 +264,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
                 if (connectToStrangers.isEmpty()) {
                     // Darknet
                     core.node.securityLevels.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.HIGH);
-                }
-                else {
+                } else {
                     // Opennet + Darknet
                     core.node.securityLevels.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.NORMAL);
                 }
@@ -280,10 +294,11 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
                     SecurityLevels.PHYSICAL_THREAT_LEVEL oldPhysicalLevel = core.node.securityLevels.getPhysicalThreatLevel();
                     core.node.securityLevels.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH);
                         if(oldPhysicalLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL ||
-                                oldPhysicalLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW)
+                                oldPhysicalLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW) {
                             core.node.changeMasterPassword("", password, true);
-                        else
+                        } else {
                             core.node.setMasterPassword(password, true);
+                        }
                 }
             } catch (Node.AlreadySetPasswordException | MasterKeysWrongPasswordException | MasterKeysFileSizeException | IOException e) {
                 Logger.error(this, "Should not happen, please report! " + e, e);

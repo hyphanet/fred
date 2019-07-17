@@ -20,9 +20,9 @@ public class DatastoreUtil {
 
         // check ram limitations
         long maxMemory = NodeStarter.getMemoryLimitBytes();
-        if (maxMemory == Long.MAX_VALUE || maxMemory < 128 * oneMiB)
+        if (maxMemory == Long.MAX_VALUE || maxMemory < 128 * oneMiB) {
             maxDatastoreSize = oneGiB; // 1GB default if don't know or very small memory.
-        else {
+        } else {
             // Don't use the first 100MB for slot filters.
             long available = maxMemory - 100 * oneMiB;
             // Don't use more than 50% of available memory for slot filters.
@@ -50,8 +50,9 @@ public class DatastoreUtil {
     }
 
     public static long autodetectDatastoreSize(NodeClientCore core, Config config) {
-        if (!config.get("node").getOption("storeSize").isDefault())
+        if (!config.get("node").getOption("storeSize").isDefault()) {
             return -1;
+        }
 
         long freeSpace = core.node.getStoreDir().getUsableSpace();
 
@@ -68,8 +69,7 @@ public class DatastoreUtil {
 
             // Choose a suggested store size based on available free space.
             if (freeSpace > 50 * oneGiB) {
-                // > 50 GiB: Use 10% free space; minimum 10 GiB. Limited by
-                // bloom filters and disk I/O.
+                // > 50 GiB: Use 10% free space; minimum 10 GiB. Limited by bloom filters and disk I/O.
                 shortSize = Math.max(10 * oneGiB,
                         Math.min(freeSpace / 10,
                                 Math.min(diskIoMax,
