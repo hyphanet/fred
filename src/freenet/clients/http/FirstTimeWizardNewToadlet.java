@@ -9,7 +9,9 @@ import freenet.config.ConfigException;
 import freenet.config.Option;
 import freenet.l10n.NodeL10n;
 import freenet.node.*;
+import freenet.pluginmanager.PluginNotFoundException;
 import freenet.support.Fields;
+import freenet.support.IllegalValueException;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.DatastoreUtil;
@@ -229,7 +231,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
                 // Detected limits reasonable; add half of both as recommended option.
                 downloadLimitDetected = Long.toString(detected.downBytes / 2 / KiB);
                 uploadLimitDetected = Long.toString(detected.upBytes / 2 / KiB);
-            } catch (Exception e) {
+            } catch (PluginNotFoundException | IllegalValueException e) {
                 Logger.normal(this, e.getMessage(), e);
             }
         }

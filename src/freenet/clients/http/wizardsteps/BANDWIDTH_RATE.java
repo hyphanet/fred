@@ -7,10 +7,8 @@ import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
-import freenet.support.HTMLNode;
-import freenet.support.Logger;
-import freenet.support.SizeUtil;
-import freenet.support.URLEncoder;
+import freenet.pluginmanager.PluginNotFoundException;
+import freenet.support.*;
 import freenet.support.api.HTTPRequest;
 
 /**
@@ -89,7 +87,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 			BandwidthLimit usable = new BandwidthLimit(detected.downBytes/2, detected.upBytes/2, "bandwidthDetected", true);
 			addLimitRow(table, helper, usable, true, true);
 			addedDefault = true;
-		} catch (Exception e) {
+		} catch (PluginNotFoundException | IllegalValueException e) {
 			Logger.normal(this, e.getMessage(), e);
 		}
 
