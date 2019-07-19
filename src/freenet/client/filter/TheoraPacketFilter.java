@@ -2,6 +2,7 @@ package freenet.client.filter;
 
 import java.io.*;
 import java.util.*;
+import java.util.function.Predicate;
 
 import freenet.support.Logger;
 import freenet.support.io.BitInputStream;
@@ -29,7 +30,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 
                 case COMMENT_HEADER: // must be second
                     Logger.minor(this, "COMMENT_HEADER");
-                    verifyTypeAndHeader(input, 0x81); // expected -127
+                    verifyTypeAndHeader("Comment", input, 0x81); // expected -127
                     expectedPacket = Packet.SETUP_HEADER;
                     return constructCommentHeaderWithEmptyVendorStringAndComments();
 
@@ -50,85 +51,43 @@ public class TheoraPacketFilter implements CodecPacketFilter {
     }
 
     private void verifyIdentificationHeader(BitInputStream input) throws IOException {
-        verifyTypeAndHeader(input, 0x80); // expected -128
+        verifyTypeAndHeader("Identification", input, 0x80); // expected -128
 
-        int VMAJ = input.readInt(8);
-        if (VMAJ != 3) {
-            throw new UnknownContentTypeException("Header VMAJ: " + VMAJ);
-        }
+        checkHeaderField("Identification", "VMAJ", input, 8, v -> v != 3);
 
-        int VMIN = input.readInt(8);
-        if (VMIN != 2) {
-            throw new UnknownContentTypeException("Header VMIN: " + VMIN);
-        }
+        checkHeaderField("Identification", "VMIN", input, 8, v -> v != 2);
 
-        int VREV = input.readInt(8);
-        if (VREV > 1) {
-            throw new UnknownContentTypeException("Header VREV: " + VREV);
-        }
+        checkHeaderField("Identification", "VREV", input, 8, v -> v > 1);
 
-        int FMBW = input.readInt(16);
-        if (FMBW == 0) {
-            throw new UnknownContentTypeException("Header FMBW: " + FMBW);
-        }
+        int FMBW = checkHeaderField("Identification", "FMBW", input, 16, v -> v == 0);
 
-        int FMBH = input.readInt(16);
-        if (FMBH == 0) {
-            throw new UnknownContentTypeException("Header FMBH: " + FMBH);
-        }
+        int FMBH = checkHeaderField("Identification", "FMBH", input, 16, v -> v == 0);
 
-        int PICW = input.readInt(24);
-        if (PICW > FMBW * 16) {
-            throw new UnknownContentTypeException("Header PICW: " + PICW + "; FMBW: " + FMBW);
-        }
+        checkHeaderField( "Identification", "PICW", input, 24, v -> v > FMBW * 16);
 
-        int PICH = input.readInt(24);
-        if (PICH > FMBH * 16) {
-            throw new UnknownContentTypeException("Header PICH: " + PICH + "; FMBH: " + FMBH);
-        }
+        checkHeaderField("Identification", "PICH", input, 24, v -> v > FMBH * 16);
 
-        int PICX = input.readInt(8);
-        if (PICX > FMBW * 16 - PICX) {
-            throw new UnknownContentTypeException("Header PICX: " + PICX + "; FMBW: " + FMBW + "; PICX: " + PICX);
-        }
+        checkHeaderField("Identification", "PICX", input, 8, v -> v > FMBW * 16 - v);
 
-        int PICY = input.readInt(8);
-        if (PICY > FMBH * 16 - PICY) {
-            throw new UnknownContentTypeException("Header PICY: " + PICY + "; FMBH: " + FMBH + "; PICY: " + PICY);
-        }
+        checkHeaderField("Identification", "PICY", input, 8, v -> v > FMBH * 16 - v);
 
-        int FRN = input.readInt(32);
-        if (FRN == 0) {
-            throw new UnknownContentTypeException("Header FRN: " + FRN);
-        }
+        checkHeaderField("Identification", "FRN", input, 32, v -> v == 0);
 
-        int FRD = input.readInt(32);
-        if (FRD == 0) {
-            throw new UnknownContentTypeException("Header FRN: " + FRN);
-        }
+        checkHeaderField("Identification", "FRD", input, 32, v -> v == 0);
 
         input.skip(48); // skip PARN and PARD
 
-        int CS = input.readInt(8);
-        if (!(CS == 0 || CS == 1 || CS == 2)) {
-            throw new UnknownContentTypeException("Header CS: " + CS);
-        }
+        checkHeaderField("Identification", "CS", input, 8, v -> !(v == 0 || v == 1 || v == 2));
 
         input.skip(35); // skip NOMBR, QUAL and KFGSHIFT
 
-        int PF = input.readInt(2);
-        if (PF == 1) {
-            throw new UnknownContentTypeException("Header PF: " + PF);
-        }
+        checkHeaderField("Identification", "PF", input, 2, v -> v == 1);
 
-        int Res = input.readInt(3);
-        if (Res != 0) {
-            throw new UnknownContentTypeException("Header Res: " + Res);
-        }
+        checkHeaderField("Identification", "Res", input, 3, v -> v != 0);
     }
 
     private void verifySetupHeader(BitInputStream input) throws IOException {
-        verifyTypeAndHeader(input, 0x82); // expected -126
+        verifyTypeAndHeader("Setup", input, 0x82); // expected -126
 
         int NBITS = input.readInt(3);
         for (int i = 0; i < 64; i++) {
@@ -145,10 +104,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
             input.skip(NBITS); // skip DCSCALE[i]
         }
 
-        int NBMS = input.readInt(9) + 1;
-        if (NBMS > 384) {
-            throw new UnknownContentTypeException("SETUP HEADER - NBMS: " + NBMS + "(MUST be no greater than 384)");
-        }
+        int NBMS = checkHeaderField("Setup", "NBMS", input, 9, v -> v + 1 > 384);
 
         int[][] BMS = new int[NBMS][64];
         for (int i = 0; i < BMS.length; i++) {
@@ -187,7 +143,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
                     QRBMIS[qti][pli] = QRBMIS[qtj][plj];
                 } else {
                     if (NEWQR != 1) {
-                        throw new UnknownContentTypeException("SETUP HEADER - NEWQR: " + NBMS + "(MUST be 0|1)");
+                        throw new UnknownContentTypeException("SetupHeader NEWQR: " + NBMS + "(MUST be 0|1)");
                     }
 
                     int qri = 0;
@@ -196,8 +152,8 @@ public class TheoraPacketFilter implements CodecPacketFilter {
                     QRBMIS[qti][pli][qri] = input.readInt(ilog(NBMS - 1));
 
                     if (QRBMIS[qti][pli][qri] >= NBMS) {
-                        throw new UnknownContentTypeException("(QRBMIS[qti][pli][qri] = " + QRBMIS[qti][pli][qri] +
-                                ") >= (NBMS = " + NBMS + ") The stream is undecodable.");
+                        throw new UnknownContentTypeException("SetupHeader (QRBMIS[qti][pli][qri]: " +
+                                QRBMIS[qti][pli][qri] + ") >= (NBMS: " + NBMS + ") The stream is undecodable.");
                     }
 
                     while (true) {
@@ -211,7 +167,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
                         if (qi < 63) {
                             continue;
                         } else if (qi > 63) {
-                            throw new UnknownContentTypeException("qi = " + qi + "; qi > 63 - The stream is undecodable.");
+                            throw new UnknownContentTypeException("SetupHeader qi: " + qi + " > 63 The stream is undecodable.");
                         }
 
                         break;
@@ -235,10 +191,11 @@ public class TheoraPacketFilter implements CodecPacketFilter {
     }
 
     // The header packets begin with the header type and the magic number. Validate both.
-    private void verifyTypeAndHeader(BitInputStream input, int expectedHeaderType) throws IOException {
-        int headerType = input.readInt(8);
-        if (headerType != expectedHeaderType) {
-            throw new UnknownContentTypeException("Header type: " + headerType + "; expected: " + expectedHeaderType);
+    private void verifyTypeAndHeader(String headerName, BitInputStream input, int expectedHeaderType) throws IOException {
+        try {
+            checkHeaderField(headerName, "type", input, 8, v -> v != expectedHeaderType);
+        } catch (UnknownContentTypeException e) {
+            throw new UnknownContentTypeException(e.getType() + "; expected: " + expectedHeaderType);
         }
 
         byte[] magicHeader = new byte[magicNumber.length];
@@ -247,6 +204,15 @@ public class TheoraPacketFilter implements CodecPacketFilter {
             throw new UnknownContentTypeException(
                     "Packet magicHeader: " + Arrays.toString(magicHeader) + "; expected: " + Arrays.toString(magicNumber));
         }
+    }
+
+    private int checkHeaderField(String headerName, String fieldName,
+                                 BitInputStream input, int sizeInBits, Predicate<Integer> validator) throws IOException {
+        int value = input.readInt(sizeInBits);
+        if (validator.test(value)) {
+            throw new UnknownContentTypeException(headerName + "Header " + fieldName + ": " + value);
+        }
+        return value;
     }
 
     private CodecPacket constructCommentHeaderWithEmptyVendorStringAndComments() {
