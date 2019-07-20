@@ -7,6 +7,8 @@ import java.util.function.Predicate;
 import freenet.support.Logger;
 import freenet.support.io.BitInputStream;
 
+import static freenet.support.PredicateUtil.not;
+
 public class TheoraPacketFilter implements CodecPacketFilter {
     static final byte[] magicNumber = new byte[]{'t', 'h', 'e', 'o', 'r', 'a'};
 
@@ -53,37 +55,37 @@ public class TheoraPacketFilter implements CodecPacketFilter {
     private void verifyIdentificationHeader(BitInputStream input) throws IOException {
         verifyTypeAndHeader("Identification", input, 0x80); // expected -128
 
-        checkHeaderField("Identification", "VMAJ", input, 8, v -> v != 3);
+        checkHeaderField("Identification", "VMAJ", input, 8, not(v -> v != 3));
 
-        checkHeaderField("Identification", "VMIN", input, 8, v -> v != 2);
+        checkHeaderField("Identification", "VMIN", input, 8, not(v -> v != 2));
 
-        checkHeaderField("Identification", "VREV", input, 8, v -> v > 1);
+        checkHeaderField("Identification", "VREV", input, 8, not(v -> v > 1));
 
-        int FMBW = checkHeaderField("Identification", "FMBW", input, 16, v -> v == 0);
+        int FMBW = checkHeaderField("Identification", "FMBW", input, 16, not(v -> v == 0));
 
-        int FMBH = checkHeaderField("Identification", "FMBH", input, 16, v -> v == 0);
+        int FMBH = checkHeaderField("Identification", "FMBH", input, 16, not(v -> v == 0));
 
-        checkHeaderField( "Identification", "PICW", input, 24, v -> v > FMBW * 16);
+        checkHeaderField( "Identification", "PICW", input, 24, not(v -> v > FMBW * 16));
 
-        checkHeaderField("Identification", "PICH", input, 24, v -> v > FMBH * 16);
+        checkHeaderField("Identification", "PICH", input, 24, not(v -> v > FMBH * 16));
 
-        checkHeaderField("Identification", "PICX", input, 8, v -> v > FMBW * 16 - v);
+        checkHeaderField("Identification", "PICX", input, 8, not(v -> v > FMBW * 16 - v));
 
-        checkHeaderField("Identification", "PICY", input, 8, v -> v > FMBH * 16 - v);
+        checkHeaderField("Identification", "PICY", input, 8, not(v -> v > FMBH * 16 - v));
 
-        checkHeaderField("Identification", "FRN", input, 32, v -> v == 0);
+        checkHeaderField("Identification", "FRN", input, 32, not(v -> v == 0));
 
-        checkHeaderField("Identification", "FRD", input, 32, v -> v == 0);
+        checkHeaderField("Identification", "FRD", input, 32, not(v -> v == 0));
 
         input.skip(48); // skip PARN and PARD
 
-        checkHeaderField("Identification", "CS", input, 8, v -> !(v == 0 || v == 1 || v == 2));
+        checkHeaderField("Identification", "CS", input, 8, not(v -> !(v == 0 || v == 1 || v == 2)));
 
         input.skip(35); // skip NOMBR, QUAL and KFGSHIFT
 
-        checkHeaderField("Identification", "PF", input, 2, v -> v == 1);
+        checkHeaderField("Identification", "PF", input, 2, not(v -> v == 1));
 
-        checkHeaderField("Identification", "Res", input, 3, v -> v != 0);
+        checkHeaderField("Identification", "Res", input, 3, not(v -> v != 0));
     }
 
     private void verifySetupHeader(BitInputStream input) throws IOException {
@@ -104,7 +106,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
             input.skip(NBITS); // skip DCSCALE[i]
         }
 
-        int NBMS = checkHeaderField("Setup", "NBMS", input, 9, v -> v > 383) + 1;
+        int NBMS = checkHeaderField("Setup", "NBMS", input, 9, not(v -> v > 383)) + 1;
 
         int[][] BMS = new int[NBMS][64];
         for (int i = 0; i < BMS.length; i++) {
@@ -193,7 +195,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
     // The header packets begin with the header type and the magic number. Validate both.
     private void verifyTypeAndHeader(String headerName, BitInputStream input, int expectedHeaderType) throws IOException {
         try {
-            checkHeaderField(headerName, "type", input, 8, v -> v != expectedHeaderType);
+            checkHeaderField(headerName, "type", input, 8, not(v -> v != expectedHeaderType));
         } catch (UnknownContentTypeException e) {
             throw new UnknownContentTypeException(e.getType() + "; expected: " + expectedHeaderType);
         }
@@ -209,7 +211,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
     private int checkHeaderField(String headerName, String fieldName,
                                  BitInputStream input, int sizeInBits, Predicate<Integer> validator) throws IOException {
         int value = input.readInt(sizeInBits);
-        if (validator.test(value)) {
+        if (!validator.test(value)) {
             throw new UnknownContentTypeException(headerName + "Header " + fieldName + ": " + value);
         }
         return value;
