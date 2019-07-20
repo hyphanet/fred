@@ -104,7 +104,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
             input.skip(NBITS); // skip DCSCALE[i]
         }
 
-        int NBMS = checkHeaderField("Setup", "NBMS", input, 9, v -> v + 1 > 384);
+        int NBMS = checkHeaderField("Setup", "NBMS", input, 9, v -> v > 383) + 1;
 
         int[][] BMS = new int[NBMS][64];
         for (int i = 0; i < BMS.length; i++) {
@@ -143,7 +143,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
                     QRBMIS[qti][pli] = QRBMIS[qtj][plj];
                 } else {
                     if (NEWQR != 1) {
-                        throw new UnknownContentTypeException("SetupHeader NEWQR: " + NBMS + "(MUST be 0|1)");
+                        throw new UnknownContentTypeException("SetupHeader NEWQR: " + NEWQR + "(MUST be 0|1)");
                     }
 
                     int qri = 0;
