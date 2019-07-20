@@ -56,35 +56,20 @@ public class TheoraPacketFilter implements CodecPacketFilter {
         verifyTypeAndHeader("Identification", input, 0x80); // expected -128
 
         checkHeaderField("Identification", "VMAJ", input, 8, not(v -> v != 3));
-
         checkHeaderField("Identification", "VMIN", input, 8, not(v -> v != 2));
-
         checkHeaderField("Identification", "VREV", input, 8, not(v -> v > 1));
-
         int FMBW = checkHeaderField("Identification", "FMBW", input, 16, not(v -> v == 0));
-
         int FMBH = checkHeaderField("Identification", "FMBH", input, 16, not(v -> v == 0));
-
         checkHeaderField( "Identification", "PICW", input, 24, not(v -> v > FMBW * 16));
-
         checkHeaderField("Identification", "PICH", input, 24, not(v -> v > FMBH * 16));
-
         checkHeaderField("Identification", "PICX", input, 8, not(v -> v > FMBW * 16 - v));
-
         checkHeaderField("Identification", "PICY", input, 8, not(v -> v > FMBH * 16 - v));
-
         checkHeaderField("Identification", "FRN", input, 32, not(v -> v == 0));
-
         checkHeaderField("Identification", "FRD", input, 32, not(v -> v == 0));
-
         input.skip(48); // skip PARN and PARD
-
         checkHeaderField("Identification", "CS", input, 8, not(v -> !(v == 0 || v == 1 || v == 2)));
-
         input.skip(35); // skip NOMBR, QUAL and KFGSHIFT
-
         checkHeaderField("Identification", "PF", input, 2, not(v -> v == 1));
-
         checkHeaderField("Identification", "Res", input, 3, not(v -> v != 0));
     }
 
