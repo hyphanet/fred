@@ -60,7 +60,7 @@ public class TheoraPacketFilter implements CodecPacketFilter {
         input.skip(8); // skip VREV
         int FMBW = checkHeaderField("Identification", "FMBW", input, 16, v -> v > 0);
         int FMBH = checkHeaderField("Identification", "FMBH", input, 16, v -> v > 0);
-        checkHeaderField( "Identification", "PICW", input, 24, not(v -> v > FMBW * 16));
+        checkHeaderField("Identification", "PICW", input, 24, not(v -> v > FMBW * 16));
         checkHeaderField("Identification", "PICH", input, 24, not(v -> v > FMBH * 16));
         checkHeaderField("Identification", "PICX", input, 8, not(v -> v > FMBW * 16 - v));
         checkHeaderField("Identification", "PICY", input, 8, not(v -> v > FMBH * 16 - v));
