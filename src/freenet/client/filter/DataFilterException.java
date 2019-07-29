@@ -14,6 +14,10 @@ public class DataFilterException extends UnsafeContentTypeException {
 	final String rawTitle;
 	final String encodedTitle;
 	final String explanation;
+
+	DataFilterException(String explanation) {
+		rawTitle = encodedTitle = this.explanation = explanation;
+	}
 	
 	DataFilterException(String raw, String encoded, String explanation) {
 		this.rawTitle = raw;
