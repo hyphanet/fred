@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
+import freenet.node.useralerts.UpgradeConnectionSpeedUserAlert;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import java.io.File;
@@ -350,6 +353,34 @@ public class WelcomeToadlet extends Toadlet {
         	for(String alertAnchor : alertAnchors) toDump.add(alertAnchor);
         	ctx.getAlertManager().dumpEvents(toDump);
         	redirectToRoot(ctx);
+        } else if (request.isPartSet("upgradeConnectionSpeed")) {
+            if (!ctx.checkFormPassword(request)) {
+                return;
+            }
+
+            UpgradeConnectionSpeedUserAlert upgradeConnectionSpeedAlert = null;
+            for (UserAlert alert : node.clientCore.alerts.getAlerts()) {
+                if (alert instanceof UpgradeConnectionSpeedUserAlert) {
+                    upgradeConnectionSpeedAlert = (UpgradeConnectionSpeedUserAlert) alert;
+                    break;
+                }
+            }
+
+            try {
+                node.config.get("node").set("inputBandwidthLimit", request.getPartAsStringFailsafe("inputBandwidthLimit", Byte.MAX_VALUE));
+                node.config.get("node").set("outputBandwidthLimit", request.getPartAsStringFailsafe("outputBandwidthLimit", Byte.MAX_VALUE));
+
+                if (upgradeConnectionSpeedAlert != null) {
+                    upgradeConnectionSpeedAlert.setUpgraded(true);
+                }
+            } catch (InvalidConfigValueException e) {
+                if (upgradeConnectionSpeedAlert != null) {
+                    upgradeConnectionSpeedAlert.setError(e.getMessage());
+                }
+            } catch (NodeNeedRestartException ignored) {
+            }
+
+            redirectToRoot(ctx);
         } else {
             redirectToRoot(ctx);
         }

@@ -10,6 +10,8 @@ public class UpgradeConnectionSpeedUserAlert extends AbstractUserAlert {
 
     private final Node node;
     private BandwidthLimit bandwidthLimit;
+    private boolean upgraded;
+    private String error;
 
     private UpgradeConnectionSpeedUserAlert(Node node, BandwidthLimit bandwidthLimit) {
         this.node = node;
@@ -29,24 +31,39 @@ public class UpgradeConnectionSpeedUserAlert extends AbstractUserAlert {
     @Override
     public HTMLNode getHTMLText() {
         HTMLNode content = new HTMLNode("div");
-        content.addChild("p", l10n("text"));
-        content.addChild("p", l10n("currentBandwidthLimit",
+
+        if (upgraded) {
+            content.addChild("p", l10n("upgraded"));
+            return content;
+        }
+        content.addChild("p", l10n("text",
                 new String[] {"input", "output"},
                 new String[] {
                         SizeUtil.formatSize(node.config.get("node").getInt("inputBandwidthLimit")),
                         SizeUtil.formatSize(node.config.get("node").getInt("outputBandwidthLimit"))}));
+        if (error != null) {
+            content.addChild("p", error);
+            error = null;
+        }
         HTMLNode form = content.addChild("form",
                 new String[] {"action", "method"},
-                new String[] {"/", "post"}); // TODO: add endpoint
-        form.addChild("span", l10n("downloadLimit"));
-        form.addChild("input",
+                new String[] {"/", "post"});
+        HTMLNode bandwidthInput = form.addChild("div",
+                new String[] {"style"},
+                new String[] {"display: inline-block; text-align: right;"});
+        bandwidthInput.addChild("span", "style", "margin-right: .5em;", l10n("downloadLimit"));
+        bandwidthInput.addChild("input",
                 new String[] {"type", "name", "value"},
                 new String[] {"text", "inputBandwidthLimit", SizeUtil.formatSize(bandwidthLimit.downBytes)});
-        form.addChild("br");
-        form.addChild("span", l10n("uploadLimit"));
-        form.addChild("input",
+        bandwidthInput.addChild("br");
+        bandwidthInput.addChild("span", "style", "margin-right: .5em;", l10n("uploadLimit"));
+        bandwidthInput.addChild("input",
                 new String[] {"type", "name", "value"},
                 new String[] {"text", "outputBandwidthLimit", SizeUtil.formatSize(bandwidthLimit.upBytes)});
+
+        form.addChild("input",
+                new String[] {"type", "name", "value"},
+                new String[] {"hidden", "upgradeConnectionSpeed", "upgradeConnectionSpeed"});
         form.addChild("input",
                 new String[] {"type", "name", "value"},
                 new String[] {"hidden", "formPassword", node.clientCore.formPassword});
@@ -59,7 +76,7 @@ public class UpgradeConnectionSpeedUserAlert extends AbstractUserAlert {
 
     @Override
     public String dismissButtonText() {
-        return NodeL10n.getBase().getString("Toadlet.no");
+        return upgraded ? NodeL10n.getBase().getString("Toadlet.ok") : NodeL10n.getBase().getString("Toadlet.no");
     }
 
     @Override
@@ -70,6 +87,14 @@ public class UpgradeConnectionSpeedUserAlert extends AbstractUserAlert {
     @Override
     public boolean shouldUnregisterOnDismiss() {
         return true;
+    }
+
+    public void setError(String error) {
+        this.error = error;
+    }
+
+    public void setUpgraded(boolean upgraded) {
+        this.upgraded = upgraded;
     }
 
     private String l10n(String key) {
