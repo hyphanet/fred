@@ -375,7 +375,8 @@ public class WelcomeToadlet extends Toadlet {
                 }
             } catch (InvalidConfigValueException e) {
                 if (upgradeConnectionSpeedAlert != null) {
-                    upgradeConnectionSpeedAlert.setError(e.getMessage());
+                    upgradeConnectionSpeedAlert.setError(
+                            NodeL10n.getBase().getString("UpgradeConnectionSpeedUserAlert.InvalidValue"));
                 }
             } catch (NodeNeedRestartException ignored) {
             }
