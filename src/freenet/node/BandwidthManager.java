@@ -1,6 +1,8 @@
 package freenet.node;
 
 import freenet.clients.http.wizardsteps.BandwidthLimit;
+import freenet.config.InvalidConfigValueException;
+import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.UpgradeConnectionSpeedUserAlert;
 import freenet.pluginmanager.FredPluginBandwidthIndicator;
 import freenet.support.Logger;
@@ -21,7 +23,7 @@ public class BandwidthManager {
     }
 
     public void start() {
-        // TODO: move to "on upgrade"
+        // TODO: move to "on upgrade"?
         /* offer upgrade of the connection speed on upgrade, if auto-detected
          * speed is much higher than the set speed, or even better: if the
          * detected speed increased significantly since the last offer. */
@@ -59,5 +61,49 @@ public class BandwidthManager {
                 }
             }
         }, SECONDS.toMillis(DELAY_HOURS)); // TODO: change to hours
+    }
+
+    public static void checkOutputBandwidthLimit(int obwLimit) throws InvalidConfigValueException {
+        if (obwLimit <= 0) {
+            throw new InvalidConfigValueException(NodeL10n.getBase().getString("Node.bwlimitMustBePositive"));
+        }
+
+        if (obwLimit < Node.getMinimumBandwidth()) {
+            throw lowBandwidthLimit(obwLimit);
+        }
+
+        // Fixme: Node outputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, ...
+        if (obwLimit > SECONDS.toNanos(1)) {
+            throw new InvalidConfigValueException(
+                    NodeL10n.getBase().getString("Node.outputBwlimitMustBeLessThan",
+                            "max", Long.toString(SECONDS.toNanos(1))));
+        }
+    }
+
+    public static void checkInputBandwidthLimit(int ibwLimit) throws InvalidConfigValueException {
+        if (ibwLimit == -1) { // Reserved value for limit based on output limit.
+            return;
+        }
+
+        if(ibwLimit <= 1) {
+            throw new InvalidConfigValueException(
+                    NodeL10n.getBase().getString("Node.bandwidthLimitMustBePositiveOrMinusOne"));
+        }
+
+        if (ibwLimit < Node.getMinimumBandwidth()) {
+            throw lowBandwidthLimit(ibwLimit);
+        }
+    }
+
+    /**
+     * Returns an exception with an explanation that the given bandwidth limit is too low.
+     *
+     * See the Node.bandwidthMinimum localization string.
+     * @param limit Bandwidth limit in bytes.
+     */
+    private static InvalidConfigValueException lowBandwidthLimit(int limit) {
+        return new InvalidConfigValueException(NodeL10n.getBase().getString("Node.bandwidthMinimum",
+                new String[] { "limit", "minimum" },
+                new String[] { Integer.toString(limit), Integer.toString(Node.getMinimumBandwidth()) }));
     }
 }
