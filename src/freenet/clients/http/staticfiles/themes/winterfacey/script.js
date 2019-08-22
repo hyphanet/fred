@@ -114,8 +114,10 @@ var toggleInnerMenu = function() {
     for (var i = 0; i < clickedClass.length; i++) {
       (function(i){
         clickedClass[i].addEventListener('click', function(event) {
-          event.preventDefault();
-          toggle(changedClass[i]);
+          if ( window.innerWidth < 991 ) {
+            event.preventDefault();
+            toggle(changedClass[i]);
+          }
         });
       })(i)
     }

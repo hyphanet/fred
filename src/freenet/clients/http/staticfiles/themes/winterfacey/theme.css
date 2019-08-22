@@ -1,6 +1,6 @@
 body,
 ul#navlist {
-  margin: 0px 0px 0px 0px;
+  margin: 0;
 }
 
 /* from base.css */
@@ -58,9 +58,14 @@ div.progress_fraction_not_finalized {
   font-style: italic;
 }
 
+textarea {
+  max-width: 50%;
+  width: 100%;
+}
+
 /* override any padding that the infobox divs might have */
 #statusbar div {
-   padding: 0px;
+  padding: 0;
 }
 
 /* this is needed for inheritance reasons */
@@ -114,8 +119,8 @@ li.navlist-selected:hover ul.subnavlist-selected {
 div#content {
   position: relative;
   top: 5px;
-  left: 0px;
-  padding-bottom: 3em;
+  left: 0;
+  padding: 0 15px 3em;
 }
 
 /* move the navbar to the top of the screen */
@@ -123,20 +128,20 @@ div#content {
 div#navbar {
   float: none;
   text-align: center;
-  padding: 0px;
+  padding: 0;
   position: relative;
   top: 5px;
-  left: 0px;
+  left: 0;
 }
 
 div#navbar a {
-   padding-left: 5px;
-   padding-right: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 #navlist li a {
-   padding-bottom: 5px;
-   text-align: left;
+  padding-bottom: 5px;
+  text-align: left;
 }
 
 /* make the top level menu items display horizontally instead of vertically */
@@ -217,7 +222,7 @@ a:hover {
 
 div#page div#navbar {
   position: sticky;
-  top: 0px;
+  top: 0;
 }
 
 #navbar {
@@ -247,7 +252,7 @@ select {
   border-radius: 4px;
   border: 1px solid #cccccc;
   background-color: white;
-  margin: 1em 1.5em 1em 0;
+  margin: 1em .5em 1em 0;
 }
 
 input[type="text"] {
@@ -285,7 +290,7 @@ ul.config {
 
 .config li {
   list-style-type: none;
-  margin-left: 0px;
+  margin-left: 0;
   padding-top: 0.5em;
   padding-bottom: 0.5em;
 }
@@ -335,7 +340,7 @@ ul.config {
   background-color: #FFFFFF;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 6px;
-  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
   vertical-align: middle;
 }
 
@@ -365,7 +370,7 @@ ul.config {
   background-color: #FFFFFF;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 6px;
-  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 }
 
 #navbar ul#navlist li a:hover,
@@ -413,7 +418,7 @@ ul#navlist li ul li:last-child {
  */
 .infobox-header,
 .infobox-content {
-  padding-left: 2ex;
+  padding-left: 0;
   padding-right: 2ex;
   padding-bottom: 0.5em;
 }
@@ -478,6 +483,7 @@ div.infobox-header,
   margin: 1em 0 0.5em;
   border-bottom: 1px solid #eee;
   background: none;
+  padding: .5em;
 }
 
 /*
@@ -573,7 +579,7 @@ table.queue td {
   text-align: center;
   font-size: 16px;
   text-transform: uppercase;
-  margin: 0px;
+  margin: 0;
   border: none;
 }
 
@@ -655,7 +661,7 @@ table tbody tr.priority6:nth-child(2n) {
  */
 #bookmarks,
 #bookmarks ul {
-  padding-left: 0px;
+  padding-left: 0;
   list-style-type: none;
 }
 
@@ -680,7 +686,7 @@ table tbody tr.priority6:nth-child(2n) {
   min-height: 6em;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 6px;
-  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
   background: none;
   margin-left: 0.5em;
   margin-right: 0.5em;
@@ -691,6 +697,8 @@ table tbody tr.priority6:nth-child(2n) {
   overflow-y: auto;
   float: left;
   display: block;
+  max-width: 256px;
+  width: 100%;
 }
 
 #bookmarks table tr td div {
@@ -698,7 +706,8 @@ table tbody tr.priority6:nth-child(2n) {
 }
 
 #bookmarks table td {
-  width: 256px;
+  max-width: 256px;
+  width: 100%;
   background: none;
   text-align: center;
   padding: 0 1% 0 1%;
@@ -706,12 +715,19 @@ table tbody tr.priority6:nth-child(2n) {
   display: block;
   margin: .3em 0;
   line-height: 1.35;
+  box-sizing: border-box;
 }
 
 #bookmarks table td:nth-child(1) {
   float: left;
   height: 36px;
   clear: none;
+}
+
+#bookmarks table td::after {
+  content: "";
+  display: table;
+  clear: both;
 }
 
 #bookmarks table td a {
@@ -722,12 +738,15 @@ table tbody tr.priority6:nth-child(2n) {
   clear: both;
 }
 
+#bookmarks table td > a {
+  margin: .5em 0 .5em;
+}
+
 #bookmarks td a img {
-  display: block;
   margin-left: auto;
-  margin-right: -2px;
-  margin-top: -4px;
-  width: 108px;
+  margin-right: auto;
+  margin-top: auto;
+  width: auto !important;
   height: 36px;
 }
 
@@ -747,18 +766,18 @@ body[id*="Sone"] {
 }
 
 #sone #notification-area {
-  margin-top: 0px;
+  margin-top: 0;
 }
 
 #sone {
   padding-top: 1em;
   background-color: #fff;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 #page div#content {
-  top: 0px !important;
-  margin-top: 0px;
+  top: 0 !important;
+  margin-top: 0;
 }
 
 /*
@@ -766,7 +785,7 @@ body[id*="Sone"] {
  * Hamburger
  *
  */
- #hamburger-box {
+#hamburger-box {
   width: 30px;
   height: 30px;
   position: relative;
@@ -804,7 +823,7 @@ body[id*="Sone"] {
 }
 
 #hamburger-box span:nth-child(1) {
-  top: 0px;
+  top: 0;
 }
 
 #hamburger-box span:nth-child(2),#hamburger-box span:nth-child(3) {
@@ -843,12 +862,480 @@ body[id*="Sone"] {
 
 /*
  *
+ * Search Bar
+ *
+ */
+#searchbar div{
+  float: left;
+  margin: 1em .5em 1em 0;
+  line-height: 1.5;
+}
+
+#searchbar input[type="text"]{
+  height: auto;
+  font-size: 13.33333px;
+}
+
+#searchbar input[type="checkbox"]{
+  margin-right: .5em;
+}
+
+#searchbar .index-bookmark-list {
+  padding: 0;
+}
+
+#searchbar .options-list {
+  padding: 0;
+}
+
+#searchbar input.index-bookmark-delete{
+  width: 11px;
+  height: 11px;
+  position: relative;
+  bottom: 2px;
+}
+
+/*
+ *
+ * Queue Download Form
+ *
+ */
+#queueDownloadForm textarea{
+  max-width: 60%;
+  width: 100%;
+  margin-top: 1em;
+}
+
+#queueDownloadForm input[type="radio"]{
+  margin-right: .5em;
+}
+
+#queueDownloadForm input[type="checkbox"]{
+  margin-right: 1em;
+  margin-left: .5em;
+}
+
+/*
+ *
+ * Queue Insert Form
+ *
+ */
+#queueInsertForm {
+  line-height: 1.5;
+}
+
+#queueInsertForm input[type="radio"]{
+  margin-right: .5em;
+  margin-bottom: 0;
+}
+
+#queueInsertForm input[type="checkbox"]{
+  margin-right: .5em;
+}
+
+/*
+ *
+ * Filter Preview Form
+ *
+ */
+#filterPreviewForm input[type="radio"]{
+  margin-right: .5em;
+}
+
+/*
+ *
+ * Add Peer Form
+ *
+ */
+#addPeerForm textarea {
+  max-width: 60%;
+  width: 100%;
+  margin-top: 1em;
+}
+
+/*
+ *
+ * Config
+ *
+ */
+.config li {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.config li a {
+  flex-basis: 100%;
+  line-height: 1.5;
+}
+
+.config li span:last-child {
+  align-self: start;
+  order: 1;
+  max-width: calc(100% - 300px);
+  line-height: 1.3;
+}
+
+.config li .config {
+  margin-left: auto;
+  order: 2;
+}
+
+/*
+ *
+ * SSK Extra Form
+ *
+ */
+#sskExtraForm input[type="text"] {
+  margin: -.3em 0 1em .4em;
+}
+
+#sskExtraForm tbody tr td {
+  padding: 1em 0 1em;
+}
+
+/*
+ *
+ * CHK Extra Form
+ *
+ */
+#chkExtraForm input[type="text"] {
+  margin: -.3em 0 1em .4em;
+}
+
+#chkExtraForm tbody tr td {
+  padding: 1em 0 1em;
+}
+
+/*
+ *
+ * Page Freemail Inbox
+ *
+ */
+#page-_Freemail_Inbox .container {
+  min-height: calc(100vh - 130px);
+  display: flex;
+  box-sizing: border-box;
+  padding-top: 20px;
+}
+
+#page-_Freemail_Inbox .messagelist {
+  border-left: 1px solid #ccc;
+  padding-left: 1em;
+  width: calc(100% - 80px);
+}
+
+#page-_Freemail_Inbox .aside {
+  line-height: 1.5;
+  width: 80px;
+}
+
+#page-_Freemail_Inbox .aside a {
+  text-decoration: none;
+}
+
+#page-_Freemail_Inbox .aside a:hover {
+  text-decoration: underline;
+}
+
+#page-_Freemail_Inbox .aside .actions a {
+  text-decoration: none;
+  border-radius: 6px;
+  border: none;
+  background-color: #5EB95E;
+  color: white;
+  margin: 0.5em 0.25em 0.5em 0;
+  font: 400 13.3333px Arial;
+  padding: 0.5em 0.5em 0.5em 0.5em;
+  display: block;
+  clear: both;
+  float: left;
+}
+
+#page-_Freemail_Inbox .aside .actions a:hover {
+  background-color: #2D9F2D;
+  cursor: pointer;
+}
+
+#page-_Freemail_Inbox table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+#page-_Freemail_Inbox table td {
+  padding: 10px;
+}
+
+#page-_Freemail_Inbox table th {
+  padding: 0 10px 5px;
+}
+
+#page-_Freemail_Inbox table td input[type="checkbox"] {
+  margin-right: 0;
+}
+
+/*
+ *
+ * Page Freemail Message
+ *
+ */
+#page-_Freemail_Message .container {
+  min-height: calc(100vh - 130px);
+  display: flex;
+  box-sizing: border-box;
+  padding-top: 20px;
+}
+
+#page-_Freemail_Message .message {
+  border-left: 1px solid #ccc;
+  padding-left: 1em;
+  width: calc(100% - 80px);
+}
+
+#page-_Freemail_Message .folderlist {
+  line-height: 1.5;
+  width: 80px;
+}
+
+#page-_Freemail_Message .folderlist a {
+  text-decoration: none;
+}
+
+#page-_Freemail_Message .folderlist a:hover {
+  text-decoration: underline;
+}
+
+#page-_Freemail_Message .folderlist .actions a {
+  text-decoration: none;
+  border-radius: 6px;
+  border: none;
+  background-color: #5EB95E;
+  color: white;
+  margin: 0.5em 0.25em 0.5em 0;
+  font: 400 13.3333px Arial;
+  padding: 0.5em 0.5em 0.5em 0.5em;
+  display: block;
+  clear: both;
+  float: left;
+}
+
+#page-_Freemail_Message .folderlist .actions a:hover {
+  background-color: #2D9F2D;
+  cursor: pointer;
+}
+
+#page-_Freemail_Message table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+#page-_Freemail_Message table td {
+  padding: 10px;
+}
+
+#page-_Freemail_Message table th {
+  padding: 0 10px 5px;
+}
+
+#page-_Freemail_Message table td input[type="checkbox"] {
+  margin-right: 0;
+}
+
+#page-_Freemail_Message .message-headers p {
+  margin: .5em 0;
+  word-break: break-all;
+}
+
+#page-_Freemail_Message .message-content p {
+  word-break: break-all;
+}
+
+#page-_Freemail_Message .message-headers {
+  padding-bottom: .5em;
+  border-bottom: 1px solid #ccc;
+}
+
+/*
+ *
+ * Page Freemail Message
+ *
+ */
+#newMessage {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+#newMessage .infobox-content {
+  padding-right: 0;
+}
+
+#newMessage .infobox-content > div {
+  display: flex;
+}
+
+#newMessage .infobox-content input[type="image"] {
+  margin-right: 0;
+}
+
+#newMessage textarea {
+  padding: 0.5em 0.5em 0.5em 0.5em;
+  border-radius: 4px;
+  border: 1px solid #cccccc;
+  background-color: white;
+  margin: 1em 0 1em 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/*
+ *
+ * Page Freemail Outbox
+ *
+ */
+#page-_Freemail_Outbox #content {
+  padding-top: 20px;
+}
+
+#page-_Freemail_Outbox table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+#page-_Freemail_Outbox table td {
+  padding: 10px;
+}
+
+#page-_Freemail_Outbox table th {
+  padding: 0 10px 5px;
+}
+
+/*
+ *
+ * Page Status Statistics
+ *
+ */
+#page-_stats_ #content .column > tbody > tr {
+  display: table-row;
+}
+
+#page-_stats_ #content .column > tbody > tr:first-child {
+  display: flex;
+}
+
+/*
+ *
+ * Page Stats (fproxy)
+ *
+ */
+#page-_stats_.fproxy-page #content .column > tbody > tr {
+  display: block;
+  overflow: hidden;
+  float: left;
+  clear: both;
+}
+
+#page-_stats_.fproxy-page #content .column > tbody > tr > td {
+  display: block;
+  float: left;
+}
+
+#page-_stats_.fproxy-page #content .column > tbody > tr:first-child {
+  display: flex;
+}
+
+#page-_stats_.fproxy-page #content .column > tbody > tr:first-child table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+#page-_stats_.fproxy-page #content .column > tbody > tr:first-child table td {
+  padding: 10px;
+}
+
+#page-_stats_.fproxy-page #content .column > tbody > tr:first-child table th {
+  padding: 0 10px 5px;
+}
+
+/*
+ *
+ * Page Seclevels
+ *
+ */
+#page-_seclevels_ .config li input, #page-_seclevels_ .config li select {
+  float: left;
+  margin: 0 .5em 0 0;
+}
+
+
+/*
+ *
+ * Others
+ *
+ */
+.column > tbody > tr {
+  display: flex;
+}
+
+.darknet_connections {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.darknet_connections td {
+  padding: 10px;
+}
+
+.darknet_connections th {
+  padding: 0 10px 5px;
+}
+
+.connectivity-port table, .connectivity-ip table, .plugins, .translation > table, .infobox-content > div > table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.connectivity-port table td, .connectivity-ip table td, .plugins td, .translation > table td, .infobox-content > div > table td {
+  padding: 10px;
+}
+
+.connectivity-port table th, .connectivity-ip table th, .plugins th, .translation > table th, .infobox-content > div > table th {
+  padding: 0 10px 5px;
+}
+
+
+/*
+ *
  * Media query
  *
  */
+@media (max-width: 1500px) {
+  
+  #page-_stats_.fproxy-page #content .column > tbody > tr > td {
+    display: block;
+    float: left;
+  }
+  
+  #page-_stats_.fproxy-page #content .column > tbody > tr:first-child {
+    flex-wrap: wrap;
+  }
+
+  #page-_stats_.fproxy-page #content .column > tbody > tr:first-child > td {
+    width: 49%;
+    box-sizing: border-box;
+    padding-right: 15px;
+  }
+}
+
 @media (max-width: 991px) {
   div#page div#navbar {
-      position: relative;
+    position: relative;
   }
 
   #navlist {
@@ -856,18 +1343,18 @@ body[id*="Sone"] {
     background: #1b1b1b;
     width: 100%;
     padding: 0;
-    visibility: hidden; /* hides sub-menu */
+    visibility: hidden;
     opacity: 0;
     position: absolute;
     left: 0;
     width: 100%;
-    transform: translateY(-2em);
+    transform: translateY(-50em);
     z-index: 1;
     transition: all 0.3s ease-in-out 0s, visibility 0s linear 0.3s, z-index 0s linear 0.01s;
   }
 
   #navlist.active {
-    visibility: visible; /* shows sub-menu */
+    visibility: visible;
     opacity: 1;
     z-index: 1;
     transform: translateY(0%);
@@ -877,7 +1364,6 @@ body[id*="Sone"] {
   #navbar, #navlist, #navbar li {
     display: block !important;
     margin: 0 !important;
-
   }
 
   #navbar ul#navlist li a {
@@ -995,15 +1481,22 @@ body[id*="Sone"] {
     position: static !important;
     transform: translateY(0%);
   }
-}
 
-@media (max-width: 700px) {
-  div#content {
-    padding-bottom: 6em;
+  .config input[type="text"] {
+    width: 100% !important;
+  }
+
+  #page-_stats_.fproxy-page #content .column > tbody > tr:first-child > td {
+    width: 100%;
+    padding-right: 5px;
   }
 }
 
 @media (max-width: 700px) {
+  textarea {
+    max-width: 100%;
+  }
+
   div#content {
     padding-bottom: 6em;
   }
@@ -1015,10 +1508,108 @@ body[id*="Sone"] {
   .infobox-content {
     padding: 0.5em;
   }
+
+  #searchbar form[name="searchform"] > div {
+    clear: both;
+    margin: 20px 0 0 !important;
+  }
+
+  #queueDownloadForm textarea {
+    max-width: 100%;
+  }
+
+  #addPeerForm textarea {
+    max-width: 100%;
+  }
+
+  .column > tbody > tr {
+    flex-direction: column;
+  }
+
+  .config li {
+    flex-direction: column;
+  }
+
+  .config li span:last-child {
+    max-width: 100%;
+  }
+
+  #sskExtraForm input[type="text"] {
+    margin: 0;
+  }
+  
+  #sskExtraForm tbody tr td {
+    padding: .5em .3em;
+  }
+  
+  #chkExtraForm input[type="text"] {
+    margin: 0;
+  }
+  
+  #chkExtraForm tbody tr td {
+    padding: .5em .3em;
+  }
+
+  #page-_Freemail_Inbox .container {
+    min-height: auto;
+    flex-direction: column;
+  }
+
+  #page-_Freemail_Inbox .aside {
+    width: 100%;
+    padding-bottom: 1em;
+  }
+  
+  #page-_Freemail_Inbox .messagelist {
+    border-left: 0;
+    border-top: 1px solid #ccc;
+    padding-top: .5em;
+    padding-left: 0;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  #page-_Freemail_Message .container {
+    min-height: auto;
+    flex-direction: column;
+  }
+
+  #page-_Freemail_Message .folderlist {
+    width: 100%;
+    padding-bottom: 1em;
+  }
+  
+  #page-_Freemail_Message .message {
+    border-left: 0;
+    border-top: 1px solid #ccc;
+    padding-left: 0;
+    width: 100%;
+    margin-left: 0;
+    padding-top: .5em;
+  }
+
+  #page-_stats_.fproxy-page #content .column > tbody > tr:first-child table  {
+    max-width: 300px;
+  }
+
 }
 
 @media (max-width: 420px) {
   div#content {
     padding-bottom: 8em;
+  }
+
+  #page-_stats_.fproxy-page #content .column > tbody > tr {
+    max-width: 300px;
+    overflow: auto;
+  }
+
+  #page-_stats_.fproxy-page #content .column > tbody > tr:first-child {
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  #page-_WebOfTrust_LogIn input, #page-_WebOfTrust_LogIn select {
+    width: 100%;
   }
 }
