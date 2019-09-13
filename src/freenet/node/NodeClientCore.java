@@ -609,7 +609,7 @@ public class NodeClientCore implements Persistable {
 						  persistentDiskChecker,
 						  compressor, storeChecker, fcpPersistentRoot,
 						  cryptoSecretTransient, toadlets,
-						  defaultFetchContext, defaultInsertContext);
+						  defaultFetchContext, defaultInsertContext, config);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 		clientLayerPersister.start(clientContext);

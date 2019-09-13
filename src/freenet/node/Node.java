@@ -44,12 +44,7 @@ import freenet.clients.fcp.FCPMessage;
 import freenet.clients.fcp.FeedMessage;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
-import freenet.config.EnumerableOptionCallback;
-import freenet.config.FreenetFilePersistentConfig;
-import freenet.config.InvalidConfigValueException;
-import freenet.config.NodeNeedRestartException;
-import freenet.config.PersistentConfig;
-import freenet.config.SubConfig;
+import freenet.config.*;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.ECDH;
 import freenet.crypt.MasterSecret;
@@ -660,6 +655,9 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean throttleLocalData;
 	private int outputBandwidthLimit;
 	private int inputBandwidthLimit;
+	private long amountOfDataToCheckCompressionRatio;
+	private int minimumCompressionPercentage;
+	private int maxTimeForSingleCompressor;
 	boolean inputLimitDefault;
 	final boolean enableARKs;
 	final boolean enablePerNodeFailureTables;
@@ -1599,6 +1597,62 @@ public class Node implements TimeSkewDetectorCallback {
 		} catch (InvalidConfigValueException e) {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, e.getMessage());
 		}
+
+		nodeConfig.register("amountOfDataToCheckCompressionRatio", "8MiB", sortOrder++,
+				true, true, "Node.amountOfDataToCheckCompressionRatio",
+				"Node.amountOfDataToCheckCompressionRatioLong", new LongCallback() {
+			@Override
+			public Long get() {
+				return amountOfDataToCheckCompressionRatio;
+			}
+			@Override
+			public void set(Long amountOfDataToCheckCompressionRatio) {
+				synchronized(Node.this) {
+					Node.this.amountOfDataToCheckCompressionRatio = amountOfDataToCheckCompressionRatio;
+				}
+			}
+		}, true);
+
+		amountOfDataToCheckCompressionRatio = nodeConfig.getLong("amountOfDataToCheckCompressionRatio");
+
+		nodeConfig.register("minimumCompressionPercentage", "10", sortOrder++,
+				true, true, "Node.minimumCompressionPercentage",
+				"Node.minimumCompressionPercentageLong", new IntCallback() {
+			@Override
+			public Integer get() {
+				return minimumCompressionPercentage;
+			}
+			@Override
+			public void set(Integer minimumCompressionPercentage) {
+				synchronized(Node.this) {
+					if (minimumCompressionPercentage < 0 || minimumCompressionPercentage > 100) {
+						Logger.normal(Node.class, "Wrong minimum compression percentage" + minimumCompressionPercentage);
+						return;
+					}
+
+					Node.this.minimumCompressionPercentage = minimumCompressionPercentage;
+				}
+			}
+		}, Dimension.NOT);
+
+		minimumCompressionPercentage = nodeConfig.getInt("minimumCompressionPercentage");
+
+		nodeConfig.register("maxTimeForSingleCompressor", "20m", sortOrder++,
+				true, true, "Node.maxTimeForSingleCompressor",
+				"Node.maxTimeForSingleCompressorLong", new IntCallback() {
+			@Override
+			public Integer get() {
+						 return maxTimeForSingleCompressor;
+					 }
+			@Override
+			public void set(Integer maxTimeForSingleCompressor) {
+				synchronized(Node.this) {
+					Node.this.maxTimeForSingleCompressor = maxTimeForSingleCompressor;
+				}
+			}
+		}, Dimension.DURATION);
+
+		maxTimeForSingleCompressor = nodeConfig.getInt("maxTimeForSingleCompressor");
 
 		nodeConfig.register("throttleLocalTraffic", false, sortOrder++, true, false, "Node.throttleLocalTraffic", "Node.throttleLocalTrafficLong", new BooleanCallback() {
 

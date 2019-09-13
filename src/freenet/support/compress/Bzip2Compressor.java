@@ -27,7 +27,7 @@ import freenet.support.io.HeaderStreams;
 ** rather than commons-compress) the compressed streams **DO NOT** have the
 ** standard "BZ" header.
 */
-public class Bzip2Compressor implements Compressor {
+public class Bzip2Compressor extends AbstractCompressor {
 
 	final public static byte[] BZ_HEADER;
 	static {
@@ -41,24 +41,16 @@ public class Bzip2Compressor implements Compressor {
 	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		Bucket output = bf.makeBucket(maxWriteLength);
-		InputStream is = null;
-		OutputStream os = null;
-		try {
-			is = data.getInputStream();
-			os = output.getOutputStream();
+		try (InputStream is = data.getInputStream();
+			 OutputStream os = output.getOutputStream()) {
 			compress(is, os, maxReadLength, maxWriteLength);
-			// It is essential that the close()'s throw if there is any problem.
-			is.close(); is = null;
-			os.close(); os = null;
-		} finally {
-			Closer.close(is);
-			Closer.close(os);
 		}
 		return output;
 	}
 	
 	@Override
-	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength,
+						 long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage) throws IOException {
 		if(maxReadLength <= 0)
 			throw new IllegalArgumentException();
 		BZip2CompressorOutputStream bz2os = null;
@@ -68,7 +60,10 @@ public class Bzip2Compressor implements Compressor {
 			long read = 0;
 			// Bigger input buffer, so can compress all at once.
 			// Won't hurt on I/O either, although most OSs will only return a page at a time.
-			byte[] buffer = new byte[32768];
+			int bufferSize = 32768;
+			byte[] buffer = new byte[bufferSize];
+			long iterationToCheckCompressionRatio = amountOfDataToCheckCompressionRatio / bufferSize;
+			int i = 0;
 			while(true) {
 				int l = (int) Math.min(buffer.length, maxReadLength - read);
 				int x = l == 0 ? -1 : is.read(buffer, 0, buffer.length);
@@ -78,6 +73,10 @@ public class Bzip2Compressor implements Compressor {
 				read += x;
 				if(cos.written() > maxWriteLength)
 					throw new CompressionOutputSizeException();
+
+				if (++i == iterationToCheckCompressionRatio) {
+					checkCompressionEffect(read, cos.written(), minimumCompressionPercentage);
+				}
 			}
 			bz2os.flush();
 			cos.flush();

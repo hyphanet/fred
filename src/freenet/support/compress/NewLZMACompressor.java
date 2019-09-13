@@ -12,6 +12,7 @@ import java.io.OutputStream;
 
 import SevenZip.Compression.LZMA.Decoder;
 import SevenZip.Compression.LZMA.Encoder;
+import SevenZip.ICodeProgress;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -21,13 +22,13 @@ import freenet.support.io.Closer;
 import freenet.support.io.CountedInputStream;
 import freenet.support.io.CountedOutputStream;
 
-public class NewLZMACompressor implements Compressor {
-	
-    // Dictionary size 1MB, this is equivalent to lzma -4, it uses 16MB to compress and 2MB to decompress.
-    // Next one up is 2MB = -5 = 26M compress, 3M decompress.
+public class NewLZMACompressor extends AbstractCompressor {
+
+	// Dictionary size 1MB, this is equivalent to lzma -4, it uses 16MB to compress and 2MB to decompress.
+	// Next one up is 2MB = -5 = 26M compress, 3M decompress.
 	static final int MAX_DICTIONARY_SIZE = 1<<20;
 
-        private static volatile boolean logMINOR;
+	private static volatile boolean logMINOR;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
@@ -61,27 +62,38 @@ public class NewLZMACompressor implements Compressor {
 	}
 	
 	@Override
-	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength,
+						 final long amountOfDataToCheckCompressionRatio, final int minimumCompressionPercentage) throws IOException {
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
 		cis = new CountedInputStream(is);
 		cos = new CountedOutputStream(os);
 		Encoder encoder = new Encoder();
-        encoder.SetEndMarkerMode( true );
-        int dictionarySize = 1;
-        if(maxReadLength == Long.MAX_VALUE || maxReadLength < 0) {
-        	dictionarySize = MAX_DICTIONARY_SIZE;
-        	Logger.error(this, "No indication of size, having to use maximum dictionary size", new Exception("debug"));
-        } else {
-        	while(dictionarySize < maxReadLength && dictionarySize < MAX_DICTIONARY_SIZE)
-        		dictionarySize <<= 1;
-        }
-        encoder.SetDictionarySize( dictionarySize );
-        encoder.WriteCoderProperties(os);
-        encoder.Code( cis, cos, maxReadLength, maxWriteLength, null );
+		encoder.SetEndMarkerMode( true );
+		int dictionarySize = 1;
+		if(maxReadLength == Long.MAX_VALUE || maxReadLength < 0) {
+			dictionarySize = MAX_DICTIONARY_SIZE;
+			Logger.error(this, "No indication of size, having to use maximum dictionary size", new Exception("debug"));
+		} else {
+			while(dictionarySize < maxReadLength && dictionarySize < MAX_DICTIONARY_SIZE)
+				dictionarySize <<= 1;
+		}
+		encoder.SetDictionarySize( dictionarySize );
+		encoder.WriteCoderProperties(os);
+		encoder.Code(cis, cos, maxReadLength, maxWriteLength, new ICodeProgress() {
+			boolean compressionEffectNotChecked = true;
+
+			@Override
+			public void SetProgress(long processedInSize, long processedOutSize) {
+				if (compressionEffectNotChecked && processedInSize > amountOfDataToCheckCompressionRatio) {
+					checkCompressionEffect(processedInSize, processedOutSize, minimumCompressionPercentage);
+					compressionEffectNotChecked = false;
+				}
+			}
+		});
 		if(cos.written() > maxWriteLength)
 			throw new CompressionOutputSizeException(cos.written());
-        cos.flush();
+		cos.flush();
 		if(logMINOR)
 			Logger.minor(this, "Read "+cis.count()+" written "+cos.written());
 		return cos.written();

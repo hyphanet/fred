@@ -13,6 +13,7 @@ import freenet.client.InsertException;
 import freenet.client.events.SimpleEventProducer;
 import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.clients.fcp.PersistentRequestRoot;
+import freenet.config.Config;
 import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
 import freenet.node.RequestScheduler;
@@ -90,6 +91,8 @@ public class ClientContext {
 	 * avoiding having two different API's, e.g. in SplitFileFetcherStorage. */
     public PersistentJobRunner dummyJobRunner;
 
+	private transient final Config config;
+
 	public ClientContext(long bootID, ClientLayerPersister jobRunner, Executor mainExecutor,
 			ArchiveManager archiveManager, PersistentTempBucketFactory ptbf, TempBucketFactory tbf, PersistentFileTracker tracker,
 			HealingQueue hq, USKManager uskManager, RandomSource strongRandom, Random fastWeakRandom, 
@@ -98,7 +101,7 @@ public class ClientContext {
 			FileRandomAccessBufferFactory fileRAFTransient, FileRandomAccessBufferFactory fileRAFPersistent,
 			RealCompressor rc, DatastoreChecker checker, PersistentRequestRoot persistentRoot, MasterSecret cryptoSecretTransient,
 			LinkFilterExceptionProvider linkFilterExceptionProvider,
-			FetchContext defaultPersistentFetchContext, InsertContext defaultPersistentInsertContext) {
+			FetchContext defaultPersistentFetchContext, InsertContext defaultPersistentInsertContext, Config config) {
 		this.bootID = bootID;
 		this.jobRunner = jobRunner;
 		this.mainExecutor = mainExecutor;
@@ -126,6 +129,7 @@ public class ClientContext {
 		this.defaultPersistentFetchContext = defaultPersistentFetchContext;
 		this.defaultPersistentInsertContext = defaultPersistentInsertContext;
 		this.cryptoSecretTransient = cryptoSecretTransient;
+		this.config = config;
 	}
 	
 	public void init(RequestStarterGroup starters, UserAlertManager alerts) {
@@ -310,5 +314,8 @@ public class ClientContext {
     public LockableRandomAccessBufferFactory getRandomAccessBufferFactory(boolean persistent) {
         return persistent ? persistentRAFFactory : tempBucketFactory;
     }
-	
+
+	public Config getConfig() {
+		return config;
+	}
 }
