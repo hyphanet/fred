@@ -5,23 +5,21 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.fcp.AddPeer;
+import freenet.clients.http.complexhtmlnodes.PeerTrustInputForAddPeerBoxNode;
+import freenet.clients.http.complexhtmlnodes.PeerVisibilityInputForAddPeerBoxNode;
 import freenet.clients.http.geoip.IPConverter;
 import freenet.clients.http.geoip.IPConverter.Country;
+import freenet.config.ConfigException;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.PacketThrottle;
@@ -39,7 +37,6 @@ import freenet.node.PeerNode;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
 import freenet.node.PeerNodeStatus;
 import freenet.node.Version;
-import freenet.node.updater.NodeUpdateManager;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -50,6 +47,7 @@ import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 /** Base class for DarknetConnectionsToadlet and OpennetConnectionsToadlet */
 public abstract class ConnectionsToadlet extends Toadlet {
@@ -617,9 +615,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	/** Where to redirect to if there is an error */
 	protected abstract String defaultRedirectLocation();
 
-	public void handleMethodPOST(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodPOST(URI uri, final HTTPRequest request, ToadletContext ctx)
+			throws ToadletContextClosedException, IOException, RedirectException, ConfigException {
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		
+
 		if(!acceptRefPosts()) {
 		    sendUnauthorizedPage(ctx);
 			return;
@@ -641,6 +640,23 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			String privateComment = null;
 			if(!isOpennet())
 				privateComment = request.getPartAsStringFailsafe("peerPrivateNote", 250).trim();
+
+			if (Boolean.parseBoolean(request.getPartAsStringFailsafe("peers-offers-files", 5))) {
+				File[] files = core.node.runDir().file("peers-offers").listFiles();
+				if (files != null && files.length > 0) {
+					StringBuilder peersOffersFilesContent = new StringBuilder();
+					for (final File file : files) {
+						if (file.isFile()) {
+							String filename = file.getName();
+							if (filename.endsWith(".fref"))
+								peersOffersFilesContent.append(FileUtil.readUTF(file));
+						}
+					}
+					reftext = peersOffersFilesContent.toString();
+				}
+
+				node.config.get("node").set("peersOffersDismissed", true);
+			}
 			
 			String trustS = request.getPartAsStringFailsafe("trust", 10);
 			FRIEND_TRUST trust = null;
@@ -906,34 +922,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
 		peerAdditionForm.addChild("br");
 		if(!isOpennet) {
-			peerAdditionForm.addChild("b", l10n("peerTrustTitle"));
-			peerAdditionForm.addChild("#", " ");
-			peerAdditionForm.addChild("#", l10n("peerTrustIntroduction"));
-			for(FRIEND_TRUST trust : FRIEND_TRUST.valuesBackwards()) { // FIXME reverse order
-				HTMLNode input = peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "trust", trust.name() });
-				if (trust.isDefaultValue()) {
-					input.addAttribute("checked", "checked");
-				}
-				input.addChild("b", l10n("peerTrust."+trust.name())); // FIXME l10n
-				input.addChild("#", ": ");
-				input.addChild("#", l10n("peerTrustExplain."+trust.name()));
-			}
-			peerAdditionForm.addChild("br");
-			
-			peerAdditionForm.addChild("b", l10n("peerVisibilityTitle"));
-			peerAdditionForm.addChild("#", " ");
-			peerAdditionForm.addChild("#", l10n("peerVisibilityIntroduction"));
-			for(FRIEND_VISIBILITY visibility : FRIEND_VISIBILITY.values()) { // FIXME reverse order
-				HTMLNode input = peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "visibility", visibility.name() });
-				if (visibility.isDefaultValue()) {
-					input.addAttribute("checked", "checked");
-				}
-				input.addChild("b", l10n("peerVisibility."+visibility.name())); // FIXME l10n
-				input.addChild("#", ": ");
-				input.addChild("#", l10n("peerVisibilityExplain."+visibility.name()));
-			}
-			peerAdditionForm.addChild("br");
-			
+			peerAdditionForm.addChild(new PeerTrustInputForAddPeerBoxNode(l10n("")));
+			peerAdditionForm.addChild(new PeerVisibilityInputForAddPeerBoxNode(l10n("")));
 		}
 		
 		if(!isOpennet) {
