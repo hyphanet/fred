@@ -17,9 +17,9 @@ import freenet.support.api.BucketFactory;
  */
 public interface Compressor {
 	
-	public static final String DEFAULT_COMPRESSORDESCRIPTOR = null;
+	String DEFAULT_COMPRESSORDESCRIPTOR = null;
 
-	public enum COMPRESSOR_TYPE implements Compressor {
+	enum COMPRESSOR_TYPE implements Compressor {
 	    // WARNING: Changing non-transient members on classes that are Serializable can result in 
 	    // restarting downloads or losing uploads.
 	    
@@ -146,6 +146,12 @@ public interface Compressor {
 		}
 
 		@Override
+		public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength,
+							 long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage) throws IOException {
+			return compressor.compress(is, os, maxReadLength, maxWriteLength, amountOfDataToCheckCompressionRatio, minimumCompressionPercentage);
+		}
+
+		@Override
 		public long decompress(InputStream input, OutputStream output, long maxLength, long maxEstimateSizeLength) throws IOException, CompressionOutputSizeException {
 			return compressor.decompress(input, output, maxLength, maxEstimateSizeLength);
 		}
@@ -171,7 +177,7 @@ public interface Compressor {
 	 * @throws IOException If an error occurs reading or writing data.
 	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength. 
 	 */
-	public abstract Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException;
+	Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException;
 
 	/**
 	 * Compress the data.
@@ -183,7 +189,16 @@ public interface Compressor {
 	 * @throws IOException If an error occurs reading or writing data.
 	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength. 
 	 */
-	public abstract long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException;
+	long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException;
+
+	/**
+	 * Compress the data (@see {@link #compress(InputStream, OutputStream, long, long)}) with checking of compression effect.
+	 * @param amountOfDataToCheckCompressionRatio The data amount after compression of which we will check whether we have got the desired effect.
+	 * @param minimumCompressionPercentage The minimal desired compression effect, %.
+	 * @throws CompressionRatioException If the desired compression effect is not achieved.
+	 */
+	long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength,
+				  long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage) throws IOException;
 
 	/**
 	 * Decompress data.
@@ -195,7 +210,7 @@ public interface Compressor {
 	 * @throws IOException
 	 * @throws CompressionOutputSizeException
 	 */
-	public abstract long decompress(InputStream input, OutputStream output, long maxLength, long maxEstimateSizeLength) throws IOException, CompressionOutputSizeException;
+	long decompress(InputStream input, OutputStream output, long maxLength, long maxEstimateSizeLength) throws IOException, CompressionOutputSizeException;
 
 	/** Decompress in RAM only.
 	 * @param dbuf Input buffer.
@@ -206,5 +221,5 @@ public interface Compressor {
 	 * @throws CompressionOutputSizeException 
 	 * @returns The number of bytes actually written.
 	 */
-	public abstract int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException;
+	int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException;
 }
