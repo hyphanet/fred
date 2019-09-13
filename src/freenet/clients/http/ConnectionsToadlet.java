@@ -366,36 +366,17 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			
 			// BEGIN PEER TABLE
 			if(fProxyJavascriptEnabled) {
-				StringBuilder jsBuf = new StringBuilder();
-				// FIXME: There's probably some icky Javascript in here (this is the first thing that worked for me); feel free to fix up to Javascript guru standards
-				jsBuf.append( "  function peerNoteChange() {\n" );
-				jsBuf.append( "    var theobj = document.getElementById( \"action\" );\n" );
-				jsBuf.append( "    var length = theobj.options.length;\n" );
-				jsBuf.append( "    for (var i = 0; i < length; i++) {\n" );
-				jsBuf.append( "      if(theobj.options[i] == \"update_notes\") {\n" );
-				jsBuf.append( "        theobj.options[i].select = true;\n" );
-				jsBuf.append( "      } else {\n" );
-				jsBuf.append( "        theobj.options[i].select = false;\n" );
-				jsBuf.append( "      }\n" );
-				jsBuf.append( "    }\n" );
-				jsBuf.append( "    theobj.value=\"update_notes\";\n" );
-				//jsBuf.append( "    document.getElementById( \"peersForm\" ).submit();\n" );
-				jsBuf.append( "    document.getElementById( \"peersForm\" ).doAction.click();\n" );
-				jsBuf.append( "  }\n" );
-				jsBuf.append( "  function peerNoteBlur() {\n" );
-				jsBuf.append( "    var theobj = document.getElementById( \"action\" );\n" );
-				jsBuf.append( "    var length = theobj.options.length;\n" );
-				jsBuf.append( "    for (var i = 0; i < length; i++) {\n" );
-				jsBuf.append( "      if(theobj.options[i] == \"update_notes\") {\n" );
-				jsBuf.append( "        theobj.options[i].select = true;\n" );
-				jsBuf.append( "      } else {\n" );
-				jsBuf.append( "        theobj.options[i].select = false;\n" );
-				jsBuf.append( "      }\n" );
-				jsBuf.append( "    }\n" );
-				jsBuf.append( "    theobj.value=\"update_notes\";\n" );
-				jsBuf.append( "  }\n" );
-				contentNode.addChild("script", "type", "text/javascript").addChild("%", jsBuf.toString());
-				contentNode.addChild("script", new String[] {"type", "src"}, new String[] {"text/javascript",  "/static/js/checkall.js"});
+				String js =
+						"  function peerNoteChange() {\n" +
+						"    document.getElementById(\"action\").value = \"update_notes\";" +
+						"    document.getElementById(\"peersForm\").doAction.click();\n" +
+						"  }\n";
+				contentNode
+						.addChild("script", "type", "text/javascript")
+						.addChild("%", js);
+				contentNode.addChild("script",
+								new String[] {"type", "src"},
+								new String[] {"text/javascript",  "/static/js/checkall.js"});
 			}
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
