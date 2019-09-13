@@ -37,6 +37,8 @@ import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
 
+import freenet.config.*;
+import freenet.node.useralerts.*;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.FetchContext;
@@ -44,7 +46,6 @@ import freenet.clients.fcp.FCPMessage;
 import freenet.clients.fcp.FeedMessage;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
-import freenet.config.*;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.ECDH;
 import freenet.crypt.MasterSecret;
@@ -94,12 +95,6 @@ import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.NotAvailNodeStoreStats;
 import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
-import freenet.node.useralerts.JVMVersionAlert;
-import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
-import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
-import freenet.node.useralerts.SimpleUserAlert;
-import freenet.node.useralerts.TimeSkewDetectedUserAlert;
-import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginDownLoaderOfficialHTTPS;
 import freenet.pluginmanager.PluginManager;
@@ -753,6 +748,8 @@ public class Node implements TimeSkewDetectorCallback {
 	private boolean storePreallocate;
 	
 	private boolean enableRoutedPing;
+
+	private boolean peersOffersDismissed;
 
 	/**
 	 * Minimum bandwidth limit in bytes considered usable: 10 KiB. If there is an attempt to set a limit below this -
@@ -2535,6 +2532,11 @@ public class Node implements TimeSkewDetectorCallback {
 		enableRoutedPing = nodeConfig.getBoolean("enableRoutedPing");
 		
 		updateMTU();
+
+		// peers-offers/*.fref files
+		peersOffersFrefFilesConfiguration(nodeConfig, sortOrder++);
+		if (!peersOffersDismissed && checkPeersOffersFrefFiles())
+			PeersOffersUserAlert.createAlert(this);
 		
 		/* Take care that no configuration options are registered after this point; they will not persist
 		 * between restarts.
@@ -2591,6 +2593,44 @@ public class Node implements TimeSkewDetectorCallback {
 
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
+	}
+
+	private void peersOffersFrefFilesConfiguration(SubConfig nodeConfig, int configOptionSortOrder) {
+	 	final Node node = this;
+		nodeConfig.register("peersOffersDismissed", false, configOptionSortOrder, true, true,
+				"Node.peersOffersDismissed", "Node.peersOffersDismissedLong", new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return peersOffersDismissed;
+					}
+
+					@Override
+					public void set(Boolean val) {
+						if (val) {
+							for (UserAlert alert : clientCore.alerts.getAlerts())
+								if (alert instanceof PeersOffersUserAlert)
+									clientCore.alerts.unregister(alert);
+						} else
+							PeersOffersUserAlert.createAlert(node);
+						peersOffersDismissed = val;
+					}
+				});
+		peersOffersDismissed = nodeConfig.getBoolean("peersOffersDismissed");
+	}
+
+	private boolean checkPeersOffersFrefFiles() {
+		File[] files = runDir.file("peers-offers").listFiles();
+		if (files != null && files.length > 0) {
+			for (File file : files) {
+				if (file.isFile()) {
+					String filename = file.getName();
+					if (filename.endsWith(".fref"))
+						return true;
+				}
+			}
+		}
+		return false;
 	}
 
     /** Delete files from old BDB-index datastore. */
