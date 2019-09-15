@@ -62,7 +62,7 @@ public class NewLzmaCompressorTest extends TestCase {
 //		assertEquals(uncompressedString, UNCOMPRESSED_DATA_1);
 //	}
 //
-	public void testByteArrayDecompress() throws IOException {
+	public void testByteArrayDecompress() throws IOException, CompressionRatioException {
 
         // build 5k array
 		byte[] originalUncompressedData = new byte[5 * 1024];
@@ -86,7 +86,7 @@ public class NewLzmaCompressorTest extends TestCase {
 		}
 	}
 
-	public void testRandomByteArrayDecompress() throws IOException {
+	public void testRandomByteArrayDecompress() throws IOException, CompressionRatioException {
 
 		Random random = new Random(1234);
 
@@ -115,7 +115,7 @@ public class NewLzmaCompressorTest extends TestCase {
 		}
 	}
 
-	public void testCompressException() throws IOException {
+	public void testCompressException() throws IOException, CompressionRatioException {
 
 		byte[] uncompressedData = UNCOMPRESSED_DATA_1.getBytes();
 		Bucket inBucket = new ArrayBucket(uncompressedData);
@@ -131,7 +131,7 @@ public class NewLzmaCompressorTest extends TestCase {
 		//fail("did not throw expected CompressionOutputSizeException");
 	}
 
-	public void testDecompressException() throws IOException {
+	public void testDecompressException() throws IOException, CompressionRatioException {
 
 		// build 5k array
 		byte[] uncompressedData = new byte[5 * 1024];
@@ -165,7 +165,7 @@ public class NewLzmaCompressorTest extends TestCase {
 		//fail("did not throw expected CompressionOutputSizeException");
 	}
 
-	private byte[] doCompress(byte[] uncompressedData) throws IOException {
+	private byte[] doCompress(byte[] uncompressedData) throws IOException, CompressionRatioException {
 		Bucket inBucket = new ArrayBucket(uncompressedData);
 		BucketFactory factory = new ArrayBucketFactory();
 		Bucket outBucket = null;

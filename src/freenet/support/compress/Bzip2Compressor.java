@@ -16,7 +16,6 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 import freenet.support.io.HeaderStreams;
 
@@ -29,7 +28,7 @@ import freenet.support.io.HeaderStreams;
 */
 public class Bzip2Compressor extends AbstractCompressor {
 
-	final public static byte[] BZ_HEADER;
+	public static final byte[] BZ_HEADER;
 	static {
 		try {
 			BZ_HEADER = "BZ".getBytes("ISO-8859-1");
@@ -39,7 +38,8 @@ public class Bzip2Compressor extends AbstractCompressor {
 	}
 
 	@Override
-	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
+			throws IOException, CompressionOutputSizeException, CompressionRatioException {
 		Bucket output = bf.makeBucket(maxWriteLength);
 		try (InputStream is = data.getInputStream();
 			 OutputStream os = output.getOutputStream()) {
@@ -47,10 +47,11 @@ public class Bzip2Compressor extends AbstractCompressor {
 		}
 		return output;
 	}
-	
+
 	@Override
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength,
-						 long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage) throws IOException {
+						 long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage)
+			throws IOException, CompressionRatioException {
 		if(maxReadLength <= 0)
 			throw new IllegalArgumentException();
 		BZip2CompressorOutputStream bz2os = null;
@@ -90,10 +91,10 @@ public class Bzip2Compressor extends AbstractCompressor {
 				bz2os.flush();
 				bz2os.close();
 			}
-			
+
 		}
 	}
-	
+
 	@Override
 	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
 		BZip2CompressorInputStream bz2is = new BZip2CompressorInputStream(HeaderStreams.augInput(BZ_HEADER, is));

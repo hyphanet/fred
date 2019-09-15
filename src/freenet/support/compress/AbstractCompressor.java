@@ -6,11 +6,13 @@ import java.io.OutputStream;
 
 abstract class AbstractCompressor implements Compressor {
 
-    public long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength) throws IOException {
+    public long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength)
+        throws IOException, CompressionRatioException {
         return compress(input, output, maxReadLength, maxWriteLength, Long.MAX_VALUE, 0);
     }
 
-    void checkCompressionEffect(long rawDataVolume, long compressedDataVolume, int minimumCompressionPercentage) {
+    void checkCompressionEffect(long rawDataVolume, long compressedDataVolume, int minimumCompressionPercentage)
+        throws CompressionRatioException {
         long compressionPercentage = 100 - compressedDataVolume * 100 / rawDataVolume;
         if (compressionPercentage < minimumCompressionPercentage) {
             throw new CompressionRatioException("Compression has no effect. Compression percentage: " + compressionPercentage);

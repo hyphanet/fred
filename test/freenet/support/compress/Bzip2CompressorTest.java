@@ -48,7 +48,7 @@ public class Bzip2CompressorTest extends TestCase {
 		assertEquals(bz2compressor, compressorZero);
 	}
 
-	public void testCompress() throws IOException {
+	public void testCompress() throws IOException, CompressionRatioException {
 
 		// do bzip2 compression
 		byte[] compressedData = doCompress(UNCOMPRESSED_DATA_1.getBytes());
@@ -74,7 +74,7 @@ public class Bzip2CompressorTest extends TestCase {
 		assertEquals(uncompressedString, UNCOMPRESSED_DATA_1);
 	}
 
-	public void testByteArrayDecompress() throws IOException {
+	public void testByteArrayDecompress() throws IOException, CompressionRatioException {
 
         // build 5k array
 		byte[] originalUncompressedData = new byte[5 * 1024];
@@ -98,7 +98,7 @@ public class Bzip2CompressorTest extends TestCase {
 		}
 	}
 
-	public void testCompressException() throws IOException {
+	public void testCompressException() throws IOException, CompressionRatioException {
 
 		byte[] uncompressedData = UNCOMPRESSED_DATA_1.getBytes();
 		Bucket inBucket = new ArrayBucket(uncompressedData);
@@ -115,7 +115,7 @@ public class Bzip2CompressorTest extends TestCase {
 
 	}
 
-	public void testDecompressException() throws IOException {
+	public void testDecompressException() throws IOException, CompressionRatioException {
 		// build 5k array
 		byte[] uncompressedData = new byte[5 * 1024];
 		for(int i = 0; i < uncompressedData.length; i++) {
@@ -166,7 +166,7 @@ public class Bzip2CompressorTest extends TestCase {
 		return outBuf;
 	}
 
-	private byte[] doCompress(byte[] uncompressedData) throws IOException {
+	private byte[] doCompress(byte[] uncompressedData) throws IOException, CompressionRatioException {
 		Bucket inBucket = new ArrayBucket(uncompressedData);
 		BucketFactory factory = new ArrayBucketFactory();
 		Bucket outBucket = null;
