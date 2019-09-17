@@ -7,8 +7,14 @@ import java.io.OutputStream;
 abstract class AbstractCompressor implements Compressor {
 
     public long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength)
-        throws IOException, CompressionRatioException {
-        return compress(input, output, maxReadLength, maxWriteLength, Long.MAX_VALUE, 0);
+        throws IOException {
+        try {
+            return compress(input, output, maxReadLength, maxWriteLength, Long.MAX_VALUE, 0);
+        } catch (CompressionRatioException e) {
+            // Should not happen according to the contract of method
+            //   {@link Compressor#compress(InputStream, OutputStream, long, long, long, int)}
+            throw new IllegalStateException(e);
+        }
     }
 
     void checkCompressionEffect(long rawDataVolume, long compressedDataVolume, int minimumCompressionPercentage)

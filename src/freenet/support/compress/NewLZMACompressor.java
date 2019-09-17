@@ -41,7 +41,7 @@ public class NewLZMACompressor extends AbstractCompressor {
 	// Copied from EncoderThread. See below re licensing.
 	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
-			throws IOException, CompressionOutputSizeException, CompressionRatioException {
+			throws IOException, CompressionOutputSizeException {
 		Bucket output;
 		InputStream is = null;
 		OutputStream os = null;
@@ -84,17 +84,13 @@ public class NewLZMACompressor extends AbstractCompressor {
 		encoder.WriteCoderProperties(os);
 		try {
 			encoder.Code(cis, cos, maxReadLength, maxWriteLength, new ICodeProgress() {
-				boolean compressionEffectNotChecked = true;
+				boolean compressionEffectNotChecked = minimumCompressionPercentage != 0;
 
 				@Override
 				public void SetProgress(long processedInSize, long processedOutSize) {
-					if (compressionEffectNotChecked
-							&& processedInSize > amountOfDataToCheckCompressionRatio) {
+					if (compressionEffectNotChecked && processedInSize > amountOfDataToCheckCompressionRatio) {
 						try {
-							checkCompressionEffect(
-									processedInSize,
-									processedOutSize,
-									minimumCompressionPercentage);
+							checkCompressionEffect(processedInSize, processedOutSize, minimumCompressionPercentage);
 						} catch (CompressionRatioException e) {
 							throw new CompressionRatioRuntimeException(e); // need to escape from foreign API :-(
 						}
