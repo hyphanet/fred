@@ -11,7 +11,7 @@ import static java.util.concurrent.TimeUnit.*;
 
 public class BandwidthManager {
 
-    private static final long DELAY_HOURS = 1;
+    private static final long DELAY_HOURS = 24;
 
     private int lastOfferedInputBandwidth;
     private int lastOfferedOutputBandwidth;
@@ -57,10 +57,10 @@ public class BandwidthManager {
                     Logger.minor(this, e.getMessage());
                     throw e;
                 } finally {
-                    node.ticker.queueTimedJob(this, SECONDS.toMillis(DELAY_HOURS)); // TODO: change to hours
+                    node.ticker.queueTimedJob(this, HOURS.toMillis(DELAY_HOURS));
                 }
             }
-        }, SECONDS.toMillis(DELAY_HOURS)); // TODO: change to hours
+        }, HOURS.toMillis(DELAY_HOURS));
     }
 
     public static void checkOutputBandwidthLimit(int obwLimit) throws InvalidConfigValueException {
