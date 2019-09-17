@@ -1065,12 +1065,16 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			final long newMetaLen = Entry.METADATA_LENGTH * storeMaxEntries;
 			final long newHdLen = (headerBlockLength + dataBlockLength + hdPadding) * storeMaxEntries;
 
-			if (preallocate && (oldMetaLen < newMetaLen || currentHdLen < newHdLen)) {
+			if (preallocate) {
 				try (WrapperKeepalive wrapperKeepalive = new WrapperKeepalive();)
 				{
 					wrapperKeepalive.start();
-					Fallocate.forChannel(metaFC, newMetaLen).fromOffset(oldMetaLen).execute();
-					Fallocate.forChannel(hdFC, newHdLen).fromOffset(currentHdLen).execute();
+					if (oldMetaLen < newMetaLen) {
+						Fallocate.forChannel(metaFC, newMetaLen).fromOffset(oldMetaLen).execute();
+					}
+					if (currentHdLen < newHdLen) {
+						Fallocate.forChannel(hdFC, newHdLen).fromOffset(currentHdLen).execute();
+					}
 				}
 			}
 			storeFileOffsetReady = 1 + storeMaxEntries;

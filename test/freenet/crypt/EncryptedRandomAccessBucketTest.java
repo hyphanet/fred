@@ -179,7 +179,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(baos.toByteArray()));
         ClientContext context = new ClientContext(0, null, null, null, null, null, null, null, null,
                 null, r, null, null, null, null, null, null, null, null, null, null, null, null, 
-                null, null, null);
+                null, null, null, null);
         context.setPersistentMasterSecret(secret);
         EncryptedRandomAccessBucket restored = (EncryptedRandomAccessBucket) BucketTools.restoreFrom(dis, context.persistentFG, context.persistentFileTracker, secret);
         assertEquals(buf.length, restored.size());
@@ -215,7 +215,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(baos.toByteArray()));
         ClientContext context = new ClientContext(0, null, null, null, null, null, null, null, null,
                 null, r, null, null, null, null, null, null, null, null, null, null, null, null, 
-                null, null, null);
+                null, null, null, null);
         context.setPersistentMasterSecret(secret);
         ObjectInputStream ois = new ObjectInputStream(dis);
         EncryptedRandomAccessBucket restored = (EncryptedRandomAccessBucket) ois.readObject();
