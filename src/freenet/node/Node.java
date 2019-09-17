@@ -775,18 +775,6 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	/**
-	 * Returns an exception with an explanation that the given bandwidth limit is too low.
-	 *
-	 * See the Node.bandwidthMinimum localization string.
-	 * @param limit Bandwidth limit in bytes.
-	 */
-	private InvalidConfigValueException lowBandwidthLimit(int limit) {
-		return new InvalidConfigValueException(l10n("bandwidthMinimum",
-		    new String[] { "limit", "minimum" },
-		    new String[] { Integer.toString(limit), Integer.toString(minimumBandwidth) }));
-	}
-
-	/**
 	 * Dispatches a probe request with the specified settings
 	 * @see freenet.node.probe.Probe#start(byte, long, Type, Listener)
 	 */
@@ -4895,20 +4883,6 @@ public class Node implements TimeSkewDetectorCallback {
         else
             return null;
     }
-
-	private void checkOutputBandwidthLimit(int obwLimit) throws InvalidConfigValueException {
-		if(obwLimit <= 0) throw new InvalidConfigValueException(l10n("bwlimitMustBePositive"));
-		if (obwLimit < minimumBandwidth) throw lowBandwidthLimit(obwLimit);
-	}
-
-	private void checkInputBandwidthLimit(int ibwLimit) throws InvalidConfigValueException {
-		// Reserved value for limit based on output limit.
-		if (ibwLimit == -1) {
-			return;
-		}
-		if(ibwLimit <= 1) throw new InvalidConfigValueException(l10n("bandwidthLimitMustBePositiveOrMinusOne"));
-		if (ibwLimit < minimumBandwidth) throw lowBandwidthLimit(ibwLimit);
-	}
 
 	public PluginManager getPluginManager() {
 		return pluginManager;
