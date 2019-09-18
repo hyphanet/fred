@@ -92,14 +92,18 @@ public class NewLZMACompressor extends AbstractCompressor {
 						try {
 							checkCompressionEffect(processedInSize, processedOutSize, minimumCompressionPercentage);
 						} catch (CompressionRatioException e) {
-							throw new CompressionRatioRuntimeException(e); // need to escape from foreign API :-(
+							throw new RuntimeException(e); // need to escape from foreign API :-(
 						}
 						compressionEffectNotChecked = false;
 					}
 				}
 			});
-		} catch (CompressionRatioRuntimeException e) {
-			throw (CompressionRatioException) e.getCause();
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof CompressionRatioException) {
+				throw (CompressionRatioException) e.getCause();
+			} else {
+				throw e;
+			}
 		}
 		if(cos.written() > maxWriteLength)
 			throw new CompressionOutputSizeException(cos.written());
