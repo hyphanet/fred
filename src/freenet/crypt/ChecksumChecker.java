@@ -68,11 +68,14 @@ public abstract class ChecksumChecker {
      * be zero'ed out. */
     public abstract void readAndChecksum(DataInput is, byte[] buf, int offset, int length) throws IOException, ChecksumFailedException;
     
-    public InputStream checksumReaderWithLength(InputStream dis, BucketFactory bf, long maxLength) throws IOException, ChecksumFailedException {
+    public InputStream checksumReaderWithLength(InputStream dis, BucketFactory bf, long maxLength)
+            throws IOException, ChecksumFailedException {
         // IMHO it is better to implement this with copying, because then we don't start 
         // constructing objects from bad data...
         long length = new DataInputStream(dis).readLong();
-        if(length < 0 || length > maxLength) throw new IOException("Bad length");
+        if(length < 0 || length > maxLength) {
+            throw new IOException("Bad length: " + length + "; maxLength: " + maxLength);
+        }
         final Bucket bucket = bf.makeBucket(-1);
         OutputStream os = bucket.getOutputStream();
         copyAndStripChecksum(dis, os, length);
