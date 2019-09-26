@@ -1,31 +1,35 @@
 package freenet.clients.http;
 
+import com.mitchellbosecke.pebble.PebbleEngine;
+import com.mitchellbosecke.pebble.extension.AbstractExtension;
+import com.mitchellbosecke.pebble.extension.Function;
+import com.mitchellbosecke.pebble.loader.ClasspathLoader;
+import com.mitchellbosecke.pebble.loader.Loader;
+import com.mitchellbosecke.pebble.template.EvaluationContext;
+import com.mitchellbosecke.pebble.template.PebbleTemplate;
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.*;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-/**
- * Simplest template engine.
- * <p>
- * Expression syntax:
- * <ul>
- * <li>${...} - Variable expressions.
- * <li>#{...} - Message (l10n) expressions.
- * <li>${...Error} - Placeholder for errors. Template try to get errors from model.errors map.
- * Unused error placeholders will be removed from the page.
- * </ul>
- */
 abstract class WebTemplateToadlet extends Toadlet {
 
-    private static final String ROOT_PATH = "templates/";
+    private static final String TEMPLATE_ROOT_PATH = "freenet/clients/http/templates/";
+    private static final String TEMPLATE_NAME_SUFFIX = ".html";
+
+    private static final PebbleEngine templateEngine;
+
+    static {
+        Loader loader = new ClasspathLoader(WebTemplateToadlet.class.getClassLoader());
+        loader.setPrefix(TEMPLATE_ROOT_PATH);
+        loader.setSuffix(TEMPLATE_NAME_SUFFIX);
+
+        templateEngine = new PebbleEngine.Builder().loader(loader).extension(new L10nExtension()).build();
+    }
 
     WebTemplateToadlet(HighLevelSimpleClient client) {
         super(client);
@@ -44,52 +48,39 @@ abstract class WebTemplateToadlet extends Toadlet {
     }
 
     void addChild(HTMLNode parent, String templateName, Map<String, Object> model, String l10nPrefix) throws IOException {
-        try (InputStream stream =
-                     getClass().getResourceAsStream(ROOT_PATH + templateName + ".html")) {
-            ByteArrayOutputStream content = new ByteArrayOutputStream();
+        model.put("l10nPrefix", l10nPrefix);
+        PebbleTemplate template = templateEngine.getTemplate(templateName);
 
-            int len;
-            byte[] contentBytes = new byte[1024];
-            while ((len = stream.read(contentBytes)) != -1) {
-                content.write(contentBytes, 0, len);
-            }
+        Writer writer = new StringWriter();
+        template.evaluate(writer, model);
 
-            String template = content.toString(StandardCharsets.UTF_8.name());
+        parent.addChild("%", writer.toString());
+    }
+}
 
-            // replace variables in html
-            for (Map.Entry<String, Object> entry : model.entrySet()) {
-                template = template.replaceAll("\\$\\{" + entry.getKey() + "}", String.valueOf(entry.getValue()));
-            }
+class L10nExtension extends AbstractExtension {
 
-            // replace l10n in html
-            String key;
-            while ((key = getL10nKey(template)) != null) {
-                template = template.replaceAll("#\\{" + key + "}", NodeL10n.getBase().getString(l10nPrefix + key));
-            }
+    @Override
+    public Map<String, Function> getFunctions() {
+        Map<String, Function> functions = new HashMap<>();
+        functions.put("l10n", new L10nFunction());
+        return functions;
+    }
+}
 
-            // replace form errors in html
-            Object errorsObject = model.get("errors");
-            if (errorsObject instanceof Map) {
-                Map errors = (Map) errorsObject;
-                for (Object errKey : errors.keySet()) {
-                    template = template.replaceAll("\\$\\{" + errKey + "}", errors.get(errKey).toString());
-                }
-            }
-            template = template.replaceAll("\\$\\{.*Error}", ""); // remove unused error placeholders
+class L10nFunction implements Function {
 
-            parent.addChild("%", template);
+    @Override
+    public Object execute(Map<String, Object> args, PebbleTemplate self, EvaluationContext context, int lineNumber) {
+        Object key = args.get("0");
+        if (key == null) {
+            return "null";
         }
+        return NodeL10n.getBase().getString(context.getVariable("l10nPrefix") + key.toString());
     }
 
-    private String getL10nKey(String template) {
-        Pattern pattern = Pattern.compile("#\\{.*}");
-        Matcher matcher = pattern.matcher(template);
-        try {
-            if (matcher.find()) {
-                String key = matcher.group();
-                return key.substring(2, key.length() - 1);
-            }
-        } catch (IllegalStateException ignored) {}
+    @Override
+    public List<String> getArgumentNames() {
         return null;
     }
 }

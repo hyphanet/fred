@@ -160,33 +160,33 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
                     long downloadLimit = this.downloadLimit.isEmpty() ? 0 : Fields.parseLong(this.downloadLimit + "KiB");
                     if (downloadLimit < Node.getMinimumBandwidth()) {
                         errors.put("downloadLimitError",
-                                FirstTimeWizardNewToadlet.l10n("valid.downloadLimit", Integer.toString(Node.getMinimumBandwidth() / 1024)));
+                                l10n("valid.downloadLimit", Integer.toString(Node.getMinimumBandwidth() / 1024)));
                     }
                 } catch (NumberFormatException e) {
                     errors.put("downloadLimitError",
-                            FirstTimeWizardNewToadlet.l10n("valid.number.prefix.downloadLimit") + " " + e.getMessage());
+                            l10n("valid.number.prefix.downloadLimit") + " " + e.getMessage());
                 }
 
                 try {
                     long uploadLimit = this.uploadLimit.isEmpty() ? 0 : Fields.parseLong(this.uploadLimit + "KiB");
                     if (uploadLimit < Node.getMinimumBandwidth()) {
                         errors.put("uploadLimitError",
-                                FirstTimeWizardNewToadlet.l10n("valid.uploadLimit", Integer.toString(Node.getMinimumBandwidth() / 1024)));
+                                l10n("valid.uploadLimit", Integer.toString(Node.getMinimumBandwidth() / 1024)));
                     }
                 } catch (NumberFormatException e) {
                     errors.put("uploadLimitError",
-                            FirstTimeWizardNewToadlet.l10n("valid.number.prefix.uploadLimit") + " " + e.getMessage());
+                            l10n("valid.number.prefix.uploadLimit") + " " + e.getMessage());
                 }
             } else {
                 try {
                     double monthlyLimit = Double.parseDouble(bandwidthMonthlyLimit);
                     if (monthlyLimit < BandwidthLimit.minMonthlyLimit) {
                         errors.put("bandwidthMonthlyLimitError",
-                                FirstTimeWizardNewToadlet.l10n("valid.bandwidthMonthlyLimit", Double.toString(BandwidthLimit.minMonthlyLimit)));
+                                l10n("valid.bandwidthMonthlyLimit", Double.toString(BandwidthLimit.minMonthlyLimit)));
                     }
                 } catch (NumberFormatException e) {
                     errors.put("bandwidthMonthlyLimitError",
-                            FirstTimeWizardNewToadlet.l10n("valid.number.prefix.bandwidthMonthlyLimit") + " " + e.getMessage());
+                            l10n("valid.number.prefix.bandwidthMonthlyLimit") + " " + e.getMessage());
                 }
             }
 
@@ -202,7 +202,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
                 }
             } catch (NumberFormatException e) {
                 errors.put("storageLimitError",
-                        FirstTimeWizardNewToadlet.l10n("valid.number.prefix.storageLimit") + " " + e.getMessage());
+                        l10n("valid.number.prefix.storageLimit") + " " + e.getMessage());
             }
 
             if (!setPassword.isEmpty()) {
