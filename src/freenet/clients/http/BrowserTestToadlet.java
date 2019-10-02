@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -18,12 +17,11 @@ import freenet.support.api.HTTPRequest;
  * <ul>
  */
 public class BrowserTestToadlet extends Toadlet {
-	BrowserTestToadlet(HighLevelSimpleClient client, NodeClientCore c) {
+
+	BrowserTestToadlet(HighLevelSimpleClient client) {
 		super(client);
-		this.core=c;
 	}
 
-	final NodeClientCore core;
 	private final static String imgWarningMime =
 		"R0lGODdh1AE8AOf9AAABAAcAAAkBAAoDARAAAQcECRYAAxoCAB4BACIBARMK" +
 		"ACUBBCcBACoAABQMAw0PDBMPAC4BAiUHADQBABkQASMLAjoABRQSFj0CAUEA" +
@@ -181,10 +179,6 @@ public class BrowserTestToadlet extends Toadlet {
 		 throws ToadletContextClosedException, IOException {
 		// Yes, we need that in order to test the browser (number of connections per server)
 		if (request.isParameterSet("wontload")) return;
-		if (request.isParameterSet("mimeTest")){
-			this.writeHTMLReply(ctx, 200, "OK", imgWarningMime);
-			return;
-		}
 
 		PageNode page = ctx.getPageMaker().getPageNode("Freenet browser testing tool", ctx);
 		HTMLNode pageNode = page.outer;
@@ -198,7 +192,6 @@ public class BrowserTestToadlet extends Toadlet {
 		 * to freenet.clients.http.ToadletContextImpl#generateCSP return statement */
 		ctx.getPageMaker().getInfobox("infobox-warning", "MIME Inline", contentNode, "mime-inline-test", true).
 			addChild("img", new String[]{"src", "alt"}, new String[]{"data:image/gif;base64,"+imgWarningMime, "Your browser is probably safe."});
-//			addChild("img", new String[]{"src", "alt"}, new String[]{"?mimeTest", "Your browser is probably safe."});
 
 		// #### Test whether we can have more than 10 simultaneous connections to fproxy
 		HTMLNode maxConnectionsPerServerContent = ctx.getPageMaker().getInfobox("infobox-warning", "Number of connections", contentNode, "browser-connections", true);
