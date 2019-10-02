@@ -84,17 +84,17 @@ public class NewLZMACompressor extends AbstractCompressor {
 		encoder.WriteCoderProperties(os);
 		try {
 			encoder.Code(cis, cos, maxReadLength, maxWriteLength, new ICodeProgress() {
-				boolean compressionEffectNotChecked = minimumCompressionPercentage != 0;
+				boolean compressionEffectShouldBeChecked = minimumCompressionPercentage != 0;
 
 				@Override
 				public void SetProgress(long processedInSize, long processedOutSize) {
-					if (compressionEffectNotChecked && processedInSize > amountOfDataToCheckCompressionRatio) {
+					if (compressionEffectShouldBeChecked && processedInSize > amountOfDataToCheckCompressionRatio) {
 						try {
 							checkCompressionEffect(processedInSize, processedOutSize, minimumCompressionPercentage);
 						} catch (CompressionRatioException e) {
 							throw new RuntimeException(e); // need to escape from foreign API :-(
 						}
-						compressionEffectNotChecked = false;
+						compressionEffectShouldBeChecked = false;
 					}
 				}
 			});
