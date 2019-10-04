@@ -5,6 +5,7 @@ import java.net.URI;
 import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.config.ConfigException;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -162,7 +163,8 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 	}
 
 	@Override
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx)
+			throws ToadletContextClosedException, IOException, RedirectException, ConfigException {
 		super.handleMethodPOST(uri, request, ctx);
 	}
 		

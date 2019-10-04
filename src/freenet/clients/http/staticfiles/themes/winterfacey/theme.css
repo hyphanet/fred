@@ -674,9 +674,8 @@ table tbody tr.priority6:nth-child(2n) {
   flex-flow: row wrap;
   justify-content: center;
   align-content: center;
+  padding: 0 10%;
   align-items: center;
-  padding: 0% 10% 0% 10%;
-  align-items: stretch;
 }
 
 #bookmarks table tr {
@@ -1316,12 +1315,12 @@ body[id*="Sone"] {
  *
  */
 @media (max-width: 1500px) {
-  
+
   #page-_stats_.fproxy-page #content .column > tbody > tr > td {
     display: block;
     float: left;
   }
-  
+
   #page-_stats_.fproxy-page #content .column > tbody > tr:first-child {
     flex-wrap: wrap;
   }
@@ -1537,15 +1536,15 @@ body[id*="Sone"] {
   #sskExtraForm input[type="text"] {
     margin: 0;
   }
-  
+
   #sskExtraForm tbody tr td {
     padding: .5em .3em;
   }
-  
+
   #chkExtraForm input[type="text"] {
     margin: 0;
   }
-  
+
   #chkExtraForm tbody tr td {
     padding: .5em .3em;
   }
@@ -1559,7 +1558,7 @@ body[id*="Sone"] {
     width: 100%;
     padding-bottom: 1em;
   }
-  
+
   #page-_Freemail_Inbox .messagelist {
     border-left: 0;
     border-top: 1px solid #ccc;
@@ -1578,7 +1577,7 @@ body[id*="Sone"] {
     width: 100%;
     padding-bottom: 1em;
   }
-  
+
   #page-_Freemail_Message .message {
     border-left: 0;
     border-top: 1px solid #ccc;

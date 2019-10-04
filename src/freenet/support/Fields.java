@@ -3,7 +3,6 @@ package freenet.support;
 import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
@@ -11,6 +10,7 @@ import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
+import freenet.config.Dimension;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger.LogLevel;
 
@@ -715,6 +715,20 @@ public abstract class Fields {
 		return limit;
 	}
 
+	public static int parseInt(String s, Dimension dimension) throws NumberFormatException {
+		switch (dimension) {
+			case NOT:
+			case SIZE:
+				return parseInt(s);
+			case DURATION:
+				long durationInMillis = TimeUtil.toMillis(s);
+				if ((int) durationInMillis == durationInMillis)
+					return (int) durationInMillis;
+				throw new ArithmeticException("integer overflow");
+		}
+		throw new AssertionError("Unknown dimension " + dimension);
+	}
+
 	/**
 	 * Parse a human-readable string possibly including SI and ICE units into an integer.
 	 * @throws NumberFormatException
@@ -785,6 +799,18 @@ public abstract class Fields {
 			}
 		}
 		return ret;
+	}
+
+	public static String intToString(int val, Dimension dimension) {
+		switch (dimension) {
+			case NOT:
+				return intToString(val, false);
+			case SIZE:
+				return intToString(val, true);
+			case DURATION:
+				return TimeUtil.formatTime(val, 6, false);
+		}
+		throw new AssertionError("Unknown dimension " + dimension);
 	}
 
 	public static String intToString(int val, boolean isSize) {

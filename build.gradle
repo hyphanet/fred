@@ -55,8 +55,8 @@ task buildInfo {
     }
 }
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 task compileVersion (type: JavaCompile) {
     copy {
@@ -67,8 +67,8 @@ task compileVersion (type: JavaCompile) {
             String line -> line.replaceAll("@custom@","${gitrev}")
         }
     }
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
     source = "${version_buildir}"
     include "${version_src}"
     classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDir)

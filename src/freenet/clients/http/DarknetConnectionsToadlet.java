@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.config.ConfigException;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
@@ -117,7 +118,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		// private darknet node comment note column
 		DarknetPeerNodeStatus status = (DarknetPeerNodeStatus) peerNodeStatus;
 		if(fProxyJavascriptEnabled) {
-			peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "onBlur", "onChange", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", "peerNoteBlur();", "peerNoteChange();", status.getPrivateDarknetCommentNote() });
+			peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "onChange", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", "peerNoteChange();", status.getPrivateDarknetCommentNote() });
 		} else {
 			peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", status.getPrivateDarknetCommentNote() });
 		}
@@ -520,7 +521,8 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	}
 
 	@Override
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx)
+			throws ToadletContextClosedException, IOException, RedirectException, ConfigException {
 		super.handleMethodPOST(uri, request, ctx);
 	}
 

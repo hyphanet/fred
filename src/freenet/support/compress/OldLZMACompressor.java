@@ -3,11 +3,7 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 import SevenZip.Compression.LZMA.Decoder;
 import SevenZip.Compression.LZMA.Encoder;
@@ -53,7 +49,7 @@ public class OldLZMACompressor implements Compressor {
 		}
 		return output;
 	}
-	
+
 	@Override
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		CountedInputStream cis = null;
@@ -74,6 +70,11 @@ public class OldLZMACompressor implements Compressor {
 			throw new CompressionOutputSizeException();
 		cos.flush();
 		return cos.written();
+	}
+
+	@Override
+	public long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength, long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage) throws IOException {
+		throw new UnsupportedEncodingException();
 	}
 
 	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength, long maxCheckSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
