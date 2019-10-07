@@ -14,9 +14,9 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.support.compress.Compressor;
 
 /** Context object for an insert operation, including both simple and multi-file inserts.
- * 
- * WARNING: Changing non-transient members on classes that are Serializable can result in 
- * losing uploads. 
+ *
+ * WARNING: Changing non-transient members on classes that are Serializable can result in
+ * losing uploads.
  */
 public class InsertContext implements Cloneable, Serializable {
 
@@ -28,10 +28,10 @@ public class InsertContext implements Cloneable, Serializable {
 	/** For migration only. */
 	private final short splitfileAlgorithm;
 	/** Maximum number of retries (after the initial attempt) for each block
-	 * inserted. -1 = retry forever or until it succeeds (subject to 
+	 * inserted. -1 = retry forever or until it succeeds (subject to
 	 * consecutiveRNFsCountAsSuccess) or until a fatal error. */
 	public int maxInsertRetries;
-	/** On a very small network, any insert will RNF. Therefore we allow 
+	/** On a very small network, any insert will RNF. Therefore we allow
 	 * some number of RNFs to equal success. */
 	public int consecutiveRNFsCountAsSuccess;
 	/** Maximum number of data blocks per segment for splitfiles */
@@ -42,7 +42,7 @@ public class InsertContext implements Cloneable, Serializable {
 	/** Client events will be published to this, you can subscribe to them */
 	public final ClientEventProducer eventProducer;
 	/** Can this insert write to the client-cache? We don't store all requests in the client cache,
-	 * in particular big stuff usually isn't written to it, to maximise its effectiveness. Plus, 
+	 * in particular big stuff usually isn't written to it, to maximise its effectiveness. Plus,
 	 * local inserts are not written to the client-cache by default for privacy reasons. */
 	public boolean canWriteClientCache;
 	/** a string that contains the codecs to use/try
@@ -60,17 +60,17 @@ public class InsertContext implements Cloneable, Serializable {
 	/** Don't insert USK DATEHINTs (and ignore them on polling for maximum edition). */
 	public boolean ignoreUSKDatehints;
 
-	/** Compatibility mode. This determines exactly how we insert data, so that we can produce the 
-	 * same CHK when reinserting a key even if it is with a later version of Freenet. It is 
-	 * also important for e.g. auto-update to be able to insert keys compatible with older nodes, 
+	/** Compatibility mode. This determines exactly how we insert data, so that we can produce the
+	 * same CHK when reinserting a key even if it is with a later version of Freenet. It is
+	 * also important for e.g. auto-update to be able to insert keys compatible with older nodes,
 	 * but CompatibilityMode's are sometimes backwards compatible, there are separate versioning
-	 * systems for keys and Metadata, which will be set as appropriate for an insert depending on 
+	 * systems for keys and Metadata, which will be set as appropriate for an insert depending on
 	 * the CompatibilityMode. */
 	public static enum CompatibilityMode {
-	    
+
 		/** We do not know. */
 		COMPAT_UNKNOWN((short)0),
-		/** No compatibility issues, use the most efficient metadata possible. Used only in the 
+		/** No compatibility issues, use the most efficient metadata possible. Used only in the
 		 * front-end: MUST NOT be stored: Code should convert this to a specific mode as early as
 		 * possible, or inserts will break when a new mode is added. InsertContext does this. */
 		COMPAT_CURRENT((short)1),
@@ -88,16 +88,18 @@ public class InsertContext implements Cloneable, Serializable {
 		COMPAT_1416((short)6),
 		/** 1468: Fill in topDontCompress and topCompatibilityMode on splitfiles. Same blocks, but
 		 * slightly different metadata. */
-		COMPAT_1468((short)7);
-		
-		/** Code used in metadata for this CompatibilityMode. Hence we can remove old 
+		COMPAT_1468((short)7),
+		/** 1485: check compression with a fraction of the data to not stall on large compressed files */
+		COMPAT_1485((short)8);
+
+		/** Code used in metadata for this CompatibilityMode. Hence we can remove old
 		 * CompatibilityMode's, and it's also convenient. */
 		public final short code;
-		
+
 		CompatibilityMode(short code) {
 		    this.code = code;
 		}
-		
+
 		/** cached values(). Never modify or pass this array to outside code! */
 		private static final CompatibilityMode[] values = values();
 
@@ -106,16 +108,16 @@ public class InsertContext implements Cloneable, Serializable {
 		public static CompatibilityMode latest() {
 			return values[values.length-1];
 		}
-		
+
 		/** Must be called whenever we accept a CompatibilityMode as e.g. a config option. Converts
 		 * the pseudo- */
 		public CompatibilityMode intern() {
 		    if(this == COMPAT_CURRENT) return latest();
 		    return this;
 		}
-		
+
         private static final Map<Short, CompatibilityMode> modesByCode;
-        
+
         static {
             HashMap<Short, CompatibilityMode> cmodes = new HashMap<Short, CompatibilityMode>();
             for(CompatibilityMode mode : CompatibilityMode.values) {
@@ -129,7 +131,7 @@ public class InsertContext implements Cloneable, Serializable {
 	        if(!modesByCode.containsKey(code)) throw new IllegalArgumentException();
 	        return modesByCode.get(code);
 	    }
-	    
+
         public static boolean hasCode(short min) {
             return modesByCode.containsKey(min);
         }
@@ -137,32 +139,32 @@ public class InsertContext implements Cloneable, Serializable {
         public static boolean maybeFutureCode(short code) {
             return code > latest().code;
         }
-        
+
         /** The default compatibility mode for new inserts when it is not specified. Usually this
          * will be COMPAT_CURRENT (it will get converted into a specific mode later), but when a
-         * new compatibility mode is deployed we may want to keep this at an earlier version to 
-         * avoid a period when data inserted with the new/testing builds can't be fetched with 
+         * new compatibility mode is deployed we may want to keep this at an earlier version to
+         * avoid a period when data inserted with the new/testing builds can't be fetched with
          * earlier versions. */
         public static final CompatibilityMode COMPAT_DEFAULT = COMPAT_CURRENT;
-        
+
 	}
-	
+
 	/** Backward compatibility support for network level metadata. */
 	private CompatibilityMode realCompatMode;
 	/** Only for migration. FIXME remove. */
 	private long compatibilityMode;
 	/** If true, don't insert, just generate the CHK */
     public boolean getCHKOnly;
-    /** If true, try to find the final URI as quickly as possible, and insert the upper layers as 
+    /** If true, try to find the final URI as quickly as possible, and insert the upper layers as
      * soon as we can, rather than waiting for the lower layers. The default behaviour is safer,
-     * because an attacker can usually only identify the datastream once he has the top block, or 
+     * because an attacker can usually only identify the datastream once he has the top block, or
      * once you have announced the key. */
     public boolean earlyEncode;
-	
+
 	public CompatibilityMode getCompatibilityMode() {
 	    return realCompatMode;
 	}
-	
+
 	public long getCompatibilityCode() {
 		return realCompatMode.ordinal();
 	}
@@ -209,7 +211,7 @@ public class InsertContext implements Cloneable, Serializable {
 		this.localRequestOnly = ctx.localRequestOnly;
 		this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
 	}
-	
+
 	/** Make public, but just call parent for a field for field copy */
 	@Override
 	public InsertContext clone() {
@@ -220,7 +222,7 @@ public class InsertContext implements Cloneable, Serializable {
 			throw new Error(e);
 		}
 	}
-	
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -289,11 +291,11 @@ public class InsertContext implements Cloneable, Serializable {
             return false;
         return true;
     }
-    
+
     public SplitfileAlgorithm getSplitfileAlgorithm() {
         return splitfileAlgo;
     }
-    
+
     /** Call when migrating from db4o era. FIXME remove.
      * @deprecated */
     @Deprecated
