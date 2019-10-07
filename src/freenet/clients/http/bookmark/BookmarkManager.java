@@ -40,7 +40,7 @@ public class BookmarkManager implements RequestClient {
 	private final USKUpdatedCallback uskCB = new USKUpdatedCallback();
 	public static final BookmarkCategory MAIN_CATEGORY = new BookmarkCategory("/");
 	public static final BookmarkCategory DEFAULT_CATEGORY = new BookmarkCategory("\\");
-	private final HashMap<String, Bookmark> bookmarks = new HashMap<String, Bookmark>();
+	private final HashMap<String, Bookmark> bookmarks = new HashMap<>();
 	private final File bookmarksFile;
 	private final File backupBookmarksFile;
 	private boolean isSavingBookmarks = false;
@@ -48,23 +48,21 @@ public class BookmarkManager implements RequestClient {
 	static {
 		String name = "freenet/clients/http/staticfiles/defaultbookmarks.dat";
 		SimpleFieldSet defaultBookmarks = null;
-		InputStream in = null;
 		try {
 			ClassLoader loader = BookmarkManager.class.getClassLoader();
-
-			// Returns null on lookup failures:
-			in = loader.getResourceAsStream(name);
-			if(in != null)
-				defaultBookmarks = SimpleFieldSet.readFrom(in, false, false);
+			try (InputStream in = loader.getResourceAsStream(name)) {
+				// loader returns null on lookup failures:
+				if (in != null)
+					defaultBookmarks = SimpleFieldSet.readFrom(in, false, false);
+			}
 		} catch(Exception e) {
 			Logger.error(BookmarkManager.class, "Error while loading the default bookmark file from " + name + " :" + e.getMessage(), e);
 		} finally {
-			Closer.close(in);
 			DEFAULT_BOOKMARKS = defaultBookmarks;
 		}
 	}
 
-        private static volatile boolean logMINOR;
+	private static volatile boolean logMINOR;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
@@ -110,10 +108,10 @@ public class BookmarkManager implements RequestClient {
 			putPaths("\\", DEFAULT_CATEGORY);
 			readBookmarks(DEFAULT_CATEGORY, DEFAULT_BOOKMARKS);
 		}
-		
+
 		SemiOrderedShutdownHook.get().addEarlyJob(new Thread() {
 			BookmarkManager bm = BookmarkManager.this;
-			
+
 			@Override public void run() {
 				bm.storeBookmarks();
 				bm = null;
@@ -339,7 +337,7 @@ public class BookmarkManager implements RequestClient {
 
 		return uris;
 	}
-	
+
 	public void storeBookmarksLazy() {
 		synchronized(bookmarks) {
 			if(isSavingBookmarksLazy) return;
@@ -369,19 +367,14 @@ public class BookmarkManager implements RequestClient {
 
 			sfs = toSimpleFieldSet();
 		}
-		FileOutputStream fos = null;
-		try {
-			fos = new FileOutputStream(backupBookmarksFile);
+		try (FileOutputStream fos = new FileOutputStream(backupBookmarksFile)){
+
 			sfs.writeToBigBuffer(fos);
-			fos.close();
-			fos = null;
 			if(!FileUtil.renameTo(backupBookmarksFile, bookmarksFile))
 				Logger.error(this, "Unable to rename " + backupBookmarksFile.toString() + " to " + bookmarksFile.toString());
 		} catch(IOException ioe) {
 			Logger.error(this, "An error has occured saving the bookmark file :" + ioe.getMessage(), ioe);
 		} finally {
-			Closer.close(fos);
-
 			synchronized(bookmarks) {
 				isSavingBookmarks = false;
 			}
