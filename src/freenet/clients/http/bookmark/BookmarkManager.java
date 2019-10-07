@@ -410,35 +410,39 @@ public class BookmarkManager implements RequestClient {
 			if(!isRoot)
 				putPaths(prefix + category.name + '/', category);
 
-			try {
-				int nbBookmarks = sfs.getInt(BookmarkItem.NAME);
-				int nbCategories = sfs.getInt(BookmarkCategory.NAME);
-
-				for(int i = 0; i < nbBookmarks; i++) {
-					SimpleFieldSet subset = sfs.getSubset(BookmarkItem.NAME + i);
-					try {
-						BookmarkItem item = new BookmarkItem(subset, this, node.alerts);
-						String name = (isRoot ? "" : prefix + category.name) + '/' + item.name;
-						putPaths(name, item);
-						category.addBookmark(item);
-						item.registerUserAlert();
-						subscribeToUSK(item);
-					} catch(MalformedURLException e) {
-						throw new FSParseException(e);
-					}
-				}
-
-				for(int i = 0; i < nbCategories; i++) {
-					SimpleFieldSet subset = sfs.getSubset(BookmarkCategory.NAME + i);
-					BookmarkCategory currentCategory = new BookmarkCategory(subset);
-					category.addBookmark(currentCategory);
-					String name = (isRoot ? "/" : (prefix + category.name + '/'));
-					_innerReadBookmarks(name, currentCategory, subset.getSubset("Content"));
-				}
-
-			} catch(FSParseException e) {
-				Logger.error(this, "Error parsing the bookmarks file!", e);
+			if (sfs == null) {
 				hasBeenParsedWithoutAnyProblem = false;
+			} else {
+				try {
+					int nbBookmarks = sfs.getInt(BookmarkItem.NAME);
+					int nbCategories = sfs.getInt(BookmarkCategory.NAME);
+
+					for (int i = 0; i < nbBookmarks; i++) {
+						SimpleFieldSet subset = sfs.getSubset(BookmarkItem.NAME + i);
+						try {
+							BookmarkItem item = new BookmarkItem(subset, this, node.alerts);
+							String name = (isRoot ? "" : prefix + category.name) + '/' + item.name;
+							putPaths(name, item);
+							category.addBookmark(item);
+							item.registerUserAlert();
+							subscribeToUSK(item);
+						} catch (MalformedURLException e) {
+							throw new FSParseException(e);
+						}
+					}
+
+					for (int i = 0; i < nbCategories; i++) {
+						SimpleFieldSet subset = sfs.getSubset(BookmarkCategory.NAME + i);
+						BookmarkCategory currentCategory = new BookmarkCategory(subset);
+						category.addBookmark(currentCategory);
+						String name = (isRoot ? "/" : (prefix + category.name + '/'));
+						_innerReadBookmarks(name, currentCategory, subset.getSubset("Content"));
+					}
+
+				} catch (FSParseException e) {
+					Logger.error(this, "Error parsing the bookmarks file!", e);
+					hasBeenParsedWithoutAnyProblem = false;
+				}
 			}
 
 		}
