@@ -40,9 +40,13 @@ public class GzipCompressor extends AbstractCompressor {
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength,
 						 long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage)
 			throws IOException, CompressionRatioException {
-		if(maxReadLength < 0)
-			throw new IllegalArgumentException();
-		GZIPOutputStream gos = null;
+		if(maxReadLength < 0) {
+      throw new IllegalArgumentException();
+    }
+    if (amountOfDataToCheckCompressionRatio == Long.MAX_VALUE && minimumCompressionPercentage == 0) {
+      return compress(is, os, maxReadLength, maxWriteLength);
+    }
+    GZIPOutputStream gos = null;
 		CountedOutputStream cos = new CountedOutputStream(os);
 		try {
 			gos = new GZIPOutputStream(cos);

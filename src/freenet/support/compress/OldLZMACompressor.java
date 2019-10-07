@@ -4,6 +4,8 @@
 package freenet.support.compress;
 
 import java.io.*;
+import java.text.MessageFormat;
+import java.util.Arrays;
 
 import SevenZip.Compression.LZMA.Decoder;
 import SevenZip.Compression.LZMA.Encoder;
@@ -15,6 +17,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedInputStream;
 import freenet.support.io.CountedOutputStream;
+import freenet.support.io.NullOutputStream;
 
 public class OldLZMACompressor implements Compressor {
         private static volatile boolean logMINOR;
@@ -73,8 +76,41 @@ public class OldLZMACompressor implements Compressor {
 	}
 
 	@Override
-	public long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength, long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage) throws IOException {
-		throw new UnsupportedEncodingException();
+	public long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength, long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage)
+			throws IOException, CompressionRatioException {
+		if ((amountOfDataToCheckCompressionRatio == Long.MAX_VALUE && minimumCompressionPercentage == 0)
+				|| !input.markSupported()) {
+			return compress(input, output, maxReadLength, maxWriteLength);
+		}
+		// try compressing with reduced input
+		byte[] reducedInput = new byte[Long.valueOf(amountOfDataToCheckCompressionRatio).intValue()];
+		input.mark(Long.valueOf(amountOfDataToCheckCompressionRatio).intValue());
+		int bytesRead = input.read(reducedInput);
+		input.reset();
+		try (CountedInputStream cis = new CountedInputStream(
+				new ByteArrayInputStream(
+						Arrays.copyOf(reducedInput, bytesRead)));
+				CountedOutputStream cos = new CountedOutputStream(new NullOutputStream())) {
+			Encoder encoder = new Encoder();
+			encoder.SetEndMarkerMode( true );
+			// Dictionary size 1MB, this is equivalent to lzma -4, it uses 16MB to compress and 2MB to decompress.
+			// Next one up is 2MB = -5 = 26M compress, 3M decompress.
+			encoder.SetDictionarySize( 1 << 20 );
+			// enc.WriteCoderProperties( out );
+			// 5d 00 00 10 00
+			encoder.Code( cis, cos, -1, -1, null );
+			if(cos.written() > maxWriteLength) {
+				throw new CompressionOutputSizeException();
+			}
+			long compressionPercentage = 100 * (cis.count() - cos.written()) / cis.count();
+			if (compressionPercentage < minimumCompressionPercentage) {
+				throw new CompressionRatioException(MessageFormat.format(
+						"Compression requires at least ''{0}''% compression percentage, but this ''{1}'' only achieved ''{2}''% savings.",
+						minimumCompressionPercentage, OldLZMACompressor.class, compressionPercentage));
+			}
+			// if compression is good enough, use the actual compressor
+			return compress(input, output, maxReadLength, maxWriteLength);
+		}
 	}
 
 	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength, long maxCheckSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
@@ -105,9 +141,9 @@ public class OldLZMACompressor implements Compressor {
 
 	// Copied from DecoderThread
 	// LICENSING: DecoderThread is LGPL 2.1/CPL according to comments.
-	
+
     static final int propSize = 5;
-    
+
     static final byte[] props = new byte[propSize];
 
     static {
