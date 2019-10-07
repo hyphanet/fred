@@ -66,9 +66,9 @@ public class NewLZMACompressor extends AbstractCompressor {
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength,
 						 final long amountOfDataToCheckCompressionRatio, final int minimumCompressionPercentage)
 			throws IOException, CompressionRatioException {
-	  if (amountOfDataToCheckCompressionRatio == Long.MAX_VALUE && minimumCompressionPercentage == 0) {
-	    return compress(is, os, maxReadLength, maxWriteLength);
-    }
+		if (amountOfDataToCheckCompressionRatio == Long.MAX_VALUE && minimumCompressionPercentage == 0) {
+		  return compress(is, os, maxReadLength, maxWriteLength);
+		}
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
 		cis = new CountedInputStream(is);
