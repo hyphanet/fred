@@ -21,6 +21,8 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
     static final String TOADLET_URL = "/wiz/";
@@ -32,6 +34,8 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
     private static final String l10nPrefix = "FirstTimeWizardToadlet.";
 
     private boolean isPasswordEmpty;
+
+    private final int KiB = 1024;
 
     FirstTimeWizardNewToadlet(HighLevelSimpleClient client, NodeClientCore core, Config config) {
         super(client);
@@ -161,10 +165,10 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             // validate
             if (haveMonthlyLimit.isEmpty()) {
                 try {
-                    long downloadLimit = this.downloadLimit.isEmpty() ? 0 : Fields.parseLong(this.downloadLimit + "KiB");
+                    long downloadLimit = this.downloadLimit.isEmpty() ? 0 : Fields.parseInt(this.downloadLimit + "KiB");
                     if (downloadLimit < Node.getMinimumBandwidth()) {
                         errors.put("downloadLimitError",
-                                l10n("valid.downloadLimit", Integer.toString(Node.getMinimumBandwidth() / 1024)));
+                                l10n("valid.downloadLimit", Integer.toString(Node.getMinimumBandwidth() / KiB)));
                     }
                 } catch (NumberFormatException e) {
                     errors.put("downloadLimitError",
@@ -172,10 +176,15 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
                 }
 
                 try {
-                    long uploadLimit = this.uploadLimit.isEmpty() ? 0 : Fields.parseLong(this.uploadLimit + "KiB");
+                    long uploadLimit = this.uploadLimit.isEmpty() ? 0 : Fields.parseInt(this.uploadLimit + "KiB");
                     if (uploadLimit < Node.getMinimumBandwidth()) {
                         errors.put("uploadLimitError",
-                                l10n("valid.uploadLimit", Integer.toString(Node.getMinimumBandwidth() / 1024)));
+                                l10n("valid.uploadLimit", Integer.toString(Node.getMinimumBandwidth() / KiB)));
+                    }
+                    int nanosInSecond = (int) SECONDS.toNanos(1);
+                    if (nanosInSecond < uploadLimit) { // see Node set outputBandwidthLimit
+                        errors.put("uploadLimitError",
+                                l10n("valid.uploadLimitMax", Integer.toString(nanosInSecond / KiB)));
                     }
                 } catch (NumberFormatException e) {
                     errors.put("uploadLimitError",
@@ -195,14 +204,16 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             }
 
             try {
-                long maxDatastoreSize;
                 long storageLimit = this.storageLimit.isEmpty() ? 0 : Fields.parseLong(this.storageLimit + "GiB");
                 if (storageLimit < Node.MIN_STORE_SIZE * 5 / 4) { // min store size + 10% for client cache + 10% for slashdot cache
                     errors.put("storageLimitError", NodeL10n.getBase().getString("Node.invalidMinStoreSizeWithCaches"));
-                } else if (storageLimit > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize())) {
-                    errors.put("storageLimitError",
-                            NodeL10n.getBase().getString("Node.invalidMaxStoreSize",
-                                    String.format("%.2f", (float) maxDatastoreSize / DatastoreUtil.oneGiB)));
+                } else {
+                    long maxDatastoreSize = DatastoreUtil.maxDatastoreSize();
+                    if (storageLimit > maxDatastoreSize) {
+                        errors.put("storageLimitError",
+                                NodeL10n.getBase().getString("Node.invalidMaxStoreSize",
+                                        String.format("%.2f", (float) maxDatastoreSize / DatastoreUtil.oneGiB)));
+                    }
                 }
             } catch (NumberFormatException e) {
                 errors.put("storageLimitError",
@@ -227,7 +238,6 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
         }
 
         private void detectBandwidthLimit() {
-            final int KiB = 1024;
             try {
                 BandwidthLimit detected =
                         BandwidthManipulator.detectBandwidthLimits(core.node.ipDetector.getBandwidthIndicator());
