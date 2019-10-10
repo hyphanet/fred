@@ -31,6 +31,8 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
     private static final String l10nPrefix = "FirstTimeWizardToadlet.";
 
+    private boolean isPasswordEmpty;
+
     FirstTimeWizardNewToadlet(HighLevelSimpleClient client, NodeClientCore core, Config config) {
         super(client);
         this.core = core;
@@ -44,6 +46,8 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             return;
         }
 
+        isPasswordEmpty =
+                core.node.securityLevels.getPhysicalThreatLevel() != SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH;
         showForm(ctx, new FormModel().toModel());
     }
 
@@ -245,7 +249,10 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             model.put("uploadLimit", uploadLimit);
             model.put("bandwidthMonthlyLimit", bandwidthMonthlyLimit);
             model.put("storageLimit", storageLimit);
-            model.put("setPassword", setPassword.length() > 0 ? "checked" : "");
+            if (isPasswordEmpty) {
+                model.put("setPassword", setPassword.length() > 0 ? "checked" : "");
+            }
+            model.put("isPasswordEmpty", isPasswordEmpty);
 
             if (downloadLimitDetected == null || uploadLimitDetected == null) {
                 detectBandwidthLimit();
@@ -288,22 +295,18 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             DATASTORE_SIZE.setDatastoreSize(storageLimit + "GiB", config, this);
 
             // TODO: not sure
-            try {
-                if (setPassword.isEmpty()) {
-                    core.node.securityLevels.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL);
-                    core.node.setMasterPassword("", true);
-                } else {
-                    SecurityLevels.PHYSICAL_THREAT_LEVEL oldPhysicalLevel = core.node.securityLevels.getPhysicalThreatLevel();
-                    core.node.securityLevels.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH);
-                        if(oldPhysicalLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL ||
-                                oldPhysicalLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW) {
-                            core.node.changeMasterPassword("", password, true);
-                        } else {
-                            core.node.setMasterPassword(password, true);
-                        }
+            if (isPasswordEmpty) {
+                try {
+                    if (setPassword.isEmpty()) {
+                        core.node.securityLevels.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL);
+                        core.node.setMasterPassword("", true);
+                    } else {
+                        core.node.securityLevels.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH);
+                        core.node.setMasterPassword(password, true);
+                    }
+                } catch (Node.AlreadySetPasswordException | MasterKeysWrongPasswordException | MasterKeysFileSizeException | IOException e) {
+                    Logger.error(this, "Should not happen, please report! " + e, e);
                 }
-            } catch (Node.AlreadySetPasswordException | MasterKeysWrongPasswordException | MasterKeysFileSizeException | IOException e) {
-                Logger.error(this, "Should not happen, please report! " + e, e);
             }
 
             core.storeConfig();
