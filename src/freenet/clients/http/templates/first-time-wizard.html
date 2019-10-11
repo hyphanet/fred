@@ -25,13 +25,12 @@
                         <div class="error">{{ errors.bandwidthMonthlyLimitError }}</div>
                     {% endif %}
                     {{ l10n("bandwidthMonthlyLimit") }}
-                    <input id="monthlyLimit" name="monthlyLimit" type="number" min="50" value="{{ bandwidthMonthlyLimit }}">
+                    <input id="monthlyLimit" value="{{ bandwidthMonthlyLimit }}" name="monthlyLimit" type="number" min="50" max="999999999">
                     {{ l10n("bandwidthMonthlyLimitBaseUnit") }}.
                 </p>
             </div>
             <div id="monthlyLimitUnchecked">
                 <p>
-                    <!-- TODO: Populated by the node with autodetected limits into HTML. -->
                     {% if errors.downloadLimitError is not null %}
                         <div class="error">{{ errors.downloadLimitError }}</div>
                     {% endif %}
@@ -84,7 +83,8 @@
                 Give
                 <!-- TODO: Ppulated by the node with some percentage of free space. -->
                 <!-- TODO: Possibly attach this number with a slider of percentage of free space. -->
-                <input id="storage" name="storage" type="number" min="0" step=".001" value="{{ storageLimit }}"> {{ l10n("storageLimitDescription") }}
+                <input id="storage" value="{{ storageLimit }}" name="storage" type="number" min="0" max="999999999" step=".001">
+                {{ l10n("storageLimitDescription") }}
             </p>
             {% if setPassword is not null %}
             <input id="setPassword" name="setPassword" type="checkbox" {{ setPassword }}>
