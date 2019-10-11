@@ -145,6 +145,25 @@ function checkChange(id, data) {
     isChecked(id, data, toggle);
 }
 
+function initMonthlyLimit() {
+    var monthlyLimitDefaultValue = document.getElementById('monthlyLimit').value,
+        downLimitDefaultValue = document.getElementById('downLimit').value,
+        upLimitDefaultValue = document.getElementById('upLimit').value,
+        id = 'haveMonthlyLimit',
+        data = {'checked': 'monthlyLimitChecked', 'unchecked': 'monthlyLimitUnchecked'},
+        timeMs = 350;
+
+        document.getElementById(id).addEventListener('change', function(event) {
+            toggle(event, data, timeMs);
+
+            document.getElementById('monthlyLimit').value = monthlyLimitDefaultValue;
+            document.getElementById('downLimit').value = downLimitDefaultValue;
+            document.getElementById('upLimit').value = upLimitDefaultValue;
+        });
+
+        isChecked(id, data, toggle);
+}
+
 checkChange('knowSomeone', data = {'checked': 'checkDarknet', 'unchecked': 'noDarknet'});
-checkChange('haveMonthlyLimit', data = {'checked': 'monthlyLimitChecked', 'unchecked': 'monthlyLimitUnchecked'});
 checkChange('setPassword', data = {'checked': 'givePassword', 'unchecked': ''});
+initMonthlyLimit();
