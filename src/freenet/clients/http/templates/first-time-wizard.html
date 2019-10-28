@@ -25,7 +25,7 @@
                         <div class="error">{{ errors.bandwidthMonthlyLimitError }}</div>
                     {% endif %}
                     {{ l10n("bandwidthMonthlyLimit") }}
-                    <input id="monthlyLimit" value="{{ bandwidthMonthlyLimit }}" name="monthlyLimit" type="number" min="50" max="999999999">
+                    <input id="monthlyLimit" value="{{ bandwidthMonthlyLimit }}" name="monthlyLimit" type="number" min="{{ minBandwidthMonthlyLimit }}" max="999999999" step=".01">
                     {{ l10n("bandwidthMonthlyLimitBaseUnit") }}.
                 </p>
             </div>
@@ -81,7 +81,7 @@
                     <div class="error">{{ errors.storageLimitError }}</div>
                 {% endif %}
                 Give
-                <!-- TODO: Ppulated by the node with some percentage of free space. -->
+                <!-- TODO: Populated by the node with some percentage of free space. -->
                 <!-- TODO: Possibly attach this number with a slider of percentage of free space. -->
                 <input id="storage" value="{{ storageLimit }}" name="storage" type="number" min="0" max="999999999" step=".001">
                 {{ l10n("storageLimitDescription") }}

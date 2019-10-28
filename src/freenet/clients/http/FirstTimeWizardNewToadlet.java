@@ -192,10 +192,13 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
                 }
             } else {
                 try {
-                    double monthlyLimit = Double.parseDouble(bandwidthMonthlyLimit);
+                    double monthlyLimit = 0;
+                    if (!bandwidthMonthlyLimit.isEmpty()) {
+                        monthlyLimit = Double.parseDouble(bandwidthMonthlyLimit);
+                    }
                     if (monthlyLimit < BandwidthLimit.minMonthlyLimit) {
                         errors.put("bandwidthMonthlyLimitError",
-                                l10n("valid.bandwidthMonthlyLimit", Double.toString(BandwidthLimit.minMonthlyLimit)));
+                                l10n("valid.bandwidthMonthlyLimit", String.format("%.2f", BandwidthLimit.minMonthlyLimit)));
                     }
                 } catch (NumberFormatException e) {
                     errors.put("bandwidthMonthlyLimitError",
@@ -258,6 +261,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             model.put("downloadLimit", downloadLimit);
             model.put("uploadLimit", uploadLimit);
             model.put("bandwidthMonthlyLimit", bandwidthMonthlyLimit);
+            model.put("minBandwidthMonthlyLimit", String.format("%.2f", BandwidthLimit.minMonthlyLimit));
             model.put("storageLimit", storageLimit);
             if (isPasswordEmpty) {
                 model.put("setPassword", setPassword.length() > 0 ? "checked" : "");
