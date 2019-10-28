@@ -17,7 +17,8 @@ import freenet.support.io.CountedOutputStream;
 public class GzipCompressor extends AbstractCompressor {
 
 	@Override
-	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
+			throws IOException, CompressionOutputSizeException, CompressionRatioException {
 		Bucket output = bf.makeBucket(maxWriteLength);
 		InputStream is = null;
 		OutputStream os = null;
@@ -34,10 +35,11 @@ public class GzipCompressor extends AbstractCompressor {
 		}
 		return output;
 	}
-	
+
 	@Override
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength,
-						 long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage) throws IOException {
+						 long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage)
+			throws IOException, CompressionRatioException {
 		if(maxReadLength < 0)
 			throw new IllegalArgumentException();
 		GZIPOutputStream gos = null;

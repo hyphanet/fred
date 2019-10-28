@@ -1211,7 +1211,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		BookmarkEditorToadlet bookmarkEditorToadlet = new BookmarkEditorToadlet(client, core);
 		server.register(bookmarkEditorToadlet, null, "/bookmarkEditor/", true, false);
 
-		BrowserTestToadlet browserTestToadlet = new BrowserTestToadlet(client, core);
+		BrowserTestToadlet browserTestToadlet = new BrowserTestToadlet(client);
 		server.register(browserTestToadlet, null, "/test/", true, false);
 
 		StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);

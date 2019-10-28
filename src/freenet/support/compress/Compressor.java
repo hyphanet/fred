@@ -16,13 +16,13 @@ import freenet.support.api.BucketFactory;
  * This is for single-file compression (gzip, bzip2) as opposed to archives.
  */
 public interface Compressor {
-	
+
 	String DEFAULT_COMPRESSORDESCRIPTOR = null;
 
 	enum COMPRESSOR_TYPE implements Compressor {
-	    // WARNING: Changing non-transient members on classes that are Serializable can result in 
+	    // WARNING: Changing non-transient members on classes that are Serializable can result in
 	    // restarting downloads or losing uploads.
-	    
+
 		// Codecs will be tried in order: put the less resource consuming first
 		GZIP("GZIP", new GzipCompressor(), (short) 0),
 		BZIP2("BZIP2", new Bzip2Compressor(), (short) 1),
@@ -34,7 +34,7 @@ public interface Compressor {
 		public final short metadataID;
 
 		/** cached values(). Never modify or pass this array to outside code! */
-		private final static COMPRESSOR_TYPE[] values = values();
+		private static final COMPRESSOR_TYPE[] values = values();
 
 		COMPRESSOR_TYPE(String name, Compressor c, short metadataID) {
 			this.name = name;
@@ -91,7 +91,7 @@ public interface Compressor {
 		 * if the string is null/empty, it returns COMPRESSOR_TYPE.values() as default
 		 * @param compressordescriptor
 		 * @return
-		 * @throws InvalidCompressionCodecException 
+		 * @throws InvalidCompressionCodecException
 		 */
 		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor, boolean pre1254) throws InvalidCompressionCodecException {
 			COMPRESSOR_TYPE[] result = getCompressorsArrayNoDefault(compressordescriptor);
@@ -132,22 +132,25 @@ public interface Compressor {
 				}
 				result.add(ct);
 			}
-			return result.toArray(new COMPRESSOR_TYPE[result.size()]);
+			return result.toArray(new COMPRESSOR_TYPE[0]);
 		}
 
 		@Override
-		public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+		public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
+				throws IOException, CompressionOutputSizeException, CompressionRatioException {
 			return compressor.compress(data, bf, maxReadLength, maxWriteLength);
 		}
 
 		@Override
-		public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+		public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength)
+				throws IOException, CompressionOutputSizeException, CompressionRatioException {
 			return compressor.compress(is, os, maxReadLength, maxWriteLength);
 		}
 
 		@Override
 		public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength,
-							 long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage) throws IOException {
+							 long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage)
+				throws IOException, CompressionRatioException {
 			return compressor.compress(is, os, maxReadLength, maxWriteLength, amountOfDataToCheckCompressionRatio, minimumCompressionPercentage);
 		}
 
@@ -175,9 +178,10 @@ public interface Compressor {
 	 * @param maxWriteLength The maximum number of bytes to write to the output bucket. If this is exceeded, throw a CompressionOutputSizeException.
 	 * @return The compressed data.
 	 * @throws IOException If an error occurs reading or writing data.
-	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength. 
+	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength.
 	 */
-	Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException;
+	Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
+			throws IOException, CompressionOutputSizeException, CompressionRatioException;
 
 	/**
 	 * Compress the data.
@@ -187,9 +191,10 @@ public interface Compressor {
 	 * @param maxWriteLength The maximum number of bytes to write to the output bucket. If this is exceeded, throw a CompressionOutputSizeException.
 	 * @return The compressed data.
 	 * @throws IOException If an error occurs reading or writing data.
-	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength. 
+	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength.
 	 */
-	long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException;
+	long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength)
+			throws IOException, CompressionOutputSizeException, CompressionRatioException;
 
 	/**
 	 * Compress the data (@see {@link #compress(InputStream, OutputStream, long, long)}) with checking of compression effect.
@@ -198,7 +203,8 @@ public interface Compressor {
 	 * @throws CompressionRatioException If the desired compression effect is not achieved.
 	 */
 	long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength,
-				  long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage) throws IOException;
+				  long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage)
+			throws IOException, CompressionRatioException;
 
 	/**
 	 * Decompress data.
@@ -217,8 +223,8 @@ public interface Compressor {
 	 * @param i Offset to start reading from.
 	 * @param j Number of bytes to read.
 	 * @param output Output buffer.
-	 * @throws DecompressException 
-	 * @throws CompressionOutputSizeException 
+	 * @throws DecompressException
+	 * @throws CompressionOutputSizeException
 	 * @returns The number of bytes actually written.
 	 */
 	int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException;

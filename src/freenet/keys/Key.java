@@ -23,6 +23,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
+import freenet.support.compress.CompressionRatioException;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
@@ -33,8 +34,8 @@ import freenet.support.io.BucketTools;
  * @author amphibian
  *
  * Base class for node keys.
- * 
- * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ *
+ * WARNING: Changing non-transient members on classes that are Serializable can result in
  * restarting downloads or losing uploads.
  */
 public abstract class Key implements WritableToDataOutputStream, Comparable<Key> {
@@ -262,7 +263,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 						try {
 							compressedData = (ArrayBucket) comp.compress(
 									sourceData, new ArrayBucketFactory(), Long.MAX_VALUE, maxCompressedDataLength);
-						} catch (CompressionOutputSizeException e) {
+						} catch (CompressionOutputSizeException | CompressionRatioException e) {
 							continue;
 						}
 						if (compressedData.size() <= maxCompressedDataLength) {
