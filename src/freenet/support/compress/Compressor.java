@@ -132,6 +132,18 @@ public interface Compressor {
 					throw new InvalidCompressionCodecException("Duplicate compression codec identifier: '"+codec+"'");
 				}
 				result.add(ct);
+				if (result.contains(COMPRESSOR_TYPE.LZMA)) {
+					// OldLZMA should no longer be used. Only accept it if it is the only codec in the list.
+					Logger.warning(
+							Compressor.class,
+							"OldLZMA compression is buggy and no longer supported. It only exists to allow reinserting old keys.");
+					if (result.size() > 1) {
+						Logger.warning(
+								Compressor.class,
+								"Codecs to choose contained ''LZMA'' along others. It was ignored. Please replace it with LZMA_NEW.");
+						result.remove(COMPRESSOR_TYPE.LZMA);
+					}
+				}
 			}
 			return result.toArray(new COMPRESSOR_TYPE[0]);
 		}
