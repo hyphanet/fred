@@ -101,7 +101,10 @@ public interface Compressor {
 				int x = 0;
 				for(COMPRESSOR_TYPE v: values) {
 					// LZMA should no longer be used. Use LZMA_NEW instead.
-					if(v == LZMA) continue;
+					if(v == LZMA) {
+						logLzmaOldRemovedWarning();
+						continue;
+					}
 					ret[x++] = v;
 				}
 				result = ret;
@@ -138,14 +141,18 @@ public interface Compressor {
 							Compressor.class,
 							"OldLZMA compression is buggy and no longer supported. It only exists to allow reinserting old keys.");
 					if (result.size() > 1) {
-						Logger.warning(
-								Compressor.class,
-								"Codecs to choose contained ''LZMA'' along others. It was ignored. Please replace it with LZMA_NEW.");
+						logLzmaOldRemovedWarning();
 						result.remove(COMPRESSOR_TYPE.LZMA);
 					}
 				}
 			}
 			return result.toArray(new COMPRESSOR_TYPE[0]);
+		}
+
+		private static void logLzmaOldRemovedWarning() {
+			Logger.warning(
+					Compressor.class,
+					"Codecs to choose contained ''LZMA'' along others. It was ignored. Please replace it with LZMA_NEW.");
 		}
 
 		@Override
