@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -93,14 +94,14 @@ public interface Compressor {
 		 * @return
 		 * @throws InvalidCompressionCodecException
 		 */
-		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor, boolean pre1254) throws InvalidCompressionCodecException {
+		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor) throws InvalidCompressionCodecException {
 			COMPRESSOR_TYPE[] result = getCompressorsArrayNoDefault(compressordescriptor);
 			if (result == null) {
 				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[values.length-1];
 				int x = 0;
 				for(COMPRESSOR_TYPE v: values) {
-					if((v == LZMA) && !pre1254) continue;
-					if((v == LZMA_NEW) && pre1254) continue;
+					// LZMA should no longer be used. Use LZMA_NEW instead.
+					if(v == LZMA) continue;
 					ret[x++] = v;
 				}
 				result = ret;
