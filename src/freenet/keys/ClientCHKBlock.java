@@ -362,17 +362,35 @@ public class ClientCHKBlock implements ClientKeyBlock {
      * @throws IOException If there is an error reading from the Bucket.
      * @throws InvalidCompressionCodecException 
      */
-    static public ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, String compressorDescriptor, boolean pre1254, byte[] cryptoKey, byte cryptoAlgorithm) throws CHKEncodeException, IOException {
-    	return encode(sourceData, asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor, pre1254, cryptoKey, cryptoAlgorithm, false);
+    static public ClientCHKBlock encode(
+				Bucket sourceData,
+				boolean asMetadata,
+				boolean dontCompress,
+				short alreadyCompressedCodec,
+				long sourceLength,
+				String compressorDescriptor,
+				byte[] cryptoKey,
+				byte cryptoAlgorithm) throws CHKEncodeException, IOException {
+    	return encode(sourceData, asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor,
+					cryptoKey, cryptoAlgorithm, false);
     }
 
     // forceNoJCA for unit tests.
-    static ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, String compressorDescriptor, boolean pre1254, byte[] cryptoKey, byte cryptoAlgorithm, boolean forceNoJCA) throws CHKEncodeException, IOException {
+    static ClientCHKBlock encode(
+				Bucket sourceData,
+				boolean asMetadata,
+				boolean dontCompress,
+				short alreadyCompressedCodec,
+				long sourceLength,
+				String compressorDescriptor,
+				byte[] cryptoKey,
+				byte cryptoAlgorithm,
+				boolean forceNoJCA) throws CHKEncodeException, IOException {
         byte[] finalData = null;
         byte[] data;
         short compressionAlgorithm = -1;
         try {
-			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, CHKBlock.MAX_LENGTH_BEFORE_COMPRESSION, CHKBlock.DATA_LENGTH, false, compressorDescriptor, pre1254);
+			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, CHKBlock.MAX_LENGTH_BEFORE_COMPRESSION, CHKBlock.DATA_LENGTH, false, compressorDescriptor);
 			finalData = comp.compressedData;
 			compressionAlgorithm = comp.compressionAlgorithm;
 		} catch (KeyEncodeException e2) {
@@ -635,11 +653,18 @@ public class ClientCHKBlock implements ClientKeyBlock {
      * @param alreadyCompressedCodec If !dontCompress, and this is >=0, then the
      * data is already compressed, and this is the algorithm.
      * @param compressorDescriptor Should be null, or list of compressors to try.
-     * @throws InvalidCompressionCodecException 
+     * @throws InvalidCompressionCodecException
      */
-    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, int sourceLength, String compressorDescriptor, boolean pre1254) throws CHKEncodeException, InvalidCompressionCodecException {
+    static public ClientCHKBlock encode(
+				byte[] sourceData,
+				boolean asMetadata,
+				boolean dontCompress,
+				short alreadyCompressedCodec,
+				int sourceLength,
+				String compressorDescriptor) throws CHKEncodeException, InvalidCompressionCodecException {
     	try {
-			return encode(new ArrayBucket(sourceData), asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor, pre1254, null, Key.ALGO_AES_CTR_256_SHA256);
+			return encode(new ArrayBucket(sourceData), asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor,
+					null, Key.ALGO_AES_CTR_256_SHA256);
 		} catch (IOException e) {
 			// Can't happen
 			throw new Error(e);

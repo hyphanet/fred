@@ -30,6 +30,7 @@ public class OldLZMACompressor implements Compressor {
 	// Copied from EncoderThread. See below re licensing.
 	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+		Logger.warning(this, "OldLZMA compression is buggy and no longer supported. It only exists to allow reinserting keys.");
 		Bucket output;
 		InputStream is = null;
 		OutputStream os = null;
@@ -52,6 +53,7 @@ public class OldLZMACompressor implements Compressor {
 
 	@Override
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+		Logger.warning(this, "OldLZMA compression is buggy and no longer supported. It only exists to allow reinserting keys.");
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
 		cis = new CountedInputStream(is);
