@@ -367,14 +367,18 @@ public class BookmarkManager implements RequestClient {
 
 			sfs = toSimpleFieldSet();
 		}
-		try (FileOutputStream fos = new FileOutputStream(backupBookmarksFile)){
-
+		FileOutputStream fos = null;
+		try {
+			fos = new FileOutputStream(backupBookmarksFile);
 			sfs.writeToBigBuffer(fos);
+			fos.close();
+			fos = null;
 			if(!FileUtil.renameTo(backupBookmarksFile, bookmarksFile))
 				Logger.error(this, "Unable to rename " + backupBookmarksFile.toString() + " to " + bookmarksFile.toString());
 		} catch(IOException ioe) {
 			Logger.error(this, "An error has occured saving the bookmark file :" + ioe.getMessage(), ioe);
 		} finally {
+			Closer.close(fos);
 			synchronized(bookmarks) {
 				isSavingBookmarks = false;
 			}
