@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import freenet.client.filter.HTMLFilter.ParsedTag;
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.clients.http.HTTPRequestImpl;
+import freenet.clients.http.ImageCreatorToadlet;
 import freenet.clients.http.StaticToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
@@ -177,7 +178,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 				// @see bug #2297
 				return path;
 			} else if (linkFilterExceptionProvider != null) {
-				if (linkFilterExceptionProvider.isLinkExcepted(uri)) {
+				if (linkFilterExceptionProvider.isLinkExcepted(uri) || path.equals(ImageCreatorToadlet.ROOT_URL)) {
 					return path + ((uri.getQuery() != null) ? ("?" + uri.getQuery()) : "");
 				}
 			}

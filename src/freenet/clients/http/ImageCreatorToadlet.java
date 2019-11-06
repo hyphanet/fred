@@ -22,6 +22,8 @@ import freenet.support.api.HTTPRequest;
 /** This toadlet creates a PNG image with the specified text. */
 public class ImageCreatorToadlet extends Toadlet {
 
+	public static final String ROOT_URL = "/imagecreator/";
+
 	/** The default width */
 	public static final int		DEFAULT_WIDTH	= 100;
 
@@ -104,7 +106,7 @@ public class ImageCreatorToadlet extends Toadlet {
 
 	@Override
 	public String path() {
-		return "/imagecreator/";
+		return ROOT_URL;
 	}
 
 }
