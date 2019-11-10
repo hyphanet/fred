@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='utf-8'?>
+<dependency-verification version='1'>
+  <trust-requirement pgp='GROUP' checksum='NONE' />
+  <ignored-keys />
+  <trusted-keys>
+    <trusted-key id='5ad66315fc018797' group='com.beust' />
+    <trusted-key id='1756b920eecf0e90' group='com.github.spotbugs' />
+    <trusted-key id='59a252fb1199d873' group='com.google.code.findbugs' />
+    <trusted-key id='7a01b0f236e5430f' group='com.google.code.gson' />
+    <trusted-key id='72475fd306b9cab7' group='com.googlecode.javaewah' />
+    <trusted-key id='4ece492b63e38acf' group='com.h3xstream.findsecbugs' />
+    <trusted-key id='44ce7bf2825ea2cd' group='com.ibm.icu' />
+    <trusted-key id='a50569c7ca7fa1f0' group='com.jcraft' />
+    <trusted-key id='9daadc1c9fcc82d0' group='commons-io' />
+    <trusted-key id='1861c322c56014b2' group='commons-lang' />
+    <trusted-key id='4044edf1bb73efea' group='jaxen' />
+    <trusted-key id='efe8086f9e93774e' group='junit' />
+    <trusted-key id='4db7bc57dfdbcea4' group='net.java.dev.jna' />
+    <trusted-key id='1d185615d0a84648' group='net.sf.saxon' />
+    <trusted-key id='82de7be82166e84e' group='net.sourceforge.pmd' />
+    <trusted-key id='c84125c13bf6f2f2' group='org.ajoberstar.grgit' />
+    <trusted-key id='6b1b008864323b92' group='org.antlr' />
+    <trusted-key id='86fdc7e2a11262cb' group='org.apache.bcel' />
+    <trusted-key id='3faad2cd5ecbb314' group='org.apache.commons' />
+    <trusted-key id='85911f425ec61b51' group='org.apiguardian' />
+    <trusted-key id='b341ddb020fcb6ab' group='org.bouncycastle' />
+    <trusted-key id='79e193516be7998f' group='org.dom4j' />
+    <trusted-key id='5b05ccde140c2876' group='org.eclipse.jgit' />
+    <trusted-key id='ecdfea3cb4493b94' group='org.fusesource.jansi' />
+    <trusted-key id='a6adfc93ef34893e' group='org.hamcrest' />
+    <trusted-key id='cb43338e060cf9fa' group='org.jacoco' />
+    <trusted-key id='85911f425ec61b51' group='org.junit.platform' />
+    <trusted-key id='85911f425ec61b51' group='org.junit.vintage' />
+    <trusted-key id='a1b4460d8ba7b9af' group='org.mockito' />
+    <trusted-key id='7c7d8456294423ba' group='org.objenesis' />
+    <trusted-key id='85911f425ec61b51' group='org.opentest4j' />
+    <trusted-key id='5f69ad087600b22c' group='org.ow2.asm' />
+    <trusted-key id='2c7b12f2a511e325' group='org.slf4j' />
+    <trusted-key id='cfca4a29d26468de' group='org.sonarsource.scanner.api' />
+    <trusted-key id='cfca4a29d26468de' group='org.sonarsource.scanner.gradle' />
+  </trusted-keys>
+  <dependencies>
+    <dependency group='com.adarshr' module='gradle-test-logger-plugin' version='2.0.0'>
+      <sha512>709A8996611A81BAE64BD7D0FEF4F653786D47CD9A70E4CCF07430CB5E75082EC2502A86A4F1F5C87E1DD4EE3C1B78E1AA8C4A8B8731223394F02281E6D4480</sha512>
+    </dependency>
+    <dependency group='com.github.spotbugs' module='spotbugs-gradle-plugin' version='2.0.1'>
+      <sha512>2C09B102601DF179B615EF37F5E56B9AA1100BB2A17D742B8CB452C1A193C44ED3EBE029FEAFB9822D55A680D99B682184C733D56F835874DD01B02209AFA13D</sha512>
+    </dependency>
+    <dependency group='net.java.dev.javacc' module='javacc' version='5.0'>
+      <sha512>EEB189E22FA686CD71103C943A185533C3976C1706E86F737D60AAA28CE3FE5C16658979DCD22CD359B0F0B6F3C94043347638617E4367BB46E8E876B7DE498C</sha512>
+    </dependency>
+    <dependency group='net.jcip' module='jcip-annotations' version='1.0'>
+      <sha512>CB312B3F571D91EF183C119D878F50464FFD97F853B7311CBA386463F295E8B7B3A5A89ED4269A045CACD5AA7CB4C803D4882854A0FDDEFA9BBC28C72AA6C786</sha512>
+    </dependency>
+    <dependency group='net.sourceforge.saxon' module='saxon' version='9.1.0.8'>
+      <sha512>24C4E9138A757EAC59FCE3C65F2BDFD4E54EDE68899E191B55D68DDFD92BBD854C72546B37A21B31593ECE82C2C697D6E57CFB2AA8753B1F9B192D419646614B</sha512>
+    </dependency>
+    <dependency group='net.sourceforge.saxon' module='saxon' version='9.1.0.8' classifier='dom'>
+      <sha512>9D311F26017C6849918444C38211BDACA292DE1177BA9819E0658D2D273C0ADD0B0E50F13088C495440B530566F595CE8D1C8DAC4FBEA2E98006FC0741A9FC2D</sha512>
+    </dependency>
+    <dependency group='org.freenetproject' module='freenet-ext' version='29'>
+      <sha512>9735F1CE4EC11F074484F6AC9692E995EC245BC74211E74B228374B08B2BCD9ECC9F564A969A86D5FBB11DE1291FFAFAD419D2DECC22F1C18A2EE16FC59BBDB1</sha512>
+    </dependency>
+    <dependency group='org.ow2.asm' module='asm-analysis' version='7.1'>
+      <sha512>D74FD51F49A8278545EAAAAF808692D69F7140FA73F4CF1EEC01A21D5D2A378356A5D74FADC2F6983EE023CDF6E06851F9F37A084BE547120300AC97D9CC6BBA</sha512>
+    </dependency>
+    <dependency group='org.ow2.asm' module='asm-commons' version='7.1'>
+      <sha512>2879AE5E7B796F0777B4730FB3F21B8D42CBDBF3A090ACADF2CE52082F1EA030059B0067D9A3B4D2C4B4680519A8EE9B2CF1563901931645245A973B9F60B1C2</sha512>
+    </dependency>
+    <dependency group='org.ow2.asm' module='asm-tree' version='7.1'>
+      <sha512>7C285E6DE13CED1FD6110C616F9F38120D5D37DA9E39BE1B6FC16224595F54F645C675313F75ED819AE27E66D84E9BC378A6FB42DF2F4DD2819ED745767A79AC</sha512>
+    </dependency>
+    <dependency group='org.ow2.asm' module='asm-util' version='7.1'>
+      <sha512>F8F693C0EFDEDB244EC09D0FD1E32E2C3DD392C464468ABBAD1D730C80FB2FDAC889719C57911D5EECCAA9E20EA4FBB47452FA24B6AFE31B07E7BBDF70F25466</sha512>
+    </dependency>
+    <dependency group='org.ow2.asm' module='asm' version='7.1'>
+      <sha512>7EBA7097109389F48FA9142BF22D225F5D3104D68013D3B8E0A6D4054A8CD0EF64614372BDCB38987D68ADB6D33A3804E98DDF112BA84DBB09D448CE702DACC4</sha512>
+    </dependency>
+  </dependencies>
+</dependency-verification>

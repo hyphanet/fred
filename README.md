@@ -33,9 +33,10 @@ To run all unit tests:
 
 You can run specific tests with a filter similar to the following:
 
-    ./gradlew test --tests *M3UFilterTest
+    ./gradlew test --tests "freenet.client.CodeTest"
+    ./gradlew test --tests "freenet.client.*"
 
-Or to exclude some tests from being run:
+Or to exclude some tests from being run: (Note: doesnt support wildcard matching)
 
     ./gradlew test -PexcludeTests="freenet.client.async.SplitFileFetcherStorageTest,Test2,..."
 

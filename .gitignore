@@ -31,13 +31,3 @@ build/
 .gradle/
 .gradletasknamecache
 *.class
-
-# Log Files
-*.log
-
-# OS X
-.DS_Store
-
-# Windows
-Thumbs.db
-Desktop.ini

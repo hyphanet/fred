@@ -38,16 +38,13 @@ script:
   - ./gradlew jar
 
 matrix:
-  allow_failures:
-    - name: 'openjdk13'
-    - name: 'Every Task'
   include:
     - name: 'openjdk8'
       jdk: openjdk8
     - name: 'openjdk11'
       jdk: openjdk11
-    - name: 'openjdk12'
-      jdk: openjdk12
+    - name: 'openjdk13'
+      jdk: openjdk13
 
     # - name: 'openjdk13'
     #   jdk: openjdk8

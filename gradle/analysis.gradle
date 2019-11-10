@@ -1,29 +1,12 @@
-buildscript {
-    repositories {
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath scriptDependencies.spotbugs
-    }
-}
-
 apply plugin: 'com.github.spotbugs'
 spotbugs {
     toolVersion = tools.spotbugs
     ignoreFailures = true
-    effort = 'max'
+    effort = 'default'
     reportLevel = 'medium'
     jvmArgs = ['-Xmx1g']
     excludeFilter = file("${project.rootDir}/gradle/spotbugs-filter.xml")
 }
-tasks.withType(com.github.spotbugs.SpotBugsTask) {
-    reports {
-        html.enabled = true
-        xml.enabled  = true
-    }
-    pluginClasspath = project.configurations.spotbugsPlugins
-}
-
 
 apply plugin: "jacoco"
 jacoco {
@@ -31,7 +14,7 @@ jacoco {
     reportsDir = file("$buildDir/reports/jacoco")
 }
 jacocoTestReport {
-    classDirectories = fileTree(
+    classDirectories.from = fileTree(
         dir: "${buildDir}/classes",
         excludes: ['**/Manifest*.*']
     )
