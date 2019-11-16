@@ -234,7 +234,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
      * @throws IOException
      * @throws InvalidCompressionCodecException
      */
-    static Compressed compress(
+    public static Compressed compress(
 				Bucket sourceData,
 				boolean dontCompress,
 				short alreadyCompressedCodec,
@@ -255,8 +255,9 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
         if((!dontCompress) || (alreadyCompressedCodec >= 0)) {
         	byte[] cbuf = null;
         	if(alreadyCompressedCodec >= 0) {
-           		if(sourceData.size() > maxCompressedDataLength)
-        			throw new TooBigException("Too big (precompressed)");
+           		if(sourceData.size() > maxCompressedDataLength) {
+                throw new TooBigException("Too big (precompressed)");
+              }
         		compressionAlgorithm = alreadyCompressedCodec;
         		cbuf = BucketTools.toByteArray(sourceData);
         		if(sourceLength > MAX_LENGTH_BEFORE_COMPRESSION)
