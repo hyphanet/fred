@@ -167,9 +167,7 @@ public class OldLZMACompressorTest extends TestCase {
 				rawBlockHeaders,
 				InsertableClientSSK.create(clientUri),
 				false);
-		// assertEquals(clientSskBlock.getCompressionCodec(), COMPRESSOR_TYPE.LZMA.ordinal());
 		byte[] decoded = oldClientSSkBlock.memoryDecode();
-		// decode with
 		for (int i = 0; i < decoded.length; i++) {
 			assertEquals(decoded[i], data[i]);
 		}
