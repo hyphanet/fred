@@ -271,7 +271,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 						try {
 							compressedData = (ArrayBucket) comp.compress(
 									sourceData, new ArrayBucketFactory(), Long.MAX_VALUE, maxCompressedDataLength);
-						} catch (CompressionOutputSizeException | CompressionRatioException e) {
+						} catch (CompressionOutputSizeException e) {
 							continue;
 						}
 						if (compressedData.size() <= maxCompressedDataLength) {
