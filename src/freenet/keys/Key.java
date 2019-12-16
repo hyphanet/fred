@@ -23,7 +23,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
-import freenet.support.compress.CompressionRatioException;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
@@ -263,7 +262,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 						try {
 							compressedData = (ArrayBucket) comp.compress(
 									sourceData, new ArrayBucketFactory(), Long.MAX_VALUE, maxCompressedDataLength);
-						} catch (CompressionOutputSizeException | CompressionRatioException e) {
+						} catch (CompressionOutputSizeException e) {
 							continue;
 						}
 						if (compressedData.size() <= maxCompressedDataLength) {
