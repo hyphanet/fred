@@ -227,7 +227,7 @@ public class OldLZMACompressorTest extends TestCase {
 
 		try {
 			Compressor.COMPRESSOR_TYPE.LZMA.compress(inBucket, factory, 32, 32);
-		} catch (CompressionOutputSizeException | CompressionRatioException e) {
+		} catch (CompressionOutputSizeException e) {
 			// expect this
 			return;
 		}
