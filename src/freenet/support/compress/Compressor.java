@@ -137,13 +137,13 @@ public interface Compressor {
 
 		@Override
 		public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
-				throws IOException, CompressionOutputSizeException, CompressionRatioException {
+				throws IOException, CompressionOutputSizeException {
 			return compressor.compress(data, bf, maxReadLength, maxWriteLength);
 		}
 
 		@Override
 		public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength)
-				throws IOException, CompressionOutputSizeException, CompressionRatioException {
+				throws IOException, CompressionOutputSizeException {
 			return compressor.compress(is, os, maxReadLength, maxWriteLength);
 		}
 
@@ -181,7 +181,7 @@ public interface Compressor {
 	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength.
 	 */
 	Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
-			throws IOException, CompressionOutputSizeException, CompressionRatioException;
+			throws IOException, CompressionOutputSizeException;
 
 	/**
 	 * Compress the data.
@@ -194,12 +194,13 @@ public interface Compressor {
 	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength.
 	 */
 	long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength)
-			throws IOException, CompressionOutputSizeException, CompressionRatioException;
+			throws IOException, CompressionOutputSizeException;
 
 	/**
 	 * Compress the data (@see {@link #compress(InputStream, OutputStream, long, long)}) with checking of compression effect.
 	 * @param amountOfDataToCheckCompressionRatio The data amount after compression of which we will check whether we have got the desired effect.
-	 * @param minimumCompressionPercentage The minimal desired compression effect, %.
+	 * @param minimumCompressionPercentage The minimal desired compression effect, %. A value of 0 means that the
+	 *                                        compression effect will not be checked.
 	 * @throws CompressionRatioException If the desired compression effect is not achieved.
 	 */
 	long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength,

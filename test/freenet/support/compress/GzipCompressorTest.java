@@ -59,7 +59,7 @@ public class GzipCompressorTest extends TestCase {
 		assertEquals(gzipCompressor, compressorZero);
 	}
 
-	public void testCompress() throws IOException, CompressionRatioException {
+	public void testCompress() throws IOException {
 
 		// do gzip compression
 		byte[] compressedData = doCompress(UNCOMPRESSED_DATA_1.getBytes());
@@ -85,7 +85,7 @@ public class GzipCompressorTest extends TestCase {
 		assertEquals(uncompressedString, UNCOMPRESSED_DATA_1);
 	}
 
-	public void testByteArrayDecompress() throws IOException, CompressionRatioException {
+	public void testByteArrayDecompress() throws IOException {
 		// build 5k array
 		byte[] originalUncompressedData = new byte[5 * 1024];
 		for(int i = 0; i < originalUncompressedData.length; i++) {
@@ -108,7 +108,7 @@ public class GzipCompressorTest extends TestCase {
 		}
 	}
 
-	public void testCompressException() throws IOException, CompressionRatioException {
+	public void testCompressException() throws IOException {
 
 		byte[] uncompressedData = UNCOMPRESSED_DATA_1.getBytes();
 		Bucket inBucket = new ArrayBucket(uncompressedData);
@@ -124,7 +124,7 @@ public class GzipCompressorTest extends TestCase {
 		//fail("did not throw expected CompressionOutputSizeException");
 	}
 
-	public void testDecompressException() throws IOException, CompressionRatioException {
+	public void testDecompressException() throws IOException {
 		// build 5k array
 		byte[] uncompressedData = new byte[5 * 1024];
 		for(int i = 0; i < uncompressedData.length; i++) {
@@ -173,7 +173,7 @@ public class GzipCompressorTest extends TestCase {
 		return outBuf;
 	}
 
-	private byte[] doCompress(byte[] uncompressedData) throws IOException, CompressionRatioException {
+	private byte[] doCompress(byte[] uncompressedData) throws IOException {
 		Bucket inBucket = new ArrayBucket(uncompressedData);
 		BucketFactory factory = new ArrayBucketFactory();
 		Bucket outBucket = null;
