@@ -27,11 +27,11 @@ import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.PooledExecutor;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
-import freenet.support.compress.InvalidCompressionCodecException;
+import freenet.support.PooledExecutor;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.FileUtil;
 
 /**
@@ -124,7 +124,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             String dataString = baseString + i;
             byte[] data = dataString.getBytes("UTF-8");
             ClientCHKBlock b;
-            b = ClientCHKBlock.encode(data, false, false, (short)-1, 0, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, false);
+            b = ClientCHKBlock.encode(data, false, false, (short)-1, 0, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
             CHKBlock block = b.getBlock();
             ClientCHK chk = b.getClientKey();
             byte[] encData = block.getData();
