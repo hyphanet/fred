@@ -39,7 +39,7 @@ public class Bzip2Compressor extends AbstractCompressor {
 
 	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
-			throws IOException, CompressionOutputSizeException, CompressionRatioException {
+			throws IOException, CompressionOutputSizeException {
 		Bucket output = bf.makeBucket(maxWriteLength);
 		try (InputStream is = data.getInputStream();
 			 OutputStream os = output.getOutputStream()) {
@@ -75,7 +75,7 @@ public class Bzip2Compressor extends AbstractCompressor {
 				if(cos.written() > maxWriteLength)
 					throw new CompressionOutputSizeException();
 
-				if (++i == iterationToCheckCompressionRatio) {
+				if (++i == iterationToCheckCompressionRatio && minimumCompressionPercentage != 0) {
 					checkCompressionEffect(read, cos.written(), minimumCompressionPercentage);
 				}
 			}

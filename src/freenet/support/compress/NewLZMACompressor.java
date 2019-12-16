@@ -41,7 +41,7 @@ public class NewLZMACompressor extends AbstractCompressor {
 	// Copied from EncoderThread. See below re licensing.
 	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
-			throws IOException, CompressionOutputSizeException, CompressionRatioException {
+			throws IOException, CompressionOutputSizeException {
 		Bucket output;
 		InputStream is = null;
 		OutputStream os = null;
@@ -84,26 +84,26 @@ public class NewLZMACompressor extends AbstractCompressor {
 		encoder.WriteCoderProperties(os);
 		try {
 			encoder.Code(cis, cos, maxReadLength, maxWriteLength, new ICodeProgress() {
-				boolean compressionEffectNotChecked = true;
+				boolean compressionEffectShouldBeChecked = minimumCompressionPercentage != 0;
 
 				@Override
 				public void SetProgress(long processedInSize, long processedOutSize) {
-					if (compressionEffectNotChecked
-							&& processedInSize > amountOfDataToCheckCompressionRatio) {
+					if (compressionEffectShouldBeChecked && processedInSize > amountOfDataToCheckCompressionRatio) {
 						try {
-							checkCompressionEffect(
-									processedInSize,
-									processedOutSize,
-									minimumCompressionPercentage);
+							checkCompressionEffect(processedInSize, processedOutSize, minimumCompressionPercentage);
 						} catch (CompressionRatioException e) {
-							throw new CompressionRatioRuntimeException(e); // need to escape from foreign API :-(
+							throw new RuntimeException(e); // need to escape from foreign API :-(
 						}
-						compressionEffectNotChecked = false;
+						compressionEffectShouldBeChecked = false;
 					}
 				}
 			});
-		} catch (CompressionRatioRuntimeException e) {
-			throw (CompressionRatioException) e.getCause();
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof CompressionRatioException) {
+				throw (CompressionRatioException) e.getCause();
+			} else {
+				throw e;
+			}
 		}
 		if(cos.written() > maxWriteLength)
 			throw new CompressionOutputSizeException(cos.written());
