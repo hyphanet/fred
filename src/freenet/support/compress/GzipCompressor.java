@@ -18,7 +18,7 @@ public class GzipCompressor extends AbstractCompressor {
 
 	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
-			throws IOException, CompressionOutputSizeException, CompressionRatioException {
+			throws IOException, CompressionOutputSizeException {
 		Bucket output = bf.makeBucket(maxWriteLength);
 		InputStream is = null;
 		OutputStream os = null;
@@ -63,8 +63,9 @@ public class GzipCompressor extends AbstractCompressor {
 				if(cos.written() > maxWriteLength)
 					throw new CompressionOutputSizeException();
 
-				if (++i == iterationToCheckCompressionRatio)
+				if (++i == iterationToCheckCompressionRatio && minimumCompressionPercentage != 0) {
 					checkCompressionEffect(read, cos.written(), minimumCompressionPercentage);
+				}
 			}
 			gos.flush();
 			gos.finish();
