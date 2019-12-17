@@ -721,15 +721,11 @@ public abstract class Fields {
 			case SIZE:
 				return parseInt(s);
 			case DURATION:
-				try {
-					long durationInMillis = TimeUtil.toMillis(s);
-					if ((int) durationInMillis == durationInMillis) {
-						return (int) durationInMillis;
-					}
-					throw new ArithmeticException("integer overflow");
-				} catch (NumberFormatException e) {
-					return parseInt(s);
+				long durationInMillis = TimeUtil.toMillis(s);
+				if ((int) durationInMillis == durationInMillis) {
+					return (int) durationInMillis;
 				}
+				throw new ArithmeticException("integer overflow");
 		}
 		throw new AssertionError("Unknown dimension " + dimension);
 	}
