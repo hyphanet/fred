@@ -8,14 +8,12 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.BufferedReader;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import freenet.l10n.NodeL10n;
-import freenet.support.io.FileUtil;
 import freenet.clients.http.ExternalLinkToadlet;
+import freenet.l10n.NodeL10n;
 
 /**
  * Content filter for M3Us
@@ -123,20 +121,7 @@ public class M3UFilter implements ContentDataFilter {
                             // clean up the URL: allow sub-m3us and mp3/ogg/flac (what we can filter)
                             String filtered;
                             try {
-                                String subMimetype;
-                                if (uriold.endsWith(".m3u") || uriold.endsWith(".m3u8")) {
-                                    subMimetype = "audio/mpegurl";
-				} else if (uriold.endsWith(".flac")) {
-                                    subMimetype = "audio/flac";
-				} else if (uriold.endsWith(".oga")) {
-                                    subMimetype = "audio/ogg";
-				} else if (uriold.endsWith(".ogv")) {
-                                    subMimetype = "video/ogg";
-				} else if (uriold.endsWith(".ogg")) {
-                                    subMimetype = "application/ogg";
-                                } else { // force mp3 for anything we do not know
-                                    subMimetype = "audio/mpeg";
-                                }
+                                String subMimetype = ContentFilter.mimeTypeForSrc(uriold);
                                 filtered = cb.processURI(uriold, subMimetype);
                                 // add prefix for the host name
                                 // for absolute path names,

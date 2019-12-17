@@ -11,7 +11,6 @@ import java.util.Map;
 import freenet.client.Metadata.SplitfileAlgorithm;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
-import freenet.support.compress.Compressor;
 
 /** Context object for an insert operation, including both simple and multi-file inserts.
  * 
@@ -48,7 +47,7 @@ public class InsertContext implements Cloneable, Serializable {
 	/** a string that contains the codecs to use/try
 	 * if the string is null it defaults to COMPRESSOR_TYPES.Values(),
 	 * so old persistent inserts are not affected after update.
-	 * @see freenet.support.compress.Compressor.COMPRESSOR_TYPE#getCompressorsArray(String compressordescriptor, boolean pre1254)
+	 * @see freenet.support.compress.Compressor.COMPRESSOR_TYPE#getCompressorsArray(String)
 	 */
 	public String compressorDescriptor;
 	public boolean forkOnCacheable;
