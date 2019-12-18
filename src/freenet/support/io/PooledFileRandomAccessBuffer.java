@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
 import java.util.Iterator;
@@ -35,6 +36,16 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
         private final LinkedHashSet<PooledFileRandomAccessBuffer> closables = new LinkedHashSet<PooledFileRandomAccessBuffer>();
         FDTracker(int maxOpenFDs) {
             this.maxOpenFDs = maxOpenFDs;
+        }
+
+        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+            in.defaultReadObject();
+            if (maxOpenFDs > 0 && totalOpenFDs > maxOpenFDs) {
+                synchronized (this) {
+                    closables.clear();
+                    totalOpenFDs = 0;
+                }
+            }
         }
 
         /** Set the size of the fd pool */
