@@ -727,7 +727,7 @@ public class PeerManager {
 									}
 								}
 							}
-							pn.disconnected(true, true);
+							pn.disconnected(true);
 						}
 					}
 				}, timeout);

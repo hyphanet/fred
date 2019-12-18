@@ -1207,35 +1207,21 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 	
 	/**
-	* Disconnected e.g. due to not receiving a packet for ages.
-	* @param dumpMessageQueue If true, clear the messages-to-send queue, and
-	* change the bootID so even if we reconnect the other side will know that
-	* a disconnect happened. If false, don't clear the messages yet. They 
-	* will be cleared after an hour if the peer is disconnected at that point.
+	* Disconnected e.g. due to not receiving a packet for ages. Will always dump the queue of
+	* messages to send and change the bootID so the other side will know a disconnect happened.
+	* Optionally dumps trackers as well.
 	* @param dumpTrackers If true, dump the SessionKey's (i.e. dump the
 	* cryptographic data so we don't understand any packets they send us).
-	* <br>
-	* Possible arguments:<ul>
-	* <li>true, true => dump everything, immediate disconnect</li>
-	* <li>true, false => dump messages but keep trackers so we can 
-	* acknowledge messages on their end for a while.</li>
-	* <li>false, false => tell the rest of the node that we have 
-	* disconnected but do not immediately drop messages, continue to 
-	* respond to their messages.</li>
-	* <li>false, true => dump crypto but keep messages. DOES NOT MAKE 
-	* SENSE!!! DO NOT USE!!! </ul>
 	* @return True if the node was connected, false if it was not.
 	*/
-	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
-		assert(!((!dumpMessageQueue) && dumpTrackers)); // Invalid combination!
+	public boolean disconnected(boolean dumpTrackers) {
 		final long now = System.currentTimeMillis();
 		if(isRealConnection())
 			Logger.normal(this, "Disconnected " + this, new Exception("debug"));
 		else if(logMINOR)
 			Logger.minor(this, "Disconnected "+this, new Exception("debug"));
 		node.usm.onDisconnect(this);
-		if(dumpMessageQueue)
-			node.tracker.onRestartOrDisconnect(this);
+		node.tracker.onRestartOrDisconnect(this);
 		node.failureTable.onDisconnect(this);
 		node.peers.disconnected(this);
 		node.nodeUpdater.disconnected(this);
@@ -1264,13 +1250,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			countFailedRevocationTransfers = 0;
 			timePrevDisconnect = timeLastDisconnect;
 			timeLastDisconnect = now;
-			if(dumpMessageQueue) {
-				// Reset the boot ID so that we get different trackers next time.
-				myBootID = node.fastWeakRandom.nextLong();
-				messagesTellDisconnected = grabQueuedMessageItems();
-				oldPacketFormat = packetFormat;
-				packetFormat = null;
-			}
+			// Reset the boot ID so that we get different trackers next time.
+			myBootID = node.fastWeakRandom.nextLong();
+			messagesTellDisconnected = grabQueuedMessageItems();
+			oldPacketFormat = packetFormat;
+			packetFormat = null;
 		}
 		if(oldPacketFormat != null) {
 			moreMessagesTellDisconnected = oldPacketFormat.onDisconnect();
@@ -1297,44 +1281,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		node.lm.lostOrRestartedNode(this);
 		if(peers.havePeer(this))
 			setPeerNodeStatus(now);
-		if(!dumpMessageQueue) {
-			// Wait for a while and then drop the messages if we haven't
-			// reconnected.
-			node.getTicker().queueTimedJob(new Runnable() {
-				@Override
-				public void run() {
-					if((!PeerNode.this.isConnected()) &&
-							timeLastDisconnect == now) {
-						PacketFormat oldPacketFormat = null;
-						synchronized(this) {
-							if(isConnected()) return;
-							// Reset the boot ID so that we get different trackers next time.
-							myBootID = node.fastWeakRandom.nextLong();
-							oldPacketFormat = packetFormat;
-							packetFormat = null;
-						}
-						MessageItem[] messagesTellDisconnected = grabQueuedMessageItems();
-						if(messagesTellDisconnected != null) {
-							for(MessageItem mi : messagesTellDisconnected) {
-								mi.onDisconnect();
-							}
-						}
-						if(oldPacketFormat != null) {
-							List<MessageItem> moreMessagesTellDisconnected = 
-								oldPacketFormat.onDisconnect();
-							if(moreMessagesTellDisconnected != null) {
-								if(logMINOR)
-									Logger.minor(this, "Messages to dump: "+moreMessagesTellDisconnected.size());
-								for(MessageItem mi : moreMessagesTellDisconnected) {
-									mi.onDisconnect();
-								}
-							}
-						}
-					}
-
-				}
-			}, CLEAR_MESSAGE_QUEUE_AFTER);
-		}
 		// Tell opennet manager even if this is darknet, because we may need more opennet peers now.
 		OpennetManager om = node.getOpennet();
 		if(om != null)
@@ -1349,7 +1295,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	@Override
 	public void forceDisconnect() {
 		Logger.error(this, "Forcing disconnect on " + this, new Exception("debug"));
-		disconnected(true, true); // always dump trackers, maybe dump messages
+		disconnected(true); // always dump trackers, maybe dump messages
 	}
 
 	/**
@@ -3866,7 +3812,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			removed = true;
 		}
 		node.getTicker().removeQueuedJob(checkStatusAfterBackoff);
-		disconnected(true, true);
+		disconnected(true);
 		stopARKFetcher();
 	}
 	
