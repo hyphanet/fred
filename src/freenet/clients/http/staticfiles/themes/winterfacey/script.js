@@ -5,11 +5,11 @@ var mobileMenu = function() {
   var navlistDomElement = document.getElementById('navlist');
   var hamburgerDomElement;
   var activeClass = 'active';
-  var humburgerId = 'hamburger-box';
+  var hamburgerId = 'hamburger-box';
   var hamburgerContent = document.createElement('div');
 
 
-  hamburgerContent.id = humburgerId;
+  hamburgerContent.id = hamburgerId;
   hamburgerContent.innerHTML = '<span></span><span></span><span></span><span></span>';
 
   // function toggle class for old browser
@@ -69,7 +69,7 @@ var mobileMenu = function() {
 
   function attach() {
     navbarDomElement.appendChild(hamburgerContent);
-    hamburgerDomElement = document.getElementById(humburgerId);
+    hamburgerDomElement = document.getElementById(hamburgerId);
     customAddEventListener(hamburgerDomElement, 'click', toggleCssClasses);
   }
 
@@ -77,7 +77,7 @@ var mobileMenu = function() {
     removeClass(navlistDomElement, activeClass);
     removeClass(hamburgerDomElement, activeClass);
     customRemoveEventListener(hamburgerDomElement, 'click', toggleCssClasses);
-    removeElement(humburgerId);
+    removeElement(hamburgerId);
   }
 
   function ready() {
