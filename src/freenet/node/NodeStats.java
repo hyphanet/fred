@@ -1454,7 +1454,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			RunningRequestsSnapshot requestsSnapshot, RunningRequestsSnapshot peerRequestsSnapshot, boolean input, long limit,
 			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag, int maxOutputTransfers, int maxOutputTransfersPeerLimit, UIDTag tag) {
 		String name = input ? "Input" : "Output";
-		int peers = node.peers.countConnectedPeers();
+		int peers = node.peers.countConnectedPeers() + 2 * node.peers.countConnectedDarknetPeers();
 		
 		double bandwidthAvailableOutputLowerLimit = getLowerLimit(bandwidthAvailableOutputUpperLimit, peers);
 		
@@ -1464,6 +1464,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputUpperLimit - bandwidthAvailableOutputLowerLimit, input, transfersPerInsert, realTimeFlag, peers, peerRequestsSnapshot.calculateSR(ignoreLocalVsRemoteBandwidthLiability, input));
 		
+		if(source instanceof DarknetPeerNode) {
+			thisAllocation *= 3;
+		}
+
 		if(SEND_LOAD_STATS_NOTICES && source != null) {
 			// FIXME tell local as well somehow?
 			if(!input) {
