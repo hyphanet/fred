@@ -1464,10 +1464,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputUpperLimit - bandwidthAvailableOutputLowerLimit, input, transfersPerInsert, realTimeFlag, peers, peerRequestsSnapshot.calculateSR(ignoreLocalVsRemoteBandwidthLiability, input));
 		
-		if(source instanceof DarknetPeerNode) {
-			thisAllocation *= 3;
-		}
-
 		if(SEND_LOAD_STATS_NOTICES && source != null) {
 			// FIXME tell local as well somehow?
 			if(!input) {
@@ -1584,6 +1580,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		else {
 		    totalAllocation -= localAllocation;
 		    thisAllocation = totalAllocation / peers;
+                    if(source instanceof DarknetPeerNode) {
+                        thisAllocation *= 3;
+                    }
 		}
 		
 		if(logMINOR && sourceRestarted != 0)
