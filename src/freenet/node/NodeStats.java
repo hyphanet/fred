@@ -1256,7 +1256,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(logMINOR) Logger.minor(this, "Maybe accepting extra request due to it being in datastore (limit now "+limit+"s)...");
 		}
 		
-		int peers = node.peers.countConnectedPeers();
+		int peers = node.peers.countConnectedPeers() + 2 * node.peers.countConnectedDarknetPeers();;
 		
 		// These limits are by transfers.
 		// We limit the total number of transfers running in parallel to ensure
