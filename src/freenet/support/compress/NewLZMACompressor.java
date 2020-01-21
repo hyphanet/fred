@@ -40,7 +40,8 @@ public class NewLZMACompressor extends AbstractCompressor {
 
 	// Copied from EncoderThread. See below re licensing.
 	@Override
-	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
+			throws IOException, CompressionOutputSizeException {
 		Bucket output;
 		InputStream is = null;
 		OutputStream os = null;
@@ -60,10 +61,11 @@ public class NewLZMACompressor extends AbstractCompressor {
 		}
 		return output;
 	}
-	
+
 	@Override
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength,
-						 final long amountOfDataToCheckCompressionRatio, final int minimumCompressionPercentage) throws IOException {
+						 final long amountOfDataToCheckCompressionRatio, final int minimumCompressionPercentage)
+			throws IOException, CompressionRatioException {
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
 		cis = new CountedInputStream(is);
@@ -80,17 +82,29 @@ public class NewLZMACompressor extends AbstractCompressor {
 		}
 		encoder.SetDictionarySize( dictionarySize );
 		encoder.WriteCoderProperties(os);
-		encoder.Code(cis, cos, maxReadLength, maxWriteLength, new ICodeProgress() {
-			boolean compressionEffectNotChecked = true;
+		try {
+			encoder.Code(cis, cos, maxReadLength, maxWriteLength, new ICodeProgress() {
+				boolean compressionEffectShouldBeChecked = minimumCompressionPercentage != 0;
 
-			@Override
-			public void SetProgress(long processedInSize, long processedOutSize) {
-				if (compressionEffectNotChecked && processedInSize > amountOfDataToCheckCompressionRatio) {
-					checkCompressionEffect(processedInSize, processedOutSize, minimumCompressionPercentage);
-					compressionEffectNotChecked = false;
+				@Override
+				public void SetProgress(long processedInSize, long processedOutSize) {
+					if (compressionEffectShouldBeChecked && processedInSize > amountOfDataToCheckCompressionRatio) {
+						try {
+							checkCompressionEffect(processedInSize, processedOutSize, minimumCompressionPercentage);
+						} catch (CompressionRatioException e) {
+							throw new RuntimeException(e); // need to escape from foreign API :-(
+						}
+						compressionEffectShouldBeChecked = false;
+					}
 				}
+			});
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof CompressionRatioException) {
+				throw (CompressionRatioException) e.getCause();
+			} else {
+				throw e;
 			}
-		});
+		}
 		if(cos.written() > maxWriteLength)
 			throw new CompressionOutputSizeException(cos.written());
 		cos.flush();
@@ -131,11 +145,11 @@ public class NewLZMACompressor extends AbstractCompressor {
 		DataInputStream dis = new DataInputStream(is);
 		dis.readFully(props);
 		CountedOutputStream cos = new CountedOutputStream(os);
-		
+
 		int dictionarySize = 0;
 		for (int i = 0; i < 4; i++)
 			dictionarySize += ((props[1 + i]) & 0xFF) << (i * 8);
-		
+
 		if(dictionarySize < 0) throw new InvalidCompressedDataException("Invalid dictionary size");
 		if(dictionarySize > MAX_DICTIONARY_SIZE) throw new TooBigDictionaryException();
 		Decoder decoder = new Decoder();

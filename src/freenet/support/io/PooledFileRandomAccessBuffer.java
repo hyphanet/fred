@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
 import java.util.Iterator;
@@ -15,18 +16,18 @@ import freenet.support.Logger;
 import freenet.support.WrapperKeepalive;
 import freenet.support.api.LockableRandomAccessBuffer;
 
-/** Random access files with a limited number of open files, using a pool. 
+/** Random access files with a limited number of open files, using a pool.
  * LOCKING OPTIMISATION: Contention on DEFAULT_FDTRACKER likely here. It's not clear how to avoid that, FIXME.
- * However, this is doing disk I/O (even if cached, system calls), so maybe it's not a big deal ... 
- * 
+ * However, this is doing disk I/O (even if cached, system calls), so maybe it's not a big deal ...
+ *
  * FIXME does this need a shutdown hook? I don't see why it would matter ... ??? */
 public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer, Serializable {
-    
+
     private static volatile boolean logMINOR;
     static {
         Logger.registerClass(PooledFileRandomAccessBuffer.class);
     }
-    
+
     private static final long serialVersionUID = 1L;
 
     static class FDTracker implements Serializable {
@@ -52,12 +53,13 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
             return closables.size();
         }
     }
+    // static variables are always transient
     private static final FDTracker DEFAULT_FDTRACKER = new FDTracker(100);
-    private final FDTracker fds;
-    
+    private transient FDTracker fds;
+
     public final File file;
     private final boolean readOnly;
-    /** >0 means locked. We will wait until we get the lock if necessary, this is always accurate. 
+    /** >0 means locked. We will wait until we get the lock if necessary, this is always accurate.
      * LOCKING: Synchronized on fds. */
     private int lockLevel;
     /** The actual RAF. Non-null only if open. LOCKING: Synchronized on (this).
@@ -65,14 +67,14 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
     private transient RandomAccessFile raf;
     private final long length;
     private boolean closed;
-    /** -1 = not persistent-temp. Otherwise the ID. We need the ID so we can move files if the 
+    /** -1 = not persistent-temp. Otherwise the ID. We need the ID so we can move files if the
      * prefix changes. */
     private final long persistentTempID;
     private boolean secureDelete;
     private final boolean deleteOnFree;
 
     /** Create a RAF backed by a file.
-     * @param file 
+     * @param file
      * @param readOnly
      * @param forceLength
      * @param seedRandom
@@ -103,7 +105,7 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
                     wrapperKeepalive.start();
                     Fallocate.forChannel(raf.getChannel(), forceLength).fromOffset(currentLength).execute();
                 }
-                raf.setLength(forceLength); 
+                raf.setLength(forceLength);
                 currentLength = forceLength;
             }
             this.length = currentLength;
@@ -138,7 +140,7 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
             throw e;
         }
     }
-    
+
     protected PooledFileRandomAccessBuffer() {
         // For serialization.
         file = null;
@@ -147,6 +149,12 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
         persistentTempID = -1;
         deleteOnFree = false;
         fds = null;
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        // use the default fdtracker to avoid having one fd tracker per P F R A Buffer
+        this.fds = DEFAULT_FDTRACKER;
     }
 
     @Override
@@ -205,7 +213,7 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
     public RAFLock lockOpen() throws IOException {
         return lockOpen(false);
     }
-    
+
     private RAFLock lockOpen(boolean forceWrite) throws IOException {
         RAFLock lock = new RAFLock() {
 
@@ -213,7 +221,7 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
             protected void innerUnlock() {
                 PooledFileRandomAccessBuffer.this.unlock();
             }
-            
+
         };
         synchronized(fds) {
             while(true) {
@@ -242,7 +250,7 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
             }
         }
     }
-    
+
     private PooledFileRandomAccessBuffer pollFirstClosable() {
         synchronized(fds) {
             Iterator<PooledFileRandomAccessBuffer> it = fds.closables.iterator();
@@ -278,7 +286,7 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
             fds.notify();
         }
     }
-    
+
     public void setSecureDelete(boolean secureDelete) {
         this.secureDelete = secureDelete;
     }
@@ -298,13 +306,13 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
             file.delete();
         }
     }
-    
+
     boolean isOpen() {
         synchronized(fds) {
             return raf != null;
         }
     }
-    
+
     boolean isLocked() {
         synchronized(fds) {
             return lockLevel != 0;
@@ -318,14 +326,14 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
         if(persistentTempID != -1)
             context.persistentFileTracker.register(file);
     }
-    
+
     public String toString() {
         return super.toString()+":"+file;
     }
-    
+
     static final int MAGIC = 0x297c550a;
     static final int VERSION = 1;
-    
+
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
         dos.writeInt(MAGIC);
@@ -339,11 +347,11 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
             dos.writeBoolean(secureDelete);
     }
 
-    /** Caller has already checked magic 
-     * @throws StorageFormatException 
-     * @throws IOException 
+    /** Caller has already checked magic
+     * @throws StorageFormatException
+     * @throws IOException
      * @throws ResumeFailedException */
-    PooledFileRandomAccessBuffer(DataInputStream dis, FilenameGenerator fg, PersistentFileTracker persistentFileTracker) 
+    PooledFileRandomAccessBuffer(DataInputStream dis, FilenameGenerator fg, PersistentFileTracker persistentFileTracker)
     throws StorageFormatException, IOException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
