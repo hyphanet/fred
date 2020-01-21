@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -93,14 +94,17 @@ public interface Compressor {
 		 * @return
 		 * @throws InvalidCompressionCodecException
 		 */
-		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor, boolean pre1254) throws InvalidCompressionCodecException {
+		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor) throws InvalidCompressionCodecException {
 			COMPRESSOR_TYPE[] result = getCompressorsArrayNoDefault(compressordescriptor);
 			if (result == null) {
 				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[values.length-1];
 				int x = 0;
 				for(COMPRESSOR_TYPE v: values) {
-					if((v == LZMA) && !pre1254) continue;
-					if((v == LZMA_NEW) && pre1254) continue;
+					// LZMA should no longer be used. Use LZMA_NEW instead.
+					if(v == LZMA) {
+						logLzmaOldRemovedWarning();
+						continue;
+					}
 					ret[x++] = v;
 				}
 				result = ret;
@@ -131,19 +135,35 @@ public interface Compressor {
 					throw new InvalidCompressionCodecException("Duplicate compression codec identifier: '"+codec+"'");
 				}
 				result.add(ct);
+				if (result.contains(COMPRESSOR_TYPE.LZMA)) {
+					// OldLZMA should no longer be used. Only accept it if it is the only codec in the list.
+					Logger.warning(
+							Compressor.class,
+							"OldLZMA compression is buggy and no longer supported. It only exists to allow reinserting old keys.");
+					if (result.size() > 1) {
+						logLzmaOldRemovedWarning();
+						result.remove(COMPRESSOR_TYPE.LZMA);
+					}
+				}
 			}
 			return result.toArray(new COMPRESSOR_TYPE[0]);
 		}
 
+		private static void logLzmaOldRemovedWarning() {
+			Logger.warning(
+					Compressor.class,
+					"Codecs to choose contained ''LZMA'' along others. It was ignored. Please replace it with LZMA_NEW.");
+		}
+
 		@Override
 		public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
-				throws IOException, CompressionOutputSizeException, CompressionRatioException {
+				throws IOException, CompressionOutputSizeException {
 			return compressor.compress(data, bf, maxReadLength, maxWriteLength);
 		}
 
 		@Override
 		public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength)
-				throws IOException, CompressionOutputSizeException, CompressionRatioException {
+				throws IOException, CompressionOutputSizeException {
 			return compressor.compress(is, os, maxReadLength, maxWriteLength);
 		}
 
@@ -181,7 +201,7 @@ public interface Compressor {
 	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength.
 	 */
 	Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
-			throws IOException, CompressionOutputSizeException, CompressionRatioException;
+			throws IOException, CompressionOutputSizeException;
 
 	/**
 	 * Compress the data.
@@ -194,12 +214,13 @@ public interface Compressor {
 	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength.
 	 */
 	long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength)
-			throws IOException, CompressionOutputSizeException, CompressionRatioException;
+			throws IOException, CompressionOutputSizeException;
 
 	/**
 	 * Compress the data (@see {@link #compress(InputStream, OutputStream, long, long)}) with checking of compression effect.
 	 * @param amountOfDataToCheckCompressionRatio The data amount after compression of which we will check whether we have got the desired effect.
-	 * @param minimumCompressionPercentage The minimal desired compression effect, %.
+	 * @param minimumCompressionPercentage The minimal desired compression effect, %. A value of 0 means that the
+	 *                                        compression effect will not be checked.
 	 * @throws CompressionRatioException If the desired compression effect is not achieved.
 	 */
 	long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength,

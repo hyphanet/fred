@@ -3,7 +3,12 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 
 import SevenZip.Compression.LZMA.Decoder;
 import SevenZip.Compression.LZMA.Encoder;
@@ -28,8 +33,10 @@ public class OldLZMACompressor implements Compressor {
 	}
 
 	// Copied from EncoderThread. See below re licensing.
+	@Deprecated
 	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+		Logger.warning(this, "OldLZMA compression is buggy and no longer supported. It only exists to allow reinserting keys.");
 		Bucket output;
 		InputStream is = null;
 		OutputStream os = null;
@@ -50,8 +57,10 @@ public class OldLZMACompressor implements Compressor {
 		return output;
 	}
 
+	@Deprecated
 	@Override
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+		Logger.warning(this, "OldLZMA compression is buggy and no longer supported. It only exists to allow reinserting keys.");
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
 		cis = new CountedInputStream(is);
@@ -105,9 +114,9 @@ public class OldLZMACompressor implements Compressor {
 
 	// Copied from DecoderThread
 	// LICENSING: DecoderThread is LGPL 2.1/CPL according to comments.
-	
+
     static final int propSize = 5;
-    
+
     static final byte[] props = new byte[propSize];
 
     static {
