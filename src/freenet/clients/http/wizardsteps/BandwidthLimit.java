@@ -48,18 +48,17 @@ public class BandwidthLimit {
 		/*
 		 * Fraction of total limit used for download. Asymptotically from 0.5 at the minimum cap to 0.8.
 		 *
-		 * Q: Why do we do this? It does not actually work, since
-		 *  download cannot be larger than upload for any long amount
-		 *  of time.
+		 * Q: Why do we do this? It does not actually work, since download cannot be larger than upload
+		 *  for any long amount of time.
 		 * A: Upload is limited because maxing it out increases latency... http://bufferbloat.net/
 		 *  And fred (line most layered P2Ps) deals very poorly with high-latency links
 		 *
 		 * This 50/50 split is consistent with the assumption in the definition of minCap that the upload and
 		 * download limits are equal.
 		 */
-		double bytesPerSecond = bytesPerMonth/secondsPerMonth;
+		double bytesPerSecond = bytesPerMonth / secondsPerMonth;
 		double minBytesPerSecond = Node.getMinimumBandwidth();
-		double bwinc = bytesPerSecond - 2*minBytesPerSecond; // min for up and min for down
+		double bwinc = bytesPerSecond - 2 * minBytesPerSecond; // min for up and min for down
 		double asymptoticDlFraction = 4. / 5.;
 		double dllimit = minBytesPerSecond + (bwinc * asymptoticDlFraction);
 		double ullimit = minBytesPerSecond + (bwinc * (1 - asymptoticDlFraction));
