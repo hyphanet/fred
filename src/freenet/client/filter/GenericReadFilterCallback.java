@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import freenet.client.filter.HTMLFilter.ParsedTag;
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.clients.http.HTTPRequestImpl;
+import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.StaticToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
@@ -278,6 +279,18 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	@Override
 	public String makeURIAbsolute(String uri) throws URISyntaxException{
 		return baseURI.resolve(URIPreEncoder.encodeURI(uri).normalize()).toASCIIString();
+	}
+
+	public String makeURIAbsoluteWithHostAndPort(String uri) throws URISyntaxException{
+		// FIXME: this breaks abstraction really badly and depends on implementation details.
+		String fproxyAuthority = "";
+		if (linkFilterExceptionProvider instanceof  SimpleToadletServer) {
+			fproxyAuthority = ((SimpleToadletServer) linkFilterExceptionProvider).getURL();
+			if (fproxyAuthority.endsWith("/")) {
+				fproxyAuthority = fproxyAuthority.substring(0, fproxyAuthority.length() - 1);
+			}
+		}
+		return fproxyAuthority + makeURIAbsolute(uri);
 	}
 
 	private static String l10n(String key, String pattern, String value) {

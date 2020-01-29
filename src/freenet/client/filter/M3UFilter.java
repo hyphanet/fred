@@ -141,7 +141,7 @@ public class M3UFilter implements ContentDataFilter {
                                 // impaired.
                                 if (cb instanceof GenericReadFilterCallback) {
                                     try {
-                                        filtered = ((GenericReadFilterCallback)cb).makeURIAbsolute(filtered);
+                                        filtered = ((GenericReadFilterCallback)cb).makeURIAbsoluteWithHostAndPort(filtered);
                                     } catch (URISyntaxException e) {
                                         filtered = badUriReplacement;
                                     }
