@@ -13,7 +13,7 @@ public class IntOption extends Option<Integer> {
 
 	public IntOption(SubConfig conf, String optionName, String defaultValueString, int sortOrder, boolean expert,
 					 boolean forceWrite, String shortDesc, String longDesc, IntCallback cb, Dimension dimension) {
-		this(conf, optionName, Fields.parseInt(defaultValueString, dimension), sortOrder, expert, forceWrite,
+		this(conf, optionName, parseString(defaultValueString, dimension), sortOrder, expert, forceWrite,
 				shortDesc, longDesc, cb, dimension);
 	}
 
@@ -47,13 +47,20 @@ public class IntOption extends Option<Integer> {
 
 	@Override
 	protected Integer parseString(String val) throws InvalidConfigValueException {
-		Integer x;
 		try {
-			x = Fields.parseInt(val, dimension);
+			return parseString(val, dimension);
 		} catch (NumberFormatException e) {
 			throw new InvalidConfigValueException(l10n("parseError", "val", val));
 		}
-		return x;
+	}
+
+	// can be two string representations: #toDisplayString(Integer) and #toString(Integer)
+	private static Integer parseString(String val, Dimension dimension) throws NumberFormatException {
+		try {
+			return Fields.parseInt(val, dimension);
+		} catch (NumberFormatException e) {
+			return Fields.parseInt(val, Dimension.NOT);
+		}
 	}
 
 	private String l10n(String key, String pattern, String value) {
