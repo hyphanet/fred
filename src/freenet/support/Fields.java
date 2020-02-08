@@ -722,8 +722,9 @@ public abstract class Fields {
 				return parseInt(s);
 			case DURATION:
 				long durationInMillis = TimeUtil.toMillis(s);
-				if ((int) durationInMillis == durationInMillis)
+				if ((int) durationInMillis == durationInMillis) {
 					return (int) durationInMillis;
+				}
 				throw new ArithmeticException("integer overflow");
 		}
 		throw new AssertionError("Unknown dimension " + dimension);
