@@ -1,15 +1,19 @@
 package freenet.keys;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import java.net.MalformedURLException;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class FreenetURITest extends TestCase {
+public class FreenetURITest {
 	// Some URI for wAnnA? index
 	private static final String WANNA_USK_1 = "USK@5hH~39FtjA7A9~VXWtBKI~prUDTuJZURudDG0xFn3KA,GDgRGt5f6xqbmo-WraQtU54x4H~871Sho9Hz6hC-0RA,AQACAAE/Search/17/index_d51.xml";
 	private static final String WANNA_SSK_1 = "SSK@5hH~39FtjA7A9~VXWtBKI~prUDTuJZURudDG0xFn3KA,GDgRGt5f6xqbmo-WraQtU54x4H~871Sho9Hz6hC-0RA,AQACAAE/Search-17/index_d51.xml";
 	private static final String WANNA_CHK_1 = "CHK@DTCDUmnkKFlrJi9UlDDVqXlktsIXvAJ~ZTseyx5cAZs,PmA2rLgWZKVyMXxSn-ZihSskPYDTY19uhrMwqDV-~Sk,AAICAAI/index_d51.xml";
 
+	@Test
 	public void testSskForUSK() throws MalformedURLException {
 		FreenetURI uri1 = new FreenetURI(WANNA_USK_1);
 		FreenetURI uri2 = new FreenetURI(WANNA_SSK_1);
@@ -59,7 +63,8 @@ public class FreenetURITest extends TestCase {
 			// pass
 		}
 	}
-	
+
+	@Test
 	public void testDeriveRequestURIFromInsertURI() throws MalformedURLException {
 		final FreenetURI chk = new FreenetURI("CHK@DTCDUmnkKFlrJi9UlDDVqXlktsIXvAJ~ZTseyx5cAZs,PmA2rLgWZKVyMXxSn-ZihSskPYDTY19uhrMwqDV-~Sk,AAICAAI/index_d51.xml");
 		assertEquals(chk, chk.deriveRequestURIFromInsertURI());
