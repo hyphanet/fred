@@ -105,4 +105,30 @@ public class FreenetURITest {
             // Success
         }
 	}
+
+	@Test
+	public void brokenUskLinkResultsInMalformedUrlException() {
+		try {
+			new FreenetURI("USK@/broken/0");
+			fail("USK@/broken/0 is not a valid USK.");
+		} catch (MalformedURLException e) {
+			// Works.
+		}
+	}
+
+	@Test
+	public void brokenSskLinkResultsInMalformedUrlException() {
+		try {
+			new FreenetURI("SSK@/broken-0");
+			fail("SSK@/broken-0 is not a valid SSK.");
+		} catch (MalformedURLException e) {
+			// Works.
+		}
+	}
+
+	@Test
+	public void sskCanBeCreatedWithoutRoutingKey() throws MalformedURLException {
+		new FreenetURI("SSK@");
+	}
+
 }
