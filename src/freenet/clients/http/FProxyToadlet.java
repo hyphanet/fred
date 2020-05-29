@@ -27,8 +27,8 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
 import freenet.client.filter.ContentFilter;
-import freenet.client.filter.FoundURICallback;
 import freenet.client.filter.FilterMIMEType;
+import freenet.client.filter.FoundURICallback;
 import freenet.client.filter.PushingTagReplacerCallback;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.clients.http.ajaxpush.DismissAlertToadlet;
@@ -47,7 +47,11 @@ import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.NodeL10n;
-import freenet.node.*;
+import freenet.node.Node;
+import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
+import freenet.node.RequestClientBuilder;
+import freenet.node.RequestStarter;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.pluginmanager.PluginInfoWrapper;
@@ -56,12 +60,12 @@ import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.MediaType;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.URIPreEncoder;
 import freenet.support.URLEncoder;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.HTTPRequest;
@@ -88,8 +92,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	// ?force= links become invalid after 2 hours.
 	private static final long FORCE_GRAIN_INTERVAL = HOURS.toMillis(1);
 	/** Maximum size for transparent pass-through. See config passthroughMaxSizeProgress */
-	public static long MAX_LENGTH_WITH_PROGRESS = (100*1024*1024 * 11) / 10; // 100MiB plus a bit due to buggy inserts, because our Windows installer is >70 MiB nowadays
-	public static long MAX_LENGTH_NO_PROGRESS = (2*1024*1024 * 11) / 10; // 2MiB plus a bit due to buggy inserts
+	public static long MAX_LENGTH_WITH_PROGRESS = (100*1024*1024) * 11 / 10; // 100MiB plus a bit due to buggy inserts, because our Windows installer is >70 MiB nowadays
+	public static long MAX_LENGTH_NO_PROGRESS = (2*1024*1024) * 11 / 10; // 2MiB plus a bit due to buggy inserts
 
 	static final URI welcome;
 	public static final short PRIORITY = RequestStarter.INTERACTIVE_PRIORITY_CLASS;
@@ -110,7 +114,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 		});
 	}
-	
+
 	// FIXME make this configurable (or get rid of prefetch support)
 	static final int MAX_PREFETCH = 50;
 
@@ -122,7 +126,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		this.context = core.clientContext;
 		fetchTracker = tracker;
 	}
-	
+
 	@Override
 	public boolean allowPOSTWithoutPassword() {
 		return true;
@@ -321,7 +325,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			optionForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "return-type", "disk" });
-			optionForm.addChild("input", 
+			optionForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "persistence", "forever" });
 			if (mimeType != null && !mimeType.equals("")) {
@@ -440,7 +444,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			throws ToadletContextClosedException, IOException, RedirectException {
 
 		String ks = uri.getPath();
-		
+
 		MultiValueTable<String,String> headers = ctx.getHeaders();
 		final String ua = headers.get("user-agent");
 		final String accept = headers.get("accept");
@@ -449,7 +453,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			isBrowser(ua) && !ctx.disableProgressPage() && (accept == null || accept.indexOf("text/html") > -1) && !httprequest.isParameterSet("forcedownload");
 
 		long defaultMaxSize = canSendProgress ? MAX_LENGTH_WITH_PROGRESS : MAX_LENGTH_NO_PROGRESS;
-		
+
 		// max-retries
 		// Less than -1 = use default.
 		// 0 = one try only, don't retry
@@ -457,7 +461,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		// 2 = three tries
 		// 3 or more = GO INTO COOLDOWN EVERY 3 TRIES! TAKES *MUCH* LONGER!!! STRONGLY NOT RECOMMENDED!!!
 		int maxRetries = httprequest.getIntParam("max-retries", -2);
-		
+
 		long maxSize;
 		long maxSizeDownload;
 
@@ -601,7 +605,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			fctx.prefetchHook = new FoundURICallback() {
 
 				List<FreenetURI> uris = new ArrayList<FreenetURI>();
-				
+
 				@Override
 				public void foundURI(FreenetURI uri) {
 					// Ignore
@@ -633,7 +637,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 								client.prefetch(uri, SECONDS.toMillis(60), 512*1024, prefetchAllowedTypes);
 							}
 						}
-						
+
 					});
 				}
 
@@ -1144,11 +1148,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
 		server.register(localFileInsertToadlet, null, LocalFileInsertToadlet.PATH, true, false);
-		
+
 		ContentFilterToadlet contentFilterToadlet = new ContentFilterToadlet(client, core);
 		server.register(contentFilterToadlet, "FProxyToadlet.categoryQueue", ContentFilterToadlet.PATH, true,
 		        "FProxyToadlet.filterFileTitle", "FProxyToadlet.filterFile", false, contentFilterToadlet);
-		
+
 		LocalFileFilterToadlet localFileFilterToadlet = new LocalFileFilterToadlet(core, client);
 		server.register(localFileFilterToadlet, null, LocalFileFilterToadlet.PATH, true, false);
 
