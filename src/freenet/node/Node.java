@@ -653,6 +653,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private long amountOfDataToCheckCompressionRatio;
 	private int minimumCompressionPercentage;
 	private int maxTimeForSingleCompressor;
+	private boolean connectionSpeedDetection;
 	boolean inputLimitDefault;
 	final boolean enableARKs;
 	final boolean enablePerNodeFailureTables;
@@ -771,18 +772,6 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	public static int getMinimumBandwidth() {
 		return minimumBandwidth;
-	}
-
-	/**
-	 * Returns an exception with an explanation that the given bandwidth limit is too low.
-	 *
-	 * See the Node.bandwidthMinimum localization string.
-	 * @param limit Bandwidth limit in bytes.
-	 */
-	private InvalidConfigValueException lowBandwidthLimit(int limit) {
-		return new InvalidConfigValueException(l10n("bandwidthMinimum",
-		    new String[] { "limit", "minimum" },
-		    new String[] { Integer.toString(limit), Integer.toString(minimumBandwidth) }));
 	}
 
 	/**
@@ -1517,7 +1506,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			@Override
 			public void set(Integer obwLimit) throws InvalidConfigValueException {
-				checkOutputBandwidthLimit(obwLimit);
+				BandwidthManager.checkOutputBandwidthLimit(obwLimit);
 				try {
 					outputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, obwLimit/2);
 				} catch (IllegalArgumentException e) {
@@ -1537,7 +1526,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		outputBandwidthLimit = obwLimit;
 		try {
-			checkOutputBandwidthLimit(outputBandwidthLimit);
+			BandwidthManager.checkOutputBandwidthLimit(outputBandwidthLimit);
 		} catch (InvalidConfigValueException e) {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, e.getMessage());
 		}
@@ -1565,7 +1554,7 @@ public class Node implements TimeSkewDetectorCallback {
 			@Override
 			public void set(Integer ibwLimit) throws InvalidConfigValueException {
 				synchronized(Node.this) {
-					checkInputBandwidthLimit(ibwLimit);
+					BandwidthManager.checkInputBandwidthLimit(ibwLimit);
 
 					if(ibwLimit == -1) {
 						inputLimitDefault = true;
@@ -1590,7 +1579,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		inputBandwidthLimit = ibwLimit;
 		try {
-			checkInputBandwidthLimit(inputBandwidthLimit);
+			BandwidthManager.checkInputBandwidthLimit(inputBandwidthLimit);
 		} catch (InvalidConfigValueException e) {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, e.getMessage());
 		}
@@ -1650,6 +1639,23 @@ public class Node implements TimeSkewDetectorCallback {
 		}, Dimension.DURATION);
 
 		maxTimeForSingleCompressor = nodeConfig.getInt("maxTimeForSingleCompressor");
+
+		nodeConfig.register("connectionSpeedDetection", true, sortOrder++,
+			true, true, "Node.connectionSpeedDetection",
+			"Node.connectionSpeedDetectionLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return connectionSpeedDetection;
+			}
+			@Override
+			public void set(Boolean connectionSpeedDetection) {
+				synchronized(Node.this) {
+					Node.this.connectionSpeedDetection = connectionSpeedDetection;
+				}
+			}
+		});
+
+		connectionSpeedDetection = nodeConfig.getBoolean("connectionSpeedDetection");
 
 		nodeConfig.register("throttleLocalTraffic", false, sortOrder++, true, false, "Node.throttleLocalTraffic", "Node.throttleLocalTrafficLong", new BooleanCallback() {
 
@@ -2537,7 +2543,7 @@ public class Node implements TimeSkewDetectorCallback {
 		peersOffersFrefFilesConfiguration(nodeConfig, sortOrder++);
 		if (!peersOffersDismissed && checkPeersOffersFrefFiles())
 			PeersOffersUserAlert.createAlert(this);
-		
+
 		/* Take care that no configuration options are registered after this point; they will not persist
 		 * between restarts.
 		 */
@@ -2593,6 +2599,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
+
+		new BandwidthManager(this).start();
 	}
 
 	private void peersOffersFrefFilesConfiguration(SubConfig nodeConfig, int configOptionSortOrder) {
@@ -4875,20 +4883,6 @@ public class Node implements TimeSkewDetectorCallback {
         else
             return null;
     }
-
-	private void checkOutputBandwidthLimit(int obwLimit) throws InvalidConfigValueException {
-		if(obwLimit <= 0) throw new InvalidConfigValueException(l10n("bwlimitMustBePositive"));
-		if (obwLimit < minimumBandwidth) throw lowBandwidthLimit(obwLimit);
-	}
-
-	private void checkInputBandwidthLimit(int ibwLimit) throws InvalidConfigValueException {
-		// Reserved value for limit based on output limit.
-		if (ibwLimit == -1) {
-			return;
-		}
-		if(ibwLimit <= 1) throw new InvalidConfigValueException(l10n("bandwidthLimitMustBePositiveOrMinusOne"));
-		if (ibwLimit < minimumBandwidth) throw lowBandwidthLimit(ibwLimit);
-	}
 
 	public PluginManager getPluginManager() {
 		return pluginManager;
