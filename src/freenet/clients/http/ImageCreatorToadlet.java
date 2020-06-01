@@ -31,6 +31,8 @@ public class ImageCreatorToadlet extends Toadlet implements LinkFilterExceptionP
 	/** The default height */
 	public static final int		DEFAULT_HEIGHT	= 100;
 
+	private static final short WIDTH_AND_HEIGHT_LIMIT = 3500;
+
 	/**
 	 * The last modification time of the class, it is required for the
 	 * client-side cache.
@@ -63,6 +65,11 @@ public class ImageCreatorToadlet extends Toadlet implements LinkFilterExceptionP
 			// If width or height is specified, we use it, if not, then we use the default
 			int requiredWidth = req.getParam("width").compareTo("") != 0 ? Integer.parseInt(req.getParam("width").endsWith("px")?req.getParam("width").substring(0, req.getParam("width").length()-2):req.getParam("width")) : DEFAULT_WIDTH;
 			int requiredHeight = req.getParam("height").compareTo("") != 0 ? Integer.parseInt(req.getParam("height").endsWith("px")?req.getParam("height").substring(0, req.getParam("height").length()-2):req.getParam("height")) : DEFAULT_HEIGHT;
+			// Validate image size
+			if (requiredWidth > WIDTH_AND_HEIGHT_LIMIT || requiredHeight > WIDTH_AND_HEIGHT_LIMIT) {
+				writeHTMLReply(ctx, 400, "Bad request",
+						"Too large (max " + WIDTH_AND_HEIGHT_LIMIT + "x" + WIDTH_AND_HEIGHT_LIMIT + "px)");
+			}
 			// This is the image we are making
 			BufferedImage buffer = new BufferedImage(requiredWidth, requiredHeight, BufferedImage.TYPE_INT_RGB);
 			Graphics2D g2 = buffer.createGraphics();
