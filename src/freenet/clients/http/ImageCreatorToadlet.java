@@ -66,6 +66,9 @@ public class ImageCreatorToadlet extends Toadlet implements LinkFilterExceptionP
 			int requiredWidth = req.getParam("width").compareTo("") != 0 ? Integer.parseInt(req.getParam("width").endsWith("px")?req.getParam("width").substring(0, req.getParam("width").length()-2):req.getParam("width")) : DEFAULT_WIDTH;
 			int requiredHeight = req.getParam("height").compareTo("") != 0 ? Integer.parseInt(req.getParam("height").endsWith("px")?req.getParam("height").substring(0, req.getParam("height").length()-2):req.getParam("height")) : DEFAULT_HEIGHT;
 			// Validate image size
+			if (requiredWidth <= 0 || requiredHeight <= 0) {
+				writeHTMLReply(ctx, 400, "Bad request", "Illegal argument");
+			}
 			if (requiredWidth > WIDTH_AND_HEIGHT_LIMIT || requiredHeight > WIDTH_AND_HEIGHT_LIMIT) {
 				writeHTMLReply(ctx, 400, "Bad request",
 						"Too large (max " + WIDTH_AND_HEIGHT_LIMIT + "x" + WIDTH_AND_HEIGHT_LIMIT + "px)");
