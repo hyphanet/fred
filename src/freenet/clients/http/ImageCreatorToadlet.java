@@ -75,25 +75,11 @@ public class ImageCreatorToadlet extends Toadlet implements LinkFilterExceptionP
 			Graphics2D g2 = buffer.createGraphics();
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			FontRenderContext fc = g2.getFontRenderContext();
-			// We then specify the maximum font size that fits in the image
-			// For this, we start at 1, and increase it, until it overflows. This-1 will be the font size
-			float size = 1;
-			g2.setFont(g2.getFont().deriveFont(size));
-			int width = 0;
-			int height = 0;
-			while (width < requiredWidth && height < requiredHeight) {
-				Rectangle2D bounds = g2.getFont().getStringBounds(text, fc);
-
-				// calculate the size of the text
-				width = (int) bounds.getWidth();
-				height = (int) bounds.getHeight();
-				g2.setFont(g2.getFont().deriveFont(++size));
-			}
-			g2.setFont(g2.getFont().deriveFont(size - 1));
+			specifyMaximumFontSizeThatFitsInImage(g2, fc, requiredWidth, requiredHeight, text);
 			Rectangle2D bounds = g2.getFont().getStringBounds(text, fc);
 			// actually do the drawing
 			g2.setColor(new Color(0, 0, 0));
-			g2.fillRect(0, 0, width, height);
+			g2.fillRect(0, 0, requiredWidth, requiredHeight);
 			g2.setColor(new Color(255, 255, 255));
 			// We position it to the center. Note that this is not the upper left corner
 			g2.drawString(text, (int) (requiredWidth / 2 - bounds.getWidth() / 2), (int) (requiredHeight / 2 + bounds.getHeight() / 4));
@@ -120,5 +106,31 @@ public class ImageCreatorToadlet extends Toadlet implements LinkFilterExceptionP
 	@Override
 	public boolean isLinkExcepted(URI link) {
 		return ROOT_URL.equals(link.getPath());
+	}
+
+	private void specifyMaximumFontSizeThatFitsInImage(Graphics2D g2, FontRenderContext fc,
+													   int imageWidth, int imageHeight, String text) {
+		int minFontSize = 1;
+		int maxFontSize = Math.max(imageWidth, imageHeight);
+		int betweenFontSize = betweenFontSize(minFontSize, maxFontSize);
+		g2.setFont(g2.getFont().deriveFont((float) betweenFontSize));
+		while (maxFontSize > minFontSize) {
+			Rectangle2D bounds = g2.getFont().getStringBounds(text, fc);
+			if (bounds.getWidth() > imageWidth || bounds.getHeight() > imageHeight) {
+				maxFontSize = betweenFontSize - 1;
+			} else {
+				minFontSize = betweenFontSize;
+			}
+			betweenFontSize = betweenFontSize(minFontSize, maxFontSize);
+			g2.setFont(g2.getFont().deriveFont((float) betweenFontSize));
+		}
+	}
+
+	private int betweenFontSize(int from, int to) {
+		int between = from + (to - from) / 4;
+		if (between == from) {
+			return to;
+		}
+		return between;
 	}
 }
