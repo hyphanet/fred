@@ -178,7 +178,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 				// @see bug #2297
 				return path;
 			} else if (linkFilterExceptionProvider != null) {
-				if (linkFilterExceptionProvider.isLinkExcepted(uri) || path.equals(ImageCreatorToadlet.ROOT_URL)) {
+				if (linkFilterExceptionProvider.isLinkExcepted(uri)) {
 					return path + ((uri.getQuery() != null) ? ("?" + uri.getQuery()) : "");
 				}
 			}
