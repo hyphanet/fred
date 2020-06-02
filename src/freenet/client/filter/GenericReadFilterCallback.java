@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
 import freenet.client.filter.HTMLFilter.ParsedTag;
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.clients.http.HTTPRequestImpl;
-import freenet.clients.http.ImageCreatorToadlet;
 import freenet.clients.http.StaticToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
