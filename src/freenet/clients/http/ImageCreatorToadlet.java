@@ -89,13 +89,10 @@ public class ImageCreatorToadlet extends Toadlet implements LinkFilterExceptionP
 
 			// Write the data, and send the modification data to let the client cache it
 			Bucket data = ctx.getBucketFactory().makeBucket(-1);
-			OutputStream os = data.getOutputStream();
-			try {
+			try (OutputStream os = data.getOutputStream()) {
 				ImageIO.write(buffer, "png", os);
-			} finally {
-				os.close();
 			}
-			MultiValueTable<String, String> headers=new MultiValueTable<String, String>();
+			MultiValueTable<String, String> headers=new MultiValueTable<>();
 			ctx.sendReplyHeadersStatic(200, "OK", headers, "image/png", data.size(), LAST_MODIFIED);
 			ctx.writeData(data);
 		}
@@ -130,9 +127,9 @@ public class ImageCreatorToadlet extends Toadlet implements LinkFilterExceptionP
 	}
 
 	private int betweenFontSize(int from, int to) {
-		int between = from + (to - from) / 4;
+		int between = from + (to - from) / 2;
 		if (between == from) {
-			return to;
+			return to; // depends on specifyMaximumFontSizeThatFitsInImage
 		}
 		return between;
 	}
