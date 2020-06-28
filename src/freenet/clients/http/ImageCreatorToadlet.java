@@ -38,7 +38,7 @@ public class ImageCreatorToadlet extends Toadlet implements LinkFilterExceptionP
 	 * client-side cache.
 	 * If anyone makes modifications to this class, this needs to be updated.
 	 */
-	public static final Date LAST_MODIFIED = new Date(1248256659001L);
+	public static final Date LAST_MODIFIED = new Date(1593361729000L);
 
 	protected ImageCreatorToadlet(HighLevelSimpleClient client) {
 		super(client);
@@ -92,7 +92,7 @@ public class ImageCreatorToadlet extends Toadlet implements LinkFilterExceptionP
 			try (OutputStream os = data.getOutputStream()) {
 				ImageIO.write(buffer, "png", os);
 			}
-			MultiValueTable<String, String> headers=new MultiValueTable<>();
+			MultiValueTable<String, String> headers = new MultiValueTable<>();
 			ctx.sendReplyHeadersStatic(200, "OK", headers, "image/png", data.size(), LAST_MODIFIED);
 			ctx.writeData(data);
 		}
