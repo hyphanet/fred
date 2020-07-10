@@ -108,8 +108,8 @@ public class ImageCreatorToadlet extends Toadlet implements LinkFilterExceptionP
 		return ROOT_URL.equals(link.getPath());
 	}
 
-	private void specifyMaximumFontSizeThatFitsInImage(Graphics2D g2, FontRenderContext fc,
-													   int imageWidth, int imageHeight, String text) {
+	public void specifyMaximumFontSizeThatFitsInImage(Graphics2D g2, FontRenderContext fc,
+													  int imageWidth, int imageHeight, String text) {
 		int minFontSize = 1;
 		int maxFontSize = Math.max(imageWidth, imageHeight);
 		int betweenFontSize = betweenFontSize(minFontSize, maxFontSize);
