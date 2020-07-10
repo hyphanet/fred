@@ -15,13 +15,12 @@ import java.text.ParseException;
 import javax.imageio.ImageIO;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
 /** This toadlet creates a PNG image with the specified text. */
-public class ImageCreatorToadlet extends Toadlet implements LinkFilterExceptionProvider {
+public class ImageCreatorToadlet extends Toadlet {
 
 	private static final String ROOT_URL = "/imagecreator/";
 
@@ -101,11 +100,6 @@ public class ImageCreatorToadlet extends Toadlet implements LinkFilterExceptionP
 	@Override
 	public String path() {
 		return ROOT_URL;
-	}
-
-	@Override
-	public boolean isLinkExcepted(URI link) {
-		return ROOT_URL.equals(link.getPath());
 	}
 
 	public void specifyMaximumFontSizeThatFitsInImage(Graphics2D g2, FontRenderContext fc,
