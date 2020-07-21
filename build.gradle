@@ -21,6 +21,7 @@ repositories {
     mavenLocal() // TODO: use lib/ instead?
     maven { url 'https://mvn.freenetproject.org' }
     jcenter()
+    maven { url 'https://jitpack.io' }
 }
 
 sourceSets {
@@ -220,7 +221,19 @@ dependencies {
     compile "org.bouncycastle:bcprov-jdk15on:1.59"
     compile "net.java.dev.jna:jna:4.2.2"
     compile "net.java.dev.jna:jna-platform:4.2.2"
-    compile "org.freenetproject:freenet-ext:29"
+    compile "org.apache.commons:commons-compress:1.4.1"
+    compile "tanukisoft:wrapper:3.2.3"
+
+    compile 'com.github.desyncr:onion-common:0.0.2'
+    compile 'com.github.desyncr:onion-fec:0.0.2'
+    compile 'com.github.desyncr:mantissa:0.0.2'
+
+    compile "org.b1.pack:lzma-sdk-4j:9.22.0"
+    compile "com.github.desyncr:lzmajio:0.95.2"
+
+    compile "com.github.desyncr:bitcollider-core:0.0.2"
+
+    compile 'com.github.desyncr:freenet-ext:0.60.2'
 
     testCompile 'junit:junit:4.12'
     testCompile "org.mockito:mockito-core:1.9.5"
@@ -234,7 +247,6 @@ dependencyVerification {
         'org.bouncycastle:bcprov-jdk15on:1c31e44e331d25e46d293b3e8ee2d07028a67db011e74cb2443285aed1d59c85',
         'net.java.dev.jna:jna-platform:32aca873a4cb14721d939bbc8287a828919c05e8e1040b3fe8290f6128cdecca',
         'net.java.dev.jna:jna:1f38af54e06c6e6f6dbf39ba2c052b952dea5dddb4871127b34639ddeb11bdbe',
-        'org.freenetproject:freenet-ext:32f2b3d6beedf54137ea2f9a3ebef67666d769f0966b08cd17fd7db59ba4d79f',
         'junit:junit:59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a',
         'org.mockito:mockito-core:f97483ba0944b9fa133aa29638764ddbeadb51ec3dbc02074c58fa2caecd07fa',
         'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
