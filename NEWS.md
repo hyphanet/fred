@@ -4,6 +4,7 @@ next:
 
 1486:
 
+- new jarsigner certificate should remove some ugly warnings - thanks to operhiem1 and nextgens!
 - update jna to 4.5.2, because our Windows build stops working otherwise
 - no longer accept certain invalid SSKs and USKs - thanks to Bombe!
 - update tests from JUnit 3 to 4 - thanks to Bombe!
