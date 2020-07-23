@@ -1,4 +1,81 @@
-next ():
+next:
+
+- 
+
+1486:
+
+- update jna to 4.5.2, because our Windows build stops working otherwise
+- no longer accept certain invalid SSKs and USKs - thanks to Bombe!
+- update tests from JUnit 3 to 4 - thanks to Bombe!
+- increase max size for passthrough to our Windows installer should spread over UOM again
+- provide more bandwidth to darknet connections than to opennet connections - thanks to Alex Williams!
+- offer connection speed upgrade when increased speed is detected - thanks to Oleh from Redwerk!
+- improve CSS for small devices - thanks to Oleh from Redwerk!
+- improve Winterfacey style - thanks to Oleh from Redwerk!
+
+1485:
+
+- avoid quadratic memory allocation if PooledFileRandomAccessBuffer is swapped to disk (should fix startup loops)
+- compressor: skip LZMA (old) if it is not the only requested compression method
+- remove the contrib submodule from the fred repo because gradle does not need it and it hinders self-hosting
+- switch to java8 as the minimum required version
+- fix bug7102: don't attempt to pre-allocate when we truncate
+- capture fetchKeyBoxAboveBookmarks from the theme as default value
+- skip file compression where compression typically does not yield much improvement
+- If there are *.fref files in a peers-offers/ folder, ask user whether to connect to them
+- Theora fixes thanks to redwerk: can filter Video now!
+- fix config parsing bug (thanks to redwerk)
+
+
+1484:
+
+This release fixes the last blocking problems with the new build based on gradle and JNA.
+
+Thanks to thesnark and operhiem1 we have a fix to a way to circumvent the content filter: on
+Firefox uploading a file as MIME type text/plain caused Firefox to guess the filetype and present
+the user with a download-or-open dialog. This could have resulted in handing an insecure file to an
+external (and potentially vulnerable) program without showing a warning to the user. Please update
+ASAP to avoid that. See CVE-2019-9673 for details.
+
+Also uploads without compression now survive restarts of the node again.
+
+Also this release finally includes the ogg-filter from Spencer Jacksons Google Summer of Code
+project. It still needs polishing and has some inefficiencies, but you can now listen to a FLAC
+from Freenet directly from your browser. For example via the following key:
+CHK@tOwwq70fTosZuCnpZP4j1vMkEKiFuRIblmC351CbgpE,w6BTgWSJBDOM1~lWnsE83K2gOv3huEGHzSPWFBN4xFc,AAMC--8/infinite-hands-free-software.flac
+
+Ogg Theora is merged, too, but currently garbles most files. If you’d like to fix that, please file
+a pull-request!
+
+As a sidenote: Freenet supports listening to mp3 files in the browser since version build 1473
+(2016-05-21). You can also use mp3s in a HTML5 audio-tag.
+
+As main user-visible change: If you use the default theme, you will now see the Winterfacey
+theme. If you changed it to some other theme, Freenet will continue to use that other theme.
+
+The main networking change is to apply the less recently failed branch by toad. This should
+decrease the number of recently failed errors, but it could have side-effects.
+
+For darknet friends, the 1024 character limit of n2n messages is lifted. You can now send
+messages of up to 128 kiB.
+
+And thanks to Redwerk, there is now a "Send confidential message" button on the friends page.
+Just tick the checkbox of the friends you want to contact to send n2n messages to them.
+
+Further changes:
+
+- update WoT plugin to build 20. Thanks to xor.
+- replace handler.outputHandler.queue by handler.send - thanks to patheticcockroach
+- update plugin Freemail_wot to v0.2.7.4 with better detection of contacts missing from WoT - thanks to Redwerk
+- update Sharesite version to 0.4.7
+- peer list: Add spacing between flag and IP address - Thanks to Bombe
+- increase scaling to 3 again because 1480 nodes otherwise slow down updated nodes.
+- plugin manager cleanup: more readable code
+- m3u filter: can stream playlists (running in external players still needs experimentation)
+- avoid losing download state on restart - thanks to ChristmasMuch from FMS
+- only FMS and Sone on ChatForums suggestion page to fit the projects longstanding stance. If you disagree, you can create a freesite to promote it.
+- update included seednodes
+
 
 - increase scaling to 3 again because 1480 nodes otherwise slow down updated nodes
 - plugin manager cleanup: more readable code 
