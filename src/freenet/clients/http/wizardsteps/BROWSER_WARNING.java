@@ -91,6 +91,7 @@ public class BROWSER_WARNING implements Step {
 		} else {
 			infoboxContent.addChild("p", WizardL10n.l10n("browserWarningSuggestion"));
 		}
+		infoboxContent.addChild("p", WizardL10n.l10n("browserImeWarning"));
 
 		HTMLNode form = helper.addFormChild(infoboxContent.addChild("p"), ".", "continueForm");
 		form.addChild("input",
