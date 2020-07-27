@@ -24,19 +24,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	final USK usk;
 	
 	public USKFetcherWrapper(USK usk, short prio, final RequestClient client) {
-		super(prio, new ClientBaseCallback() {
-
-            @Override
-            public void onResume(ClientContext context) {
-                throw new IllegalStateException();
-            }
-
-            @Override
-            public RequestClient getRequestClient() {
-                return client;
-            }
-		    
-		});
+		super(prio, client);
 		this.usk = usk;
 	}
 
