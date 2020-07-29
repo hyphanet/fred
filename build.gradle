@@ -58,6 +58,14 @@ task buildInfo {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+tasks.withType(Javadoc) {
+    options.encoding = "UTF-8"
+}
+
 task compileVersion (type: JavaCompile) {
     copy {
         from sourceSets.main.java.srcDirs
