@@ -63,16 +63,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 
 	public USKRetriever(FetchContext fctx, short prio,  
 			final RequestClient client, USKRetrieverCallback cb, USK origUSK) {
-		super(prio, new ClientBaseCallback() {
-            @Override
-            public void onResume(ClientContext context) {
-                throw new IllegalStateException();
-            }
-            @Override
-            public RequestClient getRequestClient() {
-                return client;
-            }
-		});
+		super(prio, client);
 		if(client.persistent()) throw new UnsupportedOperationException("USKRetriever cannot be persistent");
 		this.ctx = fctx;
 		this.cb = cb;
