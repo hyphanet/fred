@@ -55,7 +55,7 @@ var mobileMenu = function() {
   }
 
   function removeElement(elementId) {
-    element = document.getElementById(elementId);
+    var element = document.getElementById(elementId);
 
     if (element) {
       element.parentNode.removeChild(element);
