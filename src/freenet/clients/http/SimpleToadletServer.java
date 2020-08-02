@@ -785,7 +785,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		}
 
 		fproxyConfig.register("fetchKeyBoxAboveBookmarks", cssTheme.fetchKeyBoxAboveBookmarks, configItemOrder++,
-				true, false, "SimpleToadletServer.fetchKeyBoxAboveBookmarks",
+				false, false, "SimpleToadletServer.fetchKeyBoxAboveBookmarks",
 				"SimpleToadletServer.fetchKeyBoxAboveBookmarksLong", new BooleanCallback() {
 					@Override
 					public Boolean get() {
