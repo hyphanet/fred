@@ -6,12 +6,12 @@ import freenet.support.HTMLNode;
 
 public class PeerTrustInputForAddPeerBoxNode extends HTMLNode {
 
-    public PeerTrustInputForAddPeerBoxNode(String l10nPrefix) {
+    public PeerTrustInputForAddPeerBoxNode() {
         super("div");
 
-        this.addChild("b", l10n(l10nPrefix + "peerTrustTitle"));
+        this.addChild("b", l10n("DarknetConnectionsToadlet.peerTrustTitle"));
         this.addChild("#", " ");
-        this.addChild("#", l10n(l10nPrefix + "peerTrustIntroduction"));
+        this.addChild("#", l10n("DarknetConnectionsToadlet.peerTrustIntroduction"));
         for (DarknetPeerNode.FRIEND_TRUST trust : DarknetPeerNode.FRIEND_TRUST.valuesBackwards()) { // FIXME reverse order
             HTMLNode input = this.addChild("br")
                     .addChild("input",
@@ -19,9 +19,9 @@ public class PeerTrustInputForAddPeerBoxNode extends HTMLNode {
                             new String[] { "radio", "trust", trust.name() });
             if (trust.isDefaultValue())
                 input.addAttribute("checked", "checked");
-            input.addChild("b", l10n(l10nPrefix + "peerTrust."+trust.name()));
+            input.addChild("b", l10n("DarknetConnectionsToadlet.peerTrust." + trust.name()));
             input.addChild("#", ": ");
-            input.addChild("#", l10n(l10nPrefix + "peerTrustExplain."+trust.name()));
+            input.addChild("#", l10n("DarknetConnectionsToadlet.peerTrustExplain." + trust.name()));
         }
         this.addChild("br");
     }
