@@ -154,7 +154,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	 */
 	public ClientGetter(ClientGetCallback client,
 			FreenetURI uri, FetchContext ctx, short priorityClass, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, boolean dontFinalizeBlobWriter, Bucket initialMetadata, String forceCompatibleExtension) {
-		super(priorityClass, client);
+		super(priorityClass, client.getRequestClient());
 		this.clientCallback = client;
 		this.returnBucket = returnBucket;
 		this.uri = uri;

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import freenet.node.RequestClient;
 import java.io.Serializable;
 
 /** Base class for inserts, including site inserts, at the level of a ClientRequester.
@@ -18,8 +19,8 @@ public abstract class BaseClientPutter extends ClientRequester {
 	protected BaseClientPutter() {
 	}
 
-	protected BaseClientPutter(short priorityClass, ClientBaseCallback cb) {
-		super(priorityClass, cb);
+	protected BaseClientPutter(short priorityClass, RequestClient requestClient) {
+		super(priorityClass, requestClient);
 	}
 
 	public void dump() {
