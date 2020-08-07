@@ -37,7 +37,7 @@ public class JVMVersion {
 
 	public static boolean isEOL() {
 		return !isAndroid() // on android the version checks are done on the App level, so we do not check here.
-				&& isEOL(getCurrent());
+			&& isEOL(getCurrent());
 	}
 
 	public static boolean isAndroid() {
