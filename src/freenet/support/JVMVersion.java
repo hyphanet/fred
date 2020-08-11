@@ -1,5 +1,7 @@
 package freenet.support;
 
+import static com.sun.jna.Platform.isAndroid;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,10 +40,6 @@ public class JVMVersion {
 	public static boolean isEOL() {
 		return !isAndroid() // on android the version checks are done on the App level, so we do not check here.
 			&& isEOL(getCurrent());
-	}
-
-	public static boolean isAndroid() {
-		return Platform.isAndroid();
 	}
 
 	public static boolean needsLegacyUpdater() {
