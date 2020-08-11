@@ -5,8 +5,6 @@ import static com.sun.jna.Platform.isAndroid;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.sun.jna.Platform;
-
 /**
  * JVM version utilities.
  *
