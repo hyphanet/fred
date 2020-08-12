@@ -7,7 +7,6 @@ import freenet.io.comm.AsyncMessageCallback;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.SimpleFieldSet;
 
 /**
  * If the send fails, queue the given message for the given node.

@@ -13,7 +13,6 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
-import freenet.support.io.FileUtil;
 
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.

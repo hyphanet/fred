@@ -24,7 +24,6 @@ import freenet.l10n.NodeL10n;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
-import freenet.node.updater.MainJarDependenciesChecker.AtomicDeployer;
 import freenet.node.updater.MainJarDependenciesChecker.Deployer;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcher;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcherCallback;

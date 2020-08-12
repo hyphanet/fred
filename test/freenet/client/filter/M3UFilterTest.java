@@ -1,9 +1,7 @@
 package freenet.client.filter;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.InputStream;
-import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -12,7 +10,6 @@ import junit.framework.TestCase;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.NullBucket;
 
 public class M3UFilterTest extends TestCase {
     protected static String[][] testPlaylists = {

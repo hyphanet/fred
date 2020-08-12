@@ -30,7 +30,6 @@ import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
-import freenet.support.io.NativeThread;
 import freenet.support.io.StorageFormatException;
 
 /** Represents a single segment, in memory and on disk. Handles storage and decoding. Note that the
