@@ -233,7 +233,6 @@ public class PeerManager {
 
 	private boolean readPeers(File peersFile, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
 		boolean someBroken = false;
-		boolean gotSome = false;
 		FileInputStream fis;
 		try {
 			fis = new FileInputStream(peersFile);
@@ -1799,7 +1798,7 @@ public class PeerManager {
 						break;
 				}
 			}
-			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting+" No load stats: "+numberOfNoLoadStats);
+			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting + " Disconnecting " + numberOfRoutingDisabled + " No load stats: "+numberOfNoLoadStats);
 			nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
 		}
 	}

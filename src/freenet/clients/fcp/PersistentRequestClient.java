@@ -191,7 +191,7 @@ public class PersistentRequestClient {
 		int i = 0;
 		for(i=offset;i<Math.min(reqs.length,offset+max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
-			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, listRequestIdentifier, false, false);
+			req.sendPendingMessages(outputHandler, listRequestIdentifier, false, false);
 		}
 		return i;
 	}
@@ -246,7 +246,6 @@ public class PersistentRequestClient {
 			req = clientRequestsByIdentifier.get(identifier);
 //			if(container != null && req != null)
 //				container.activate(req, 1);
-			boolean removedFromRunning = false;
 			if(req == null) {
 				for(ClientRequest r : completedUnackedRequests) {
 					if(r.getIdentifier().equals(identifier)) {
