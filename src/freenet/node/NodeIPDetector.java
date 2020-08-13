@@ -386,7 +386,6 @@ public class NodeIPDetector {
 	 */
 	public void processDetectedIPs(DetectedIP[] list) {
 		pluginDetectedIPs = list;
-		boolean mtuChanged = false;
 		for(DetectedIP pluginDetectedIP: pluginDetectedIPs)
 		    reportMTU(pluginDetectedIP.mtu, pluginDetectedIP.publicAddress instanceof Inet6Address);
 		redetectAddress();

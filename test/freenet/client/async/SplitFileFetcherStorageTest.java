@@ -483,7 +483,6 @@ public class SplitFileFetcherStorageTest extends TestCase {
                 }
                 assertTrue(succeeded);
             }
-            int x = 0;
             synchronized(this) {
                 for(int i=0;i<encodedBlocks.length;i++)
                     assertTrue("Block "+i+" not found or decoded", encodedBlocks[i]);

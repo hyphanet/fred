@@ -687,7 +687,6 @@ final public class FileUtil {
 			try {
 				System.out.println("Securely deleting "+file+" which is of length "+size+" bytes...");
 				raf = new RandomAccessFile(file, "rw");
-				long count;
 				// Random data first.
 				raf.seek(0);
 				fill(new RandomAccessFileOutputStream(raf), size);

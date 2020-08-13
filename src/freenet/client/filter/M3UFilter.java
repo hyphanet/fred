@@ -67,8 +67,6 @@ public class M3UFilter implements ContentDataFilter {
         // TODO: Check the EXTINF headers instead of killing comments.
         // Check whether the line is a comment
         boolean isComment = false;
-        boolean isBadUri = false;
-        int numberOfDotsInUri = 0;
         int readcount;
         byte[] nextbyte = new byte[1];
         byte[] fileUri;
@@ -97,8 +95,6 @@ public class M3UFilter implements ContentDataFilter {
                 continue;
             }
             // read one line as a fileUri
-            numberOfDotsInUri = 0;
-            isBadUri = false;
             fileIndex = 0;
             fileUri = new byte[MAX_URI_LENGTH];
             while (readcount != -1) {
