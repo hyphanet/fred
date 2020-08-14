@@ -1109,7 +1109,7 @@ public class PeerManager {
 						leastRecentlyTimedOutBackedOffDistance = diff;
 					}
 			if(addUnpickedLocsTo != null && !chosen) {
-				Double d = new Double(loc);
+				Double d = loc;
 				// Here we can directly compare double's because they aren't processed in any way, and are finite and (probably) nonzero.
 				if(!addUnpickedLocsTo.contains(d))
 					addUnpickedLocsTo.add(d);
@@ -1242,7 +1242,7 @@ public class PeerManager {
 			if(addUnpickedLocsTo != null)
 				//Add the location which we did not pick, if it exists.
 				if(closestNotBackedOff != null && closestBackedOff != null)
-					addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
+					addUnpickedLocsTo.add(closestBackedOff.getLocation());
 					
 		}
 		
