@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.Iterator;
@@ -22,6 +23,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -128,6 +130,11 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 	private boolean preallocate = true;
 	public static boolean NO_CLEANER_SLEEP = false;
+
+	/**
+	 * true if close() hase been called
+	 */
+	private AtomicBoolean closeCalled = new AtomicBoolean(false);
 
 	/** If we have no space in this store, try writing it to the alternate store,
 	 * with the wrong store flag set. Note that we do not *read from* it, the caller
@@ -835,11 +842,20 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 		metaRAF = new RandomAccessFile(metaFile, "rw");
 		metaFC = metaRAF.getChannel();
-		metaFC.lock();
 
+		try {
+			metaFC.lock();
+		} catch(OverlappingFileLockException ex) {
+			throw new IllegalStateException("Could not aquire lock for file " + baseDir.toPath().resolve(name + ".metadata"), ex);
+		}
+		
 		hdRAF = new RandomAccessFile(hdFile, "rw");
 		hdFC = hdRAF.getChannel();
-		hdFC.lock();
+		try {
+			hdFC.lock();
+		} catch(OverlappingFileLockException ex) {
+			throw new IllegalStateException("Could not aquire lock for file " + baseDir.toPath().resolve(name + ".hd"), ex);
+		}
 
 		return newStore;
 	}
@@ -1228,34 +1244,36 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	private void writeConfigFile() {
 		configLock.writeLock().lock();
 		try {
+
 			File tempConfig = new File(configFile.getPath() + ".tmp");
-			RandomAccessFile raf = new RandomAccessFile(tempConfig, "rw");
-			raf.seek(0);
-			raf.write(cipherManager.getDiskSalt());
+			try(RandomAccessFile raf = new RandomAccessFile(tempConfig, "rw")) {
+				raf.seek(0);
+				raf.write(cipherManager.getDiskSalt());
 
-			raf.writeLong(storeSize);
-			raf.writeLong(prevStoreSize);
-			raf.writeLong(keyCount.get());
-			raf.writeInt(generation);
-			raf.writeInt(flags);
-			raf.writeInt(0); // bloomFilterK
-			raf.writeInt(0);
-			raf.writeLong(0);
-			raf.writeLong(writes.get());
-			raf.writeLong(hits.get());
-			raf.writeLong(misses.get());
-			raf.writeLong(bloomFalsePos.get());
+				raf.writeLong(storeSize);
+				raf.writeLong(prevStoreSize);
+				raf.writeLong(keyCount.get());
+				raf.writeInt(generation);
+				raf.writeInt(flags);
+				raf.writeInt(0); // bloomFilterK
+				raf.writeInt(0);
+				raf.writeLong(0);
+				raf.writeLong(writes.get());
+				raf.writeLong(hits.get());
+				raf.writeLong(misses.get());
+				raf.writeLong(bloomFalsePos.get());
 
-			raf.getFD().sync();
-			raf.close();
-
-			FileUtil.renameTo(tempConfig, configFile);
-		} catch (IOException ioe) {
-			Logger.error(this, "error writing config file for " + name, ioe);
-		} finally {
-			configLock.writeLock().unlock();
+				raf.getFD().sync();
+				raf.close();
 		}
+
+		FileUtil.renameTo(tempConfig, configFile);
+	} catch (IOException ioe) {
+		Logger.error(this, "error writing config file for " + name, ioe);
+	} finally {
+		configLock.writeLock().unlock();
 	}
+}
 
 	// ------------- Store resizing
 	private long prevStoreSize = 0;
@@ -2021,27 +2039,31 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 	
 	public void close(boolean abort) {
-		shutdown = true;
-		lockManager.shutdown();
+		if (closeCalled.compareAndSet(false, true)) {
+			shutdown = true;
+			lockManager.shutdown();
 
-		cleanerLock.lock();
-		try {
-			cleanerCondition.signalAll();
-			cleanerThread.interrupt();
-		} finally {
-			cleanerLock.unlock();
-		}
+			cleanerLock.lock();
+			try {
+				cleanerCondition.signalAll();
+				cleanerThread.interrupt();
+			} finally {
+				cleanerLock.unlock();
+			}
 
-		configLock.writeLock().lock();
-		try {
-			flushAndClose(abort);
-			flags &= ~FLAG_DIRTY; // clean shutdown
-			writeConfigFile();
-		} finally {
-			configLock.writeLock().unlock();
+			configLock.writeLock().lock();
+			try {
+				flushAndClose(abort);
+				flags &= ~FLAG_DIRTY; // clean shutdown
+				writeConfigFile();
+			} finally {
+				configLock.writeLock().unlock();
+			}
+			cipherManager.shutdown();
+			Logger.normal(this, "Successfully closed store: " + name);
+		} else {
+			Logger.normal(this, "Store already closed: " + name);
 		}
-		cipherManager.shutdown();
-		System.out.println("Successfully closed store "+name);
 	}
 
 	/**
