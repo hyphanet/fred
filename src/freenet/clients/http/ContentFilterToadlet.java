@@ -156,7 +156,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         filterForm.addChild("#", l10n("mimeTypeText"));
         filterForm.addChild("br");
         filterForm.addChild("br");
-        
+
         // file selection
         if (ctx.isAllowedFullAccess()) {
             filterForm.addChild("#", l10n("filterFileBrowseLabel") + ": ");
@@ -170,11 +170,11 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
                 new String[] { "type", "name", "value" },
                 new String[] { "file", "filename", "" });
         filterForm.addChild("#", " \u00a0 ");
-        filterForm.addChild("input", 
+        filterForm.addChild("input",
                 new String[] { "type", "name", "value" },
                 new String[] { "submit", "filter-upload", l10n("filterFileFilterLabel") });
         filterForm.addChild("#", " \u00a0 ");
-        
+
         return filterBox;
     }
 
@@ -196,7 +196,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         }
         writeHTMLReply(context, 400, "Bad request", pageNode.generate());
     }
-    
+
     /**
      * Handle a request to filter a file.
      */
@@ -248,7 +248,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             }
         }
     }
-    
+
     private FilterOperation getFilterOperation(HTTPRequest request)
             throws BadRequestException {
         String s = request.getPartAsStringFailsafe("filter-operation", 100);
@@ -258,7 +258,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             throw new BadRequestException("filter-operation", e);
         }
     }
-    
+
     private ResultHandling getResultHandling(HTTPRequest request)
             throws BadRequestException {
         String s = request.getPartAsStringFailsafe("result-handling", 100);
@@ -268,19 +268,19 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             throw new BadRequestException("result-handling", e);
         }
     }
-    
+
     private String makeResultFilename(String originalFilename, String mimeType) {
         String filteredFilename;
         int p = originalFilename.indexOf('.', 1);
         if (p > 0) {
-            filteredFilename = originalFilename.substring(0, p) + ".filtered" + originalFilename.substring(p); 
+            filteredFilename = originalFilename.substring(0, p) + ".filtered" + originalFilename.substring(p);
         } else {
             filteredFilename = originalFilename + ".filtered";
         }
         filteredFilename = FileUtil.sanitize(filteredFilename, mimeType);
         return filteredFilename;
     }
-    
+
     private void handleFilter(Bucket data, String mimeType, FilterOperation operation, ResultHandling resultHandling, String resultFilename, ToadletContext ctx, NodeClientCore core)
             throws ToadletContextClosedException, IOException, BadRequestException {
         Bucket resultBucket = ctx.getBucketFactory().makeBucket(-1);
@@ -314,7 +314,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             }
         }
     }
-    
+
     private FilterStatus applyFilter(Bucket input, Bucket output, String mimeType, FilterOperation operation, NodeClientCore core)
             throws UnsafeContentTypeException, IOException {
         InputStream inputStream = null;
@@ -328,7 +328,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             Closer.close(outputStream);
         }
     }
-    
+
     private FilterStatus applyFilter(InputStream input, OutputStream output, String mimeType, FilterOperation operation, NodeClientCore core)
             throws UnsafeContentTypeException, IOException {
         URI fakeUri;
@@ -339,14 +339,14 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             return null;
         }
         //TODO: check operation, once ContentFilter supports write filtering
-        return ContentFilter.filter(input, output, mimeType, fakeUri, null, null, null,
+        return ContentFilter.filter(input, output, mimeType, fakeUri, null, null, null, null,
                 core.getLinkFilterExceptionProvider());
     }
-    
+
     static String l10n(String key) {
         return NodeL10n.getBase().getString("ContentFilterToadlet." + key);
     }
-    
+
     static String l10n(String key, String pattern, String value) {
         return NodeL10n.getBase().getString("ContentFilterToadlet." + key, pattern, value);
     }

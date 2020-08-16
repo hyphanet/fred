@@ -151,7 +151,7 @@ public class CSSParserTest extends TestCase {
 		CSS2_BAD_SELECTOR.add("h1[foo=\"hello\\202\r\n\"] {}");
 	}
 
-	
+
 	/** CSS3 Selectors */
 	private final static HashMap<String,String> CSS3_SELECTOR= new HashMap<String,String>();
 	static
@@ -816,7 +816,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}", "@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}");
 		propertyTests.put("@media speech { table { speak-header: always } table.quick { speak-header: once } table.sub { speak-header: inherit }}", "@media speech { table { speak-header: always } table.quick { speak-header: once } table.sub { speak-header: inherit }}");
 		propertyTests.put("@media speech { h1 { voice-family: announcer, male } p.part.romeo  { voice-family: romeo, male } p.part.juliet { voice-family: juliet, female }}", "@media speech { h1 { voice-family: announcer, male } p.part.romeo { voice-family: romeo, male } p.part.juliet { voice-family: juliet, female }}");
-		
+
 		// Banned selectors
 		propertyTests.put(":visited { color:red }", "");
 		propertyTests.put("a:visited { color:red }", "");
@@ -826,7 +826,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put(":active,a:visited { color:red }", ":active { color:red }");
 		propertyTests.put(":focus,:visited,:active { color:red }", ":focus,:active { color:red }");
 		propertyTests.put(":focus,a:visited,:active { color:red }", ":focus,:active { color:red }");
-		
+
 		// Flex-box Test
 		propertyTests.put("nav > ul { display: flex; }", "nav>ul { display: flex; }");
 		propertyTests.put("nav > ul > li {\n  min-width: 100px;\n  /* Prevent items from getting too small for their content. */\n  }", "nav>ul>li {\n  min-width: 100px;\n  \n  }");
@@ -863,7 +863,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("div { justify-self: true center; }", "div { justify-self: true center; }");
 		propertyTests.put("div { justify-self: center true; }", "div { justify-self: center true; }");
 		propertyTests.put("div { justify-self: center true center; }", "div { }");
-		
+
 		propertyTests.put("div { align-content: flex-start; }", "div { align-content: flex-start; }");
 		propertyTests.put("div { align-content: space-between; }", "div { align-content: space-between; }");
 		propertyTests.put("div { align-content: true flex-start; }", "div { align-content: true flex-start; }");
@@ -878,7 +878,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("div { display: list-item flow flow; }", "div { }");
 		propertyTests.put("div { display: invalidItem; }", "div { }");
 		propertyTests.put("div { display: block invalidItem; }", "div { }");
-		
+
 		// Navigation Attributes for CSS3 UI
 		propertyTests.put("body { nav-down: auto; }",  "body { nav-down: auto; }");
 		propertyTests.put("body { nav-down: h2#java current; }",  "body { nav-down: h2#java current; }");

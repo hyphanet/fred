@@ -30,11 +30,11 @@ import freenet.crypt.SSL;
 import freenet.support.Executor;
 
 /**
- * An SSL extension to the {@link NetworkInterface} 
+ * An SSL extension to the {@link NetworkInterface}
  * @author ET
  */
 public class SSLNetworkInterface extends NetworkInterface {
-	
+
 	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindableIP6) throws IOException {
 		NetworkInterface iface = new SSLNetworkInterface(port, allowedHosts, executor);
 		String[] failedBind = iface.setBindTo(bindTo, ignoreUnbindableIP6);

@@ -27,9 +27,9 @@ import freenet.support.io.FileBucket;
 
 /**
  * Content filter for PNG's. Only allows valid chunks (valid CRC, known chunk type).
- * 
+ *
  * It can strip the timestamp and "text(.)*" chunks if asked to
- * 
+ *
  * FIXME: validate chunk contents where possible.
  */
 public class PNGFilter implements ContentDataFilter {

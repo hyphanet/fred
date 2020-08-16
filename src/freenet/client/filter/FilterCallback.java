@@ -48,10 +48,10 @@ public interface FilterCallback {
 	 * @param method The form sending method. Normally GET or POST.
 	 * @param action The URI to send the form to.
 	 * @return The new action URI, or null if the form is not allowed.
-	 * @throws CommentException 
+	 * @throws CommentException
 	 */
 	public String processForm(String method, String action) throws CommentException;
-	
+
 	/**
 	 * Process a tag. If it needs changing, then return the changed
 	 * HTML, if not, then return null;
@@ -59,7 +59,7 @@ public interface FilterCallback {
 	 * @return The new tag, or null, if it doesn't need changing
 	 * */
 	public String processTag(ParsedTag pt);
-	
+
 	public void onFinished();
-	
+
 }

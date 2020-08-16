@@ -19,8 +19,8 @@ import freenet.node.RequestScheduler;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.StorageFormatException;
 
-/** Context for a Fetcher. Contains all the settings a Fetcher needs to know 
- * about. FIXME these should be final or private, with getters/setters and 
+/** Context for a Fetcher. Contains all the settings a Fetcher needs to know
+ * about. FIXME these should be final or private, with getters/setters and
  * checking for valid values e.g. maxRecursionLevel >= 1. */
 public class FetchContext implements Cloneable, Serializable {
 
@@ -34,18 +34,18 @@ public class FetchContext implements Cloneable, Serializable {
 	/** Maximum length of data fetched in order to obtain the final data - metadata, containers, etc. */
 	public long maxTempLength;
 	/** 1 = only fetch a single block. 2 = allow one redirect, e.g. metadata
-	 * block pointing to actual data block. Etc. 0 may work sometimes but 
+	 * block pointing to actual data block. Etc. 0 may work sometimes but
 	 * is not recommended. */
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
 	/** Maximum number of manifest lookups during a request. A manifest lookup is looking up a part
-	 * of a pathname in a "manifest", which is essentially a directory (folder). Usually manifest 
-	 * lookups are inside containers (archives), which are usually tar files, which may or may not 
-	 * be compressed (compression occurs transparently on a different level). This is not 
+	 * of a pathname in a "manifest", which is essentially a directory (folder). Usually manifest
+	 * lookups are inside containers (archives), which are usually tar files, which may or may not
+	 * be compressed (compression occurs transparently on a different level). This is not
 	 * necessarily the same as the number of slashes in the key after the part for the key itself,
-	 * since keys can redirect to other keys. If you are fetching user-uploaded keys, e.g. in 
-	 * fproxy, especially freesites, you will want this to be non-zero. However if you are using 
-	 * keys only internally, and never upload freesites, you should set this to 0. 
+	 * since keys can redirect to other keys. If you are fetching user-uploaded keys, e.g. in
+	 * fproxy, especially freesites, you will want this to be non-zero. However if you are using
+	 * keys only internally, and never upload freesites, you should set this to 0.
 	 * @see ArchiveContext where this is enforced. */
 	public int maxArchiveLevels;
 	public boolean dontEnterImplicitArchives;
@@ -183,7 +183,7 @@ public class FetchContext implements Cloneable, Serializable {
 	/** Copy a FetchContext.
 	 * @param ctx The old FetchContext to copy.
 	 * @param maskID Mask mode for the copy operation e.g. SPLITFILE_DEFAULT_BLOCK_MASK.
-	 * @param keepProducer If true, keep the existing EventProducer. Must be false if we are 
+	 * @param keepProducer If true, keep the existing EventProducer. Must be false if we are
 	 * creating a new request. Can be true if we are masking the FetchContext within a single
 	 * request, e.g. to download a container. This is important so that we see the progress updates
 	 * for the request and not for other requests sharing the FetchContext, but also it could break
@@ -277,11 +277,11 @@ public class FetchContext implements Cloneable, Serializable {
 			throw new IllegalArgumentException("Invalid COOLDOWN_PERIOD: Must be >= "+RequestScheduler.COOLDOWN_PERIOD+" since ULPRs will ensure fast response at that level");
 		this.cooldownTime = cooldownTime;
 	}
-	
+
 	public int getCooldownRetries() {
 		return cooldownRetries;
 	}
-	
+
 	public long getCooldownTime() {
 		return cooldownTime;
 	}
@@ -343,7 +343,7 @@ public class FetchContext implements Cloneable, Serializable {
      */
     public FetchContext(DataInputStream dis) throws StorageFormatException, IOException {
         long magic = dis.readLong();
-        if(magic != CLIENT_DETAIL_MAGIC) 
+        if(magic != CLIENT_DETAIL_MAGIC)
             throw new StorageFormatException("Bad magic for fetch settings (FetchContext)");
         int version = dis.readInt();
         if(version != CLIENT_DETAIL_VERSION)
@@ -466,7 +466,7 @@ public class FetchContext implements Cloneable, Serializable {
                 return false;
         } else if (!allowedMIMETypes.equals(other.allowedMIMETypes))
             return false;
-        // We *DO* compare on blocks, which means that two FetchContext's can be non-equal even 
+        // We *DO* compare on blocks, which means that two FetchContext's can be non-equal even
         // though the are really the same, until blocks has a proper equals(). FIXME
         if (blocks == null) {
             if (other.blocks != null)

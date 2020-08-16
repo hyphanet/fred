@@ -29,7 +29,7 @@ import freenet.support.api.HTTPRequest;
 
 public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	public static final HashSet<String> allowedProtocols;
-	
+
 	static {
 		allowedProtocols = new HashSet<String>();
 		allowedProtocols.add("http");
@@ -69,7 +69,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
 		setStrippedURI(uri.toString());
 	}
-	
+
 	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb,TagReplacerCallback trc, LinkFilterExceptionProvider linkFilterExceptionProvider) {
 		try {
 			this.baseURI = uri.toRelativeURI();
@@ -100,7 +100,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	public String processURI(String u, String overrideType) throws CommentException {
 		return processURI(u, overrideType, false, false);
 	}
-	
+
 	// RFC3986
 	//  unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
 	protected static final String UNRESERVED = "[a-zA-Z0-9\\-\\._~]";
@@ -125,11 +125,11 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			// Hack for anchors, see #710
 			return u;
 		}
-		
+
 		boolean noRelative = forBaseHref;
 		// evil hack, see #2451 and r24565,r24566
 		u = u.replaceAll(" #", " %23");
-		
+
 		URI uri;
 		URI resolved;
 		try {
@@ -183,15 +183,15 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 				}
 			}
 		}
-		
+
 		String reason = l10n("deletedURI");
-		
+
 		// Try as an absolute URI
-		
+
 		URI origURI = uri;
-		
+
 		// Convert localhost uri's to relative internal ones.
-		
+
 		String host = uri.getHost();
 		if(host != null && (host.equals("localhost") || host.equals("127.0.0.1")) && uri.getPort() == 8888) {
 			try {
@@ -202,17 +202,17 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			}
 			host = null;
 		}
-		
+
 		String rpath = uri.getPath();
 		if(logMINOR) Logger.minor(this, "Path: \""+path+"\" rpath: \""+rpath+"\"");
-		
+
 		if(host == null) {
-		
+
 			boolean isAbsolute = false;
-			
+
 			if(rpath != null) {
 				if(logMINOR) Logger.minor(this, "Resolved URI (rpath absolute): \""+rpath+"\"");
-				
+
 				// Valid FreenetURI?
 				try {
 					String p = rpath;
@@ -233,15 +233,15 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 					}
 				}
 			}
-			
+
 			if((!isAbsolute) && (!forBaseHref)) {
-				
+
 				// Relative URI
-				
+
 				rpath = resolved.getPath();
 				if(rpath == null) throw new CommentException("No URI");
 				if(logMINOR) Logger.minor(this, "Resolved URI (rpath relative): "+rpath);
-				
+
 				// Valid FreenetURI?
 				try {
 					String p = rpath;
@@ -257,13 +257,13 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 						reason = l10n("couldNotParseRelativeFreenetURI");
 					}
 				}
-				
+
 			}
-		
+
 		}
-		
+
 		uri = origURI;
-		
+
 		if(forBaseHref)
 			throw new CommentException(l10n("bogusBaseHref"));
 		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
@@ -327,22 +327,22 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 					typeOverride = split[0];
 			}
 		}
-		
-		// REDFLAG any other options we should support? 
+
+		// REDFLAG any other options we should support?
 		// Obviously we don't want to support ?force= !!
 		// At the moment, ?type= and ?force= are the only options supported by FProxy anyway.
-		
+
 		try {
 			// URI encoding issues: FreenetURI.toString() does URLEncode'ing of critical components.
-			// So if we just pass it in to the component-wise constructor, we end up encoding twice, 
+			// So if we just pass it in to the component-wise constructor, we end up encoding twice,
 			// so get %2520 for a space.
-			
+
 			// However, we want to support encoded slashes or @'s in the path, so we don't want to
 			// just decode before feeding it to the constructor. It looks like the best option is
 			// to construct it ourselves and then re-parse it. This is doing unnecessary work, it
-			// would be much easier if we had a component-wise constructor for URI that didn't 
+			// would be much easier if we had a component-wise constructor for URI that didn't
 			// re-encode, but at least it works...
-			
+
 			StringBuilder sb = new StringBuilder();
 			if(strippedBaseURI.getScheme() != null && !noRelative) {
 				sb.append(strippedBaseURI.getScheme());
@@ -359,9 +359,9 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 				sb.append('#');
 				sb.append(u.getRawFragment());
 			}
-			
+
 			URI uri = new URI(sb.toString());
-			
+
 			if(!noRelative)
 				uri = strippedBaseURI.relativize(uri);
 			if(logMINOR)
@@ -423,7 +423,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	}
 
 	static final String PLUGINS_PREFIX = "/plugins/";
-	
+
 	/**
 	 * Process a form.
 	 * Current strategy:
@@ -436,7 +436,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		if(action == null) return null;
 		if(method == null) method = "GET";
 		method = method.toUpperCase();
-		if(!(method.equals("POST") || method.equals("GET"))) 
+		if(!(method.equals("POST") || method.equals("GET")))
 			return null; // no irregular form sending methods
 		// FIXME what about /downloads/ /friends/ etc?
 		// Allow access to Library for searching, form passwords are used for actions such as adding bookmarks
@@ -460,7 +460,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		// Otherwise disallow.
 		return null;
 	}
-	
+
 	/** Processes a tag. It calls the TagReplacerCallback if present.
 	 * @param pt - The tag, that needs to be processed
 	 * @return The replacement for the tag, or null, if no replacement needed*/

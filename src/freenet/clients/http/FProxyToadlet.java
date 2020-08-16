@@ -445,6 +445,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		String ks = uri.getPath();
 
+		String authority = httprequest.getHeader("host");
 		MultiValueTable<String,String> headers = ctx.getHeaders();
 		final String ua = headers.get("user-agent");
 		final String accept = headers.get("accept");
@@ -580,6 +581,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 
 		FetchContext fctx = getFetchContext(maxSize);
+		fctx.host = authority;
 		// max-size=-1 => use default
 		maxSize = fctx.maxOutputLength;
 
