@@ -61,8 +61,9 @@ public class M3UFilter implements ContentDataFilter {
     // { (byte)'#', (byte)'E', (byte)'X', (byte)'T', (byte)'M', (byte)'3', (byte)'U' };
 
     @Override
-    public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-            FilterCallback cb) throws DataFilterException, IOException {
+    public void readFilter(
+        InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+        String hostPort, FilterCallback cb) throws DataFilterException, IOException {
         // TODO: Check the header whether this is an ext m3u.
         // TODO: Check the EXTINF headers instead of killing comments.
         // Check whether the line is a comment
@@ -122,7 +123,6 @@ public class M3UFilter implements ContentDataFilter {
                             String filtered;
                             try {
                                 String subMimetype = ContentFilter.mimeTypeForSrc(uriold);
-                                filtered = cb.processURI(uriold, subMimetype);
                                 // add prefix for the host name
                                 // for absolute path names,
                                 // because otherwise external
@@ -139,13 +139,7 @@ public class M3UFilter implements ContentDataFilter {
                                 // strip the absolute path again,
                                 // so mirroring should not be
                                 // impaired.
-                                if (cb instanceof GenericReadFilterCallback) {
-                                    try {
-                                        filtered = ((GenericReadFilterCallback)cb).makeURIAbsoluteWithHostAndPort(filtered);
-                                    } catch (URISyntaxException e) {
-                                        filtered = badUriReplacement;
-                                    }
-                                }
+                                filtered = cb.processURI(uriold, subMimetype, hostPort);
                                 // allow transparent pass through
                                 // for all but the largest files,
                                 // but not for external

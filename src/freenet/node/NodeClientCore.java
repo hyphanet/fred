@@ -116,10 +116,10 @@ public class NodeClientCore implements Persistable {
 	 * When processing the POST-request, you MUST validate that the received password matches this variable. If it does not, you must NOT process the request.
 	 * In particular, you must NOT modify anything.</p>
 	 * <p>To produce a form which already contains the password, use {@link PluginRespirator#addFormChild(freenet.support.HTMLNode, String, String)}.</p>
-	 * <p>To validate that the right password was received, use {@link WebInterfaceToadlet#isFormPassword(HTTPRequest)}.</p> 
+	 * <p>To validate that the right password was received, use {@link WebInterfaceToadlet#isFormPassword(HTTPRequest)}.</p>
 	 */
 	public final String formPassword;
-	
+
 	final ProgramDirectory downloadsDir;
 	private File[] downloadAllowedDirs;
 	private boolean includeDownloadDir;
@@ -1980,7 +1980,7 @@ public class NodeClientCore implements Persistable {
 	public FilterCallback createFilterCallback(URI uri, FoundURICallback cb) {
 		if(logMINOR)
 			Logger.minor(this, "Creating filter callback: " + uri + ", " + cb);
-		return new GenericReadFilterCallback(uri, cb,null, toadletContainer);
+		return new GenericReadFilterCallback(uri, cb, toadletContainer);
 	}
 
 	public int maxBackgroundUSKFetchers() {

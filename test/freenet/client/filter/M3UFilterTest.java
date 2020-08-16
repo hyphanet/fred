@@ -1,9 +1,7 @@
 package freenet.client.filter;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.InputStream;
-import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -12,7 +10,6 @@ import junit.framework.TestCase;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.NullBucket;
 
 public class M3UFilterTest extends TestCase {
     protected static String[][] testPlaylists = {
@@ -21,9 +18,10 @@ public class M3UFilterTest extends TestCase {
     };
 
     private static final String BASE_URI_PROTOCOL = "http";
+    private static final String HOST_PORT = "localhost:8888";
     private static final String BASE_URI_CONTENT = "localhost:8888";
     private static final String BASE_KEY = "USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/FakeM3UHostingFreesite/23/";
-    private static final String BASE_URI = BASE_URI_PROTOCOL+"://"+BASE_URI_CONTENT+'/'+BASE_KEY;
+    private static final String BASE_URI = '/'+BASE_KEY;
 
     public void testSuiteTest() throws IOException {
         M3UFilter filter = new M3UFilter();
@@ -49,7 +47,7 @@ public class M3UFilterTest extends TestCase {
 
             try {
                 filter.readFilter(ibo.getInputStream(), ibprocessed.getOutputStream(), "UTF-8", null,
-                          new GenericReadFilterCallback(new URI(BASE_URI), null, null, null));
+                    HOST_PORT, new GenericReadFilterCallback(new URI(BASE_URI), null, null, null));
                 String result = ibprocessed.toString();
 
                 assertTrue(original + " should be filtered as " + correct + " but was filtered as\n" + result + "\ninstead of the correct\n" + bucketToString((ArrayBucket)ibc), result.equals(bucketToString((ArrayBucket)ibc)));

@@ -338,7 +338,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 
 			output = finalResult.getOutputStream();
 			if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
-			worker = new ClientGetWorkerThread(new BufferedInputStream(dataInput), output, uri, mimeType, hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
+			worker = new ClientGetWorkerThread(new BufferedInputStream(dataInput), output, uri, mimeType, ctx.host, hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
 			worker.start();
 			try {
 				streamGenerator.writeTo(dataOutput, context);
@@ -903,9 +903,9 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	}
 
 	@Override
-	public void onSplitfileCompatibilityMode(final CompatibilityMode min, 
-	        final CompatibilityMode max, final byte[] customSplitfileKey, 
-	        final boolean dontCompress, final boolean bottomLayer, final boolean definitiveAnyway, 
+	public void onSplitfileCompatibilityMode(final CompatibilityMode min,
+	        final CompatibilityMode max, final byte[] customSplitfileKey,
+	        final boolean dontCompress, final boolean bottomLayer, final boolean definitiveAnyway,
 	        ClientContext context) {
 	    context.getJobRunner(persistent()).queueNormalOrDrop(new PersistentJob() {
 

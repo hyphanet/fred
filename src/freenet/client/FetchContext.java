@@ -114,15 +114,17 @@ public class FetchContext implements Cloneable, Serializable {
 	/** Number of attempts before we go into cooldown. Must be less than or equal to
 	 * RequestScheduler.COOLDOWN_RETRIES. */
 	private int cooldownRetries;
-	/** Time period for which we go into cooldown. Must be NO LESS THAN 
+	/** Time period for which we go into cooldown. Must be NO LESS THAN
 	 * RequestScheduler.COOLDOWN_PERIOD, because ULPRs will ensure rapid success
 	 * with that interval or less. */
 	private long cooldownTime;
 
 	/** Ignore USK DATEHINTs */
 	public boolean ignoreUSKDatehints;
-	
-	public FetchContext(long curMaxLength,
+	/** host and port (authority) */
+  public String host;
+
+  public FetchContext(long curMaxLength,
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
 			boolean dontEnterImplicitArchives,
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries, int maxUSKRetries,
@@ -130,8 +132,9 @@ public class FetchContext implements Cloneable, Serializable {
 			boolean filterData, int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
 			ClientEventProducer producer,
-			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME) {
-		this.blocks = null;
+			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME,
+      String host) {
+    this.blocks = null;
 		this.maxOutputLength = curMaxLength;
 		if(maxOutputLength < 0) throw new IllegalArgumentException("Bad max output length");
 		this.maxTempLength = curMaxTempLength;
@@ -170,8 +173,9 @@ public class FetchContext implements Cloneable, Serializable {
 		this.cooldownTime = RequestScheduler.COOLDOWN_PERIOD;
 		this.ignoreUSKDatehints = false; // FIXME
 		hasOwnEventProducer = true;
+    this.host = host;
 	}
-	
+
 	/** Copy a FetchContext, creating a new EventProducer and not changing the blocks list.
      * @param ctx The old FetchContext to copy.
      * @param maskID Mask mode for the copy operation e.g. SPLITFILE_DEFAULT_BLOCK_MASK.
@@ -227,6 +231,7 @@ public class FetchContext implements Cloneable, Serializable {
 		this.cooldownRetries = ctx.cooldownRetries;
 		this.cooldownTime = ctx.cooldownTime;
 		this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
+		this.host = ctx.host;
 
 		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
 			// DEFAULT
@@ -333,8 +338,12 @@ public class FetchContext implements Cloneable, Serializable {
         dos.writeInt(cooldownRetries);
         dos.writeLong(cooldownTime);
         dos.writeBoolean(ignoreUSKDatehints);
+        if (host != null)
+          dos.writeUTF(host);
+        else
+          dos.writeUTF("");
     }
-    
+
     /** Create from a saved form, e.g. for restarting a request from scratch. Will create its own
      * SimpleEventProducer.
      * @param dis
@@ -404,6 +413,11 @@ public class FetchContext implements Cloneable, Serializable {
         cooldownRetries = dis.readInt();
         cooldownTime = dis.readLong();
         ignoreUSKDatehints = dis.readBoolean();
+        s = dis.readUTF();
+        if(s.equals(""))
+          host = null;
+        else
+          host = s;
         hasOwnEventProducer = true;
         eventProducer = new SimpleEventProducer();
         blocks = null;
@@ -444,6 +458,7 @@ public class FetchContext implements Cloneable, Serializable {
         result = prime * result + ((prefetchHook == null) ? 0 : prefetchHook.hashCode());
         result = prime * result + (returnZIPManifests ? 1231 : 1237);
         result = prime * result + ((tagReplacer == null) ? 0 : tagReplacer.hashCode());
+        result = prime * result + ((host == null) ? 0 : host.hashCode());
         return result;
     }
 
@@ -538,6 +553,11 @@ public class FetchContext implements Cloneable, Serializable {
             if (other.tagReplacer != null)
                 return false;
         } else if (!tagReplacer.equals(other.tagReplacer))
+            return false;
+        if (host == null) {
+            if (other.host != null)
+                return false;
+        } else if (!host.equals(other.host))
             return false;
         return true;
     }

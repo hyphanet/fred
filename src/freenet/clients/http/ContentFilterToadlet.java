@@ -30,7 +30,7 @@ import freenet.support.io.FileUtil;
  */
 public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback {
     public final static String PATH = "/filterfile/";
-    
+
     /**
      * What to do the the output from the content filter.
      */
@@ -38,19 +38,19 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         DISPLAY,
         SAVE
     }
-    
+
     private final NodeClientCore core;
-    
+
     public ContentFilterToadlet(HighLevelSimpleClient client, NodeClientCore clientCore) {
         super(client);
         this.core = clientCore;
     }
-    
+
     @Override
     public String path() {
         return PATH;
     }
-    
+
     public boolean isEnabled (ToadletContext ctx) {
         if(ctx == null) return false;
         boolean fullAccess = !container.publicGatewayMode() || ctx.isAllowedFullAccess();
@@ -63,9 +63,9 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             sendUnauthorizedPage(ctx);
             return;
         }
-        
+
         PageMaker pageMaker = ctx.getPageMaker();
-        
+
         PageNode page = pageMaker.getPageNode(l10n("pageTitle"), ctx);
         HTMLNode pageNode = page.outer;
         HTMLNode contentNode = page.content;
@@ -73,10 +73,10 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         contentNode.addChild(ctx.getAlertManager().createSummary());
 
         contentNode.addChild(createContent(pageMaker, ctx));
-        
+
         writeHTMLReply(ctx, 200, "OK", null, pageNode.generate());
     }
-    
+
     public void handleMethodPOST(URI uri, final HTTPRequest request, final ToadletContext ctx)
             throws ToadletContextClosedException, IOException, RedirectException {
         if (container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
@@ -120,14 +120,14 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             request.freeParts();
         }
     }
-    
+
     private HTMLNode createContent(PageMaker pageMaker, ToadletContext ctx) {
         InfoboxNode infobox = pageMaker.getInfobox(l10n("filterFile"), "filter-file", true);
         HTMLNode filterBox = infobox.outer;
         HTMLNode filterContent = infobox.content;
 
         HTMLNode filterForm = ctx.addFormChild(filterContent, PATH, "filterForm");
-        
+
         // apply read filter, write filter, or both
         //TODO: radio buttons to select, once ContentFilter supports write filtering
         filterForm.addChild("input",
@@ -146,7 +146,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         filterForm.addChild("#", l10n("saveResultLabel"));
         filterForm.addChild("br");
         filterForm.addChild("br");
-        
+
         // mime type
         filterForm.addChild("#", l10n("mimeTypeLabel") + ": ");
         filterForm.addChild("input",

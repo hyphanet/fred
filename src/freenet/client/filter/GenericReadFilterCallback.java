@@ -62,6 +62,10 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		});
 	}
 
+	public GenericReadFilterCallback(URI uri, FoundURICallback cb, LinkFilterExceptionProvider linkFilterExceptionProvider) {
+		this(uri, cb, null, linkFilterExceptionProvider);
+	}
+
 	public GenericReadFilterCallback(URI uri, FoundURICallback cb,TagReplacerCallback trc, LinkFilterExceptionProvider linkFilterExceptionProvider) {
 		this.baseURI = uri;
 		this.cb = cb;
@@ -150,30 +154,11 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			throw new CommentException(l10n("couldNotParseURIWithError", "error", e1.getMessage()));
 		}
 		String path = uri.getPath();
-		
+
 		HTTPRequest req = new HTTPRequestImpl(uri, "GET");
 		if (path != null) {
 			if (path.equals("/") && req.isParameterSet("newbookmark") && !forBaseHref) {
-				// allow links to the root to add bookmarks
-				String bookmark_key = req.getParam("newbookmark");
-				String bookmark_desc = req.getParam("desc");
-				String bookmark_activelink = req.getParam("hasAnActivelink", "");
-
-				try {
-					FreenetURI furi = new FreenetURI(bookmark_key);
-					bookmark_key = furi.toString();
-					bookmark_desc = URLEncoder.encode(bookmark_desc, "UTF-8");
-				} catch (UnsupportedEncodingException e) {
-					// impossible, UTF-8 is always supported
-				} catch (MalformedURLException e) {
-					throw new CommentException("Invalid Freenet URI: " + e);
-				}
-
-				String url = "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
-				if (bookmark_activelink.equals("true")) {
-					url = url + "&hasAnActivelink=true";
-				}
-				return url;
+				return processBookmark(req);
 			} else if(path.startsWith(StaticToadlet.ROOT_URL)) {
 				// @see bug #2297
 				return path;
@@ -275,22 +260,52 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			throw new CommentException(l10n("protocolNotEscaped", "protocol", uri.getScheme()));
 		}
 	}
-	
+
+	@Override
+	public String processURI(String u, String overrideType, String forceHostPort)
+			throws CommentException {
+		URI uri;
+		String filtered;
+		try {
+			filtered = processURI(makeURIAbsolute(u), overrideType, true, false);
+			uri = URIPreEncoder.encodeURI(filtered).normalize();
+		} catch (URISyntaxException e1) {
+			if(logMINOR) Logger.minor(this, "Failed to parse URI: "+e1);
+			throw new CommentException(l10n("couldNotParseURIWithError", "error", e1.getMessage()));
+		}
+		if (uri.getHost() == null) {
+			String scheme = uri.getScheme() != null ? uri.getScheme() : "http";
+			return scheme + "://" + forceHostPort + filtered;
+		}
+		return filtered;
+	}
+
+	private String processBookmark(HTTPRequest req) throws CommentException {
+		// allow links to the root to add bookmarks
+		String bookmark_key = req.getParam("newbookmark");
+		String bookmark_desc = req.getParam("desc");
+		String bookmark_activelink = req.getParam("hasAnActivelink", "");
+
+		try {
+			FreenetURI furi = new FreenetURI(bookmark_key);
+			bookmark_key = furi.toString();
+			bookmark_desc = URLEncoder.encode(bookmark_desc, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// impossible, UTF-8 is always supported
+		} catch (MalformedURLException e) {
+			throw new CommentException("Invalid Freenet URI: " + e);
+		}
+
+		String url = "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
+		if (bookmark_activelink.equals("true")) {
+			url = url + "&hasAnActivelink=true";
+		}
+		return url;
+	}
+
 	@Override
 	public String makeURIAbsolute(String uri) throws URISyntaxException{
 		return baseURI.resolve(URIPreEncoder.encodeURI(uri).normalize()).toASCIIString();
-	}
-
-	public String makeURIAbsoluteWithHostAndPort(String uri) throws URISyntaxException{
-		// FIXME: this breaks abstraction really badly and depends on implementation details.
-		String fproxyAuthority = "";
-		if (linkFilterExceptionProvider instanceof  SimpleToadletServer) {
-			fproxyAuthority = ((SimpleToadletServer) linkFilterExceptionProvider).getURL();
-			if (fproxyAuthority.endsWith("/")) {
-				fproxyAuthority = fproxyAuthority.substring(0, fproxyAuthority.length() - 1);
-			}
-		}
-		return fproxyAuthority + makeURIAbsolute(uri);
 	}
 
 	private static String l10n(String key, String pattern, String value) {

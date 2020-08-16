@@ -27,17 +27,27 @@ public interface FilterCallback {
 	public String processURI(String uri, String overrideType, boolean noRelative, boolean inline) throws CommentException;
 
 	/**
+	 * Process a URI forcing the host.
+	 * If it cannot be turned into something sufficiently safe, then return null.
+	 * @param overrideType Force the return type.
+	 * @param noRelative TODO
+	 * @param inline TODO
+	 * @throws CommentException If the URI is nvalid or unacceptable in some way.
+	 */
+	public String processURI(String uri, String overrideType, String forceHostPort) throws CommentException;
+
+	/**
 	 * Process a base URI in the page. Not only is this filtered, it affects all
 	 * relative uri's on the page.
 	 */
 	public String onBaseHref(String baseHref);
-	
+
 	/**
 	 * Process plain-text. Notification only; can't modify.
 	 * Type can be null, or can correspond, for example to HTML tag name around text
 	 * (for example: "title").
-	 *    
-	 * Note that the string will have been fed through the relevant decoder if 
+	 *
+	 * Note that the string will have been fed through the relevant decoder if
 	 * necessary (e.g. HTMLDecoder). It must be re-encoded if it is sent out as
 	 * text to a browser.
 	 */
