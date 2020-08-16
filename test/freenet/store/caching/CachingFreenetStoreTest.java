@@ -805,14 +805,18 @@ public class CachingFreenetStoreTest extends TestCase {
 		}
 	}
 
-	public void testOnCollisionsSSK() throws IOException, SSKEncodeException, InvalidCompressionCodecException,
+	public void testOnCollisionsSSK_useSlotFilter() throws IOException, SSKEncodeException, InvalidCompressionCodecException,
+			SSKVerifyException, KeyDecodeException, KeyCollisionException {
+		// With slot filters turned on, it should be cached, it should compare it, and
+		// still not throw if it's the same block.
+		checkOnCollisionsSSK(true);
+	}
+
+	public void testOnCollisionsSSK_dontUseSlotFilter() throws IOException, SSKEncodeException, InvalidCompressionCodecException,
 			SSKVerifyException, KeyDecodeException, KeyCollisionException {
 		// With slot filters turned off, it goes straight to disk, because
 		// probablyInStore() always returns true.
 		checkOnCollisionsSSK(false);
-		// With slot filters turned on, it should be cached, it should compare it, and
-		// still not throw if it's the same block.
-		checkOnCollisionsSSK(true);
 	}
 
 	/* Test collisions on SSK */
