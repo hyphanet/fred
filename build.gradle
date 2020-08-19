@@ -225,7 +225,8 @@ dependencies {
     compile "tanukisoft:wrapper:3.2.3"
 
     compile 'com.github.freenet-mobile:onion-common:0.0.3'
-    compile 'com.github.freenet-mobile:onion-fec:0.0.3'
+    compile 'com.github.freenet-mobile:onion-fec:0.0.4'
+
     compile 'com.github.freenet-mobile:mantissa:0.0.3'
 
     compile "org.b1.pack:lzma-sdk-4j:9.22.0"
