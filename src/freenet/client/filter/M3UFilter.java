@@ -114,7 +114,7 @@ public class M3UFilter implements ContentDataFilter {
                 }
                 readcount = dis.read(nextbyte);
                 if (isNewline(nextbyte) || readcount == -1) {
-                    if (!isComment) {
+                    if (!isComment && fileIndex > 0) {
                         // remove too long paths
                         if (fileIndex <= MAX_URI_LENGTH) {
                             String uriold = new String(fileUri, 0, fileIndex, "UTF-8");
