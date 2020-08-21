@@ -114,61 +114,66 @@ public class M3UFilter implements ContentDataFilter {
                 }
                 readcount = dis.read(nextbyte);
                 if (isNewline(nextbyte) || readcount == -1) {
-                    if (!isComment && fileIndex > 0) {
+                    if (!isComment) {
                         // remove too long paths
                         if (fileIndex <= MAX_URI_LENGTH) {
-                            String uriold = new String(fileUri, 0, fileIndex, "UTF-8");
-                            // System.out.println(uriold);
-                            // clean up the URL: allow sub-m3us and mp3/ogg/flac (what we can filter)
-                            String filtered;
-                            try {
-                                String subMimetype = ContentFilter.mimeTypeForSrc(uriold);
-                                // add prefix for the host name
-                                // for absolute path names,
-                                // because otherwise external
-                                // clients could be tricked into
-                                // accessing local files (and some
-                                // just don't work, especially not
-                                // with downloaded files). This
-                                // can however make downloaded
-                                // files leak information about
-                                // the local setup (host and
-                                // port).
+                            boolean lineIsEmpty = fileIndex == 0;
+                            if (!lineIsEmpty) {
+                                String uriold = new String(fileUri, 0, fileIndex, "UTF-8");
+                                // System.out.println(uriold);
+                                // clean up the URL: allow sub-m3us and mp3/ogg/flac (what we can filter)
+                                String filtered;
+                                try {
+                                    String subMimetype = ContentFilter.mimeTypeForSrc(uriold);
+                                    // add prefix for the host name
+                                    // for absolute path names,
+                                    // because otherwise external
+                                    // clients could be tricked into
+                                    // accessing local files (and some
+                                    // just don't work, especially not
+                                    // with downloaded files). This
+                                    // can however make downloaded
+                                    // files leak information about
+                                    // the local setup (host and
+                                    // port).
 
-                                // mirroring tools like `wget -mk`
-                                // strip the absolute path again,
-                                // so mirroring should not be
-                                // impaired.
-                                filtered = cb.processURI(uriold, subMimetype, hostPort);
-                                // allow transparent pass through
-                                // for all but the largest files,
-                                // but not for external
-                                // links. This check is safe,
-                                // since false positives will just
-                                // lead to a file to not be played
-                                // (players will get progress-bar
-                                // HTML content instead).
-                                if (!filtered.contains(ExternalLinkToadlet.PATH) && !filtered.contains(ExternalLinkToadlet.magicHTTPEscapeString)) {
-                                    if (filtered.contains("?")) {
-                                        filtered += "&";
-                                    } else {
-                                        filtered += "?";
+                                    // mirroring tools like `wget -mk`
+                                    // strip the absolute path again,
+                                    // so mirroring should not be
+                                    // impaired.
+                                    filtered = cb.processURI(uriold, subMimetype, hostPort);
+                                    // allow transparent pass through
+                                    // for all but the largest files,
+                                    // but not for external
+                                    // links. This check is safe,
+                                    // since false positives will just
+                                    // lead to a file to not be played
+                                    // (players will get progress-bar
+                                    // HTML content instead).
+                                    if (!filtered.contains(ExternalLinkToadlet.PATH)
+                                        && !filtered.contains(ExternalLinkToadlet.magicHTTPEscapeString)) {
+                                        if (filtered.contains("?")) {
+                                            filtered += "&";
+                                        } else {
+                                            filtered += "?";
+                                        }
+                                        filtered += "max-size=" + Long.valueOf(
+                                            MAX_LENGTH_NO_PROGRESS).toString();
                                     }
-                                    filtered += "max-size=" + Long.valueOf(MAX_LENGTH_NO_PROGRESS).toString();
-                                }
 
-                            } catch (CommentException e) {
-                                filtered = badUriReplacement;
-                            } catch (Exception e) {
-                                filtered = badUriReplacement;
-                            }
-                            if (filtered == null) {
-                                filtered = badUriReplacement;
-                            }
-                            try {
-                                dos.write(filtered.getBytes("UTF-8"));
-                            } catch (Exception e) {
-                                dos.write(badUriReplacement.getBytes("UTF-8"));
+                                } catch (CommentException e) {
+                                    filtered = badUriReplacement;
+                                } catch (Exception e) {
+                                    filtered = badUriReplacement;
+                                }
+                                if (filtered == null) {
+                                    filtered = badUriReplacement;
+                                }
+                                try {
+                                    dos.write(filtered.getBytes("UTF-8"));
+                                } catch (Exception e) {
+                                    dos.write(badUriReplacement.getBytes("UTF-8"));
+                                }
                             }
                             // write the newline if we're not at EOF
                             if (readcount != -1){
