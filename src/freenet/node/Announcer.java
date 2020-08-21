@@ -30,6 +30,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
+import freenet.support.io.Closer;
 import freenet.support.transport.ip.IPUtil;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -262,7 +263,9 @@ public class Announcer {
 
 	public static List<SimpleFieldSet> readSeednodes(File file) {
 		List<SimpleFieldSet> list = new ArrayList<SimpleFieldSet>();
-		try(FileInputStream fis = new FileInputStream(file)) {
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(file);
 			BufferedInputStream bis = new BufferedInputStream(fis);
 			InputStreamReader isr = new InputStreamReader(bis, "UTF-8");
 			BufferedReader br = new BufferedReader(isr);
@@ -283,6 +286,8 @@ public class Announcer {
 		} catch (IOException e) {
 			Logger.error(Announcer.class, "Unexpected error while reading seednodes from " + file, e);
 			return list;
+		} finally {
+			Closer.close(fis);
 		}
 	}
 

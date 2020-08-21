@@ -317,8 +317,11 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	protected abstract void maybeParseManifest(FetchResult result, int build);
 
 	protected void parseManifest(FetchResult result) {
-		try(InputStream is = result.asBucket().getInputStream()) {
-			try(ZipInputStream zis = new ZipInputStream(is)) {
+		InputStream is = null;
+		try {
+			is = result.asBucket().getInputStream();
+			ZipInputStream zis = new ZipInputStream(is);
+			try {
 				ZipEntry ze;
 				while(true) {
 					ze = zis.getNextEntry();
@@ -348,11 +351,15 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 						zis.closeEntry();
 					}
 				}
+			} finally {
+				Closer.close(zis);
 			}
 		} catch (IOException e) {
 			Logger.error(this, "IOException trying to read manifest on update");
 		} catch (Throwable t) {
 			Logger.error(this, "Failed to parse update manifest: "+t, t);
+		} finally {
+			Closer.close(is);
 		}
 	}
 	

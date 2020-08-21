@@ -22,6 +22,7 @@ import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Fields;
+import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /** Keys read from the master keys file */
@@ -75,13 +76,15 @@ public class MasterKeys {
 	public static MasterKeys read(File masterKeysFile, Random hardRandom, String password) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 		System.err.println("Trying to read master keys file...");
 		if(masterKeysFile != null && masterKeysFile.exists()) {
+			// Try to read the keys
+			FileInputStream fis = null;
 			// FIXME move declarations of sensitive data out and clear() in finally {}
 			long len = masterKeysFile.length();
-			if(len > 1024) throw new MasterKeysFileSizeException(true);
-			if(len < (32 + 32 + 8 + 32)) throw new MasterKeysFileSizeException(false);
+            if(len > 1024) throw new MasterKeysFileSizeException(true);
+            if(len < (32 + 32 + 8 + 32)) throw new MasterKeysFileSizeException(false);
 			int length = (int) len;
-			// Try to read the keys
-			try(FileInputStream fis = new FileInputStream(masterKeysFile)) {
+			try {
+				fis = new FileInputStream(masterKeysFile);
 				DataInputStream dis = new DataInputStream(fis);
 				if(len == 140) {
 				    MasterKeys ret = readOldFormat(dis, length, hardRandom, password);
@@ -175,6 +178,8 @@ public class MasterKeys {
 				throw new Error(e);
 			} catch (EOFException e) {
 				throw new MasterKeysFileSizeException(false);
+			} finally {
+				Closer.close(fis);
 			}
 		}
 		System.err.println("Creating new master keys file");

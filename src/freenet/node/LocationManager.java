@@ -37,6 +37,7 @@ import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.TimeSortedHashtable;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.Closer;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 
 /**
@@ -664,14 +665,19 @@ public class LocationManager implements ByteCounter {
 				File locationLog = node.nodeDir().file("location.log.txt");
 				if(locationLog.exists() && locationLog.length() > 1024*1024*10)
 					locationLog.delete();
-				try(FileOutputStream os = new FileOutputStream(locationLog, true)) {
+				FileOutputStream os = null;
+				try {
+					os = new FileOutputStream(locationLog, true);
 					BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, "ISO-8859-1"));
 					DateFormat df = DateFormat.getDateTimeInstance();
 					df.setTimeZone(TimeZone.getTimeZone("GMT"));
 					bw.write(""+df.format(new Date())+" : "+getLocation()+(randomReset ? " (random reset"+(fromDupLocation?" from duplicated location" : "")+")" : "")+'\n');
 					bw.close();
+					os = null;
 				} catch (IOException e) {
 					Logger.error(this, "Unable to write changed location to "+locationLog+" : "+e, e);
+				} finally {
+					Closer.close(os);
 				}
 			}
 
