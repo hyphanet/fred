@@ -64,7 +64,6 @@ import freenet.support.Ticker;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread.PriorityLevel;
 
@@ -1159,18 +1158,13 @@ public class PluginManager {
 	private void downloadPluginFile(PluginDownLoader<?> pluginDownLoader, File pluginDirectory, File pluginFile, PluginProgress pluginProgress) throws IOException, PluginNotFoundException {
 		File tempPluginFile = File.createTempFile("plugin-", ".jar", pluginDirectory);
 		tempPluginFile.deleteOnExit();
-		OutputStream pluginOutputStream = null;
-		InputStream pluginInputStream = null;
-		try {
-			pluginOutputStream = new FileOutputStream(tempPluginFile);
-			pluginInputStream = pluginDownLoader.getInputStream(pluginProgress);
-			FileUtil.copy(pluginInputStream, pluginOutputStream, -1);
+		try(OutputStream pluginOutputStream = new FileOutputStream(tempPluginFile)) {
+			try(InputStream pluginInputStream = pluginDownLoader.getInputStream(pluginProgress)) {
+				FileUtil.copy(pluginInputStream, pluginOutputStream, -1);
+			}
 		} catch (IOException ioe1) {
 			tempPluginFile.delete();
 			throw ioe1;
-		} finally {
-			Closer.close(pluginInputStream);
-			Closer.close(pluginOutputStream);
 		}
 		if (tempPluginFile.length() == 0) {
 			throw new PluginNotFoundException("downloaded zero length file");
@@ -1194,31 +1188,29 @@ public class PluginManager {
 	}
 
 	private String verifyJarFileAndGetPluginMainClass(File pluginFile) throws PluginNotFoundException, PluginAlreadyLoaded {
-		JarFile pluginJarFile = null;
-		try {
-			pluginJarFile = new JarFile(pluginFile);
-			Manifest manifest = pluginJarFile.getManifest();
-			if (manifest == null) {
-				throw new PluginNotFoundException("could not load manifest from plugin file");
-			}
-			Attributes mainAttributes = manifest.getMainAttributes();
-			if (mainAttributes == null) {
-				throw new PluginNotFoundException("manifest does not contain attributes");
-			}
-			String pluginMainClassName = mainAttributes.getValue("Plugin-Main-Class");
-			if (pluginMainClassName == null) {
-				throw new PluginNotFoundException("manifest does not contain a Plugin-Main-Class attribute");
-			}
-			if (isPluginLoaded(pluginMainClassName)) {
-				Logger.error(this, "Plugin already loaded: " + pluginFile.getName());
-				throw new PluginAlreadyLoaded();
-			}
-			return pluginMainClassName;
+		Manifest manifest;
+		try(JarFile pluginJarFile = new JarFile(pluginFile)) {
+			manifest = pluginJarFile.getManifest();
 		} catch (IOException ioe1) {
 			throw new PluginNotFoundException("error procesesing jar file", ioe1);
-		} finally {
-			Closer.close(pluginJarFile);
 		}
+
+		if (manifest == null) {
+			throw new PluginNotFoundException("could not load manifest from plugin file");
+		}
+		Attributes mainAttributes = manifest.getMainAttributes();
+		if (mainAttributes == null) {
+			throw new PluginNotFoundException("manifest does not contain attributes");
+		}
+		String pluginMainClassName = mainAttributes.getValue("Plugin-Main-Class");
+		if (pluginMainClassName == null) {
+			throw new PluginNotFoundException("manifest does not contain a Plugin-Main-Class attribute");
+		}
+		if (isPluginLoaded(pluginMainClassName)) {
+			Logger.error(this, "Plugin already loaded: " + pluginFile.getName());
+			throw new PluginAlreadyLoaded();
+		}
+		return pluginMainClassName;
 	}
 
 	private FredPlugin loadPluginFromJarFile(String name, File pluginFile, String pluginMainClassName, boolean isOfficialPlugin) throws PluginNotFoundException {
@@ -1340,8 +1332,6 @@ public class PluginManager {
 	private String getFileDigest(File file, String digest) throws PluginNotFoundException {
 		final int BUFFERSIZE = 4096;
 		MessageDigest hash = null;
-		FileInputStream fis = null;
-		BufferedInputStream bis = null;
 		boolean wasFromDigest256Pool = false;
 		String result;
 
@@ -1354,21 +1344,18 @@ public class PluginManager {
 			}
 			// We compute the hash
 			// http://java.sun.com/developer/TechTips/1998/tt0915.html#tip2
-			fis = new FileInputStream(file);
-			bis = new BufferedInputStream(fis);
-			int len = 0;
-			byte[] buffer = new byte[BUFFERSIZE];
-			while((len = bis.read(buffer)) > -1) {
-				hash.update(buffer, 0, len);
+			try(BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
+				int len = 0;
+				byte[] buffer = new byte[BUFFERSIZE];
+				while((len = bis.read(buffer)) > -1) {
+					hash.update(buffer, 0, len);
+				}
 			}
 			result = HexUtil.bytesToHex(hash.digest());
 			if (wasFromDigest256Pool)
 				SHA256.returnMessageDigest(hash);
 		} catch(Exception e) {
 			throw new PluginNotFoundException("Error while computing hash '"+digest+"' of the downloaded plugin: " + e, e);
-		} finally {
-			Closer.close(bis);
-			Closer.close(fis);
 		}
 		return result;
 	}

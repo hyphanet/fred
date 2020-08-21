@@ -22,7 +22,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
 /**
@@ -337,18 +336,14 @@ public class PNGFilter implements ContentDataFilter {
 		fout.delete();
 		final Bucket inputBucket = new FileBucket(fin, true, false, false, false);
 		final Bucket outputBucket = new FileBucket(fout, false, true, false, false);
-		InputStream inputStream = null;
-		OutputStream outputStream = null;
-		try {
-			inputStream = inputBucket.getInputStream();
-			outputStream = outputBucket.getOutputStream();
-			Logger.setupStdoutLogging(LogLevel.MINOR, "");
+		try(InputStream inputStream = inputBucket.getInputStream()) {
+			try(OutputStream outputStream = outputBucket.getOutputStream()) {
+				Logger.setupStdoutLogging(LogLevel.MINOR, "");
 
-			ContentFilter.filter(inputStream, outputStream, "image/png",
-					new URI("http://127.0.0.1:8888/"), null, null, null, null);
+				ContentFilter.filter(inputStream, outputStream, "image/png",
+						new URI("http://127.0.0.1:8888/"), null, null, null);
+			}
 		} finally {
-			Closer.close(inputStream);
-			Closer.close(outputStream);
 			inputBucket.free();
 			outputBucket.free();
 		}

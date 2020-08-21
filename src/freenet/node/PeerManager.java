@@ -1103,7 +1103,7 @@ public class PeerManager {
 						leastRecentlyTimedOutBackedOffDistance = diff;
 					}
 			if(addUnpickedLocsTo != null && !chosen) {
-				Double d = new Double(loc);
+				Double d = loc;
 				// Here we can directly compare double's because they aren't processed in any way, and are finite and (probably) nonzero.
 				if(!addUnpickedLocsTo.contains(d))
 					addUnpickedLocsTo.add(d);
@@ -1236,7 +1236,7 @@ public class PeerManager {
 			if(addUnpickedLocsTo != null)
 				//Add the location which we did not pick, if it exists.
 				if(closestNotBackedOff != null && closestBackedOff != null)
-					addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
+					addUnpickedLocsTo.add(closestBackedOff.getLocation());
 					
 		}
 		
@@ -1504,16 +1504,15 @@ public class PeerManager {
 	private void writePeersInner(String filename, String sb, int maxBackups, boolean rotateBackups) {
 		assert(maxBackups >= 1);
 		synchronized(writePeerFileSync) {
-			FileOutputStream fos = null;
 			File f;
-			File full = new File(filename).getAbsoluteFile();
 			try {
+				File full = new File(filename).getAbsoluteFile();
 				f = File.createTempFile(full.getName()+".", ".tmp", full.getParentFile());
 			} catch (IOException e2) {
 				Logger.error(this, "Cannot write peers to disk: Cannot create temp file - " + e2, e2);
-				Closer.close(fos);
 				return;
 			}
+			FileOutputStream fos = null;
 			try {
 				fos = new FileOutputStream(f);
 			} catch(FileNotFoundException e2) {

@@ -37,7 +37,6 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
-import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 import freenet.support.io.NullOutputStream;
 
@@ -1228,18 +1227,14 @@ public class Metadata implements Cloneable, Serializable {
 	}
 	
     public long writtenLength() throws MetadataUnresolvedException {
-        CountedOutputStream cos = new CountedOutputStream(new NullOutputStream());
-        DataOutputStream dos = null;
-        try {
-            dos = new DataOutputStream(cos);
-            writeTo(dos);
+        try(CountedOutputStream cos = new CountedOutputStream(new NullOutputStream())) {
+            try(DataOutputStream dos = new DataOutputStream(cos)) {
+							writeTo(dos);
+							return cos.written();
+						}
         } catch (IOException e) {
             throw new Error("Could not write to CountedOutputStream: "+e, e);
-        } finally {
-            Closer.close(dos);
-            Closer.close(cos);
         }
-        return cos.written();
     }
 
 	/**
@@ -1686,21 +1681,16 @@ public class Metadata implements Cloneable, Serializable {
 	}
 
 	public RandomAccessBucket toBucket(BucketFactory bf) throws MetadataUnresolvedException, IOException {
-	    RandomAccessBucket b = bf.makeBucket(-1);
-	    DataOutputStream dos = null;
-	    boolean success = false;
-	    try {
-	        dos = new DataOutputStream(b.getOutputStream());
-	        writeTo(dos);
-	        dos.close();
-	        dos = null;
-	        b.setReadOnly(); // Must be after dos.close()
-	        success = true;
-	        return b;
-	    } finally {
-	        Closer.close(dos);
-	        if(!success) b.free();
-	    }
+		RandomAccessBucket b = bf.makeBucket(-1);
+		boolean success = false;
+		try(DataOutputStream dos = new DataOutputStream(b.getOutputStream())) {
+			writeTo(dos);
+			success = true;
+			return b;
+		} finally {
+			b.setReadOnly(); // Must be after dos.close()
+			if(!success) b.free();
+		}
 	}
 
 	public boolean isResolved() {
