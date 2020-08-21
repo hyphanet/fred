@@ -7,8 +7,6 @@ import java.security.NoSuchAlgorithmException;
 
 import javax.crypto.Mac;
 
-import freenet.support.Logger;
-
 /**
  * Keeps track of properties of different Message Authentication Code 
  * algorithms available to Freenet including key type, name of the 

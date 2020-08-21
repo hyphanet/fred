@@ -1,7 +1,6 @@
 package freenet.client.async;
 
 import java.io.File;
-import java.io.FileDescriptor;
 
 import freenet.client.ClientMetadata;
 

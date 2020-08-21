@@ -15,7 +15,6 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import junit.framework.TestCase;
-
 import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.l10n.NodeL10n;
@@ -26,8 +25,6 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 
 public class CSSParserTest extends TestCase {
-
-
 
 
 	// FIXME should specify exact output values

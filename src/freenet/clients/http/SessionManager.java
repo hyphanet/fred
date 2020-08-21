@@ -4,7 +4,6 @@
 package freenet.clients.http;
 
 import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.net.URI;
 import java.net.URISyntaxException;

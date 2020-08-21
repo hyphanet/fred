@@ -16,8 +16,6 @@ import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.SplitFileInserterSegmentStorage.BlockInsert;
 import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
 import freenet.client.async.SplitFileInserterStorage.Status;
-import freenet.client.async.SplitFileInserterStorageTest.MyCallback;
-import freenet.client.async.SplitFileInserterStorageTest.MyKeysFetchingLocally;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.ChecksumChecker;

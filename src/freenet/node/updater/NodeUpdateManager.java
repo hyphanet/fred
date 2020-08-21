@@ -29,7 +29,6 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.node.Announcer;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeFile;

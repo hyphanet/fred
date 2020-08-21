@@ -6,8 +6,6 @@ package freenet.clients.fcp;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.HashMap;
-import java.util.Map;
 
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;

@@ -41,7 +41,6 @@ import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
-import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItemKey;
 import freenet.support.CheatingTicker;
 import freenet.support.DummyJobRunner;

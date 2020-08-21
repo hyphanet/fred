@@ -8,7 +8,6 @@ import java.util.List;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
-import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
 import freenet.keys.FreenetURI;

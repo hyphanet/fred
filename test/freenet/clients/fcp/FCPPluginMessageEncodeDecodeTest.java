@@ -7,9 +7,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import junit.framework.TestCase;
-import freenet.clients.fcp.FCPPluginConnectionImpl;
-import freenet.clients.fcp.FCPPluginClientMessage;
-import freenet.clients.fcp.FCPPluginServerMessage;
 import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
 

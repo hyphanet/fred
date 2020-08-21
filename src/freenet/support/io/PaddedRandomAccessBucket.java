@@ -11,7 +11,6 @@ import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.crypt.MasterSecret;
-import freenet.support.api.Bucket;
 import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 

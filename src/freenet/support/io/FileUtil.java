@@ -34,7 +34,6 @@ import freenet.client.DefaultMIMETypes;
 import freenet.node.NodeStarter;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SizeUtil;
 import freenet.support.StringValidityChecker;
 import freenet.support.Logger.LogLevel;
 
