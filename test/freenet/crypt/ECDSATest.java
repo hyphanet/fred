@@ -3,7 +3,6 @@ package freenet.crypt;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.PublicKey;
-import java.security.Security;
 
 import freenet.crypt.ECDSA.Curves;
 import freenet.node.FSParseException;

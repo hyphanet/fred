@@ -15,14 +15,6 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import junit.framework.TestCase;
-import freenet.client.filter.CSSParser;
-import freenet.client.filter.CSSReadFilter;
-import freenet.client.filter.ContentFilter;
-import freenet.client.filter.DataFilterException;
-import freenet.client.filter.GenericReadFilterCallback;
-import freenet.client.filter.FilterMIMEType;
-import freenet.client.filter.UnsafeContentTypeException;
-import freenet.client.filter.UnsupportedCharsetInFilterException;
 import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.l10n.NodeL10n;
@@ -33,8 +25,6 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 
 public class CSSParserTest extends TestCase {
-
-
 
 
 	// FIXME should specify exact output values

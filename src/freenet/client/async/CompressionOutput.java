@@ -1,7 +1,6 @@
 package freenet.client.async;
 
 import freenet.crypt.HashResult;
-import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 

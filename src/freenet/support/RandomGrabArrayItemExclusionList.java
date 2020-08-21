@@ -4,7 +4,6 @@
 package freenet.support;
 
 import freenet.client.async.ClientContext;
-import freenet.client.async.RequestSelectionTreeNode;
 
 public interface RandomGrabArrayItemExclusionList {
 	

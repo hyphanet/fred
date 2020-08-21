@@ -18,7 +18,6 @@ import freenet.support.math.MersenneTwister;
 
 import freenet.crypt.AEADCryptBucket;
 
-import freenet.client.async.ClientContext;
 import freenet.crypt.EncryptedRandomAccessBucket;
 import freenet.crypt.EncryptedRandomAccessBuffer;
 import freenet.crypt.MasterSecret;

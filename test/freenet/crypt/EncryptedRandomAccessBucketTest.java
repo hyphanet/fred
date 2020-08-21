@@ -1,7 +1,6 @@
 package freenet.crypt;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -33,7 +32,6 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.RAFBucket;
-import freenet.support.io.FileRandomAccessBuffer;
 import freenet.support.io.RandomAccessBufferTestBase;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;

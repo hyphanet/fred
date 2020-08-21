@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import freenet.node.PeerNode;
-
 /** 
  * For any single UID, we should only route to the same node once, even if
  * the request comes back to us in a loop. Loop detection with rejection is

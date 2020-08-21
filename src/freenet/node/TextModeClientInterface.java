@@ -2,7 +2,6 @@ package freenet.node;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.EOFException;

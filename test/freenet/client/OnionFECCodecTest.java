@@ -5,7 +5,6 @@ import java.util.Random;
 
 import freenet.support.TestProperty;
 
-import junit.framework.Assert;
 import junit.framework.TestCase;
 
 /** Test the new (post db4o) high level FEC API */
