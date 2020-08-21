@@ -145,10 +145,10 @@ public class OggPage {
 			int concludingPartialSegment = packet.payload.length % 255;
 			Logger.minor(this, "Whole segments: "+wholeSegments+" Partial: "+concludingPartialSegment);
 			for(int i = 0; i < wholeSegments; i++) {
-				segmentSizes.add(new Byte(intToUnsignedByte(255)));
+				segmentSizes.add(Byte.valueOf(intToUnsignedByte(255)));
 			}
 			if(concludingPartialSegment != 0) {
-				segmentSizes.add(new Byte(intToUnsignedByte(concludingPartialSegment)));
+				segmentSizes.add(Byte.valueOf(intToUnsignedByte(concludingPartialSegment)));
 			}
 			Logger.minor(this, "Writing packet sized: "+packet.payload.length);
 			payloadStream.write(packet.payload);
