@@ -9,8 +9,6 @@ import java.security.InvalidKeyException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-import freenet.support.Logger;
-
 /**
  * MasterSecret is a serializable secret used to derive various keys and ivs for local storage in 
  * Freenet.

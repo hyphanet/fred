@@ -60,8 +60,8 @@ public class PeersOffersUserAlert extends AbstractUserAlert {
                 new String[] {"type", "name", "value"},
                 new String[] {"hidden", "peers-offers-files", "true"});
 
-        form.addChild(new PeerTrustInputForAddPeerBoxNode("DarknetConnectionsToadlet."));
-        form.addChild(new PeerVisibilityInputForAddPeerBoxNode("DarknetConnectionsToadlet."));
+        form.addChild(new PeerTrustInputForAddPeerBoxNode());
+        form.addChild(new PeerVisibilityInputForAddPeerBoxNode());
 
         form.addChild("input",
                         new String[] {"type", "name", "value"},

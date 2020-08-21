@@ -34,7 +34,6 @@ import freenet.client.DefaultMIMETypes;
 import freenet.node.NodeStarter;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SizeUtil;
 import freenet.support.StringValidityChecker;
 import freenet.support.Logger.LogLevel;
 
@@ -60,18 +59,15 @@ final public class FileUtil {
 	        skip = length - byteLimit;
 	    }
 
-	    FileInputStream fis = null;
 	    LineReadingInputStream lis = null;
 	    try {
-	        fis = new FileInputStream(logfile);
-	        lis = new LineReadingInputStream(fis);
+	        lis = new LineReadingInputStream(new FileInputStream(logfile));
 	        if (skip > 0) {
 	            lis.skip(skip);
 	            lis.readLine(100000, 200, true);
 	        }
 	    } catch (IOException e) {
 	        Closer.close(lis);
-	        Closer.close(fis);
 	        throw e;
 	    }
 	    return lis;
@@ -309,30 +305,19 @@ final public class FileUtil {
      * @throws IOException if an I/O error occurs
      */
 	public static StringBuilder readUTF(File file, long offset) throws FileNotFoundException, IOException {
-		StringBuilder result = new StringBuilder();
-		FileInputStream fis = null;
-		BufferedInputStream bis = null;
-		InputStreamReader isr = null;
-
-		try {
-			fis = new FileInputStream(file);
+		try(FileInputStream fis = new FileInputStream(file)) {
 			skipFully(fis, offset);
-			bis = new BufferedInputStream(fis);
-			isr = new InputStreamReader(bis, "UTF-8");
-
-			char[] buf = new char[4096];
-			int length = 0;
-
-			while((length = isr.read(buf)) > 0) {
-				result.append(buf, 0, length);
+			try(InputStreamReader isr = new InputStreamReader(new BufferedInputStream(fis), "UTF-8")) {
+				
+				StringBuilder result = new StringBuilder();
+				char[] buf = new char[4096];
+				int length = 0;
+				while((length = isr.read(buf)) > 0) {
+					result.append(buf, 0, length);
+				}
+				return result;
 			}
-
-		} finally {
-			Closer.close(isr);
-			Closer.close(bis);
-			Closer.close(fis);
 		}
-		return result;
 	}
 	
 	/**
@@ -355,16 +340,12 @@ final public class FileUtil {
 	public static StringBuilder readUTF(InputStream stream, long offset) throws IOException {
 	    StringBuilder result = new StringBuilder();
 	    skipFully(stream, offset);
-	    InputStreamReader reader = null;
-	    try {
-	        reader = new InputStreamReader(stream, "UTF-8");
-	        char[] buf = new char[4096];
-	        int length = 0;
-	        while((length = reader.read(buf)) > 0) {
-	            result.append(buf, 0, length);
-	        }
-	    } finally {
-	        Closer.close(reader);
+	    try(InputStreamReader reader = new InputStreamReader(stream, "UTF-8")) {
+				char[] buf = new char[4096];
+				int length = 0;
+				while((length = reader.read(buf)) > 0) {
+						result.append(buf, 0, length);
+				}
 	    }
 	    return result;
 	}
@@ -683,19 +664,13 @@ final public class FileUtil {
 		if(!file.exists()) return;
 		long size = file.length();
 		if(size > 0) {
-			RandomAccessFile raf = null;
-			try {
+			try(RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
 				System.out.println("Securely deleting "+file+" which is of length "+size+" bytes...");
-				raf = new RandomAccessFile(file, "rw");
 				long count;
 				// Random data first.
 				raf.seek(0);
 				fill(new RandomAccessFileOutputStream(raf), size);
 				raf.getFD().sync();
-				raf.close();
-				raf = null;
-			} finally {
-				Closer.close(raf);
 			}
 		}
 		if((!file.delete()) && file.exists())

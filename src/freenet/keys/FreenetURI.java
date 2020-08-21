@@ -459,6 +459,9 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 				if(routingKey.length != 32 && keyType.equals("CHK"))
 					throw new MalformedURLException("Bad URI: Routing key should be 32 bytes long");
 			} else {
+				if (isUSK || (isSSK && docName != null)) {
+					throw new MalformedURLException("Bad URI: Routing key missing");
+				}
 				routingKey = cryptoKey = extra = null;
 				return;
 			}

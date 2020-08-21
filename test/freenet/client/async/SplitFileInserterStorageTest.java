@@ -41,7 +41,6 @@ import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
-import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItemKey;
 import freenet.support.CheatingTicker;
 import freenet.support.DummyJobRunner;
@@ -1529,6 +1528,9 @@ public class SplitFileInserterStorageTest extends TestCase {
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         KeysFetchingLocally keys = new MyKeysFetchingLocally();
+        if(baseContext == null) {
+            System.err.println("baseContext is null");
+        }
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, true, baseContext.clone(), 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 

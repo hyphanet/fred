@@ -13,7 +13,6 @@ import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
 import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.HashResult;
-import freenet.node.SendableInsert;
 import freenet.support.Logger;
 import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;

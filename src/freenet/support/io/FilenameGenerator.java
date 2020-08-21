@@ -8,7 +8,6 @@ import java.util.Random;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;

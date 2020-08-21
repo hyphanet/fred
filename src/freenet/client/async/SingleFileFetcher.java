@@ -50,7 +50,6 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.InsufficientDiskSpaceException;
-import freenet.support.io.TempBucketFactory;
 
 /**
  * Does most of the complicated metadata handling for fetching single files.

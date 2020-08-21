@@ -22,7 +22,6 @@ import junit.framework.TestCase;
 import freenet.crypt.CTRBlockCipherTest;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.support.HexUtil;
-import freenet.support.io.Closer;
 
 /**
  * @author sdiz
@@ -1929,11 +1928,10 @@ public class RijndaelTest extends TestCase {
 	
 	private void checkGladmanTestVectors(String type) throws UnsupportedCipherException, IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
 		for(int testNumber : GLADMAN_TEST_NUMBERS) {
-			InputStream is = null;
-			try {
-				is = getClass().getResourceAsStream("/freenet/crypt/ciphers/rijndael-gladman-test-data/ecbn"+type+testNumber+".txt");
-				InputStreamReader isr = new InputStreamReader(is, "ISO-8859-1");
-				BufferedReader br = new BufferedReader(isr);
+			try(BufferedReader br = new BufferedReader(new InputStreamReader(
+				getClass().getResourceAsStream("/freenet/crypt/ciphers/rijndael-gladman-test-data/ecbn"+type+testNumber+".txt")
+				, "ISO-8859-1"
+			))) {
 				for(int i=0;i<7;i++) br.readLine(); // Skip header
 				String line = br.readLine();
 				int blockSize = Integer.parseInt(line.substring("BLOCKSIZE=".length()));
@@ -2006,8 +2004,6 @@ public class RijndaelTest extends TestCase {
 						}
 					}
 				}
-			} finally {
-				Closer.close(is);
 			}
 		}
 	}

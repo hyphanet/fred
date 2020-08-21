@@ -27,7 +27,6 @@ import freenet.support.Ticker;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.LockableRandomAccessBufferFactory;
 import freenet.support.compress.RealCompressor;
-import freenet.support.io.DiskSpaceCheckingRandomAccessBufferFactory;
 import freenet.support.io.FileRandomAccessBufferFactory;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;

@@ -29,7 +29,6 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.node.Announcer;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeFile;
@@ -435,14 +434,13 @@ public class NodeUpdateManager {
 		@Override
 		public void onSuccess(FetchResult result, ClientGetter state) {
 			File temp;
-			FileOutputStream fos = null;
 			try {
 				temp = File.createTempFile(filename, ".tmp", directory.dir());
 				temp.deleteOnExit();
-				fos = new FileOutputStream(temp);
-				BucketTools.copyTo(result.asBucket(), fos, -1);
-				fos.close();
-				fos = null;
+				try(FileOutputStream fos = new FileOutputStream(temp)) {
+					BucketTools.copyTo(result.asBucket(), fos, -1);
+				}
+
 				for (int i = 0; i < 10; i++) {
 					// FIXME add a callback in case it's being used on Windows.
 					if (FileUtil.renameTo(temp, directory.file(filename))) {
@@ -472,7 +470,6 @@ public class NodeUpdateManager {
 				System.err.println("The error was: " + e);
 				e.printStackTrace();
 			} finally {
-				Closer.close(fos);
 				Closer.close(result.asBucket());
 			}
 		}
@@ -1355,15 +1352,8 @@ public class NodeUpdateManager {
 			System.err.println("Can't delete " + fNew + "!");
 		}
 
-		FileOutputStream fos = null;
-		try {
-			fos = new FileOutputStream(fNew);
-
+		try(FileOutputStream fos = new FileOutputStream(fNew)) {
 			BucketTools.copyTo(this.fetchedMainJarData, fos, -1);
-
-			fos.flush();
-		} finally {
-			Closer.close(fos);
 		}
 	}
 
@@ -1736,9 +1726,9 @@ public class NodeUpdateManager {
 						"invalidUpdateURI", "error",
 						e.getLocalizedMessage()));
 			}
-			if(updateURI.hasMetaStrings())
+			if(uri.hasMetaStrings())
 				throw new InvalidConfigValueException(l10n("updateURIMustHaveNoMetaStrings"));
-			if(!updateURI.isUSK())
+			if(!uri.isUSK())
 				throw new InvalidConfigValueException(l10n("updateURIMustBeAUSK"));
 			setURI(uri);
 		}

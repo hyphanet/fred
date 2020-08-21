@@ -133,6 +133,9 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.ShortCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.io.ArrayBucketFactory;
+import freenet.support.io.FileUtil;
+import freenet.support.io.NativeThread;
 import freenet.support.math.MersenneTwister;
 import freenet.support.transport.ip.HostnameSyntaxException;
 
@@ -650,6 +653,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private long amountOfDataToCheckCompressionRatio;
 	private int minimumCompressionPercentage;
 	private int maxTimeForSingleCompressor;
+	private boolean connectionSpeedDetection;
 	boolean inputLimitDefault;
 	final boolean enableARKs;
 	final boolean enablePerNodeFailureTables;
@@ -771,18 +775,6 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	/**
-	 * Returns an exception with an explanation that the given bandwidth limit is too low.
-	 *
-	 * See the Node.bandwidthMinimum localization string.
-	 * @param limit Bandwidth limit in bytes.
-	 */
-	private InvalidConfigValueException lowBandwidthLimit(int limit) {
-		return new InvalidConfigValueException(l10n("bandwidthMinimum",
-		    new String[] { "limit", "minimum" },
-		    new String[] { Integer.toString(limit), Integer.toString(minimumBandwidth) }));
-	}
-
-	/**
 	 * Dispatches a probe request with the specified settings
 	 * @see freenet.node.probe.Probe#start(byte, long, Type, Listener)
 	 */
@@ -891,18 +883,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(orig.exists()) backup.delete();
 
-		FileOutputStream fos = null;
-		try {
-			fos = new FileOutputStream(backup);
+		try(FileOutputStream fos = new FileOutputStream(backup)) {
 			fs.writeTo(fos);
 			fos.close();
-			fos = null;
 			FileUtil.renameTo(backup, orig);
 		} catch (IOException ioe) {
 			Logger.error(this, "IOE :"+ioe.getMessage(), ioe);
-			return;
-		} finally {
-			Closer.close(fos);
 		}
 	}
 
@@ -1218,9 +1204,7 @@ public class Node implements TimeSkewDetectorCallback {
 		File bootIDFile = runDir.file("bootID");
 		int BOOT_FILE_LENGTH = 64 / 4; // A long in padded hex bytes
 		long oldBootID = -1;
-		RandomAccessFile raf = null;
-		try {
-			raf = new RandomAccessFile(bootIDFile, "rw");
+		try(RandomAccessFile raf = new RandomAccessFile(bootIDFile, "rw")) {
 			if(raf.length() < BOOT_FILE_LENGTH) {
 				oldBootID = -1;
 			} else {
@@ -1242,8 +1226,6 @@ public class Node implements TimeSkewDetectorCallback {
 		} catch (IOException e) {
 			oldBootID = -1;
 			// If we have an error in reading, *or in writing*, we don't reliably know the last boot ID.
-		} finally {
-			Closer.close(raf);
 		}
 		lastBootID = oldBootID;
 
@@ -1514,7 +1496,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			@Override
 			public void set(Integer obwLimit) throws InvalidConfigValueException {
-				checkOutputBandwidthLimit(obwLimit);
+				BandwidthManager.checkOutputBandwidthLimit(obwLimit);
 				try {
 					outputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, obwLimit/2);
 				} catch (IllegalArgumentException e) {
@@ -1534,7 +1516,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		outputBandwidthLimit = obwLimit;
 		try {
-			checkOutputBandwidthLimit(outputBandwidthLimit);
+			BandwidthManager.checkOutputBandwidthLimit(outputBandwidthLimit);
 		} catch (InvalidConfigValueException e) {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, e.getMessage());
 		}
@@ -1562,7 +1544,7 @@ public class Node implements TimeSkewDetectorCallback {
 			@Override
 			public void set(Integer ibwLimit) throws InvalidConfigValueException {
 				synchronized(Node.this) {
-					checkInputBandwidthLimit(ibwLimit);
+					BandwidthManager.checkInputBandwidthLimit(ibwLimit);
 
 					if(ibwLimit == -1) {
 						inputLimitDefault = true;
@@ -1587,7 +1569,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		inputBandwidthLimit = ibwLimit;
 		try {
-			checkInputBandwidthLimit(inputBandwidthLimit);
+			BandwidthManager.checkInputBandwidthLimit(inputBandwidthLimit);
 		} catch (InvalidConfigValueException e) {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, e.getMessage());
 		}
@@ -1647,6 +1629,23 @@ public class Node implements TimeSkewDetectorCallback {
 		}, Dimension.DURATION);
 
 		maxTimeForSingleCompressor = nodeConfig.getInt("maxTimeForSingleCompressor");
+
+		nodeConfig.register("connectionSpeedDetection", true, sortOrder++,
+			true, true, "Node.connectionSpeedDetection",
+			"Node.connectionSpeedDetectionLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return connectionSpeedDetection;
+			}
+			@Override
+			public void set(Boolean connectionSpeedDetection) {
+				synchronized(Node.this) {
+					Node.this.connectionSpeedDetection = connectionSpeedDetection;
+				}
+			}
+		});
+
+		connectionSpeedDetection = nodeConfig.getBoolean("connectionSpeedDetection");
 
 		nodeConfig.register("throttleLocalTraffic", false, sortOrder++, true, false, "Node.throttleLocalTraffic", "Node.throttleLocalTrafficLong", new BooleanCallback() {
 
@@ -2597,6 +2596,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
+
+		new BandwidthManager(this).start();
 	}
 
 	private void peersOffersFrefFilesConfiguration(SubConfig nodeConfig, int configOptionSortOrder) {
@@ -4883,20 +4884,6 @@ public class Node implements TimeSkewDetectorCallback {
         else
             return null;
     }
-
-	private void checkOutputBandwidthLimit(int obwLimit) throws InvalidConfigValueException {
-		if(obwLimit <= 0) throw new InvalidConfigValueException(l10n("bwlimitMustBePositive"));
-		if (obwLimit < minimumBandwidth) throw lowBandwidthLimit(obwLimit);
-	}
-
-	private void checkInputBandwidthLimit(int ibwLimit) throws InvalidConfigValueException {
-		// Reserved value for limit based on output limit.
-		if (ibwLimit == -1) {
-			return;
-		}
-		if(ibwLimit <= 1) throw new InvalidConfigValueException(l10n("bandwidthLimitMustBePositiveOrMinusOne"));
-		if (ibwLimit < minimumBandwidth) throw lowBandwidthLimit(ibwLimit);
-	}
 
 	public PluginManager getPluginManager() {
 		return pluginManager;

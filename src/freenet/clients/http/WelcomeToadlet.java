@@ -3,6 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
+import freenet.node.*;
+import freenet.node.useralerts.UpgradeConnectionSpeedUserAlert;
+import freenet.support.*;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import java.io.File;
@@ -22,17 +27,8 @@ import freenet.clients.http.bookmark.BookmarkItem;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.node.DarknetPeerNode;
-import freenet.node.Node;
-import freenet.node.NodeStarter;
-import freenet.node.Version;
 import freenet.node.useralerts.UserAlert;
-import freenet.support.HTMLNode;
-import freenet.support.LogThresholdCallback;
-import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.MultiValueTable;
-import freenet.support.URLDecoder;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
@@ -350,6 +346,66 @@ public class WelcomeToadlet extends Toadlet {
         	for(String alertAnchor : alertAnchors) toDump.add(alertAnchor);
         	ctx.getAlertManager().dumpEvents(toDump);
         	redirectToRoot(ctx);
+        } else if (request.isPartSet("upgradeConnectionSpeed")) {
+            if (!ctx.checkFormPassword(request)) {
+                return;
+            }
+
+            UpgradeConnectionSpeedUserAlert upgradeConnectionSpeedAlert = null;
+            for (UserAlert alert : node.clientCore.alerts.getAlerts()) {
+                if (alert instanceof UpgradeConnectionSpeedUserAlert) {
+                    upgradeConnectionSpeedAlert = (UpgradeConnectionSpeedUserAlert) alert;
+                    break;
+                }
+            }
+
+            String errorMessage = null;
+            try {
+                int outputBandwidthLimit = Fields.parseInt(request.getPartAsStringFailsafe("outputBandwidthLimit", Byte.MAX_VALUE));
+                BandwidthManager.checkOutputBandwidthLimit(outputBandwidthLimit);
+            } catch (NumberFormatException e) {
+                errorMessage = NodeL10n.getBase().getString("UpgradeConnectionSpeedUserAlert.InvalidValue", "type", "upload");
+            } catch (InvalidConfigValueException e) {
+                errorMessage = e.getMessage();
+            }
+            try {
+                int inputBandwidthLimit = Fields.parseInt(request.getPartAsStringFailsafe("inputBandwidthLimit", Byte.MAX_VALUE));
+                BandwidthManager.checkInputBandwidthLimit(inputBandwidthLimit);
+            } catch (NumberFormatException e) {
+                if (errorMessage == null) {
+                    errorMessage = NodeL10n.getBase().getString("UpgradeConnectionSpeedUserAlert.InvalidValue", "type", "download");
+                } else {
+                    errorMessage += " " + NodeL10n.getBase().getString("UpgradeConnectionSpeedUserAlert.InvalidValue", "type", "download");
+                }
+            } catch (InvalidConfigValueException e) {
+                if (errorMessage == null) {
+                    errorMessage = e.getMessage();
+                } else {
+                    errorMessage += " " + e.getMessage();
+                }
+            }
+
+            if (errorMessage == null) {
+                try {
+                    node.config.get("node").set("inputBandwidthLimit", request.getPartAsStringFailsafe("inputBandwidthLimit", Byte.MAX_VALUE));
+                    node.config.get("node").set("outputBandwidthLimit", request.getPartAsStringFailsafe("outputBandwidthLimit", Byte.MAX_VALUE));
+
+                    if (upgradeConnectionSpeedAlert != null) {
+                        upgradeConnectionSpeedAlert.setUpgraded(true);
+                    }
+                } catch (InvalidConfigValueException e) {
+                    if (upgradeConnectionSpeedAlert != null) {
+                        upgradeConnectionSpeedAlert.setError(e.getMessage());
+                    }
+                } catch (NodeNeedRestartException ignored) {
+                }
+            } else {
+                if (upgradeConnectionSpeedAlert != null) {
+                    upgradeConnectionSpeedAlert.setError(errorMessage);
+                }
+            }
+
+            redirectToRoot(ctx);
         } else {
             redirectToRoot(ctx);
         }

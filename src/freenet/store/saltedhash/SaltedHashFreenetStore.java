@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.store.saltedhash;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.EOFException;
@@ -60,7 +59,6 @@ import freenet.support.io.Closer;
 import freenet.support.io.Fallocate;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
-import freenet.support.math.MersenneTwister;
 
 /**
  * Index-less data store based on salted hash.

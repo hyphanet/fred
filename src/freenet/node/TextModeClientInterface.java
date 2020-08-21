@@ -2,7 +2,6 @@ package freenet.node;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.EOFException;
@@ -60,7 +59,6 @@ import freenet.support.SizeUtil;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
 /**
@@ -443,22 +441,18 @@ public class TextModeClientInterface implements Runnable {
     	final String content = readLines(reader, false);
     	final Bucket input = new ArrayBucket(content.getBytes("UTF-8"));
     	final Bucket output = new ArrayBucket();
-    	InputStream inputStream = null;
-    	OutputStream outputStream = null;
-    	InputStream bis = null;
     	try {
-    		inputStream = input.getInputStream();
-    		outputStream = output.getOutputStream();
-    		ContentFilter.filter(inputStream, outputStream, "text/html", new URI("http://127.0.0.1:8888/"), null, null, null, core.getLinkFilterExceptionProvider());
-    		inputStream.close();
-			inputStream = null;
-    		outputStream.close();
-			outputStream = null;
+				try(InputStream inputStream = input.getInputStream()) {
+					try(OutputStream outputStream = output.getOutputStream()) {
+						ContentFilter.filter(inputStream, outputStream, "text/html", new URI("http://127.0.0.1:8888/"), null, null, null, core.getLinkFilterExceptionProvider());
+					}
+				}
 
-    		bis = output.getInputStream();
-    		while(bis.available() > 0){
-    			outsb.append((char)bis.read());
-    		}
+    		try(InputStream bis = output.getInputStream()) {
+					while(bis.available() > 0){
+						outsb.append((char)bis.read());
+					}
+				}
     	} catch (IOException e) {
     		outsb.append("Bucket error?: " + e.getMessage());
     		Logger.error(this, "Bucket error?: " + e, e);
@@ -466,9 +460,6 @@ public class TextModeClientInterface implements Runnable {
     		outsb.append("Internal error: " + e.getMessage());
     		Logger.error(this, "Internal error: " + e, e);
     	} finally {
-			Closer.close(inputStream);
-			Closer.close(outputStream);
-			Closer.close(bis);
     		input.free();
     		output.free();
     	}
