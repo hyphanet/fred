@@ -1504,16 +1504,15 @@ public class PeerManager {
 	private void writePeersInner(String filename, String sb, int maxBackups, boolean rotateBackups) {
 		assert(maxBackups >= 1);
 		synchronized(writePeerFileSync) {
-			FileOutputStream fos = null;
 			File f;
-			File full = new File(filename).getAbsoluteFile();
 			try {
+				File full = new File(filename).getAbsoluteFile();
 				f = File.createTempFile(full.getName()+".", ".tmp", full.getParentFile());
 			} catch (IOException e2) {
 				Logger.error(this, "Cannot write peers to disk: Cannot create temp file - " + e2, e2);
-				Closer.close(fos);
 				return;
 			}
+			FileOutputStream fos = null;
 			try {
 				fos = new FileOutputStream(f);
 			} catch(FileNotFoundException e2) {

@@ -135,20 +135,14 @@ public class GzipCompressorTest extends TestCase {
 
 		Bucket inBucket = new ArrayBucket(compressedData);
 		NullBucket outBucket = new NullBucket();
-		InputStream decompressorInput = null;
-		OutputStream decompressorOutput = null;
-		try {
-			decompressorInput = inBucket.getInputStream();
-			decompressorOutput = outBucket.getOutputStream();
-			Compressor.COMPRESSOR_TYPE.GZIP.decompress(decompressorInput, decompressorOutput, 4096 + 10, 4096 + 20);
-			decompressorInput.close();
-			decompressorOutput.close();
+		try(InputStream decompressorInput = inBucket.getInputStream()) {
+			try(OutputStream decompressorOutput = outBucket.getOutputStream()) {
+				Compressor.COMPRESSOR_TYPE.GZIP.decompress(decompressorInput, decompressorOutput, 4096 + 10, 4096 + 20);
+			}
 		} catch (CompressionOutputSizeException e) {
 			// expect this
 			return;
 		} finally {
-			Closer.close(decompressorInput);
-			Closer.close(decompressorOutput);
 			inBucket.free();
 			outBucket.free();
 		}
