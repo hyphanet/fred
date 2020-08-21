@@ -1528,6 +1528,9 @@ public class SplitFileInserterStorageTest extends TestCase {
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         KeysFetchingLocally keys = new MyKeysFetchingLocally();
+        if(baseContext == null) {
+            System.err.println("baseContext is null");
+        }
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, true, baseContext.clone(), 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 

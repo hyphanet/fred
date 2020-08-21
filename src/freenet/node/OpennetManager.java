@@ -51,7 +51,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeSortedHashtable;
 import freenet.support.io.ByteArrayRandomAccessBuffer;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
@@ -299,31 +298,31 @@ public class OpennetManager {
 
 		if(orig.exists()) backup.delete();
 
-		FileOutputStream fos = null;
-		OutputStreamWriter osr = null;
-		BufferedWriter bw = null;
-		try {
-			fos = new FileOutputStream(backup);
-			osr = new OutputStreamWriter(fos, "UTF-8");
-			bw = new BufferedWriter(osr);
+		try(BufferedWriter bw = new BufferedWriter( 
+			new OutputStreamWriter( 
+				new FileOutputStream(backup), 
+				"UTF-8" 
+			)
+		)) {
 			fs.writeTo(bw);
 
-			bw.close();
 			FileUtil.renameTo(backup, orig);
 		} catch (IOException e) {
-			Closer.close(bw);
-			Closer.close(osr);
-			Closer.close(fos);
+			Logger.error(this, "Could not write to file", e);
 		}
 	}
 
 	private void readFile(File filename) throws IOException {
 		// REDFLAG: Any way to share this code with Node and NodePeer?
-		FileInputStream fis = new FileInputStream(filename);
-		InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
-		BufferedReader br = new BufferedReader(isr);
-		SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
-		br.close();
+		SimpleFieldSet fs;
+		try (
+			BufferedReader br = new BufferedReader(new InputStreamReader(
+				new FileInputStream(filename), 
+				"UTF-8"
+			))
+		) {
+			fs = new SimpleFieldSet(br, false, true);
+		}
 		// Read contents
 		String[] udp = fs.getAll("physical.udp");
 		if((udp != null) && (udp.length > 0)) {
