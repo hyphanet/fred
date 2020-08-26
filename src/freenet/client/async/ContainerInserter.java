@@ -34,6 +34,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.ManifestElement;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
 import freenet.support.io.ResumeFailedException;
 
 /**
@@ -170,14 +171,14 @@ public class ContainerInserter implements ClientPutState, Serializable {
 		}
 		
 		InsertBlock block;
+		OutputStream os = null;
 		try {
-			RandomAccessBucket outputBucket = context.getBucketFactory(persistent).makeBucket(-1);
-			String mimeType;
-			try (OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream())) {
-				mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
-					createTarBucket(os) :
-					createZipBucket(os));
-			}
+		    RandomAccessBucket outputBucket = context.getBucketFactory(persistent).makeBucket(-1);
+			os = new BufferedOutputStream(outputBucket.getOutputStream());
+			String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
+				createTarBucket(os) :
+				createZipBucket(os));
+			os = null; // create*Bucket closes os
 			if(logMINOR)
 				Logger.minor(this, "Archive size is "+outputBucket.size());
 			
@@ -192,6 +193,8 @@ public class ContainerInserter implements ClientPutState, Serializable {
 		} catch (IOException e) {
 			fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context);
 			return;
+		} finally {
+			Closer.close(os);
 		}
 		
 		boolean dc = dontCompress;
@@ -279,8 +282,8 @@ public class ContainerInserter implements ClientPutState, Serializable {
 	private String createTarBucket(OutputStream os) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 		
-		
-		try(TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os)) {
+		TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os);
+		try {
 			tarOS.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
 			TarArchiveEntry ze;
 
@@ -295,6 +298,8 @@ public class ContainerInserter implements ClientPutState, Serializable {
 				BucketTools.copyTo(ph.data, tarOS, size);
 				tarOS.closeArchiveEntry();
 			}
+		} finally {
+			tarOS.close();
 		}
 		
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];

@@ -1,5 +1,6 @@
 package freenet.store;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 import freenet.node.stats.StoreAccessStats;
@@ -9,7 +10,7 @@ import freenet.support.Ticker;
 /**
  * Datastore interface
  */
-public interface FreenetStore<T extends StorableBlock> {
+public interface FreenetStore<T extends StorableBlock> extends Closeable {
 	public enum StoreType {
 		CHK, PUBKEY, SSK
 	};

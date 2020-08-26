@@ -31,6 +31,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
 import freenet.support.api.RandomAccessBucket;
+import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /** Simulates MHKs. Creates 4 CHKs, inserts the first one 3 times, and inserts the
@@ -71,6 +72,7 @@ public class LongTermMHKTest extends LongTermTest {
 		int exitCode = 0;
 		Node node = null;
 		Node node2 = null;
+		FileInputStream fis = null;
 		File file = new File("mhk-test-"+uid + ".csv");
 		long t1, t2;
 
@@ -92,9 +94,9 @@ public class LongTermMHKTest extends LongTermTest {
 
 			final File innerDir = new File(dir, Integer.toString(DARKNET_PORT1));
 			innerDir.mkdir();
-			try(FileInputStream fis = new FileInputStream(seednodes)) {
-				FileUtil.writeTo(fis, new File(innerDir, "seednodes.fref"));
-			}
+			fis = new FileInputStream(seednodes);
+			FileUtil.writeTo(fis, new File(innerDir, "seednodes.fref"));
+			fis.close();
 
 			// Create one node
 			node = NodeStarter.createTestNode(DARKNET_PORT1, OPENNET_PORT1, dir.getPath(), false, Node.DEFAULT_MAX_HTL,
@@ -204,126 +206,126 @@ public class LongTermMHKTest extends LongTermTest {
 			
 			FreenetURI singleURI = null;
 			FreenetURI[] mhkURIs = new FreenetURI[3];
+			fis = new FileInputStream(file);
+			BufferedReader br = new BufferedReader(new InputStreamReader(fis, ENCODING));
 			String line = null;
 			int linesTooShort = 0, linesBroken = 0, linesNoNumber = 0, linesNoURL = 0, linesNoFetch = 0;
 			int total = 0, singleKeysSucceeded = 0, mhkSucceeded = 0;
 			int totalSingleKeyFetches = 0, totalSingleKeySuccesses = 0;
-			try( BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), ENCODING)) ) {
-				while((line = br.readLine()) != null) {
+			while((line = br.readLine()) != null) {
 				
-					singleURI = null;
-					for(int i=0;i<mhkURIs.length;i++) mhkURIs[i] = null;
-					//System.out.println("LINE: "+line);
-					String[] split = line.split("!");
-					Date date = dateFormat.parse(split[0]);
-					GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-					calendar.setTime(date);
-					System.out.println("Date: "+dateFormat.format(calendar.getTime()));
-					GregorianCalendar target = (GregorianCalendar) today.clone();
-					target.set(Calendar.HOUR_OF_DAY, 0);
-					target.set(Calendar.MINUTE, 0);
-					target.set(Calendar.MILLISECOND, 0);
-					target.set(Calendar.SECOND, 0);
-					target.add(Calendar.DAY_OF_MONTH, -DELTA);
-					calendar.set(Calendar.HOUR_OF_DAY, 0);
-					calendar.set(Calendar.MINUTE, 0);
-					calendar.set(Calendar.MILLISECOND, 0);
-					calendar.set(Calendar.SECOND, 0);
-					calendar.getTime();
-					target.getTime();
-					try {
-						if(split.length < 3) {
-							linesTooShort++;
-							continue;
-						}
-						int seedTime = Integer.parseInt(split[2]);
-						System.out.println("Seed time: "+seedTime);
-						
-						int token = 3;
-						if(split.length < 4) {
-							linesTooShort++;
-							continue;
-						}
-						
-						for(int i=0;i<3;i++) {
-							int insertTime = Integer.parseInt(split[token]);
-							System.out.println("Single key insert "+i+" : "+insertTime);
-							token++;
-							FreenetURI thisURI = new FreenetURI(split[token]);
-							if(singleURI == null)
-								singleURI = thisURI;
-							else {
-								if(!singleURI.equals(thisURI)) {
-									System.err.println("URI is not the same for all 3 inserts: was "+singleURI+" but "+i+" is "+thisURI);
-									linesBroken++;
-									continue;
-								}
-							}
-							token++;
-						}
-						System.out.println("Single key URI: "+singleURI);
-						
-						for(int i=0;i<3;i++) {
-							int insertTime = Integer.parseInt(split[token]);
-							token++;
-							mhkURIs[i] = new FreenetURI(split[token]);
-							token++;
-							System.out.println("MHK #"+i+" URI: "+mhkURIs[i]+" insert time "+insertTime);
-						}
-						
-					} catch (NumberFormatException e) {
-						System.err.println("Failed to parse row: "+e);
-						linesNoNumber++;
-						continue;
-					} catch (MalformedURLException e) {
-						System.err.println("Failed to parse row: "+e);
-						linesNoURL++;
+				singleURI = null;
+				for(int i=0;i<mhkURIs.length;i++) mhkURIs[i] = null;
+				//System.out.println("LINE: "+line);
+				String[] split = line.split("!");
+				Date date = dateFormat.parse(split[0]);
+				GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+				calendar.setTime(date);
+				System.out.println("Date: "+dateFormat.format(calendar.getTime()));
+				GregorianCalendar target = (GregorianCalendar) today.clone();
+				target.set(Calendar.HOUR_OF_DAY, 0);
+				target.set(Calendar.MINUTE, 0);
+				target.set(Calendar.MILLISECOND, 0);
+				target.set(Calendar.SECOND, 0);
+				target.add(Calendar.DAY_OF_MONTH, -DELTA);
+				calendar.set(Calendar.HOUR_OF_DAY, 0);
+				calendar.set(Calendar.MINUTE, 0);
+				calendar.set(Calendar.MILLISECOND, 0);
+				calendar.set(Calendar.SECOND, 0);
+				calendar.getTime();
+				target.getTime();
+				try {
+					if(split.length < 3) {
+						linesTooShort++;
 						continue;
 					}
-					if(Math.abs(target.getTimeInMillis() - calendar.getTimeInMillis()) < HOURS.toMillis(12)) {
-						System.out.println("Found row for target date "+dateFormat.format(target.getTime())+" : "+dateFormat.format(calendar.getTime()));
-						System.out.println("Version: "+split[1]);
-						match = true;
-						break;
-					} else if(split.length > 3+6+6) {
-						int token = 3 + 6 + 6;
-						int singleKeyFetchTime = -1;
-						boolean singleKeySuccess = false;
-						for(int i=0;i<3;i++) {
-							// Fetched 3 times
-							if(!singleKeySuccess) {
-								try {
-									singleKeyFetchTime = Integer.parseInt(split[token]);
-									singleKeySuccess = true;
-									System.out.println("Fetched single key on try "+i+" on "+date+" in "+singleKeyFetchTime+"ms");
-								} catch (NumberFormatException e) {
-									System.out.println("Failed fetch single key on "+date+" try "+i+" : "+split[token]);
-									singleKeyFetchTime = -1;
-								}
-							} // Else will be empty.
-							token++;
-						}
-						boolean mhkSuccess = false;
-						for(int i=0;i<3;i++) {
-							totalSingleKeyFetches++;
-							int mhkFetchTime = -1;
-							try {
-								mhkFetchTime = Integer.parseInt(split[token]);
-								mhkSuccess = true;
-								totalSingleKeySuccesses++;
-								System.out.println("Fetched MHK #"+i+" on "+date+" in "+mhkFetchTime+"ms");
-							} catch (NumberFormatException e) {
-								System.out.println("Failed fetch MHK #"+i+" on "+date+" : "+split[token]);
+					int seedTime = Integer.parseInt(split[2]);
+					System.out.println("Seed time: "+seedTime);
+					
+					int token = 3;
+					if(split.length < 4) {
+						linesTooShort++;
+						continue;
+					}
+					
+					for(int i=0;i<3;i++) {
+						int insertTime = Integer.parseInt(split[token]);
+						System.out.println("Single key insert "+i+" : "+insertTime);
+						token++;
+						FreenetURI thisURI = new FreenetURI(split[token]);
+						if(singleURI == null)
+							singleURI = thisURI;
+						else {
+							if(!singleURI.equals(thisURI)) {
+								System.err.println("URI is not the same for all 3 inserts: was "+singleURI+" but "+i+" is "+thisURI);
+								linesBroken++;
+								continue;
 							}
-							token++;
 						}
-						total++;
-						if(singleKeySuccess)
-							singleKeysSucceeded++;
-						if(mhkSuccess)
-							mhkSucceeded++;
-					} else linesNoFetch++;
+						token++;
+					}
+					System.out.println("Single key URI: "+singleURI);
+					
+					for(int i=0;i<3;i++) {
+						int insertTime = Integer.parseInt(split[token]);
+						token++;
+						mhkURIs[i] = new FreenetURI(split[token]);
+						token++;
+						System.out.println("MHK #"+i+" URI: "+mhkURIs[i]+" insert time "+insertTime);
+					}
+					
+				} catch (NumberFormatException e) {
+					System.err.println("Failed to parse row: "+e);
+					linesNoNumber++;
+					continue;
+				} catch (MalformedURLException e) {
+					System.err.println("Failed to parse row: "+e);
+					linesNoURL++;
+					continue;
 				}
+				if(Math.abs(target.getTimeInMillis() - calendar.getTimeInMillis()) < HOURS.toMillis(12)) {
+					System.out.println("Found row for target date "+dateFormat.format(target.getTime())+" : "+dateFormat.format(calendar.getTime()));
+					System.out.println("Version: "+split[1]);
+					match = true;
+					break;
+				} else if(split.length > 3+6+6) {
+					int token = 3 + 6 + 6;
+					int singleKeyFetchTime = -1;
+					boolean singleKeySuccess = false;
+					for(int i=0;i<3;i++) {
+						// Fetched 3 times
+						if(!singleKeySuccess) {
+							try {
+								singleKeyFetchTime = Integer.parseInt(split[token]);
+								singleKeySuccess = true;
+								System.out.println("Fetched single key on try "+i+" on "+date+" in "+singleKeyFetchTime+"ms");
+							} catch (NumberFormatException e) {
+								System.out.println("Failed fetch single key on "+date+" try "+i+" : "+split[token]);
+								singleKeyFetchTime = -1;
+							}
+						} // Else will be empty.
+						token++;
+					}
+					boolean mhkSuccess = false;
+					for(int i=0;i<3;i++) {
+						totalSingleKeyFetches++;
+						int mhkFetchTime = -1;
+						try {
+							mhkFetchTime = Integer.parseInt(split[token]);
+							mhkSuccess = true;
+							totalSingleKeySuccesses++;
+							System.out.println("Fetched MHK #"+i+" on "+date+" in "+mhkFetchTime+"ms");
+						} catch (NumberFormatException e) {
+							System.out.println("Failed fetch MHK #"+i+" on "+date+" : "+split[token]);
+						}
+						token++;
+					}
+					total++;
+					if(singleKeySuccess)
+						singleKeysSucceeded++;
+					if(mhkSuccess)
+						mhkSucceeded++;
+				} else linesNoFetch++;
 			}
 			System.out.println("Lines where insert failed or no fetch: too short: "+linesTooShort+" broken: "+linesBroken+" no number: "+linesNoNumber+" no url: "+linesNoURL+" no fetch "+linesNoFetch);
 			System.out.println("Total attempts where insert succeeded and fetch executed: "+total);
@@ -334,6 +336,8 @@ public class LongTermMHKTest extends LongTermTest {
 			System.out.println("Success rate for individual keys (from MHK inserts): "+((double)totalSingleKeySuccesses)/((double)totalSingleKeyFetches));
 			System.out.println("Success rate for the single key triple inserted: "+((double)singleKeysSucceeded)/((double)total));
 			System.out.println("Success rate for the MHK (success = any of the 3 different keys worked): "+((double)mhkSucceeded)/((double)total));
+			fis.close();
+			fis = null;
 			
 			// FETCH STUFF
 			
@@ -400,6 +404,7 @@ public class LongTermMHKTest extends LongTermTest {
 					node2.park();
 			} catch (Throwable tt) {
 			}
+			Closer.close(fis);
 
 			if(!dumpOnly) {
 				writeToStatusLog(file, csvLine);

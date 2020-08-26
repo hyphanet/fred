@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import freenet.l10n.NodeL10n;
+import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 
 /** Filters Ogg container files. These containers contain one or more
@@ -78,39 +79,50 @@ public class OggFilter implements ContentDataFilter{
 	 * @throws IOException
 	 */
 	private boolean hasValidSubpage(OggPage page, OggPage nextPage) throws IOException {
+		OggPage subpage = null;
 		int pageCount = 0;
-		try(ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+		ByteArrayOutputStream data = null;
+		DataInputStream in = null;
+		try{
 			//Populate a byte array with all the data in which a subpage might hide
+			data = new ByteArrayOutputStream();
 			data.write(page.toArray());
 			if(nextPage != null) data.write(nextPage.toArray());
-			try(DataInputStream in = new DataInputStream(new ByteArrayInputStream(data.toByteArray()))) {
-				data.close();
-				while(true) {
-					OggPage.seekToPage(in);
-					in.mark(65307);
-					OggPage subpage = new OggPage(in);
-					if(subpage.headerValid()) {
-						pageCount++;
-					}
-					in.reset();
-					in.skip(1); //Break the lock on the current page
+			in = new DataInputStream(new ByteArrayInputStream(data.toByteArray()));
+			data.close();
+			while(true) {
+				OggPage.seekToPage(in);
+				in.mark(65307);
+				subpage = new OggPage(in);
+				if(subpage.headerValid()) {
+					pageCount++;
 				}
+				in.reset();
+				in.skip(1); //Break the lock on the current page
 			}
 		} catch(EOFException e) {
 			//We've ran out of data to read. Break.
+			in.close();
+		} finally {
+			Closer.close(data);
+			Closer.close(in);
 		}
 		return (pageCount > 2 || hasValidSubpage(page));
 	}
 
 	private boolean hasValidSubpage(OggPage page) throws IOException {
-		try(DataInputStream in = new DataInputStream(new ByteArrayInputStream(page.toArray()))) {
-			in.skip(1); //Break alignment with the first page
+		DataInputStream in = new DataInputStream(new ByteArrayInputStream(page.toArray()));
+		in.skip(1); //Break alignment with the first page
+		try {
 			while(true) {
 				OggPage subpage = OggPage.readPage(in);
 				if(subpage.headerValid()) return true;
 			}
 		} catch(EOFException e) {
 			//We've ran out of data to read. Break.
+			in.close();
+		} finally {
+			Closer.close(in);
 		}
 		return false;
 	}

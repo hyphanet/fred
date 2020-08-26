@@ -923,22 +923,26 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	                    return false;
 	                }
 	                if(f.length() < SCRIPT_HEAD.length) {
-										Logger.error(this, "Found "+toFind+" on path but less than "+SCRIPT_HEAD+" bytes long, so can't check whether it is a script - will the shell try the next match? We can't tell whether it is a script or not ...");
-										return false; // Weird!
+	                    Logger.error(this, "Found "+toFind+" on path but less than "+SCRIPT_HEAD+" bytes long, so can't check whether it is a script - will the shell try the next match? We can't tell whether it is a script or not ...");
+	                    return false; // Weird!
 	                }
-	                try(FileInputStream fis = new FileInputStream(f)) {
-										try(DataInputStream dis = new DataInputStream(fis)) {
-											byte[] buf = new byte[SCRIPT_HEAD.length];
-											dis.read(buf);
-												return !Arrays.equals(buf, SCRIPT_HEAD);
-										}
-									} catch (FileNotFoundException e) {
-										// Impossible.
-										throw new RuntimeException("File should exist", e);
-									} catch (IOException e) {
-										Logger.error(this, "Unable to read "+f+" to check whether it is a script: "+e+" - disk corruption problems???", e);
-										return false;
-									}
+	                try {
+                        FileInputStream fis = new FileInputStream(f);
+                        byte[] buf = new byte[SCRIPT_HEAD.length];
+                        DataInputStream dis = new DataInputStream(fis);
+                        try {
+                            dis.read(buf);
+                            return !Arrays.equals(buf, SCRIPT_HEAD);
+                        } catch (IOException e) {
+                            Logger.error(this, "Unable to read "+f+" to check whether it is a script: "+e+" - disk corruption problems???", e);
+                            return false;
+                        } finally {
+	                        Closer.close(fis);
+	                        Closer.close(dis);
+                        }
+                    } catch (FileNotFoundException e) {
+                        // Impossible.
+                    }
 	            }
 	        }
 	    }
@@ -1505,17 +1509,22 @@ outer:	for(String propName : props.stringPropertyNames()) {
             File restartFreenet = new File(RESTART_SCRIPT_NAME);
             restartFreenet.delete();
             FileBucket fb = new FileBucket(restartFreenet, false, true, false, false);
-						try(OutputStreamWriter osw = new OutputStreamWriter(
-							new BufferedOutputStream(fb.getOutputStream()),
-							"ISO-8859-1"
-						)) {
+            OutputStream os = null;
+            try {
+                os = new BufferedOutputStream(fb.getOutputStream());
+                OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1"); // Right???
                 osw.write("#!/bin/sh\n"); // FIXME exec >/dev/null 2>&1 ???? Believed to be portable.
                 //osw.write("trap true PIPE\n"); - should not be necessary
                 osw.write("while kill -0 "+WrapperManager.getWrapperPID()+" > /dev/null 2>&1; do sleep 1; done\n");
                 osw.write("./"+runshNoNice+" start > /dev/null 2>&1\n");
                 osw.write("rm "+RESTART_SCRIPT_NAME+"\n");
                 osw.write("rm "+runshNoNice+"\n");
+                osw.close();
+                osw = null; 
+                os = null;
                 return restartFreenet;
+            } finally {
+                Closer.close(os);
             }
         }
 
@@ -1548,6 +1557,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 br.close();
                 is = new FileInputStream(input);
                 w.close();
+                os = null;
                 if(!(output.setExecutable(true) || output.canExecute())) {
                     failed = true;
                     return false;
@@ -1660,19 +1670,22 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			System.out.println("File exists while updating but length is wrong ("+filename.length()+" should be "+size+") for "+filename);
 			return false;
 		}
-		
-		try(FileInputStream fis = new FileInputStream(filename)) {
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(filename);
 			MessageDigest md = SHA256.getMessageDigest();
 			SHA256.hash(fis, md);
 			byte[] hash = md.digest();
 			SHA256.returnMessageDigest(md);
+			fis.close();
+			fis = null;
 			if(Arrays.equals(hash, expectedHash)) {
-				if(executable && !filename.canExecute()) {
-					filename.setExecutable(true);
-				}
-				return true;
+                if(executable && !filename.canExecute()) {
+                    filename.setExecutable(true);
+                }
+			    return true;
 			} else {
-				return false;
+			    return false;
 			}
 		} catch (FileNotFoundException e) {
 			Logger.error(MainJarDependencies.class, "File not found: "+filename);
@@ -1680,6 +1693,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		} catch (IOException e) {
 			System.err.println("Unable to read "+filename+" for updater");
 			return false;
+		} finally {
+			Closer.close(fis);
 		}
 	}
 

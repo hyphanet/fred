@@ -221,9 +221,14 @@ public class BucketTools {
 		long size = bucket.size();
 		if(size > Integer.MAX_VALUE) throw new OutOfMemoryError();
 		byte[] data = new byte[(int)size];
-		
-		try(DataInputStream dis = new DataInputStream(bucket.getInputStreamUnbuffered())) {
+		InputStream is = bucket.getInputStreamUnbuffered();
+		DataInputStream dis = null;
+		try {
+			dis = new DataInputStream(is);
 			dis.readFully(data);
+		} finally {
+			Closer.close(dis);
+			Closer.close(is);
 		}
 		return data;
 	}
@@ -439,8 +444,8 @@ public class BucketTools {
 		byte[] hash = BucketTools.hash(oldBucket);
 		Bucket b = bf.makeBucket(blockLength);
 		MersenneTwister mt = new MersenneTwister(hash);
-		
-		try(OutputStream os = b.getOutputStreamUnbuffered()) {
+		OutputStream os = b.getOutputStreamUnbuffered();
+		try {
 			BucketTools.copyTo(oldBucket, os, length);
 			byte[] buf = new byte[BUFFER_SIZE];
 			for(int x=length;x<blockLength;) {
@@ -451,10 +456,11 @@ public class BucketTools {
 				x += thisCycle;
 			}
 			os.close();
+			os = null;
 			if(b.size() != blockLength)
 				throw new IllegalStateException("The bucket's size is "+b.size()+" whereas it should be "+blockLength+'!');
 			return b;
-		}
+		} finally { Closer.close(os); }
 	}
 	
 	static final ArrayBucketFactory ARRAY_FACTORY = new ArrayBucketFactory();
