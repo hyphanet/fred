@@ -346,7 +346,6 @@ public class PNGFilter implements ContentDataFilter {
 
 			ContentFilter.filter(inputStream, outputStream, "image/png",
 					new URI("http://127.0.0.1:8888/"), null, null, null, null);
-			}
 		} finally {
 			Closer.close(inputStream);
 			Closer.close(outputStream);
