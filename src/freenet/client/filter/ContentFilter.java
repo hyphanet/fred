@@ -189,7 +189,7 @@ public class ContentFilter {
 	 *            Stream to write filtered data to
 	 * @param typeName
 	 *            MIME type for input data
-	 * @param host
+	 * @param hostAndPort
 	 *        HOST and PORT from the request
 	 * @param maybeCharset
 	 * 			  MIME type of the referring document, as a hint, some types,
@@ -208,11 +208,11 @@ public class ContentFilter {
 			OutputStream output,
 			String typeName,
 			URI baseURI,
-			String host,
+			String hostAndPort,
 			FoundURICallback cb,
 			TagReplacerCallback trc,
 			String maybeCharset) throws UnsafeContentTypeException, IOException {
-		return filter(input, output, typeName, baseURI, host, cb, trc, maybeCharset, null);
+		return filter(input, output, typeName, baseURI, hostAndPort, cb, trc, maybeCharset, null);
 	}
 
 	/**
@@ -240,12 +240,12 @@ public class ContentFilter {
 			OutputStream output,
 			String typeName,
 			URI baseURI,
-			String host,
+			String hostAndPort,
 			FoundURICallback cb,
 			TagReplacerCallback trc,
 			String maybeCharset,
 			LinkFilterExceptionProvider linkFilterExceptionProvider) throws UnsafeContentTypeException, IOException {
-		return filter(input, output, typeName, maybeCharset, host, new GenericReadFilterCallback(baseURI, cb, trc, linkFilterExceptionProvider));
+		return filter(input, output, typeName, maybeCharset, hostAndPort, new GenericReadFilterCallback(baseURI, cb, trc, linkFilterExceptionProvider));
 	}
 
 	/**
@@ -267,19 +267,19 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, String maybeCharset, String hostPort, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, String maybeCharset, String hostAndPort, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
 		if(logMINOR) Logger.minor(ContentFilter.class, "Filtering data of type"+typeName);
 		String type = typeName;
 		String options = "";
 		String charset = null;
-		// mimeType params
-		HashMap<String, String> otherParams = null;
+		HashMap<String, String> otherMimeTypeParams = null;
 		input = new BufferedInputStream(input);
 
 		// First parse the MIME type
 
 		int idx = type.indexOf(';');
 		if(idx != -1) {
+			// TODO: extract into parseHeaderOptions method, also needed for the Forwarded header.
 			options = type.substring(idx+1);
 			type = type.substring(0, idx);
 			// Parse options
@@ -296,9 +296,9 @@ public class ContentFilter {
 				if(before.equals("charset")) {
 					charset = after;
 				} else {
-					if (otherParams == null)
-						otherParams = new LinkedHashMap<String, String>();
-					otherParams.put(before, after);
+					if (otherMimeTypeParams == null)
+						otherMimeTypeParams = new LinkedHashMap<String, String>();
+					otherMimeTypeParams.put(before, after);
 				}
 			}
 		}
@@ -327,7 +327,7 @@ public class ContentFilter {
 					charset = detectCharset(charsetBuffer, offset, handler, maybeCharset);
 				}
 				try {
-					handler.readFilter.readFilter(input, output, charset, otherParams, hostPort, filterCallback);
+					handler.readFilter.readFilter(input, output, charset, otherMimeTypeParams, hostAndPort, filterCallback);
 				}
 				catch(EOFException e) {
 					Logger.error(ContentFilter.class, "EOFException caught: "+e,e);

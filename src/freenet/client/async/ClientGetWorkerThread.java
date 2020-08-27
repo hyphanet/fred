@@ -36,7 +36,7 @@ import freenet.support.io.FileUtil;
 public class ClientGetWorkerThread extends Thread {
 
 	private InputStream input;
-	private String host;
+	final private String hostAndPort;
 	final private URI uri;
 	final private HashResult[] hashes;
 	final private boolean filterData;
@@ -80,7 +80,7 @@ public class ClientGetWorkerThread extends Thread {
 	 * @throws URISyntaxException
 	 */
 	public ClientGetWorkerThread(InputStream input, OutputStream output, FreenetURI uri,
-			String mimeType, String host, HashResult[] hashes, boolean filterData, String charset,
+			String mimeType, String hostAndPort, HashResult[] hashes, boolean filterData, String charset,
 			FoundURICallback prefetchHook, TagReplacerCallback tagReplacer, LinkFilterExceptionProvider linkFilterExceptionProvider) throws URISyntaxException {
 		super("ClientGetWorkerThread-"+counter());
 		this.input = input;
@@ -88,7 +88,7 @@ public class ClientGetWorkerThread extends Thread {
 		else this.uri = null;
 		if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
 		this.mimeType = mimeType;
-		this.host = host;
+		this.hostAndPort = hostAndPort;
 		this.hashes = hashes;
 		this.output = output;
 		this.filterData = filterData;
@@ -115,7 +115,8 @@ public class ClientGetWorkerThread extends Thread {
 				if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+prefetchHook+" tagReplacer: "+tagReplacer);
 				if(mimeType == null || uri == null || input == null || output == null) throw new IOException("Insufficient arguements to worker thread");
 				// Send XHTML as HTML because we can't use web-pushing on XHTML.
-				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri, host, prefetchHook, tagReplacer, charset, linkFilterExceptionProvider);
+				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri,
+						hostAndPort, prefetchHook, tagReplacer, charset, linkFilterExceptionProvider);
 
 				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
 				synchronized(this) {

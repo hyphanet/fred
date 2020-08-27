@@ -340,6 +340,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 
 	@Override
 	public FetchContext getFetchContext(long overrideMaxSize) {
+		return getFetchContext(-1, null);
+	}
+
+	@Override
+	public FetchContext getFetchContext(long overrideMaxSize, String hostAndPort) {
 		long maxLength = curMaxLength;
 		long maxTempLength = curMaxTempLength;
 		if(overrideMaxSize >= 0) {
@@ -353,7 +358,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				FILTER_DATA, MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				bucketFactory, eventProducer,
-				false, CAN_WRITE_CLIENT_CACHE, null, null, null);
+				false, CAN_WRITE_CLIENT_CACHE, null, null, hostAndPort);
 	}
 
 	public static FetchContext makeDefaultFetchContext(long maxLength, long maxTempLength,

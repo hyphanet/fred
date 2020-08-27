@@ -20,8 +20,8 @@ public interface FilterCallback {
 	 * Process a URI.
 	 * If it cannot be turned into something sufficiently safe, then return null.
 	 * @param overrideType Force the return type.
-	 * @param noRelative TODO
-	 * @param inline TODO
+	 * @param noRelative always turn into absolute URI, adding the baseUri if needed
+	 * @param inline inline URIs may be prefetched while filtering
 	 * @throws CommentException If the URI is nvalid or unacceptable in some way.
 	 */
 	public String processURI(String uri, String overrideType, boolean noRelative, boolean inline) throws CommentException;
@@ -30,11 +30,10 @@ public interface FilterCallback {
 	 * Process a URI forcing the host.
 	 * If it cannot be turned into something sufficiently safe, then return null.
 	 * @param overrideType Force the return type.
-	 * @param noRelative TODO
-	 * @param inline TODO
+	 * @param inline inline URIs may be prefetched while filtering
 	 * @throws CommentException If the URI is nvalid or unacceptable in some way.
 	 */
-	public String processURI(String uri, String overrideType, String forceHostPort) throws CommentException;
+	public String processURI(String uri, String overrideType, String forceHostPort, boolean inline) throws CommentException;
 
 	/**
 	 * Process a base URI in the page. Not only is this filtered, it affects all

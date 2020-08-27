@@ -121,8 +121,9 @@ public class FetchContext implements Cloneable, Serializable {
 
 	/** Ignore USK DATEHINTs */
 	public boolean ignoreUSKDatehints;
-	/** host and port (authority) */
-  public String host;
+
+  /** host and port (authority) */
+  private String hostAndPort;
 
   public FetchContext(long curMaxLength,
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -133,7 +134,7 @@ public class FetchContext implements Cloneable, Serializable {
 			BucketFactory bucketFactory,
 			ClientEventProducer producer,
 			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME,
-      String host) {
+      String hostAndPort) {
     this.blocks = null;
 		this.maxOutputLength = curMaxLength;
 		if(maxOutputLength < 0) throw new IllegalArgumentException("Bad max output length");
@@ -173,7 +174,7 @@ public class FetchContext implements Cloneable, Serializable {
 		this.cooldownTime = RequestScheduler.COOLDOWN_PERIOD;
 		this.ignoreUSKDatehints = false; // FIXME
 		hasOwnEventProducer = true;
-    this.host = host;
+    this.hostAndPort = hostAndPort;
 	}
 
 	/** Copy a FetchContext, creating a new EventProducer and not changing the blocks list.
@@ -231,7 +232,7 @@ public class FetchContext implements Cloneable, Serializable {
 		this.cooldownRetries = ctx.cooldownRetries;
 		this.cooldownTime = ctx.cooldownTime;
 		this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
-		this.host = ctx.host;
+		this.hostAndPort = ctx.hostAndPort;
 
 		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
 			// DEFAULT
@@ -287,6 +288,10 @@ public class FetchContext implements Cloneable, Serializable {
 		return cooldownRetries;
 	}
 
+  public String getHostAndPort() {
+    return hostAndPort;
+  }
+
 	public long getCooldownTime() {
 		return cooldownTime;
 	}
@@ -338,8 +343,8 @@ public class FetchContext implements Cloneable, Serializable {
         dos.writeInt(cooldownRetries);
         dos.writeLong(cooldownTime);
         dos.writeBoolean(ignoreUSKDatehints);
-        if (host != null)
-          dos.writeUTF(host);
+        if (hostAndPort != null)
+          dos.writeUTF(hostAndPort);
         else
           dos.writeUTF("");
     }
@@ -415,9 +420,9 @@ public class FetchContext implements Cloneable, Serializable {
         ignoreUSKDatehints = dis.readBoolean();
         s = dis.readUTF();
         if(s.equals(""))
-          host = null;
+          hostAndPort = null;
         else
-          host = s;
+          hostAndPort = s;
         hasOwnEventProducer = true;
         eventProducer = new SimpleEventProducer();
         blocks = null;
@@ -458,7 +463,7 @@ public class FetchContext implements Cloneable, Serializable {
         result = prime * result + ((prefetchHook == null) ? 0 : prefetchHook.hashCode());
         result = prime * result + (returnZIPManifests ? 1231 : 1237);
         result = prime * result + ((tagReplacer == null) ? 0 : tagReplacer.hashCode());
-        result = prime * result + ((host == null) ? 0 : host.hashCode());
+        result = prime * result + ((hostAndPort == null) ? 0 : hostAndPort.hashCode());
         return result;
     }
 
@@ -554,10 +559,10 @@ public class FetchContext implements Cloneable, Serializable {
                 return false;
         } else if (!tagReplacer.equals(other.tagReplacer))
             return false;
-        if (host == null) {
-            if (other.host != null)
+        if (hostAndPort == null) {
+            if (other.hostAndPort != null)
                 return false;
-        } else if (!host.equals(other.host))
+        } else if (!hostAndPort.equals(other.hostAndPort))
             return false;
         return true;
     }

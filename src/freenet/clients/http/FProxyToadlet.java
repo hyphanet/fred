@@ -518,7 +518,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
             }
 		} else if(ks.startsWith("/feed/") || ks.equals("/feed")) {
 			//TODO Better way to find the host. Find if https is used?
-			String host = ctx.getHeaders().get("host");
+			String host = getSchemeHostAndPort(ctx);
 			String atom = ctx.getAlertManager().getAtom("http://" + host);
 			byte[] buf = atom.getBytes("UTF-8");
 			ctx.sendReplyHeadersFProxy(200, "OK", null, "application/atom+xml", buf.length);
@@ -579,8 +579,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			return;
 		}
 
-		FetchContext fctx = getFetchContext(maxSize);
-		fctx.host = ctx.getHeaders().get("host");
+		FetchContext fctx = getFetchContext(maxSize, getSchemeHostAndPort(ctx));
 		// max-size=-1 => use default
 		maxSize = fctx.maxOutputLength;
 
@@ -983,6 +982,13 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(fr == null && data != null) data.free();
 			if(fr != null) fr.close();
 		}
+	}
+
+	private String getSchemeHostAndPort(ToadletContext ctx) {
+		// String forwarded = ctx.getHeaders().get("Forwarded");
+		// TODO: parse forwarded as done for the otherMimeTypeParams
+		// String protocol = ctx.getHeaders().get("X-Forwarded-Proto");
+		return ctx.getHeaders().get("host");
 	}
 
 	private boolean isBrowser(String ua) {

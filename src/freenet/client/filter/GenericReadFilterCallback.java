@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
 import freenet.client.filter.HTMLFilter.ParsedTag;
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.clients.http.HTTPRequestImpl;
-import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.StaticToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
@@ -262,12 +261,12 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	}
 
 	@Override
-	public String processURI(String u, String overrideType, String forceHostPort)
+	public String processURI(String u, String overrideType, String forceHostPort, boolean inline)
 			throws CommentException {
 		URI uri;
 		String filtered;
 		try {
-			filtered = processURI(makeURIAbsolute(u), overrideType, true, false);
+			filtered = processURI(makeURIAbsolute(u), overrideType, true, inline);
 			uri = URIPreEncoder.encodeURI(filtered).normalize();
 		} catch (URISyntaxException e1) {
 			if(logMINOR) Logger.minor(this, "Failed to parse URI: "+e1);
