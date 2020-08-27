@@ -81,13 +81,15 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	final ClientContext context;
 	final FProxyFetchTracker fetchTracker;
 
-	static final Set<String> prefetchAllowedTypes = new HashSet<String>();
-	static {
-		// Only valid inlines
-		prefetchAllowedTypes.add("image/png");
-		prefetchAllowedTypes.add("image/jpeg");
-		prefetchAllowedTypes.add("image/gif");
-	}
+	static final Set<String> prefetchAllowedTypes = new HashSet<>(Arrays.asList(
+			"image/png",
+			"image/jpeg",
+			"image/gif",
+			"audio/mp3",
+			"audio/ogg",
+			"video/ogg",
+			"application/ogg"
+	));
 
 	// ?force= links become invalid after 2 hours.
 	private static final long FORCE_GRAIN_INTERVAL = HOURS.toMillis(1);
