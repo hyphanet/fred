@@ -548,9 +548,9 @@ public class NodeUpdateManager {
 					getInstallerWindowsURI(), NodeFile.InstallerWindows);
 
 			installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					32 * 1024 * 1024);
+					100 * 1024 * 1024);
 			wininstallerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					32 * 1024 * 1024);
+					100 * 1024 * 1024);
 
 		}
 
