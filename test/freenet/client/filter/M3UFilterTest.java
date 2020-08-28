@@ -17,9 +17,7 @@ public class M3UFilterTest extends TestCase {
         { "./m3u/unsafe.m3u", "./m3u/unsafe_madesafe.m3u" },
     };
 
-    private static final String BASE_URI_PROTOCOL = "http";
     private static final String HOST_PORT = "localhost:8888";
-    private static final String BASE_URI_CONTENT = "localhost:8888";
     private static final String BASE_KEY = "USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/FakeM3UHostingFreesite/23/";
     private static final String BASE_URI = '/'+BASE_KEY;
 
