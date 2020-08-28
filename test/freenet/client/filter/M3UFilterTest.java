@@ -17,7 +17,7 @@ public class M3UFilterTest extends TestCase {
         { "./m3u/unsafe.m3u", "./m3u/unsafe_madesafe.m3u" },
     };
 
-    private static final String HOST_PORT = "localhost:8888";
+    private static final String SCHEME_HOST_PORT = "http://localhost:8888";
     private static final String BASE_KEY = "USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/FakeM3UHostingFreesite/23/";
     private static final String BASE_URI = '/'+BASE_KEY;
 
@@ -45,7 +45,7 @@ public class M3UFilterTest extends TestCase {
 
             try {
                 filter.readFilter(ibo.getInputStream(), ibprocessed.getOutputStream(), "UTF-8", null,
-                    HOST_PORT, new GenericReadFilterCallback(new URI(BASE_URI), null, null, null));
+                    SCHEME_HOST_PORT, new GenericReadFilterCallback(new URI(BASE_URI), null, null, null));
                 String result = ibprocessed.toString();
 
                 assertTrue(original + " should be filtered as " + correct + " but was filtered as\n" + result + "\ninstead of the correct\n" + bucketToString((ArrayBucket)ibc), result.equals(bucketToString((ArrayBucket)ibc)));
