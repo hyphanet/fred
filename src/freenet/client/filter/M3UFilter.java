@@ -158,8 +158,7 @@ public class M3UFilter implements ContentDataFilter {
                                         } else {
                                             filtered += "?";
                                         }
-                                        filtered += "max-size=" + Long.valueOf(
-                                            MAX_LENGTH_NO_PROGRESS).toString();
+                                        filtered += "max-size=" + MAX_LENGTH_NO_PROGRESS;
                                     }
 
                                 } catch (CommentException e) {
