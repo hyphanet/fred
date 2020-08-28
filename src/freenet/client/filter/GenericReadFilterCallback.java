@@ -61,10 +61,6 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		});
 	}
 
-	public GenericReadFilterCallback(URI uri, FoundURICallback cb, LinkFilterExceptionProvider linkFilterExceptionProvider) {
-		this(uri, cb, null, linkFilterExceptionProvider);
-	}
-
 	public GenericReadFilterCallback(URI uri, FoundURICallback cb,TagReplacerCallback trc, LinkFilterExceptionProvider linkFilterExceptionProvider) {
 		this.baseURI = uri;
 		this.cb = cb;

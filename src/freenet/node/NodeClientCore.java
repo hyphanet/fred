@@ -1980,7 +1980,7 @@ public class NodeClientCore implements Persistable {
 	public FilterCallback createFilterCallback(URI uri, FoundURICallback cb) {
 		if(logMINOR)
 			Logger.minor(this, "Creating filter callback: " + uri + ", " + cb);
-		return new GenericReadFilterCallback(uri, cb, toadletContainer);
+		return new GenericReadFilterCallback(uri, cb, null, toadletContainer);
 	}
 
 	public int maxBackgroundUSKFetchers() {
