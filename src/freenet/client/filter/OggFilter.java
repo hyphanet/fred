@@ -32,7 +32,7 @@ public class OggFilter implements ContentDataFilter{
 	public void readFilter(
       InputStream input, OutputStream output,
       String charset, HashMap<String, String> otherParams,
-      String hostPort, FilterCallback cb) throws DataFilterException, IOException {
+      String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
 		HashMap<Integer, OggBitstreamFilter> streamFilters = new HashMap<Integer, OggBitstreamFilter>();
 		LinkedList<OggPage> splitPages = new LinkedList<OggPage>();
 		CountedOutputStream out = new CountedOutputStream(output);

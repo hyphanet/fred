@@ -260,7 +260,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				output = context.tempBucketFactory.makeBucket(-1);
 				is = data.getInputStream();
 				os = output.getOutputStream();
-				ContentFilter.filter(is, os, fullMimeType, uri.toURI("/"), fctx.getHostAndPort(), null, null, fctx.charset, context.linkFilterExceptionProvider);
+				ContentFilter.filter(is, os, fullMimeType, uri.toURI("/"), fctx.getSchemeHostAndPort(), null, null, fctx.charset, context.linkFilterExceptionProvider);
 				is.close();
 				is = null;
 				os.close();

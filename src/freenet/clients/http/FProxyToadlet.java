@@ -3,6 +3,7 @@ package freenet.clients.http;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -15,8 +16,11 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import freenet.client.DefaultMIMETypes;
@@ -519,9 +523,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
                 throw new Error(e);
             }
 		} else if(ks.startsWith("/feed/") || ks.equals("/feed")) {
-			//TODO Better way to find the host. Find if https is used?
-			String host = getSchemeHostAndPort(ctx);
-			String atom = ctx.getAlertManager().getAtom("http://" + host);
+			String schemeHostAndPort = getSchemeHostAndPort(ctx);
+			String atom = ctx.getAlertManager().getAtom(schemeHostAndPort);
 			byte[] buf = atom.getBytes("UTF-8");
 			ctx.sendReplyHeadersFProxy(200, "OK", null, "application/atom+xml", buf.length);
 			ctx.writeData(buf, 0, buf.length);
@@ -987,10 +990,46 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	}
 
 	private String getSchemeHostAndPort(ToadletContext ctx) {
-		// String forwarded = ctx.getHeaders().get("Forwarded");
-		// TODO: parse forwarded as done for the otherMimeTypeParams
-		// String protocol = ctx.getHeaders().get("X-Forwarded-Proto");
-		return ctx.getHeaders().get("host");
+		MultiValueTable<String, String> headers = ctx.getHeaders();
+		Map<String, String> forwarded = parseForwardedHeader(headers.get("Forwarded"));
+		String uriScheme = ctx.getUri().getScheme();
+		String uriHost = ctx.getUri().getHost();
+		String protocol = forwarded.getOrDefault("proto",
+				headers.containsKey("X-Forwarded-Proto")
+						? headers.get("X-Forwarded-Proto")
+				    : uriScheme != null && !uriScheme.trim().isEmpty() ? uriScheme : "http");
+		String host = forwarded.getOrDefault("proto",
+				headers.containsKey("X-Forwarded-For")
+						? headers.get("X-Forwarded-For")
+				    : uriHost != null && !uriHost.trim().isEmpty() ? uriHost : headers.get("host"));
+		return protocol + "://" + host;
+	}
+
+	private Map<String, String> parseForwardedHeader(String forwarded) {
+		if (forwarded == null || forwarded.trim().isEmpty()) {
+			return new HashMap<>();
+		}
+		Map<String, String> headerParams = new HashMap<>();
+
+		boolean hasAtLeastOneKey = forwarded.indexOf('=') != -1;
+		boolean hasMultipleKeys = forwarded.indexOf(';') != -1;
+		String[] fields = new String[]{};
+		if(hasMultipleKeys) {
+			fields = forwarded.split(";");
+		} else if (hasAtLeastOneKey) {
+			fields = new String[]{ forwarded };
+		}
+		for (String field : fields) {
+			// if a multi-value field is given, only use the first value.
+			if (field.indexOf(',') != -1) {
+				field = field.split(",")[0];
+			}
+			if (field.indexOf('=') != 1) {
+				String[] keyAndValue = field.split("=");
+				headerParams.put(keyAndValue[0], keyAndValue[1]);
+			}
+		}
+		return headerParams;
 	}
 
 	private boolean isBrowser(String ua) {

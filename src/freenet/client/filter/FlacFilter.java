@@ -23,7 +23,7 @@ public class FlacFilter implements ContentDataFilter {
 	public void readFilter(
       InputStream input, OutputStream output,
       String charset, HashMap<String, String> otherParams,
-      String hostPort, FilterCallback cb) throws DataFilterException, IOException {
+      String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this.getClass());
 		FlacPacketFilter parser = new FlacPacketFilter();
 		DataInputStream in = new DataInputStream(input);

@@ -261,7 +261,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	}
 
 	@Override
-	public String processURI(String u, String overrideType, String forceHostPort, boolean inline)
+	public String processURI(String u, String overrideType, String forceSchemeHostAndPort, boolean inline)
 			throws CommentException {
 		URI uri;
 		String filtered;
@@ -273,8 +273,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			throw new CommentException(l10n("couldNotParseURIWithError", "error", e1.getMessage()));
 		}
 		if (uri.getHost() == null) {
-			String scheme = uri.getScheme() != null ? uri.getScheme() : "http";
-			return scheme + "://" + forceHostPort + filtered;
+			return forceSchemeHostAndPort + filtered;
 		}
 		return filtered;
 	}

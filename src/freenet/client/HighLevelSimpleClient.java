@@ -166,7 +166,7 @@ public interface HighLevelSimpleClient {
 	 */
 	public FetchContext getFetchContext();
 	public FetchContext getFetchContext(long size);
-	public FetchContext getFetchContext(long size, String hostAndPort);
+	public FetchContext getFetchContext(long size, String schemeHostAndPort);
 
 	/**
 	 * Get an InsertContext. Has settings for controlling the insertion process, for example which

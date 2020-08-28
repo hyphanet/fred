@@ -338,7 +338,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 
 			output = finalResult.getOutputStream();
 			if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
-			worker = new ClientGetWorkerThread(new BufferedInputStream(dataInput), output, uri, mimeType, ctx.getHostAndPort(), hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
+			worker = new ClientGetWorkerThread(new BufferedInputStream(dataInput), output, uri, mimeType, ctx.getSchemeHostAndPort(), hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
 			worker.start();
 			try {
 				streamGenerator.writeTo(dataOutput, context);
@@ -442,7 +442,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
             DecompressorThreadManager decompressorManager = null;
             ClientGetWorkerThread worker = null;
 
-            worker = new ClientGetWorkerThread(is, new NullOutputStream(), uri, null, ctx.getHostAndPort(), hashes, false, null, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
+            worker = new ClientGetWorkerThread(is, new NullOutputStream(), uri, null, ctx.getSchemeHostAndPort(), hashes, false, null, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
             worker.start();
 
             if(logMINOR) Logger.minor(this, "Waiting for hashing, filtration, and writing to finish");

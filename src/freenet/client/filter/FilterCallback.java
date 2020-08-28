@@ -33,7 +33,7 @@ public interface FilterCallback {
 	 * @param inline inline URIs may be prefetched while filtering
 	 * @throws CommentException If the URI is nvalid or unacceptable in some way.
 	 */
-	public String processURI(String uri, String overrideType, String forceHostPort, boolean inline) throws CommentException;
+	public String processURI(String uri, String overrideType, String forceSchemeHostAndPort, boolean inline) throws CommentException;
 
 	/**
 	 * Process a base URI in the page. Not only is this filtered, it affects all

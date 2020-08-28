@@ -25,7 +25,7 @@ public interface ContentDataFilter {
 	 * @param output Stream to write safe (but possibly incomplete) data to.
 	 * @param charset Character set of the data if appropriate for this MIME type.
 	 * @param otherParams Other type parameters if appropriate.
-	 * @param hostPort
+	 * @param schemeHostAndPort Scheme, host and port of the node as seen in the request.
 	 * @param cb Filter callback for modifying HTML tags. Irrelevant for most MIME types. In future we
 	 * might need this for other types.
 	 * @throws DataFilterException If the data cannot be filtered. Any data
@@ -37,5 +37,5 @@ public interface ContentDataFilter {
 	 */
 	public void readFilter(
 			InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-			String hostPort, FilterCallback cb) throws DataFilterException, IOException;
+			String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException;
 }

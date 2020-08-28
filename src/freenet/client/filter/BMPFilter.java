@@ -88,7 +88,7 @@ public class BMPFilter implements ContentDataFilter {
 	@Override
 	public void readFilter(
       InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-      String hostPort, FilterCallback cb) throws DataFilterException, IOException {
+      String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
 		DataInputStream dis = new DataInputStream(input);
 		dis.mark(54);
 		byte[] StartWord = new byte[2];

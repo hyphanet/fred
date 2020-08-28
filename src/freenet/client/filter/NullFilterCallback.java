@@ -33,7 +33,7 @@ public class NullFilterCallback implements FilterCallback {
 	}
 
 	@Override
-	public String processURI(String uri, String overrideType, String forceHostPort, boolean inline)
+	public String processURI(String uri, String overrideType, String forceSchemeHostAndPort, boolean inline)
 			throws CommentException {
 		return null;
 	}

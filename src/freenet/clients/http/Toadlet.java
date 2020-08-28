@@ -172,9 +172,9 @@ public abstract class Toadlet {
 	 * @param maxSize The maximum allowable size of the fetch's result
 	 * @return A default FetchContext
 	 */
-	FetchContext getFetchContext(long maxSize, String hostAndPort) {
+	FetchContext getFetchContext(long maxSize, String schemeHostAndPort) {
 		//We want to retrieve a FetchContext we may override
-		return client.getFetchContext(maxSize, hostAndPort);
+		return client.getFetchContext(maxSize, schemeHostAndPort);
 	}
 
 	FreenetURI insert(InsertBlock insert, String filenameHint, boolean getCHKOnly) throws InsertException {

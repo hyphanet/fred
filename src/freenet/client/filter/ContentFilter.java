@@ -240,12 +240,12 @@ public class ContentFilter {
 			OutputStream output,
 			String typeName,
 			URI baseURI,
-			String hostAndPort,
+			String schemeHostAndPort,
 			FoundURICallback cb,
 			TagReplacerCallback trc,
 			String maybeCharset,
 			LinkFilterExceptionProvider linkFilterExceptionProvider) throws UnsafeContentTypeException, IOException {
-		return filter(input, output, typeName, maybeCharset, hostAndPort, new GenericReadFilterCallback(baseURI, cb, trc, linkFilterExceptionProvider));
+		return filter(input, output, typeName, maybeCharset, schemeHostAndPort, new GenericReadFilterCallback(baseURI, cb, trc, linkFilterExceptionProvider));
 	}
 
 	/**
@@ -267,7 +267,7 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, String maybeCharset, String hostAndPort, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, String maybeCharset, String schemeHostAndPort, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
 		if(logMINOR) Logger.minor(ContentFilter.class, "Filtering data of type"+typeName);
 		String type = typeName;
 		String options = "";
@@ -327,7 +327,7 @@ public class ContentFilter {
 					charset = detectCharset(charsetBuffer, offset, handler, maybeCharset);
 				}
 				try {
-					handler.readFilter.readFilter(input, output, charset, otherMimeTypeParams, hostAndPort, filterCallback);
+					handler.readFilter.readFilter(input, output, charset, otherMimeTypeParams, schemeHostAndPort, filterCallback);
 				}
 				catch(EOFException e) {
 					Logger.error(ContentFilter.class, "EOFException caught: "+e,e);
