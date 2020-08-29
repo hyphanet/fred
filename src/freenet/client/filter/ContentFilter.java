@@ -194,7 +194,6 @@ public class ContentFilter {
 	 * @param maybeCharset
 	 * 			  MIME type of the referring document, as a hint, some types,
 	 * 			  such as CSS, will inherit it if no other data is available.
-	 * @param linkFilterExceptionProvider
 	 * @return
 	 * @throws IOException
 	 *             If an internal error involving s occurred.
