@@ -122,7 +122,7 @@ public class FetchContext implements Cloneable, Serializable {
 	/** Ignore USK DATEHINTs */
 	public boolean ignoreUSKDatehints;
 
-  /** host and port (authority) */
+  /** scheme, host and port: force the prefix of a URI. Example: https://localhost:1234 */
   private final String schemeHostAndPort;
 
   public FetchContext(long curMaxLength,
