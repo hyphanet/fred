@@ -365,6 +365,33 @@ public class PluginManager {
 		return realStartPlugin(new PluginDownLoaderFreenet(client, node, false), filename, store, false);
 	}
 
+	/**
+	 * Registers an externally loaded plugin.
+	 *
+	 * @param plug Plugin instance.
+	 * @return
+	 */
+	public PluginInfoWrapper startPlugin(FredPlugin plug) {
+	    final String filename = plug.getClass().getName();
+		Logger.normal(this, "Loading plugin: " + filename);
+		PluginInfoWrapper pi = null;
+		try {
+			pi = new PluginInfoWrapper(node, plug, filename, true);
+			PluginHandler.startPlugin(PluginManager.this, pi);
+			loadedPlugins.addLoadedPlugin(pi);
+			loadedPlugins.removeFailedPlugin(filename);
+			Logger.normal(this, "Plugin loaded: " + filename);
+		} catch (Throwable e) {
+			Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
+			System.err.println("Could not load plugin " + filename + " : " + e);
+			e.printStackTrace();
+			System.err.println("Plugin "+filename+" is broken, but we want to retry after next startup");
+			Logger.error(this, "Plugin "+filename+" is broken, but we want to retry after next startup");
+		}
+
+		return pi;
+	}
+
 	private PluginInfoWrapper realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store, boolean alwaysDownload) {
 	    if (!enabled) throw new IllegalStateException("Plugins disabled");
 		if(filename.trim().length() == 0)

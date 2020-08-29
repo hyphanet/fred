@@ -585,9 +585,11 @@ public class NodeStarter implements WrapperListener {
 	}
 
 	// experimental osgi support
-	public static void start_osgi(String[] args) {
+	public static Node start_osgi(String[] args) {
 		nodestarter_osgi = new NodeStarter();
 		nodestarter_osgi.start(args);
+
+		return nodestarter_osgi.node;
 	}
 
 	// experimental osgi support
