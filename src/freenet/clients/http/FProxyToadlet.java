@@ -1011,19 +1011,22 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 		Map<String, String> headerParams = new HashMap<>();
 
+		// if a multi-value header is given, only use the first value.
+		int indexOfComma = forwarded.indexOf(',');
+		if (indexOfComma != -1) {
+			forwarded = forwarded.substring(0, indexOfComma);
+		}
 		boolean hasAtLeastOneKey = forwarded.indexOf('=') != -1;
 		boolean hasMultipleKeys = forwarded.indexOf(';') != -1;
-		String[] fields = new String[]{};
-		if(hasMultipleKeys) {
+		String[] fields;
+		if (hasMultipleKeys) {
 			fields = forwarded.split(";");
 		} else if (hasAtLeastOneKey) {
 			fields = new String[]{ forwarded };
+		} else {
+			return headerParams;
 		}
 		for (String field : fields) {
-			// if a multi-value field is given, only use the first value.
-			if (field.indexOf(',') != -1) {
-				field = field.split(",")[0];
-			}
 			if (field.indexOf('=') != 1) {
 				String[] keyAndValue = field.split("=");
 				headerParams.put(keyAndValue[0], keyAndValue[1]);
