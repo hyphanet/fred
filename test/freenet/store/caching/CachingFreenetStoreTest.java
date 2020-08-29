@@ -1,5 +1,11 @@
 package freenet.store.caching;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -10,7 +16,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
-import junit.framework.TestCase;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
@@ -64,36 +73,50 @@ import freenet.support.io.FileUtil;
  *
  *         FIXME lots of repeated code, factor out.
  */
-public class CachingFreenetStoreTest extends TestCase {
+public class CachingFreenetStoreTest {
+	
+	private static final File TEMP_DIR = new File("tmp-CachingFreenetStoreTest");
 
 	private Random weakPRNG = new Random(12340);
 	private PooledExecutor exec = new PooledExecutor();
 	private Ticker ticker = new TrivialTicker(exec);
-	private File tempDir = new File("tmp-cachingfreenetstoretest");
 	private long cachingFreenetStoreMaxSize = Fields.parseLong("1M");
 	private long cachingFreenetStorePeriod = Fields.parseLong("300k");
 
-	@Override
-	protected void setUp() throws java.lang.Exception {
-		ResizablePersistentIntBuffer.setPersistenceTime(-1);
-		exec.start();
+	@BeforeClass
+	public static void setupClass() {
+		FileUtil.removeAll(TEMP_DIR);
 
-		// Make sure each test has a nice clean working directory to start with
-		if (!FileUtil.removeAll(tempDir)) {
-			throw new RuntimeException("Could not clean temporary directory for running clean tests");
+		if(! TEMP_DIR.mkdir()) {
+			throw new IllegalStateException("Could not create temporary directory for store tests");
 		}
-		tempDir.mkdir();
 	}
 
-	@Override
-	protected void tearDown() {
-		FileUtil.removeAll(tempDir);
+	@Before
+	public void setUpTest() {
+		ResizablePersistentIntBuffer.setPersistenceTime(-1);
+		exec.start();
+	}
+
+	@AfterClass
+	public static void cleanup() {
+		FileUtil.removeAll(TEMP_DIR);
+	}
+
+	private File getStorePath(String testname) {
+		File storePath = new File(TEMP_DIR, "CachingFreenetStoreTest_" + testname);
+		FileUtil.removeAll(storePath);
+		if( ! storePath.mkdirs() ) {
+			throw new IllegalStateException("Could not create temporary test store path: " + storePath);
+		}
+		return storePath;
 	}
 
 	/* Simple test with CHK for CachingFreenetStore */
-	public void testSimpleCHK() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+	@Test
+ 	public void testSimpleCHK() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
-		File f = new File(tempDir, "saltstore");
+		File f = getStorePath("testSimpleCHK");
 		try (SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK",
 				store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null)) {
 			CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize,
@@ -121,9 +144,10 @@ public class CachingFreenetStoreTest extends TestCase {
 	 * Check that if the size limit is 0 (and therefore presumably if it is smaller
 	 * than the key being cached), we will pass through immediately.
 	 */
-	public void testZeroSize() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+	@Test
+ 	public void testZeroSize() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 
-		File f = new File(tempDir, "saltstore");
+		File f = getStorePath("testZeroSize");
 		CHKStore store = new CHKStore();
 		try (SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK",
 				store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null)) {
@@ -176,9 +200,10 @@ public class CachingFreenetStoreTest extends TestCase {
 	 * Check that if we are going over the maximum size, the caching store will call
 	 * pushAll and all blocks is in the *undelying* store and the size is 0
 	 */
-	public void testOverMaximumSize()
+	@Test
+ 	public void testOverMaximumSize()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException, InterruptedException {
-		File f = new File(tempDir, "saltstore");
+		File f = getStorePath("testOverMaximumSize");
 
 		String test = "test0";
 		ClientCHKBlock block = encodeBlockCHK(test);
@@ -240,7 +265,8 @@ public class CachingFreenetStoreTest extends TestCase {
 		}
 	}
 
-	public void testCollisionsOverMaximumSize()
+	@Test
+ 	public void testCollisionsOverMaximumSize()
 			throws IOException, SSKEncodeException, InvalidCompressionCodecException, InterruptedException {
 		PubkeyStore pk = new PubkeyStore();
 		new RAMFreenetStore<DSAPublicKey>(pk, 10);
@@ -249,7 +275,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		int sskBlockSize = store.getTotalBlockSize();
 
 		// Create a cache with size limit of 1.5 SSK's.
-		File f = new File(tempDir, "saltstore");
+		File f = getStorePath("testCollisionsOverMaximumSize");
 		try (SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK",
 				store, weakPRNG, 20, true, SemiOrderedShutdownHook.get(), true, true, ticker, null)) {
 			WaitableCachingFreenetStoreTracker tracker = new WaitableCachingFreenetStoreTracker((sskBlockSize * 3) / 2,
@@ -334,7 +360,8 @@ public class CachingFreenetStoreTest extends TestCase {
 		}
 	}
 
-	public void testSimpleManualWrite()
+	@Test
+ 	public void testSimpleManualWrite()
 			throws IOException, SSKEncodeException, InvalidCompressionCodecException, InterruptedException {
 
 		PubkeyStore pk = new PubkeyStore();
@@ -343,7 +370,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		SSKStore store = new SSKStore(pubkeyCache);
 		int sskBlockSize = store.getTotalBlockSize();
 
-		File f = new File(tempDir, "saltstore");
+		File f = getStorePath("testSimpleManualWrite");
 		try (SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK",
 				store, weakPRNG, 20, true, SemiOrderedShutdownHook.get(), true, true, ticker, null)) {
 			CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker((sskBlockSize * 3), cachingFreenetStorePeriod,
@@ -397,7 +424,8 @@ public class CachingFreenetStoreTest extends TestCase {
 	 * not remove it) } Write the block. Lock { Detected a different block for key
 	 * K. Return 0 rather than removing it. }
 	 */
-	public void testManualWriteCollision() throws IOException, SSKEncodeException, InvalidCompressionCodecException,
+	@Test
+ 	public void testManualWriteCollision() throws IOException, SSKEncodeException, InvalidCompressionCodecException,
 			InterruptedException, ExecutionException {
 
 		PubkeyStore pk = new PubkeyStore();
@@ -408,7 +436,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		SSKStore store = new SSKStore(pubkeyCache);
 		int sskBlockSize = store.getTotalBlockSize();
 
-		File f = new File(tempDir, "saltstore");
+		File f = getStorePath("testManualWriteCollision");
 		try (SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK",
 				store, weakPRNG, 20, true, SemiOrderedShutdownHook.get(), true, true, ticker, null)) {
 			// Don't let the write complete until we say so...
@@ -503,7 +531,8 @@ public class CachingFreenetStoreTest extends TestCase {
 	}
 
 	/* Simple test with SSK for CachingFreenetStore */
-	public void testSimpleSSK() throws IOException, KeyCollisionException, SSKVerifyException, KeyDecodeException,
+	@Test
+ 	public void testSimpleSSK() throws IOException, KeyCollisionException, SSKVerifyException, KeyDecodeException,
 			SSKEncodeException, InvalidCompressionCodecException {
 
 		final int keys = 5;
@@ -513,7 +542,7 @@ public class CachingFreenetStoreTest extends TestCase {
 
 		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
 		SSKStore store = new SSKStore(pubkeyCache);
-		File f = new File(tempDir, "saltstore");
+		File f = getStorePath("testSimpleSSK");
 		try (SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreSSK",
 				store, weakPRNG, 20, true, SemiOrderedShutdownHook.get(), true, true, ticker, null)) {
 			CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize,
@@ -542,10 +571,11 @@ public class CachingFreenetStoreTest extends TestCase {
 	}
 
 	/* Test to re-open after close */
-	public void testOnCloseCHK() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+	@Test
+ 	public void testOnCloseCHK() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 
 		CHKStore store = new CHKStore();
-		File f = new File(tempDir, "saltstore");
+		File f = getStorePath("testOnCloseCHK");
 		List<String> tests = new ArrayList<String>();
 		List<ClientCHKBlock> chkBlocks = new ArrayList<ClientCHKBlock>();
 		CachingFreenetStoreTracker tracker = new CachingFreenetStoreTracker(cachingFreenetStoreMaxSize,
@@ -604,9 +634,10 @@ public class CachingFreenetStoreTest extends TestCase {
 	}
 
 	/* Test whether stuff gets written to disk after the caching period expires */
-	public void testTimeExpireCHK()
+	@Test
+ 	public void testTimeExpireCHK()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException, InterruptedException {
-		File f = new File(tempDir, "saltstore");
+		File f = getStorePath("testTimeExpireCHK");
 		long delay = 100;
 
 		CHKStore store = new CHKStore();
@@ -676,9 +707,10 @@ public class CachingFreenetStoreTest extends TestCase {
 	}
 
 	/* Test with SSK to re-open after close */
-	public void testOnCloseSSK() throws IOException, SSKEncodeException, InvalidCompressionCodecException,
+	@Test
+ 	public void testOnCloseSSK() throws IOException, SSKEncodeException, InvalidCompressionCodecException,
 			KeyCollisionException, SSKVerifyException, KeyDecodeException {
-		File f = new File(tempDir, "saltstore");
+		File f = getStorePath("testOnCloseSSK");
 
 		final int keys = 5;
 		PubkeyStore pk = new PubkeyStore();
@@ -746,9 +778,10 @@ public class CachingFreenetStoreTest extends TestCase {
 	 * Test with SSK whether stuff gets written to disk after the caching period
 	 * expires
 	 */
-	public void testTimeExpireSSK() throws IOException, SSKEncodeException, InvalidCompressionCodecException,
+	@Test
+ 	public void testTimeExpireSSK() throws IOException, SSKEncodeException, InvalidCompressionCodecException,
 			KeyCollisionException, SSKVerifyException, KeyDecodeException, InterruptedException {
-		File f = new File(tempDir, "saltstore");
+		File f = getStorePath("testTimeExpireSSK");
 
 		final int keys = 5;
 		PubkeyStore pk = new PubkeyStore();
@@ -805,14 +838,16 @@ public class CachingFreenetStoreTest extends TestCase {
 		}
 	}
 
-	public void testOnCollisionsSSK_useSlotFilter() throws IOException, SSKEncodeException, InvalidCompressionCodecException,
+	@Test
+ 	public void testOnCollisionsSSK_useSlotFilter() throws IOException, SSKEncodeException, InvalidCompressionCodecException,
 			SSKVerifyException, KeyDecodeException, KeyCollisionException {
 		// With slot filters turned on, it should be cached, it should compare it, and
 		// still not throw if it's the same block.
 		checkOnCollisionsSSK(true);
 	}
 
-	public void testOnCollisionsSSK_dontUseSlotFilter() throws IOException, SSKEncodeException, InvalidCompressionCodecException,
+	@Test
+ 	public void testOnCollisionsSSK_dontUseSlotFilter() throws IOException, SSKEncodeException, InvalidCompressionCodecException,
 			SSKVerifyException, KeyDecodeException, KeyCollisionException {
 		// With slot filters turned off, it goes straight to disk, because
 		// probablyInStore() always returns true.
@@ -823,7 +858,7 @@ public class CachingFreenetStoreTest extends TestCase {
 	private void checkOnCollisionsSSK(boolean useSlotFilter) throws IOException, SSKEncodeException,
 			InvalidCompressionCodecException, SSKVerifyException, KeyDecodeException, KeyCollisionException {
 
-		FileUtil.removeAll(tempDir);
+		FileUtil.removeAll(TEMP_DIR);
 
 		final int keys = 5;
 		PubkeyStore pk = new PubkeyStore();
@@ -831,7 +866,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		pk.setStore(ramFreenetStore);
 		GetPubkey pubkeyCache = new SimpleGetPubkey(pk);
 		SSKStore store = new SSKStore(pubkeyCache);
-		File f = new File(tempDir, "saltstore");
+		File f = getStorePath("checkOnCollisionsSSK");
 
 		try (SaltedHashFreenetStore<SSKBlock> saltStore = SaltedHashFreenetStore.construct(f,
 				"testCachingFreenetStoreOnCloseSSK", store, weakPRNG, 10, useSlotFilter, SemiOrderedShutdownHook.get(), true,

@@ -1,13 +1,19 @@
 package freenet.store;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.UUID;
 
-import junit.framework.TestCase;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
@@ -32,46 +38,44 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
 
 /** Test migration from a RAMFreenetStore to a SaltedHashFreenetStore */
-public class RAMSaltMigrationTest extends TestCase {
+public class RAMSaltMigrationTest {
+	
+	private static final File TEMP_DIR = new File("tmp-RAMSaltMigrationTest");
 
 	private RandomSource strongPRNG = new DummyRandomSource(43210);
 	private Random weakPRNG = new Random(12340);
 	private PooledExecutor exec = new PooledExecutor();
 	private Ticker ticker = new TrivialTicker(exec);
-	private final File tempDir = new File("tmp-slashdotstoretest");
 
-	@Override
-	protected void setUp() throws java.lang.Exception {
-		exec.start();
+	@BeforeClass
+	public static void setupClass() {
+		FileUtil.removeAll(TEMP_DIR);
 
-		// Make sure each test starts with a nice clean temp directory
-		if( ! FileUtil.removeAll(tempDir) ) {
-			throw new RuntimeException("Could not clean temporary directory for running clean tests");
+		if(! TEMP_DIR.mkdir()) {
+			throw new IllegalStateException("Could not create temporary directory for store tests");
 		}
-		tempDir.mkdir();
+	}
 
+	@Before
+	public void setUpTest() {
 		ResizablePersistentIntBuffer.setPersistenceTime(-1);
+		exec.start();
 	}
 
-	@Override
-	protected void tearDown() {
-		FileUtil.removeAll(tempDir);
+	@AfterClass
+	public static void cleanup() {
+		FileUtil.removeAll(TEMP_DIR);
 	}
 
-	private File getTempStoreFile() {
-		return new File(tempDir, "saltstore_" + UUID.randomUUID());
-	}
-
-	private void sleep(int time) {
-		if (time <= 0) {
-			return;
+	private File getStorePath(String testname) {
+		File storePath = new File(TEMP_DIR, "CachingFreenetStoreTest_" + testname);
+		FileUtil.removeAll(storePath);
+		if( ! storePath.mkdirs() ) {
+			throw new IllegalStateException("Could not create temporary test store path: " + storePath);
 		}
-		try {
-			Thread.sleep(time);
-		} catch (InterruptedException e) {
-			// Ignore
-		}
+		return storePath;
 	}
+
 
 	/**
 	 * Insert Standard testing data
@@ -161,10 +165,12 @@ public class RAMSaltMigrationTest extends TestCase {
 		assertTrue("Not all keys in store were a hit", numberOfHits > 0);
 	}
 
+	@Test
 	public void testRAMStore_newFormat() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		checkRAMStore(true);
 	}
 
+	@Test
 	public void testRAMStore_oldFormat() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		checkRAMStore(false);
 	}
@@ -187,6 +193,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		assertEquals(test, data);
 	}
 
+	@Test
 	public void testRAMStoreOldBlocks() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
 		RAMFreenetStore<CHKBlock> ramFreenetStore = new RAMFreenetStore<CHKBlock>(store, 10);
@@ -214,21 +221,23 @@ public class RAMSaltMigrationTest extends TestCase {
 		assertEquals(test, data);
 	}
 
+	@Test
 	public void testSaltedStore_oldFormat()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
-		checkSaltedStore(false);
+		checkSaltedStore(false, "testSaltedStore_oldFormat");
 	}
 
+	@Test
 	public void testSaltedStore_newFormat()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
-		checkSaltedStore(true);
+		checkSaltedStore(true, "testSaltedStore_newFormat");
 	}
 
-	public void checkSaltedStore(boolean newFormat)
+	public void checkSaltedStore(boolean newFormat, String testName)
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
 
-		File f = getTempStoreFile();
+		File f = getStorePath(testName);
 		try (SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG,
 				10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null)) {
 			saltStore.start(null, true);
@@ -249,14 +258,14 @@ public class RAMSaltMigrationTest extends TestCase {
 		}
 	}
 
-	private void innerTestSaltedStoreWithClose(int persistenceTime, int delay)
+	private void innerTestSaltedStoreWithClose(int persistenceTime, int delay, String testName)
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		ResizablePersistentIntBuffer.setPersistenceTime(persistenceTime);
 
 		int keycount = 5;
 
 		CHKStore store = new CHKStore();
-		File f = getTempStoreFile();
+		File f = getStorePath(testName);
 		List<String> dummyValueActuallyStoredList = new ArrayList<String>(keycount);
 		List<ClientCHKBlock> blockActuallyStoredList = new ArrayList<ClientCHKBlock>(keycount);
 		try (SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG,
@@ -304,10 +313,10 @@ public class RAMSaltMigrationTest extends TestCase {
 	}
 
 	private void innerTestSaltedStoreSlotFilterWithAbort(int persistenceTime, int delay, boolean expectFailure,
-			boolean forceValidEmpty) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+			boolean forceValidEmpty, String testName) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		ResizablePersistentIntBuffer.setPersistenceTime(persistenceTime);
 
-		File f = getTempStoreFile();
+		File f = getStorePath(testName);
 
 		CHKStore store = new CHKStore();
 		try (SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG,
@@ -319,7 +328,11 @@ public class RAMSaltMigrationTest extends TestCase {
 
 			checkBlocks(store, true, false);
 
-			sleep(delay);
+			try {
+				Thread.sleep(delay);
+			} catch (InterruptedException e) {
+			}
+	
 		}
 
 		store = new CHKStore();
@@ -333,91 +346,99 @@ public class RAMSaltMigrationTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testSaltedStoreWithClose_writeImmediately()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		// Write straight through should work.
-		innerTestSaltedStoreWithClose(-1, 0);
+		innerTestSaltedStoreWithClose(-1, 0, "testSaltedStoreWithClose_writeImmediately");
 	}
 
+	@Test
 	public void testSaltedStoreWithClose_writeOnShotdown()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		// Write on shutdown should work.
-		innerTestSaltedStoreWithClose(0, 0);
+		innerTestSaltedStoreWithClose(0, 0, "testSaltedStoreWithClose_writeOnShotdown");
 	}
 
+	@Test
 	public void testSaltedStoreWithClose_waitLongerThanPersistenceTime()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		// Shorter interval than delay should work.
-		innerTestSaltedStoreWithClose(1000, 2000);
+		innerTestSaltedStoreWithClose(1000, 2000, "testSaltedStoreWithClose_waitLongerThanPersistenceTime");
 	}
 
+	@Test
 	public void testSaltedStoreWithClose_noWaitWithPersincenceTime_relayOnClose()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		// Longer interval than delay should work (write on shutdown).
-		innerTestSaltedStoreWithClose(5000, 0);
+		innerTestSaltedStoreWithClose(5000, 0, "testSaltedStoreWithClose_noWaitWithPersincenceTime_relayOnClose");
 	}
 
 	public void innerTestSaltedStoreSlotFilterWithAbort_writeImmediately()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		// Write straight through should work even with abort.
-		innerTestSaltedStoreSlotFilterWithAbort(-1, 0, false, false);
+		innerTestSaltedStoreSlotFilterWithAbort(-1, 0, false, false, "innerTestSaltedStoreSlotFilterWithAbort_writeImmediately");
 	}
 
 	public void innerTestSaltedStoreSlotFilterWithAbort_waitLongerThanPersistenceTime()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		// Shorter interval than delay should work.
-		innerTestSaltedStoreSlotFilterWithAbort(1000, 2000, false, false);
+		innerTestSaltedStoreSlotFilterWithAbort(1000, 2000, false, false, "innerTestSaltedStoreSlotFilterWithAbort_waitLongerThanPersistenceTime");
 	}
 
 	public void innerTestSaltedStoreSlotFilterWithAbort_noWaitWithPersincenceTime_slotsUnknown()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		// Even this should work, because the slots still say unknown.
-		innerTestSaltedStoreSlotFilterWithAbort(5000, 0, false, false);
+		innerTestSaltedStoreSlotFilterWithAbort(5000, 0, false, false, "innerTestSaltedStoreSlotFilterWithAbort_noWaitWithPersincenceTime_slotsUnknown");
 	}
 
 	public void innerTestSaltedStoreSlotFilterWithAbort_noWaitWithPersincenceTime_forceKownEmpty_fails()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		// However if we set the unknown slots to known empty, it should fail.
-		innerTestSaltedStoreSlotFilterWithAbort(5000, 0, true, true);
+		innerTestSaltedStoreSlotFilterWithAbort(5000, 0, true, true, "innerTestSaltedStoreSlotFilterWithAbort_noWaitWithPersincenceTime_forceKownEmpty_fails");
 	}
 
 	public void innerTestSaltedStoreSlotFilterWithAbort_writeImmediately_forceKownEmptz()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		// But if we do the same thing while giving it enough time to write, it should
 		// work.
-		innerTestSaltedStoreSlotFilterWithAbort(-1, 0, false, true);
+		innerTestSaltedStoreSlotFilterWithAbort(-1, 0, false, true, "innerTestSaltedStoreSlotFilterWithAbort_writeImmediately_forceKownEmptz");
 	}
 
+	@Test
 	public void testSaltedStoreWithClose_withPersincenceTimeAndLongerWait_forceKownEmpty()
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		// But if we do the same thing while giving it enough time to write, it should
 		// work.
-		innerTestSaltedStoreSlotFilterWithAbort(1000, 2000, false, true);
+		innerTestSaltedStoreSlotFilterWithAbort(1000, 2000, false, true, "testSaltedStoreWithClose_withPersincenceTimeAndLongerWait_forceKownEmpty");
 	}
 
+	@Test
 	public void testSaltedStoreOldBlock_noSlotFilters_bloomZero()
 			throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
-		checkSaltedStoreOldBlocks(5, 10, 0, false);
+		checkSaltedStoreOldBlocks(5, 10, 0, false, "testSaltedStoreOldBlock_noSlotFilters_bloomZero");
 	}
 
+	@Test
 	public void testSaltedStoreOldBlock_noSlotFilters_bloom50()
 			throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
-		checkSaltedStoreOldBlocks(5, 10, 50, false);
+		checkSaltedStoreOldBlocks(5, 10, 50, false, "testSaltedStoreOldBlock_noSlotFilters_bloom50");
 	}
 
+	@Test
 	public void testSaltedStoreOldBlock_withSlotFilters_bloomZero()
 			throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
-		checkSaltedStoreOldBlocks(5, 10, 0, true);
+		checkSaltedStoreOldBlocks(5, 10, 0, true, "testSaltedStoreOldBlock_withSlotFilters_bloomZero");
 	}
 
-	public void checkSaltedStoreOldBlocks(int keycount, int size, int bloomSize, boolean useSlotFilter)
+	public void checkSaltedStoreOldBlocks(int keycount, int size, int bloomSize, boolean useSlotFilter, String testName)
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		int delay = 1000;
 		ResizablePersistentIntBuffer.setPersistenceTime(delay);
 
 		CHKStore store = new CHKStore();
 
-		File f = getTempStoreFile();
+		File f = getStorePath(testName);
 		try (SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG,
 				size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null)) {
 			
@@ -456,45 +477,51 @@ public class RAMSaltMigrationTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testSaltedStoreResize_noUseSlotFilter_writeImmediately_noAbort_openNewSize()
 			throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
-		checkSaltedStoreResize(5, 10, 20, false, -1, false, true);
+		checkSaltedStoreResize(5, 10, 20, false, -1, false, true, "testSaltedStoreResize_noUseSlotFilter_writeImmediately_noAbort_openNewSize");
 	}
 
+	@Test
 	public void testSaltedStoreResize_useSlotFilter_writeImmediately_noAbort_openNewSize()
 			throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
-		checkSaltedStoreResize(5, 10, 20, true, -1, false, true);
+		checkSaltedStoreResize(5, 10, 20, true, -1, false, true, "testSaltedStoreResize_useSlotFilter_writeImmediately_noAbort_openNewSize");
 	}
 
+	@Test
 	public void testSaltedStoreResize_useSlotFilter_1h_noAbort_openNewSize()
 			throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
 		// Will write to disk on shutdown.
-		checkSaltedStoreResize(5, 10, 20, true, 60000, false, true);
+		checkSaltedStoreResize(5, 10, 20, true, 60000, false, true, "testSaltedStoreResize_useSlotFilter_1h_noAbort_openNewSize");
 	}
 
+	@Test
 	public void testSaltedStoreResize_useSlotFilter_1h_noAbort_noOpenNewSize()
 			throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
 		// Using the old size causes it to resize on startup back to the old size. This
 		// needs testing too, and revealed some odd bugs.
-		checkSaltedStoreResize(5, 10, 20, true, 60000, false, false);
+		checkSaltedStoreResize(5, 10, 20, true, 60000, false, false, "testSaltedStoreResize_useSlotFilter_1h_noAbort_noOpenNewSize");
 	}
 
+	@Test
 	public void testSaltedStoreResize_useSlotFilter_1h_abort_openNewSize()
 			throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
 		// It will force to disk after resizing, so should still work even with a long
 		// write time.
-		checkSaltedStoreResize(5, 10, 20, true, 60000, true, true);
+		checkSaltedStoreResize(5, 10, 20, true, 60000, true, true, "testSaltedStoreResize_useSlotFilter_1h_abort_openNewSize");
 	}
 
+	@Test
 	public void testSaltedStoreResize_useSlotFilter_1h_abort_noOpenNewSize()
 			throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
-		checkSaltedStoreResize(5, 10, 20, true, 60000, true, false);
+		checkSaltedStoreResize(5, 10, 20, true, 60000, true, false, "testSaltedStoreResize_useSlotFilter_1h_abort_noOpenNewSize");
 	}
 
 	public void checkSaltedStoreResize(int keycount, int size, int newSize, boolean useSlotFilter, int persistenceTime,
-			boolean abort, boolean openNewSize)
+			boolean abort, boolean openNewSize, String testName)
 			throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
-		File f = getTempStoreFile();
+		File f = getStorePath(testName);
 
 		ResizablePersistentIntBuffer.setPersistenceTime(persistenceTime);
 
@@ -531,6 +558,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testMigrate() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
 		RAMFreenetStore<CHKBlock> ramStore = new RAMFreenetStore<CHKBlock>(store, 10);
@@ -548,7 +576,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		assertEquals(test, data);
 
 		CHKStore newStore = new CHKStore();
-		File f = getTempStoreFile();
+		File f = getStorePath("testMigrate");
 		try (SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "teststore", newStore,
 				weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null)) {
 			saltStore.start(null, true);
@@ -561,6 +589,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testMigrateKeyed() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
 		RAMFreenetStore<CHKBlock> ramStore = new RAMFreenetStore<CHKBlock>(store, 10);
@@ -581,7 +610,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		strongPRNG.nextBytes(storeKey);
 
 		CHKStore newStore = new CHKStore();
-		File f = getTempStoreFile();
+		File f = getStorePath("testMigrateKeyed");
 		try (SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "teststore", newStore,
 				weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, storeKey)) {
 			saltStore.start(null, true);
