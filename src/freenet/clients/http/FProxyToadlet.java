@@ -998,9 +998,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				headers.containsKey("X-Forwarded-Proto")
 						? headers.get("X-Forwarded-Proto")
 				    : uriScheme != null && !uriScheme.trim().isEmpty() ? uriScheme : "http");
-		String host = forwarded.getOrDefault("proto",
-				headers.containsKey("X-Forwarded-For")
-						? headers.get("X-Forwarded-For")
+		String host = forwarded.getOrDefault("host",
+				headers.containsKey("X-Forwarded-Host")
+						? headers.get("X-Forwarded-Host")
 				    : uriHost != null && !uriHost.trim().isEmpty() ? uriHost : headers.get("host"));
 		return protocol + "://" + host;
 	}
