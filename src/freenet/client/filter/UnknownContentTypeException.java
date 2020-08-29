@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
-import freenet.client.FetchException;
 import freenet.client.FetchException.FetchExceptionMode;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;

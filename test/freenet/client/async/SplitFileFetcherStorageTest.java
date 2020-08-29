@@ -33,7 +33,6 @@ import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
-import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItemKey;
 import freenet.support.CheatingTicker;
 import freenet.support.DummyJobRunner;

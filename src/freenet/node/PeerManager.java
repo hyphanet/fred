@@ -15,7 +15,6 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,16 +30,11 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
-import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
-import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.DroppedOldPeersUserAlert;
 import freenet.node.useralerts.PeerManagerUserAlert;
-import freenet.node.useralerts.SimpleUserAlert;
-import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
-import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
@@ -1107,7 +1101,7 @@ public class PeerManager {
 						leastRecentlyTimedOutBackedOffDistance = diff;
 					}
 			if(addUnpickedLocsTo != null && !chosen) {
-				Double d = new Double(loc);
+				Double d = loc;
 				// Here we can directly compare double's because they aren't processed in any way, and are finite and (probably) nonzero.
 				if(!addUnpickedLocsTo.contains(d))
 					addUnpickedLocsTo.add(d);
@@ -1240,7 +1234,7 @@ public class PeerManager {
 			if(addUnpickedLocsTo != null)
 				//Add the location which we did not pick, if it exists.
 				if(closestNotBackedOff != null && closestBackedOff != null)
-					addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
+					addUnpickedLocsTo.add(closestBackedOff.getLocation());
 					
 		}
 		

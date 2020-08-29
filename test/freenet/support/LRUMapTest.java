@@ -134,8 +134,8 @@ public class LRUMapTest extends TestCase {
 	public void testPushSameKey() {
 		LRUMap<Object, Object> methodLRUht = createSampleHashTable(sampleElemsNumber);
 		Object[][] sampleObj = {
-				{ new Integer(sampleElemsNumber), new Object() }, 
-				{ new Integer(sampleElemsNumber+1), new Object() } };
+				{ sampleElemsNumber, new Object() }, 
+				{ sampleElemsNumber + 1, new Object() } };
 		
 		methodLRUht.push(sampleObj[0][0],sampleObj[0][1]);
 		methodLRUht.push(sampleObj[1][0],sampleObj[1][1]);

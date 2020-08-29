@@ -58,6 +58,14 @@ task buildInfo {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+tasks.withType(Javadoc) {
+    options.encoding = "UTF-8"
+}
+
 task compileVersion (type: JavaCompile) {
     copy {
         from sourceSets.main.java.srcDirs
@@ -81,16 +89,14 @@ processResources.dependsOn compileVersion
 task jar (type: Jar, overwrite: true) {
     from (compileVersion) {
         include 'freenet/node/Version**class'
-	preserveFileTimestamps = false
-        reproducibleFileOrder = true
     }
     from ("${buildDir}/classes/java/main/") {
         exclude 'freenet/node/Version.class'
         exclude 'freenet/node/Version$1.class'
-        preserveFileTimestamps = false
-        reproducibleFileOrder = true
     }
-    duplicatesStrategy = "exclude"
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+    duplicatesStrategy = "warn"
     archivesBaseName = "freenet"
     manifest {
         attributes("Permissions": "all-permissions")

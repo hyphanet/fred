@@ -1,6 +1,7 @@
 package freenet.store.caching;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -28,6 +29,10 @@ public class CachingFreenetStore<T extends StorableBlock> extends ProxyFreenetSt
     private static volatile boolean logMINOR;
  
 	private boolean shuttingDown; /* If this flag is true, we don't accept puts anymore */
+	/***
+	 * True if close() has been called
+	 */
+	private AtomicBoolean closeCalled = new AtomicBoolean(false);
 	private final LRUMap<ByteArrayWrapper, Block<T>> blocksByRoutingKey;
 	private final StoreCallback<T> callback;
 	private final boolean collisionPossible;
@@ -219,8 +224,10 @@ public class CachingFreenetStore<T extends StorableBlock> extends ProxyFreenetSt
 
 	@Override
 	public void close() {
-		innerClose();
-		backDatastore.close();
+		if( closeCalled.compareAndSet(false, true)) {
+			innerClose();
+			backDatastore.close();
+		}
 	}
 
 	/** Close this store but not the underlying store. */

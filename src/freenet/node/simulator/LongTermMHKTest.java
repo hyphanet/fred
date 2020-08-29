@@ -30,7 +30,6 @@ import freenet.node.Version;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
-import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
