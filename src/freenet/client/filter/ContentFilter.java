@@ -279,7 +279,6 @@ public class ContentFilter {
 
 		int idx = type.indexOf(';');
 		if(idx != -1) {
-			// TODO: extract into parseHeaderOptions method, also needed for the Forwarded header.
 			options = type.substring(idx+1);
 			type = type.substring(0, idx);
 			// Parse options
