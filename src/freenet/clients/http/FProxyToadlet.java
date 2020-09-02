@@ -991,48 +991,16 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	private String getSchemeHostAndPort(ToadletContext ctx) {
 		MultiValueTable<String, String> headers = ctx.getHeaders();
-		Map<String, String> forwarded = parseForwardedHeader(headers.get("Forwarded"));
+		// TODO: parse the Forwarded header, too. Skipped here to reduce the scope.
 		String uriScheme = ctx.getUri().getScheme();
 		String uriHost = ctx.getUri().getHost();
-		String protocol = forwarded.getOrDefault("proto",
-				headers.containsKey("X-Forwarded-Proto")
+		String protocol = headers.containsKey("X-Forwarded-Proto")
 						? headers.get("X-Forwarded-Proto")
-				    : uriScheme != null && !uriScheme.trim().isEmpty() ? uriScheme : "http");
-		String host = forwarded.getOrDefault("host",
-				headers.containsKey("X-Forwarded-Host")
+				    : uriScheme != null && !uriScheme.trim().isEmpty() ? uriScheme : "http";
+		String host = headers.containsKey("X-Forwarded-Host")
 						? headers.get("X-Forwarded-Host")
-				    : uriHost != null && !uriHost.trim().isEmpty() ? uriHost : headers.get("host"));
+				    : uriHost != null && !uriHost.trim().isEmpty() ? uriHost : headers.get("host");
 		return protocol + "://" + host;
-	}
-
-	private Map<String, String> parseForwardedHeader(String forwarded) {
-		if (forwarded == null || forwarded.trim().isEmpty()) {
-			return new HashMap<>();
-		}
-		Map<String, String> headerParams = new HashMap<>();
-
-		// if a multi-value header is given, only use the first value.
-		int indexOfComma = forwarded.indexOf(',');
-		if (indexOfComma != -1) {
-			forwarded = forwarded.substring(0, indexOfComma);
-		}
-		boolean hasAtLeastOneKey = forwarded.indexOf('=') != -1;
-		boolean hasMultipleKeys = forwarded.indexOf(';') != -1;
-		String[] fields;
-		if (hasMultipleKeys) {
-			fields = forwarded.split(";");
-		} else if (hasAtLeastOneKey) {
-			fields = new String[]{ forwarded };
-		} else {
-			return headerParams;
-		}
-		for (String field : fields) {
-			if (field.indexOf('=') != 1) {
-				String[] keyAndValue = field.split("=");
-				headerParams.put(keyAndValue[0], keyAndValue[1]);
-			}
-		}
-		return headerParams;
 	}
 
 	private boolean isBrowser(String ua) {
