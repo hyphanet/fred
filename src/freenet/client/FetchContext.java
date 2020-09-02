@@ -5,6 +5,7 @@ package freenet.client;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashSet;
@@ -418,7 +419,12 @@ public class FetchContext implements Cloneable, Serializable {
         cooldownRetries = dis.readInt();
         cooldownTime = dis.readLong();
         ignoreUSKDatehints = dis.readBoolean();
-        s = dis.readUTF();
+        try {
+          s = dis.readUTF();
+        } catch (EOFException e) {
+          // input stream reached EOF, so it must have been and old version without scehmeHostAndPort.
+          s = "";
+        }
         if(s.equals(""))
           schemeHostAndPort = null;
         else
