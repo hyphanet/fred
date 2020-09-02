@@ -24,7 +24,6 @@ public class M3UFilterTest extends TestCase {
 
     public void testSuiteTest() throws IOException {
         M3UFilter filter = new M3UFilter();
-        List<String> unreadableFiles = new ArrayList<>();
 
         for (String[] test : testPlaylists) {
             String original = test[0];
@@ -35,16 +34,14 @@ public class M3UFilterTest extends TestCase {
             try {
                 ibo = resourceToBucket(original);
             } catch (IOException e) {
-                System.out.println(original + " not found, test skipped");
-                unreadableFiles.add(original);
-                continue;
+                System.out.println(original + " not found");
+                throw e;
             }
             try {
                 ibc = resourceToBucket(correct);
             } catch (IOException e) {
-                System.out.println(correct + " not found, test skipped");
-                unreadableFiles.add(correct);
-                continue;
+                System.out.println(correct + " not found");
+                throw e;
             }
 
             try {
@@ -59,7 +56,6 @@ public class M3UFilterTest extends TestCase {
                 assertTrue("Creating URI from BASE_URI " + BASE_URI + " failed", false);
             }
         }
-        assertTrue("All files should be readable, but at least " + unreadableFiles.size() + " files could not be read: " + unreadableFiles.toString(), unreadableFiles.isEmpty());
     }
 
     protected ArrayBucket resourceToBucket(String filename) throws IOException {
