@@ -3,6 +3,7 @@ package freenet.clients.http.utils;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -17,7 +18,8 @@ public class UriFilterProxyHeaderParser {
         Option<?> fProxyBindToConfig,
         String uriScheme,
         String uriHost,
-        MultiValueTable<String, String> headers
+        MultiValueTable<String, String> headers,
+        Map<String, String> forwarded
         ) {
         Set<String> safeProtocols = new HashSet<>(Arrays.asList("http", "https"));
 
@@ -38,14 +40,13 @@ public class UriFilterProxyHeaderParser {
         safeHosts.addAll(safeHosts.stream()
                          .map(host -> host + ":" + port)
                          .collect(Collectors.toList()));
-
         // check uri host and headers
-        String protocol = headers.containsKey("x-forwarded-proto")
+        String protocol = forwarded.getOrDefault("proto", headers.containsKey("x-forwarded-proto")
             ? headers.get("x-forwarded-proto")
-            : uriScheme != null && !uriScheme.trim().isEmpty() ? uriScheme : "http";
-        String host = headers.containsKey("x-forwarded-host")
+            : uriScheme != null && !uriScheme.trim().isEmpty() ? uriScheme : "http");
+        String host = forwarded.getOrDefault("host", headers.containsKey("x-forwarded-host")
             ? headers.get("x-forwarded-host")
-            : uriHost != null && !uriHost.trim().isEmpty() ? uriHost : headers.get("host");
+            : uriHost != null && !uriHost.trim().isEmpty() ? uriHost : headers.get("host"));
         // check allow list
         if (!safeProtocols.contains(protocol)) {
             protocol = "http";

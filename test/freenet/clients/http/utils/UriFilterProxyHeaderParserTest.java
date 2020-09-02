@@ -2,11 +2,11 @@ package freenet.clients.http.utils;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.HashMap;
+
 import org.junit.Test;
 
 import freenet.config.Config;
-import freenet.config.InvalidConfigValueException;
-import freenet.config.NodeNeedRestartException;
 import freenet.config.StringOption;
 import freenet.support.MultiValueTable;
 import freenet.support.api.StringCallback;
@@ -287,7 +287,8 @@ public class UriFilterProxyHeaderParserTest {
         fakeBindToOption(fProxyBindTo),
         uriScheme,
         uriHost,
-        headers)
+        headers,
+        new HashMap<>())
         .toString();
     assertTrue(
         String.format(
