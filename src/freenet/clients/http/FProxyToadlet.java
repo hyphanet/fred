@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
@@ -986,16 +987,38 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	}
 
 	private String getSchemeHostAndPort(ToadletContext ctx) {
+		Set<String> safeProtocols = new HashSet<>(Arrays.asList("http", "https"));
+		// allow all bindToHosts
+		SubConfig fProxyConfig = core.node.config.get("fproxy");
+		List<String> bindToHosts = Arrays.asList(
+				fProxyConfig.getString("bindTo").split(",")).stream()
+				.map(host -> host.contains(":") ? "[" + host + "]" : host)
+				.collect(Collectors.toList());
+		String firstBindToHost = bindToHosts.get(0);
+		Set<String> safeHosts = new HashSet<>(bindToHosts);
+		String fProxyPort = String.valueOf(fProxyConfig.getInt("port"));
+		// also allow bindTo hosts with the fProxyPort added
+		safeHosts.addAll(safeHosts.stream()
+				.map(host -> host + ":" + fProxyPort)
+				.collect(Collectors.toList()));
+		// check uri host and headers
 		MultiValueTable<String, String> headers = ctx.getHeaders();
 		// TODO: parse the Forwarded header, too. Skipped here to reduce the scope.
 		String uriScheme = ctx.getUri().getScheme();
 		String uriHost = ctx.getUri().getHost();
-		String protocol = headers.containsKey("X-Forwarded-Proto")
-						? headers.get("X-Forwarded-Proto")
+		String protocol = headers.containsKey("x-forwarded-proto")
+						? headers.get("x-forwarded-proto")
 				    : uriScheme != null && !uriScheme.trim().isEmpty() ? uriScheme : "http";
-		String host = headers.containsKey("X-Forwarded-Host")
-						? headers.get("X-Forwarded-Host")
+		String host = headers.containsKey("x-forwarded-host")
+						? headers.get("x-forwarded-host")
 				    : uriHost != null && !uriHost.trim().isEmpty() ? uriHost : headers.get("host");
+		// check allow list
+		if (!safeProtocols.contains(protocol)) {
+			protocol = "http";
+		}
+		if (!safeHosts.contains(host)) {
+			host = firstBindToHost + ":" + fProxyPort;
+		}
 		return protocol + "://" + host;
 	}
 
