@@ -217,8 +217,8 @@ copyRuntimeLibs.dependsOn jar
 // In this section you declare the dependencies for your production and test code
 dependencies {
     compile "org.bouncycastle:bcprov-jdk15on:1.59"
-    compile "net.java.dev.jna:jna:4.5.2@aar"
-    compile "net.java.dev.jna:jna-platform:4.5.2"
+    implementation "net.java.dev.jna:jna:4.5.2"
+    implementation "net.java.dev.jna:jna-platform:4.5.2"
     compile "org.apache.commons:commons-compress:1.4.1"
     compile "tanukisoft:wrapper:3.2.3"
 
@@ -244,8 +244,6 @@ dependencyVerification {
     includedConfigurations = [configurations.testCompile]
     verify = [
         'org.bouncycastle:bcprov-jdk15on:1c31e44e331d25e46d293b3e8ee2d07028a67db011e74cb2443285aed1d59c85',
-        'net.java.dev.jna:jna-platform:f1d00c167d8921c6e23c626ef9f1c3ae0be473c95c68ffa012bc7ae55a87e2d6',
-        'net.java.dev.jna:jna:3c4cbe8c023ff7ae27dd82cff25d5a9f339cfad18ecdeca382f181b619bc2945',
         'org.apache.commons:commons-compress:28a00d80716f073d644b9da76e94b5e8ff94de8e9323f06f558fba653fcf5f86',
         'tanukisoft:wrapper:54de7b6be77955fe54821efc28fcab2bd195cc2aabfceb29d608c12206a57918',
         'com.github.freenet-mobile:onion-fec:7f68d901b4d92ac31b8edf51710381a8de7285257b5adeb88f40a52006a9bd2b',
