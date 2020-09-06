@@ -123,9 +123,9 @@ public class OfficialPlugins {
 					.loadedFrom("USK@QeTBVWTwBldfI-lrF~xf0nqFVDdQoSUghT~PvhyJ1NE,OjEywGD063La2H-IihD7iYtZm3rC0BP6UTvvwyF5Zh4,AQACAAE/WebOfTrustTesting.jar/17");
 			addPlugin("FlogHelper")
 					.inGroup("communication")
-					.minimumVersion(35)
+					.minimumVersion(36)
 					.usesXml()
-					.loadedFrom("CHK@3Ht6otYHogKxa1Z8SC0hz46kV9q1qaSBsjbJxuwPosU,txky3jF33oWU9n6YiGMphiHA1V9q3i4ZN0VPtgElSaI,AAMC--8/FlogHelper-v35.jar");
+					.loadedFrom("CHK@vk9NRGTCBqOzQs2S~PhlJCAf3uYmoMguNB5a5fx3wC4,bx8ewRk-OJPwXOj5P1PXUxuuK7ZxuNLHXsMJJH9xuVg,AAMC--8/FlogHelper.jar");
 			addPlugin("Sharesite")
 					.inGroup("communication")
 					.recommendedVersion(4)
