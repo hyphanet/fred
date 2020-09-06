@@ -52,7 +52,7 @@ public class OfficialPlugins {
 			addPlugin("KeyUtils")
 					.inGroup("technical")
 					.minimumVersion(5026)
-					.loadedFrom("CHK@VGVmYp8qGseh2S7irYSDS7f6Goy0Z7rZcOc-iiQVPXg,Q4VeVf0fhdfejLqXrSYY5TK76f37D34Ly3Npv5X1GMA,AAMC--8/KeyUtils-v5026.jar")
+					.loadedFrom("CHK@xNGn1TII3fcM~qjKpWCT3UsU3p4bAi5x1~39XfoO1kg,dgqqLN5HACdXAT2z78qdL7Ktxg37gnbxsC5VM17bJW0,AAMC--8/freenet-KeyUtils.jar")
 					.advanced();
 			addPlugin("MDNSDiscovery")
 					.inGroup("connectivity")
