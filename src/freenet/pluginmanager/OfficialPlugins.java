@@ -51,8 +51,8 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@Zgib8xrGxcEuix7AVB4eajton1FpNHbIJeQZgEbHMNU,BQekU261VLSDUBQPOHSMKUF5qxY1v0zjXa33RyoEbYk,AAMC--8/JSTUN.jar");
 			addPlugin("KeyUtils")
 					.inGroup("technical")
-					.minimumVersion(5026)
-					.loadedFrom("CHK@xNGn1TII3fcM~qjKpWCT3UsU3p4bAi5x1~39XfoO1kg,dgqqLN5HACdXAT2z78qdL7Ktxg37gnbxsC5VM17bJW0,AAMC--8/freenet-KeyUtils.jar")
+					.minimumVersion(5027)
+					.loadedFrom("CHK@EB2-RzJ~AgqJ3LhnXOdsHyXFmLfFvVVCek4SYmN58pk,SDDRbNWVfqOYokCKMOsnWkvHbMAfVt-qkbsLOzrP5zg,AAMC--8/freenet-KeyUtils.jar")
 					.advanced();
 			addPlugin("KeepAlive")
 					.inGroup("file-transfer")
