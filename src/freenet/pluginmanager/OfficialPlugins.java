@@ -54,6 +54,9 @@ public class OfficialPlugins {
 					.minimumVersion(5026)
 					.loadedFrom("CHK@xNGn1TII3fcM~qjKpWCT3UsU3p4bAi5x1~39XfoO1kg,dgqqLN5HACdXAT2z78qdL7Ktxg37gnbxsC5VM17bJW0,AAMC--8/freenet-KeyUtils.jar")
 					.advanced();
+			addPlugin("KeepAlive")
+					.inGroup("file-transfer")
+					.loadedFrom("CHK@bT1sdJ8VC0QT80kcefY95FYHEaqrHLlWVYgMX2bqeHg,AnvF8F7T9nJP8DY4snYsNJwz1np5JG73OaXeHJUqyZw,AAMC--8/plugin-KeepAlive.jar ");
 			addPlugin("MDNSDiscovery")
 					.inGroup("connectivity")
 					.minimumVersion(2)
