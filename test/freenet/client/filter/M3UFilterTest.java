@@ -31,18 +31,8 @@ public class M3UFilterTest extends TestCase {
             Bucket ibo;
             Bucket ibprocessed = new ArrayBucket();
             Bucket ibc;
-            try {
-                ibo = resourceToBucket(original);
-            } catch (IOException e) {
-                System.out.println(original + " not found");
-                throw e;
-            }
-            try {
-                ibc = resourceToBucket(correct);
-            } catch (IOException e) {
-                System.out.println(correct + " not found");
-                throw e;
-            }
+            ibo = resourceToBucket(original);
+            ibc = resourceToBucket(correct);
 
             try {
                 filter.readFilter(ibo.getInputStream(), ibprocessed.getOutputStream(), "UTF-8", null,
@@ -60,7 +50,7 @@ public class M3UFilterTest extends TestCase {
 
     protected ArrayBucket resourceToBucket(String filename) throws IOException {
         InputStream is = getClass().getResourceAsStream(filename);
-        if (is == null) throw new java.io.FileNotFoundException();
+        if (is == null) throw new java.io.FileNotFoundException(filename);
         ArrayBucket ab = new ArrayBucket();
         BucketTools.copyFrom(ab, is, Long.MAX_VALUE);
         return ab;
