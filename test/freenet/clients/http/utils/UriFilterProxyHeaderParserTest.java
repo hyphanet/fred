@@ -29,6 +29,7 @@ public class UriFilterProxyHeaderParserTest extends TestCase {
         {"8888", "127.0.0.1", "", "", MultiValueTable.from(new String[] {}, new String[] {}), "http://127.0.0.1:8888"},
         // empty arguments result in plain http:// prefix
         {"", "", "", "", MultiValueTable.from(new String[] {}, new String[] {}), "http://127.0.0.1:8888"},
+        {"", "", null, null, MultiValueTable.from(new String[] {}, new String[] {}), "http://127.0.0.1:8888"},
         // sanity checks for defaults
         {"8888", "", "", "", MultiValueTable.from(new String[] {}, new String[] {}), "http://127.0.0.1:8888"},
         {"", "127.0.0.1", "", "", MultiValueTable.from(new String[] {}, new String[] {}), "http://127.0.0.1:8888"},
