@@ -42,6 +42,7 @@ import freenet.clients.http.ajaxpush.PushNotificationToadlet;
 import freenet.clients.http.ajaxpush.PushTesterToadlet;
 import freenet.clients.http.updateableelements.ProgressBarElement;
 import freenet.clients.http.updateableelements.ProgressInfoElement;
+import freenet.clients.http.utils.UriFilterProxyHeaderParser;
 import freenet.config.Config;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
@@ -987,39 +988,20 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	}
 
 	private String getSchemeHostAndPort(ToadletContext ctx) {
-		Set<String> safeProtocols = new HashSet<>(Arrays.asList("http", "https"));
-		// allow all bindToHosts
+		// retrieve config from froxy
 		SubConfig fProxyConfig = core.node.config.get("fproxy");
-		List<String> bindToHosts = Arrays.asList(
-				fProxyConfig.getString("bindTo").split(",")).stream()
-				.map(host -> host.contains(":") ? "[" + host + "]" : host)
-				.collect(Collectors.toList());
-		String firstBindToHost = bindToHosts.get(0);
-		Set<String> safeHosts = new HashSet<>(bindToHosts);
+
 		String fProxyPort = String.valueOf(fProxyConfig.getInt("port"));
-		// also allow bindTo hosts with the fProxyPort added
-		safeHosts.addAll(safeHosts.stream()
-				.map(host -> host + ":" + fProxyPort)
-				.collect(Collectors.toList()));
-		// check uri host and headers
+		String fProxyBindTo = fProxyConfig.getString("bindTo");
+
+		// get uri host and headers
 		MultiValueTable<String, String> headers = ctx.getHeaders();
 		// TODO: parse the Forwarded header, too. Skipped here to reduce the scope.
 		String uriScheme = ctx.getUri().getScheme();
 		String uriHost = ctx.getUri().getHost();
-		String protocol = headers.containsKey("x-forwarded-proto")
-						? headers.get("x-forwarded-proto")
-				    : uriScheme != null && !uriScheme.trim().isEmpty() ? uriScheme : "http";
-		String host = headers.containsKey("x-forwarded-host")
-						? headers.get("x-forwarded-host")
-				    : uriHost != null && !uriHost.trim().isEmpty() ? uriHost : headers.get("host");
-		// check allow list
-		if (!safeProtocols.contains(protocol)) {
-			protocol = "http";
-		}
-		if (!safeHosts.contains(host)) {
-			host = firstBindToHost + ":" + fProxyPort;
-		}
-		return protocol + "://" + host;
+
+		return new UriFilterProxyHeaderParser(fProxyPort, fProxyBindTo, uriScheme, uriHost, headers)
+				.getSchemeHostAndPort();
 	}
 
 	private boolean isBrowser(String ua) {
