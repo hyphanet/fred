@@ -102,8 +102,8 @@ public class ImageCreatorToadlet extends Toadlet {
 		return ROOT_URL;
 	}
 
-	public void specifyMaximumFontSizeThatFitsInImage(Graphics2D g2, FontRenderContext fc,
-													int imageWidth, int imageHeight, String text) {
+	void specifyMaximumFontSizeThatFitsInImage(Graphics2D g2, FontRenderContext fc,
+												int imageWidth, int imageHeight, String text) {
 		int minFontSize = 1;
 		int maxFontSize = Math.max(imageWidth, imageHeight);
 		int betweenFontSize = betweenFontSize(minFontSize, maxFontSize);
