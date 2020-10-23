@@ -271,7 +271,7 @@ public class ContentFilter {
 		String type = typeName;
 		String options = "";
 		String charset = null;
-		HashMap<String, String> otherMimeTypeParams = null;
+		HashMap<String, String> otherMimeTypeParams = new LinkedHashMap<>();
 		input = new BufferedInputStream(input);
 
 		// First parse the MIME type
@@ -294,8 +294,6 @@ public class ContentFilter {
 				if(before.equals("charset")) {
 					charset = after;
 				} else {
-					if (otherMimeTypeParams == null)
-						otherMimeTypeParams = new LinkedHashMap<String, String>();
 					otherMimeTypeParams.put(before, after);
 				}
 			}
