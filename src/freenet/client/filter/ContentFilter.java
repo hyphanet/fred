@@ -189,7 +189,7 @@ public class ContentFilter {
 	 *            Stream to write filtered data to
 	 * @param typeName
 	 *            MIME type for input data
-	 * @param hostAndPort
+	 * @param schemeHostAndPort
 	 *        HOST and PORT from the request
 	 * @param maybeCharset
 	 * 			  MIME type of the referring document, as a hint, some types,
@@ -207,11 +207,11 @@ public class ContentFilter {
 			OutputStream output,
 			String typeName,
 			URI baseURI,
-			String hostAndPort,
+			String schemeHostAndPort,
 			FoundURICallback cb,
 			TagReplacerCallback trc,
 			String maybeCharset) throws UnsafeContentTypeException, IOException {
-		return filter(input, output, typeName, baseURI, hostAndPort, cb, trc, maybeCharset, null);
+		return filter(input, output, typeName, baseURI, schemeHostAndPort, cb, trc, maybeCharset, null);
 	}
 
 	/**
