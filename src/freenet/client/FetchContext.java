@@ -425,10 +425,11 @@ public class FetchContext implements Cloneable, Serializable {
           // input stream reached EOF, so it must have been and old version without scehmeHostAndPort.
           s = "";
         }
-        if(s.equals(""))
+        if (s.equals("")) {
           schemeHostAndPort = null;
-        else
+        } else {
           schemeHostAndPort = s;
+        }
         hasOwnEventProducer = true;
         eventProducer = new SimpleEventProducer();
         blocks = null;
