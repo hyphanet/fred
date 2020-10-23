@@ -33,8 +33,7 @@ public class UriFilterProxyHeaderParser {
     public String getSchemeHostAndPort() {
         Set<String> safeProtocols = new HashSet<>(Arrays.asList("http", "https"));
 
-        List<String> bindToHosts = Arrays.asList(
-                                                 fProxyBindToConfig.split(",")).stream()
+        List<String> bindToHosts = Arrays.asList(fProxyBindToConfig.split(",")).stream()
             .map(host -> host.contains(":") ? "[" + host + "]" : host)
             .collect(Collectors.toList());
         String firstBindToHost = bindToHosts.get(0);

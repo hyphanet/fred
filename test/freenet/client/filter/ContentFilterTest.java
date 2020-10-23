@@ -340,8 +340,7 @@ public class ContentFilterTest extends TestCase {
 		ArrayBucket output = new ArrayBucket();
 		InputStream inputStream = input.getInputStream();
 		OutputStream outputStream = output.getOutputStream();
-		ContentFilter.filter(inputStream, outputStream, typeName, baseURI,
-        null,null, null, null);
+		ContentFilter.filter(inputStream, outputStream, typeName, baseURI,null,null, null, null);
 		inputStream.close();
 		outputStream.close();
 		returnValue = output.toString();
