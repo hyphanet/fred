@@ -52,7 +52,6 @@ public class UriFilterProxyHeaderParser {
                          .collect(Collectors.toList()));
 
         // check uri host and headers
-        // TODO: parse the Forwarded header, too. Skipped here to reduce the scope.
         String protocol = headers.containsKey("x-forwarded-proto")
             ? headers.get("x-forwarded-proto")
             : uriScheme != null && !uriScheme.trim().isEmpty() ? uriScheme : "http";

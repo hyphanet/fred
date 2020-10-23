@@ -1,8 +1,7 @@
 package freenet.support;
-import java.text.MessageFormat;
+
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Vector;
 
