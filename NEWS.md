@@ -2,6 +2,10 @@ next:
 
 - 
 
+1488:
+
+- update translations to make Freenet more inviting for people around the world: update French, add Hungarian.
+
 1487:
 
 - The windows-installer and wintray are now being built by our continuous integration system using a more secure code-signing setup. This should reduce the scary warnings on install, reduces our dependency on specific setup of the release manager, and provides earlier checks whether something in fred broke the installer.
