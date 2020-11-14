@@ -4,6 +4,10 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import freenet.config.Config;
+import freenet.config.Option;
+import freenet.config.StringOption;
+import freenet.config.SubConfig;
 import freenet.support.MultiValueTable;
 
 public class UriFilterProxyHeaderParserTest {
@@ -257,13 +261,13 @@ public class UriFilterProxyHeaderParserTest {
       String uriHost,
       MultiValueTable<String, String> headers,
       String resultUriPrefix) {
-    String schemeHostAndPort = new UriFilterProxyHeaderParser(
-        fProxyPort,
-        fProxyBindTo,
+    String schemeHostAndPort = UriFilterProxyHeaderParser.parse(
+        fakeOption(fProxyPort),
+        fakeOption(fProxyBindTo),
         uriScheme,
         uriHost,
         headers)
-        .getSchemeHostAndPort();
+        .toString();
     assertTrue(
         String.format(
             "schemeHostAndPort %s does not match expected %s; portConfig=\"%s\", bindTo=\"%s\", uriScheme=\"%s\", uriHost=\"%s\", headers=%s, expected=\"%s\"",
@@ -277,6 +281,19 @@ public class UriFilterProxyHeaderParserTest {
             resultUriPrefix),
         schemeHostAndPort.equals(resultUriPrefix));
 
+  }
+
+  private StringOption fakeOption(String value) {
+    return new StringOption(
+        new Config().createSubConfig("fake"),
+        "port",
+        value,
+        0,
+        false,
+        false,
+        null,
+        null,
+        null);
   }
 
 }

@@ -18,7 +18,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
@@ -1001,8 +1000,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		String uriScheme = ctx.getUri().getScheme();
 		String uriHost = ctx.getUri().getHost();
 
-		return new UriFilterProxyHeaderParser(fProxyPort, fProxyBindTo, uriScheme, uriHost, headers)
-				.getSchemeHostAndPort();
+		return UriFilterProxyHeaderParser.parse(fProxyPort, fProxyBindTo, uriScheme, uriHost, headers).toString();
 	}
 
 	private boolean isBrowser(String ua) {

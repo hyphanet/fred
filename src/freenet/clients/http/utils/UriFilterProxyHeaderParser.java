@@ -31,7 +31,35 @@ public class UriFilterProxyHeaderParser {
         this.headers = headers;
     }
 
-    public String getSchemeHostAndPort() {
+    public static SchemeAndHostWithPort parse (
+        Option<?> fProxyPort,
+        Option<?> fProxyBindTo,
+        String uriScheme,
+        String uriHost,
+        MultiValueTable<String, String> headers
+        ) {
+        return new UriFilterProxyHeaderParser(fProxyPort, fProxyBindTo, uriScheme, uriHost, headers)
+            .retrieveSchemeHostAndPort();
+    }
+
+    public class SchemeAndHostWithPort {
+        private final String scheme;
+        private final String host;
+
+        SchemeAndHostWithPort(
+            String scheme,
+            String host
+        ) {
+            this.scheme = scheme;
+            this.host = host;
+        }
+
+        public String toString() {
+            return scheme + "://" + host;
+        }
+    }
+
+    public SchemeAndHostWithPort retrieveSchemeHostAndPort() {
         Set<String> safeProtocols = new HashSet<>(Arrays.asList("http", "https"));
 
         List<String> bindToHosts = Arrays.stream(fProxyBindToConfig.getValueString().split(","))
@@ -64,6 +92,6 @@ public class UriFilterProxyHeaderParser {
         if (!safeHosts.contains(host)) {
             host = firstBindToHost + ":" + port;
         }
-        return protocol + "://" + host;
+        return new SchemeAndHostWithPort(protocol, host);
     }
 }
