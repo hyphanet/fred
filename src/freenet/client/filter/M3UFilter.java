@@ -133,8 +133,7 @@ public class M3UFilter implements ContentDataFilter {
                                     // strip the absolute path again,
                                     // so mirroring should not be
                                     // impaired.
-                                    filtered = cb.processURI(uriold, subMimetype,
-                                        schemeHostAndPort, true);
+                                    filtered = cb.processURI(uriold, subMimetype, schemeHostAndPort, true);
                                     // allow transparent pass through
                                     // for all but the largest files,
                                     // but not for external
