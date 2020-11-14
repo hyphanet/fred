@@ -44,6 +44,7 @@ import freenet.clients.http.updateableelements.ProgressBarElement;
 import freenet.clients.http.updateableelements.ProgressInfoElement;
 import freenet.clients.http.utils.UriFilterProxyHeaderParser;
 import freenet.config.Config;
+import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
@@ -991,8 +992,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		// retrieve config from froxy
 		SubConfig fProxyConfig = core.node.config.get("fproxy");
 
-		String fProxyPort = String.valueOf(fProxyConfig.getInt("port"));
-		String fProxyBindTo = fProxyConfig.getString("bindTo");
+		Option<?> fProxyPort = fProxyConfig.getOption("port");
+		Option<?> fProxyBindTo = fProxyConfig.getOption("bindTo");
 
 		// get uri host and headers
 		MultiValueTable<String, String> headers = ctx.getHeaders();
