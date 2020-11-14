@@ -70,7 +70,9 @@ public class UriFilterProxyHeaderParser {
         if (firstBindToHost.isEmpty()) {
             firstBindToHost = "127.0.0.1";
         }
-        String port = fProxyPortConfig.getValueString();
+        String port = fProxyPortConfig.getValueString().isEmpty()
+            ? "8888"
+            : fProxyPortConfig.getValueString();
         // allow all bindToHosts
         Set<String> safeHosts = new HashSet<>(bindToHosts);
         // also allow bindTo hosts with the fProxyPortConfig added

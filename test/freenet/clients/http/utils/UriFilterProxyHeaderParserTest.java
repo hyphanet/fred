@@ -5,10 +5,11 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import freenet.config.Config;
-import freenet.config.Option;
+import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.StringOption;
-import freenet.config.SubConfig;
 import freenet.support.MultiValueTable;
+import freenet.support.api.StringCallback;
 
 public class UriFilterProxyHeaderParserTest {
 
@@ -262,8 +263,8 @@ public class UriFilterProxyHeaderParserTest {
       MultiValueTable<String, String> headers,
       String resultUriPrefix) {
     String schemeHostAndPort = UriFilterProxyHeaderParser.parse(
-        fakeOption(fProxyPort),
-        fakeOption(fProxyBindTo),
+        fakePortOption(fProxyPort),
+        fakeBindToOption(fProxyBindTo),
         uriScheme,
         uriHost,
         headers)
@@ -283,17 +284,59 @@ public class UriFilterProxyHeaderParserTest {
 
   }
 
-  private StringOption fakeOption(String value) {
-    return new StringOption(
+  private StringOption fakeBindToOption(String value) {
+    StringOption option = new StringOption(
         new Config().createSubConfig("fake"),
-        "port",
-        value,
+        "bindTo",
+        "127.0.0.1",
         0,
         false,
         false,
-        null,
-        null,
-        null);
+        "",
+        "",
+        new DummyStringCallback());
+    try {
+      option.setValue(value);
+    } catch (InvalidConfigValueException e) {
+      e.printStackTrace();
+    } catch (NodeNeedRestartException e) {
+      e.printStackTrace();
+    }
+    return option;
+  }
+
+  private StringOption fakePortOption(String value) {
+    StringOption option = new StringOption(
+        new Config().createSubConfig("fake"),
+        "port",
+        "8888",
+        0,
+        false,
+        false,
+        "",
+        "",
+        new DummyStringCallback());
+    try {
+      option.setValue(value);
+    } catch (InvalidConfigValueException e) {
+      e.printStackTrace();
+    } catch (NodeNeedRestartException e) {
+      e.printStackTrace();
+    }
+    return option;
+  }
+
+  private class DummyStringCallback extends StringCallback {
+
+    @Override
+    public String get() {
+      return null;
+    }
+
+    @Override
+    public void set(String val) {
+
+    }
   }
 
 }
