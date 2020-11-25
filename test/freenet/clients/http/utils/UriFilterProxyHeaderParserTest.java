@@ -15,7 +15,8 @@ public class UriFilterProxyHeaderParserTest {
 
   // typical arguments
   @Test
-  public void standardValuesParsedAsStandardPrefix() {
+  public void standardValuesParsedAsStandardPrefix()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "127.0.0.1",
@@ -27,7 +28,8 @@ public class UriFilterProxyHeaderParserTest {
 
   // empty arguments result in plain http:// prefix
   @Test
-  public void emptyArgumentsParsedAsStandardPrefix() {
+  public void emptyArgumentsParsedAsStandardPrefix()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "",
         "",
@@ -38,7 +40,8 @@ public class UriFilterProxyHeaderParserTest {
   }
 
   @Test
-  public void nullArgumentsParsedAsStandardPrefix() {
+  public void nullArgumentsParsedAsStandardPrefix()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "",
         "",
@@ -50,7 +53,8 @@ public class UriFilterProxyHeaderParserTest {
 
   // sanity checks for defaults
   @Test
-  public void defaultPortParsedAsStandardPrefix() {
+  public void defaultPortParsedAsStandardPrefix()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "",
@@ -61,7 +65,8 @@ public class UriFilterProxyHeaderParserTest {
   }
 
   @Test
-  public void defaultIpParsedAsStandardPrefix() {
+  public void defaultIpParsedAsStandardPrefix()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "",
         "127.0.0.1",
@@ -73,7 +78,8 @@ public class UriFilterProxyHeaderParserTest {
 
   // taking proxy values
   @Test
-  public void allowedProxyHostIsUsedIfInSecondPositionOfBindTo() {
+  public void allowedProxyHostIsUsedIfInSecondPositionOfBindTo()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "127.0.0.1,foo",
@@ -84,7 +90,8 @@ public class UriFilterProxyHeaderParserTest {
   }
 
   @Test
-  public void allowedProxyHostIsUsedIfInFirstPositionOfBindTo() {
+  public void allowedProxyHostIsUsedIfInFirstPositionOfBindTo()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "foo,127.0.0.1",
@@ -95,7 +102,8 @@ public class UriFilterProxyHeaderParserTest {
   }
 
   @Test
-  public void allowedProxyHostWithNonstandardPortIsUsed() {
+  public void allowedProxyHostWithNonstandardPortIsUsed()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8889",
         "127.0.0.1,foo",
@@ -106,7 +114,8 @@ public class UriFilterProxyHeaderParserTest {
   }
 
   @Test
-  public void httpsProtocolFromProxyIsUsed() {
+  public void httpsProtocolFromProxyIsUsed()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "127.0.0.1",
@@ -118,7 +127,7 @@ public class UriFilterProxyHeaderParserTest {
 
   // taking uri values
   @Test
-  public void allowedUriHostIsUsed() {
+  public void allowedUriHostIsUsed() throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "127.0.0.1,foo",
@@ -129,7 +138,8 @@ public class UriFilterProxyHeaderParserTest {
   }
 
   @Test
-  public void allowedUriHostWithStandardPortAreUsed() {
+  public void allowedUriHostWithStandardPortAreUsed()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "127.0.0.1,foo",
@@ -140,7 +150,8 @@ public class UriFilterProxyHeaderParserTest {
   }
 
   @Test
-  public void allowedUriAndNonstandardPortAreUsed() {
+  public void allowedUriAndNonstandardPortAreUsed()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8889",
         "127.0.0.1,foo",
@@ -151,7 +162,8 @@ public class UriFilterProxyHeaderParserTest {
   }
 
   @Test
-  public void httpsProtocolFromUriIsUsed() {
+  public void httpsProtocolFromUriIsUsed()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "127.0.0.1",
@@ -163,7 +175,8 @@ public class UriFilterProxyHeaderParserTest {
 
   // ignored header values
   @Test
-  public void disallowedProxyHostHeaderIsIgnored() {
+  public void disallowedProxyHostHeaderIsIgnored()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "127.0.0.1",
@@ -174,7 +187,8 @@ public class UriFilterProxyHeaderParserTest {
   }
 
   @Test
-  public void disallowedProxyProtocolIsIgnored() {
+  public void disallowedProxyProtocolIsIgnored()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "127.0.0.1",
@@ -185,7 +199,8 @@ public class UriFilterProxyHeaderParserTest {
   }
 
   @Test
-  public void disallowedProxyHostAndPortAreIgnored() {
+  public void disallowedProxyHostAndPortAreIgnored()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "127.0.0.1",
@@ -196,7 +211,8 @@ public class UriFilterProxyHeaderParserTest {
   }
 
   @Test
-  public void disallowedProxyWithStandardPortIsIgnoredIfPortIsNotStandardAndHostNotAllowed() {
+  public void disallowedProxyWithStandardPortIsIgnoredIfPortIsNotStandardAndHostNotAllowed()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8889",
         "127.0.0.1",
@@ -207,7 +223,8 @@ public class UriFilterProxyHeaderParserTest {
   }
 
   @Test
-  public void disallowedProxyWithStandardPortIsIgnoredIfPortIsNotStandard() {
+  public void disallowedProxyWithStandardPortIsIgnoredIfPortIsNotStandard()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8889",
         "127.0.0.1",
@@ -222,7 +239,8 @@ public class UriFilterProxyHeaderParserTest {
   // ignored uri values
   // no such bindToHost
   @Test
-  public void disallowedUriHostIsIgnored() {
+  public void disallowedUriHostIsIgnored()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "127.0.0.1",
@@ -233,7 +251,8 @@ public class UriFilterProxyHeaderParserTest {
   }
 
   @Test
-  public void disallowedUriHostWithStandardPortIsIgnored() {
+  public void disallowedUriHostWithStandardPortIsIgnored()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "127.0.0.1",
@@ -245,7 +264,8 @@ public class UriFilterProxyHeaderParserTest {
 
   // port mismatch
   @Test
-  public void disallowedUriWithAllowedHostButDisallowedPortIsIgnored() {
+  public void disallowedUriWithAllowedHostButDisallowedPortIsIgnored()
+      throws Exception {
     testUriPrefixMatchesExpected(
         "8888",
         "127.0.0.1,foo",
@@ -261,7 +281,7 @@ public class UriFilterProxyHeaderParserTest {
       String uriScheme,
       String uriHost,
       MultiValueTable<String, String> headers,
-      String resultUriPrefix) {
+      String resultUriPrefix) throws Exception {
     String schemeHostAndPort = UriFilterProxyHeaderParser.parse(
         fakePortOption(fProxyPort),
         fakeBindToOption(fProxyBindTo),
@@ -284,7 +304,8 @@ public class UriFilterProxyHeaderParserTest {
 
   }
 
-  private StringOption fakeBindToOption(String value) {
+  private StringOption fakeBindToOption(String value)
+      throws Exception {
     StringOption option = new StringOption(
         new Config().createSubConfig("fake"),
         "bindTo",
@@ -295,17 +316,12 @@ public class UriFilterProxyHeaderParserTest {
         "",
         "",
         new DummyStringCallback());
-    try {
-      option.setValue(value);
-    } catch (InvalidConfigValueException e) {
-      e.printStackTrace();
-    } catch (NodeNeedRestartException e) {
-      e.printStackTrace();
-    }
+    option.setValue(value);
     return option;
   }
 
-  private StringOption fakePortOption(String value) {
+  private StringOption fakePortOption(String value)
+      throws Exception {
     StringOption option = new StringOption(
         new Config().createSubConfig("fake"),
         "port",
@@ -316,13 +332,7 @@ public class UriFilterProxyHeaderParserTest {
         "",
         "",
         new DummyStringCallback());
-    try {
-      option.setValue(value);
-    } catch (InvalidConfigValueException e) {
-      e.printStackTrace();
-    } catch (NodeNeedRestartException e) {
-      e.printStackTrace();
-    }
+    option.setValue(value);
     return option;
   }
 
