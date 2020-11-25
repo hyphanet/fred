@@ -4,6 +4,7 @@
 package freenet.node;
 
 import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -14,6 +15,11 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.security.MessageDigest;
 import java.text.DateFormat;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Deque;
@@ -24,6 +30,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
+import freenet.client.async.ClientPutter;
+import freenet.clients.fcp.FCPClientRequestClient;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.io.comm.ByteCounter;
@@ -32,6 +40,8 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.keys.ClientKSK;
+import freenet.keys.NodeSSK;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
@@ -146,8 +156,9 @@ public class LocationManager implements ByteCounter {
      * we are not locked.
      */
     public void start() {
-    	if(node.enableSwapping)
-    		node.getTicker().queueTimedJob(sender, STARTUP_DELAY);
+    	if(node.enableSwapping) {
+          node.getTicker().queueTimedJob(sender, STARTUP_DELAY);
+      }
 		node.ticker.queueTimedJob(new Runnable() {
 
 			@Override
@@ -157,6 +168,27 @@ public class LocationManager implements ByteCounter {
 					removeTooOldQueuedItems();
 				} finally {
 					node.ticker.queueTimedJob(this, SECONDS.toMillis(10));
+				}
+			}
+
+		}, SECONDS.toMillis(10));
+    	// Insert key to probe whether its part of the keyspace is operational. If it is not, switch location to it.
+		node.ticker.queueTimedJob(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+				    node.clientCore.getFCPServer().getGlobalForeverClient().queueClientRequestMessage();
+            ClientKSK insertForToday = (ClientKSK.create(new String(node.darknetCrypto.identityHashHash)
+                + DateTimeFormatter.ISO_DATE.format(Instant.now())));
+            ClientKSK insertFromYesterday = ClientKSK.create(new String(node.darknetCrypto.identityHashHash)
+                + DateTimeFormatter.ISO_DATE.format(Instant.now().minus(Duration.ofDays(1))));
+
+            DMT.createFNPInsertRequest(insertForToday.getURI())
+				    node.getUSM().send();
+				    node.darknetCrypto.identityHashHash
+				} finally {
+					node.ticker.queueTimedJob(this, DAYS.toMillis(1));
 				}
 			}
 
@@ -263,7 +295,7 @@ public class LocationManager implements ByteCounter {
     	// Swapping on opennet nodes, even hybrid nodes, causes significant and unnecessary location churn.
     	// Simulations show significantly improved performance if all opennet enabled nodes don't participate in swapping.
     	// FIXME: Investigate the possibility of enabling swapping on hybrid nodes with mostly darknet peers (more simulation needed).
-    	// FIXME: Hybrid nodes with all darknet peeers who haven't upgraded to HIGH.
+    	// FIXME: Hybrid nodes with all darknet peers who haven't upgraded to HIGH.
     	// Probably we should have a useralert for this to get the user to do the right thing ... but we could auto-detect
     	// it and start swapping... however, we should not start swapping just because we temporarily have no opennet peers
     	// on startup.
