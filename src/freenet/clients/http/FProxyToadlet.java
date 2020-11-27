@@ -41,7 +41,9 @@ import freenet.clients.http.ajaxpush.PushNotificationToadlet;
 import freenet.clients.http.ajaxpush.PushTesterToadlet;
 import freenet.clients.http.updateableelements.ProgressBarElement;
 import freenet.clients.http.updateableelements.ProgressInfoElement;
+import freenet.clients.http.utils.UriFilterProxyHeaderParser;
 import freenet.config.Config;
+import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
@@ -81,13 +83,15 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	final ClientContext context;
 	final FProxyFetchTracker fetchTracker;
 
-	static final Set<String> prefetchAllowedTypes = new HashSet<String>();
-	static {
-		// Only valid inlines
-		prefetchAllowedTypes.add("image/png");
-		prefetchAllowedTypes.add("image/jpeg");
-		prefetchAllowedTypes.add("image/gif");
-	}
+	static final Set<String> prefetchAllowedTypes = new HashSet<>(Arrays.asList(
+			"image/png",
+			"image/jpeg",
+			"image/gif",
+			"audio/mp3",
+			"audio/ogg",
+			"video/ogg",
+			"application/ogg"
+	));
 
 	// ?force= links become invalid after 2 hours.
 	private static final long FORCE_GRAIN_INTERVAL = HOURS.toMillis(1);
@@ -517,9 +521,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
                 throw new Error(e);
             }
 		} else if(ks.startsWith("/feed/") || ks.equals("/feed")) {
-			//TODO Better way to find the host. Find if https is used?
-			String host = ctx.getHeaders().get("host");
-			String atom = ctx.getAlertManager().getAtom("http://" + host);
+			String schemeHostAndPort = getSchemeHostAndPort(ctx);
+			String atom = ctx.getAlertManager().getAtom(schemeHostAndPort);
 			byte[] buf = atom.getBytes("UTF-8");
 			ctx.sendReplyHeadersFProxy(200, "OK", null, "application/atom+xml", buf.length);
 			ctx.writeData(buf, 0, buf.length);
@@ -579,7 +582,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			return;
 		}
 
-		FetchContext fctx = getFetchContext(maxSize);
+		FetchContext fctx = getFetchContext(maxSize, getSchemeHostAndPort(ctx));
 		// max-size=-1 => use default
 		maxSize = fctx.maxOutputLength;
 
@@ -982,6 +985,22 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(fr == null && data != null) data.free();
 			if(fr != null) fr.close();
 		}
+	}
+
+	private String getSchemeHostAndPort(ToadletContext ctx) {
+		// retrieve config from froxy
+		SubConfig fProxyConfig = core.node.config.get("fproxy");
+
+		Option<?> fProxyPort = fProxyConfig.getOption("port");
+		Option<?> fProxyBindTo = fProxyConfig.getOption("bindTo");
+
+		// get uri host and headers
+		MultiValueTable<String, String> headers = ctx.getHeaders();
+		// TODO: parse the Forwarded header, too. Skipped here to reduce the scope.
+		String uriScheme = ctx.getUri().getScheme();
+		String uriHost = ctx.getUri().getHost();
+
+		return UriFilterProxyHeaderParser.parse(fProxyPort, fProxyBindTo, uriScheme, uriHost, headers).toString();
 	}
 
 	private boolean isBrowser(String ua) {
