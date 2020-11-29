@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
+import freenet.client.HighLevelSimpleClient;
+import freenet.client.InsertContext;
 import freenet.client.async.ClientPutter;
 import freenet.clients.fcp.FCPClientRequestClient;
 import freenet.crypt.RandomSource;
@@ -183,9 +185,14 @@ public class LocationManager implements ByteCounter {
                 + DateTimeFormatter.ISO_DATE.format(Instant.now())));
             ClientKSK insertFromYesterday = ClientKSK.create(new String(node.darknetCrypto.identityHashHash)
                 + DateTimeFormatter.ISO_DATE.format(Instant.now().minus(Duration.ofDays(1))));
+            HighLevelSimpleClient highLevelSimpleClient = node.clientCore.makeClient(
+                (short) 0,
+                true,
+                false);
+            InsertContext insertContext = highLevelSimpleClient.getInsertContext(true);
+            highLevelSimpleClient.insert()
 
-            DMT.createFNPInsertRequest(insertForToday.getURI())
-				    node.getUSM().send();
+
 				    node.darknetCrypto.identityHashHash
 				} finally {
 					node.ticker.queueTimedJob(this, DAYS.toMillis(1));
