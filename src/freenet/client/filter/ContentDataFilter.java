@@ -35,7 +35,17 @@ public interface ContentDataFilter {
 	 * if data is merely badly formatted - any such exceptions should be
 	 * caught and converted to a DataFilterException.
 	 */
-	public void readFilter(
+	void readFilter(
 			InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException;
+
+	/**
+	 * Compatibility for readFilter without schemeHostAndPort. Please use readFilter with schemeHostAndPort.
+	 */
+	default void readFilter(
+			InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+			FilterCallback cb) throws DataFilterException, IOException {
+		readFilter(input, output, charset, otherParams, null, cb);
+	}
+
 }
