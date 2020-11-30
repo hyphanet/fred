@@ -8,9 +8,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URISyntaxException;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Map;
 
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.l10n.NodeL10n;
@@ -62,7 +61,7 @@ public class M3UFilter implements ContentDataFilter {
 
     @Override
     public void readFilter(
-        InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+        InputStream input, OutputStream output, String charset, Map<String, String> otherParams,
         String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
         // TODO: Check the header whether this is an ext m3u.
         // TODO: Check the EXTINF headers instead of killing comments.

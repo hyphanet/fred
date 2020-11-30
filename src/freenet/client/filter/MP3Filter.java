@@ -9,7 +9,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
+import java.util.Map;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
@@ -90,7 +90,7 @@ public class MP3Filter implements ContentDataFilter {
 	@Override
 	public void readFilter(
       InputStream input, OutputStream output,
-      String charset, HashMap<String, String> otherParams,
+      String charset, Map<String, String> otherParams,
       String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
 		filter(input, output);
 	}

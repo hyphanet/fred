@@ -14,7 +14,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.util.HashMap;
+import java.util.Map;
 
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
@@ -39,7 +39,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 
 	@Override
 	public void readFilter(
-      InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+      InputStream input, OutputStream output, String charset, Map<String, String> otherParams,
       String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
 		if (logDEBUG)
 			Logger.debug(
