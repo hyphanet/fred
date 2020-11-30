@@ -76,7 +76,7 @@ public class JPEGFilter implements ContentDataFilter {
 		output.flush();
 	}
 
-	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+	public void readFilter(InputStream input, OutputStream output, String charset, Map<String, String> otherParams,
 			FilterCallback cb, boolean deleteComments, boolean deleteExif)
 	throws DataFilterException, IOException {
 		CountedInputStream cis = new CountedInputStream(input);
