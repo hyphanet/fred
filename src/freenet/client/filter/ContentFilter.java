@@ -181,6 +181,21 @@ public class ContentFilter {
 	}
 
 	/**
+	 * Compatibility for plugins: passes schemeHostAndPort null.
+	 */
+	@Deprecated // please move to filter with schemeHostAndPort, called from this method.
+	public static FilterStatus filter(
+			InputStream input,
+			OutputStream output,
+			String typeName,
+			URI baseURI,
+			FoundURICallback cb,
+			TagReplacerCallback trc,
+			String maybeCharset) throws UnsafeContentTypeException, IOException {
+		return filter(input, output, typeName, baseURI, null, cb, trc, maybeCharset, null);
+	}
+
+	/**
 	 * Filter some data.
 	 *
 	 * @param input
