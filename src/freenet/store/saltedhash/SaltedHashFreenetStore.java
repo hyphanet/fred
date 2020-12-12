@@ -1085,7 +1085,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					wrapperKeepalive.start();
 					if (oldMetaLen < newMetaLen) {
 						// freenet-mobile-changed: Passing file descriptor to avoid using reflection
-						Fallocate.forChannel(metaFC, metaRAF.getFD() ,newMetaLen).fromOffset(oldMetaLen).execute();
+						Fallocate.forChannel(metaFC, metaRAF.getFD(), newMetaLen).fromOffset(oldMetaLen).execute();
 					}
 					if (currentHdLen < newHdLen) {
 						Fallocate.forChannel(hdFC, hdRAF.getFD(), newHdLen).fromOffset(currentHdLen).execute();
