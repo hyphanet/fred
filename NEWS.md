@@ -1,6 +1,11 @@
 next:
 
-- 
+1489:
+
+- Add m3u support with mp3, ogg, oga, ogv, and flac. Thanks to Bombe for reviewing!
+- Reduce max backoff times from 3 hours to 8 minutes; the one safe change from the let-it-burn patchset. This might increase bandwidth available. Thanks to TheSeeker.
+- add explicit license for Libre-JS to progresspage.js
+- rewrite checkall, match the class for all input elements, and add explicit license for Libre-JS
 
 1488:
 
