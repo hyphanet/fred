@@ -2881,7 +2881,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	static final int BACKOFF_MULTIPLIER = 2;
 	/** Maximum upper limit to routing backoff slow or fast */
-	static final int MAX_ROUTING_BACKOFF_LENGTH = (int) HOURS.toMillis(3);
+	static final int MAX_ROUTING_BACKOFF_LENGTH = (int) MINUTES.toMillis(8);
 	/** Current nominal routing backoff length */
 
 	// Transfer Backoff
@@ -2890,7 +2890,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	long transferBackedOffUntilBulk = -1;
 	static final int INITIAL_TRANSFER_BACKOFF_LENGTH = (int) SECONDS.toMillis(30); // 60 seconds, but it starts at twice this.
 	static final int TRANSFER_BACKOFF_MULTIPLIER = 2;
-	static final int MAX_TRANSFER_BACKOFF_LENGTH = (int) HOURS.toMillis(3);
+	static final int MAX_TRANSFER_BACKOFF_LENGTH = (int) MINUTES.toMillis(8);
 
 	int transferBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
 	int transferBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
