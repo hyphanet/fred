@@ -15,6 +15,7 @@ import java.io.OutputStream;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.io.Closer;
@@ -31,7 +32,7 @@ public class OggFilter implements ContentDataFilter{
 
 	public void readFilter(
       InputStream input, OutputStream output,
-      String charset, HashMap<String, String> otherParams,
+      String charset, Map<String, String> otherParams,
       String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
 		HashMap<Integer, OggBitstreamFilter> streamFilters = new HashMap<Integer, OggBitstreamFilter>();
 		LinkedList<OggPage> splitPages = new LinkedList<OggPage>();

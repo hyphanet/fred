@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Data filter for a specific MIME type.
@@ -35,7 +36,18 @@ public interface ContentDataFilter {
 	 * if data is merely badly formatted - any such exceptions should be
 	 * caught and converted to a DataFilterException.
 	 */
-	public void readFilter(
-			InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+	void readFilter(
+			InputStream input, OutputStream output, String charset, Map<String, String> otherParams,
 			String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException;
+
+	/**
+	 * Compatibility for readFilter without schemeHostAndPort. Please use readFilter with schemeHostAndPort.
+	 */
+	@Deprecated
+	default void readFilter(
+			InputStream input, OutputStream output, String charset, Map<String, String> otherParams,
+			FilterCallback cb) throws DataFilterException, IOException {
+		readFilter(input, output, charset, otherParams, null, cb);
+	}
+
 }

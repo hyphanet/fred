@@ -63,7 +63,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	@Override
 	public void readFilter(
-      InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+      InputStream input, OutputStream output, String charset, Map<String, String> otherParams,
       String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
 		if(cb == null) cb = new NullFilterCallback();
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
