@@ -103,7 +103,8 @@ public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer,
                 // Preallocate space. We want predictable disk usage, not minimal disk usage, especially for downloads.
                 try (WrapperKeepalive wrapperKeepalive = new WrapperKeepalive()) {
                     wrapperKeepalive.start();
-                    Fallocate.forChannel(raf.getChannel(), forceLength).fromOffset(currentLength).execute();
+                    // freenet-mobile-changed: Passing file descriptor to avoid using reflection
+                    Fallocate.forChannel(raf.getChannel(), raf.getFD(), forceLength).fromOffset(currentLength).execute();
                 }
                 raf.setLength(forceLength);
                 currentLength = forceLength;
