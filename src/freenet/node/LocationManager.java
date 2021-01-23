@@ -4,7 +4,6 @@
 package freenet.node;
 
 import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -18,8 +17,6 @@ import java.text.DateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAmount;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Deque;
@@ -30,10 +27,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
+import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
-import freenet.client.async.ClientPutter;
-import freenet.clients.fcp.FCPClientRequestClient;
+import freenet.client.InsertException;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.io.comm.ByteCounter;
@@ -43,12 +41,12 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.keys.ClientKSK;
-import freenet.keys.NodeSSK;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.ShortBuffer;
 import freenet.support.TimeSortedHashtable;
-import freenet.support.Logger.LogLevel;
+import freenet.support.io.ArrayBucket;
 import freenet.support.io.Closer;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 
@@ -179,22 +177,39 @@ public class LocationManager implements ByteCounter {
 
 			@Override
 			public void run() {
+			    ClientKSK insertForToday = (ClientKSK.create(new String(node.darknetCrypto.identityHashHash)
+              + DateTimeFormatter.ISO_DATE.format(Instant.now())));
+			    ClientKSK insertFromYesterday = ClientKSK.create(new String(node.darknetCrypto.identityHashHash)
+              + DateTimeFormatter.ISO_DATE.format(Instant.now().minus(Duration.ofDays(1))));
 				try {
-				    node.clientCore.getFCPServer().getGlobalForeverClient().queueClientRequestMessage();
-            ClientKSK insertForToday = (ClientKSK.create(new String(node.darknetCrypto.identityHashHash)
-                + DateTimeFormatter.ISO_DATE.format(Instant.now())));
-            ClientKSK insertFromYesterday = ClientKSK.create(new String(node.darknetCrypto.identityHashHash)
-                + DateTimeFormatter.ISO_DATE.format(Instant.now().minus(Duration.ofDays(1))));
+            // create some random data to insert to the KSK
+            byte[] randomContentToInsert = new byte[1024];
+            node.fastWeakRandom.nextBytes(randomContentToInsert);
+            ArrayBucket randomBucketToInsert = new ArrayBucket(randomContentToInsert);
+            InsertBlock insertBlock = new InsertBlock(
+                randomBucketToInsert,
+                null,
+                insertForToday.getInsertURI());
             HighLevelSimpleClient highLevelSimpleClient = node.clientCore.makeClient(
                 (short) 0,
                 true,
                 false);
             InsertContext insertContext = highLevelSimpleClient.getInsertContext(true);
-            highLevelSimpleClient.insert()
-
-
-				    node.darknetCrypto.identityHashHash
-				} finally {
+            highLevelSimpleClient.insert(insertBlock, false, null);
+            highLevelSimpleClient.fetch(insertFromYesterday.getURI());
+        } catch (InsertException e) {
+            Logger.error(this, "could not insert pitch black detection data to KSK for today: "
+                + insertForToday.getURI().toString()
+                + ", trying again tomorrow.");
+        } catch (FetchException e) {
+            double probedLocationFromYesterday = insertFromYesterday.getNodeKey().toNormalizedDouble();
+            Logger.warning(this,
+                "could not fetch the insert from yesterday: "
+                    + insertFromYesterday.getURI().toString()
+                    + ", assuming we are under attack: switching location to failed location: "
+                    + probedLocationFromYesterday);
+            setLocation(probedLocationFromYesterday);
+        } finally {
 					node.ticker.queueTimedJob(this, DAYS.toMillis(1));
 				}
 			}
