@@ -156,8 +156,8 @@ function updateSrc(mediaTag, callback) {
     // update title
     mediaTag.parentElement.querySelector(".m3u-player--title").title = stripUrlParameters(trackUrl);
     mediaTag.parentElement.querySelector(".m3u-player--title").textContent = stripUrlParameters(trackUrl);
-    // start prefetching the next two tracks.
-    for (const i of [1, 2]) {
+    // start prefetching the next three tracks.
+    for (const i of [1, 2, 3]) {
       if (playlist.length > Number(trackIndex) + i) {
         prefetchTrack(playlist[Number(trackIndex) + i]);
       }
