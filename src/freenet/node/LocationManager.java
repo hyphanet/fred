@@ -50,6 +50,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.keys.ClientKSK;
 import freenet.support.Base64;
 import freenet.support.Fields;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.ShortBuffer;
@@ -249,10 +250,17 @@ public class LocationManager implements ByteCounter {
         ClientKSK insertFromYesterday = ClientKSK.create(insertInfoFromYesterday.getName());
         try {
             FetchResult fetch = highLevelSimpleClient.fetch(insertFromYesterday.getURI());
-            if (!Arrays.equals(
-                fetch.asByteArray(),
-                Files.readAllBytes(insertInfoFromYesterday.toPath()))) {
-                switchLocationToDefendAgainstPitchBlackAttack(insertFromYesterday);
+            try {
+                byte[] expectedContent = Base64.decode(
+                    String.join("\n",
+                        Files.readAllLines(insertInfoFromYesterday.toPath())));
+                if (!Arrays.equals(expectedContent, fetch.asByteArray())) {
+                    switchLocationToDefendAgainstPitchBlackAttack(insertFromYesterday);
+                }
+            } catch (IllegalBase64Exception e) {
+            Logger.warning(e,
+                "Could not decode content of insert info file from yesterday as base64 "
+                    + insertInfoFromYesterday.getName());
             }
         } catch (FetchException e) {
             if (isRequestExceptionBecauseUriIsNotAvailable(e)) {
