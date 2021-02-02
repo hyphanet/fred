@@ -7,17 +7,23 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Deque;
 import java.util.Hashtable;
@@ -28,6 +34,7 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import freenet.client.FetchException;
+import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
@@ -41,6 +48,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.keys.ClientKSK;
+import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -57,6 +65,8 @@ import freenet.support.math.BootstrappingDecayingRunningAverage;
  * Initiates swap attempts. Deals with locking.
  */
 public class LocationManager implements ByteCounter {
+
+    public static final String FOIL_PITCH_BLACK_ATTACK_PREFIX = "FOILPBA-";
 
     public class MyCallback extends SendMessageOnErrorCallback {
 
@@ -173,48 +183,191 @@ public class LocationManager implements ByteCounter {
 
 		}, SECONDS.toMillis(10));
     	// Insert key to probe whether its part of the keyspace is operational. If it is not, switch location to it.
-		node.ticker.queueTimedJob(new Runnable() {
+        node.ticker.queueTimedJob(new Runnable() {
 
-			@Override
-			public void run() {
-			    ClientKSK insertForToday = (ClientKSK.create(new String(node.darknetCrypto.identityHashHash)
-              + DateTimeFormatter.ISO_DATE.format(Instant.now())));
-			    ClientKSK insertFromYesterday = ClientKSK.create(new String(node.darknetCrypto.identityHashHash)
-              + DateTimeFormatter.ISO_DATE.format(Instant.now().minus(Duration.ofDays(1))));
-				try {
-            // create some random data to insert to the KSK
-            byte[] randomContentToInsert = new byte[1024];
-            node.fastWeakRandom.nextBytes(randomContentToInsert);
-            ArrayBucket randomBucketToInsert = new ArrayBucket(randomContentToInsert);
-            InsertBlock insertBlock = new InsertBlock(
-                randomBucketToInsert,
-                null,
-                insertForToday.getInsertURI());
-            HighLevelSimpleClient highLevelSimpleClient = node.clientCore.makeClient(
-                (short) 0,
-                true,
-                false);
-            InsertContext insertContext = highLevelSimpleClient.getInsertContext(true);
-            highLevelSimpleClient.insert(insertBlock, false, null);
-            highLevelSimpleClient.fetch(insertFromYesterday.getURI());
-        } catch (InsertException e) {
-            Logger.error(this, "could not insert pitch black detection data to KSK for today: "
-                + insertForToday.getURI().toString()
-                + ", trying again tomorrow.");
+            @Override
+            public void run() {
+                try {
+                    String isoDateStringToday = DateTimeFormatter.ISO_DATE
+                        .format(LocalDateTime.now());
+                    String isoDateStringYesterday = DateTimeFormatter.ISO_DATE
+                        .format(LocalDateTime.now().minus(Duration.ofDays(1)));
+                    File[] previousInsertFromToday = node.userDir().dir()
+                        .listFiles((file, name) -> name.startsWith(FOIL_PITCH_BLACK_ATTACK_PREFIX
+                            + isoDateStringToday));
+                    HighLevelSimpleClient highLevelSimpleClient = node.clientCore.makeClient(
+                        RequestStarter.INTERACTIVE_PRIORITY_CLASS,
+                        true,
+                        false);
+
+                    if (previousInsertFromToday != null
+                        && previousInsertFromToday.length == 0) {
+                        byte[] randomContentForKSK = new byte[20];
+                        node.fastWeakRandom.nextBytes(randomContentForKSK);
+                        String randomPart = Base64.encode(randomContentForKSK);
+                        String nameForInsert =
+                            FOIL_PITCH_BLACK_ATTACK_PREFIX + isoDateStringToday + "-" + randomPart;
+                        tryToInsertPitchBlackCheck(highLevelSimpleClient, nameForInsert);
+                    }
+
+                    File[] successfulInsertFromYesterday = node.userDir().dir()
+                        .listFiles((file, name) -> name.startsWith(FOIL_PITCH_BLACK_ATTACK_PREFIX
+                            + isoDateStringYesterday));
+                    if (successfulInsertFromYesterday != null
+                        && successfulInsertFromYesterday.length > 0) {
+                        tryToRequestPitchBlackCheckFromYesterday(
+                            highLevelSimpleClient,
+                            successfulInsertFromYesterday[0]
+                        );
+                        // cleanup file, regardless of success
+                        for (File f : successfulInsertFromYesterday) {
+                            //noinspection ResultOfMethodCallIgnored
+                            f.delete();
+                        }
+                    }
+                    // delete files from more than one day ago
+                    File[] leftoverFiles = node.userDir().dir()
+                        .listFiles((file, name) -> name.startsWith(FOIL_PITCH_BLACK_ATTACK_PREFIX)
+                            && !name.contains(isoDateStringToday));
+                    if (leftoverFiles != null) {
+                        for (File f : leftoverFiles) {
+                            //noinspection ResultOfMethodCallIgnored
+                            f.delete();
+                        }
+                    }
+
+                } finally {
+                    node.ticker.queueTimedJob(this, DAYS.toMillis(1));
+                }
+            }
+        }, SECONDS.toMillis(10));
+    }
+
+    private void tryToRequestPitchBlackCheckFromYesterday(
+        HighLevelSimpleClient highLevelSimpleClient,
+        File insertInfoFromYesterday) {
+        ClientKSK insertFromYesterday = ClientKSK.create(insertInfoFromYesterday.getName());
+        try {
+            FetchResult fetch = highLevelSimpleClient.fetch(insertFromYesterday.getURI());
+            if (!Arrays.equals(
+                fetch.asByteArray(),
+                Files.readAllBytes(insertInfoFromYesterday.toPath()))) {
+                switchLocationToDefendAgainstPitchBlackAttack(insertFromYesterday);
+            }
         } catch (FetchException e) {
-            double probedLocationFromYesterday = insertFromYesterday.getNodeKey().toNormalizedDouble();
-            Logger.warning(this,
-                "could not fetch the insert from yesterday: "
-                    + insertFromYesterday.getURI().toString()
-                    + ", assuming we are under attack: switching location to failed location: "
-                    + probedLocationFromYesterday);
-            setLocation(probedLocationFromYesterday);
-        } finally {
-					node.ticker.queueTimedJob(this, DAYS.toMillis(1));
-				}
-			}
+            if (isRequestExceptionBecauseUriIsNotAvailable(e)) {
+                switchLocationToDefendAgainstPitchBlackAttack(insertFromYesterday);
+            }
+        } catch (FileNotFoundException e) {
+            Logger.warning(e,
+                "Could not read from insert info file from yesterday because the file was not found: "
+                    + insertInfoFromYesterday.getName());
+        } catch (IOException e) {
+            Logger.warning(e,
+                "Could not read from insert info file from yesterday: "
+                    + insertInfoFromYesterday.getName());
+        }
+    }
 
-		}, SECONDS.toMillis(10));
+    private void switchLocationToDefendAgainstPitchBlackAttack(ClientKSK insertFromYesterday) {
+        double probedLocationFromYesterday = insertFromYesterday
+            .getNodeKey()
+            .toNormalizedDouble();
+        Logger.warning(
+            this,
+            "could not fetch the insert from yesterday: "
+                + insertFromYesterday.getURI().toString()
+                + ", assuming we are under attack: switching location to failed location: "
+                + probedLocationFromYesterday);
+        setLocation(probedLocationFromYesterday);
+    }
+
+    private void tryToInsertPitchBlackCheck(
+        HighLevelSimpleClient highLevelSimpleClient,
+        String nameForInsert) {
+        // create some random data of up to 1021 bytes to insert to the KSK
+        byte[] contentLengthSource = new byte[2];
+        node.fastWeakRandom.nextBytes(contentLengthSource);
+        // bytes are -127 to 128,
+        // so this gives us 253 to 1021 bytes of size
+        int contentLength = (5 * 127)
+            + (3 * contentLengthSource[0])
+            + contentLengthSource[1] / 64; // -1 to 2
+        byte[] randomContentToInsert = new byte[contentLength];
+        node.fastWeakRandom.nextBytes(randomContentToInsert);
+        // create the KSK
+        ClientKSK insertForToday = (ClientKSK.create(nameForInsert));
+        ArrayBucket randomBucketToInsert = new ArrayBucket(randomContentToInsert);
+        InsertBlock insertBlock = new InsertBlock(
+            randomBucketToInsert,
+            null,
+            insertForToday.getInsertURI());
+        try {
+            highLevelSimpleClient.insert(insertBlock, false, null);
+            // create a file to check on the next run tomorrow
+            File succeededInsertFile = node.userDir().file(nameForInsert);
+            FileOutputStream fileOutputStream = new FileOutputStream(succeededInsertFile);
+            try (BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(
+                fileOutputStream), 4096)) {
+                bufferedWriter.write(Base64.encode(randomContentToInsert));
+            } catch (IOException e) {
+                Logger.error(
+                    e,
+                    "Could not write successful insert content to file: " + nameForInsert);
+            }
+        } catch (InsertException e) {
+            Logger.error(
+                this,
+                "could not insert pitch black detection data to KSK for today: "
+                    + insertForToday.getURI().toString()
+                    + ", trying again tomorrow.");
+        } catch (FileNotFoundException e) {
+            Logger.error(
+                e,
+                "Could not write successful insert info to file: " + nameForInsert);
+        }
+    }
+
+    private static boolean isRequestExceptionBecauseUriIsNotAvailable(FetchException fetchException) {
+        switch (fetchException.getMode()) {
+            case DATA_NOT_FOUND:
+            case ROUTE_NOT_FOUND:
+            case ALL_DATA_NOT_FOUND:
+                return true;
+            case TOO_BIG:
+            case UNKNOWN_METADATA:
+            case INVALID_METADATA:
+            case ARCHIVE_FAILURE:
+            case BLOCK_DECODE_ERROR:
+            case TOO_MANY_ARCHIVE_RESTARTS:
+            case TOO_MUCH_RECURSION:
+            case NOT_IN_ARCHIVE:
+            case TOO_MANY_PATH_COMPONENTS:
+            case BUCKET_ERROR:
+            case REJECTED_OVERLOAD:
+            case INTERNAL_ERROR:
+            case TRANSFER_FAILED:
+            case SPLITFILE_ERROR:
+            case INVALID_URI:
+            case TOO_BIG_METADATA:
+            case TOO_MANY_BLOCKS_PER_SEGMENT:
+            case NOT_ENOUGH_PATH_COMPONENTS:
+            case CANCELLED:
+            case ARCHIVE_RESTART:
+            case PERMANENT_REDIRECT:
+            case WRONG_MIME_TYPE:
+            case RECENTLY_FAILED:
+            case CONTENT_VALIDATION_FAILED:
+            case CONTENT_VALIDATION_UNKNOWN_MIME:
+            case CONTENT_VALIDATION_BAD_MIME:
+            case CONTENT_HASH_FAILED:
+            case SPLITFILE_DECODE_ERROR:
+            case MIME_INCOMPATIBLE_WITH_EXTENSION:
+            case NOT_ENOUGH_DISK_SPACE:
+                return false;
+            default:
+                return false;
+        }
     }
 
     /**
@@ -225,7 +378,7 @@ public class LocationManager implements ByteCounter {
 
         @Override
         public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
+            freenet.support.Logger.OSThread.logPID(this);
 		    Thread.currentThread().setName("SwapRequestSender");
             while(true) {
                 try {
