@@ -7,19 +7,17 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -37,7 +35,6 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
-import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
@@ -47,7 +44,10 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.keys.ClientCHK;
 import freenet.keys.ClientKSK;
+import freenet.keys.ClientKey;
+import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.IllegalBase64Exception;
@@ -241,43 +241,91 @@ public class LocationManager implements ByteCounter {
                     node.ticker.queueTimedJob(this, DAYS.toMillis(1));
                 }
             }
-        }, SECONDS.toMillis(10));
+        }, SECONDS.toMillis(60));
     }
 
     private void tryToRequestPitchBlackCheckFromYesterday(
         HighLevelSimpleClient highLevelSimpleClient,
         File insertInfoFromYesterday) {
         ClientKSK insertFromYesterday = ClientKSK.create(insertInfoFromYesterday.getName());
+        byte[] expectedContent;
         try {
-            FetchResult fetch = highLevelSimpleClient.fetch(insertFromYesterday.getURI());
-            try {
-                byte[] expectedContent = Base64.decode(
-                    String.join("\n",
-                        Files.readAllLines(insertInfoFromYesterday.toPath())));
-                if (!Arrays.equals(expectedContent, fetch.asByteArray())) {
-                    switchLocationToDefendAgainstPitchBlackAttack(insertFromYesterday);
-                }
-            } catch (IllegalBase64Exception e) {
-            Logger.warning(e,
+            expectedContent = Base64.decode(
+                String.join(
+                    "\n",
+                    Files.readAllLines(insertInfoFromYesterday.toPath())));
+        } catch (IllegalBase64Exception e) {
+            Logger.warning(
+                e,
                 "Could not decode content of insert info file from yesterday as base64 "
                     + insertInfoFromYesterday.getName());
+            return;
+        }  catch (FileNotFoundException e) {
+            Logger.warning(
+                e,
+                "Could not read from insert info file from yesterday because the file was not found: "
+                    + insertInfoFromYesterday.getName());
+            return;
+        } catch (IOException e) {
+            Logger.warning(
+                e,
+                "Could not read from insert info file from yesterday: "
+                    + insertInfoFromYesterday.getName());
+            return;
+        }
+        // check the SSK
+        FetchResult sskFetchResult = null;
+        try {
+            sskFetchResult = highLevelSimpleClient.fetch(insertFromYesterday.getURI());
+            if (!Arrays.equals(expectedContent, sskFetchResult.asByteArray())) {
+                switchLocationToDefendAgainstPitchBlackAttack(insertFromYesterday);
             }
         } catch (FetchException e) {
             if (isRequestExceptionBecauseUriIsNotAvailable(e)) {
                 switchLocationToDefendAgainstPitchBlackAttack(insertFromYesterday);
             }
-        } catch (FileNotFoundException e) {
-            Logger.warning(e,
-                "Could not read from insert info file from yesterday because the file was not found: "
-                    + insertInfoFromYesterday.getName());
+            return;
         } catch (IOException e) {
-            Logger.warning(e,
-                "Could not read from insert info file from yesterday: "
-                    + insertInfoFromYesterday.getName());
+            Logger.warning(
+                e,
+                "Could not convert fetched data into byteArray. fetch: "
+                    + sskFetchResult);
+            return;
         }
+        // check the CHK
+        ArrayBucket randomBucketToInsert = new ArrayBucket(expectedContent);
+        InsertBlock chkInsertBlock = new InsertBlock(
+            randomBucketToInsert,
+            null,
+            FreenetURI.EMPTY_CHK_URI);
+        FreenetURI calculatedChkUri;
+        try {
+            calculatedChkUri = highLevelSimpleClient.insert(chkInsertBlock, true, null);
+        } catch (InsertException e) {
+            Logger.error(
+                e,
+                "Could not create CHK for expected content.");
+            return;
+        }
+        try {
+            highLevelSimpleClient.fetch(calculatedChkUri);
+        } catch (FetchException e) {
+            if (isRequestExceptionBecauseUriIsNotAvailable(e)) {
+                try {
+                    switchLocationToDefendAgainstPitchBlackAttack(new ClientCHK(calculatedChkUri));
+                } catch (MalformedURLException exception) {
+                    Logger.error(
+                        exception,
+                        "Could not create ClientCHK from CHKUri for calculated CHK URI:"
+                            + calculatedChkUri);
+                    return;
+                }
+            }
+        }
+
     }
 
-    private void switchLocationToDefendAgainstPitchBlackAttack(ClientKSK insertFromYesterday) {
+    private void switchLocationToDefendAgainstPitchBlackAttack(ClientKey insertFromYesterday) {
         double probedLocationFromYesterday = insertFromYesterday
             .getNodeKey()
             .toNormalizedDouble();
@@ -303,15 +351,21 @@ public class LocationManager implements ByteCounter {
             + contentLengthSource[1] / 64; // -1 to 2
         byte[] randomContentToInsert = new byte[contentLength];
         node.fastWeakRandom.nextBytes(randomContentToInsert);
+        ArrayBucket randomBucketToInsert = new ArrayBucket(randomContentToInsert);
         // create the KSK
         ClientKSK insertForToday = (ClientKSK.create(nameForInsert));
-        ArrayBucket randomBucketToInsert = new ArrayBucket(randomContentToInsert);
-        InsertBlock insertBlock = new InsertBlock(
+        InsertBlock kskInsertBlock = new InsertBlock(
             randomBucketToInsert,
             null,
             insertForToday.getInsertURI());
+        // create the CHK
+        InsertBlock chkInsertBlock = new InsertBlock(
+            randomBucketToInsert,
+            null,
+            FreenetURI.EMPTY_CHK_URI);
         try {
-            highLevelSimpleClient.insert(insertBlock, false, null);
+            highLevelSimpleClient.insert(kskInsertBlock, false, null);
+            highLevelSimpleClient.insert(chkInsertBlock, false, null);
             // create a file to check on the next run tomorrow
             File succeededInsertFile = node.userDir().file(nameForInsert);
             FileOutputStream fileOutputStream = new FileOutputStream(succeededInsertFile);
