@@ -102,8 +102,11 @@ public class NodeUpdateManager {
 	public static final long MAX_REVOCATION_KEY_LENGTH = 32 * 1024;
 	public static final long MAX_REVOCATION_KEY_TEMP_LENGTH = 64 * 1024;
 	public static final long MAX_REVOCATION_KEY_BLOB_LENGTH = 128 * 1024;
-
 	public static final long MAX_MAIN_JAR_LENGTH = 48 * 1024 * 1024; // 48MiB
+	public static final long MAX_JAVA_INSTALLER_LENGTH = 300 * 1024 * 1024;
+	public static final long MAX_WINDOWS_INSTALLER_LENGTH = 300 * 1024 * 1024;
+	public static final long MAX_IP_TO_COUNTRY_LENGTH = 24 * 1024 * 1024;
+	public static final long MAX_SEEDNODES_LENGTH = 3 * 1024 * 1024;
 
 	static final FreenetURI legacyMainJarSSK;
 	static final FreenetURI legacyMainJarUSK;
@@ -537,7 +540,7 @@ public class NodeUpdateManager {
 					NodeFile.Seednodes);
 			seedrefsGetter.start(
 					RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					3 * 1024 * 1024);
+					MAX_SEEDNODES_LENGTH);
 		}
 
 		// Fetch installers and IP-to-country files to the runDir.
@@ -548,9 +551,9 @@ public class NodeUpdateManager {
 					getInstallerWindowsURI(), NodeFile.InstallerWindows);
 
 			installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					300 * 1024 * 1024);
+					MAX_JAVA_INSTALLER_LENGTH);
 			wininstallerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					300 * 1024 * 1024);
+					MAX_WINDOWS_INSTALLER_LENGTH);
 
 		}
 
@@ -558,7 +561,7 @@ public class NodeUpdateManager {
 			SimplePuller ip4Getter = new SimplePuller(getIPv4ToCountryURI(),
 					NodeFile.IPv4ToCountry);
 			ip4Getter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					24 * 1024 * 1024);
+					MAX_IP_TO_COUNTRY_LENGTH);
 		}
 
 	}
