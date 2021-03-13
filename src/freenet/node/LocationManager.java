@@ -67,7 +67,7 @@ import freenet.support.math.BootstrappingDecayingRunningAverage;
  */
 public class LocationManager implements ByteCounter {
 
-    public static final String FOIL_PITCH_BLACK_ATTACK_PREFIX = "FOILPBA-";
+    public static final String FOIL_PITCH_BLACK_ATTACK_PREFIX = "mitigate-pitch-black-attack-";
 
     public class MyCallback extends SendMessageOnErrorCallback {
 
