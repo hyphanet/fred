@@ -14,6 +14,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.text.DateFormat;
@@ -50,7 +51,6 @@ import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.Fields;
-import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.ShortBuffer;
@@ -248,17 +248,12 @@ public class LocationManager implements ByteCounter {
         ClientKSK insertFromYesterday = ClientKSK.create(insertInfoFromYesterday.getName());
         byte[] expectedContent;
         try {
-            expectedContent = Base64.decode(
+            expectedContent =
                 String.join(
                     "\n",
-                    Files.readAllLines(insertInfoFromYesterday.toPath())));
-        } catch (IllegalBase64Exception e) {
-            Logger.warning(
-                e,
-                "Could not decode content of insert info file from yesterday as base64 "
-                    + insertInfoFromYesterday.getName());
-            return;
-        }  catch (FileNotFoundException e) {
+                    Files.readAllLines(insertInfoFromYesterday.toPath(), StandardCharsets.UTF_8))
+                    .getBytes();
+        } catch (FileNotFoundException e) {
             Logger.warning(
                 e,
                 "Could not read from insert info file from yesterday because the file was not found: "
@@ -373,10 +368,11 @@ public class LocationManager implements ByteCounter {
             highLevelSimpleClient.insert(chkInsertBlock, false, null);
             // create a file to check on the next run tomorrow
             File succeededInsertFile = node.userDir().file(nameForInsert);
-            FileOutputStream fileOutputStream = new FileOutputStream(succeededInsertFile);
-            try (BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(
-                fileOutputStream), 4096)) {
-                bufferedWriter.write(Base64.encode(randomContentToInsert));
+            try (FileOutputStream fileOutputStream = new FileOutputStream(succeededInsertFile);
+                 BufferedWriter bufferedWriter = new BufferedWriter(
+                     new OutputStreamWriter(fileOutputStream),
+                     4096)) {
+                bufferedWriter.write(new String(randomContentToInsert, StandardCharsets.UTF_8));
             } catch (IOException e) {
                 Logger.error(
                     e,
@@ -388,10 +384,6 @@ public class LocationManager implements ByteCounter {
                 "could not insert pitch black detection data to KSK for today: "
                     + insertForToday.getURI().toString()
                     + ", trying again tomorrow.");
-        } catch (FileNotFoundException e) {
-            Logger.error(
-                e,
-                "Could not write successful insert info to file: " + nameForInsert);
         }
     }
 
