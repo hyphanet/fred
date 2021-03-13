@@ -14,6 +14,7 @@ import java.util.Arrays;
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
+import freenet.crypt.Util;
 import freenet.io.WritableToDataOutputStream;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
@@ -134,12 +135,8 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
         md.update((byte)TYPE);
         byte[] digest = md.digest();
         SHA256.returnMessageDigest(md); md = null;
-        long asLong = Math.abs(Fields.bytesToLong(digest));
-        // Math.abs can actually return negative...
-        if(asLong == Long.MIN_VALUE)
-            asLong = Long.MAX_VALUE;
-        cachedNormalizedDouble = ((double)asLong)/((double)Long.MAX_VALUE);
-        return cachedNormalizedDouble;
+			cachedNormalizedDouble = Util.keyDigestAsNormalizedDouble(digest);
+			return cachedNormalizedDouble;
     }
 
 	/**

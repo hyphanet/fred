@@ -329,6 +329,13 @@ public class LocationManager implements ByteCounter {
         double probedLocationFromYesterday = insertFromYesterday
             .getNodeKey()
             .toNormalizedDouble();
+        if (insertFromYesterday instanceof ClientSSK) {
+            // decide between SSK and pubkey at random, because they always break together.
+            if (node.fastWeakRandom.nextBoolean()) {
+                probedLocationFromYesterday = Util.keyDigestAsNormalizedDouble(
+                    ((ClientSSK) insertFromYesterday).getPubKey().getRoutingKey());
+            }
+        }
         Logger.warning(
             this,
             "could not fetch the insert from yesterday: "
