@@ -388,45 +388,7 @@ public class LocationManager implements ByteCounter {
     }
 
     private static boolean isRequestExceptionBecauseUriIsNotAvailable(FetchException fetchException) {
-        switch (fetchException.getMode()) {
-            case DATA_NOT_FOUND:
-            case ROUTE_NOT_FOUND:
-            case ALL_DATA_NOT_FOUND:
-                return true;
-            case TOO_BIG:
-            case UNKNOWN_METADATA:
-            case INVALID_METADATA:
-            case ARCHIVE_FAILURE:
-            case BLOCK_DECODE_ERROR:
-            case TOO_MANY_ARCHIVE_RESTARTS:
-            case TOO_MUCH_RECURSION:
-            case NOT_IN_ARCHIVE:
-            case TOO_MANY_PATH_COMPONENTS:
-            case BUCKET_ERROR:
-            case REJECTED_OVERLOAD:
-            case INTERNAL_ERROR:
-            case TRANSFER_FAILED:
-            case SPLITFILE_ERROR:
-            case INVALID_URI:
-            case TOO_BIG_METADATA:
-            case TOO_MANY_BLOCKS_PER_SEGMENT:
-            case NOT_ENOUGH_PATH_COMPONENTS:
-            case CANCELLED:
-            case ARCHIVE_RESTART:
-            case PERMANENT_REDIRECT:
-            case WRONG_MIME_TYPE:
-            case RECENTLY_FAILED:
-            case CONTENT_VALIDATION_FAILED:
-            case CONTENT_VALIDATION_UNKNOWN_MIME:
-            case CONTENT_VALIDATION_BAD_MIME:
-            case CONTENT_HASH_FAILED:
-            case SPLITFILE_DECODE_ERROR:
-            case MIME_INCOMPATIBLE_WITH_EXTENSION:
-            case NOT_ENOUGH_DISK_SPACE:
-                return false;
-            default:
-                return false;
-        }
+        return FetchException.FetchExceptionMode.DATA_NOT_FOUND.equals(fetchException.getMode());
     }
 
     /**
