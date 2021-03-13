@@ -250,11 +250,7 @@ public class LocationManager implements ByteCounter {
         ClientKSK insertFromYesterday = ClientKSK.create(insertInfoFromYesterday.getName());
         byte[] expectedContent;
         try {
-            expectedContent =
-                String.join(
-                    "\n",
-                    Files.readAllLines(insertInfoFromYesterday.toPath(), StandardCharsets.UTF_8))
-                    .getBytes();
+            expectedContent = Files.readAllBytes(insertInfoFromYesterday.toPath());
         } catch (FileNotFoundException e) {
             Logger.warning(
                 e,
@@ -370,11 +366,8 @@ public class LocationManager implements ByteCounter {
             highLevelSimpleClient.insert(chkInsertBlock, false, null);
             // create a file to check on the next run tomorrow
             File succeededInsertFile = node.userDir().file(nameForInsert);
-            try (FileOutputStream fileOutputStream = new FileOutputStream(succeededInsertFile);
-                 BufferedWriter bufferedWriter = new BufferedWriter(
-                     new OutputStreamWriter(fileOutputStream),
-                     4096)) {
-                bufferedWriter.write(new String(randomContentToInsert, StandardCharsets.UTF_8));
+            try (FileOutputStream fileOutputStream = new FileOutputStream(succeededInsertFile)) {
+                fileOutputStream.write(randomContentToInsert);
             } catch (IOException e) {
                 Logger.error(
                     e,
