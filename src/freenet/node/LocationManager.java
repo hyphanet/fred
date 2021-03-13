@@ -212,29 +212,29 @@ public class LocationManager implements ByteCounter {
                     tryToInsertPitchBlackCheck(highLevelSimpleClient, nameForInsert);
                 }
 
-                    File[] successfulInsertFromYesterday = node.userDir().dir()
-                        .listFiles((file, name) -> name.startsWith(FOIL_PITCH_BLACK_ATTACK_PREFIX
-                            + isoDateStringYesterday));
-                    if (successfulInsertFromYesterday != null
-                        && successfulInsertFromYesterday.length > 0) {
+                File[] foilPitchBlackStatusFiles = node.userDir().dir()
+                    .listFiles((file, name) -> name.startsWith(FOIL_PITCH_BLACK_ATTACK_PREFIX));
+                if (foilPitchBlackStatusFiles != null) {
+                    File[] successfulInsertFromYesterday = Arrays.stream(foilPitchBlackStatusFiles)
+                        .filter(file -> file.getName().contains(isoDateStringYesterday))
+                        .toArray(File[]::new);
+                    for (File f : successfulInsertFromYesterday) {
                         tryToRequestPitchBlackCheckFromYesterday(
                             highLevelSimpleClient,
                             successfulInsertFromYesterday[0]
                         );
                         // cleanup file, regardless of success
-                        for (File f : successfulInsertFromYesterday) {
-                            //noinspection ResultOfMethodCallIgnored
-                            f.delete();
+                        if (!f.delete()) {
+                            f.deleteOnExit();
                         }
                     }
                     // delete files from more than one day ago
-                    File[] leftoverFiles = node.userDir().dir()
-                        .listFiles((file, name) -> name.startsWith(FOIL_PITCH_BLACK_ATTACK_PREFIX)
-                            && !name.contains(isoDateStringToday));
-                    if (leftoverFiles != null) {
-                        for (File f : leftoverFiles) {
-                            //noinspection ResultOfMethodCallIgnored
-                            f.delete();
+                    File[] leftoverFiles = Arrays.stream(foilPitchBlackStatusFiles)
+                        .filter(file -> !file.getName().contains(isoDateStringToday))
+                        .toArray(File[]::new);
+                    for (File f : leftoverFiles) {
+                        if (!f.delete()) {
+                            f.deleteOnExit();
                         }
                     }
                 }
