@@ -187,7 +187,7 @@ public class Util {
 				buf[from++] = (byte)rnd;
 		}
 	}
-	
+
 	@Deprecated // use freenet.support.Fields instead
 	public static boolean byteArrayEqual(byte[] a, byte[] b, int offset, int length) {
 		return freenet.support.Fields.byteArrayEqual(a, b, offset, offset, length);
