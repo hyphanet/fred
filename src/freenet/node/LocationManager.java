@@ -202,15 +202,15 @@ public class LocationManager implements ByteCounter {
                     true,
                     false);
 
-                    if (previousInsertFromToday != null
-                        && previousInsertFromToday.length == 0) {
-                        byte[] randomContentForKSK = new byte[20];
-                        node.fastWeakRandom.nextBytes(randomContentForKSK);
-                        String randomPart = Base64.encode(randomContentForKSK);
-                        String nameForInsert =
-                            FOIL_PITCH_BLACK_ATTACK_PREFIX + isoDateStringToday + "-" + randomPart;
-                        tryToInsertPitchBlackCheck(highLevelSimpleClient, nameForInsert);
-                    }
+                if (previousInsertFromToday != null
+                    && previousInsertFromToday.length == 0) {
+                    byte[] randomContentForKSK = new byte[20];
+                    node.secureRandom.nextBytes(randomContentForKSK);
+                    String randomPart = Base64.encode(randomContentForKSK);
+                    String nameForInsert =
+                        FOIL_PITCH_BLACK_ATTACK_PREFIX + isoDateStringToday + "-" + randomPart;
+                    tryToInsertPitchBlackCheck(highLevelSimpleClient, nameForInsert);
+                }
 
                     File[] successfulInsertFromYesterday = node.userDir().dir()
                         .listFiles((file, name) -> name.startsWith(FOIL_PITCH_BLACK_ATTACK_PREFIX
