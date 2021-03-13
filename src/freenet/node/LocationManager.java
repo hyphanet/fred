@@ -188,18 +188,19 @@ public class LocationManager implements ByteCounter {
 
             @Override
             public void run() {
-                try {
-                    String isoDateStringToday = DateTimeFormatter.ISO_DATE
-                        .format(LocalDateTime.now());
-                    String isoDateStringYesterday = DateTimeFormatter.ISO_DATE
-                        .format(LocalDateTime.now().minus(Duration.ofDays(1)));
-                    File[] previousInsertFromToday = node.userDir().dir()
-                        .listFiles((file, name) -> name.startsWith(FOIL_PITCH_BLACK_ATTACK_PREFIX
-                            + isoDateStringToday));
-                    HighLevelSimpleClient highLevelSimpleClient = node.clientCore.makeClient(
-                        RequestStarter.INTERACTIVE_PRIORITY_CLASS,
-                        true,
-                        false);
+                node.ticker.queueTimedJob(this, DAYS.toMillis(1));
+                LocalDateTime now = LocalDateTime.now();
+                String isoDateStringToday = DateTimeFormatter.ISO_DATE
+                    .format(now);
+                String isoDateStringYesterday = DateTimeFormatter.ISO_DATE
+                    .format(now.minus(Duration.ofDays(1)));
+                File[] previousInsertFromToday = node.userDir().dir()
+                    .listFiles((file, name) -> name.startsWith(FOIL_PITCH_BLACK_ATTACK_PREFIX
+                        + isoDateStringToday));
+                HighLevelSimpleClient highLevelSimpleClient = node.clientCore.makeClient(
+                    RequestStarter.INTERACTIVE_PRIORITY_CLASS,
+                    true,
+                    false);
 
                     if (previousInsertFromToday != null
                         && previousInsertFromToday.length == 0) {
@@ -236,9 +237,6 @@ public class LocationManager implements ByteCounter {
                             f.delete();
                         }
                     }
-
-                } finally {
-                    node.ticker.queueTimedJob(this, DAYS.toMillis(1));
                 }
             }
         }, SECONDS.toMillis(60));
