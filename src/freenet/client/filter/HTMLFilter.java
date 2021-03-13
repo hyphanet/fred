@@ -43,7 +43,9 @@ import freenet.support.io.NullWriter;
 
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
-	public static final String M3U_PLAYER_TAG_FILE = "freenet/clients/http/staticfiles/js/m3u-player.js";
+	private static final String M3U_PLAYER_TAG_FILE = "freenet/clients/http/staticfiles/js/m3u-player.js";
+	/** if true, embed m3u player. Enabled when fproxy javascript is enabled. **/
+	public static boolean embedM3uPlayer = true;
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
 
@@ -605,7 +607,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				if(t.element.compareTo("head")==0 && !t.startSlash){
 					pc.wasHeadElementFound=true;
 				} else if(t.element.compareTo("head")==0 && t.startSlash) {
-					w.write(m3uPlayerScriptTagContent);
+					if (embedM3uPlayer) {
+						w.write(m3uPlayerScriptTagContent);
+					}
 					pc.headEnded = true;
 					if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
 				//If we found a <title> or a <meta> without a <head>, then we need to add them to a <head>
@@ -621,7 +625,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				//If we found a <body> and haven't closed <head> already, then we do
 				}else if(t.element.compareTo("body") == 0 &&  pc.openElements.contains("head")){
 					if(!pc.onlyDetectingCharset) {
-						w.write(m3uPlayerScriptTagContent);
+						if (embedM3uPlayer) {
+							w.write(m3uPlayerScriptTagContent);
+						}
 						w.write("</head>");
 					}
 					pc.headEnded = true;
@@ -633,7 +639,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					String headContent=pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()));
 					if(headContent!=null){
 						if(!pc.onlyDetectingCharset) {
-							w.write(m3uPlayerScriptTagContent);
+							if (embedM3uPlayer) {
+								w.write(m3uPlayerScriptTagContent);
+							}
 							w.write(headContent+"</head>");
 						}
 						pc.headEnded = true;
