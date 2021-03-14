@@ -240,7 +240,7 @@ public class LocationManager implements ByteCounter {
                     }
                 }
             }
-        }, SECONDS.toMillis(60));
+        }, MINUTES.toMillis(10));
     }
 
     private void tryToRequestPitchBlackCheckFromYesterday(
