@@ -235,7 +235,12 @@ function initPlayer(mediaTag) {
   mediaTag.resizeObserver.observe(mediaTag);
 }
 function processTag(mediaTag) {
-  if (!mediaTag.canPlayType('audio/x-mpegurl')) {
+  const canPlayClaim = mediaTag.canPlayType('audio/x-mpegurl');
+  let supportsPlaylists = !!canPlayClaim;
+  if (canPlayClaim == 'maybe') { // yes, seriously: specced as you only know when you try
+    supportsPlaylists = false;
+  }
+  if (!supportsPlaylists) {
     if (isPlaylist(mediaTag.getAttribute("src"))) {
       initPlayer(mediaTag);
     }
