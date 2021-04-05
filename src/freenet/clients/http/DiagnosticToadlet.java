@@ -2,11 +2,16 @@ package freenet.clients.http;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
@@ -409,15 +414,60 @@ public class DiagnosticToadlet extends Toadlet {
 		}
 		textBuilder.append("\n");
 
-		// drawThreadPriorityStatsBox
-		textBuilder.append("Threads:\n");
-		int[] activeThreadsByPriority = stats.getActiveThreadsByPriority();
-		int[] waitingThreadsByPriority = stats.getWaitingThreadsByPriority();
-		for(int i=0; i<activeThreadsByPriority.length; i++) {
-			textBuilder.append(l10n("running")).append(": ").append(String.valueOf(activeThreadsByPriority[i])).append(" (").append(String.valueOf(i+1)).append(")\n");
-			textBuilder.append(l10n("waiting")).append(": ").append(String.valueOf(waitingThreadsByPriority[i])).append(" (").append(String.valueOf(i+1)).append(")\n");
-		}
-		textBuilder.append("\n");
+			// drawThreadPriorityStatsBox
+			textBuilder.append("Threads:\n");
+			ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
+			Map<Long, Long> threadCPU = new HashMap<Long, Long>();
+			for (ThreadInfo info : threadMxBean.dumpAllThreads(false, false)) {
+			    threadMxBean.getThreadInfo(info.getThreadId());
+				threadCPU.put(info.getThreadId(), threadMxBean.getThreadCpuTime(info.getThreadId()));
+			}
+
+			RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+			long initialUptime = runtimeMxBean.getUptime();
+
+			try {Thread.sleep(1000);} catch (InterruptedException e) {}
+
+			for (ThreadInfo info : threadMxBean.dumpAllThreads(false, false)) {
+				Long prev = threadCPU.get(info.getThreadId());
+				if (prev == null)
+					continue;
+				threadCPU.put(info.getThreadId(), threadMxBean.getThreadCpuTime(info.getThreadId()) - prev);
+			}
+
+			Float totalCPU = (runtimeMxBean.getUptime() - initialUptime) * 1000000F * 1;
+
+			// ID, Name, Priority, Group (system, main), Status, % CPU
+			textBuilder.append(
+				String.format(
+					"%5s %-30s %5s %10s %-20s %-5s%n",
+					"ID",
+					"Name",
+					"Prio.",
+					"Group",
+					"Status",
+					"% CPU"
+				)
+			);
+
+			for (Thread t : stats.getThreads()) {
+				if (t == null)
+					continue;
+
+				Float cpuUsage = threadCPU.getOrDefault(t.getId(), 0l) / totalCPU;
+				String line = String.format(
+					"%5s %-30s %5s %10s %-20s %.2f%n",
+					t.getId(),
+					t.getName().length() > 30 ? t.getName().substring(0, 30) : t.getName(),
+					t.getPriority(),
+					t.getThreadGroup().getName(),
+					t.getState(),
+					cpuUsage
+				);
+
+				textBuilder.append(line);
+			}
+			textBuilder.append("\n");
 		}
 
 		this.writeTextReply(ctx, 200, "OK", textBuilder.toString());
