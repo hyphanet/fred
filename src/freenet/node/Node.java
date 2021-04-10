@@ -723,6 +723,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public final SecurityLevels securityLevels;
 
+	/** Diagnostics */
+	public final NodeDiagnostics nodeDiagnostics;
+
+
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
 
@@ -2601,6 +2605,8 @@ public class Node implements TimeSkewDetectorCallback {
 		System.out.println("Node constructor completed");
 
 		new BandwidthManager(this).start();
+
+		nodeDiagnostics = new NodeDiagnostics(this.nodeStats, this.ticker);
 	}
 
 	private void peersOffersFrefFilesConfiguration(SubConfig nodeConfig, int configOptionSortOrder) {
@@ -3165,6 +3171,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Process any data in the extra peer data directory
 		peers.readExtraPeerData();
+
+		nodeDiagnostics.start();
 
 		Logger.normal(this, "Started node");
 
@@ -4892,5 +4900,8 @@ public class Node implements TimeSkewDetectorCallback {
     DatabaseKey getDatabaseKey() {
         return databaseKey;
     }
-    
+
+	public NodeDiagnostics getNodeDiagnostics() {
+		return nodeDiagnostics;
+	}
 }

@@ -9,10 +9,7 @@ import java.lang.management.ThreadMXBean;
 import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.PersistenceDisabledException;
@@ -25,15 +22,7 @@ import freenet.config.SubConfig;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.l10n.BaseL10n;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.NodeStarter;
-import freenet.node.NodeStats;
-import freenet.node.OpennetManager;
-import freenet.node.PeerManager;
-import freenet.node.PeerNodeStatus;
-import freenet.node.RequestTracker;
-import freenet.node.Version;
+import freenet.node.*;
 import freenet.node.stats.DataStoreInstanceType;
 import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.StatsNotAvailableException;
@@ -414,60 +403,45 @@ public class DiagnosticToadlet extends Toadlet {
 		}
 		textBuilder.append("\n");
 
-			// drawThreadPriorityStatsBox
-			textBuilder.append("Threads:\n");
-			ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
-			Map<Long, Long> threadCPU = new HashMap<Long, Long>();
-			for (ThreadInfo info : threadMxBean.dumpAllThreads(false, false)) {
-			    threadMxBean.getThreadInfo(info.getThreadId());
-				threadCPU.put(info.getThreadId(), threadMxBean.getThreadCpuTime(info.getThreadId()));
+		// drawThreadPriorityStatsBox
+		textBuilder.append("Threads:\n");
+		// ID, Name, Priority, Group (system, main), Status, % CPU
+		textBuilder.append(
+			String.format(
+				"%5s %-60s %5s %10s %-20s %-5s%n",
+				"ID",
+				"Name",
+				"Prio.",
+				"Group",
+				"Status",
+				"% CPU"
+			)
+		);
+
+		List<NodeDiagnostics.NodeThreadInfo> threads = node.getNodeDiagnostics().getThreadInfo();
+		threads.sort(
+			new Comparator<NodeDiagnostics.NodeThreadInfo>() {
+				@Override
+				public int compare(NodeDiagnostics.NodeThreadInfo o1, NodeDiagnostics.NodeThreadInfo o2) {
+					return Double.compare(o2.getCpuTime(), o1.getCpuTime());
+				}
 			}
+		);
 
-			RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-			long initialUptime = runtimeMxBean.getUptime();
-
-			try {Thread.sleep(1000);} catch (InterruptedException e) {}
-
-			for (ThreadInfo info : threadMxBean.dumpAllThreads(false, false)) {
-				Long prev = threadCPU.get(info.getThreadId());
-				if (prev == null)
-					continue;
-				threadCPU.put(info.getThreadId(), threadMxBean.getThreadCpuTime(info.getThreadId()) - prev);
-			}
-
-			Float totalCPU = (runtimeMxBean.getUptime() - initialUptime) * 1000000F * 1;
-
-			// ID, Name, Priority, Group (system, main), Status, % CPU
-			textBuilder.append(
-				String.format(
-					"%5s %-30s %5s %10s %-20s %-5s%n",
-					"ID",
-					"Name",
-					"Prio.",
-					"Group",
-					"Status",
-					"% CPU"
-				)
+		for (NodeDiagnostics.NodeThreadInfo t : threads) {
+			String line = String.format(
+				"%5s %-60s %5s %10s %-20s %.2f%n",
+				t.getId(),
+				t.getName().substring(0, Math.min(60, t.getName().length())),
+				t.getPrio(),
+				t.getGroupName(),
+				t.getState(),
+				t.getCpuTime()
 			);
+			textBuilder.append(line);
+		}
 
-			for (Thread t : stats.getThreads()) {
-				if (t == null)
-					continue;
-
-				Float cpuUsage = threadCPU.getOrDefault(t.getId(), 0l) / totalCPU;
-				String line = String.format(
-					"%5s %-30s %5s %10s %-20s %.2f%n",
-					t.getId(),
-					t.getName().length() > 30 ? t.getName().substring(0, 30) : t.getName(),
-					t.getPriority(),
-					t.getThreadGroup().getName(),
-					t.getState(),
-					cpuUsage
-				);
-
-				textBuilder.append(line);
-			}
-			textBuilder.append("\n");
+		textBuilder.append("\n");
 		}
 
 		this.writeTextReply(ctx, 200, "OK", textBuilder.toString());
