@@ -4902,6 +4902,6 @@ public class Node implements TimeSkewDetectorCallback {
     }
 
 	public NodeDiagnostics getNodeDiagnostics() {
-		return nodeDiagnostics;
+        return nodeDiagnostics;
 	}
 }
