@@ -2,15 +2,13 @@ package freenet.clients.http;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
 import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.*;
-
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.List;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.clients.fcp.DownloadRequestStatus;
