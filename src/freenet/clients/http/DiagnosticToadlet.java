@@ -20,9 +20,9 @@ import freenet.config.SubConfig;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.l10n.BaseL10n;
+import freenet.node.diagnostics.NodeDiagnostics;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
-import freenet.node.NodeDiagnostics;
 import freenet.node.NodeStarter;
 import freenet.node.NodeStats;
 import freenet.node.OpennetManager;
@@ -30,6 +30,8 @@ import freenet.node.PeerManager;
 import freenet.node.PeerNodeStatus;
 import freenet.node.RequestTracker;
 import freenet.node.Version;
+import freenet.node.diagnostics.diagnostics.*;
+import freenet.node.diagnostics.diagnostics.threads.*;
 import freenet.node.stats.DataStoreInstanceType;
 import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.StatsNotAvailableException;
@@ -425,17 +427,16 @@ public class DiagnosticToadlet extends Toadlet {
 			)
 		);
 
-		List<NodeDiagnostics.NodeThreadInfo> threads = node.getNodeDiagnostics().getThreadInfo();
+		ThreadsDiagnostics threadsDiagnostics = (ThreadsDiagnostics) node
+			.getNodeDiagnostics()
+			.getDiagnostics(NodeDiagnostics.DIAGNOSTICS.THREADS);
+
+		List<NodeThreadInfo> threads = threadsDiagnostics.getThreads();
 		threads.sort(
-			new Comparator<NodeDiagnostics.NodeThreadInfo>() {
-				@Override
-				public int compare(NodeDiagnostics.NodeThreadInfo o1, NodeDiagnostics.NodeThreadInfo o2) {
-					return Double.compare(o2.getCpuTime(), o1.getCpuTime());
-				}
-			}
+			(o1, o2) -> Double.compare(o2.getCpuTime(), o1.getCpuTime())
 		);
 
-		for (NodeDiagnostics.NodeThreadInfo t : threads) {
+		for (NodeThreadInfo t : threads) {
 			String line = String.format(
 				"%5s %-60s %5s %10s %-20s %.2f%n",
 				t.getId(),
