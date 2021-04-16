@@ -22,7 +22,7 @@ import java.util.HashMap;
  *  Some data pointers are obtained from NodeStats object.
  */
 public class NodeDiagnostics {
-    public enum DIAGNOSTICS {
+    private enum DIAGNOSTICS {
         THREADS
     };
 
@@ -47,7 +47,7 @@ public class NodeDiagnostics {
      *
      * @return List of threads registered in NodeStats.getThreads()
      */
-    public Diagnostics getDiagnostics(DIAGNOSTICS diagnostic) {
-        return diagnostics.get(diagnostic);
+    public ThreadsDiagnostics getThreadsDiagnostics() {
+        return (ThreadsDiagnostics)diagnostics.get(DIAGNOSTICS.THREADS);
     }
 }

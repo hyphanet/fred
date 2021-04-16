@@ -437,9 +437,9 @@ public class DiagnosticToadlet extends Toadlet {
 			)
 		);
 
-		ThreadsDiagnostics threadsDiagnostics = (ThreadsDiagnostics) node
+		ThreadsDiagnostics threadsDiagnostics = node
 			.getNodeDiagnostics()
-			.getDiagnostics(NodeDiagnostics.DIAGNOSTICS.THREADS);
+			.getThreadsDiagnostics();
 
 		List<NodeThreadInfo> threads = threadsDiagnostics.getThreads();
 		threads.sort(
