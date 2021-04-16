@@ -725,8 +725,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public final SecurityLevels securityLevels;
 
 	/** Diagnostics */
-	public final NodeDiagnostics nodeDiagnostics;
-
+	private final NodeDiagnostics nodeDiagnostics;
 
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
