@@ -414,8 +414,18 @@ public class DiagnosticToadlet extends Toadlet {
 
 		// drawThreadPriorityStatsBox
 		textBuilder.append("Threads:\n");
+		textBuilder.append(threadsStats());
+
+		textBuilder.append("\n");
+		}
+
+		this.writeTextReply(ctx, 200, "OK", textBuilder.toString());
+	}
+
+	private StringBuilder threadsStats() {
+		StringBuilder sb = new StringBuilder();
 		// ID, Name, Priority, Group (system, main), Status, % CPU
-		textBuilder.append(
+		sb.append(
 			String.format(
 				"%5s %-60s %5s %10s %-20s %-5s%n",
 				"ID",
@@ -436,23 +446,20 @@ public class DiagnosticToadlet extends Toadlet {
 			(o1, o2) -> Double.compare(o2.getCpuTime(), o1.getCpuTime())
 		);
 
-		for (NodeThreadInfo t : threads) {
+		for (NodeThreadInfo thread : threads) {
 			String line = String.format(
 				"%5s %-60s %5s %10s %-20s %.2f%n",
-				t.getId(),
-				t.getName().substring(0, Math.min(60, t.getName().length())),
-				t.getPrio(),
-				t.getGroupName(),
-				t.getState(),
-				t.getCpuTime()
+				thread.getId(),
+				thread.getName().substring(0, Math.min(60, thread.getName().length())),
+				thread.getPrio(),
+				thread.getGroupName(),
+				thread.getState(),
+				thread.getCpuTime()
 			);
-			textBuilder.append(line);
+			sb.append(line);
 		}
 
-		textBuilder.append("\n");
-		}
-
-		this.writeTextReply(ctx, 200, "OK", textBuilder.toString());
+		return sb;
 	}
 
 	private int getPeerStatusCount(PeerNodeStatus[] peerNodeStatuses, int status) {
