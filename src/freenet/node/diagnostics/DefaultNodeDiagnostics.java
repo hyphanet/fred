@@ -6,9 +6,6 @@ package freenet.node.diagnostics;
 import freenet.node.diagnostics.threads.*;
 import freenet.support.Ticker;
 import freenet.node.NodeStats;
-import freenet.node.NodeInitException;
-
-import java.util.HashMap;
 
 /**
  *  @author desyncr
@@ -31,7 +28,7 @@ public class DefaultNodeDiagnostics implements NodeDiagnostics {
         defaultThreadDiagnostics = new DefaultThreadDiagnostics(nodeStats, ticker);
     }
 
-    public void start() throws NodeInitException {
+    public void start() {
         defaultThreadDiagnostics.start();
     }
 
