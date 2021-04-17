@@ -27,7 +27,7 @@ public class DefaultNodeDiagnostics implements NodeDiagnostics {
      * @param nodeStats Used to retrieve data points.
      * @param ticker Used to queue timed jobs.
      */
-    public DefaultNodeDiagnostics(final NodeStats nodeStats, final Ticker ticker) {
+    public DefaultNodeDiagnostics(NodeStats nodeStats, Ticker ticker) {
         defaultThreadDiagnostics = new DefaultThreadDiagnostics(nodeStats, ticker);
     }
 
