@@ -82,7 +82,7 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.BaseL10n;
 import freenet.l10n.NodeL10n;
-import freenet.node.diagnostics.NodeDiagnostics;
+import freenet.node.diagnostics.DefaultNodeDiagnostics;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
@@ -725,7 +725,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public final SecurityLevels securityLevels;
 
 	/** Diagnostics */
-	private final NodeDiagnostics nodeDiagnostics;
+	private final DefaultNodeDiagnostics defaultNodeDiagnostics;
 
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
@@ -2606,7 +2606,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		new BandwidthManager(this).start();
 
-		nodeDiagnostics = new NodeDiagnostics(this.nodeStats, this.ticker);
+		defaultNodeDiagnostics = new DefaultNodeDiagnostics(this.nodeStats, this.ticker);
 	}
 
 	private void peersOffersFrefFilesConfiguration(SubConfig nodeConfig, int configOptionSortOrder) {
@@ -3172,7 +3172,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Process any data in the extra peer data directory
 		peers.readExtraPeerData();
 
-		nodeDiagnostics.start();
+		defaultNodeDiagnostics.start();
 
 		Logger.normal(this, "Started node");
 
@@ -4901,7 +4901,7 @@ public class Node implements TimeSkewDetectorCallback {
         return databaseKey;
     }
 
-	public NodeDiagnostics getNodeDiagnostics() {
-        return nodeDiagnostics;
+	public DefaultNodeDiagnostics getNodeDiagnostics() {
+        return defaultNodeDiagnostics;
 	}
 }

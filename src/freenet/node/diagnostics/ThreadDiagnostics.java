@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.diagnostics;
 
-public interface Diagnostics {
-    void start();
+import freenet.node.diagnostics.threads.*;
+
+import java.util.*;
+
+public interface ThreadDiagnostics {
+    List<NodeThreadInfo> getThreads();
 }

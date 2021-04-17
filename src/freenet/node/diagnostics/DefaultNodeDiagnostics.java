@@ -20,33 +20,27 @@ import java.util.HashMap;
  *  is available through the public methods.
  *  Some data pointers are obtained from NodeStats object.
  */
-public class NodeDiagnostics {
-    private enum DIAGNOSTICS {
-        THREADS
-    };
-
-    private final HashMap<DIAGNOSTICS, Diagnostics> diagnostics = new HashMap<>();
+public class DefaultNodeDiagnostics implements NodeDiagnostics {
+    private final DefaultThreadDiagnostics defaultThreadDiagnostics;
 
    /**
      * @param nodeStats Used to retrieve data points.
      * @param ticker Used to queue timed jobs.
      */
-    public NodeDiagnostics(final NodeStats nodeStats, final Ticker ticker) {
-        this.diagnostics.put(
-            DIAGNOSTICS.THREADS,
-            new ThreadsDiagnostics(nodeStats, ticker)
-        );
+    public DefaultNodeDiagnostics(final NodeStats nodeStats, final Ticker ticker) {
+        defaultThreadDiagnostics = new DefaultThreadDiagnostics(nodeStats, ticker);
     }
 
     public void start() throws NodeInitException {
-        diagnostics.forEach((type, diagnostic) -> diagnostic.start());
+        defaultThreadDiagnostics.start();
     }
 
     /**
      *
      * @return List of threads registered in NodeStats.getThreads()
      */
-    public ThreadsDiagnostics getThreadsDiagnostics() {
-        return (ThreadsDiagnostics)diagnostics.get(DIAGNOSTICS.THREADS);
+    @Override
+    public ThreadDiagnostics getThreadDiagnostics() {
+        return defaultThreadDiagnostics;
     }
 }

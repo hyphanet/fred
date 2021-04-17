@@ -14,7 +14,7 @@ import java.util.*;
  * Runnable thread to retrieve node thread's information and compiling it into
  * an array of NodeThreadInfo objects.
  */
-public class ThreadDiagnostics implements Runnable {
+public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     private final String name;
     private final int monitorInterval;
 
@@ -27,7 +27,7 @@ public class ThreadDiagnostics implements Runnable {
 
     /** Sleep interval to calculate % CPU used by each thread */
     private static final int CPU_SLEEP_INTERVAL = 1000;
-    List<NodeThreadInfo> nodeThreadInfos    = Collections.synchronizedList(new ArrayList<>());
+    List<NodeThreadInfo> nodeThreadInfo     = Collections.synchronizedList(new ArrayList<>());
 
     OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
     ThreadMXBean threadMxBean               = ManagementFactory.getThreadMXBean();
@@ -39,7 +39,7 @@ public class ThreadDiagnostics implements Runnable {
      * @param name Thread name
      * @param monitorInterval Sleep intervals to retrieve CPU usage
      */
-    public ThreadDiagnostics(NodeStats nodeStats, Ticker ticker, String name, int monitorInterval) {
+    public DefaultThreadDiagnostics(NodeStats nodeStats, Ticker ticker, String name, int monitorInterval) {
         this.nodeStats = nodeStats;
         this.ticker = ticker;
         this.name = name;
@@ -50,7 +50,7 @@ public class ThreadDiagnostics implements Runnable {
      * @param nodeStats Used to retrieve data points
      * @param ticker Used to queue timed jobs
      */
-    public ThreadDiagnostics(NodeStats nodeStats, Ticker ticker) {
+    public DefaultThreadDiagnostics(NodeStats nodeStats, Ticker ticker) {
         this(nodeStats, ticker, MONITOR_THREAD_NAME, MONITOR_INTERVAL);
     }
 
@@ -126,7 +126,7 @@ public class ThreadDiagnostics implements Runnable {
             threads.add(nodeThreadInfo);
         }
         synchronized (this) {
-            nodeThreadInfos = threads;
+            nodeThreadInfo = threads;
         }
 
         scheduleNext();
@@ -136,6 +136,6 @@ public class ThreadDiagnostics implements Runnable {
      * @return List of Node threads
      */
     public synchronized List<NodeThreadInfo> getThreads() {
-        return new ArrayList<>(nodeThreadInfos);
+        return new ArrayList<>(nodeThreadInfo);
     }
 }
