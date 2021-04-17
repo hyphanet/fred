@@ -1,5 +1,6 @@
-package freenet.node.metrics;
+package freenet.node.metrics.persisters;
 
+import freenet.node.metrics.*;
 import freenet.support.*;
 
 import java.io.*;
@@ -7,13 +8,13 @@ import java.net.*;
 import java.time.*;
 import java.util.*;
 
-public class DefaultNodeMetricsPersister implements Runnable {
+public class NodeMetricsPersisterGraphite implements Runnable {
     private final static int DEFAULT_INTERVAL = 10000;
     private final Ticker ticker;
     List<MetricsProvider> mps;
     private final GraphitePersister persister = new GraphitePersister("127.0.0.1", 2003);
 
-    public DefaultNodeMetricsPersister(List<MetricsProvider> mps, Ticker ticker) {
+    public NodeMetricsPersisterGraphite(List<MetricsProvider> mps, Ticker ticker) {
         this.mps = mps;
         this.ticker = ticker;
     }

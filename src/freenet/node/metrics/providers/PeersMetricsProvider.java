@@ -1,52 +1,21 @@
-package freenet.node.metrics.peers;
+package freenet.node.metrics.providers;
 
 import freenet.node.*;
 import freenet.node.metrics.*;
 import freenet.support.*;
 
 import java.util.*;
-import java.util.concurrent.atomic.*;
 
-public class DefaultPeerMetrics implements Runnable, MetricsProvider {
+public class PeersMetricsProvider extends DefaultMetricProvider implements Runnable, MetricsProvider {
     private final PeerManager peers;
-    private final Ticker ticker;
-    private static final int DEFAULT_INTERVAL = 10000;
-    private final AtomicReference<List<Metric>> metrics = new AtomicReference<>(new ArrayList<>());
     private static final String DATA_POINT_PREFIX = "peers.status.";
 
-    public DefaultPeerMetrics(PeerManager peers, Ticker ticker) {
+    public PeersMetricsProvider(PeerManager peers, Ticker ticker) {
+        super(ticker);
         this.peers = peers;
-        this.ticker = ticker;
     }
 
-    private void scheduleNext() {
-        scheduleNext(DEFAULT_INTERVAL);
-    }
-
-    private void scheduleNext(int interval) {
-        ticker.queueTimedJob(
-            this,
-            this.getClass().getName(),
-            interval,
-            false,
-            true
-        );
-    }
-
-    public void start() {
-        scheduleNext(0);
-    }
-
-    /**
-     * Returns metrics snapshot and remove these metrics.
-     */
-    public List<Metric> getMetrics() {
-        return Collections.unmodifiableList(metrics.getAndSet(new ArrayList<>()));
-    }
-
-    @Override
-    public void run() {
-        Logger.normal(this, "Running defaultpeermetrisc");
+    public List<Metric> update() {
         PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
         Arrays.sort(peerNodeStatuses, Comparator.comparingInt(PeerNodeStatus::getStatusValue));
 
@@ -68,26 +37,24 @@ public class DefaultPeerMetrics implements Runnable, MetricsProvider {
             put(PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS, "no_load_stats");
         }};
 
-        List<Metric> updateMetrics = new ArrayList<>(metrics.get());
+        List<Metric> metrics = new ArrayList<>();
         registeredDataPoint.forEach((Integer status, String name) -> {
             registerDataPoint(
-                updateMetrics,
+                metrics,
                 peerNodeStatuses,
                 status,
                 name
             );
         });
 
-        updateMetrics.add(
+        metrics.add(
             new Metric(getDataPointPrefix("seed_servers"), getCountSeedServers(peerNodeStatuses))
         );
-        updateMetrics.add(
+        metrics.add(
             new Metric(getDataPointPrefix("seed_clients"), getCountSeedClients(peerNodeStatuses))
         );
 
-        metrics.set(updateMetrics);
-
-        scheduleNext();
+        return metrics;
     }
 
     /**
