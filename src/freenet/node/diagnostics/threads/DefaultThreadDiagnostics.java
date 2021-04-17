@@ -22,12 +22,10 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     private final NodeStats nodeStats;
     private final Ticker ticker;
 
-    /** Interval in ms the ThreadMonitor is launched */
-    private static final int MONITOR_INTERVAL = 10000;
+    /** Sleep interval to calculate % CPU used by each thread */
+    private static final int MONITOR_INTERVAL = 1000;
     private static final String MONITOR_THREAD_NAME = "NodeDiagnostics: thread monitor";
 
-    /** Sleep interval to calculate % CPU used by each thread */
-    private static final int CPU_SLEEP_INTERVAL = 1000;
     private final AtomicReference<List<NodeThreadInfo>> nodeThreadInfo = new AtomicReference<>(new ArrayList<>());
 
     private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
@@ -73,24 +71,25 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
         scheduleNext(monitorInterval);
     }
 
+    private final Map<Long, Long> threadCPU = new HashMap<>();
+    private long initialUptime = -1;
+
     @Override
     public void run() {
-        Map<Long, Long> threadCPU = new HashMap<>();
+        if (initialUptime == -1) {
+            initialUptime = runtimeMxBean.getUptime();
 
-        for (ThreadInfo info : threadMxBean.dumpAllThreads(false, false)) {
-            threadCPU.put(
-                info.getThreadId(),
-                threadMxBean.getThreadCpuTime(
-                    info.getThreadId()
-                )
-            );
-        }
+            for (ThreadInfo info : threadMxBean.dumpAllThreads(false, false)) {
+                threadCPU.put(
+                    info.getThreadId(),
+                    threadMxBean.getThreadCpuTime(
+                        info.getThreadId()
+                    )
+                );
+            }
 
-        long initialUptime = runtimeMxBean.getUptime();
-
-        try {
-            Thread.sleep(CPU_SLEEP_INTERVAL);
-        } catch (InterruptedException ignored) {
+            scheduleNext();
+            return;
         }
 
         for (ThreadInfo info : threadMxBean.dumpAllThreads(false, false)) {
@@ -105,31 +104,42 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
             );
         }
 
+        nodeThreadInfo.set(buildThreadList());
+
+        initialUptime = -1;
+        threadCPU.clear();
+
+        scheduleNext();
+    }
+
+    /**
+     *
+     * @return
+     */
+    private List<NodeThreadInfo> buildThreadList() {
+        List<NodeThreadInfo> threads = new ArrayList<>();
         long elapsedUptime = runtimeMxBean.getUptime() - initialUptime;
         double totalElapsedUptime = (elapsedUptime * operatingSystemMXBean.getAvailableProcessors()) * 10000F;
 
-        List<NodeThreadInfo> threads = new ArrayList<>();
-        for (Thread t : nodeStats.getThreads()) {
-            if (t == null) {
+        for (Thread thread : nodeStats.getThreads()) {
+            if (thread == null) {
                 continue;
             }
 
-            double cpuUsage = threadCPU.getOrDefault(t.getId(), 0L) / totalElapsedUptime;
+            double cpuUsage = threadCPU.getOrDefault(thread.getId(), 0L) / totalElapsedUptime;
             NodeThreadInfo nodeThreadInfo = new NodeThreadInfo(
-                t.getId(),
-                t.getName(),
-                t.getPriority(),
-                t.getThreadGroup().getName(),
-                t.getState().toString(),
+                thread.getId(),
+                thread.getName(),
+                thread.getPriority(),
+                thread.getThreadGroup().getName(),
+                thread.getState().toString(),
                 cpuUsage
             );
 
             threads.add(nodeThreadInfo);
         }
 
-        nodeThreadInfo.set(threads);
-
-        scheduleNext();
+        return threads;
     }
 
     /**
