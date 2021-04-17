@@ -119,14 +119,14 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     private List<NodeThreadInfo> buildThreadList() {
         List<NodeThreadInfo> threads = new ArrayList<>();
         long elapsedUptime = runtimeMxBean.getUptime() - initialUptime;
-        double totalElapsedUptime = (elapsedUptime * operatingSystemMXBean.getAvailableProcessors()) * 10000F;
+        double totalElapsedUptime = (elapsedUptime * operatingSystemMXBean.getAvailableProcessors()) * 10000d;
 
         for (Thread thread : nodeStats.getThreads()) {
             if (thread == null) {
                 continue;
             }
 
-            double cpuUsage = threadCPU.getOrDefault(thread.getId(), 0L) / totalElapsedUptime;
+            double cpuUsage = (threadCPU.getOrDefault(thread.getId(), 0L) / totalElapsedUptime) * 100;
             NodeThreadInfo nodeThreadInfo = new NodeThreadInfo(
                 thread.getId(),
                 thread.getName(),
