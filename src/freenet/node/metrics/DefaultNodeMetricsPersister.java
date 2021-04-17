@@ -2,13 +2,16 @@ package freenet.node.metrics;
 
 import freenet.support.*;
 
+import java.io.*;
+import java.net.*;
 import java.time.*;
 import java.util.*;
 
 public class DefaultNodeMetricsPersister implements Runnable {
-    private final static int DEFAULT_INTERVAL = 1000;
+    private final static int DEFAULT_INTERVAL = 10000;
     private final Ticker ticker;
     List<MetricsProvider> mps;
+    private final GraphitePersister persister = new GraphitePersister("127.0.0.1", 2003);
 
     public DefaultNodeMetricsPersister(List<MetricsProvider> mps, Ticker ticker) {
         this.mps = mps;
@@ -35,22 +38,53 @@ public class DefaultNodeMetricsPersister implements Runnable {
 
     @Override
     public void run() {
-        Logger.error(this, "Running node persister");
         for (MetricsProvider mp : mps) {
-            for (Metric metric : mp.getMetrics()) {
-                Logger.error(this, mp.getClass().getName());
-                Logger.error(
-                    this,
-                    String.format(
-                        "[%s] %s = %s",
-                        metric.getTimestamp(),
-                        metric.getName(),
-                        metric.getValue()
-                    )
-                );
-            }
+            persister.persist(mp.getMetrics());
         }
 
         scheduleNext();
+    }
+
+    interface Persister {
+        void persist(List<Metric> metrics);
+    }
+
+    static class GraphitePersister implements Persister {
+        private final String domain;
+        private final int port;
+
+        public GraphitePersister(String domain, int port) {
+            this.domain = domain;
+            this.port = port;
+        }
+
+        public void persist(List<Metric> metrics) {
+            if (metrics.size() == 0) {
+                return;
+            }
+
+            try {
+                Socket socket = new Socket(this.domain, this.port);
+                OutputStream s = socket.getOutputStream();
+                PrintWriter out = new PrintWriter(s, true);
+
+                for (Metric metric : metrics) {
+                    out.printf(
+                        "%s %s %s%n",
+                        metric.getName(),
+                        metric.getValue(),
+                        metric.getTimestamp()
+                            .atZone(ZoneId.systemDefault())
+                            .toEpochSecond()
+                    );
+                }
+                out.close();
+                socket.close();
+            } catch (IOException e) {
+                // TODO Back off mechanism
+                // TODO Buffer metrics
+                e.printStackTrace();
+            }
+        }
     }
 }

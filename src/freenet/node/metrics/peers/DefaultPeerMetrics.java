@@ -4,14 +4,14 @@ import freenet.node.*;
 import freenet.node.metrics.*;
 import freenet.support.*;
 
-import java.time.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 public class DefaultPeerMetrics implements Runnable, MetricsProvider {
     private final PeerManager peers;
     private final Ticker ticker;
     private static final int DEFAULT_INTERVAL = 10000;
-    private List<Metric> metrics = new ArrayList<>();
+    private final AtomicReference<List<Metric>> metrics = new AtomicReference<>(new ArrayList<>());
     private static final String DATA_POINT_PREFIX = "peers.status.";
 
     public DefaultPeerMetrics(PeerManager peers, Ticker ticker) {
@@ -38,10 +38,10 @@ public class DefaultPeerMetrics implements Runnable, MetricsProvider {
     }
 
     /**
-     * @return
+     * Returns metrics snapshot and remove these metrics.
      */
     public List<Metric> getMetrics() {
-        return Collections.unmodifiableList(metrics);
+        return Collections.unmodifiableList(metrics.getAndSet(new ArrayList<>()));
     }
 
     @Override
@@ -68,30 +68,35 @@ public class DefaultPeerMetrics implements Runnable, MetricsProvider {
             put(PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS, "no_load_stats");
         }};
 
+        List<Metric> updateMetrics = new ArrayList<>(metrics.get());
         registeredDataPoint.forEach((Integer status, String name) -> {
             registerDataPoint(
+                updateMetrics,
                 peerNodeStatuses,
                 status,
                 name
             );
         });
 
-        metrics.add(
+        updateMetrics.add(
             new Metric(getDataPointPrefix("seed_servers"), getCountSeedServers(peerNodeStatuses))
         );
-        metrics.add(
+        updateMetrics.add(
             new Metric(getDataPointPrefix("seed_clients"), getCountSeedClients(peerNodeStatuses))
         );
+
+        metrics.set(updateMetrics);
 
         scheduleNext();
     }
 
     /**
+     * @param metrics
      * @param peerNodeStatuses
      * @param status
      * @param datapoint
      */
-    private void registerDataPoint(PeerNodeStatus[] peerNodeStatuses, int status, String datapoint) {
+    private void registerDataPoint(List<Metric> metrics, PeerNodeStatus[] peerNodeStatuses, int status, String datapoint) {
         metrics.add(
             new Metric(
                 getDataPointPrefix(datapoint),
