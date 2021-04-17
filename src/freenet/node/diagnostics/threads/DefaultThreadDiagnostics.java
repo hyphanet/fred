@@ -146,6 +146,6 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
      * @return List of Node threads
      */
     public List<NodeThreadInfo> getThreads() {
-        return new ArrayList<>(nodeThreadInfo.get());
+        return nodeThreadInfo.get();
     }
 }
