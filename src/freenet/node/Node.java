@@ -38,6 +38,7 @@ import java.util.Random;
 import java.util.Set;
 
 import freenet.config.*;
+import freenet.node.metrics.*;
 import freenet.node.useralerts.*;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -732,6 +733,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 	// The node starter
 	private static NodeStarter nodeStarter;
+
+	// Node metrics
+	private final DefaultNodeMetrics nodeMetrics;
 
 	// The watchdog will be silenced until it's true
 	private boolean hasStarted;
@@ -2596,6 +2600,9 @@ public class Node implements TimeSkewDetectorCallback {
 			toadlets.createFproxy();
 			toadlets.removeStartupToadlet();
 		}
+
+		nodeMetrics = new DefaultNodeMetrics(this);
+		nodeMetrics.start();
 
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
