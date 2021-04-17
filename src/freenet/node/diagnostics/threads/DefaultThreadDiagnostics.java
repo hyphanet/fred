@@ -27,11 +27,11 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
 
     /** Sleep interval to calculate % CPU used by each thread */
     private static final int CPU_SLEEP_INTERVAL = 1000;
-    List<NodeThreadInfo> nodeThreadInfo     = Collections.synchronizedList(new ArrayList<>());
+    private List<NodeThreadInfo> nodeThreadInfo     = Collections.synchronizedList(new ArrayList<>());
 
-    OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
-    ThreadMXBean threadMxBean               = ManagementFactory.getThreadMXBean();
-    RuntimeMXBean runtimeMxBean             = ManagementFactory.getRuntimeMXBean();
+    private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
+    private final ThreadMXBean threadMxBean               = ManagementFactory.getThreadMXBean();
+    private final RuntimeMXBean runtimeMxBean             = ManagementFactory.getRuntimeMXBean();
 
     /**
      * @param nodeStats Used to retrieve data points
