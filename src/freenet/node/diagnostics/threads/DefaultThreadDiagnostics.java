@@ -9,6 +9,7 @@ import freenet.support.*;
 
 import java.lang.management.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 /**
  * Runnable thread to retrieve node thread's information and compiling it into
@@ -27,7 +28,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
 
     /** Sleep interval to calculate % CPU used by each thread */
     private static final int CPU_SLEEP_INTERVAL = 1000;
-    private List<NodeThreadInfo> nodeThreadInfo     = Collections.synchronizedList(new ArrayList<>());
+    private final AtomicReference<List<NodeThreadInfo>> nodeThreadInfo = new AtomicReference<>(new ArrayList<>());
 
     private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
     private final ThreadMXBean threadMxBean               = ManagementFactory.getThreadMXBean();
@@ -125,9 +126,8 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
 
             threads.add(nodeThreadInfo);
         }
-        synchronized (this) {
-            nodeThreadInfo = threads;
-        }
+
+        nodeThreadInfo.set(threads);
 
         scheduleNext();
     }
@@ -135,7 +135,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     /**
      * @return List of Node threads
      */
-    public synchronized List<NodeThreadInfo> getThreads() {
-        return new ArrayList<>(nodeThreadInfo);
+    public List<NodeThreadInfo> getThreads() {
+        return new ArrayList<>(nodeThreadInfo.get());
     }
 }
