@@ -725,7 +725,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public final SecurityLevels securityLevels;
 
 	/** Diagnostics */
-	private final NodeDiagnostics nodeDiagnostics;
+	private final DefaultNodeDiagnostics nodeDiagnostics;
 
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
@@ -3172,7 +3172,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Process any data in the extra peer data directory
 		peers.readExtraPeerData();
 
-		((DefaultNodeDiagnostics)nodeDiagnostics).start();
+		nodeDiagnostics.start();
 
 		Logger.normal(this, "Started node");
 
