@@ -1,10 +1,10 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.node.diagnostics.diagnostics.threads;
+package freenet.node.diagnostics.threads;
 
 import freenet.node.*;
-import freenet.node.diagnostics.diagnostics.*;
+import freenet.node.diagnostics.*;
 import freenet.support.*;
 
 import java.lang.management.*;
@@ -14,7 +14,7 @@ import java.util.*;
  * Runnable thread to retrieve node thread's information and compiling it into
  * an array of NodeThreadInfo objects.
  */
-public class ThreadsDiagnostics implements Runnable, Diagnostics {
+public class ThreadDiagnostics implements Runnable {
     private final String name;
     private final int monitorInterval;
 
@@ -39,7 +39,7 @@ public class ThreadsDiagnostics implements Runnable, Diagnostics {
      * @param name Thread name
      * @param monitorInterval Sleep intervals to retrieve CPU usage
      */
-    public ThreadsDiagnostics(NodeStats nodeStats, Ticker ticker, String name, int monitorInterval) {
+    public ThreadDiagnostics(NodeStats nodeStats, Ticker ticker, String name, int monitorInterval) {
         this.nodeStats = nodeStats;
         this.ticker = ticker;
         this.name = name;
@@ -50,7 +50,7 @@ public class ThreadsDiagnostics implements Runnable, Diagnostics {
      * @param nodeStats Used to retrieve data points
      * @param ticker Used to queue timed jobs
      */
-    public ThreadsDiagnostics(NodeStats nodeStats, Ticker ticker) {
+    public ThreadDiagnostics(NodeStats nodeStats, Ticker ticker) {
         this(nodeStats, ticker, MONITOR_THREAD_NAME, MONITOR_INTERVAL);
     }
 
