@@ -15,7 +15,7 @@ public class DefaultNodeMetrics implements NodeMetrics {
         PeerManager peers = node.peers;
         Ticker ticker = node.ticker;
         providers.add(new ActivityMetricsProvider(ticker));
-        providers.add(new BandwidthMetricsProvider(ticker));
+        providers.add(new BandwidthMetricsProvider(node, ticker));
         providers.add(new DatastoreMetricsProvider(ticker));
         providers.add(new MemoryMetricsProvider(ticker));
         providers.add(new PeersMetricsProvider(peers, ticker));
