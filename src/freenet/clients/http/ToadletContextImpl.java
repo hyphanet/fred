@@ -579,13 +579,11 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				Bucket data;
 
-				boolean methodIsConfigurable = true;
 
 				String slen = headers.get("content-length");
 
 				if (METHODS_MUST_HAVE_DATA.contains(method)) {
 					// <method> must have data
-					methodIsConfigurable = false;
 					if (slen == null) {
 						ctx.shouldDisconnect = true;
 						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
@@ -593,7 +591,6 @@ public class ToadletContextImpl implements ToadletContext {
 					}
 				} else if (METHODS_CANNOT_HAVE_DATA.contains(method)) {
 					// <method> can not have data
-					methodIsConfigurable = false;
 					if (slen != null) {
 						ctx.shouldDisconnect = true;
 						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
