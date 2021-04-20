@@ -190,6 +190,9 @@ public class LocationManager implements ByteCounter {
             @Override
             public void run() {
                 node.ticker.queueTimedJob(this, DAYS.toMillis(1));
+                if (swappingDisabled()) {
+                    return;
+                }
                 LocalDateTime now = LocalDateTime.now();
                 String isoDateStringToday = DateTimeFormatter.ISO_DATE
                     .format(now);
