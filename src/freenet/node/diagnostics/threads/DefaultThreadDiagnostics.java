@@ -71,44 +71,24 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
         scheduleNext(monitorInterval);
     }
 
-    /** Map<ThreadId, ThreadCpuTimeNs> */
-    private final Map<Long, Long> threadCPU = new HashMap<>();
-    private long initialUptime = -1;
+    private final AtomicReference<Map<Long, Long>> threadCPU = new AtomicReference<>(new HashMap<>());
+    private long lastCycle = -1;
 
     @Override
     public void run() {
-        if (initialUptime == -1) {
-            initialUptime = runtimeMxBean.getUptime();
-
-            for (ThreadInfo info : threadMxBean.dumpAllThreads(false, false)) {
-                threadCPU.put(
-                    info.getThreadId(),
-                    threadMxBean.getThreadCpuTime(
-                        info.getThreadId()
-                    )
-                );
-            }
-
-            scheduleNext();
-            return;
-        }
-
+        Map<Long, Long> delta = new HashMap<>(threadCPU.get());
+        Map<Long, Long> threads = new HashMap<>();
         for (ThreadInfo info : threadMxBean.dumpAllThreads(false, false)) {
-            Long prev = threadCPU.get(info.getThreadId());
-            if (prev == null) {
-                continue;
-            }
+            long threadId = info.getThreadId();
+            long cpuTime = threadMxBean.getThreadCpuTime(threadId);
 
-            threadCPU.put(
-                info.getThreadId(),
-                threadMxBean.getThreadCpuTime(info.getThreadId()) - prev
-            );
+            delta.put(threadId, cpuTime - delta.getOrDefault(threadId, 0L));
+            threads.put(threadId, cpuTime);
         }
 
-        nodeThreadInfo.set(buildThreadList());
-
-        initialUptime = -1;
-        threadCPU.clear();
+        threadCPU.set(threads);
+        nodeThreadInfo.set(buildThreadList(delta));
+        lastCycle = runtimeMxBean.getUptime();
 
         scheduleNext();
     }
@@ -116,17 +96,16 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     /**
      * @return List of NodeThreadInfo
      */
-    private List<NodeThreadInfo> buildThreadList() {
+    private List<NodeThreadInfo> buildThreadList(Map<Long, Long> delta) {
         List<NodeThreadInfo> threads = new ArrayList<>();
-        double elapsedUptime = runtimeMxBean.getUptime() - initialUptime;
+        double elapsedUptime = runtimeMxBean.getUptime() - lastCycle;
         double totalElapsedUptime = elapsedUptime * operatingSystemMXBean.getAvailableProcessors();
-
         for (Thread thread : nodeStats.getThreads()) {
             if (thread == null) {
                 continue;
             }
 
-            double cpuUsage = (threadCPU.getOrDefault(thread.getId(), 0L) / 1000000d) / totalElapsedUptime * 100;
+            double cpuUsage = (delta.getOrDefault(thread.getId(), 0L) / 1000000d) / totalElapsedUptime * 100;
             NodeThreadInfo nodeThreadInfo = new NodeThreadInfo(
                 thread.getId(),
                 thread.getName(),
