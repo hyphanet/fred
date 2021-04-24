@@ -12,7 +12,7 @@ public class NodeThreadInfo {
     private final int prio;
     private final String groupName;
     private final String state;
-    private final double cpu_time;
+    private final double cpuTime;
 
     /**
      * @param id Thread ID
@@ -20,15 +20,15 @@ public class NodeThreadInfo {
      * @param prio Thread priority
      * @param groupName Thread's group name
      * @param state Thread current state (TIMED_WAITING, RUNNABLE, etc)
-     * @param cpu_time Thread's % of CPU time used
+     * @param cpuTime Thread's % of CPU time used
      */
-    NodeThreadInfo(long id, String name, int prio, String groupName, String state, double cpu_time) {
+    NodeThreadInfo(long id, String name, int prio, String groupName, String state, double cpuTime) {
         this.id = id;
         this.name = name;
         this.prio = prio;
         this.groupName = groupName;
         this.state = state;
-        this.cpu_time = cpu_time;
+        this.cpuTime = cpuTime;
     }
 
     public long getId() {
@@ -52,6 +52,6 @@ public class NodeThreadInfo {
     }
 
     public double getCpuTime() {
-        return cpu_time;
+        return cpuTime;
     }
 }
