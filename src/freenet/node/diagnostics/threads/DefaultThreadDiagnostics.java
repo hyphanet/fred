@@ -28,9 +28,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
 
     private final AtomicReference<List<NodeThreadInfo>> nodeThreadInfo = new AtomicReference<>(new ArrayList<>());
 
-    private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
     private final ThreadMXBean threadMxBean               = ManagementFactory.getThreadMXBean();
-    private final RuntimeMXBean runtimeMxBean             = ManagementFactory.getRuntimeMXBean();
 
     /**
      * @param nodeStats Used to retrieve data points
@@ -71,24 +69,19 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
         scheduleNext(monitorInterval);
     }
 
-    private final AtomicReference<Map<Long, Long>> threadCPU = new AtomicReference<>(new HashMap<>());
-    private long lastCycle = -1;
-
     @Override
     public void run() {
-        Map<Long, Long> delta = new HashMap<>(threadCPU.get());
         Map<Long, Long> threads = new HashMap<>();
+        double totalCpuTime = 0d;
         for (ThreadInfo info : threadMxBean.dumpAllThreads(false, false)) {
             long threadId = info.getThreadId();
             long cpuTime = threadMxBean.getThreadCpuTime(threadId);
 
-            delta.put(threadId, cpuTime - delta.getOrDefault(threadId, 0L));
+            totalCpuTime += cpuTime;
             threads.put(threadId, cpuTime);
         }
 
-        threadCPU.set(threads);
-        nodeThreadInfo.set(buildThreadList(delta));
-        lastCycle = runtimeMxBean.getUptime();
+        nodeThreadInfo.set(buildThreadList(threads, totalCpuTime));
 
         scheduleNext();
     }
@@ -96,16 +89,14 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     /**
      * @return List of NodeThreadInfo
      */
-    private List<NodeThreadInfo> buildThreadList(Map<Long, Long> delta) {
-        List<NodeThreadInfo> threads = new ArrayList<>();
-        double elapsedUptime = runtimeMxBean.getUptime() - lastCycle;
-        double totalElapsedUptime = elapsedUptime * operatingSystemMXBean.getAvailableProcessors();
+    private List<NodeThreadInfo> buildThreadList(Map<Long, Long> threads, double totalCpuTime) {
+        List<NodeThreadInfo> threadInfo = new ArrayList<>();
         for (Thread thread : nodeStats.getThreads()) {
             if (thread == null) {
                 continue;
             }
 
-            double cpuUsage = (delta.getOrDefault(thread.getId(), 0L) / 1000000d) / totalElapsedUptime * 100;
+            double cpuUsage = ((threads.getOrDefault(thread.getId(), 0L) / totalCpuTime) * 100);
             NodeThreadInfo nodeThreadInfo = new NodeThreadInfo(
                 thread.getId(),
                 thread.getName(),
@@ -115,10 +106,10 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
                 cpuUsage
             );
 
-            threads.add(nodeThreadInfo);
+            threadInfo.add(nodeThreadInfo);
         }
 
-        return threads;
+        return threadInfo;
     }
 
     /**
