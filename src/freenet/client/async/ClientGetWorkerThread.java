@@ -64,6 +64,19 @@ public class ClientGetWorkerThread extends Thread {
 		return counter++;
 	}
 
+	/**
+	 * compatibility for plugins.
+	 */
+	@Deprecated // use @GetClientWorkerThread with schemeHostAndPort instead, pass null if needed.
+	public ClientGetWorkerThread(InputStream input, OutputStream output, FreenetURI uri,
+			String mimeType, HashResult[] hashes, boolean filterData, String charset,
+			FoundURICallback prefetchHook, TagReplacerCallback tagReplacer,
+			LinkFilterExceptionProvider linkFilterExceptionProvider) throws URISyntaxException {
+			this(input, output, uri,
+			mimeType, null, hashes, filterData, charset,
+			prefetchHook, tagReplacer, linkFilterExceptionProvider);
+		}
+
 	 /**
 	 * @param input The stream to read the data from
 	 * @param output The final destination to which the data will be written
