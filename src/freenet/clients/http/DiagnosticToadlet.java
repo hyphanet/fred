@@ -441,14 +441,12 @@ public class DiagnosticToadlet extends Toadlet {
 			.getThreadDiagnostics();
 
 		List<NodeThreadInfo> threads = threadDiagnostics.getThreads();
-
-		ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
-		double totalCpuTime = Arrays.stream(threadMxBean.dumpAllThreads(false, false))
-			.mapToDouble(
-				(thread) -> threadMxBean.getThreadCpuTime(thread.getThreadId())
-			).sum();
-
 		threads.sort(Comparator.comparing(NodeThreadInfo::getCpuTime).reversed());
+
+		double totalCpuTime = threads
+			.stream()
+			.mapToDouble(NodeThreadInfo::getCpuTime)
+			.sum();
 
 		for (NodeThreadInfo thread : threads) {
 			String line = String.format(

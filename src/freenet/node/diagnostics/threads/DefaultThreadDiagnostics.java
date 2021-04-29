@@ -29,7 +29,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
 
     private final AtomicReference<List<NodeThreadInfo>> nodeThreadInfo = new AtomicReference<>(new ArrayList<>());
 
-    private final ThreadMXBean threadMxBean               = ManagementFactory.getThreadMXBean();
+    private final ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
 
     /**
      * @param nodeStats Used to retrieve data points
@@ -70,25 +70,26 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
         scheduleNext(monitorInterval);
     }
 
-    @Override
-    public void run() {
-        List<NodeThreadInfo> threads = Arrays.stream(nodeStats.getThreads())
-            .filter(Objects::nonNull)
-            .map(thread ->
-                new NodeThreadInfo(
-                    thread.getId(),
-                    thread.getName(),
-                    thread.getPriority(),
-                    thread.getThreadGroup().getName(),
-                    thread.getState().toString(),
-                    threadMxBean.getThreadCpuTime(thread.getId())
-                )
-            )
-            .collect(Collectors.toList());
+    private final HashMap<Long, Double> threadCpu = new HashMap<>();
 
-        nodeThreadInfo.set(threads);
+    /**
+     * Calculate the "delta" CPU time for a given thread. This method keeps
+     * track of the previous CPU Time and calculates the difference between that
+     * snapshot and the current CPU Time.
+     *
+     * If there's no previous snapshot of CPU Time for the thread this method
+     * will return 0.
+     *
+     * @param threadId Thread ID to get the CPU usage
+     * @return Delta CPU time.
+     */
+    private double getCpuTimeDelta(long threadId) {
+        double current = threadMxBean.getThreadCpuTime(threadId);
 
-        scheduleNext();
+        double cpuUsage = current - threadCpu.getOrDefault(threadId, current);
+        threadCpu.put(threadId, current);
+
+        return cpuUsage;
     }
 
     /**
@@ -96,5 +97,25 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
      */
     public List<NodeThreadInfo> getThreads() {
         return nodeThreadInfo.get();
+    }
+
+    @Override
+    public void run() {
+        List<NodeThreadInfo> threads = Arrays.stream(nodeStats.getThreads())
+            .filter(Objects::nonNull)
+            .map(thread -> new NodeThreadInfo(
+                    thread.getId(),
+                    thread.getName(),
+                    thread.getPriority(),
+                    thread.getThreadGroup().getName(),
+                    thread.getState().toString(),
+                    getCpuTimeDelta(thread.getId())
+                )
+            )
+            .collect(Collectors.toList());
+
+        nodeThreadInfo.set(threads);
+
+        scheduleNext();
     }
 }
