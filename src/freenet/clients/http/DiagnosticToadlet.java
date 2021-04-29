@@ -2,13 +2,13 @@ package freenet.clients.http;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.*;
 import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.List;
+import java.util.*;
+import java.util.stream.*;
+
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.clients.fcp.DownloadRequestStatus;
@@ -441,7 +441,13 @@ public class DiagnosticToadlet extends Toadlet {
 			.getThreadDiagnostics();
 
 		List<NodeThreadInfo> threads = threadDiagnostics.getThreads();
-		double totalCpuTime = threads.stream().mapToDouble(NodeThreadInfo::getCpuTime).sum();
+		//double totalCpuTime = threads.stream().mapToDouble(NodeThreadInfo::getCpuTime).sum();
+		ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
+		double totalCpuTime = Arrays.stream(threadMxBean.dumpAllThreads(false, false))
+			.mapToDouble(
+				(t) -> threadMxBean.getThreadCpuTime(t.getThreadId())
+			).sum();
+
 		threads.sort(Comparator.comparing(NodeThreadInfo::getCpuTime).reversed());
 
 		for (NodeThreadInfo thread : threads) {

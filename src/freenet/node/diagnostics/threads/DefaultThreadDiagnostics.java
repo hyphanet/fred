@@ -72,8 +72,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
 
     @Override
     public void run() {
-        nodeThreadInfo.set(
-            Arrays.stream(nodeStats.getThreads())
+        List<NodeThreadInfo> threads = Arrays.stream(nodeStats.getThreads())
             .filter(Objects::nonNull)
             .map(thread ->
                 new NodeThreadInfo(
@@ -85,8 +84,9 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
                     threadMxBean.getThreadCpuTime(thread.getId())
                 )
             )
-            .collect(Collectors.toList())
-        );
+            .collect(Collectors.toList());
+
+        nodeThreadInfo.set(threads);
 
         scheduleNext();
     }
