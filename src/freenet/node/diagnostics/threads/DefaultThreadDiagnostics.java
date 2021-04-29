@@ -10,6 +10,7 @@ import freenet.support.*;
 import java.lang.management.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import java.util.stream.*;
 
 /**
  * Runnable thread to retrieve node thread's information and compiling it into
@@ -71,45 +72,23 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
 
     @Override
     public void run() {
-        Map<Long, Long> threads = new HashMap<>();
-        double totalCpuTime = 0d;
-        for (ThreadInfo info : threadMxBean.dumpAllThreads(false, false)) {
-            long threadId = info.getThreadId();
-            long cpuTime = threadMxBean.getThreadCpuTime(threadId);
-
-            totalCpuTime += cpuTime;
-            threads.put(threadId, cpuTime);
-        }
-
-        nodeThreadInfo.set(buildThreadList(threads, totalCpuTime));
+        nodeThreadInfo.set(
+            Arrays.stream(nodeStats.getThreads())
+            .filter(Objects::nonNull)
+            .map(thread ->
+                new NodeThreadInfo(
+                    thread.getId(),
+                    thread.getName(),
+                    thread.getPriority(),
+                    thread.getThreadGroup().getName(),
+                    thread.getState().toString(),
+                    threadMxBean.getThreadCpuTime(thread.getId())
+                )
+            )
+            .collect(Collectors.toList())
+        );
 
         scheduleNext();
-    }
-
-    /**
-     * @return List of NodeThreadInfo
-     */
-    private List<NodeThreadInfo> buildThreadList(Map<Long, Long> threads, double totalCpuTime) {
-        List<NodeThreadInfo> threadInfo = new ArrayList<>();
-        for (Thread thread : nodeStats.getThreads()) {
-            if (thread == null) {
-                continue;
-            }
-
-            double cpuUsage = ((threads.getOrDefault(thread.getId(), 0L) / totalCpuTime) * 100);
-            NodeThreadInfo nodeThreadInfo = new NodeThreadInfo(
-                thread.getId(),
-                thread.getName(),
-                thread.getPriority(),
-                thread.getThreadGroup().getName(),
-                thread.getState().toString(),
-                cpuUsage
-            );
-
-            threadInfo.add(nodeThreadInfo);
-        }
-
-        return threadInfo;
     }
 
     /**

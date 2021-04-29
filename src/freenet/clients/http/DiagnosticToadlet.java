@@ -441,6 +441,7 @@ public class DiagnosticToadlet extends Toadlet {
 			.getThreadDiagnostics();
 
 		List<NodeThreadInfo> threads = threadDiagnostics.getThreads();
+		double totalCpuTime = threads.stream().mapToDouble(NodeThreadInfo::getCpuTime).sum();
 		threads.sort(Comparator.comparing(NodeThreadInfo::getCpuTime).reversed());
 
 		for (NodeThreadInfo thread : threads) {
@@ -449,9 +450,9 @@ public class DiagnosticToadlet extends Toadlet {
 				thread.getId(),
 				thread.getName().substring(0, Math.min(60, thread.getName().length())),
 				thread.getPrio(),
-				thread.getGroupName(),
+				thread.getGroupName().substring(0, Math.min(10, thread.getGroupName().length())),
 				thread.getState(),
-				thread.getCpuTime()
+				thread.getCpuTime() / totalCpuTime * 100
 			);
 			sb.append(line);
 		}
