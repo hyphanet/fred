@@ -20,7 +20,7 @@ import freenet.support.math.MersenneTwister;
 public final class Fallocate {
 
   private static final boolean IS_LINUX = Platform.isLinux();
-  private static final boolean IS_POSIX = !Platform.isWindows() && !Platform.isMac();
+  private static final boolean IS_POSIX = !Platform.isWindows() && !Platform.isMac() && !Platform.isOpenBSD();
   private static final boolean IS_ANDROID = Platform.isAndroid();
 
   private static final int FALLOC_FL_KEEP_SIZE = 0x01;
