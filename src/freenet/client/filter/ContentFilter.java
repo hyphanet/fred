@@ -238,6 +238,8 @@ public class ContentFilter {
 	 *            Stream to write filtered data to
 	 * @param typeName
 	 *            MIME type for input data
+	 * @param schemeHostAndPort
+	 *        HOST and PORT from the request
 	 * @param maybeCharset
 	 * 			  MIME type of the referring document, as a hint, some types,
 	 * 			  such as CSS, will inherit it if no other data is available.
@@ -263,6 +265,14 @@ public class ContentFilter {
 	}
 
 	/**
+	 * Compatibility for plugins: passes schemeHostAndPort null.
+	 */
+	@Deprecated // please move to filter with schemeHostAndPort, called from this method.
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
+        return filter(input, output, typeName, maybeCharset, null, filterCallback);
+    }
+
+     /**
 	 * Filter some data.
 	 *
 	 * @param input
@@ -274,6 +284,8 @@ public class ContentFilter {
 	 * @param maybeCharset
 	 * 			  MIME type of the referring document, as a hint, some types,
 	 * 			  such as CSS, will inherit it if no other data is available.
+	 * @param schemeHostAndPort
+	 *        HOST and PORT from the request
 	 * @throws IOException
 	 *             If an internal error involving buckets occurred.
 	 * @throws UnsafeContentTypeException
