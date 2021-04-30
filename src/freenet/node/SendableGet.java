@@ -100,7 +100,6 @@ public abstract class SendableGet extends BaseSendableGet {
 	@Override
 	public void unregister(ClientContext context, short oldPrio) {
 		super.unregister(context, oldPrio);
-		ClientRequestScheduler scheduler = getScheduler(context);
 		context.checker.removeRequest(this, persistent, context, oldPrio == -1 ? getPriorityClass() : oldPrio);
 	}
 	

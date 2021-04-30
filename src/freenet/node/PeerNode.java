@@ -2056,7 +2056,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			isRoutable = routable;
 			unroutableNewerVersion = newer;
 			unroutableOlderVersion = older;
-			boolean notReusingTracker = false;
 			long oldBootID;
 			oldBootID = bootID.getAndSet(thisBootID);
 			bootIDChanged = oldBootID != thisBootID;
@@ -2378,7 +2377,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		offset++;
 		length--;
 		if((firstByte & 0x2) == 2) { // DSAcompressed group; legacy
-			int groupIndex = (data[offset] & 0xff);
 			offset++;
 			length--;
 		}

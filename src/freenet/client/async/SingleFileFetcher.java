@@ -414,7 +414,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							newMeta = metadata.getDocument(name);
 						}
 						metadata = newMeta;
-						FreenetURI oldThisKey = thisKey;
 						thisKey = thisKey.pushMetaString(name);
 					}
 					if(metadata == null)
@@ -520,7 +519,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Metadata cannot contain pointers to files which don't exist.
 					// We enforce this in ArchiveHandler.
 					// Therefore, the archive needs to be fetched.
-					final boolean persistent = this.persistent;
 					fetchArchive(true, archiveMetadata, filename, new ArchiveExtractCallback() {
                         private static final long serialVersionUID = 1L;
                         @Override
@@ -598,7 +596,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Metadata cannot contain pointers to files which don't exist.
 					// We enforce this in ArchiveHandler.
 					// Therefore, the archive needs to be fetched.
-					final boolean persistent = this.persistent;
 					fetchArchive(true, archiveMetadata, filename, new ArchiveExtractCallback() {
                         private static final long serialVersionUID = 1L;
                         @Override

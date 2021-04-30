@@ -190,6 +190,9 @@ public class LocationManager implements ByteCounter {
             @Override
             public void run() {
                 node.ticker.queueTimedJob(this, DAYS.toMillis(1));
+                if (swappingDisabled()) {
+                    return;
+                }
                 LocalDateTime now = LocalDateTime.now();
                 String isoDateStringToday = DateTimeFormatter.ISO_DATE
                     .format(now);
@@ -240,7 +243,7 @@ public class LocationManager implements ByteCounter {
                     }
                 }
             }
-        }, SECONDS.toMillis(60));
+        }, MINUTES.toMillis(10));
     }
 
     private void tryToRequestPitchBlackCheckFromYesterday(

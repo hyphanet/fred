@@ -227,7 +227,6 @@ public class PeerManager {
 
 	private boolean readPeers(File peersFile, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
 		boolean someBroken = false;
-		boolean gotSome = false;
 		FileInputStream fis;
 		try {
 			fis = new FileInputStream(peersFile);
@@ -258,7 +257,6 @@ public class PeerManager {
 					        opennet.addOldOpennetNode((OpennetPeerNode)pn);
 					} else
 						addPeer(pn, true, false);
-					gotSome = true;
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					System.err.println("Cannot parse a friend from the peers file: "+e2);
@@ -1793,7 +1791,7 @@ public class PeerManager {
 						break;
 				}
 			}
-			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting+" No load stats: "+numberOfNoLoadStats);
+			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting + " RoutingDisabled " + numberOfRoutingDisabled + " No load stats: "+numberOfNoLoadStats);
 			nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
 		}
 	}
