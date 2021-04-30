@@ -412,7 +412,6 @@ public class DiagnosticToadlet extends Toadlet {
 		textBuilder.append("\n");
 
 		// drawThreadPriorityStatsBox
-		textBuilder.append("Threads:\n");
 		textBuilder.append(threadsStats());
 
 		textBuilder.append("\n");
@@ -423,6 +422,21 @@ public class DiagnosticToadlet extends Toadlet {
 
 	private StringBuilder threadsStats() {
 		StringBuilder sb = new StringBuilder();
+
+		ThreadDiagnostics threadDiagnostics = node
+			.getNodeDiagnostics()
+			.getThreadDiagnostics();
+
+		List<NodeThreadInfo> threads = threadDiagnostics.getThreads();
+		threads.sort(Comparator.comparing(NodeThreadInfo::getCpuTime).reversed());
+
+		double totalCpuTime = Math.max(1, threads
+			.stream()
+			.mapToDouble(NodeThreadInfo::getCpuTime)
+			.sum());
+
+		sb.append(String.format("Threads (%d):%n", threads.size()));
+
 		// ID, Name, Priority, Group (system, main), Status, % CPU
 		sb.append(
 			String.format(
@@ -435,18 +449,6 @@ public class DiagnosticToadlet extends Toadlet {
 				"% CPU"
 			)
 		);
-
-		ThreadDiagnostics threadDiagnostics = node
-			.getNodeDiagnostics()
-			.getThreadDiagnostics();
-
-		List<NodeThreadInfo> threads = threadDiagnostics.getThreads();
-		threads.sort(Comparator.comparing(NodeThreadInfo::getCpuTime).reversed());
-
-		double totalCpuTime = threads
-			.stream()
-			.mapToDouble(NodeThreadInfo::getCpuTime)
-			.sum();
 
 		for (NodeThreadInfo thread : threads) {
 			String line = String.format(
