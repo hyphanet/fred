@@ -45,6 +45,12 @@ function replaceHost(link) {
     url.host = window.location.host;
     url.port = window.location.port;
   }
+  // cannot access unprivileged resources from a privileged site. If Freenet is proxied via https, we need https for the content.
+  if (url.protocol === 'http:') {
+    if (window.location.protocol === 'https:') {
+      url.protocol = 'https:';
+    }
+  }
   return url.href;
 }
 function parsePlaylist(textContent) {
