@@ -103,6 +103,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     public void run() {
         List<NodeThreadInfo> threads = Arrays.stream(nodeStats.getThreads())
             .filter(Objects::nonNull)
+            .filter(thread -> thread.getThreadGroup() != null)
             .map(thread -> new NodeThreadInfo(
                     thread.getId(),
                     thread.getName(),
