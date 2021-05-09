@@ -754,6 +754,8 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	private boolean enableRoutedPing;
 
+	private boolean enableNodeDiagnostics;
+
 	private boolean peersOffersDismissed;
 
 	/**
@@ -2540,7 +2542,30 @@ public class Node implements TimeSkewDetectorCallback {
 			
 		});
 		enableRoutedPing = nodeConfig.getBoolean("enableRoutedPing");
-		
+
+		nodeConfig.register("enableNodeDiagnostics", false, sortOrder++, true, false, "Node.enableDiagnostics", "Node.enableDiagnosticsLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				synchronized(Node.this) {
+					return enableNodeDiagnostics;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException,
+				NodeNeedRestartException {
+				synchronized(Node.this) {
+					enableNodeDiagnostics = val;
+					nodeDiagnostics.stop();
+
+					if (enableNodeDiagnostics) {
+						nodeDiagnostics.start();
+					}
+				}
+			}
+		});
+		enableNodeDiagnostics = nodeConfig.getBoolean("enableNodeDiagnostics");
+
 		updateMTU();
 
 		// peers-offers/*.fref files
@@ -3172,7 +3197,9 @@ public class Node implements TimeSkewDetectorCallback {
 		// Process any data in the extra peer data directory
 		peers.readExtraPeerData();
 
-		nodeDiagnostics.start();
+		if (enableNodeDiagnostics) {
+			nodeDiagnostics.start();
+		}
 
 		Logger.normal(this, "Started node");
 
@@ -4904,4 +4931,8 @@ public class Node implements TimeSkewDetectorCallback {
 	public NodeDiagnostics getNodeDiagnostics() {
         return nodeDiagnostics;
 	}
+
+    public boolean isNodeDiagnosticsEnabled() {
+        return enableNodeDiagnostics;
+    }
 }

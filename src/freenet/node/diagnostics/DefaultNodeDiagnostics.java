@@ -32,6 +32,10 @@ public class DefaultNodeDiagnostics implements NodeDiagnostics {
         defaultThreadDiagnostics.start();
     }
 
+    public void stop() {
+        defaultThreadDiagnostics.stop();
+    }
+
     /**
      *
      * @return List of threads registered in NodeStats.getThreads()

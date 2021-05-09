@@ -176,7 +176,7 @@ public class DiagnosticToadlet extends Toadlet {
 		if ((numTransferringRequests == 0) &&
 				(numCHKRequests == 0) && (numSSKRequests == 0) &&
 				(numCHKInserts == 0) && (numSSKInserts == 0) &&
-				(numTransferringRequestHandlers == 0) && 
+				(numTransferringRequestHandlers == 0) &&
 				(numCHKOfferReplys == 0) && (numSSKOfferReplys == 0)) {
 			textBuilder.append(l10n("noRequests")).append("\n");
 		} else {
@@ -339,14 +339,14 @@ public class DiagnosticToadlet extends Toadlet {
 			long totalBytesSentNodeToNode = node.nodeStats.getNodeToNodeBytesSent();
 			long totalBytesSentAllocationNotices = node.nodeStats.getAllocationNoticesBytesSent();
 			long totalBytesSentFOAF = node.nodeStats.getFOAFBytesSent();
-			long totalBytesSentRemaining = total[0] - 
+			long totalBytesSentRemaining = total[0] -
 				(totalPayload + totalBytesSentCHKRequests + totalBytesSentSSKRequests +
 				totalBytesSentCHKInserts + totalBytesSentSSKInserts +
-				totalBytesSentOfferedKeys + totalBytesSendOffers + totalBytesSentSwapOutput + 
+				totalBytesSentOfferedKeys + totalBytesSendOffers + totalBytesSentSwapOutput +
 				totalBytesSentAuth + totalBytesSentAckOnly + totalBytesSentResends +
-				totalBytesSentUOM + totalBytesSentAnnounce + 
+				totalBytesSentUOM + totalBytesSentAnnounce +
 				totalBytesSentRoutingStatus + totalBytesSentNetworkColoring + totalBytesSentPing +
-				totalBytesSentProbeRequest + totalBytesSentRouted + totalBytesSentDisconn + 
+				totalBytesSentProbeRequest + totalBytesSentRouted + totalBytesSentDisconn +
 				totalBytesSentInitial + totalBytesSentChangedIP + totalBytesSentNodeToNode + totalBytesSentAllocationNotices + totalBytesSentFOAF);
 			textBuilder.append(l10n("requestOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(totalBytesSentCHKRequests, true), SizeUtil.formatSize(totalBytesSentSSKRequests, true) })).append("\n");
 			textBuilder.append(l10n("insertOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(totalBytesSentCHKInserts, true), SizeUtil.formatSize(totalBytesSentSSKInserts, true) })).append("\n");
@@ -412,9 +412,10 @@ public class DiagnosticToadlet extends Toadlet {
 		textBuilder.append("\n");
 
 		// drawThreadPriorityStatsBox
-		textBuilder.append(threadsStats());
-
-		textBuilder.append("\n");
+		if (node.isNodeDiagnosticsEnabled()) {
+			textBuilder.append(threadsStats());
+			textBuilder.append("\n");
+		}
 		}
 
 		this.writeTextReply(ctx, 200, "OK", textBuilder.toString());

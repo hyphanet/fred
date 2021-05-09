@@ -83,6 +83,10 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
         scheduleNext(0);
     }
 
+    public void stop() {
+        ticker.removeQueuedJob(this);
+    }
+
     private void scheduleNext() {
         scheduleNext(monitorInterval);
     }
