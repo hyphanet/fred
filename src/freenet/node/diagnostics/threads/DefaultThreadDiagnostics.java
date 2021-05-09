@@ -70,7 +70,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
         scheduleNext(monitorInterval);
     }
 
-    private final HashMap<Long, Double> threadCpu = new HashMap<>();
+    private final HashMap<Long, Long> threadCpu = new HashMap<>();
 
     /**
      * Calculate the "delta" CPU time for a given thread. This method keeps
@@ -84,12 +84,26 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
      * @return Delta CPU time.
      */
     private double getCpuTimeDelta(long threadId) {
-        double current = threadMxBean.getThreadCpuTime(threadId);
+        long current = threadMxBean.getThreadCpuTime(threadId);
 
-        double cpuUsage = current - threadCpu.getOrDefault(threadId, current);
+        long cpuUsage = current - threadCpu.getOrDefault(threadId, current);
         threadCpu.put(threadId, current);
 
         return cpuUsage;
+    }
+
+    /**
+     * Remove threads that aren't present in the last snapshot.
+     *
+     * @param threads List of active threads.
+     */
+    private void purgeInactiveThreads(List<NodeThreadInfo> threads) {
+        List<Long> activeThreads = threads.stream()
+                .map(NodeThreadInfo::getId)
+                .collect(Collectors.toList());
+
+        threadCpu.keySet()
+                .removeIf(key -> !activeThreads.contains(key));
     }
 
     /**
@@ -116,6 +130,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
             .collect(Collectors.toList());
 
         nodeThreadInfo.set(threads);
+        purgeInactiveThreads(threads);
 
         scheduleNext();
     }
