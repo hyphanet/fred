@@ -24,12 +24,14 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     private final Ticker ticker;
 
     /** Sleep interval to calculate % CPU used by each thread */
-    private static final int MONITOR_INTERVAL = 1000;
-    private static final String MONITOR_THREAD_NAME = "NodeDiagnostics: thread monitor";
+    private static final int DEFAULT_MONITOR_INTERVAL = 1000;
+    private static final String DEFAULT_MONITOR_THREAD_NAME = "NodeDiagnostics: thread monitor";
 
-    private final AtomicReference<List<NodeThreadInfo>> nodeThreadInfo = new AtomicReference<>(new ArrayList<>());
-
+    private final AtomicReference<NodeThreadSnapshot> nodeThreadSnapshot = new AtomicReference<>();
     private final ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
+
+    /** Map to track thread's CPU differences between intervals of time */
+    private final HashMap<Long, Long> threadCpu = new HashMap<>();
 
     /**
      * @param nodeStats Used to retrieve data points
@@ -44,14 +46,26 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
         this.monitorInterval = monitorInterval;
     }
 
-    /*
+    /**
      * @param nodeStats Used to retrieve data points
      * @param ticker Used to queue timed jobs
      */
     public DefaultThreadDiagnostics(NodeStats nodeStats, Ticker ticker) {
-        this(nodeStats, ticker, MONITOR_THREAD_NAME, MONITOR_INTERVAL);
+        this(nodeStats, ticker, DEFAULT_MONITOR_THREAD_NAME, DEFAULT_MONITOR_INTERVAL);
     }
 
+    /**
+     * @return Current snapshot.
+     */
+    public NodeThreadSnapshot getThreadSnapshot() {
+        return nodeThreadSnapshot.get();
+    }
+
+    /**
+     * Schedule this class execution in seconds.
+     *
+     * @param interval Time internal in seconds.
+     */
     private void scheduleNext(int interval) {
         ticker.queueTimedJob(
             this,
@@ -62,6 +76,9 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
         );
     }
 
+    /**
+     * Start the execution.
+     */
     public void start() {
         scheduleNext(0);
     }
@@ -69,8 +86,6 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     private void scheduleNext() {
         scheduleNext(monitorInterval);
     }
-
-    private final HashMap<Long, Long> threadCpu = new HashMap<>();
 
     /**
      * Calculate the "delta" CPU time for a given thread. This method keeps
@@ -106,13 +121,6 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
                 .removeIf(key -> !activeThreads.contains(key));
     }
 
-    /**
-     * @return List of Node threads
-     */
-    public List<NodeThreadInfo> getThreads() {
-        return nodeThreadInfo.get();
-    }
-
     @Override
     public void run() {
         List<NodeThreadInfo> threads = Arrays.stream(nodeStats.getThreads())
@@ -129,9 +137,11 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
             )
             .collect(Collectors.toList());
 
-        nodeThreadInfo.set(threads);
-        purgeInactiveThreads(threads);
+        nodeThreadSnapshot.set(
+                new NodeThreadSnapshot(threads, monitorInterval)
+        );
 
+        purgeInactiveThreads(threads);
         scheduleNext();
     }
 }

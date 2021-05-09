@@ -5,8 +5,6 @@ package freenet.node.diagnostics;
 
 import freenet.node.diagnostics.threads.*;
 
-import java.util.*;
-
 public interface ThreadDiagnostics {
-    List<NodeThreadInfo> getThreads();
+    NodeThreadSnapshot getThreadSnapshot();
 }

@@ -427,13 +427,11 @@ public class DiagnosticToadlet extends Toadlet {
 			.getNodeDiagnostics()
 			.getThreadDiagnostics();
 
-		List<NodeThreadInfo> threads = threadDiagnostics.getThreads();
-		threads.sort(Comparator.comparing(NodeThreadInfo::getCpuTime).reversed());
+		NodeThreadSnapshot threadSnapshot = threadDiagnostics.getThreadSnapshot();
+		double totalCpuTime = threadSnapshot.getTotalCpuTime();
 
-		double totalCpuTime = Math.max(1, threads
-			.stream()
-			.mapToDouble(NodeThreadInfo::getCpuTime)
-			.sum());
+		List<NodeThreadInfo> threads = threadSnapshot.getThreads();
+		threads.sort(Comparator.comparing(NodeThreadInfo::getCpuTime).reversed());
 
 		sb.append(String.format("Threads (%d):%n", threads.size()));
 
