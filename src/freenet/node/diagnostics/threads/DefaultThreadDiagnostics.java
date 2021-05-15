@@ -31,7 +31,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     private final ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
 
     /** Map to track thread's CPU differences between intervals of time */
-    private final HashMap<Long, Long> threadCpu = new HashMap<>();
+    private final Map<Long, Long> threadCpu = new HashMap<>();
 
     /**
      * @param nodeStats Used to retrieve data points
