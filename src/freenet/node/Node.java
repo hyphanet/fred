@@ -2543,27 +2543,35 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		enableRoutedPing = nodeConfig.getBoolean("enableRoutedPing");
 
-		nodeConfig.register("enableNodeDiagnostics", false, sortOrder++, true, false, "Node.enableDiagnostics", "Node.enableDiagnosticsLong", new BooleanCallback() {
-			@Override
-			public Boolean get() {
-				synchronized(Node.this) {
-					return enableNodeDiagnostics;
+		nodeConfig.register(
+			"enableNodeDiagnostics",
+			false,
+			sortOrder++,
+			true,
+			false,
+			"Node.enableDiagnostics",
+			"Node.enableDiagnosticsLong",
+			new BooleanCallback() {
+				@Override
+				public Boolean get() {
+					synchronized (Node.this) {
+						return enableNodeDiagnostics;
+					}
 				}
-			}
 
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException,
-				NodeNeedRestartException {
-				synchronized(Node.this) {
-					enableNodeDiagnostics = val;
-					nodeDiagnostics.stop();
+				@Override
+				public void set(Boolean val) {
+					synchronized (Node.this) {
+						enableNodeDiagnostics = val;
+						nodeDiagnostics.stop();
 
-					if (enableNodeDiagnostics) {
-						nodeDiagnostics.start();
+						if (enableNodeDiagnostics) {
+							nodeDiagnostics.start();
+						}
 					}
 				}
 			}
-		});
+		);
 		enableNodeDiagnostics = nodeConfig.getBoolean("enableNodeDiagnostics");
 
 		updateMTU();
