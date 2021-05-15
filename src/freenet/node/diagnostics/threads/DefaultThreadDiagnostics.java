@@ -102,7 +102,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
      * @param threadId Thread ID to get the CPU usage
      * @return Delta CPU time.
      */
-    private double getCpuTimeDelta(long threadId) {
+    private long getCpuTimeDelta(long threadId) {
         long current = threadMxBean.getThreadCpuTime(threadId);
 
         long cpuUsage = current - threadCpu.getOrDefault(threadId, current);
