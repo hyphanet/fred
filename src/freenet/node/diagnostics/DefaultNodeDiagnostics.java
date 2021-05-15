@@ -37,7 +37,6 @@ public class DefaultNodeDiagnostics implements NodeDiagnostics {
     }
 
     /**
-     *
      * @return List of threads registered in NodeStats.getThreads()
      */
     @Override
