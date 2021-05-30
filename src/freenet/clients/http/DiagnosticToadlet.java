@@ -7,6 +7,7 @@ import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.*;
 
 import freenet.client.HighLevelSimpleClient;
@@ -437,7 +438,9 @@ public class DiagnosticToadlet extends Toadlet {
 			return sb;
 		}
 
-		double totalCpuTime = threadSnapshot.getTotalCpuTime();
+		double wallTime = TimeUnit.MILLISECONDS.toNanos(
+			threadSnapshot.getInterval()
+		);
 
 		List<NodeThreadInfo> threads = threadSnapshot.getThreads();
 		threads.sort(Comparator.comparing(NodeThreadInfo::getCpuTime).reversed());
@@ -465,7 +468,7 @@ public class DiagnosticToadlet extends Toadlet {
 				thread.getPrio(),
 				thread.getGroupName().substring(0, Math.min(10, thread.getGroupName().length())),
 				thread.getState(),
-				thread.getCpuTime() / totalCpuTime * 100
+				thread.getCpuTime() / wallTime * 100
 			);
 			sb.append(line);
 		}
