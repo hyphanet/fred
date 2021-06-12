@@ -278,10 +278,14 @@ public class LocationManager implements ByteCounter {
         try {
             sskFetchResult = highLevelSimpleClient.fetch(insertFromYesterday.getURI());
             if (!Arrays.equals(expectedContent, sskFetchResult.asByteArray())) {
+                // if we received false data, this is definitely an attack: move there to provide a good node in the location
                 switchLocationToDefendAgainstPitchBlackAttack(insertFromYesterday);
             }
         } catch (FetchException e) {
-            if (isRequestExceptionBecauseUriIsNotAvailable(e)) {
+            if (isRequestExceptionBecauseUriIsNotAvailable(e) && node.fastWeakRandom.nextBoolean()) {
+                // switch to the attacked location with only 50% probability,
+                // because it could be caused by the defensive swap of another node
+                // which made its current content inaccessible.
                 switchLocationToDefendAgainstPitchBlackAttack(insertFromYesterday);
             }
             return;
@@ -310,7 +314,10 @@ public class LocationManager implements ByteCounter {
         try {
             highLevelSimpleClient.fetch(calculatedChkUri);
         } catch (FetchException e) {
-            if (isRequestExceptionBecauseUriIsNotAvailable(e)) {
+            if (isRequestExceptionBecauseUriIsNotAvailable(e) && node.fastWeakRandom.nextBoolean()) {
+                // switch to the attacked location with only 50% probability,
+                // because it could be caused by the defensive swap of another node
+                // which made its current content inaccessible.
                 try {
                     switchLocationToDefendAgainstPitchBlackAttack(new ClientCHK(calculatedChkUri));
                 } catch (MalformedURLException exception) {
