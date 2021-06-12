@@ -17,6 +17,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.text.DateFormat;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -69,6 +70,8 @@ import freenet.support.math.BootstrappingDecayingRunningAverage;
 public class LocationManager implements ByteCounter {
 
     public static final String FOIL_PITCH_BLACK_ATTACK_PREFIX = "mitigate-pitch-black-attack-";
+    public static long PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY = DAYS.toMillis(1);
+    public static long PITCH_BLACK_MITIGATION_STARTUP_DELAY = MINUTES.toMillis(10);
 
     public class MyCallback extends SendMessageOnErrorCallback {
 
@@ -117,6 +120,7 @@ public class LocationManager implements ByteCounter {
     final SwapRequestSender sender;
     final Node node;
     long timeLastSuccessfullySwapped;
+    public static Clock clockForTesting = Clock.systemDefaultZone();
 
     public LocationManager(RandomSource r, Node node) {
         loc = r.nextDouble();
@@ -189,18 +193,18 @@ public class LocationManager implements ByteCounter {
 
             @Override
             public void run() {
-                node.ticker.queueTimedJob(this, DAYS.toMillis(1));
+                node.ticker.queueTimedJob(this, PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY);
                 if (swappingDisabled()) {
                     return;
                 }
-                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime now = LocalDateTime.now(clockForTesting);
                 String isoDateStringToday = DateTimeFormatter.ISO_DATE
                     .format(now);
                 String isoDateStringYesterday = DateTimeFormatter.ISO_DATE
                     .format(now.minus(Duration.ofDays(1)));
                 File[] previousInsertFromToday = node.userDir().dir()
-                    .listFiles((file, name) -> name.startsWith(FOIL_PITCH_BLACK_ATTACK_PREFIX
-                        + isoDateStringToday));
+                    .listFiles((file, name) -> name.startsWith(getPitchBlackPrefix(
+                        isoDateStringToday)));
                 HighLevelSimpleClient highLevelSimpleClient = node.clientCore.makeClient(
                     RequestStarter.INTERACTIVE_PRIORITY_CLASS,
                     true,
@@ -211,13 +215,12 @@ public class LocationManager implements ByteCounter {
                     byte[] randomContentForKSK = new byte[20];
                     node.secureRandom.nextBytes(randomContentForKSK);
                     String randomPart = Base64.encode(randomContentForKSK);
-                    String nameForInsert =
-                        FOIL_PITCH_BLACK_ATTACK_PREFIX + isoDateStringToday + "-" + randomPart;
+                    String nameForInsert = getPitchBlackPrefix(isoDateStringToday + "-" + randomPart);
                     tryToInsertPitchBlackCheck(highLevelSimpleClient, nameForInsert);
                 }
 
                 File[] foilPitchBlackStatusFiles = node.userDir().dir()
-                    .listFiles((file, name) -> name.startsWith(FOIL_PITCH_BLACK_ATTACK_PREFIX));
+                    .listFiles((file, name) -> name.startsWith(getPitchBlackPrefix("")));
                 if (foilPitchBlackStatusFiles != null) {
                     File[] successfulInsertFromYesterday = Arrays.stream(foilPitchBlackStatusFiles)
                         .filter(file -> file.getName().contains(isoDateStringYesterday))
@@ -243,7 +246,11 @@ public class LocationManager implements ByteCounter {
                     }
                 }
             }
-        }, MINUTES.toMillis(10));
+        }, PITCH_BLACK_MITIGATION_STARTUP_DELAY);
+    }
+
+    public String getPitchBlackPrefix(String middleSubstring) {
+        return FOIL_PITCH_BLACK_ATTACK_PREFIX + middleSubstring;
     }
 
     private void tryToRequestPitchBlackCheckFromYesterday(
@@ -1591,6 +1598,14 @@ public class LocationManager implements ByteCounter {
     		return knownLocs.pairsAfter(timestamp, new Double[knownLocs.size()]);
     	}
 	}
+
+	public static void setClockForTesting(Clock clock) {
+        clockForTesting = clock;
+  }
+
+	public static Clock getClockForTesting() {
+        return clockForTesting;
+  }
 
 	public static double[] extractLocs(PeerNode[] peers, boolean indicateBackoff) {
 		double[] locs = new double[peers.length];
