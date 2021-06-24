@@ -4936,9 +4936,9 @@ public class Node implements TimeSkewDetectorCallback {
         return databaseKey;
     }
 
-	public NodeDiagnostics getNodeDiagnostics() {
+    public NodeDiagnostics getNodeDiagnostics() {
         return nodeDiagnostics;
-	}
+    }
 
     public boolean isNodeDiagnosticsEnabled() {
         return enableNodeDiagnostics;
