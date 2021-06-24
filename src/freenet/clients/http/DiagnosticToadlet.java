@@ -422,6 +422,11 @@ public class DiagnosticToadlet extends Toadlet {
 		this.writeTextReply(ctx, 200, "OK", textBuilder.toString());
 	}
 
+	/**
+	 * Retrieves ThreadDiagnostics (through NodeDiagnostics) to display
+	 * thread information (id, name, group, % cpu, etc).
+	 * @return Thread information in tab separated format.
+	 */
 	private StringBuilder threadsStats() {
 		StringBuilder sb = new StringBuilder();
 
