@@ -431,13 +431,6 @@ public class DiagnosticToadlet extends Toadlet {
 
 		NodeThreadSnapshot threadSnapshot = threadDiagnostics.getThreadSnapshot();
 
-		// It's possible to request threadStats with out having taken any snapshot so far.
-		// In this scenario we'll just return a message indicating this.
-		if (threadSnapshot == null) {
-			sb.append("No threads registered.");
-			return sb;
-		}
-
 		double wallTime = TimeUnit.MILLISECONDS.toNanos(
 			threadSnapshot.getInterval()
 		);

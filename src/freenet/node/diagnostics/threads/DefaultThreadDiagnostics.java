@@ -27,7 +27,12 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     private static final int DEFAULT_MONITOR_INTERVAL = 1000;
     private static final String DEFAULT_MONITOR_THREAD_NAME = "NodeDiagnostics: thread monitor";
 
-    private final AtomicReference<NodeThreadSnapshot> nodeThreadSnapshot = new AtomicReference<>();
+    /** Initialising with an empty NodeThreadSnapshot to avoid possible race conditions */
+    private final AtomicReference<NodeThreadSnapshot> nodeThreadSnapshot =
+            new AtomicReference<>(
+                    new NodeThreadSnapshot(new ArrayList<>(), DEFAULT_MONITOR_INTERVAL)
+            );
+
     private final ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
 
     /** Map to track thread's CPU differences between intervals of time */

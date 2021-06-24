@@ -6,9 +6,11 @@ package freenet.node.diagnostics.threads;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Wrapper class to contain a list of NodeThreadInfos.
+ */
 public class NodeThreadSnapshot {
     private final List<NodeThreadInfo> threads;
-    private final double totalCpuTime;
     private final int interval;
 
     /**
@@ -16,12 +18,6 @@ public class NodeThreadSnapshot {
      */
     public NodeThreadSnapshot(List<NodeThreadInfo> threads, int interval) {
         this.threads = new ArrayList<>(threads);
-
-        totalCpuTime = Math.max(1, threads
-                .stream()
-                .mapToDouble(NodeThreadInfo::getCpuTime)
-                .sum());
-
         this.interval = interval;
     }
 
@@ -30,13 +26,6 @@ public class NodeThreadSnapshot {
      */
     public List<NodeThreadInfo> getThreads() {
         return new ArrayList<>(threads);
-    }
-
-    /**
-     * @return The calculated total CPU time from the snapshot's thread list.
-     */
-    public double getTotalCpuTime() {
-        return totalCpuTime;
     }
 
     /**
