@@ -47,12 +47,14 @@ public class SkipShieldingInputStream extends FilterInputStream {
     @Override
     public long skip(long n) throws IOException {
         int retval;
-        if (n < 0)
+        if (n < 0) {
             retval = 0;
+        }
         else {
             retval = read(SKIP_BUFFER, 0, (int) Math.min(n, SKIP_BUFFER_SIZE));
-            if (retval < 0)
+            if (retval < 0) {
                 retval = 0;
+            }
         }
         return retval;
     }
