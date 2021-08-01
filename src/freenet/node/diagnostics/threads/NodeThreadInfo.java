@@ -16,13 +16,13 @@ public class NodeThreadInfo {
 
     /**
      * @param id Thread ID
+     * @param cpuTime Thread's CPU time in nanoseconds (delta)
      * @param name Thread name, or <noname>
      * @param prio Thread priority
      * @param groupName Thread's group name
      * @param state Thread current state (TIMED_WAITING, RUNNABLE, etc)
-     * @param cpuTime Thread's CPU time in nanoseconds (delta)
      */
-    NodeThreadInfo(long id, String name, int prio, String groupName, String state, long cpuTime) {
+    NodeThreadInfo(long id, long cpuTime, String name, int prio, String groupName, String state) {
         this.id = id;
         this.name = name;
         this.prio = prio;

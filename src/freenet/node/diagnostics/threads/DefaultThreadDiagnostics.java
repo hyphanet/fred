@@ -107,14 +107,39 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
      * @param threadId Thread ID to get the CPU usage
      * @return Delta CPU time (nanoseconds)
      */
-    private long getCpuTimeDelta(long threadId) {
+    private long getCpuTimeDelta(long threadId, String name) {
         long current = threadMxBean.getThreadCpuTime(threadId);
 
         long cpuUsage = current - threadCpu.getOrDefault(threadId, current);
-        threadCpu.put(threadId, current);
+        threadSnapshot.put(threadId, new ThreadSnapshot(current, name));
 
         return cpuUsage;
     }
+
+    private final Map<Long, ThreadSnapshot> threadSnapshot = new HashMap<>();
+
+    /**
+     * Class holder for cpu and thread name at the moment of measurement. This is
+     * necessary as the threads are pooled and may change name right after measurement.
+     */
+    private class ThreadSnapshot {
+        private final long cpu;
+        private final String name;
+
+        public ThreadSnapshot(long cpu, String name) {
+            this.cpu = cpu;
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public long getCpu() {
+            return cpu;
+        }
+    }
+
 
     /**
      * Remove threads that aren't present in the last snapshot.
@@ -133,18 +158,18 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     @Override
     public void run() {
         List<NodeThreadInfo> threads = Arrays.stream(nodeStats.getThreads())
-            .filter(Objects::nonNull)
-            .filter(thread -> thread.getThreadGroup() != null)
-            .map(thread -> new NodeThreadInfo(
-                    thread.getId(),
-                    thread.getName(),
-                    thread.getPriority(),
-                    thread.getThreadGroup().getName(),
-                    thread.getState().toString(),
-                    getCpuTimeDelta(thread.getId())
+                .filter(Objects::nonNull)
+                .filter(thread -> thread.getThreadGroup() != null)
+                .map(thread -> new NodeThreadInfo(
+                                thread.getId(),
+                                getCpuTimeDelta(thread.getId(), thread.getName()),
+                                threadSnapshot.get(thread.getId()).getName(),
+                                thread.getPriority(),
+                                thread.getThreadGroup().getName(),
+                                thread.getState().toString()
+                        )
                 )
-            )
-            .collect(Collectors.toList());
+                .collect(Collectors.toList());
 
         nodeThreadSnapshot.set(
                 new NodeThreadSnapshot(threads, monitorInterval)
