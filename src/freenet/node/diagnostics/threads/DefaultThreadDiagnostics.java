@@ -104,11 +104,18 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
      * If there's no previous snapshot of CPU Time for the thread this method
      * will return 0.
      *
-     * @param threadId Thread ID to get the CPU usage
+     * @param thread Thread object to get the CPU usage
      * @return Delta CPU time (nanoseconds)
      */
-    private long getCpuTimeDelta(long threadId, String name) {
-        long current = threadMxBean.getThreadCpuTime(threadId);
+    private long getCpuTimeDelta(Thread thread) {
+        long threadId = thread.getId(), current;
+        String name;
+        // Synchronizing thread to avoid PoolerExecutor to change thread name
+        // while we're measuring it.
+        synchronized (thread) {
+            name = thread.getName();
+            current = threadMxBean.getThreadCpuTime(threadId);
+        }
 
         ThreadSnapshot snapshot = threadSnapshot.get(threadId);
         long cpuUsage = current - (snapshot != null ? snapshot.getCpu() : 0);
@@ -121,7 +128,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
      * Class holder for cpu and thread name at the moment of measurement. This is
      * necessary as the threads are pooled and may change name right after measurement.
      */
-    private class ThreadSnapshot {
+    private static class ThreadSnapshot {
         private final long cpu;
         private final String name;
 
@@ -161,7 +168,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
                 .filter(thread -> thread.getThreadGroup() != null)
                 .map(thread -> new NodeThreadInfo(
                                 thread.getId(),
-                                getCpuTimeDelta(thread.getId(), thread.getName()),
+                                getCpuTimeDelta(thread),
                                 threadSnapshot.get(thread.getId()).getName(),
                                 thread.getPriority(),
                                 thread.getThreadGroup().getName(),
