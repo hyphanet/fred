@@ -36,7 +36,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     private final ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
 
     /** Map to track thread's CPU differences between intervals of time */
-    private final Map<Long, Long> threadCpu = new HashMap<>();
+    private final Map<Long, ThreadSnapshot> threadSnapshot = new HashMap<>();
 
     /**
      * @param nodeStats Used to retrieve data points
@@ -110,13 +110,12 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
     private long getCpuTimeDelta(long threadId, String name) {
         long current = threadMxBean.getThreadCpuTime(threadId);
 
-        long cpuUsage = current - threadCpu.getOrDefault(threadId, current);
+        ThreadSnapshot snapshot = threadSnapshot.get(threadId);
+        long cpuUsage = current - (snapshot != null ? snapshot.getCpu() : 0);
         threadSnapshot.put(threadId, new ThreadSnapshot(current, name));
 
         return cpuUsage;
     }
-
-    private final Map<Long, ThreadSnapshot> threadSnapshot = new HashMap<>();
 
     /**
      * Class holder for cpu and thread name at the moment of measurement. This is
@@ -151,7 +150,7 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
                 .map(NodeThreadInfo::getId)
                 .collect(Collectors.toList());
 
-        threadCpu.keySet()
+        threadSnapshot.keySet()
                 .removeIf(key -> !activeThreads.contains(key));
     }
 
