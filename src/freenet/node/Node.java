@@ -2028,7 +2028,9 @@ public class Node implements TimeSkewDetectorCallback {
 				"Node.storeSaltHashSlotFilterPersistenceTime", "Node.storeSaltHashSlotFilterPersistenceTimeLong", new IntCallback() {
 
 					@Override
-					public Integer get() { return storeSaltHashSlotFilterPersistenceTime;}
+					public Integer get() {
+						return storeSaltHashSlotFilterPersistenceTime;
+					}
 
 					@Override
 					public void set(Integer val)
