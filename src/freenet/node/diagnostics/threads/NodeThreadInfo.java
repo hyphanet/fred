@@ -8,6 +8,7 @@ package freenet.node.diagnostics.threads;
  */
 public class NodeThreadInfo {
     private final long id;
+    private final long jobId;
     private final String name;
     private final int prio;
     private final String groupName;
@@ -16,14 +17,16 @@ public class NodeThreadInfo {
 
     /**
      * @param id Thread ID
+     * @param jobId Job ID
      * @param cpuTime Thread's CPU time in nanoseconds (delta)
      * @param name Thread name, or <noname>
      * @param prio Thread priority
      * @param groupName Thread's group name
      * @param state Thread current state (TIMED_WAITING, RUNNABLE, etc)
      */
-    NodeThreadInfo(long id, long cpuTime, String name, int prio, String groupName, String state) {
+    NodeThreadInfo(long id, long jobId, long cpuTime, String name, int prio, String groupName, String state) {
         this.id = id;
+        this.jobId = jobId;
         this.name = name;
         this.prio = prio;
         this.groupName = groupName;
@@ -33,6 +36,10 @@ public class NodeThreadInfo {
 
     public long getId() {
         return id;
+    }
+
+    public long getJobId() {
+        return jobId;
     }
 
     public String getName() {

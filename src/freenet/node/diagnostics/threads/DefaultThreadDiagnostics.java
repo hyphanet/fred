@@ -7,6 +7,7 @@ import freenet.node.*;
 import freenet.node.diagnostics.*;
 import freenet.support.*;
 
+import java.io.*;
 import java.lang.management.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
@@ -108,20 +109,36 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
      * @return Delta CPU time (nanoseconds)
      */
     private long getCpuTimeDelta(Thread thread) {
-        long threadId = thread.getId(), current;
+        long jobId, current;
         String name;
         // Synchronizing thread to avoid PoolerExecutor to change thread name
         // while we're measuring it.
         synchronized (thread) {
             name = thread.getName();
-            current = threadMxBean.getThreadCpuTime(threadId);
+            current = threadMxBean.getThreadCpuTime(thread.getId());
+            jobId = getJobId(thread);
         }
 
-        ThreadSnapshot snapshot = threadSnapshot.get(threadId);
+        ThreadSnapshot snapshot = threadSnapshot.get(jobId);
         long cpuUsage = current - (snapshot != null ? snapshot.getCpu() : 0);
-        threadSnapshot.put(threadId, new ThreadSnapshot(current, name));
+        threadSnapshot.put(jobId, new ThreadSnapshot(current, name));
 
         return cpuUsage;
+    }
+
+    /**
+     * Gets the job's ID from the thread (PooledExecutor.MyThread) or
+     * defaults to the thread's ID.
+     * @param thread
+     * @return Job ID or Thread ID.
+     */
+    private long getJobId(Thread thread) {
+        long jobId = thread.getId();
+        if ((thread instanceof PooledExecutor.MyThread)) {
+            jobId = ((PooledExecutor.MyThread) thread).getJobId();
+        }
+
+        return jobId;
     }
 
     /**
@@ -154,11 +171,22 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
      */
     private void purgeInactiveThreads(List<NodeThreadInfo> threads) {
         List<Long> activeThreads = threads.stream()
-                .map(NodeThreadInfo::getId)
+                .map(NodeThreadInfo::getJobId) // job id might be the same as thread id
                 .collect(Collectors.toList());
 
         threadSnapshot.keySet()
                 .removeIf(key -> !activeThreads.contains(key));
+    }
+
+    /**
+     * Get thread (jobs) name at the time of measurement or default
+     * to current's thread name.
+     * @param thread
+     * @return Thread's name
+     */
+    private String getJobName(Thread thread) {
+        ThreadSnapshot ts = threadSnapshot.get(getJobId(thread));
+        return ts != null ? ts.getName() : thread.getName();
     }
 
     @Override
@@ -166,10 +194,12 @@ public class DefaultThreadDiagnostics implements Runnable, ThreadDiagnostics {
         List<NodeThreadInfo> threads = Arrays.stream(nodeStats.getThreads())
                 .filter(Objects::nonNull)
                 .filter(thread -> thread.getThreadGroup() != null)
+                .filter(thread -> getJobId(thread) != 0)
                 .map(thread -> new NodeThreadInfo(
                                 thread.getId(),
+                                getJobId(thread),
                                 getCpuTimeDelta(thread),
-                                threadSnapshot.get(thread.getId()).getName(),
+                                getJobName(thread),
                                 thread.getPriority(),
                                 thread.getThreadGroup().getName(),
                                 thread.getState().toString()
