@@ -28,16 +28,50 @@ import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 
 /**
- * @author amphibian
+ * @author ArneBab
  *
- * Create a mesh of nodes and let them sort out their locations.
+ * This test spins uf Freenet nodes and simulates a pitch black attack and defense.
+ * It moves fake days forward to simulate the defense despite limited swapping speed.
  *
- * Then run some node-to-node searches.
+ * It spins up NUMBER_OF_NODES freenet nodes with DEEGREE.
+ *
+ * MIN_PINGS and MAX_PINGS give the minimum and maximum runtime.
+ *
+ * Adjust the variables NUMBER_OF_NODES, DEGREE, and PINGS_PER_ITERATION to adjust test parameters.
+ *
+ * Set PITCH_BLACK_ATTACK_MEAN_LOCATION and PITCH_BLACK_ATTACK_JITTER to select the location
+ * to attack. PITCH_BLACK_ATTACK_JITTER is necessary to prevent existind heuristics from deticting
+ * the naive attack with exactly one location.
+ *
+ * Set BETWEEN_PING_SLEEP_TIME to give the nodes time to swap between logging.
+ *
+ * PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY gives the time between triggering a mitigation
+ * (usually it is just one per day). It abvances the fake time by one day per period.
+ *
+ * Just grep the test output to get test results. Example Gnuplot calls to evaluate:
+ *
+ * set title "Average peer locations during pitch black mitigation"
+ * set xlabel "Time / Cycle"
+ * set ylabel "node / index"
+ * set cblabel "location / position in ring"
+ * plot "<(grep Cycle real-node-pitch-black-mitigation-test-results-11.log | grep ' node ' | sed 's/Cycle //;s/ node / /;s/: .*average=/ /;s/, .*$//;s/,/./g')" using 1:2:3 palette pt 5 ps 1.5 lw 1 title "RealNodePitchBlackMitigationTest"
+ *
+ *  set title "Average path length of successful pings"
+ * set xlabel "Time / Cycle"
+ * set ylabel "average path lenth / hops"
+ * plot "<(grep 'Average path length' real-node-pitch-black-mitigation-test-results-11.log | sed 's/.*: //')" using 0:1 pt 5 ps 1.5 lw 1 title "RealNodePitchBlackMitigationTest"
+ *
+ *  set title "Ping-Statistics"
+ * set xlabel "Time / Ping Number"
+ * set ylabel "fraction / unitless"
+ * set cblabel "path / hops needed"
+ * plot "<(grep 'Routed ping' real-node-pitch-black-mitigation-test-results-11.log | grep success | sed 's/Routed ping //;s/ success: / /g')" using 1:(($0+1)/$1):2 palette pt 3 ps 1 lw 1 title "succeeded", "<(grep 'Routed ping' real-node-pitch-black-mitigation-test-results-11.log | grep FAILED | sed 's/Routed ping //;s/FAILED from//')" using 1:(($0+1)/$1) pt 6 ps 1 lw 1 title "FAILED"
+ *
  */
 public class RealNodePitchBlackMitigationTest extends RealNodeTest {
 
-	static final int NUMBER_OF_NODES = 100;
-	static final int DEGREE = 10;
+	static final int NUMBER_OF_NODES = 300;
+	static final int DEGREE = 4;
 	static final short MAX_HTL = (short) 10;
 	static final boolean START_WITH_IDEAL_LOCATIONS = true;
 	static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
