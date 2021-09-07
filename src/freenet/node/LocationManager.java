@@ -201,7 +201,7 @@ public class LocationManager implements ByteCounter {
                 String isoDateStringToday = DateTimeFormatter.ISO_DATE
                     .format(now);
                 String isoDateStringYesterday = DateTimeFormatter.ISO_DATE
-                    .format(now.minus(Duration.ofDays(1)));
+                    .format(now.minusDays(1));
                 File[] previousInsertFromToday = node.userDir().dir()
                     .listFiles((file, name) -> name.startsWith(getPitchBlackPrefix(
                         isoDateStringToday)));
