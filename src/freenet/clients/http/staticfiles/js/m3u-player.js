@@ -110,6 +110,21 @@ function prefetchTrack(url, onload) {
   };
   xhr.send();
 }
+
+function showStaticOverlay(mediaTag, canvas) {
+  // take screenshot of video and overlay it to mask short-term flicker.
+  canvas.width = mediaTag.clientWidth;
+  canvas.height = mediaTag.clientHeight;
+  const context = canvas.getContext("2d");
+  context.scale(mediaTag.clientWidth / mediaTag.videoWidth, mediaTag.clientHeight / mediaTag.videoHeight);
+  context.drawImage(mediaTag, 0, 0);
+  canvas.hidden = true;
+  mediaTag.parentNode.insertBefore(canvas, mediaTag.nextSibling);
+  canvas.style.position = "absolute";
+  canvas.style.marginLeft = "-" + mediaTag.clientWidth + "px";
+  canvas.hidden = false;
+}
+
 function updateSrc(mediaTag, callback) {
   const playlistUrl = mediaTag.getAttribute("playlist");
   const trackIndex =  mediaTag.getAttribute("track-index");
@@ -141,26 +156,22 @@ function updateSrc(mediaTag, callback) {
     const oldUrl = mediaTag.getAttribute("src");
     // prevent size flickering by setting height before src change
     const canvas = document.createElement("canvas");
-    if (!isNaN(mediaTag.duration)) { // already loaded a valid file so the size should fit
+    if (!isNaN(mediaTag.duration) // already loaded a valid file so the size should fit
+       && document.fullscreen !== true) { // overlay does not work for fullscreen
       // fix height to the height of the current video. Re-run after setting the source.
       mediaTag.height = (mediaTag.clientWidth * mediaTag.videoHeight) / mediaTag.videoWidth;
-      // take screenshot of video and overlay it to mask short-term flicker.
-      canvas.width = mediaTag.clientWidth;
-      canvas.height = mediaTag.clientHeight;
-      const context = canvas.getContext("2d");
-      context.scale(mediaTag.clientWidth / mediaTag.videoWidth, mediaTag.clientHeight / mediaTag.videoHeight);
-      context.drawImage(mediaTag, 0, 0);
-      canvas.hidden = true;
-      mediaTag.parentNode.insertBefore(canvas, mediaTag.nextSibling);
-      canvas.style.position = "absolute";
-      canvas.style.marginLeft = "-" + mediaTag.clientWidth + "px";
-      canvas.hidden = false;
+      // fix width to avoid flickering video width during loading of the next segment - required when the height is fixed via CSS
+      mediaTag.width = mediaTag.clientWidth;
+      // mask flickering with a static overlay
+      showStaticOverlay(mediaTag, canvas);
     }
     mediaTag.setAttribute("src", url);
     mediaTag.oncanplaythrough = () => {
       if (!isNaN(mediaTag.duration)) { // already loaded a valid file
-        // fix height to the height of the current video. Re-run after setting the source.
+        // update height for new video file.
         mediaTag.height = (mediaTag.clientWidth * mediaTag.videoHeight) / mediaTag.videoWidth;
+        // update the width after loading completed to address cases where CSS changed the width, for example due to window size changes
+        mediaTag.width = (mediaTag.clientHeight * mediaTag.videoWidth) / mediaTag.videoHeight;
       }
       // remove overlay
       canvas.hidden = true;
