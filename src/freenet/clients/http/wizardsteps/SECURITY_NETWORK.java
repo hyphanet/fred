@@ -118,7 +118,7 @@ public class SECURITY_NETWORK implements Step {
 	private void securityLevelChoice(HTMLNode parent, SecurityLevels.NETWORK_THREAT_LEVEL level) {
 		HTMLNode input = parent.addChild("p").addChild("input",
 		        new String[] { "type", "name", "value", "id" },
-		        new String[] { "radio", "security-levels.networkThreatLevel", "security-levels.networkThreatLevel" + level.name() });
+		        new String[] { "radio", "security-levels.networkThreatLevel", level.name(), "security-levels.networkThreatLevel" + level.name() });
 		input.addChild("label",
             new String[] { "for" },
             new String[] { "security-levels.networkThreatLevel" + level.name() }
