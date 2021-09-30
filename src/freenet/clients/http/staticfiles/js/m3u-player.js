@@ -165,13 +165,20 @@ function updateSrc(mediaTag, callback) {
       // mask flickering with a static overlay
       showStaticOverlay(mediaTag, canvas);
     }
+    if (mediaTag.height && mediaTag.width) {
+      mediaTag.style.height = mediaTag.clientHeight + 'px';
+      mediaTag.style.width = mediaTag.clientWidth + 'px';
+    }
     mediaTag.setAttribute("src", url);
     mediaTag.oncanplaythrough = () => {
       if (!isNaN(mediaTag.duration)) { // already loaded a valid file
+        // unset element styles to allow recomputation if sizes changed
+        mediaTag.style.height = null;
+        mediaTag.style.width = null;
         // update height for new video file.
         mediaTag.height = (mediaTag.clientWidth * mediaTag.videoHeight) / mediaTag.videoWidth;
         // update the width after loading completed to address cases where CSS changed the width, for example due to window size changes
-        mediaTag.width = (mediaTag.clientHeight * mediaTag.videoWidth) / mediaTag.videoHeight;
+        mediaTag.width = mediaTag.clientWidth;
       }
       // remove overlay
       canvas.hidden = true;
