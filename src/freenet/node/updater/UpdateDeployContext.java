@@ -20,6 +20,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.updater.MainJarDependenciesChecker.Dependency;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
+import freenet.support.JVMVersion;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
 
@@ -264,8 +265,8 @@ public class UpdateDeployContext {
 			bw.write("wrapper.java.additional."+count+"=-Djava.io.tmpdir=./tmp/"+'\n');
 		}
 
-		// allow accessing internal modules (required for Java 16+)
-		if (!writtenIllegalAccessPermit) {
+		// allow accessing internal modules (required for Java 16+, only supported since Java 9)
+		if (!writtenIllegalAccessPermit && JVMVersion.supportsModules()) {
 			bw.write("wrapper.java.additional."+count+"=--illegal-access=permit"+'\n');
 		}
 

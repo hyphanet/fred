@@ -25,6 +25,11 @@ public class JVMVersion {
 	public static final String UPDATER_THRESHOLD = "1.8";
 
 	/**
+	 * Oldest Java version which supports Modules
+	 */
+	public static final String SUPPORTS_MODULES_THRESHOLD = "1.9";
+
+	/**
 	 * Pre-9 is formatted as: major.feature[.maintenance[_update]]-ident
 	 * Post-9 is formatted as: major[.minor[.security[. ...]]]-ident
 	 * For comparison of compatibility, information beyond the major, feature/minor,
@@ -70,6 +75,15 @@ public class JVMVersion {
 		} else {
 			return is32bitOS;
 		}
+	}
+
+	public static final boolean supportsModules() {
+		String currentVersion = getCurrent();
+		if (currentVersion == null) {
+			return false;
+		}
+
+		return compareVersion(currentVersion, SUPPORTS_MODULES_THRESHOLD) <= 0;
 	}
 
 	/**
