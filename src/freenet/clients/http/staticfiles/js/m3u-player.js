@@ -176,29 +176,21 @@ function updateSrc(mediaTag, callback) {
     const oldUrl = mediaTag.getAttribute("src");
     // prevent size flickering by setting height before src change
     const canvas = document.createElement("canvas");
-    if (!isNaN(mediaTag.duration) // already loaded a valid file so the size should fit
+    if (!isNaN(mediaTag.duration) // already loaded a valid file
        && document.fullscreen !== true) { // overlay does not work for fullscreen
-      // fix height to the height of the current video. Re-run after setting the source.
-      mediaTag.height = (mediaTag.clientWidth * mediaTag.videoHeight) / mediaTag.videoWidth;
-      // fix width to avoid flickering video width during loading of the next segment - required when the height is fixed via CSS
-      mediaTag.width = mediaTag.clientWidth;
       // mask flickering with a static overlay
       showStaticOverlay(mediaTag, canvas);
     }
-    if (mediaTag.height && mediaTag.width) {
-      mediaTag.style.height = mediaTag.clientHeight + 'px';
-      mediaTag.style.width = mediaTag.clientWidth + 'px';
-    }
+    // force sizes to stay constant during loading of the next segment
+    mediaTag.style.height = mediaTag.getBoundingClientRect().height.toString() + 'px';
+    mediaTag.style.width = mediaTag.getBoundingClientRect().width.toString() + 'px';
+    // swich to the next segment
     mediaTag.setAttribute("src", url);
     mediaTag.oncanplaythrough = () => {
       if (!isNaN(mediaTag.duration)) { // already loaded a valid file
         // unset element styles to allow recomputation if sizes changed
         mediaTag.style.height = null;
         mediaTag.style.width = null;
-        // update height for new video file.
-        mediaTag.height = (mediaTag.clientWidth * mediaTag.videoHeight) / mediaTag.videoWidth;
-        // update the width after loading completed to address cases where CSS changed the width, for example due to window size changes
-        mediaTag.width = mediaTag.clientWidth;
       }
       // remove overlay
       canvas.hidden = true;
