@@ -113,15 +113,35 @@ function prefetchTrack(url, onload) {
 
 function showStaticOverlay(mediaTag, canvas) {
   // take screenshot of video and overlay it to mask short-term flicker.
-  canvas.width = mediaTag.clientWidth;
-  canvas.height = mediaTag.clientHeight;
+  const realWidth = mediaTag.getBoundingClientRect().width;
+  const realHeight = mediaTag.getBoundingClientRect().height;
+  canvas.width = realWidth;
+  canvas.height = realHeight;
+  // need the actual video size
+  const videoAspectRatio = mediaTag.videoHeight / mediaTag.videoWidth;
+  const tagAspectRatio = realHeight / realWidth;
+  const videoIsPartialHeight = tagAspectRatio > (videoAspectRatio * 1.01); // avoid rounding errors
+  const videoIsPartialWidth = videoAspectRatio > (tagAspectRatio * 1.01); // avoid rounding errors
+  if (videoIsPartialHeight) {
+    canvas.height = realWidth * videoAspectRatio;
+  } else if (videoIsPartialWidth) {
+    canvas.width = realHeight / videoAspectRatio;
+  }
   const context = canvas.getContext("2d");
-  context.scale(mediaTag.clientWidth / mediaTag.videoWidth, mediaTag.clientHeight / mediaTag.videoHeight);
+  context.scale(canvas.width / mediaTag.videoWidth, canvas.height / mediaTag.videoHeight);
   context.drawImage(mediaTag, 0, 0);
   canvas.hidden = true;
   mediaTag.parentNode.insertBefore(canvas, mediaTag.nextSibling);
   canvas.style.position = "absolute";
-  canvas.style.marginLeft = "-" + mediaTag.clientWidth + "px";
+  // shift canvas to cover only the space where the video actually is
+  if (videoIsPartialWidth) {
+    canvas.style.marginLeft = "-" + ((realWidth + canvas.width) / 2.) + "px";
+  } else {
+    canvas.style.marginLeft = "-" + realWidth + "px";
+  }
+  if (videoIsPartialHeight) {
+    canvas.style.marginTop = ((realHeight - canvas.height) / 2) + "px";
+  }
   canvas.hidden = false;
 }
 
