@@ -173,7 +173,7 @@ public class BookmarkManager implements RequestClient {
 		}
 	}
 
-	public String l10n(String key) {
+	private String l10n(String key) {
 		return NodeL10n.getBase().getString("BookmarkManager." + key);
 	}
 
