@@ -44,11 +44,19 @@ public class DATASTORE_SIZE implements Step {
 
 		@SuppressWarnings("unchecked")
 		Option<Long> sizeOption = (Option<Long>) config.get("node").getOption("storeSize");
+		@SuppressWarnings("unchecked")
+		Option<Long> clientCacheSizeOption = (Option<Long>) config.get("node").getOption("clientCacheSize");
+		@SuppressWarnings("unchecked")
+		Option<Long> slashdotCacheSizeOption = (Option<Long>) config.get("node").getOption("slashdotCacheSize");
 		if(!sizeOption.isDefault()) {
 			long current = sizeOption.getValue();
+			long currentTotal = current;
+			if (!clientCacheSizeOption.isDefault() && !slashdotCacheSizeOption.isDefault()) {
+				currentTotal += clientCacheSizeOption.getValue() + slashdotCacheSizeOption.getValue();
+			}
 			result.addChild("option",
 			        new String[] { "value", "selected" },
-			        new String[] { SizeUtil.formatSize(current), "on" }, WizardL10n.l10n("currentPrefix")+" "+SizeUtil.formatSize(current));
+			        new String[] { SizeUtil.formatSize(currentTotal), "on" }, WizardL10n.l10n("currentPrefix")+" "+SizeUtil.formatSize(currentTotal));
 		} else if(autodetectedSize != -1) {
 			result.addChild("option",
 			        new String[] { "value", "selected" },
