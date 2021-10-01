@@ -140,7 +140,7 @@ function showStaticOverlay(mediaTag, canvas) {
     canvas.style.marginLeft = "-" + realWidth + "px";
   }
   if (videoIsPartialHeight) {
-    canvas.style.marginTop = ((realHeight - canvas.height) / 2) + "px";
+    canvas.style.marginTop = ((realHeight - canvas.height) / 2.) + "px";
   }
   canvas.hidden = false;
 }
