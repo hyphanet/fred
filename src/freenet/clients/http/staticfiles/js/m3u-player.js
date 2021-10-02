@@ -179,7 +179,11 @@ function updateSrc(mediaTag, callback) {
     if (!isNaN(mediaTag.duration) // already loaded a valid file
        && document.fullscreen !== true) { // overlay does not work for fullscreen
       // mask flickering with a static overlay
-      showStaticOverlay(mediaTag, canvas);
+      try {
+        showStaticOverlay(mediaTag, canvas);
+      } catch (error) {
+        console.log(error);
+      }
     }
     // force sizes to stay constant during loading of the next segment
     mediaTag.style.height = mediaTag.getBoundingClientRect().height.toString() + 'px';
