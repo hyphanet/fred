@@ -83,7 +83,7 @@ public class JVMVersion {
 			return false;
 		}
 
-		return compareVersion(currentVersion, SUPPORTS_MODULES_THRESHOLD) <= 0;
+		return compareVersion(SUPPORTS_MODULES_THRESHOLD, currentVersion) <= 0;
 	}
 
 	/**
