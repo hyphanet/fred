@@ -615,7 +615,8 @@ public class PproxyToadlet extends Toadlet {
 					new String[] { "radio", "plugin-name", pluginDescription.name, "radioPlugin" + pluginDescription.name });
 				option.addChild("label",
 					new String[] { "for" },
-					new String[] { "radioPlugin" + pluginDescription.name }).addChild("i", pluginDescription.getLocalisedPluginName());
+					new String[] { "radioPlugin" + pluginDescription.name }
+				).addChild("i", pluginDescription.getLocalisedPluginName());
 				if(pluginDescription.deprecated)
 					option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
 				if(pluginDescription.experimental)
