@@ -22,9 +22,12 @@ public class OPENNET implements Step {
 
 		HTMLNode p = form.addChild("p");
 		HTMLNode input = p.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "radio", "opennet", "false" });
-		input.addChild("b", WizardL10n.l10n("opennetChoiceConnectFriends")+":");
+            new String[] { "type", "name", "value", "id" },
+            new String[] { "radio", "opennet", "false", "opennetFalse" });
+		input.addChild("label",
+            new String[] { "for" },
+            new String[] { "opennetFalse" }
+            ).addChild("b", WizardL10n.l10n("opennetChoiceConnectFriends")+":");
 		p.addChild("br");
 		p.addChild("i", WizardL10n.l10n("opennetChoicePro"));
 		p.addChild("#", ": "+WizardL10n.l10n("opennetChoiceConnectFriendsPRO") + "¹");
@@ -34,9 +37,12 @@ public class OPENNET implements Step {
 
 		p = form.addChild("p");
 		input = p.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "radio", "opennet", "true" });
-		input.addChild("b", WizardL10n.l10n("opennetChoiceConnectStrangers")+":");
+            new String[] { "type", "name", "value", "id" },
+            new String[] { "radio", "opennet", "true", "opennetTrue" });
+		input.addChild("label",
+            new String[] { "for" },
+            new String[] { "opennetTrue" }
+            ).addChild("b", WizardL10n.l10n("opennetChoiceConnectStrangers")+":");
 		p.addChild("br");
 		p.addChild("i", WizardL10n.l10n("opennetChoicePro"));
 		p.addChild("#", ": "+WizardL10n.l10n("opennetChoiceConnectStrangersPRO"));
