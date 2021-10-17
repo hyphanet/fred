@@ -110,6 +110,41 @@ function prefetchTrack(url, onload) {
   };
   xhr.send();
 }
+
+function showStaticOverlay(mediaTag, canvas) {
+  // take screenshot of video and overlay it to mask short-term flicker.
+  const realWidth = mediaTag.getBoundingClientRect().width;
+  const realHeight = mediaTag.getBoundingClientRect().height;
+  canvas.width = realWidth;
+  canvas.height = realHeight;
+  // need the actual video size
+  const videoAspectRatio = mediaTag.videoHeight / mediaTag.videoWidth;
+  const tagAspectRatio = realHeight / realWidth;
+  const videoIsPartialHeight = tagAspectRatio > (videoAspectRatio * 1.01); // avoid rounding errors
+  const videoIsPartialWidth = videoAspectRatio > (tagAspectRatio * 1.01); // avoid rounding errors
+  if (videoIsPartialHeight) {
+    canvas.height = realWidth * videoAspectRatio;
+  } else if (videoIsPartialWidth) {
+    canvas.width = realHeight / videoAspectRatio;
+  }
+  const context = canvas.getContext("2d");
+  context.scale(canvas.width / mediaTag.videoWidth, canvas.height / mediaTag.videoHeight);
+  context.drawImage(mediaTag, 0, 0);
+  canvas.hidden = true;
+  mediaTag.parentNode.insertBefore(canvas, mediaTag.nextSibling);
+  canvas.style.position = "absolute";
+  // shift canvas to cover only the space where the video actually is
+  if (videoIsPartialWidth) {
+    canvas.style.marginLeft = "-" + ((realWidth + canvas.width) / 2.) + "px";
+  } else {
+    canvas.style.marginLeft = "-" + realWidth + "px";
+  }
+  if (videoIsPartialHeight) {
+    canvas.style.marginTop = ((realHeight - canvas.height) / 2.) + "px";
+  }
+  canvas.hidden = false;
+}
+
 function updateSrc(mediaTag, callback) {
   const playlistUrl = mediaTag.getAttribute("playlist");
   const trackIndex =  mediaTag.getAttribute("track-index");
@@ -139,7 +174,33 @@ function updateSrc(mediaTag, callback) {
         ? URL.createObjectURL(prefetchedTracks.get(trackUrl))
         : trackUrl : trackUrl;
     const oldUrl = mediaTag.getAttribute("src");
+    // prevent size flickering by setting height before src change
+    const canvas = document.createElement("canvas");
+    if (!isNaN(mediaTag.duration) // already loaded a valid file
+       && document.fullscreen !== true) { // overlay does not work for fullscreen
+      // mask flickering with a static overlay
+      try {
+        showStaticOverlay(mediaTag, canvas);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    // force sizes to stay constant during loading of the next segment
+    mediaTag.style.height = mediaTag.getBoundingClientRect().height.toString() + 'px';
+    mediaTag.style.width = mediaTag.getBoundingClientRect().width.toString() + 'px';
+    // swich to the next segment
     mediaTag.setAttribute("src", url);
+    mediaTag.oncanplaythrough = () => {
+      if (!isNaN(mediaTag.duration)) { // already loaded a valid file
+        // unset element styles to allow recomputation if sizes changed
+        mediaTag.style.height = null;
+        mediaTag.style.width = null;
+      }
+      // remove overlay
+      canvas.hidden = true;
+      canvas.remove(); // to allow garbage collection
+    };
+    setTimeout(() => canvas.remove(), 300); // fallback
     // replace the url when done, because a blob from an xhr request
     // is more reliable in the media tag; 
     // the normal URL caused jumping prematurely to the next track.
