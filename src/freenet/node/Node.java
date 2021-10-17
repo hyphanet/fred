@@ -38,6 +38,7 @@ import java.util.Random;
 import java.util.Set;
 
 import freenet.config.*;
+import freenet.node.diagnostics.*;
 import freenet.node.useralerts.*;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -486,7 +487,8 @@ public class Node implements TimeSkewDetectorCallback {
 	private String storeType;
 	private boolean storeUseSlotFilters;
 	private boolean storeSaltHashResizeOnStart;
-	
+	private int storeSaltHashSlotFilterPersistenceTime;
+
 	/** Minimum total datastore size */
 	static final long MIN_STORE_SIZE = 32 * 1024 * 1024;
 	/** Default datastore size (must be at least MIN_STORE_SIZE) */
@@ -723,6 +725,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public final SecurityLevels securityLevels;
 
+	/** Diagnostics */
+	private final DefaultNodeDiagnostics nodeDiagnostics;
+
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
 
@@ -749,6 +754,8 @@ public class Node implements TimeSkewDetectorCallback {
 	private boolean storePreallocate;
 	
 	private boolean enableRoutedPing;
+
+	private boolean enableNodeDiagnostics;
 
 	private boolean peersOffersDismissed;
 
@@ -2028,20 +2035,21 @@ public class Node implements TimeSkewDetectorCallback {
 
 					@Override
 					public Integer get() {
-						return ResizablePersistentIntBuffer.getPersistenceTime();
+						return storeSaltHashSlotFilterPersistenceTime;
 					}
 
 					@Override
 					public void set(Integer val)
-							throws InvalidConfigValueException,
-							NodeNeedRestartException {
-						if(val >= -1)
+							throws InvalidConfigValueException {
+						if(val >= -1) {
 							ResizablePersistentIntBuffer.setPersistenceTime(val);
-						else
+							storeSaltHashSlotFilterPersistenceTime = val;
+						} else
 							throw new InvalidConfigValueException(l10n("slotFilterPersistenceTimeError"));
 					}
 			
 		}, false);
+		storeSaltHashSlotFilterPersistenceTime = nodeConfig.getInt("storeSaltHashSlotFilterPersistenceTime");
 
 		nodeConfig.register("storeSaltHashResizeOnStart", false, sortOrder++, true, false,
 				"Node.storeSaltHashResizeOnStart", "Node.storeSaltHashResizeOnStartLong", new BooleanCallback() {
@@ -2536,7 +2544,38 @@ public class Node implements TimeSkewDetectorCallback {
 			
 		});
 		enableRoutedPing = nodeConfig.getBoolean("enableRoutedPing");
-		
+
+		nodeConfig.register(
+			"enableNodeDiagnostics",
+			false,
+			sortOrder++,
+			true,
+			false,
+			"Node.enableDiagnostics",
+			"Node.enableDiagnosticsLong",
+			new BooleanCallback() {
+				@Override
+				public Boolean get() {
+					synchronized (Node.this) {
+						return enableNodeDiagnostics;
+					}
+				}
+
+				@Override
+				public void set(Boolean val) {
+					synchronized (Node.this) {
+						enableNodeDiagnostics = val;
+						nodeDiagnostics.stop();
+
+						if (enableNodeDiagnostics) {
+							nodeDiagnostics.start();
+						}
+					}
+				}
+			}
+		);
+		enableNodeDiagnostics = nodeConfig.getBoolean("enableNodeDiagnostics");
+
 		updateMTU();
 
 		// peers-offers/*.fref files
@@ -2601,6 +2640,8 @@ public class Node implements TimeSkewDetectorCallback {
 		System.out.println("Node constructor completed");
 
 		new BandwidthManager(this).start();
+
+		nodeDiagnostics = new DefaultNodeDiagnostics(this.nodeStats, this.ticker);
 	}
 
 	private void peersOffersFrefFilesConfiguration(SubConfig nodeConfig, int configOptionSortOrder) {
@@ -3165,6 +3206,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Process any data in the extra peer data directory
 		peers.readExtraPeerData();
+
+		if (enableNodeDiagnostics) {
+			nodeDiagnostics.start();
+		}
 
 		Logger.normal(this, "Started node");
 
@@ -4892,5 +4937,12 @@ public class Node implements TimeSkewDetectorCallback {
     DatabaseKey getDatabaseKey() {
         return databaseKey;
     }
-    
+
+    public NodeDiagnostics getNodeDiagnostics() {
+        return nodeDiagnostics;
+    }
+
+    public boolean isNodeDiagnosticsEnabled() {
+        return enableNodeDiagnostics;
+    }
 }

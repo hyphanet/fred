@@ -361,7 +361,7 @@ public class ArchiveManager {
 			}
 		} catch (IOException ioe) {
 			throw new ArchiveFailureException("An IOE occured: "+ioe.getMessage(), ioe);
-		}finally {
+		} finally {
 			Closer.close(is);
 	}
 	}
