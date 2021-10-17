@@ -136,14 +136,20 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
 
         // display in browser or save to disk
         filterForm.addChild("input",
-                new String[] { "type", "name", "value" },
-                new String[] { "radio", "result-handling", ResultHandling.DISPLAY.toString() });
-        filterForm.addChild("#", l10n("displayResultLabel"));
+                new String[] { "type", "name", "value", "id" },
+                new String[] { "radio", "result-handling", ResultHandling.DISPLAY.toString(), "result-handling-display" });
+        filterForm.addChild("label",
+                new String[] { "for" },
+                new String[] { "result-handling-display" },
+                l10n("displayResultLabel"));
         filterForm.addChild("br");
         filterForm.addChild("input",
-                new String[] { "type", "name", "value" },
-                new String[] { "radio", "result-handling", ResultHandling.SAVE.toString() });
-        filterForm.addChild("#", l10n("saveResultLabel"));
+                new String[] { "type", "name", "value", "id" },
+                new String[] { "radio", "result-handling", ResultHandling.SAVE.toString(), "result-handling-save" });
+        filterForm.addChild("label",
+                new String[] { "for" },
+                new String[] { "result-handling-save" },
+                l10n("saveResultLabel"));
         filterForm.addChild("br");
         filterForm.addChild("br");
 

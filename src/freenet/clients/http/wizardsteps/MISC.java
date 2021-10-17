@@ -32,19 +32,28 @@ public class MISC implements Step {
 
 		miscInfoboxContent.addChild("p", WizardL10n.l10n("autoUpdateLong"));
 		miscInfoboxContent.addChild("p").addChild("input",
-		        new String[] { "type", "checked", "name", "value" },
-		        new String[] { "radio", "on", "autodeploy", "true" }, WizardL10n.l10n("autoUpdateAutodeploy"));
+            new String[] { "type", "checked", "name", "value", "id" },
+            new String[] { "radio", "on", "autodeploy", "true", "autodeployTrue" }
+            ).addChild("label",
+              new String[] { "for" },
+              new String[] { "autodeployTrue" }, WizardL10n.l10n("autoUpdateAutodeploy"));
 		miscInfoboxContent.addChild("p").addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "radio", "autodeploy", "false" }, WizardL10n.l10n("autoUpdateNoAutodeploy"));
+            new String[] { "type", "name", "value", "id" },
+            new String[] { "radio", "autodeploy", "false", "autodeployFalse" }
+            ).addChild("label",
+              new String[] { "for" },
+              new String[] { "autodeployFalse" }, WizardL10n.l10n("autoUpdateNoAutodeploy"));
 
 		miscInfoboxContent = helper.getInfobox("infobox-normal", WizardL10n.l10n("plugins"),
 		        form, null, false);
 
 		miscInfoboxContent.addChild("p", WizardL10n.l10n("pluginsLong"));
 		miscInfoboxContent.addChild("p").addChild("input",
-		        new String[] { "type", "checked", "name", "value" },
-		        new String[] { "checkbox", "on", "upnp", "true" }, WizardL10n.l10n("enableUPnP"));
+            new String[] { "type", "checked", "name", "value", "id" },
+            new String[] { "checkbox", "on", "upnp", "true", "upnpTrue" }
+            ).addChild("label",
+              new String[] { "for" },
+              new String[] { "upnpTrue" }, WizardL10n.l10n("enableUPnP"));
 		miscInfoboxContent.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});

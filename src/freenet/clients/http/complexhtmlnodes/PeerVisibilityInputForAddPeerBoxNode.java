@@ -15,11 +15,14 @@ public class PeerVisibilityInputForAddPeerBoxNode extends HTMLNode {
         for (DarknetPeerNode.FRIEND_VISIBILITY visibility : DarknetPeerNode.FRIEND_VISIBILITY.values()) { // FIXME reverse order
             HTMLNode input = this.addChild("br")
                     .addChild("input",
-                            new String[] { "type", "name", "value" },
-                            new String[] { "radio", "visibility", visibility.name() });
+                            new String[] { "type", "name", "value", "id" },
+                            new String[] { "radio", "visibility", visibility.name(), "visibility" + visibility.name() });
             if (visibility.isDefaultValue())
                 input.addAttribute("checked", "checked");
-            input.addChild("b", l10n("DarknetConnectionsToadlet.peerVisibility." + visibility.name()));
+            input.addChild("label",
+                new String[] { "for" },
+                new String[] { "visibility" + visibility.name() }
+                ).addChild("b", l10n("DarknetConnectionsToadlet.peerVisibility." + visibility.name()));
             input.addChild("#", ": ");
             input.addChild("#", l10n("DarknetConnectionsToadlet.peerVisibilityExplain." + visibility.name()));
         }
