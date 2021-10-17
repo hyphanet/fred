@@ -73,9 +73,12 @@ public class SECURITY_PHYSICAL implements Step {
 		for(SecurityLevels.PHYSICAL_THREAT_LEVEL level : SecurityLevels.PHYSICAL_THREAT_LEVEL.values()) {
 			HTMLNode input;
 			input = div.addChild("p").addChild("input",
-			        new String[] { "type", "name", "value" },
-			        new String[] { "radio", controlName, level.name() });
-			input.addChild("b", WizardL10n.l10nSec("physicalThreatLevel.name." + level));
+			        new String[] { "type", "name", "value", "id" },
+			        new String[] { "radio", controlName, level.name(), controlName + level.name() });
+			input.addChild("label",
+							new String[] { "for" },
+							new String[] { controlName + level.name() }
+							).addChild("b", WizardL10n.l10nSec("physicalThreatLevel.name." + level));
 			input.addChild("#", ": ");
 			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
 			if(level == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH &&

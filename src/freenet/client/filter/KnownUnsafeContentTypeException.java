@@ -6,7 +6,6 @@ package freenet.client.filter;
 import java.util.LinkedList;
 import java.util.List;
 
-import freenet.client.FetchException;
 import freenet.client.FetchException.FetchExceptionMode;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;

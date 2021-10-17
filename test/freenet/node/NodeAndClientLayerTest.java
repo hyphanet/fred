@@ -4,12 +4,10 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 
 import org.junit.After;
 import org.junit.Test;
 
-import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -18,20 +16,14 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
-import freenet.client.async.BinaryBlobWriter;
-import freenet.client.async.ClientGetter;
 import freenet.crypt.DummyRandomSource;
 import freenet.keys.FreenetURI;
-import freenet.keys.InsertableClientSSK;
 import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.TestProperty;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.PooledExecutor;
-import freenet.support.SimpleReadOnlyArrayBucket;
-import freenet.support.api.Bucket;
-import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
 

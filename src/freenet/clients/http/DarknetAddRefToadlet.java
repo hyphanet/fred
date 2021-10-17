@@ -8,7 +8,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeFile;
-import freenet.node.updater.NodeUpdateManager;
 import freenet.support.HTMLNode;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.HTTPRequest;

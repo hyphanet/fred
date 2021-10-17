@@ -167,7 +167,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 					Logger.error(RealNodeRoutingTest.class, "Caught " + t, t);
 				}
 			}
-			System.err.println("Average path length for successful requests: "+totalHopsTaken/successes);
+			System.err.println("Average path length for successful requests: "+((double)totalHopsTaken)/successes);
 			if(pings > 10 && avg.currentValue() > accuracy && ((double) successes / ((double) (failures + successes)) > accuracy)) {
 				System.err.println();
 				System.err.println("Reached " + (accuracy * 100) + "% accuracy.");

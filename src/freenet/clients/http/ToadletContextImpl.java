@@ -18,7 +18,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Locale;
+import java.util.StringJoiner;
 import java.util.TimeZone;
 
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
@@ -445,9 +447,12 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	private static String generateCSP(boolean allowScripts, boolean allowFrames) {
 	    StringBuilder sb = new StringBuilder();
-	    sb.append("default-src 'self'; script-src ");
+	    // allow access to blobs, because these are purely local
+	    sb.append("default-src 'self' blob:; script-src ");
 	    // "options inline-script" is old syntax needed for older Firefox's.
-	    sb.append(allowScripts ? "'self' 'unsafe-inline'; options inline-script" : "'none'");
+	    sb.append(allowScripts
+					? "'self' 'unsafe-inline'; options inline-script"
+					: generateRestrictedScriptSrc());
 	    sb.append("; frame-src ");
         sb.append(allowFrames ? "'self'" : "'none'");
         sb.append("; object-src 'none'");
@@ -457,8 +462,24 @@ public class ToadletContextImpl implements ToadletContext {
         return sb.toString();
     }
 
-    static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
-	
+	private static String generateRestrictedScriptSrc() {
+		// TODO: auto-generate these hashes from the path to the source file
+		String[] allowedScriptHashes = new String[] {
+				"sha256-uBohlLWVKw+CT6aoh/dTlBfKXU7QWzLXnomOhe7JxdQ=" // freenet/clients/http/staticfiles/js/m3u-player.js
+		};
+		if (allowedScriptHashes.length == 0) {
+			return "'none'";
+		} else {
+			StringJoiner stringJoiner = new StringJoiner("' '", "'", "'");
+			for (String source : allowedScriptHashes) {
+				stringJoiner.add(source);
+			}
+			return stringJoiner.toString();
+		}
+	}
+
+	static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
+
 	public static Date parseHTTPDate(String httpDate) throws java.text.ParseException{
 		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
 		sdf.setTimeZone(TZ_UTC);
@@ -558,13 +579,11 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				Bucket data;
 
-				boolean methodIsConfigurable = true;
 
 				String slen = headers.get("content-length");
 
 				if (METHODS_MUST_HAVE_DATA.contains(method)) {
 					// <method> must have data
-					methodIsConfigurable = false;
 					if (slen == null) {
 						ctx.shouldDisconnect = true;
 						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
@@ -572,7 +591,6 @@ public class ToadletContextImpl implements ToadletContext {
 					}
 				} else if (METHODS_CANNOT_HAVE_DATA.contains(method)) {
 					// <method> can not have data
-					methodIsConfigurable = false;
 					if (slen != null) {
 						ctx.shouldDisconnect = true;
 						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);

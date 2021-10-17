@@ -29,10 +29,9 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.node.Announcer;
 import freenet.node.Node;
-import freenet.node.NodeInitException;
 import freenet.node.NodeFile;
+import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
@@ -61,18 +60,18 @@ import freenet.support.io.FileUtil;
 /**
  * <p>Supervises NodeUpdater's. Enables us to easily update multiple files, change
  * the URI's on the fly, eliminates some messy code in the callbacks etc.</p>
- * 
- * <p>Procedure for updating the update key: Create a new key. Create a new build X, the 
- * "transition version". This must be UOM-compatible with the previous transition version. 
- * UOM-compatible means UOM should work from the older builds. This in turn means that it should 
- * support an overlapping set of connection setup negTypes (@link 
+ *
+ * <p>Procedure for updating the update key: Create a new key. Create a new build X, the
+ * "transition version". This must be UOM-compatible with the previous transition version.
+ * UOM-compatible means UOM should work from the older builds. This in turn means that it should
+ * support an overlapping set of connection setup negTypes (@link
  * FNPPacketMangler.supportedNegTypes()). Similarly there may be issues with changes to the UOM
  * messages, or to messages in general. Build X is inserted to both the old key and the new key.
- * Build X's SSK URI (on the old auto-update key) will be hard-coded as the new transition version. 
- * Then the next build, X+1, can get rid of some of the back compatibility cruft (especially old 
- * connection setup types), and will be inserted only to the new key. Secure backups of the new 
+ * Build X's SSK URI (on the old auto-update key) will be hard-coded as the new transition version.
+ * Then the next build, X+1, can get rid of some of the back compatibility cruft (especially old
+ * connection setup types), and will be inserted only to the new key. Secure backups of the new
  * key are required and are documented elsewhere.</p>
- * 
+ *
  * FIXME: See bug #6009 for some current UOM compatibility issues.
  */
 public class NodeUpdateManager {
@@ -103,8 +102,11 @@ public class NodeUpdateManager {
 	public static final long MAX_REVOCATION_KEY_LENGTH = 32 * 1024;
 	public static final long MAX_REVOCATION_KEY_TEMP_LENGTH = 64 * 1024;
 	public static final long MAX_REVOCATION_KEY_BLOB_LENGTH = 128 * 1024;
-
-	public static final long MAX_MAIN_JAR_LENGTH = 16 * 1024 * 1024; // 16MB
+	public static final long MAX_MAIN_JAR_LENGTH = 48 * 1024 * 1024; // 48MiB
+	public static final long MAX_JAVA_INSTALLER_LENGTH = 300 * 1024 * 1024;
+	public static final long MAX_WINDOWS_INSTALLER_LENGTH = 300 * 1024 * 1024;
+	public static final long MAX_IP_TO_COUNTRY_LENGTH = 24 * 1024 * 1024;
+	public static final long MAX_SEEDNODES_LENGTH = 3 * 1024 * 1024;
 
 	static final FreenetURI legacyMainJarSSK;
 	static final FreenetURI legacyMainJarUSK;
@@ -114,7 +116,7 @@ public class NodeUpdateManager {
 
 	public static final String transitionMainJarFilename = "legacy-freenet-jar-"
 			+ TRANSITION_VERSION + ".fblob";
-	
+
 	public final File transitionMainJarFile;
 
 	static {
@@ -187,7 +189,7 @@ public class NodeUpdateManager {
 	private int fetchedMainJarVersion;
 	/** The jar of the version we have fetched and will deploy. */
 	private Bucket fetchedMainJarData;
-	
+
 	/** The blob file for the current version, for UOM */
 	private File currentVersionBlobFile;
 
@@ -201,9 +203,9 @@ public class NodeUpdateManager {
 	 * deploying.
 	 */
 	private Bucket maybeNextMainJarData;
-	
+
 	private static final Object deployLock = new Object();
-	
+
 	static final String TEMP_BLOB_SUFFIX = ".updater.fblob.tmp";
 	static final String TEMP_FILE_SUFFIX = ".updater.tmp";
 
@@ -484,7 +486,7 @@ public class NodeUpdateManager {
 
         @Override
         public RequestClient getRequestClient() {
-            return node.nonPersistentClientBulk; 
+            return node.nonPersistentClientBulk;
         }
 
 	}
@@ -528,7 +530,7 @@ public class NodeUpdateManager {
 	public void start() throws InvalidConfigValueException {
 
 		node.clientCore.alerts.register(alert);
-		
+
 		enable(wasEnabledOnStartup);
 
 		// Fetch seednodes to the nodeDir.
@@ -538,7 +540,7 @@ public class NodeUpdateManager {
 					NodeFile.Seednodes);
 			seedrefsGetter.start(
 					RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					1024 * 1024);
+					MAX_SEEDNODES_LENGTH);
 		}
 
 		// Fetch installers and IP-to-country files to the runDir.
@@ -549,9 +551,9 @@ public class NodeUpdateManager {
 					getInstallerWindowsURI(), NodeFile.InstallerWindows);
 
 			installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					32 * 1024 * 1024);
+					MAX_JAVA_INSTALLER_LENGTH);
 			wininstallerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					32 * 1024 * 1024);
+					MAX_WINDOWS_INSTALLER_LENGTH);
 
 		}
 
@@ -559,9 +561,9 @@ public class NodeUpdateManager {
 			SimplePuller ip4Getter = new SimplePuller(getIPv4ToCountryURI(),
 					NodeFile.IPv4ToCountry);
 			ip4Getter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					8 * 1024 * 1024);
+					MAX_IP_TO_COUNTRY_LENGTH);
 		}
-		
+
 	}
 
 	void broadcastUOMAnnouncesOld() {
@@ -617,7 +619,7 @@ public class NodeUpdateManager {
 		boolean mainJarAvailable = transitionMainJarFetcher == null ? false
 				: transitionMainJarFetcher.fetched();
         return DMT.createUOMAnnouncement(previousMainJarUSK.toString(), revocationURI
-                .toString(), revocationChecker.hasBlown(), 
+                .toString(), revocationChecker.hasBlown(),
                 mainJarAvailable ? TRANSITION_VERSION : -1,
                 revocationChecker.lastSucceededDelta(), revocationChecker
                 .getRevocationDNFCounter(), revocationChecker
@@ -682,7 +684,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * Enable or disable auto-update.
-	 * 
+	 *
 	 * @param enable
 	 *            Whether auto-update should be enabled.
 	 * @throws InvalidConfigValueException
@@ -839,7 +841,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * Create a NodeUpdateManager. Called by node constructor.
-	 * 
+	 *
 	 * @param node
 	 *            The node object.
 	 * @param config
@@ -889,7 +891,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * Set the URfrenet.jar should be updated from.
-	 * 
+	 *
 	 * @param uri
 	 *            The URI to set.
 	 */
@@ -920,7 +922,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * Set the revocation URI.
-	 * 
+	 *
 	 * @param uri
 	 *            The new revocation URI.
 	 */
@@ -942,7 +944,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * Enable or disable auto-update.
-	 * 
+	 *
 	 * @param val
 	 *            If true, enable auto-update (and immediately update if an
 	 *            update is ready). If false, disable it.
@@ -975,7 +977,7 @@ public class NodeUpdateManager {
 	/**
 	 * Does the updater have an update ready to deploy? May be called
 	 * synchronized(this).
-	 * @param ignoreRevocation If true, return whether we will deploy when the revocation check 
+	 * @param ignoreRevocation If true, return whether we will deploy when the revocation check
 	 * finishes. If false, return whether we can deploy now, and if not, deploy after a delay with
 	 * deployOffThread().
 	 */
@@ -1138,16 +1140,16 @@ public class NodeUpdateManager {
 			}
 		}
 	}
-	
-	/** Use this lock when deploying an update of any kind which will require us to restart. If the 
+
+	/** Use this lock when deploying an update of any kind which will require us to restart. If the
 	 * update succeeds, you should call waitForever() if you don't immediately exit. There could be
-	 * rather nasty race conditions if we deploy two updates at once. 
+	 * rather nasty race conditions if we deploy two updates at once.
 	 * @return A mutex for serialising update deployments. */
 	static final Object deployLock() {
 	    return deployLock;
 	}
-	
-	/** Does not return. Should be called, inside the deployLock(), if you are in a situation 
+
+	/** Does not return. Should be called, inside the deployLock(), if you are in a situation
 	 * where you've deployed an update but the exit hasn't actually happened yet. */
 	static void waitForever() {
 	    while(true) {
@@ -1189,7 +1191,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * Write the updated jars, if necessary rewrite the wrapper.conf.
-	 * 
+	 *
 	 * @return True if this part of the update succeeded.
 	 */
 	private boolean writeJars(UpdateDeployContext ctx, MainJarDependencies deps) {
@@ -1250,15 +1252,15 @@ public class NodeUpdateManager {
 	/**
 	 * Write a jar. Returns true if the caller needs to rewrite the config,
 	 * false if he doesn't, or throws if it fails.
-	 * 
+	 *
 	 * @param mainJar
 	 *            The location of the current jar file.
 	 * @param newMainJar
 	 *            The location of the new jar file.
 	 * @param backupMainJar
-	 *            On Windows, we alternate between freenet.jar and freenet.jar.new, so we do not 
-	 *            need to write a backup - the user can rename between these two. On Unix, we 
-	 *            copy to freenet.jar.bak before updating, in case something horrible happens. 
+	 *            On Windows, we alternate between freenet.jar and freenet.jar.new, so we do not
+	 *            need to write a backup - the user can rename between these two. On Unix, we
+	 *            copy to freenet.jar.bak before updating, in case something horrible happens.
 	 * @param mainUpdater
 	 *            The NodeUpdater for the file in question, so we can ask it to
 	 *            write the file.
@@ -1414,7 +1416,7 @@ public class NodeUpdateManager {
 	 * Called when a new jar has been downloaded. The caller should process the
 	 * dependencies *AFTER* this method has completed, and then call
 	 * onDependenciesReady().
-	 * 
+	 *
 	 * @param fetched
 	 *            The build number we have fetched.
 	 * @param result
@@ -1600,7 +1602,7 @@ public class NodeUpdateManager {
 			}
 		}, delay);
 	}
-	
+
 	protected void maybeBroadcastUOMAnnouncesNew() {
 		if(logMINOR) Logger.minor(this, "Maybe broadcast UOM announces new");
 		synchronized(NodeUpdateManager.this) {
@@ -1625,7 +1627,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * What version has been fetched?
-	 * 
+	 *
 	 * This includes jar's fetched via UOM, because the UOM code feeds its
 	 * results through the mainUpdater.
 	 */
@@ -1769,7 +1771,7 @@ public class NodeUpdateManager {
 	 * Called when a peer indicates in its UOMAnnounce that it has fetched the
 	 * revocation key (or failed to do so in a way suggesting that somebody
 	 * knows the key).
-	 * 
+	 *
 	 * @param source
 	 *            The node which is claiming this.
 	 */
@@ -1799,7 +1801,7 @@ public class NodeUpdateManager {
 			public void run() {
 				maybeBroadcastUOMAnnouncesNew();
 			}
-			
+
 		}, REVOCATION_FETCH_TIMEOUT);
 	}
 
@@ -1902,7 +1904,7 @@ public class NodeUpdateManager {
 	/**
 	 * Called when the dependencies have been verified and/or downloaded, and we
 	 * can upgrade to the new build without dependency issues.
-	 * 
+	 *
 	 * @param deps
 	 *            The dependencies object. Used to rewrite wrapper.conf if
 	 *            necessary. Also contains the build number.
@@ -1934,7 +1936,7 @@ public class NodeUpdateManager {
 		}
 		m.renderProperties(alertNode);
 	}
-	
+
 	public boolean brokenDependencies() {
 		MainJarUpdater m;
 		synchronized (this) {

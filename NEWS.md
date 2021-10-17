@@ -1,6 +1,24 @@
 next:
 
-- 
+1489:
+
+- Add m3u support with mp3, ogg, oga, ogv, and flac. Thanks to Bombe for reviewing!
+- Reduce max backoff times from 3 hours to 8 minutes; the one safe change from the let-it-burn patchset. This might increase bandwidth available. Thanks to TheSeeker.
+- add explicit license for Libre-JS to progresspage.js
+- rewrite checkall, match the class for all input elements, and add explicit license for Libre-JS
+
+1488:
+
+- update translations to make Freenet more inviting for people around the world: update French, add Hungarian.
+
+1487:
+
+- The windows-installer and wintray are now being built by our continuous integration system using a more secure code-signing setup. This should reduce the scary warnings on install, reduces our dependency on specific setup of the release manager, and provides earlier checks whether something in fred broke the installer.
+- Accept Android Java as not EOL to simplify the mobile-node maintenance (see https://github.com/freenet-mobile/app).
+- Set context class loader when terminating plugin (by Bombe)
+- Cleanups of some old deprecated code.
+- Plugin-updates: KeepAlive (redwerk fixes: now ready as official plugin), plugin-FlogHelper (audio- and video-tag and more translations), Sharesite (better default CSS, clearer wording), Freemail (use newer WoT API and cleanup), KeyUtils (adjust for internal API change).
+- Add UPnP2 plugin for testing.
 
 1486:
 
@@ -31,7 +49,7 @@ next:
 1484:
 
 This release fixes the last blocking problems with the new build based on gradle and JNA.
-
+[5~
 Thanks to thesnark and operhiem1 we have a fix to a way to circumvent the content filter: on
 Firefox uploading a file as MIME type text/plain caused Firefox to guess the filetype and present
 the user with a download-or-open dialog. This could have resulted in handing an insecure file to an

@@ -2011,22 +2011,31 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		} else {
 			downloadForm.addChild("br");
 			downloadForm.addChild("input",
-				new String[] { "type", "value", "name" },
-				new String[] { "radio", "disk", "target" },
+				new String[] { "type", "value", "name", "id" },
+				new String[] { "radio", "disk", "target", "bulkDownloadSelectOptionDisk" }
 					//Nicer spacing for radio button
-				' '+l10n("bulkDownloadSelectOptionDisk")+' ');
+				).addChild("label",
+					new String[] { "for" },
+					new String[] { "bulkDownloadSelectOptionDisk" },
+					' '+l10n("bulkDownloadSelectOptionDisk")+' ');
 			selectLocation(downloadForm);
 			downloadForm.addChild("br");
 			downloadForm.addChild("input",
-				new String[] { "type", "value", "name", "checked" },
-				new String[] { "radio", "direct", "target", "checked" },
-				' '+l10n("bulkDownloadSelectOptionDirect")+' ');
+				new String[] { "type", "value", "name", "checked", "id" },
+				new String[] { "radio", "direct", "target", "checked", "bulkDownloadSelectOptionDirect" }
+				).addChild("label",
+					new String[] { "for" },
+					new String[] { "bulkDownloadSelectOptionDirect" },
+					' '+l10n("bulkDownloadSelectOptionDirect")+' ');
 		}
 		HTMLNode filterControl = downloadForm.addChild("div", l10n("filterData"));
 		filterControl.addChild("input",
-			new String[] { "type", "name", "value", "checked" },
-			new String[] { "checkbox", "filterData", "filterData", "checked"});
-		filterControl.addChild("#", l10n("filterDataMessage"));
+			new String[] { "type", "name", "value", "checked", "id" },
+			new String[] { "checkbox", "filterData", "filterData", "checked", "filterDataMessage"});
+		filterControl.addChild("label",
+			new String[] { "for" },
+			new String[] { "filterDataMessage" },
+			l10n("filterDataMessage"));
 		downloadForm.addChild("br");
 		downloadForm.addChild("input",
 			new String[] { "type", "name", "value" },

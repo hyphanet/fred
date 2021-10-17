@@ -13,7 +13,6 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
-import freenet.support.io.FileUtil;
 
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.
@@ -45,8 +44,12 @@ public class DATASTORE_SIZE implements Step {
 
 		@SuppressWarnings("unchecked")
 		Option<Long> sizeOption = (Option<Long>) config.get("node").getOption("storeSize");
+		@SuppressWarnings("unchecked")
+		Option<Long> clientCacheSizeOption = (Option<Long>) config.get("node").getOption("clientCacheSize");
+		@SuppressWarnings("unchecked")
+		Option<Long> slashdotCacheSizeOption = (Option<Long>) config.get("node").getOption("slashdotCacheSize");
 		if(!sizeOption.isDefault()) {
-			long current = sizeOption.getValue();
+			long current = sizeOption.getValue() + clientCacheSizeOption.getValue() + slashdotCacheSizeOption.getValue();
 			result.addChild("option",
 			        new String[] { "value", "selected" },
 			        new String[] { SizeUtil.formatSize(current), "on" }, WizardL10n.l10n("currentPrefix")+" "+SizeUtil.formatSize(current));

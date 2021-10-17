@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
@@ -20,9 +21,10 @@ public class FlacFilter implements ContentDataFilter {
 	static final byte[] magicNumber = new byte[] {0x66, 0x4C, 0x61, 0x43};
 	enum State {UNINITIALIZED, STREAMINFO_FOUND, METADATA_FOUND, STREAM_FINISHED};
 
-	public void readFilter(InputStream input, OutputStream output,
-			String charset, HashMap<String, String> otherParams,
-			FilterCallback cb) throws DataFilterException, IOException {
+	public void readFilter(
+      InputStream input, OutputStream output,
+      String charset, Map<String, String> otherParams,
+      String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this.getClass());
 		FlacPacketFilter parser = new FlacPacketFilter();
 		DataInputStream in = new DataInputStream(input);
@@ -54,8 +56,8 @@ public class FlacFilter implements ContentDataFilter {
 					boolean firstHalfOfSyncHeaderFound = false;
 					ArrayList<Byte> buffer = new ArrayList<Byte>();
 					int data = 0;
-					buffer.add(new Byte((byte) ((frameHeader & 0xFF00) >>> 8)));
-					buffer.add(new Byte((byte) ((frameHeader & 0x00FF))));
+					buffer.add(Byte.valueOf((byte) ((frameHeader & 0xFF00) >>> 8)));
+					buffer.add(Byte.valueOf((byte) (frameHeader & 0x00FF)));
 					boolean running = true;
 					while(running) {
 						try {
@@ -88,10 +90,10 @@ public class FlacFilter implements ContentDataFilter {
 								packet = new FlacFrame(payload);
 							} else {
 								firstHalfOfSyncHeaderFound = false;
-								buffer.add(new Byte((byte)0xFF));
+								buffer.add(Byte.valueOf((byte) 0xFF));
 							}
 						}
-						buffer.add(new Byte((byte) (data&0xFF)));
+						buffer.add(Byte.valueOf((byte) (data & 0xFF)));
 					}
 				}
 				if(currentState == State.UNINITIALIZED && packet instanceof FlacMetadataBlock && ((FlacMetadataBlock) packet).isLastMetadataBlock()) {

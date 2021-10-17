@@ -43,6 +43,9 @@ import freenet.support.io.NullWriter;
 
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
+	private static final String M3U_PLAYER_TAG_FILE = "freenet/clients/http/staticfiles/js/m3u-player.js";
+	/** if true, embed m3u player. Enabled when fproxy javascript is enabled. **/
+	public static boolean embedM3uPlayer = true;
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
 
@@ -61,9 +64,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	/** -1 means don't allow it */
 	public static int metaRefreshRedirectMinInterval = 30;
 
+	private static final String m3uPlayerScriptTagContent = m3uPlayerScriptTagContent();
+
 	@Override
-	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
+	public void readFilter(
+      InputStream input, OutputStream output, String charset, Map<String, String> otherParams,
+      String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
 		if(cb == null) cb = new NullFilterCallback();
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
@@ -558,6 +564,30 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		w.write(sout);
 	}
 
+	static String m3uPlayerScriptTagContent() {
+		InputStream m3uPlayerTagStream = HTMLFilter.class.getClassLoader()
+				.getResourceAsStream(M3U_PLAYER_TAG_FILE);
+		String errorTag = "/* Error: could not load " + M3U_PLAYER_TAG_FILE + " */";
+		if (m3uPlayerTagStream == null) {
+			return errorTag;
+		}
+		String tagContent;
+		try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(m3uPlayerTagStream))) {
+			StringBuilder stringBuilder = new StringBuilder("<script>");
+			String line;
+			while ((line = bufferedReader.readLine()) != null) {
+				stringBuilder.append(line);
+				stringBuilder.append("\n");
+			}
+			stringBuilder.append("</script>");
+			tagContent = stringBuilder.toString();
+		} catch (IOException e) {
+			Logger.error(HTMLFilter.class, "Could not read m3uPlayer inline-script.");
+			return errorTag;
+		}
+		return tagContent;
+	}
+
 	String processTag(List<String> splitTag, Writer w, HTMLParseContext pc)
 		throws IOException, DataFilterException {
 		// First, check that it is a recognized tag
@@ -577,6 +607,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				if(t.element.compareTo("head")==0 && !t.startSlash){
 					pc.wasHeadElementFound=true;
 				} else if(t.element.compareTo("head")==0 && t.startSlash) {
+					if (embedM3uPlayer) {
+						w.write(m3uPlayerScriptTagContent);
+					}
 					pc.headEnded = true;
 					if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
 				//If we found a <title> or a <meta> without a <head>, then we need to add them to a <head>
@@ -591,7 +624,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					throwFilterException(l10n("metaOutsideHead"));
 				//If we found a <body> and haven't closed <head> already, then we do
 				}else if(t.element.compareTo("body") == 0 &&  pc.openElements.contains("head")){
-					if(!pc.onlyDetectingCharset) w.write("</head>");
+					if(!pc.onlyDetectingCharset) {
+						if (embedM3uPlayer) {
+							w.write(m3uPlayerScriptTagContent);
+						}
+						w.write("</head>");
+					}
 					pc.headEnded = true;
 					if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
 					pc.openElements.pop();
@@ -600,7 +638,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					pc.wasHeadElementFound=true;
 					String headContent=pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()));
 					if(headContent!=null){
-						if(!pc.onlyDetectingCharset) w.write(headContent+"</head>");
+						if(!pc.onlyDetectingCharset) {
+							if (embedM3uPlayer) {
+								w.write(m3uPlayerScriptTagContent);
+							}
+							w.write(headContent+"</head>");
+						}
 						pc.headEnded = true;
 						if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
 					}
@@ -2811,9 +2854,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
-			String hreflang = getHashString(h, "hreflang");
-			String charset = null;
-			String maybecharset = null;
 
 			String src = getHashString(h, "src");
 			if (src != null) {

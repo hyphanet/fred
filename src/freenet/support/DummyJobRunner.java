@@ -3,7 +3,6 @@ package freenet.support;
 import freenet.client.async.ClientContext;
 import freenet.client.async.PersistentJob;
 import freenet.client.async.PersistentJobRunner;
-import freenet.client.async.PersistentJobRunnerImpl;
 import freenet.node.PrioRunnable;
 import freenet.support.io.NativeThread;
 
