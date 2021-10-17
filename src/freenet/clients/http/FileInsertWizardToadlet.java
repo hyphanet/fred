@@ -88,33 +88,42 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		NETWORK_THREAT_LEVEL seclevel = core.node.securityLevels.getNetworkThreatLevel();
 		HTMLNode insertForm = ctx.addFormChild(insertContent, QueueToadlet.PATH_UPLOADS, "queueInsertForm");
 		HTMLNode input = insertForm.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "radio", "keytype", "CHK" });
+		        new String[] { "type", "name", "value", "id" },
+		        new String[] { "radio", "keytype", "CHK", "keytypeChk" });
 		if ((!rememberedLastTime && seclevel == NETWORK_THREAT_LEVEL.LOW) ||
 		        (rememberedLastTime && wasCanonicalLastTime && seclevel != NETWORK_THREAT_LEVEL.MAXIMUM)) {
 			input.addAttribute("checked", "checked");
 		}
-		insertForm.addChild("b", l10n("insertCanonicalTitle"));
+		insertForm.addChild("label",
+		        new String[] { "for" },
+		        new String[] { "keytypeChk" }
+		        ).addChild("b", l10n("insertCanonicalTitle"));
 		insertForm.addChild("#", ": "+l10n("insertCanonical"));
 		if(isAdvancedModeEnabled)
 			insertForm.addChild("#", " "+l10n("insertCanonicalAdvanced"));
 		insertForm.addChild("br");
 		input = insertForm.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "radio", "keytype", "SSK" });
+		        new String[] { "type", "name", "value", "id" },
+		        new String[] { "radio", "keytype", "SSK", "keytypeSsk" });
 		if (seclevel == NETWORK_THREAT_LEVEL.MAXIMUM || (rememberedLastTime && !wasCanonicalLastTime)) {
 			input.addAttribute("checked", "checked");
 		}
-		insertForm.addChild("b", l10n("insertRandomTitle"));
+		insertForm.addChild("label",
+            new String[] { "for" },
+            new String[] { "keytypeSsk" }
+            ).addChild("b", l10n("insertRandomTitle"));
 		insertForm.addChild("#", ": "+l10n("insertRandom"));
 		if(isAdvancedModeEnabled)
 			insertForm.addChild("#", " "+l10n("insertRandomAdvanced"));
 		if (isAdvancedModeEnabled) {
 			insertForm.addChild("br");
 			insertForm.addChild("input",
-			        new String[] { "type", "name", "value" },
-			        new String[] { "radio", "keytype", "specify" });
-			insertForm.addChild("b", l10n("insertSpecificKeyTitle"));
+			        new String[] { "type", "name", "value", "id" },
+			        new String[] { "radio", "keytype", "specify", "keytypeSpecify" });
+			insertForm.addChild("label",
+              new String[] { "for" },
+              new String[] { "keytypeSpecify" }
+              ).addChild("b", l10n("insertSpecificKeyTitle"));
 			insertForm.addChild("#", ": "+l10n("insertSpecificKey")+" ");
 			insertForm.addChild("input",
 			        new String[] { "type", "name", "value" },
@@ -124,10 +133,12 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 			insertForm.addChild("br");
 			insertForm.addChild("br");
 			insertForm.addChild("input",
-			        new String[] { "type", "name", "checked" },
-			        new String[] { "checkbox", "compress", "checked" });
-			insertForm.addChild("#", ' ' +
-			        NodeL10n.getBase().getString("QueueToadlet.insertFileCompressLabel"));
+			        new String[] { "type", "name", "checked", "id" },
+			        new String[] { "checkbox", "compress", "checked", "checkboxCompress" });
+			insertForm.addChild("label",
+              new String[] { "for" },
+              new String[] { "checkboxCompress" },
+              ' ' + NodeL10n.getBase().getString("QueueToadlet.insertFileCompressLabel"));
 		} else {
 			insertForm.addChild("input",
 			        new String[] { "type", "name", "value" },
@@ -195,14 +206,20 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 
         // display in browser or save to disk
 	    insertForm.addChild("input",
-                new String[] { "type", "name", "value" },
-                new String[] { "radio", "result-handling", ResultHandling.DISPLAY.toString() });
-	    insertForm.addChild("#", ContentFilterToadlet.l10n("displayResultLabel"));
+                new String[] { "type", "name", "value", "id" },
+                new String[] { "radio", "result-handling", ResultHandling.DISPLAY.toString(), "resHandlingDisplay" });
+	    insertForm.addChild("label",
+                new String[] { "for" },
+                new String[] { "resHandlingDisplay" },
+                ContentFilterToadlet.l10n("displayResultLabel"));
 	    insertForm.addChild("br");
 	    insertForm.addChild("input",
-                new String[] { "type", "name", "value" },
-                new String[] { "radio", "result-handling", ResultHandling.SAVE.toString() });
-	    insertForm.addChild("#", ContentFilterToadlet.l10n("saveResultLabel"));
+                new String[] { "type", "name", "value", "id" },
+                new String[] { "radio", "result-handling", ResultHandling.SAVE.toString(), "resHandlingSave" });
+	    insertForm.addChild("label",
+                new String[] { "for" },
+                new String[] { "resHandlingSave" },
+                ContentFilterToadlet.l10n("saveResultLabel"));
 	    insertForm.addChild("br");
 	    insertForm.addChild("br");
         

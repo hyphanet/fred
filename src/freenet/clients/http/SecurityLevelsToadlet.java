@@ -491,12 +491,19 @@ public class SecurityLevelsToadlet extends Toadlet {
 		String controlName = "security-levels.networkThreatLevel";
 		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.getOpennetValues()) {
 			HTMLNode input;
-			if(level == networkLevel) {
-				input = div.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
+			if (level == networkLevel) {
+				input = div.addChild("p").addChild("input",
+					new String[] { "type", "checked", "name", "value", "id" },
+					new String[] { "radio", "on", controlName, level.name(), controlName + level.name() });
 			} else {
-				input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
+				input = div.addChild("p").addChild("input",
+					new String[] { "type", "name", "value", "id" },
+					new String[] { "radio", controlName, level.name(), controlName + level.name() });
 			}
-			input.addChild("b", l10nSec("networkThreatLevel.name."+level));
+			input.addChild("label",
+				new String[] { "for" },
+				new String[] { controlName + level.name() }
+				).addChild("b", l10nSec("networkThreatLevel.name."+level));
 			input.addChild("#", ": ");
 			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold" },
 					new HTMLNode[] { HTMLNode.STRONG });
@@ -514,11 +521,18 @@ public class SecurityLevelsToadlet extends Toadlet {
 		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.getDarknetValues()) {
 			HTMLNode input;
 			if(level == networkLevel) {
-				input = div.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
+				input = div.addChild("p").addChild("input",
+					new String[] { "type", "checked", "name", "value", "id" },
+					new String[] { "radio", "on", controlName, level.name(), controlName + level.name() });
 			} else {
-				input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
+				input = div.addChild("p").addChild("input",
+					new String[] { "type", "name", "value", "id" },
+					new String[] { "radio", controlName, level.name(), controlName + level.name() });
 			}
-			input.addChild("b", l10nSec("networkThreatLevel.name."+level));
+			input.addChild("label",
+				new String[] { "for" },
+				new String[] { controlName + level.name() }
+				).addChild("b", l10nSec("networkThreatLevel.name."+level));
 			input.addChild("#", ": ");
 			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold" },
 					new HTMLNode[] { HTMLNode.STRONG });
@@ -552,12 +566,19 @@ public class SecurityLevelsToadlet extends Toadlet {
 		controlName = "security-levels.physicalThreatLevel";
 		for(PHYSICAL_THREAT_LEVEL level : PHYSICAL_THREAT_LEVEL.values()) {
 			HTMLNode input;
-			if(level == physicalLevel) {
-				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
+			if (level == physicalLevel) {
+				input = seclevelGroup.addChild("p").addChild("input",
+					new String[] { "type", "checked", "name", "value", "id" },
+					new String[] { "radio", "on", controlName, level.name(), controlName + level.name() });
 			} else {
-				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
+				input = seclevelGroup.addChild("p").addChild("input",
+					new String[] { "type", "name", "value", "id" },
+					new String[] { "radio", controlName, level.name(), controlName + level.name() });
 			}
-			input.addChild("b", l10nSec("physicalThreatLevel.name."+level));
+			input.addChild("label",
+				new String[] { "for" },
+				new String[] { controlName + level.name() }
+				).addChild("b", l10nSec("physicalThreatLevel.name."+level));
 			input.addChild("#", ": ");
 			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold" },
 					new HTMLNode[] { HTMLNode.STRONG });

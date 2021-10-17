@@ -486,7 +486,8 @@ public class Node implements TimeSkewDetectorCallback {
 	private String storeType;
 	private boolean storeUseSlotFilters;
 	private boolean storeSaltHashResizeOnStart;
-	
+	private int storeSaltHashSlotFilterPersistenceTime;
+
 	/** Minimum total datastore size */
 	static final long MIN_STORE_SIZE = 32 * 1024 * 1024;
 	/** Default datastore size (must be at least MIN_STORE_SIZE) */
@@ -2028,20 +2029,21 @@ public class Node implements TimeSkewDetectorCallback {
 
 					@Override
 					public Integer get() {
-						return ResizablePersistentIntBuffer.getPersistenceTime();
+						return storeSaltHashSlotFilterPersistenceTime;
 					}
 
 					@Override
 					public void set(Integer val)
-							throws InvalidConfigValueException,
-							NodeNeedRestartException {
-						if(val >= -1)
+							throws InvalidConfigValueException {
+						if(val >= -1) {
 							ResizablePersistentIntBuffer.setPersistenceTime(val);
-						else
+							storeSaltHashSlotFilterPersistenceTime = val;
+						} else
 							throw new InvalidConfigValueException(l10n("slotFilterPersistenceTimeError"));
 					}
 			
 		}, false);
+		storeSaltHashSlotFilterPersistenceTime = nodeConfig.getInt("storeSaltHashSlotFilterPersistenceTime");
 
 		nodeConfig.register("storeSaltHashResizeOnStart", false, sortOrder++, true, false,
 				"Node.storeSaltHashResizeOnStart", "Node.storeSaltHashResizeOnStartLong", new BooleanCallback() {

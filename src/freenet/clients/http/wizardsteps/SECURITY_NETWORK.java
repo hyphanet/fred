@@ -117,9 +117,12 @@ public class SECURITY_NETWORK implements Step {
 	 */
 	private void securityLevelChoice(HTMLNode parent, SecurityLevels.NETWORK_THREAT_LEVEL level) {
 		HTMLNode input = parent.addChild("p").addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "radio", "security-levels.networkThreatLevel", level.name() });
-		input.addChild("b", WizardL10n.l10nSec("networkThreatLevel.name."+level));
+		        new String[] { "type", "name", "value", "id" },
+		        new String[] { "radio", "security-levels.networkThreatLevel", level.name(), "security-levels.networkThreatLevel" + level.name() });
+		input.addChild("label",
+            new String[] { "for" },
+            new String[] { "security-levels.networkThreatLevel" + level.name() }
+            ).addChild("b", WizardL10n.l10nSec("networkThreatLevel.name."+level));
 		input.addChild("#", ": ");
 		NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level,
 		        new String[] { "bold" },
