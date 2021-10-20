@@ -25,7 +25,7 @@ Attacks we know about are detailed on the opennet attacks and the major attacks 
 What to report as normal bugs
 -----------------------------
 
-Best practices, hardening tipps, and similar are not security issues.
+Best practices, hardening tips, and similar are not security issues.
 Please report them to our regular bugtracker:
 https://bugs.freenetproject.org
 
