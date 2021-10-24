@@ -131,7 +131,7 @@ public class OfficialPlugins {
 					.inGroup("communication")
 					.minimumVersion(36)
 					.usesXml()
-					.loadedFrom("CHK@vk9NRGTCBqOzQs2S~PhlJCAf3uYmoMguNB5a5fx3wC4,bx8ewRk-OJPwXOj5P1PXUxuuK7ZxuNLHXsMJJH9xuVg,AAMC--8/FlogHelper.jar");
+					.loadedFrom("CHK@zAvWPxjh2rJ7j2cAiXcm2wnDYlURL9BFDGfLBaVtjqU,Ak90k0Qw1b6CWoWZ1AMdvrUj~evz4p9vl75mg7BsEp0,AAMC--8/FlogHelper.jar");
 			addPlugin("Sharesite")
 					.inGroup("communication")
 					.recommendedVersion(5)
