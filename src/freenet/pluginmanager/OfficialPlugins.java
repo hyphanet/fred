@@ -110,8 +110,8 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@RrYmOu8RGoEY44LOgGBBgY9qRxmiev0SFAVxWAbwROI,cfYMrDcBdewk4I7AC4J3mAq0g~NH3TxVpfeSkQ9Xaa8,AAMC--8/Library.jar");
 			addPlugin("Spider")
 					.inGroup("index")
-					.minimumVersion(52)
-					.loadedFrom("CHK@94gCPJEkEXq6Zti4wxDrqr9e~geQS4B3kdIwl4TXzV8,NUlmfjeqja28Lim6m3kTuxGHRSNtQHsbRoIAilxdkJY,AAMC--8/Spider-v52.jar")
+					.minimumVersion(53)
+					.loadedFrom("CHK@AsgPJMi335uI0lW5ZTx7PIauP-O2piHARJQsMZPdRLE,c-WnilzeQ2JApq1GdXQPukUeMQ51teUMjgqDRoBxlpg,AAMC--8/Spider.jar")
 					.advanced();
 			addPlugin("WebOfTrust")
 					.inGroup("communication")
