@@ -4,6 +4,7 @@
 package freenet.node;
 
 import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -20,7 +21,11 @@ import java.text.DateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -31,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+
+import sun.util.resources.TimeZoneNames;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -52,6 +59,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -71,7 +79,7 @@ public class LocationManager implements ByteCounter {
 
     public static final String FOIL_PITCH_BLACK_ATTACK_PREFIX = "mitigate-pitch-black-attack-";
     public static long PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY = DAYS.toMillis(1);
-    public static long PITCH_BLACK_MITIGATION_STARTUP_DELAY = MINUTES.toMillis(10);
+    public static long PITCH_BLACK_MITIGATION_STARTUP_DELAY = HOURS.toMillis(2);
 
     public class MyCallback extends SendMessageOnErrorCallback {
 
@@ -193,11 +201,12 @@ public class LocationManager implements ByteCounter {
 
             @Override
             public void run() {
-                node.ticker.queueTimedJob(this, PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY);
+                LocalDateTime now = LocalDateTime.now(clockForTesting);
+                long millisUntilTomorrowHour = getMillisUntilRandomTimeTomorrow(now);
+                node.ticker.queueTimedJob(this, millisUntilTomorrowHour);
                 if (swappingDisabled()) {
                     return;
                 }
-                LocalDateTime now = LocalDateTime.now(clockForTesting);
                 String isoDateStringToday = DateTimeFormatter.ISO_DATE
                     .format(now);
                 String isoDateStringYesterday = DateTimeFormatter.ISO_DATE
@@ -246,7 +255,16 @@ public class LocationManager implements ByteCounter {
                     }
                 }
             }
-        }, PITCH_BLACK_MITIGATION_STARTUP_DELAY);
+        }, (int) (node.fastWeakRandom.nextFloat() * PITCH_BLACK_MITIGATION_STARTUP_DELAY));
+    }
+
+    private long getMillisUntilRandomTimeTomorrow(LocalDateTime now) {
+        LocalDateTime tomorrowHourUTC = now
+            .plusDays(1)
+            .withHour(node.fastWeakRandom.nextInt(23))
+            .withMinute(node.fastWeakRandom.nextInt(59))
+            .withSecond(node.fastWeakRandom.nextInt(59));
+        return now.until(tomorrowHourUTC, ChronoUnit.MILLIS);
     }
 
     public String getPitchBlackPrefix(String middleSubstring) {
