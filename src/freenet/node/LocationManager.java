@@ -20,6 +20,7 @@ import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -121,7 +122,7 @@ public class LocationManager implements ByteCounter {
     final SwapRequestSender sender;
     final Node node;
     long timeLastSuccessfullySwapped;
-    public static Clock clockForTesting = Clock.systemDefaultZone();
+    public static Clock clockForTesting = Clock.system(ZoneOffset.UTC);
 
     public LocationManager(RandomSource r, Node node) {
         loc = r.nextDouble();
