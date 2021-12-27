@@ -196,8 +196,8 @@ public class LocationManager implements ByteCounter {
             @Override
             public void run() {
                 LocalDateTime now = LocalDateTime.now(clockForTesting);
-                long millisUntilTomorrowHour = getMillisUntilRandomTimeTomorrow(now);
-                node.ticker.queueTimedJob(this, millisUntilTomorrowHour);
+                long millisUntilNextRequestTomorrow = getNextPitchBlackMitigationDelayMillisecondsTomorrow(now);
+                node.ticker.queueTimedJob(this, millisUntilNextRequestTomorrow);
                 if (swappingDisabled()) {
                     return;
                 }
@@ -250,6 +250,11 @@ public class LocationManager implements ByteCounter {
                 }
             }
         }, (int) (node.fastWeakRandom.nextFloat() * PITCH_BLACK_MITIGATION_STARTUP_DELAY));
+    }
+
+    /** @return the millis to wait until the next pitch black check: tomorrow and at least 12 hours in the future. */
+    private long getNextPitchBlackMitigationDelayMillisecondsTomorrow(LocalDateTime now) {
+        return Math.max(HOURS.toMillis(12), getMillisUntilRandomTimeTomorrow(now));
     }
 
     private long getMillisUntilRandomTimeTomorrow(LocalDateTime now) {
