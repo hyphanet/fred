@@ -465,7 +465,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private static String generateRestrictedScriptSrc() {
 		// TODO: auto-generate these hashes from the path to the source file
 		String[] allowedScriptHashes = new String[] {
-				"sha256-dLiB4u0FXPxUpecGDu2olWWLKRY+mS4gBZh2u4jdAtk=" // freenet/clients/http/staticfiles/js/m3u-player.js
+				"sha256-2KVMiHI/KwgnPnxNWiDkyZgd5hog2keEGCcYNJxt6C4=" // freenet/clients/http/staticfiles/js/m3u-player.js
 		};
 		if (allowedScriptHashes.length == 0) {
 			return "'none'";

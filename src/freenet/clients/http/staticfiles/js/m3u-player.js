@@ -112,6 +112,9 @@ function prefetchTrack(url, onload) {
 }
 
 function showStaticOverlay(mediaTag, canvas) {
+  if (mediaTag instanceof Audio) {
+    return;
+  }
   // take screenshot of video and overlay it to mask short-term flicker.
   const realWidth = mediaTag.getBoundingClientRect().width;
   const realHeight = mediaTag.getBoundingClientRect().height;
