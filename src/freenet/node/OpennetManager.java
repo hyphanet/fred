@@ -980,9 +980,46 @@ public class OpennetManager {
 			int targetPeers = (int)Math.round(Math.min(MAX_PEERS_FOR_SCALING, Math.sqrt(obwLimit * SCALING_CONSTANT / 1000.0)));
 			if(targetPeers < MIN_PEERS_FOR_SCALING)
 				targetPeers = MIN_PEERS_FOR_SCALING;
-			if(max > targetPeers) max = targetPeers; // Allow user to reduce it.
+			targetPeers = addMorePeersIfSlowPeersCannotSupplyEnoughBandwidthPerConnection(targetPeers);
+			if(max > targetPeers) {
+				max = targetPeers; // Allow user to reduce it.
+			}
 		}
 		return max;
+	}
+
+	/**
+	 * A fast peer requires inbound bandwidth per connection proportional to the number of target peers.
+	 * But a peer with fewer than sqrt(targetPeers) connections does not have enough bandwidth
+	 * to support a connection to such a fast peer.
+	 *
+	 * Therefore a fast peer needs more peers than given by the square-root scaling.
+	 *
+	 * To calculate the missing bandwidth, we have to make an assumption: How many peers are too slow?
+	 * We assume that 50% of the peers have the lowest possible peer count.
+	 *
+	 * We need targetPeers packets per peer. We assume that half the peers have the minimum peer count.
+	 * To stay in the 50% slow nodes model, we assume that half the peers of the slow peer are slow,
+	 * the other half are as fast as we are. We receive targetPeers / (minPeers + targetPeers)
+	 * of the packages the slow peer receives.
+	 *
+	 * For each additional peer, we receive one additional packet from fast peers
+	 * and receivedFraction * MIN_PEERS_FOR_SCALING * MIN_PEERS_FOR_SCALING from slow peers.
+	 *
+	 * @param targetPeers the target peers from square root scaling
+	 * @return increased estimate to provide enough bandwidth for the fast peer.
+	 */
+	private int addMorePeersIfSlowPeersCannotSupplyEnoughBandwidthPerConnection(int targetPeers) {
+		double receivedFraction = ((double) targetPeers) / (MIN_PEERS_FOR_SCALING + targetPeers);
+		double packetsFromSlowPeer = receivedFraction * MIN_PEERS_FOR_SCALING * MIN_PEERS_FOR_SCALING;
+		if (targetPeers <= packetsFromSlowPeer) {
+			return targetPeers;
+		}
+		double missingPacketsPerSlowPeer = targetPeers - packetsFromSlowPeer;
+		double missingPackets = 0.5 * targetPeers * missingPacketsPerSlowPeer;
+		double additionalPacketsPerAddedPeer = 0.5 * targetPeers + packetsFromSlowPeer;
+		// always compensate for the missing packets. The worst nodes to be underused are the fast ones.
+		return targetPeers + 1 + (int) (missingPackets / additionalPacketsPerAddedPeer);
 	}
 
 	/** Get the target number of opennet peers. Do not call while holding locks. */
