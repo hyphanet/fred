@@ -191,11 +191,11 @@ public class OpennetManager {
 	public static final boolean ENABLE_PEERS_PER_KB_OUTPUT = true;
 	/** Constant for scaling peers: we multiply bandwidth in kB/sec by this
 	 * and then take the square root. Minimum is MIN_PEERs_FOR_SCALING.
-     * 
-     * (define (peers kbps) (sqrt (* kbps scaling)))
-     * 
+     *
+     * (define (peers kBps) (sqrt (* kBps scaling)))
+     *
      * Scaling at 3 gives 4 peers at 5K (min peers),
-	 * 5 at 7K, 5 at 10K, 8 at 20K, 9 at 30K, 13 at 60K, 
+	 * 5 at 7K, 5 at 10K, 8 at 20K, 9 at 30K, 13 at 60K,
      * 17 at 100K, 20 at 140K, 87 at 2500K.
 	 * 106 at 30mbit/s (the mean upload in Japan in 2014) and
 	 * 180 at 88mbit/s (the mean upload in Hong Kong in 2014).*/
