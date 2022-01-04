@@ -977,10 +977,12 @@ public class OpennetManager {
 		int max = node.getMaxOpennetPeers();
 		if(ENABLE_PEERS_PER_KB_OUTPUT) {
 			int obwLimit = node.getOutputBandwidthLimit();
-			int targetPeers = (int)Math.round(Math.min(MAX_PEERS_FOR_SCALING, Math.sqrt(obwLimit * SCALING_CONSTANT / 1000.0)));
+			int targetPeers = (int)Math.round(Math.sqrt(obwLimit * SCALING_CONSTANT / 1000.0));
 			if(targetPeers < MIN_PEERS_FOR_SCALING)
 				targetPeers = MIN_PEERS_FOR_SCALING;
 			targetPeers = addMorePeersIfSlowPeersCannotSupplyEnoughBandwidthPerConnection(targetPeers);
+			// limit to max peers
+			targetPeers = Math.min(MAX_PEERS_FOR_SCALING, targetPeers);
 			if(max > targetPeers) {
 				max = targetPeers; // Allow user to reduce it.
 			}
