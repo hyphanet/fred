@@ -810,10 +810,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 	private static SimpleFieldSet parseNoderefLiberally(String nodeReference) throws IOException {
 		nodeReference = Fields.trimLines(nodeReference);
-		try {
-			return new SimpleFieldSet(nodeReference, false, true, true);
-		} catch (IOException e) {
-				Logger.warning(null, "Cannot parse noderef, trying to replace all spaces with newlines and parsing again.");
+		SimpleFieldSet fs = new SimpleFieldSet(nodeReference, false, true, true);
+		if (fs.directKeys().contains("lastGoodVersion")) {
+			return fs;
+		} else {
+			Logger.warning(null, "Cannot parse noderef: does not contain lastGoodVersion, trying to replace all spaces with newlines and parsing again.");
 			return new SimpleFieldSet(nodeReference.replace(" ", "\n"), false, true, true);
 		}
 	}
