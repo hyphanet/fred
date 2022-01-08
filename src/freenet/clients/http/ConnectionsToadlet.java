@@ -768,8 +768,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		SimpleFieldSet fs;
 		
 		try {
-			nodeReference = Fields.trimLines(nodeReference);
-			fs = new SimpleFieldSet(nodeReference, false, true, true);
+			fs = parseNoderefLiberally(nodeReference);
 			if(!fs.getEndMarker().endsWith("End")) {
 				Logger.error(this, "Trying to add noderef with end marker \""+fs.getEndMarker()+"\"");
 				return PeerAdditionReturnCodes.WRONG_ENCODING;
@@ -807,6 +806,16 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			return PeerAdditionReturnCodes.ALREADY_IN_REFERENCE;
 		}
 		return PeerAdditionReturnCodes.OK;
+	}
+
+	private static SimpleFieldSet parseNoderefLiberally(String nodeReference) throws IOException {
+		nodeReference = Fields.trimLines(nodeReference);
+		try {
+			return new SimpleFieldSet(nodeReference, false, true, true);
+		} catch (IOException e) {
+				Logger.warning(null, "Cannot parse noderef, trying to replace all spaces with newlines and parsing again.");
+			return new SimpleFieldSet(nodeReference.split("\n"), false, true, true);
+		}
 	}
 
 	/** Adding a darknet node or an opennet node? */
