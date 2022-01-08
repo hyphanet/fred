@@ -93,10 +93,10 @@ public class AddPeer extends FCPMessage {
 
 	public static StringBuilder getReferenceFromFreenetURI(FreenetURI url, HighLevelSimpleClient client)
 			throws IOException, FetchException {
-		StringBuilder ref = new StringBuilder(1024);
+		StringBuilder ref = new StringBuilder(1024); // the 1024 is the initial capacity
 		InputStream is = null;
 		try {
-			is = client.fetch(url).asBucket().getInputStream();
+			is = client.fetch(url, 31000).asBucket().getInputStream(); // limit to 31k, which should suffice even if we add many more ipv6 addresses
 			BufferedReader in = new BufferedReader(new InputStreamReader(is, MediaType.getCharsetRobustOrUTF("text/plain")));
 			String line;
 			while ((line = in.readLine()) != null) {
