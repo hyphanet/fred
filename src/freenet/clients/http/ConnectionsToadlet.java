@@ -814,7 +814,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			return new SimpleFieldSet(nodeReference, false, true, true);
 		} catch (IOException e) {
 				Logger.warning(null, "Cannot parse noderef, trying to replace all spaces with newlines and parsing again.");
-			return new SimpleFieldSet(nodeReference.split("\n"), false, true, true);
+			return new SimpleFieldSet(nodeReference.replace(" ", "\n"), false, true, true);
 		}
 	}
 
