@@ -267,6 +267,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private long totalOutputSinceStartup;
 	/** Peer node public key; changing this means new noderef */
 	public final ECPublicKey peerECDSAPubKey;
+    /** FIXME: Used by the N2NChat plugin because the getter is protected! */
 	public final byte[] peerECDSAPubKeyHash;
 	private boolean isSignatureVerificationSuccessfull;
 	/** Incoming setup key. Used to decrypt incoming auth packets.
