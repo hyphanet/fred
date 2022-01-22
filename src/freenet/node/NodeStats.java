@@ -385,8 +385,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			defaultThreadLimit = 500;
 			Logger.minor(this, "Setting 500 thread limit due to <=512MB memory limit. This should be enough but more memory is better.");
 		} else {
-			Logger.minor(this, "Setting standard 1000 thread limit. This should be enough for most nodes.");
 			defaultThreadLimit = 1000;
+			Logger.minor(this, "Setting standard 1000 thread limit. This should be enough for most nodes.");
 		}
 		statsConfig.register("threadLimit", defaultThreadLimit, sortOrder++, true, true, "NodeStat.threadLimit", "NodeStat.threadLimitLong",
 				new IntCallback() {
