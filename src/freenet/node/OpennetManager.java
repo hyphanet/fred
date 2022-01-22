@@ -155,7 +155,9 @@ public class OpennetManager {
 	public static final long DONT_READD_TIME = MINUTES.toMillis(1);
 	/** Don't drop a node until it's at least this old, if it's connected. */
 	public static final long DROP_MIN_AGE = MINUTES.toMillis(5);
-	/** Don't drop a node until it's at least this old, if it's not connected (if it has connected once then DROP_DISCONNECT_DELAY applies, but only once an hour as below). Must be less than DROP_MIN_AGE.
+	/** Don't drop a node until it's at least this old, if it's not connected
+	 * (if it has connected once then DROP_DISCONNECT_DELAY applies,
+	 * but only once an hour as below). Must be less than DROP_MIN_AGE.
 	 * Relatively generous because noderef transfers e.g. for announcement can be slow (Note
 	 * that announcements actually wait for previous transfers!). */
 	public static final long DROP_MIN_AGE_DISCONNECTED = MINUTES.toMillis(5);
