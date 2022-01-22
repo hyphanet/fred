@@ -170,7 +170,7 @@ public class DATASTORE_SIZE implements Step {
             // Maximum to suggest to keep Disk I/O managable. This
             // value might need revisiting when hardware or
             // filesystems change.
-            long diskIoMax = 20 * oneGiB;
+            long diskIoMax = 100 * oneGiB;
 
             // Choose a suggested store size based on available free space.
             if (freeSpace > 50 * oneGiB) {
