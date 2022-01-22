@@ -98,6 +98,9 @@ public class OpennetManager {
 	static final double LONG_PROPORTION = 0.3;
 	/** The proportion of the routing table which consists of "short links". */
 	public static final double SHORT_PROPORTION = 1.0 - LONG_PROPORTION;
+	/** Assumed proportion of slow peers for scaling up the peer count
+	 * to take limited capacity of slow peers into account. */
+	public static final double ASSUMPTION_50_PERCENT_SLOW_PEERS = 0.5;
 	
     enum LinkLengthClass {
         /** Shorter than LONG_DISTANCE */
@@ -1018,8 +1021,8 @@ public class OpennetManager {
 			return targetPeers;
 		}
 		double missingPacketsPerSlowPeer = targetPeers - packetsFromSlowPeer;
-		double missingPackets = 0.5 * targetPeers * missingPacketsPerSlowPeer;
-		double additionalPacketsPerAddedPeer = 0.5 * targetPeers + packetsFromSlowPeer;
+		double missingPackets = ASSUMPTION_50_PERCENT_SLOW_PEERS * targetPeers * missingPacketsPerSlowPeer;
+		double additionalPacketsPerAddedPeer = ASSUMPTION_50_PERCENT_SLOW_PEERS * targetPeers + packetsFromSlowPeer;
 		// always compensate for the missing packets. The worst nodes to be underused are the fast ones.
 		return targetPeers + 1 + (int) (missingPackets / additionalPacketsPerAddedPeer);
 	}
