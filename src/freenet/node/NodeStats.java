@@ -371,19 +371,22 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		int defaultThreadLimit;
 		long memoryLimit = NodeStarter.getMemoryLimitMB();
 		
-		System.out.println("Memory is "+memoryLimit+"MB");
+		Logger.minor(this, "Memory is "+memoryLimit+"MB");
 		if(memoryLimit > 0 && memoryLimit < 100) {
 			defaultThreadLimit = 200;
-			System.out.println("Severe memory pressure, setting 200 thread limit. Freenet may not work well!");
+			Logger.minor(this, "Severe memory pressure, setting 200 thread limit. Freenet may not work well!");
 		} else if(memoryLimit > 0 && memoryLimit < 128) {
 			defaultThreadLimit = 300;
-			System.out.println("Moderate memory pressure, setting 300 thread limit. Increase your memory limit in wrapper.conf if possible.");
+			Logger.minor(this, "Moderate memory pressure, setting 300 thread limit. Increase your memory limit in wrapper.conf if possible.");
 		} else if(memoryLimit > 0 && memoryLimit < 192) {
 			defaultThreadLimit = 400;
-			System.out.println("Setting 400 thread limit due to <=192MB memory limit. This should be enough but more memory is better.");
-		} else {
-			System.out.println("Setting standard 500 thread limit. This should be enough for most nodes but more memory is usually a good thing.");
+			Logger.minor(this, "Setting 400 thread limit due to <=192MB memory limit. This should be enough but more memory is better.");
+		} else if(memoryLimit > 0 && memoryLimit < 512) {
 			defaultThreadLimit = 500;
+			Logger.minor(this, "Setting 500 thread limit due to <=512MB memory limit. This should be enough but more memory is better.");
+		} else {
+			defaultThreadLimit = 1000;
+			Logger.minor(this, "Setting standard 1000 thread limit. This should be enough for most nodes.");
 		}
 		statsConfig.register("threadLimit", defaultThreadLimit, sortOrder++, true, true, "NodeStat.threadLimit", "NodeStat.threadLimitLong",
 				new IntCallback() {
