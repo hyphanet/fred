@@ -42,9 +42,9 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 				// 4Mbps/256kbps
 				new BandwidthLimit(256*KiB, 16*KiB, "bandwidthConnection4M", false),
 				// 6Mbps/256kbps - 6Mbps is common in parts of china, as well as being the real value in lots of DSL areas
-				new BandwidthLimit(384*KiB, 16*KiB, "bandwidthConnection6M", true),
+				new BandwidthLimit(384*KiB, 16*KiB, "bandwidthConnection6M", false),
 				// 8Mbps/512kbps - UK DSL1 is either 448k up or 832k up
-				new BandwidthLimit(512*KiB, 32*KiB, "bandwidthConnection8M", false),
+				new BandwidthLimit(512*KiB, 32*KiB, "bandwidthConnection8M", true),
 				// 12Mbps/1Mbps - typical DSL2
 				new BandwidthLimit(768*KiB, 64*KiB, "bandwidthConnection12M", false),
 				// 20Mbps/1Mbps - fast DSL2
