@@ -249,7 +249,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			noCacheURI = true;
 			return this;
 		}
-		FreenetURI u = new FreenetURI(keyType, dn, newMetaStr, routingKey, cryptoKey, extra);
+		FreenetURI u = new FreenetURI(keyType, dn, newMetaStr, routingKey, cryptoKey, extra, suggestedEdition);
 		u.noCacheURI = true;
 		return u;
 	}
