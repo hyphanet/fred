@@ -1,5 +1,121 @@
 next:
 
+- add output of filtered file to the OggFilterTest
+- fix peer scaling for very fast peers
+- try replacing spaces by newlines in noderefs when parsing fails
+- Accept FreenetURI in add peer field; only try regular url on failure
+- add max size to the fetched noderef
+- increase default datastore size to 100GiB, because SSDs are much faster today
+- Set standard thread limit to 1000
+- required module opens for Java 17 to wrapper.conf
+
+1492:
+
+- Fred:
+
+- The diagnostics component provides thread runtime statistics. Thanks to DC*.
+  https://github.com/freenet/fred/pull/727
+
+- The multi-node test to show that the mitigation against the pitch
+  black attack works.
+  https://github.com/freenet/fred/pull/736
+
+- The m3u-player for video on demand over Freenet now prevents most
+  visual flickering.
+  https://github.com/freenet/fred/pull/734
+
+- Clickable labels for checkboxes. Thanks to AC4BB21B.
+  https://github.com/freenet/fred/pull/741
+
+- Fix: skip in support.io.SkipShieldingInputStream must return
+  non-negative. Thanks to dennisnez.
+  https://github.com/freenet/fred/pull/737
+
+- Fix: NodeConfig was reading a particular config from default on every
+  start up. Thanks to desyncr.
+  https://github.com/freenet/fred/pull/739
+
+- OpenJDK 16+ compat: add wrapper.conf argument to allow access to
+  internal openjdk modules.
+  https://github.com/freenet/fred/pull/740
+
+- Fix: Correct "current size" option in Wizard => datastore size. Thanks to
+AC4BB21B.
+  https://github.com/freenet/fred/pull/742
+
+- Plugins:
+
+- KeyUtils:
+  Fix API call to allow compiling, and
+   Fix extra bytes display for composed SSK.
+  both thanks to TheSeeker.
+  https://github.com/freenet/plugin-KeyUtils/pull/17
+  https://github.com/freenet/plugin-KeyUtils/pull/16
+
+- Library:
+  search with unchecked boxes thanks to redwerk
+  https://github.com/freenet/plugin-Library/pull/14 -
+
+  custom index docname thanks to TheSeeker
+  https://github.com/freenet/plugin-Library/pull/18
+
+- Spider:
+  Fix writing to the bucket and Replace SortedIntSet thanks to redwerks
+  https://github.com/freenet/plugin-Spider/pull/6
+
+  Fix build thanks to Juiceman
+  https://github.com/freenet/plugin-Spider/pull/5
+
+- FlogHelper
+  Add new media tags in tool menu: audio and video thanks to
+  AlexandreRio
+  https://github.com/freenet/plugin-FlogHelper/pull/19
+  (you can simply set an uploaded m3u file as as source of a video
+   and it will show up on your flog as video on demand)
+
+related: nextgens fixed our website build (Thank you!), so we can release
+there again. I polished our theme and the messaging on the index-page.
+https://freenetproject.org/
+
+
+1491:
+
+
+- disable pitch black defense if swapping is disabled because the node uses opennet
+  this should resolve problems to the network structure
+  introduced during the pitch-black fix because
+  opennet nodes started swapping when they had network-issues.
+  Sorry for that :-(
+- start pitch black defense 10 minutes after startup, not 1 minute after startup
+  further reduce the probability of stray swapping
+- fix streaming: deal with proxies providing a http node via https
+  streaming should now work over proxies.
+- m3u compability for mobile devices - thanks to DC*
+  some mobile browsers answer the query "supports m3u" with "maybe" O_o
+- add OpenBSD support thanks to jv@D7b92AQB2664AkrR
+- Add compatibility method for plugins (SCGIPublisher needs it)
+- recover constructor for compatibility with plugins
+- Fixed several unused variables issues - thanks to Jan Gerritsen
+- Fix label for logged attribute RoutingDisabled - thanks to Jan Gerritsen
+
+
+1490:
+
+- streaming in the browser,
+- mitigating the pitch black attack, and
+- providing the windows-installer from the node again.
+
+- inject vanilla Javascript m3u-player into Freesites
+  to get in-browser playlist streaming (with config to disable if needed).
+  Thanks to nextgens and desyncr for the review!
+- mitigate the pitch black attack following
+  https://www.mail-archive.com/devl@freenetproject.org/msg55182.html
+  Thanks to nextgens and x for the review!
+- triple the UOM transfer max sizes
+  so the windows-installer provided by nodes gets updated again.
+  Thanks to desyncr for the review!
+
+
 1489:
 
 - Add m3u support with mp3, ogg, oga, ogv, and flac. Thanks to Bombe for reviewing!
