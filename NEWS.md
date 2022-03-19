@@ -1,5 +1,6 @@
 next:
 
+- required module opens for Java 17 to wrapper.conf
 - add output of filtered file to the OggFilterTest
 - fix peer scaling for very fast peers
 - try replacing spaces by newlines in noderefs when parsing fails
@@ -7,7 +8,6 @@ next:
 - add max size to the fetched noderef
 - increase default datastore size to 100GiB, because SSDs are much faster today
 - Set standard thread limit to 1000
-- required module opens for Java 17 to wrapper.conf
 
 1492:
 
