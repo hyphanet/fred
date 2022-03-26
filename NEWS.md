@@ -33,7 +33,7 @@ next:
 - decreased default thread stack size for reduced memory usage
   (512KiB)
 - Increase default bandwidth to 32KiB/s. This should improve
-  performance, for new nodes where UPnP does not give the speed.
+  performance for new nodes where UPnP does not give the speed.
   thanks to operhiem1 for the review
 - add output of filtered file to the OggFilterTest
 
