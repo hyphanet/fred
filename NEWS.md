@@ -13,7 +13,7 @@ next:
 - Update default bookmarks: Replace inactive indexes, add Shoeshop,
   show active sites first. Thanks to AC4BB21B for the review!
 - Fix FreenetURI intern() to not forget edition of USK — thanks to
-  debbiedub for new nodes where UPnP does not give the speed.
+  debbiedub.
 - required module opens for Java 17 to wrapper.conf
 - Replace Pointer.SIZE with Native.POINTER_SIZE for JNA 5.x — thanks
   to Leo3418 and Bombe
@@ -33,7 +33,8 @@ next:
 - decreased default thread stack size for reduced memory usage
   (512KiB)
 - Increase default bandwidth to 32KiB/s. This should improve
-  performance, thanks to operhiem1 for the review
+  performance, for new nodes where UPnP does not give the speed.
+  thanks to operhiem1 for the review
 - add output of filtered file to the OggFilterTest
 
 1492:
