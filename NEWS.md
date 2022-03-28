@@ -13,29 +13,33 @@ next:
 - Update default bookmarks: Replace inactive indexes, add Shoeshop,
   show active sites first. Thanks to AC4BB21B for the review!
 - Fix FreenetURI intern() to not forget edition of USK — thanks to
-  debbiedub.
-- required module opens for Java 17 to wrapper.conf
+  debbiedub!
 - Replace Pointer.SIZE with Native.POINTER_SIZE for JNA 5.x — thanks
   to Leo3418 and Bombe
 - fix peer scaling for very fast peers: 
   Very fast nodes have more peers to fix a conceptual mistake
   (did not take the aggregated bandwidth limit of the peers into account). 
   Thanks to TheSeeker for the review!
-- Java 17 support of the installer
 - more resilient noderef parsing for easier friend-to-friend connections
   try replacing spaces by newlines in noderefs when parsing fails
 - Accept FreenetURI in add peer field; only try regular url on failure
   — thanks to desyncr for the review
 - Add warning about surveillance through voice recognition tech
-- increase default datastore size to 100GiB, because SSDs are much
-  faster today
-- Set standard thread limit to 1000
-- decreased default thread stack size for reduced memory usage
-  (512KiB)
-- Increase default bandwidth to 32KiB/s. This should improve
-  performance for new nodes where UPnP does not give the speed.
-  thanks to operhiem1 for the review
-- add output of filtered file to the OggFilterTest
+- Updater changes to add Java 17 support for existing nodes to
+  wrapper.conf (required module opens for Java 17 to wrapper.conf)
+  during the following update (to 1494)
+- Installer changes: 
+  - Java 17 support
+  - increase default datastore size to 100GiB, because SSDs are much
+    faster today
+  - Set standard thread limit to 1000
+  - decreased default thread stack size for reduced memory usage
+    (512KiB)
+  - Increase default bandwidth to 32KiB/s. This should improve
+    performance for new nodes where UPnP does not give the speed.
+    thanks to operhiem1 for the review
+  - add output of filtered file to the OggFilterTest
+
 
 1492:
 
