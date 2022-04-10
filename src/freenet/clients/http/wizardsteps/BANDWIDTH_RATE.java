@@ -24,31 +24,15 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		super(core, config);
 		final int KiB = 1024;
 		limits = new BandwidthLimit[] {
-				// FIXME feedback on typical real world ratios on slow connections would be helpful.
-				
-//				// Dial-up
-//				// 57.6/33.6; call it 4KB/sec each way
-//				new BandwidthLimit(4*KiB, 4*KiB, "bandwidthConnectionDialUp"),
-//				// 128kbps symmetrical = 16KB/sec each way, take half so 8KB/sec each way
-//				new BandwidthLimit(8*KiB, 8*KiB, "bandwidthConnectionISDN"),
-//				// 256kbps/64kbps developing world broadband
-//				new BandwidthLimit(16*KiB, 4*KiB, "bandwidthConnectionSlow256"),
-//				// 512kbps/128kbps very slow broadband
-//				new BandwidthLimit(32*KiB, 8*KiB, "bandwidthConnectionSlow512"),
-//				// 1Mbps/128kbps
-//				new BandwidthLimit(64*KiB, 8*KiB, "bandwidthConnection1M"),
-//				// 2Mbps/128kbps (slow often => poor ratios)
-//				new BandwidthLimit(128*KiB, 8*KiB, "bandwidthConnection2M"),
-				// 6Mbps/256kbps - 6Mbps is common in parts of china, as well as being the real value in lots of DSL areas
-				new BandwidthLimit(384*KiB, 16*KiB, "bandwidthConnection6M", false),
-				// 8Mbps/512kbps - UK DSL1 is either 448k up or 832k up
-				new BandwidthLimit(512*KiB, 32*KiB, "bandwidthConnection8M", true),
-				// 12Mbps/1Mbps - typical DSL2
-				new BandwidthLimit(768*KiB, 64*KiB, "bandwidthConnection12M", false),
-				// 20Mbps/5Mbps - Slow end of VDSL
-				new BandwidthLimit(1280*KiB, 320*KiB, "bandwidthConnectionVDSL", false),
-				// 100Mbps fibre etc
-				new BandwidthLimit(2048*KiB, 2048*KiB, "bandwidthConnection100M", false)
+			new BandwidthLimit(384*KiB, 16*KiB, "bandwidthConnection6M", false),
+			// 8Mbps/512kbps - UK DSL1 is either 448k up or 832k up
+			new BandwidthLimit(512*KiB, 32*KiB, "bandwidthConnection8M", false),
+			// 12Mbps/1Mbps - typical DSL2
+			new BandwidthLimit(768*KiB, 64*KiB, "bandwidthConnection12M", false),
+			// 20Mbps/5Mbps - Slow end of VDSL
+			new BandwidthLimit(1280*KiB, 320*KiB, "bandwidthConnectionVDSL", true),
+			// 100Mbps fibre etc
+			new BandwidthLimit(2048*KiB, 2048*KiB, "bandwidthConnection100M", false)
 		};
 	}
 
