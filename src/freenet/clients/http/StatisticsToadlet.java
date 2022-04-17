@@ -544,17 +544,11 @@ public class StatisticsToadlet extends Toadlet {
 		loadStatsInfobox.addChild("div", "class", "infobox-header", "Load limiting "+(realTime ? "RealTime" : "Bulk"));
 		HTMLNode loadStatsContent = loadStatsInfobox.addChild("div", "class", "infobox-content");
 		RequestStarterGroup starters = core.requestStarters;
-		double window = starters.getWindow(realTime);
-		double realWindow = starters.getRealWindow(realTime);
 		HTMLNode loadStatsList = loadStatsContent.addChild("ul");
-		loadStatsList.addChild("li", l10n("globalWindow")+": "+window);
-		loadStatsList.addChild("li", l10n("realGlobalWindow")+": "+realWindow);
 		loadStatsList.addChild("li", starters.statsPageLine(false, false, realTime));
 		loadStatsList.addChild("li", starters.statsPageLine(true, false, realTime));
 		loadStatsList.addChild("li", starters.statsPageLine(false, true, realTime));
 		loadStatsList.addChild("li", starters.statsPageLine(true, true, realTime));
-		loadStatsList.addChild("li", starters.diagnosticThrottlesLine(false));
-		loadStatsList.addChild("li", starters.diagnosticThrottlesLine(true));
 	}
 	
 	private void drawNewLoadManagementBox(HTMLNode infobox) {

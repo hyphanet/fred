@@ -1210,7 +1210,7 @@ public class NodeClientCore implements Persistable {
 						if(!rejectedOverload)
 							requestStarters.requestCompleted(isSSK, false, key, realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
-						requestStarters.getThrottle(isSSK, false, realTimeFlag).successfulCompletion(rtt);
+						requestStarters.getStats(isSSK, false, realTimeFlag).addRTT(rtt);
 						if(isSSK) {
 							node.nodeStats.reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
 						} else {
@@ -1421,7 +1421,7 @@ public class NodeClientCore implements Persistable {
 						if(!rejectedOverload)
 							requestStarters.requestCompleted(false, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
-						requestStarters.getThrottle(false, false, realTimeFlag).successfulCompletion(rtt);
+						requestStarters.getStats(false, false, realTimeFlag).addRTT(rtt);
 						node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
 						if(status == RequestSender.SUCCESS) {
 							Logger.minor(this, "Successful CHK fetch took "+rtt);
@@ -1542,7 +1542,7 @@ public class NodeClientCore implements Persistable {
 						if(!rejectedOverload)
 							requestStarters.requestCompleted(true, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
-						requestStarters.getThrottle(true, false, realTimeFlag).successfulCompletion(rtt);
+						requestStarters.getStats(true, false, realTimeFlag).addRTT(rtt);
 						node.nodeStats.reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
 					}
 
@@ -1667,7 +1667,7 @@ public class NodeClientCore implements Persistable {
 					long len = endTime - startTime;
 
 					// RejectedOverload requests count towards RTT (timed out ones don't).
-					requestStarters.getThrottle(false, true, realTimeFlag).successfulCompletion(len);
+					requestStarters.getStats(false, true, realTimeFlag).addRTT(len);
 					requestStarters.requestCompleted(false, true, block.getKey(), realTimeFlag);
 				}
 
@@ -1786,7 +1786,7 @@ public class NodeClientCore implements Persistable {
 					long endTime = System.currentTimeMillis();
 					long rtt = endTime - startTime;
 					requestStarters.requestCompleted(true, true, block.getKey(), realTimeFlag);
-					requestStarters.getThrottle(true, true, realTimeFlag).successfulCompletion(rtt);
+					requestStarters.getStats(true, true, realTimeFlag).addRTT(rtt);
 				}
 
 			int status = is.getStatus();
