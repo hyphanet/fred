@@ -33,7 +33,7 @@ next:
   - increase default datastore size to 100GiB, because SSDs are much
     faster today
   - Set standard thread limit to 1000
-  - decreased default thread stack size for reduced memory usage
+  - decrease default thread stack size for reduced memory usage
     (512KiB)
   - Increase default bandwidth to 32KiB/s. This should improve
     performance for new nodes where UPnP does not give the speed.
