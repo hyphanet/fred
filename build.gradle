@@ -178,6 +178,11 @@ compileTestJava.dependsOn copyResourcesToClasses2
 compileTestJava.dependsOn copyTestResourcesToClasses2
 
 test {
+    if(JavaVersion.current() >= JavaVersion.VERSION_1_9) {
+        jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
+        jvmArgs '--add-opens=java.base/java.util=ALL-UNNAMED'
+        jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
+    }
     minHeapSize = "128m"
     maxHeapSize = "512m"
     // no inner class
