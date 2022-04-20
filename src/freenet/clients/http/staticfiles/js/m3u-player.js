@@ -169,7 +169,7 @@ function updateSrc(mediaTag, callback) {
         () => callback());
     }
   } else {
-    let url = prefetchedTracks.has(trackUrl)
+    const url = prefetchedTracks.has(trackUrl)
         ? prefetchedTracks.get(trackUrl) instanceof Blob
         ? URL.createObjectURL(prefetchedTracks.get(trackUrl))
         : trackUrl : trackUrl;
@@ -180,14 +180,15 @@ function updateSrc(mediaTag, callback) {
        && document.fullscreen !== true) { // overlay does not work for fullscreen
       // mask flickering with a static overlay
       try {
-        showStaticOverlay(mediaTag, canvas);
+        if (mediaTag.nodeName === "VIDEO") {
+          showStaticOverlay(mediaTag, canvas);
+        }
       } catch (error) {
         console.log(error);
       }
     }
-    // force sizes to stay constant during loading of the next segment
-    mediaTag.style.height = mediaTag.getBoundingClientRect().height.toString() + 'px';
-    mediaTag.style.width = mediaTag.getBoundingClientRect().width.toString() + 'px';
+    const height = mediaTag.getBoundingClientRect().height.toString() + 'px';
+    const width = mediaTag.getBoundingClientRect().width.toString() + 'px';
     // swich to the next segment
     mediaTag.setAttribute("src", url);
     mediaTag.oncanplaythrough = () => {
@@ -200,9 +201,15 @@ function updateSrc(mediaTag, callback) {
       canvas.hidden = true;
       canvas.remove(); // to allow garbage collection
     };
+    // run the media
+    callback();
+    // force sizes to stay constant during loading of the next segment
+    // setting after the callback to avoid forcing a style reflow before getting audio
+    mediaTag.style.height = height;
+    mediaTag.style.width = width;
     setTimeout(() => canvas.remove(), 300); // fallback
     // replace the url when done, because a blob from an xhr request
-    // is more reliable in the media tag; 
+    // is more reliable in the media tag;
     // the normal URL caused jumping prematurely to the next track.
     if (url == trackUrl) {
       prefetchTrack(trackUrl, () => {
@@ -229,7 +236,6 @@ function updateSrc(mediaTag, callback) {
         prefetchTrack(playlist[Number(trackIndex) + i]);
       }
     }
-    callback();
   }
 }
 function changeTrack(mediaTag, diff) {
@@ -238,7 +244,7 @@ function changeTrack(mediaTag, diff) {
   const tracks = playlists[mediaTag.getAttribute("playlist")];
   if (nextTrackIndex >= 0) { // do not collapse the if clauses with double-and, that does not survive inlining
     if (tracks.length > nextTrackIndex) {
-    mediaTag.setAttribute("track-index", nextTrackIndex);
+      mediaTag.setAttribute("track-index", nextTrackIndex);
       updateSrc(mediaTag, () => mediaTag.play());
     }
   }
@@ -288,6 +294,7 @@ function initPlayer(mediaTag) {
     url,
     () => {
       updateSrc(mediaTag, () => null);
+      // TODO: investigate using the timeupdate event and setTimeout with duration - currentTime and removing the ended event before setTimeout (to avoid skipping twice), adding it after completion again (for robustness).
       mediaTag.addEventListener("ended", event => {
         if (mediaTag.currentTime >= mediaTag.duration) {
           changeTrack(mediaTag, +1);
