@@ -2388,31 +2388,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 		writeLocalToDatastore = nodeConfig.getBoolean("writeLocalToDatastore");
 
-		// LOW network *and* physical seclevel = writeLocalToDatastore
-
-		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
-
-			@Override
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				if(newLevel == NETWORK_THREAT_LEVEL.LOW && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW)
-					writeLocalToDatastore = true;
-				else
-					writeLocalToDatastore = false;
-			}
-
-		});
-
-		securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
-
-			@Override
-			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
-				if(newLevel == PHYSICAL_THREAT_LEVEL.LOW && securityLevels.getNetworkThreatLevel() == NETWORK_THREAT_LEVEL.LOW)
-					writeLocalToDatastore = true;
-				else
-					writeLocalToDatastore = false;
-			}
-
-		});
+		// This is dangerous on opennet, but was enabled by default before if both security levels
+		// were LOW. Upgrade to safe value; this setting only makes sense on small darknets.
+		if (opennetEnabled) {
+			writeLocalToDatastore = false;
+		}
 
 		nodeConfig.register("slashdotCacheLifetime", MINUTES.toMillis(30), sortOrder++, true, false, "Node.slashdotCacheLifetime", "Node.slashdotCacheLifetimeLong", new LongCallback() {
 
