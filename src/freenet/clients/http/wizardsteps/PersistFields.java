@@ -12,6 +12,7 @@ public class PersistFields {
 
 	public final FirstTimeWizardToadlet.WIZARD_PRESET preset;
 	public final boolean opennet;
+	public final boolean singleStep;
 
 	/**
 	 * @param request Parsed for persistence fields, checking parameters (GET) first, then parts (POST).
@@ -19,6 +20,7 @@ public class PersistFields {
 	public PersistFields(HTTPRequest request) {
 		this.preset = parsePreset(request);
 		this.opennet = parseOpennet(request);
+		this.singleStep = parseSingleStep(request);
 	}
 
 	/**
@@ -28,6 +30,7 @@ public class PersistFields {
 	public PersistFields(boolean opennet, HTTPRequest request) {
 		this.preset = parsePreset(request);
 		this.opennet = opennet;
+		this.singleStep = parseSingleStep(request);
 	}
 
 	/**
@@ -37,6 +40,7 @@ public class PersistFields {
 	public PersistFields(FirstTimeWizardToadlet.WIZARD_PRESET preset, HTTPRequest request) {
 		this.preset = preset;
 		this.opennet = parseOpennet(request);
+		this.singleStep = parseSingleStep(request);
 	}
 
 	private FirstTimeWizardToadlet.WIZARD_PRESET parsePreset(HTTPRequest request) {
@@ -70,8 +74,24 @@ public class PersistFields {
 		return Fields.stringToBool(opennetRaw, false);
 	}
 
+	private boolean parseSingleStep(HTTPRequest request) {
+		String singleStepRaw;
+
+		if (request.hasParameters()) {
+			singleStepRaw = request.getParam("singlestep", "false");
+		} else {
+			singleStepRaw = request.getPartAsStringFailsafe("singlestep", 5);
+		}
+
+		return Fields.stringToBool(singleStepRaw, false);
+	}
+
 	public boolean isUsingPreset() {
 		return preset != null;
+	}
+
+	public boolean isSingleStep() {
+		return singleStep;
 	}
 
 	/**
@@ -83,6 +103,9 @@ public class PersistFields {
 		StringBuilder url = new StringBuilder(baseURL).append("&opennet=").append(opennet);
 		if (isUsingPreset()) {
 			url.append("&preset=").append(preset);
+		}
+		if (isSingleStep()) {
+			url.append("&singlestep=").append(singleStep);
 		}
 		return url.toString();
 	}
