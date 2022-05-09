@@ -418,19 +418,6 @@ public class BlockTransmitter {
 		};
 	}
 	
-	/** Abort the send, and then send the sendAborted message. Don't do anything if the
-	 * send has already been aborted. */
-	public void abortSend(int reason, String desc) throws NotConnectedException {
-		if(logMINOR) Logger.minor(this, "Aborting send on "+this);
-		Future fail;
-		synchronized(_senderThread) {
-			_failed = true;
-			fail = maybeFail(reason, desc);
-		}
-		fail.execute();
-		cancelItemsPending();
-	}
-	
 	public void innerSendAborted(int reason, String desc) throws NotConnectedException {
 		_usm.send(_destination, DMT.createSendAborted(_uid, reason, desc), _ctr);
 	}
