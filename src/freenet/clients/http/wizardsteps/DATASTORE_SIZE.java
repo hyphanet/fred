@@ -92,10 +92,27 @@ public class DATASTORE_SIZE implements Step {
 
 	@Override
 	public String postStep(HTTPRequest request) {
-		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
-		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20));
-		return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH.name();
-	}
+		boolean firsttime = true;
+
+		if (request.isPartSet("singlestep")) {
+			firsttime = false;
+		}
+
+		try {
+			String selectedStoreSize = request.getPartAsStringFailsafe("ds", 20);
+			long size = Long.parseLong(selectedStoreSize);
+			long availableSize = maxDatastoreSize(core.node) / (1024*1024*1024);
+			if (size < 1) {
+				return FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE.name() + "&valueError=true";
+			}
+			if (size > availableSize) {
+				return FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE.name() + "&valueError=true";
+			}
+            // drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
+            _setDatastoreSize(request.getPartAsStringFailsafe("ds", 20));
+            return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH.name();
+        }
+    }
 
 	private void _setDatastoreSize(String selectedStoreSize) {
 		try {
@@ -107,7 +124,7 @@ public class DATASTORE_SIZE implements Step {
 			int downstreamLimit = config.get("node").getInt("inputBandwidthLimit");
 			// is used for remote stuff, so go by the minimum of the two
 			int limit;
-			if(downstreamLimit <= 0) limit = upstreamLimit;
+			if (downstreamLimit <= 0) limit = upstreamLimit;
 			else limit = Math.min(downstreamLimit, upstreamLimit);
 			// 35KB/sec limit has been seen to have 0.5 store writes per second.
 			// So saying we want to have space to cache everything is only doubling that ...
@@ -121,12 +138,10 @@ public class DATASTORE_SIZE implements Step {
 
 			System.out.println("Setting datastore size to "+Fields.longToString(storeSize, true));
 			config.get("node").set("storeSize", Fields.longToString(storeSize, true));
-			if(config.get("node").getString("storeType").equals("ram"))
-				config.get("node").set("storeType", "salt-hash");
+			if (firsttime) config.get("node").set("storeType", "salt-hash");
 			System.out.println("Setting client cache size to "+Fields.longToString(clientCacheSize, true));
 			config.get("node").set("clientCacheSize", Fields.longToString(clientCacheSize, true));
-			if(config.get("node").getString("clientCacheType").equals("ram"))
-				config.get("node").set("clientCacheType", "salt-hash");
+			if (firsttime) config.get("node").set("clientCacheType", "salt-hash");
 			System.out.println("Setting slashdot/ULPR/recent requests cache size to "+Fields.longToString(slashdotCacheSize, true));
 			config.get("node").set("slashdotCacheSize", Fields.longToString(slashdotCacheSize, true));
 
@@ -137,7 +152,7 @@ public class DATASTORE_SIZE implements Step {
 		}
 	}
 
-	private long maxDatastoreSize() {
+	public static long maxDatastoreSize(Node node) {
 		long maxMemory = NodeStarter.getMemoryLimitBytes();
 		if(maxMemory == Long.MAX_VALUE) return 1024*1024*1024; // Treat as don't know.
 		if(maxMemory < 128*1024*1024) return 1024*1024*1024; // 1GB default if don't know or very small memory.
@@ -151,7 +166,25 @@ public class DATASTORE_SIZE implements Step {
 		slots /= 3;
 		// We return the total size, so we don't need to worry about cache vs store or even client cache.
 		// One key of all 3 types combined uses Node.sizePerKey bytes on disk. So we get a size.
-		return slots * Node.sizePerKey;
+		long maxSize = slots * Node.sizePerKey;
+
+		// Datastore can never be larger than free disk space, assuming datastore is zero now.
+		File storeDir = node.getStoreDir();
+		long freeSpace = storeDir.getUsableSpace();
+		File[] files = storeDir.listFiles();
+
+		for (int i = 0; i < files.length; i++) {
+			freeSpace += files[i].length();
+		}
+
+		if (freeSpace < maxSize) {
+			maxSize = freeSpace;
+		}
+
+		// Leave some margin.
+		maxSize = maxSize - 1024*1024*1024;
+
+		return maxSize;
 	}
 
     private long canAutoconfigureDatastoreSize() {
