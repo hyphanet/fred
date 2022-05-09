@@ -33,9 +33,6 @@ public class RequestTag extends UIDTag {
 	private int requestSenderFinishedCode = RequestSender.NOT_FINISHED;
 	private Throwable handlerThrew;
 	private boolean rejected;
-	private boolean abortedDownstreamTransfer;
-	private int abortedDownstreamReason;
-	private String abortedDownstreamDesc;
 	private boolean handlerDisconnected;
 	private WeakReference<PeerNode> waitingForOpennet;
 	private boolean handlerTransferring;
@@ -143,12 +140,6 @@ public class RequestTag extends UIDTag {
 		sb.append(" rejected=").append(rejected);
 		if(handlerThrew != null)
 			sb.append(" thrown=").append(handlerThrew);
-		if(abortedDownstreamTransfer) {
-			sb.append(" abortedDownstreamTransfer reason=");
-			sb.append(abortedDownstreamReason);
-			sb.append(" desc=");
-			sb.append(abortedDownstreamDesc);
-		}
 		if(handlerDisconnected)
 			sb.append(" handlerDisconnected=true");
 		if(waitingForOpennet != null) {
@@ -162,12 +153,6 @@ public class RequestTag extends UIDTag {
 			Logger.error(this, sb.toString(), handlerThrew);
 		else
 			Logger.error(this, sb.toString());
-	}
-
-	public synchronized void onAbortDownstreamTransfers(int reason, String desc) {
-		abortedDownstreamTransfer = true;
-		abortedDownstreamReason = reason;
-		abortedDownstreamDesc = desc;
 	}
 
 	public synchronized void handlerDisconnected() {
