@@ -760,6 +760,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private boolean peersOffersDismissed;
 
+	private int datastoreTooSmallDismissed;
+
 	/**
 	 * Minimum bandwidth limit in bytes considered usable: 10 KiB. If there is an attempt to set a limit below this -
 	 * excluding the reserved -1 for input bandwidth - the callback will throw. See the callbacks for
@@ -2583,6 +2585,21 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		);
 		enableNodeDiagnostics = nodeConfig.getBoolean("enableNodeDiagnostics");
+
+		nodeConfig.register("datastoreTooSmallDismissed", -1, sortOrder++, true, false,
+				"Node.datastoreTooSmallDismissed", "Node.datastoreTooSmallDismissedLong", new IntCallback() {
+
+					@Override
+					public Integer get() {
+						return datastoreTooSmallDismissed;
+					}
+
+					@Override
+					public void set(Integer val) {
+						datastoreTooSmallDismissed = val;
+					}
+				});
+		datastoreTooSmallDismissed = nodeConfig.getInt("datastoreTooSmallDismissed");
 
 		updateMTU();
 

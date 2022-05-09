@@ -6,13 +6,17 @@ import freenet.config.ConfigException;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.Option;
 import freenet.l10n.NodeL10n;
+import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.NodeStarter;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.DatastoreUtil;
+
+import java.io.File;
 
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.
@@ -37,7 +41,7 @@ public class DATASTORE_SIZE implements Step {
 		HTMLNode bandwidthForm = helper.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 		HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
 
-		long maxSize = DatastoreUtil.maxDatastoreSize();
+		long maxSize = maxDatastoreSize(core.node);
 
 		long autodetectedSize = canAutoconfigureDatastoreSize();
 		if(maxSize < autodetectedSize) autodetectedSize = maxSize;
@@ -93,15 +97,20 @@ public class DATASTORE_SIZE implements Step {
 	@Override
 	public String postStep(HTTPRequest request) {
 		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
-		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20));
-		return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH.name();
+		boolean firsttime = true;
+
+		if (request.isPartSet("singlestep")) {
+			firsttime = false;
+		}
+		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20), firsttime);
+        if (firsttime) {
+            return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH.name();
+        } else {
+            return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
+        }
 	}
 
-	private void _setDatastoreSize(String selectedStoreSize) {
-		setDatastoreSize(selectedStoreSize, config, this);
-	}
-
-	public static void setDatastoreSize(String selectedStoreSize, Config config, Object callback) {
+	private void _setDatastoreSize(String selectedStoreSize, boolean firsttime) {
 		try {
 			long size = Fields.parseLong(selectedStoreSize);
 
@@ -118,7 +127,7 @@ public class DATASTORE_SIZE implements Step {
 			int downstreamLimit = config.get("node").getInt("inputBandwidthLimit");
 			// is used for remote stuff, so go by the minimum of the two
 			int limit;
-			if(downstreamLimit <= 0) limit = upstreamLimit;
+			if (downstreamLimit <= 0) limit = upstreamLimit;
 			else limit = Math.min(downstreamLimit, upstreamLimit);
 			// 35KB/sec limit has been seen to have 0.5 store writes per second.
 			// So saying we want to have space to cache everything is only doubling that ...
@@ -132,24 +141,56 @@ public class DATASTORE_SIZE implements Step {
 
 			System.out.println("Setting datastore size to "+Fields.longToString(storeSize, true));
 			config.get("node").set("storeSize", Fields.longToString(storeSize, true));
-			if(config.get("node").getString("storeType").equals("ram"))
-				config.get("node").set("storeType", "salt-hash");
+			if (firsttime) config.get("node").set("storeType", "salt-hash");
 			System.out.println("Setting client cache size to "+Fields.longToString(clientCacheSize, true));
 			config.get("node").set("clientCacheSize", Fields.longToString(clientCacheSize, true));
-			if(config.get("node").getString("clientCacheType").equals("ram"))
-				config.get("node").set("clientCacheType", "salt-hash");
+			if (firsttime) config.get("node").set("clientCacheType", "salt-hash");
 			System.out.println("Setting slashdot/ULPR/recent requests cache size to "+Fields.longToString(slashdotCacheSize, true));
 			config.get("node").set("slashdotCacheSize", Fields.longToString(slashdotCacheSize, true));
 
 
-			Logger.normal(callback, "The storeSize has been set to " + selectedStoreSize);
+			Logger.normal(this, "The storeSize has been set to " + selectedStoreSize);
 		} catch(ConfigException e) {
-			Logger.error(callback, "Should not happen, please report!" + e, e);
+			Logger.error(this, "Should not happen, please report!" + e, e);
 		}
 	}
 
-	private long canAutoconfigureDatastoreSize() {
-		return DatastoreUtil.autodetectDatastoreSize(core, config);
+	public static long maxDatastoreSize(Node node) {
+		long maxMemory = NodeStarter.getMemoryLimitBytes();
+		if(maxMemory == Long.MAX_VALUE) return 1024*1024*1024; // Treat as don't know.
+		if(maxMemory < 128*1024*1024) return 1024*1024*1024; // 1GB default if don't know or very small memory.
+		// Don't use the first 100MB for slot filters.
+		long available = maxMemory - 100*1024*1024;
+		// Don't use more than 50% of available memory for slot filters.
+		available = available / 2;
+		// Slot filters are 4 bytes per slot.
+		long slots = available / 4;
+		// There are 3 types of keys. We want the number of { SSK, CHK, pubkey } i.e. the number of slots in each store.
+		slots /= 3;
+		// We return the total size, so we don't need to worry about cache vs store or even client cache.
+		// One key of all 3 types combined uses Node.sizePerKey bytes on disk. So we get a size.
+		long maxSize =slots * Node.sizePerKey;
+
+		// Datastore can never be larger than free disk space, assuming datastore is zero now.
+		File storeDir = node.getStoreDir();
+		long freeSpace = storeDir.getUsableSpace();
+		File[] files = storeDir.listFiles();
+
+		for (int i = 0; i < files.length; i++) {
+			freeSpace += files[i].length();
+		}
+
+		if (freeSpace < maxSize) {
+			maxSize = freeSpace;
+		}
+
+		// Leave some margin.
+		maxSize = maxSize - 1024*1024*1024;
+
+		return maxSize;
 	}
    
+	private long canAutoconfigureDatastoreSize() {
+		return DatastoreUtil.autodetectDatastoreSize(core, config);
+    }
 }
