@@ -55,6 +55,7 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.NodeL10n;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.useralerts.DatastoreTooSmallAlert;
 import freenet.node.useralerts.DiskSpaceUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -881,6 +882,7 @@ public class NodeClientCore implements Persistable {
 				    });
 		alwaysCommit = nodeConfig.getBoolean("alwaysCommit");
 		alerts.register(new DiskSpaceUserAlert(this));
+		alerts.register(new DatastoreTooSmallAlert(this));
 	}
 
 	protected void updatePersistentRAFSpaceLimit() {
