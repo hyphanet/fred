@@ -71,6 +71,11 @@ public class PageHelper {
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "preset", persistFields.preset.name() });
 		}
+		if (persistFields.isSingleStep()) {
+			form.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "hidden", "singlestep", "true" });
+		}
 		if (includeOpennet) {
 			form.addChild("input",
 			        new String[] { "type", "name", "value" },
