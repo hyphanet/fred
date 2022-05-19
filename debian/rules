@@ -1,0 +1,38 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=0
+FREENET_VERSION := 0.7.5
+FREENET_BUILD   := 1493
+WRAPPER_INIT    := /usr/share/wrapper/make-wrapper-init.sh
+
+%:
+	dh $@ --with javahelper
+
+override_dh_auto_build:
+	export GRADLE_USER_HOME="`pwd`/gradle"; \
+	export GRADLE_OPTS="-Dorg.gradle.daemon=false -Xmx512m"; \
+	./gradlew assemble; \
+	./gradlew copyRuntimeLibs
+
+	sed -e 's/@version@/$(FREENET_VERSION)/' -e 's/@build@/$(FREENET_BUILD)/' $(CURDIR)/debian/freenet.service.params | \
+	 $(WRAPPER_INIT) -q > "$(CURDIR)/debian/freenet.init"
+
+override_dh_builddeb:
+	dh_builddeb -- -Zgzip
+
+override_dh_auto_install:
+	dh_auto_install
+	jh_installlibs $(CURDIR)/build/libs/freenet.jar
+
+override_dh_auto_test:
+	export GRADLE_USER_HOME="`pwd`/gradle"; \
+	export GRADLE_OPTS="-Dorg.gradle.daemon=false -Xmx512m"; \
+	./gradlew test
+
+override_jh_installlibs:
+	jh_installlibs $(CURDIR)/build/output/freenet-ext-29.jar
+	jh_installlibs $(CURDIR)/build/output/jna-4.5.2.jar
+	jh_installlibs $(CURDIR)/build/output/jna-platform-4.5.2.jar
+	jh_installlibs $(CURDIR)/build/output/bcprov-jdk15on-1.59.jar
