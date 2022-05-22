@@ -15,10 +15,8 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import freenet.client.DefaultMIMETypes;
@@ -998,41 +996,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		// get uri host and headers
 		MultiValueTable<String, String> headers = ctx.getHeaders();
-		Map<String, String> forwarded = parseForwardedHeader(headers.get("forwarded"));
 		String uriScheme = ctx.getUri().getScheme();
 		String uriHost = ctx.getUri().getHost();
 
-		return UriFilterProxyHeaderParser.parse(fProxyPort, fProxyBindTo, uriScheme, uriHost, headers, forwarded).toString();
-	}
-
-	private Map<String, String> parseForwardedHeader(String forwarded) {
-		if (forwarded == null || forwarded.trim().isEmpty()) {
-			return new HashMap<>();
-		}
-		Map<String, String> headerParams = new HashMap<>();
-
-		// if a multi-value header is given, only use the first value.
-		int indexOfComma = forwarded.indexOf(',');
-		if (indexOfComma != -1) {
-			forwarded = forwarded.substring(0, indexOfComma);
-		}
-		boolean hasAtLeastOneKey = forwarded.indexOf('=') != -1;
-		boolean hasMultipleKeys = forwarded.indexOf(';') != -1;
-		String[] fields;
-		if (hasMultipleKeys) {
-			fields = forwarded.split(";");
-		} else if (hasAtLeastOneKey) {
-			fields = new String[]{ forwarded };
-		} else {
-			return headerParams;
-		}
-		for (String field : fields) {
-			if (field.indexOf('=') != 1) {
-				String[] keyAndValue = field.split("=");
-				headerParams.put(keyAndValue[0], keyAndValue[1]);
-			}
-		}
-		return headerParams;
+		return UriFilterProxyHeaderParser.parse(fProxyPort, fProxyBindTo, uriScheme, uriHost, headers).toString();
 	}
 
 	private boolean isBrowser(String ua) {
