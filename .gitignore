@@ -16,6 +16,7 @@
 *.ipr
 *.iws
 .*
+!.github
 *~
 \#*\#
 /override.properties
