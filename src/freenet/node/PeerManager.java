@@ -1348,7 +1348,7 @@ public class PeerManager {
 		String[] status = new String[peers.length];
 		for(int i = 0; i < peers.length; i++) {
 			PeerNode pn = peers[i];
-			status[i] = pn.getStatus(true).toString();
+			status[i] = pn.getStatus(peerScores, true).toString();
 		}
 		Arrays.sort(status);
 		for(String s: status) {
@@ -1899,7 +1899,7 @@ public class PeerManager {
 		PeerNode[] peers = myPeers();
 		PeerNodeStatus[] _peerNodeStatuses = new PeerNodeStatus[peers.length];
 		for(int peerIndex = 0, peerCount = peers.length; peerIndex < peerCount; peerIndex++) {
-			_peerNodeStatuses[peerIndex] = peers[peerIndex].getStatus(noHeavy);
+			_peerNodeStatuses[peerIndex] = peers[peerIndex].getStatus(peerScores, noHeavy);
 		}
 		return _peerNodeStatuses;
 	}
@@ -1908,7 +1908,7 @@ public class PeerManager {
 		DarknetPeerNode[] peers = getDarknetPeers();
 		DarknetPeerNodeStatus[] _peerNodeStatuses = new DarknetPeerNodeStatus[peers.length];
 		for(int peerIndex = 0, peerCount = peers.length; peerIndex < peerCount; peerIndex++) {
-			_peerNodeStatuses[peerIndex] = (DarknetPeerNodeStatus) peers[peerIndex].getStatus(noHeavy);
+			_peerNodeStatuses[peerIndex] = (DarknetPeerNodeStatus) peers[peerIndex].getStatus(peerScores, noHeavy);
 		}
 		return _peerNodeStatuses;
 	}
@@ -1917,7 +1917,7 @@ public class PeerManager {
 		OpennetPeerNode[] peers = getOpennetPeers();
 		OpennetPeerNodeStatus[] _peerNodeStatuses = new OpennetPeerNodeStatus[peers.length];
 		for(int peerIndex = 0, peerCount = peers.length; peerIndex < peerCount; peerIndex++) {
-			_peerNodeStatuses[peerIndex] = (OpennetPeerNodeStatus) peers[peerIndex].getStatus(noHeavy);
+			_peerNodeStatuses[peerIndex] = (OpennetPeerNodeStatus) peers[peerIndex].getStatus(peerScores, noHeavy);
 		}
 		return _peerNodeStatuses;
 	}

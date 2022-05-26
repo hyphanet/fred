@@ -58,6 +58,9 @@ public class PeerNodeStatus {
 
 	private final boolean isOpennet;
 
+	private final boolean isTrustedForLocal;
+	private final long peerTrustScore;
+
 	private final double averagePingTime;
 	private final double averagePingTimeCorrected;
 
@@ -124,7 +127,7 @@ public class PeerNodeStatus {
 	
 	public final boolean hasFullNoderef;
 
-	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
+	PeerNodeStatus(PeerNode peerNode, TrustScoreManager peerScores, boolean noHeavy) {
 		Peer p = peerNode.getPeer();
 		if(p == null) {
 			peerAddress = null;
@@ -160,6 +163,8 @@ public class PeerNodeStatus {
 		this.routable = peerNode.isRoutable();
 		this.isFetchingARK = peerNode.isFetchingARK();
 		this.isOpennet = peerNode.isOpennet();
+		this.isTrustedForLocal = peerScores.trustedForLocalRequests(peerNode, null);
+		this.peerTrustScore = peerScores.getScoreFor(peerNode);
 		this.averagePingTime = peerNode.averagePingTime();
 		this.averagePingTimeCorrected = peerNode.averagePingTimeCorrected();
 		this.publicInvalidVersion = peerNode.publicInvalidVersion();
@@ -409,6 +414,20 @@ public class PeerNodeStatus {
 	 */
 	public boolean isOpennet() {
 		return isOpennet;
+	}
+
+	/**
+	 * @return the isTrustedForLocal
+	 */
+	public boolean isTrustedForLocalRequests() {
+		return isTrustedForLocal;
+	}
+
+	/**
+	 * @return the peerTrustScore
+	 */
+	public long getPeerTrustScore() {
+		return peerTrustScore;
 	}
 
 	/**

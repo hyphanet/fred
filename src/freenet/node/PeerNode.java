@@ -2644,9 +2644,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	/**
 	 * Get a PeerNodeStatus for this node.
+	 * @param peerScores The opennet peer trust score manager
 	 * @param noHeavy If true, avoid any expensive operations e.g. the message count hashtables.
 	 */
-	public abstract PeerNodeStatus getStatus(boolean noHeavy);
+	public abstract PeerNodeStatus getStatus(TrustScoreManager peerScores, boolean noHeavy);
 
 	public String getTMCIPeerInfo() {
 		long now = System.currentTimeMillis();

@@ -431,6 +431,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "trust")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("visibilityMessage"+(advancedMode?"Advanced":"Simple")), "border-bottom: 1px dotted; cursor: help;" }, l10n("visibilityTitle"));
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "address")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("ipAddress"), "border-bottom: 1px dotted; cursor: help;" }, l10n("ipAddressTitle"));
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "version")).addChild("#", l10n("versionTitle"));
+				if(hasPeerScoreColumn())
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "peerscore")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("peerScore"), "border-bottom: 1px dotted; cursor: help;" }, l10n("peerScoreTitle"));
 				if (advancedMode) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "location")).addChild("#", l10n("locationTitle"));
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "backoffRT")).addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy (realtime)? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff (realtime)");
@@ -997,6 +999,17 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			peerRow.addChild("td", "class", "peer-version").addChild("#", Integer.toString(peerNodeStatus.getSimpleVersion()));
 		}
 
+		// peer trust score column
+		if(hasPeerScoreColumn()) {
+			String score = Long.toString(peerNodeStatus.getPeerTrustScore());
+
+			if (peerNodeStatus.isTrustedForLocalRequests()) {
+				score = score + " (" + l10n("peerScoreTrusted") + ")";
+			}
+
+			peerRow.addChild("td", "class", "peer-score").addChild("#", score);
+		}
+
 		// location column
 		if (advancedModeEnabled) {
 			HTMLNode locationNode = peerRow.addChild("td", "class", "peer-location");
@@ -1115,6 +1128,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	protected void drawVisibilityColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus, boolean advancedModeEnabled) {
 		// Do nothing
 	}
+
+	/**
+	 * Is there a peer trust score column?
+	 */
+	abstract protected boolean hasPeerScoreColumn();
 
 	/** Is there a name column? */
 	abstract protected boolean hasNameColumn();

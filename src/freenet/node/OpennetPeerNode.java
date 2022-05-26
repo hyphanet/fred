@@ -31,8 +31,8 @@ public class OpennetPeerNode extends PeerNode {
 	}
 
 	@Override
-	public PeerNodeStatus getStatus(boolean noHeavy) {
-		return new OpennetPeerNodeStatus(this, noHeavy);
+	public PeerNodeStatus getStatus(TrustScoreManager peerScores, boolean noHeavy) {
+		return new OpennetPeerNodeStatus(this, peerScores, noHeavy);
 	}
 
 	@Override

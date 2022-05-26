@@ -67,7 +67,12 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	protected Comparator<PeerNodeStatus> comparator(String sortBy, boolean reversed) {
 		return new DarknetComparator(sortBy, reversed);
 	}
-		
+
+	@Override
+	protected boolean hasPeerScoreColumn() {
+		return false;
+	}
+
 	@Override
 	protected boolean hasNameColumn() {
 		return true;

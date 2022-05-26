@@ -35,6 +35,11 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 	}
 
 	@Override
+	protected boolean hasPeerScoreColumn() {
+		return true;
+	}
+
+	@Override
 	protected boolean hasNameColumn() {
 		return false;
 	}
