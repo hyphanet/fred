@@ -73,7 +73,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	static final int MAX_WAITING_FOR_SLOTS = 50;
 
 	/** Throttle speed at which local requests are started */
-	private final long DELAY_MS_PER_PEER = 5400; // 655 MB/hour if 30 peers
+	private final long DELAY_MS_PER_PEER = 2700; // 655 MB/hour if 30 peers (15 sendable)
 
 	public RequestStarter(NodeClientCore node, String name,
 			RunningAverage averageOutputBytesPerRequest,
@@ -130,7 +130,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(logMINOR) Logger.minor(this, "Running "+req+" priority "+req.getPriority());
 				if(!req.localRequestOnly) {
 					// Wait
-					long numPeers = core.node.peers.countNonBackedOffPeers(realTime);
+					long numPeers = core.node.peers.countSendablePeers(realTime);
 					if (numPeers < 1) numPeers = 1;
 					long delay = DELAY_MS_PER_PEER / numPeers;
 					if(logMINOR) Logger.minor(this, "Delay="+delay);

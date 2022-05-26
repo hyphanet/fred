@@ -1677,12 +1677,12 @@ public class PeerManager {
 		node.getTicker().queueTimedJob(writePeersRunnable, 0);
 	}
 
-	public int countNonBackedOffPeers(boolean realTime) {
+	public int countSendablePeers(boolean realTime) {
 		PeerNode[] peers = connectedPeers();
 		// even if myPeers peers are connected they won't be routed to
 		int countNoBackoff = 0;
 		for(PeerNode peer: peers) {
-			if(peer.isRoutable())
+			if(peer.isRoutable() && peerScores.trustedForLocalRequests(peer, peers))
 				if(!peer.isRoutingBackedOff(realTime))
 					countNoBackoff++;
 		}
