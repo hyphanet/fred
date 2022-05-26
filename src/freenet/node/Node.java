@@ -1714,7 +1714,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		// Then read the peers
-		peerScores = new TrustScoreManager(shutdownHook);
+		peerScores = new TrustScoreManager(shutdownHook, nodeConfig);
 		peers = new PeerManager(this, peerScores, shutdownHook);
 		
 		tracker = new RequestTracker(peers, ticker);

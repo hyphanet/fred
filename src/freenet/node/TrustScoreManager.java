@@ -4,6 +4,9 @@
 
 package freenet.node;
 
+import freenet.config.InvalidConfigValueException;
+import freenet.config.SubConfig;
+import freenet.support.api.LongCallback;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.IllegalBase64Exception;
@@ -51,6 +54,17 @@ import java.util.HashMap;
  * We do not count successful transfer of offered CHK keys though, since
  * the attacker potentially can affect what they offer. Most CHK requests
  * are not from offered keys anyway.
+ *
+ * We also permit the user to configure a minimum permitted trust score.
+ * Usually we send local requests to the 50% of currently connected peers
+ * who have the highest score, but if an attacker can surround us and take
+ * the place of our regular peers, the median score could drop all the way
+ * down to zero and the attacker can start seeing local requests without
+ * having done any proof of work. By never sending local requests to peers
+ * that have a score below a certain configured minimum, even if there are
+ * no other peers, such de-anonymization attacks are converted into the more
+ * harmless denial of service attacks. This is for advanced users with high
+ * anonymity requirements only.
  */
 public class TrustScoreManager {
 	/** The file name for the opennet peer trust score file */
@@ -121,6 +135,8 @@ public class TrustScoreManager {
 	private HashMap<PeerTrust,PeerTrust> peers;
 	/** Median score of all currently connected opennet peers */
 	private long medianScore;
+	/** Minimum permitted score, if configured by the user */
+	private long minScore;
 	/** Do not recalculate scores if peer list still is this one */
 	private PeerNode[] calculatedFor;
 	/** Number of score increments done since last save */
@@ -130,9 +146,11 @@ public class TrustScoreManager {
 	 * Load opennet peer trust scores from file, or start with
 	 * a fresh one if the file does not exist.
 	 */
-	public TrustScoreManager(SemiOrderedShutdownHook shutdownHook) {
+	public TrustScoreManager(SemiOrderedShutdownHook shutdownHook,
+			SubConfig config) {
 		peers = new HashMap<PeerTrust,PeerTrust>();
 		medianScore = -1;
+		minScore = 0;
 		calculatedFor = null;
 		sinceLastSave = 0;
 
@@ -141,6 +159,27 @@ public class TrustScoreManager {
 				writeFile();
 			}
 		});
+
+		config.register("minimumTrustScore", 0, 0, false, false,
+				"Node.minimumTrustScore",
+				"Node.minimumTrustScoreLong",
+				new LongCallback() {
+			@Override
+			public Long get() {
+				return minScore;
+			}
+
+			@Override
+			public void set(Long score) throws InvalidConfigValueException {
+				synchronized (TrustScoreManager.this) {
+					long newScore = score;
+					if (newScore < 0) newScore = 0;
+					minScore = newScore;
+				}
+			}
+		}, false);
+
+		minScore = config.getLong("minimumTrustScore");
 
 		File realfile = new File(TRUST_FILE_NAME);
 		if (!realfile.exists()) {
@@ -254,7 +293,8 @@ public class TrustScoreManager {
 	/**
 	 * Return true if this peer is a darknet peer, thus trusted,
 	 * or if this peer one of the 50% connected opennet peers with
-	 * the highest proof of work score, thus marginally trusted.
+	 * the highest proof of work score and that score is above the
+	 * minimum permitted score, thus marginally trusted.
 	 */
 	public synchronized boolean trustedForLocalRequests(PeerNode peerNode,
 			PeerNode[] connectedNodes) {
@@ -270,7 +310,8 @@ public class TrustScoreManager {
 			}
 		}
 
-		if (medianScore >= 0 && score >= medianScore) {
+		if (medianScore >= 0 && score >= medianScore &&
+				score >= minScore) {
 			return true;
 		}
 
