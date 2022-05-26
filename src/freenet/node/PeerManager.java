@@ -62,6 +62,8 @@ public class PeerManager {
         }
 	/** Our Node */
 	final Node node;
+	/** Trust scores for all peers ever seen */
+	private final TrustScoreManager peerScores;
 	/** All the peers we want to connect to */
 	private PeerNode[] myPeers;
 	/** All the peers we are actually connected to */
@@ -163,7 +165,8 @@ public class PeerManager {
 	 * @param node
 	 * @param shutdownHook
 	 */
-	public PeerManager(Node node, SemiOrderedShutdownHook shutdownHook) {
+	public PeerManager(Node node, TrustScoreManager peerScores,
+			SemiOrderedShutdownHook shutdownHook) {
 		Logger.normal(this, "Creating PeerManager");
 		peerNodeRoutingBackoffReasonsRT = new PeerStatusTracker<String>();
 		peerNodeRoutingBackoffReasonsBulk = new PeerStatusTracker<String>();
@@ -173,6 +176,7 @@ public class PeerManager {
 		myPeers = new PeerNode[0];
 		connectedPeers = new PeerNode[0];
 		this.node = node;
+		this.peerScores = peerScores;
 		shutdownHook.addEarlyJob(new Thread() {
 			public void run() {
 				// Ensure we're not waiting 5mins here
@@ -1017,6 +1021,10 @@ public class PeerManager {
 			}
 			if(newLoadManagement && p.isInMandatoryBackoff(now, realTime)) {
 				if(logMINOR) Logger.minor(this, "Skipping (mandatory backoff): "+p.getPeer());
+				continue;
+			}
+			if(isLocal && !peerScores.trustedForLocalRequests(p, peers)) {
+				if(logMINOR) Logger.minor(this, "Skipping (not trusted for local): "+p.getPeer());
 				continue;
 			}
 			

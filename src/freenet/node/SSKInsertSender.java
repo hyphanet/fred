@@ -143,7 +143,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
              */
             // Decrement at this point so we can DNF immediately on reaching HTL 0.
             boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
-            if((!starting) && (!canWriteStorePrev)) {
+            if(!starting && !canWriteStorePrev) {
             	// We always decrement on starting a sender.
             	// However, after that, if our HTL is above the no-cache threshold,
             	// we do not want to decrement the HTL for trivial rejections (e.g. RejectedLoop),

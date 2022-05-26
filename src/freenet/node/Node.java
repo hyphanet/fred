@@ -596,6 +596,8 @@ public class Node implements TimeSkewDetectorCallback {
 	public long swapIdentifier;
 	private String myName;
 	public final LocationManager lm;
+	/** Trust scores for all peers ever seen */
+	private final TrustScoreManager peerScores;
 	/** My peers */
 	public final PeerManager peers;
 	/** Node-reference directory (node identity, peers, etc) */
@@ -1712,7 +1714,8 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		// Then read the peers
-		peers = new PeerManager(this, shutdownHook);
+		peerScores = new TrustScoreManager(shutdownHook);
+		peers = new PeerManager(this, peerScores, shutdownHook);
 		
 		tracker = new RequestTracker(peers, ticker);
 
@@ -3470,7 +3473,7 @@ public class Node implements TimeSkewDetectorCallback {
 			return null;
 		}
 
-		sender = new RequestSender(key, null, htl, uid, tag, this, source, offersOnly, canWriteClientCache, canWriteDatastore, realTimeFlag);
+		sender = new RequestSender(key, null, htl, uid, tag, this, source, offersOnly, canWriteClientCache, canWriteDatastore, realTimeFlag, peerScores);
 		tag.setSender(sender, false);
 		sender.start();
 		if(logMINOR) Logger.minor(this, "Created new sender: "+sender);

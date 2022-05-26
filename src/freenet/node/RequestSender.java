@@ -83,6 +83,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     private boolean reassignedToSelfDueToMultipleTimeouts;
     private final boolean canWriteClientCache;
     private final boolean canWriteDatastore;
+    /** Trust scores for all peers ever seen */
+    private final TrustScoreManager peerScores;
     
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
@@ -164,7 +166,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
      * @param realTimeFlag If enabled,  
      */
     public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, RequestTag tag, Node n,
-            PeerNode source, boolean offersOnly, boolean canWriteClientCache, boolean canWriteDatastore, boolean realTimeFlag) {
+            PeerNode source, boolean offersOnly, boolean canWriteClientCache, boolean canWriteDatastore,
+            boolean realTimeFlag, TrustScoreManager peerScores) {
     	super(key, realTimeFlag, source, n, htl, uid);
     	if(realTimeFlag) {
     		getOfferedTimeout = BlockReceiver.RECEIPT_TIMEOUT_REALTIME;
@@ -176,6 +179,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         this.tryOffersOnly = offersOnly;
         this.canWriteClientCache = canWriteClientCache;
         this.canWriteDatastore = canWriteDatastore;
+        this.peerScores = peerScores;
     }
 
     public void start() {
@@ -276,19 +280,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             	// NLM needs us to reroute.
             	dontDecrementHTLThisTime = false;
             } else {
-            	// FIXME SECURITY/NETWORK: Should we never decrement on the originator?
-            	// It would buy us another hop of no-cache, making it significantly
-            	// harder to trace after the fact; however it would make local 
-            	// requests fractionally easier to detect by peers.
-            	// IMHO local requests are so easy for peers to detect anyway that
-            	// it's probably worth it.
-            	// Currently the worst case is we don't cache on the originator
-            	// and we don't cache on the first peer we route to. If we get
-            	// RejectedOverload's etc we won't cache on them either, up to 5;
-            	// but lets assume that one of them accepts, and routes onward;
-            	// the *second* hop out (with the originator being 0) WILL cache.
-            	// Note also that changing this will have a performance impact.
-            	if((!starting) && (!canWriteStorePrev)) {
+            	if(!starting && !canWriteStorePrev) {
             		// We always decrement on starting a sender.
             		// However, after that, if our HTL is above the no-cache threshold,
             		// we do not want to decrement the HTL for trivial rejections (e.g. RejectedLoop),
@@ -568,6 +560,16 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         			return;
         		}
         		pn = offer.getPeerNode();
+
+			// If this is a local request, and we have an offer from a peer
+			// we do not trust enough to make local requests to, delete the
+			// offer from that peer, it is not useful.
+			if (source == null && !peerScores.trustedForLocalRequests(pn, null)) {
+				offers.deleteLastOffer();
+				pn = null;
+				continue;
+			}
+
         		status = tryOffer(offer, pn, offers);
         	}
 			switch(status) {
@@ -1167,6 +1169,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     				}
     				if(haveSetPRB) // It was a fork, so we didn't immediately send the data.
     					fireCHKTransferBegins();
+				peerScores.increaseScoreFor(next);
     				finish(SUCCESS, next, false);
     			} catch (Throwable t) {
         			Logger.error(this, "Failed on "+this, t);
