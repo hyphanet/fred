@@ -24,6 +24,7 @@ build_seed_file: $(REFS_DIR)
 
 clean:
 	rm -rf $(REFS_DIR)
+	rm seednodes.fref
 
 override_dh_auto_build: build_seed_file
 	export GRADLE_USER_HOME="`pwd`/gradle"; \
