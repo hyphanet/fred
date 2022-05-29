@@ -10,7 +10,6 @@ auth.negTypes=10
 ecdsa.P256.pub=MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEnwm~Hm2yGWRCfhmX2tJu3M-2cmaKIfsS9oXJTmdZ6kRq3tU~bBwFQY4Fabb44q~vXyIq9O4vNysvtGGV5qHXpA
 physical.udp==ZnJlZW5ldC5udWxsdm9pZC5tZTo2MTQ1NTsyNjA3OjUzMDA6MjAxOjMwMDA6MDowOjA6MTdkMzo2MTQ1NTsxNDkuNTYuNDUuMjAwOjYxNDU1
 End
-
 identity=AMJNW1zpC2TSVeyRI~rLq8Yb~9py2NSNefblrlECx2M
 lastGoodVersion==RnJlZCwwLjcsMS4wLDE0NzU
 location==MC4zMTIzNTIxNzYwMjI4MDg3NA
@@ -23,7 +22,6 @@ auth.negTypes=10
 ecdsa.P256.pub=MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEmaH8K8bKR8Hvvhxjr-TPUe4R4yItj-Dcr5vfmwg1j0wu4mWD10Z5S9rN2ZUYNFYoiwwFd8LdAGSRDtQFoHE~3g
 physical.udp==ZDYuZ251dGVsbGEyLmluZm86MzI2ODU7ODUuMjEyLjMuMTMwOjMyNjg1Ozg1LjIxMi4yNi4yNDI6MzI2ODU7ODUuMjEyLjI2LjI0Mjo2MTk3OA
 End
-
 identity=7EoZpRvanX5WdT1aWg82SZjf0wVQd-Xmg8KAPT-sXDE
 lastGoodVersion==RnJlZCwwLjcsMS4wLDE0NjY
 location==MC4wMDE5NTUyMDQwNDc0MTQzMzg0
@@ -41,7 +39,6 @@ dsaPubKey.y=Q-RXw568J3~j6i5W4Nr2oIm~Vejx8dClz7ULBJGH2RWdmlUVWE~8Jg4FJeTwYItawFDA
 ecdsa.P256.pub=MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE~Eo5a~5zfJhSnkNx2VpJnEFWpjwjmgO7-Tt-4rgDJ1LwxAKKKxwbSlJDUTkd0RMGDQCGxOedvYrOclYuF3-FjQ
 physical.udp==ZnJlZW5ldC5uZXJkeWJsb2tlLm5ldDozNDE1OzI1LjE1NC4xNjguMTY0OjM0MTU7MjEyLjE1OS4xNzcuMTk4OjM0MTU
 End
-
 identity=6W8b11Iy5jjW2WmLN-wQIPcwnzHLdsrKDTbpO2nbQoA
 lastGoodVersion==RnJlZCwwLjcsMS4wLDE0NjY
 location==MC40NTY1NDI5OTIzMTY0OTE4Nw
@@ -59,7 +56,6 @@ dsaPubKey.y=fAkSEP5sc4QwSD9OhES1jxJ8PqnUIMaCCJ6Rdl8uHtYKv2jDTlBrhnxs7Waxpowtxjeu
 ecdsa.P256.pub=MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEak4~fhdD5gTCnOkmyfJNt95yYtY3NkoRB-x6aMydjZT4D~Ppjh5o~NX7NEyI9ShiPj6S5HAoDnYlbCOKuqdjTw
 physical.udp==NzguNDYuNjMuMjA6MTI4Ng
 End
-
 identity=2vh9tO8Z8B9djfsEDf0~5J~sw9paO0T1gNy2eaG7BF4
 lastGoodVersion==RnJlZCwwLjcsMS4wLDE0NzU
 location==MC4yMTI2NjU4MDQ0NjA0MDA5NQ
@@ -72,7 +68,6 @@ auth.negTypes=10
 ecdsa.P256.pub=MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE9r4SocX5yq1icEMJn8c85JlJM0i6ifDbEypEdE3WMu6VoDxcCGyElZLpvhtMRzAzsin6kTHvtTi-A~uLGb6zAg
 physical.udp==a2F0aXNrYS5vcmc6NDk1MzI7ODAuNzUuMTAzLjg5OjQ5NTMy
 End
-
 identity=skCoNetjkg0rBksZE-cvoZ9~IXhno6RW5SDtAO8TNXs
 lastGoodVersion==RnJlZCwwLjcsMS4wLDE0NjY
 location==MC4zMjc3NTc2NTUzNTY1NTg5
@@ -90,7 +85,6 @@ dsaPubKey.y=HHGmoASQb6hDv~CCQX38DFyWQvoihXmdcCT8dUFwRdVXEdBBplxZTC7JLIh9Ct34aEPT
 ecdsa.P256.pub=MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAI5mk35~trhSVzDEJ8~ylQHuxvZTTcq7Df0eD7VaMeMtSLcjkbXR~xiNF~l~RMbyo9Qe6qToH2zDZiqLy6LoWQ
 physical.udp==Zm5ldC5tb29vLmNvbToxNDQxNjs5NS4yNS4xMjUuMjMxOjE0NDE2OzEwMC44MC4yMi4xMjQ6MTQ0MTY
 End
-
 identity=FuS~37Rro5JRvwfLfJQlWSyE4dlNsXFohoNACS6c6dE
 lastGoodVersion==RnJlZCwwLjcsMS4wLDE0NjY
 location==MC44MTcxODkxMzQ5NjAyNTY2
@@ -108,7 +102,6 @@ dsaPubKey.y=Uljye0KvEBtQ6xCaj6VhCEl-z4C6b7if0qSzvx6aqn0rxOeFVnbEKAZwHu~fLA8mpUwA
 ecdsa.P256.pub=MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEnFZUXRtj6eaHBCZqhilMRsnLDqCTRIkPDm5zpfjNdL7oOVcq07QuVeyyJAf9v6vOrjlzxv2w194i3ger31-YLA
 physical.udp==MTQ5LjE1NC4xNTkuMTcyOjYxMDc4
 End
-
 identity=-X2GrYYfJsKd0nAEMN6Bm79w~nljbKbR-x09eF8Rj2o
 lastGoodVersion==RnJlZCwwLjcsMS4wLDE0NzU
 location==MC4xNTY0OTk4NTYyODUzNTMxMg
@@ -121,7 +114,6 @@ auth.negTypes=10
 ecdsa.P256.pub=MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE9AhL1-WGRb0O8HYFxj0VeyYiGgCSHmTcO-fJ4ep6-1CnWlPv7Gxju~tVqNHNkTLQMlwCGYbFj2~lIXoIA5~zPQ
 physical.udp==MTM4LjE5Ny4xNzMuNjg6Mjc0NTk
 End
-
 identity=9KMO9Hrd7Jc4r8DCKCu2ZqlAZjAWCB5mhLi~A5n7wSM
 lastGoodVersion==RnJlZCwwLjcsMS4wLDE0NzU
 location==MC40NDgyODA1MDg0MDQ4ODIx
@@ -134,20 +126,6 @@ auth.negTypes=10
 ecdsa.P256.pub=MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE3oQ0lNMwEdKWApYyeNkDBfgzOXi5-eFUpoG7BomRHYGaWFSdWB4nTCZXrFUb1yJ4rl-d6yW98NynaMXGIDlCfg
 physical.udp==MTk4LjUwLjIyMy4yMCwyNjA3OjUzMDA6MjAzOjdhYzU6MTk4OjUwOjIyMzoyMDo1OTc0NzsxOTguNTAuMjIzLjIwOjU5NzQ3
 End
-
-identity=y885-nLCItbw5qD7Qq5xHKjwTm9RU6wrXM5t3BmCnUY
-lastGoodVersion==RnJlZCwwLjcsMS4wLDE0NzU
-location==MC42MzI1NTYxNDE0MDg0NjQ3
-opennet=true
-sigP256=MEUCIQDHqiAbDzX-uUFSoYP02k2WiCvvUdP1YmGv9d27hEEwkAIgBJ0Jigcj2dQHTPqdBKpK0XKfN0YqsM3WjMDRik6TlZs
-version==RnJlZCwwLjcsMS4wLDE0OTI
-ark.number=27
-ark.pubURI=SSK@AR2Fo2FDtZz~uYQzwopDgpCiHeCpzKXysohBhGnP9uQ,tJBUBJxaSGwx4DkYfTNiU5~9voibnV1jjgTHE2hHTOU,AQACAAE/ark
-auth.negTypes=10
-ecdsa.P256.pub=MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEiKkpl1ukJO2eBn7O3QbY4RL7Iqy26Sa75xHnI2dlDuEkZMgBn2zPn0li16j6J-0hN8cxrfw9P~VARBSXPoNuOg
-physical.udp==MTk4LjUwLjIyMy4yMSwyNjA3OjUzMDA6MjAzOjdhYzU6MTk4OjUwOjIyMzoyMTo2MzYxMDsxOTguNTAuMjIzLjIxOjYzNjEw
-End
-
 identity=y885-nLCItbw5qD7Qq5xHKjwTm9RU6wrXM5t3BmCnUY
 lastGoodVersion==RnJlZCwwLjcsMS4wLDE0NzU
 location==MC42MzI1NTYxNDE0MDg0NjQ3
