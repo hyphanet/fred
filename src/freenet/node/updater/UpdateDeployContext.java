@@ -20,6 +20,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.updater.MainJarDependenciesChecker.Dependency;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
+import freenet.support.JVMVersion;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
 
@@ -146,7 +147,10 @@ public class UpdateDeployContext {
 		boolean writtenAnchorInterval = false;
 		/** Add the relative JNA tempdir if it does not exist already */
 		boolean writtenJnaTmpDir = false;
-		
+		/** Allow accessing internal modules in Java 16+ */
+		boolean writtenIllegalAccessPermit = false;
+		boolean writtenPrivateModulesOpens = false;
+
 		String newMain = mainJarAbsolute ? newMainJar.getAbsolutePath() : newMainJar.getPath();
 		
 		String mainRHS = null;
@@ -177,7 +181,7 @@ public class UpdateDeployContext {
 					// Ignore the numbers.
 					String rhs = line.substring(idx+1);
 					dontWrite = true;
-					if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") || 
+					if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") ||
 							rhs.equals("freenet-stable-latest.jar") || rhs.equals("freenet-stable-latest.jar.new") ||
 							rhs.equals("freenet-testing-latest.jar") || rhs.equals("freenet-testing-latest.jar.new")) {
 						if(writtenNewJar)
@@ -210,6 +214,12 @@ public class UpdateDeployContext {
 				 additionalJavaArguments.add(rhs);
 				 if (rhs.startsWith("-Djava.io.tmpdir=")) {
 				       writtenJnaTmpDir = true;
+				 }
+				 if (rhs.startsWith("--illegal-access=permit")) {
+				       writtenIllegalAccessPermit = true;
+				 }
+				 if (rhs.startsWith("--add-opens=")) {
+				       writtenPrivateModulesOpens = true;
 				 }
 			    }
 			} else if(lowcaseLine.equals("wrapper.restart.reload_configuration=true")) {
@@ -257,8 +267,27 @@ public class UpdateDeployContext {
 		// ensure that we have an entry for the JNA tempdir
 		if (!writtenJnaTmpDir) {
 			bw.write("wrapper.java.additional."+count+"=-Djava.io.tmpdir=./tmp/"+'\n');
+			count++;
 		}
-		
+
+		// allow accessing internal modules (required for Java 16, only supported since Java 9)
+		if (!writtenIllegalAccessPermit && JVMVersion.supportsModules()) {
+			bw.write("wrapper.java.additional."+count+"=--illegal-access=permit"+'\n');
+			count++;
+		}
+		// open internal modules (required for Java 17, only supported since Java 9)
+		if (!writtenPrivateModulesOpens && JVMVersion.supportsModules()) {
+            // WoT: Unable to make field private final java.lang.String java.lang.Enum.name accessible
+			bw.write("wrapper.java.additional."+count+"=--add-opens=java.base/java.lang=ALL-UNNAMED"+'\n');
+			count++;
+            // Unable to make public int java.util.Collections$UnmodifiableCollection.size() accessible
+			bw.write("wrapper.java.additional."+count+"=--add-opens=java.base/java.util=ALL-UNNAMED"+'\n');
+			count++;
+            // Unable to make field private int java.io.FileDescriptor.fd accessible
+			bw.write("wrapper.java.additional."+count+"=--add-opens=java.base/java.io=ALL-UNNAMED"+'\n');
+			count++;
+		}
+
 		for(String s : otherLines)
 			bw.write(s+'\n');
 
@@ -342,43 +371,68 @@ public class UpdateDeployContext {
 			}
 		}
 		
+		FileInputStream fis = null;
+		BufferedInputStream bis = null;
+		InputStreamReader isr = null;
+		BufferedReader br = null;
+		FileOutputStream fos = null;
+		OutputStreamWriter osw = null;
+		BufferedWriter bw = null;
+		
 		boolean success = false;
 		
-		try(BufferedReader br = new BufferedReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(oldConfig))))) {
-			try( BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(newConfig))) ) {
+		try {
+		
+		fis = new FileInputStream(oldConfig);
+		bis = new BufferedInputStream(fis);
+		isr = new InputStreamReader(bis);
+		br = new BufferedReader(isr);
+		
+		fos = new FileOutputStream(newConfig);
+		osw = new OutputStreamWriter(fos);
+		bw = new BufferedWriter(osw);
 
-				String line;
-				while((line = br.readLine()) != null) {
-					
-					if(line.equals("#" + markerComment))
-						return CHANGED.ALREADY;
-					
-					if(line.startsWith("wrapper.java.maxmemory=")) {
-						try {
-							int memoryLimit = Integer.parseInt(line.substring("wrapper.java.maxmemory=".length()));
-							int newMemoryLimit = memoryLimit + extraMemoryMB;
-							// There have been some cases where really high limits have caused the JVM to do bad things.
-							if(NodeStarter.isSomething32bits() && newMemoryLimit > 1408) {
-								Logger.error(UpdateDeployContext.class, "We've detected a 32bit JVM so we're refusing to set maxmemory to "+newMemoryLimit);
-								newMemoryLimit = 1408;
-							}
-							bw.write('#' + markerComment + '\n');
-							bw.write("wrapper.java.maxmemory="+newMemoryLimit+'\n');
-							success = true;
-							continue;
-						} catch (NumberFormatException e) {
-							// Grrrrr!
-						}
+		String line;
+		
+		while((line = br.readLine()) != null) {
+			
+			if(line.equals("#" + markerComment))
+				return CHANGED.ALREADY;
+			
+			if(line.startsWith("wrapper.java.maxmemory=")) {
+				try {
+					int memoryLimit = Integer.parseInt(line.substring("wrapper.java.maxmemory=".length()));
+					int newMemoryLimit = memoryLimit + extraMemoryMB;
+					// There have been some cases where really high limits have caused the JVM to do bad things.
+					if(NodeStarter.isSomething32bits() && newMemoryLimit > 1408) {
+						Logger.error(UpdateDeployContext.class, "We've detected a 32bit JVM so we're refusing to set maxmemory to "+newMemoryLimit);
+						newMemoryLimit = 1408;
 					}
-				
-					bw.write(line+'\n');
+					bw.write('#' + markerComment + '\n');
+					bw.write("wrapper.java.maxmemory="+newMemoryLimit+'\n');
+					success = true;
+					continue;
+				} catch (NumberFormatException e) {
+					// Grrrrr!
 				}
 			}
 			
+			bw.write(line+'\n');
+		}
+		br.close();
+		
 		} catch (IOException e) {
 			newConfig.delete();
 			System.err.println("Unable to rewrite wrapper.conf with new memory limit.");
 			return CHANGED.FAIL;
+		} finally {
+			Closer.close(br);
+			Closer.close(isr);
+			Closer.close(bis);
+			Closer.close(fis);
+			Closer.close(bw);
+			Closer.close(osw);
+			Closer.close(fos);
 		}
 		
 		if(success) {

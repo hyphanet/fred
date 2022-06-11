@@ -59,15 +59,18 @@ final public class FileUtil {
 	        skip = length - byteLimit;
 	    }
 
+	    FileInputStream fis = null;
 	    LineReadingInputStream lis = null;
 	    try {
-	        lis = new LineReadingInputStream(new FileInputStream(logfile));
+	        fis = new FileInputStream(logfile);
+	        lis = new LineReadingInputStream(fis);
 	        if (skip > 0) {
 	            lis.skip(skip);
 	            lis.readLine(100000, 200, true);
 	        }
 	    } catch (IOException e) {
 	        Closer.close(lis);
+	        Closer.close(fis);
 	        throw e;
 	    }
 	    return lis;
@@ -305,19 +308,30 @@ final public class FileUtil {
      * @throws IOException if an I/O error occurs
      */
 	public static StringBuilder readUTF(File file, long offset) throws FileNotFoundException, IOException {
-		try(FileInputStream fis = new FileInputStream(file)) {
+		StringBuilder result = new StringBuilder();
+		FileInputStream fis = null;
+		BufferedInputStream bis = null;
+		InputStreamReader isr = null;
+
+		try {
+			fis = new FileInputStream(file);
 			skipFully(fis, offset);
-			try(InputStreamReader isr = new InputStreamReader(new BufferedInputStream(fis), "UTF-8")) {
-				
-				StringBuilder result = new StringBuilder();
-				char[] buf = new char[4096];
-				int length = 0;
-				while((length = isr.read(buf)) > 0) {
-					result.append(buf, 0, length);
-				}
-				return result;
+			bis = new BufferedInputStream(fis);
+			isr = new InputStreamReader(bis, "UTF-8");
+
+			char[] buf = new char[4096];
+			int length = 0;
+
+			while((length = isr.read(buf)) > 0) {
+				result.append(buf, 0, length);
 			}
+
+		} finally {
+			Closer.close(isr);
+			Closer.close(bis);
+			Closer.close(fis);
 		}
+		return result;
 	}
 	
 	/**
@@ -340,12 +354,16 @@ final public class FileUtil {
 	public static StringBuilder readUTF(InputStream stream, long offset) throws IOException {
 	    StringBuilder result = new StringBuilder();
 	    skipFully(stream, offset);
-	    try(InputStreamReader reader = new InputStreamReader(stream, "UTF-8")) {
-				char[] buf = new char[4096];
-				int length = 0;
-				while((length = reader.read(buf)) > 0) {
-						result.append(buf, 0, length);
-				}
+	    InputStreamReader reader = null;
+	    try {
+	        reader = new InputStreamReader(stream, "UTF-8");
+	        char[] buf = new char[4096];
+	        int length = 0;
+	        while((length = reader.read(buf)) > 0) {
+	            result.append(buf, 0, length);
+	        }
+	    } finally {
+	        Closer.close(reader);
 	    }
 	    return result;
 	}
@@ -664,13 +682,18 @@ final public class FileUtil {
 		if(!file.exists()) return;
 		long size = file.length();
 		if(size > 0) {
-			try(RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
+			RandomAccessFile raf = null;
+			try {
 				System.out.println("Securely deleting "+file+" which is of length "+size+" bytes...");
-				long count;
+				raf = new RandomAccessFile(file, "rw");
 				// Random data first.
 				raf.seek(0);
 				fill(new RandomAccessFileOutputStream(raf), size);
 				raf.getFD().sync();
+				raf.close();
+				raf = null;
+			} finally {
+				Closer.close(raf);
 			}
 		}
 		if((!file.delete()) && file.exists())

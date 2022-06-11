@@ -227,7 +227,6 @@ public class PeerManager {
 
 	private boolean readPeers(File peersFile, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
 		boolean someBroken = false;
-		boolean gotSome = false;
 		FileInputStream fis;
 		try {
 			fis = new FileInputStream(peersFile);
@@ -258,7 +257,6 @@ public class PeerManager {
 					        opennet.addOldOpennetNode((OpennetPeerNode)pn);
 					} else
 						addPeer(pn, true, false);
-					gotSome = true;
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					System.err.println("Cannot parse a friend from the peers file: "+e2);
@@ -1504,15 +1502,16 @@ public class PeerManager {
 	private void writePeersInner(String filename, String sb, int maxBackups, boolean rotateBackups) {
 		assert(maxBackups >= 1);
 		synchronized(writePeerFileSync) {
+			FileOutputStream fos = null;
 			File f;
+			File full = new File(filename).getAbsoluteFile();
 			try {
-				File full = new File(filename).getAbsoluteFile();
 				f = File.createTempFile(full.getName()+".", ".tmp", full.getParentFile());
 			} catch (IOException e2) {
 				Logger.error(this, "Cannot write peers to disk: Cannot create temp file - " + e2, e2);
+				Closer.close(fos);
 				return;
 			}
-			FileOutputStream fos = null;
 			try {
 				fos = new FileOutputStream(f);
 			} catch(FileNotFoundException e2) {
@@ -1792,7 +1791,7 @@ public class PeerManager {
 						break;
 				}
 			}
-			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting+" No load stats: "+numberOfNoLoadStats);
+			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting + " RoutingDisabled " + numberOfRoutingDisabled + " No load stats: "+numberOfNoLoadStats);
 			nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
 		}
 	}

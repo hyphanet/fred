@@ -20,7 +20,8 @@ import freenet.support.math.MersenneTwister;
 public final class Fallocate {
 
   private static final boolean IS_LINUX = Platform.isLinux();
-  private static final boolean IS_POSIX = !Platform.isWindows() && !Platform.isMac();
+  private static final boolean IS_POSIX = !Platform.isWindows() && !Platform.isMac() && !Platform.isOpenBSD();
+  private static final boolean IS_ANDROID = Platform.isAndroid();
 
   private static final int FALLOC_FL_KEEP_SIZE = 0x01;
 
@@ -38,6 +39,10 @@ public final class Fallocate {
 
   public static Fallocate forChannel(FileChannel channel, long final_filesize) {
     return new Fallocate(channel, getDescriptor(channel), final_filesize);
+  }
+
+  public static Fallocate forChannel(FileChannel channel, FileDescriptor fd, long final_filesize) {
+    return new Fallocate(channel, getDescriptor(fd), final_filesize);
   }
 
   public Fallocate fromOffset(long offset) {
@@ -82,7 +87,7 @@ public final class Fallocate {
 
   private static class FallocateHolder {
     static {
-      Native.register(Platform.C_LIBRARY_NAME);
+      Native.register(FallocateHolder.class, Platform.C_LIBRARY_NAME);
     }
 
     private static native int fallocate(int fd, int mode, long offset, long length);
@@ -90,7 +95,7 @@ public final class Fallocate {
 
   private static class FallocateHolderPOSIX {
     static {
-      Native.register(Platform.C_LIBRARY_NAME);
+      Native.register(FallocateHolderPOSIX.class, Platform.C_LIBRARY_NAME);
     }
 
     private static native int posix_fallocate(int fd, long offset, long length);
@@ -110,7 +115,7 @@ public final class Fallocate {
   private static int getDescriptor(FileDescriptor descriptor) {
     try {
       // Oracle java.io.FileDescriptor declares private int fd
-      final Field field = descriptor.getClass().getDeclaredField("fd");
+      final Field field = descriptor.getClass().getDeclaredField(IS_ANDROID ? "descriptor" : "fd");
       field.setAccessible(true);
       return (int) field.get(descriptor);
     } catch (final Exception e) {

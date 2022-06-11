@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-
+import java.util.ArrayList;
+import java.util.List;
 
 import junit.framework.TestCase;
 import freenet.support.api.Bucket;
@@ -17,10 +18,9 @@ public class M3UFilterTest extends TestCase {
         { "./m3u/unsafe.m3u", "./m3u/unsafe_madesafe.m3u" },
     };
 
-    private static final String BASE_URI_PROTOCOL = "http";
-    private static final String BASE_URI_CONTENT = "localhost:8888";
+    private static final String SCHEME_HOST_PORT = "http://localhost:8888";
     private static final String BASE_KEY = "USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/FakeM3UHostingFreesite/23/";
-    private static final String BASE_URI = BASE_URI_PROTOCOL+"://"+BASE_URI_CONTENT+'/'+BASE_KEY;
+    private static final String BASE_URI = '/' + BASE_KEY;
 
     public void testSuiteTest() throws IOException {
         M3UFilter filter = new M3UFilter();
@@ -31,22 +31,12 @@ public class M3UFilterTest extends TestCase {
             Bucket ibo;
             Bucket ibprocessed = new ArrayBucket();
             Bucket ibc;
-            try {
-                ibo = resourceToBucket(original);
-            } catch (IOException e) {
-                System.out.println(original + " not found, test skipped");
-                continue;
-            }
-            try {
-                ibc = resourceToBucket(correct);
-            } catch (IOException e) {
-                System.out.println(correct + " not found, test skipped");
-                continue;
-            }
+            ibo = resourceToBucket(original);
+            ibc = resourceToBucket(correct);
 
             try {
                 filter.readFilter(ibo.getInputStream(), ibprocessed.getOutputStream(), "UTF-8", null,
-                          new GenericReadFilterCallback(new URI(BASE_URI), null, null, null));
+                    SCHEME_HOST_PORT, new GenericReadFilterCallback(new URI(BASE_URI), null, null, null));
                 String result = ibprocessed.toString();
 
                 assertTrue(original + " should be filtered as " + correct + " but was filtered as\n" + result + "\ninstead of the correct\n" + bucketToString((ArrayBucket)ibc), result.equals(bucketToString((ArrayBucket)ibc)));
@@ -60,7 +50,7 @@ public class M3UFilterTest extends TestCase {
 
     protected ArrayBucket resourceToBucket(String filename) throws IOException {
         InputStream is = getClass().getResourceAsStream(filename);
-        if (is == null) throw new java.io.FileNotFoundException();
+        if (is == null) throw new java.io.FileNotFoundException(filename);
         ArrayBucket ab = new ArrayBucket();
         BucketTools.copyFrom(ab, is, Long.MAX_VALUE);
         return ab;

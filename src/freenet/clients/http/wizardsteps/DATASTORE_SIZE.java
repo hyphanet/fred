@@ -44,8 +44,12 @@ public class DATASTORE_SIZE implements Step {
 
 		@SuppressWarnings("unchecked")
 		Option<Long> sizeOption = (Option<Long>) config.get("node").getOption("storeSize");
+		@SuppressWarnings("unchecked")
+		Option<Long> clientCacheSizeOption = (Option<Long>) config.get("node").getOption("clientCacheSize");
+		@SuppressWarnings("unchecked")
+		Option<Long> slashdotCacheSizeOption = (Option<Long>) config.get("node").getOption("slashdotCacheSize");
 		if(!sizeOption.isDefault()) {
-			long current = sizeOption.getValue();
+			long current = sizeOption.getValue() + clientCacheSizeOption.getValue() + slashdotCacheSizeOption.getValue();
 			result.addChild("option",
 			        new String[] { "value", "selected" },
 			        new String[] { SizeUtil.formatSize(current), "on" }, WizardL10n.l10n("currentPrefix")+" "+SizeUtil.formatSize(current));
@@ -147,4 +151,5 @@ public class DATASTORE_SIZE implements Step {
 	private long canAutoconfigureDatastoreSize() {
 		return DatastoreUtil.autodetectDatastoreSize(core, config);
 	}
+   
 }

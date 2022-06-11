@@ -181,27 +181,18 @@ public class ContentFilter {
 	}
 
 	/**
-	 * Filter some data.
-	 *
-	 * @param input
-	 *            Source stream to read data from
-	 * @param output
-	 *            Stream to write filtered data to
-	 * @param typeName
-	 *            MIME type for input data
-	 * @param maybeCharset
-	 * 			  MIME type of the referring document, as a hint, some types,
-	 * 			  such as CSS, will inherit it if no other data is available.
-	 * @return
-	 * @throws IOException
-	 *             If an internal error involving s occurred.
-	 * @throws UnsafeContentTypeException
-	 *             If the MIME type is declared unsafe (e.g. pdf files)
-	 * @throws IllegalStateException
-	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
+	 * Compatibility for plugins: passes schemeHostAndPort null.
 	 */
-	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
-		return filter(input, output, typeName, baseURI, cb, trc, maybeCharset, null);
+	@Deprecated // please move to filter with schemeHostAndPort, called from this method.
+	public static FilterStatus filter(
+			InputStream input,
+			OutputStream output,
+			String typeName,
+			URI baseURI,
+			FoundURICallback cb,
+			TagReplacerCallback trc,
+			String maybeCharset) throws UnsafeContentTypeException, IOException {
+		return filter(input, output, typeName, baseURI, null, cb, trc, maybeCharset, null);
 	}
 
 	/**
@@ -213,6 +204,8 @@ public class ContentFilter {
 	 *            Stream to write filtered data to
 	 * @param typeName
 	 *            MIME type for input data
+	 * @param schemeHostAndPort
+	 *        HOST and PORT from the request
 	 * @param maybeCharset
 	 * 			  MIME type of the referring document, as a hint, some types,
 	 * 			  such as CSS, will inherit it if no other data is available.
@@ -224,8 +217,16 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset, LinkFilterExceptionProvider linkFilterExceptionProvider) throws UnsafeContentTypeException, IOException {
-		return filter(input, output, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc, linkFilterExceptionProvider));
+	public static FilterStatus filter(
+			InputStream input,
+			OutputStream output,
+			String typeName,
+			URI baseURI,
+			String schemeHostAndPort,
+			FoundURICallback cb,
+			TagReplacerCallback trc,
+			String maybeCharset) throws UnsafeContentTypeException, IOException {
+		return filter(input, output, typeName, baseURI, schemeHostAndPort, cb, trc, maybeCharset, null);
 	}
 
 	/**
@@ -237,9 +238,54 @@ public class ContentFilter {
 	 *            Stream to write filtered data to
 	 * @param typeName
 	 *            MIME type for input data
+	 * @param schemeHostAndPort
+	 *        HOST and PORT from the request
 	 * @param maybeCharset
 	 * 			  MIME type of the referring document, as a hint, some types,
 	 * 			  such as CSS, will inherit it if no other data is available.
+	 * @return
+	 * @throws IOException
+	 *             If an internal error involving s occurred.
+	 * @throws UnsafeContentTypeException
+	 *             If the MIME type is declared unsafe (e.g. pdf files)
+	 * @throws IllegalStateException
+	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
+	 */
+	public static FilterStatus filter(
+			InputStream input,
+			OutputStream output,
+			String typeName,
+			URI baseURI,
+			String schemeHostAndPort,
+			FoundURICallback cb,
+			TagReplacerCallback trc,
+			String maybeCharset,
+			LinkFilterExceptionProvider linkFilterExceptionProvider) throws UnsafeContentTypeException, IOException {
+		return filter(input, output, typeName, maybeCharset, schemeHostAndPort, new GenericReadFilterCallback(baseURI, cb, trc, linkFilterExceptionProvider));
+	}
+
+	/**
+	 * Compatibility for plugins: passes schemeHostAndPort null.
+	 */
+	@Deprecated // please move to filter with schemeHostAndPort, called from this method.
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
+        return filter(input, output, typeName, maybeCharset, null, filterCallback);
+    }
+
+     /**
+	 * Filter some data.
+	 *
+	 * @param input
+	 *            Source stream to read data from
+	 * @param output
+	 *            Stream to write filtered data to
+	 * @param typeName
+	 *            MIME type for input data
+	 * @param maybeCharset
+	 * 			  MIME type of the referring document, as a hint, some types,
+	 * 			  such as CSS, will inherit it if no other data is available.
+	 * @param schemeHostAndPort
+	 *        HOST and PORT from the request
 	 * @throws IOException
 	 *             If an internal error involving buckets occurred.
 	 * @throws UnsafeContentTypeException
@@ -247,12 +293,12 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, String maybeCharset, String schemeHostAndPort, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
 		if(logMINOR) Logger.minor(ContentFilter.class, "Filtering data of type"+typeName);
 		String type = typeName;
 		String options = "";
 		String charset = null;
-		HashMap<String, String> otherParams = null;
+		HashMap<String, String> otherMimeTypeParams = new LinkedHashMap<>();
 		input = new BufferedInputStream(input);
 
 		// First parse the MIME type
@@ -275,9 +321,7 @@ public class ContentFilter {
 				if(before.equals("charset")) {
 					charset = after;
 				} else {
-					if (otherParams == null)
-						otherParams = new LinkedHashMap<String, String>();
-					otherParams.put(before, after);
+					otherMimeTypeParams.put(before, after);
 				}
 			}
 		}
@@ -306,7 +350,7 @@ public class ContentFilter {
 					charset = detectCharset(charsetBuffer, offset, handler, maybeCharset);
 				}
 				try {
-					handler.readFilter.readFilter(input, output, charset, otherParams, filterCallback);
+					handler.readFilter.readFilter(input, output, charset, otherMimeTypeParams, schemeHostAndPort, filterCallback);
 				}
 				catch(EOFException e) {
 					Logger.error(ContentFilter.class, "EOFException caught: "+e,e);

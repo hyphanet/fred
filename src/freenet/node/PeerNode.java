@@ -267,6 +267,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private long totalOutputSinceStartup;
 	/** Peer node public key; changing this means new noderef */
 	public final ECPublicKey peerECDSAPubKey;
+    /** FIXME: Used by the N2NChat plugin because the getter is protected! */
 	public final byte[] peerECDSAPubKeyHash;
 	private boolean isSignatureVerificationSuccessfull;
 	/** Incoming setup key. Used to decrypt incoming auth packets.
@@ -2056,7 +2057,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			isRoutable = routable;
 			unroutableNewerVersion = newer;
 			unroutableOlderVersion = older;
-			boolean notReusingTracker = false;
 			long oldBootID;
 			oldBootID = bootID.getAndSet(thisBootID);
 			bootIDChanged = oldBootID != thisBootID;
@@ -2378,7 +2378,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		offset++;
 		length--;
 		if((firstByte & 0x2) == 2) { // DSAcompressed group; legacy
-			int groupIndex = (data[offset] & 0xff);
 			offset++;
 			length--;
 		}
@@ -2881,7 +2880,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	static final int BACKOFF_MULTIPLIER = 2;
 	/** Maximum upper limit to routing backoff slow or fast */
-	static final int MAX_ROUTING_BACKOFF_LENGTH = (int) HOURS.toMillis(3);
+	static final int MAX_ROUTING_BACKOFF_LENGTH = (int) MINUTES.toMillis(8);
 	/** Current nominal routing backoff length */
 
 	// Transfer Backoff
@@ -2890,7 +2889,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	long transferBackedOffUntilBulk = -1;
 	static final int INITIAL_TRANSFER_BACKOFF_LENGTH = (int) SECONDS.toMillis(30); // 60 seconds, but it starts at twice this.
 	static final int TRANSFER_BACKOFF_MULTIPLIER = 2;
-	static final int MAX_TRANSFER_BACKOFF_LENGTH = (int) HOURS.toMillis(3);
+	static final int MAX_TRANSFER_BACKOFF_LENGTH = (int) MINUTES.toMillis(8);
 
 	int transferBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
 	int transferBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;

@@ -23,7 +23,6 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 
 	@Override
 	OggPage parse(OggPage page) throws IOException {
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		page = super.parse(page);
 		if(!isValidStream) return null;
 		ArrayList<CodecPacket> parsedPackets = new ArrayList<CodecPacket>();

@@ -7,12 +7,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.*;
 
+import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.fcp.AddPeer;
 import freenet.clients.http.complexhtmlnodes.PeerTrustInputForAddPeerBoxNode;
@@ -23,6 +25,7 @@ import freenet.config.ConfigException;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.PacketThrottle;
+import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
@@ -666,8 +669,14 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				// fetch reference from a URL
 				BufferedReader in = null;
 				try {
-					URL url = new URL(urltext);
-					ref = AddPeer.getReferenceFromURL(url);
+					try {
+						FreenetURI refUri = new FreenetURI(urltext);
+					  ref = AddPeer.getReferenceFromFreenetURI(refUri, client);
+					} catch (MalformedURLException | FetchException e) {
+						Logger.warning(this, "Url cannot be used as Freenet URI, trying to fetch as URL: " + urltext);
+						URL url = new URL(urltext);
+					  ref = AddPeer.getReferenceFromURL(url);
+					}
 				} catch (IOException e) {
 					this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), NodeL10n.getBase().getString("DarknetConnectionsToadlet.cantFetchNoderefURL", new String[] { "url" }, new String[] { urltext }), !isOpennet());
 					return;
@@ -768,8 +777,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		SimpleFieldSet fs;
 		
 		try {
-			nodeReference = Fields.trimLines(nodeReference);
-			fs = new SimpleFieldSet(nodeReference, false, true, true);
+			fs = parseNoderefLiberally(nodeReference);
 			if(!fs.getEndMarker().endsWith("End")) {
 				Logger.error(this, "Trying to add noderef with end marker \""+fs.getEndMarker()+"\"");
 				return PeerAdditionReturnCodes.WRONG_ENCODING;
@@ -807,6 +815,17 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			return PeerAdditionReturnCodes.ALREADY_IN_REFERENCE;
 		}
 		return PeerAdditionReturnCodes.OK;
+	}
+
+	private static SimpleFieldSet parseNoderefLiberally(String nodeReference) throws IOException {
+		nodeReference = Fields.trimLines(nodeReference);
+		SimpleFieldSet fs = new SimpleFieldSet(nodeReference, false, true, true);
+		if (fs.directKeys().contains("lastGoodVersion")) {
+			return fs;
+		} else {
+			Logger.warning(null, "Cannot parse noderef: does not contain lastGoodVersion, trying to replace all spaces with newlines and parsing again.");
+			return new SimpleFieldSet(nodeReference.replace(" ", "\n"), false, true, true);
+		}
 	}
 
 	/** Adding a darknet node or an opennet node? */

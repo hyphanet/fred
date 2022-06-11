@@ -569,8 +569,6 @@ public class SplitFileInserterSegmentStorage {
         int checksumLength = parent.checker.checksumLength();
         System.arraycopy(buf, 0, checkBuf, prefix.length, buf.length - checksumLength);
         byte[] checksum = Arrays.copyOfRange(buf, buf.length - checksumLength, buf.length);
-        if(parent.checker.checkChecksum(checkBuf, 0, checkBuf.length, checksum))
-            throw new MissingKeyException();
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buf));
         byte b = dis.readByte();
         if(b != 1) throw new MissingKeyException();
