@@ -122,7 +122,7 @@ public class LocationManager implements ByteCounter {
     final SwapRequestSender sender;
     final Node node;
     long timeLastSuccessfullySwapped;
-    public static Clock clockForTesting = Clock.system(ZoneOffset.UTC);
+    public static Clock systemClockUTC = Clock.system(ZoneOffset.UTC);
 
     public LocationManager(RandomSource r, Node node) {
         loc = r.nextDouble();
@@ -195,7 +195,7 @@ public class LocationManager implements ByteCounter {
 
             @Override
             public void run() {
-                LocalDateTime now = LocalDateTime.now(clockForTesting);
+                LocalDateTime now = LocalDateTime.now(systemClockUTC);
                 long millisUntilNextRequestTomorrow = getNextPitchBlackMitigationDelayMillisecondsTomorrow(now);
                 node.ticker.queueTimedJob(this, millisUntilNextRequestTomorrow);
                 if (swappingDisabled()) {
@@ -258,12 +258,12 @@ public class LocationManager implements ByteCounter {
     }
 
     private long getMillisUntilRandomTimeTomorrow(LocalDateTime now) {
-        LocalDateTime tomorrowHourUTC = now
+        LocalDateTime tomorrowTime = now
             .plusDays(1)
             .withHour(node.fastWeakRandom.nextInt(23))
             .withMinute(node.fastWeakRandom.nextInt(59))
             .withSecond(node.fastWeakRandom.nextInt(59));
-        return now.until(tomorrowHourUTC, ChronoUnit.MILLIS);
+        return now.until(tomorrowTime, ChronoUnit.MILLIS);
     }
 
     public String getPitchBlackPrefix(String middleSubstring) {
@@ -1624,11 +1624,11 @@ public class LocationManager implements ByteCounter {
 	}
 
 	public static void setClockForTesting(Clock clock) {
-        clockForTesting = clock;
+        systemClockUTC = clock;
   }
 
 	public static Clock getClockForTesting() {
-        return clockForTesting;
+        return systemClockUTC;
   }
 
 	public static double[] extractLocs(PeerNode[] peers, boolean indicateBackoff) {
