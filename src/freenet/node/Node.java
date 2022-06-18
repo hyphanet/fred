@@ -3731,7 +3731,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Store a datum.
 	 * @param block
 	 *      a KeyBlock
-	 * @param deep If true, insert to the store as well as the cache. Do not set
+	 * @param deep If true, insert to the store rather than the cache. Do not set
 	 * this to true unless the store results from an insert, and this node is the
 	 * closest node to the target; see the description of chkDatastore.
 	 */
@@ -3761,9 +3761,10 @@ public class Node implements TimeSkewDetectorCallback {
 					chkDatastore.put(block, !canWriteDatastore);
 					nodeStats.avgStoreCHKLocation.report(loc);
 
+				} else {
+					chkDatacache.put(block, !canWriteDatastore);
+					nodeStats.avgCacheCHKLocation.report(loc);
 				}
-				chkDatacache.put(block, !canWriteDatastore);
-				nodeStats.avgCacheCHKLocation.report(loc);
 			}
 			if (canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);
@@ -3809,9 +3810,10 @@ public class Node implements TimeSkewDetectorCallback {
 				if(deep) {
 					sskDatastore.put(block, overwrite, !canWriteDatastore);
 					nodeStats.avgStoreSSKLocation.report(loc);
+				} else {
+					sskDatacache.put(block, overwrite, !canWriteDatastore);
+					nodeStats.avgCacheSSKLocation.report(loc);
 				}
-				sskDatacache.put(block, overwrite, !canWriteDatastore);
-				nodeStats.avgCacheSSKLocation.report(loc);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);
