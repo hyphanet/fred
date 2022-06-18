@@ -759,6 +759,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private boolean peersOffersDismissed;
 
+	private int datastoreTooSmallDismissed;
+
 	/**
 	 * Minimum bandwidth limit in bytes considered usable: 10 KiB. If there is an attempt to set a limit below this -
 	 * excluding the reserved -1 for input bandwidth - the callback will throw. See the callbacks for
@@ -2378,31 +2380,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 		writeLocalToDatastore = nodeConfig.getBoolean("writeLocalToDatastore");
 
-		// LOW network *and* physical seclevel = writeLocalToDatastore
-
-		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
-
-			@Override
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				if(newLevel == NETWORK_THREAT_LEVEL.LOW && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW)
-					writeLocalToDatastore = true;
-				else
-					writeLocalToDatastore = false;
-			}
-
-		});
-
-		securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
-
-			@Override
-			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
-				if(newLevel == PHYSICAL_THREAT_LEVEL.LOW && securityLevels.getNetworkThreatLevel() == NETWORK_THREAT_LEVEL.LOW)
-					writeLocalToDatastore = true;
-				else
-					writeLocalToDatastore = false;
-			}
-
-		});
+		// This is dangerous on opennet, but was enabled by default before if both security levels
+		// were LOW. Upgrade to safe value; this setting only makes sense on small darknets.
+		if (opennetEnabled) {
+			writeLocalToDatastore = false;
+		}
 
 		nodeConfig.register("slashdotCacheLifetime", MINUTES.toMillis(30), sortOrder++, true, false, "Node.slashdotCacheLifetime", "Node.slashdotCacheLifetimeLong", new LongCallback() {
 
@@ -2575,6 +2557,21 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		);
 		enableNodeDiagnostics = nodeConfig.getBoolean("enableNodeDiagnostics");
+
+		nodeConfig.register("datastoreTooSmallDismissed", -1, sortOrder++, true, false,
+				"Node.datastoreTooSmallDismissed", "Node.datastoreTooSmallDismissedLong", new IntCallback() {
+
+					@Override
+					public Integer get() {
+						return datastoreTooSmallDismissed;
+					}
+
+					@Override
+					public void set(Integer val) {
+						datastoreTooSmallDismissed = val;
+					}
+				});
+		datastoreTooSmallDismissed = nodeConfig.getInt("datastoreTooSmallDismissed");
 
 		updateMTU();
 
