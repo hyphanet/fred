@@ -1,7 +1,8 @@
 next:
 
 - Show a user alert (once every Freenet update) if the datastore is
-  below 10% of available space   thanks to Trivuele
+  below 10% of available space with a link to the store size wizard page
+  to make it easy to increase the store ― thanks to Trivuele
 - Do not store blocks in the cache, if they are eligible for the store
   (should increase usable cache size)   thanks to Trivuele
 - m3u-player: more robust sizes, do not use overlay for audio. This
