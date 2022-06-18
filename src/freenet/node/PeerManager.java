@@ -1007,11 +1007,10 @@ public class PeerManager {
 				continue;
 			}
 			if(enableFOAFMitigationHack) {
-				double selectionRate = selectionRates[i];
-				double selectionSamplesPercentage = selectionRate / totalSelectionRate;
-				if(PeerNode.SELECTION_PERCENTAGE_WARNING < selectionSamplesPercentage) {
+				double selectionPercentage = 100.0 * selectionRates[i] / totalSelectionRate;
+				if(selectionPercentage > PeerNode.SELECTION_PERCENTAGE_WARNING) {
 					if(logMINOR)
-						Logger.minor(this, "Skipping over-selectionned peer(" + selectionSamplesPercentage + "%): " + p.getPeer());
+						Logger.minor(this, "Skipping over-selected peer(" + selectionPercentage + "%): " + p.getPeer());
 					continue;
 				}
 			}
