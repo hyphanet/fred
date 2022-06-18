@@ -9,7 +9,7 @@ Homepage: http://freenetproject.org/
 
 Package: freenet
 Architecture: any
-Depends: adduser, default-jre-headless, libservice-wrapper-java, service-wrapper
+Depends: adduser, default-jre-headless, libservice-wrapper-java, service-wrapper,
  ${shlibs:Depends}, ${misc:Depends}, ${java:Depends}
 Replaces: fred
 Conflicts: fred

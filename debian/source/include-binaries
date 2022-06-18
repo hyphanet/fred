@@ -1,0 +1,4 @@
+debian/freenet/usr/share/doc/freenet/changelog.Debian.gz
+debian/freenet/usr/share/java/freenet.jar
+debian/freenet/usr/share/java/freenet-0.7.5+1493.jar
+gradle/**

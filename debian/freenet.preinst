@@ -65,11 +65,11 @@ case "$1" in
        # 5. adjust file and directory permissions
        if ! dpkg-statoverride --list $SERVER_HOME >/dev/null
        then
-           chown -f -R $SERVER_USER:$SERVER_GROUP $SERVER_HOME
+           chown -f $SERVER_USER:$SERVER_GROUP $SERVER_HOME
            chmod -f u=rwx,g=rxs,o= $SERVER_HOME
-           chown -f -R $SERVER_USER:$SERVER_GROUP $SERVER_LOG
+           chown -f $SERVER_USER:$SERVER_GROUP $SERVER_LOG
            chmod -f u=rwx,g=rxs,o= $SERVER_LOG
-           chown -f -R $SERVER_USER:$SERVER_GROUP $SERVER_ETC
+           chown -f $SERVER_USER:$SERVER_GROUP $SERVER_ETC
            chmod -f u=rwx,g=rxs,o= $SERVER_ETC
 
        fi
