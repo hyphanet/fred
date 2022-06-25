@@ -9,9 +9,24 @@ jobs:
   build-deb:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - run: |
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          apt update
+          apt install build-essential debhelper devscripts -y
+
+      - name: Install package build dependencies
+        run: |
           install_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
           mk-build-deps --install --tool="${install_tool}" debian/control
+
+      - name: Build package
+        run: |
           gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-pkg -us -uc
+
+      - name: Get package info
+        run: |
           dpkg -I ../freenet*.deb
+
