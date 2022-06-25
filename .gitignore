@@ -32,3 +32,4 @@ debhelper-build-stamp
 /debian/freenet/*
 .gradle
 gradle
+debian/seednodes.fref
