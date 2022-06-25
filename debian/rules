@@ -7,9 +7,14 @@ FREENET_VERSION := 0.7.5
 FREENET_BUILD   := 1493
 WRAPPER_INIT    := /usr/share/wrapper/make-wrapper-init.sh
 
+BUILD_DIR	:= /tmp/fred-build
+
 REFS		:= https://github.com/freenet/seedrefs/archive/refs/heads/master.zip
 REFS_NAME	:= seedrefs-master
-REFS_DIR	:= /tmp/seeds
+REFS_DIR	:= $(BUILD_DIR)/seeds
+
+export GRADLE_OPTS	:= -Dorg.gradle.daemon=true -Xmx512m -Dorg.gradle.project.buildDir=$(BUILD_DIR)
+export GRADLE_USER_HOME := $(BUILD_DIR)/gradle
 
 %:
 	dh $@ --with javahelper
@@ -23,19 +28,10 @@ build_seed_file: $(REFS_DIR)
 	cat $(REFS_DIR)/$(REFS_NAME)/* > debian/seednodes.fref
 
 clean:
-	rm -rf $(REFS_DIR)
-	rm -rf debian/freenet
-	rm -rf build
-	rm -rf .gradle
 	rm -f debian/seednodes.fref
-	rm -rf gradle/caches
-	rm -rf gradle/notifications
-	rm -rf gradle/native
-	rm -rf gradle/wrapper/dists
+	rm -rf .gradle gradle/wrapper/dists debian/freenet
 
 override_dh_auto_build: build_seed_file
-	export GRADLE_USER_HOME="`pwd`/gradle"; \
-	export GRADLE_OPTS="-Dorg.gradle.daemon=false -Xmx512m"; \
 	./gradlew jar; \
 	./gradlew copyRuntimeLibs
 
@@ -47,15 +43,14 @@ override_dh_builddeb:
 
 override_dh_auto_install:
 	dh_auto_install
-	jh_installlibs $(CURDIR)/build/libs/freenet.jar
+	jh_installlibs $(BUILD_DIR)/libs/freenet.jar
 
 override_dh_auto_test:
-	export GRADLE_USER_HOME="`pwd`/gradle"; \
-	export GRADLE_OPTS="-Dorg.gradle.daemon=false -Xmx512m"; \
-	./gradlew test
+
+override_jh_depends:
 
 override_jh_installlibs:
-	jh_installlibs $(CURDIR)/build/output/freenet-ext-29.jar
-	jh_installlibs $(CURDIR)/build/output/jna-4.5.2.jar
-	jh_installlibs $(CURDIR)/build/output/jna-platform-4.5.2.jar
-	jh_installlibs $(CURDIR)/build/output/bcprov-jdk15on-1.59.jar
+	jh_installlibs $(BUILD_DIR)/output/freenet-ext-29.jar
+	jh_installlibs $(BUILD_DIR)/output/jna-4.5.2.jar
+	jh_installlibs $(BUILD_DIR)/output/jna-platform-4.5.2.jar
+	jh_installlibs $(BUILD_DIR)/output/bcprov-jdk15on-1.59.jar
