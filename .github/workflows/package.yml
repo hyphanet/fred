@@ -28,15 +28,6 @@ jobs:
           distribution: '${{ matrix.distribution }}'
           java-version: '${{ matrix.java }}'
 
-      - name: Configure gradle.properties
-        run: |
-          echo "" > gradle.properties  # Force empty gradle.properties file
-          echo "org.gradle.configureondemand=true" >> gradle.properties
-          echo "org.gradle.jvmargs=-Xms256m -Xmx1024m" >> gradle.properties
-          echo "org.gradle.parallel = true" >> gradle.properties
-          echo "tasks.withType(Test) { maxParallelForks = Runtime.runtime.availableProcessors() }" >> gradle.properties
-          cat gradle.properties
-
       - name: Install dependencies
         run: |
           sudo apt update
