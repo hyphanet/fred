@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
-          sudo apt update
-          sudo apt install -y git-buildpackage
-          gbp buildpackage --git-upstream-tag=debian-pkg -us -uc
+          install_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
+          mk-build-deps --install --tool="${install_tool}" debian/control
+          gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-pkg -us -uc
           dpkg -I ../freenet*.deb
