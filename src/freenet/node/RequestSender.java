@@ -1517,7 +1517,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
        		if(prb != null)
        			current |= WAIT_TRANSFERRING_DATA;
         	
-        	if(status != NOT_FINISHED || sentAbortDownstreamTransfers)
+        	if(status != NOT_FINISHED)
         		current |= WAIT_FINISHED;
         	
         	if(current != mask) return current;
@@ -1930,18 +1930,14 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		boolean reject=false;
 		boolean transfer=false;
 		boolean sentFinished;
-		boolean sentTransferCancel = false;
 		boolean sentFinishedFromOfferedKey = false;
 		int status;
 		// LOCKING: We add the new listener. We check each notification.
 		// If it has already been sent when we add the new listener, we need to send it here.
 		// Otherwise we don't, it will be called by the thread processing that event, even if it's already happened.
 		synchronized (listeners) {
-			sentTransferCancel = sentAbortDownstreamTransfers;
-			if(!sentTransferCancel) {
-				listeners.add(l);
-				if(logMINOR) Logger.minor(this, "Added listener "+l+" to "+this);
-			}
+			listeners.add(l);
+			if(logMINOR) Logger.minor(this, "Added listener "+l+" to "+this);
 			reject = sentReceivedRejectOverload;
 			transfer = sentCHKTransferBegins;
 			sentFinished = sentRequestSenderFinished;
@@ -1952,9 +1948,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			l.onReceivedRejectOverload();
 		if (transfer)
 			l.onCHKTransferBegins();
-		if(sentTransferCancel)
-			l.onAbortDownstreamTransfers(abortDownstreamTransfersReason, abortDownstreamTransfersDesc);
-		if(sentFinished) {
+		if (sentFinished) {
 			// At the time when we added the listener, we had sent the status to the others.
 			// Therefore, we need to send it to this one too.
 			synchronized(this) {
@@ -2022,9 +2016,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		}
 	}
 
-	private boolean sentAbortDownstreamTransfers;
-	private int abortDownstreamTransfersReason;
-	private String abortDownstreamTransfersDesc;
 	private boolean receivingAsync;
 	
 	private void reassignToSelfOnTimeout(boolean fromOfferedKey) {
@@ -2050,10 +2041,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 
 	public PeerNode transferringFrom() {
 		return transferringFrom;
-	}
-
-	public synchronized boolean abortedDownstreamTransfers() {
-		return sentAbortDownstreamTransfers;
 	}
 
 	public long fetchTimeout() {

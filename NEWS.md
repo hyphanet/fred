@@ -1,6 +1,27 @@
 next:
 
-- 
+- Show a user alert (once every Freenet update) if the datastore is
+  below 10% of available space with a link to the store size wizard page
+  to make it easy to increase the store ― thanks to Trivuele
+- Do not store blocks in the cache, if they are eligible for the store
+  (should increase usable cache size)   thanks to Trivuele
+- m3u-player: more robust sizes, do not use overlay for audio. This
+  finally enables convenient Samizdat Radio
+- randomize pitch black defense times and wait at least 12 hours
+  between pitch black mitigations to prevent timing attacks
+- bandwidth settings: parse bit suffix correctly
+- improve /imagecreator/   thanks to Oleh from Redwerk
+- Disable write local to datastore functionality when opennet is
+  enabled; it can be useful on a small darknet, but on opennet it
+  makes it easier to find downloaders.   thanks to Trivuele
+- make it easier to build fred without network access   thanks to Trivuele
+- fix build with modern Java: add opens jvmargs on java 17
+- fix: a FOAF mitigation wasn t operational, because it lacked a
+  conversion to percent.   thanks to freedom-of-depression
+- remove Frost on ChatForumsToadlet from non-updated translations
+  (removed 2019 from the original english)
+- fix parts of the German translation
+
 
 1493:
 

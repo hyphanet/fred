@@ -255,11 +255,19 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			super.writeTemporaryRedirect(ctx, "Wizard set preset", redirectTo.toString());
 			return;
 		} else if (request.isPartSet("back")) {
-			//User chose back, return to previous page.
-			redirectTarget = getPreviousStep(currentStep, persistFields.preset).name();
+			//User chose back, return to previous page, or cancel if single step.
+			if (request.isPartSet("singlestep")) {
+				redirectTarget = WIZARD_STEP.COMPLETE.name();
+			} else {
+				redirectTarget = getPreviousStep(currentStep, persistFields.preset).name();
+			}
 		} else {
 			try {
 				redirectTarget = steps.get(currentStep).postStep(request);
+				//Go to complete rather than go to next if single step.
+				if (request.isPartSet("singlestep") && !redirectTarget.startsWith(currentStep.name())) {
+					redirectTarget = WIZARD_STEP.COMPLETE.name();
+				}
 
 				//Opennet step can change the persisted value for opennet.
 				if (currentStep == WIZARD_STEP.OPENNET) {

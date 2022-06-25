@@ -759,6 +759,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private boolean peersOffersDismissed;
 
+	private int datastoreTooSmallDismissed;
+
 	/**
 	 * Minimum bandwidth limit in bytes considered usable: 10 KiB. If there is an attempt to set a limit below this -
 	 * excluding the reserved -1 for input bandwidth - the callback will throw. See the callbacks for
@@ -2378,31 +2380,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 		writeLocalToDatastore = nodeConfig.getBoolean("writeLocalToDatastore");
 
-		// LOW network *and* physical seclevel = writeLocalToDatastore
-
-		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
-
-			@Override
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				if(newLevel == NETWORK_THREAT_LEVEL.LOW && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW)
-					writeLocalToDatastore = true;
-				else
-					writeLocalToDatastore = false;
-			}
-
-		});
-
-		securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
-
-			@Override
-			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
-				if(newLevel == PHYSICAL_THREAT_LEVEL.LOW && securityLevels.getNetworkThreatLevel() == NETWORK_THREAT_LEVEL.LOW)
-					writeLocalToDatastore = true;
-				else
-					writeLocalToDatastore = false;
-			}
-
-		});
+		// This is dangerous on opennet, but was enabled by default before if both security levels
+		// were LOW. Upgrade to safe value; this setting only makes sense on small darknets.
+		if (opennetEnabled) {
+			writeLocalToDatastore = false;
+		}
 
 		nodeConfig.register("slashdotCacheLifetime", MINUTES.toMillis(30), sortOrder++, true, false, "Node.slashdotCacheLifetime", "Node.slashdotCacheLifetimeLong", new LongCallback() {
 
@@ -2575,6 +2557,21 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		);
 		enableNodeDiagnostics = nodeConfig.getBoolean("enableNodeDiagnostics");
+
+		nodeConfig.register("datastoreTooSmallDismissed", -1, sortOrder++, true, false,
+				"Node.datastoreTooSmallDismissed", "Node.datastoreTooSmallDismissedLong", new IntCallback() {
+
+					@Override
+					public Integer get() {
+						return datastoreTooSmallDismissed;
+					}
+
+					@Override
+					public void set(Integer val) {
+						datastoreTooSmallDismissed = val;
+					}
+				});
+		datastoreTooSmallDismissed = nodeConfig.getInt("datastoreTooSmallDismissed");
 
 		updateMTU();
 
@@ -3734,7 +3731,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Store a datum.
 	 * @param block
 	 *      a KeyBlock
-	 * @param deep If true, insert to the store as well as the cache. Do not set
+	 * @param deep If true, insert to the store rather than the cache. Do not set
 	 * this to true unless the store results from an insert, and this node is the
 	 * closest node to the target; see the description of chkDatastore.
 	 */
@@ -3764,9 +3761,10 @@ public class Node implements TimeSkewDetectorCallback {
 					chkDatastore.put(block, !canWriteDatastore);
 					nodeStats.avgStoreCHKLocation.report(loc);
 
+				} else {
+					chkDatacache.put(block, !canWriteDatastore);
+					nodeStats.avgCacheCHKLocation.report(loc);
 				}
-				chkDatacache.put(block, !canWriteDatastore);
-				nodeStats.avgCacheCHKLocation.report(loc);
 			}
 			if (canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);
@@ -3812,9 +3810,10 @@ public class Node implements TimeSkewDetectorCallback {
 				if(deep) {
 					sskDatastore.put(block, overwrite, !canWriteDatastore);
 					nodeStats.avgStoreSSKLocation.report(loc);
+				} else {
+					sskDatacache.put(block, overwrite, !canWriteDatastore);
+					nodeStats.avgCacheSSKLocation.report(loc);
 				}
-				sskDatacache.put(block, overwrite, !canWriteDatastore);
-				nodeStats.avgCacheSSKLocation.report(loc);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);
