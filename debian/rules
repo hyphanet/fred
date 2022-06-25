@@ -36,7 +36,7 @@ clean:
 override_dh_auto_build: build_seed_file
 	export GRADLE_USER_HOME="`pwd`/gradle"; \
 	export GRADLE_OPTS="-Dorg.gradle.daemon=false -Xmx512m"; \
-	./gradlew assemble; \
+	./gradlew jar; \
 	./gradlew copyRuntimeLibs
 
 	sed -e 's/@version@/$(FREENET_VERSION)/' -e 's/@build@/$(FREENET_BUILD)/' $(CURDIR)/debian/freenet.service.params | \

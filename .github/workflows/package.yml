@@ -7,10 +7,35 @@ on:
 
 jobs:
   build-deb:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        distribution: [temurin]
+        java: [8, 11]
+
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Wrapper validation
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Setup java
+        uses: actions/setup-java@v3
+        with:
+          cache: 'gradle'
+          distribution: '${{ matrix.distribution }}'
+          java-version: '${{ matrix.java }}'
+
+      - name: Configure gradle.properties
+        run: |
+          echo "" > gradle.properties  # Force empty gradle.properties file
+          echo "org.gradle.configureondemand=true" >> gradle.properties
+          echo "org.gradle.jvmargs=-Xms256m -Xmx1024m" >> gradle.properties
+          echo "org.gradle.parallel = true" >> gradle.properties
+          echo "tasks.withType(Test) { maxParallelForks = Runtime.runtime.availableProcessors() }" >> gradle.properties
+          cat gradle.properties
 
       - name: Install dependencies
         run: |
@@ -24,7 +49,7 @@ jobs:
 
       - name: Build package
         run: |
-          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-pkg -us -uc
+          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-pkg -us -uc --git-ignore-new
 
       - name: Get package info
         run: |
