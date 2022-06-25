@@ -14,5 +14,4 @@ jobs:
       - uses: singingwolfboy/build-dpkg-buster@v1
         id: build
         with:
-          args: --unsigned-source --unsigned-changes
-
+          args: --unsigned-source --unsigned-changes -b
