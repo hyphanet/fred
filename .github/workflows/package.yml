@@ -11,6 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
+          sudo apt update
           sudo apt install -y git-buildpackage
           gbp buildpackage --git-upstream-tag=debian-pkg -us -uc
           dpkg -I ../freenet*.deb
