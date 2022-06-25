@@ -410,7 +410,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 
                 @Override
                 public String dismissButtonText() {
-                    return NodeL10n.getBase().getDefaultString("UpdatedVersionAvailableUserAlert.updateNowButton");
+                    return NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert.updateNowButton");
                 }
 
                 @Override

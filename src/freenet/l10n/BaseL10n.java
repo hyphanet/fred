@@ -584,7 +584,7 @@ public class BaseL10n {
 	 * @return String
 	 */
 	public String getDefaultString(String key) {
-        return getStrings(key, FallbackState.FALLBACK_LANG).iterator().next();
+        return getStrings(key, FallbackState.CURRENT_LANG).iterator().next();
 	}
 
 	/**
