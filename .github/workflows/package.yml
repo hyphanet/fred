@@ -15,7 +15,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install build-essential debhelper devscripts -y
+          sudo apt install build-essential debhelper devscripts equivs -y
 
       - name: Install package build dependencies
         run: |
