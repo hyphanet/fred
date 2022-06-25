@@ -10,8 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-
-      - uses: singingwolfboy/build-dpkg-buster@v1
-        id: build
-        with:
-          args: --unsigned-source --unsigned-changes -b
+      - run: |
+          sudo apt install -y git-buildpackage
+          gbp buildpackage --git-upstream-tag=debian-pkg -us -uc
+          dpkg -I ../freenet*.deb
