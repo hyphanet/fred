@@ -20,7 +20,7 @@ jobs:
       - name: Install package build dependencies
         run: |
           install_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
-          sudo mk-build-deps --install --tool="${install_tool}" debian/control
+          sudo mk-build-deps --install -r --tool="${install_tool}" debian/control
 
       - name: Build package
         run: |
@@ -29,4 +29,5 @@ jobs:
       - name: Get package info
         run: |
           dpkg -I ../freenet*.deb
+          file ../freenet*.deb
 
