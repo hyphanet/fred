@@ -1,5 +1,11 @@
+freenet (0.7.5+1494-1) unstable; urgency=medium
+
+  * Build 1494
+
+ -- DC* <des@riseup.net>  Sat, 02 Jul 2022 00:00:49 +0100
+
 freenet (0.7.5+1493-1) unstable; urgency=medium
 
   * Initial Release.
 
- -- Dario Cavuotti <des@riseup.net>  Wed, 18 May 2022 00:00:00 +0100
+ -- DC* <des@riseup.net>  Fri, 01 Jul 2022 23:25:13 +0100
