@@ -1,3 +1,9 @@
+freenet (0.7.5+1494-3) unstable; urgency=medium
+
+  * Add attribution to original work
+
+ -- DC* <des@riseup.net>  Sat, 02 Jul 2022 00:26:57 +0100
+
 freenet (0.7.5+1494-2) unstable; urgency=medium
 
   * Update maintainer
@@ -13,5 +19,6 @@ freenet (0.7.5+1494-1) unstable; urgency=medium
 freenet (0.7.5+1493-1) unstable; urgency=medium
 
   * Initial Release.
+  Packaged originally by Ximin Luo <infinity0@debian.org>: https://github.com/freenet/debian
 
  -- DC* <des@riseup.net>  Fri, 01 Jul 2022 23:25:13 +0100
