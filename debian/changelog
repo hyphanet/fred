@@ -1,3 +1,9 @@
+freenet (0.7.5+1494-4) unstable; urgency=medium
+
+  * Update package build descriptions
+
+ -- DC <des@riseup.net>  Sat, 02 Jul 2022 00:36:27 +0100
+
 freenet (0.7.5+1494-3) unstable; urgency=medium
 
   * Add attribution to original work

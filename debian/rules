@@ -4,7 +4,7 @@
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=0
 FREENET_VERSION := 0.7.5
-FREENET_BUILD   := 1493
+FREENET_BUILD   := 1494
 WRAPPER_INIT    := /usr/share/wrapper/make-wrapper-init.sh
 
 BUILD_DIR	:= /tmp/fred-build
