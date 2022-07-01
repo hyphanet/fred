@@ -1,7 +1,7 @@
 Source: freenet
 Section: net
 Priority: optional
-Maintainer: Dario Cavuotti <des@riseup.net>
+Maintainer: DC* <des@riseup.net>
 Build-Depends: debhelper (>= 9), javahelper, quilt, adduser (>= 3.11),
  git-core, default-jdk, wget, service-wrapper, git-buildpackage
 Standards-Version: 4.5.1
