@@ -593,6 +593,9 @@ public class SplitFileFetcherSegmentStorage {
         return true;
     }
 
+    /**
+     * queue up for healing all blocks that either failed or needed more than one try to retrieve. 
+     */
     private void queueHeal(byte[][] dataBlocks, byte[][] checkBlocks, boolean[] dataBlocksPresent, boolean[] checkBlocksPresent) throws IOException {
         for(int i=0;i<dataBlocks.length;i++) {
             if(dataBlocksPresent[i]) continue;
