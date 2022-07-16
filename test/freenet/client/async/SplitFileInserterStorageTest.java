@@ -775,7 +775,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         Bucket copyBucket = m1.toBucket(smallBucketFactory);
         assertTrue(BucketTools.equalBuckets(metaBucket, copyBucket));
         
-        MyFetchCallback fcb = new MyFetchCallback();
+        FetchCallbackForTestingSplitFileInserter fcb = new FetchCallbackForTestingSplitFileInserter();
         
         FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, smallBucketFactory, new SimpleEventProducer());
         
@@ -1002,7 +1002,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         Bucket copyBucket = m1.toBucket(smallBucketFactory);
         assertTrue(BucketTools.equalBuckets(metaBucket, copyBucket));
         
-        MyFetchCallback fcb = new MyFetchCallback();
+        FetchCallbackForTestingSplitFileInserter fcb = new FetchCallbackForTestingSplitFileInserter();
         
         FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, smallBucketFactory, new SimpleEventProducer());
         
@@ -1082,7 +1082,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         Bucket copyBucket = m1.toBucket(smallBucketFactory);
         assertTrue(BucketTools.equalBuckets(metaBucket, copyBucket));
         
-        MyFetchCallback fcb = new MyFetchCallback();
+        FetchCallbackForTestingSplitFileInserter fcb = new FetchCallbackForTestingSplitFileInserter();
         
         FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, smallBucketFactory, new SimpleEventProducer());
         
@@ -1174,7 +1174,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         }
     }
     
-    class MyFetchCallback implements SplitFileFetcherStorageCallback {
+    class FetchCallbackForTestingSplitFileInserter implements SplitFileFetcherStorageCallback {
         
         
         private boolean succeeded;
