@@ -233,7 +233,7 @@ dependencies {
     compile "net.java.dev.jna:jna:4.5.2"
     compile "net.java.dev.jna:jna-platform:4.5.2"
     compile "org.freenetproject:freenet-ext:29"
-    compile "io.pebbletemplates:pebble:3.1.0"
+    compile "io.pebbletemplates:pebble:3.1.5"
 
     testCompile 'junit:junit:4.12'
     testCompile "org.mockito:mockito-core:1.9.5"
@@ -255,7 +255,7 @@ dependencyVerification {
         'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
         'org.hamcrest:hamcrest-core:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9',
         'org.objenesis:objenesis:c5694b55d92527479382f254199b3c6b1d8780f652ad61e9ca59919887f491a8',
-        'io.pebbletemplates:pebble:f1c6996c6be01686ad310cd206ebeb126235f2bc4081d7a0d61b94870c7ce042',
+        'io.pebbletemplates:pebble:d253a6dde59e138698aaaaee546461d2f1f6c8bd2aa38ecdd347df17cf90d6f0',
     ]
 }
 
