@@ -255,6 +255,7 @@ dependencyVerification {
         'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
         'org.hamcrest:hamcrest-core:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9',
         'org.objenesis:objenesis:c5694b55d92527479382f254199b3c6b1d8780f652ad61e9ca59919887f491a8',
+        'io.pebbletemplates:pebble:f1c6996c6be01686ad310cd206ebeb126235f2bc4081d7a0d61b94870c7ce042',
     ]
 }
 
