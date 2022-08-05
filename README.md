@@ -73,6 +73,7 @@ dependencies.properties.
 - fcpupload {dependencyfile.jar}
 - add it to all installers: wininstaller-innosetup, java_installer, mactray. Search for `jna-platform` to find out where to put and register the dependency.
 - add dependency and the CHK to `dependencies.properties`.
+- update `scripts/update.sh` and `res/wrapper.conf` and `res/unix/run.sh` in java_installer to include the dependency.
 
 With the example of pebble: The filename is just the jarfile. The key is what fcpupload returns. Size is `wc -c filename.jar`, sha256 is `sha256sum filename.jar`, order is where it should be put in `wrapper.conf` in wrapper.java.classpath.
 
