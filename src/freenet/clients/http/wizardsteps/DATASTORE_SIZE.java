@@ -18,6 +18,8 @@ import freenet.support.io.DatastoreUtil;
 
 import java.io.File;
 
+import java.io.File;
+
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.
  */
@@ -109,6 +111,7 @@ public class DATASTORE_SIZE implements Step {
             return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
         }
 	}
+
 
 	public static void setDatastoreSize(String selectedStoreSize, Config config, Object callback) {
 		_setDatastoreSize(selectedStoreSize, true, config, callback);
