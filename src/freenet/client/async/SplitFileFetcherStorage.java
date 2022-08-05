@@ -1429,9 +1429,9 @@ public class SplitFileFetcherStorage {
         return total;
     }
 
-    final class MyKey implements SendableRequestItem, SendableRequestItemKey {
+    final class SplitFileFetcherStorageKey implements SendableRequestItem, SendableRequestItemKey {
 
-        public MyKey(int n, int segNo, SplitFileFetcherStorage storage) {
+        public SplitFileFetcherStorageKey(int n, int segNo, SplitFileFetcherStorage storage) {
             this.blockNumber = n;
             this.segmentNumber = segNo;
             this.get = storage;
@@ -1456,8 +1456,8 @@ public class SplitFileFetcherStorage {
         @Override
         public boolean equals(Object o) {
             if(this == o) return true;
-            if(!(o instanceof MyKey)) return false;
-            MyKey k = (MyKey)o;
+            if(!(o instanceof SplitFileFetcherStorageKey)) return false;
+            SplitFileFetcherStorageKey k = (SplitFileFetcherStorageKey)o;
             return k.blockNumber == blockNumber && k.segmentNumber == segmentNumber && 
                 k.get == get;
         }
@@ -1476,7 +1476,7 @@ public class SplitFileFetcherStorage {
         }
         
         public String toString() {
-            return "MyKey:"+segmentNumber+":"+blockNumber;
+            return "SplitFileFetcherStorageKey:"+segmentNumber+":"+blockNumber;
         }
 
     }
@@ -1489,7 +1489,7 @@ public class SplitFileFetcherStorage {
      * 
      * @return The block number to be fetched, as an integer.
      */
-    public MyKey chooseRandomKey() {
+    public SplitFileFetcherStorageKey chooseRandomKey() {
         // FIXME this should probably use SimpleBlockChooser and hence use lowest-retry-count from each segment?
         synchronized(this) {
             if(finishedFetcher) return null;
@@ -1504,7 +1504,7 @@ public class SplitFileFetcherStorage {
                 SplitFileFetcherSegmentStorage segment = randomSegmentIterator.next();
                 int ret = segment.chooseRandomKey();
                 if (ret != -1) {
-                    return new MyKey(ret, segment.segNo, this);
+                    return new SplitFileFetcherStorageKey(ret, segment.segNo, this);
                 }
             }
         }
@@ -1545,7 +1545,7 @@ public class SplitFileFetcherStorage {
         return cancelled || finishedFetcher || finishedEncoding;
     }
 
-    public void onFailure(MyKey key, FetchException fe) {
+    public void onFailure(SplitFileFetcherStorageKey key, FetchException fe) {
         if(logMINOR) Logger.minor(this, "Failure: "+fe.mode+" for block "+key.blockNumber+" for "+key.segmentNumber);
         synchronized(this) {
             if(cancelled || finishedFetcher) return;
@@ -1557,7 +1557,7 @@ public class SplitFileFetcherStorage {
         lazyWriteMetadata();
     }
 
-    public ClientKey getKey(MyKey key) {
+    public ClientKey getKey(SplitFileFetcherStorageKey key) {
         try {
             return segments[key.segmentNumber].getSegmentKeys().getKey(key.blockNumber, null, false);
         } catch (IOException e) {
