@@ -921,8 +921,11 @@ public class PeerMessageQueue {
 	
 	public boolean removeMessage(MessageItem message) {
 		synchronized(this) {
-			short prio = message.getPriority();
-			if(!queuesByPriority[prio].removeMessage(message)) return false;
+			if (message != null) {
+				short prio = message.getPriority();
+				if (!queuesByPriority[prio].removeMessage(message))
+					return false;
+			}
 		}
 		message.onFailed();
 		return true;

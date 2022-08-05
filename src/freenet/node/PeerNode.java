@@ -1651,8 +1651,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if (!cb.done) {
 			Logger.warning(this, "Waited too long for a blocking send for " + req + " to " + PeerNode.this, new Exception("error"));
 			this.localRejectedOverload("SendSyncTimeout", realTime);
+			if (item == null) {
+				// item can be null when the receiver did not reply to
+				// a manifest key which causes a nullpointer on
+				// removing. Assume an attacker and disconnect.
+				fatalTimeout();
 			// Try to unqueue it, since it presumably won't be of any use now.
-			if(!messageQueue.removeMessage(item)) {
+            } else if(!messageQueue.removeMessage(item)) {
 				cb.waitForSend(SECONDS.toMillis(10));
 				if(!cb.done) {
 					Logger.error(this, "Waited too long for blocking send and then could not unqueue for "+req+" to "+PeerNode.this, new Exception("error"));
