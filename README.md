@@ -62,6 +62,30 @@ To override values set in `build.gradle` put them into [the file](https://docs.g
 
 See our [contributor guidelines](CONTRIBUTING.md).
 
+## Add a new dependency
+
+All dependencies must be available via Freenet, so it must be added to
+dependencies.properties.
+
+- Add it to build.gradle dependencies *and* dependencyVerification.
+  Run `./gradlew jar --debug` to find files that fail the
+  verification.
+- fcpupload {dependencyfile.jar}
+- add it to all installers: wininstaller-innosetup, java_installer, mactray. Search for `jna-platform` to find out where to put and register the dependency.
+- add dependency and the CHK to `dependencies.properties`.
+
+With the example of pebble: The filename is just the jarfile. The key is what fcpupload returns. Size is `wc -c filename.jar`, sha256 is `sha256sum filename.jar`, order is where it should be put in `wrapper.conf` in wrapper.java.classpath.
+
+```
+pebble.version=3.1.5
+pebble.filename=pebble-3.1.5.jar
+pebble.filename-regex=pebble-*.jar
+pebble.key=CHK@y~p8HMUVXmVgfSnrmUyu2UNXMO9uMDHS5nwo2YuOKvw,yzwLFP0GXa8RjwRpicQCPFKNggDXLkTQKH8nISe0qUY,AAMC--8/pebble-3.1.5.jar
+pebble.size=318169
+pebble.sha256=85e77f9fd64c0a1f85569db8f95c1fb8e6ef8b296f4d6206440dc6306140c1a1
+pebble.order=4
+```
+
 ## Licensing
 Freenet is under the GPL, version 2 or later - see LICENSE.Freenet. We use some
 code under the Apache license version 2 (mostly apache commons stuff), and some
