@@ -102,7 +102,7 @@ public class DATASTORE_SIZE implements Step {
 		if (request.isPartSet("singlestep")) {
 			firsttime = false;
 		}
-		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20), firsttime);
+		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20), firsttime, config, this);
         if (firsttime) {
             return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH.name();
         } else {
@@ -110,7 +110,15 @@ public class DATASTORE_SIZE implements Step {
         }
 	}
 
-	private void _setDatastoreSize(String selectedStoreSize, boolean firsttime) {
+	public static void setDatastoreSize(String selectedStoreSize, Config config, Object callback) {
+		_setDatastoreSize(selectedStoreSize, true, config, callback);
+	}
+
+	private static void _setDatastoreSize(
+			String selectedStoreSize,
+			boolean firsttime,
+			Config config,
+			Object callback) {
 		try {
 			long size = Fields.parseLong(selectedStoreSize);
 
@@ -149,9 +157,9 @@ public class DATASTORE_SIZE implements Step {
 			config.get("node").set("slashdotCacheSize", Fields.longToString(slashdotCacheSize, true));
 
 
-			Logger.normal(this, "The storeSize has been set to " + selectedStoreSize);
+			Logger.normal(callback, "The storeSize has been set to " + selectedStoreSize);
 		} catch(ConfigException e) {
-			Logger.error(this, "Should not happen, please report!" + e, e);
+			Logger.error(callback, "Should not happen, please report!" + e, e);
 		}
 	}
 
