@@ -84,6 +84,7 @@ pebble.filename-regex=pebble-*.jar
 pebble.key=CHK@y~p8HMUVXmVgfSnrmUyu2UNXMO9uMDHS5nwo2YuOKvw,yzwLFP0GXa8RjwRpicQCPFKNggDXLkTQKH8nISe0qUY,AAMC--8/pebble-3.1.5.jar
 pebble.size=318169
 pebble.sha256=85e77f9fd64c0a1f85569db8f95c1fb8e6ef8b296f4d6206440dc6306140c1a1
+pebble.type=CLASSPATH
 pebble.order=4
 ```
 
