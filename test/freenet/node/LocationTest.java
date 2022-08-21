@@ -68,8 +68,8 @@ public class LocationTest extends TestCase {
         assertEquals(0.5, Location.distance(VALID_2, Location.normalize(VALID_2 - 0.5)), EPSILON);
         
         // Identity.
-        assertEquals(0.0, Location.distance(VALID_1, VALID_1));
-        assertEquals(0.0, Location.distance(VALID_2, VALID_2));
+        assertEquals(0.0, Location.distance(VALID_1, VALID_1), EPSILON);
+        assertEquals(0.0, Location.distance(VALID_2, VALID_2), EPSILON);
     }
     
     public void testChange() {
@@ -84,8 +84,8 @@ public class LocationTest extends TestCase {
         assertEquals(0.5, Location.change(VALID_2, Location.normalize(VALID_2 - 0.5)), EPSILON);
 
         // Identity.
-        assertEquals(0.0, Location.change(VALID_1, VALID_1));
-        assertEquals(0.0, Location.change(VALID_2, VALID_2));
+        assertEquals(0.0, Location.change(VALID_1, VALID_1), EPSILON);
+        assertEquals(0.0, Location.change(VALID_2, VALID_2), EPSILON);
     }
     
     public void testNormalize() {
@@ -98,7 +98,7 @@ public class LocationTest extends TestCase {
         }
         
         // Corner case.
-        assertEquals(0.0, Location.normalize(1.0));
+        assertEquals(0.0, Location.normalize(1.0), EPSILON);
     }
     
     public void testDistanceAllowInvalid() {
@@ -113,24 +113,24 @@ public class LocationTest extends TestCase {
         assertEquals(0.5, Location.distanceAllowInvalid(VALID_2, Location.normalize(VALID_2 - 0.5)), EPSILON);
         
         // Identity.
-        assertEquals(0.0, Location.distanceAllowInvalid(VALID_1, VALID_1));
-        assertEquals(0.0, Location.distanceAllowInvalid(VALID_2, VALID_2));
+        assertEquals(0.0, Location.distanceAllowInvalid(VALID_1, VALID_1), EPSILON);
+        assertEquals(0.0, Location.distanceAllowInvalid(VALID_2, VALID_2), EPSILON);
         
         // Normal operation with invalid.
-        assertEquals(2.0 - VALID_1, Location.distanceAllowInvalid(INVALID_1, VALID_1));
-        assertEquals(2.0 - VALID_1, Location.distanceAllowInvalid(VALID_1, INVALID_1));
-        assertEquals(2.0 - VALID_1, Location.distanceAllowInvalid(INVALID_2, VALID_1));
-        assertEquals(2.0 - VALID_1, Location.distanceAllowInvalid(VALID_1, INVALID_2));
-        assertEquals(2.0 - VALID_2, Location.distanceAllowInvalid(INVALID_1, VALID_2));
-        assertEquals(2.0 - VALID_2, Location.distanceAllowInvalid(VALID_2, INVALID_1));
-        assertEquals(2.0 - VALID_2, Location.distanceAllowInvalid(INVALID_2, VALID_2));
-        assertEquals(2.0 - VALID_2, Location.distanceAllowInvalid(VALID_2, INVALID_2));
+        assertEquals(2.0 - VALID_1, Location.distanceAllowInvalid(INVALID_1, VALID_1), EPSILON);
+        assertEquals(2.0 - VALID_1, Location.distanceAllowInvalid(VALID_1, INVALID_1), EPSILON);
+        assertEquals(2.0 - VALID_1, Location.distanceAllowInvalid(INVALID_2, VALID_1), EPSILON);
+        assertEquals(2.0 - VALID_1, Location.distanceAllowInvalid(VALID_1, INVALID_2), EPSILON);
+        assertEquals(2.0 - VALID_2, Location.distanceAllowInvalid(INVALID_1, VALID_2), EPSILON);
+        assertEquals(2.0 - VALID_2, Location.distanceAllowInvalid(VALID_2, INVALID_1), EPSILON);
+        assertEquals(2.0 - VALID_2, Location.distanceAllowInvalid(INVALID_2, VALID_2), EPSILON);
+        assertEquals(2.0 - VALID_2, Location.distanceAllowInvalid(VALID_2, INVALID_2), EPSILON);
         
         // Identity of invalid.
-        assertEquals(0.0, Location.distanceAllowInvalid(INVALID_1, INVALID_1));
-        assertEquals(0.0, Location.distanceAllowInvalid(INVALID_1, INVALID_2));
-        assertEquals(0.0, Location.distanceAllowInvalid(INVALID_2, INVALID_1));
-        assertEquals(0.0, Location.distanceAllowInvalid(INVALID_2, INVALID_2));
+        assertEquals(0.0, Location.distanceAllowInvalid(INVALID_1, INVALID_1), EPSILON);
+        assertEquals(0.0, Location.distanceAllowInvalid(INVALID_1, INVALID_2), EPSILON);
+        assertEquals(0.0, Location.distanceAllowInvalid(INVALID_2, INVALID_1), EPSILON);
+        assertEquals(0.0, Location.distanceAllowInvalid(INVALID_2, INVALID_2), EPSILON);
     }
 }
 

@@ -68,8 +68,8 @@ public class MessageTest extends TestCase {
 		assertEquals(shortVal, msg.getShort(SHORT));
 		assertEquals(intVal, msg.getInt(INT));
 		assertEquals(longVal, msg.getLong(LONG));
-		assertEquals(doubleVal, msg.getDouble(DOUBLE));
-		assertEquals(floatVal, msg.getFloat(FLOAT));
+		assertEquals(doubleVal, msg.getDouble(DOUBLE), 0);
+		assertEquals(floatVal, msg.getFloat(FLOAT), 0);
 		assertTrue(Arrays.equals(doubleArrayVal, msg.getDoubleArray(DOUBLE_ARRAY)));
 		assertTrue(Arrays.equals(floatArrayVal, msg.getFloatArray(FLOAT_ARRAY)));
 	}
