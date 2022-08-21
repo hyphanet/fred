@@ -27,10 +27,6 @@ public class ConfigTest extends TestCase {
 	Config conf;
 	SubConfig sc;
 	
-	public ConfigTest(String name) {
-		super(name);
-	}
-	
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
