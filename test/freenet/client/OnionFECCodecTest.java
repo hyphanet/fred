@@ -121,7 +121,7 @@ public class OnionFECCodecTest extends TestCase {
         // Encode the check blocks.
         checkBlocksPresent = new boolean[checkBlocks.length];
         codec.encode(dataBlocks, checkBlocks, checkBlocksPresent, BLOCK_SIZE);
-        assertEquals(originalDataBlocks, dataBlocks);
+        assertBlockArrayEquals(originalDataBlocks, dataBlocks);
         originalCheckBlocks = copy(checkBlocks);
         
         // Initially everything is present...
@@ -134,12 +134,12 @@ public class OnionFECCodecTest extends TestCase {
         boolean[] oldDataBlocksPresent = dataBlocksPresent.clone();
         boolean[] oldCheckBlocksPresent = checkBlocksPresent.clone();
         codec.decode(dataBlocks, checkBlocks, dataBlocksPresent, checkBlocksPresent, BLOCK_SIZE);
-        assertEquals(originalDataBlocks, dataBlocks);
+        assertBlockArrayEquals(originalDataBlocks, dataBlocks);
         assertTrue(Arrays.equals(oldDataBlocksPresent, dataBlocksPresent));
         assertTrue(Arrays.equals(oldCheckBlocksPresent, checkBlocksPresent));
         for(int i=0;i<dataBlocksPresent.length;i++) dataBlocksPresent[i] = true;
         codec.encode(dataBlocks, checkBlocks, checkBlocksPresent, BLOCK_SIZE);
-        assertEquals(originalCheckBlocks, checkBlocks);
+        assertBlockArrayEquals(originalCheckBlocks, checkBlocks);
         assertTrue(Arrays.equals(oldCheckBlocksPresent, checkBlocksPresent));
     }
     
@@ -192,7 +192,7 @@ public class OnionFECCodecTest extends TestCase {
         return ret;
     }
     
-    private void assertEquals(byte[][] blocks1, byte[][] blocks2) {
+    private void assertBlockArrayEquals(byte[][] blocks1, byte[][] blocks2) {
         assertEquals(blocks1.length, blocks2.length);
         for(int i=0;i<blocks1.length;i++) {
             assertTrue(Arrays.equals(blocks1[i], blocks2[i]));
