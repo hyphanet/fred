@@ -3,9 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import static org.junit.Assert.*;
+
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
+
+import org.junit.Before;
+import org.junit.Test;
 
 public class ReceivedCookieTest extends CookieTest {
 	
@@ -16,9 +21,9 @@ public class ReceivedCookieTest extends CookieTest {
 											+ " $Expires = \"Sun, 25 Oct 2030 15:09:37 GMT\"; "
 											+ " $blah;";
 
-	@Override
+	@Before
 	@SuppressWarnings("deprecation")
-	protected void setUp() throws Exception { 		
+	public void setUp() throws Exception {
 		super.setUp();
 		
 		validExpiresDate = new Date(2030 - 1900, 10 - 1, 25, 15, 9, 37);
@@ -31,6 +36,7 @@ public class ReceivedCookieTest extends CookieTest {
 		// TODO: Implement.
 	}
 
+	@Test
 	public void testParseHeader() throws ParseException {
 		// The tests for getPath(), getName() etc will be executed using the parsed mCookie and therefore also test parseHeader() for valid values,
 		// we only need to test special cases here.

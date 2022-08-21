@@ -1,9 +1,15 @@
 package freenet.support.io;
 
+import static org.junit.Assert.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
 import freenet.support.io.PooledFileRandomAccessBuffer.FDTracker;
@@ -18,10 +24,12 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
 
     private File base = new File("tmp.pooled-random-access-file-wrapper-test");
     
+    @Before
     public void setUp() {
         base.mkdir();
     }
     
+    @After
     public void tearDown() {
         FileUtil.removeAll(base);
     }
@@ -36,6 +44,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
     }
 
     /** Simplest test for pooling. TODO Add more. */
+    @Test
     public void testSimplePooling() throws IOException {
         for(int sz : TEST_LIST)
             innerTestSimplePooling(sz);
@@ -65,6 +74,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
     }
 
     /** Test that locking and unlocking do something */
+    @Test
     public void testLock() throws IOException {
         int sz = 1024;
         fds.setMaxFDs(1);
@@ -97,6 +107,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
     }
     
     /** Thanks bertm */
+    @Test
     public void testLocksB() throws IOException {
         fds.setMaxFDs(1);
         PooledFileRandomAccessBuffer a = construct(0);
@@ -111,6 +122,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         assertEquals(fds.getClosableFDs(), 0);
     }
     
+    @Test
     public void testLockedNotClosable() throws IOException {
         int sz = 1024;
         fds.setMaxFDs(2);
@@ -137,6 +149,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         b.close();
     }
     
+    @Test
     public void testLockedNotClosableFromNotOpenFD() throws IOException {
         int sz = 1024;
         fds.setMaxFDs(2);
@@ -168,6 +181,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
     
     /** Test that locking enforces limits and blocks when appropriate. 
      * @throws InterruptedException */
+    @Test
     public void testLockBlocking() throws IOException, InterruptedException {
         int sz = 1024;
         fds.setMaxFDs(1);
