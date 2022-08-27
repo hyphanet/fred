@@ -1,10 +1,14 @@
 package freenet.store;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
@@ -26,7 +30,7 @@ import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.TempBucketFactory;
 
-public class SlashdotStoreTest extends TestCase {
+public class SlashdotStoreTest {
 	
 	private RandomSource strongPRNG = new DummyRandomSource(43210);
 	private Random weakPRNG = new Random(12340);
@@ -35,8 +39,8 @@ public class SlashdotStoreTest extends TestCase {
 	private TempBucketFactory tbf;
 	private File tempDir;
 
-	@Override
-	protected void setUp() throws java.lang.Exception {
+	@Before
+	public void setUp() throws java.lang.Exception {
 		tempDir = new File("tmp-slashdotstoretest");
 		tempDir.mkdir();
 		fg = new FilenameGenerator(weakPRNG, true, tempDir, "temp-");
@@ -44,11 +48,12 @@ public class SlashdotStoreTest extends TestCase {
 		exec.start();
 	}
 	
-	@Override
-	protected void tearDown() {
+	@After
+	public void tearDown() {
 		FileUtil.removeAll(tempDir);
 	}
 	
+	@Test
 	public void testSimple() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
 		new SlashdotStore<CHKBlock>(store, 10, 30*1000, 5*1000, new TrivialTicker(exec), tbf);
@@ -65,6 +70,7 @@ public class SlashdotStoreTest extends TestCase {
 		assertEquals(test, data);
 	}
 	
+	@Test
 	public void testDeletion() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException, InterruptedException {
 		CHKStore store = new CHKStore();
 		SpeedyTicker st = new SpeedyTicker();

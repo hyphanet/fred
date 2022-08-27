@@ -3,15 +3,19 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
 import java.net.URI;
 import java.util.LinkedHashMap;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import freenet.client.filter.HTMLFilter.ParsedTag;
 import freenet.client.filter.HTMLFilter.TagVerifier;
 
-public class TagVerifierTest extends TestCase {
+public class TagVerifierTest {
 	private static final String BASE_URI_PROTOCOL = "http";
 	private static final String BASE_URI_CONTENT = "localhost:8888";
 	private static final String BASE_KEY = "USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/Ultimate-Freenet-Index/55/";
@@ -24,14 +28,14 @@ public class TagVerifierTest extends TestCase {
 	HTMLFilter filter;
 	HTMLFilter.HTMLParseContext pc;
 
-	@Override
+	@Before
 	public void setUp() throws Exception {
 		filter = new HTMLFilter();
 		attributes = new LinkedHashMap<String, String>();
 		pc = filter.new HTMLParseContext(null, null, "utf-8", new GenericReadFilterCallback(new URI(ALT_BASE_URI), null, null, null), false);
 	}
 
-	@Override
+	@After
 	public void tearDown() {
 		filter = null;
 		attributes = null;
@@ -41,6 +45,7 @@ public class TagVerifierTest extends TestCase {
 		HTMLTag = null;
 	}
 
+	@Test
 	public void testHTMLTagWithInvalidNS() throws DataFilterException{
 		tagname = "html";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
@@ -56,6 +61,7 @@ public class TagVerifierTest extends TestCase {
 		assertEquals("HTML tag containing an invalid xmlns", HTML_INVALID_XMLNS, verifier.sanitize(HTMLTag, pc).toString());
 	}
 
+	@Test
 	public void testLinkTag() throws DataFilterException {
 		tagname = "link";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
@@ -73,6 +79,7 @@ public class TagVerifierTest extends TestCase {
 		assertEquals("Link tag importing CSS", LINK_STYLESHEET, verifier.sanitize(HTMLTag, pc).toString());
 	}
 
+	@Test
 	public void testMetaTagHTMLContentType() throws DataFilterException {
 		tagname = "meta";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
@@ -84,6 +91,7 @@ public class TagVerifierTest extends TestCase {
 		assertEquals("Meta tag describing HTML content-type", HTMLTag.toString(), verifier.sanitize(HTMLTag, pc).toString());
 	}
 
+	@Test
 	public void testMetaTagXHTMLContentType() throws DataFilterException {
 		tagname = "meta";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
@@ -95,6 +103,7 @@ public class TagVerifierTest extends TestCase {
 		assertEquals("Meta tag describing XHTML content-type", HTMLTag.toString(), verifier.sanitize(HTMLTag, pc).toString());
 	}
 
+	@Test
 	public void testMetaTagUnknownContentType() throws DataFilterException {
 		tagname = "meta";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
@@ -111,6 +120,7 @@ public class TagVerifierTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testBodyTag() throws DataFilterException {
 		tagname = "body";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
@@ -126,6 +136,7 @@ public class TagVerifierTest extends TestCase {
 		assertEquals("Body tag", BODY_TAG, verifier.sanitize(HTMLTag, pc).toString());
 	}
 
+	@Test
 	public void testFormTag() throws DataFilterException {
 		tagname = "form";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
@@ -141,6 +152,7 @@ public class TagVerifierTest extends TestCase {
 		assertEquals("Form tag", FORM_TAG, verifier.sanitize(HTMLTag, pc).toString());
 	}
 
+	@Test
 	public void testInvalidFormMethod() throws DataFilterException {
 		tagname = "form";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
@@ -153,6 +165,7 @@ public class TagVerifierTest extends TestCase {
 		assertNull("Form tag with an invalid method", verifier.sanitize(HTMLTag, pc));
 	}
 
+	@Test
 	public void testValidInputTag() throws DataFilterException {
 		tagname = "input";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
@@ -164,6 +177,7 @@ public class TagVerifierTest extends TestCase {
 		assertEquals("Input tag with a valid type", HTMLTag.toString(), verifier.sanitize(HTMLTag, pc).toString());
 	}
 
+	@Test
 	public void testInvalidInputTag() throws DataFilterException {
 		tagname = "input";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);

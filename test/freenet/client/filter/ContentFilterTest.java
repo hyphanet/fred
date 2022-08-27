@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+
+import org.junit.Test;
 
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.clients.http.ExternalLinkToadlet;
@@ -24,7 +26,7 @@ import freenet.support.io.ArrayBucket;
  *
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
-public class ContentFilterTest extends TestCase {
+public class ContentFilterTest {
 	private static final String BASE_URI_PROTOCOL = "http";
 	private static final String BASE_URI_CONTENT = "localhost:8888";
 	private static final String BASE_KEY = "USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/Ultimate-Freenet-Index/55/";
@@ -118,6 +120,7 @@ public class ContentFilterTest extends TestCase {
 
 	private static final String CSS_SPEC_EXAMPLE1 = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n<HTML>\n  <HEAD>\n  <TITLE>Bach's home page</TITLE>\n  <STYLE type=\"text/css\">\n    body {\n      font-family: \"Gill Sans\", sans-serif;\n      font-size: 12pt;\n      margin: 3em;\n\n    }\n  </STYLE>\n  </HEAD>\n  <BODY>\n    <H1>Bach's home page</H1>\n    <P>Johann Sebastian Bach was a prolific composer.\n  </BODY>\n</HTML>";
 
+	@Test
 	public void testHTMLFilter() throws Exception {
 		if (TestProperty.VERBOSE) {
 			Logger.setupStdoutLogging(LogLevel.MINOR, "freenet.client.filter.Generic:DEBUG");
@@ -207,6 +210,7 @@ public class ContentFilterTest extends TestCase {
 	private static final String META_BOGUS_REDIRECT4_OUT = "<!-- GenericReadFilterCallback.deletedURI-->";
 	private static final String META_BOGUS_REDIRECT_NO_URL = "<!-- no url but doesn't parse as number in meta refresh -->";
 
+	@Test
 	public void testMetaRefresh() throws Exception {
 		HTMLFilter.metaRefreshSamePageMinInterval = 5;
 		HTMLFilter.metaRefreshRedirectMinInterval = 30;
@@ -254,6 +258,7 @@ public class ContentFilterTest extends TestCase {
 		return s;
 	}
 
+	@Test
 	public void testEvilCharset() throws IOException {
 		// This is why we need to disallow characters before <html> !!
 		String s = "<html><body><a href=\"http://www.google.com/\">Blah</a>";
@@ -346,6 +351,7 @@ public class ContentFilterTest extends TestCase {
 		return returnValue;
 	}
 
+	@Test
 	public void testLowerCaseExtensions() {
 		for(FilterMIMEType type : ContentFilter.mimeTypesByName.values()) {
 			String ext = type.primaryExtension;

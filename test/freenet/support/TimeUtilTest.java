@@ -17,25 +17,28 @@ package freenet.support;
 
 import static java.util.Calendar.MILLISECOND;
 
+import static org.junit.Assert.*;
+
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.TimeUtil} class.
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
-public class TimeUtilTest extends TestCase {
+public class TimeUtilTest {
 
 	//1w+1d+1h+1m+1s+1ms
 	private long oneForTermLong = 694861001;
 	
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		Locale.setDefault(Locale.US);
 	}
 	
@@ -43,6 +46,7 @@ public class TimeUtilTest extends TestCase {
 	 * Tests formatTime(long,int,boolean) method
 	 * trying the biggest long value
 	 */
+	@Test
 	public void testFormatTime_LongIntBoolean_MaxValue() {
 		String expectedForMaxLongValue = "15250284452w3d7h12m55.807s";
 		assertEquals(TimeUtil.formatTime(Long.MAX_VALUE,6,true),
@@ -53,6 +57,7 @@ public class TimeUtilTest extends TestCase {
 	 * Tests formatTime(long,int) method
 	 * trying the biggest long value
 	 */
+	@Test
 	public void testFormatTime_LongInt() {
 		String expectedForMaxLongValue = "15250284452w3d7h12m55s";
 		assertEquals(TimeUtil.formatTime(Long.MAX_VALUE,6),
@@ -63,6 +68,7 @@ public class TimeUtilTest extends TestCase {
 	 * Tests formatTime(long) method
 	 * trying the biggest long value
 	 */
+	@Test
 	public void testFormatTime_Long() {
 		//it uses two terms by default
 		String expectedForMaxLongValue = "15250284452w3d";
@@ -76,6 +82,7 @@ public class TimeUtilTest extends TestCase {
 	 * They could be checked using Google Calculator
 	 * http://www.google.com/intl/en/help/features.html#calculator
 	 */
+	@Test
 	public void testFormatTime_KnownValues() {
 		Long methodLong;
 		String[][] valAndExpected = {
@@ -102,6 +109,7 @@ public class TimeUtilTest extends TestCase {
 	 * term kind. It tests if the maxTerms arguments
 	 * works correctly
 	 */
+	@Test
 	public void testFormatTime_LongIntBoolean_maxTerms() {
 		String[] valAndExpected = {
 				//0 terms
@@ -130,6 +138,7 @@ public class TimeUtilTest extends TestCase {
 	 * It tests if the withSecondFractions argument
 	 * works correctly
 	 */
+	@Test
 	public void testFormatTime_LongIntBoolean_milliseconds() {
 		long methodValue = 1;	//1ms
 		assertEquals(TimeUtil.formatTime(methodValue,6,false),"0s");
@@ -142,6 +151,7 @@ public class TimeUtilTest extends TestCase {
 	 * term kind. It tests if the maxTerms arguments
 	 * works correctly
 	 */
+	@Test
 	public void testFormatTime_LongIntBoolean_tooManyTerms() {	
 		try {
 			TimeUtil.formatTime(oneForTermLong,7);
@@ -151,6 +161,7 @@ public class TimeUtilTest extends TestCase {
 	}
 
 	/** Tests {@link TimeUtil#setTimeToZero(Date)} */
+	@Test
 	public void testSetTimeToZero() {
 		// Test whether zeroing doesn't happen when it needs not to.
 		
@@ -184,23 +195,28 @@ public class TimeUtilTest extends TestCase {
 		assertEquals(originalBackup, original);
 	}
 
+	@Test
 	public void testToMillis_oneForTermLong() {
 		assertEquals(TimeUtil.toMillis("1w1d1h1m1.001s"), oneForTermLong);
 	}
 
+	@Test
 	public void testToMillis_maxLong() {
 		assertEquals(TimeUtil.toMillis("15250284452w3d7h12m55.807s"), Long.MAX_VALUE);
 	}
 
+	@Test
 	public void testToMillis_minLong() {
 		assertEquals(TimeUtil.toMillis("-15250284452w3d7h12m55.808s"), Long.MIN_VALUE);
 	}
 
+	@Test
 	public void testToMillis_empty() {
 		assertEquals(TimeUtil.toMillis(""), 0);
 		assertEquals(TimeUtil.toMillis("-"), 0);
 	}
 
+	@Test
 	public void testToMillis_unknownFormat() {
 		try {
 			TimeUtil.toMillis("15250284452w3q7h12m55.807s");

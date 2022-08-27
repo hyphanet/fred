@@ -1,9 +1,13 @@
 package freenet.store;
 
+import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+
+import org.junit.Test;
 
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
@@ -11,10 +15,10 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.Global;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.math.MersenneTwister;
-import junit.framework.TestCase;
 
-public class PubkeyStoreTest extends TestCase {
+public class PubkeyStoreTest {
 	
+	@Test
 	public void testSimple() throws IOException {
 		final int keys = 10;
 		PubkeyStore pk = new PubkeyStore();

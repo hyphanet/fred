@@ -3,13 +3,17 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import static org.junit.Assert.*;
+
 import java.io.File;
 import java.io.FileWriter;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.spaceroots.mantissa.random.ScalarSampleStatistics;
 
-import junit.framework.*;
-
-public class YarrowTest extends TestCase {
+public class YarrowTest {
 
 	private static final String SEED_FILE_NAME = "prng-test.seed";
 	private static final File SEED_FILE = new File(SEED_FILE_NAME);
@@ -21,9 +25,8 @@ public class YarrowTest extends TestCase {
 		(byte)0xCD, (byte)0xD0, (byte)0xEB, (byte)0x37, (byte)0xF4 
 	};
 	
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setUp() throws Exception {
 		FileWriter fw = new FileWriter(SEED_FILE);
 		for(int i = 0; i < 256; i++)
 			fw.write(i);
@@ -31,9 +34,8 @@ public class YarrowTest extends TestCase {
 		fw.close();
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
-		super.tearDown();
+	@After
+	public void tearDown() throws Exception {
 		assertTrue(SEED_FILE.delete());
 	}
 
@@ -50,6 +52,7 @@ public class YarrowTest extends TestCase {
 //		assertEquals(new String(bytes, "UTF-8"), new String(SEED_OUTPUT_YARROW_FILE, "UTF-8"));
 //	}
 
+	@Test
 	public void testDouble() {
 		Yarrow y = new Yarrow(SEED_FILE, "SHA1", "Rijndael", false, false, false);
 		ScalarSampleStatistics sample = new ScalarSampleStatistics();
@@ -62,6 +65,7 @@ public class YarrowTest extends TestCase {
 		assertEquals(1.0 / (2.0 * Math.sqrt(3.0)), sample.getStandardDeviation(), 0.002);
 	}
 
+	@Test
 	public void testNextInt() {
 //		Yarrow y = new Yarrow(SEED_FILE, "SHA1", "Rijndael", false, false, false);
 //		for(int n = 1; n < 20; ++n) {
@@ -79,6 +83,7 @@ public class YarrowTest extends TestCase {
 //		}
 	}
 	
+	@Test
 	public void testNextBoolean() {
 		Yarrow y = new Yarrow(SEED_FILE, "SHA1", "Rijndael", false, false, false);
 		int[] results = new int[2];

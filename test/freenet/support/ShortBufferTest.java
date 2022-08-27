@@ -15,13 +15,15 @@
  */
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.ShortBuffer} class.
@@ -29,11 +31,12 @@ import junit.framework.TestCase;
  * @author stuart martin &lt;wavey@freenetproject.org&gt;
  * @author Daniel Cheng &lt;sdiz@freenetproject.org&gt;
  */
-public class ShortBufferTest extends TestCase {
+public class ShortBufferTest {
 
 	private static final String DATA_STRING_1 = "asldkjaskjdsakdhasdhaskjdhaskjhbkasbhdjkasbduiwbxgdoudgboewuydxbybuewyxbuewyuwe" + 
 		"dasdkljasndijwnodhnqweoidhnaouidhbnwoduihwnxodiuhnwuioxdhnwqiouhnxwqoiushdnxwqoiudhxnwqoiudhxni";
 	
+	@Test
 	public void testByteArrayShortBuffer() {
 		
 		byte[] data = DATA_STRING_1.getBytes();
@@ -45,6 +48,7 @@ public class ShortBufferTest extends TestCase {
 		doTestShortBuffer(data, buffer);
 	}
 
+	@Test
 	public void testByteArrayIndexShortBuffer() {
 		
 		// get content
@@ -62,6 +66,7 @@ public class ShortBufferTest extends TestCase {
 		doTestShortBuffer(dataSub, buffer);
 	}
 
+	@Test
 	public void testBadLength() {
 		try{
 			new ShortBuffer(new byte[0], 0, -1);
@@ -91,6 +96,7 @@ public class ShortBufferTest extends TestCase {
 		new Buffer(new byte[1], 0, 1);
 	}
 	
+	@Test
 	public void testDataInputStreamShortBuffer() {
 		
 		byte[] data = DATA_STRING_1.getBytes();   // get some content
@@ -133,6 +139,7 @@ public class ShortBufferTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testShortBufferToString() {
 		String shortString = "feep";
 		ShortBuffer shortShortBuffer = new ShortBuffer(shortString.getBytes());
@@ -141,6 +148,7 @@ public class ShortBufferTest extends TestCase {
 		assertEquals(outString, "{4:102 101 101 112 "); // FIXME: final brace?
 	}
 	
+	@Test
 	public void testEquals() {
 		ShortBuffer b1 = new ShortBuffer("ShortBuffer1".getBytes());
 		ShortBuffer b2 = new ShortBuffer("ShortBuffer2".getBytes());
@@ -154,6 +162,7 @@ public class ShortBufferTest extends TestCase {
 		assertTrue(b3.equals(b1));				
 	}
 	
+	@Test
 	public void testHashcode() {
 		
 		ShortBuffer b1 = new ShortBuffer("ShortBuffer1".getBytes());
@@ -177,6 +186,7 @@ public class ShortBufferTest extends TestCase {
 		assertTrue(o == b3);
 	}
 	
+	@Test
 	public void testCopy() {
 		byte[] oldBuf = DATA_STRING_1.getBytes();
 		ShortBuffer b = new ShortBuffer(oldBuf);

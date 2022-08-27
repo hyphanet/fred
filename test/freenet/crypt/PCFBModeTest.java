@@ -1,8 +1,10 @@
 package freenet.crypt;
 
+import static org.junit.Assert.*;
+
 import java.util.Arrays;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
@@ -11,7 +13,7 @@ import freenet.support.math.MersenneTwister;
 // 256,256 PCFB is the same as 256,256 CFB, however JCA does not support 256-bit block size, so we can't
 // test against JCA. We will move to the standard block size, and stop using PCFB, eventually, but we'll 
 // need PCFB for a while if only for old keys, so we need to test it.
-public class PCFBModeTest extends TestCase {
+public class PCFBModeTest {
 
 	private MersenneTwister mt = new MersenneTwister(1634);
 
@@ -38,6 +40,7 @@ public class PCFBModeTest extends TestCase {
 	byte[] PCFB_256_DECRYPT_PLAINTEXT = PCFB_256_ENCRYPT_PLAINTEXT;
 	byte[] PCFB_256_DECRYPT_CIPHERTEXT = PCFB_256_ENCRYPT_CIPHERTEXT;
 
+	@Test
 	public void testKnownValues() throws UnsupportedCipherException {
 		// Rijndael(256,256)
 		checkKnownValues(256, PCFB_256_ENCRYPT_KEY, PCFB_256_ENCRYPT_IV,
@@ -46,6 +49,7 @@ public class PCFBModeTest extends TestCase {
 				PCFB_256_DECRYPT_PLAINTEXT, PCFB_256_DECRYPT_CIPHERTEXT);
 	}
 
+	@Test
 	public void testKnownValuesRandomLength() throws UnsupportedCipherException {
 		// Rijndael(256,256)
 		checkKnownValuesRandomLength(256, PCFB_256_ENCRYPT_KEY, PCFB_256_ENCRYPT_IV,
@@ -106,6 +110,7 @@ public class PCFBModeTest extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testRandom() throws UnsupportedCipherException {
 		for(int i=0;i<1024;i++) {
 			byte[] plaintext = new byte[mt.nextInt(4096)+1];

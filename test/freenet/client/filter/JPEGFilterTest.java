@@ -1,5 +1,7 @@
 package freenet.client.filter;
 
+import static org.junit.Assert.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -8,15 +10,16 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Unit test for (parts of) {@link JPEGFilter}.
  *
  * @author <a href="mailto:bombe@pterodactylus.net">David ‘Bombe’ Roden</a>
  */
-public class JPEGFilterTest extends TestCase {
+public class JPEGFilterTest {
 
+	@Test
 	public void testThatAThumbnailExtensionCodeIsPreserved() throws IOException {
 		JPEGFilter jpegFilter = new JPEGFilter(true, true);
 		byte[] jpegFile = createValidJpegFileWithThumbnail();

@@ -1,18 +1,21 @@
 package freenet.client;
 
+import static org.junit.Assert.*;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import freenet.client.events.SimpleEventProducer;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.StorageFormatException;
 
-public class FetchContextTest extends TestCase {
+public class FetchContextTest {
     
+    @Test
     public void testPersistence() throws IOException, StorageFormatException {
         FetchContext context = 
             HighLevelSimpleClientImpl.makeDefaultFetchContext(Long.MAX_VALUE, Long.MAX_VALUE, 

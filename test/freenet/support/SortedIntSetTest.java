@@ -1,11 +1,13 @@
 package freenet.support;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.Random;
 
-public class SortedIntSetTest extends TestCase {
+import org.junit.Test;
+
+public class SortedIntSetTest {
     private static final int[] SORTED_UNIQUE = new int[] {
         /*0,*/ 1, 2, /*3,*/ 4, 5, 6, 7, 8, 9, 10, /*11,*/ 12, 13, 14, 15 /*, 16*/
     };
@@ -15,6 +17,7 @@ public class SortedIntSetTest extends TestCase {
     
     private final Random r = new Random(0);
 
+    @Test
     public void testPush() {
         int[] shuffled = shuffle(SORTED_UNIQUE);
         SortedIntSet s = new SortedIntSet();
@@ -28,6 +31,7 @@ public class SortedIntSetTest extends TestCase {
         }
     }
 
+    @Test
     public void testAdd() {
         int[] shuffled = shuffle(SORTED_UNIQUE);
         SortedIntSet s = new SortedIntSet();
@@ -46,6 +50,7 @@ public class SortedIntSetTest extends TestCase {
         }
     }
 
+    @Test
     public void testRemove() {
         int[] shuffled = shuffle(SORTED_UNIQUE);
         SortedIntSet s = new SortedIntSet(SORTED_UNIQUE);
@@ -62,6 +67,7 @@ public class SortedIntSetTest extends TestCase {
         }
     }
 
+    @Test
     public void testContains() {
         int[] shuffled = shuffle(SORTED_UNIQUE);
         SortedIntSet s = new SortedIntSet();

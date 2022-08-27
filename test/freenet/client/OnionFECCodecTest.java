@@ -1,14 +1,16 @@
 package freenet.client;
 
+import static org.junit.Assert.*;
+
 import java.util.Arrays;
 import java.util.Random;
 
+import org.junit.Test;
+
 import freenet.support.TestProperty;
 
-import junit.framework.TestCase;
-
 /** Test the new (post db4o) high level FEC API */
-public class OnionFECCodecTest extends TestCase {
+public class OnionFECCodecTest {
     
     private static final int BLOCK_SIZE = 4096;
     private static final int MAX_SEGMENT_SIZE = 255;
@@ -21,6 +23,7 @@ public class OnionFECCodecTest extends TestCase {
     private boolean[] checkBlocksPresent;
     private boolean[] dataBlocksPresent;
     
+    @Test
     public void testDecodeRandomSubset() {
         Random r = new Random(19412106);
         int iterations = TestProperty.EXTENSIVE ? 100 : 10;
@@ -32,6 +35,7 @@ public class OnionFECCodecTest extends TestCase {
             inner(129, 127, r);
     }
     
+    @Test
     public void testEncodeThrowsOnNotPaddedLastBlock() {
         Random r = new Random(21502106);
         int data = 128;
@@ -51,6 +55,7 @@ public class OnionFECCodecTest extends TestCase {
         }
     }
     
+    @Test
     public void testDecodeThrowsOnNotPaddedLastBlock() {
         Random r = new Random(21482106);
         setup(128, 128, r);
@@ -65,6 +70,7 @@ public class OnionFECCodecTest extends TestCase {
         }
     }
     
+    @Test
     public void testDecodeAlreadyDecoded() {
         Random r = new Random(21482106);
         setup(128, 128, r);
@@ -73,6 +79,7 @@ public class OnionFECCodecTest extends TestCase {
         decode(); // Should be a no-op.
     }
     
+    @Test
     public void testDecodeNoneDecoded() {
         Random r = new Random(21482106);
         setup(128, 128, r);
@@ -81,6 +88,7 @@ public class OnionFECCodecTest extends TestCase {
         decode();
     }
     
+    @Test
     public void testManyCheckFewData() {
         Random r = new Random(21582106);
         inner(2, 253, r);
@@ -89,12 +97,14 @@ public class OnionFECCodecTest extends TestCase {
         inner(2, 3, r); // Common case, include it here.
     }
     
+    @Test
     public void testManyDataFewCheck() {
         Random r = new Random(21592106);
         inner(200, 55, r);
         inner(253, 2, r);
     }
     
+    @Test
     public void testRandomDataCheckCounts() {
         Random r = new Random(21602106);
         int iterations = TestProperty.EXTENSIVE ? 100 : 10;

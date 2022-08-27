@@ -16,7 +16,10 @@
 
 package freenet.io;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
 import freenet.io.AddressIdentifier.AddressType;
 
 /**
@@ -25,8 +28,9 @@ import freenet.io.AddressIdentifier.AddressType;
  * @author David Roden &lt;droden@gmail.com&gt;
  * @version $Id: AddressIdentifierTest.java 10490 2006-09-20 00:07:46Z toad $
  */
-public class AddressIdentifierTest extends TestCase {
+public class AddressIdentifierTest {
 
+	@Test
 	public void test() {
 		/* test real IPv4 addresses */
 		assertEquals(AddressType.IPv4, AddressIdentifier.getAddressType("0.0.0.0"));
@@ -50,6 +54,7 @@ public class AddressIdentifierTest extends TestCase {
 		assertEquals(AddressType.OTHER, AddressIdentifier.getAddressType("12345:6:7:8:9"));
 	}
 	
+	@Test
 	public void testIsAnISATAPIPv6Address() {
 		assertFalse(AddressIdentifier.isAnISATAPIPv6Address("fe80:0:0:0:203:dff:fe22:420f"));
 		assertFalse(AddressIdentifier.isAnISATAPIPv6Address("fe80:0:5efe:0:203:dff:fe22:420f"));

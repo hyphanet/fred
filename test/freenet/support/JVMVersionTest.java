@@ -1,51 +1,59 @@
 package freenet.support;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-public class JVMVersionTest extends TestCase {
+import org.junit.Test;
 
+public class JVMVersionTest {
+
+	@Test
 	public void testTooOldWarning() {
-		Assert.assertTrue(JVMVersion.isEOL("1.6.0_32"));
-		Assert.assertTrue(JVMVersion.isEOL("1.6"));
-		Assert.assertTrue(JVMVersion.isEOL("1.5"));
-		Assert.assertTrue(JVMVersion.isEOL("1.7.0_65"));
-		Assert.assertTrue(JVMVersion.isEOL("1.7"));
+		assertTrue(JVMVersion.isEOL("1.6.0_32"));
+		assertTrue(JVMVersion.isEOL("1.6"));
+		assertTrue(JVMVersion.isEOL("1.5"));
+		assertTrue(JVMVersion.isEOL("1.7.0_65"));
+		assertTrue(JVMVersion.isEOL("1.7"));
 	}
 
+	@Test
 	public void testTooOldUpdater() {
-		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.6.0_32"));
-		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.6"));
-		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.5"));
-		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.7.0_65"));
-		Assert.assertTrue(JVMVersion.needsLegacyUpdater("1.7"));
+		assertTrue(JVMVersion.needsLegacyUpdater("1.6.0_32"));
+		assertTrue(JVMVersion.needsLegacyUpdater("1.6"));
+		assertTrue(JVMVersion.needsLegacyUpdater("1.5"));
+		assertTrue(JVMVersion.needsLegacyUpdater("1.7.0_65"));
+		assertTrue(JVMVersion.needsLegacyUpdater("1.7"));
 	}
 
+	@Test
 	public void testRecentEnoughWarning() {
-		Assert.assertFalse(JVMVersion.isEOL("1.8.0_9"));
-		Assert.assertFalse(JVMVersion.isEOL("9-ea"));
-		Assert.assertFalse(JVMVersion.isEOL("10"));
+		assertFalse(JVMVersion.isEOL("1.8.0_9"));
+		assertFalse(JVMVersion.isEOL("9-ea"));
+		assertFalse(JVMVersion.isEOL("10"));
 	}
 
+	@Test
 	public void testRecentEnoughUpdater() {
-		Assert.assertFalse(JVMVersion.needsLegacyUpdater("1.8.0_9"));
-		Assert.assertFalse(JVMVersion.needsLegacyUpdater("9-ea"));
-		Assert.assertFalse(JVMVersion.needsLegacyUpdater("10"));
+		assertFalse(JVMVersion.needsLegacyUpdater("1.8.0_9"));
+		assertFalse(JVMVersion.needsLegacyUpdater("9-ea"));
+		assertFalse(JVMVersion.needsLegacyUpdater("10"));
 	}
 
+	@Test
 	public void testRelative() {
 		/*
 		 * Being at too old a version for the modern updater URI must produce a warning, but a warning can be shown for
 		 * a version not yet too old for the modern updater URI.
 		 */
-		Assert.assertTrue(JVMVersion.compareVersion(JVMVersion.UPDATER_THRESHOLD, JVMVersion.EOL_THRESHOLD) <= 0);
+		assertTrue(JVMVersion.compareVersion(JVMVersion.UPDATER_THRESHOLD, JVMVersion.EOL_THRESHOLD) <= 0);
 	}
 
+	@Test
 	public void testNull() {
-		Assert.assertFalse(JVMVersion.isEOL(null));
-		Assert.assertFalse(JVMVersion.needsLegacyUpdater(null));
+		assertFalse(JVMVersion.isEOL(null));
+		assertFalse(JVMVersion.needsLegacyUpdater(null));
 	}
 
+	@Test
 	public void testCompare() {
 	    String[] orderedVersions = new String[] {
 	        "bogus", // Bogus versions are treated as 0.0.0_0

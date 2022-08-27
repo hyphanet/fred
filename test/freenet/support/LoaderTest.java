@@ -16,17 +16,20 @@
 
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.lang.reflect.InvocationTargetException;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.Loader} class.
  * 
  * @author stuart martin &lt;wavey@freenetproject.org&gt;
  */
-public class LoaderTest extends TestCase {
+public class LoaderTest {
 
+	@Test
 	public void testLoader() {
 		Object o = null;
 		

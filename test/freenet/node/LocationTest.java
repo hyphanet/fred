@@ -1,8 +1,10 @@
 package freenet.node;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-public class LocationTest extends TestCase {
+import org.junit.Test;
+
+public class LocationTest {
 
     // Maximal acceptable difference to consider two doubles equal.
     private static final double EPSILON = 1e-12;
@@ -20,6 +22,7 @@ public class LocationTest extends TestCase {
     private static final double INVALID_1 = -1;
     private static final double INVALID_2 = 1.1;
 
+    @Test
     public void testIsValid() {
         // Simple cases.
         assertTrue(Location.isValid(VALID_1));
@@ -32,6 +35,7 @@ public class LocationTest extends TestCase {
         assertTrue(Location.isValid(1.0));
     }
 
+    @Test
     public void testEquals() {
         // Simple cases.
         assertTrue(Location.equals(VALID_1, VALID_1));
@@ -56,6 +60,7 @@ public class LocationTest extends TestCase {
         assertTrue(Location.equals(1.0, 1.0));
     }
     
+    @Test
     public void testDistance() {
         // Simple cases.
         assertEquals(DIST_12, Location.distance(VALID_1, VALID_2), EPSILON);
@@ -72,6 +77,7 @@ public class LocationTest extends TestCase {
         assertEquals(0.0, Location.distance(VALID_2, VALID_2), EPSILON);
     }
     
+    @Test
     public void testChange() {
         // Simple cases.
         assertEquals(CHANGE_12, Location.change(VALID_1, VALID_2), EPSILON);
@@ -88,6 +94,7 @@ public class LocationTest extends TestCase {
         assertEquals(0.0, Location.change(VALID_2, VALID_2), EPSILON);
     }
     
+    @Test
     public void testNormalize() {
         // Simple cases.
         for (int i = 0; i < 5; i++) {
@@ -101,6 +108,7 @@ public class LocationTest extends TestCase {
         assertEquals(0.0, Location.normalize(1.0), EPSILON);
     }
     
+    @Test
     public void testDistanceAllowInvalid() {
         // Simple cases.
         assertEquals(DIST_12, Location.distanceAllowInvalid(VALID_1, VALID_2), EPSILON);

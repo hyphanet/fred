@@ -16,6 +16,8 @@
 
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -24,17 +26,18 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import org.junit.Test;
+
 import freenet.node.FSParseException;
 import freenet.support.io.LineReader;
 import freenet.support.io.Readers;
-import junit.framework.TestCase;
 
 /**
  * Test case for {@link freenet.support.SimpleFieldSet} class.
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
-public class SimpleFieldSetTest extends TestCase {
+public class SimpleFieldSetTest {
 
 	private static final char KEY_VALUE_SEPARATOR = '=';
 	
@@ -57,6 +60,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * trying to store a key with two paired
 	 * multi_level_chars (i.e. "..").
 	 */
+	@Test
 	public void testSimpleFieldSetPutSingle_StringString_WithTwoPairedMultiLevelChars() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		String methodKey = "foo..bar.";
@@ -71,6 +75,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * trying to store a key with two paired
 	 * multi_level_chars (i.e. "..").
 	 */
+	@Test
 	public void testSimpleFieldSetPutAppend_StringString_WithTwoPairedMultiLevelChars() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		String methodKey = "foo..bar";
@@ -84,6 +89,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * using a normal Map behaviour
 	 * and without MULTI_LEVEL_CHARs
 	 */
+	@Test
 	public void testSimpleFieldSetPutAndGet_NoMultiLevel(){
 		String[][] methodPairsArray = { 
 				{"A","a"},{"B","b"},{"C","c"},{"D","d"},{"E","e"},{"F","f"} };
@@ -95,6 +101,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * using a normal Map behaviour
 	 * and with MULTI_LEVEL_CHARs
 	 */
+	@Test
 	public void testSimpleFieldSetPutAndGet_MultiLevel(){
 		String[][] methodPairsArray_DoubleLevel = { 
 				{"A.A","aa"},
@@ -141,6 +148,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * on the first level and then get()
 	 * on the second
 	 */
+	@Test
 	public void testSimpleFieldSetSubset_String() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		String[][] methodPairsArray_MultiLevel = { 
@@ -171,6 +179,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * with another with same keys but different
 	 * values
 	 */
+	@Test
 	public void testPutAllOverwrite() {
 		String methodAppendedString = "buu";
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
@@ -189,6 +198,7 @@ public class SimpleFieldSetTest extends TestCase {
 	/**
 	 * Tests put(String,SimpleFieldSet) method
 	 */
+	@Test
 	public void testPut_StringSimpleFieldSet() {
 		String methodKey = "prefix";
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
@@ -202,6 +212,7 @@ public class SimpleFieldSetTest extends TestCase {
 	/**
 	 * Tests put(String,SimpleFieldSet) method
 	 */
+	@Test
 	public void testTPut_StringSimpleFieldSet() {
 		String methodKey = "prefix";
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
@@ -216,6 +227,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * tput(String,SimpleFieldSet) trying to
 	 * add empty data structures
 	 */
+	@Test
 	public void testPutAndTPut_WithEmpty() {
 		SimpleFieldSet methodEmptySFS = new SimpleFieldSet(true);
 		SimpleFieldSet methodSampleSFS = sfsFromSampleStringPairs();
@@ -253,6 +265,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * we are sure if it finds the right value or not
 	 * (and does not use the default).
 	 */
+	@Test
 	public void testPut_StringBoolean() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		int length = 15;
@@ -289,6 +302,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * if it finds the right value or not 
 	 * (and does not use the default).
 	 */
+	@Test
 	public void testPut_StringInt() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		int[][] methodPairsArray =
@@ -318,6 +332,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * if it finds the right value or not 
 	 * (and does not use the default).
 	 */
+	@Test
 	public void testPut_StringLong() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		long[][] methodPairsArray =
@@ -347,6 +362,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * if it finds the right value or not 
 	 * (and does not use the default).
 	 */
+	@Test
 	public void testPut_StringChar() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		char[][] methodPairsArray =
@@ -376,6 +392,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * if it finds the right value or not 
 	 * (and does not use the default).
 	 */
+	@Test
 	public void testPut_StringShort() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		short[][] methodPairsArray =
@@ -405,6 +422,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * if it finds the right value or not 
 	 * (and does not use the default).
 	 */
+	@Test
 	public void testPut_StringDouble() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		double[][] methodPairsArray =
@@ -448,6 +466,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * Tests SimpleFieldSet(String,boolean,boolean) constructor,
 	 * with simple and border cases of the canonical form.
 	 */
+	@Test
 	public void testSimpleFieldSet_StringBooleanBoolean() {
 		String[][] methodStringPairs = SAMPLE_STRING_PAIRS;
 		String methodStringToParse = sfsReadyString(methodStringPairs);
@@ -464,6 +483,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * Tests SimpleFieldSet(BufferedReader,boolean,boolean) constructor,
 	 * with simple and border cases of the canonical form.
 	 */
+	@Test
 	public void testSimpleFieldSet_BufferedReaderBooleanBoolean() {
 		String[][] methodStringPairs = SAMPLE_STRING_PAIRS;
         BufferedReader methodBufferedReader = 
@@ -496,6 +516,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * Tests SimpleFieldSet(SimpleFieldSet) constructor,
 	 * with simple and border cases of the canonical form.
 	 */
+	@Test
 	public void testSimpleFieldSet_SimpleFieldSet() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(sfsFromSampleStringPairs());
 		String[][] methodStringPairs = SAMPLE_STRING_PAIRS;
@@ -508,6 +529,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * Tests {get,set}EndMarker(String) methods
 	 * using them after a String parsing
 	 */
+	@Test
 	public void testEndMarker() {
 		String methodEndMarker = "ANOTHER-ENDING";
 		String methodStringToParse = sfsReadyString(SAMPLE_STRING_PAIRS);
@@ -523,6 +545,7 @@ public class SimpleFieldSetTest extends TestCase {
 	/**
 	 * Tests isEmpty() method.
 	 */
+	@Test
 	public void testIsEmpty() {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
 		assertFalse(methodSFS.isEmpty());
@@ -535,6 +558,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * It uses SAMPLE_STRING_PAIRS and for this reason
 	 * the expected subset is "foo".
 	 */
+	@Test
 	public void testDirectSubsetNameIterator() {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
 		String expectedSubset = SAMPLE_STRING_PAIRS[0][0];	//"foo"
@@ -549,6 +573,7 @@ public class SimpleFieldSetTest extends TestCase {
 	/**
 	 * Tests nameOfDirectSubsets() method.
 	 */
+	@Test
 	public void testNamesOfDirectSubsets() {
 		String[] expectedResult = {SAMPLE_STRING_PAIRS[0][0]};
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
@@ -561,6 +586,7 @@ public class SimpleFieldSetTest extends TestCase {
 	/**
 	 * Test the putOverwrite(String,String) method.
 	 */
+	@Test
 	public void testPutOverwrite_String() {
 		String methodKey = "foo.bar";
 		String[] methodValues = {"boo","bar","zoo"};
@@ -574,6 +600,7 @@ public class SimpleFieldSetTest extends TestCase {
 	/**
 	 * Test the putOverwrite(String,String[]) method.
 	 */
+	@Test
 	public void testPutOverwrite_StringArray() {
 		String methodKey = "foo.bar";
 		String[] methodValues = {"boo","bar","zoo"};
@@ -585,6 +612,7 @@ public class SimpleFieldSetTest extends TestCase {
 	/**
 	 * Test the putAppend(String,String) method.
 	 */
+	@Test
 	public void testPutAppend() {
 		String methodKey = "foo.bar";
 		String[] methodValues = {"boo","bar","zoo"};
@@ -600,6 +628,7 @@ public class SimpleFieldSetTest extends TestCase {
 	/**
 	 * Tests the getAll(String) method.
 	 */
+	@Test
 	public void testGetAll() {
 		String methodKey = "foo.bar";
 		String[] methodValues = {"boo","bar","zoo"};
@@ -612,6 +641,7 @@ public class SimpleFieldSetTest extends TestCase {
 	/**
 	 * Tests the getIntArray(String) method
 	 */
+	@Test
 	public void testGetIntArray() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		String keyPrefix = "foo";
@@ -626,6 +656,7 @@ public class SimpleFieldSetTest extends TestCase {
 	/**
 	 * Tests the getDoubleArray(String) method
 	 */
+	@Test
 	public void testGetDoubleArray() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		String keyPrefix = "foo";
@@ -640,6 +671,7 @@ public class SimpleFieldSetTest extends TestCase {
 	/**
 	 * Tests removeValue(String) method
 	 */
+	@Test
 	public void testRemoveValue() {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
 		methodSFS.removeValue("foo");
@@ -652,6 +684,7 @@ public class SimpleFieldSetTest extends TestCase {
 	/**
 	 * Tests removeSubset(String) method
 	 */
+	@Test
 	public void testRemoveSubset() {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
 		methodSFS.removeSubset("foo");
@@ -706,6 +739,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * SimpleFieldSet class.
 	 * It tests hasNext() and next() methods.
 	 */
+	@Test
 	public void testKeyIterator() {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
 		Iterator<String> itr = methodSFS.keyIterator();
@@ -716,6 +750,7 @@ public class SimpleFieldSetTest extends TestCase {
 	 * Tests the Iterator created using prefix 
 	 * given for the SimpleFieldSet class
 	 */
+	@Test
 	public void testKeyIterator_String() {
 		String methodPrefix = "bob";
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
@@ -730,6 +765,7 @@ public class SimpleFieldSetTest extends TestCase {
          * 
          * TODO: improve the test
 	 */
+	@Test
 	public void testToplevelKeyIterator() {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
 		Iterator<String> itr = methodSFS.toplevelKeyIterator();
@@ -741,6 +777,7 @@ public class SimpleFieldSetTest extends TestCase {
         assertFalse(itr.hasNext());
 	}
 
+	@Test
 	public void testKeyIterationPastEnd() {
 		System.out.println("Starting iterator test");
 
@@ -758,6 +795,7 @@ public class SimpleFieldSetTest extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testBase64() throws IOException {
 		checkBase64("test", " ", "IA");
 		for(String[] s : SAMPLE_STRING_PAIRS) {
@@ -780,6 +818,7 @@ public class SimpleFieldSetTest extends TestCase {
 		assertEquals(sfsCheck.get(key), value);
 	}
 	
+	@Test
 	public void testEmptyValue() throws IOException {
 		String written = "foo.blah=\nEnd\n";
 		LineReader r = Readers.fromBufferedReader(new BufferedReader(new StringReader(written)));
@@ -790,6 +829,7 @@ public class SimpleFieldSetTest extends TestCase {
 		assertTrue(sfsCheck.get("foo.blah").equals(""));
 	}
 	
+	@Test
 	public void testSplit() {
 	    assertTrue(Arrays.equals(SimpleFieldSet.split("blah"), new String[] { "blah" }));
 	    assertTrue(Arrays.equals(SimpleFieldSet.split("blah; blah"), new String[] { "blah", " blah" }));

@@ -16,16 +16,19 @@
 
 package freenet.io;
 
+import static org.junit.Assert.*;
+
 import java.net.InetAddress;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * @author David Roden &lt;droden@gmail.com&gt;
  * @version $Id: Inet4AddressMatcherTest.java 10490 2006-09-20 00:07:46Z toad $
  */
-public class Inet4AddressMatcherTest extends TestCase {
+public class Inet4AddressMatcherTest {
 
+	@Test
 	public void test() throws Exception {
 		Inet4AddressMatcher matcher = new Inet4AddressMatcher("192.168.1.2");
 		assertEquals(false, matcher.matches(InetAddress.getByName("192.168.1.1")));

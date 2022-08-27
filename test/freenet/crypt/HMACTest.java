@@ -1,12 +1,14 @@
 package freenet.crypt;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.security.Security;
 import java.util.Random;
@@ -14,7 +16,7 @@ import java.util.Random;
 import freenet.support.TestProperty;
 import freenet.support.TimeUtil;
 
-public class HMACTest extends TestCase {
+public class HMACTest {
 
   Random random;
   // RFC4868 2.7.2.1 SHA256 Authentication Test Vector
@@ -26,18 +28,20 @@ public class HMACTest extends TestCase {
       knownSHA256 =
       Hex.decode("198a607eb44bfbc69903a0f1cf2bbdc5ba0aa3f3d9ae3c1c7a3b1696a0b68cf7");
 
-  protected void setUp() throws Exception {
-    super.setUp();
+  @Before
+  public void setUp() throws Exception {
     Security.addProvider(new BouncyCastleProvider());
     random = new Random(0xAAAAAAAA);
   }
 
+  @Test
   public void testAllCipherNames() {
     for (HMAC hmac : HMAC.values()) {
       HMAC.mac(hmac, new byte[hmac.digestSize], plaintext);
     }
   }
 
+  @Test
   public void testSHA256SignVerify() {
     byte[] key = new byte[32];
     random.nextBytes(key);
@@ -47,6 +51,7 @@ public class HMACTest extends TestCase {
     assertTrue(HMAC.verifyWithSHA256(key, plaintext, hmac));
   }
 
+  @Test
   public void testWrongKeySize() {
     byte[] keyTooLong = new byte[31];
     byte[] keyTooShort = new byte[29];
@@ -66,12 +71,14 @@ public class HMACTest extends TestCase {
     }
   }
 
+  @Test
   public void testKnownVectors() {
     byte[] hmac = HMAC.macWithSHA256(knownKey, plaintext);
     assertEquals(Hex.toHexString(hmac), Hex.toHexString(knownSHA256));
   }
 
   // ant -Dtest.skip=false -Dtest.class=freenet.crypt.HMACTest -Dtest.benchmark=true unit
+  @Test
   public void testBenchmark() {
     if (!TestProperty.BENCHMARK) {
       return;

@@ -3,11 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.util.Iterator;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class SparseBitmapTest extends TestCase {
+public class SparseBitmapTest {
+	@Test
 	public void testAdd() {
 		SparseBitmap s = new SparseBitmap();
 
@@ -36,6 +39,7 @@ public class SparseBitmapTest extends TestCase {
 		assertTrue(s.contains(10, 15));
 	}
 
+	@Test
 	public void testClear() {
 		SparseBitmap s = new SparseBitmap();
 		s.add(0, 2);
@@ -44,6 +48,7 @@ public class SparseBitmapTest extends TestCase {
 		assertFalse(s.contains(1, 1));
 	}
 
+	@Test
 	public void testRemove() {
 		SparseBitmap s = new SparseBitmap();
 
@@ -78,6 +83,7 @@ public class SparseBitmapTest extends TestCase {
 		assertTrue(s.contains(13, 14));
 	}
 
+	@Test
 	public void testNotOverlapping() {
 		for (int a = 0; a <= 20; a++) {
 			for (int b = a; b <= 20; b++) {
@@ -114,6 +120,7 @@ public class SparseBitmapTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testContainsThrowsOnBadRange() {
 		SparseBitmap s = new SparseBitmap();
 		try {
@@ -124,6 +131,7 @@ public class SparseBitmapTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testCombineBackwards() {
 		SparseBitmap s = new SparseBitmap();
 		s.add(5, 10);
@@ -137,6 +145,7 @@ public class SparseBitmapTest extends TestCase {
 		assertFalse(it.hasNext());
 	}
 
+	@Test
 	public void testCombineMiddle() {
 		SparseBitmap s = new SparseBitmap();
 		s.add(10, 15);
@@ -151,6 +160,7 @@ public class SparseBitmapTest extends TestCase {
 		assertFalse(it.hasNext());
 	}
 
+	@Test
 	public void testCombineAdjacent() {
 		SparseBitmap s = new SparseBitmap();
 		s.add(10, 14);
@@ -165,6 +175,7 @@ public class SparseBitmapTest extends TestCase {
 		assertFalse(it.hasNext());
 	}
 
+	@Test
 	public void testIteratorDoubleRemove() {
 		SparseBitmap s = new SparseBitmap();
 		s.add(1, 2);

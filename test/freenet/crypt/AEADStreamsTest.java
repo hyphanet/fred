@@ -1,5 +1,7 @@
 package freenet.crypt;
 
+import static org.junit.Assert.*;
+
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,7 +9,7 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Random;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
@@ -15,8 +17,9 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NoCloseProxyOutputStream;
 
-public class AEADStreamsTest extends TestCase {
+public class AEADStreamsTest {
     
+    @Test
     public void testSuccessfulRoundTrip() throws IOException {
         Random random = new Random(0x96231307);
         for(int i=0;i<10;i++) {
@@ -28,6 +31,7 @@ public class AEADStreamsTest extends TestCase {
         }
     }
     
+    @Test
     public void testCorruptedRoundTrip() throws IOException {
         Random random = new Random(0x96231307); // Same seed as first test, intentionally.
         for(int i=0;i<10;i++) {
@@ -39,6 +43,7 @@ public class AEADStreamsTest extends TestCase {
         }
     }
     
+    @Test
     public void testTruncatedReadsWritesRoundTrip() throws IOException {
         Random random = new Random(0x49ee92f5);
         ArrayBucket input = new ArrayBucket();
@@ -102,6 +107,7 @@ public class AEADStreamsTest extends TestCase {
     
     /** Check whether we can close the stream early. 
      * @throws IOException */
+    @Test
     public void testCloseEarly() throws IOException {
         ArrayBucket input = new ArrayBucket();
         BucketTools.fill(input, 2048);
@@ -127,6 +133,7 @@ public class AEADStreamsTest extends TestCase {
     /** If we close the stream early but there is garbage after that point, it should throw on
      * close(). 
      * @throws IOException */
+    @Test
     public void testGarbageAfterClose() throws IOException {
         ArrayBucket input = new ArrayBucket();
         BucketTools.fill(input, 1024);

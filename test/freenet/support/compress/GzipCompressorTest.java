@@ -16,13 +16,16 @@
 
 package freenet.support.compress;
 
+import static org.junit.Assert.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucket;
@@ -35,7 +38,7 @@ import freenet.support.io.NullBucket;
  *
  * @author stuart martin &lt;wavey@freenetproject.org&gt;
  */
-public class GzipCompressorTest extends TestCase {
+public class GzipCompressorTest {
 
 	public static final String UNCOMPRESSED_DATA_1 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 			+ "aksjdhaskjsdhaskjdhaksjdhkajsdhkasdhkqhdioqahdkashdkashdnkashdnaskdhnkasjhdnkasjhdnkasjhdnkasjhdnkasjhdnkashdnkasjhdnkasjhdnkasjhndkasjhdna"
@@ -51,6 +54,7 @@ public class GzipCompressorTest extends TestCase {
 	/**
 	 * test GZIP compressor's identity and functionality
 	 */
+	@Test
 	public void testGzipCompressor() throws IOException {
 		Compressor.COMPRESSOR_TYPE gzipCompressor = Compressor.COMPRESSOR_TYPE.GZIP;
 		Compressor compressorZero = Compressor.COMPRESSOR_TYPE.getCompressorByMetadataID((short)0);
@@ -59,6 +63,7 @@ public class GzipCompressorTest extends TestCase {
 		assertEquals(gzipCompressor, compressorZero);
 	}
 
+	@Test
 	public void testCompress() throws IOException {
 
 		// do gzip compression
@@ -73,6 +78,7 @@ public class GzipCompressorTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testBucketDecompress() throws IOException {
 
 		byte[] compressedData = COMPRESSED_DATA_1;
@@ -85,6 +91,7 @@ public class GzipCompressorTest extends TestCase {
 		assertEquals(uncompressedString, UNCOMPRESSED_DATA_1);
 	}
 
+	@Test
 	public void testByteArrayDecompress() throws IOException {
 		// build 5k array
 		byte[] originalUncompressedData = new byte[5 * 1024];
@@ -108,6 +115,7 @@ public class GzipCompressorTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testCompressException() throws IOException {
 
 		byte[] uncompressedData = UNCOMPRESSED_DATA_1.getBytes();
@@ -124,6 +132,7 @@ public class GzipCompressorTest extends TestCase {
 		//fail("did not throw expected CompressionOutputSizeException");
 	}
 
+	@Test
 	public void testDecompressException() throws IOException {
 		// build 5k array
 		byte[] uncompressedData = new byte[5 * 1024];

@@ -1,17 +1,20 @@
 package freenet.l10n;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.util.Iterator;
+
+import org.junit.Test;
 
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.support.HTMLNode;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TestProperty;
 
-public class BaseL10nTest extends TestCase {
+public class BaseL10nTest {
     
+    @Test
     public void testAddL10nSubstitution() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         HTMLNode node = new HTMLNode("div");
@@ -22,6 +25,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("Text with <b>loud</b> string", node.generateChildren());
     }
     
+    @Test
     public void testAddL10nSubstitutionExtra() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         HTMLNode node = new HTMLNode("div");
@@ -33,6 +37,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("Text with <b>loud</b> string", node.generateChildren());
     }
     
+    @Test
     public void testAddL10nSubstitutionUnclosed() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         HTMLNode node = new HTMLNode("div");
@@ -43,6 +48,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("Text with <img /> unclosed substitution", node.generateChildren());
     }
     
+    @Test
     public void testAddL10nSubstitutionUnclosedMissing() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         HTMLNode node = new HTMLNode("div");
@@ -52,6 +58,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("Text with  unclosed substitution", node.generateChildren());
     }
     
+    @Test
     public void testAddL10nSubstitutionMultiple() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         HTMLNode node = new HTMLNode("div");
@@ -64,6 +71,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("<r1>Rep 1</r1><r2>Rep 2</r2> and <r3>Rep 3</r3>", node.generateChildren());
     }
     
+    @Test
     public void testAddL10nSubstitutionMissing() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         HTMLNode node = new HTMLNode("div");
@@ -75,6 +83,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("Rep 1<r2>Rep 2</r2> and <r3>Rep 3</r3>", node.generateChildren());
     }
     
+    @Test
     public void testAddL10nSubstitutionNested() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         HTMLNode node = new HTMLNode("div");
@@ -86,6 +95,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("<out>Text and <in>replacement</in></out>", node.generateChildren());
     }
     
+    @Test
     public void testAddL10nSubstitutionDouble() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         HTMLNode node = new HTMLNode("div");
@@ -96,6 +106,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("<tag></tag>content<tag></tag>", node.generateChildren());
     }
     
+    @Test
     public void testAddL10nSubstitutionSelfNested() throws Exception {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         HTMLNode node = new HTMLNode("div");
@@ -108,6 +119,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("test.selfNestedSubstitution", node.generateChildren());
     }
     
+    @Test
     public void testAddL10nSubstitutionSelfNestedEmpty() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         HTMLNode node = new HTMLNode("div");
@@ -118,6 +130,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("<tag>content <tag></tag>nested</tag>", node.generateChildren());
     }
     
+    @Test
     public void testAddL10nSubstitutionMissingBrace() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         HTMLNode node = new HTMLNode("div");
@@ -128,6 +141,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("test.missingBraceSubstitution", node.generateChildren());
     }
     
+    @Test
     public void testAddL10nSubstitutionUnmatchedClose() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         HTMLNode node = new HTMLNode("div");
@@ -138,6 +152,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("test.unmatchedCloseSubstitution", node.generateChildren());
     }
     
+    @Test
     public void testAddL10nSubstitutionFallback() {
         BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
         HTMLNode node = new HTMLNode("div");
@@ -148,6 +163,7 @@ public class BaseL10nTest extends TestCase {
         assertEquals("Fallback <tag></tag>", node.generateChildren());
     }
     
+    @Test
     public void testAddL10nSubstitutionMissingFallback() {
         BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
         HTMLNode node = new HTMLNode("div");
@@ -158,36 +174,42 @@ public class BaseL10nTest extends TestCase {
         assertEquals("Text with <b>loud</b> string", node.generateChildren());
     }
     
+    @Test
     public void testGetString() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         String value = l10n.getString("test.sanity");
         assertEquals("Sane", value);
     }
 
+    @Test
     public void testGetStringOverridden() {
         BaseL10n l10n = createTestL10n(LANGUAGE.ENGLISH);
         String value = l10n.getString("test.override");
         assertEquals("Overridden", value);
     }
 
+    @Test
     public void testGetStringFallback() {
         BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
         String value = l10n.getString("test.sanity");
         assertEquals("Sane", value);
     }
 
+    @Test
     public void testGetStringFallbackOverridden() {
         BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
         String value = l10n.getString("test.override");
         assertEquals("Not overridden", value);
     }
 
+    @Test
     public void testGetStringNonexistent() {
         BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
         String value = l10n.getString("test.nonexistent");
         assertEquals("test.nonexistent", value);
     }
     
+    @Test
     public void testStrings() throws Exception {
         for (LANGUAGE lang : LANGUAGE.values()) {
             BaseL10n l10n = createL10n(lang);
