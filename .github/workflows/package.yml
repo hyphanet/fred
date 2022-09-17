@@ -1,7 +1,7 @@
 name: Build debian package
 on:
   push:
-    branches: [ 'master' ]
+    branches: [ 'master', 'debian-pkg' ]
     tags:
       - build**
       - testing-**
