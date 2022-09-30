@@ -336,7 +336,7 @@ class KeyListenerTracker implements KeySalter {
 	
 	public boolean anyWantKey(Key key, ClientContext context) {
 		assert(key instanceof NodeSSK == isSSKScheduler);
-		byte[] saltedKey = saltKey(key
+		byte[] saltedKey = saltKey(key);
 		List<KeyListener> matches = probablyWantKey(key, saltedKey);
 		if (!matches.isEmpty()) {
 			for (KeyListener listener : matches) {
@@ -383,28 +383,32 @@ class KeyListenerTracker implements KeySalter {
 	}
 	
 	public boolean tripPendingKey(Key key, KeyBlock block, ClientContext context) {
-		if((key instanceof NodeSSK) != isSSKScheduler) {
-			Logger.error(this, "Key "+key+" on scheduler ssk="+isSSKScheduler, new Exception("debug"));
+		if ((key instanceof NodeSSK) != isSSKScheduler) {
+			Logger.error(
+					this,
+					"Key " + key + " on scheduler ssk=" + isSSKScheduler,
+					new Exception("debug"));
 			return false;
 		}
-		assert(key instanceof NodeSSK == isSSKScheduler);
+		assert (key instanceof NodeSSK == isSSKScheduler);
 		byte[] saltedKey = saltKey(key);
 		ArrayList<KeyListener> matches = probablyMatches(key, saltedKey);
 		boolean ret = false;
-		if(matches != null) {
-		for (KeyListener listener : matches) {
-			try {
-				if (listener.handleBlock(key, saltedKey, block, context)) {
-					ret = true;
-				}
-			} catch (Throwable t) {
-				Logger.error(this, format("Error in handleBlock callback for %s", listener), t);
-			}
-			if (listener.isEmpty()) {
+		if (matches != null) {
+			for (KeyListener listener : matches) {
 				try {
-					removePendingKeys(listener);
+					if (listener.handleBlock(key, saltedKey, block, context)) {
+						ret = true;
+					}
 				} catch (Throwable t) {
-					Logger.error(this, format("Error while removing %s", listener), t);
+					Logger.error(this, format("Error in handleBlock callback for %s", listener), t);
+				}
+				if (listener.isEmpty()) {
+					try {
+						removePendingKeys(listener);
+					} catch (Throwable t) {
+						Logger.error(this, format("Error while removing %s", listener), t);
+					}
 				}
 			}
 		}
