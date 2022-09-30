@@ -1,10 +1,11 @@
 package freenet.store;
 
+import junit.framework.TestCase;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
-import junit.framework.TestCase;
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
@@ -15,6 +16,7 @@ import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.SpeedyTicker;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
@@ -65,14 +67,16 @@ public class SlashdotStoreTest extends TestCase {
 	
 	public void testDeletion() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException, InterruptedException {
 		CHKStore store = new CHKStore();
-		new SlashdotStore<CHKBlock>(store, 10, 500, 100, new TrivialTicker(exec), tbf);
+		SpeedyTicker st = new SpeedyTicker();
+		SlashdotStore<CHKBlock> ss = new SlashdotStore<>(store, 10, 0, 100, st, tbf);
 		
 		// Encode a block
 		String test = "test";
 		ClientCHKBlock block = encodeBlock(test);
 		store.put(block.getBlock(), false);
-		
-		Thread.sleep(2000);
+
+		// Do the same as what the ticker would have done...
+		ss.purgeOldData();
 		
 		ClientCHK key = block.getClientKey();
 		
@@ -80,7 +84,7 @@ public class SlashdotStoreTest extends TestCase {
 		if(verify == null) return; // Expected outcome
 		String data = decodeBlock(verify, key);
 		System.err.println("Got data: "+data+" but should have been deleted!");
-		assertTrue(false);
+		fail();
 	}
 
 	private String decodeBlock(CHKBlock verify, ClientCHK key) throws CHKVerifyException, CHKDecodeException, IOException {
@@ -93,7 +97,8 @@ public class SlashdotStoreTest extends TestCase {
 	private ClientCHKBlock encodeBlock(String test) throws CHKEncodeException, IOException {
 		byte[] data = test.getBytes("UTF-8");
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
-		return ClientCHKBlock.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR, false, null, (byte)0);
+		return ClientCHKBlock.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR,
+        null, (byte)0);
 	}
 
 }

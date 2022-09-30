@@ -23,11 +23,16 @@ public class MemoryLimitedJobRunner {
     private int maxThreads;
     private boolean shutdown;
     
+    private static boolean logMINOR;
+    static {
+        Logger.registerClass(MemoryLimitedJobRunner.class);
+    }
+    
     @SuppressWarnings("unchecked")
     public MemoryLimitedJobRunner(long capacity, int maxThreads, Executor executor, int priorities) {
         this.capacity = capacity;
         this.counter = 0;
-        this.jobs = new ArrayDeque[priorities];
+        this.jobs = (ArrayDeque<MemoryLimitedJob>[])new ArrayDeque<?>[priorities];
         for(int i=0;i<jobs.length;i++) 
             jobs[i] = new ArrayDeque<MemoryLimitedJob>();
         this.executor = executor;
@@ -40,6 +45,7 @@ public class MemoryLimitedJobRunner {
     public synchronized void queueJob(final MemoryLimitedJob job) {
         if(shutdown) return;
         if(job.initialAllocation > capacity) throw new IllegalArgumentException("Job size "+job.initialAllocation+" > capacity "+capacity);
+        if(logMINOR) Logger.minor(this, "Queueing job "+job+" at priority "+job.getPriority());
         jobs[job.getPriority()].add(job);
         maybeStartJobs();
     }
@@ -76,6 +82,7 @@ public class MemoryLimitedJobRunner {
     private synchronized void startJob(final MemoryLimitedJob job) {
         counter += job.initialAllocation;
         runningThreads++;
+        if(logMINOR) Logger.minor(this, "Starting job "+job);
         executor.execute(new PrioRunnable() {
 
             @Override

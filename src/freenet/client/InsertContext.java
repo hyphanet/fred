@@ -11,7 +11,6 @@ import java.util.Map;
 import freenet.client.Metadata.SplitfileAlgorithm;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
-import freenet.support.compress.Compressor;
 
 /** Context object for an insert operation, including both simple and multi-file inserts.
  * 
@@ -48,7 +47,7 @@ public class InsertContext implements Cloneable, Serializable {
 	/** a string that contains the codecs to use/try
 	 * if the string is null it defaults to COMPRESSOR_TYPES.Values(),
 	 * so old persistent inserts are not affected after update.
-	 * @see freenet.support.compress.Compressor.COMPRESSOR_TYPE#getCompressorsArray(String compressordescriptor, boolean pre1254)
+	 * @see freenet.support.compress.Compressor.COMPRESSOR_TYPE#getCompressorsArray(String)
 	 */
 	public String compressorDescriptor;
 	public boolean forkOnCacheable;
@@ -143,8 +142,7 @@ public class InsertContext implements Cloneable, Serializable {
          * new compatibility mode is deployed we may want to keep this at an earlier version to 
          * avoid a period when data inserted with the new/testing builds can't be fetched with 
          * earlier versions. */
-        // FIXME revert to COMPAT_CURRENT after 1468 ships.
-        public static final CompatibilityMode COMPAT_DEFAULT = COMPAT_1416;
+        public static final CompatibilityMode COMPAT_DEFAULT = COMPAT_CURRENT;
         
 	}
 	
@@ -297,6 +295,7 @@ public class InsertContext implements Cloneable, Serializable {
     
     /** Call when migrating from db4o era. FIXME remove.
      * @deprecated */
+    @Deprecated
     public void onResume() {
         // Used to encode it as a long.
         if(realCompatMode == null)

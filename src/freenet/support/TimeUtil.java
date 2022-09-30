@@ -26,11 +26,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Locale;
-import java.util.TimeZone;
+import java.util.*;
 
 /**
  * Time formatting utility.
@@ -43,7 +39,7 @@ public class TimeUtil {
 	/**
 	 * It converts a given time interval into a 
 	 * week/day/hour/second.milliseconds string.
-	 * @param timeInterval interval to convert
+	 * @param timeInterval interval to convert, millis
 	 * @param maxTerms the terms number to display
 	 * (e.g. 2 means "h" and "m" if the time could be expressed in hour,
 	 * 3 means "h","m","s" in the same example).
@@ -136,6 +132,48 @@ public class TimeUtil {
     
     public static String formatTime(long timeInterval, int maxTerms) {
         return formatTime(timeInterval, maxTerms, false);
+    }
+
+    public static long toMillis(String timeInterval) {
+        byte sign = 1;
+        if (timeInterval.contains("-")) {
+            sign = -1;
+            timeInterval = timeInterval.substring(1);
+        }
+
+        String[] terms = timeInterval.split("(?<=[a-z])");
+
+        long millis = 0;
+        for (String term : terms) {
+            if (term.length() == 0) continue;
+
+            char measure = term.charAt(term.length() - 1);
+            switch(measure){
+                case 'w':
+                    millis += 7 * MILLISECONDS.convert(Long.parseLong(term.substring(0, term.length() - 1)), DAYS);
+                    break;
+                case 'd':
+                    millis += MILLISECONDS.convert(Short.parseShort(term.substring(0, term.length() - 1)), DAYS);
+                    break;
+                case 'h':
+                    millis += MILLISECONDS.convert(Short.parseShort(term.substring(0, term.length() - 1)), HOURS);
+                    break;
+                case 'm':
+                    millis += MILLISECONDS.convert(Short.parseShort(term.substring(0, term.length() - 1)), MINUTES);
+                    break;
+                case 's':
+                    if (term.contains(".")) {
+                        millis += Integer.parseInt(term.replaceAll("[a-z.]", ""));
+                    } else {
+                        millis += MILLISECONDS.convert(Short.parseShort(term.substring(0, term.length() - 1)), SECONDS);
+                    }
+                    break;
+                default:
+                    throw new NumberFormatException("Unknown format: " + (sign > 0 ? "" : "-") + timeInterval);
+            }
+        }
+
+        return millis * sign;
     }
 
 	/**

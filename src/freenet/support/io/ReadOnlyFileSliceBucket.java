@@ -27,16 +27,6 @@ public class ReadOnlyFileSliceBucket implements Bucket, Serializable {
 	private final long startAt;
 	private final long length;
 
-	/**
-	 * zero arg c'tor for db4o on jamvm / serialization
-	 */
-	@SuppressWarnings("unused")
-	private ReadOnlyFileSliceBucket() {
-		startAt = 0;
-		length = 0;
-		file = null;
-	}
-
 	public ReadOnlyFileSliceBucket(File f, long startAt, long length) {
 		this.file = new File(f.getPath()); // copy so we can delete it
 		this.startAt = startAt;

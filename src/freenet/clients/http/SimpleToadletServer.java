@@ -3,19 +3,18 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
-
-import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.filter.HTMLFilter;
 import freenet.client.filter.LinkFilterExceptionProvider;
@@ -45,8 +44,8 @@ import freenet.support.Executor;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
+import freenet.support.Ticker;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.IntCallback;
@@ -95,6 +94,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private boolean sendAllThemes;
 	private boolean advancedModeEnabled;
 	private final PageMaker pageMaker;
+	private boolean fetchKeyBoxAboveBookmarks;
 	
 	// Control
 	private Thread myThread;
@@ -109,6 +109,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private boolean enableInlinePrefetch;
 	private boolean enableActivelinks;
 	private boolean enableExtendedMethodHandling;
+	private boolean enableCachingForChkAndSskKeys;
 	
 	// Something does not really belongs to here
 	volatile static boolean isPanicButtonToBeShown;				// move to QueueToadlet ?
@@ -259,6 +260,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			NodeClientCore core = SimpleToadletServer.this.core;
 			if (core.node.pluginManager != null)
 				core.node.pluginManager.setFProxyTheme(cssTheme);
+			fetchKeyBoxAboveBookmarks = cssTheme.fetchKeyBoxAboveBookmarks;
 		}
 
 		@Override
@@ -464,7 +466,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 				new FProxyPortCallback(), false);
 		fproxyConfig.register("bindTo", NetworkInterface.DEFAULT_BIND_TO, configItemOrder++, true, true, "SimpleToadletServer.bindTo", "SimpleToadletServer.bindToLong",
 				new FProxyBindtoCallback());
-		fproxyConfig.register("css", "clean-dropdown", configItemOrder++, false, false, "SimpleToadletServer.cssName", "SimpleToadletServer.cssNameLong",
+		fproxyConfig.register("css", PageMaker.THEME.getDefault().code, configItemOrder++, false, false, "SimpleToadletServer.cssName", "SimpleToadletServer.cssNameLong",
 				new FProxyCSSNameCallback());
 		fproxyConfig.register("CSSOverride", "", configItemOrder++, true, false, "SimpleToadletServer.cssOverride", "SimpleToadletServer.cssOverrideLong",
 				new FProxyCSSOverrideCallback());
@@ -485,6 +487,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		
 		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.advancedMode", "SimpleToadletServer.advancedModeLong",
 				new FProxyAdvancedModeEnabledCallback(this));
+
 		fproxyConfig.register("enableExtendedMethodHandling", false, configItemOrder++, true, false, "SimpleToadletServer.enableExtendedMethodHandling", "SimpleToadletServer.enableExtendedMethodHandlingLong",
 				new BooleanCallback() {
 					@Override
@@ -649,7 +652,19 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		fproxyConfig.register("passthroughMaxSizeProgress", FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSizeProgress", "SimpleToadletServer.passthroughMaxSizeProgressLong", new FProxyPassthruMaxSizeProgress(), true);
 		FProxyToadlet.MAX_LENGTH_WITH_PROGRESS = fproxyConfig.getLong("passthroughMaxSizeProgress");
 		System.out.println("Set fproxy max length to "+FProxyToadlet.MAX_LENGTH_NO_PROGRESS+" and max length with progress to "+FProxyToadlet.MAX_LENGTH_WITH_PROGRESS+" = "+fproxyConfig.getLong("passthroughMaxSizeProgress"));
-		
+
+		fproxyConfig.register("enableCachingForChkAndSskKeys", false, configItemOrder++, true, true, "SimpleToadletServer.enableCachingForChkAndSskKeys", "SimpleToadletServer.enableCachingForChkAndSskKeysLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return enableCachingForChkAndSskKeys;
+			}
+
+			@Override
+			public void set(Boolean value) throws InvalidConfigValueException, NodeNeedRestartException {
+				enableCachingForChkAndSskKeys = value;
+			}
+		});
+		enableCachingForChkAndSskKeys = fproxyConfig.getBoolean("enableCachingForChkAndSskKeys");
 		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedHosts", "SimpleToadletServer.allowedHostsLong",
 				new FProxyAllowedHostsCallback());
 		fproxyConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedFullAccess", 
@@ -743,6 +758,21 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		}, false);
 		HTMLFilter.metaRefreshRedirectMinInterval = Math.max(-1, fproxyConfig.getInt("metaRefreshRedirectInterval"));
 
+		fproxyConfig.register("embedM3uPlayerInFreesites", true, configItemOrder++, true, false, "SimpleToadletServer.embedM3uPlayerInFreesites", "SimpleToadletServer.embedM3uPlayerInFreesitesLong",
+				new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return HTMLFilter.embedM3uPlayer;
+					}
+
+					@Override
+					public void set(Boolean val) {
+						HTMLFilter.embedM3uPlayer = val;
+					}
+				});
+		HTMLFilter.embedM3uPlayer = fproxyConfig.getBoolean("embedM3uPlayerInFreesites");
+
 		fproxyConfig.register("refilterPolicy", "RE_FILTER",
 				configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", new ReFilterCallback());
 		
@@ -768,6 +798,22 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			cssOverride = null;
 			pageMaker.setOverride(null);
 		}
+
+		fproxyConfig.register("fetchKeyBoxAboveBookmarks", cssTheme.fetchKeyBoxAboveBookmarks, configItemOrder++,
+				false, false, "SimpleToadletServer.fetchKeyBoxAboveBookmarks",
+				"SimpleToadletServer.fetchKeyBoxAboveBookmarksLong", new BooleanCallback() {
+					@Override
+					public Boolean get() {
+						return fetchKeyBoxAboveBookmarks;
+					}
+
+					@Override
+					public void set(Boolean val) {
+						if(get().equals(val)) return;
+						fetchKeyBoxAboveBookmarks = val;
+					}
+				});
+		fetchKeyBoxAboveBookmarks = fproxyConfig.getBoolean("fetchKeyBoxAboveBookmarks");
 		
 		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");
 		toadlets = new LinkedList<ToadletElement>();
@@ -970,11 +1016,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 	@Override
 	public void run() {
-		try {
-			networkInterface.setSoTimeout(500);
-		} catch (SocketException e1) {
-			Logger.error(this, "Could not set so-timeout to 500ms; on-the-fly disabling of the interface will not work");
-		}
 		boolean finishedStartup = false;
 		while(true) {
 			synchronized(this) {
@@ -1160,6 +1201,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	@Override
 	public boolean enableExtendedMethodHandling() {
 		return enableExtendedMethodHandling;
+	}
+
+	@Override
+	public boolean enableCachingForChkAndSskKeys() {
+		return enableCachingForChkAndSskKeys;
 	}
 
 	@Override

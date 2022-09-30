@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
+import freenet.support.io.PooledFileRandomAccessBuffer.FDTracker;
 
 public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase {
 
@@ -26,11 +27,12 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
     }
     
     private Random r = new Random(222831072);
+    private FDTracker fds = new FDTracker(100);
     
     @Override
     protected PooledFileRandomAccessBuffer construct(long size) throws IOException {
         File f = File.createTempFile("test", ".tmp", base);
-        return new PooledFileRandomAccessBuffer(f, false, size, r.nextBoolean() ? r : null, -1, true);
+        return new PooledFileRandomAccessBuffer(f, false, size, r.nextBoolean() ? r : null, -1, true, fds);
     }
 
     /** Simplest test for pooling. TODO Add more. */
@@ -40,7 +42,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
     }
     
     private void innerTestSimplePooling(int sz) throws IOException {
-        PooledFileRandomAccessBuffer.setMaxFDs(1);
+        fds.setMaxFDs(1);
         PooledFileRandomAccessBuffer a = construct(sz);
         PooledFileRandomAccessBuffer b = construct(sz);
         byte[] buf1 = new byte[sz];
@@ -65,38 +67,38 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
     /** Test that locking and unlocking do something */
     public void testLock() throws IOException {
         int sz = 1024;
-        PooledFileRandomAccessBuffer.setMaxFDs(1);
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 0);
-        assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 0);
+        fds.setMaxFDs(1);
+        assertEquals(fds.getOpenFDs(), 0);
+        assertEquals(fds.getClosableFDs(), 0);
         PooledFileRandomAccessBuffer a = construct(sz);
         PooledFileRandomAccessBuffer b = construct(sz);
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 1);
-        assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 1);
+        assertEquals(fds.getOpenFDs(), 1);
+        assertEquals(fds.getClosableFDs(), 1);
         assertFalse(a.isLocked());
         assertFalse(b.isLocked());
         RAFLock lock = a.lockOpen();
         try {
             assertTrue(a.isLocked());
             assertFalse(b.isLocked());
-            assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 1);
-            assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 0);
+            assertEquals(fds.getOpenFDs(), 1);
+            assertEquals(fds.getClosableFDs(), 0);
         } finally {
             lock.unlock();
             assertFalse(a.isLocked());
-            assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 1);
-            assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 1);
+            assertEquals(fds.getOpenFDs(), 1);
+            assertEquals(fds.getClosableFDs(), 1);
         }
         a.close();
         b.close();
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 0);
-        assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 0);
+        assertEquals(fds.getOpenFDs(), 0);
+        assertEquals(fds.getClosableFDs(), 0);
         a.free();
         b.free();
     }
     
     /** Thanks bertm */
     public void testLocksB() throws IOException {
-        PooledFileRandomAccessBuffer.setMaxFDs(1);
+        fds.setMaxFDs(1);
         PooledFileRandomAccessBuffer a = construct(0);
         PooledFileRandomAccessBuffer b = construct(0);
         RAFLock lock = b.lockOpen();
@@ -105,43 +107,43 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         b.close();
         a.free();
         b.free();
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 0);
-        assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 0);
+        assertEquals(fds.getOpenFDs(), 0);
+        assertEquals(fds.getClosableFDs(), 0);
     }
     
     public void testLockedNotClosable() throws IOException {
         int sz = 1024;
-        PooledFileRandomAccessBuffer.setMaxFDs(2);
+        fds.setMaxFDs(2);
         PooledFileRandomAccessBuffer a = construct(sz);
         PooledFileRandomAccessBuffer b = construct(sz);
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 2);
-        assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 2);
+        assertEquals(fds.getOpenFDs(), 2);
+        assertEquals(fds.getClosableFDs(), 2);
         assertTrue(a.isOpen());
         assertTrue(b.isOpen());
         assertFalse(a.isLocked());
         assertFalse(b.isLocked());
         // Open and open FD -> locked
         RAFLock la = a.lockOpen();
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 2);
-        assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 1);
+        assertEquals(fds.getOpenFDs(), 2);
+        assertEquals(fds.getClosableFDs(), 1);
         RAFLock lb = b.lockOpen();
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 2);
-        assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 0);
+        assertEquals(fds.getOpenFDs(), 2);
+        assertEquals(fds.getClosableFDs(), 0);
         la.unlock();
         lb.unlock();
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 2);
-        assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 2);       
+        assertEquals(fds.getOpenFDs(), 2);
+        assertEquals(fds.getClosableFDs(), 2);
         a.close();
         b.close();
     }
     
     public void testLockedNotClosableFromNotOpenFD() throws IOException {
         int sz = 1024;
-        PooledFileRandomAccessBuffer.setMaxFDs(2);
+        fds.setMaxFDs(2);
         PooledFileRandomAccessBuffer a = construct(sz);
         PooledFileRandomAccessBuffer b = construct(sz);
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 2);
-        assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 2);
+        assertEquals(fds.getOpenFDs(), 2);
+        assertEquals(fds.getClosableFDs(), 2);
         assertTrue(a.isOpen());
         assertTrue(b.isOpen());
         // Close the RAFs to exercise the other code path.
@@ -151,15 +153,15 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         assertFalse(b.isLocked());
         // Open and open FD -> locked
         RAFLock la = a.lockOpen();
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 1);
-        assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 1);
+        assertEquals(fds.getOpenFDs(), 1);
+        assertEquals(fds.getClosableFDs(), 1);
         RAFLock lb = b.lockOpen();
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 2);
-        assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 0);
+        assertEquals(fds.getOpenFDs(), 2);
+        assertEquals(fds.getClosableFDs(), 0);
         la.unlock();
         lb.unlock();
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 2);
-        assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 2);
+        assertEquals(fds.getOpenFDs(), 2);
+        assertEquals(fds.getClosableFDs(), 2);
         a.close();
         b.close();
     }
@@ -168,16 +170,16 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
      * @throws InterruptedException */
     public void testLockBlocking() throws IOException, InterruptedException {
         int sz = 1024;
-        PooledFileRandomAccessBuffer.setMaxFDs(1);
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 0);
+        fds.setMaxFDs(1);
+        assertEquals(fds.getOpenFDs(), 0);
         final PooledFileRandomAccessBuffer a = construct(sz);
         final PooledFileRandomAccessBuffer b = construct(sz);
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 1);
+        assertEquals(fds.getOpenFDs(), 1);
         assertFalse(a.isLocked());
         assertFalse(b.isLocked());
         RAFLock lock = a.lockOpen();
         assertTrue(a.isOpen());
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 1);
+        assertEquals(fds.getOpenFDs(), 1);
         // Now try to lock on a second thread.
         // It should wait until the first thread unlocks.
         class Status {
@@ -235,7 +237,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
             assertFalse(s.hasLocked);
             assertFalse(s.hasFinished);
         }
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 1);
+        assertEquals(fds.getOpenFDs(), 1);
         assertTrue(a.isOpen());
         assertFalse(b.isOpen());
         // Wait while holding lock, to give it some time to progress if it's buggy.
@@ -244,7 +246,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
             assertFalse(s.hasLocked);
             assertFalse(s.hasFinished);
         }
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 1);
+        assertEquals(fds.getOpenFDs(), 1);
         assertTrue(a.isOpen());
         assertFalse(b.isOpen());
         // Now release lock.
@@ -258,7 +260,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         assertFalse(a.isOpen());
         assertTrue(b.isOpen());
         assertTrue(b.isLocked());
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 1);
+        assertEquals(fds.getOpenFDs(), 1);
         
         // Now let it proceed.
         synchronized(s) {
@@ -271,12 +273,12 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         }
         assertFalse(a.isLocked());
         assertFalse(b.isLocked());
-        assertEquals(PooledFileRandomAccessBuffer.getClosableFDs(), 1);
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 1);
+        assertEquals(fds.getClosableFDs(), 1);
+        assertEquals(fds.getOpenFDs(), 1);
         a.close();
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 1);
+        assertEquals(fds.getOpenFDs(), 1);
         b.close();
-        assertEquals(PooledFileRandomAccessBuffer.getOpenFDs(), 0);
+        assertEquals(fds.getOpenFDs(), 0);
         a.free();
         b.free();
     }

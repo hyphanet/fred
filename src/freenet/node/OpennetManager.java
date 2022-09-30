@@ -98,6 +98,9 @@ public class OpennetManager {
 	static final double LONG_PROPORTION = 0.3;
 	/** The proportion of the routing table which consists of "short links". */
 	public static final double SHORT_PROPORTION = 1.0 - LONG_PROPORTION;
+	/** Assumed proportion of slow peers for scaling up the peer count
+	 * to take limited capacity of slow peers into account. */
+	public static final double ASSUMPTION_50_PERCENT_SLOW_PEERS = 0.5;
 	
     enum LinkLengthClass {
         /** Shorter than LONG_DISTANCE */
@@ -152,7 +155,9 @@ public class OpennetManager {
 	public static final long DONT_READD_TIME = MINUTES.toMillis(1);
 	/** Don't drop a node until it's at least this old, if it's connected. */
 	public static final long DROP_MIN_AGE = MINUTES.toMillis(5);
-	/** Don't drop a node until it's at least this old, if it's not connected (if it has connected once then DROP_DISCONNECT_DELAY applies, but only once an hour as below). Must be less than DROP_MIN_AGE.
+	/** Don't drop a node until it's at least this old, if it's not connected
+	 * (if it has connected once then DROP_DISCONNECT_DELAY applies,
+	 * but only once an hour as below). Must be less than DROP_MIN_AGE.
 	 * Relatively generous because noderef transfers e.g. for announcement can be slow (Note
 	 * that announcements actually wait for previous transfers!). */
 	public static final long DROP_MIN_AGE_DISCONNECTED = MINUTES.toMillis(5);
@@ -190,22 +195,30 @@ public class OpennetManager {
 	/** Enable scaling of peers with bandwidth? */
 	public static final boolean ENABLE_PEERS_PER_KB_OUTPUT = true;
 	/** Constant for scaling peers: we multiply bandwidth in kB/sec by this
-	 * and then take the square root. 12 gives 11 at 10K, 15 at 20K, 19 at
-	 * 30K, 26 at 60K, 34 at 100K, 40 at 140K, 100 at 2500K.
-	 * 212 at 30mbit/s (the mean upload in Japan in 2014) and
-	 * 363 at 88mbit/s (the mean upload in Hong Kong in 2014).*/
-	public static final double SCALING_CONSTANT = 12.0;
+	 * and then take the square root. Minimum is MIN_PEERs_FOR_SCALING.
+     *
+     * (define (peers kBps) (sqrt (* kBps scaling)))
+     *
+     * Scaling at 3 gives 4 peers at 5K (min peers),
+	 * 5 at 7K, 5 at 10K, 8 at 20K, 9 at 30K, 13 at 60K,
+     * 17 at 100K, 20 at 140K, 87 at 2500K.
+	 * 106 at 30mbit/s (the mean upload in Japan in 2014) and
+	 * 180 at 88mbit/s (the mean upload in Hong Kong in 2014).*/
+	public static final double SCALING_CONSTANT = 3;
 	/**
-	 * Minimum number of peers. Do not reduce this: As a rough estimate, because the vast majority
-	 * of requests complete in 5 hops, this gives just one binary decision per hop on average.
+	 * Minimum number of peers. As a rough estimate, because the vast majority
+	 * of requests complete in 5 hops, 10 peers give just one binary decision
+	 * per hop. However the distribution of peers before the link length fix
+ 	 * showed that having 3 short distance peers still worked, since requests
+ 	 * preferentially go through higher capacity nodes with more FOAFs.
 	 */
-	public static final int MIN_PEERS_FOR_SCALING = 10;
+	public static final int MIN_PEERS_FOR_SCALING = 4;
 	/** The maximum possible distance between two nodes in the wrapping [0,1) location space. */
 	public static final double MAX_DISTANCE = 0.5;
 	/** The fraction of nodes which are only a short distance away. */
 	public static final double SHORT_NODES_FRACTION = LONG_DISTANCE / MAX_DISTANCE;
 	/** The estimated average number of nodes which are active at any given time. */
-	public static final int LAST_NETWORK_SIZE_ESTIMATE = 5000;
+	public static final int LAST_NETWORK_SIZE_ESTIMATE = 3000;
 	/** The estimated number of nodes which are a short distance away. */
 	public static final int AVAILABLE_SHORT_DISTANCE_NODES =
 		(int) (LAST_NETWORK_SIZE_ESTIMATE * SHORT_NODES_FRACTION);
@@ -427,7 +440,7 @@ public class OpennetManager {
 		try {
 			// FIXME OPT can we do this cheaper?
 			// Maybe just parse the pubkey, and then compare it with the existing peers?
-			OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
+			OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, false);
 			if(lruQueue(pn).contains(pn)) {
 				if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 				return true;
@@ -443,8 +456,8 @@ public class OpennetManager {
 
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType, boolean allowExisting) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		try {
-		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
-		if(Arrays.equals(pn.getPubKeyHash(), crypto.pubKeyHash)) {
+		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, false);
+		if(Arrays.equals(pn.peerECDSAPubKeyHash, crypto.ecdsaPubKeyHash)) {
 			if(logMINOR) Logger.minor(this, "Not adding self as opennet peer");
 			return null; // Equal to myself
 		}
@@ -454,7 +467,7 @@ public class OpennetManager {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			if(allowExisting) {
 				// However, we can reconnect.
-				return (OpennetPeerNode) peersLRU.get(pn);
+				return peersLRU.get(pn);
 			} else {
 				return null;
 			}
@@ -969,12 +982,51 @@ public class OpennetManager {
 		int max = node.getMaxOpennetPeers();
 		if(ENABLE_PEERS_PER_KB_OUTPUT) {
 			int obwLimit = node.getOutputBandwidthLimit();
-			int targetPeers = (int)Math.round(Math.min(MAX_PEERS_FOR_SCALING, Math.sqrt(obwLimit * SCALING_CONSTANT / 1000.0)));
+			int targetPeers = (int)Math.round(Math.sqrt(obwLimit * SCALING_CONSTANT / 1000.0));
 			if(targetPeers < MIN_PEERS_FOR_SCALING)
 				targetPeers = MIN_PEERS_FOR_SCALING;
-			if(max > targetPeers) max = targetPeers; // Allow user to reduce it.
+			targetPeers = addMorePeersIfSlowPeersCannotSupplyEnoughBandwidthPerConnection(targetPeers);
+			// limit to max peers
+			targetPeers = Math.min(MAX_PEERS_FOR_SCALING, targetPeers);
+			if(max > targetPeers) {
+				max = targetPeers; // Allow user to reduce it.
+			}
 		}
 		return max;
+	}
+
+	/**
+	 * A fast peer requires inbound bandwidth per connection proportional to the number of target peers.
+	 * But a peer with fewer than sqrt(targetPeers) connections does not have enough bandwidth
+	 * to support a connection to such a fast peer.
+	 *
+	 * Therefore a fast peer needs more peers than given by the square-root scaling.
+	 *
+	 * To calculate the missing bandwidth, we have to make an assumption: How many peers are too slow?
+	 * We assume that 50% of the peers have the lowest possible peer count.
+	 *
+	 * We need targetPeers packets per peer. We assume that half the peers have the minimum peer count.
+	 * To stay in the 50% slow nodes model, we assume that half the peers of the slow peer are slow,
+	 * the other half are as fast as we are. We receive targetPeers / (minPeers + targetPeers)
+	 * of the packages the slow peer receives.
+	 *
+	 * For each additional peer, we receive one additional packet from fast peers
+	 * and receivedFraction * MIN_PEERS_FOR_SCALING * MIN_PEERS_FOR_SCALING from slow peers.
+	 *
+	 * @param targetPeers the target peers from square root scaling
+	 * @return increased estimate to provide enough bandwidth for the fast peer.
+	 */
+	private int addMorePeersIfSlowPeersCannotSupplyEnoughBandwidthPerConnection(int targetPeers) {
+		double receivedFraction = ((double) targetPeers) / (MIN_PEERS_FOR_SCALING + targetPeers);
+		double packetsFromSlowPeer = receivedFraction * MIN_PEERS_FOR_SCALING * MIN_PEERS_FOR_SCALING;
+		if (targetPeers <= packetsFromSlowPeer) {
+			return targetPeers;
+		}
+		double missingPacketsPerSlowPeer = targetPeers - packetsFromSlowPeer;
+		double missingPackets = ASSUMPTION_50_PERCENT_SLOW_PEERS * targetPeers * missingPacketsPerSlowPeer;
+		double additionalPacketsPerAddedPeer = ASSUMPTION_50_PERCENT_SLOW_PEERS * targetPeers + packetsFromSlowPeer;
+		// always compensate for the missing packets. The worst nodes to be underused are the fast ones.
+		return targetPeers + 1 + (int) (missingPackets / additionalPacketsPerAddedPeer);
 	}
 
 	/** Get the target number of opennet peers. Do not call while holding locks. */

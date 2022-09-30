@@ -142,9 +142,8 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
      * @param ignoreStore If true, don't check the datastore before re-registering the requests to
      * run. Should be true when rescheduling after a normal cooldown, false after recovering from
      * data corruption (the blocks may still be in the store), false otherwise.
-     * @throws KeyListenerConstructionException
      */
-    public void schedule(ClientContext context, boolean ignoreStore) throws KeyListenerConstructionException {
+    public void schedule(ClientContext context, boolean ignoreStore) {
         ClientRequestScheduler sched = context.getChkFetchScheduler(realTimeFlag);
         BlockSet blocks = parent.blockFetchContext.blocks;
         sched.register(this, new SendableGet[] { this }, persistent, blocks, ignoreStore);
@@ -153,12 +152,6 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     @Override
     public KeyListener makeKeyListener(ClientContext context, boolean onStartup) {
         return storage.keyListener;
-    }
-
-    @Override
-    public void onFailed(KeyListenerConstructionException e, ClientContext context) {
-        // Impossible.
-        throw new IllegalStateException();
     }
 
     public void cancel(ClientContext context) {

@@ -20,6 +20,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.updater.MainJarDependenciesChecker.Dependency;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
+import freenet.support.JVMVersion;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
 
@@ -51,9 +52,10 @@ public class UpdateDeployContext {
 	final MainJarDependencies deps;
 	
 	UpdateDeployContext(MainJarDependencies deps) throws UpdaterParserException {
-		Properties p = WrapperManager.getProperties();
 		this.deps = deps;
-		
+
+		// find the name or path used for the freenet main jar
+		Properties p = WrapperManager.getProperties();
 		for(int propNo=1;true;propNo++) {
 			String prop = p.getProperty("wrapper.java.classpath."+propNo);
 			if(prop == null) break;
@@ -143,13 +145,19 @@ public class UpdateDeployContext {
 		boolean writtenAnchor = false;
 		/** Write the anchor polling interval too if it doesn't exist already */
 		boolean writtenAnchorInterval = false;
-		
+		/** Add the relative JNA tempdir if it does not exist already */
+		boolean writtenJnaTmpDir = false;
+		/** Allow accessing internal modules in Java 16+ */
+		boolean writtenIllegalAccessPermit = false;
+		boolean writtenPrivateModulesOpens = false;
+
 		String newMain = mainJarAbsolute ? newMainJar.getAbsolutePath() : newMainJar.getPath();
 		
 		String mainRHS = null;
 		
 		ArrayList<String> otherLines = new ArrayList<String>();
 		ArrayList<String> classpath = new ArrayList<String>();
+		ArrayList<String> additionalJavaArguments = new ArrayList<String>();
 		
 		// We MUST put the ext (and all other dependencies) before the main jar, 
 		// or auto-update of freenet-ext.jar on Windows won't work.
@@ -173,7 +181,7 @@ public class UpdateDeployContext {
 					// Ignore the numbers.
 					String rhs = line.substring(idx+1);
 					dontWrite = true;
-					if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") || 
+					if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") ||
 							rhs.equals("freenet-stable-latest.jar") || rhs.equals("freenet-stable-latest.jar.new") ||
 							rhs.equals("freenet-testing-latest.jar") || rhs.equals("freenet-testing-latest.jar.new")) {
 						if(writtenNewJar)
@@ -195,6 +203,25 @@ public class UpdateDeployContext {
 						}
 					}
 				}
+			} else if(lowcaseLine.startsWith("wrapper.java.additional.")) {
+			    // get existing java arguments
+			    line = line.substring("wrapper.java.additional.".length());
+			    int idx = line.indexOf('=');
+			    if(idx != -1) {
+				 // Ignore the numbers.
+				 String rhs = line.substring(idx+1);
+				 dontWrite = true;
+				 additionalJavaArguments.add(rhs);
+				 if (rhs.startsWith("-Djava.io.tmpdir=")) {
+				       writtenJnaTmpDir = true;
+				 }
+				 if (rhs.startsWith("--illegal-access=permit")) {
+				       writtenIllegalAccessPermit = true;
+				 }
+				 if (rhs.startsWith("--add-opens=")) {
+				       writtenPrivateModulesOpens = true;
+				 }
+			    }
 			} else if(lowcaseLine.equals("wrapper.restart.reload_configuration=true")) {
 				writtenReload = true;
 			} else if(lowcaseLine.startsWith("wrapper.anchorfile=")) {
@@ -229,7 +256,38 @@ public class UpdateDeployContext {
 			bw.write("wrapper.java.classpath."+count+"="+s+'\n');
 			count++;
 		}
-		
+
+		// write the java arguments
+		// As above, we need to write ALL the dependencies BEFORE we write the main jar.
+		count = 1; // arguments for java are also 1-based.
+		for(String s : additionalJavaArguments) {
+			bw.write("wrapper.java.additional."+count+"="+s+'\n');
+			count++;
+		}
+		// ensure that we have an entry for the JNA tempdir
+		if (!writtenJnaTmpDir) {
+			bw.write("wrapper.java.additional."+count+"=-Djava.io.tmpdir=./tmp/"+'\n');
+			count++;
+		}
+
+		// allow accessing internal modules (required for Java 16, only supported since Java 9)
+		if (!writtenIllegalAccessPermit && JVMVersion.supportsModules()) {
+			bw.write("wrapper.java.additional."+count+"=--illegal-access=permit"+'\n');
+			count++;
+		}
+		// open internal modules (required for Java 17, only supported since Java 9)
+		if (!writtenPrivateModulesOpens && JVMVersion.supportsModules()) {
+            // WoT: Unable to make field private final java.lang.String java.lang.Enum.name accessible
+			bw.write("wrapper.java.additional."+count+"=--add-opens=java.base/java.lang=ALL-UNNAMED"+'\n');
+			count++;
+            // Unable to make public int java.util.Collections$UnmodifiableCollection.size() accessible
+			bw.write("wrapper.java.additional."+count+"=--add-opens=java.base/java.util=ALL-UNNAMED"+'\n');
+			count++;
+            // Unable to make field private int java.io.FileDescriptor.fd accessible
+			bw.write("wrapper.java.additional."+count+"=--add-opens=java.base/java.io=ALL-UNNAMED"+'\n');
+			count++;
+		}
+
 		for(String s : otherLines)
 			bw.write(s+'\n');
 

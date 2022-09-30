@@ -15,14 +15,6 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import junit.framework.TestCase;
-import freenet.client.filter.CSSParser;
-import freenet.client.filter.CSSReadFilter;
-import freenet.client.filter.ContentFilter;
-import freenet.client.filter.DataFilterException;
-import freenet.client.filter.GenericReadFilterCallback;
-import freenet.client.filter.FilterMIMEType;
-import freenet.client.filter.UnsafeContentTypeException;
-import freenet.client.filter.UnsupportedCharsetInFilterException;
 import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.l10n.NodeL10n;
@@ -33,8 +25,6 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 
 public class CSSParserTest extends TestCase {
-
-
 
 
 	// FIXME should specify exact output values
@@ -151,7 +141,7 @@ public class CSSParserTest extends TestCase {
 		CSS2_BAD_SELECTOR.add("h1[foo=\"hello\\202\r\n\"] {}");
 	}
 
-	
+
 	/** CSS3 Selectors */
 	private final static HashMap<String,String> CSS3_SELECTOR= new HashMap<String,String>();
 	static
@@ -188,7 +178,7 @@ public class CSSParserTest extends TestCase {
 		CSS3_SELECTOR.put("h1:nth-last-of-type(odd) {}","h1:nth-last-of-type(odd)");
 		CSS3_SELECTOR.put("h1:nth-last-of-type(even) {}","h1:nth-last-of-type(even)");
 	}
-	
+
 	private final static HashSet<String> CSS3_BAD_SELECTOR= new HashSet<String>();
 	static
 	{
@@ -542,6 +532,13 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1 { margin: 1ex;}", "h1 { margin: 1ex;}");
 		propertyTests.put("p { font-size: 12px;}", "p { font-size: 12px;}");
 		propertyTests.put("h3 { word-spacing: 4mm }", "h3 { word-spacing: 4mm }");
+		// CSS 3.0 Length units (ch, rem, vw, vh, vmin, vmax)
+		propertyTests.put("img { max-height: 12ch;}\n","img { max-height: 12ch;}\n");
+		propertyTests.put("img { max-height: 12rem;}\n","img { max-height: 12rem;}\n");
+		propertyTests.put("img { max-height: 12vw;}\n","img { max-height: 12vw;}\n");
+		propertyTests.put("img { max-height: 12vh}\n","img { max-height: 12vh}\n");
+		propertyTests.put("img { max-height: 12vmin }\n","img { max-height: 12vmin }\n");
+		propertyTests.put("img { max-height: 1.2vmax }\n","img { max-height: 1.2vmax }\n");
 
 		// Fonts
 		propertyTests.put("h2 { font-family: times new roman;}\n", "h2 { font-family: times new roman;}\n");
@@ -657,12 +654,25 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("#xy34 { border-style: solid dotted }", "#xy34 { border-style: solid dotted }");
 		propertyTests.put("h1 { border-bottom: thick solid red }", "h1 { border-bottom: thick solid red }");
 		propertyTests.put("h1[foo] { border: solid red; }", "h1[foo] { border: solid red; }");
+		propertyTests.put("div { box-sizing: content-box; }", "div { box-sizing: content-box; }");
+		propertyTests.put("div { box-sizing: border-box; }", "div { box-sizing: border-box; }");
+		propertyTests.put("div { box-sizing: invalidValueToTestFilter; }", "div { }");
+		propertyTests.put("div { box-sizing: inherit; }", "div { box-sizing: inherit; }");
 
 		// Visual formatting
 		propertyTests.put("body { display: inline }\np { display: block }", "body { display: inline }\np { display: block }");
 		propertyTests.put("body.abc { display: run-in }", "body.abc { display: run-in }");
 		propertyTests.put("body.abc { display: none }", "body.abc { display: none }");
 		propertyTests.put("body.abc { display: inherit }", "body.abc { display: inherit }");
+		propertyTests.put("div { display: list-item; }", "div { display: list-item; }");
+		propertyTests.put("div { display: list-item flow; }", "div { display: list-item flow; }");
+		propertyTests.put("div { display: list-item block flow; }", "div { display: list-item block flow; }");
+		propertyTests.put("div { display: block list-item flow; }", "div { display: block list-item flow; }");
+		propertyTests.put("div { display: inline-block; }", "div { display: inline-block; }");
+		propertyTests.put("div { display: inline-flex; }", "div { display: inline-flex; }");
+		propertyTests.put("div { display: table; }", "div { display: table; }");
+		propertyTests.put("div { display: ruby; }", "div { display: ruby; }");
+		propertyTests.put("div { display: ruby-text-container; }", "div { display: ruby-text-container; }");
 		propertyTests.put("@media screen { h1#first { position: fixed } }\n@media print { h1#first { position: static } }", "@media screen { h1#first { position: fixed }}\n@media print { h1#first { position: static }}");
 		propertyTests.put("body { top: auto; left: inherit; right: 23em; bottom: 3.2% }", "body { top: auto; left: inherit; right: 23em; bottom: 3.2% }");
 		propertyTests.put("EM { padding: 2px; margin: 1em; border-width: medium; border-style: dashed; line-height: 2.4em; }", "EM { padding: 2px; margin: 1em; border-width: medium; border-style: dashed; line-height: 2.4em; }");
@@ -762,6 +772,8 @@ public class CSSParserTest extends TestCase {
 		// User interface
 		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", ":link { cursor: url(\"example.svg#linkcursor\") url(\"hyper.cur\") pointer }");
 		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor), url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\"), url(\"hyper.cur\"), pointer }");
+		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) 2 5, url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\") 2 5, url(\"hyper.cur\"), pointer }");
+                propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) 2, url(hyper.cur), pointer }", ":link { }");
 
 		// UI colors
 		propertyTests.put("p { color: WindowText; background-color: Window }", "p { color: WindowText; background-color: Window }");
@@ -794,7 +806,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}", "@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}");
 		propertyTests.put("@media speech { table { speak-header: always } table.quick { speak-header: once } table.sub { speak-header: inherit }}", "@media speech { table { speak-header: always } table.quick { speak-header: once } table.sub { speak-header: inherit }}");
 		propertyTests.put("@media speech { h1 { voice-family: announcer, male } p.part.romeo  { voice-family: romeo, male } p.part.juliet { voice-family: juliet, female }}", "@media speech { h1 { voice-family: announcer, male } p.part.romeo { voice-family: romeo, male } p.part.juliet { voice-family: juliet, female }}");
-		
+
 		// Banned selectors
 		propertyTests.put(":visited { color:red }", "");
 		propertyTests.put("a:visited { color:red }", "");
@@ -804,6 +816,66 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put(":active,a:visited { color:red }", ":active { color:red }");
 		propertyTests.put(":focus,:visited,:active { color:red }", ":focus,:active { color:red }");
 		propertyTests.put(":focus,a:visited,:active { color:red }", ":focus,:active { color:red }");
+
+		// Flex-box Test
+		propertyTests.put("nav > ul { display: flex; }", "nav>ul { display: flex; }");
+		propertyTests.put("nav > ul > li {\n  min-width: 100px;\n  /* Prevent items from getting too small for their content. */\n  }", "nav>ul>li {\n  min-width: 100px;\n  \n  }");
+		propertyTests.put("nav > ul > #login {\n  margin-left: auto;\n}", "nav>ul>#login {\n  margin-left: auto;\n}");
+		propertyTests.put("nav > ul { display: flex; }", "nav>ul { display: flex; }");
+		propertyTests.put("div { flex-flow: row nowrap; }", "div { flex-flow: row nowrap; }");
+		propertyTests.put("div { flex-grow: 5; }", "div { flex-grow: 5; }");
+		propertyTests.put("div { flex: 64 content; }", "div { flex: 64 content; }");
+		propertyTests.put("div { flex-grow: 5; }", "div { flex-grow: 5; }");
+		propertyTests.put("div { flex-basis: 5px; }", "div { flex-basis: 5px; }");
+		propertyTests.put("div { flex-basis: content; }", "div { flex-basis: content; }");
+		propertyTests.put("div { flex: 64 ; }", "div { flex: 64; }");
+		propertyTests.put("nav { flex-shrink: 3; }", "nav { flex-shrink: 3; }");
+		propertyTests.put("div { flex-wrap: nowrap ; }", "div { flex-wrap: nowrap; }");
+		propertyTests.put("div { flex-wrap: wrap ; }", "div { flex-wrap: wrap; }");
+		propertyTests.put("div { flex-wrap: wrap-reverse; }", "div { flex-wrap: wrap-reverse; }");
+		propertyTests.put("div { flex-direction: column-reverse; }", "div { flex-direction: column-reverse; }");
+		propertyTests.put("div { order: 5; flex-basis: content; }", "div { order: 5; flex-basis: content; }");
+		propertyTests.put("div { justify-content: flex-start; }", "div { justify-content: flex-start; }");
+		propertyTests.put("div { justify-content: flex-end; }", "div { justify-content: flex-end; }");
+		propertyTests.put("div { justify-content: center; }", "div { justify-content: center; }");
+		propertyTests.put("div { justify-content: space-between; }", "div { justify-content: space-between; }");
+		propertyTests.put("div { justify-content: space-around; }", "div { justify-content: space-around; }");
+		propertyTests.put("div { justify-items: legacy center; }", "div { justify-items: legacy center; }");
+		propertyTests.put("div { justify-items: auto; }", "div { justify-items: auto; }");
+		propertyTests.put("div { justify-items: baseline; }", "div { justify-items: baseline; }");
+		propertyTests.put("div { justify-items: true left; }", "div { justify-items: true left; }");
+		propertyTests.put("div { justify-items: self-start; }", "div { justify-items: self-start; }");
+		propertyTests.put("div { justify-items: self-start legacy left; }", "div { }");
+		propertyTests.put("div { justify-items: left; }", "div { justify-items: left; }");
+		propertyTests.put("div { align-self: true center; }", "div { align-self: true center; }");
+		propertyTests.put("div { align-self: center true; }", "div { align-self: center true; }");
+		propertyTests.put("div { align-self: center true center; }", "div { }");
+		propertyTests.put("div { justify-self: true center; }", "div { justify-self: true center; }");
+		propertyTests.put("div { justify-self: center true; }", "div { justify-self: center true; }");
+		propertyTests.put("div { justify-self: center true center; }", "div { }");
+
+		propertyTests.put("div { align-content: flex-start; }", "div { align-content: flex-start; }");
+		propertyTests.put("div { align-content: space-between; }", "div { align-content: space-between; }");
+		propertyTests.put("div { align-content: true flex-start; }", "div { align-content: true flex-start; }");
+		propertyTests.put("div { align-content: flex-start safe; }", "div { align-content: flex-start safe; }");
+		propertyTests.put("div { align-self: baseline; }", "div { align-self: baseline; }");
+		propertyTests.put("div { align-self: stretch; }", "div { align-self: stretch; }");
+		propertyTests.put("div { align-items: stretch; }", "div { align-items: stretch; }");
+		propertyTests.put("div { align-items: flex-end; }", "div { align-items: flex-end; }");
+		// all valid properties but too many of them
+		propertyTests.put("div { display: block list-item flow list-item; }", "div { }");
+		// all valid but repeated when repetition is not allowed
+		propertyTests.put("div { display: list-item flow flow; }", "div { }");
+		propertyTests.put("div { display: invalidItem; }", "div { }");
+		propertyTests.put("div { display: block invalidItem; }", "div { }");
+
+		// Navigation Attributes for CSS3 UI
+		propertyTests.put("body { nav-down: auto; }",  "body { nav-down: auto; }");
+		propertyTests.put("body { nav-down: h2#java current; }",  "body { nav-down: h2#java current; }");
+		propertyTests.put("body { nav-up: #java root; }",  "body { nav-up: #java root; }");
+		propertyTests.put("body { nav-left: div.bold '<target-name>'; }",  "body { }");
+		propertyTests.put("button#foo { nav-left: #bar \"sidebar\"; }", "button#foo { nav-left: #bar \"sidebar\"; }");
+		propertyTests.put("button#foo { nav-left: invalidSelector \"sidebar\"; }", "button#foo { }");
 	}
 
 	FilterMIMEType cssMIMEType;
@@ -1015,7 +1087,8 @@ public class CSSParserTest extends TestCase {
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" or \""+family+"\" from getCharsetByBOM", detectedCharset == null || charset.equalsIgnoreCase(detectedCharset) || (family != null && family.equalsIgnoreCase(detectedCharset)));
 		detectedCharset = ContentFilter.detectCharset(bytes, bytes.length, cssMIMEType, null);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset.equalsIgnoreCase(detectedCharset));
-		FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4oobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
+		FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4oobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"),
+        null, null, null, null);
 		inputStream.close();
 		outputStream.close();
 		assertEquals("text/css", filterStatus.mimeType);
@@ -1039,7 +1112,8 @@ public class CSSParserTest extends TestCase {
 		detectedCharset = ContentFilter.detectCharset(bytes, bytes.length, cssMIMEType, null);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset == null || "utf-8".equalsIgnoreCase(detectedCharset));
 		try {
-			FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
+			FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"),
+          null,null, null, null);
 			// It is safe to return utf-8, as long as we clobber the actual content; utf-8 is the default, but other stuff decoded to it is unlikely to be coherent...
 			assertTrue("ContentFilter.filter() returned charset \""+filterStatus.charset+"\" should be unknown testing  unsupported charset \""+charset+"\"", filterStatus.charset.equalsIgnoreCase(charset) || filterStatus.charset.equalsIgnoreCase("utf-8"));//If we switch to JUnit 4, this may be replaced with an assertThat
 			assertEquals("text/css", filterStatus.mimeType);
@@ -1071,7 +1145,8 @@ public class CSSParserTest extends TestCase {
 		Bucket outputBucket = new ArrayBucket();
 		InputStream inputStream = inputBucket.getInputStream();
 		OutputStream outputStream = outputBucket.getOutputStream();
-		FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, charset);
+		FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"),
+        null,null, null, charset);
 		inputStream.close();
 		outputStream.close();
 		assertEquals(charset, filterStatus.charset);
@@ -1095,5 +1170,4 @@ public class CSSParserTest extends TestCase {
 	public void testTripleCommentStart() throws IOException, URISyntaxException {
 		assertEquals("Triple comment start does not crash", filter("/*/*/*"), "");
 	}
-
 }

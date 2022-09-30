@@ -455,7 +455,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		}
 		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
 		if(tryCompress) {
-			InsertCompressor.start(context, this, origData, oneBlockCompressedSize, context.getBucketFactory(persistent), persistent, wantHashes, !atLeast1254);
+			InsertCompressor.start(context, this, origData, oneBlockCompressedSize, context.getBucketFactory(persistent), persistent, wantHashes, !atLeast1254, context.getConfig());
 		} else {
 			if(logMINOR) Logger.minor(this, "Not compressing "+origData+" size = "+origSize+" block size = "+blockSize);
 			HashResult[] hashes = null;
@@ -571,17 +571,6 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		@Override
 		public int hashCode() {
 			return hashCode;
-		}
-
-		/**
-		 * zero arg c'tor for db4o on jamvm
-		 */
-		@SuppressWarnings("unused")
-		private SplitHandler() {
-			persistent = false;
-			origDataLength = 0;
-			origCompressedDataLength = 0;
-			hashCode = 0;
 		}
 
 		public SplitHandler(long origDataLength, long origCompressedDataLength, boolean allowSizes) {

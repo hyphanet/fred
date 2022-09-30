@@ -15,14 +15,20 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
 
+import freenet.client.FetchException;
+import freenet.client.HighLevelSimpleClient;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.keys.FreenetURI;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.OpennetDisabledException;
 import freenet.node.PeerNode;
+import freenet.node.PeerTooOldException;
+import freenet.node.RequestStarter;
+import freenet.support.Logger;
 import freenet.support.MediaType;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
@@ -85,6 +91,23 @@ public class AddPeer extends FCPMessage {
 		}
 	}
 
+	public static StringBuilder getReferenceFromFreenetURI(FreenetURI url, HighLevelSimpleClient client)
+			throws IOException, FetchException {
+		StringBuilder ref = new StringBuilder(1024); // the 1024 is the initial capacity
+		InputStream is = null;
+		try {
+			is = client.fetch(url, 31000).asBucket().getInputStream(); // limit to 31k, which should suffice even if we add many more ipv6 addresses
+			BufferedReader in = new BufferedReader(new InputStreamReader(is, MediaType.getCharsetRobustOrUTF("text/plain")));
+			String line;
+			while ((line = in.readLine()) != null) {
+				ref.append( line ).append('\n');
+			}
+			return ref;
+		} finally {
+			Closer.close(is);
+		}
+	}
+
 	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
@@ -96,8 +119,18 @@ public class AddPeer extends FCPMessage {
 		BufferedReader in;
 		if(urlString != null) {
 			try {
-				URL url = new URL(urlString);
-				ref = getReferenceFromURL(url);
+				try {
+					FreenetURI refUri = new FreenetURI(urlString);
+					HighLevelSimpleClient client = node.clientCore.makeClient(
+							RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
+							true,
+							true);
+					ref = AddPeer.getReferenceFromFreenetURI(refUri, client);
+				} catch (MalformedURLException | FetchException e) {
+					Logger.warning(this, "Url cannot be used as Freenet URI, trying to fetch as URL: " + urlString);
+					URL url = new URL(urlString);
+					ref = AddPeer.getReferenceFromURL(url);
+				}
 			} catch (MalformedURLException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "Error parsing ref URL <"+urlString+">: "+e.getMessage(), identifier, false);
 			} catch (IOException e) {
@@ -155,8 +188,10 @@ public class AddPeer extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), identifier, false);
 			} catch (ReferenceSignatureVerificationException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_SIGNATURE_INVALID, "Error adding ref: "+e.getMessage(), identifier, false);
-			}
-			if(Arrays.equals(pn.getPubKeyHash(), node.getOpennetPubKeyHash()))
+			} catch (PeerTooOldException e) {
+                throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), identifier, false);
+            }
+			if(Arrays.equals(pn.peerECDSAPubKeyHash, node.getOpennetPubKeyHash()))
 				throw new MessageInvalidException(ProtocolErrorMessage.CANNOT_PEER_WITH_SELF, "Node cannot peer with itself", identifier, false);
 			if(!node.addPeerConnection(pn)) {
 				throw new MessageInvalidException(ProtocolErrorMessage.DUPLICATE_PEER_REF, "Node already has a peer with that identity", identifier, false);
@@ -171,15 +206,17 @@ public class AddPeer extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), identifier, false);
 			} catch (ReferenceSignatureVerificationException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_SIGNATURE_INVALID, "Error adding ref: "+e.getMessage(), identifier, false);
-			}
-			if(Arrays.equals(pn.getPubKeyHash(), node.getDarknetPubKeyHash()))
+			} catch (PeerTooOldException e) {
+                throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), identifier, false);
+            }
+			if(Arrays.equals(pn.peerECDSAPubKeyHash, node.getDarknetPubKeyHash()))
 				throw new MessageInvalidException(ProtocolErrorMessage.CANNOT_PEER_WITH_SELF, "Node cannot peer with itself", identifier, false);
 			if(!node.addPeerConnection(pn)) {
 				throw new MessageInvalidException(ProtocolErrorMessage.DUPLICATE_PEER_REF, "Node already has a peer with that identity", identifier, false);
 			}
 			System.out.println("Added darknet peer: "+pn);
 		}
-		handler.outputHandler.queue(new PeerMessage(pn, true, true, identifier));
+		handler.send(new PeerMessage(pn, true, true, identifier));
 	}
 
 }

@@ -28,8 +28,8 @@ public class ClientCHKBlockTest extends TestCase {
 			checkBlock(fullBlock, true);
 		}
 	}
-	
-	public void testEncodeDecodeShortInteger() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {	
+
+	public void testEncodeDecodeShortInteger() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {
 		for(int i=0;i<100;i++) {
 			String s = Integer.toString(i);
 			checkBlock(s.getBytes("UTF-8"), false);
@@ -67,15 +67,17 @@ public class ClientCHKBlockTest extends TestCase {
 		byte cryptoAlgorithm = newAlgo ? Key.ALGO_AES_CTR_256_SHA256 : Key.ALGO_AES_PCFB_256_SHA256;
 		byte[] copyOfData = new byte[data.length];
 		System.arraycopy(data, 0, copyOfData, 0, data.length);
-		ClientCHKBlock encodedBlock = 
-			ClientCHKBlock.encode(new ArrayBucket(data), false, false, (short)-1, data.length, null, false, null, cryptoAlgorithm);
+		ClientCHKBlock encodedBlock =
+			ClientCHKBlock.encode(new ArrayBucket(data), false, false, (short)-1, data.length, null,
+					null, cryptoAlgorithm);
 		// Not modified in-place.
 		assert(Arrays.equals(data, copyOfData));
 		ClientCHK key = encodedBlock.getClientKey();
 		if(newAlgo) {
 			// Check with no JCA.
-			ClientCHKBlock otherEncodedBlock = 
-				ClientCHKBlock.encode(new ArrayBucket(data), false, false, (short)-1, data.length, null, false, null, cryptoAlgorithm, true);
+			ClientCHKBlock otherEncodedBlock =
+				ClientCHKBlock.encode(new ArrayBucket(data), false, false, (short)-1, data.length, null,
+            null, cryptoAlgorithm, true);
 			assertTrue(key.equals(otherEncodedBlock.getClientKey()));
 			assertTrue(Arrays.equals(otherEncodedBlock.getBlock().data, encodedBlock.getBlock().data));
 			assertTrue(Arrays.equals(otherEncodedBlock.getBlock().headers, encodedBlock.getBlock().headers));

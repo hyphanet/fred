@@ -246,28 +246,28 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 					continue;
 				}
 				boolean excludeItem = false;
-				long excludeTime = item.getWakeupTime(context, now);
-				if(excludeTime > 0) {
-					// In cooldown, will be wanted later.
+				long itemWakeTime = item.getWakeupTime(context, now);
+				if (itemWakeTime > 0) {
+					// The item is in cooldown, will be wanted later.
 					excludeItem = true;
-					if(wakeupTime > excludeTime) wakeupTime = excludeTime;
-				} else {
-					long itemWakeTime = item.getWakeupTime(context, now);
-					if(itemWakeTime == -1) {
-						if(logMINOR) Logger.minor(this, "Removing "+item+" on "+this);
-						// We are doing compaction here. We don't need to swap with the end; we write valid ones to the target location.
-						reqsReading[offset] = null;
-						item.setParentGrabArray(null);
-						continue;
-					} else if(itemWakeTime > 0) {
-						if(itemWakeTime < wakeupTime) wakeupTime = itemWakeTime;
-						excludeItem = true;
+					if (itemWakeTime < wakeupTime) {
+						wakeupTime = itemWakeTime;
 					}
-					if(!excludeItem) {
-						itemWakeTime = excluding.exclude(item, context, now);
-						if(itemWakeTime > 0) {
-							if(itemWakeTime < wakeupTime) wakeupTime = itemWakeTime;
-							excludeItem = true;
+				} else if (itemWakeTime == -1) {
+					// The item is no longer needed and should be removed.
+					if(logMINOR) {
+						Logger.minor(this, "Removing "+item+" on "+this);
+					}
+					// We are doing compaction here. We don't need to swap with the end; we write valid ones to the target location.
+					reqsReading[offset] = null;
+					item.setParentGrabArray(null);
+					continue;
+				} else {
+					long excludeTime = excluding.exclude(item, context, now);
+					if (excludeTime > 0) {
+						excludeItem = true;
+						if(excludeTime < wakeupTime) {
+							wakeupTime = excludeTime;
 						}
 					}
 				}
@@ -311,7 +311,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 				return null; // Caller should remove the whole RGA
 			} else if(valid == 0) {
 				if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items total "+index);
-				reduceWakeupTime(wakeupTime, context);
+				setWakeupTime(wakeupTime, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else if(valid == 1) {
 				ret = validItem;
@@ -487,6 +487,25 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
         synchronized(root) {
             if(wakeupTime < now) wakeupTime = 0;
             return wakeupTime;
+        }
+    }
+    
+    /** Set the wakeup time, and update parents recursively if it is reduced. If it is increased
+     * we don't need to bother parents as they will recompute the next time they need to. Only
+     * called by removeRandomExhaustive() i.e. after checking <b>all</b> our 
+     * RandomGrabArrayItem's and finding that none of them are ready to send.
+     * @param wakeupTime
+     * @param context
+     */
+    private void setWakeupTime(long wakeupTime, ClientContext context) {
+        if(logMINOR) Logger.minor(this, "setCooldownTime("+(wakeupTime-System.currentTimeMillis())+") on "+this);
+        synchronized(root) {
+            if(this.wakeupTime > wakeupTime) {
+                this.wakeupTime = wakeupTime; // Set before calling parent.
+                if(parent != null) parent.reduceWakeupTime(wakeupTime, context);
+            } else {
+                this.wakeupTime = wakeupTime;
+            }
         }
     }
 

@@ -18,7 +18,6 @@ import freenet.support.math.MersenneTwister;
 
 import freenet.crypt.AEADCryptBucket;
 
-import freenet.client.async.ClientContext;
 import freenet.crypt.EncryptedRandomAccessBucket;
 import freenet.crypt.EncryptedRandomAccessBuffer;
 import freenet.crypt.MasterSecret;
@@ -487,6 +486,7 @@ public class BucketTools {
     }
     
     /** @deprecated Only for unit tests */
+    @Deprecated
     public static void fill(Bucket bucket, Random random, long length) throws IOException {
         OutputStream os = null;
         try {
@@ -498,6 +498,7 @@ public class BucketTools {
     }
 
     /** @deprecated Only for unit tests */
+    @Deprecated
     public static void fill(RandomAccessBuffer raf, Random random, long offset, long length) 
     throws IOException {
         long moved = 0;

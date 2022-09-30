@@ -199,9 +199,21 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
 			SelectorReturn r = chooseRequestInner(fuzz, random, offeredKeys, starter, realTime, context, now);
-			SendableRequest req = null;
-			if(r != null && r.req != null) req = r.req;
-			if(req == null) continue;
+                        SendableRequest req = r.req;
+			if(req == null) {
+			    if(r.wakeupTime != Long.MAX_VALUE && r.wakeupTime > now) {
+			        // Wake up later.
+			        sched.clientContext.ticker.queueTimedJob(new Runnable() {
+			            
+			            @Override
+			            public void run() {
+			                sched.wakeStarter();
+			            }
+			            
+			        }, r.wakeupTime - now);
+			    }
+			    continue;
+			}
 			if(isInsertScheduler && req instanceof SendableGet) {
 				IllegalStateException e = new IllegalStateException("removeFirstInner returned a SendableGet on an insert scheduler!!");
 				req.internalError(e, sched, context, req.persistent());
@@ -220,6 +232,8 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			return null;
 		}
 		if(req.getWakeupTime(context, now) != 0) {
+		    // Race condition. We don't need to add a wake-up job. FIXME this shouldn't happen 
+		    // because we only consider local requests of the same type?! Add logging and debug!
 			if(logMINOR) Logger.minor(this, "Request is in cooldown: "+req);
 			return null;
 		}
@@ -306,7 +320,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		long l = choosePriority(fuzz, random, context, now);
 		if(l > Integer.MAX_VALUE) {
 			if(logMINOR) Logger.minor(this, "No priority available for the next "+TimeUtil.formatTime(l - now));
-			return null;
+			return new SelectorReturn(l);
 		}
 		int choosenPriorityClass = (int)l;
 		if(choosenPriorityClass == -1) {
@@ -316,7 +330,8 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			}
 			if(logMINOR)
 				Logger.minor(this, "Nothing to do");
-			return null;
+			// No requests queued at all.
+			return new SelectorReturn(Long.MAX_VALUE);
 		}
 		long wakeupTime = Long.MAX_VALUE;
 outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CLASS;choosenPriorityClass++) {
@@ -438,7 +453,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
 			}
 		}
 		if(logMINOR) Logger.minor(this, "No requests to run");
-		return null;
+		return new SelectorReturn(wakeupTime);
 	}
 	
 	private static final short[] tweakedPrioritySelector = { 
@@ -513,7 +528,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
 			if(getterWaiting != null) {
 			    WeakReference<BaseSendableGet>[] waiting = transientRequestsWaitingForKeysFetching.get(key);
 			    if(waiting == null) {
-			        transientRequestsWaitingForKeysFetching.put(key, new WeakReference[] { new WeakReference<BaseSendableGet>(getterWaiting) });
+			        transientRequestsWaitingForKeysFetching.put(key, (WeakReference<BaseSendableGet>[])new WeakReference<?>[] { new WeakReference<BaseSendableGet>(getterWaiting) });
 			    } else {
 			        for(WeakReference<BaseSendableGet> ref : waiting) {
 			            if(ref.get() == getterWaiting) return true;

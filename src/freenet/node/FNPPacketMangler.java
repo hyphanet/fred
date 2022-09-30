@@ -3,13 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.security.interfaces.ECPublicKey;
@@ -17,19 +12,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
-import freenet.crypt.DHGroup;
-import freenet.crypt.DSA;
-import freenet.crypt.DSAGroup;
-import freenet.crypt.DSASignature;
-import freenet.crypt.DiffieHellman;
-import freenet.crypt.DiffieHellmanLightContext;
 import freenet.crypt.ECDH;
 import freenet.crypt.ECDHLightContext;
 import freenet.crypt.ECDSA;
 import freenet.crypt.ECDSA.Curves;
-import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.PCFBMode;
@@ -48,9 +35,7 @@ import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
-import freenet.l10n.NodeL10n;
 import freenet.node.OpennetManager.ConnectionType;
-import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -63,14 +48,19 @@ import freenet.support.io.FileUtil;
 import freenet.support.io.InetAddressComparator;
 import freenet.support.io.NativeThread;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * @author amphibian
  *
- * Encodes and decodes packets for FNP.
- *
- * This includes encryption, authentication, and may later
- * include queueing etc. (that may require some interface
- * changes in IncomingPacketFilter).
+ * Handles connection setup and more complex packet decoding (cases where we don't immediately know
+ * which peer sent the packet). Connection setup uses JFKi, but with an outer obfuscation layer
+ * keyed on the "identity" of both the peer and this node.
+ * 
+ * @see freenet.io.comm.IncomingPacketFilter
+ * @see NewPacketFormat
  */
 public class FNPPacketMangler implements OutgoingPacketMangler {
     static { Logger.registerClass(FNPPacketMangler.class); }
@@ -89,7 +79,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	/** The following is used in the HMAC calculation of JFK message3 and message4 */
 	private static final byte[] JFK_PREFIX_INITIATOR, JFK_PREFIX_RESPONDER;
 	static {
-		byte[] I = null,R = null;
+		byte[] I,R;
 		try {
 			I = "I".getBytes("UTF-8");
 			R = "R".getBytes("UTF-8");
@@ -109,18 +99,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	* The FIFO itself
 	* Get a lock on dhContextFIFO before touching it!
 	*/
-	private final LinkedList<DiffieHellmanLightContext> dhContextFIFO = new LinkedList<DiffieHellmanLightContext>();
-	/* The element which is about to be prunned from the FIFO */
-	private DiffieHellmanLightContext dhContextToBePrunned = null;
-	private static final DHGroup dhGroupToUse = Global.DHgroupA;
-	private long jfkDHLastGenerationTimestamp = 0;
-	
 	private final LinkedList<ECDHLightContext> ecdhContextFIFO = new LinkedList<ECDHLightContext>();
-    private ECDHLightContext ecdhContextToBePrunned;
-    private static final ECDH.Curves ecdhCurveToUse = ECDH.Curves.P256;
+	private ECDHLightContext ecdhContextToBePrunned;
+	private static final ECDH.Curves ecdhCurveToUse = ECDH.Curves.P256;
 	private long jfkECDHLastGenerationTimestamp = 0;
 
-	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = SHA256.getDigestLength();
 	/** The size of the key used to authenticate the hmac */
 	private static final int TRANSIENT_KEY_SIZE = HASH_LENGTH;
@@ -140,25 +123,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			maybeResetTransientKey();
 		}
 	};
-	/** Minimum headers overhead */
-	private static final int HEADERS_LENGTH_MINIMUM =
-		4 + // sequence number
-		RANDOM_BYTES_LENGTH + // random junk
-		1 + // version
-		1 + // assume seqno != -1; otherwise would be 4
-		4 + // other side's seqno
-		1 + // number of acks
-		0 + // assume no acks
-		1 + // number of resend reqs
-		0 + // assume no resend requests
-		1 + // number of ack requests
-		0 + // assume no ack requests
-		1 + // no forgotten packets
-		HASH_LENGTH + // hash
-		1; // number of messages
-	/** Headers overhead if there is one message and no acks. */
-	static public final int HEADERS_LENGTH_ONE_MESSAGE =
-		HEADERS_LENGTH_MINIMUM + 2; // 2 bytes = length of message. rest is the same.
 
         private long lastConnectivityStatusUpdate;
         private Status lastConnectivityStatus;
@@ -180,38 +144,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		maybeResetTransientKey();
 		// Fill the DH FIFO on-thread
 		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
-			_fillJFKDHFIFO();
-		}
-		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
 			_fillJFKECDHFIFO();
 		}
 		this.authHandlingThread.start(node.executor, "FNP incoming auth packet handler thread");
-	}
-
-	/**
-	 * Packet format:
-	 *
-	 * E_session_ecb(
-	 *         4 bytes:  sequence number XOR first 4 bytes of node identity
-	 *         12 bytes: first 12 bytes of H(data)
-	 *         )
-	 * E_session_ecb(
-	 *         16 bytes: bytes 12-28 of H(data)
-	 *         ) XOR previous ciphertext XOR previous plaintext
-	 * 4 bytes: bytes 28-32 of H(data) XOR bytes 0-4 of H(data)
-	 * E_session_pcfb(data) // IV = first 32 bytes of packet
-	 *
-	 */
-
-	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
-		/**
-		 * Look up the Peer.
-		 * If we know it, check the packet with that key.
-		 * Otherwise try all of them (on the theory that nodes
-		 * occasionally change their IP addresses).
-		 */
-		PeerNode opn = node.peers.getByPeer(peer);
-		return process(buf, offset, length, peer, opn, now);
 	}
 
 	/**
@@ -537,7 +472,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 9 || negType == 10)) {
+		if(!(negType == 10)) {
 			if(negType > 10)
 				Logger.error(this, "Unknown neg type: "+negType);
 			else
@@ -597,7 +532,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 9 || negType == 10)) {
+		if(!(negType == 10)) {
 			if(negType > 10)
 				Logger.error(this, "Unknown neg type: "+negType);
 			else
@@ -672,11 +607,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 
-		if(negType >= 0 && negType < 9) {
+		if(negType >= 0 && negType < 10) {
 			// negType 0 through 5 no longer supported, used old FNP.
 			Logger.warning(this, "Old neg type "+negType+" not supported");
 			return;
-		} else if (negType == 9 || negType == 10) {
+		} else if (negType == 10) {
 			// negType == 10 => Changes the method of ack encoding (from single-ack to cummulative range acks)
 		    // negType == 9 => Lots of changes:
 		    //      Security fixes:
@@ -781,17 +716,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		long t1=System.currentTimeMillis();
 		int modulusLength = getModulusLength(negType);
 		// Pre negtype 9 we were sending Ni as opposed to Ni'
-		int nonceSize = (negType < 9 ? getNonceSize(negType) : HASH_LENGTH);
+		int nonceSizeHashed = HASH_LENGTH;
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
 		// FIXME: follow the spec and send IDr' ?
-		if(payload.length < nonceSize + modulusLength + 3 + (unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)) {
-			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(nonceSize + modulusLength));
+		if(payload.length < nonceSizeHashed + modulusLength + 3 + (unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)) {
+			Logger.error(this, "Packet too short from "+pn+": "+payload.length+" after decryption in JFK(1), should be "+(nonceSizeHashed + modulusLength));
 			return;
 		}
 		// get Ni'
-		byte[] nonceInitiator = new byte[nonceSize]; 
-		System.arraycopy(payload, offset, nonceInitiator, 0, nonceSize);
-		offset += nonceSize;
+		byte[] nonceInitiator = new byte[nonceSizeHashed];
+		System.arraycopy(payload, offset, nonceInitiator, 0, nonceSizeHashed);
+		offset += nonceSizeHashed;
 
 		// get g^i
 		byte[] hisExponential = Arrays.copyOfRange(payload, offset, offset + modulusLength);
@@ -808,17 +743,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(throttleRekey(pn, replyTo)) return;
 		   
 
-		if(negType >= 8 || DiffieHellman.checkDHExponentialValidity(this.getClass(), new NativeBigInteger(1,hisExponential))) {
-			// JFK protects us from weak key attacks on ECDH, so we don't need to check.
 		    try {
 		    	sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo, unknownInitiator, setupType, negType);
 		    } catch (NoContextsException e) {
 		    	handleNoContextsException(e, NoContextsException.CONTEXT.REPLYING);
 		    	return;
 		    }
-		} else {
-		    Logger.error(this, "We can't accept the exponential "+pn+" sent us!! REDFLAG: IT CAN'T HAPPEN UNLESS AGAINST AN ACTIVE ATTACKER!!");
-		}
 
 		long t2=System.currentTimeMillis();
 		if((t2-t1)>500) {
@@ -905,33 +835,26 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         int nonceSize = getNonceSize(negType);
 		
 		KeyAgreementSchemeContext ctx = pn.getKeyAgreementSchemeContext();
-		if(negType < 8) { // Legacy DH
-		    if((ctx == null) || !(ctx instanceof DiffieHellmanLightContext) || ((pn.jfkContextLifetime + DH_GENERATION_INTERVAL*DH_CONTEXT_BUFFER_SIZE) < now)) {
-			    pn.jfkContextLifetime = now;
-			    pn.setKeyAgreementSchemeContext(ctx = getLightDiffieHellmanContext());
-		    }
-		} else {
             if((ctx == null) || !(ctx instanceof ECDHLightContext) || ((pn.jfkContextLifetime + DH_GENERATION_INTERVAL*DH_CONTEXT_BUFFER_SIZE) < now)) {
                 pn.jfkContextLifetime = now;
                 pn.setKeyAgreementSchemeContext(ctx = getECDHLightContext());
             }
-		}
 		
 		int offset = 0;
 		byte[] nonce = new byte[nonceSize];
 		byte[] myExponential = ctx.getPublicKeyNetworkFormat();
 		node.random.nextBytes(nonce);
 
-		synchronized (pn) {
+		synchronized (pn.jfkNoncesSent) {
 			pn.jfkNoncesSent.add(nonce);
 			if(pn.jfkNoncesSent.size() > MAX_NONCES_PER_PEER)
 				pn.jfkNoncesSent.removeFirst();
 		}
 
-		int nonceSizeHashed = (negType > 8 ? HASH_LENGTH : nonceSize);
+		int nonceSizeHashed = HASH_LENGTH;
 		byte[] message1 = new byte[nonceSizeHashed+modulusLength+(unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)];
 
-		System.arraycopy((negType > 8 ? SHA256.digest(nonce) : nonce), 0, message1, offset, nonceSizeHashed);
+		System.arraycopy(SHA256.digest(nonce), 0, message1, offset, nonceSizeHashed);
 		offset += nonceSizeHashed;
 		System.arraycopy(myExponential, 0, message1, offset, modulusLength);
 
@@ -965,17 +888,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int nonceSize = getNonceSize(negType);
 		// g^r
 		// Neg type 8 and later use ECDH for generating the keys.
-		KeyAgreementSchemeContext ctx = negType < 8 ? getLightDiffieHellmanContext() : getECDHLightContext();
+		KeyAgreementSchemeContext ctx = getECDHLightContext();
 		
 		// Nr
 		byte[] myNonce = new byte[nonceSize];
 		node.random.nextBytes(myNonce);
 		byte[] myExponential = ctx.getPublicKeyNetworkFormat();
 		// Neg type 9 and later use ECDSA signature.
-		byte[] sig = (negType < 9 ? ctx.dsaSig : ctx.ecdsaSig);
+		byte[] sig = ctx.ecdsaSig;
 	    if(sig.length != getSignatureLength(negType))
 	        throw new IllegalStateException("This shouldn't happen: please report! We are attempting to send "+sig.length+" bytes of signature in JFK2! "+pn.getPeer());
-	    byte[] authenticator = HMAC.macWithSHA256(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
+	    byte[] authenticator = HMAC.macWithSHA256(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()));
 		if(logDEBUG) Logger.debug(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
         if(logDEBUG) Logger.debug(this, "We have Ni' : " + HexUtil.bytesToHex(nonceInitator));
 		byte[] message2 = new byte[nonceInitator.length + nonceSize+modulusLength+
@@ -1041,7 +964,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int modulusLength = getModulusLength(negType);
 		// Pre negtype 9 we were sending Ni as opposed to Ni'
 		int nonceSize = getNonceSize(negType);
-		int nonceSizeHashed = (negType > 8 ? HASH_LENGTH : nonceSize);
+		int nonceSizeHashed = HASH_LENGTH;
 		
 		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it - "+pn.getPeer());
 		// FIXME: follow the spec and send IDr' ?
@@ -1084,9 +1007,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		// sanity check
 		byte[] myNi = null;
-		synchronized (pn) {
+		synchronized (pn.jfkNoncesSent) {
 			for(byte[] buf : pn.jfkNoncesSent) {
-				if(MessageDigest.isEqual(nonceInitiator, (negType > 8 ?  SHA256.digest(buf) : buf)))
+				if(MessageDigest.isEqual(nonceInitiator, SHA256.digest(buf)))
 					myNi = buf;
 			}
 		}
@@ -1098,33 +1021,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 
-		if(negType < 8) { // legacy DH
-		    NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-		    if(!DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
-		        Logger.error(this, "We can't accept the exponential "+pn.getPeer()+" sent us!! REDFLAG: IT CAN'T HAPPEN UNLESS AGAINST AN ACTIVE ATTACKER!!");
-		        return;
-		    }
-			// JFK protects us from weak key attacks on ECDH, so we don't need to check.
-		}
-
-		if(negType < 9) {
-		    // Verify the DSA signature
-		    byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-		    byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-		    System.arraycopy(sig, 0, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
-		    System.arraycopy(sig, Node.SIGNATURE_PARAMETER_LENGTH, s, 0, Node.SIGNATURE_PARAMETER_LENGTH);
-		    DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
-		    // At that point we don't know if it's "him"; let's check it out
-		    byte[] locallyExpectedExponentials =  assembleDHParams(hisExponential, pn.peerCryptoGroup);
-
-		    if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(locallyExpectedExponentials)), false)) {
-		        Logger.error(this, "The signature verification has failed in JFK(2)!! "+pn.getPeer());
-		        return;
-		    }
-		} else {
 		    // Verify the ECDSA signature ; We are assuming that it's the curve we expect
-		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey(), sig, hisExponential)) {
-	              if(pn.peerECDSAPubKeyHash() == null) {
+		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey, sig, hisExponential)) {
+	              if(pn.peerECDSAPubKeyHash == null) {
 	            	  // FIXME remove when remove DSA support.
 	            	  // Caused by nodes running broken early versions of negType9.
 	            	  Logger.error(this, "Peer attempting negType "+negType+" with ECDSA but no ECDSA key known: "+pn.userToString());
@@ -1132,11 +1031,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	              }
 		    	  Logger.error(this, "The ECDSA signature verification has failed in JFK(2)!! "+pn.getPeer());
 	              if(logDEBUG) Logger.debug(this, "Expected signature on "+HexUtil.bytesToHex(hisExponential)+
-	            		  " with "+HexUtil.bytesToHex(pn.peerECDSAPubKeyHash())+
+	            		  " with "+HexUtil.bytesToHex(pn.peerECDSAPubKeyHash)+
 	            		  " signature "+HexUtil.bytesToHex(sig));
 	              return;
 		    }
-		}
+
 
 		// At this point we know it's from the peer, so we can report a packet received.
 		pn.receivedPacket(true, false);
@@ -1205,7 +1104,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		inputOffset += nonceSize;
 		if(logDEBUG) Logger.debug(this, "We are receiving Ni : " + HexUtil.bytesToHex(nonceInitiator));
 		// Before negtype 9 we didn't hash it!
-		byte[] nonceInitiatorHashed = (negType > 8 ? SHA256.digest(nonceInitiator) : nonceInitiator);
+		byte[] nonceInitiatorHashed = SHA256.digest(nonceInitiator);
 		    
 		// Nr
 		byte[] nonceResponder = new byte[nonceSize];
@@ -1256,18 +1155,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		inputOffset += HASH_LENGTH;
 
 		byte[] computedExponential;
-		if(negType < 8) { // Legacy DH
-			NativeBigInteger _hisExponential = new NativeBigInteger(1, initiatorExponential);
-			NativeBigInteger _ourExponential = new NativeBigInteger(1, responderExponential);
 
-			DiffieHellmanLightContext ctx = findContextByExponential(_ourExponential);
-			if(ctx == null) {
-				Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+pn);
-				// Possible this is a replay or severely delayed? We don't keep every exponential we ever use.
-				return;
-			}
-			computedExponential = ctx.getHMACKey(_hisExponential);
-        } else {
             ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential, ecdhCurveToUse);
             ECPublicKey responderKey = ECDH.getPublicKey(responderExponential, ecdhCurveToUse);
             ECDHLightContext ctx = findECDHContextByPubKey(responderKey);
@@ -1278,7 +1166,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
                 return;
             }
             computedExponential = ctx.getHMACKey(initiatorKey);
-        }
+
 		if(logDEBUG) Logger.debug(this, "The shared Master secret is : "+HexUtil.bytesToHex(computedExponential) +" for " + pn);
 		
 		/* 0 is the outgoing key for the initiator, 7 for the responder */
@@ -1307,23 +1195,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				| ((sharedData[6] & 0xFF) << 8)
 				| (sharedData[7] & 0xFF);
 		int theirInitialMsgID, ourInitialMsgID;
-		if(negType >= 7) {
+
 			theirInitialMsgID =
 				unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
 					getInitialMessageID(pn.identity, crypto.myIdentity);
 			ourInitialMsgID =
 				unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
 					getInitialMessageID(crypto.myIdentity, pn.identity);
-		} else {
-			theirInitialMsgID= ((sharedData[8] & 0xFF) << 24)
-				| ((sharedData[9] & 0xFF) << 16)
-				| ((sharedData[10] & 0xFF) << 8)
-				| (sharedData[11] & 0xFF);
-			ourInitialMsgID= ((sharedData[12] & 0xFF) << 24)
-				| ((sharedData[13] & 0xFF) << 16)
-				| ((sharedData[14] & 0xFF) << 8)
-				| (sharedData[15] & 0xFF);
-		}
+
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+theirInitialMsgID+" ours "+ourInitialMsgID);
 
@@ -1379,23 +1258,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// verify the signature
-		byte[] toVerify = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, crypto.getIdentity(negType, false), data);
-		if(negType < 9) {
-		    byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-		    System.arraycopy(sig, 0, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
-            byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-            System.arraycopy(sig, Node.SIGNATURE_PARAMETER_LENGTH, s, 0, Node.SIGNATURE_PARAMETER_LENGTH);
-		    DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
-		    if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, SHA256.digest(toVerify)), false)) {
-		        Logger.error(this, "The signature verification has failed!! JFK(3) - "+pn.getPeer());
-		        return;
-		    }
-		} else {
-		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey(), sig, toVerify)) {
+		byte[] toVerify = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, crypto.getIdentity(negType), data);
+		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey, sig, toVerify)) {
 	              Logger.error(this, "The ECDSA signature verification has failed!! JFK(3) - "+pn.getPeer());
 	                return;
 		    }
-		}
+
 
 		// At this point we know it's from the peer, so we can report a packet received.
 		pn.receivedPacket(true, false);
@@ -1447,9 +1315,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				bootID, hisRef, 0, hisRef.length, outgoingCipher, outgoingKey, incommingCipher,
 				incommingKey, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher,
 				ivNonce, ourInitialSeqNum, theirInitialSeqNum, ourInitialMsgID, theirInitialMsgID);
-
-		// Set acknowledging method acording to negType
-		pn.setAcknowledgeType(negType);
 		
 		if(newTrackerID > 0) {
 
@@ -1491,7 +1356,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 			PeerNode seed;
 			try {
-				seed = new SeedClientPeerNode(ref, node, crypto, node.peers, false, true, crypto.packetMangler);
+				seed = new SeedClientPeerNode(ref, node, crypto);
 				// Don't tell tracker yet as we don't have the address yet.
 			} catch (FSParseException e) {
 				Logger.error(this, "Invalid seed client noderef: "+e+" from "+from, e);
@@ -1502,7 +1367,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			} catch (ReferenceSignatureVerificationException e) {
 				Logger.error(this, "Invalid seed client noderef: "+e+" from "+from, e);
 				return null;
-			}
+			} catch (PeerTooOldException e) {
+                Logger.error(this, "Invalid seed client noderef: "+e+" from "+from, e);
+                return null;
+            }
 			if(seed.equals(pn)) {
 				Logger.normal(this, "Already connected to seednode");
 				return pn;
@@ -1621,8 +1489,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// verify the signature
 		int dataLen = hisRef.length + 8 + 9;
 		int nonceSize = getNonceSize(negType);
-		int nonceSizeHashed = (negType > 8 ? HASH_LENGTH : nonceSize);
-	    byte[] identity = crypto.getIdentity(negType, unknownInitiator);
+		int nonceSizeHashed = HASH_LENGTH;
+		byte[] identity = crypto.getIdentity(negType);
 		byte[] locallyGeneratedText = new byte[nonceSizeHashed + nonceSize + modulusLength * 2 + identity.length + dataLen + pn.jfkMyRef.length];
 		int bufferOffset = nonceSizeHashed + nonceSize + modulusLength*2;
 		System.arraycopy(jfkBuffer, 0, locallyGeneratedText, 0, bufferOffset);
@@ -1632,24 +1500,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		System.arraycopy(data, 0, locallyGeneratedText, bufferOffset, dataLen);
 		bufferOffset += dataLen;
 		System.arraycopy(pn.jfkMyRef, 0, locallyGeneratedText, bufferOffset, pn.jfkMyRef.length);
-	    if(negType < 9) { // DSA sig     
-	        byte[] r = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-	        System.arraycopy(sig, 0, r, 0, Node.SIGNATURE_PARAMETER_LENGTH);
-	        byte[] s = new byte[Node.SIGNATURE_PARAMETER_LENGTH];
-	        System.arraycopy(sig, Node.SIGNATURE_PARAMETER_LENGTH, s, 0, Node.SIGNATURE_PARAMETER_LENGTH);
-	        DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
-	        byte[] messageHash = SHA256.digest(locallyGeneratedText);
-	        if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, messageHash), false)) {
-	            String error = "The signature verification has failed!! JFK(4) -"+pn.getPeer()+" message hash "+HexUtil.bytesToHex(messageHash)+" length "+locallyGeneratedText.length+" hisRef "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" myRef "+pn.jfkMyRef.length+" hash "+Fields.hashCode(pn.jfkMyRef)+" boot ID "+bootID;
-	            Logger.error(this, error);
-	            return true;
-	        }
-	    } else { // ECDSA sig
-	        if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey(), sig, locallyGeneratedText)) {
+	        if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey, sig, locallyGeneratedText)) {
 	            Logger.error(this, "The ECDSA signature verification has failed!! JFK(4) - "+pn.getPeer()+" length "+locallyGeneratedText.length+" hisRef "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" myRef "+pn.jfkMyRef.length+" hash "+Fields.hashCode(pn.jfkMyRef)+" boot ID "+bootID);
 	            return true;
 	        }
-	    }
+
 
 		// Received a packet
 		pn.receivedPacket(true, false);
@@ -1678,8 +1533,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.normal(this, "Rejecting connection because already have something with the same IP");
 			dontWant = true;
 		}
-		// Set acknowledging method acording to negType
-		pn.setAcknowledgeType(negType);
 
 		// We change the key
 		BlockCipher ivCipher = null;
@@ -1729,7 +1582,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// We want to clear it here so that new handshake requests
 		// will be sent with a different DH pair
 		pn.setKeyAgreementSchemeContext(null);
-		synchronized (pn) {
+		synchronized (pn.jfkNoncesSent) {
 			// FIXME TRUE MULTI-HOMING: winner-takes-all, kill all other connection attempts since we can't deal with multiple active connections
 			// Also avoids leaking
 			pn.jfkNoncesSent.clear();
@@ -1759,7 +1612,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int signLength = getSignatureLength(negType);
 		int nonceSize = getNonceSize(negType);
         // Pre negtype 9 we were sending Ni as opposed to Ni'
-        byte[] nonceInitiatorHashed = (negType > 8 ? SHA256.digest(nonceInitiator) : nonceInitiator);
+        byte[] nonceInitiatorHashed = SHA256.digest(nonceInitiator);
         
 		long t1=System.currentTimeMillis();
 		BlockCipher c = null;
@@ -1808,17 +1661,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		 * It is assumed to be non-message recovering
 		 */
 		// save parameters so that we can verify message4
-		byte[] toSign = assembleDHParams(nonceInitiatorHashed, nonceResponder, ourExponential, hisExponential, pn.getIdentity(negType), data);
+		byte[] toSign = assembleDHParams(nonceInitiatorHashed, nonceResponder, ourExponential, hisExponential, pn.getPubKeyHash(), data);
 		pn.setJFKBuffer(toSign);
-		byte[] sig = (negType < 9 ? crypto.sign(SHA256.digest(toSign)) : crypto.ecdsaSign(toSign));
+		byte[] sig = crypto.ecdsaSign(toSign);
 
-		byte[] computedExponential;
-		if (negType < 8 ) { // Legacy DH
-		    NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
-		    computedExponential= ((DiffieHellmanLightContext)ctx).getHMACKey(_hisExponential);
-		}else {
-		    computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential, ecdhCurveToUse));
-		}
+		byte[] computedExponential=((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential, ecdhCurveToUse));
+
 		if(logDEBUG) Logger.debug(this, "The shared Master secret is : "+HexUtil.bytesToHex(computedExponential)+ " for " + pn);
 		/* 0 is the outgoing key for the initiator, 7 for the responder */
 		pn.outgoingKey = computeJFKSharedKey(computedExponential, nonceInitiatorHashed, nonceResponder, "0");
@@ -1845,24 +1693,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				| ((sharedData[5] & 0xFF) << 16)
 				| ((sharedData[6] & 0xFF) << 8)
 				| (sharedData[7] & 0xFF);
-		if(negType >= 7) {
+
 			pn.theirInitialMsgID =
 				unknownInitiator ? getInitialMessageID(pn.identity) :
 					getInitialMessageID(pn.identity, crypto.myIdentity);
 			pn.ourInitialMsgID =
 				unknownInitiator ? getInitialMessageID(pn.identity) :
 					getInitialMessageID(crypto.myIdentity, pn.identity);
-		} else {
-			pn.ourInitialMsgID= ((sharedData[8] & 0xFF) << 24)
-				| ((sharedData[9] & 0xFF) << 16)
-				| ((sharedData[10] & 0xFF) << 8)
-				| (sharedData[11] & 0xFF);
-			pn.theirInitialMsgID= ((sharedData[12] & 0xFF) << 24)
-				| ((sharedData[13] & 0xFF) << 16)
-				| ((sharedData[14] & 0xFF) << 8)
-				| (sharedData[15] & 0xFF);
-		}
-			
+
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+pn.theirInitialMsgID+" ours "+pn.ourInitialMsgID);
 
@@ -1887,7 +1725,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		pcfb.blockEncipher(cleartext, cleartextToEncypherOffset, cleartext.length-cleartextToEncypherOffset);
 
 		// We compute the HMAC of (prefix + cyphertext) Includes the IV!
-		byte[] hmac = HMAC.macWithSHA256(pn.jfkKa, cleartext, HASH_LENGTH);
+		byte[] hmac = HMAC.macWithSHA256(pn.jfkKa, cleartext);
 
 		// copy stuffs back to the message
 		System.arraycopy(hmac, 0, message3, offset, HASH_LENGTH);
@@ -1984,10 +1822,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		ptr += myRef.length;
 		System.arraycopy(hisRef, 0, data, ptr, hisRef.length);
 
-		byte[] params = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, pn.getIdentity(negType), data);
+		byte[] params = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, pn.getPubKeyHash(), data);
 		if(logMINOR)
 			Logger.minor(this, "Message length "+params.length+" myRef: "+myRef.length+" hash "+Fields.hashCode(myRef)+" hisRef: "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" boot ID "+node.bootID);
-		byte[] sig = (negType < 9 ? crypto.sign(SHA256.digest(params)) : crypto.ecdsaSign(params));
+		byte[] sig = crypto.ecdsaSign(params);
 
 		int ivLength = PCFBMode.lengthIV(c);
 		byte[] iv=new byte[ivLength];
@@ -2010,7 +1848,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		pk.blockEncipher(cyphertext, cleartextToEncypherOffset, cyphertext.length - cleartextToEncypherOffset);
 
 		// We compute the HMAC of (prefix + iv + signature)
-		byte[] hmac = HMAC.macWithSHA256(Ka, cyphertext, HASH_LENGTH);
+		byte[] hmac = HMAC.macWithSHA256(Ka, cyphertext);
 
 		// Message4 = hmac + IV + encryptedSignature
 		byte[] message4 = new byte[HASH_LENGTH + ivLength + (cyphertext.length - cleartextToEncypherOffset)];
@@ -2147,29 +1985,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return true;
 	}
 
-	byte[] preformat(byte[] buf, int offset, int length) {
-		byte[] newBuf;
-		if(buf != null) {
-			newBuf = new byte[length+3];
-			newBuf[0] = 1;
-			newBuf[1] = (byte)(length >> 8);
-			newBuf[2] = (byte)length;
-			System.arraycopy(buf, offset, newBuf, 3, length);
-		} else {
-			newBuf = new byte[1];
-			newBuf[0] = 0;
-		}
-		return newBuf;
-	}
-
-	protected String l10n(String key, String[] patterns, String[] values) {
-		return NodeL10n.getBase().getString("FNPPacketMangler."+key, patterns, values);
-	}
-
-	protected String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("FNPPacketMangler."+key, pattern, value);
-	}
-
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#sendHandshake(freenet.node.PeerNode)
 	 */
@@ -2215,12 +2030,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(context == null) return false;
 		return !context.isConnected();
 	}
-	
-	static UserAlert BCPROV_LOAD_FAILED = null;
 
 	@Override
 	public int[] supportedNegTypes(boolean forPublic) {
-		return new int[] { 9, 10 };
+		return new int[] { 10 };
 	}
 
 	@Override
@@ -2243,35 +2056,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return crypto.config.alwaysAllowLocalAddresses();
 	}
 
-	private DiffieHellmanLightContext _genLightDiffieHellmanContext() {
-		final DiffieHellmanLightContext ctx = DiffieHellman.generateLightContext(dhGroupToUse);
-		if(logDEBUG) Logger.debug(this, "Signing for DiffieHellman: "+HexUtil.bytesToHex(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup())))+" for "+HexUtil.bytesToHex(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup())));
-		ctx.setDSASignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup()))));
 
-		return ctx;
-	}
-    
 	private ECDHLightContext _genECDHLightContext() {
         final ECDHLightContext ctx = new ECDHLightContext(ecdhCurveToUse);
         ctx.setECDSASignature(crypto.ecdsaSign(ctx.getPublicKeyNetworkFormat()));
-        ctx.setDSASignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup()))));
         if(logDEBUG) Logger.debug(this, "ECDSA Signature: "+HexUtil.bytesToHex(ctx.ecdsaSig)+" for "+HexUtil.bytesToHex(ctx.getPublicKeyNetworkFormat()));
         return ctx;
     }
-	
-	private void _fillJFKDHFIFOOffThread() {
-		// do it off-thread
-		node.executor.execute(new PrioRunnable() {
-			@Override
-			public void run() {
-				_fillJFKDHFIFO();
-			}
-			@Override
-			public int getPriority() {
-				return NativeThread.MIN_PRIORITY;
-			}
-		}, "DiffieHellman exponential signing");
-	}
 
     private void _fillJFKECDHFIFOOffThread() {
         // do it off-thread
@@ -2286,26 +2077,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
             }
         }, "ECDH exponential signing");
     }
-    
-	private void _fillJFKDHFIFO() {
-	    synchronized (dhContextFIFO) {
-	        int size = dhContextFIFO.size();
-	        if((size > 0) && (size + 1 > DH_CONTEXT_BUFFER_SIZE)) {
-	            DiffieHellmanLightContext result = null;
-	            long oldestSeen = Long.MAX_VALUE;
-
-				for (DiffieHellmanLightContext tmp: dhContextFIFO) {
-					if(tmp.lifetime < oldestSeen) {
-						oldestSeen = tmp.lifetime;
-						result = tmp;
-					}
-				}
-				dhContextFIFO.remove(dhContextToBePrunned = result);
-			}
-
-			dhContextFIFO.addLast(_genLightDiffieHellmanContext());
-		}
-	}
     
 	private void _fillJFKECDHFIFO() {
         synchronized (ecdhContextFIFO) {
@@ -2325,36 +2096,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
             ecdhContextFIFO.addLast(_genECDHLightContext());
         }
-    }	
-
-	/**
-	 * Change the DH Exponents on a regular basis but at most once every 30sec
-	 *
-	 * @return {@link DiffieHellmanLightContext}
-	 */
-	private DiffieHellmanLightContext getLightDiffieHellmanContext() {
-		final long now = System.currentTimeMillis();
-		DiffieHellmanLightContext result = null;
-
-		synchronized (dhContextFIFO) {
-			result = dhContextFIFO.pollFirst();
-
-			// Shall we replace one element of the queue ?
-			if((jfkDHLastGenerationTimestamp + DH_GENERATION_INTERVAL) < now) {
-				jfkDHLastGenerationTimestamp = now;
-				_fillJFKDHFIFOOffThread();
-			}
-
-            // If we didn't get any, generate on-thread
-            if(result == null)
-                result = _genLightDiffieHellmanContext();
-            
-			dhContextFIFO.addLast(result);
-		}
-
-		if(logMINOR) Logger.minor(this, "getLightDiffieHellmanContext() is serving "+result.hashCode());
-		return result;
-	}
+    }
 	
     /**
      * Change the ECDH key on a regular basis but at most once every 30sec
@@ -2392,32 +2134,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
     	private enum CONTEXT {
     		SENDING,
     		REPLYING
-    	};
+    	}
     }
-	
 
-	/**
-	 * Used in processJFK[3|4]
-	 * That's O^(n) ... but we have only a few elements and
-	 * we call it only once a round-trip has been done
-	 *
-	 * @param exponential
-	 * @return the corresponding DiffieHellmanLightContext with the right exponent
-	 */
-	private DiffieHellmanLightContext findContextByExponential(BigInteger exponential) {
-		synchronized (dhContextFIFO) {
-			for (DiffieHellmanLightContext result : dhContextFIFO) {
-				if(exponential.equals(result.myExponential)) {
-					return result;
-				}
-			}
-
-			if((dhContextToBePrunned != null) && ((dhContextToBePrunned.myExponential).equals(exponential)))
-				return dhContextToBePrunned;
-		}
-		return null;
-	}
-	
 	 /**
      * Used in processJFK[3|4]
      * That's O^(n) ... but we have only a few elements and
@@ -2443,16 +2162,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	/*
 	 * Prepare DH parameters of message2 for them to be signed (useful in message3 to check the sig)
 	 */
-	private byte[] assembleDHParams(byte[] exponential, DSAGroup group) {
-		byte[] _myGroup = group.getP().toByteArray();
-		byte[] toSign = new byte[exponential.length + _myGroup.length];
-
-		System.arraycopy(exponential, 0, toSign, 0, exponential.length);
-		System.arraycopy(_myGroup, 0, toSign, exponential.length, _myGroup.length);
-
-		return toSign;
-	}
-
 	private byte[] assembleDHParams(byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential, byte[] responderExponential, byte[] id, byte[] sa) {
 		byte[] result = new byte[nonceInitiator.length + nonceResponder.length + initiatorExponential.length + responderExponential.length + id.length + sa.length];
 		int offset = 0;
@@ -2498,7 +2207,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		offset += nR.length;
 		System.arraycopy(number, 0, toHash, offset, number.length);
 
-		return HMAC.macWithSHA256(exponential, toHash, HASH_LENGTH);
+		return HMAC.macWithSHA256(exponential, toHash);
 	}
 
 	private long timeLastReset = -1;
@@ -2576,23 +2285,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	
 	/** @returns the modulus length in bytes for a given negType */
 	private int getModulusLength(int negType) {
-	    if(negType < 8)
-	        return DiffieHellman.modulusLengthInBytes();
-	    else
 	        return ecdhCurveToUse.modulusSize;
 	}
 	
 	private int getSignatureLength(int negType) {
-	    if(negType < 9)
-	       return Node.SIGNATURE_PARAMETER_LENGTH*2; // R and S
-	    else
 	       return ECDSA.Curves.P256.maxSigSize;
 	}
 	
 	private int getNonceSize(int negType) {
-	    if(negType < 9)
-	        return 8;
-	    else
-	        return 16;
+		return 16;
 	}
 }

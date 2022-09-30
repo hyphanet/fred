@@ -40,10 +40,13 @@ public class WrapperConfig {
 			Logger.normal(WrapperConfig.class, "Cannot alter properties: not running under wrapper");
 			return false;
 		}
-		File f = new File("wrapper.conf");
+		File f = new File("wrapper/wrapper.conf");
 		if(!f.exists()) {
-			Logger.normal(WrapperConfig.class, "Cannot alter properties: wrapper.conf does not exist");
-			return false;
+			f = new File("wrapper.conf");
+			if(!f.exists()) {
+                            Logger.normal(WrapperConfig.class, "Cannot alter properties: wrapper.conf does not exist");
+                            return false;
+ 			}
 		}
 		if(!f.canRead()) {
 			Logger.normal(WrapperConfig.class, "Cannot alter properties: wrapper.conf not readable");
@@ -69,9 +72,15 @@ public class WrapperConfig {
 	public static synchronized boolean setWrapperProperty(String name, String value) {
 		// Some of this copied from UpdateDeployContext, hence no GPL header on this file as none there.
 		
-		File oldConfig = new File("wrapper.conf");
-		File newConfig = new File("wrapper.conf.new");
+		String wrapperDir = "wrapper";
+		File oldConfig = new File(wrapperDir + "/wrapper.conf");
+		File newConfig = new File(wrapperDir + "/wrapper.conf.new");
 		
+		if(!oldConfig.exists()) {
+			oldConfig = new File("wrapper.conf");
+			newConfig = new File("wrapper.conf.new");
+			wrapperDir=".";
+		}
 		FileInputStream fis = null;
 		FileOutputStream fos = null;
 		
@@ -127,10 +136,10 @@ public class WrapperConfig {
 		}
 		
 		if(!newConfig.renameTo(oldConfig)) {
-			File oldOldConfig = new File("wrapper.conf.old");
+			File oldOldConfig = new File(wrapperDir + "/wrapper.conf.old");
 			if(oldOldConfig.exists() && !oldOldConfig.delete())
 				try {
-					oldOldConfig = File.createTempFile("wrapper.conf", ".old.tmp", new File("."));
+					oldOldConfig = File.createTempFile(wrapperDir + "/wrapper.conf", ".old.tmp", new File("."));
 				} catch (IOException e) {
 					String error = "Unable to create temporary file and unable to copy wrapper.conf to wrapper.conf.old. Could not update wrapper.conf trying to set property "+name;
 					Logger.error(WrapperConfig.class, error);

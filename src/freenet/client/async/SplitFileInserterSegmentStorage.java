@@ -27,7 +27,6 @@ import freenet.support.MemoryLimitedJob;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
 import freenet.support.io.CountedOutputStream;
-import freenet.support.io.NativeThread;
 import freenet.support.io.NullOutputStream;
 import freenet.support.io.StorageFormatException;
 
@@ -400,6 +399,8 @@ public class SplitFileInserterSegmentStorage {
         long limit = totalBlockCount * CHKBlock.DATA_LENGTH + 
             Math.max(parent.codec.maxMemoryOverheadDecode(dataBlockCount, crossCheckBlockCount),
                 parent.codec.maxMemoryOverheadEncode(dataBlockCount, crossCheckBlockCount));
+        if(logMINOR) Logger.minor(this, "Scheduling encode on "+this+" at priority "+prio+
+                " blocks "+totalBlockCount+" memory limit "+limit);
         parent.memoryLimitedJobRunner.queueJob(new MemoryLimitedJob(limit) {
             
             @Override
@@ -568,8 +569,6 @@ public class SplitFileInserterSegmentStorage {
         int checksumLength = parent.checker.checksumLength();
         System.arraycopy(buf, 0, checkBuf, prefix.length, buf.length - checksumLength);
         byte[] checksum = Arrays.copyOfRange(buf, buf.length - checksumLength, buf.length);
-        if(parent.checker.checkChecksum(checkBuf, 0, checkBuf.length, checksum))
-            throw new MissingKeyException();
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buf));
         byte b = dis.readByte();
         if(b != 1) throw new MissingKeyException();
@@ -580,7 +579,7 @@ public class SplitFileInserterSegmentStorage {
     }
 
     public class MissingKeyException extends Exception {
-        
+        private static final long serialVersionUID = -6695311996193392803L;
     }
 
     /** Has the segment completed all inserts?

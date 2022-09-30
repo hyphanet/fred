@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import freenet.node.RequestClient;
+import java.io.Serializable;
+
 /** Base class for inserts, including site inserts, at the level of a ClientRequester.
  * 
  * WARNING: Changing non-transient members on classes that are Serializable can result in 
@@ -12,14 +15,12 @@ public abstract class BaseClientPutter extends ClientRequester {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-	 * zero arg c'tor for db4o on jamvm
-	 */
+	/** Required because {@link Serializable} is implemented by the parent class. */
 	protected BaseClientPutter() {
 	}
 
-	protected BaseClientPutter(short priorityClass, ClientBaseCallback cb) {
-		super(priorityClass, cb);
+	protected BaseClientPutter(short priorityClass, RequestClient requestClient) {
+		super(priorityClass, requestClient);
 	}
 
 	public void dump() {

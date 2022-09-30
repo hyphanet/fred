@@ -52,9 +52,9 @@ public class GetRequestStatusMessage extends FCPMessage {
                         ClientRequest req = handler.getForeverRequest(global, handler, identifier);
                         if(req == null) {
                             ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-                            handler.outputHandler.queue(msg);
+                            handler.send(msg);
                         } else {
-                            req.sendPendingMessages(handler.outputHandler, true, true, onlyData);
+                            req.sendPendingMessages(handler.outputHandler, identifier, true, onlyData);
                         }
                         return false;
                     }
@@ -62,10 +62,10 @@ public class GetRequestStatusMessage extends FCPMessage {
                 }, NativeThread.NORM_PRIORITY);
             } catch (PersistenceDisabledException e) {
                 ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-                handler.outputHandler.queue(msg);
+                handler.send(msg);
             }
 		} else {
-			req.sendPendingMessages(handler.outputHandler, true, true, onlyData);
+			req.sendPendingMessages(handler.outputHandler, identifier, true, onlyData);
 		}
 	}
 

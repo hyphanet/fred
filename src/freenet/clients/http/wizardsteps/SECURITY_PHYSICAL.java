@@ -27,7 +27,8 @@ public class SECURITY_PHYSICAL implements Step {
 	private enum PASSWORD_PROMPT {
 		SET_BLANK, //Requested new password was blank
 		DECRYPT_WRONG, //Decryption password was wrong
-		DECRYPT_BLANK  //Decryption password was blank
+		DECRYPT_BLANK,  //Decryption password was blank
+		SET_NO_MATCH //The new password pair that was requested does not match.
 	}
 
 	/**
@@ -72,9 +73,12 @@ public class SECURITY_PHYSICAL implements Step {
 		for(SecurityLevels.PHYSICAL_THREAT_LEVEL level : SecurityLevels.PHYSICAL_THREAT_LEVEL.values()) {
 			HTMLNode input;
 			input = div.addChild("p").addChild("input",
-			        new String[] { "type", "name", "value" },
-			        new String[] { "radio", controlName, level.name() });
-			input.addChild("b", WizardL10n.l10nSec("physicalThreatLevel.name." + level));
+			        new String[] { "type", "name", "value", "id" },
+			        new String[] { "radio", controlName, level.name(), controlName + level.name() });
+			input.addChild("label",
+							new String[] { "for" },
+							new String[] { controlName + level.name() }
+							).addChild("b", WizardL10n.l10nSec("physicalThreatLevel.name." + level));
 			input.addChild("#", ": ");
 			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
 			if(level == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH &&
@@ -83,6 +87,9 @@ public class SECURITY_PHYSICAL implements Step {
 				HTMLNode p = div.addChild("p");
 				p.addChild("label", "for", "passwordBox", WizardL10n.l10nSec("setPasswordLabel")+":");
 				p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "password", "masterPassword" });
+				// Confirm password box
+				p.addChild("label", "for", "confirmPasswordBox", WizardL10n.l10nSec("confirmPasswordLabel")+":");
+				p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "confirmPasswordBox", "password", "confirmMasterPassword" });
 			}
 		}
 		div.addChild("#", WizardL10n.l10nSec("physicalThreatLevelEnd"));
@@ -140,6 +147,12 @@ public class SECURITY_PHYSICAL implements Step {
 					forDowngrade = true;
 					forUpgrade = false;
 					break;
+				case SET_NO_MATCH:
+					pageTitleKey = "passwordPageTitle";
+					infoboxTitleKey = "enterPasswordTitle";
+					forDowngrade = false;
+					forUpgrade = true;
+					break;
 				default:
 					//Unanticipated value for type!
 					return false;
@@ -152,6 +165,8 @@ public class SECURITY_PHYSICAL implements Step {
 
 			if (type == PASSWORD_PROMPT.SET_BLANK || type == PASSWORD_PROMPT.DECRYPT_BLANK) {
 				content.addChild("p", WizardL10n.l10nSec("passwordNotZeroLength"));
+			} else if (type == PASSWORD_PROMPT.SET_NO_MATCH) {
+				content.addChild("p", WizardL10n.l10nSec("passwordsDoNotMatch"));
 			}
 
 			HTMLNode form = helper.addFormChild(content, ".", "masterPasswordForm");
@@ -182,7 +197,9 @@ public class SECURITY_PHYSICAL implements Step {
 	public String postStep(HTTPRequest request) throws IOException {
 		final String errorCorrupt = FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL+"&error=corrupt";
 		String pass = request.getPartAsStringFailsafe("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
-		final boolean passwordIsBlank = pass != null && pass.length() == 0;
+		String confirmPass = request.getPartAsStringFailsafe("confirmMasterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
+		final boolean passwordIsBlank = pass.isEmpty() && confirmPass.isEmpty();
+		final boolean passwordsDoNotMatch = !pass.equals(confirmPass);
 
 		String physicalThreatLevel = request.getPartAsStringFailsafe("security-levels.physicalThreatLevel", 128);
 		SecurityLevels.PHYSICAL_THREAT_LEVEL oldThreatLevel = core.node.securityLevels.getPhysicalThreatLevel();
@@ -202,6 +219,9 @@ public class SECURITY_PHYSICAL implements Step {
 			if (passwordIsBlank) {
 				// Must set the password to something non-blank.
 				return promptPassword(newThreatLevel, PASSWORD_PROMPT.SET_BLANK);
+			} else if (passwordsDoNotMatch) {
+				//Must Confirm the password before setting it
+				return promptPassword(newThreatLevel, PASSWORD_PROMPT.SET_NO_MATCH);
 			} else {
 				try {
 					if(oldThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL ||

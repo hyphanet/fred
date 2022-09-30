@@ -15,7 +15,12 @@
  */
 package freenet.support;
 
+import static java.util.Calendar.MILLISECOND;
+
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import junit.framework.TestCase;
 
@@ -145,4 +150,62 @@ public class TimeUtilTest extends TestCase {
 			assertNotNull(anException); }
 	}
 
+	/** Tests {@link TimeUtil#setTimeToZero(Date)} */
+	public void testSetTimeToZero() {
+		// Test whether zeroing doesn't happen when it needs not to.
+		
+		GregorianCalendar c = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+		c.set(2015, 0 /* 0-based! */, 01, 00, 00, 00);
+		c.set(MILLISECOND, 0);
+		
+		Date original = c.getTime();
+		Date zeroed = TimeUtil.setTimeToZero(original);
+		
+		assertEquals(original, zeroed);
+		// Date objects are mutable so their recycling is discouraged, check for it
+		assertNotSame(original, zeroed);
+		
+		// Test whether zeroing happens when it should.
+		
+		c.set(2014, 12 - 1 /* 0-based! */, 31, 23, 59, 59);
+		c.set(MILLISECOND, 999);
+		original = c.getTime();
+		Date originalBackup = (Date)original.clone();
+		
+		c.set(2014, 12 - 1 /* 0-based! */, 31, 00, 00, 00);
+		c.set(MILLISECOND, 0);
+		Date expected = c.getTime();
+		
+		zeroed = TimeUtil.setTimeToZero(original);
+		
+		assertEquals(expected, zeroed);
+		assertNotSame(original, zeroed);
+		// Check for bogus tampering with original object
+		assertEquals(originalBackup, original);
+	}
+
+	public void testToMillis_oneForTermLong() {
+		assertEquals(TimeUtil.toMillis("1w1d1h1m1.001s"), oneForTermLong);
+	}
+
+	public void testToMillis_maxLong() {
+		assertEquals(TimeUtil.toMillis("15250284452w3d7h12m55.807s"), Long.MAX_VALUE);
+	}
+
+	public void testToMillis_minLong() {
+		assertEquals(TimeUtil.toMillis("-15250284452w3d7h12m55.808s"), Long.MIN_VALUE);
+	}
+
+	public void testToMillis_empty() {
+		assertEquals(TimeUtil.toMillis(""), 0);
+		assertEquals(TimeUtil.toMillis("-"), 0);
+	}
+
+	public void testToMillis_unknownFormat() {
+		try {
+			TimeUtil.toMillis("15250284452w3q7h12m55.807s");
+		} catch (NumberFormatException e) {
+				assertNotNull(e);
+		}
+	}
 }

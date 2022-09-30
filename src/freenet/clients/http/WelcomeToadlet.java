@@ -3,13 +3,18 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
+import freenet.node.*;
+import freenet.node.useralerts.UpgradeConnectionSpeedUserAlert;
+import freenet.support.*;
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
-
-import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClient;
@@ -22,17 +27,8 @@ import freenet.clients.http.bookmark.BookmarkItem;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.node.DarknetPeerNode;
-import freenet.node.Node;
-import freenet.node.NodeStarter;
-import freenet.node.Version;
 import freenet.node.useralerts.UserAlert;
-import freenet.support.HTMLNode;
-import freenet.support.LogThresholdCallback;
-import freenet.support.Logger;
-import freenet.support.MultiValueTable;
 import freenet.support.Logger.LogLevel;
-import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
@@ -40,6 +36,9 @@ import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
 
 public class WelcomeToadlet extends Toadlet {
+
+    /** Suffix {@link #path()} with "#" + BOOKMARKS_ANCHOR to deep link to the bookmark list */
+    public static final String BOOKMARKS_ANCHOR = "bookmarks";
 
     final Node node;
 
@@ -78,22 +77,36 @@ public class WelcomeToadlet extends Toadlet {
             for (int i = 0; i < items.size(); i++) {
                 BookmarkItem item = items.get(i);
                 HTMLNode row = table.addChild("tr");
-                HTMLNode cell = row.addChild("td", "style", "border: none");
+                HTMLNode cell = row.addChild("td", "style", "border: none;");
                 if (item.hasAnActivelink() && !noActiveLinks) {
                     String initialKey = item.getKey();
                     String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/") + "activelink.png";
-                    cell.addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "height", "width", "alt", "title"},
-                            new String[]{ key, "36", "108", "activelink", item.getDescription()});
+                    cell.addChild("div", "style", "height: 36px; width: 108px;").addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "alt", "style", "title"},
+                            new String[]{ key, "activelink", "height: 36px; width: 108px", item.getDescription()});
                 } else {
                     cell.addChild("#", " ");
                 }
                 cell = row.addChild("td", "style", "border: none");
-                cell.addChild("a", new String[]{"href", "title", "class"}, new String[]{ '/' + item.getKey(), item.getDescription(), "bookmark-title"}, item.getVisibleName());
+                
+                boolean updated = item.hasUpdated(); // We use it twice so copy for thread safety
+                String linkClass = updated ? "bookmark-title-updated" : "bookmark-title";
+                cell.addChild(
+                    "a",
+                    new String[]{"href", "title", "class"},
+                    new String[]{'/' + item.getKey(), item.getDescription(), linkClass},
+                    item.getVisibleName());
+                
                 String explain = item.getShortDescription();
                 if(explain != null && explain.length() > 0) {
                 	cell.addChild("#", " (");
                 	cell.addChild("#", explain);
                 	cell.addChild("#", ")");
+                }
+
+                if (updated) {
+                    cell = row.addChild("td", "style", "border: none");
+                    cell.addChild(node.clientCore.alerts.renderDismissButton(
+                        item.getUserAlert(), path() + "#" + BOOKMARKS_ANCHOR));
                 }
             }
         }
@@ -216,7 +229,7 @@ public class WelcomeToadlet extends Toadlet {
         	if(!ctx.checkFormPassword(request)) return;
         	// FIXME do we still use this? where?
         	// FIXME If we support it from freesites we need a confirmation page with the formPassword.
-            FreenetURI key = new FreenetURI(request.getPartAsStringFailsafe("key", 128));
+            FreenetURI key = new FreenetURI(request.getPartAsStringFailsafe("key", Short.MAX_VALUE));
             String type = request.getPartAsStringFailsafe("content-type", 128);
             if (type == null) {
                 type = "text/plain";
@@ -265,6 +278,18 @@ public class WelcomeToadlet extends Toadlet {
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             request.freeParts();
             bucket.free();
+            return;
+        } else if (request.isPartSet("key")) {
+            if(!ctx.checkFormPassword(request)) return;
+            String key;
+            try {
+              key = URLDecoder.decode(new FreenetURI(request.getPartAsStringFailsafe("key", Short.MAX_VALUE)).toURI("/").toString(), false);
+            } catch (Exception e) {
+              sendErrorPage(ctx, l10n("invalidURI"), l10n("invalidURILong"), e);
+              return;
+            }
+            writeTemporaryRedirect(ctx, "OK", key);
+            return;
         } else if (request.isPartSet("exit")) {
         	PageNode page = ctx.getPageMaker().getPageNode(l10n("shutdownConfirmTitle"), ctx);
             HTMLNode pageNode = page.outer;
@@ -321,6 +346,66 @@ public class WelcomeToadlet extends Toadlet {
         	for(String alertAnchor : alertAnchors) toDump.add(alertAnchor);
         	ctx.getAlertManager().dumpEvents(toDump);
         	redirectToRoot(ctx);
+        } else if (request.isPartSet("upgradeConnectionSpeed")) {
+            if (!ctx.checkFormPassword(request)) {
+                return;
+            }
+
+            UpgradeConnectionSpeedUserAlert upgradeConnectionSpeedAlert = null;
+            for (UserAlert alert : node.clientCore.alerts.getAlerts()) {
+                if (alert instanceof UpgradeConnectionSpeedUserAlert) {
+                    upgradeConnectionSpeedAlert = (UpgradeConnectionSpeedUserAlert) alert;
+                    break;
+                }
+            }
+
+            String errorMessage = null;
+            try {
+                int outputBandwidthLimit = Fields.parseInt(request.getPartAsStringFailsafe("outputBandwidthLimit", Byte.MAX_VALUE));
+                BandwidthManager.checkOutputBandwidthLimit(outputBandwidthLimit);
+            } catch (NumberFormatException e) {
+                errorMessage = NodeL10n.getBase().getString("UpgradeConnectionSpeedUserAlert.InvalidValue", "type", "upload");
+            } catch (InvalidConfigValueException e) {
+                errorMessage = e.getMessage();
+            }
+            try {
+                int inputBandwidthLimit = Fields.parseInt(request.getPartAsStringFailsafe("inputBandwidthLimit", Byte.MAX_VALUE));
+                BandwidthManager.checkInputBandwidthLimit(inputBandwidthLimit);
+            } catch (NumberFormatException e) {
+                if (errorMessage == null) {
+                    errorMessage = NodeL10n.getBase().getString("UpgradeConnectionSpeedUserAlert.InvalidValue", "type", "download");
+                } else {
+                    errorMessage += " " + NodeL10n.getBase().getString("UpgradeConnectionSpeedUserAlert.InvalidValue", "type", "download");
+                }
+            } catch (InvalidConfigValueException e) {
+                if (errorMessage == null) {
+                    errorMessage = e.getMessage();
+                } else {
+                    errorMessage += " " + e.getMessage();
+                }
+            }
+
+            if (errorMessage == null) {
+                try {
+                    node.config.get("node").set("inputBandwidthLimit", request.getPartAsStringFailsafe("inputBandwidthLimit", Byte.MAX_VALUE));
+                    node.config.get("node").set("outputBandwidthLimit", request.getPartAsStringFailsafe("outputBandwidthLimit", Byte.MAX_VALUE));
+
+                    if (upgradeConnectionSpeedAlert != null) {
+                        upgradeConnectionSpeedAlert.setUpgraded(true);
+                    }
+                } catch (InvalidConfigValueException e) {
+                    if (upgradeConnectionSpeedAlert != null) {
+                        upgradeConnectionSpeedAlert.setError(e.getMessage());
+                    }
+                } catch (NodeNeedRestartException ignored) {
+                }
+            } else {
+                if (upgradeConnectionSpeedAlert != null) {
+                    upgradeConnectionSpeedAlert.setError(errorMessage);
+                }
+            }
+
+            redirectToRoot(ctx);
         } else {
             redirectToRoot(ctx);
         }
@@ -438,7 +523,7 @@ public class WelcomeToadlet extends Toadlet {
 			contentNode.addChild(ctx.getAlertManager().createSummary());
         }
 		
-        if (ctx.getPageMaker().getTheme().fetchKeyBoxAboveBookmarks) {
+        if (node.config.get("fproxy").getBoolean("fetchKeyBoxAboveBookmarks")) {
             this.putFetchKeyBox(ctx, contentNode);
         }
         
@@ -455,7 +540,7 @@ public class WelcomeToadlet extends Toadlet {
         HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
         
         
-        HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
+        HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", BOOKMARKS_ANCHOR);
 		if (ctx.isAllowedFullAccess() || !ctx.getContainer().publicGatewayMode()) {
 			addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), ctx);
 		}
@@ -469,7 +554,7 @@ public class WelcomeToadlet extends Toadlet {
         }
 
         // Fetch key box if the theme wants it below the bookmarks.
-        if (!ctx.getPageMaker().getTheme().fetchKeyBoxAboveBookmarks) {
+        if (!node.config.get("fproxy").getBoolean("fetchKeyBoxAboveBookmarks")) {
             this.putFetchKeyBox(ctx, contentNode);
         }
 
@@ -502,10 +587,11 @@ public class WelcomeToadlet extends Toadlet {
 		// Fetch-a-key box
 		HTMLNode fetchKeyContent = ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel"), contentNode, "fetch-key", true);
 		fetchKeyContent.addAttribute("id", "keyfetchbox");
-		HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[]{"action", "method"}, new String[]{"/", "get"}).addChild("div");
-		fetchKeyForm.addChild("span", "class", "fetch-key-label", l10n("keyRequestLabel") + ' ');
-		fetchKeyForm.addChild("input", new String[]{"type", "size", "name"}, new String[]{"text", "80", "key"});
-		fetchKeyForm.addChild("input", new String[]{"type", "value"}, new String[]{"submit", l10n("fetch")});
+                HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[]{ "method" }, new String[]{ "POST" }).addChild("div");
+                fetchKeyForm.addChild("span", "class", "fetch-key-label", l10n("keyRequestLabel") + ' ');
+                fetchKeyForm.addChild("input", new String[]{ "type", "size", "name" }, new String[]{ "text", "80", "key" });
+                fetchKeyForm.addChild("input", new String[]{ "type", "name", "value" }, new String[]{ "hidden", "formPassword", ctx.getFormPassword() });
+                fetchKeyForm.addChild("input", new String[]{ "type", "value" }, new String[]{ "submit", l10n("fetch") });
 	}
 
     private void sendRestartingPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {

@@ -154,9 +154,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	 */
 	public boolean handleAnnounce(Message m, final PeerNode source) {
 		
-		/** If it's a UOMAnnounce, we only care about revocations. */
-		boolean fromOldNode = m.getSpec() == DMT.UOMAnnounce;
-		
 		String mainJarKey = m.getString(DMT.MAIN_JAR_KEY);
 		String revocationKey = m.getString(DMT.REVOCATION_KEY);
 		boolean haveRevocationKey = m.getBoolean(DMT.HAVE_REVOCATION_KEY);
@@ -239,10 +236,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		
 		tellFetchers(source);
 		
-		if(fromOldNode)
-			// If it's an old node, we ignore everything except revocations.
-			return true;
-
 		if(updateManager.isBlown())
 			return true; // We already know
 
@@ -1190,16 +1183,19 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 		// Do we have the data?
 
-		File data = updateManager.getCurrentVersionBlobFile();
-		int version = Version.buildNumber();
-		
-		if(version != Version.buildNumber()) {
-			Logger.normal(this, "Peer " + source + " asked us for the blob file for the main jar but we are about to update...");
-			// Race condition?
-			return;
-			
+		File data;
+		int version;
+		FreenetURI uri;
+		if (source.getVersionNumber() < NodeUpdateManager.TRANSITION_VERSION) {
+		    data = updateManager.getTransitionMainBlob();
+		    version = NodeUpdateManager.TRANSITION_VERSION;
+		    uri = NodeUpdateManager.previousMainJarUSK;
+		} else {
+		    data = updateManager.getCurrentVersionBlobFile();
+		    version = Version.buildNumber();
+            uri = updateManager.getURI();
 		}
-
+		
 		if(data == null) {
 			Logger.normal(this, "Peer " + source + " asked us for the blob file for the "+name+" jar but we don't have it!");
 			// Probably a race condition on reconnect, hopefully we'll be asked again
@@ -1240,7 +1236,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 			
 			msg =
-				DMT.createUOMSendingMainJar(uid, length, updateManager.getURI().toString(), version);
+				DMT.createUOMSendingMainJar(uid, length, uri.toString(), version);
 			
 		} catch (RuntimeException e) {
 			source.finishedSendingUOMJar(false);

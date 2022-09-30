@@ -14,17 +14,18 @@ import java.util.Arrays;
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
+import freenet.crypt.Util;
 import freenet.io.WritableToDataOutputStream;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.Logger.LogLevel;
+import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
-import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
@@ -33,8 +34,8 @@ import freenet.support.io.BucketTools;
  * @author amphibian
  *
  * Base class for node keys.
- * 
- * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ *
+ * WARNING: Changing non-transient members on classes that are Serializable can result in
  * restarting downloads or losing uploads.
  */
 public abstract class Key implements WritableToDataOutputStream, Comparable<Key> {
@@ -134,12 +135,8 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
         md.update((byte)TYPE);
         byte[] digest = md.digest();
         SHA256.returnMessageDigest(md); md = null;
-        long asLong = Math.abs(Fields.bytesToLong(digest));
-        // Math.abs can actually return negative...
-        if(asLong == Long.MIN_VALUE)
-            asLong = Long.MAX_VALUE;
-        cachedNormalizedDouble = ((double)asLong)/((double)Long.MAX_VALUE);
-        return cachedNormalizedDouble;
+			cachedNormalizedDouble = Util.keyDigestAsNormalizedDouble(digest);
+			return cachedNormalizedDouble;
     }
 
 	/**
@@ -228,13 +225,20 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
      * @param MAX_COMPRESSED_DATA_LENGTH
      * @param shortLength
      * @param compressordescriptor
-     * @param pre1254 If this is set, use OldLZMA not NewLZMA.
      * @return
      * @throws KeyEncodeException
      * @throws IOException
      * @throws InvalidCompressionCodecException
      */
-    static Compressed compress(Bucket sourceData, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, long MAX_LENGTH_BEFORE_COMPRESSION, int MAX_COMPRESSED_DATA_LENGTH, boolean shortLength, String compressordescriptor, boolean pre1254) throws KeyEncodeException, IOException, InvalidCompressionCodecException {
+    public static Compressed compress(
+				Bucket sourceData,
+				boolean dontCompress,
+				short alreadyCompressedCodec,
+				long sourceLength,
+				long MAX_LENGTH_BEFORE_COMPRESSION,
+				int MAX_COMPRESSED_DATA_LENGTH,
+				boolean shortLength,
+				String compressordescriptor) throws KeyEncodeException, IOException, InvalidCompressionCodecException {
     	byte[] finalData = null;
         short compressionAlgorithm = -1;
         int maxCompressedDataLength = MAX_COMPRESSED_DATA_LENGTH;
@@ -247,8 +251,9 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
         if((!dontCompress) || (alreadyCompressedCodec >= 0)) {
         	byte[] cbuf = null;
         	if(alreadyCompressedCodec >= 0) {
-           		if(sourceData.size() > maxCompressedDataLength)
-        			throw new TooBigException("Too big (precompressed)");
+           		if(sourceData.size() > maxCompressedDataLength) {
+                throw new TooBigException("Too big (precompressed)");
+              }
         		compressionAlgorithm = alreadyCompressedCodec;
         		cbuf = BucketTools.toByteArray(sourceData);
         		if(sourceLength > MAX_LENGTH_BEFORE_COMPRESSION)
@@ -256,7 +261,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
         	} else {
         		if (sourceData.size() > maxCompressedDataLength) {
 					// Determine the best algorithm
-        			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressordescriptor, pre1254);
+        			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressordescriptor);
 					for (COMPRESSOR_TYPE comp : comps) {
 						ArrayBucket compressedData;
 						try {

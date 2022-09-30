@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Random;
 
 import freenet.io.comm.AsyncMessageCallback;
@@ -113,7 +114,8 @@ public class NullBasePeerNode implements BasePeerNode {
 
 	@Override
 	public void verified(SessionKey s) {
-		throw new UnsupportedOperationException();
+	    if (decryptedMessages == null)
+	        throw new UnsupportedOperationException(); // Not expecting messages.
 	}
 
 	@Override
@@ -136,9 +138,15 @@ public class NullBasePeerNode implements BasePeerNode {
 		// Ignore
 	}
 
+	protected ArrayList<byte[]> decryptedMessages;
+
 	protected void processDecryptedMessage(byte[] data, int offset, int length,
 			int overhead) {
-		throw new UnsupportedOperationException();
+	    if (decryptedMessages == null) {
+	        throw new UnsupportedOperationException();
+	    } else {
+	        decryptedMessages.add(java.util.Arrays.copyOfRange(data, offset, offset+length));
+	    }
 	}
 
 	@Override
@@ -161,9 +169,11 @@ public class NullBasePeerNode implements BasePeerNode {
 		return 1280;
 	}
 
+	public PeerMessageQueue messageQueue;
+
 	@Override
 	public PeerMessageQueue getMessageQueue() {
-		return null;
+		return messageQueue;
 	}
 
 	@Override
@@ -171,9 +181,11 @@ public class NullBasePeerNode implements BasePeerNode {
 		return false;
 	}
 
+	byte[] sentEncryptedPacket;
+
 	@Override
 	public void sendEncryptedPacket(byte[] data) throws LocalAddressException {
-		// Do nothing
+	    sentEncryptedPacket = data;
 	}
 
 	@Override
@@ -270,10 +282,5 @@ public class NullBasePeerNode implements BasePeerNode {
 	public int getThrottleWindowSize() {
 		// Arbitrary.
 		return 10;
-	}
-
-	@Override
-	public boolean isUseCumulativeAcksSet() {
-		return true;
 	}
 }

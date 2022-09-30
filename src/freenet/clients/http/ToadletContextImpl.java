@@ -1,7 +1,5 @@
 package freenet.clients.http;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,7 +18,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Locale;
+import java.util.StringJoiner;
 import java.util.TimeZone;
 
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
@@ -43,6 +43,8 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
 import freenet.support.io.TooLongException;
+
+import static java.util.concurrent.TimeUnit.DAYS;
 /**
  * ToadletContext implementation, including all the icky HTTP parsing etc.
  * An actual ToadletContext object represents a request, after we have parsed the 
@@ -52,7 +54,9 @@ import freenet.support.io.TooLongException;
  */
 public class ToadletContextImpl implements ToadletContext {
 	
-	private static final Class<?> HANDLE_PARAMETERS[] = new Class[] {URI.class, HTTPRequest.class, ToadletContext.class};
+	private static final Class<?> HANDLE_PARAMETERS[] = new Class<?>[] {
+		URI.class, HTTPRequest.class, ToadletContext.class
+	};
 
 	/* methods listed here are *not* configurable with
 	 * AllowData annotation
@@ -376,15 +380,29 @@ public class ToadletContextImpl implements ToadletContext {
 			}
 		if(contentLength >= 0)
 			mvt.put("content-length", Long.toString(contentLength));
-		
-		String expiresTime;
+
+		boolean allowCaching; // For privacy reasons, only static
+							  // content may be cached
 		if (mTime == null) {
-			expiresTime = "Thu, 01 Jan 1970 00:00:00 GMT";
+			allowCaching = false;
 		} else {
-			// use an expiry time of 1 day, somewhat arbitrarily
-			expiresTime = TimeUtil.makeHTTPDate(mTime.getTime() + DAYS.toMillis(1));
+			allowCaching = true;
+		}
+		String expiresTime;
+		String cacheControl;
+		if (allowCaching) {
+			// use an expiry time of 30 day from now, about the frequency of Freenet releases
+			// Expires is needed for older browsers
+			expiresTime = TimeUtil.makeHTTPDate(System.currentTimeMillis() + DAYS.toMillis(30));
+			cacheControl = "public, max-age=" + String.valueOf(3600 * 24 * 30);
+		} else {
+			expiresTime = "Thu, 01 Jan 1970 00:00:00 GMT";
+			// no-cache for Internet Explorer, no-store for Firefox
+			cacheControl = "private, max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0";
+			mvt.put("pragma", "no-cache");
 		}
 		mvt.put("expires", expiresTime);
+		mvt.put("cache-control", cacheControl);
 		
 		String nowString = TimeUtil.makeHTTPDate(System.currentTimeMillis());
 		String lastModString;
@@ -396,11 +414,6 @@ public class ToadletContextImpl implements ToadletContext {
 		
 		mvt.put("last-modified", lastModString);
 		mvt.put("date", nowString);
-		if (mTime == null) {
-			mvt.put("pragma", "no-cache");
-			String cacheControl = "max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0";
-			mvt.put("cache-control", cacheControl);
-		}
 		if(disconnect)
 			mvt.put("connection", "close");
 		else
@@ -409,6 +422,7 @@ public class ToadletContextImpl implements ToadletContext {
 		mvt.put("content-security-policy", contentSecurityPolicy);
 		mvt.put("x-content-security-policy", contentSecurityPolicy);
 		mvt.put("x-webkit-csp", contentSecurityPolicy);
+		mvt.put("x-frame-options", allowFrames ? "SAMEORIGIN" : "DENY");
 		StringBuilder buf = new StringBuilder(1024);
 		buf.append("HTTP/1.1 ");
 		buf.append(replyCode);
@@ -433,9 +447,12 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	private static String generateCSP(boolean allowScripts, boolean allowFrames) {
 	    StringBuilder sb = new StringBuilder();
-	    sb.append("default-src 'self'; script-src ");
+	    // allow access to blobs, because these are purely local
+	    sb.append("default-src 'self' blob:; script-src ");
 	    // "options inline-script" is old syntax needed for older Firefox's.
-	    sb.append(allowScripts ? "'self' 'unsafe-inline'; options inline-script" : "'none'");
+	    sb.append(allowScripts
+					? "'self' 'unsafe-inline'; options inline-script"
+					: generateRestrictedScriptSrc());
 	    sb.append("; frame-src ");
         sb.append(allowFrames ? "'self'" : "'none'");
         sb.append("; object-src 'none'");
@@ -445,8 +462,24 @@ public class ToadletContextImpl implements ToadletContext {
         return sb.toString();
     }
 
-    static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
-	
+	private static String generateRestrictedScriptSrc() {
+		// TODO: auto-generate these hashes from the path to the source file
+		String[] allowedScriptHashes = new String[] {
+				"sha256-65KUrjDrXy9qaXvBwlb07WWlUykh3VGs+JkSgxAPqlc=" // freenet/clients/http/staticfiles/js/m3u-player.js
+		};
+		if (allowedScriptHashes.length == 0) {
+			return "'none'";
+		} else {
+			StringJoiner stringJoiner = new StringJoiner("' '", "'", "'");
+			for (String source : allowedScriptHashes) {
+				stringJoiner.add(source);
+			}
+			return stringJoiner.toString();
+		}
+	}
+
+	static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
+
 	public static Date parseHTTPDate(String httpDate) throws java.text.ParseException{
 		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
 		sdf.setTimeZone(TZ_UTC);
@@ -546,13 +579,11 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				Bucket data;
 
-				boolean methodIsConfigurable = true;
 
 				String slen = headers.get("content-length");
 
 				if (METHODS_MUST_HAVE_DATA.contains(method)) {
 					// <method> must have data
-					methodIsConfigurable = false;
 					if (slen == null) {
 						ctx.shouldDisconnect = true;
 						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
@@ -560,7 +591,6 @@ public class ToadletContextImpl implements ToadletContext {
 					}
 				} else if (METHODS_CANNOT_HAVE_DATA.contains(method)) {
 					// <method> can not have data
-					methodIsConfigurable = false;
 					if (slen != null) {
 						ctx.shouldDisconnect = true;
 						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);

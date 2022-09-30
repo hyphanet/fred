@@ -35,8 +35,12 @@ public final class FCPPluginConnectionImplTest extends TestCase {
         // will throw.
         final AtomicBoolean failure = new AtomicBoolean(false);
         
-        final FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForUnitTest(
-            new ServerSideFCPMessageHandler() {
+        // Notice: server must be kept referenced by our local variable for the whole duration of
+        // the test, otherwise it would get GCed because the FCPPluginConnectionImpl which we will
+        // pass it to only keeps a WeakReference to it.
+        // This is by design: Plugins are supposed to be unloadable and the FCPPluginConnectionImpl
+        // must not keep them pinned in memory after unload.
+        final ServerSideFCPMessageHandler server = new ServerSideFCPMessageHandler() {
                 @Override public FCPPluginMessage handlePluginFCPMessage(
                         final FCPPluginConnection connection, final FCPPluginMessage message) {
                     
@@ -44,8 +48,9 @@ public final class FCPPluginConnectionImplTest extends TestCase {
                     reply.params.putSingle("replyToThread", message.params.get("thread"));
                     return reply;
                 }
-            }, 
-            new ClientSideFCPMessageHandler() {
+            };
+        
+        final ClientSideFCPMessageHandler client = new ClientSideFCPMessageHandler() {
                 @Override public FCPPluginMessage handlePluginFCPMessage(
                         final FCPPluginConnection connection, final FCPPluginMessage message) {
                     
@@ -54,7 +59,10 @@ public final class FCPPluginConnectionImplTest extends TestCase {
                        + "hit the client message handler");
                     throw new UnsupportedOperationException();
                 }
-            });
+            };
+        
+        final FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForUnitTest(
+            server, client);
         
         final int threadCount = 100;
         final Thread[] threads = new Thread[threadCount];

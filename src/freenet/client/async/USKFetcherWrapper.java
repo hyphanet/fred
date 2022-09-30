@@ -19,23 +19,12 @@ import freenet.support.io.ResumeFailedException;
  * Wrapper for a backgrounded USKFetcher.
  */
 public class USKFetcherWrapper extends BaseClientGetter {
+	private static final long serialVersionUID = -6416069493740293035L;
 
 	final USK usk;
 	
 	public USKFetcherWrapper(USK usk, short prio, final RequestClient client) {
-		super(prio, new ClientBaseCallback() {
-
-            @Override
-            public void onResume(ClientContext context) {
-                throw new IllegalStateException();
-            }
-
-            @Override
-            public RequestClient getRequestClient() {
-                return client;
-            }
-		    
-		});
+		super(prio, client);
 		this.usk = usk;
 	}
 

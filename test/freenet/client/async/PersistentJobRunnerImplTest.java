@@ -17,7 +17,7 @@ public class PersistentJobRunnerImplTest extends TestCase {
     
     public PersistentJobRunnerImplTest() {
         jobRunner = new JobRunner(exec, ticker, 1000);
-        context = new ClientContext(0, null, exec, null, null, null, null, null, null, null, null, ticker, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        context = new ClientContext(0, null, exec, null, null, null, null, null, null, null, null, ticker, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         jobRunner.start(context);
         jobRunner.onStarted(false);
         exec.waitForIdle();
@@ -167,6 +167,29 @@ public class PersistentJobRunnerImplTest extends TestCase {
         w.wakeUp();
         checkpointer.waitForFinished();
         assertTrue(w.finished());
+    }
+    
+    public void testDisabledCheckpointing() throws PersistenceDisabledException {
+        jobRunner.setCheckpointASAP();
+        exec.waitForIdle();
+        assertFalse(jobRunner.mustCheckpoint()); // Has checkpointed, now false.
+        jobRunner.disableWrite();
+        assertFalse(jobRunner.mustCheckpoint());
+        jobRunner.setCheckpointASAP();
+        assertFalse(jobRunner.mustCheckpoint());
+        
+        // Run a job which will request a checkpoint.
+        jobRunner.queue(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                return true;
+            }
+            
+        }, NativeThread.NORM_PRIORITY);
+        // Wait for the job to complete.
+        exec.waitForIdle();
+        assertFalse(jobRunner.mustCheckpoint());
     }
 
 }

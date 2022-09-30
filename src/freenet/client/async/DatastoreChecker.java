@@ -27,6 +27,13 @@ import freenet.support.io.NativeThread;
  */
 public class DatastoreChecker implements PrioRunnable {
 
+    /** True to start the DatastoreChecker thread lazily (mostly for simulations). */
+    private final boolean lazy;
+    /** True if lazy is true and the datastore checker thread is running */
+    private boolean running;
+    private final Executor executor;
+    private final String threadName;
+    
 	// Setting these to 1, 3 kills 1/3rd of datastore checks.
 	// 2, 5 gives 40% etc.
 	// In normal operation KILL_BLOCKS should be 0 !!!!
@@ -57,10 +64,20 @@ public class DatastoreChecker implements PrioRunnable {
             this.keys = keys;
             this.blockSet = blockSet;
 		}
+
+		@Override
 		public boolean equals(Object o) {
 		    // Hack to make queue.remove() work, see removeRequest() below.
 			if(!(o instanceof QueueItem)) return false; // equals() should not throw ClassCastException
 			return this.getter == ((QueueItem)o).getter;
+		}
+
+		@Override
+		public int hashCode() {
+			if (getter == null) {
+				return 0;
+			}
+			return getter.hashCode();
 		}
 	}
 
@@ -75,10 +92,13 @@ public class DatastoreChecker implements PrioRunnable {
 	}
 
 	@SuppressWarnings("unchecked")
-    public DatastoreChecker(Node node) {
+    public DatastoreChecker(Node node, boolean lazyStart, Executor executor, String threadName) {
 		this.node = node;
+		this.lazy = lazyStart;
+		this.executor = executor;
+		this.threadName = threadName;
 		int priorities = RequestStarter.NUMBER_OF_PRIORITY_CLASSES;
-		queue = new ArrayDeque[priorities];
+		queue = (ArrayDeque<QueueItem>[])new ArrayDeque<?>[priorities];
 		for(int i=0;i<priorities;i++)
 			queue[i] = new ArrayDeque<QueueItem>();
 	}
@@ -101,7 +121,7 @@ public class DatastoreChecker implements PrioRunnable {
 				return;
 			}
 			queue[prio].add(queueItem);
-			notifyAll();
+			wakeUp();
 		}
 	}
 
@@ -109,14 +129,17 @@ public class DatastoreChecker implements PrioRunnable {
 	public void run() {
 		while(true) {
 			try {
-				realRun();
+				if(realRun()) return; // Lazy termination.
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t+" in datastore checker thread", t);
 			}
 		}
 	}
 
-	private void realRun() {
+	/** Process a single job, waiting if necessary.
+	 * @return True if lazy=true and there are no jobs to run.
+	 */
+	private boolean realRun() {
 		Random random;
 		if(KILL_BLOCKS != 0)
 			random = new MersenneTwister();
@@ -144,6 +167,10 @@ public class DatastoreChecker implements PrioRunnable {
 				if(keys != null)
 					break;
 				if(logMINOR) Logger.minor(this, "Waiting for more transient requests");
+				if(lazy) {
+				    running = false;
+				    return true;
+				}
 				waited = true;
 				try {
 					// Wait for anything.
@@ -215,22 +242,40 @@ public class DatastoreChecker implements PrioRunnable {
 		} else {
 			sched.finishRegister(new SendableGet[] { getter }, false, anyValid);
 		}
+		return false;
 	}
 
 	synchronized void wakeUp() {
+	    if(lazy) {
+	        if(!running) {
+	            start();
+	            return;
+	        }
+	    }
 		notifyAll();
 	}
 
-	public void start(Executor executor, String name) {
-		executor.execute(this, name);
+	public synchronized void start() {
+	    if(lazy) {
+	        if(isEmpty()) return;
+	        if(running) return;
+	    }
+	    running = true;
+            executor.execute(this, threadName);
 	}
 
-	@Override
+	private synchronized boolean isEmpty() {
+	    for(ArrayDeque<QueueItem> q : queue) {
+	        if(!q.isEmpty()) return false;
+	    }
+	    return true;
+    }
+
+        @Override
 	public int getPriority() {
 		return NativeThread.NORM_PRIORITY;
 	}
 
-	@SuppressWarnings("unchecked")
 	public void removeRequest(SendableGet request, boolean persistent, ClientContext context, short prio) {
 		if(logMINOR) Logger.minor(this, "Removing request prio="+prio+" persistent="+persistent);
 		QueueItem requestMatcher = new QueueItem(null, request, null);

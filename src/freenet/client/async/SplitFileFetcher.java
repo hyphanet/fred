@@ -185,7 +185,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
     }
 
     @Override
-    public void schedule(ClientContext context) throws KeyListenerConstructionException {
+    public void schedule(ClientContext context) {
         if(storage.start(false))
             getter.schedule(context, false);
     }
@@ -393,11 +393,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         Logger.error(this, "Restarting download "+this+" after data corruption");
         // We need to fetch more blocks. Some of them may even be in the datastore.
         getter.unregister(context, getPriorityClass());
-        try {
-            getter.schedule(context, false);
-        } catch (KeyListenerConstructionException e) {
-            // Impossible.
-        }
+        getter.schedule(context, false);
         context.jobRunner.setCheckpointASAP();
     }
 
@@ -451,13 +447,8 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
             lastNotifiedStoreFetch = System.currentTimeMillis();
         }
         getter = new SplitFileFetcherGet(this, storage);
-        try {
-            if(storage.start(resumed))
-                getter.schedule(context, storage.hasCheckedStore());
-        } catch (KeyListenerConstructionException e) {
-            Logger.error(this, "Key listener construction failed during resume: "+e, e);
-            fail(new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Resume failed: "+e, e));
-            return;
+        if (storage.start(resumed)) {
+            getter.schedule(context, storage.hasCheckedStore());
         }
     }
 

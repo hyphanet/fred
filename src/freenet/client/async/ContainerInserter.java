@@ -388,7 +388,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
     
     @SuppressWarnings("unchecked")
     public static void resumeMetadata(Map<String, Object> map, ClientContext context) throws ResumeFailedException {
-        Map<String, Object> manifestElements = (Map<String, Object>)map;
+        Map<String, Object> manifestElements = map;
         for (Object o : manifestElements.values()) {
             if(o instanceof HashMap) {
                 resumeMetadata((Map<String, Object>)o, context);

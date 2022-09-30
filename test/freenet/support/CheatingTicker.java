@@ -1,8 +1,5 @@
 package freenet.support;
 
-import freenet.support.Executor;
-import freenet.support.Ticker;
-
 public class CheatingTicker implements Ticker {
     
     final Executor underlying;
@@ -30,6 +27,12 @@ public class CheatingTicker implements Ticker {
     @Override
     public void removeQueuedJob(Runnable job) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void queueTimedJobAbsolute(Runnable job, String name, long time,
+            boolean runOnTickerAnyway, boolean noDupes) {
+        underlying.execute(job);
     }
 
 }

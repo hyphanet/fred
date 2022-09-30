@@ -3,9 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
@@ -35,6 +32,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.useralerts.DroppedOldPeersUserAlert;
 import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
@@ -44,6 +42,9 @@ import freenet.support.TimeUtil;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @author amphibian
@@ -174,6 +175,9 @@ public class PeerManager {
 		this.node = node;
 		shutdownHook.addEarlyJob(new Thread() {
 			public void run() {
+				// Ensure we're not waiting 5mins here
+				writePeersDarknet();
+				writePeersOpennet();
 				writePeersNow(false);
 			}
 		});
@@ -198,13 +202,12 @@ public class PeerManager {
 				else
 					darkFilename = filename;
 		}
-		OutgoingPacketMangler mangler = crypto.packetMangler;
 		int maxBackups = isOpennet ? BACKUPS_OPENNET : BACKUPS_DARKNET;
 		for(int i=0;i<=maxBackups;i++) {
 			File peersFile = this.getBackupFilename(filename, i);
 			// Try to read the node list from disk
 			if(peersFile.exists())
-				if(readPeers(peersFile, mangler, crypto, opennet, oldOpennetPeers)) {
+				if(readPeers(peersFile, crypto, opennet, oldOpennetPeers)) {
 					String msg;
 					if(oldOpennetPeers)
 						msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
@@ -222,9 +225,8 @@ public class PeerManager {
 		// The other cases are less important.
 	}
 
-	private boolean readPeers(File peersFile, OutgoingPacketMangler mangler, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
+	private boolean readPeers(File peersFile, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
 		boolean someBroken = false;
-		boolean gotSome = false;
 		FileInputStream fis;
 		try {
 			fis = new FileInputStream(peersFile);
@@ -239,13 +241,15 @@ public class PeerManager {
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e4, e4);
 		}
 		BufferedReader br = new BufferedReader(ris);
+		File brokenPeersFile = new File(peersFile.getPath() + ".broken");
+		DroppedOldPeersUserAlert droppedOldPeers = new DroppedOldPeersUserAlert(brokenPeersFile);
 		try { // FIXME: no better way?
 			while(true) {
 				// Read a single NodePeer
 				SimpleFieldSet fs;
 				fs = new SimpleFieldSet(br, false, true);
 				try {
-					PeerNode pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
+					PeerNode pn = PeerNode.create(fs, node, crypto, opennet, this);
 					if(oldOpennetPeers) {
 					    if(!(pn instanceof OpennetPeerNode))
 					        Logger.error(this, "Darknet node in old opennet peers?!: "+pn);
@@ -253,7 +257,6 @@ public class PeerManager {
 					        opennet.addOldOpennetNode((OpennetPeerNode)pn);
 					} else
 						addPeer(pn, true, false);
-					gotSome = true;
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					System.err.println("Cannot parse a friend from the peers file: "+e2);
@@ -275,7 +278,17 @@ public class PeerManager {
 					someBroken = true;
 					continue;
 					// FIXME tell the user???
-				}
+				} catch (PeerTooOldException e) {
+				    if(crypto.isOpennet) {
+				        // Ignore.
+				        Logger.error(this, "Dropping too-old opennet peer");
+				    } else {
+				        // A lot more noisy!
+				        droppedOldPeers.add(e, fs.get("myName"));
+				    }
+                    someBroken = true;
+                    continue;
+                }
 			}
 		} catch(EOFException e) {
 			// End of file, fine
@@ -288,23 +301,31 @@ public class PeerManager {
 			Logger.error(this, "Ignoring " + e3 + " caught reading " + peersFile, e3);
 		}
 		if(someBroken) {
-			File broken = new File(peersFile.getPath()+".broken");
 			try {
-				broken.delete();
-				FileOutputStream fos = new FileOutputStream(broken);
+				brokenPeersFile.delete();
+				FileOutputStream fos = new FileOutputStream(brokenPeersFile);
 				fis = new FileInputStream(peersFile);
 				FileUtil.copy(fis, fos, -1);
 				fos.close();
 				fis.close();
-				System.err.println("Broken peers file copied to "+broken);
+				System.err.println("Broken peers file copied to " + brokenPeersFile);
 			} catch (IOException e) {
 				System.err.println("Unable to copy broken peers file.");
 			}
 		}
+		if(!droppedOldPeers.isEmpty()) {
+		    try {
+		        node.clientCore.alerts.register(droppedOldPeers);
+		        Logger.error(this, droppedOldPeers.getText());
+		    } catch (Throwable t) {
+		        // Startup MUST complete, don't let client layer problems kill it.
+		        Logger.error(this, "Caught error telling user about dropped peers", t);
+		    }
+		}
 		return !someBroken;
 	}
 
-	public boolean addPeer(PeerNode pn) {
+    public boolean addPeer(PeerNode pn) {
 		return addPeer(pn, false, false);
 	}
 
@@ -600,12 +621,13 @@ public class PeerManager {
 
 	/**
 	 * Connect to a node provided the fieldset representing it.
+	 * @throws PeerTooOldException 
 	 */
-	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		PeerNode pn = node.createNewDarknetNode(noderef, trust, visibility);
 		PeerNode[] peerList = myPeers();
 		for(PeerNode mp: peerList) {
-			if(Arrays.equals(mp.pubKeyHash, pn.pubKeyHash))
+			if(Arrays.equals(mp.peerECDSAPubKeyHash, pn.peerECDSAPubKeyHash))
 				return;
 		}
 		addPeer(pn);
@@ -727,26 +749,6 @@ public class PeerManager {
 		}
 	};
 
-	protected static class LocationUIDPair implements Comparable<LocationUIDPair> {
-		double location;
-		long uid;
-
-		LocationUIDPair(PeerNode pn) {
-			location = pn.getLocation();
-			uid = pn.swapIdentifier;
-		}
-
-		@Override
-		public int compareTo(LocationUIDPair p) {
-			// Compare purely on location, so result is the same as getPeerLocationDoubles()
-			if(p.location > location)
-				return 1;
-			if(p.location < location)
-				return -1;
-			return 0;
-		}
-	}
-
 	/**
 	 * @return An array of the current locations (as doubles) of all
 	 * our connected peers or double[0] if Node.shallWePublishOurPeersLocation() is false
@@ -771,28 +773,6 @@ public class PeerManager {
 			return Arrays.copyOf(locs, x);
 		else
 			return locs;
-	}
-
-	/** Just like getPeerLocationDoubles, except it also
-	 * returns the UID for each node. */
-	public LocationUIDPair[] getPeerLocationsAndUIDs() {
-		PeerNode[] conns;
-		LocationUIDPair[] locPairs;
-		synchronized(this) {
-			conns = myPeers;
-		}
-		locPairs = new LocationUIDPair[conns.length];
-		int x = 0;
-		for(PeerNode conn: conns) {
-			if(conn.isRoutable())
-				locPairs[x++] = new LocationUIDPair(conn);
-		}
-		// Sort it
-		Arrays.sort(locPairs, 0, x);
-		if(x != locPairs.length)
-			return Arrays.copyOf(locPairs, x);
-		else
-			return locPairs;
 	}
 
 	/**
@@ -837,10 +817,19 @@ public class PeerManager {
 		return connectedPeers[node.random.nextInt(lengthWithoutExcluded)];
 	}
 
+	public void localBroadcast(Message msg, boolean ignoreRoutability, 
+	        boolean onlyRealConnections, ByteCounter ctr) {
+	    localBroadcast(msg, ignoreRoutability, onlyRealConnections, ctr, 
+	            Integer.MIN_VALUE, Integer.MAX_VALUE);
+	}
+	
 	/**
 	 * Asynchronously send this message to every connected peer.
+	 * @param maxVersion Only send the message if the version >= maxVersion.
+	 * @param minVersion Only send the message if the version <= minVersion.
 	 */
-	public void localBroadcast(Message msg, boolean ignoreRoutability, boolean onlyRealConnections, ByteCounter ctr) {
+	public void localBroadcast(Message msg, boolean ignoreRoutability, 
+	        boolean onlyRealConnections, ByteCounter ctr, int minVersion, int maxVersion) {
 		// myPeers not connectedPeers as connectedPeers only contains
 		// ROUTABLE peers, and we may want to send to non-routable peers
 		PeerNode[] peers = myPeers();
@@ -853,6 +842,9 @@ public class PeerManager {
 					continue;
 			if(onlyRealConnections && !peer.isRealConnection())
 				continue;
+			int version = peer.getVersionNumber();
+			if(version < minVersion) continue;
+			if(version > maxVersion) continue;
 			try {
 				peer.sendAsync(msg, null, ctr);
 			} catch(NotConnectedException e) {
@@ -973,6 +965,15 @@ public class PeerManager {
 			totalSelectionRate += selectionRates[i];
 		}
 		boolean enableFOAFMitigationHack = (peers.length >= PeerNode.SELECTION_MIN_PEERS) && (totalSelectionRate > 0.0);
+
+		// Locations not to consider for routing: our own location, and locations already routed to
+		Set<Double> excludeLocations = new HashSet<Double>();
+		excludeLocations.add(myLoc);
+		excludeLocations.add(prevLoc);
+		for (PeerNode routedToNode : routedTo) {
+			excludeLocations.add(routedToNode.getLocation());
+		}
+
 		for(int i = 0; i < peers.length; i++) {
 			PeerNode p = peers[i];
 			if(routedTo.contains(p)) {
@@ -1006,11 +1007,10 @@ public class PeerManager {
 				continue;
 			}
 			if(enableFOAFMitigationHack) {
-				double selectionRate = selectionRates[i];
-				double selectionSamplesPercentage = selectionRate / totalSelectionRate;
-				if(PeerNode.SELECTION_PERCENTAGE_WARNING < selectionSamplesPercentage) {
+				double selectionPercentage = 100.0 * selectionRates[i] / totalSelectionRate;
+				if(selectionPercentage > PeerNode.SELECTION_PERCENTAGE_WARNING) {
 					if(logMINOR)
-						Logger.minor(this, "Skipping over-selectionned peer(" + selectionSamplesPercentage + "%): " + p.getPeer());
+						Logger.minor(this, "Skipping over-selected peer(" + selectionPercentage + "%): " + p.getPeer());
 					continue;
 				}
 			}
@@ -1038,21 +1038,9 @@ public class PeerManager {
 			double realDiff = Location.distance(loc, target);
 			double diff = realDiff;
 			
-			double[] peersLocation = p.getPeersLocation();
-			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
-				for(double l : peersLocation) {
-					boolean ignoreLoc = false; // Because we've already been there
-					if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
-							Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
-						ignoreLoc = true;
-					else {
-						for(PeerNode cmpPN : routedTo)
-							if(Math.abs(l - cmpPN.getLocation()) < Double.MIN_VALUE * 2) {
-								ignoreLoc = true;
-								break;
-							}
-					}
-					if(ignoreLoc) continue;
+			if (p.shallWeRouteAccordingToOurPeersLocation(outgoingHTL)) {
+				double l = p.getClosestPeerLocation(target, excludeLocations);
+				if (!Double.isNaN(l)) {
 					double newDiff = Location.distance(l, target);
 					if(newDiff < diff) {
 						loc = l;
@@ -1112,7 +1100,7 @@ public class PeerManager {
 						leastRecentlyTimedOutBackedOffDistance = diff;
 					}
 			if(addUnpickedLocsTo != null && !chosen) {
-				Double d = new Double(loc);
+				Double d = loc;
 				// Here we can directly compare double's because they aren't processed in any way, and are finite and (probably) nonzero.
 				if(!addUnpickedLocsTo.contains(d))
 					addUnpickedLocsTo.add(d);
@@ -1166,7 +1154,8 @@ public class PeerManager {
 		
 		if(recentlyFailed != null && logMINOR)
 			Logger.minor(this, "Count waiting: "+countWaiting);
-		if(recentlyFailed != null && countWaiting >= 3 && 
+		int maxCountWaiting = maxCountWaiting(peers);
+		if(recentlyFailed != null && countWaiting >= maxCountWaiting && 
 				node.enableULPRDataPropagation /* dangerous to do RecentlyFailed if we won't track/propagate offers */) {
 			// Recently failed is possible.
 			// Route twice, each time ignoring timeout.
@@ -1188,7 +1177,7 @@ public class PeerManager {
 							// This is the sooner of the two top nodes' timeouts.
 							// We also take into account the sooner of any timed out node, IF there are exactly 3 nodes waiting.
 							long until = Math.min(secondTime, firstTime);
-							if(countWaiting == 3) {
+							if(countWaiting == maxCountWaiting) {
 								// Count the others as well if there are only 3.
 								// If there are more than that they won't matter.
 								until = Math.min(until, soonestTimeoutWakeup);
@@ -1244,11 +1233,21 @@ public class PeerManager {
 			if(addUnpickedLocsTo != null)
 				//Add the location which we did not pick, if it exists.
 				if(closestNotBackedOff != null && closestBackedOff != null)
-					addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
+					addUnpickedLocsTo.add(closestBackedOff.getLocation());
 					
 		}
 		
 		return best;
+	}
+
+	/**
+	 * @param peers 
+	 * @return The minimum number of peers which are waiting for timeouts due to RecentlyFailed or 
+	 * DNF's for which we will terminate the request with a RecentlyFailed of our own.
+	 */
+	private int maxCountWaiting(PeerNode[] peers) {
+		int count = countConnectedPeers(peers);
+		return Math.min(10, Math.max(3, count / 4));
 	}
 
 	static final int MIN_DELTA = 2000;
@@ -1264,6 +1263,11 @@ public class PeerManager {
 	 */
 	private long checkBackoffsForRecentlyFailed(PeerNode[] peers, PeerNode best, double target, double bestDistance, double myLoc, double prevLoc, long now, TimedOutNodesList entry, short outgoingHTL) {
 		long overallWakeup = Long.MAX_VALUE;
+
+		Set<Double> excludeLocations = new HashSet<Double>();
+		excludeLocations.add(myLoc);
+		excludeLocations.add(prevLoc);
+
 		for(PeerNode p : peers) {
 			if(p == best) continue;
 			if(!p.isRoutable()) continue;
@@ -1275,16 +1279,9 @@ public class PeerManager {
 			double realDiff = Location.distance(loc, target);
 			double diff = realDiff;
 			
-			double[] peersLocation = p.getPeersLocation();
-			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
-				for(double l : peersLocation) {
-					boolean ignoreLoc = false; // Because we've already been there
-					if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
-							Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
-						continue;
-					// For purposes of recently failed, we haven't routed anywhere else.
-					// However we do need to check for our location, and the source's location.
-					if(ignoreLoc) continue;
+			if (p.shallWeRouteAccordingToOurPeersLocation(outgoingHTL)) {
+				double l = p.getClosestPeerLocation(target, excludeLocations);
+				if (!Double.isNaN(l)) {
 					double newDiff = Location.distance(l, target);
 					if(newDiff < diff) {
 						loc = l;
@@ -1793,7 +1790,7 @@ public class PeerManager {
 						break;
 				}
 			}
-			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting+" No load stats: "+numberOfNoLoadStats);
+			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting + " RoutingDisabled " + numberOfRoutingDisabled + " No load stats: "+numberOfNoLoadStats);
 			nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
 		}
 	}
@@ -1949,6 +1946,9 @@ public class PeerManager {
 		return v.toArray(new DarknetPeerNode[v.size()]);
 	}
 
+	/** Get the currently connected seednodes.
+	 * @param exclude Set of peer public keys to exclude.
+	 */
 	public List<SeedServerPeerNode> getConnectedSeedServerPeersVector(HashSet<ByteArrayWrapper> exclude) {
 		PeerNode[] peers = myPeers();
 		// FIXME optimise! Maybe maintain as a separate list?
@@ -1956,7 +1956,7 @@ public class PeerManager {
 		for(PeerNode p : peers) {
 			if(p instanceof SeedServerPeerNode) {
 				SeedServerPeerNode sspn = (SeedServerPeerNode) p;
-				if(exclude != null && exclude.contains(new ByteArrayWrapper(sspn.getIdentity()))) {
+				if(exclude != null && exclude.contains(new ByteArrayWrapper(sspn.getPubKeyHash()))) {
 					if(logMINOR)
 						Logger.minor(this, "Not including in getConnectedSeedServerPeersVector() as in exclude set: " + sspn.userToString());
 					continue;
@@ -2055,7 +2055,7 @@ public class PeerManager {
 		PeerNode[] peers = pn.isOpennet() ? getOpennetAndSeedServerPeers() : getDarknetPeers();
 
 		for(PeerNode peer: peers)
-			if(Arrays.equals(pn.getIdentity(), peer.getIdentity()))
+			if(Arrays.equals(pn.getPubKeyHash(), peer.getPubKeyHash()))
 				return peer;
 
 		return null;
@@ -2078,10 +2078,13 @@ public class PeerManager {
 		if(logMINOR) Logger.minor(this, "countConnectedDarknetPeers() returning "+count);
 		return count;
 	}
-
+	
 	public int countConnectedPeers() {
+		return countConnectedPeers(myPeers());
+	}
+
+	private int countConnectedPeers(PeerNode[] peers) {
 		int count = 0;
-		PeerNode[] peers = myPeers();
 		for(PeerNode peer: peers) {
 			if(peer == null)
 				continue;
@@ -2221,7 +2224,7 @@ public class PeerManager {
 	public PeerNode getByPubKeyHash(byte[] pkHash) {
 		PeerNode[] peers = myPeers();
 		for(PeerNode peer : peers) {
-			if(Arrays.equals(peer.getPubKeyHash(), pkHash))
+			if(Arrays.equals(peer.peerECDSAPubKeyHash, pkHash))
 				return peer;
 		}
 		return null;
@@ -2322,5 +2325,5 @@ public class PeerManager {
 			return connections < OUTDATED_MAX_CONNS;
 		} else return false;
 	}
-
+	
 }

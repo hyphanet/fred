@@ -25,15 +25,15 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 		Logger.registerClass(SectoredRandomGrabArray.class);
 	}
 
-	protected RemoveRandomWithObject<T>[] grabArrays;
+	private RemoveRandomWithObject<T>[] grabArrays;
 	private T[] grabClients;
 	private RemoveRandomParent parent;
 	protected final ClientRequestSelector root;
 	private long wakeupTime;
-	
+
 	public SectoredRandomGrabArray(RemoveRandomParent parent, ClientRequestSelector root) {
-		grabClients = (T[]) new Object[0];
-		grabArrays = new RemoveRandomWithObject[0];
+		grabClients = newClientArray(0);
+		grabArrays = newGrabberArray(0);
 		this.parent = parent;
 		this.root = root;
 	}
@@ -62,11 +62,12 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 	/**
 	 * Get a grabber.
 	 */
+	@SuppressWarnings("unchecked")
 	public C getGrabber(T client) {
 	    synchronized(root) {
 		int idx = haveClient(client);
 		if(idx == -1) return null;
-		else return (C) grabArrays[idx];
+		else return (C)grabArrays[idx];
 	    }
 	}
 	
@@ -230,13 +231,13 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 			Logger.error(this, "rga = null on "+this);
 			if(grabArrays[1-x] == null) {
 				Logger.error(this, "other rga is also null on "+this);
-				grabArrays = (C[]) new RemoveRandomWithObject[0];
-				grabClients = (T[]) new Object[0];
+				grabArrays = newGrabberArray(0);
+				grabClients = newClientArray(0);
 				return null;
 			} else {
 				Logger.error(this, "grabArrays["+(1-x)+"] is valid but ["+x+"] is null, correcting...");
-				grabArrays = (C[]) new RemoveRandomWithObject[] { grabArrays[1-x] };
-				grabClients = (T[]) new Object[] { grabClients[1-x] };
+				grabArrays = asGrabberArray(grabArrays[1-x]);
+				grabClients = asClientArray(grabClients[1-x]);
 				return null;
 			}
 		}
@@ -267,8 +268,8 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 			rga = grabArrays[x];
 			if(rga == null) {
 				Logger.error(this, "Other RGA is null later on on "+this);
-				grabArrays = (C[]) new RemoveRandomWithObject[] { grabArrays[1-x] };
-				grabClients = (T[]) new Object[] { grabClients[1-x] };
+				grabArrays = asGrabberArray(grabArrays[1-x]);
+				grabClients = asClientArray(grabClients[1-x]);
                 reduceWakeupTime(wakeupTime, context);
 				return new RemoveRandomReturn(wakeupTime);
 			}
@@ -288,12 +289,12 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 			}
 			if(firstRGA != null && firstRGA.isEmpty() && rga != null && rga.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Removing both on "+this+" : "+firstRGA+" and "+rga+" are empty");
-				grabArrays = (C[]) new RemoveRandomWithObject[0];
-				grabClients = (T[]) new Object[0];
+				grabArrays = newGrabberArray(0);
+				grabClients = newClientArray(0);
 			} else if(firstRGA != null && firstRGA.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Removing first: "+firstRGA+" is empty on "+this);
-				grabArrays = (C[]) new RemoveRandomWithObject[] { grabArrays[x] }; // don't use RGA, it may be nulled out
-				grabClients = (T[]) new Object[] { grabClients[x] };
+				grabArrays = asGrabberArray(grabArrays[x]); // don't use RGA, it may be nulled out
+				grabClients = asClientArray(grabClients[x]);
 			}
 			if(logMINOR)
 				Logger.minor(this, "Returning (two items only) "+item+" for "+rga);
@@ -321,8 +322,8 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 		if(rga == null) {
 			Logger.error(this, "Only one entry and that is null");
 			// We are sure
-			grabArrays = (C[]) new RemoveRandomWithObject[0];
-			grabClients = (T[]) new Object[0];
+			grabArrays = newGrabberArray(0);
+			grabClients = newClientArray(0);
 			return null;
 		}
 		RemoveRandomReturn val = rga.removeRandom(excluding, context, now);
@@ -337,8 +338,8 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 		if(rga.isEmpty()) {
 			if(logMINOR)
 				Logger.minor(this, "Removing only grab array (0) : "+rga);
-			grabArrays = (C[]) new RemoveRandomWithObject[0];
-			grabClients = (T[]) new Object[0];
+			grabArrays = newGrabberArray(0);
+			grabClients = newClientArray(0);
 		}
 		if(logMINOR)
 			Logger.minor(this, "Returning (one item only) "+item+" for "+rga);
@@ -357,19 +358,19 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 	    synchronized(root) {
 		final int grabArraysLength = grabArrays.length;
 		int newLen = grabArraysLength > 1 ? grabArraysLength-1 : 0;
-		C[] newArray = (C[]) new RemoveRandomWithObject[newLen];
+		RemoveRandomWithObject<T>[] newArray = newGrabberArray(newLen);
 		if(x > 0)
 			System.arraycopy(grabArrays, 0, newArray, 0, x);
 		if(x < grabArraysLength-1)
 			System.arraycopy(grabArrays, x+1, newArray, x, grabArraysLength - (x+1));
 		grabArrays = newArray;
 		
-		Object[] newClients = new Object[newLen];
+		T[] newClients = newClientArray(newLen);
 		if(x > 0)
 			System.arraycopy(grabClients, 0, newClients, 0, x);
 		if(x < grabArraysLength-1)
 			System.arraycopy(grabClients, x+1, newClients, x, grabArraysLength - (x+1));
-		grabClients = (T[]) newClients;
+		grabClients = newClients;
 	    }
 	}
 
@@ -464,5 +465,26 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
             if(parent != null) parent.clearWakeupTime(context);
         }
     }
-    
+
+    private T[] asClientArray(T client) {
+        T[] clients = newClientArray(1);
+        clients[0] = client;
+        return clients;
+    }
+
+    @SuppressWarnings("unchecked")
+    private T[] newClientArray(int length) {
+        return (T[])new Object[length];
+    }
+
+    private RemoveRandomWithObject<T>[] asGrabberArray(RemoveRandomWithObject<T> grabber) {
+        RemoveRandomWithObject<T>[] grabbers = newGrabberArray(1);
+        grabbers[0] = grabber;
+        return grabbers;
+    }
+
+    @SuppressWarnings("unchecked")
+    private RemoveRandomWithObject<T>[] newGrabberArray(int length) {
+        return (RemoveRandomWithObject<T>[])new RemoveRandomWithObject<?>[length];
+    }
 }

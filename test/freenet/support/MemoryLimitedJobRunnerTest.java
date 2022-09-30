@@ -95,14 +95,14 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
 
     public void testQueueingSmallDelayed() throws InterruptedException {
         innerTestQueueingSmallDelayed(1, 10, 20, false);
-        innerTestQueueingSmallDelayed(1, 1024, 1024*2, false);
+        innerTestQueueingSmallDelayed(1, 512, 1024, false);
     }
     
     public void testQueueingManySmallDelayed() throws InterruptedException {
         innerTestQueueingSmallDelayed(1, 10, 10, false);
         innerTestQueueingSmallDelayed(1, 20, 10, false);
-        innerTestQueueingSmallDelayed(1, 1024, 1024, false);
-        innerTestQueueingSmallDelayed(1, 2048, 1024, false);
+        innerTestQueueingSmallDelayed(1, 512, 512, false);
+        innerTestQueueingSmallDelayed(1, 1024, 512, false);
         innerTestQueueingSmallDelayed(1, 20, 1, false);
     }
     
@@ -289,14 +289,14 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
     
     public void testAsyncQueueingSmallDelayed() throws InterruptedException {
         innerTestAsyncQueueingSmallDelayed(1, 10, 20, false);
-        innerTestAsyncQueueingSmallDelayed(1, 1024, 1024*2, false);
+        innerTestAsyncQueueingSmallDelayed(1, 512, 1024, false);
     }
     
     public void testAsyncQueueingManySmallDelayed() throws InterruptedException {
         innerTestAsyncQueueingSmallDelayed(1, 10, 10, false);
         innerTestAsyncQueueingSmallDelayed(1, 20, 10, false);
-        innerTestAsyncQueueingSmallDelayed(1, 1024, 1024, false);
-        innerTestAsyncQueueingSmallDelayed(1, 2048, 1024, false);
+        innerTestAsyncQueueingSmallDelayed(1, 512, 512, false);
+        innerTestAsyncQueueingSmallDelayed(1, 1024, 512, false);
         innerTestAsyncQueueingSmallDelayed(1, 20, 1, false);
     }
     

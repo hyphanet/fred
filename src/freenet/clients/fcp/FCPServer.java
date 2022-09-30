@@ -152,10 +152,12 @@ public class FCPServer implements Runnable, DownloadCache {
 			this.networkInterface = null;
 		}
 		
-        // We need to start the FCPPluginConnectionTracker no matter whether this.enabled == true:
-        // If networked FCP is disabled, plugins might still communicate via non-networked
-        // intra-node FCP.
-        pluginConnectionTracker.start();
+		if(node.pluginManager.isEnabled()) {
+		    // We need to start the FCPPluginConnectionTracker no matter whether this.enabled == true:
+		    // If networked FCP is disabled, plugins might still communicate via non-networked
+		    // intra-node FCP.
+		    pluginConnectionTracker.start();
+		}
 	}
 
 	@Override
@@ -421,7 +423,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 
 	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config, PersistentRequestRoot root) throws IOException, InvalidConfigValueException {
-		SubConfig fcpConfig = new SubConfig("fcp", config);
+		SubConfig fcpConfig = config.createSubConfig("fcp");
 		short sortOrder = 0;
 		fcpConfig.register("enabled", true, sortOrder++, true, false, "FcpServer.isEnabled", "FcpServer.isEnabledLong", new FCPEnabledCallback(core));
 		fcpConfig.register("ssl", false, sortOrder++, true, true, "FcpServer.ssl", "FcpServer.sslLong", new FCPSSLCallback());
@@ -584,7 +586,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				} else {
 					// Kill old connection
 					oldConn.setKilledDupe();
-					oldConn.outputHandler.queue(new CloseConnectionDuplicateClientNameMessage());
+					oldConn.send(new CloseConnectionDuplicateClientNameMessage());
 					oldConn.close();
 					oldClient.setConnection(handler);
 					return oldClient;

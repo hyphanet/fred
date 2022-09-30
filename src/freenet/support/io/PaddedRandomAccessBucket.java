@@ -11,7 +11,6 @@ import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.crypt.MasterSecret;
-import freenet.support.api.Bucket;
 import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 
@@ -138,7 +137,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
         if(size < MIN_PADDED_SIZE) size = MIN_PADDED_SIZE;
         if(size == MIN_PADDED_SIZE) return size;
         long min = MIN_PADDED_SIZE;
-        long max = (long)MIN_PADDED_SIZE << 1;
+        long max = MIN_PADDED_SIZE << 1;
         while(true) {
             if(max < 0)
                 throw new Error("Impossible size: "+size+" - min="+min+", max="+max);

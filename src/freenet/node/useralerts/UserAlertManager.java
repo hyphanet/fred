@@ -81,7 +81,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			@Override
 			public void run() {
 				for (FCPConnectionHandler subscriber : subscribers)
-					subscriber.outputHandler.queue(alert.getFCPMessage());
+					subscriber.send(alert.getFCPMessage());
 			}
 		}, "UserAlertManager callback executor");
 	}
@@ -158,7 +158,10 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			int classHash1 = a1.getClass().hashCode();
 			if(classHash0 > classHash1) return 1;
 			else if(classHash0 < classHash1) return -1;
-			// Then by object hashCode
+			// Then go by time (newest first)
+			if(a0.getUpdatedTime() < a1.getUpdatedTime()) return 1;
+			else if(a0.getUpdatedTime() > a1.getUpdatedTime()) return -1;
+			// And finally by object hashCode
 			int hash0 = a0.hashCode();
 			int hash1 = a1.hashCode();
 			if(hash0 > hash1) return 1;
@@ -220,13 +223,26 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		userAlertNode.addChild("div", "class", "infobox-header", userAlert.getTitle());
 		HTMLNode alertContentNode = userAlertNode.addChild("div", "class", "infobox-content");
 		alertContentNode.addChild(userAlert.getHTMLText());
+		alertContentNode.addChild(renderDismissButton(userAlert, null));
+
+		return userAlertNode;
+	}
+
+	public HTMLNode renderDismissButton(UserAlert userAlert, String redirectToAfterDisable) {
+		HTMLNode result = new HTMLNode("div");
 		if (userAlert.userCanDismiss()) {
-			HTMLNode dismissFormNode = alertContentNode.addChild("form", new String[] { "action", "method" }, new String[] { "/alerts/", "post" }).addChild("div");
+			HTMLNode dismissFormNode = result.addChild("form", new String[] { "action", "method" }, new String[] { "/alerts/", "post" }).addChild("div");
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "disable", String.valueOf(userAlert.hashCode()) });
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dismiss-user-alert", userAlert.dismissButtonText() });
+			
+			if (redirectToAfterDisable != null) {
+				dismissFormNode.addChild("input",
+					new String[] { "type", "name", "value" },
+					new String[] { "hidden", "redirectToAfterDisable", redirectToAfterDisable });
+			}
 		}
-		return userAlertNode;
+		return result;
 	}
 
 	private String getAlertLevelName(short level) {
@@ -368,15 +384,15 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	}
 
 	public void watch(final FCPConnectionHandler subscriber) {
-                subscribers.add(subscriber);
+		subscribers.add(subscriber);
 		// Run off-thread, because of locking, and because client
 		// callbacks may take some time
 		core.clientContext.mainExecutor.execute(new Runnable() {
 			@Override
 			public void run() {
 				for (UserAlert alert : getAlerts())
-                                        if(alert.isValid())
-					    subscriber.outputHandler.queue(alert.getFCPMessage());
+					if(alert.isValid())
+						subscriber.send(alert.getFCPMessage());
 			}
 		}, "UserAlertManager callback executor");
 		subscribers.add(subscriber);

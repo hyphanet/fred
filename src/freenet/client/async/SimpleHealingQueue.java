@@ -20,6 +20,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue, PutCompletionCallback {
+	private static final long serialVersionUID = -2884613086588264043L;
 
 	final int maxRunning;
 	int counter;
@@ -38,21 +39,8 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 
 	static final RequestClient REQUEST_CLIENT = new RequestClientBuilder().build();
 
-    static final ClientBaseCallback BOGUS_CALLBACK = 
-        new ClientBaseCallback() {
-            @Override
-            public void onResume(ClientContext context) {
-                throw new IllegalStateException(); // Impossible.
-            }
-
-            @Override
-            public RequestClient getRequestClient() {
-                return REQUEST_CLIENT;
-            }
-    };
-
 	public SimpleHealingQueue(InsertContext context, short prio, int maxRunning) {
-		super(prio, BOGUS_CALLBACK);
+		super(prio, REQUEST_CLIENT);
 		this.ctx = context;
 		this.runningInserters = new HashMap<Bucket, SingleBlockInserter>();
 		this.maxRunning = maxRunning;

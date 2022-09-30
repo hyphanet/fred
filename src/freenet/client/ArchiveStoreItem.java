@@ -3,13 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import freenet.support.DoublyLinkedListImpl;
 import freenet.support.api.Bucket;
 
 /**
  * Base class for items stored in the archive cache.
  */
-abstract class ArchiveStoreItem extends DoublyLinkedListImpl.Item<ArchiveStoreItem> {
+abstract class ArchiveStoreItem {
 	final ArchiveKey key;
 	final ArchiveStoreContext context;
 	

@@ -44,8 +44,22 @@ public abstract class BloomFilter {
 	}
 	
 	protected BloomFilter(int length, int k) {
+		if (length < 0) {
+			throw new IllegalArgumentException("Filter must have postitive or zero length");
+		}
+		if (k < 0) {
+			throw new IllegalArgumentException("Filter must have postitive or zero hashes");
+		}
+
 		if (length % 8 != 0)
 			length -= length % 8;
+
+		if (length == 0) {
+			// Zero-length filters produce 100% false positives, no need for hashing.
+			// This makes sure that length is strictly positive when k is strictly
+			// positive as well, so nextInt(length) can safely be used.
+			k = 0;
+		}
 
 		this.length = length;
 		this.k = k;
@@ -173,6 +187,11 @@ public abstract class BloomFilter {
 	 * @return optimal K
 	 */
 	public static int optimialK(int filterLength, long maxKey) {
+		if (filterLength == 0) {
+			// There's no point hashing when the filter is of zero length.
+			return 0;
+		}
+
 		long k = Math.round(Math.log(2) * filterLength / maxKey);
 		
 		if (k > 64)

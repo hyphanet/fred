@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.TreeSet;
 
 public class SparseBitmap implements Iterable<int[]> {
+	// Ranges ordered by start time. Invariant: ranges do not overlap and do not touch.
 	private final TreeSet<Range> ranges;
 
 	public SparseBitmap() {
@@ -21,25 +23,24 @@ public class SparseBitmap implements Iterable<int[]> {
 		}
 	}
 
+	/**
+	 * Marks the slots between start and end (inclusive) as present.
+	 */
 	public void add(int start, int end) {
 		if(start > end) {
 			throw new IllegalArgumentException("Tried adding bad range. Start: " + start + ", end: " + end);
 		}
-
-		Iterator<Range> it = ranges.iterator();
-		while(it.hasNext()) {
-			Range range = it.next();
-			if(range.start <= start && range.end >= end) {
-				// Equal or inside
-				return;
-			} else if((range.start <= start && range.end >= (start - 1))
-			                || (range.start <= (end + 1) && range.end >= end)) {
-				// Overlapping
-				it.remove();
-
-				start = Math.min(start, range.start);
-				end = Math.max(end, range.end);
+		NavigableSet<Range> toReplace = overlaps(start, end, true);
+		if (!toReplace.isEmpty()) {
+			Range first = toReplace.first();
+			if (first.start < start) {
+				start = first.start;
 			}
+			Range last = toReplace.last();
+			if (last.end > end) {
+				end = last.end;
+			}
+			toReplace.clear();
 		}
 		ranges.add(new Range(start, end));
 	}
@@ -48,23 +49,23 @@ public class SparseBitmap implements Iterable<int[]> {
 		ranges.clear();
 	}
 
+	/**
+	 * Checks whether all slots between start and end (inclusive) are present.
+	 */
 	public boolean contains(int start, int end) {
 		if(start > end) {
 			throw new IllegalArgumentException("Tried checking bad range. Start: " + start + ", end: " + end);
 		}
 
-		Iterator<Range> it = ranges.iterator();
-		while(it.hasNext()) {
-			Range r = it.next();
-			if(r.start > r.end) Logger.error(this, "Bad Range: " + r);
-
-			if((r.start <= start) && (r.end >= end)) {
-				return true;
-			}
-		}
-		return false;
+		// Find the latest range starting before (or at) start, if any exists.
+		Range floor = ranges.floor(new Range(start, end));
+		// By definition of floor(), lower.start <= start.
+		return floor != null && floor.end >= end;
 	}
 
+	/**
+	 * Marks all slots between start and end (inclusive) as not present.
+	 */
 	public void remove(int start, int end) {
 		if(start > end) {
 			throw new IllegalArgumentException("Removing bad range. Start: " + start + ", end: " + end);
@@ -72,31 +73,25 @@ public class SparseBitmap implements Iterable<int[]> {
 
 		List<Range> toAdd = new ArrayList<Range>();
 
-		Iterator<Range> it = ranges.iterator();
-		while(it.hasNext()) {
+		Iterator<Range> it = overlaps(start, end, false).iterator();
+		while (it.hasNext()) {
 			Range range = it.next();
 
-			if(range.start < start) {
-				if(range.end < start) {
-					//Outside
-					continue;
-				} else if(range.end <= end) {
+			if (range.start < start) {
+				if (range.end <= end) {
 					//Overlaps beginning
 					toAdd.add(new Range(range.start, start - 1));
-				} else /* (range[1] > end) */{
+				} else if (range.end > end) {
 					//Overlaps entire range
 					toAdd.add(new Range(range.start, start - 1));
 					toAdd.add(new Range(end + 1, range.end));
 				}
-			} else if(range.start >= start && range.start <= end) {
-				if(range.end > end) {
+			} else {
+				if (range.end > end) {
 					// Overlaps end
 					toAdd.add(new Range(end + 1, range.end));
 				}
 				//Else it is equal or inside
-			} else /* (range[0] > end) */ {
-				//Outside
-				continue;
 			}
 			it.remove();
 		}
@@ -121,6 +116,20 @@ public class SparseBitmap implements Iterable<int[]> {
 			s.append(range[0] + "->" + range[1]);
 		}
 		return s.toString();
+	}
+
+	/** Finds all ranges that overlap or touch the given range. */
+	private NavigableSet<Range> overlaps(int start, int end, boolean includeTouching) {
+		// Establish bounds on start times to select ranges that would overlap or touch
+		Range startRange = new Range(start, 0);
+		Range lower = ranges.lower(startRange);
+		if (lower != null && lower.end >= (includeTouching ? start - 1 : start)) {
+			// This range would overlap (or touch, if those are to be included)
+			startRange = new Range(lower.start, 0);
+		}
+		Range endRange = new Range(end + 1, 0);
+		// Any range with start time within startRange and endRange would touch or overlap
+		return ranges.subSet(startRange, true, endRange, includeTouching);
 	}
 
 	private static class SparseBitmapIterator implements Iterator<int[]> {
@@ -148,8 +157,8 @@ public class SparseBitmap implements Iterable<int[]> {
 	}
 
 	private static class Range {
-		int start; // inclusive
-		int end;   // inclusive
+		final int start; // inclusive
+		final int end;   // inclusive
 
 		public Range(int start, int end) {
 			this.start = start;
@@ -171,12 +180,20 @@ public class SparseBitmap implements Iterable<int[]> {
 
 	/** @return The number of slots between start and end that are not marked as present */
 	public int notOverlapping(int start, int end) {
-		// FIXME OPTIMIZE: this is an incredibly stupid and inefficient but demonstrably correct way to evaluate this. Implement something better!
-		int total = 0;
-		for(int i=start;i<=end;i++) {
-			if(!contains(i, i))
-				total++;
+		int count = end - start + 1;
+		for (Range range : overlaps(start, end, false)) {
+			if (range.end < start || range.start > end) {
+				throw new IllegalStateException();
+			}
+			int overlap = range.end - range.start + 1;
+			if (range.start < start) {
+				overlap -= start - range.start;
+			}
+			if (range.end > end) {
+				overlap -= range.end - end;
+			}
+			count -= overlap;
 		}
-		return total;
+		return count;
 	}
 }

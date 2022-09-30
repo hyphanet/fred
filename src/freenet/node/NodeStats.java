@@ -1,10 +1,5 @@
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -36,7 +31,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.StringCounter;
 import freenet.support.TimeUtil;
-import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -45,6 +39,11 @@ import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.math.TrivialRunningAverage;
+
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /** Node (as opposed to NodeClientCore) level statistics. Includes shouldRejectRequest(), but not limited
  * to stuff required to implement that. */
@@ -58,7 +57,38 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		CHK_OFFER_FETCH,
 		SSK_OFFER_FETCH;
 	}
-	
+
+	/** Histogram for request locations. */
+	private static class RequestsByLocation {
+		private final int[] bins;
+		private int count = 0;
+
+		/** Constructs a request location histogram with the given number of bins. */
+		RequestsByLocation(int numBins) {
+			bins = new int[numBins];
+		}
+
+		/** Update the request counts with a request for the given location. */
+		final void report(final double loc) {
+			assert(loc >= 0 && loc < 1.0);
+			final int bin = (int)Math.floor(loc * bins.length);
+			synchronized (this) {
+				bins[bin]++;
+			}
+		}
+
+		/** Get the request count bins. The total request count is placed at position zero of the
+		  * given array. */
+		final int[] getCounts(final int[] total) {
+			final int[] ret = new int[bins.length];
+			synchronized (this) {
+				System.arraycopy(bins, 0, ret, 0, bins.length);
+				total[0] = count;
+			}
+			return ret;
+		}
+	}
+
 	/** Sub-max ping time. If ping is greater than this, we reject some requests. */
 	public static final long DEFAULT_SUB_MAX_PING_TIME = MILLISECONDS.toMillis(700);
 	/** Maximum overall average ping time. If ping is greater than this,
@@ -84,14 +114,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * block send time.
 	 */
 	public static final long MAX_INTERREQUEST_TIME = SECONDS.toMillis(10);
+
 	/** Locations of incoming requests */
-	private final int[] incomingRequestsByLoc = new int[10];
-	private int incomingRequestsAccounted = 0;
+	private final RequestsByLocation incomingRequests = new RequestsByLocation(10);
 	/** Locations of outgoing requests */
-	private final int[] outgoingLocalRequestByLoc = new int[10];
-	private int outgoingLocalRequestsAccounted = 0;
-	private final int[] outgoingRequestByLoc = new int[10];
-	private int outgoingRequestsAccounted = 0;
+	private final RequestsByLocation outgoingLocalRequests = new RequestsByLocation(10);
+	private final RequestsByLocation outgoingRequests = new RequestsByLocation(10);
+
 	private volatile long subMaxPingTime;
 	private volatile long maxPingTime;
 
@@ -219,11 +248,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	/** Node I/O stats update interval (milliseconds) */
 	private static final long nodeIOStatsUpdateInterval = 2000;
 
-	/** Token bucket for output bandwidth used by requests */
-	final TokenBucket requestOutputThrottle;
-	/** Token bucket for input bandwidth used by requests */
-	final TokenBucket requestInputThrottle;
-
 	// various metrics
 	public final RunningAverage routingMissDistanceLocal;
 	public final RunningAverage routingMissDistanceRemote;
@@ -347,19 +371,22 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		int defaultThreadLimit;
 		long memoryLimit = NodeStarter.getMemoryLimitMB();
 		
-		System.out.println("Memory is "+memoryLimit+"MB");
+		Logger.minor(this, "Memory is "+memoryLimit+"MB");
 		if(memoryLimit > 0 && memoryLimit < 100) {
 			defaultThreadLimit = 200;
-			System.out.println("Severe memory pressure, setting 200 thread limit. Freenet may not work well!");
+			Logger.minor(this, "Severe memory pressure, setting 200 thread limit. Freenet may not work well!");
 		} else if(memoryLimit > 0 && memoryLimit < 128) {
 			defaultThreadLimit = 300;
-			System.out.println("Moderate memory pressure, setting 300 thread limit. Increase your memory limit in wrapper.conf if possible.");
+			Logger.minor(this, "Moderate memory pressure, setting 300 thread limit. Increase your memory limit in wrapper.conf if possible.");
 		} else if(memoryLimit > 0 && memoryLimit < 192) {
 			defaultThreadLimit = 400;
-			System.out.println("Setting 400 thread limit due to <=192MB memory limit. This should be enough but more memory is better.");
-		} else {
-			System.out.println("Setting standard 500 thread limit. This should be enough for most nodes but more memory is usually a good thing.");
+			Logger.minor(this, "Setting 400 thread limit due to <=192MB memory limit. This should be enough but more memory is better.");
+		} else if(memoryLimit > 0 && memoryLimit < 512) {
 			defaultThreadLimit = 500;
+			Logger.minor(this, "Setting 500 thread limit due to <=512MB memory limit. This should be enough but more memory is better.");
+		} else {
+			defaultThreadLimit = 1000;
+			Logger.minor(this, "Setting standard 1000 thread limit. This should be enough for most nodes.");
 		}
 		statsConfig.register("threadLimit", defaultThreadLimit, sortOrder++, true, true, "NodeStat.threadLimit", "NodeStat.threadLimitLong",
 				new IntCallback() {
@@ -584,11 +611,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		localSSKFetchTimeAverageBulk = new TrivialRunningAverage();
 
 		chkSuccessRatesByLocation = new Histogram2(10, 1.0);
-
-		requestOutputThrottle =
-			new TokenBucket(Math.max(obwLimit*60, 32768*20), SECONDS.toNanos(1) / obwLimit, 0);
-		requestInputThrottle =
-			new TokenBucket(Math.max(ibwLimit*60, 32768*20), SECONDS.toNanos(1) / ibwLimit, 0);
 
 		double nodeLoc=node.lm.getLocation();
 		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
@@ -1236,7 +1258,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(logMINOR) Logger.minor(this, "Maybe accepting extra request due to it being in datastore (limit now "+limit+"s)...");
 		}
 		
-		int peers = node.peers.countConnectedPeers();
+		int peers = node.peers.countConnectedPeers() + 2 * node.peers.countConnectedDarknetPeers();;
 		
 		// These limits are by transfers.
 		// We limit the total number of transfers running in parallel to ensure
@@ -1283,30 +1305,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			return new RejectReason(ret, true);
 		}
 		
-		// Do we have the bandwidth?
-		// The throttles should not be used much now, the timeout-based 
-		// preemptive rejection and fair sharing code above should catch it in
-		// all cases. FIXME can we get rid of the throttles here?
-		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
-		int expectedSent = (int)Math.max(expected / nonOverheadFraction, 0);
-		if(logMINOR)
-			Logger.minor(this, "Expected sent bytes: "+expected+" -> "+expectedSent);
-		if(!requestOutputThrottle.instantGrab(expectedSent)) {
-			rejected("Insufficient output bandwidth", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
-			return new RejectReason("Insufficient output bandwidth", false);
-			// FIXME slowDown?
-		}
-		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
-		int expectedReceived = (int)Math.max(expected, 0);
-		if(logMINOR)
-			Logger.minor(this, "Expected received bytes: "+expectedReceived);
-		if(!requestInputThrottle.instantGrab(expectedReceived)) {
-			requestOutputThrottle.recycle(expectedSent);
-			rejected("Insufficient input bandwidth", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
-			return new RejectReason("Insufficient input bandwidth", false);
-			// FIXME slowDown?
-		}
-
 		// Message queues - when the link level has far more queued than it
 		// can transmit in a reasonable time, don't accept requests.
 		if(source != null) {
@@ -1458,7 +1456,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			RunningRequestsSnapshot requestsSnapshot, RunningRequestsSnapshot peerRequestsSnapshot, boolean input, long limit,
 			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag, int maxOutputTransfers, int maxOutputTransfersPeerLimit, UIDTag tag) {
 		String name = input ? "Input" : "Output";
-		int peers = node.peers.countConnectedPeers();
+		int peers = node.peers.countConnectedPeers() + 2 * node.peers.countConnectedDarknetPeers();
 		
 		double bandwidthAvailableOutputLowerLimit = getLowerLimit(bandwidthAvailableOutputUpperLimit, peers);
 		
@@ -1576,20 +1574,17 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private double getPeerLimit(PeerNode source, double totalGuaranteedBandwidth, boolean input, int transfersPerInsert, boolean realTimeFlag, int peers, double sourceRestarted) {
 		
 		double thisAllocation;
-		
+		double totalAllocation = totalGuaranteedBandwidth;
 		// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
-		if(RequestStarter.LOCAL_REQUESTS_COMPETE_FAIRLY) {
-			thisAllocation = totalGuaranteedBandwidth / (peers + 1);
-		} else {
-			double totalAllocation = totalGuaranteedBandwidth;
-			// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
-			double localAllocation = totalAllocation * 0.5;
-			if(source == null)
-				thisAllocation = localAllocation;
-			else {
-				totalAllocation -= localAllocation;
-				thisAllocation = totalAllocation / peers;
-			}
+		double localAllocation = totalAllocation * 0.5;
+		if (source == null)
+		    thisAllocation = localAllocation;
+		else {
+		    totalAllocation -= localAllocation;
+		    thisAllocation = totalAllocation / peers;
+                    if(source instanceof DarknetPeerNode) {
+                        thisAllocation *= 3;
+                    }
 		}
 		
 		if(logMINOR && sourceRestarted != 0)
@@ -2254,17 +2249,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("blockTransferFailTimeout", blockTransferFailTimeout.currentValue());
 
 		return fs;
-	}
-
-	public void setOutputLimit(int obwLimit) {
-		requestOutputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, Math.max(obwLimit*60, 32768*20));
-		if(node.inputLimitDefault) {
-			setInputLimit(obwLimit * 4);
-		}
-	}
-
-	public void setInputLimit(int ibwLimit) {
-		requestInputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / ibwLimit, Math.max(ibwLimit*60, 32768*20));
 	}
 
 	public boolean isTestnetEnabled() {
@@ -2996,60 +2980,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public void reportIncomingRequestLocation(double loc) {
-		assert((loc > 0) && (loc < 1.0));
-
-		synchronized(incomingRequestsByLoc) {
-			incomingRequestsByLoc[(int)Math.floor(loc*incomingRequestsByLoc.length)]++;
-			incomingRequestsAccounted++;
-		}
+		incomingRequests.report(loc);
 	}
 
 	public int[] getIncomingRequestLocation(int[] retval) {
-		int[] result = new int[incomingRequestsByLoc.length];
-		synchronized(incomingRequestsByLoc) {
-			System.arraycopy(incomingRequestsByLoc, 0, result, 0, incomingRequestsByLoc.length);
-			retval[0] = incomingRequestsAccounted;
-		}
-
-		return result;
+		return incomingRequests.getCounts(retval);
 	}
 
 	public void reportOutgoingLocalRequestLocation(double loc) {
-		assert((loc > 0) && (loc < 1.0));
-
-		synchronized(outgoingLocalRequestByLoc) {
-			outgoingLocalRequestByLoc[(int)Math.floor(loc*outgoingLocalRequestByLoc.length)]++;
-			outgoingLocalRequestsAccounted++;
-		}
+		outgoingLocalRequests.report(loc);
 	}
 
 	public int[] getOutgoingLocalRequestLocation(int[] retval) {
-		int[] result = new int[outgoingLocalRequestByLoc.length];
-		synchronized(outgoingLocalRequestByLoc) {
-			System.arraycopy(outgoingLocalRequestByLoc, 0, result, 0, outgoingLocalRequestByLoc.length);
-			retval[0] = outgoingLocalRequestsAccounted;
-		}
-
-		return result;
+		return outgoingLocalRequests.getCounts(retval);
 	}
 
 	public void reportOutgoingRequestLocation(double loc) {
-		assert((loc > 0) && (loc < 1.0));
-
-		synchronized(outgoingRequestByLoc) {
-			outgoingRequestByLoc[(int)Math.floor(loc*outgoingRequestByLoc.length)]++;
-			outgoingRequestsAccounted++;
-		}
+		outgoingRequests.report(loc);
 	}
 
 	public int[] getOutgoingRequestLocation(int[] retval) {
-		int[] result = new int[outgoingRequestByLoc.length];
-		synchronized(outgoingRequestByLoc) {
-			System.arraycopy(outgoingRequestByLoc, 0, result, 0, outgoingRequestByLoc.length);
-			retval[0] = outgoingRequestsAccounted;
-		}
-
-		return result;
+		return outgoingRequests.getCounts(retval);
 	}
 
 	public void reportCHKOutcome(long rtt, boolean successful, double location, boolean isRealtime) {
@@ -3683,8 +3634,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	/** To prevent thread overflow */
 	private final static int MAX_ANNOUNCEMENTS = 100;
-	
-	public boolean shouldAcceptAnnouncement(long uid) {
+
+	enum AnnouncementDecision {
+		ACCEPT,
+		OVERLOAD,
+		LOOP
+	}
+	public AnnouncementDecision shouldAcceptAnnouncement(long uid) {
 		int outputPerSecond = node.getOutputBandwidthLimit() / 2; // FIXME: Take overhead into account??? Be careful, it may include announcements and that would cause problems!
 		int inputPerSecond = node.getInputBandwidthLimit() / 2;
 		int limit = Math.min(inputPerSecond, outputPerSecond);
@@ -3693,7 +3649,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			int running = runningAnnouncements.size();
 			if(running >= MAX_ANNOUNCEMENTS) {
 				if(logMINOR) Logger.minor(this, "Too many announcements running: "+running);
-				return false;
+				return AnnouncementDecision.OVERLOAD;
 			}
 			// Liability-style limiting as well.
 			int perTransfer = OpennetManager.PADDED_NODEREF_SIZE;
@@ -3701,11 +3657,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			int bandwidthIn30Secs = limit * 30;
 			if(perTransfer * transfersPerAnnouncement * running > bandwidthIn30Secs) {
 				if(logMINOR) Logger.minor(this, "Can't complete "+running+" announcements in 30 secs");
-				return false;
+				return AnnouncementDecision.OVERLOAD;
 			}
-			runningAnnouncements.add(uid);
-			if(logMINOR) Logger.minor(this, "Accepting announcement "+uid);
-			return true;
+			boolean ret = runningAnnouncements.add(uid);
+			if(logMINOR) {
+				if(ret) Logger.minor(this, "Accepting announcement "+uid);
+				else Logger.minor(this, "Rejecting (loop) announcement "+uid);
+			}
+			return (ret ? AnnouncementDecision.ACCEPT : AnnouncementDecision.LOOP);
 		}
 	}
 	

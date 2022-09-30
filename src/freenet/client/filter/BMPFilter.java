@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Map;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.io.FileUtil;
@@ -86,8 +86,9 @@ public class BMPFilter implements ContentDataFilter {
 
 
 	@Override
-	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-			FilterCallback cb) throws DataFilterException, IOException {
+	public void readFilter(
+      InputStream input, OutputStream output, String charset, Map<String, String> otherParams,
+      String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
 		DataInputStream dis = new DataInputStream(input);
 		dis.mark(54);
 		byte[] StartWord = new byte[2];
@@ -174,12 +175,6 @@ public class BMPFilter implements ContentDataFilter {
 		if(shortReason != null)
 			message += " - (" + shortReason + ')';
 		throw new DataFilterException(shortReason, shortReason, message);
-	}
-
-	@Override
-	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-			FilterCallback cb) throws DataFilterException, IOException {
-		return;
 	}
 
 }

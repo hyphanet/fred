@@ -14,10 +14,11 @@ import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 
-public class GzipCompressor implements Compressor {
+public class GzipCompressor extends AbstractCompressor {
 
 	@Override
-	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
+			throws IOException, CompressionOutputSizeException {
 		Bucket output = bf.makeBucket(maxWriteLength);
 		InputStream is = null;
 		OutputStream os = null;
@@ -34,9 +35,11 @@ public class GzipCompressor implements Compressor {
 		}
 		return output;
 	}
-	
+
 	@Override
-	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength,
+						 long amountOfDataToCheckCompressionRatio, int minimumCompressionPercentage)
+			throws IOException, CompressionRatioException {
 		if(maxReadLength < 0)
 			throw new IllegalArgumentException();
 		GZIPOutputStream gos = null;
@@ -46,7 +49,10 @@ public class GzipCompressor implements Compressor {
 			long read = 0;
 			// Bigger input buffer, so can compress all at once.
 			// Won't hurt on I/O either, although most OSs will only return a page at a time.
-			byte[] buffer = new byte[32768];
+			int bufferSize = 32768;
+			byte[] buffer = new byte[bufferSize];
+			long iterationToCheckCompressionRatio = amountOfDataToCheckCompressionRatio / bufferSize;
+			int i = 0;
 			while(true) {
 				int l = (int) Math.min(buffer.length, maxReadLength - read);
 				int x = l == 0 ? -1 : is.read(buffer, 0, l);
@@ -56,6 +62,10 @@ public class GzipCompressor implements Compressor {
 				read += x;
 				if(cos.written() > maxWriteLength)
 					throw new CompressionOutputSizeException();
+
+				if (++i == iterationToCheckCompressionRatio && minimumCompressionPercentage != 0) {
+					checkCompressionEffect(read, cos.written(), minimumCompressionPercentage);
+				}
 			}
 			gos.flush();
 			gos.finish();

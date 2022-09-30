@@ -250,19 +250,11 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	public void schedule(ClientContext context) {
 		if(key == null) throw new NullPointerException();
-		try {
-			getScheduler(context).register(this, new SendableGet[] { this }, persistent, ctx.blocks, false);
-		} catch (KeyListenerConstructionException e) {
-			Logger.error(this, "Impossible: "+e+" on "+this, e);
-		}
+		getScheduler(context).register(this, new SendableGet[] { this }, persistent, ctx.blocks, false);
 	}
 	
 	public void reschedule(ClientContext context) {
-		try {
-			getScheduler(context).register(null, new SendableGet[] { this }, persistent, ctx.blocks, true);
-		} catch (KeyListenerConstructionException e) {
-			Logger.error(this, "Impossible: "+e+" on "+this, e);
-		}
+		getScheduler(context).register(null, new SendableGet[] { this }, persistent, ctx.blocks, true);
 	}
 	
 	public SendableGet getRequest(Key key) {

@@ -43,7 +43,8 @@ public final class PageMaker {
 		SKY_STATIC("sky-static", "Sky (Static menu)", "", false, false),
 		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue", false, false),
 		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true),
-		RABBIT_HOLE("rabbit-hole", "Into the Rabbit Hole", "Simple and clean theme", false, false);
+		RABBIT_HOLE("rabbit-hole", "Into the Rabbit Hole", "Simple and clean theme", false, false),
+		WINTERFACEY("winterfacey", "Winterfacey", "2016th-theme, based on Winterface (Bootstrap)", true, false);
 
 		
 		public static final String[] possibleValues = {
@@ -69,7 +70,8 @@ public final class PageMaker {
 			SKY_STATIC.code,
 			MINIMALBLUE.code,
 			MINIMALISTIC.code,
-			RABBIT_HOLE.code
+			RABBIT_HOLE.code,
+			WINTERFACEY.code
 		};
 		
 		public final String code;  // the internal name
@@ -110,7 +112,7 @@ public final class PageMaker {
 		}
 
 		public static THEME getDefault() {
-			return THEME.CLEAN;
+			return THEME.WINTERFACEY;
 		}
 	}	
 	
@@ -336,7 +338,16 @@ public final class PageMaker {
 				headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
 			}
 		}
-		
+
+		if (ctx != null && ctx.getContainer().isFProxyJavascriptEnabled()) {
+			URL themeJsUrl = getClass().getResource("staticfiles/themes/" + theme.code + "/script.js");
+			if (themeJsUrl != null) {
+				headNode.addChild("script",
+						new String[]{"type", "language", "src"},
+						new String[]{"text/javascript", "javascript", "/static/themes/" + theme.code + "/script.js"});
+			}
+		}
+
 		boolean webPushingEnabled = 
 			ctx != null && ctx.getContainer().isFProxyJavascriptEnabled() && ctx.getContainer().isFProxyWebPushingEnabled();
 		

@@ -48,7 +48,7 @@ public class SubscribeUSK implements USKProgressCallback {
 		}
 		//if(newKnownGood && !newSlotToo) return;
 		FCPMessage msg = new SubscribedUSKUpdate(identifier, l, key, newKnownGood, newSlotToo);
-		handler.outputHandler.queue(msg);
+		handler.send(msg);
 	}
 
 	@Override
@@ -67,12 +67,12 @@ public class SubscribeUSK implements USKProgressCallback {
 
 	@Override
 	public void onSendingToNetwork(ClientContext context) {
-		handler.outputHandler.queue(new SubscribedUSKSendingToNetworkMessage(identifier));
+		handler.send(new SubscribedUSKSendingToNetworkMessage(identifier));
 	}
 
 	@Override
 	public void onRoundFinished(ClientContext context) {
-		handler.outputHandler.queue(new SubscribedUSKRoundFinishedMessage(identifier));
+		handler.send(new SubscribedUSKRoundFinishedMessage(identifier));
 	}
 
 }

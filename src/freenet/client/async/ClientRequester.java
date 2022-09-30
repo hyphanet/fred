@@ -58,18 +58,16 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 		return priorityClass;
 	}
 
-	/**
-	 * zero arg c'tor for db4o on jamvm / for serialization.
-	 */
+	/** Required because we implement {@link Serializable}. */
 	protected ClientRequester() {
 		realTimeFlag = false;
 		creationTime = 0;
 		hashCode = 0;
 	}
 
-	protected ClientRequester(short priorityClass, ClientBaseCallback cb) {
+	protected ClientRequester(short priorityClass, RequestClient requestClient) {
 		this.priorityClass = priorityClass;
-		this.client = cb.getRequestClient();
+		this.client = requestClient;
 		this.realTimeFlag = client.realTimeFlag();
 		if(client == null)
 			throw new NullPointerException();

@@ -29,12 +29,13 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.node.Announcer;
 import freenet.node.Node;
+import freenet.node.NodeFile;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
+import freenet.node.ProgramDirectory;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
@@ -47,6 +48,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.OfficialPlugins.OfficialPluginDescription;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.support.HTMLNode;
+import freenet.support.JVMVersion;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.Bucket;
@@ -58,75 +60,71 @@ import freenet.support.io.FileUtil;
 /**
  * <p>Supervises NodeUpdater's. Enables us to easily update multiple files, change
  * the URI's on the fly, eliminates some messy code in the callbacks etc.</p>
- * 
- * <p>Procedure for updating the update key: Create a new key. Create a new build X, the 
- * "transition version". This must be UOM-compatible with the previous transition version. 
- * UOM-compatible means UOM should work from the older builds. This in turn means that it should 
- * support an overlapping set of connection setup negTypes (@link 
+ *
+ * <p>Procedure for updating the update key: Create a new key. Create a new build X, the
+ * "transition version". This must be UOM-compatible with the previous transition version.
+ * UOM-compatible means UOM should work from the older builds. This in turn means that it should
+ * support an overlapping set of connection setup negTypes (@link
  * FNPPacketMangler.supportedNegTypes()). Similarly there may be issues with changes to the UOM
  * messages, or to messages in general. Build X is inserted to both the old key and the new key.
- * Build X's SSK URI (on the old auto-update key) will be hard-coded as the new transition version. 
- * Then the next build, X+1, can get rid of some of the back compatibility cruft (especially old 
- * connection setup types), and will be inserted only to the new key. Secure backups of the new 
+ * Build X's SSK URI (on the old auto-update key) will be hard-coded as the new transition version.
+ * Then the next build, X+1, can get rid of some of the back compatibility cruft (especially old
+ * connection setup types), and will be inserted only to the new key. Secure backups of the new
  * key are required and are documented elsewhere.</p>
- * 
+ *
  * FIXME: See bug #6009 for some current UOM compatibility issues.
  */
 public class NodeUpdateManager {
 
 	/**
-	 * The last build on the old key (/update/), which includes the multi-jar
-	 * updating code, but doesn't require it to work, i.e. it still uses the old
-	 * freenet-ext.jar and doesn't require any other jars. Older nodes can
+	 * The last build on the previous key with Java 7 support. Older nodes can
 	 * update to this point via old UOM.
 	 */
-	public final static int TRANSITION_VERSION = 1421;
-	/** The freenet-ext.jar build number corresponding to the old key */
-	public final static int TRANSITION_VERSION_EXT = 29;
+	public final static int TRANSITION_VERSION = 1481;
 
-	/** The URI for post-TRANSITION_VERSION builds' freenet.jar. */
-	public final static String UPDATE_URI = "USK@sabn9HY9MKLbFPp851AO98uKtsCtYHM9rqB~A5cCGW4,3yps2z06rLnwf50QU4HvsILakRBYd4vBlPtLv0elUts,AQACAAE/jar/"
+	/** The URI for post-TRANSITION_VERSION builds' freenet.jar on modern JVMs. */
+	public final static String UPDATE_URI = "USK@vCKGjQtKuticcaZ-dwOgmkYPVLj~N1dm9mb3j3Smg4Y,-wz5IYtd7PlhI2Kx4cAwpUu13fW~XBglPyOn8wABn60,AQACAAE/jar/"
 			+ Version.buildNumber();
 
-	/** Might as well be the SSK */
-	public final static String LEGACY_UPDATE_URI = "freenet:SSK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/update-"
+	/** The URI for post-TRANSITION_VERSION builds' freenet.jar on EoL JVMs. */
+	public final static String LEGACY_UPDATE_URI = "SSK@ugWS2VICgMcQ5ptmEE1mAvHgUn2OSCOogJIUAvbL090,ZKO1pZRI9oaBuBQuWFL4bK3K0blvmEdqYgiIJF5GcjQ,AQACAAE/jar-"
 			+ TRANSITION_VERSION;
+
 	/**
-	 * Pre-TRANSITION_VERSION builds needed to fetch freenet-ext.jar via an
-	 * updater of its own.
+	 * The URI for freenet.jar before the updater was rekeyed. Unless both the EoL and modern keys rekey this is
+	 * LEGACY_UPDATE_URI.
 	 */
-	public final static String LEGACY_EXT_URI = "freenet:SSK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/ext-"
-			+ TRANSITION_VERSION_EXT;
+	public final static String PREVIOUS_UPDATE_URI = "SSK@O~UmMwTeDcyDIW-NsobFBoEicdQcogw7yrLO2H-sJ5Y,JVU4L7m9mNppkd21UNOCzRHKuiTucd6Ldw8vylBOe5o,AQACAAE/jar-"
+			+ TRANSITION_VERSION;
 
 	public final static String REVOCATION_URI = "SSK@tHlY8BK2KFB7JiO2bgeAw~e4sWU43YdJ6kmn73gjrIw,DnQzl0BYed15V8WQn~eRJxxIA-yADuI8XW7mnzEbut8,AQACAAE/revoked";
 	// These are necessary to prevent DoS.
 	public static final long MAX_REVOCATION_KEY_LENGTH = 32 * 1024;
 	public static final long MAX_REVOCATION_KEY_TEMP_LENGTH = 64 * 1024;
 	public static final long MAX_REVOCATION_KEY_BLOB_LENGTH = 128 * 1024;
+	public static final long MAX_MAIN_JAR_LENGTH = 48 * 1024 * 1024; // 48MiB
+	public static final long MAX_JAVA_INSTALLER_LENGTH = 300 * 1024 * 1024;
+	public static final long MAX_WINDOWS_INSTALLER_LENGTH = 300 * 1024 * 1024;
+	public static final long MAX_IP_TO_COUNTRY_LENGTH = 24 * 1024 * 1024;
+	public static final long MAX_SEEDNODES_LENGTH = 3 * 1024 * 1024;
 
-	public static final long MAX_MAIN_JAR_LENGTH = 16 * 1024 * 1024; // 16MB
+	static final FreenetURI legacyMainJarSSK;
+	static final FreenetURI legacyMainJarUSK;
 
-	public static final FreenetURI transitionMainJarURI;
-	public static final FreenetURI transitionExtJarURI;
-	
-	public static final FreenetURI transitionMainJarURIAsUSK;
-	public static final FreenetURI transitionExtJarURIAsUSK;
-	
+	static final FreenetURI previousMainJarSSK;
+	static final FreenetURI previousMainJarUSK;
 
 	public static final String transitionMainJarFilename = "legacy-freenet-jar-"
 			+ TRANSITION_VERSION + ".fblob";
-	public static final String transitionExtJarFilename = "legacy-freenet-ext-jar-"
-			+ TRANSITION_VERSION_EXT + ".fblob";
-	
+
 	public final File transitionMainJarFile;
-	public final File transitionExtJarFile;
 
 	static {
 		try {
-			transitionMainJarURI = new FreenetURI(LEGACY_UPDATE_URI);
-			transitionExtJarURI = new FreenetURI(LEGACY_EXT_URI);
-			transitionMainJarURIAsUSK = transitionMainJarURI.uskForSSK();
-			transitionExtJarURIAsUSK = transitionExtJarURI.uskForSSK();
+			legacyMainJarSSK = new FreenetURI(LEGACY_UPDATE_URI);
+			legacyMainJarUSK = legacyMainJarSSK.uskForSSK();
+			previousMainJarSSK = new FreenetURI(PREVIOUS_UPDATE_URI);
+			previousMainJarUSK = previousMainJarSSK.uskForSSK();
 		} catch (MalformedURLException e) {
 			throw new Error(e);
 		}
@@ -136,7 +134,6 @@ public class NodeUpdateManager {
 	private FreenetURI revocationURI;
 
 	private final LegacyJarFetcher transitionMainJarFetcher;
-	private final LegacyJarFetcher transitionExtJarFetcher;
 
 	private MainJarUpdater mainUpdater;
 
@@ -180,7 +177,6 @@ public class NodeUpdateManager {
 	// Update alert
 	private final UpdatedVersionAvailableUserAlert alert;
 
-	public final LegacyUpdateOverMandatoryManager legacyUOM;
 	public final UpdateOverMandatoryManager uom;
 
 	private static volatile boolean logMINOR;
@@ -193,7 +189,7 @@ public class NodeUpdateManager {
 	private int fetchedMainJarVersion;
 	/** The jar of the version we have fetched and will deploy. */
 	private Bucket fetchedMainJarData;
-	
+
 	/** The blob file for the current version, for UOM */
 	private File currentVersionBlobFile;
 
@@ -207,9 +203,9 @@ public class NodeUpdateManager {
 	 * deploying.
 	 */
 	private Bucket maybeNextMainJarData;
-	
+
 	private static final Object deployLock = new Object();
-	
+
 	static final String TEMP_BLOB_SUFFIX = ".updater.fblob.tmp";
 	static final String TEMP_FILE_SUFFIX = ".updater.tmp";
 
@@ -224,7 +220,7 @@ public class NodeUpdateManager {
 		this.alert = new UpdatedVersionAvailableUserAlert(this);
 		alert.isValid(false);
 
-		SubConfig updaterConfig = new SubConfig("node.updater", config);
+		SubConfig updaterConfig = config.createSubConfig("node.updater");
 
 		updaterConfig.register("enabled", true, 1, false, false,
 				"NodeUpdateManager.enabled", "NodeUpdateManager.enabledLong",
@@ -239,8 +235,10 @@ public class NodeUpdateManager {
 				new AutoUpdateAllowedCallback());
 		isAutoUpdateAllowed = updaterConfig.getBoolean("autoupdate");
 
+		// Set default update URI for new nodes depending on JVM version.
 		updaterConfig
-				.register("URI", UPDATE_URI, 3, true, true,
+				.register("URI", JVMVersion.needsLegacyUpdater() ? legacyMainJarUSK.toString() : UPDATE_URI,
+				          3, true, true,
 						"NodeUpdateManager.updateURI",
 						"NodeUpdateManager.updateURILong",
 						new UpdateURICallback());
@@ -251,6 +249,21 @@ public class NodeUpdateManager {
 			throw new InvalidConfigValueException(l10n("invalidUpdateURI",
 					"error", e.getLocalizedMessage()));
 		}
+
+		/*
+		 * The update URI is always written, so override the existing key depending on JVM version.
+		 * Only override official URIs to avoid interfering with unofficial update keys.
+		 *
+		 * An up-to-date JVM must update the legacy URI (in addition to the previous URI) in case a node was
+		 * run with an EoL JVM that was subsequently upgraded.
+		 */
+		if (JVMVersion.needsLegacyUpdater()) {
+			transitionKey(updaterConfig, previousMainJarSSK, legacyMainJarUSK.toString());
+		} else {
+			transitionKey(updaterConfig, previousMainJarSSK, UPDATE_URI);
+			transitionKey(updaterConfig, legacyMainJarSSK, UPDATE_URI);
+		}
+
 		updateURI = updateURI.setSuggestedEdition(Version.buildNumber());
 		if(updateURI.hasMetaStrings())
 			throw new InvalidConfigValueException(l10n("updateURIMustHaveNoMetaStrings"));
@@ -274,9 +287,8 @@ public class NodeUpdateManager {
 
 			@Override
 			public void onSuccess(LegacyJarFetcher fetcher) {
-				if (transitionMainJarFetcher.fetched()
-						&& transitionExtJarFetcher.fetched()) {
-					System.out.println("Got legacy jars, announcing...");
+				if (transitionMainJarFetcher.fetched()) {
+					System.out.println("Got legacy jar, announcing...");
 					broadcastUOMAnnouncesOld();
 				}
 			}
@@ -299,12 +311,8 @@ public class NodeUpdateManager {
 		};
 
 		transitionMainJarFile = new File(node.clientCore.getPersistentTempDir(), transitionMainJarFilename);
-		transitionExtJarFile = new File(node.clientCore.getPersistentTempDir(), transitionExtJarFilename);
-		transitionMainJarFetcher = new LegacyJarFetcher(transitionMainJarURI,
+		transitionMainJarFetcher = new LegacyJarFetcher(previousMainJarSSK,
 				transitionMainJarFile, node.clientCore,
-				legacyFetcherCallback);
-		transitionExtJarFetcher = new LegacyJarFetcher(transitionExtJarURI,
-				transitionExtJarFile, node.clientCore,
 				legacyFetcherCallback);
 
 		updaterConfig.register("updateSeednodes", wasEnabledOnStartup, 6, true,
@@ -369,19 +377,37 @@ public class NodeUpdateManager {
 		this.revocationChecker = new RevocationChecker(this, new File(
 				node.clientCore.getPersistentTempDir(), "revocation-key.fblob"));
 
-		this.legacyUOM = new LegacyUpdateOverMandatoryManager(this);
 		this.uom = new UpdateOverMandatoryManager(this);
 		this.uom.removeOldTempFiles();
+	}
+
+	private void transitionKey(SubConfig updaterConfig, FreenetURI from, String to)
+			throws InvalidConfigValueException {
+
+		if (updateURI.equalsKeypair(from)) {
+			try {
+				updaterConfig.set("URI", to);
+			} catch (NodeNeedRestartException e) {
+				// UpdateURICallback.set() does not throw NodeNeedRestartException.
+				Logger.warning(this, "Unexpected failure setting update URI", e);
+			}
+		}
 	}
 
 	class SimplePuller implements ClientGetCallback {
 
 		final FreenetURI freenetURI;
 		final String filename;
+		final ProgramDirectory directory;
 
-		public SimplePuller(FreenetURI freenetURI, String filename) {
+		public SimplePuller(FreenetURI freenetURI, NodeFile file) {
+		    this(freenetURI, file.getFilename(), file.getProgramDirectory(node));
+		}
+
+		private SimplePuller(FreenetURI freenetURI, String filename, ProgramDirectory directory) {
 			this.freenetURI = freenetURI;
 			this.filename = filename;
+			this.directory = directory;
 		}
 
 		public void start(short priority, long maxSize) {
@@ -413,7 +439,7 @@ public class NodeUpdateManager {
 			File temp;
 			FileOutputStream fos = null;
 			try {
-				temp = File.createTempFile(filename, ".tmp", node.getRunDir());
+				temp = File.createTempFile(filename, ".tmp", directory.dir());
 				temp.deleteOnExit();
 				fos = new FileOutputStream(temp);
 				BucketTools.copyTo(result.asBucket(), fos, -1);
@@ -421,7 +447,7 @@ public class NodeUpdateManager {
 				fos = null;
 				for (int i = 0; i < 10; i++) {
 					// FIXME add a callback in case it's being used on Windows.
-					if (FileUtil.renameTo(temp, node.runDir().file(filename))) {
+					if (FileUtil.renameTo(temp, directory.file(filename))) {
 						System.out.println("Successfully fetched " + filename
 								+ " for version " + Version.buildNumber());
 						break;
@@ -443,7 +469,7 @@ public class NodeUpdateManager {
 						.println("Fetched but failed to write out "
 								+ filename
 								+ " - please check that the node has permissions to write in "
-								+ node.getRunDir()
+								+ directory.dir()
 								+ " and particularly the file " + filename);
 				System.err.println("The error was: " + e);
 				e.printStackTrace();
@@ -460,17 +486,13 @@ public class NodeUpdateManager {
 
         @Override
         public RequestClient getRequestClient() {
-            return node.nonPersistentClientBulk; 
+            return node.nonPersistentClientBulk;
         }
 
 	}
 
-	public static final String WINDOWS_FILENAME = "freenet-latest-installer-windows.exe";
-	public static final String NON_WINDOWS_FILENAME = "freenet-latest-installer-nonwindows.jar";
-	public static final String IPV4_TO_COUNTRY_FILENAME = "IpToCountry.dat";
-
 	public File getInstallerWindows() {
-		File f = node.runDir().file(WINDOWS_FILENAME);
+		File f = NodeFile.InstallerWindows.getFile(node);
 		if (!(f.exists() && f.canRead() && f.length() > 0))
 			return null;
 		else
@@ -478,7 +500,7 @@ public class NodeUpdateManager {
 	}
 
 	public File getInstallerNonWindows() {
-		File f = node.runDir().file(NON_WINDOWS_FILENAME);
+		File f = NodeFile.InstallerNonWindows.getFile(node);
 		if (!(f.exists() && f.canRead() && f.length() > 0))
 			return null;
 		else
@@ -490,12 +512,12 @@ public class NodeUpdateManager {
 				"seednodes-" + Version.buildNumber());
 	}
 
-	public FreenetURI getInstallerWindowsURI() {
+	public FreenetURI getInstallerNonWindowsURI() {
 		return updateURI.sskForUSK().setDocName(
 				"installer-" + Version.buildNumber());
 	}
 
-	public FreenetURI getInstallerNonWindowsURI() {
+	public FreenetURI getInstallerWindowsURI() {
 		return updateURI.sskForUSK().setDocName(
 				"wininstaller-" + Version.buildNumber());
 	}
@@ -508,55 +530,53 @@ public class NodeUpdateManager {
 	public void start() throws InvalidConfigValueException {
 
 		node.clientCore.alerts.register(alert);
-		
+
 		enable(wasEnabledOnStartup);
 
-		// Fetch 3 files, each to a file in the runDir.
-
+		// Fetch seednodes to the nodeDir.
 		if (updateSeednodes) {
 
 			SimplePuller seedrefsGetter = new SimplePuller(getSeednodesURI(),
-					Announcer.SEEDNODES_FILENAME);
+					NodeFile.Seednodes);
 			seedrefsGetter.start(
 					RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					1024 * 1024);
+					MAX_SEEDNODES_LENGTH);
 		}
 
+		// Fetch installers and IP-to-country files to the runDir.
 		if (updateInstallers) {
 			SimplePuller installerGetter = new SimplePuller(
-					getInstallerWindowsURI(), NON_WINDOWS_FILENAME);
+					getInstallerNonWindowsURI(), NodeFile.InstallerNonWindows);
 			SimplePuller wininstallerGetter = new SimplePuller(
-					getInstallerNonWindowsURI(), WINDOWS_FILENAME);
+					getInstallerWindowsURI(), NodeFile.InstallerWindows);
 
 			installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					32 * 1024 * 1024);
+					MAX_JAVA_INSTALLER_LENGTH);
 			wininstallerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					32 * 1024 * 1024);
+					MAX_WINDOWS_INSTALLER_LENGTH);
 
 		}
 
 		if (updateIPToCountry) {
 			SimplePuller ip4Getter = new SimplePuller(getIPv4ToCountryURI(),
-					IPV4_TO_COUNTRY_FILENAME);
+					NodeFile.IPv4ToCountry);
 			ip4Getter.start(RequestStarter.UPDATE_PRIORITY_CLASS,
-					8 * 1024 * 1024);
+					MAX_IP_TO_COUNTRY_LENGTH);
 		}
-		
+
 	}
 
 	void broadcastUOMAnnouncesOld() {
 		boolean mainJarAvailable = transitionMainJarFetcher == null ? false
 				: transitionMainJarFetcher.fetched();
-		boolean extJarAvailable = transitionExtJarFetcher == null ? false
-				: transitionExtJarFetcher.fetched();
 		Message msg;
-		if(!(mainJarAvailable && extJarAvailable)) return;
+		if(!mainJarAvailable) return;
 		synchronized (broadcastUOMAnnouncesSync) {
 			if(broadcastUOMAnnouncesOld && !hasBeenBlown) return;
 			broadcastUOMAnnouncesOld = true;
 			msg = getOldUOMAnnouncement();
 		}
-		node.peers.localBroadcast(msg, true, true, ctr);
+		node.peers.localBroadcast(msg, true, true, ctr, 0, TRANSITION_VERSION-1);
 	}
 
 	void broadcastUOMAnnouncesNew() {
@@ -570,7 +590,7 @@ public class NodeUpdateManager {
 			msg = getNewUOMAnnouncement(size);
 		}
 		if(logMINOR) Logger.minor(this, "Broadcasting UOM announcements (new)");
-		node.peers.localBroadcast(msg, true, true, ctr);
+		node.peers.localBroadcast(msg, true, true, ctr, TRANSITION_VERSION, Integer.MAX_VALUE);
 	}
 
 	/** Return the length of the data fetched for the current version, or -1. */
@@ -598,20 +618,15 @@ public class NodeUpdateManager {
 	private Message getOldUOMAnnouncement() {
 		boolean mainJarAvailable = transitionMainJarFetcher == null ? false
 				: transitionMainJarFetcher.fetched();
-		boolean extJarAvailable = transitionExtJarFetcher == null ? false
-				: transitionExtJarFetcher.fetched();
-		return DMT.createUOMAnnounce(transitionMainJarURIAsUSK.toString(),
-				transitionExtJarURIAsUSK.toString(),
-				revocationURI.toString(), revocationChecker.hasBlown(),
-				mainJarAvailable ? TRANSITION_VERSION : -1,
-				extJarAvailable ? TRANSITION_VERSION_EXT : -1,
-				revocationChecker.lastSucceededDelta(), revocationChecker
-						.getRevocationDNFCounter(), revocationChecker
-						.getBlobSize(),
-				mainJarAvailable ? transitionMainJarFetcher.getBlobSize() : -1,
-				extJarAvailable ? transitionExtJarFetcher.getBlobSize() : -1,
-				(int) node.nodeStats.getNodeAveragePingTime(),
-				(int) node.nodeStats.getBwlimitDelayTime());
+        return DMT.createUOMAnnouncement(previousMainJarUSK.toString(), revocationURI
+                .toString(), revocationChecker.hasBlown(),
+                mainJarAvailable ? TRANSITION_VERSION : -1,
+                revocationChecker.lastSucceededDelta(), revocationChecker
+                .getRevocationDNFCounter(), revocationChecker
+                .getBlobSize(),
+                mainJarAvailable ? transitionMainJarFetcher.getBlobSize() : -1,
+                (int) node.nodeStats.getNodeAveragePingTime(),
+                (int) node.nodeStats.getBwlimitDelayTime());
 	}
 
 	private Message getNewUOMAnnouncement(long blobSize) {
@@ -648,10 +663,13 @@ public class NodeUpdateManager {
 		}
 		long size = canAnnounceUOMNew();
 		try {
-			if (sendOld || hasBeenBlown)
-				peer.sendAsync(getOldUOMAnnouncement(), null, ctr);
-			if (sendNew || hasBeenBlown)
-				peer.sendAsync(getNewUOMAnnouncement(size), null, ctr);
+		    if(peer.getVersionNumber() < TRANSITION_VERSION) {
+		        if (sendOld || hasBeenBlown)
+		            peer.sendAsync(getOldUOMAnnouncement(), null, ctr);
+		    } else {
+		        if (sendNew || hasBeenBlown)
+		            peer.sendAsync(getNewUOMAnnouncement(size), null, ctr);
+		    }
 		} catch (NotConnectedException e) {
 			// Sad, but ignore it
 		}
@@ -666,7 +684,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * Enable or disable auto-update.
-	 * 
+	 *
 	 * @param enable
 	 *            Whether auto-update should be enabled.
 	 * @throws InvalidConfigValueException
@@ -720,7 +738,6 @@ public class NodeUpdateManager {
 				main.kill();
 			stopPluginUpdaters(oldPluginUpdaters);
 			transitionMainJarFetcher.stop();
-			transitionExtJarFetcher.stop();
 		} else {
 			// FIXME copy it, dodgy locking.
 			try {
@@ -735,7 +752,6 @@ public class NodeUpdateManager {
 			mainUpdater.start();
 			startPluginUpdaters();
 			transitionMainJarFetcher.start();
-			transitionExtJarFetcher.start();
 		}
 	}
 
@@ -765,7 +781,8 @@ public class NodeUpdateManager {
 
 	void startPluginUpdater(OfficialPluginDescription plugin) {
 		String name = plugin.name;
-		long minVer = plugin.recommendedVersion;
+		// @see https://emu.freenetproject.org/pipermail/devl/2015-November/038581.html
+		long minVer = (plugin.essential ? plugin.minimumVersion : plugin.recommendedVersion);
 		// But it might already be past that ...
 		PluginInfoWrapper info = node.pluginManager.getPluginInfo(name);
 		if (info == null) {
@@ -779,8 +796,8 @@ public class NodeUpdateManager {
 			minVer = Math.max(minVer, info.getPluginLongVersion());
 		FreenetURI uri = updateURI.setDocName(name).setSuggestedEdition(minVer);
 		PluginJarUpdater updater = new PluginJarUpdater(this, uri,
-				(int) minVer, -1, Integer.MAX_VALUE, name + "-", name,
-				node.pluginManager, autoDeployPluginsOnRestart);
+				(int) minVer, -1, (plugin.essential ? (int)minVer : Integer.MAX_VALUE)
+				, name + "-", name, node.pluginManager, autoDeployPluginsOnRestart);
 		synchronized (this) {
 			if (pluginUpdaters == null) {
 				if (logMINOR)
@@ -824,7 +841,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * Create a NodeUpdateManager. Called by node constructor.
-	 * 
+	 *
 	 * @param node
 	 *            The node object.
 	 * @param config
@@ -874,7 +891,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * Set the URfrenet.jar should be updated from.
-	 * 
+	 *
 	 * @param uri
 	 *            The URI to set.
 	 */
@@ -905,7 +922,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * Set the revocation URI.
-	 * 
+	 *
 	 * @param uri
 	 *            The new revocation URI.
 	 */
@@ -927,7 +944,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * Enable or disable auto-update.
-	 * 
+	 *
 	 * @param val
 	 *            If true, enable auto-update (and immediately update if an
 	 *            update is ready). If false, disable it.
@@ -960,7 +977,7 @@ public class NodeUpdateManager {
 	/**
 	 * Does the updater have an update ready to deploy? May be called
 	 * synchronized(this).
-	 * @param ignoreRevocation If true, return whether we will deploy when the revocation check 
+	 * @param ignoreRevocation If true, return whether we will deploy when the revocation check
 	 * finishes. If false, return whether we can deploy now, and if not, deploy after a delay with
 	 * deployOffThread().
 	 */
@@ -1123,16 +1140,16 @@ public class NodeUpdateManager {
 			}
 		}
 	}
-	
-	/** Use this lock when deploying an update of any kind which will require us to restart. If the 
+
+	/** Use this lock when deploying an update of any kind which will require us to restart. If the
 	 * update succeeds, you should call waitForever() if you don't immediately exit. There could be
-	 * rather nasty race conditions if we deploy two updates at once. 
+	 * rather nasty race conditions if we deploy two updates at once.
 	 * @return A mutex for serialising update deployments. */
 	static final Object deployLock() {
 	    return deployLock;
 	}
-	
-	/** Does not return. Should be called, inside the deployLock(), if you are in a situation 
+
+	/** Does not return. Should be called, inside the deployLock(), if you are in a situation
 	 * where you've deployed an update but the exit hasn't actually happened yet. */
 	static void waitForever() {
 	    while(true) {
@@ -1174,7 +1191,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * Write the updated jars, if necessary rewrite the wrapper.conf.
-	 * 
+	 *
 	 * @return True if this part of the update succeeded.
 	 */
 	private boolean writeJars(UpdateDeployContext ctx, MainJarDependencies deps) {
@@ -1235,15 +1252,15 @@ public class NodeUpdateManager {
 	/**
 	 * Write a jar. Returns true if the caller needs to rewrite the config,
 	 * false if he doesn't, or throws if it fails.
-	 * 
+	 *
 	 * @param mainJar
 	 *            The location of the current jar file.
 	 * @param newMainJar
 	 *            The location of the new jar file.
 	 * @param backupMainJar
-	 *            On Windows, we alternate between freenet.jar and freenet.jar.new, so we do not 
-	 *            need to write a backup - the user can rename between these two. On Unix, we 
-	 *            copy to freenet.jar.bak before updating, in case something horrible happens. 
+	 *            On Windows, we alternate between freenet.jar and freenet.jar.new, so we do not
+	 *            need to write a backup - the user can rename between these two. On Unix, we
+	 *            copy to freenet.jar.bak before updating, in case something horrible happens.
 	 * @param mainUpdater
 	 *            The NodeUpdater for the file in question, so we can ask it to
 	 *            write the file.
@@ -1399,7 +1416,7 @@ public class NodeUpdateManager {
 	 * Called when a new jar has been downloaded. The caller should process the
 	 * dependencies *AFTER* this method has completed, and then call
 	 * onDependenciesReady().
-	 * 
+	 *
 	 * @param fetched
 	 *            The build number we have fetched.
 	 * @param result
@@ -1585,7 +1602,7 @@ public class NodeUpdateManager {
 			}
 		}, delay);
 	}
-	
+
 	protected void maybeBroadcastUOMAnnouncesNew() {
 		if(logMINOR) Logger.minor(this, "Maybe broadcast UOM announces new");
 		synchronized(NodeUpdateManager.this) {
@@ -1610,7 +1627,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * What version has been fetched?
-	 * 
+	 *
 	 * This includes jar's fetched via UOM, because the UOM code feeds its
 	 * results through the mainUpdater.
 	 */
@@ -1721,9 +1738,9 @@ public class NodeUpdateManager {
 						"invalidUpdateURI", "error",
 						e.getLocalizedMessage()));
 			}
-			if(updateURI.hasMetaStrings())
+			if(uri.hasMetaStrings())
 				throw new InvalidConfigValueException(l10n("updateURIMustHaveNoMetaStrings"));
-			if(!updateURI.isUSK())
+			if(!uri.isUSK())
 				throw new InvalidConfigValueException(l10n("updateURIMustBeAUSK"));
 			setURI(uri);
 		}
@@ -1754,7 +1771,7 @@ public class NodeUpdateManager {
 	 * Called when a peer indicates in its UOMAnnounce that it has fetched the
 	 * revocation key (or failed to do so in a way suggesting that somebody
 	 * knows the key).
-	 * 
+	 *
 	 * @param source
 	 *            The node which is claiming this.
 	 */
@@ -1784,7 +1801,7 @@ public class NodeUpdateManager {
 			public void run() {
 				maybeBroadcastUOMAnnouncesNew();
 			}
-			
+
 		}, REVOCATION_FETCH_TIMEOUT);
 	}
 
@@ -1887,7 +1904,7 @@ public class NodeUpdateManager {
 	/**
 	 * Called when the dependencies have been verified and/or downloaded, and we
 	 * can upgrade to the new build without dependency issues.
-	 * 
+	 *
 	 * @param deps
 	 *            The dependencies object. Used to rewrite wrapper.conf if
 	 *            necessary. Also contains the build number.
@@ -1905,10 +1922,6 @@ public class NodeUpdateManager {
 		deployOffThread(0, true);
 	}
 
-	public File getTransitionExtBlob() {
-		return transitionExtJarFetcher.getBlobFile();
-	}
-
 	public File getTransitionMainBlob() {
 		return transitionMainJarFetcher.getBlobFile();
 	}
@@ -1923,7 +1936,7 @@ public class NodeUpdateManager {
 		}
 		m.renderProperties(alertNode);
 	}
-	
+
 	public boolean brokenDependencies() {
 		MainJarUpdater m;
 		synchronized (this) {

@@ -91,6 +91,9 @@ public class BROWSER_WARNING implements Step {
 		} else {
 			infoboxContent.addChild("p", WizardL10n.l10n("browserWarningSuggestion"));
 		}
+		infoboxContent.addChild("p", WizardL10n.l10n("browserImeWarning"));
+        // voice recognition also used for surveillance
+		infoboxContent.addChild("p", WizardL10n.l10n("browserVoiceRecognitionWarning"));
 
 		HTMLNode form = helper.addFormChild(infoboxContent.addChild("p"), ".", "continueForm");
 		form.addChild("input",

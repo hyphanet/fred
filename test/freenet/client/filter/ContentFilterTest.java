@@ -3,28 +3,24 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import junit.framework.TestCase;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.LinkedHashMap;
 
-import junit.framework.TestCase;
-import freenet.client.filter.ContentFilter;
-import freenet.client.filter.DataFilterException;
-import freenet.client.filter.GenericReadFilterCallback;
-import freenet.client.filter.HTMLFilter;
 import freenet.client.filter.ContentFilter.FilterStatus;
-import freenet.client.filter.HTMLFilter.*;
+import freenet.client.filter.HTMLFilter.ParsedTag;
+import freenet.client.filter.HTMLFilter.TagVerifier;
 import freenet.clients.http.ExternalLinkToadlet;
-import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.io.ArrayBucket;
-
 import freenet.support.TestProperty;
+import freenet.support.io.ArrayBucket;
 
 /**
  * A simple meta-test to track regressions of the content-filter
@@ -112,7 +108,7 @@ public class ContentFilterTest extends TestCase {
 	private static final String FRAME_SRC_CHARSET_BAD1C = "<frame src=\"test.html?type=text/html\">";
 
 	private static final String SPAN_WITH_STYLE = "<span style=\"font-family: verdana, sans-serif; color: red;\">";
-	
+
 	private static final String BASE_HREF = "<base href=\"/"+BASE_KEY+"\">";
 	private static final String BAD_BASE_HREF = "<base href=\"/\">";
 	private static final String BAD_BASE_HREF2 = "<base href=\"//www.google.com\">";
@@ -120,14 +116,12 @@ public class ContentFilterTest extends TestCase {
 	private static final String BAD_BASE_HREF4 = "<base id=\"blah\">";
 	private static final String BAD_BASE_HREF5 = "<base href=\"http://www.google.com/\">";
 	private static final String DELETED_BASE_HREF = "<!-- deleted invalid base href -->";
-	
+
 	// From CSS spec
 
 	private static final String CSS_SPEC_EXAMPLE1 = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n<HTML>\n  <HEAD>\n  <TITLE>Bach's home page</TITLE>\n  <STYLE type=\"text/css\">\n    body {\n      font-family: \"Gill Sans\", sans-serif;\n      font-size: 12pt;\n      margin: 3em;\n\n    }\n  </STYLE>\n  </HEAD>\n  <BODY>\n    <H1>Bach's home page</H1>\n    <P>Johann Sebastian Bach was a prolific composer.\n  </BODY>\n</HTML>";
 
 	public void testHTMLFilter() throws Exception {
-		new NodeL10n();
-
 		if (TestProperty.VERBOSE) {
 			Logger.setupStdoutLogging(LogLevel.MINOR, "freenet.client.filter.Generic:DEBUG");
 		}
@@ -184,7 +178,7 @@ public class ContentFilterTest extends TestCase {
 		assertEquals(CSS_SPEC_EXAMPLE1, HTMLFilter(CSS_SPEC_EXAMPLE1));
 
 		assertEquals(SPAN_WITH_STYLE, HTMLFilter(SPAN_WITH_STYLE));
-		
+
 		assertEquals(BASE_HREF, HTMLFilter(BASE_HREF));
 		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF));
 		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF2));
@@ -192,65 +186,63 @@ public class ContentFilterTest extends TestCase {
 		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF4));
 		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF5));
 	}
-	
+
 	private static final String META_TIME_ONLY = "<meta http-equiv=\"refresh\" content=\"5\">";
 	private static final String META_TIME_ONLY_WRONG_CASE = "<meta http-equiv=\"RefResH\" content=\"5\">";
 	private static final String META_TIME_ONLY_TOO_SHORT = "<meta http-equiv=\"refresh\" content=\"0\">";
 	private static final String META_TIME_ONLY_NEGATIVE = "<meta http-equiv=\"refresh\" content=\"-5\">";
-	
+
 	private static final String META_TIME_ONLY_BADNUM1 = "<meta http-equiv=\"refresh\" content=\"5.5\">";
 	private static final String META_TIME_ONLY_BADNUM2 = "<meta http-equiv=\"refresh\" content=\"\">";
 	private static final String META_TIME_ONLY_BADNUM_OUT = "<!-- doesn't parse as number in meta refresh -->";
-	
+
 	private static final String META_VALID_REDIRECT = "<meta http-equiv=\"refresh\" content=\"30; url=/KSK@gpl.txt\">";
 	private static final String META_VALID_REDIRECT_NOSPACE = "<meta http-equiv=\"refresh\" content=\"30;url=/KSK@gpl.txt\">";
-	
+
 	private static final String META_BOGUS_REDIRECT1 = "<meta http-equiv=\"refresh\" content=\"30; url=/\">";
 	private static final String META_BOGUS_REDIRECT2 = "<meta http-equiv=\"refresh\" content=\"30; url=/plugins\">";
 	private static final String META_BOGUS_REDIRECT3 = "<meta http-equiv=\"refresh\" content=\"30; url=http://www.google.com\">";
 	private static final String META_BOGUS_REDIRECT4 = "<meta http-equiv=\"refresh\" content=\"30; url=//www.google.com\">";
 	private static final String META_BOGUS_REDIRECT5 = "<meta http-equiv=\"refresh\" content=\"30; url=\"/KSK@gpl.txt\"\">";
 	private static final String META_BOGUS_REDIRECT6 = "<meta http-equiv=\"refresh\" content=\"30; /KSK@gpl.txt\">";
-	private static final String META_BOGUS_REDIRECT1_OUT = "<!-- Malformed URL (relative): There is no @ in that URI! ()-->";
-	private static final String META_BOGUS_REDIRECT2_OUT = "<!-- Malformed URL (relative): There is no @ in that URI! (plugins)-->";
+	private static final String META_BOGUS_REDIRECT1_OUT = "<!-- GenericReadFilterCallback.malformedRelativeURL-->";
 	private static final String META_BOGUS_REDIRECT3_OUT = "<meta http-equiv=\"refresh\" content=\"30; url=/external-link/?_CHECKED_HTTP_=http://www.google.com\">";
-	private static final String META_BOGUS_REDIRECT4_OUT = "<!-- Deleted invalid or dangerous URI-->";
-	private static final String META_BOGUS_REDIRECT5_OUT = "<!-- Malformed URL (relative): Invalid key type: \"/KSK-->";
+	private static final String META_BOGUS_REDIRECT4_OUT = "<!-- GenericReadFilterCallback.deletedURI-->";
 	private static final String META_BOGUS_REDIRECT_NO_URL = "<!-- no url but doesn't parse as number in meta refresh -->";
-	
+
 	public void testMetaRefresh() throws Exception {
 		HTMLFilter.metaRefreshSamePageMinInterval = 5;
 		HTMLFilter.metaRefreshRedirectMinInterval = 30;
-		assertEquals(META_TIME_ONLY, headFilter(META_TIME_ONLY));
-		assertEquals(META_TIME_ONLY, headFilter(META_TIME_ONLY_WRONG_CASE));
-		assertEquals(META_TIME_ONLY, headFilter(META_TIME_ONLY_TOO_SHORT));
-		assertEquals("", headFilter(META_TIME_ONLY_NEGATIVE));
-		assertEquals(META_TIME_ONLY_BADNUM_OUT, headFilter(META_TIME_ONLY_BADNUM1));
-		assertEquals(META_TIME_ONLY_BADNUM_OUT, headFilter(META_TIME_ONLY_BADNUM2));
-		assertEquals(META_VALID_REDIRECT, headFilter(META_VALID_REDIRECT));
-		assertEquals(META_VALID_REDIRECT, headFilter(META_VALID_REDIRECT_NOSPACE));
-		assertEquals(META_BOGUS_REDIRECT1_OUT, headFilter(META_BOGUS_REDIRECT1));
-		assertEquals(META_BOGUS_REDIRECT2_OUT, headFilter(META_BOGUS_REDIRECT2));
-		assertEquals(META_BOGUS_REDIRECT3_OUT, headFilter(META_BOGUS_REDIRECT3));
-		assertEquals(META_BOGUS_REDIRECT4_OUT, headFilter(META_BOGUS_REDIRECT4));
-		assertEquals(META_BOGUS_REDIRECT5_OUT, headFilter(META_BOGUS_REDIRECT5));
-		assertEquals(META_BOGUS_REDIRECT_NO_URL, headFilter(META_BOGUS_REDIRECT6));
+		assertEquals(META_TIME_ONLY + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_TIME_ONLY));
+		assertEquals(META_TIME_ONLY + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_TIME_ONLY_WRONG_CASE));
+		assertEquals(META_TIME_ONLY + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_TIME_ONLY_TOO_SHORT));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_TIME_ONLY_NEGATIVE));
+		assertEquals(META_TIME_ONLY_BADNUM_OUT + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_TIME_ONLY_BADNUM1));
+		assertEquals(META_TIME_ONLY_BADNUM_OUT + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_TIME_ONLY_BADNUM2));
+		assertEquals(META_VALID_REDIRECT + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_VALID_REDIRECT));
+		assertEquals(META_VALID_REDIRECT + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_VALID_REDIRECT_NOSPACE));
+		assertEquals(META_BOGUS_REDIRECT1_OUT + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_BOGUS_REDIRECT1));
+		assertEquals(META_BOGUS_REDIRECT1_OUT + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_BOGUS_REDIRECT2));
+		assertEquals(META_BOGUS_REDIRECT3_OUT + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_BOGUS_REDIRECT3));
+		assertEquals(META_BOGUS_REDIRECT4_OUT + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_BOGUS_REDIRECT4));
+		assertEquals(META_BOGUS_REDIRECT1_OUT + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_BOGUS_REDIRECT5));
+		assertEquals(META_BOGUS_REDIRECT_NO_URL + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_BOGUS_REDIRECT6));
 		HTMLFilter.metaRefreshSamePageMinInterval = -1;
 		HTMLFilter.metaRefreshRedirectMinInterval = -1;
-		assertEquals("", headFilter(META_TIME_ONLY));
-		assertEquals("", headFilter(META_TIME_ONLY_WRONG_CASE));
-		assertEquals("", headFilter(META_TIME_ONLY_TOO_SHORT));
-		assertEquals("", headFilter(META_TIME_ONLY_NEGATIVE));
-		assertEquals("", headFilter(META_TIME_ONLY_BADNUM1));
-		assertEquals("", headFilter(META_TIME_ONLY_BADNUM2));
-		assertEquals("", headFilter(META_VALID_REDIRECT));
-		assertEquals("", headFilter(META_VALID_REDIRECT_NOSPACE));
-		assertEquals("", headFilter(META_BOGUS_REDIRECT1));
-		assertEquals("", headFilter(META_BOGUS_REDIRECT2));
-		assertEquals("", headFilter(META_BOGUS_REDIRECT3));
-		assertEquals("", headFilter(META_BOGUS_REDIRECT4));
-		assertEquals("", headFilter(META_BOGUS_REDIRECT5));
-		assertEquals("", headFilter(META_BOGUS_REDIRECT6));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_TIME_ONLY));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_TIME_ONLY_WRONG_CASE));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_TIME_ONLY_TOO_SHORT));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_TIME_ONLY_NEGATIVE));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_TIME_ONLY_BADNUM1));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_TIME_ONLY_BADNUM2));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_VALID_REDIRECT));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_VALID_REDIRECT_NOSPACE));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_BOGUS_REDIRECT1));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_BOGUS_REDIRECT2));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_BOGUS_REDIRECT3));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_BOGUS_REDIRECT4));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_BOGUS_REDIRECT5));
+		assertEquals("" + HTMLFilter.m3uPlayerScriptTagContent(), headFilter(META_BOGUS_REDIRECT6));
 	}
 
 	private String headFilter(String data) throws Exception {
@@ -290,7 +282,7 @@ public class ContentFilterTest extends TestCase {
 		FileOutputStream fos;
 		try {
 			ArrayBucket out = new ArrayBucket();
-			filter.readFilter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "UTF-16", null, null);
+			filter.readFilter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "UTF-16", null, null, null);
 			fos = new FileOutputStream("output.utf16");
 			fos.write(out.toByteArray());
 			fos.close();
@@ -306,7 +298,7 @@ public class ContentFilterTest extends TestCase {
 		}
 		try {
 			ArrayBucket out = new ArrayBucket();
-			FilterStatus fo = ContentFilter.filter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "text/html", null, null);
+			FilterStatus fo = ContentFilter.filter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "text/html", null, null, null);
 			fos = new FileOutputStream("output.filtered");
 			fos.write(out.toByteArray());
 			fos.close();
@@ -348,7 +340,7 @@ public class ContentFilterTest extends TestCase {
 		ArrayBucket output = new ArrayBucket();
 		InputStream inputStream = input.getInputStream();
 		OutputStream outputStream = output.getOutputStream();
-		ContentFilter.filter(inputStream, outputStream, typeName, baseURI, null, null, null);
+		ContentFilter.filter(inputStream, outputStream, typeName, baseURI,null,null, null, null);
 		inputStream.close();
 		outputStream.close();
 		returnValue = output.toString();
@@ -516,7 +508,7 @@ public class ContentFilterTest extends TestCase {
 			assertNull("Input tag with an invalid type", verifier.sanitize(HTMLTag, pc));
 		}
 	}
-	
+
 	public void testLowerCaseExtensions() {
 		for(FilterMIMEType type : ContentFilter.mimeTypesByName.values()) {
 			String ext = type.primaryExtension;

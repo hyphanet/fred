@@ -1,14 +1,11 @@
 package freenet.node;
 
+import org.bouncycastle.util.Arrays;
+
 import java.io.UnsupportedEncodingException;
 import java.util.Random;
 
-import org.bouncycastle.util.Arrays;
-
-import com.db4o.io.IoAdapter;
-
 import freenet.crypt.AEADCryptBucket;
-import freenet.crypt.EncryptingIoAdapter;
 import freenet.crypt.HMAC;
 import freenet.crypt.RandomSource;
 import freenet.support.api.Bucket;
@@ -21,10 +18,6 @@ public class DatabaseKey {
     DatabaseKey(byte[] key, Random random) {
         this.databaseKey = Arrays.copyOf(key, key.length);
         this.random = random;
-    }
-    
-    public EncryptingIoAdapter createEncryptingDb4oAdapter(IoAdapter baseAdapter) {
-        return new EncryptingIoAdapter(baseAdapter, databaseKey, random);
     }
     
     public Bucket createEncryptedBucketForClientLayer(Bucket underlying) {
@@ -52,7 +45,7 @@ public class DatabaseKey {
             System.arraycopy(PLUGIN, 0, full, x, PLUGIN.length);
             x += PLUGIN.length;
             System.arraycopy(id, 0, full, x, id.length);
-            return HMAC.macWithSHA256(databaseKey, full, 32);
+            return HMAC.macWithSHA256(databaseKey, full);
         } catch (UnsupportedEncodingException e) {
             throw new Error(e);
         }
@@ -68,7 +61,7 @@ public class DatabaseKey {
         System.arraycopy(databaseKey, 0, full, 0, databaseKey.length);
         x += databaseKey.length;
         System.arraycopy(CLIENT_LAYER, 0, full, x, CLIENT_LAYER.length);
-        return HMAC.macWithSHA256(databaseKey, full, 32);
+        return HMAC.macWithSHA256(databaseKey, full);
     }
     
     private static final byte[] PLUGIN;
@@ -103,10 +96,7 @@ public class DatabaseKey {
             return false;
         }
         DatabaseKey other = (DatabaseKey) obj;
-        if (!java.util.Arrays.equals(databaseKey, other.databaseKey)) {
-            return false;
-        }
-        return true;
+        return java.util.Arrays.equals(databaseKey, other.databaseKey);
     }
 
 }

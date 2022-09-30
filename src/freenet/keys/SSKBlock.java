@@ -3,14 +3,15 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
+import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.crypto.signers.DSASigner;
+
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
-import net.i2p.util.NativeBigInteger;
-
-import freenet.crypt.DSA;
 import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DSASignature;
+import freenet.crypt.Global;
 import freenet.crypt.SHA256;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -137,22 +138,34 @@ public class SSKBlock implements KeyBlock {
 			System.arraycopy(headers, x, bufS, 0, SIG_S_LENGTH);
 			x+=SIG_S_LENGTH;
 
-	        MessageDigest md = SHA256.getMessageDigest();
-			md.update(data);
-			byte[] dataHash = md.digest();
-			// All headers up to and not including the signature
-			md.update(headers, 0, headersOffset + ENCRYPTED_HEADERS_LENGTH);
-			// Then the implicit data hash
-			md.update(dataHash);
-			// Makes the implicit overall hash
-			byte[] overallHash = md.digest();
-			SHA256.returnMessageDigest(md);
+			MessageDigest md = null;
+			byte[] overallHash;
+			try {
+				md = SHA256.getMessageDigest();
+				md.update(data);
+				byte[] dataHash = md.digest();
+				// All headers up to and not including the signature
+				md.update(headers, 0, headersOffset + ENCRYPTED_HEADERS_LENGTH);
+				// Then the implicit data hash
+				md.update(dataHash);
+				// Makes the implicit overall hash
+				overallHash = md.digest();
+			} finally {
+				SHA256.returnMessageDigest(md);
+			}
 			
 			// Now verify it
-			NativeBigInteger r = new NativeBigInteger(1, bufR);
-			NativeBigInteger s = new NativeBigInteger(1, bufS);
-			if(!(DSA.verify(pubKey, new DSASignature(r, s), new NativeBigInteger(1, overallHash), false) ||
-					(DSA.verify(pubKey, new DSASignature(r, s), new NativeBigInteger(1, overallHash), true)))) {
+			BigInteger r = new BigInteger(1, bufR);
+			BigInteger s = new BigInteger(1, bufS);
+			DSASigner dsa = new DSASigner();
+			dsa.init(false, new DSAPublicKeyParameters(pubKey.getY(), Global.getDSAgroupBigAParameters()));
+
+			// We probably don't need to try both here...
+			// but that's what the legacy code was doing...
+			// @see comments in Global before touching it
+			if(!(dsa.verifySignature(Global.truncateHash(overallHash), r, s) ||
+			     dsa.verifySignature(overallHash, r, s))
+			  ) {
 				if (dontVerify)
 					Logger.error(this, "DSA verification failed with dontVerify!!!!");
 				throw new SSKVerifyException("Signature verification failed for node-level SSK");

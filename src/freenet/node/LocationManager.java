@@ -4,17 +4,27 @@
 package freenet.node;
 
 import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.text.DateFormat;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Deque;
 import java.util.Hashtable;
@@ -24,20 +34,32 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
+import freenet.client.HighLevelSimpleClient;
+import freenet.client.InsertBlock;
+import freenet.client.InsertException;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
+import freenet.crypt.Util;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
-import freenet.node.PeerManager.LocationUIDPair;
+import freenet.keys.ClientCHK;
+import freenet.keys.ClientKSK;
+import freenet.keys.ClientKey;
+import freenet.keys.ClientSSK;
+import freenet.keys.FreenetURI;
+import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.ShortBuffer;
 import freenet.support.TimeSortedHashtable;
-import freenet.support.Logger.LogLevel;
+import freenet.support.io.ArrayBucket;
 import freenet.support.io.Closer;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 
@@ -48,6 +70,10 @@ import freenet.support.math.BootstrappingDecayingRunningAverage;
  * Initiates swap attempts. Deals with locking.
  */
 public class LocationManager implements ByteCounter {
+
+    public static final String FOIL_PITCH_BLACK_ATTACK_PREFIX = "mitigate-pitch-black-attack-";
+    public static long PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY = DAYS.toMillis(1);
+    public static long PITCH_BLACK_MITIGATION_STARTUP_DELAY = HOURS.toMillis(2);
 
     public class MyCallback extends SendMessageOnErrorCallback {
 
@@ -96,6 +122,7 @@ public class LocationManager implements ByteCounter {
     final SwapRequestSender sender;
     final Node node;
     long timeLastSuccessfullySwapped;
+    public static Clock systemClockUTC = Clock.system(ZoneOffset.UTC);
 
     public LocationManager(RandomSource r, Node node) {
         loc = r.nextDouble();
@@ -147,8 +174,9 @@ public class LocationManager implements ByteCounter {
      * we are not locked.
      */
     public void start() {
-    	if(node.enableSwapping)
-    		node.getTicker().queueTimedJob(sender, STARTUP_DELAY);
+    	if(node.enableSwapping) {
+          node.getTicker().queueTimedJob(sender, STARTUP_DELAY);
+      }
 		node.ticker.queueTimedJob(new Runnable() {
 
 			@Override
@@ -162,6 +190,233 @@ public class LocationManager implements ByteCounter {
 			}
 
 		}, SECONDS.toMillis(10));
+    	// Insert key to probe whether its part of the keyspace is operational. If it is not, switch location to it.
+        node.ticker.queueTimedJob(new Runnable() {
+
+            @Override
+            public void run() {
+                LocalDateTime now = LocalDateTime.now(systemClockUTC);
+                long millisUntilNextRequestTomorrow = getNextPitchBlackMitigationDelayMillisecondsTomorrow(now);
+                node.ticker.queueTimedJob(this, millisUntilNextRequestTomorrow);
+                if (swappingDisabled()) {
+                    return;
+                }
+                String isoDateStringToday = DateTimeFormatter.ISO_DATE
+                    .format(now);
+                String isoDateStringYesterday = DateTimeFormatter.ISO_DATE
+                    .format(now.minusDays(1));
+                File[] previousInsertFromToday = node.userDir().dir()
+                    .listFiles((file, name) -> name.startsWith(getPitchBlackPrefix(
+                        isoDateStringToday)));
+                HighLevelSimpleClient highLevelSimpleClient = node.clientCore.makeClient(
+                    RequestStarter.INTERACTIVE_PRIORITY_CLASS,
+                    true,
+                    false);
+
+                if (previousInsertFromToday != null
+                    && previousInsertFromToday.length == 0) {
+                    byte[] randomContentForKSK = new byte[20];
+                    node.secureRandom.nextBytes(randomContentForKSK);
+                    String randomPart = Base64.encode(randomContentForKSK);
+                    String nameForInsert = getPitchBlackPrefix(isoDateStringToday + "-" + randomPart);
+                    tryToInsertPitchBlackCheck(highLevelSimpleClient, nameForInsert);
+                }
+
+                File[] foilPitchBlackStatusFiles = node.userDir().dir()
+                    .listFiles((file, name) -> name.startsWith(getPitchBlackPrefix("")));
+                if (foilPitchBlackStatusFiles != null) {
+                    File[] successfulInsertFromYesterday = Arrays.stream(foilPitchBlackStatusFiles)
+                        .filter(file -> file.getName().contains(isoDateStringYesterday))
+                        .toArray(File[]::new);
+                    for (File f : successfulInsertFromYesterday) {
+                        tryToRequestPitchBlackCheckFromYesterday(
+                            highLevelSimpleClient,
+                            successfulInsertFromYesterday[0]
+                        );
+                        // cleanup file, regardless of success
+                        if (!f.delete()) {
+                            f.deleteOnExit();
+                        }
+                    }
+                    // delete files from more than one day ago
+                    File[] leftoverFiles = Arrays.stream(foilPitchBlackStatusFiles)
+                        .filter(file -> !file.getName().contains(isoDateStringToday))
+                        .toArray(File[]::new);
+                    for (File f : leftoverFiles) {
+                        if (!f.delete()) {
+                            f.deleteOnExit();
+                        }
+                    }
+                }
+            }
+        }, (int) (node.fastWeakRandom.nextFloat() * PITCH_BLACK_MITIGATION_STARTUP_DELAY));
+    }
+
+    /** @return the millis to wait until the next pitch black check: tomorrow and at least 12 hours in the future. */
+    private long getNextPitchBlackMitigationDelayMillisecondsTomorrow(LocalDateTime now) {
+        return Math.max(HOURS.toMillis(12), getMillisUntilRandomTimeTomorrow(now));
+    }
+
+    private long getMillisUntilRandomTimeTomorrow(LocalDateTime now) {
+        LocalDateTime tomorrowTime = now
+            .plusDays(1)
+            .withHour(node.fastWeakRandom.nextInt(23))
+            .withMinute(node.fastWeakRandom.nextInt(59))
+            .withSecond(node.fastWeakRandom.nextInt(59));
+        return now.until(tomorrowTime, ChronoUnit.MILLIS);
+    }
+
+    public String getPitchBlackPrefix(String middleSubstring) {
+        return FOIL_PITCH_BLACK_ATTACK_PREFIX + middleSubstring;
+    }
+
+    private void tryToRequestPitchBlackCheckFromYesterday(
+        HighLevelSimpleClient highLevelSimpleClient,
+        File insertInfoFromYesterday) {
+        ClientKSK insertFromYesterday = ClientKSK.create(insertInfoFromYesterday.getName());
+        byte[] expectedContent;
+        try {
+            expectedContent = Files.readAllBytes(insertInfoFromYesterday.toPath());
+        } catch (FileNotFoundException e) {
+            Logger.warning(
+                e,
+                "Could not read from insert info file from yesterday because the file was not found: "
+                    + insertInfoFromYesterday.getName());
+            return;
+        } catch (IOException e) {
+            Logger.warning(
+                e,
+                "Could not read from insert info file from yesterday: "
+                    + insertInfoFromYesterday.getName());
+            return;
+        }
+        // check the SSK
+        FetchResult sskFetchResult = null;
+        try {
+            sskFetchResult = highLevelSimpleClient.fetch(insertFromYesterday.getURI());
+            if (!Arrays.equals(expectedContent, sskFetchResult.asByteArray())) {
+                // if we received false data, this is definitely an attack: move there to provide a good node in the location
+                switchLocationToDefendAgainstPitchBlackAttack(insertFromYesterday);
+            }
+        } catch (FetchException e) {
+            if (isRequestExceptionBecauseUriIsNotAvailable(e) && node.fastWeakRandom.nextBoolean()) {
+                // switch to the attacked location with only 50% probability,
+                // because it could be caused by the defensive swap of another node
+                // which made its current content inaccessible.
+                switchLocationToDefendAgainstPitchBlackAttack(insertFromYesterday);
+            }
+            return;
+        } catch (IOException e) {
+            Logger.warning(
+                e,
+                "Could not convert fetched data into byteArray. fetch: "
+                    + sskFetchResult);
+            return;
+        }
+        // check the CHK
+        ArrayBucket randomBucketToInsert = new ArrayBucket(expectedContent);
+        InsertBlock chkInsertBlock = new InsertBlock(
+            randomBucketToInsert,
+            null,
+            FreenetURI.EMPTY_CHK_URI);
+        FreenetURI calculatedChkUri;
+        try {
+            calculatedChkUri = highLevelSimpleClient.insert(chkInsertBlock, true, null);
+        } catch (InsertException e) {
+            Logger.error(
+                e,
+                "Could not create CHK for expected content.");
+            return;
+        }
+        try {
+            highLevelSimpleClient.fetch(calculatedChkUri);
+        } catch (FetchException e) {
+            if (isRequestExceptionBecauseUriIsNotAvailable(e) && node.fastWeakRandom.nextBoolean()) {
+                // switch to the attacked location with only 50% probability,
+                // because it could be caused by the defensive swap of another node
+                // which made its current content inaccessible.
+                try {
+                    switchLocationToDefendAgainstPitchBlackAttack(new ClientCHK(calculatedChkUri));
+                } catch (MalformedURLException exception) {
+                    Logger.error(
+                        exception,
+                        "Could not create ClientCHK from CHKUri for calculated CHK URI:"
+                            + calculatedChkUri);
+                    return;
+                }
+            }
+        }
+
+    }
+
+    private void switchLocationToDefendAgainstPitchBlackAttack(ClientKey insertFromYesterday) {
+        double probedLocationFromYesterday = insertFromYesterday
+            .getNodeKey()
+            .toNormalizedDouble();
+        if (insertFromYesterday instanceof ClientSSK) {
+            // decide between SSK and pubkey at random, because they always break together.
+            if (node.fastWeakRandom.nextBoolean()) {
+                probedLocationFromYesterday = Util.keyDigestAsNormalizedDouble(
+                    ((ClientSSK) insertFromYesterday).getPubKey().getRoutingKey());
+            }
+        }
+        Logger.warning(
+            this,
+            "could not fetch the insert from yesterday: "
+                + insertFromYesterday.getURI().toString()
+                + ", assuming we are under attack: switching location to failed location: "
+                + probedLocationFromYesterday);
+        setLocation(probedLocationFromYesterday);
+    }
+
+    private void tryToInsertPitchBlackCheck(
+        HighLevelSimpleClient highLevelSimpleClient,
+        String nameForInsert) {
+        // create some random data of up to 1021 bytes to insert to the KSK
+        byte[] contentLengthSource = new byte[2];
+        node.fastWeakRandom.nextBytes(contentLengthSource);
+        // bytes are -127 to 128,
+        // so this gives us 253 to 1021 bytes of size
+        int contentLength = (5 * 127)
+            + (3 * contentLengthSource[0])
+            + contentLengthSource[1] / 64; // -1 to 2
+        byte[] randomContentToInsert = new byte[contentLength];
+        node.fastWeakRandom.nextBytes(randomContentToInsert);
+        ArrayBucket randomBucketToInsert = new ArrayBucket(randomContentToInsert);
+        // create the KSK
+        ClientKSK insertForToday = (ClientKSK.create(nameForInsert));
+        InsertBlock kskInsertBlock = new InsertBlock(
+            randomBucketToInsert,
+            null,
+            insertForToday.getInsertURI());
+        // create the CHK
+        InsertBlock chkInsertBlock = new InsertBlock(
+            randomBucketToInsert,
+            null,
+            FreenetURI.EMPTY_CHK_URI);
+        try {
+            highLevelSimpleClient.insert(kskInsertBlock, false, null);
+            highLevelSimpleClient.insert(chkInsertBlock, false, null);
+            // create a file to check on the next run tomorrow
+            File succeededInsertFile = node.userDir().file(nameForInsert);
+            try (FileOutputStream fileOutputStream = new FileOutputStream(succeededInsertFile)) {
+                fileOutputStream.write(randomContentToInsert);
+            } catch (IOException e) {
+                Logger.error(
+                    e,
+                    "Could not write successful insert content to file: " + nameForInsert);
+            }
+        } catch (InsertException e) {
+            Logger.error(
+                this,
+                "could not insert pitch black detection data to KSK for today: "
+                    + insertForToday.getURI().toString()
+                    + ", trying again tomorrow.");
+        }
+    }
+
+    private static boolean isRequestExceptionBecauseUriIsNotAvailable(FetchException fetchException) {
+        return FetchException.FetchExceptionMode.DATA_NOT_FOUND.equals(fetchException.getMode());
     }
 
     /**
@@ -172,7 +427,7 @@ public class LocationManager implements ByteCounter {
 
         @Override
         public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
+            freenet.support.Logger.OSThread.logPID(this);
 		    Thread.currentThread().setName("SwapRequestSender");
             while(true) {
                 try {
@@ -264,7 +519,7 @@ public class LocationManager implements ByteCounter {
     	// Swapping on opennet nodes, even hybrid nodes, causes significant and unnecessary location churn.
     	// Simulations show significantly improved performance if all opennet enabled nodes don't participate in swapping.
     	// FIXME: Investigate the possibility of enabling swapping on hybrid nodes with mostly darknet peers (more simulation needed).
-    	// FIXME: Hybrid nodes with all darknet peeers who haven't upgraded to HIGH.
+    	// FIXME: Hybrid nodes with all darknet peers who haven't upgraded to HIGH.
     	// Probably we should have a useralert for this to get the user to do the right thing ... but we could auto-detect
     	// it and start swapping... however, we should not start swapping just because we temporarily have no opennet peers
     	// on startup.
@@ -326,8 +581,7 @@ public class LocationManager implements ByteCounter {
 
             long random = r.nextLong();
             double myLoc = getLocation();
-            LocationUIDPair[] friendLocsAndUIDs = node.peers.getPeerLocationsAndUIDs();
-            double[] friendLocs = extractLocs(friendLocsAndUIDs);
+            double[] friendLocs = node.peers.getPeerLocationDoubles(false);
             long[] myValueLong = new long[1+1+friendLocs.length];
             myValueLong[0] = random;
             myValueLong[1] = Double.doubleToLongBits(myLoc);
@@ -473,8 +727,7 @@ public class LocationManager implements ByteCounter {
                 // pretend that they're locked
                 long random = r.nextLong();
                 double myLoc = getLocation();
-                LocationUIDPair[] friendLocsAndUIDs = node.peers.getPeerLocationsAndUIDs();
-                double[] friendLocs = extractLocs(friendLocsAndUIDs);
+                double[] friendLocs = node.peers.getPeerLocationDoubles(false);
                 long[] myValueLong = new long[1+1+friendLocs.length];
                 myValueLong[0] = random;
                 myValueLong[1] = Double.doubleToLongBits(myLoc);
@@ -1090,10 +1343,11 @@ public class LocationManager implements ByteCounter {
         }
         item.lastMessageTime = System.currentTimeMillis();
         // Returning to source - use incomingID
-        m.set(DMT.UID, item.incomingID);
+        byte[] hisHash = ((ShortBuffer)m.getObject(DMT.HASH)).getData();
+        Message fwd = DMT.createFNPSwapReply(item.incomingID, hisHash);
         if(logMINOR) Logger.minor(this, "Forwarding SwapReply "+uid+" from "+source+" to "+item.requestSender);
         try {
-            item.requestSender.sendAsync(m, null, this);
+            item.requestSender.sendAsync(fwd, null, this);
         } catch (NotConnectedException e) {
         	if(logMINOR) Logger.minor(this, "Lost connection forwarding SwapReply "+uid+" to "+item.requestSender);
         }
@@ -1369,19 +1623,13 @@ public class LocationManager implements ByteCounter {
     	}
 	}
 
-	static double[] extractLocs(LocationUIDPair[] pairs) {
-		double[] locs = new double[pairs.length];
-		for(int i=0;i<pairs.length;i++)
-			locs[i] = pairs[i].location;
-		return locs;
-	}
+	public static void setClockForTesting(Clock clock) {
+        systemClockUTC = clock;
+  }
 
-	static long[] extractUIDs(LocationUIDPair[] pairs) {
-		long[] uids = new long[pairs.length];
-		for(int i=0;i<pairs.length;i++)
-			uids[i] = pairs[i].uid;
-		return uids;
-	}
+	public static Clock getClockForTesting() {
+        return systemClockUTC;
+  }
 
 	public static double[] extractLocs(PeerNode[] peers, boolean indicateBackoff) {
 		double[] locs = new double[peers.length];

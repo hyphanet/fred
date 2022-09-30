@@ -4,7 +4,6 @@
 package freenet.clients.http;
 
 import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -407,30 +406,7 @@ public final class SessionManager {
 		}
 		
 		// FIXME: Execute every few hours only.
-		verifyQueueOrder();
 		verifySessionsByUserIDTable();
-	}
-	
-	/**
-	 * Debug function which checks whether the session LRU queue is in order;
-	 */
-	private synchronized void verifyQueueOrder() {
-		long previousTime = 0;
-		
-		Enumeration<Session> sessions = mSessionsByID.values();
-		while(sessions.hasMoreElements()) {
-			Session session = sessions.nextElement();
-			
-			if(session.getExpirationTime() < previousTime) {
-				long sessionAge = HOURS.convert(CurrentTimeUTC.getInMillis() - session.getExpirationTime(), MILLISECONDS);
-				Logger.error(this, "Session LRU queue out of order! Found session which is " + sessionAge + " hour old: " + session); 
-				Logger.error(this, "Deleting all sessions...");
-				
-				mSessionsByID.clear();
-				mSessionsByUserID.clear();
-				return;
-			}
-		}
 	}
 	
 	/**

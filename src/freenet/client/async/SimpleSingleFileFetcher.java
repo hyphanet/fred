@@ -150,11 +150,6 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	@Override
-	public void onFailed(KeyListenerConstructionException e, ClientContext context) {
-		onFailure(e.getFetchException(), false, context);
-	}
-
-	@Override
 	public void cancel(ClientContext context) {
 		super.cancel(context);
 		rcb.onFailure(new FetchException(FetchExceptionMode.CANCELLED), this, context);
