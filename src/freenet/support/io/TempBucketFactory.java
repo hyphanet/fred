@@ -489,9 +489,9 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 		    // if *neither* object is reachable.
 			if (!hasBeenFreed) {
 				if (TRACE_BUCKET_LEAKS)
-					Logger.error(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this, tracer);
+					Logger.error(this, "TempBucket not freed, freeing. Size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this, tracer);
 				else
-				    Logger.error(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this);
+				    Logger.error(this, "TempBucket not freed, freeing. Size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this);
 				free();
 			}
                         super.finalize();
