@@ -992,7 +992,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"footer",
 				"article",
 				"section",
-				"hgroup"};
+				"hgroup",
+				"wbr"};
 		for (String x: group2)
 			allowedTagsVerifiers.put(
 				x,
