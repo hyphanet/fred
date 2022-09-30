@@ -290,6 +290,8 @@ function initPlayer(mediaTag) {
   left.onclick = () => changeTrack(mediaTag, -1);
   right.innerHTML = "&gt;";
   right.onclick = () => changeTrack(mediaTag, +1);
+  // if loading fails, skip to the next track. Be resilient against error for listening in the background
+  mediaTag.addEventListener("error", () => changeTrack(mediaTag, +1));
   fetchPlaylist(
     url,
     () => {
