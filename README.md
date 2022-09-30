@@ -26,6 +26,11 @@ immediately:
 We've [configured it](gradle/wrapper/gradle-wrapper.properties) to [verify the checksum](https://docs.gradle.org/3.2/userguide/gradle_wrapper.html#sec:verification)
 of the archive it downloads from `https://services.gradle.org`.
 
+### Build with ant
+
+    $ mkdir -p lib; cd lib && grep -o CHK.* ../dependencies.properties  | xargs -P16 -I {} bash -c 'fcpget -v {} "$(echo {} | sed s,^.*/,,)"'
+    $ ant -propertyfile build.properties -f build-clean.xml -Dtest.skip=true -Dfindbugs.skip=true
+
 ## Testing
 
 ### Run Tests
