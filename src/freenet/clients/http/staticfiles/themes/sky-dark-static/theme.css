@@ -1,0 +1,279 @@
+/* sky-dark-static theme */
+
+/* Basic CSS functions */
+@import url(/static/baseelements.css);
+@import url(/static/color.css);
+@import url(/static/statusbar.css);
+@import url(/static/bookmark.css);
+
+/* navigation behavior */
+@import url(/static/behavior-static.css);
+
+/* layout */
+@import url(/static/themes/sky/layout.css);
+
+/* color scheme */
+@import url(/static/themes/sky/color.css);
+
+html, body {
+  color: #beb3a1;
+  scrollbar-color: #4a4741 #2e2d28;
+}
+
+table {
+  border-color: #56534b;
+}
+
+div.infobox {
+  background-color: rgb(42, 40, 37);
+    border-color: rgb(43, 51, 64);  
+}
+
+#topbar {
+    background-color: rgb(44, 43, 39);
+}
+
+body {
+    background-color: rgb(42, 40, 37);
+}
+
+div.infobox div.infobox-header {  
+    background-color: rgb(44, 43, 39);
+border-color: rgb(43, 51, 64);
+}
+
+th {
+  background-color: rgb(50, 48, 44);
+}
+td, th {
+  border-color: rgb(61, 58, 61);
+}
+
+td.priority4, tr.priority4 {
+  background-color: rgb(58, 78, 58);
+}
+
+#navbar, #selected-subnavbar {
+  border-color: rgb(46, 43, 53);
+}
+
+#navbar, #navlist, li.navlist-selected, li.navlist-not-selected, ul.subnavlist-selected, ul.subnavlist, li.submenuitem-selected, li.submenuitem-not-selected, #subnavbar {
+  background-color: rgb(42, 40, 37);
+}
+
+td.priority0, tr.priority0 {
+  background-color: rgb(55, 31, 28);
+}
+
+td.priority1, tr.priority1 {
+  background-color: rgb(73, 57, 40);
+}
+
+td.priority2, tr.priority2 {
+  background-color: rgb(69, 61, 42);
+}
+
+td.priority3, tr.priority3 {
+  background-color: rgb(67, 68, 44);
+}
+
+td.priority4, tr.priority4 {
+  background-color: rgb(58, 78, 58);
+}
+
+td.priority5, tr.priority5 {
+  background-color: rgb(61, 80, 72);
+}
+
+td.priority6, tr.priority6 {
+  background-color: rgb(59, 57, 52);
+}
+
+a {
+  color: rgb(190, 179, 161);
+}
+
+a:hover {
+  color: rgb(121, 120, 119);
+}
+
+a.low {
+  color: rgb(157, 119, 106);
+}
+div#statusbar div#statusbar-seclevels a.low {
+  color: rgb(157, 119, 106);
+}
+
+div#statusbar div#statusbar-seclevels a.normal {
+  color: rgb(173, 147, 110);
+}
+
+div.infobox {
+  background-color: rgb(42, 40, 37);
+  border-color: rgb(43, 51, 64);
+}
+
+div#statusbar-container {
+  background-color: rgb(57, 55, 50);
+  border-top-color: rgb(68, 66, 60);
+  border-bottom-color: rgb(68, 66, 60);
+}
+
+div#statusbar div.progressbar div.progressbar-peers.very-few-peers {
+  background-color: #4f0404 !important;
+}
+
+div#statusbar div.progressbar div.progressbar-peers.few-peers {
+	background-color: #734b02 !important;
+}
+
+div#statusbar div.progressbar div.progressbar-peers.avg-peers {
+	background-color: #4a681c !important;
+}
+
+li.navlist-selected a:hover, li.navlist-not-selected a:hover, li.submenuitem-selected a:hover, li.submenuitem-not-selected a:hover {
+  background-color: rgb(45, 53, 67);
+  color: inherit;
+}
+
+li.submenuitem-selected a {
+  background-color: rgb(77, 68, 45);
+  color: inherit;
+}
+
+li.navlist-selected > a {
+  background-color: #2a2825;
+}
+
+li.submenuitem-selected a {    
+    border: 1px solid #605d5d;
+}
+
+li.submenuitem-not-selected a {
+  background-color: rgb(42, 40, 37);
+  color: inherit;
+}
+
+::selection {
+  background-color: #2d4764 !important;
+  color: #beb3a0 !important;
+}
+
+div#statusbar div.separator {
+  background-color: rgb(60, 58, 53);
+}
+
+.progressbar {
+  background-color: rgb(32, 31, 29);
+  border-color: rgb(45, 53, 67);
+}
+
+.progressbar-done {
+  background-color: rgb(104, 55, 103);
+}
+
+.progressbar-min {
+  background-color: rgb(51, 49, 45);
+}
+
+select,input,textarea {
+    background-color:rgb(43, 42, 51);
+    color:rgb(251, 251, 254);
+    border:1px solid rgb(117, 116, 122);  
+    padding:5px;
+    border-radius:3px;
+}
+
+table.requests {
+    margin-top:30px;
+    margin-bottom:30px;
+}
+
+div.request-delete,div.request-priority {
+    display:inline-block;
+}
+
+textarea#bulkDownloads {
+    width:90%;
+    height:200px;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: scroll;
+}
+
+span.peer_backed_off {
+  color: #a28b02;
+}
+
+ul.config {
+    border-color: #797777;
+}
+
+ul.config li {
+  background-color: #353535;
+}
+
+div.histogramDisconnected {
+  background-color: #868282;
+}
+
+div.histogramConnected {
+  background-color: #04ac04;
+}
+
+span.peer_connected {
+  color: #03b003;
+}
+
+input[type=radio] {
+  display:none;
+}
+
+input[type=radio] + label:before {
+  content: '•';
+  display:inline-block;
+  border-radius: 10px;
+  width: 16px;
+  height:16px;
+  background:#6c6c6c;
+  color:#535353;
+  border: 2px solid #313131;
+  line-height: 15px;
+  text-align: center;
+  font-size:25px;
+  margin-right: 5px;
+}
+
+input[type=radio]:checked + label:before {
+  color: #fff;
+}
+
+input[type="checkbox"],input[type="file"] {
+    filter: sepia(0%) brightness(70%) hue-rotate(170deg) saturate(100%) contrast(80%);
+}
+
+.interfacelink {
+  color: #db8080;
+}
+
+.edit-bracket {
+    padding-left: 5px;
+    padding-right: 4px;
+}
+
+div#statusbar div#statusbar-alerts.contains-information, div#statusbar div#statusbar-alerts.contains-information a {
+    color: #db8080;
+}
+
+div#statusbar div#statusbar-alerts.contains-warning, div#statusbar div#statusbar-alerts.contains-warning a, div#statusbar div#statusbar-alerts.contains-alert, div#statusbar div#statusbar-alerts.contains-alert a {
+    background-color: #555524;
+    padding: 0 2px;
+}
+
+#statusbar-container {
+    opacity: 0.85;
+}
+
+table.requests tr:hover {
+  background-color: darkgreen;
+}
