@@ -1,5 +1,20 @@
 next:
 
+- 
+
+1495:
+
+- Eleriseth pending keys merged (performance)
+- new firsttime wizard (single-step joining with clearer defaults)
+- healing size increased (better lifetime for popular files)
+- CSS improvements (enable transition and word-wrap)
+- new theme: sky-dark-static
+- m3u-player: skip broken files
+- bookmarks: first section has "starting points"
+- announcement fixes
+
+1494:
+
 - Show a user alert (once every Freenet update) if the datastore is
   below 10% of available space with a link to the store size wizard page
   to make it easy to increase the store ― thanks to Trivuele
