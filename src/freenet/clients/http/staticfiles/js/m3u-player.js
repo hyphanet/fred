@@ -243,9 +243,11 @@ function changeTrack(mediaTag, diff) {
   const nextTrackIndex = currentTrackIndex + diff;
   const tracks = playlists[mediaTag.getAttribute("playlist")];
   if (nextTrackIndex >= 0) { // do not collapse the if clauses with double-and, that does not survive inlining
-    if (tracks.length > nextTrackIndex) {
-      mediaTag.setAttribute("track-index", nextTrackIndex);
-      updateSrc(mediaTag, () => mediaTag.play());
+    if (tracks) {
+      if (tracks.length > nextTrackIndex) {
+        mediaTag.setAttribute("track-index", nextTrackIndex);
+        updateSrc(mediaTag, () => mediaTag.play());
+      }
     }
   }
 }
@@ -290,8 +292,6 @@ function initPlayer(mediaTag) {
   left.onclick = () => changeTrack(mediaTag, -1);
   right.innerHTML = "&gt;";
   right.onclick = () => changeTrack(mediaTag, +1);
-  // if loading fails, skip to the next track. Be resilient against error for listening in the background
-  mediaTag.addEventListener("error", () => changeTrack(mediaTag, +1));
   fetchPlaylist(
     url,
     () => {
@@ -301,6 +301,14 @@ function initPlayer(mediaTag) {
         if (mediaTag.currentTime >= mediaTag.duration) {
           changeTrack(mediaTag, +1);
         }
+      });
+      // if loading fails, skip to the next track. Be resilient against error for listening in the background
+      let debounceTimer;
+      mediaTag.addEventListener("error", () => {
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+        }
+        debounceTimer = setTimeout(() => changeTrack(mediaTag, +1), 300);
       });
     },
     () => null);
