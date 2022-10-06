@@ -246,7 +246,13 @@ function changeTrack(mediaTag, diff) {
     if (tracks) {
       if (tracks.length > nextTrackIndex) {
         mediaTag.setAttribute("track-index", nextTrackIndex);
-        updateSrc(mediaTag, () => mediaTag.play());
+        updateSrc(mediaTag, () => {
+          try {
+            mediaTag.play();
+          } catch (exception) {
+            mediaTag.dispatchEvent("error", exception);
+          }
+        });
       }
     }
   }
@@ -304,12 +310,14 @@ function initPlayer(mediaTag) {
       });
       // if loading fails, skip to the next track. Be resilient against error for listening in the background
       let debounceTimer;
-      mediaTag.addEventListener("error", () => {
+      const nextOnError = () => {
         if (debounceTimer) {
           clearTimeout(debounceTimer);
         }
         debounceTimer = setTimeout(() => changeTrack(mediaTag, +1), 300);
-      });
+      };
+      mediaTag.addEventListener("error", nextOnError);
+      mediaTag.addEventListener(DOMException, nextOnError);
     },
     () => null);
   // keep the controls aligned to the media tag
