@@ -145,6 +145,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		boolean wasHeadElementFound=false;
 		/** We can only have <head> once, and <meta>/<title> can't be outside it. This helps with robustness against charset attacks and allows us to stop looking for <meta> as soon as we see </head> when detecting charset. */
 		boolean headEnded=false;
+		/** if a &lt;video&gt; or &lt;audio&gt; tag is present in the file, it makes sense to include the media player. */ 
+		boolean wasMediaElementFound=false;
 
 		HTMLParseContext(Reader r, Writer w, String charset, FilterCallback cb, boolean onlyDetectingCharset) {
 			this.r = r;
@@ -606,10 +608,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				//To achieve this, we keep track whether we processed the <head>
 				if(t.element.compareTo("head")==0 && !t.startSlash){
 					pc.wasHeadElementFound=true;
+				} else if ((t.element.compareTo("video")==0 || t.element.compareTo("audio")==0) && !t.startSlash) {
+					pc.wasMediaElementFound=true;
 				} else if(t.element.compareTo("head")==0 && t.startSlash) {
-					if (embedM3uPlayer) {
-						w.write(m3uPlayerScriptTagContent);
-					}
 					pc.headEnded = true;
 					if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
 				//If we found a <title> or a <meta> without a <head>, then we need to add them to a <head>
@@ -625,9 +626,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				//If we found a <body> and haven't closed <head> already, then we do
 				}else if(t.element.compareTo("body") == 0 &&  pc.openElements.contains("head")){
 					if(!pc.onlyDetectingCharset) {
-						if (embedM3uPlayer) {
-							w.write(m3uPlayerScriptTagContent);
-						}
 						w.write("</head>");
 					}
 					pc.headEnded = true;
@@ -639,13 +637,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					String headContent=pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()));
 					if(headContent!=null){
 						if(!pc.onlyDetectingCharset) {
-							if (embedM3uPlayer) {
-								w.write(m3uPlayerScriptTagContent);
-							}
 							w.write(headContent+"</head>");
 						}
 						pc.headEnded = true;
 						if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
+					}
+				// if the body is ended and we found a media tag (<video> or <audio>) we include the m3u-player just before the end of the body. 
+				}else if(t.element.compareTo("body")==0 && t.startSlash && pc.wasMediaElementFound == true) {
+					if (embedM3uPlayer) {
+						w.write(m3uPlayerScriptTagContent);
 					}
 				}
 
