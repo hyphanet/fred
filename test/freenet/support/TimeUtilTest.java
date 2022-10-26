@@ -183,4 +183,29 @@ public class TimeUtilTest extends TestCase {
 		// Check for bogus tampering with original object
 		assertEquals(originalBackup, original);
 	}
+
+	public void testToMillis_oneForTermLong() {
+		assertEquals(TimeUtil.toMillis("1w1d1h1m1.001s"), oneForTermLong);
+	}
+
+	public void testToMillis_maxLong() {
+		assertEquals(TimeUtil.toMillis("15250284452w3d7h12m55.807s"), Long.MAX_VALUE);
+	}
+
+	public void testToMillis_minLong() {
+		assertEquals(TimeUtil.toMillis("-15250284452w3d7h12m55.808s"), Long.MIN_VALUE);
+	}
+
+	public void testToMillis_empty() {
+		assertEquals(TimeUtil.toMillis(""), 0);
+		assertEquals(TimeUtil.toMillis("-"), 0);
+	}
+
+	public void testToMillis_unknownFormat() {
+		try {
+			TimeUtil.toMillis("15250284452w3q7h12m55.807s");
+		} catch (NumberFormatException e) {
+				assertNotNull(e);
+		}
+	}
 }

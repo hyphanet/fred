@@ -20,6 +20,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.updater.MainJarDependenciesChecker.Dependency;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
+import freenet.support.JVMVersion;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
 
@@ -146,7 +147,10 @@ public class UpdateDeployContext {
 		boolean writtenAnchorInterval = false;
 		/** Add the relative JNA tempdir if it does not exist already */
 		boolean writtenJnaTmpDir = false;
-		
+		/** Allow accessing internal modules in Java 16+ */
+		boolean writtenIllegalAccessPermit = false;
+		boolean writtenPrivateModulesOpens = false;
+
 		String newMain = mainJarAbsolute ? newMainJar.getAbsolutePath() : newMainJar.getPath();
 		
 		String mainRHS = null;
@@ -177,7 +181,7 @@ public class UpdateDeployContext {
 					// Ignore the numbers.
 					String rhs = line.substring(idx+1);
 					dontWrite = true;
-					if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") || 
+					if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") ||
 							rhs.equals("freenet-stable-latest.jar") || rhs.equals("freenet-stable-latest.jar.new") ||
 							rhs.equals("freenet-testing-latest.jar") || rhs.equals("freenet-testing-latest.jar.new")) {
 						if(writtenNewJar)
@@ -210,6 +214,12 @@ public class UpdateDeployContext {
 				 additionalJavaArguments.add(rhs);
 				 if (rhs.startsWith("-Djava.io.tmpdir=")) {
 				       writtenJnaTmpDir = true;
+				 }
+				 if (rhs.startsWith("--illegal-access=permit")) {
+				       writtenIllegalAccessPermit = true;
+				 }
+				 if (rhs.startsWith("--add-opens=")) {
+				       writtenPrivateModulesOpens = true;
 				 }
 			    }
 			} else if(lowcaseLine.equals("wrapper.restart.reload_configuration=true")) {
@@ -257,8 +267,27 @@ public class UpdateDeployContext {
 		// ensure that we have an entry for the JNA tempdir
 		if (!writtenJnaTmpDir) {
 			bw.write("wrapper.java.additional."+count+"=-Djava.io.tmpdir=./tmp/"+'\n');
+			count++;
 		}
-		
+
+		// allow accessing internal modules (required for Java 16, only supported since Java 9)
+		if (!writtenIllegalAccessPermit && JVMVersion.supportsModules()) {
+			bw.write("wrapper.java.additional."+count+"=--illegal-access=permit"+'\n');
+			count++;
+		}
+		// open internal modules (required for Java 17, only supported since Java 9)
+		if (!writtenPrivateModulesOpens && JVMVersion.supportsModules()) {
+            // WoT: Unable to make field private final java.lang.String java.lang.Enum.name accessible
+			bw.write("wrapper.java.additional."+count+"=--add-opens=java.base/java.lang=ALL-UNNAMED"+'\n');
+			count++;
+            // Unable to make public int java.util.Collections$UnmodifiableCollection.size() accessible
+			bw.write("wrapper.java.additional."+count+"=--add-opens=java.base/java.util=ALL-UNNAMED"+'\n');
+			count++;
+            // Unable to make field private int java.io.FileDescriptor.fd accessible
+			bw.write("wrapper.java.additional."+count+"=--add-opens=java.base/java.io=ALL-UNNAMED"+'\n');
+			count++;
+		}
+
 		for(String s : otherLines)
 			bw.write(s+'\n');
 

@@ -30,10 +30,12 @@ public class InsertFreesiteToadlet extends Toadlet {
 		
 		NodeL10n.getBase().addL10nSubstitution(contentBox.addChild("p"), "InsertFreesiteToadlet.content2",
 		        new String[] { "jsite-http", "jsite-freenet", "jsite-freenet-version", "jsite-info" },
-		        new HTMLNode[] { HTMLNode.link(ExternalLinkToadlet.escape("http://downloads.freenetproject.org/alpha/jSite/")),
-		                HTMLNode.link("/CHK@1bWi9EOtVyY77cJfioG7BvWzSlU-2j7dNG55c6KlpNk,5EsWJj4BjJa51K6kLTLWb64DEJQ3qHEEmFBITZMtcIw,AAMC--8/jSite-0.11.1-jar-with-dependencies.jar"),
-		                HTMLNode.text("0.11.1"), HTMLNode.link("/SSK@1waTsw46L9-JEQ8yX1khjkfHcn--g0MlMsTlYHax9zQ,oYyxr5jyFnaTsVGDQWk9e3ddOWGKnqEASxAk08MHT2Y,AQACAAE/jSite-6/"),
-		        });
+				new HTMLNode[] {
+						HTMLNode.link(ExternalLinkToadlet.escape("http://downloads.freenetproject.org/alpha/jSite/")),
+						HTMLNode.link("/SSK@1waTsw46L9-JEQ8yX1khjkfHcn--g0MlMsTlYHax9zQ,oYyxr5jyFnaTsVGDQWk9e3ddOWGKnqEASxAk08MHT2Y,AQACAAE/jSite-15/jSite-0.14-jar-with-dependencies.jar"),
+						HTMLNode.text("0.14"),
+						HTMLNode.link("/SSK@1waTsw46L9-JEQ8yX1khjkfHcn--g0MlMsTlYHax9zQ,oYyxr5jyFnaTsVGDQWk9e3ddOWGKnqEASxAk08MHT2Y,AQACAAE/jSite-15/"),
+				});
 		contentBox.addChild("p", l10n("content3"));
 		HTMLNode ul = contentBox.addChild("ul");
 		HTMLNode li = ul.addChild("li");

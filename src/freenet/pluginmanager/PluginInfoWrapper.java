@@ -142,12 +142,19 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		unregister(manager, reloading);
 		// TODO add a timeout for plug.terminate() too
 		System.out.println("Terminating plugin "+this.getFilename());
+
+		// set the plugin’s class loader as context class loader
+		ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+		Thread.currentThread().setContextClassLoader(plug.getClass().getClassLoader());
+
 		try {
 			plug.terminate();
 		} catch (Throwable t) {
 			Logger.error(this, "Error while terminating plugin.", t);
 			System.err.println("Error while terminating plugin: "+t);
 			t.printStackTrace();
+		} finally {
+			Thread.currentThread().setContextClassLoader(originalClassLoader);
 		}
 		synchronized(this) {
 			stopping = true;

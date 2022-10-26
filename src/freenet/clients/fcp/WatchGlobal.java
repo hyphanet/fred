@@ -43,7 +43,7 @@ public class WatchGlobal extends FCPMessage {
 			throws MessageInvalidException {
 		if(!handler.getRebootClient().setWatchGlobal(enabled, verbosityMask, node.clientCore.getFCPServer())) {
 			FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence disabled", null, true);
-			handler.outputHandler.queue(err);
+			handler.send(err);
 		}
 		PersistentRequestClient client = handler.getForeverClient();
 		if(client != null)

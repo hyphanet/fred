@@ -191,7 +191,7 @@ public class PersistentRequestClient {
 		int i = 0;
 		for(i=offset;i<Math.min(reqs.length,offset+max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
-			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, listRequestIdentifier, false, false);
+			req.sendPendingMessages(outputHandler, listRequestIdentifier, false, false);
 		}
 		return i;
 	}
@@ -246,7 +246,6 @@ public class PersistentRequestClient {
 			req = clientRequestsByIdentifier.get(identifier);
 //			if(container != null && req != null)
 //				container.activate(req, 1);
-			boolean removedFromRunning = false;
 			if(req == null) {
 				for(ClientRequest r : completedUnackedRequests) {
 					if(r.getIdentifier().equals(identifier)) {
@@ -261,14 +260,13 @@ public class PersistentRequestClient {
 						if(r.getIdentifier().equals(identifier)) {
 							req = r;
 							runningPersistentRequests.remove(r);
-							removedFromRunning = true;
 							Logger.error(this, "Found running request "+r+" for identifier "+r.getIdentifier()+" but not in clientRequestsByIdentifier!!");
 							break;
 						}
 					}
 				}
 				if(req == null) return false;
-			} else if(!((removedFromRunning = runningPersistentRequests.remove(req)) || completedUnackedRequests.remove(req))) {
+			} else if(!((runningPersistentRequests.remove(req)) || completedUnackedRequests.remove(req))) {
 				Logger.error(this, "Removing "+identifier+": in clientRequestsByIdentifier but not in running/completed maps!");
 				
 				return false;
@@ -374,7 +372,7 @@ public class PersistentRequestClient {
 			return;
 		FCPConnectionHandler conn = getConnection();
 		if(conn != null) {
-			conn.outputHandler.queue(msg);
+			conn.send(msg);
 		}
 		PersistentRequestClient[] clients;
 		if(isGlobalQueue) {

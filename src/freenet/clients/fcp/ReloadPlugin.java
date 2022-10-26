@@ -54,7 +54,7 @@ public class ReloadPlugin extends FCPMessage {
 			public void run() {
 				PluginInfoWrapper pi = node.pluginManager.getPluginInfo(plugname);
 				if (pi == null) {
-					handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
+					handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
 				} else {
 					String source = pi.getFilename();
 					pi.stopPlugin(node.pluginManager, maxWaitTime, true);
@@ -63,9 +63,9 @@ public class ReloadPlugin extends FCPMessage {
 					}
 					pi = node.pluginManager.startPluginAuto(source, store);
 					if (pi == null) {
-						handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
+						handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
 					} else {
-						handler.outputHandler.queue(new PluginInfoMessage(pi, identifier, true));
+						handler.send(new PluginInfoMessage(pi, identifier, true));
 					}
 				}
 			}

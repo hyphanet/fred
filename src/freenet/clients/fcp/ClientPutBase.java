@@ -16,7 +16,6 @@ import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.events.StartedCompressionEvent;
-import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.NodeClientCore;
@@ -262,7 +261,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		// notify client that request was removed
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
 		if(persistence == Persistence.CONNECTION)
-			origHandler.outputHandler.queue(msg);
+			origHandler.send(msg);
 		else
 		client.queueClientRequestMessage(msg, 0);
 

@@ -586,7 +586,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				} else {
 					// Kill old connection
 					oldConn.setKilledDupe();
-					oldConn.outputHandler.queue(new CloseConnectionDuplicateClientNameMessage());
+					oldConn.send(new CloseConnectionDuplicateClientNameMessage());
 					oldConn.close();
 					oldClient.setConnection(handler);
 					return oldClient;

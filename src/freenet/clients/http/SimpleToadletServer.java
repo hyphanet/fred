@@ -94,6 +94,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private boolean sendAllThemes;
 	private boolean advancedModeEnabled;
 	private final PageMaker pageMaker;
+	private boolean fetchKeyBoxAboveBookmarks;
 	
 	// Control
 	private Thread myThread;
@@ -259,6 +260,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			NodeClientCore core = SimpleToadletServer.this.core;
 			if (core.node.pluginManager != null)
 				core.node.pluginManager.setFProxyTheme(cssTheme);
+			fetchKeyBoxAboveBookmarks = cssTheme.fetchKeyBoxAboveBookmarks;
 		}
 
 		@Override
@@ -485,6 +487,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		
 		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.advancedMode", "SimpleToadletServer.advancedModeLong",
 				new FProxyAdvancedModeEnabledCallback(this));
+
 		fproxyConfig.register("enableExtendedMethodHandling", false, configItemOrder++, true, false, "SimpleToadletServer.enableExtendedMethodHandling", "SimpleToadletServer.enableExtendedMethodHandlingLong",
 				new BooleanCallback() {
 					@Override
@@ -755,6 +758,21 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		}, false);
 		HTMLFilter.metaRefreshRedirectMinInterval = Math.max(-1, fproxyConfig.getInt("metaRefreshRedirectInterval"));
 
+		fproxyConfig.register("embedM3uPlayerInFreesites", true, configItemOrder++, true, false, "SimpleToadletServer.embedM3uPlayerInFreesites", "SimpleToadletServer.embedM3uPlayerInFreesitesLong",
+				new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return HTMLFilter.embedM3uPlayer;
+					}
+
+					@Override
+					public void set(Boolean val) {
+						HTMLFilter.embedM3uPlayer = val;
+					}
+				});
+		HTMLFilter.embedM3uPlayer = fproxyConfig.getBoolean("embedM3uPlayerInFreesites");
+
 		fproxyConfig.register("refilterPolicy", "RE_FILTER",
 				configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", new ReFilterCallback());
 		
@@ -780,6 +798,22 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			cssOverride = null;
 			pageMaker.setOverride(null);
 		}
+
+		fproxyConfig.register("fetchKeyBoxAboveBookmarks", cssTheme.fetchKeyBoxAboveBookmarks, configItemOrder++,
+				false, false, "SimpleToadletServer.fetchKeyBoxAboveBookmarks",
+				"SimpleToadletServer.fetchKeyBoxAboveBookmarksLong", new BooleanCallback() {
+					@Override
+					public Boolean get() {
+						return fetchKeyBoxAboveBookmarks;
+					}
+
+					@Override
+					public void set(Boolean val) {
+						if(get().equals(val)) return;
+						fetchKeyBoxAboveBookmarks = val;
+					}
+				});
+		fetchKeyBoxAboveBookmarks = fproxyConfig.getBoolean("fetchKeyBoxAboveBookmarks");
 		
 		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");
 		toadlets = new LinkedList<ToadletElement>();

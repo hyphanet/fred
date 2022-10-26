@@ -18,7 +18,6 @@ import java.util.Random;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.MasterSecret;
 import freenet.crypt.PCFBMode;
-import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;

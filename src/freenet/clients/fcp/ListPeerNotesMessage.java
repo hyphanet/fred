@@ -43,7 +43,7 @@ public class ListPeerNotesMessage extends FCPMessage {
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
 			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier, identifier);
-			handler.outputHandler.queue(msg);
+			handler.send(msg);
 			return;
 		}
 		if(!(pn instanceof DarknetPeerNode)) {
@@ -52,8 +52,8 @@ public class ListPeerNotesMessage extends FCPMessage {
 		DarknetPeerNode dpn = (DarknetPeerNode) pn;
 		// **FIXME** this should be generalized for multiple peer notes per peer, after PeerNode is similarly generalized
 		String noteText = dpn.getPrivateDarknetCommentNote();
-		handler.outputHandler.queue(new PeerNote(nodeIdentifier, noteText, Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT, identifier));
-		handler.outputHandler.queue(new EndListPeerNotesMessage(nodeIdentifier, identifier));
+		handler.send(new PeerNote(nodeIdentifier, noteText, Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT, identifier));
+		handler.send(new EndListPeerNotesMessage(nodeIdentifier, identifier));
 	}
 
 }

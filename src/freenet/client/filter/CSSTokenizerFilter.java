@@ -61,7 +61,7 @@ class CSSTokenizerFilter {
 		stopAtDetectedCharset = false;
 		isInline = false;
 	}
-        
+
 	CSSTokenizerFilter(Reader r, Writer w, FilterCallback cb, String charset, boolean stopAtDetectedCharset, boolean isInline) {
 		this.r=r;
 		this.w = w;
@@ -389,7 +389,7 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[105]=new CSSPropertyVerifier(Arrays.asList("filled","open"),null,null,null,true);
 		auxilaryVerifiers[106]=new CSSPropertyVerifier(Arrays.asList("dot","circle","double-circle","triangle","sesame"),null,null,null,true);
 		auxilaryVerifiers[107]=new CSSPropertyVerifier(Arrays.asList("none"),ElementInfo.VISUALMEDIA,Arrays.asList("st"),Arrays.asList("105a106"));
-		
+
 		// <align-content> and <justify-content>
 		// auto | <baseline-position> | <content-distribution> || [ <overflow-position>? && <content-position> ]
 		// <content-position> = center | start | end | flex-start | flex-end | left | right
@@ -398,7 +398,7 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[122] = new CSSPropertyVerifier(Arrays.asList("true", "safe"), null, null, null, true);
 		auxilaryVerifiers[123] = new CSSPropertyVerifier(Arrays.asList("center", "start", "end", "flex-start", "flex-end", "left", "right"), null, null, null, true);
 		auxilaryVerifiers[124] = new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("122 123", "123", "123 122"), true,true);
-		
+
 		// <align-items>
 		// auto | stretch | <baseline-position> | [ <item-position> && <overflow-position>? ]
 		auxilaryVerifiers[125] = new CSSPropertyVerifier(Arrays.asList("auto", "stretch", "baseline", "last-baseline"), null, null, null, true);
@@ -406,13 +406,13 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[126] = new CSSPropertyVerifier(Arrays.asList("center", "start", "end", "self-start", "self-end", "flex-start", "flex-end", "left", "right"), null, null, null, true);
 		// [ <item-position> && <overflow-position>? ]
 		auxilaryVerifiers[127] = new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("122 126", "126", "126 122"), true,true);
-		
+
 		// <justify-items>
 		// auto | stretch | <baseline-position> | [ <item-position> && <overflow-position>? ] | [ legacy && [ left | right | center ] ]
 		auxilaryVerifiers[128] = new CSSPropertyVerifier(Arrays.asList("legacy"), null, null, null, true);
 		auxilaryVerifiers[129] = new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("4 128", "128 4"), true,true);
 		auxilaryVerifiers[130] = new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("122 126", "126", "126 122"), true,true);
-		
+
 		// used in nav-down, nav-left, nav-right and nav-up
 		auxilaryVerifiers[143] = new CSSPropertyVerifier(null, Arrays.asList("se"), null, null, true);
 		auxilaryVerifiers[144] = new CSSPropertyVerifier(Arrays.asList("current", "root"), Arrays.asList("st"), null, null, true);
@@ -837,7 +837,7 @@ class CSSTokenizerFilter {
                         elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("1", "all"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
                 }
-                else if("column-width".equalsIgnoreCase(element)) 
+                else if("column-width".equalsIgnoreCase(element))
                 {
                         elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le")));
 			allelementVerifiers.remove(element);
@@ -915,12 +915,12 @@ class CSSTokenizerFilter {
 		}
 		else if("cursor".equalsIgnoreCase(element))
 		{
-			// <cursor> = [ [<url> [<x> <y>]?,]* 
+			// <cursor> = [ [<url> [<x> <y>]?,]*
 			// [ auto | default | none |
-			//   context-menu | help | pointer | progress | wait | 
-			//   cell | crosshair | text | vertical-text | 
-			//   alias | copy | move | no-drop | not-allowed | grab | grabbing | 
-			//   e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out 
+			//   context-menu | help | pointer | progress | wait |
+			//   cell | crosshair | text | vertical-text |
+			//   alias | copy | move | no-drop | not-allowed | grab | grabbing |
+			//   e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out
 			//  ] ]
 			auxilaryVerifiers[25]=new CSSPropertyVerifier(null,Arrays.asList("ur"),null,null,true);
 			auxilaryVerifiers[141] = new CSSPropertyVerifier(null, Arrays.asList("in", "re"), null, null, true);
@@ -959,7 +959,7 @@ class CSSTokenizerFilter {
 			auxilaryVerifiers[138] = new CSSPropertyVerifier(Arrays.asList("contents", "none"), null, null, null, true);
 			// <display-legacy>
 			auxilaryVerifiers[139] = new CSSPropertyVerifier(Arrays.asList("inline-block", "inline-list-item", "inline-table", "inline-flex", "inline-grid"), null, null, null, true);
-			
+
 			auxilaryVerifiers[140] = new CSSPropertyVerifier(null, null, Arrays.asList("133b135b136"), null, true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, Arrays.asList("131a132", "140<0,1>[1,3]", "137", "138", "139"), null, true));
 			allelementVerifiers.remove(element);
@@ -1679,14 +1679,13 @@ class CSSTokenizerFilter {
 	 * This function accepts an HTML element(along with class name, ID, pseudo class and attribute selector) and determines whether it is valid or not.
 	 * Returns null on failure (invalid selector), empty string on banned (but otherwise valid) selector.
 	 * @param elementName A selector which may include an HTML element.
-	 * @param isIDSelector True if we only allow an ID selector, which must include an ID, may 
+	 * @param isIDSelector True if we only allow an ID selector, which must include an ID, may
 	 * include an element name or *, but must not contain anything else.
 	 */
 	public static String HTMLelementVerifier(String elementString, boolean isIDSelector)
 	{
-//		if(logDEBUG) Logger.debug(this, "varifying element/selector: \""+elementString+"\"");
+		if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "varifying element/selector: \""+elementString+"\"");
 		String HTMLelement="",pseudoClass="",className="",id="";
-		boolean isValid=true;
 		StringBuilder fBuffer=new StringBuilder();
 		ArrayList<String> attSelections = null;
 		while(elementString.indexOf('[')!=-1 && elementString.indexOf(']')!=-1 && (elementString.indexOf('[')<elementString.indexOf(']')))
@@ -1696,7 +1695,7 @@ class CSSTokenizerFilter {
 			StringBuilder buf=new StringBuilder(elementString);
 			buf.delete(elementString.indexOf('['), elementString.indexOf(']')+1);
 			elementString=buf.toString();
-//			if(logDEBUG) Logger.debug(this, "attSelection="+attSelection+"  elementString="+elementString);
+			if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "attSelection="+attSelection+"  elementString="+elementString);
 			if(attSelections == null) attSelections = new ArrayList<String>();
 			attSelections.add(attSelection);
 		}
@@ -1708,7 +1707,7 @@ class CSSTokenizerFilter {
 			{
 				pseudoClass=elementString.substring(index+1,elementString.length()).trim();
 				HTMLelement=elementString.substring(0,index).trim();
-//				if(logDEBUG) Logger.debug(this, "pseudoclass="+pseudoClass+" HTMLelement="+HTMLelement);
+				if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "pseudoclass="+pseudoClass+" HTMLelement="+HTMLelement);
 			}
 			else
 			{
@@ -1726,7 +1725,7 @@ class CSSTokenizerFilter {
 			{
 				className=HTMLelement.substring(index+1,HTMLelement.length()).trim();
 				HTMLelement=HTMLelement.substring(0,index).trim();
-//				if(logDEBUG) Logger.debug(this, "class="+className+" HTMLelement="+HTMLelement);
+				if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "class="+className+" HTMLelement="+HTMLelement);
 			}
 
 		}
@@ -1738,114 +1737,111 @@ class CSSTokenizerFilter {
 			{
 				id=HTMLelement.substring(index+1,HTMLelement.length()).trim();
 				HTMLelement=HTMLelement.substring(0,index).trim();
-//				if(logDEBUG) Logger.debug(this, "id="+id+" element="+HTMLelement);
+				if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "id="+id+" element="+HTMLelement);
 			}
 
 		}
 		if(isIDSelector && "".equals(id)) return null; // No ID
 
-		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTag(HTMLelement.toLowerCase())) || 
-				("".equals(HTMLelement.trim()) && 
-						((!className.equals("")) || (!id.equals("")) || attSelections!=null || !pseudoClass.equals(""))))
-		{
-			if(!className.equals(""))
-			{
-				// Note that the definition of isValidName() allows chained classes because it allows . in class names.
-				if(!ElementInfo.isValidName(className))
-					isValid=false;
-			}
-			else if(!id.equals(""))
-			{
-				if(!ElementInfo.isValidName(id))
-					isValid=false;
-			}
-
-			if(isValid && !pseudoClass.equals(""))
-			{
-				if(!ElementInfo.isValidPseudoClass(pseudoClass)) {
-					isValid=false;
-				} else if(ElementInfo.isBannedPseudoClass(pseudoClass)) {
-					return "";
-				}
-			}
-
-			if(isValid && attSelections!=null)
-			{
-				String[] attSelectionParts;
-
-				for(String attSelection : attSelections) {
-					if(attSelection.indexOf("|=")!=-1)
-					{
-						attSelectionParts=new String[2];
-						attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("|="));
-						attSelectionParts[1]=attSelection.substring(attSelection.indexOf("|=")+2,attSelection.length());
-					}
-					else if(attSelection.indexOf("~=")!=-1) {
-						attSelectionParts=new String[2];
-						attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("~="));
-						attSelectionParts[1]=attSelection.substring(attSelection.indexOf("~=")+2,attSelection.length());
-					} else if(attSelection.indexOf('=') != -1){
-						attSelectionParts=new String[2];
-						attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf('='));
-						attSelectionParts[1]=attSelection.substring(attSelection.indexOf('=')+1,attSelection.length());
-					} else {
-						attSelectionParts=new String[] { attSelection };
-					}
-
-					//Verifying whether each character is alphanumeric or _
-//					if(logDEBUG) Logger.debug(this, "HTMLelementVerifier length of attSelectionParts="+attSelectionParts.length);
-
-					if(attSelectionParts[0].length()==0)
-						isValid=false;
-					else
-					{
-						char c=attSelectionParts[0].charAt(0);
-						if(!((c>='a' && c<='z') || (c>='A' && c<='Z')))
-							isValid=false;
-						for(int i=1;i<attSelectionParts[0].length();i++)
-						{
-							if(!((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_' || c=='-'))
-								isValid=false;
-						}
-					}
-
-					if(attSelectionParts.length > 1) {
-						// What about the right hand side?
-						// The grammar says it's an IDENT.
-//						if(logDEBUG) Logger.debug(this, "RHS is \""+attSelectionParts[1]+"\"");
-						if(!(ElementInfo.isValidIdentifier(attSelectionParts[1]) || ElementInfo.isValidStringWithQuotes(attSelectionParts[1]))) isValid = false;
-					}
-				}
-			}
-
-
-			if(isValid)
-			{
-				fBuffer.append(HTMLelement);
-				if(!className.equals("")) {
-					fBuffer.append('.');
-					fBuffer.append(className);
-				} else if(!id.equals("")) {
-					fBuffer.append('#');
-					fBuffer.append(id);
-				}
-				if(!pseudoClass.equals("")) {
-					fBuffer.append(':');
-					fBuffer.append(pseudoClass);
-				}
-				if(attSelections!=null) {
-					for(String attSelection:attSelections) {
-						fBuffer.append('[');
-						fBuffer.append(attSelection);
-						fBuffer.append(']');
-					}
-				}
-				return fBuffer.toString();
-			}
+		boolean elementValid =
+		    "*".equals(HTMLelement) ||
+		    (ElementInfo.isValidHTMLTag(HTMLelement.toLowerCase())) ||
+		    ("".equals(HTMLelement.trim()) &&
+                    ((!className.equals("")) || (!id.equals("")) || attSelections!=null ||
+                            !pseudoClass.equals("")));
+		if(!elementValid) return null;
+		
+		if(!className.equals("")) {
+		    // Note that the definition of isValidName() allows chained classes because it allows . in class names.
+		    if(!ElementInfo.isValidName(className))
+		        return null;
+		} else if(!id.equals("")) {
+		    if(!ElementInfo.isValidName(id))
+		        return null;
 		}
 
-		return null;
+		if(!pseudoClass.equals("")) {
+		    if(!ElementInfo.isValidPseudoClass(pseudoClass)) {
+		        return null;
+		    } else if(ElementInfo.isBannedPseudoClass(pseudoClass)) {
+		        return "";
+		    }
+		}
+
+		if(attSelections!=null) {
+		    String[] attSelectionParts;
+
+		    for(String attSelection : attSelections) {
+		        if(attSelection.indexOf("|=")!=-1) {
+		            attSelectionParts=new String[2];
+		            attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("|="));
+		            attSelectionParts[1]=attSelection.substring(attSelection.indexOf("|=")+2,
+		                    attSelection.length());
+		        } else if(attSelection.indexOf("~=")!=-1) {
+		            attSelectionParts=new String[2];
+		            attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("~="));
+		            attSelectionParts[1]=attSelection.substring(attSelection.indexOf("~=")+2,
+		                    attSelection.length());
+		        } else if(attSelection.indexOf('=') != -1){
+		            attSelectionParts=new String[2];
+		            attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf('='));
+		            attSelectionParts[1]=attSelection.substring(attSelection.indexOf('=')+1,
+		                    attSelection.length());
+		        } else {
+		            attSelectionParts=new String[] { attSelection };
+		        }
+
+		        //Verifying whether each character is alphanumeric or _
+		        if(logDEBUG) Logger.debug(CSSTokenizerFilter.class,
+		                "HTMLelementVerifier length of attSelectionParts="+
+		                attSelectionParts.length);
+
+		        if(attSelectionParts[0].length()==0)
+		            return null;
+		        else {
+		            char c=attSelectionParts[0].charAt(0);
+		            if(!((c>='a' && c<='z') || (c>='A' && c<='Z')))
+		                return null;
+		            for(int i=1;i<attSelectionParts[0].length();i++) {
+		                if(!((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_' || c=='-'))
+		                    return null;
+		            }
+		        }
+
+		        if(attSelectionParts.length > 1) {
+		            // What about the right hand side?
+		            // The grammar says it's an IDENT.
+		            if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "RHS is \""+
+		                    attSelectionParts[1]+"\"");
+		            if(!(ElementInfo.isValidIdentifier(attSelectionParts[1]) ||
+		                    ElementInfo.isValidStringWithQuotes(attSelectionParts[1])))
+		                return null;
+		        }
+		    }
+		}
+
+		fBuffer.append(HTMLelement);
+		if(!className.equals("")) {
+		    fBuffer.append('.');
+		    fBuffer.append(className);
+		} else if(!id.equals("")) {
+		    fBuffer.append('#');
+		    fBuffer.append(id);
+		}
+		if(!pseudoClass.equals("")) {
+		    fBuffer.append(':');
+		    fBuffer.append(pseudoClass);
+		}
+		if(attSelections!=null) {
+		    for(String attSelection:attSelections) {
+		        fBuffer.append('[');
+		        fBuffer.append(attSelection);
+		        fBuffer.append(']');
+		    }
+		}
+		return fBuffer.toString();
 	}
+
 	/*
 	 * This function works with different operators, +, >, " " and verifies each HTML element with HTMLelementVerifier(String elementString)
 	 * e.g. div > p:first-child
@@ -3489,7 +3485,7 @@ class CSSTokenizerFilter {
 		String s = origToken.toString();
 		if(couldBeIdentifier)
 			return new ParsedIdentifier(s, decodedToken.toString(), dontLikeOrigToken);
-		
+
 		String sl = s.toLowerCase();
 		if(sl.startsWith("url(")) {
 			if(s.endsWith(")")) {
@@ -3642,7 +3638,7 @@ class CSSTokenizerFilter {
 	{
 		public final boolean onlyValueVerifier;
 		public final boolean allowCommaDelimiters;
-		
+
 		public final Set<String> allowedValues; //immutable HashSet for all String constants that this CSS property can assume like "auto"
 												// Defaulting Keywords ("initial", "inherit" and "unset") are always accepted
 		public final Set<String> allowedMedia; // immutable HashSet for all valid Media for this CSS property.
@@ -3666,9 +3662,9 @@ class CSSTokenizerFilter {
 		public final boolean isTime;       //ti
 		public final boolean isFrequency;  //fr
 		public final boolean isTransform;  //tr
-		
+
 		private final List<String> parserExpressions;
-		
+
 		CSSPropertyVerifier(boolean allowCommaDelimiters)
 		{
 			this(null, null, null, null, false, allowCommaDelimiters);
@@ -3770,7 +3766,7 @@ class CSSTokenizerFilter {
 			this.isTime = isTime;
 			this.isFrequency = isFrequency;
 			this.isTransform = isTransform;
-			
+
 			if (allowedValues != null) {
 				this.allowedValues = Collections.unmodifiableSet(new HashSet<String>(allowedValues));
 			} else {
@@ -3893,7 +3889,7 @@ class CSSTokenizerFilter {
 					return true;
 				}
 			}
-				
+
 
 			if(words[0] instanceof SimpleParsedWord) {
 
@@ -3974,14 +3970,14 @@ class CSSTokenizerFilter {
 			{
 				return true;
 			}
-			
+
 			if (isIDSelector) {
 			    // In accordance with spec for e.g. nav-*, we only allow ID selectors.
 			    // See http://www.w3.org/TR/css3-ui/
-			    // REDFLAG If we allow more general selectors (which some browsers may accept) we 
+			    // REDFLAG If we allow more general selectors (which some browsers may accept) we
 			    // have two new problems:
 			    // 1) They may occupy more than one word, which greatly complicates parsing here,
-			    // 2) We should sanitize the selectors, not just pass them on. Which in turn may 
+			    // 2) We should sanitize the selectors, not just pass them on. Which in turn may
 			    // cause them to take up more than one word!
 				String result = HTMLelementVerifier(words[0].original, true);
 				if (!(result == null || result.equals(""))) {
@@ -4009,10 +4005,10 @@ class CSSTokenizerFilter {
 			 * 1<1,4> => 1<1,4>
 			 * 1* => 1<0,65536>
 			 * 1? => 1?
-			 * 
+			 *
 			 * Note that we do not (correctly) implement operator precedence. Brackets must be
-			 * implemented using auxiliary expression verifiers. && and || may only join numbered 
-			 * expressions. There is no support for the single bar, again we use multiple 
+			 * implemented using auxiliary expression verifiers. && and || may only join numbered
+			 * expressions. There is no support for the single bar, again we use multiple
 			 * alternative numbered patterns for this.
 			 */
 			/*
@@ -4243,7 +4239,7 @@ class CSSTokenizerFilter {
 			assert(expression.length() != 0);
 			assert(expression.charAt(expression.length()-1) != 'b');
 			assert(expression.charAt(0) != 'b');
-			
+
 			// Get all the verifiers in one list, we need to check them individually
 			List<CSSPropertyVerifier> propertyVerifierList = new ArrayList<CSSPropertyVerifier>();
 			for (int i = 0; i <= expression.length(); i++) {
@@ -4258,16 +4254,16 @@ class CSSTokenizerFilter {
 					else ignoredParts = "";
 					firstPart = expression.substring(lastB+1,i);
 					lastB = i;
-					
+
 					int index = Integer.parseInt(firstPart);
 					propertyVerifierList.add(CSSTokenizerFilter.auxilaryVerifiers[index]);
 				}
 			}
-			
-			// Check each group of words in each verifier a maximum of maxLoops times 
+
+			// Check each group of words in each verifier a maximum of maxLoops times
 			// and only if we have some property verifiers to test against in the list.
-			// Since some property verifiers will return a positive match on an empty 
-			// list we do not want that potential false positive and so here we are 
+			// Since some property verifiers will return a positive match on an empty
+			// list we do not want that potential false positive and so here we are
 			// forcing the verifier to take at least one word.
 			int maxLoops = words.length;
 			while (maxLoops-- > 0 && propertyVerifierList.size() != 0) {
@@ -4295,7 +4291,7 @@ class CSSTokenizerFilter {
 					break;
 				}
 			}
-			
+
 			// Little optimisation to allow us to quit early
 			// any propertyVerifiers left will not accept any words in the list or
 			// they would have been accepted earlier. We know the next step will fail
@@ -4303,7 +4299,7 @@ class CSSTokenizerFilter {
 			if (words.length > 0) {
 				return false;
 			}
-			
+
 			// Verifiers that still remain in the list may accept an empty word array
 			// here we will let those verifiers accept an empty array if they want to.
 			boolean result = true;
@@ -4311,7 +4307,7 @@ class CSSTokenizerFilter {
 				CSSPropertyVerifier verifier = propertyVerifierList.get(i);
 				result = result && verifier.checkValidity(words, cb);
 			}
-			
+
 			return result;
 		}
 		/*
@@ -4847,7 +4843,7 @@ outer:		for(int i=0;i<value.length;i++) {
             Logger.setupStdoutLogging(Logger.LogLevel.DEBUG, "");
 
             ContentFilter.filter(inputStream, outputStream, "text/css",
-                    new URI("http://127.0.0.1:8888/freenet:USK@ZupQjDFZSc3I4orBpl1iTEAPZKo2733RxCUbZ2Q7iH0,EO8Tuf8SP3lnDjQdAPdCM2ve2RaUEN8m-hod3tQ5oQE,AQACAAE/jFreesite/19/Style/"), null, null, null);
+                    new URI("http://127.0.0.1:8888/freenet:USK@ZupQjDFZSc3I4orBpl1iTEAPZKo2733RxCUbZ2Q7iH0,EO8Tuf8SP3lnDjQdAPdCM2ve2RaUEN8m-hod3tQ5oQE,AQACAAE/jFreesite/19/Style/"), null, null, null, null);
         } finally {
             Closer.close(inputStream);
             Closer.close(outputStream);

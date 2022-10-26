@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Random;
 
 import freenet.crypt.ciphers.Rijndael;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Loader;
 import freenet.support.Logger;
@@ -394,4 +395,11 @@ public class Util {
 		}
 	}
 
+	public static double keyDigestAsNormalizedDouble(byte[] digest) {
+		long asLong = Math.abs(Fields.bytesToLong(digest));
+		// Math.abs can actually return negative...
+		if(asLong == Long.MIN_VALUE)
+				asLong = Long.MAX_VALUE;
+		return ((double)asLong)/((double)Long.MAX_VALUE);
+	}
 }

@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.config.ConfigException;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
@@ -117,7 +118,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		// private darknet node comment note column
 		DarknetPeerNodeStatus status = (DarknetPeerNodeStatus) peerNodeStatus;
 		if(fProxyJavascriptEnabled) {
-			peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "onBlur", "onChange", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", "peerNoteBlur();", "peerNoteChange();", status.getPrivateDarknetCommentNote() });
+			peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "onChange", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", "peerNoteChange();", status.getPrivateDarknetCommentNote() });
 		} else {
 			peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", status.getPrivateDarknetCommentNote() });
 		}
@@ -151,9 +152,13 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 
 	@Override
 	protected void drawPeerActionSelectBox(HTMLNode peerForm, boolean advancedModeEnabled) {
+		peerForm.addChild("input",
+			 new String[] { "type", "name", "value" },
+			 new String[] { "submit", "doSendMessageToPeers", l10n("sendConfidentialMessage") });
+		peerForm.addChild("br");
+
 		HTMLNode actionSelect = peerForm.addChild("select", new String[] { "id", "name" }, new String[] { "action", "action" });
 		actionSelect.addChild("option", "value", "", l10n("selectAction"));
-		actionSelect.addChild("option", "value", "send_n2ntm", l10n("sendMessageToPeers"));
 		actionSelect.addChild("option", "value", "update_notes", l10n("updateChangedPrivnotes"));
 		if(advancedModeEnabled) {
 			actionSelect.addChild("option", "value", "enable", l10n("peersEnable"));
@@ -209,7 +214,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	 */
 	@Override
 	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
-		if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("send_n2ntm")) {
+		if (request.isPartSet("doSendMessageToPeers")) {
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
@@ -516,7 +521,8 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	}
 
 	@Override
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx)
+			throws ToadletContextClosedException, IOException, RedirectException, ConfigException {
 		super.handleMethodPOST(uri, request, ctx);
 	}
 

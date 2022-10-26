@@ -33,7 +33,6 @@ import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
-import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItemKey;
 import freenet.support.CheatingTicker;
 import freenet.support.DummyJobRunner;
@@ -483,7 +482,6 @@ public class SplitFileFetcherStorageTest extends TestCase {
                 }
                 assertTrue(succeeded);
             }
-            int x = 0;
             synchronized(this) {
                 for(int i=0;i<encodedBlocks.length;i++)
                     assertTrue("Block "+i+" not found or decoded", encodedBlocks[i]);

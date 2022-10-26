@@ -37,7 +37,7 @@ public class GenerateSSKMessage extends FCPMessage {
     	FreenetURI insertURI = key.getInsertURI();
     	FreenetURI requestURI = key.getURI();
     	SSKKeypairMessage msg = new SSKKeypairMessage(insertURI, requestURI, identifier);
-    	handler.outputHandler.queue(msg);
+    	handler.send(msg);
 	}
 
 }

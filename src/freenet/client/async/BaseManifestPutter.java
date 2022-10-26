@@ -33,7 +33,6 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.ManifestElement;
 import freenet.support.api.RandomAccessBucket;
-import freenet.support.io.BucketTools;
 import freenet.support.io.ResumeFailedException;
 
 /**
@@ -361,7 +360,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
         // run me
 		private PutHandler(final BaseManifestPutter bmp, PutHandler parent, String name, ClientMetadata cm, HashSet<PutHandler> runningMap) {
-			super(bmp.priorityClass, bmp.cb);
+			super(bmp.priorityClass, bmp.cb.getRequestClient());
 			this.persistent = bmp.persistent();
 			this.cm = cm;
 			this.itemName = name;
@@ -397,7 +396,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		// place holder, don't run it
 		private PutHandler(final BaseManifestPutter bmp, PutHandler parent, String name, String nameInArchive, Metadata md, ClientMetadata cm) {
-			super(bmp.priorityClass, bmp.cb);
+			super(bmp.priorityClass, bmp.cb.getRequestClient());
 			this.persistent = bmp.persistent();
 			this.cm = cm;
 			this.itemName = name;
@@ -769,7 +768,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	public BaseManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
 			InsertContext ctx, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ClientContext context) throws TooManyFilesInsertException {
-		super(prioClass, cb);
+		super(prioClass, cb.getRequestClient());
 		this.targetURI = target;
 		this.cb = cb;
 		this.ctx = ctx;

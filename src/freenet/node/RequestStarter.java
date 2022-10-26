@@ -4,11 +4,9 @@
 package freenet.node;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
-import freenet.client.async.RequestSelectionTreeNode;
 import freenet.client.async.ChosenBlockImpl;
 import freenet.keys.Key;
 import freenet.node.NodeStats.RejectReason;
@@ -16,7 +14,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArrayItem;
 import freenet.support.RandomGrabArrayItemExclusionList;
-import freenet.support.TokenBucket;
 import freenet.support.Logger.LogLevel;
 import freenet.support.math.RunningAverage;
 

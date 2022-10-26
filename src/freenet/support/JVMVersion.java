@@ -1,5 +1,7 @@
 package freenet.support;
 
+import static com.sun.jna.Platform.isAndroid;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,6 +25,11 @@ public class JVMVersion {
 	public static final String UPDATER_THRESHOLD = "1.8";
 
 	/**
+	 * Oldest Java version which supports Modules
+	 */
+	public static final String SUPPORTS_MODULES_THRESHOLD = "1.9";
+
+	/**
 	 * Pre-9 is formatted as: major.feature[.maintenance[_update]]-ident
 	 * Post-9 is formatted as: major[.minor[.security[. ...]]]-ident
 	 * For comparison of compatibility, information beyond the major, feature/minor,
@@ -34,7 +41,8 @@ public class JVMVersion {
 	    Pattern.compile("^0*(\\d+)(?:\\.0*(\\d+)(?:\\.0*(\\d+)(?:[_.]0*(\\d+))?)?)?.*$");
 
 	public static boolean isEOL() {
-		return isEOL(getCurrent());
+		return !isAndroid() // on android the version checks are done on the App level, so we do not check here.
+			&& isEOL(getCurrent());
 	}
 
 	public static boolean needsLegacyUpdater() {
@@ -67,6 +75,15 @@ public class JVMVersion {
 		} else {
 			return is32bitOS;
 		}
+	}
+
+	public static final boolean supportsModules() {
+		String currentVersion = getCurrent();
+		if (currentVersion == null) {
+			return false;
+		}
+
+		return compareVersion(SUPPORTS_MODULES_THRESHOLD, currentVersion) <= 0;
 	}
 
 	/**

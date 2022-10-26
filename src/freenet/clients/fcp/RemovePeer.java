@@ -42,12 +42,12 @@ public class RemovePeer extends FCPMessage {
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
 			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier, identifier);
-			handler.outputHandler.queue(msg);
+			handler.send(msg);
 			return;
 		}
 		String identity = pn.getIdentityString();
 		node.removePeerConnection(pn);
-		handler.outputHandler.queue(new PeerRemoved(identity, nodeIdentifier, identifier));
+		handler.send(new PeerRemoved(identity, nodeIdentifier, identifier));
 	}
 
 }

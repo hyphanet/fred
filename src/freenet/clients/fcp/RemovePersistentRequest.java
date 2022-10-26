@@ -63,7 +63,7 @@ public class RemovePersistentRequest extends FCPMessage {
                             return true;
                         } catch (MessageInvalidException e) {
                             FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
-                            handler.outputHandler.queue(err);
+                            handler.send(err);
                             return false;
                         }
                     }
@@ -71,7 +71,7 @@ public class RemovePersistentRequest extends FCPMessage {
                 }, NativeThread.HIGH_PRIORITY);
             } catch (PersistenceDisabledException e) {
                 FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence disabled and non-persistent request not found", identifier, global);
-                handler.outputHandler.queue(err);
+                handler.send(err);
             }
 		}
 	}

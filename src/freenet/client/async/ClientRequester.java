@@ -65,9 +65,9 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 		hashCode = 0;
 	}
 
-	protected ClientRequester(short priorityClass, ClientBaseCallback cb) {
+	protected ClientRequester(short priorityClass, RequestClient requestClient) {
 		this.priorityClass = priorityClass;
-		this.client = cb.getRequestClient();
+		this.client = requestClient;
 		this.realTimeFlag = client.realTimeFlag();
 		if(client == null)
 			throw new NullPointerException();

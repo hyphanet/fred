@@ -249,7 +249,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			noCacheURI = true;
 			return this;
 		}
-		FreenetURI u = new FreenetURI(keyType, dn, newMetaStr, routingKey, cryptoKey, extra);
+		FreenetURI u = new FreenetURI(keyType, dn, newMetaStr, routingKey, cryptoKey, extra, suggestedEdition);
 		u.noCacheURI = true;
 		return u;
 	}
@@ -459,6 +459,9 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 				if(routingKey.length != 32 && keyType.equals("CHK"))
 					throw new MalformedURLException("Bad URI: Routing key should be 32 bytes long");
 			} else {
+				if (isUSK || (isSSK && docName != null)) {
+					throw new MalformedURLException("Bad URI: Routing key missing");
+				}
 				routingKey = cryptoKey = extra = null;
 				return;
 			}

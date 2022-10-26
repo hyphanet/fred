@@ -30,5 +30,9 @@ public class PluginDownLoaderOfficialFreenet extends PluginDownLoaderFreenet {
 	public boolean isOfficialPluginLoader() {
 		return true;
 	}
-	
+
+	public PluginDownLoader<FreenetURI> getRetryDownloader() {
+		return new PluginDownLoaderOfficialFreenet(hlsc, node, true);
+	}
+
 }

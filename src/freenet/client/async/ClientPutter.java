@@ -92,7 +92,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			short priorityClass,
 			boolean isMetadata, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto,
 			long metadataThreshold) {
-		super(priorityClass, client);
+		super(priorityClass, client.getRequestClient());
 		this.cm = cm;
 		this.isMetadata = isMetadata;
 		this.client = client;

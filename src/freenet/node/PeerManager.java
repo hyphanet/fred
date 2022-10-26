@@ -15,7 +15,6 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,16 +30,11 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
-import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
-import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.DroppedOldPeersUserAlert;
 import freenet.node.useralerts.PeerManagerUserAlert;
-import freenet.node.useralerts.SimpleUserAlert;
-import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
-import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
@@ -233,7 +227,6 @@ public class PeerManager {
 
 	private boolean readPeers(File peersFile, NodeCrypto crypto, OpennetManager opennet, boolean oldOpennetPeers) {
 		boolean someBroken = false;
-		boolean gotSome = false;
 		FileInputStream fis;
 		try {
 			fis = new FileInputStream(peersFile);
@@ -264,7 +257,6 @@ public class PeerManager {
 					        opennet.addOldOpennetNode((OpennetPeerNode)pn);
 					} else
 						addPeer(pn, true, false);
-					gotSome = true;
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					System.err.println("Cannot parse a friend from the peers file: "+e2);
@@ -1015,11 +1007,10 @@ public class PeerManager {
 				continue;
 			}
 			if(enableFOAFMitigationHack) {
-				double selectionRate = selectionRates[i];
-				double selectionSamplesPercentage = selectionRate / totalSelectionRate;
-				if(PeerNode.SELECTION_PERCENTAGE_WARNING < selectionSamplesPercentage) {
+				double selectionPercentage = 100.0 * selectionRates[i] / totalSelectionRate;
+				if(selectionPercentage > PeerNode.SELECTION_PERCENTAGE_WARNING) {
 					if(logMINOR)
-						Logger.minor(this, "Skipping over-selectionned peer(" + selectionSamplesPercentage + "%): " + p.getPeer());
+						Logger.minor(this, "Skipping over-selected peer(" + selectionPercentage + "%): " + p.getPeer());
 					continue;
 				}
 			}
@@ -1109,7 +1100,7 @@ public class PeerManager {
 						leastRecentlyTimedOutBackedOffDistance = diff;
 					}
 			if(addUnpickedLocsTo != null && !chosen) {
-				Double d = new Double(loc);
+				Double d = loc;
 				// Here we can directly compare double's because they aren't processed in any way, and are finite and (probably) nonzero.
 				if(!addUnpickedLocsTo.contains(d))
 					addUnpickedLocsTo.add(d);
@@ -1163,7 +1154,8 @@ public class PeerManager {
 		
 		if(recentlyFailed != null && logMINOR)
 			Logger.minor(this, "Count waiting: "+countWaiting);
-		if(recentlyFailed != null && countWaiting >= 3 && 
+		int maxCountWaiting = maxCountWaiting(peers);
+		if(recentlyFailed != null && countWaiting >= maxCountWaiting && 
 				node.enableULPRDataPropagation /* dangerous to do RecentlyFailed if we won't track/propagate offers */) {
 			// Recently failed is possible.
 			// Route twice, each time ignoring timeout.
@@ -1185,7 +1177,7 @@ public class PeerManager {
 							// This is the sooner of the two top nodes' timeouts.
 							// We also take into account the sooner of any timed out node, IF there are exactly 3 nodes waiting.
 							long until = Math.min(secondTime, firstTime);
-							if(countWaiting == 3) {
+							if(countWaiting == maxCountWaiting) {
 								// Count the others as well if there are only 3.
 								// If there are more than that they won't matter.
 								until = Math.min(until, soonestTimeoutWakeup);
@@ -1241,11 +1233,21 @@ public class PeerManager {
 			if(addUnpickedLocsTo != null)
 				//Add the location which we did not pick, if it exists.
 				if(closestNotBackedOff != null && closestBackedOff != null)
-					addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
+					addUnpickedLocsTo.add(closestBackedOff.getLocation());
 					
 		}
 		
 		return best;
+	}
+
+	/**
+	 * @param peers 
+	 * @return The minimum number of peers which are waiting for timeouts due to RecentlyFailed or 
+	 * DNF's for which we will terminate the request with a RecentlyFailed of our own.
+	 */
+	private int maxCountWaiting(PeerNode[] peers) {
+		int count = countConnectedPeers(peers);
+		return Math.min(10, Math.max(3, count / 4));
 	}
 
 	static final int MIN_DELTA = 2000;
@@ -1788,7 +1790,7 @@ public class PeerManager {
 						break;
 				}
 			}
-			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting+" No load stats: "+numberOfNoLoadStats);
+			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting + " RoutingDisabled " + numberOfRoutingDisabled + " No load stats: "+numberOfNoLoadStats);
 			nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
 		}
 	}
@@ -2076,10 +2078,13 @@ public class PeerManager {
 		if(logMINOR) Logger.minor(this, "countConnectedDarknetPeers() returning "+count);
 		return count;
 	}
-
+	
 	public int countConnectedPeers() {
+		return countConnectedPeers(myPeers());
+	}
+
+	private int countConnectedPeers(PeerNode[] peers) {
 		int count = 0;
-		PeerNode[] peers = myPeers();
 		for(PeerNode peer: peers) {
 			if(peer == null)
 				continue;

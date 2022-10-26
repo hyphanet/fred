@@ -44,7 +44,7 @@ public final class PageMaker {
 		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue", false, false),
 		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true),
 		RABBIT_HOLE("rabbit-hole", "Into the Rabbit Hole", "Simple and clean theme", false, false),
-		WINTERFACEY("winterfacey", "Winterfacey", "2016th-theme, based on Winterface (Bootstrap)", false, false);
+		WINTERFACEY("winterfacey", "Winterfacey", "2016th-theme, based on Winterface (Bootstrap)", true, false);
 
 		
 		public static final String[] possibleValues = {
@@ -112,7 +112,7 @@ public final class PageMaker {
 		}
 
 		public static THEME getDefault() {
-			return THEME.SKY_STATIC;
+			return THEME.WINTERFACEY;
 		}
 	}	
 	
@@ -338,7 +338,16 @@ public final class PageMaker {
 				headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
 			}
 		}
-		
+
+		if (ctx != null && ctx.getContainer().isFProxyJavascriptEnabled()) {
+			URL themeJsUrl = getClass().getResource("staticfiles/themes/" + theme.code + "/script.js");
+			if (themeJsUrl != null) {
+				headNode.addChild("script",
+						new String[]{"type", "language", "src"},
+						new String[]{"text/javascript", "javascript", "/static/themes/" + theme.code + "/script.js"});
+			}
+		}
+
 		boolean webPushingEnabled = 
 			ctx != null && ctx.getContainer().isFProxyJavascriptEnabled() && ctx.getContainer().isFProxyWebPushingEnabled();
 		

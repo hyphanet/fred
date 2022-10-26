@@ -16,7 +16,6 @@ import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
 import freenet.support.MemoryLimitedJobRunner;
-import freenet.support.io.NativeThread;
 import freenet.support.io.StorageFormatException;
 
 /** Cross-segments are "in parallel" with the main segments, an interlaced Reed-Solomon scheme 

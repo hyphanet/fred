@@ -100,12 +100,19 @@ public class InsertableClientSSK extends ClientSSK {
 		byte[] pkHash = pubKey.asBytesHash();
 		return new InsertableClientSSK(uri.getDocName(), pkHash, pubKey, privKey, uri.getCryptoKey(), keyType);
 	}
-	
-	public ClientSSKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, RandomSource r, String compressordescriptor, boolean pre1254) throws SSKEncodeException, IOException, InvalidCompressionCodecException {
+
+	public ClientSSKBlock encode(
+			Bucket sourceData,
+			boolean asMetadata,
+			boolean dontCompress,
+			short alreadyCompressedCodec,
+			long sourceLength,
+			RandomSource r,
+			String compressordescriptor) throws SSKEncodeException, IOException, InvalidCompressionCodecException {
 		byte[] compressedData;
 		short compressionAlgo;
 		try {
-			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, ClientSSKBlock.MAX_DECOMPRESSED_DATA_LENGTH, SSKBlock.DATA_LENGTH, true, compressordescriptor, pre1254);
+			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, ClientSSKBlock.MAX_DECOMPRESSED_DATA_LENGTH, SSKBlock.DATA_LENGTH, true, compressordescriptor);
 			compressedData = comp.compressedData;
 			compressionAlgo = comp.compressionAlgorithm;
 		} catch (KeyEncodeException e) {

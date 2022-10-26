@@ -60,7 +60,7 @@ public class TestDDARequestMessage extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, e.getMessage(), identifier, false);
 		}
 		TestDDAReplyMessage reply = new TestDDAReplyMessage(job);
-		handler.outputHandler.queue(reply);
+		handler.send(reply);
 	}
 	
 }

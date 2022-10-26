@@ -55,6 +55,7 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.NodeL10n;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.useralerts.DatastoreTooSmallAlert;
 import freenet.node.useralerts.DiskSpaceUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -116,10 +117,10 @@ public class NodeClientCore implements Persistable {
 	 * When processing the POST-request, you MUST validate that the received password matches this variable. If it does not, you must NOT process the request.
 	 * In particular, you must NOT modify anything.</p>
 	 * <p>To produce a form which already contains the password, use {@link PluginRespirator#addFormChild(freenet.support.HTMLNode, String, String)}.</p>
-	 * <p>To validate that the right password was received, use {@link WebInterfaceToadlet#isFormPassword(HTTPRequest)}.</p> 
+	 * <p>To validate that the right password was received, use {@link WebInterfaceToadlet#isFormPassword(HTTPRequest)}.</p>
 	 */
 	public final String formPassword;
-	
+
 	final ProgramDirectory downloadsDir;
 	private File[] downloadAllowedDirs;
 	private boolean includeDownloadDir;
@@ -151,10 +152,10 @@ public class NodeClientCore implements Persistable {
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	protected final Persister persister;
 	public final DatastoreChecker storeChecker;
-	/** How much disk space must be free when starting a long-term, unpredictable duration job such 
+	/** How much disk space must be free when starting a long-term, unpredictable duration job such
 	 * as a big download? */
 	private long minDiskFreeLongTerm;
-	/** How much disk space must be free when starting a quick but disk-heavy job such as 
+	/** How much disk space must be free when starting a quick but disk-heavy job such as
 	 * completing a download? */
 	private long minDiskFreeShortTerm;
 	private final MasterSecret cryptoSecretTransient;
@@ -170,7 +171,7 @@ public class NodeClientCore implements Persistable {
 	private boolean alwaysCommit;
 	private final PluginStores pluginStores;
 	private boolean lazyStartDatastoreChecker;
-	
+
 	private boolean finishedInitStorage;
 	private boolean finishingInitStorage;
 
@@ -609,7 +610,7 @@ public class NodeClientCore implements Persistable {
 						  persistentDiskChecker,
 						  compressor, storeChecker, fcpPersistentRoot,
 						  cryptoSecretTransient, toadlets,
-						  defaultFetchContext, defaultInsertContext);
+						  defaultFetchContext, defaultInsertContext, config);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 		clientLayerPersister.start(clientContext);
@@ -881,6 +882,7 @@ public class NodeClientCore implements Persistable {
 				    });
 		alwaysCommit = nodeConfig.getBoolean("alwaysCommit");
 		alerts.register(new DiskSpaceUserAlert(this));
+		alerts.register(new DatastoreTooSmallAlert(this));
 	}
 
 	protected void updatePersistentRAFSpaceLimit() {
@@ -914,10 +916,10 @@ public class NodeClientCore implements Persistable {
                 }
                 updatePersistentRAFSpaceLimit();
             }
-            
+
         }, true);
         minDiskFreeLongTerm = nodeConfig.getLong("minDiskFreeLongTerm");
-        
+
         nodeConfig.register("minDiskFreeShortTerm", "512M", sortOrder++, true, true, "NodeClientCore.minDiskFreeShortTerm", "NodeClientCore.minDiskFreeShortTermLong", new LongCallback() {
 
             @Override
@@ -935,7 +937,7 @@ public class NodeClientCore implements Persistable {
                 }
                 tempBucketFactory.setMinDiskSpace(val);
             }
-            
+
         }, true);
         minDiskFreeShortTerm = nodeConfig.getLong("minDiskFreeShortTerm");
         // Do not register the UserAlert yet, since we haven't finished constructing stuff it uses.
@@ -961,10 +963,10 @@ public class NodeClientCore implements Persistable {
 	 * @throws MasterKeysWrongPasswordException If it needs an encryption key.
 	 */
 	private void initStorage(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException {
-	    clientLayerPersister.setFilesAndLoad(node.nodeDir.dir(), "client.dat", 
+	    clientLayerPersister.setFilesAndLoad(node.nodeDir.dir(), "client.dat",
 	            node.wantEncryptedDatabase(), node.wantNoPersistentDatabase(), databaseKey, clientContext, requestStarters, random);
 	}
-	
+
 	/** Must only be called after we have loaded master.keys */
 	private void finishInitStorage() {
 	    boolean success = false;
@@ -1035,7 +1037,7 @@ public class NodeClientCore implements Persistable {
 	}
 
 	public void start(Config config) throws NodeInitException {
-	    
+
 		persister.start();
 
 		requestStarters.start();
@@ -1043,7 +1045,7 @@ public class NodeClientCore implements Persistable {
 		storeChecker.start();
 		if(fcpServer != null)
 			fcpServer.maybeStart();
-        node.pluginManager.start(node.config);
+        node.pluginManager.start();
         node.ipDetector.ipDetectorManager.start();
 		if(tmci != null)
 			tmci.start();
@@ -1091,7 +1093,7 @@ public class NodeClientCore implements Persistable {
 		}
 	}
 
-	/** Start an asynchronous fetch for the key, which will complete by calling 
+	/** Start an asynchronous fetch for the key, which will complete by calling
 	 * tripPendingKey() if successful, as well as calling the listener in most cases.
 	 * @param key The key to fetch.
 	 * @param offersOnly If true, only fetch the key from nodes that have offered it, using GetOfferedKeys,
@@ -1127,7 +1129,7 @@ public class NodeClientCore implements Persistable {
 		asyncGet(key, offersOnly, uid, new RequestSenderListener() {
 
 			private boolean rejectedOverload;
-			
+
 			@Override
 			public void onCHKTransferBegins() {
 				// Ignore
@@ -1141,7 +1143,7 @@ public class NodeClientCore implements Persistable {
 				}
 				requestStarters.rejectedOverload(isSSK, false, realTimeFlag);
 			}
-			
+
 			@Override
 			public void onDataFoundLocally() {
 				tag.unlockHandler();
@@ -1155,16 +1157,13 @@ public class NodeClientCore implements Persistable {
 			@Override
 			public void onRequestSenderFinished(int status, boolean fromOfferedKey, RequestSender rs) {
 				tag.unlockHandler();
-				
-				if(rs.abortedDownstreamTransfers())
-					status = RequestSender.TRANSFER_FAILED;
 
 				if(status == RequestSender.NOT_FINISHED) {
 					Logger.error(this, "Bogus status in onRequestSenderFinished for "+rs, new Exception("error"));
 					listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
 					return;
 				}
-				
+
 				boolean rejectedOverload;
 				synchronized(this) {
 					rejectedOverload = this.rejectedOverload;
@@ -1263,11 +1262,6 @@ public class NodeClientCore implements Persistable {
 			}
 
 			@Override
-			public void onAbortDownstreamTransfers(int reason, String desc) {
-				// Ignore, onRequestSenderFinished will also be called.
-			}
-
-			@Override
 			public void onNotStarted(boolean internalError) {
 				if(internalError)
 					listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
@@ -1292,7 +1286,7 @@ public class NodeClientCore implements Persistable {
 	 * tripPendingKeys mechanism.
 	 * @param canReadClientCache Can this request read the client-cache?
 	 * @param canWriteClientCache Can this request write the client-cache?
-	 * @param htl The HTL to start the request at. See the caller, this can be modified in the case of 
+	 * @param htl The HTL to start the request at. See the caller, this can be modified in the case of
 	 * fetching an offered key.
 	 * @param realTimeFlag Is this a real-time request? False = this is a bulk request.
 	 * @param localOnly If true, only check the datastore, don't create a request if nothing is found.
@@ -1380,9 +1374,6 @@ public class NodeClientCore implements Persistable {
 				}
 
 				int status = rs.getStatus();
-
-				if(rs.abortedDownstreamTransfers())
-					status = RequestSender.TRANSFER_FAILED;
 
 				if(status == RequestSender.NOT_FINISHED)
 					continue;
@@ -1980,7 +1971,7 @@ public class NodeClientCore implements Persistable {
 	public FilterCallback createFilterCallback(URI uri, FoundURICallback cb) {
 		if(logMINOR)
 			Logger.minor(this, "Creating filter callback: " + uri + ", " + cb);
-		return new GenericReadFilterCallback(uri, cb,null, toadletContainer);
+		return new GenericReadFilterCallback(uri, cb, null, toadletContainer);
 	}
 
 	public int maxBackgroundUSKFetchers() {
@@ -2059,7 +2050,7 @@ public class NodeClientCore implements Persistable {
 		sched = requestStarters.getScheduler(key instanceof NodeSSK, false, true);
 		sched.dequeueOfferedKey(key);
 	}
-	
+
 	public BookmarkManager getBookmarkManager() {
 		return toadletContainer.getBookmarks();
 	}
@@ -2103,7 +2094,7 @@ public class NodeClientCore implements Persistable {
     public PluginStores getPluginStores() {
         return pluginStores;
     }
-    
+
     public synchronized long getMinDiskFreeLongTerm() {
         return minDiskFreeLongTerm;
     }

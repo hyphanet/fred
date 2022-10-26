@@ -6,6 +6,7 @@ package freenet.support;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 import freenet.node.PrioRunnable;
@@ -161,17 +162,24 @@ public class PooledExecutor implements Executor {
 	private static class Job {
 		private final Runnable runnable;
 		private final String name;
+		private final int id;
 
 		Job(Runnable runnable, String name) {
 			this.runnable = runnable;
 			this.name = name;
+			this.id = new Random().nextInt();
+		}
+
+		public int getId() {
+			return id;
 		}
 	}
 
-	private class MyThread extends NativeThread {
+	public class MyThread extends NativeThread {
 		final String defaultName;
 		volatile boolean alive = true;
 		Job nextJob;
+		Job job;
 		final long threadNo;
 		private boolean removed = false;
 
@@ -195,12 +203,14 @@ public class PooledExecutor implements Executor {
 				}
 			}
 		}
+
+		public int getJobId() {
+			return job != null ? job.id : nextJob != null ? nextJob.id : 0;
+		}
 		
 		private void innerRun(int nativePriority) {
 			long ranJobs = 0;
 			while(true) {
-				Job job;
-
 				synchronized(this) {
 					job = nextJob;
 					nextJob = null;

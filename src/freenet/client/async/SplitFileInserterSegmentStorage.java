@@ -27,7 +27,6 @@ import freenet.support.MemoryLimitedJob;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
 import freenet.support.io.CountedOutputStream;
-import freenet.support.io.NativeThread;
 import freenet.support.io.NullOutputStream;
 import freenet.support.io.StorageFormatException;
 
@@ -570,8 +569,6 @@ public class SplitFileInserterSegmentStorage {
         int checksumLength = parent.checker.checksumLength();
         System.arraycopy(buf, 0, checkBuf, prefix.length, buf.length - checksumLength);
         byte[] checksum = Arrays.copyOfRange(buf, buf.length - checksumLength, buf.length);
-        if(parent.checker.checkChecksum(checkBuf, 0, checkBuf.length, checksum))
-            throw new MissingKeyException();
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buf));
         byte b = dis.readByte();
         if(b != 1) throw new MissingKeyException();

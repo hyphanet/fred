@@ -48,7 +48,7 @@ public class GetConfig extends FCPMessage {
 		if(!handler.hasFullAccess()) {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "GetConfig requires full access", identifier, false);
 		}
-		handler.outputHandler.queue(new ConfigData(node, withCurrent, withDefaults, withSortOrder, withExpertFlag, withForceWriteFlag, withShortDescription, withLongDescription, withDataTypes, identifier));
+		handler.send(new ConfigData(node, withCurrent, withDefaults, withSortOrder, withExpertFlag, withForceWriteFlag, withShortDescription, withLongDescription, withDataTypes, identifier));
 	}
 
 }

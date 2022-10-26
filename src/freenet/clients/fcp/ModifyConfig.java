@@ -65,7 +65,7 @@ public class ModifyConfig extends FCPMessage {
 			}
 		}
 		node.clientCore.storeConfig();
-		handler.outputHandler.queue(new ConfigData(node, true, false, false, false, false, false, false, false, identifier));
+		handler.send(new ConfigData(node, true, false, false, false, false, false, false, false, identifier));
 	}
 
 }

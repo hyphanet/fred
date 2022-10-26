@@ -37,6 +37,9 @@ import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
 
+import freenet.config.*;
+import freenet.node.diagnostics.*;
+import freenet.node.useralerts.*;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.FetchContext;
@@ -44,12 +47,6 @@ import freenet.clients.fcp.FCPMessage;
 import freenet.clients.fcp.FeedMessage;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
-import freenet.config.EnumerableOptionCallback;
-import freenet.config.FreenetFilePersistentConfig;
-import freenet.config.InvalidConfigValueException;
-import freenet.config.NodeNeedRestartException;
-import freenet.config.PersistentConfig;
-import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.ECDH;
 import freenet.crypt.MasterSecret;
@@ -99,12 +96,6 @@ import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.NotAvailNodeStoreStats;
 import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
-import freenet.node.useralerts.JVMVersionAlert;
-import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
-import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
-import freenet.node.useralerts.SimpleUserAlert;
-import freenet.node.useralerts.TimeSkewDetectedUserAlert;
-import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginDownLoaderOfficialHTTPS;
 import freenet.pluginmanager.PluginManager;
@@ -496,7 +487,8 @@ public class Node implements TimeSkewDetectorCallback {
 	private String storeType;
 	private boolean storeUseSlotFilters;
 	private boolean storeSaltHashResizeOnStart;
-	
+	private int storeSaltHashSlotFilterPersistenceTime;
+
 	/** Minimum total datastore size */
 	static final long MIN_STORE_SIZE = 32 * 1024 * 1024;
 	/** Default datastore size (must be at least MIN_STORE_SIZE) */
@@ -660,6 +652,10 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean throttleLocalData;
 	private int outputBandwidthLimit;
 	private int inputBandwidthLimit;
+	private long amountOfDataToCheckCompressionRatio;
+	private int minimumCompressionPercentage;
+	private int maxTimeForSingleCompressor;
+	private boolean connectionSpeedDetection;
 	boolean inputLimitDefault;
 	final boolean enableARKs;
 	final boolean enablePerNodeFailureTables;
@@ -729,6 +725,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public final SecurityLevels securityLevels;
 
+	/** Diagnostics */
+	private final DefaultNodeDiagnostics nodeDiagnostics;
+
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
 
@@ -756,6 +755,12 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	private boolean enableRoutedPing;
 
+	private boolean enableNodeDiagnostics;
+
+	private boolean peersOffersDismissed;
+
+	private int datastoreTooSmallDismissed;
+
 	/**
 	 * Minimum bandwidth limit in bytes considered usable: 10 KiB. If there is an attempt to set a limit below this -
 	 * excluding the reserved -1 for input bandwidth - the callback will throw. See the callbacks for
@@ -776,18 +781,6 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	public static int getMinimumBandwidth() {
 		return minimumBandwidth;
-	}
-
-	/**
-	 * Returns an exception with an explanation that the given bandwidth limit is too low.
-	 *
-	 * See the Node.bandwidthMinimum localization string.
-	 * @param limit Bandwidth limit in bytes.
-	 */
-	private InvalidConfigValueException lowBandwidthLimit(int limit) {
-		return new InvalidConfigValueException(l10n("bandwidthMinimum",
-		    new String[] { "limit", "minimum" },
-		    new String[] { Integer.toString(limit), Integer.toString(minimumBandwidth) }));
 	}
 
 	/**
@@ -1522,7 +1515,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			@Override
 			public void set(Integer obwLimit) throws InvalidConfigValueException {
-				checkOutputBandwidthLimit(obwLimit);
+				BandwidthManager.checkOutputBandwidthLimit(obwLimit);
 				try {
 					outputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, obwLimit/2);
 				} catch (IllegalArgumentException e) {
@@ -1542,7 +1535,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		outputBandwidthLimit = obwLimit;
 		try {
-			checkOutputBandwidthLimit(outputBandwidthLimit);
+			BandwidthManager.checkOutputBandwidthLimit(outputBandwidthLimit);
 		} catch (InvalidConfigValueException e) {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, e.getMessage());
 		}
@@ -1570,7 +1563,7 @@ public class Node implements TimeSkewDetectorCallback {
 			@Override
 			public void set(Integer ibwLimit) throws InvalidConfigValueException {
 				synchronized(Node.this) {
-					checkInputBandwidthLimit(ibwLimit);
+					BandwidthManager.checkInputBandwidthLimit(ibwLimit);
 
 					if(ibwLimit == -1) {
 						inputLimitDefault = true;
@@ -1595,10 +1588,83 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		inputBandwidthLimit = ibwLimit;
 		try {
-			checkInputBandwidthLimit(inputBandwidthLimit);
+			BandwidthManager.checkInputBandwidthLimit(inputBandwidthLimit);
 		} catch (InvalidConfigValueException e) {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, e.getMessage());
 		}
+
+		nodeConfig.register("amountOfDataToCheckCompressionRatio", "8MiB", sortOrder++,
+				true, true, "Node.amountOfDataToCheckCompressionRatio",
+				"Node.amountOfDataToCheckCompressionRatioLong", new LongCallback() {
+			@Override
+			public Long get() {
+				return amountOfDataToCheckCompressionRatio;
+			}
+			@Override
+			public void set(Long amountOfDataToCheckCompressionRatio) {
+				synchronized(Node.this) {
+					Node.this.amountOfDataToCheckCompressionRatio = amountOfDataToCheckCompressionRatio;
+				}
+			}
+		}, true);
+
+		amountOfDataToCheckCompressionRatio = nodeConfig.getLong("amountOfDataToCheckCompressionRatio");
+
+		nodeConfig.register("minimumCompressionPercentage", "10", sortOrder++,
+				true, true, "Node.minimumCompressionPercentage",
+				"Node.minimumCompressionPercentageLong", new IntCallback() {
+			@Override
+			public Integer get() {
+				return minimumCompressionPercentage;
+			}
+			@Override
+			public void set(Integer minimumCompressionPercentage) {
+				synchronized(Node.this) {
+					if (minimumCompressionPercentage < 0 || minimumCompressionPercentage > 100) {
+						Logger.normal(Node.class, "Wrong minimum compression percentage" + minimumCompressionPercentage);
+						return;
+					}
+
+					Node.this.minimumCompressionPercentage = minimumCompressionPercentage;
+				}
+			}
+		}, Dimension.NOT);
+
+		minimumCompressionPercentage = nodeConfig.getInt("minimumCompressionPercentage");
+
+		nodeConfig.register("maxTimeForSingleCompressor", "20m", sortOrder++,
+				true, true, "Node.maxTimeForSingleCompressor",
+				"Node.maxTimeForSingleCompressorLong", new IntCallback() {
+			@Override
+			public Integer get() {
+						 return maxTimeForSingleCompressor;
+					 }
+			@Override
+			public void set(Integer maxTimeForSingleCompressor) {
+				synchronized(Node.this) {
+					Node.this.maxTimeForSingleCompressor = maxTimeForSingleCompressor;
+				}
+			}
+		}, Dimension.DURATION);
+
+		maxTimeForSingleCompressor = nodeConfig.getInt("maxTimeForSingleCompressor");
+
+		nodeConfig.register("connectionSpeedDetection", true, sortOrder++,
+			true, true, "Node.connectionSpeedDetection",
+			"Node.connectionSpeedDetectionLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				return connectionSpeedDetection;
+			}
+			@Override
+			public void set(Boolean connectionSpeedDetection) {
+				synchronized(Node.this) {
+					Node.this.connectionSpeedDetection = connectionSpeedDetection;
+				}
+			}
+		});
+
+		connectionSpeedDetection = nodeConfig.getBoolean("connectionSpeedDetection");
 
 		nodeConfig.register("throttleLocalTraffic", false, sortOrder++, true, false, "Node.throttleLocalTraffic", "Node.throttleLocalTrafficLong", new BooleanCallback() {
 
@@ -1971,20 +2037,21 @@ public class Node implements TimeSkewDetectorCallback {
 
 					@Override
 					public Integer get() {
-						return ResizablePersistentIntBuffer.getPersistenceTime();
+						return storeSaltHashSlotFilterPersistenceTime;
 					}
 
 					@Override
 					public void set(Integer val)
-							throws InvalidConfigValueException,
-							NodeNeedRestartException {
-						if(val >= -1)
+							throws InvalidConfigValueException {
+						if(val >= -1) {
 							ResizablePersistentIntBuffer.setPersistenceTime(val);
-						else
+							storeSaltHashSlotFilterPersistenceTime = val;
+						} else
 							throw new InvalidConfigValueException(l10n("slotFilterPersistenceTimeError"));
 					}
 			
 		}, false);
+		storeSaltHashSlotFilterPersistenceTime = nodeConfig.getInt("storeSaltHashSlotFilterPersistenceTime");
 
 		nodeConfig.register("storeSaltHashResizeOnStart", false, sortOrder++, true, false,
 				"Node.storeSaltHashResizeOnStart", "Node.storeSaltHashResizeOnStartLong", new BooleanCallback() {
@@ -2313,31 +2380,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 		writeLocalToDatastore = nodeConfig.getBoolean("writeLocalToDatastore");
 
-		// LOW network *and* physical seclevel = writeLocalToDatastore
-
-		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
-
-			@Override
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				if(newLevel == NETWORK_THREAT_LEVEL.LOW && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW)
-					writeLocalToDatastore = true;
-				else
-					writeLocalToDatastore = false;
-			}
-
-		});
-
-		securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
-
-			@Override
-			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
-				if(newLevel == PHYSICAL_THREAT_LEVEL.LOW && securityLevels.getNetworkThreatLevel() == NETWORK_THREAT_LEVEL.LOW)
-					writeLocalToDatastore = true;
-				else
-					writeLocalToDatastore = false;
-			}
-
-		});
+		// This is dangerous on opennet, but was enabled by default before if both security levels
+		// were LOW. Upgrade to safe value; this setting only makes sense on small darknets.
+		if (opennetEnabled) {
+			writeLocalToDatastore = false;
+		}
 
 		nodeConfig.register("slashdotCacheLifetime", MINUTES.toMillis(30), sortOrder++, true, false, "Node.slashdotCacheLifetime", "Node.slashdotCacheLifetimeLong", new LongCallback() {
 
@@ -2479,9 +2526,60 @@ public class Node implements TimeSkewDetectorCallback {
 			
 		});
 		enableRoutedPing = nodeConfig.getBoolean("enableRoutedPing");
-		
+
+		nodeConfig.register(
+			"enableNodeDiagnostics",
+			false,
+			sortOrder++,
+			true,
+			false,
+			"Node.enableDiagnostics",
+			"Node.enableDiagnosticsLong",
+			new BooleanCallback() {
+				@Override
+				public Boolean get() {
+					synchronized (Node.this) {
+						return enableNodeDiagnostics;
+					}
+				}
+
+				@Override
+				public void set(Boolean val) {
+					synchronized (Node.this) {
+						enableNodeDiagnostics = val;
+						nodeDiagnostics.stop();
+
+						if (enableNodeDiagnostics) {
+							nodeDiagnostics.start();
+						}
+					}
+				}
+			}
+		);
+		enableNodeDiagnostics = nodeConfig.getBoolean("enableNodeDiagnostics");
+
+		nodeConfig.register("datastoreTooSmallDismissed", -1, sortOrder++, true, false,
+				"Node.datastoreTooSmallDismissed", "Node.datastoreTooSmallDismissedLong", new IntCallback() {
+
+					@Override
+					public Integer get() {
+						return datastoreTooSmallDismissed;
+					}
+
+					@Override
+					public void set(Integer val) {
+						datastoreTooSmallDismissed = val;
+					}
+				});
+		datastoreTooSmallDismissed = nodeConfig.getInt("datastoreTooSmallDismissed");
+
 		updateMTU();
-		
+
+		// peers-offers/*.fref files
+		peersOffersFrefFilesConfiguration(nodeConfig, sortOrder++);
+		if (!peersOffersDismissed && checkPeersOffersFrefFiles())
+			PeersOffersUserAlert.createAlert(this);
+
 		/* Take care that no configuration options are registered after this point; they will not persist
 		 * between restarts.
 		 */
@@ -2537,6 +2635,48 @@ public class Node implements TimeSkewDetectorCallback {
 
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
+
+		new BandwidthManager(this).start();
+
+		nodeDiagnostics = new DefaultNodeDiagnostics(this.nodeStats, this.ticker);
+	}
+
+	private void peersOffersFrefFilesConfiguration(SubConfig nodeConfig, int configOptionSortOrder) {
+	 	final Node node = this;
+		nodeConfig.register("peersOffersDismissed", false, configOptionSortOrder, true, true,
+				"Node.peersOffersDismissed", "Node.peersOffersDismissedLong", new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return peersOffersDismissed;
+					}
+
+					@Override
+					public void set(Boolean val) {
+						if (val) {
+							for (UserAlert alert : clientCore.alerts.getAlerts())
+								if (alert instanceof PeersOffersUserAlert)
+									clientCore.alerts.unregister(alert);
+						} else
+							PeersOffersUserAlert.createAlert(node);
+						peersOffersDismissed = val;
+					}
+				});
+		peersOffersDismissed = nodeConfig.getBoolean("peersOffersDismissed");
+	}
+
+	private boolean checkPeersOffersFrefFiles() {
+		File[] files = runDir.file("peers-offers").listFiles();
+		if (files != null && files.length > 0) {
+			for (File file : files) {
+				if (file.isFile()) {
+					String filename = file.getName();
+					if (filename.endsWith(".fref"))
+						return true;
+				}
+			}
+		}
+		return false;
 	}
 
     /** Delete files from old BDB-index datastore. */
@@ -3064,6 +3204,10 @@ public class Node implements TimeSkewDetectorCallback {
 		// Process any data in the extra peer data directory
 		peers.readExtraPeerData();
 
+		if (enableNodeDiagnostics) {
+			nodeDiagnostics.start();
+		}
+
 		Logger.normal(this, "Started node");
 
 		hasStarted = true;
@@ -3587,7 +3731,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Store a datum.
 	 * @param block
 	 *      a KeyBlock
-	 * @param deep If true, insert to the store as well as the cache. Do not set
+	 * @param deep If true, insert to the store rather than the cache. Do not set
 	 * this to true unless the store results from an insert, and this node is the
 	 * closest node to the target; see the description of chkDatastore.
 	 */
@@ -3617,9 +3761,10 @@ public class Node implements TimeSkewDetectorCallback {
 					chkDatastore.put(block, !canWriteDatastore);
 					nodeStats.avgStoreCHKLocation.report(loc);
 
+				} else {
+					chkDatacache.put(block, !canWriteDatastore);
+					nodeStats.avgCacheCHKLocation.report(loc);
 				}
-				chkDatacache.put(block, !canWriteDatastore);
-				nodeStats.avgCacheCHKLocation.report(loc);
 			}
 			if (canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);
@@ -3665,9 +3810,10 @@ public class Node implements TimeSkewDetectorCallback {
 				if(deep) {
 					sskDatastore.put(block, overwrite, !canWriteDatastore);
 					nodeStats.avgStoreSSKLocation.report(loc);
+				} else {
+					sskDatacache.put(block, overwrite, !canWriteDatastore);
+					nodeStats.avgCacheSSKLocation.report(loc);
 				}
-				sskDatacache.put(block, overwrite, !canWriteDatastore);
-				nodeStats.avgCacheSSKLocation.report(loc);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);
@@ -4782,20 +4928,6 @@ public class Node implements TimeSkewDetectorCallback {
             return null;
     }
 
-	private void checkOutputBandwidthLimit(int obwLimit) throws InvalidConfigValueException {
-		if(obwLimit <= 0) throw new InvalidConfigValueException(l10n("bwlimitMustBePositive"));
-		if (obwLimit < minimumBandwidth) throw lowBandwidthLimit(obwLimit);
-	}
-
-	private void checkInputBandwidthLimit(int ibwLimit) throws InvalidConfigValueException {
-		// Reserved value for limit based on output limit.
-		if (ibwLimit == -1) {
-			return;
-		}
-		if(ibwLimit <= 1) throw new InvalidConfigValueException(l10n("bandwidthLimitMustBePositiveOrMinusOne"));
-		if (ibwLimit < minimumBandwidth) throw lowBandwidthLimit(ibwLimit);
-	}
-
 	public PluginManager getPluginManager() {
 		return pluginManager;
 	}
@@ -4804,5 +4936,12 @@ public class Node implements TimeSkewDetectorCallback {
     DatabaseKey getDatabaseKey() {
         return databaseKey;
     }
-    
+
+    public NodeDiagnostics getNodeDiagnostics() {
+        return nodeDiagnostics;
+    }
+
+    public boolean isNodeDiagnosticsEnabled() {
+        return enableNodeDiagnostics;
+    }
 }

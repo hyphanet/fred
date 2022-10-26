@@ -1,0 +1,34 @@
+
+# initial and later empty lines should disappear
+
+# some comment
+simplepathname.mp3
+# unimportant comment
+simplepathname2.mp3
+simplepathname3.m3u
+simplepathname3.ogg
+simplepathname3.oga
+simplepathname3.ogv
+simplepathname3.flac
+# absolute links are shifted to the host and port of the visitor
+http://127.0.0.1:8888/CHK@qtpnyOzrg~aiAbnw6AoKbX8ZlTCwznjY4G1y-JiiCgg,b0wkEgRPKWMvedueAKLkyv0S83xOrGUT4S7FaN5J3nI,AAMC--8/Infinite-Hands-free-software.mp3
+http://127.0.0.1:8888/CHK@qtpnyOzrg~aiAbnw6AoKbX8ZlTCwznjY4G1y-JiiCgg,b0wkEgRPKWMvedueAKLkyv0S83xOrGUT4S7FaN5J3nI,AAMC--8/next.m3u
+/CHK@qtpnyOzrg~aiAbnw6AoKbX8ZlTCwznjY4G1y-JiiCgg,b0wkEgRPKWMvedueAKLkyv0S83xOrGUT4S7FaN5J3nI,AAMC--8/Infinite-Hands-free-software.mp3
+/CHK@qtpnyOzrg~aiAbnw6AoKbX8ZlTCwznjY4G1y-JiiCgg,b0wkEgRPKWMvedueAKLkyv0S83xOrGUT4S7FaN5J3nI,AAMC--8/next.m3u
+/CHK@qtpnyOzrg~aiAbnw6AoKbX8ZlTCwznjY4G1y-JiiCgg,b0wkEgRPKWMvedueAKLkyv0S83xOrGUT4S7FaN5J3nI,AAMC--8/Infinite-Hands-free-software.mp3
+
+
+# https://soundcloud.com/conniptions/mr-tsa-man-coming-into-los cc by-sa
+/CHK@aYtI6p96mfkDrIXQdnGZWeTxLm~hEjFy8xz~Bw5oZSw,6gcO31K9NqkpyXk4kTfZbwBp0LvvN5NFLIfDnQ8uEXo,AAMC--8/mrtsaman3.mp3
+# https://soundcloud.com/lelu-starlite/home-at-the-grange cc by-sa
+/CHK@ONyIPZXETM4dDiObUZkyfQzaOtHxmGIDcB0Eofo9UGA,C85PHfP~LjC~uxntvUi~H9cjXx7poU6wLOu8YEwDKTw,AAMC--8/Home-At-The-Grange.mp3
+# https://soundcloud.com/kristina-couch/i-should-leave cc by
+/CHK@q74q2YCWmxGFOivrnLJt3ysXeN3mGJANFQQYt34K3Ag,ISATE9J8ah0V65IZE1H8MENt5U8K9~2DthcPirqh4sk,AAMC--8/cecilos-song-v2.0.mp3
+# https://soundcloud.com/kristina-couch/i-should-leave-improved cc by
+/CHK@0FbKGEpOeRN1VEXRlg~o855V9B6OxeV5h4UEHiq3ngw,oEPkK1k0XWvY82ZlmpGF7jGWuIcNbozwiYnhtEnqWzg,AAMC--8/cecilos-songbest-version.mp3
+# https://soundcloud.com/sorcha_ni/bonnie-alba cc by
+/CHK@ZcvI6zgqtQtV65sI9gntyhIJYNEP5X3I2ylmia0FiOg,aDL29QdbwzipSELt~1jsHqgqZ5YA9sZ-34I8~ZFWrwA,AAMC--8/BonnieAlba.mp3
+# https://soundcloud.com/sorcha_ni/albananthem cc by
+/CHK@~A-SETPFf0jekBWw06yNxsfcsoj-v6V1tT8ntd7ns7I,Cy33kB2jkDR7eeqP54DjHLhILOTw253dUVYrTmO3f90,AAMC--8/AlbanAnthem.mp3
+# https://soundcloud.com/sorcha_ni/a-drop-of-bereks-blood cc by
+/CHK@dq~3Ojv3QItpqNhp7b8W8QrKQo~66duficuXXofHeYY,advGQWcuQbogNX~Kq2to8bWZi7w~YW2aravk1fC4T5M,AAMC--8/BereksBlood.mp3
