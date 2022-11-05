@@ -326,7 +326,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	}
 
 	// Strip http(s):// and (web+|ext+)freenet: prefix
-	protected final static Pattern URI_PREFIX = Pattern.compile("^(https?://[^/]+/+)?(((ext|web)\+)?freenet:)?");
+	protected final static Pattern URI_PREFIX = Pattern.compile("^(https?://[^/]+/+)?(((ext|web)\\+)?freenet:)?");
 
 	public FreenetURI(String URI) throws MalformedURLException {
 		this(URI, false);
