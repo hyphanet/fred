@@ -93,6 +93,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * The connection between the node and the client layer.
  */
 public class NodeClientCore implements Persistable {
+	// max number of healing inserts. If a 320 MiB file succeeds just barely,
+	// it has about 10.000 blocks eligible for healing (10_000 x 32 kiB).
+	// lifetime of large files is currently 7-14 days, so at 10_000 max keys,
+	// a 320 MiB file stays alive if one person accesses it every 10 days.
+	// a 3GiB file stays alive if it is downloaded by one person per day.
+	// 8k means that up to 250 MiB of memory are needed
+	// when a file of 250MiB or more succeeds just barely.
+	private static final int MAX_RUNNING_HEALING_INSERTS = 8192;
 	private static volatile boolean logMINOR;
 
 	static {
@@ -487,7 +495,7 @@ public class NodeClientCore implements Persistable {
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false,
 						Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0,
 						InsertContext.CompatibilityMode.COMPAT_DEFAULT),
-				RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+				RequestStarter.PREFETCH_PRIORITY_CLASS, MAX_RUNNING_HEALING_INSERTS);
 
 		PooledFileRandomAccessBufferFactory raff =
 				new PooledFileRandomAccessBufferFactory(persistentFilenameGenerator,
