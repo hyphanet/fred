@@ -1645,26 +1645,6 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("147<1,65535>"),false,true));
 			allelementVerifiers.remove(element);
 		}
-		else if("transition-delay".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("145<1,65535>"),false,true));
-			allelementVerifiers.remove(element);
-		}
-		else if("transition-duration".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("145<1,65535>"),false,true));
-			allelementVerifiers.remove(element);
-		}
-		else if("transition-property".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("146<1,65535>"),false,true));
-			allelementVerifiers.remove(element);
-		}
-		else if("transition-timing-function".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("147<1,65535>"),false,true));
-			allelementVerifiers.remove(element);
-		}
 	}
 
 
