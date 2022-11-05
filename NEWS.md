@@ -5,6 +5,7 @@ next:
 1495:
 
 - finally merged the HashingAPI by unixninja92, a GSoC project that had gotten lost int he pull requests. This provides an easy and well-tested way to create and verify different types of Hashes from byte arrays, including Sha256 and TigerTree. https://github.com/freenet/fred/pull/258
+- Add web+freenet and ext+freenet as supported schemas to support extensions. Thanks to TheSeeker
 - Eleriseth pending keys merged (performance)
 - new firsttime wizard (single-step joining with clearer defaults)
 - healing size increased (better lifetime for popular files)
