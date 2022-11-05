@@ -1339,7 +1339,7 @@ class CSSTokenizerFilter {
 		}
 		else if("position".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("static","relative","absolute","fixed"),ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("static","relative","absolute","fixed","sticky"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("quotes".equalsIgnoreCase(element))
