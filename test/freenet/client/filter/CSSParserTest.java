@@ -880,6 +880,28 @@ public class CSSParserTest {
 		propertyTests.put("body { nav-left: div.bold '<target-name>'; }",  "body { }");
 		propertyTests.put("button#foo { nav-left: #bar \"sidebar\"; }", "button#foo { nav-left: #bar \"sidebar\"; }");
 		propertyTests.put("button#foo { nav-left: invalidSelector \"sidebar\"; }", "button#foo { }");
+		
+		// transition-* 
+		// valid, 1 value
+		propertyTests.put("div { transition-duration: 5s; }", "div { transition-duration: 5s; }");
+		propertyTests.put("div { transition-delay: 1s; }", "div { transition-delay: 1s; }");
+		propertyTests.put("div { transition-property: width; }", "div { transition-property: width; }");
+		propertyTests.put("div { transition-timing-function: ease; }", "div { transition-timing-function: ease; }");
+		// valid, 2 values
+		propertyTests.put("div { transition-duration: 5s, 1s; }", "div { transition-duration: 5s, 1s; }");
+		propertyTests.put("div { transition-delay: 1s, 3s; }", "div { transition-delay: 1s, 3s; }");
+		propertyTests.put("div { transition-property: width, transform; }", "div { transition-property: width, transform; }");
+		propertyTests.put("div { transition-timing-function: ease, ease-out; }", "div { transition-timing-function: ease, ease-out; }");
+		// invalid, no values
+		propertyTests.put("div { transition-duration: ; }", "div { }");
+		propertyTests.put("div { transition-delay: ; }", "div { }");
+		propertyTests.put("div { transition-property: ; }", "div { }");
+		propertyTests.put("div { transition-timing-function: ; }", "div { }");
+		// invalid, wrong values
+		propertyTests.put("div { transition-duration: \"test\"; }", "div { }");
+		propertyTests.put("div { transition-delay: \"test\"; }", "div { }");
+		propertyTests.put("div { transition-property: \"test\"; }", "div { }");
+		propertyTests.put("div { transition-timing-function: \"test\"; }", "div { }");
 	}
 
 	FilterMIMEType cssMIMEType;
