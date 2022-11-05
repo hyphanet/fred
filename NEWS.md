@@ -11,10 +11,10 @@ next:
 - new firsttime wizard (single-step joining with clearer defaults)
 - healing size increased (better lifetime for popular files)
 - CSS: enable sticky — thanks to Spider Admin
-- CSS: enable transition and word-wrap — thanks to naejadu
+- CSS: enable transition and word-wrap — thanks to naejadu, thanks to vwoodzell for the review!
 - new theme: sky-dark-static
 - m3u-player: skip broken files
-- bookmarks: first section has "starting points"
+- bookmarks: first section has "starting points", thanks to vwoodzell for the review!
 - announcement fixes
 
 1494:
