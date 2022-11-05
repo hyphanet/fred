@@ -1,5 +1,7 @@
 package freenet.client.filter;
 
+import static org.junit.Assert.*;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -7,10 +9,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class OggPageTest extends TestCase {
+public class OggPageTest {
+	@Test
 	public void testStripNonsenseInterruption() throws IOException {
 		InputStream badData = getClass().getResourceAsStream("./ogg/nonsensical_interruption.ogg");
 		ByteArrayOutputStream filteredDataStream = new ByteArrayOutputStream();
@@ -36,20 +38,22 @@ public class OggPageTest extends TestCase {
 		output.close();
 		input.close();
 
-		Assert.assertTrue(Arrays.equals(filteredData, expectedData));
+		assertTrue(Arrays.equals(filteredData, expectedData));
 	}
 
+	@Test
 	public void testChecksum() throws IOException {
 		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/valid_checksum.ogg"));
 		OggPage page = OggPage.readPage(input);
-		Assert.assertTrue(page.headerValid());
+		assertTrue(page.headerValid());
 		input.close();
 	}
 
+	@Test
 	public void testInvalidChecksumInvalidates() throws IOException {
 		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/invalid_checksum.ogg"));
 		OggPage page = OggPage.readPage(input);
-		Assert.assertFalse(page.headerValid());
+		assertFalse(page.headerValid());
 		input.close();
 	}
 }

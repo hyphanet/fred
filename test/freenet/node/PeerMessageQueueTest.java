@@ -3,14 +3,18 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-public class PeerMessageQueueTest extends TestCase {
+import org.junit.Test;
+
+public class PeerMessageQueueTest {
+	@Test
 	public void testUrgentTimeEmpty() {
 		PeerMessageQueue pmq = new PeerMessageQueue();
 		assertEquals(Long.MAX_VALUE, pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis()));
 	}
 
+	@Test
 	public void testUrgentTime() {
 		PeerMessageQueue pmq = new PeerMessageQueue();
 
@@ -31,6 +35,7 @@ public class PeerMessageQueueTest extends TestCase {
 	/* Test that getNextUrgentTime() returns the correct value, even when the items on the queue
 	 * aren't ordered by their timeout value, eg. when an item was readded because we couldn't send
 	 * it. */
+	@Test
 	public void testUrgentTimeQueuedWrong() {
 		PeerMessageQueue pmq = new PeerMessageQueue();
 
@@ -60,6 +65,7 @@ public class PeerMessageQueueTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testGrabQueuedMessageItem() {
 		PeerMessageQueue pmq = new PeerMessageQueue();
 

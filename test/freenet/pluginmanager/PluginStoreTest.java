@@ -1,14 +1,17 @@
 package freenet.pluginmanager;
 
+import static org.junit.Assert.*;
+
 import java.util.Arrays;
 import java.util.Random;
+
+import org.junit.Test;
 
 import freenet.node.FSParseException;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;
-import junit.framework.TestCase;
 
-public class PluginStoreTest extends TestCase {
+public class PluginStoreTest {
     
     private void check(PluginStore store) throws IllegalBase64Exception, FSParseException {
         SimpleFieldSet fs = store.exportStoreAsSFS();
@@ -21,6 +24,7 @@ public class PluginStoreTest extends TestCase {
     private String invalidCharsForSFS = "\r\n"+SimpleFieldSet.KEYVALUE_SEPARATOR_CHAR+
         SimpleFieldSet.MULTI_LEVEL_CHAR+SimpleFieldSet.MULTI_VALUE_CHAR;
     
+    @Test
     public void testStringsWithInvalidChars() throws IllegalBase64Exception, FSParseException {
         PluginStore store = new PluginStore();
         for(int i=0;i<invalidCharsForSFS.length();i++) {
@@ -30,6 +34,7 @@ public class PluginStoreTest extends TestCase {
         check(store);
     }
     
+    @Test
     public void testRandom() throws IllegalBase64Exception, FSParseException {
         Random r = new Random(1234);
         PluginStore store = new PluginStore();
@@ -114,6 +119,7 @@ public class PluginStoreTest extends TestCase {
         }
     }
     
+    @Test
     public void testWriteStringArrays() throws IllegalBase64Exception, FSParseException {
         String key = "test";
         String[] value = new String[] { "tag1", "tag2" };

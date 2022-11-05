@@ -1,8 +1,11 @@
 package freenet.node;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-public class MessageWrapperTest extends TestCase {
+import org.junit.Test;
+
+public class MessageWrapperTest {
+	@Test
 	public void testGetFragment() {
 		MessageItem item = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
 		MessageWrapper wrapper = new MessageWrapper(item, 0);
@@ -48,6 +51,7 @@ public class MessageWrapperTest extends TestCase {
 		assertSame(wrapper, frag.wrapper);
 	}
 	
+	@Test
 	public void testGetFragmentWithLoss() {
 		MessageItem item = new MessageItem(new byte[363], null, false, null, (short) 0, false, false);
 		MessageWrapper wrapper = new MessageWrapper(item, 0);
@@ -101,6 +105,7 @@ public class MessageWrapperTest extends TestCase {
 		assertSame(wrapper, frag.wrapper);
 	}
 
+	@Test
 	public void testLost() {
 		MessageItem item = new MessageItem(new byte[363], null, false, null, (short) 0, false, false);
 		MessageWrapper wrapper = new MessageWrapper(item, 0);

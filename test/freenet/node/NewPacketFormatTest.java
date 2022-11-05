@@ -3,13 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.ciphers.Rijndael;
@@ -19,14 +22,15 @@ import freenet.io.comm.Message;
 import freenet.io.comm.Peer;
 import freenet.support.MutableBoolean;
 
-public class NewPacketFormatTest extends TestCase {
-	@Override
+public class NewPacketFormatTest {
+	@Before
 	public void setUp() {
 		// Because we don't call maybeSendPacket, the packet sent times are not updated,
 		// so lets turn off the keepalives.
 		NewPacketFormat.DO_KEEPALIVES = false;
 	}
 	
+	@Test
 	public void testEmptyCreation() throws BlockedTooLongException {
 		NewPacketFormat npf = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue pmq = new PeerMessageQueue();
@@ -36,6 +40,7 @@ public class NewPacketFormatTest extends TestCase {
 		if(p != null) fail("Created packet from nothing");
 	}
 
+	@Test
 	public void testAckOnlyCreation() throws BlockedTooLongException, InterruptedException {
 		BasePeerNode pn = new NullBasePeerNode();
 		NewPacketFormat npf = new NewPacketFormat(pn, 0, 0);
@@ -56,6 +61,7 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(1, p.getAcks().size());
 	}
 
+	@Test
 	public void testLostLastAck() throws BlockedTooLongException, InterruptedException {
 		NullBasePeerNode senderNode = new NullBasePeerNode();
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
@@ -106,6 +112,7 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(0, ack2.getFragments().size());
 	}
 
+	@Test
 	public void testOutOfOrderDelivery() throws BlockedTooLongException {
 		NullBasePeerNode senderNode = new NullBasePeerNode();
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
@@ -131,6 +138,7 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(1, receiver.handleDecryptedPacket(fragment2, receiverKey).size());
 	}
 
+	@Test
 	public void testReceiveUnknownMessageLength() throws BlockedTooLongException {
 		NullBasePeerNode senderNode = new NullBasePeerNode();
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
@@ -154,6 +162,7 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(1, receiver.handleDecryptedPacket(fragment1, receiverKey).size());
 	}
 
+	@Test
 	public void testResendAlreadyCompleted() throws BlockedTooLongException, InterruptedException {
 		NullBasePeerNode senderNode = new NullBasePeerNode();
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
@@ -177,6 +186,7 @@ public class NewPacketFormatTest extends TestCase {
 	}
 	
 	// Test sending it when the peer wants it to be sent. This is as a real message, *not* as a lossy message.
+	@Test
 	public void testLoadStatsSendWhenPeerWants() throws BlockedTooLongException, InterruptedException {
 		final Message loadMessage = DMT.createFNPVoid();
 		final MutableBoolean gotMessage = new MutableBoolean();
@@ -255,6 +265,7 @@ public class NewPacketFormatTest extends TestCase {
 	}
 	
 	// Test sending it as a per-packet lossy message.
+	@Test
 	public void testLoadStatsLowLevel() throws BlockedTooLongException, InterruptedException {
 		final byte[] loadMessage = 
 			new byte[] { (byte)0xFF, (byte)0xEE, (byte)0xDD, (byte)0xCC, (byte)0xBB, (byte)0xAA};
@@ -287,6 +298,7 @@ public class NewPacketFormatTest extends TestCase {
 	}
 	
 	// Test sending load message as a per-packet lossy message, including message decoding.
+	@Test
 	public void testLoadStatsHighLevel() throws BlockedTooLongException, InterruptedException {
 		final Message loadMessage = DMT.createFNPVoid();
 		final MutableBoolean gotMessage = new MutableBoolean();
@@ -340,6 +352,7 @@ public class NewPacketFormatTest extends TestCase {
 	
 	/* This checks the output of the sequence number encryption function to
 	 * make sure it doesn't change accidentally. */
+	@Test
 	public void testSequenceNumberEncryption() {
 		BlockCipher ivCipher = new Rijndael();
 		ivCipher.initialize(new byte[] {
@@ -371,6 +384,7 @@ public class NewPacketFormatTest extends TestCase {
 		assertTrue(Arrays.equals(correct, encrypted));
 	}
 
+	@Test
 	public void testEncryption()
 			throws BlockedTooLongException, UnknownHostException, InterruptedException {
 		Random random = new Random(120116);

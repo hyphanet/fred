@@ -1,6 +1,6 @@
 package freenet.support;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -9,11 +9,14 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.junit.Test;
+
 /**
  * Tests writing various types to output streams and reading from input streams.
  */
-public class SerializerTest extends TestCase {
+public class SerializerTest {
 
+	@Test
 	public void test() {
 		// Values for basic type testing.
 		final Object[] data = new Object[] { true, (byte)9, (short)0xDE, 1234567, 123467890123L, Math.E,
@@ -40,6 +43,7 @@ public class SerializerTest extends TestCase {
 		readWrite(edgeCases);
 	}
 
+	@Test
 	public void testTooLongDoubleArray() {
 		ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(byteOutputStream);

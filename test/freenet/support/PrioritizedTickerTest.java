@@ -1,9 +1,13 @@
 package freenet.support;
 
-import freenet.node.FastRunnable;
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-public class PrioritizedTickerTest extends TestCase {
+import org.junit.Before;
+import org.junit.Test;
+
+import freenet.node.FastRunnable;
+
+public class PrioritizedTickerTest {
 	
 	private WaitableExecutor realExec;
 	
@@ -52,9 +56,8 @@ public class PrioritizedTickerTest extends TestCase {
 	    
 	}
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setUp() throws Exception {
 		realExec = new WaitableExecutor(new PooledExecutor());
 		ticker = new MyTicker(realExec, 0);
 		ticker.start();
@@ -134,6 +137,7 @@ public class PrioritizedTickerTest extends TestCase {
         
     }
     
+    @Test
     public void testSimple() throws InterruptedException {
         synchronized(PrioritizedTickerTest.this) {
             runCount = 0;
@@ -163,6 +167,7 @@ public class PrioritizedTickerTest extends TestCase {
         }
     }
 
+    @Test
     public void testRemove() throws InterruptedException {
         synchronized(PrioritizedTickerTest.this) {
             runCount = 0;
@@ -183,6 +188,7 @@ public class PrioritizedTickerTest extends TestCase {
         blocker.unblockAndWait();
     }
     
+    @Test
     public void testRemoveTwoInSameMillisecond() throws InterruptedException {
         BlockTickerJob blocker = new BlockTickerJob();
         ticker.queueTimedJob(blocker, "Block the ticker", 0, true, false);
@@ -217,6 +223,7 @@ public class PrioritizedTickerTest extends TestCase {
         }
     }
 
+	@Test
 	public void testDeduping() throws InterruptedException {
 	    synchronized(PrioritizedTickerTest.this) {
 			runCount = 0;

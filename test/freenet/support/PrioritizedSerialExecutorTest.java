@@ -1,16 +1,20 @@
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
+
 import freenet.node.PrioRunnable;
 import freenet.support.io.NativeThread;
 
-public class PrioritizedSerialExecutorTest extends TestCase {
+public class PrioritizedSerialExecutorTest {
 	private Executor realExec;
 	private PrioritizedSerialExecutor exec;
 
@@ -45,9 +49,8 @@ public class PrioritizedSerialExecutorTest extends TestCase {
 		}
 	}
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setUp() throws Exception {
 		realExec = new PooledExecutor();
 		completedJobs = new ArrayList<String>();
 		completingJob = new SynchronousQueue<String>();
@@ -77,6 +80,7 @@ public class PrioritizedSerialExecutorTest extends TestCase {
 		System.out.println(completedJobs);
 	}
 
+	@Test
 	public void testRun() throws InterruptedException {
 		assertTrue(completedJobs.isEmpty());
 
@@ -100,6 +104,7 @@ public class PrioritizedSerialExecutorTest extends TestCase {
 		assertFalse(exec.onThread());
 	}
 
+	@Test
 	public void testRunPrio() throws InterruptedException {
 		assertTrue(completedJobs.isEmpty());
 

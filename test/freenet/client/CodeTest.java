@@ -1,7 +1,8 @@
 package freenet.client;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
 
 import freenet.support.TestProperty;
 
@@ -12,7 +13,7 @@ import com.onionnetworks.fec.PureCode;
 import com.onionnetworks.util.Buffer;
 import com.onionnetworks.util.Util;
 
-public class CodeTest extends TestCase {
+public class CodeTest {
 
 	public static FECMath fecMath = new FECMath(8);
 
@@ -40,9 +41,10 @@ public class CodeTest extends TestCase {
 		decode.decode(repairBufs, index);
 
 		for (int i = 0; i < src.length; i++)
-			Assert.assertEquals(src[i], repair[i]);
+			assertEquals(src[i], repair[i]);
 	}
 
+	@Test
 	public void testBenchmark() {
 		if(!TestProperty.BENCHMARK) return;
 
@@ -97,6 +99,7 @@ public class CodeTest extends TestCase {
 		System.out.println("Native code took "+dNativeDecode+"ms whereas java's code took "+dPureDecode+"ms to decode()");
 	}
 
+	@Test
 	public void testSimpleRev() {
 		int lim = fecMath.gfSize + 1;
 		FECCode code = FECCodeFactory.getDefault().createFECCode(KK, lim);
@@ -110,6 +113,7 @@ public class CodeTest extends TestCase {
 		encodeDecode(code2, code, index);
 	}
 
+	@Test
 	public void testSimple() {
 		int lim = fecMath.gfSize + 1;
 		FECCode code = FECCodeFactory.getDefault().createFECCode(KK, lim);
@@ -122,6 +126,7 @@ public class CodeTest extends TestCase {
 		encodeDecode(code2, code, index);
 	}
 
+	@Test
 	public void testShifted() {
 		int lim = fecMath.gfSize + 1;
 		FECCode code = FECCodeFactory.getDefault().createFECCode(KK, lim);

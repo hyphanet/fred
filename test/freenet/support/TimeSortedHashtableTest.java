@@ -1,8 +1,11 @@
 package freenet.support;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-public class TimeSortedHashtableTest extends TestCase {
+import org.junit.Test;
+
+public class TimeSortedHashtableTest {
+	@Test
 	public void testAddRemove() {
 		TimeSortedHashtable<String> tsh = new TimeSortedHashtable<String>();
 
@@ -63,6 +66,7 @@ public class TimeSortedHashtableTest extends TestCase {
 		assertTrue(tsh.containsValue("KEY3"));
 	}
 
+	@Test
 	public void testAddRemoveTS() {
 		TimeSortedHashtable<String> tsh = new TimeSortedHashtable<String>();
 		
@@ -87,6 +91,7 @@ public class TimeSortedHashtableTest extends TestCase {
 		assertEquals(300, tsh.getTime("KEY3"));
 	}
 
+	@Test
 	public void testBeforeInclusive() {
 		TimeSortedHashtable<String> tsh = new TimeSortedHashtable<String>();
 
@@ -98,6 +103,7 @@ public class TimeSortedHashtableTest extends TestCase {
 		assertEquals(1, tsh.size());
 	}
 
+	@Test
 	public void testPairs() {
 		TimeSortedHashtable<String> tsh = new TimeSortedHashtable<String>();
 

@@ -15,6 +15,8 @@
  */
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -22,14 +24,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.MultiValueTable} class.
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
-public class MultiValueTableTest extends TestCase {
+public class MultiValueTableTest {
 	
 	private static final int sampleKeyNumber = 100;
 	private static final int sampleMaxValueNumber = 3;
@@ -119,6 +121,7 @@ public class MultiValueTableTest extends TestCase {
 	 * putting values in a sample
 	 * MultiValueTable
 	 */
+	@Test
 	public void testPut() {
 		assertNotNull(
 				createSampleMultiValueTable(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom));
@@ -129,6 +132,7 @@ public class MultiValueTableTest extends TestCase {
 	 * present keys and not present
 	 */
 	@SuppressWarnings("unchecked")
+    @Test
     public void testGet() {
 		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertNull(methodMVTable.get(new Object()));
@@ -145,6 +149,7 @@ public class MultiValueTableTest extends TestCase {
 	 * It verifies the correct behavior with empty
 	 * MultiValueTable and not present keys, too.
 	 */
+	@Test
 	public void testContainsKey() {
 		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertFalse(methodMVTable.containsKey(new Object()));
@@ -164,6 +169,7 @@ public class MultiValueTableTest extends TestCase {
 	 * MultiValueTable and not present Elements, too.
 	 */
 	@SuppressWarnings("unchecked")
+    @Test
     public void testContainsElement() {
 		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertFalse(methodMVTable.containsElement(new Object(),new Object()));
@@ -183,6 +189,7 @@ public class MultiValueTableTest extends TestCase {
 	 * Tests getAll() method
 	 */
 	@SuppressWarnings("unchecked")
+    @Test
     public void testGetAll() {
 		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		//TODO: verifies if an Exception is necessary
@@ -204,6 +211,7 @@ public class MultiValueTableTest extends TestCase {
 	 * Tests countAll() method
 	 */
 	@SuppressWarnings("unchecked")
+    @Test
     public void testCountAll() {
 		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertEquals(methodMVTable.countAll(new Object()),0);
@@ -219,6 +227,7 @@ public class MultiValueTableTest extends TestCase {
 	 * both present and not present keys
 	 */
 	@SuppressWarnings({ "cast", "unchecked" })
+    @Test
     public void testGetSync() {
 		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertNull(methodMVTable.getSync(new Object()));
@@ -234,6 +243,7 @@ public class MultiValueTableTest extends TestCase {
 	 * with a present key and a not present key
 	 */
 	@SuppressWarnings("unchecked")
+    @Test
     public void testGetArray() {
 		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertNull(methodMVTable.getArray(new Object()));
@@ -250,6 +260,7 @@ public class MultiValueTableTest extends TestCase {
 	 * It verifies the behavior when removing a not present
 	 * key, too.
 	 */
+	@Test
 	public void testRemove() {
 		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		//TODO: shouldn't it raise an exception?
@@ -266,6 +277,7 @@ public class MultiValueTableTest extends TestCase {
 	 * Tests isEmpty() method with an empty MultiValueTable,
 	 * after putting objects and after removing all of them.
 	 */
+	@Test
 	public void testIsEmpty() {
 		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertTrue(methodMVTable.isEmpty());
@@ -283,6 +295,7 @@ public class MultiValueTableTest extends TestCase {
 	 * and verifying if all keys are correctly removed.
 	 * Finally it verifies the result of isEmpty() method.
 	 */
+	@Test
 	public void testClear() {
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
@@ -299,6 +312,7 @@ public class MultiValueTableTest extends TestCase {
 	 * removed and if the result of isEmpty() method is correct.
 	 */
 	@SuppressWarnings("unchecked")
+    @Test
     public void testRemoveElement() {
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
@@ -321,6 +335,7 @@ public class MultiValueTableTest extends TestCase {
 	 * Tests keys() method verifying if all keys inserted are
 	 * correctly present in the resulting Enumeration
 	 */
+	@Test
 	public void testKeys() {
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
@@ -338,6 +353,7 @@ public class MultiValueTableTest extends TestCase {
 	 * verifying their behavior when putting the same
 	 * value for different keys.
 	 */
+	@Test
 	public void testDifferentKeysSameElement() {
 		int keysNumber = 2;
 		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();

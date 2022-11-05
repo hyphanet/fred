@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import static org.junit.Assert.*;
+
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,10 +13,10 @@ import java.security.Security;
 import java.util.Random;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
@@ -23,7 +25,16 @@ import freenet.support.SerialExecutor;
 import freenet.support.api.Bucket;
 import freenet.support.io.TempBucketFactory.TempBucket;
 
-public class TempBucketTest extends TestSuite {
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+	TempBucketTest.RealTempBucketTest_8_16_F.class,
+	TempBucketTest.RealTempBucketTest_64_128_F.class,
+	TempBucketTest.RealTempBucketTest_64k_128k_F.class,
+	TempBucketTest.RealTempBucketTest_8_16_T.class,
+	TempBucketTest.RealTempBucketTest_64k_128k_T.class,
+	TempBucketTest.TempBucketMigrationTest.class
+})
+public class TempBucketTest {
 
     private static final long MIN_DISK_SPACE = 2*1024*1024;
     
@@ -33,7 +44,7 @@ public class TempBucketTest extends TestSuite {
         Security.addProvider(new BouncyCastleProvider());
     }
     
-	public static class TempBucketMigrationTest extends TestCase {
+	public static class TempBucketMigrationTest {
 		private Random weakPRNG = new Random(12340);
 		private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
 		private FilenameGenerator fg;
@@ -42,6 +53,7 @@ public class TempBucketTest extends TestSuite {
 			fg = new FilenameGenerator(weakPRNG, false, null, "junit");
 		}
 
+		@Test
 		public void testRamLimitCreate() throws IOException {
 			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 16, 128, weakPRNG, false, MIN_DISK_SPACE, secret);
 
@@ -75,6 +87,7 @@ public class TempBucketTest extends TestSuite {
 			}
 		}
 
+		@Test
 		public void testWriteExcessConversionFactor() throws IOException {
 			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 16, 128, weakPRNG, false, MIN_DISK_SPACE, secret);
 
@@ -96,6 +109,7 @@ public class TempBucketTest extends TestSuite {
 			}
 		}
 
+		@Test
 		public void testWriteExcessLimit() throws IOException {
 			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 16, 17, weakPRNG, false, MIN_DISK_SPACE, secret);
 
@@ -116,6 +130,7 @@ public class TempBucketTest extends TestSuite {
 		}
 		
 		// This CAN happen due to memory pressure.
+		@Test
 		public void testConversionWhileReading() throws IOException {
 			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 1024, 65536, weakPRNG, false, MIN_DISK_SPACE, secret);
 			
@@ -133,6 +148,7 @@ public class TempBucketTest extends TestSuite {
 		}
 		
 		// Do a bigger read, verify contents.
+		@Test
 		public void testBigConversionWhileReading() throws IOException {
 			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 4096, 65536, weakPRNG, false, MIN_DISK_SPACE, secret);
 			
@@ -208,27 +224,6 @@ public class TempBucketTest extends TestSuite {
 		public RealTempBucketTest_64k_128k_T() throws IOException {
 			super(64 * 1024, 128 * 1024, true);
 		}
-	}
-
-    public TempBucketTest() {
-		super("TempBucketTest");
-		addTest(new TestSuite(RealTempBucketTest_8_16_F.class));
-		addTest(new TestSuite(RealTempBucketTest_64_128_F.class));
-		addTest(new TestSuite(RealTempBucketTest_64k_128k_F.class));
-		addTest(new TestSuite(RealTempBucketTest_8_16_T.class));
-		addTest(new TestSuite(RealTempBucketTest_64k_128k_T.class));
-		addTest(new TestSuite(TempBucketMigrationTest.class));
-	}
-
-	public static Test suite() {
-		TestSuite suite = new TestSuite("TempBucketTest");
-		suite.addTest(new TestSuite(RealTempBucketTest_8_16_F.class));
-		suite.addTest(new TestSuite(RealTempBucketTest_64_128_F.class));
-		suite.addTest(new TestSuite(RealTempBucketTest_64k_128k_F.class));
-		suite.addTest(new TestSuite(RealTempBucketTest_8_16_T.class));
-		suite.addTest(new TestSuite(RealTempBucketTest_64k_128k_T.class));
-		suite.addTest(new TestSuite(TempBucketMigrationTest.class));
-		return suite;
 	}
 
 }

@@ -15,12 +15,15 @@
  */
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.junit.Test;
+
 import freenet.test.*;
-import junit.framework.TestCase;
 
 /**
  * Test case for {@link freenet.support.URLEncoder} and 
@@ -28,7 +31,7 @@ import junit.framework.TestCase;
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
-public class URLEncoderDecoderTest extends TestCase {
+public class URLEncoderDecoderTest {
 
 	public static final String prtblAscii = new String(UTFUtil.PRINTABLE_ASCII);
 	public static final String stressedUTF_8Chars = new String(UTFUtil.STRESSED_UTF);
@@ -38,6 +41,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	/**
 	 * Encodes a string of ALL unicode characters except the 0-character and tests whether it is decoded correctly. 
 	 */
+	@Test
 	public void testEncodeDecodeString_allChars() throws URLEncodedFormatException {
 		assertTrue(areCorrectlyEncodedDecoded(new String[] { allCharsExceptNull }, true));
 		assertTrue(areCorrectlyEncodedDecoded(new String[] { allCharsExceptNull }, false));
@@ -49,6 +53,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * work correctly together, both with safe
 	 * characters and not safe "base" (i.e. ASCII) chars .
 	 */
+	@Test
 	public void testEncodeDecodeString_notSafeBaseChars() {
 		String[] toEncode = {
 				//safe chars
@@ -71,6 +76,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * work correctly together, both with safe
 	 * characters and not safe "advanced" (i.e. not ASCII) chars .
 	 */
+	@Test
 	public void testEncodeDecodeString_notSafeAdvChars() {
 		String[] toEncode = {stressedUTF_8Chars};
 		try {
@@ -117,6 +123,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * well-managed for each safeURLCharacter,
 	 * with both true and false ascii-flag.
 	 */
+	@Test
 	public void testEncodeForced() {
 		String toEncode,expectedResult;
 		char eachChar;
@@ -158,6 +165,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * using not valid encoded String to
 	 * verifies if it raises an exception
 	 */
+	@Test
 	public void testDecodeWrongString() {
 		String toDecode = "%00";
 		assertTrue(isDecodeRaisingEncodedException(toDecode,false));
@@ -168,6 +176,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * using not valid hex values String to
 	 * verifies if it raises an exception
 	 */
+	@Test
 	public void testDecodeWrongHex() {
 		String toDecode = "123456789abcde"+prtblAscii+stressedUTF_8Chars;
 		
@@ -182,6 +191,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * if it work correctly as a hack to allow users 
 	 * to paste in URLs containing %'s.
 	 */
+	@Test
 	public void testTolerantDecoding() {
 		String toDecode = "%%%";
 		
@@ -194,6 +204,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	/**
 	 * Tests whether all URL-encoded characters are acceptable to the java.net.URI constructor.
 	 */
+	@Test
 	public void testEncodedUsableInURI() {
 		try {
 			new URI("#" + URLEncoder.encode(allChars, false));

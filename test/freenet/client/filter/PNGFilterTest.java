@@ -1,15 +1,18 @@
 package freenet.client.filter;
 
+import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NullBucket;
 
-public class PNGFilterTest extends TestCase {
+public class PNGFilterTest {
 	protected static Object[][] testImages = {
 			// { image file, valid }
 	        // NOT PASS  { "./png/broken/scal_floating_point.png", false }, //
@@ -97,6 +100,7 @@ public class PNGFilterTest extends TestCase {
 	        { "./png/suite/basn0g04.png", true }, //
 	};
 
+	@Test
 	public void testSuiteTest() throws IOException {
 		PNGFilter filter = new PNGFilter(false, false, true);
 

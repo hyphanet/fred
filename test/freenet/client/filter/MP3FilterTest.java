@@ -1,16 +1,19 @@
 package freenet.client.filter;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
+import org.junit.Test;
+
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 
-public class MP3FilterTest extends TestCase {
+public class MP3FilterTest {
     private static final String RESOURCE_PATH = "mp3/";
 
     /** Known good files, should pass filter unaltered. */
@@ -52,12 +55,14 @@ public class MP3FilterTest extends TestCase {
         }
     };
 
+    @Test
     public void testKnownGood() {
         for (String good : GOOD) {
             assertEqualAfterFilter(good, good);
         }
     }
 
+    @Test
     public void testFilterPairs() {
         for (String[] pair : FILTER_PAIRS) {
             assertEqualAfterFilter(pair[0], pair[1]);

@@ -1,35 +1,40 @@
 package freenet.client.filter;
 
+import static org.junit.Assert.*;
+
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
 
+import org.junit.Test;
 
-public class OggBitStreamFilterTest extends TestCase{
+public class OggBitStreamFilterTest {
+	@Test
 	public void testGetVorbisBitstreamFilter() throws IOException {
 		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/vorbis_header.ogg"));
 		OggPage page = OggPage.readPage(input);
-		Assert.assertEquals(VorbisBitstreamFilter.class, getFilterClass(page));
+		assertEquals(VorbisBitstreamFilter.class, getFilterClass(page));
 		input.close();
 	}
 
+	@Test
 	public void testGetTheoraBitStreamFilter() throws IOException { 
 		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/theora_header.ogg"));
 		OggPage page = OggPage.readPage(input);
-		Assert.assertEquals(TheoraBitstreamFilter.class, getFilterClass(page));
+		assertEquals(TheoraBitstreamFilter.class, getFilterClass(page));
 		input.close();
 	}
+	@Test
 	public void testGetFilterForInvalidFormat() throws IOException {
 		InputStream input = getClass().getResourceAsStream("./ogg/invalid_header.ogg");
 		DataInputStream dis = new DataInputStream(input);
 		OggPage page = OggPage.readPage(dis);
-		Assert.assertEquals(null, getFilterClass(page));
+		assertEquals(null, getFilterClass(page));
 		input.close();
 	}
 
+	@Test
 	public void testPagesOutOfOrderCausesException() throws IOException {
 		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/pages_out_of_order.ogg"));
 		OggPage page = OggPage.readPage(input);

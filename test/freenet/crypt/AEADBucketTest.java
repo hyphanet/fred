@@ -1,13 +1,17 @@
 package freenet.crypt;
 
+import static org.junit.Assert.*;
+
 import java.io.IOException;
+
+import org.junit.Test;
 
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
-import junit.framework.TestCase;
 
-public class AEADBucketTest extends TestCase {
+public class AEADBucketTest {
     
+    @Test
     public void testCopyBucketNotDivisibleBy16() throws IOException {
         checkCopyBucketNotDivisibleBy16(902);
     }

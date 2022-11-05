@@ -19,9 +19,11 @@
 
 package freenet.io;
 
+import static org.junit.Assert.*;
+
 import java.net.InetAddress;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Test case for the {@link freenet.io.Inet6AddressMatcher} class. Contains some
@@ -30,8 +32,9 @@ import junit.framework.TestCase;
  * @author David Roden &lt;droden@gmail.com&gt;
  * @version $Id: Inet6AddressMatcherTest.java 10490 2006-09-20 00:07:46Z toad $
  */
-public class Inet6AddressMatcherTest extends TestCase {
+public class Inet6AddressMatcherTest {
 
+	@Test
 	public void test() throws Exception {
 		Inet6AddressMatcher matcher = new Inet6AddressMatcher("0:0:0:0:0:0:0:0/0");
 		assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:203:dff:fe22:420f")));

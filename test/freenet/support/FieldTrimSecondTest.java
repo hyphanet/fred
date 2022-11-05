@@ -1,11 +1,13 @@
 package freenet.support;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
 
 /**
  * Tests parsing of bandwidth limits optionally specified with some indicator of "(bits) per second."
  */
-public class FieldTrimSecondTest extends TestCase {
+public class FieldTrimSecondTest {
 
 	/**
 	 * Bandwidth limit input with and without various "per second" specifiers and SI / IEC units.
@@ -17,6 +19,7 @@ public class FieldTrimSecondTest extends TestCase {
 	 */
 	private static final int[] output = { 50 * 1024, 3 * 1024 * 1024 / 2, 128 * 1000, 20 * 1024, 5800 };
 
+	@Test
 	public void test() {
 		assert input.length == output.length;
 

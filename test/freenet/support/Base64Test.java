@@ -16,17 +16,19 @@
 
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.util.Arrays;
 import java.util.Random;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.Base64} class.
  *
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
-public class Base64Test extends TestCase {
+public class Base64Test {
 
 	// data from http://www.alanwood.net/unicode/unicode_samples.html
 	static final String testSample = "!5Aa¥¼ÑñĄąĲĳƏƐƕƺɖɞɫɷʱʬ˕˨o̕o̚ơo͡oΎΔδϠЉЩщӃԀԆԈԎԱԲաբסֶאבױ؟بحٍ۳܀ܐܠܘ݉ހސޤހި߄ߐ߰ߋ߹ࠀࠎࠏࠪ࠽ठःअठी३তঃঅ৩৵ਠਂਅਉਠੱઠઃઅઠૌ૩ଆଐଠୗ୩பஂஅபூ௩అఃఓఅౌ౩ಲಃಅಲೋ೩ഠഃഅഠൃ൩ෆංඑඣෆූกญกั๓ກຜໄ໓༣ཁངཱུངྵကဂု၄၍აზჵ჻ᄀᅙᇧᇸሀቻ፧፬ᎠᎫᏎᏴᐁᑦᕵᙧᚁᚈᚕ᚜ᚠᚳᛦᛰᜀᜄᜌᜊᜒᜠᜫᜪᜭᜯᝁᝊᝐᝊᝒᝠᝦᝮᝪᝲកឣខា៤᠀᠔ᡎᢥᢰᣇᣠᣴᤁᤥ᥅᥉ᥐᥞᥨᥲ᧠᧪᧴᧾ᨀᨁᨖᨔᨗᨠᨣᩯ᪁᪭ᬧᬀᬊᬧᭀ᭪ᮗᮀᮋᮗᮦ᮵ᰁᰘᰓᰯ᱅᱕ᱝᱰ᱿o᳐o᳢ᳩᳱᴂᴥᴽᵫḀẀẶỳἀὂᾑῼ—“‰※⁴⁾₃₌₢₣₪€o⃐o⃕o⃚o⃠℀℃№™⅛Ⅳⅸↂ←↯↻⇈∀∰⊇⋩⌂⌆⌣⌽␂␊␢␣⑀⑃⑆⑊③⑷⒌ⓦ┍┝╤╳▀▃▏░□▨◎◮☂☺♀♪✃✈❄➓⟐⟟⟥⟫⟰⟶⟺⟿⠀⠲⢖⣿⤄⤽⥈⥻⦀⦝⧰⧻⨇⨋⫚⫸⬀⬄⬉⬍ⰀⰉⰍⱙⱠⱥⱶⱺⲀⲑⲶⳂⴀⴆⴝⴢⴲⴶⵟⵥⶀⶆⶐⷖоⷠоⷩоⷶоⷿ⸁⸎⸨⸭⺀⺘⻂⻱⼀⼽⽺⿔⿰⿳⿷⿻々〒〣〰あぐるゞアヅヨヾㄆㄓㄝㄩㄱㄸㅪㆍ㆐㆕㆚㆟ㆠㆧㆯㆷㇰㇵㇺㇿ㈔㈲㊧㋮㌃㍻㎡㏵㐅㒅㝬㿜䷂䷫䷴䷾一憨田龥ꀀꅴꊩꒌ꒐꒡꒰꓆ꓐꓫꓻ꓿ꔁꔂꕝꕢꙂꙉꙮꚖꚠꛠꛕ꛰꛷꜁꜉ꜜꜟꜢꜮꝿꟿꠀꠇꠠꠤ꠪꠰꠶꠸꠹ꡁꡧꡳ꡷ꢝꢁꢍꢳ꣕ठ꣠ठ꣮ꣳꣻ꤅ꤎꤍꤪ꤮ꤰꤸꤷꥐ꥟ꥠꥪꥴꥼꦮꦀꦣꦮꦺ꧙ꨅꨍꨂꨬ꩖ꩠꩮꩴဂꩻꪀꪙꪒꪷ꫟ꯀꯌꯁꯧ꯹가뮀윸힣ힰퟎퟡퟻ豈朗歷館ﬀﬁﬗﭏﭐﰡﲼﷻo︠o︡o︢o︣︴︵﹃﹌﹖﹠﹩﹫ﹰﺗﺺﻼ３Ｆｶﾺ￹￺￼�𐀀𐀢𐁀𐁝𐂀𐂚𐃃𐃺𐄀𐄎𐄱𐄸𐅃𐅉𐅓𐆉𐆐𐆔𐆘𐆚𐇐𐇛𐇯𐇹𐊀𐊉𐊕𐊚𐊡𐊨𐊾𐋋𐌀𐌊𐌜𐌢𐌰𐌸𐍂𐍊𐎀𐎇𐎖𐎟𐐂𐐉𐐯𐑉𐑐𐑝𐑫𐑿𐒀𐒎𐒝𐒨𐠀𐠓𐠦𐠿𐡀𐡋𐡓𐡟𐤀𐤈𐤔𐤕𐤠𐤩𐤰𐤿𐨀𐨨𐨍𐨲𐩅𐩠𐩯𐩽𐩿𐬀𐬟𐬩𐬿𐭀𐭉𐭚𐭟𐭠𐭬𐭹𐭿𐰀𐰕𐰯𐱈𐹠𐹮𐹵𐹻𑂞𑂀𑂚𑂞𑂴𑃁𒀀𒀞𒅑𒍦𒐁𒐌𒐥𒑳𓀀𓅸𓉀𓐮𝁆𝂋𝃩𝃰𝄁𝄫𝅘𝅥𝅮𝇇𝌀𝌃𝌑𝍊𝍠𝍨𝍬𝍱𝓐𝕬𝝃𝟽🀀🀍🀒🀝🀴🁓🁮🂈🄀🄖🄭🆐🈐🈖🈪🉈𠀧𠤩𡨺𡽫𪜀𪮘𪾀𫜴勺卉善爨";
@@ -48,6 +50,7 @@ public class Base64Test extends TestCase {
 	 * (see http://en.wikipedia.org/wiki/Base_64 as reference)
 	 * to verify if it encode works correctly.
 	 */
+	@Test
 	public void testEncode() throws Exception {
 		byte[] aByteArrayToEncode = toEncode.getBytes("UTF-8");
 		assertEquals(Base64.encode(aByteArrayToEncode), toDecode);
@@ -59,6 +62,7 @@ public class Base64Test extends TestCase {
 	 * (see http://en.wikipedia.org/wiki/Base_64 as reference)
 	 * to verify if it decode an already encoded string correctly.
 	 */
+	@Test
 	public void testDecode() throws Exception {
 		String decodedString = new String(Base64.decode(toDecode));
 		assertEquals(decodedString, toEncode);
@@ -68,6 +72,7 @@ public class Base64Test extends TestCase {
 	 * Test the encodeStandard(byte[]) method
 	 * This is the same as encode() from generator/js/src/freenet/client/tools/Base64.java
 	 */
+	@Test
 	public void testEncodeStandard() throws Exception {
 		byte[] aByteArrayToEncode = testSample.getBytes("UTF-8");
 		assertEquals(Base64.encodeStandard(aByteArrayToEncode), testSampleStandardEncoding);
@@ -77,6 +82,7 @@ public class Base64Test extends TestCase {
 	 * Test the decodeStandard(byte[]) method.
 	 * This is the same as decode() from generator/js/src/freenet/client/tools/Base64.java
 	 */
+	@Test
 	public void testDecodeStandard() throws Exception {
 		String decodedString = new String(Base64.decodeStandard(testSampleStandardEncoding), "UTF-8");
 		assertEquals(decodedString, testSample);
@@ -89,6 +95,7 @@ public class Base64Test extends TestCase {
 	 * It compares the string before encoding
 	 * and with the one after decoding.
 	 */
+	@Test
 	public void testEncodeDecode() {
 		byte[] bytesDecoded;
 		byte[] bytesToEncode = new byte[5];
@@ -115,6 +122,7 @@ public class Base64Test extends TestCase {
 	 * method to verify if the padding
 	 * character '=' is correctly placed.
 	 */
+	@Test
 	public void testEncodePadding() {
 		byte[][] methodBytesArray = {
 				//three byte Array -> no padding char expected
@@ -141,6 +149,7 @@ public class Base64Test extends TestCase {
 	 * providing a string with non-Base64
 	 * characters.
 	 */
+	@Test
 	public void testIllegalBaseCharacter() {
 //		TODO: check many other possibile cases!
 		String illegalCharString = "abcd=fghilmn";
@@ -160,6 +169,7 @@ public class Base64Test extends TestCase {
 	 *  the only wrong lengths are the ones
 	 *  where -> number MOD 4 = 1).
 	 */
+	@Test
 	public void testIllegalBaseLength() {
 		//most interesting case
 		String illegalLengthString = "a";
@@ -175,6 +185,7 @@ public class Base64Test extends TestCase {
 	 *
 	 * @throws IllegalBase64Exception
 	 */
+	@Test
 	public void testRandom() throws IllegalBase64Exception {
 		int iter;
 		Random r = new Random(1234);

@@ -15,24 +15,27 @@
  */
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.Buffer} class.
  * 
  * @author stuart martin &lt;wavey@freenetproject.org&gt;
  */
-public class BufferTest extends TestCase {
+public class BufferTest {
 
 	private static final String DATA_STRING_1 = "asldkjaskjdsakdhasdhaskjdhaskjhbkasbhdjkasbduiwbxgdoudgboewuydxbybuewyxbuewyuwe" + 
 		"dasdkljasndijwnodhnqweoidhnaouidhbnwoduihwnxodiuhnwuioxdhnwqiouhnxwqoiushdnxwqoiudhxnwqoiudhxni";
 	
+	@Test
 	public void testByteArrayBuffer() {
 		
 		byte[] data = DATA_STRING_1.getBytes();
@@ -44,6 +47,7 @@ public class BufferTest extends TestCase {
 		doTestBuffer(data, buffer);
 	}
 
+	@Test
 	public void testByteArrayIndexBuffer() {
 		
 		// get content
@@ -61,6 +65,7 @@ public class BufferTest extends TestCase {
 		doTestBuffer(dataSub, buffer);
 	}
 
+	@Test
 	public void testBadLength() {
 		try{
 			new Buffer(new byte[0], 0, -1);
@@ -84,6 +89,7 @@ public class BufferTest extends TestCase {
 		new Buffer(new byte[1], 0, 1);
 	}
 	
+	@Test
 	public void testDataInputStreamBuffer() {
 		
 		byte[] data = DATA_STRING_1.getBytes();   // get some content
@@ -128,6 +134,7 @@ public class BufferTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testLongBufferToString() {
 		
 		Buffer buffer = new Buffer(DATA_STRING_1.getBytes());
@@ -135,6 +142,7 @@ public class BufferTest extends TestCase {
 		assertEquals("Buffer {" + buffer.getLength() + "}", longString);
 	}
 	
+	@Test
 	public void testEquals() {
 		
 		Buffer b1 = new Buffer("Buffer1".getBytes());
@@ -149,6 +157,7 @@ public class BufferTest extends TestCase {
 		assertTrue(b3.equals(b1));				
 	}
 	
+	@Test
 	public void testHashcode() {
 		
 		Buffer b1 = new Buffer("Buffer1".getBytes());
@@ -172,6 +181,7 @@ public class BufferTest extends TestCase {
 		assertTrue(o == b3);
 	}
 	
+	@Test
 	public void testCopy() {
 		
 		byte[] oldBuf = DATA_STRING_1.getBytes();

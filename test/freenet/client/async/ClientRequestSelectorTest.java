@@ -1,11 +1,13 @@
 package freenet.client.async;
 
+import static org.junit.Assert.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClientImpl;
@@ -57,7 +59,7 @@ import freenet.support.io.ResumeFailedException;
 import freenet.support.io.TempBucketFactory;
 import freenet.support.io.TrivialPersistentFileTracker;
 
-public class ClientRequestSelectorTest extends TestCase {
+public class ClientRequestSelectorTest {
     
     final LockableRandomAccessBufferFactory smallRAFFactory = new ByteArrayRandomAccessBufferFactory();
     final FilenameGenerator fg;
@@ -321,6 +323,7 @@ public class ClientRequestSelectorTest extends TestCase {
         
     }
     
+    @Test
     public void testSmallSplitfileChooseCompletion() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block

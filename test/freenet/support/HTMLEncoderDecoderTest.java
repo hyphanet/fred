@@ -14,8 +14,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 package freenet.support;
+
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
 import freenet.test.UTFUtil;
-import junit.framework.TestCase;
 
 /**
  * Test case for {@link freenet.support.HTMLEncoder} and 
@@ -23,7 +27,7 @@ import junit.framework.TestCase;
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
-public class HTMLEncoderDecoderTest extends TestCase {
+public class HTMLEncoderDecoderTest {
 	
 	private static final char WHITESPACE = '\u0020';
 	private static final char TAB = '\t';
@@ -36,6 +40,7 @@ public class HTMLEncoderDecoderTest extends TestCase {
 	 * Tests decode(String) method
 	 * trying to decode entity by entity
 	 */
+	@Test
 	public void testDecodeSingleEntities() {
 		for (int i =0; i<UTFUtil.HTML_ENTITIES_UTF.length; i++)
 			assertEquals(HTMLDecoder.decode(UTFUtil.HTML_ENTITIES_UTF[i][1]),UTFUtil.HTML_ENTITIES_UTF[i][0]);
@@ -46,6 +51,7 @@ public class HTMLEncoderDecoderTest extends TestCase {
 	 * trying to decode a long String
 	 * with all possible entity appended
 	 */
+	@Test
 	public void testDecodeAppendedEntities() {
 		StringBuilder toDecode = new StringBuilder();
 		StringBuilder expected = new StringBuilder();
@@ -62,6 +68,7 @@ public class HTMLEncoderDecoderTest extends TestCase {
 	 * The incomplete entity must remain
 	 * the same as before encoding
 	 */
+	@Test
 	public void testDecodeIncomplete() {
 		//without ending semicolon
 		assertEquals(HTMLDecoder.decode("&Phi"),"&Phi");
@@ -82,6 +89,7 @@ public class HTMLEncoderDecoderTest extends TestCase {
 	 * repeated whitespaces of every kind
 	 * (e.g. tabs,newline,space).
 	 */
+	@Test
 	public void testCompactRepeated(){
 		StringBuilder strBuffer[] = new StringBuilder[6];
 		for (int i = 0; i < strBuffer.length; i++)
@@ -106,6 +114,7 @@ public class HTMLEncoderDecoderTest extends TestCase {
 	 * Tests compact(String) method
 	 * with each kind of "whitespace"
 	 */
+	@Test
 	public void testCompactMixed(){
 		String toCompact = "\u0020"+"\t"+"\n"+"\r"+"\u200b"+"\u000c";
 		assertEquals(HTMLDecoder.compact(toCompact)," ");
@@ -116,6 +125,7 @@ public class HTMLEncoderDecoderTest extends TestCase {
 	 * against all possible HTML white space
 	 * type
 	 */
+	@Test
 	public void testIsWhiteSpace() {
 		assertTrue(HTMLDecoder.isWhitespace(WHITESPACE));
 		assertTrue(HTMLDecoder.isWhitespace(TAB));

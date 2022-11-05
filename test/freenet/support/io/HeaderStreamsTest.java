@@ -5,6 +5,8 @@ package freenet.support.io;
 
 import static freenet.test.Asserts.assertArrayEquals;
 
+import static org.junit.Assert.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,9 +14,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-public class HeaderStreamsTest extends TestCase {
+public class HeaderStreamsTest {
 
 	final public static String strHeader = "TEST";
 	final public static String strString = "testing testing 1 2 3";
@@ -27,18 +31,19 @@ public class HeaderStreamsTest extends TestCase {
 	ByteArrayOutputStream origStream;
 	OutputStream dimStream;
 
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setUp() throws Exception {
 		InputStream testStream = new ByteArrayInputStream(bString);
 		augStream = HeaderStreams.augInput(bHeader, testStream);
 		origStream = new ByteArrayOutputStream();
 		dimStream = HeaderStreams.dimOutput(bHeader, origStream);
 	}
 
-	protected void tearDown() throws Exception {
-		super.tearDown();
+	@After
+	public void tearDown() throws Exception {
 	}
 
+	@Test
 	public void testAugInputRead1() throws IOException {
 		int size = augStream.available();
 		assertEquals(size, bHeader.length + bString.length);
@@ -52,14 +57,19 @@ public class HeaderStreamsTest extends TestCase {
 		assertArrayEquals(bJoined, buffer);
 	}
 
+	@Test
 	public void testAugInputReadM() throws IOException {
 		_testAugInputRead(-bHeader.length); }
+	@Test
 	public void testAugInputReadI() throws IOException {
 		_testAugInputRead(-1); }
+	@Test
 	public void testAugInputRead0() throws IOException {
 		_testAugInputRead(0); }
+	@Test
 	public void testAugInputReadP() throws IOException {
 		_testAugInputRead(1); }
+	@Test
 	public void testAugInputReadZ() throws IOException {
 		_testAugInputRead(bString.length); }
 
@@ -75,14 +85,19 @@ public class HeaderStreamsTest extends TestCase {
 		assertArrayEquals(bJoined, buffer);
 	}
 
+	@Test
 	public void testAugInputSkipAndReadM() throws IOException {
 		_testAugInputSkipAndRead(-bHeader.length); }
+	@Test
 	public void testAugInputSkipAndReadI() throws IOException {
 		_testAugInputSkipAndRead(-1); }
+	@Test
 	public void testAugInputSkipAndRead0() throws IOException {
 		_testAugInputSkipAndRead(0); }
+	@Test
 	public void testAugInputSkipAndReadP() throws IOException {
 		_testAugInputSkipAndRead(1); }
+	@Test
 	public void testAugInputSkipAndReadZ() throws IOException {
 		_testAugInputSkipAndRead(bString.length); }
 
@@ -98,6 +113,7 @@ public class HeaderStreamsTest extends TestCase {
 		  Arrays.copyOfRange(bJoined, i, bJoined.length), buffer);
 	}
 
+	@Test
 	public void testDimOutputWrite1() throws IOException {
 		for (int i=0; i<bJoined.length; i++) {
 			assertArrayEquals(origStream.toByteArray(),
@@ -108,14 +124,19 @@ public class HeaderStreamsTest extends TestCase {
 		assertArrayEquals(bString, origStream.toByteArray());
 	}
 
+	@Test
 	public void testDimOutputWriteM() throws IOException {
 		_testDimOutputWrite(-bHeader.length); }
+	@Test
 	public void testDimOutputWriteI() throws IOException {
 		_testDimOutputWrite(-1); }
+	@Test
 	public void testDimOutputWrite0() throws IOException {
 		_testDimOutputWrite(0); }
+	@Test
 	public void testDimOutputWriteP() throws IOException {
 		_testDimOutputWrite(1); }
+	@Test
 	public void testDimOutputWriteZ() throws IOException {
 		_testDimOutputWrite(bString.length); }
 
@@ -129,6 +150,7 @@ public class HeaderStreamsTest extends TestCase {
 		assertArrayEquals(bString, origStream.toByteArray());
 	}
 
+	@Test
 	public void testDimOutputThrow0() throws IOException {
 		assertArrayEquals(new byte[0], origStream.toByteArray());
 		try {
@@ -137,6 +159,7 @@ public class HeaderStreamsTest extends TestCase {
 		} catch (IOException expected) { }
 	}
 
+	@Test
 	public void testDimOutputThrow1() throws IOException {
 		dimStream.write('T');
 		assertArrayEquals(new byte[0], origStream.toByteArray());

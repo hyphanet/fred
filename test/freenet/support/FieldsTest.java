@@ -4,17 +4,20 @@
 
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.util.Random;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.Fields} class.
  *
  * @author stuart martin &lt;wavey@freenetproject.org&gt;
  */
-public class FieldsTest extends TestCase {
+public class FieldsTest {
 
+	@Test
 	public void testHexToLong(){
 
 		long l1 = Fields.hexToLong("0");
@@ -78,6 +81,7 @@ public class FieldsTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testHexToInt() {
 
 		int i1 = Fields.hexToInt("0");
@@ -138,6 +142,7 @@ public class FieldsTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testStringToBool() {
 		assertTrue(Fields.stringToBool("true"));
 		assertTrue(Fields.stringToBool("TRUE"));
@@ -161,6 +166,7 @@ public class FieldsTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testStringToBoolWithDefault() {
 		assertTrue(Fields.stringToBool("true", false));
 		assertFalse(Fields.stringToBool("false", true));
@@ -171,11 +177,13 @@ public class FieldsTest extends TestCase {
 		assertTrue(Fields.stringToBool(null, true));
 	}
 
+	@Test
 	public void testBoolToString() {
 		assertEquals(Fields.boolToString(true), "true");
 		assertEquals(Fields.boolToString(false), "false");
 	}
 
+	@Test
 	public void testCommaListFromString() {
 		String[] expected = new String[] {"one", "two", "three", "four"};
 		String[] actual = Fields.commaList("one,two,     three    ,  four");
@@ -194,6 +202,7 @@ public class FieldsTest extends TestCase {
 		assertTrue(expected.length == actual.length);
 	}
 
+	@Test
 	public void testStringArrayToCommaList() {
 
 		String[] input = new String[] { "one", "two", "three", "four" };
@@ -212,6 +221,7 @@ public class FieldsTest extends TestCase {
 		assertEquals(expected, actual);
 	}
 
+	@Test
 	public void testHashcodeForByteArray() {
 		byte[] input = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7 };
 
@@ -223,6 +233,7 @@ public class FieldsTest extends TestCase {
 		assertEquals(0, Fields.hashCode(input));
 	}
 
+	@Test
 	public void testLongHashcode() {
 
 		byte[] b1 = new byte[] { 1, 1, 2, 2, 3, 3 };
@@ -238,6 +249,7 @@ public class FieldsTest extends TestCase {
 		assertTrue(l3.equals(l1)); // should be same due to Fields.longHashcode
 	}
 
+	@Test
 	public void testIntsToBytes() {
 		int[] longs = new int[] {};
 		doRoundTripIntsArrayToBytesArray(longs);
@@ -263,6 +275,7 @@ public class FieldsTest extends TestCase {
 		assertEquals(outLongs.length, ints.length);
 	}
 
+	@Test
 	public void testBytesToLongsException() {
 		byte[] bytes = new byte[3];
 		try {
@@ -274,6 +287,7 @@ public class FieldsTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testBytesToInt() {
 
 		byte[] bytes = new byte[] { 0, 1, 2, 2 };
@@ -306,6 +320,7 @@ public class FieldsTest extends TestCase {
 		assertEquals(outBytes.length, inBytes.length);
 	}
 
+	@Test
 	public void testLongsToBytes() {
 		long[] longs = new long[] {};
 		doRoundTripLongsArrayToBytesArray(longs);
@@ -331,6 +346,7 @@ public class FieldsTest extends TestCase {
 		assertEquals(outLongs.length, longs.length);
 	}
 
+	@Test
 	public void testBytesToLongException() {
 		byte[] bytes = new byte[3];
 		try {
@@ -342,6 +358,7 @@ public class FieldsTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testBytesToLong() {
 
 		byte[] bytes = new byte[] { 0, 1, 2, 2, 1, 3, 6, 7 };
@@ -375,6 +392,7 @@ public class FieldsTest extends TestCase {
 		assertEquals(outBytes.length, inBytes.length);
 	}
 
+	@Test
 	public void testTrimLines() {
 		assertEquals("", Fields.trimLines(""));
 		assertEquals("", Fields.trimLines("\n"));
@@ -388,6 +406,7 @@ public class FieldsTest extends TestCase {
 		assertEquals("a\nb\n", Fields.trimLines("a\nb"));
 	}
 	
+	@Test
 	public void testGetDigits() {
 		assertEquals(1, Fields.getDigits("1.0", 0, true));
 		assertEquals(0, Fields.getDigits("1.0", 0, false));
@@ -429,6 +448,7 @@ public class FieldsTest extends TestCase {
 		return sb.toString();
 	}
 	
+	@Test
 	public void testCompareVersion() {
 		checkCompareVersionLessThan("1.0", "1.1");
 		checkCompareVersionLessThan("1.0", "1.01");

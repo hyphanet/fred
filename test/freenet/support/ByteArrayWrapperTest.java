@@ -3,21 +3,24 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.ByteArrayWrapper} class.
  * @author stuart martin &lt;wavey@freenetproject.org&gt;
  */
-public class ByteArrayWrapperTest extends TestCase {
+public class ByteArrayWrapperTest {
 
 	private static final String DATA_STRING_1 = "asldkjaskjdsakdhasdhaskjdhaskjhbkasbhdjkasbduiwbxgdoudgboewuydxbybuewyxbuewyuwe";
 	
 	private static final String DATA_STRING_2 = "string2";
 	
+	@Test
 	public void testWrapper() {
 		
 		byte[] data1 = DATA_STRING_1.getBytes();

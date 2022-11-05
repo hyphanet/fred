@@ -1,14 +1,16 @@
 package freenet.support.io;
 
+import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.util.Random;
 
+import org.junit.Test;
+
 import freenet.support.api.RandomAccessBuffer;
 
-import junit.framework.TestCase;
-
 /** Base class for testing RandomAccessBuffer's. */
-public abstract class RandomAccessBufferTestBase extends TestCase {
+public abstract class RandomAccessBufferTestBase {
     
     /** Size list for small tests i.e. stuff that definitely fits in RAM */
     protected final int[] sizeList;
@@ -39,6 +41,7 @@ public abstract class RandomAccessBufferTestBase extends TestCase {
 
     /** Test that we can create and free a RandomAccessBuffer of various sizes, and it returns the correct
      * size. */
+    @Test
     public void testSize() throws IOException {
         for(long size : fullSizeList)
             innerTestSize(size);
@@ -46,6 +49,7 @@ public abstract class RandomAccessBufferTestBase extends TestCase {
     
     private static final int BUFFER_SIZE = 65536;
     
+    @Test
     public void testFormula() throws IOException {
         Random r = new Random(2126);
         Formula modulo256 = new Formula() {
@@ -106,6 +110,7 @@ public abstract class RandomAccessBufferTestBase extends TestCase {
     }
     
     /** Test that we can't write or read after the size limit */
+    @Test
     public void testWriteOverLimit() throws IOException {
         Random r = new Random(21092506);
         innerTestWriteOverLimit(0L, 1);
@@ -179,6 +184,7 @@ public abstract class RandomAccessBufferTestBase extends TestCase {
         }
     }
 
+    @Test
     public void testClose() throws IOException {
         // Try to cover any thresholds for e.g. moving to disk.
         // Implementations should add their own tests according to known thresholds (white box).
@@ -195,6 +201,7 @@ public abstract class RandomAccessBufferTestBase extends TestCase {
         raf.free();
     }
     
+    @Test
     public void testArray() throws IOException {
         Random r = new Random(21162506);
         for(int size : sizeList)

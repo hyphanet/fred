@@ -3,9 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.test;
 
-import java.util.Arrays;
+import static org.junit.Assert.*;
 
-import static junit.framework.TestCase.fail;
+import java.util.Arrays;
 
 public abstract class Asserts {
 

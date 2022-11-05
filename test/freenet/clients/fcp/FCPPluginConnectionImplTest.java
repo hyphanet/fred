@@ -3,16 +3,19 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
+import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
 import freenet.clients.fcp.FCPPluginConnection.SendDirection;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 
-public final class FCPPluginConnectionImplTest extends TestCase {
+public final class FCPPluginConnectionImplTest {
     /**
      * {@link FCPPluginConnectionImpl#sendSynchronous(SendDirection, FCPPluginMessage, long)} is
      * powered by an internal map which keeps track of synchronous sends which are waiting for a
@@ -26,6 +29,7 @@ public final class FCPPluginConnectionImplTest extends TestCase {
      * - Whether the map which keeps track of synchronous sends does not leak. This is done by
      *   checking whether it is empty after all send threads have terminated.<br>
      */
+    @Test
     public final void testSendSynchronousThreadSafety() throws InterruptedException {
         // JUnit ignores failures in threads other than the threads which it runs tests from. 
         // Thus we pass failures out with this boolean.

@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import static org.junit.Assert.*;
+
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,6 +10,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -50,9 +55,8 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessBufferFactory;
 import freenet.support.io.NativeThread;
 import freenet.support.io.StorageFormatException;
-import junit.framework.TestCase;
 
-public class SplitFileFetcherStorageTest extends TestCase {
+public class SplitFileFetcherStorageTest {
     
     // Setup code is considerable. See below for actual tests ...
     
@@ -79,6 +83,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
     static FreenetURI URI;
     private static final List<COMPRESSOR_TYPE> NO_DECOMPRESSORS = Collections.emptyList();
     
+    @Before
     public void setUp() {
         // Reset RNG for each test (it's static so not reset by junit).
         random = new DummyRandomSource(1234);
@@ -607,6 +612,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
     
     // Actual tests ...
     
+    @Test
     public void testSingleSegment() throws CHKEncodeException, IOException, FetchException, MetadataParseException, MetadataUnresolvedException {
         // 2 data blocks.
         //testSingleSegment(1, 2, BLOCK_SIZE);
@@ -735,6 +741,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
     
     // FIXME LATER Test cross-segment.
 
+    @Test
     public void testMultiSegment() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException {
         // We have to be consistent with the format, but we can in fact play with the segment sizes 
         // to some degree.
@@ -882,6 +889,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         
     }
     
+    @Test
     public void testChooseKeyOneTry() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException {
         int dataBlocks = 3, checkBlocks = 3;
         TestSplitfile test = TestSplitfile.constructSingleSegment(dataBlocks*BLOCK_SIZE, checkBlocks, null, false);
@@ -931,6 +939,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         // Will be able to fetch keys immediately, unless in cooldown.
     }
 
+    @Test
     public void testChooseKeyThreeTries() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException {
         int dataBlocks = 3, checkBlocks = 3;
         TestSplitfile test = TestSplitfile.constructSingleSegment(dataBlocks*BLOCK_SIZE, checkBlocks, null, false);
@@ -946,6 +955,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.waitForFailed();
     }
     
+    @Test
     public void testChooseKeyCooldown() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException, InterruptedException {
         int dataBlocks = 3, checkBlocks = 3;
         int COOLDOWN_TIME = 200;
@@ -978,6 +988,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.waitForFailed();
     }
     
+    @Test
     public void testWriteReadSegmentKeys() throws FetchException, MetadataParseException, IOException, CHKEncodeException, MetadataUnresolvedException, ChecksumFailedException {
         int dataBlocks = 3, checkBlocks = 3;
         TestSplitfile test = TestSplitfile.constructSingleSegment(dataBlocks*BLOCK_SIZE, checkBlocks, null, true);
@@ -991,6 +1002,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
     }
 
     /** Test persistence: Create and then reload. Don't do anything. */
+    @Test
     public void testPersistenceReload() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException, StorageFormatException {
         int dataBlocks = 2;
         int checkBlocks = 3;
@@ -1004,6 +1016,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         storage.close();
     }
     
+    @Test
     public void testPersistenceReloadThenFetch() throws IOException, StorageFormatException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException, FetchException {
         int dataBlocks = 2;
         int checkBlocks = 3;
@@ -1048,6 +1061,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.checkFailed();
     }
     
+    @Test
     public void testPersistenceReloadThenChooseKey() throws IOException, StorageFormatException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException, FetchException {
         int dataBlocks = 2;
         int checkBlocks = 3;
@@ -1069,6 +1083,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.waitForFailed();
     }
     
+    @Test
     public void testPersistenceReloadBetweenChooseKey() throws IOException, StorageFormatException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException, FetchException {
         int dataBlocks = 2;
         int checkBlocks = 3;
@@ -1100,6 +1115,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.waitForFailed();
     }
     
+    @Test
     public void testPersistenceReloadBetweenFetches() throws IOException, StorageFormatException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException, FetchException {
         int dataBlocks = 2;
         int checkBlocks = 3;
