@@ -17,7 +17,7 @@ public class FieldTrimSecondTest {
 	/**
 	 * Correct result in bytes matched by index with input.
 	 */
-	private static final int[] output = { 50 * 1024, 3 * 1024 * 1024 / 2, 128 * 1000, 20 * 1024, 5800 };
+	private static final int[] output = { 50 * 1024, 3 * 1024 * 1024 / 2, (128 / 8) * 1000, 20 * 1024, 5800 };
 
 	@Test
 	public void test() {
@@ -26,7 +26,6 @@ public class FieldTrimSecondTest {
 		int parsed;
 		for (int i = 0; i < input.length; i++) {
 			parsed = Fields.parseInt(Fields.trimPerSecond(input[i]));
-			System.out.format("Input: %s\tParsed: %d\tIntended: %d\n", input[i], parsed, output[i]);
 			assertEquals(parsed, output[i]);
 		}
 	}
