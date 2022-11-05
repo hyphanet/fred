@@ -283,12 +283,13 @@ public class HashTest {
 		for(int i = 0; i < types.length; i++){
 			Hash hash = new Hash(types[i]);
 			boolean throwResult = false;
+            boolean valid = true;
 			try{
-				hash.verify(nullArray, helloWorld);
+				valid = hash.verify(nullArray, helloWorld);
 			}catch(NullPointerException e){
 				throwResult = true;
 			}
-			assertTrue("HashType: "+types[i].name(), throwResult);
+			assertTrue("HashType: "+types[i].name(), throwResult || !valid);
 		}
 	}
 
