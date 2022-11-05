@@ -10,7 +10,8 @@ next:
 - Eleriseth pending keys merged (performance)
 - new firsttime wizard (single-step joining with clearer defaults)
 - healing size increased (better lifetime for popular files)
-- CSS improvements (enable transition and word-wrap)
+- CSS: enable sticky — thanks to Spider Admin 
+- CSS: enable transition and word-wrap — thanks to naejadu
 - new theme: sky-dark-static
 - m3u-player: skip broken files
 - bookmarks: first section has "starting points"
