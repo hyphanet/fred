@@ -21,4 +21,8 @@ public interface HasKeyListener {
 	 */
 	boolean isCancelled();
 
+	/**
+	 * @return non-null if only key with (isSSK() ? pubKeyHash : routingKey) wanted.
+	 */
+	public byte[] getWantedKey();
 }
