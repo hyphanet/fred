@@ -15,14 +15,16 @@
  */
 package freenet.support;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.SizeUtil} class.
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
-public class SizeUtilTest extends TestCase {
+public class SizeUtilTest {
 	
 	String[][] valAndExpected = {
 			//one byte
@@ -45,6 +47,7 @@ public class SizeUtilTest extends TestCase {
 			//{"1208925819614629174706176","1.0 YiB"},	
 	};
 	
+	@Test
 	public void testFormatSizeLong() {
 		Long methodLong;
 		methodLong = Long.valueOf(valAndExpected[0][0]);
@@ -62,6 +65,7 @@ public class SizeUtilTest extends TestCase {
 	 * works correctly with intermediate values
 	 * (i.e. 1/4,1/2,3/4)
 	 */
+	@Test
 	public void testFormatSizeLong_WithIntermediateValues() {
 		Long methodLong;
 		String[] actualValue = {"1.0","1.25","1.5","1.75"};

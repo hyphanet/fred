@@ -1,5 +1,7 @@
 package freenet.client.filter;
 
+import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -7,12 +9,13 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 
-public class M3UFilterTest extends TestCase {
+public class M3UFilterTest {
     protected static String[][] testPlaylists = {
         { "./m3u/safe.m3u", "./m3u/safe_madesafe.m3u" },
         { "./m3u/unsafe.m3u", "./m3u/unsafe_madesafe.m3u" },
@@ -22,6 +25,7 @@ public class M3UFilterTest extends TestCase {
     private static final String BASE_KEY = "USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/FakeM3UHostingFreesite/23/";
     private static final String BASE_URI = '/' + BASE_KEY;
 
+    @Test
     public void testSuiteTest() throws IOException {
         M3UFilter filter = new M3UFilter();
 

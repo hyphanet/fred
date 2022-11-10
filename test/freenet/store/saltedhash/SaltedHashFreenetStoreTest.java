@@ -1,10 +1,14 @@
 package freenet.store.saltedhash;
 
+import static org.junit.Assert.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
@@ -54,27 +58,28 @@ import freenet.support.io.FileUtil;
  * @author Simon Vocella <voxsim@gmail.com>
  *
  */
-public class SaltedHashFreenetStoreTest extends TestCase {
+public class SaltedHashFreenetStoreTest {
 
 	private Random weakPRNG = new Random(12340);
 	private PooledExecutor exec = new PooledExecutor();
 	private Ticker ticker = new TrivialTicker(exec);
 	private File tempDir;
 
-	@Override
-	protected void setUp() throws java.lang.Exception {
+	@Before
+	public void setUp() throws java.lang.Exception {
 		tempDir = new File("tmp-saltedHashfreenetstoretest");
 		tempDir.mkdir();
 		exec.start();
 		ResizablePersistentIntBuffer.setPersistenceTime(-1);
 	}
 
-	@Override
-	protected void tearDown() {
+	@After
+	public void tearDown() {
 		FileUtil.removeAll(tempDir);
 	}
 
 	/* Simple test with CHK for SaltedHashFreenetStore without slotFilter */
+	@Test
 	public void testSimpleCHK() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		File f = new File(tempDir, "saltstore");
 		FileUtil.removeAll(f);
@@ -97,6 +102,7 @@ public class SaltedHashFreenetStoreTest extends TestCase {
 	}
 
 	/* Simple test with SSK for SaltedHashFreenetStore without slotFilter */
+	@Test
 	public void testSimpleSSK() throws IOException, KeyCollisionException, SSKVerifyException, KeyDecodeException, SSKEncodeException, InvalidCompressionCodecException {
 		File f = new File(tempDir, "saltstore");
 		FileUtil.removeAll(f);
@@ -140,6 +146,7 @@ public class SaltedHashFreenetStoreTest extends TestCase {
         null, (byte)0);
 	}
 
+	@Test
 	public void testOnCollisionsSSK() throws IOException, SSKEncodeException, InvalidCompressionCodecException, SSKVerifyException, KeyDecodeException, KeyCollisionException {
 		// With slot filters turned off, it goes straight to disk, because probablyInStore() always returns true.
 		checkOnCollisionsSSK(false);

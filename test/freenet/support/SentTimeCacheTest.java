@@ -3,19 +3,22 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
 
 /**
  * Tests for {@link SentTimeCache}.
  *
  * @author bertm
  */
-public class SentTimeCacheTest extends TestCase {
+public class SentTimeCacheTest {
     private static final int CACHE_SIZE = 32;
 
     /**
      * Tests if the cache adheres to its given maximum capacity.
      */
+    @Test
     public void testMaxSize() {
         SentTimeCache c = newCache();
         fillWithSequence(c);
@@ -26,6 +29,7 @@ public class SentTimeCacheTest extends TestCase {
     /**
      * Tests the correctness of simple {@link SentTimeCache#queryAndRemove(int)} use.
      */
+    @Test
     public void testQueryAndRemove() {
         SentTimeCache c = newCache();
         fillWithSequence(c);
@@ -43,6 +47,7 @@ public class SentTimeCacheTest extends TestCase {
     /**
      * Tests the FIFO characteristics of the cache.
      */
+    @Test
     public void testFifo() {
         SentTimeCache c = newCache();
         fillWithSequence(c);

@@ -3,17 +3,20 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static org.junit.Assert.*;
+
 import java.util.Arrays;
 import java.util.Random;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class NPFPacketTest extends TestCase {
+public class NPFPacketTest {
     
     static final int MAX_PACKET_SIZE = 1400;
 
 	public NullBasePeerNode pn = new NullBasePeerNode();
 	
+	@Test
 	public void testEmptyPacket() {
 		byte[] packet = new byte[] {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number 0
@@ -26,6 +29,7 @@ public class NPFPacketTest extends TestCase {
 		assertFalse(r.getError());
 	}
 
+	@Test
 	public void testPacketWithAck() {
 		byte[] packet = new byte[] {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number 0
@@ -40,6 +44,7 @@ public class NPFPacketTest extends TestCase {
 		assertFalse(r.getError());
 	}
 
+	@Test
 	public void testPacketWithAcks() {
 		byte[] packet = new byte[] {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number 0
@@ -63,6 +68,7 @@ public class NPFPacketTest extends TestCase {
 		assertFalse(r.getError());
 	}
 
+	@Test
 	public void testPacketWithFragment() {
 		byte[] packet = new byte[] {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number 0
@@ -90,6 +96,7 @@ public class NPFPacketTest extends TestCase {
 		assertFalse(r.getError());
 	}
 
+	@Test
 	public void testPacketWithFragments() {
 		byte[] packet = new byte[] { (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, // Sequence number 0
 		                (byte)0x00, // 0 acks
@@ -132,6 +139,7 @@ public class NPFPacketTest extends TestCase {
 		assertFalse(r.getError());
 	}
 
+	@Test
 	public void testReceivedLargeFragment() {
 		byte[] packet = new byte[] { (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // Sequence number 0
 		                (byte) 0x00, // 0 acks
@@ -170,6 +178,7 @@ public class NPFPacketTest extends TestCase {
 		assertFalse(r.getError());
 	}
 
+	@Test
 	public void testReceiveSequenceNumber() {
 		byte[] packet = new byte[] {
 		                (byte)0x01, (byte)0x02, (byte)0x04, (byte)0x08, //Sequence number
@@ -182,6 +191,7 @@ public class NPFPacketTest extends TestCase {
 		assertFalse(r.getError());
 	}
 
+	@Test
 	public void testReceiveLongFragmentedMessage() {
 		byte[] packetNoData = new byte[] {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number (0)
@@ -208,6 +218,7 @@ public class NPFPacketTest extends TestCase {
 		assertFalse(r.getError());
 	}
 
+	@Test
 	public void testReceiveBadFragment() {
 		byte[] packet = new byte[] {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
@@ -221,6 +232,7 @@ public class NPFPacketTest extends TestCase {
 		assertTrue(r.getError());
 	}
 
+	@Test
 	public void testReceiveZeroLengthFragment() {
 		byte[] packet = new byte[] {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
@@ -238,6 +250,7 @@ public class NPFPacketTest extends TestCase {
 		assertEquals(0, f.messageID);
 	}
 
+	@Test
 	public void testSendEmptyPacket() {
 		NPFPacket p = new NPFPacket();
 		p.setSequenceNumber(0);
@@ -248,6 +261,7 @@ public class NPFPacketTest extends TestCase {
 		checkPacket(p, correctData);
 	}
 
+    @Test
     public void testSendPacketWithAck() {
         NPFPacket p = new NPFPacket();
         p.setSequenceNumber(0);
@@ -260,6 +274,7 @@ public class NPFPacketTest extends TestCase {
         checkPacket(p, correctData);
     }
 
+    @Test
     public void testSendPacketWithAckRange() {
         NPFPacket p = new NPFPacket();
         p.setSequenceNumber(0);
@@ -274,6 +289,7 @@ public class NPFPacketTest extends TestCase {
         checkPacket(p, correctData);
     }
 
+    @Test
     public void testSendPacketWithTwoAcks() {
         NPFPacket p = new NPFPacket();
         p.setSequenceNumber(0);
@@ -288,6 +304,7 @@ public class NPFPacketTest extends TestCase {
         checkPacket(p, correctData);
     }
 
+    @Test
     public void testSendPacketWithTwoAcksLong() {
         NPFPacket p = new NPFPacket();
         p.setSequenceNumber(0);
@@ -302,6 +319,7 @@ public class NPFPacketTest extends TestCase {
         checkPacket(p, correctData);
     }
 
+	@Test
 	public void testSendPacketWithAcks() {
 		NPFPacket p = new NPFPacket();
 		p.setSequenceNumber(0);
@@ -318,6 +336,7 @@ public class NPFPacketTest extends TestCase {
 		checkPacket(p, correctData);
 	}
 
+	@Test
 	public void testSendPacketWithFragment() {
 		NPFPacket p = new NPFPacket();
 		p.setSequenceNumber(100);
@@ -333,6 +352,7 @@ public class NPFPacketTest extends TestCase {
 		checkPacket(p, correctData);
 	}
 
+	@Test
 	public void testSendCompletePacket() {
 		NPFPacket p = new NPFPacket();
 		p.setSequenceNumber(2130706432);
@@ -384,6 +404,7 @@ public class NPFPacketTest extends TestCase {
 		checkPacket(p, correctData);
 	}
 
+	@Test
 	public void testLength() {
 		NPFPacket p = new NPFPacket();
 
@@ -399,6 +420,7 @@ public class NPFPacketTest extends TestCase {
 		assertEquals(46, p.getLength());
 	}
 	
+	@Test
 	public void testEncodeDecodeLossyPerPacketMessages() {
 		NPFPacket p = new NPFPacket();
 		byte[] fragData = new byte[] {(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF};
@@ -419,6 +441,7 @@ public class NPFPacketTest extends TestCase {
 		checkEquals(lossyFragment, decodedLossyMessage);
 	}
 
+	@Test
 	public void testEncodeDecodeLossyPerPacketMessages2() {
 		NPFPacket p = new NPFPacket();
 		byte[] fragData = new byte[] {(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF};
@@ -443,6 +466,7 @@ public class NPFPacketTest extends TestCase {
 		checkEquals(lossyFragment2, decodedLossyMessage);
 	}
 
+	@Test
 	public void testEncodeDecodeLossyPerPacketMessages2Padded() {
 		NPFPacket p = new NPFPacket();
 		byte[] fragData = new byte[] {(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF};

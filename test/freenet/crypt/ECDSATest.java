@@ -1,38 +1,45 @@
 package freenet.crypt;
 
+import static org.junit.Assert.*;
+
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.PublicKey;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import freenet.crypt.ECDSA.Curves;
 import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
-import junit.framework.TestCase;
 
 
-public class ECDSATest extends TestCase {
+public class ECDSATest {
     
     ECDSA.Curves curveToTest;
     ECDSA ecdsa;
 
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         curveToTest = Curves.P256;
         ecdsa = new ECDSA(curveToTest);
     }
 
+    @Test
     public void testGetPublicKey() {
         PublicKey pub = ecdsa.getPublicKey();
         assertNotNull(pub);
         assertTrue(pub.getEncoded().length <= curveToTest.modulusSize);
     }
     
+    @Test
     public void testSign() {
         byte[] sig= ecdsa.sign("test".getBytes());
         assertNotNull(sig);
         assertTrue(sig.length > 0);
     }
     
+    @Test
     public void testSignToNetworkFormat() {
         byte[] toSign = "test".getBytes();
         byte[] sig= ecdsa.signToNetworkFormat(toSign);
@@ -40,6 +47,7 @@ public class ECDSATest extends TestCase {
         assertEquals(sig.length, curveToTest.maxSigSize);
     }
     
+    @Test
     public void testVerify() {
         String toSign = "test";
         byte[] sig= ecdsa.sign(toSign.getBytes());
@@ -47,6 +55,7 @@ public class ECDSATest extends TestCase {
         assertFalse(ecdsa.verify(sig, "".getBytes()));
     }
     
+    @Test
     public void testAsFieldSet() throws FSParseException {
         SimpleFieldSet privSFS = ecdsa.asFieldSet(true);
         assertNotNull(privSFS.getSubset(curveToTest.name()));
@@ -60,6 +69,7 @@ public class ECDSATest extends TestCase {
         assertNull(pubSFS.get(curveToTest.name()+".pri"));
     }
     
+    @Test
     public void testSerializeUnserialize() throws FSParseException {
         SimpleFieldSet sfs = ecdsa.asFieldSet(true);
         ECDSA ecdsa2 = new ECDSA(sfs.getSubset(curveToTest.name()), curveToTest);

@@ -15,15 +15,18 @@
  */
 package freenet.support;
 
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
 import freenet.test.UTFUtil;
-import junit.framework.TestCase;
 
 /**
  * Test case for {@link freenet.support.URIPreEncoder} class
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
-public class URIPreEncoderTest extends TestCase {
+public class URIPreEncoderTest {
 
 	private String prtblAscii = new String(UTFUtil.PRINTABLE_ASCII);
 	private String stressedUTF_8Chars = new String(UTFUtil.STRESSED_UTF);
@@ -44,6 +47,7 @@ public class URIPreEncoderTest extends TestCase {
 	 * to verify if it converts all
 	 * not safe chars into safe chars.
 	 */
+	@Test
 	public void testEncode() {
 		String toEncode = prtblAscii+stressedUTF_8Chars;
 		String encoded = URIPreEncoder.encode(toEncode);
@@ -58,6 +62,7 @@ public class URIPreEncoderTest extends TestCase {
 	 * to verify if it converts all
 	 * not safe chars into safe chars.
 	 */
+	@Test
 	public void testEncodeURI() {
 		//String toEncode = prtblAscii+stressedUTF_8Chars;
 		//URI encoded;

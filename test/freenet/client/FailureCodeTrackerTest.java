@@ -1,15 +1,19 @@
 package freenet.client;
 
+import static org.junit.Assert.*;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.junit.Test;
+
 import freenet.support.io.CountedOutputStream;
 import freenet.support.io.NullOutputStream;
-import junit.framework.TestCase;
 
-public class FailureCodeTrackerTest extends TestCase {
+public class FailureCodeTrackerTest {
 
     /** Test that the fixed size representation really is fixed size */
+    @Test
     public void testSize() throws IOException {
         testSize(false);
         testSize(true);

@@ -1,14 +1,17 @@
 package freenet.client.async;
 
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
 import freenet.support.CheatingTicker;
 import freenet.support.Executor;
 import freenet.support.PooledExecutor;
 import freenet.support.Ticker;
 import freenet.support.WaitableExecutor;
 import freenet.support.io.NativeThread;
-import junit.framework.TestCase;
 
-public class PersistentJobRunnerImplTest extends TestCase {
+public class PersistentJobRunnerImplTest {
     
     final WaitableExecutor exec = new WaitableExecutor(new PooledExecutor());
     final Ticker ticker = new CheatingTicker(exec);
@@ -156,6 +159,7 @@ public class PersistentJobRunnerImplTest extends TestCase {
         
     }
     
+    @Test
     public void testWaitForCheckpoint() throws PersistenceDisabledException {
         jobRunner.onLoading();
         WakeableJob w = new WakeableJob();
@@ -169,6 +173,7 @@ public class PersistentJobRunnerImplTest extends TestCase {
         assertTrue(w.finished());
     }
     
+    @Test
     public void testDisabledCheckpointing() throws PersistenceDisabledException {
         jobRunner.setCheckpointASAP();
         exec.waitForIdle();

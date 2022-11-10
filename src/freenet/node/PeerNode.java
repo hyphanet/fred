@@ -3891,6 +3891,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private long timeLastAcceptedAnnouncement;
 	private long[] runningAnnounceUIDs = new long[0];
 
+	/** Protection against too many simultaneous announcements over a single
+	 * connection.
+	 * @param uid The announcement UID.
+	 * @return True if we should accept the announcement. False to reject it.
+	 */
 	public synchronized boolean shouldAcceptAnnounce(long uid) {
 		long now = System.currentTimeMillis();
 		if(runningAnnounceUIDs.length < MAX_SIMULTANEOUS_ANNOUNCEMENTS &&
@@ -3899,6 +3904,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			if(runningAnnounceUIDs.length > 0)
 				System.arraycopy(runningAnnounceUIDs, 0, newList, 0, runningAnnounceUIDs.length);
 			newList[runningAnnounceUIDs.length] = uid;
+			runningAnnounceUIDs = newList;
 			timeLastAcceptedAnnouncement = now;
 			return true;
 		} else {
@@ -3906,23 +3912,29 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 	}
 
+	/** Report that an announcement finished. */
 	public synchronized boolean completedAnnounce(long uid) {
-		final int runningAnnounceUIDsLength = runningAnnounceUIDs.length;
-		if(runningAnnounceUIDsLength < 1) return false;
-		long[] newList = new long[runningAnnounceUIDsLength - 1];
+		if(runningAnnounceUIDs.length < 1) return false;
+		long[] newList = new long[runningAnnounceUIDs.length - 1];
 		int x = 0;
-		for(int i=0;i<runningAnnounceUIDs.length;i++) {
-			if(i == runningAnnounceUIDs.length) return false;
-			long l = runningAnnounceUIDs[i];
+		for(long l : runningAnnounceUIDs) {
 			if(l == uid) continue;
+			if(x == newList.length) {
+				Logger.warning(this, "UID not found in completedAnnounce, should not happen", new Exception("debug"));
+				// uid was not found in runningAnnounceUIDs
+				return false;
+			}
 			newList[x++] = l;
 		}
-		runningAnnounceUIDs = newList;
-		if(x < runningAnnounceUIDs.length) {
-			assert(false); // Callers prevent duplicated UIDs.
-			runningAnnounceUIDs = Arrays.copyOf(runningAnnounceUIDs, x);
+		if(x < newList.length) {
+			Logger.error(this, "Duplicated UID, should not happen", new Exception("debug"));
+			newList = Arrays.copyOf(newList, x);
+			runningAnnounceUIDs = newList;
+			return true;
+		} else {
+			runningAnnounceUIDs = newList;
+			return true;
 		}
-		return true;
 	}
 
 	public synchronized long timeLastDisconnect() {

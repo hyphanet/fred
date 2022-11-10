@@ -1,10 +1,12 @@
 package freenet.store;
 
+import static org.junit.Assert.*;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
@@ -13,8 +15,9 @@ import freenet.crypt.Global;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.math.MersenneTwister;
 
-public class SimplePubkeyCacheTest extends TestCase {
+public class SimplePubkeyCacheTest {
 	
+	@Test
 	public void testSimple() {
 		final int keys = 10;
 		PubkeyStore pk = new PubkeyStore();

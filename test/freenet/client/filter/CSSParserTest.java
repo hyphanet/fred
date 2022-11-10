@@ -1,5 +1,7 @@
 package freenet.client.filter;
 
+import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -14,7 +16,9 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
+
 import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.l10n.NodeL10n;
@@ -24,7 +28,7 @@ import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 
-public class CSSParserTest extends TestCase {
+public class CSSParserTest {
 
 
 	// FIXME should specify exact output values
@@ -876,11 +880,33 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("body { nav-left: div.bold '<target-name>'; }",  "body { }");
 		propertyTests.put("button#foo { nav-left: #bar \"sidebar\"; }", "button#foo { nav-left: #bar \"sidebar\"; }");
 		propertyTests.put("button#foo { nav-left: invalidSelector \"sidebar\"; }", "button#foo { }");
+		
+		// transition-* 
+		// valid, 1 value
+		propertyTests.put("div { transition-duration: 5s; }", "div { transition-duration: 5s; }");
+		propertyTests.put("div { transition-delay: 1s; }", "div { transition-delay: 1s; }");
+		propertyTests.put("div { transition-property: width; }", "div { transition-property: width; }");
+		propertyTests.put("div { transition-timing-function: ease; }", "div { transition-timing-function: ease; }");
+		// valid, 2 values
+		propertyTests.put("div { transition-duration: 5s, 1s; }", "div { transition-duration: 5s, 1s; }");
+		propertyTests.put("div { transition-delay: 1s, 3s; }", "div { transition-delay: 1s, 3s; }");
+		propertyTests.put("div { transition-property: width, transform; }", "div { transition-property: width, transform; }");
+		propertyTests.put("div { transition-timing-function: ease, ease-out; }", "div { transition-timing-function: ease, ease-out; }");
+		// invalid, no values
+		propertyTests.put("div { transition-duration: ; }", "div { }");
+		propertyTests.put("div { transition-delay: ; }", "div { }");
+		propertyTests.put("div { transition-property: ; }", "div { }");
+		propertyTests.put("div { transition-timing-function: ; }", "div { }");
+		// invalid, wrong values
+		propertyTests.put("div { transition-duration: \"test\"; }", "div { }");
+		propertyTests.put("div { transition-delay: \"test\"; }", "div { }");
+		propertyTests.put("div { transition-property: \"test\"; }", "div { }");
+		propertyTests.put("div { transition-timing-function: \"test\"; }", "div { }");
 	}
 
 	FilterMIMEType cssMIMEType;
 
-	@Override
+	@Before
 	public void setUp() throws InvalidThresholdException {
 		new NodeL10n();
 		//if (TestProperty.VERBOSE) {
@@ -890,6 +916,7 @@ public class CSSParserTest extends TestCase {
 		cssMIMEType = ContentFilter.getMIMEType("text/css");
 	}
 
+	@Test
 	public void testCSS1Selector() throws IOException, URISyntaxException {
 
 
@@ -907,6 +934,7 @@ public class CSSParserTest extends TestCase {
 		assertTrue("key=\""+CSS_INVALID_MEDIA_CASCADE+"\" value=\""+filter(CSS_INVALID_MEDIA_CASCADE)+"\"", "".equals(filter(CSS_INVALID_MEDIA_CASCADE)));
 	}
 
+	@Test
 	public void testCSS2Selector() throws IOException, URISyntaxException {
 		Collection<String> c = CSS2_SELECTOR.keySet();
 		Iterator<String> itr = c.iterator();
@@ -927,6 +955,7 @@ public class CSSParserTest extends TestCase {
 
 	}
 
+	@Test
 	public void testCSS3Selector() throws IOException, URISyntaxException {
 		Collection<String> c = CSS3_SELECTOR.keySet();
 		Iterator<String> itr = c.iterator();
@@ -947,16 +976,19 @@ public class CSSParserTest extends TestCase {
 
 	}
 
+	@Test
 	public void testNewlines() throws IOException, URISyntaxException {
 		assertTrue("key=\""+CSS_STRING_NEWLINES+"\" value=\""+filter(CSS_STRING_NEWLINES)+"\" should be: \""+CSS_STRING_NEWLINESC+"\"", CSS_STRING_NEWLINESC.equals(filter(CSS_STRING_NEWLINES)));
 	}
 
+	@Test
 	public void testBackgroundURL() throws IOException, URISyntaxException {
 		assertTrue("key="+CSS_BACKGROUND_URL+" value=\""+filter(CSS_BACKGROUND_URL)+"\" should be \""+CSS_BACKGROUND_URLC+"\"", CSS_BACKGROUND_URLC.equals(filter(CSS_BACKGROUND_URL)));
 
 		assertTrue("key="+CSS_LCASE_BACKGROUND_URL+" value=\""+filter(CSS_LCASE_BACKGROUND_URL)+"\"", CSS_LCASE_BACKGROUND_URLC.equals(filter(CSS_LCASE_BACKGROUND_URL)));
 	}
 
+	@Test
 	public void testImports() throws IOException, URISyntaxException {
 		assertTrue("key="+CSS_IMPORT+" value=\""+filter(CSS_IMPORT)+"\"", CSS_IMPORTC.equals(filter(CSS_IMPORT)));
 		assertTrue("key="+CSS_IMPORT2+" value=\""+filter(CSS_IMPORT2)+"\"", CSS_IMPORT2C.equals(filter(CSS_IMPORT2)));
@@ -980,11 +1012,13 @@ public class CSSParserTest extends TestCase {
 		assertTrue("key="+BROKEN_BEFORE_MEDIA+" value=\""+filter(BROKEN_BEFORE_MEDIA)+"\"", BROKEN_BEFORE_MEDIAC.equals(filter(BROKEN_BEFORE_MEDIA)));
 	}
 
+	@Test
 	public void testEscape() throws IOException, URISyntaxException {
 		assertTrue("key="+CSS_ESCAPED_LINK+" value=\""+filter(CSS_ESCAPED_LINK)+"\"", CSS_ESCAPED_LINKC.equals(filter(CSS_ESCAPED_LINK)));
 		assertTrue("key="+CSS_ESCAPED_LINK2+" value=\""+filter(CSS_ESCAPED_LINK2)+"\"", CSS_ESCAPED_LINK2C.equals(filter(CSS_ESCAPED_LINK2)));
 	}
 
+	@Test
 	public void testProperties() throws IOException, URISyntaxException {
 		for(Entry<String, String> entry : propertyTests.entrySet()) {
 			String key = entry.getKey();
@@ -1001,6 +1035,7 @@ public class CSSParserTest extends TestCase {
 		return w.toString();
 	}
 
+	@Test
 	public void testCharset() throws IOException, URISyntaxException {
 		// Test whether @charset is passed through when it is correct.
 		String test = "@charset \"UTF-8\";\nh2 { color: red;}";
@@ -1130,6 +1165,7 @@ public class CSSParserTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testMaybeCharset() throws UnsafeContentTypeException, URISyntaxException, IOException {
 		testUseMaybeCharset("UTF-8");
 		testUseMaybeCharset("UTF-16");
@@ -1155,18 +1191,22 @@ public class CSSParserTest extends TestCase {
 		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" with maybeCharset \""+charset+"\"", original.equals(filtered));
 	}
 
+	@Test
 	public void testComment() throws IOException, URISyntaxException {
 		assertTrue("value=\""+filter(COMMENT)+"\"",COMMENTC.equals(filter(COMMENT)));
 	}
 
+	@Test
 	public void testWhitespace() throws IOException, URISyntaxException {
 		assertTrue("value=\""+filter(CSS_COMMA_WHITESPACE)+"\"", CSS_COMMA_WHITESPACE.equals(filter(CSS_COMMA_WHITESPACE)));
 	}
 
+	@Test
 	public void testDoubleCommentStart() throws IOException, URISyntaxException {
 		assertEquals("Double comment start does not crash", filter("/*/*"), "");
 	}
 
+	@Test
 	public void testTripleCommentStart() throws IOException, URISyntaxException {
 		assertEquals("Triple comment start does not crash", filter("/*/*/*"), "");
 	}

@@ -581,7 +581,7 @@ public class BaseL10n {
 	/**
 	 * Get the default value for a key.
 	 * @param key Key to search for.
-	 * @return String
+	 * @return the matching string in the fallback language (English); the raw key if there is no entry for it in the fallback language.
 	 */
 	public String getDefaultString(String key) {
         return getStrings(key, FallbackState.FALLBACK_LANG).iterator().next();
@@ -590,7 +590,7 @@ public class BaseL10n {
 	/**
 	 * Get the default value for a key.
 	 * @param key Key to search for.
-	 * @return String
+	 * @return the matching string in the fallback language (English); the raw key if there is no entry for it in the fallback language. Patterns are replaced by the matching values.
 	 */
 	public String getDefaultString(String key, String[] patterns, String[] values) {
 		assert (patterns.length == values.length);

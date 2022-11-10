@@ -1,5 +1,7 @@
 package freenet.client.filter;
 
+import static org.junit.Assert.*;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.FileOutputStream;
@@ -9,18 +11,18 @@ import java.net.URL;
 import java.util.Arrays;
 
 import org.apache.commons.compress.utils.IOUtils;
+import org.junit.Before;
+import org.junit.Test;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
-
-public class OggFilterTest extends TestCase {
+public class OggFilterTest {
 	private OggFilter filter;
 
-	@Override
-	protected void setUp() {
+	@Before
+	public void setUp() {
 		filter = new OggFilter();
 	}
 
+	@Test
 	public void testEmptyOutputRaisesException() throws IOException {
 		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/invalid_header.ogg"));
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -30,18 +32,20 @@ public class OggFilterTest extends TestCase {
 		} catch(DataFilterException e) {}
 	}
 
+	@Test
 	public void testValidSubPageStripped() throws IOException, DataFilterException {
 		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/contains_subpages.ogg"));
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		try {
 			filter.readFilter(input, output, null, null, null, null);
 		} catch(DataFilterException e) {}
-		Assert.assertTrue(Arrays.equals(new byte[]{}, output.toByteArray()));
+		assertTrue(Arrays.equals(new byte[]{}, output.toByteArray()));
 		input.close();
 		output.close();
 	}
 
     /** the purpose of this test is to create the testoutputFile so you can check it with a video player. */
+	@Test
 	public void testFilterFfmpegEncodedVideoSegment() throws IOException, DataFilterException {
         String testoutputFile = getClass().getResource(
 	 			"./ogg/36C3_-_opening--cc-by--c3voc--fem-ags-opensuse--ccc--filtered-testoutput.ogv")
@@ -61,7 +65,7 @@ public class OggFilterTest extends TestCase {
 			output.writeTo(newFileStream);
 			newFileStream.close();
 		} catch(DataFilterException e) {}
-		Assert.assertTrue(Arrays.equals(unchangedData.toByteArray(), output.toByteArray()));
+		assertTrue(Arrays.equals(unchangedData.toByteArray(), output.toByteArray()));
 		input.close();
 		output.close();
 	}

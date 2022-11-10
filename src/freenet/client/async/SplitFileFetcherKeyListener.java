@@ -343,6 +343,11 @@ public class SplitFileFetcherKeyListener implements KeyListener {
         return false;
     }
 
+    @Override
+    public byte[] getWantedKey() {
+        return null;
+    }
+
     public void writeStaticSettings(DataOutputStream dos) throws IOException {
         dos.write(localSalt);
         dos.writeInt(mainBloomFilterSizeBytes);

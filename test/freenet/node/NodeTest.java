@@ -3,17 +3,20 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
 
 /**
  * Sanity tests for Node.
  * TODO: add more tests.
  */
-public class NodeTest extends TestCase {
+public class NodeTest {
 
     /**
      * Tests for sanity of default store sizes.
      */
+    @Test
     public void testDefaultStoreSizeSanity() {
         assertTrue(Node.MIN_STORE_SIZE <= Node.DEFAULT_STORE_SIZE);
         assertTrue(Node.MIN_CLIENT_CACHE_SIZE <= Node.DEFAULT_CLIENT_CACHE_SIZE);

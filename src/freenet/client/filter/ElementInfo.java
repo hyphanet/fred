@@ -211,6 +211,7 @@ public class ElementInfo {
 			"hover",
 			"active",
 			"focus",
+			"focus-within",
 			"lang",
 			"first-line",
 			"first-letter",

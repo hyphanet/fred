@@ -355,17 +355,17 @@ public class SplitFileFetcherSegmentStorage {
         if(allBlocks == null || keys == null) {
             return;
         }
-        class MyBlock {
+        class SplitFileFetcherBlock {
             final byte[] buf;
             final int blockNumber;
             final int slot;
-            MyBlock(byte[] buf, int blockNumber, int slot) {
+            SplitFileFetcherBlock(byte[] buf, int blockNumber, int slot) {
                 this.buf = buf;
                 this.blockNumber = blockNumber;
                 this.slot = slot;
             }
         }
-        ArrayList<MyBlock> maybeBlocks = new ArrayList<MyBlock>();
+        ArrayList<SplitFileFetcherBlock> maybeBlocks = new ArrayList<SplitFileFetcherBlock>();
         int fetchedCount = 0;
         synchronized(this) {
             boolean[] used = new boolean[totalBlocks];
@@ -374,7 +374,7 @@ public class SplitFileFetcherSegmentStorage {
                     Logger.warning(this, "Inconsistency decoding splitfile: slot "+i+" has bogus block number "+blocksFetched[i]);
                     if(blocksFetched[i] != -1)
                         blocksFetched[i] = -1;
-                    maybeBlocks.add(new MyBlock(allBlocks[i], (short)-1, i));
+                    maybeBlocks.add(new SplitFileFetcherBlock(allBlocks[i], (short)-1, i));
                     continue;
                 } else if(used[blocksFetched[i]]) {
                     Logger.warning(this, "Inconsistency decoding splitfile: slot "+i+" has duplicate block number "+blocksFetched[i]);
@@ -382,7 +382,7 @@ public class SplitFileFetcherSegmentStorage {
                     continue;
                 } else {
                     if(logMINOR) Logger.minor(this, "Found block "+blocksFetched[i]+" in slot "+i);
-                    maybeBlocks.add(new MyBlock(allBlocks[i], blocksFetched[i], i));
+                    maybeBlocks.add(new SplitFileFetcherBlock(allBlocks[i], blocksFetched[i], i));
                     used[blocksFetched[i]] = true;
                     fetchedCount++;
                 }
@@ -415,7 +415,7 @@ public class SplitFileFetcherSegmentStorage {
         byte[][] dataBlocks = new byte[blocksForDecode()][];
         byte[][] checkBlocks = new byte[this.checkBlocks][];
         
-        for(MyBlock test : maybeBlocks) {
+        for(SplitFileFetcherBlock test : maybeBlocks) {
             boolean failed = false;
             int blockNumber = test.blockNumber;
             byte[] buf = test.buf;
@@ -593,6 +593,9 @@ public class SplitFileFetcherSegmentStorage {
         return true;
     }
 
+    /**
+     * queue up for healing all blocks that either failed or needed more than one try to retrieve. 
+     */
     private void queueHeal(byte[][] dataBlocks, byte[][] checkBlocks, boolean[] dataBlocksPresent, boolean[] checkBlocksPresent) throws IOException {
         for(int i=0;i<dataBlocks.length;i++) {
             if(dataBlocksPresent[i]) continue;

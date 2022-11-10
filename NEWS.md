@@ -1,5 +1,26 @@
 next:
 
+- new theme: sky-dark-static
+- m3u-player: skip broken files
+- m3u-player: only inline the m3u player if the page contains media tags
+- new firsttime wizard (single-step joining with clearer defaults)
+- Client getter honor max size argument
+- 
+
+1495:
+
+- finally merged the HashingAPI by unixninja92, a GSoC project that had gotten lost in the pull requests. This provides an easy and well-tested way to create and verify different types of Hashes from byte arrays, including Sha256 and TigerTree. https://github.com/freenet/fred/pull/258
+- Add web+freenet and ext+freenet as supported schemas to support extensions. Thanks to TheSeeker
+- upgrade unit tests to junit4, thanks to vwoodzell!
+- Eleriseth pending keys merged (performance)
+- healing size increased (better lifetime for popular files)
+- CSS: enable sticky — thanks to Spider Admin
+- CSS: enable transition and word-wrap — thanks to naejadu, thanks to vwoodzell for the review!
+- re-organize default bookmarks: first section has "starting points", thanks to vwoodzell for the review!
+- old announcement fixes by toad finally merged
+
+1494:
+
 - Show a user alert (once every Freenet update) if the datastore is
   below 10% of available space with a link to the store size wizard page
   to make it easy to increase the store ― thanks to Trivuele

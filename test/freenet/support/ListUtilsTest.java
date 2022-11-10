@@ -14,17 +14,20 @@
  */
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.util.ArrayList;
 import java.util.Random;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.ListUtils} class.
  *
  */
-public class ListUtilsTest extends TestCase {
+public class ListUtilsTest {
 
+	@Test
 	public void testRemoveByObject() {
 		ArrayList<Integer> list = new ArrayList<Integer>();
 		for(int i = 0; i < 10; i++)
@@ -65,6 +68,7 @@ public class ListUtilsTest extends TestCase {
 				assertEquals(list.get(i), Integer.valueOf(i));
 		}
 	}
+	@Test
 	public void testRemoveByIndex() {
 		ArrayList<Integer> list = new ArrayList<Integer>();
 		for(int i = 0; i < 10; i++)
@@ -111,6 +115,7 @@ public class ListUtilsTest extends TestCase {
 				return 0;
 			}
 	}
+	@Test
 	public void testRemoveByRandom() {
 		ArrayList<Integer> list = new ArrayList<Integer>();
 		Random rand = new Random();
@@ -177,6 +182,7 @@ public class ListUtilsTest extends TestCase {
 			assertEquals(list.get(i), Integer.valueOf(i));
 	}
 
+	@Test
 	public void testRemoveByRandomSimple() {
 		ArrayList<Integer> list = new ArrayList<Integer>();
 		Random rand = new Random();

@@ -1,11 +1,15 @@
 package freenet.support;
 
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
 import freenet.node.PrioRunnable;
 import freenet.support.io.NativeThread;
-import junit.framework.TestCase;
 
-public class SerialExecutorTest extends TestCase {
+public class SerialExecutorTest {
 	
+	@Test
 	public void testBlocking() {
 		SerialExecutor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
 		exec.start(new PooledExecutor(), "test");

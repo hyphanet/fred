@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import static org.junit.Assert.*;
+
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -10,7 +12,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -72,7 +74,7 @@ import freenet.support.io.StorageFormatException;
 import freenet.support.io.TempBucketFactory;
 import freenet.support.io.TrivialPersistentFileTracker;
 
-public class SplitFileInserterStorageTest extends TestCase {
+public class SplitFileInserterStorageTest {
     
     final LockableRandomAccessBufferFactory smallRAFFactory = new ByteArrayRandomAccessBufferFactory();
     final FilenameGenerator fg;
@@ -221,6 +223,7 @@ public class SplitFileInserterStorageTest extends TestCase {
 
     }
     
+    @Test
     public void testSmallSplitfileNoLastBlock() throws IOException, InsertException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
@@ -241,6 +244,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertTrue(storage.getStatus() == Status.ENCODED);
     }
 
+    @Test
     public void testSmallSplitfileWithLastBlock() throws IOException, InsertException {
         Random r = new Random(12122);
         long size = 65535;
@@ -273,6 +277,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertTrue(storage.getStatus() == Status.ENCODED);
     }
     
+    @Test
     public void testSmallSplitfileHasKeys() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
@@ -299,6 +304,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertTrue(storage.getStatus() == Status.ENCODED);
     }
 
+    @Test
     public void testSmallSplitfileCompletion() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
@@ -326,6 +332,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(storage.getStatus(), Status.SUCCEEDED);
     }
 
+    @Test
     public void testSmallSplitfileChooseCompletion() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
@@ -372,6 +379,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(storage.getStatus(), Status.SUCCEEDED);
     }
 
+    @Test
     public void testSmallSplitfileChooseCooldown() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
@@ -425,6 +433,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(storage.getStatus(), Status.SUCCEEDED);
     }
 
+    @Test
     public void testSmallSplitfileChooseCooldownNotRNF() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
@@ -478,6 +487,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(storage.getStatus(), Status.SUCCEEDED);
     }
 
+    @Test
     public void testSmallSplitfileConsecutiveRNFsHack() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
@@ -527,6 +537,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(storage.getStatus(), Status.SUCCEEDED);
     }
 
+    @Test
     public void testSmallSplitfileConsecutiveRNFsHackFailure() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
@@ -571,6 +582,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         }
     }
 
+    @Test
     public void testSmallSplitfileFailureMaxRetries() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
@@ -608,6 +620,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         }
     }
 
+    @Test
     public void testSmallSplitfileFailureFatalError() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
@@ -664,6 +677,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         return new ReadOnlyRandomAccessBuffer(thing);
     }
     
+    @Test
     public void testRoundTripSimple() throws FetchException, MetadataParseException, Exception {
         testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*2, CompatibilityMode.COMPAT_CURRENT);
         testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*2-1, CompatibilityMode.COMPAT_CURRENT);
@@ -673,16 +687,19 @@ public class SplitFileInserterStorageTest extends TestCase {
         testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*192+1, CompatibilityMode.COMPAT_CURRENT);
     }
     
+    @Test
     public void testRoundTripOneBlockSegment() throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
         testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*(128+1)-1, CompatibilityMode.COMPAT_1250_EXACT);
     }
     
+    @Test
     public void testRoundTripCrossSegment() throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
         if(!TestProperty.EXTENSIVE) return;
         // Test cross-segment:
         testRoundTripCrossSegmentRandom(CHKBlock.DATA_LENGTH*128*21);
     }
     
+    @Test
     public void testRoundTripDataBlocksOnly() throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
         testRoundTripCrossSegmentDataBlocks(CHKBlock.DATA_LENGTH*128*5);
         if(!TestProperty.EXTENSIVE) return;
@@ -690,16 +707,19 @@ public class SplitFileInserterStorageTest extends TestCase {
         testRoundTripCrossSegmentDataBlocks(CHKBlock.DATA_LENGTH*128*21);
     }
     
+    @Test
     public void testResumeCrossSegment() throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
         if(!TestProperty.EXTENSIVE) return;
         testResumeCrossSegment(CHKBlock.DATA_LENGTH*128*21);
     }
     
+    @Test
     public void testEncodeAfterShutdownCrossSegment() throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
         if(!TestProperty.EXTENSIVE) return;
         testEncodeAfterShutdownCrossSegment(CHKBlock.DATA_LENGTH*128*21);
     }
     
+    @Test
     public void testRepeatedEncodeAfterShutdown() throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
         testRepeatedEncodeAfterShutdownCrossSegment(CHKBlock.DATA_LENGTH*128*5); // Not cross-segment.
         if(!TestProperty.EXTENSIVE) return;
@@ -775,7 +795,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         Bucket copyBucket = m1.toBucket(smallBucketFactory);
         assertTrue(BucketTools.equalBuckets(metaBucket, copyBucket));
         
-        MyFetchCallback fcb = new MyFetchCallback();
+        FetchCallbackForTestingSplitFileInserter fcb = new FetchCallbackForTestingSplitFileInserter();
         
         FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, smallBucketFactory, new SimpleEventProducer());
         
@@ -1002,7 +1022,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         Bucket copyBucket = m1.toBucket(smallBucketFactory);
         assertTrue(BucketTools.equalBuckets(metaBucket, copyBucket));
         
-        MyFetchCallback fcb = new MyFetchCallback();
+        FetchCallbackForTestingSplitFileInserter fcb = new FetchCallbackForTestingSplitFileInserter();
         
         FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, smallBucketFactory, new SimpleEventProducer());
         
@@ -1082,7 +1102,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         Bucket copyBucket = m1.toBucket(smallBucketFactory);
         assertTrue(BucketTools.equalBuckets(metaBucket, copyBucket));
         
-        MyFetchCallback fcb = new MyFetchCallback();
+        FetchCallbackForTestingSplitFileInserter fcb = new FetchCallbackForTestingSplitFileInserter();
         
         FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, smallBucketFactory, new SimpleEventProducer());
         
@@ -1174,7 +1194,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         }
     }
     
-    class MyFetchCallback implements SplitFileFetcherStorageCallback {
+    class FetchCallbackForTestingSplitFileInserter implements SplitFileFetcherStorageCallback {
         
         
         private boolean succeeded;
@@ -1335,6 +1355,7 @@ public class SplitFileInserterStorageTest extends TestCase {
 
     }
 
+    @Test
     public void testCancel() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12124);
         long size = 32768*6;
@@ -1364,12 +1385,14 @@ public class SplitFileInserterStorageTest extends TestCase {
         }
     }
     
+    @Test
     public void testCancelAlt() throws IOException, InsertException, MissingKeyException {
         // We need to check that onFailed() isn't called until after all the cross segment encode threads have finished.
         Random r = new Random(12124);
         testCancelAlt(r, 32768*6);
     }
     
+    @Test
     public void testCancelAltCrossSegment() throws IOException, InsertException, MissingKeyException {
         // We need to check that onFailed() isn't called until after all the cross segment encode threads have finished.
         Random r = new Random(0xb395f44d);
@@ -1452,6 +1475,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         return false;
     }
 
+    @Test
     public void testPersistentSmallSplitfileNoLastBlockCompletion() throws IOException, InsertException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
@@ -1486,6 +1510,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(Status.SUCCEEDED, resumed.getStatus());
     }
 
+    @Test
     public void testPersistentSmallSplitfileNoLastBlockCompletionAfterResume() throws IOException, InsertException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
@@ -1521,6 +1546,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(Status.SUCCEEDED, resumed.getStatus());
     }
     
+    @Test
     public void testPersistentSmallSplitfileWithLastBlockCompletionAfterResume() throws IOException, InsertException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
         Random r = new Random(12121);
         long size = 65535; // Exact multiple, so no last block
@@ -1556,6 +1582,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(Status.SUCCEEDED, resumed.getStatus());
     }
     
+    @Test
     public void testPersistentSmallSplitfileNoLastBlockFailAfterResume() throws IOException, InsertException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
@@ -1604,6 +1631,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(Status.FAILED, resumed.getStatus());
     }
 
+    @Test
     public void testPersistentSmallSplitfileNoLastBlockChooseAfterResume() throws IOException, InsertException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block

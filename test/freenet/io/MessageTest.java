@@ -1,16 +1,19 @@
 package freenet.io;
 
+import static org.junit.Assert.*;
+
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
-import junit.framework.TestCase;
 
 import java.util.Arrays;
+
+import org.junit.Test;
 
 /**
  * Tests Message abilities.
  */
-public class MessageTest extends TestCase {
+public class MessageTest {
 
 	private static final String BOOLEAN = "boolean";
 	private static final String BYTE = "byte";
@@ -37,6 +40,7 @@ public class MessageTest extends TestCase {
 	/**
 	 * Test that different types can be set and retrieved to and from a Message.
 	 */
+	@Test
 	public void test() {
 		Message msg = new Message(test);
 
@@ -68,8 +72,8 @@ public class MessageTest extends TestCase {
 		assertEquals(shortVal, msg.getShort(SHORT));
 		assertEquals(intVal, msg.getInt(INT));
 		assertEquals(longVal, msg.getLong(LONG));
-		assertEquals(doubleVal, msg.getDouble(DOUBLE));
-		assertEquals(floatVal, msg.getFloat(FLOAT));
+		assertEquals(doubleVal, msg.getDouble(DOUBLE), 0);
+		assertEquals(floatVal, msg.getFloat(FLOAT), 0);
 		assertTrue(Arrays.equals(doubleArrayVal, msg.getDoubleArray(DOUBLE_ARRAY)));
 		assertTrue(Arrays.equals(floatArrayVal, msg.getFloatArray(FLOAT_ARRAY)));
 	}
