@@ -643,7 +643,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
 					}
 				// if the body is ended and we found a media tag (<video> or <audio>) we include the m3u-player just before the end of the body. 
-				}else if(t.element.compareTo("body")==0 && t.startSlash && pc.wasMediaElementFound == true) {
+				}else if(t.element.compareTo("body")==0 && t.startSlash && pc.wasMediaElementFound) {
 					if (embedM3uPlayer) {
 						w.write(m3uPlayerScriptTagContent);
 					}
