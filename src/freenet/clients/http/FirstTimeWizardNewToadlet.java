@@ -32,6 +32,8 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
     public static final String TOADLET_URL = "/wiz/";
 
+    private static final long MIN_STORAGE_LIMIT = Node.MIN_STORE_SIZE * 5 / 4;
+
     private final NodeClientCore core;
 
     private final Config config;
@@ -116,6 +118,8 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
         private String bandwidthMonthlyLimit = "500";
 
         private String storageLimit;
+
+        private final String minStorageLimit = String.format(Locale.ENGLISH, "%.2f", (float) MIN_STORAGE_LIMIT / DatastoreUtil.oneGiB);
 
         private String setPassword = "";
 
@@ -215,7 +219,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
             try {
                 long storageLimit = this.storageLimit.isEmpty() ? 0 : Fields.parseLong(this.storageLimit + "GiB");
-                if (storageLimit < Node.MIN_STORE_SIZE * 5 / 4) { // min store size + 10% for client cache + 10% for slashdot cache
+                if (storageLimit < MIN_STORAGE_LIMIT) { // min store size + 10% for client cache + 10% for slashdot cache
                     errors.put("storageLimitError", NodeL10n.getBase().getString("Node.invalidMinStoreSizeWithCaches"));
                 } else {
                     long maxDatastoreSize = DatastoreUtil.maxDatastoreSize();
@@ -270,6 +274,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             model.put("bandwidthMonthlyLimit", bandwidthMonthlyLimit);
             model.put("minBandwidthMonthlyLimit", String.format("%.2f", BandwidthLimit.minMonthlyLimit));
             model.put("storageLimit", storageLimit);
+            model.put("minStorageLimit", minStorageLimit);
             if (!isPasswordAlreadySet) {
                 model.put("setPassword", setPassword.length() > 0 ? "checked" : "");
             }
