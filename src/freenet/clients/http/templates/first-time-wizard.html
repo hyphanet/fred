@@ -83,7 +83,7 @@
                 Give
                 <!-- TODO: Populated by the node with some percentage of free space. -->
                 <!-- TODO: Possibly attach this number with a slider of percentage of free space. -->
-                <input id="storage" value="{{ storageLimit }}" name="storage" type="number" min="0" max="999999999" step=".001">
+                <input id="storage" value="{{ storageLimit }}" name="storage" type="number" min="0.04" max="999999999" step=".01">
                 {{ l10n("storageLimitDescription") }}
             </p>
             {% if setPassword is not null %}
