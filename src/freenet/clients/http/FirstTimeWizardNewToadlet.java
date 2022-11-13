@@ -32,7 +32,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
     public static final String TOADLET_URL = "/wiz/";
 
-    private static final long MIN_STORAGE_LIMIT = Node.MIN_STORE_SIZE * 5 / 4;
+    private static final long MIN_STORAGE_LIMIT = Node.MIN_STORE_SIZE * 5 / 4;  // min store size + 10% for client cache + 10% for slashdot cache
 
     private final NodeClientCore core;
 
