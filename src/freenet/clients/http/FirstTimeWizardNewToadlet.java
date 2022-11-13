@@ -111,9 +111,9 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
         private String downloadLimit = "900";
 
-        private String uploadLimit = "300";
+        private String uploadLimit = "100";
 
-        private String bandwidthMonthlyLimit = "50";
+        private String bandwidthMonthlyLimit = "500";
 
         private String storageLimit;
 
@@ -128,7 +128,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
         private Map<String, String> errors = new HashMap<>();
 
         FormModel() {
-            float storage = 1;
+            float storage = 100;
             @SuppressWarnings("unchecked")
             Option<Long> sizeOption = (Option<Long>) config.get("node").getOption("storeSize");
             if(!sizeOption.isDefault()) {
