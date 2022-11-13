@@ -24,6 +24,10 @@ import java.util.Map;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+/**
+ * Javascript-based First-Time-Wizard. The regular wizard redirects
+ * here if both fproxy and browser have Javascript enabled.
+ */
 public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
     public static final String TOADLET_URL = "/wiz/";
