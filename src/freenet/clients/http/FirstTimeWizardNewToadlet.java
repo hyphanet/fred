@@ -26,7 +26,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
-    static final String TOADLET_URL = "/wiz/";
+    public static final String TOADLET_URL = "/wiz/";
 
     private final NodeClientCore core;
 
