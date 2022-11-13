@@ -33,7 +33,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
     private static final String l10nPrefix = "FirstTimeWizardToadlet.";
 
-    private boolean isPasswordEmpty;
+    private boolean isPasswordAlreadySet;
 
     private final int KiB = 1024;
 
@@ -50,8 +50,9 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             return;
         }
 
-        isPasswordEmpty =
-                core.node.securityLevels.getPhysicalThreatLevel() != SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH;
+        // if threat level is high, the password must already be set: user is running the wizard again?
+        isPasswordAlreadySet =
+                core.node.securityLevels.getPhysicalThreatLevel() == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH;
         showForm(ctx, new FormModel().toModel());
     }
 
@@ -263,10 +264,10 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             model.put("bandwidthMonthlyLimit", bandwidthMonthlyLimit);
             model.put("minBandwidthMonthlyLimit", String.format("%.2f", BandwidthLimit.minMonthlyLimit));
             model.put("storageLimit", storageLimit);
-            if (isPasswordEmpty) {
+            if (!isPasswordAlreadySet) {
                 model.put("setPassword", setPassword.length() > 0 ? "checked" : "");
             }
-            model.put("isPasswordEmpty", isPasswordEmpty);
+            model.put("isPasswordAlreadySet", isPasswordAlreadySet);
 
             if (downloadLimitDetected == null || uploadLimitDetected == null) {
                 detectBandwidthLimit();
@@ -308,10 +309,9 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
             DATASTORE_SIZE.setDatastoreSize(storageLimit + "GiB", config, this);
 
-            // TODO: not sure
-            if (isPasswordEmpty) {
+            if (!isPasswordAlreadySet) {
                 try {
-                    if (setPassword.isEmpty()) {
+                    if (setPassword.isEmpty()) { // no password protection requested
                         core.node.securityLevels.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL);
                         core.node.setMasterPassword("", true);
                     } else {
