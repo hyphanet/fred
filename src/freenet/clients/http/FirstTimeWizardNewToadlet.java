@@ -19,6 +19,7 @@ import freenet.support.io.DatastoreUtil;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -140,7 +141,8 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
                     storage = (float) autodetectedDatastoreSize / DatastoreUtil.oneGiB;
                 }
             }
-            storageLimit = String.format("%.2f", storage);
+            // format with English locale to ensure that the decimal point is "." as required for the form value
+            storageLimit = String.format(Locale.ENGLISH, "%.2f", storage);
 
             detectBandwidthLimit();
             if (downloadLimitDetected != null) {
