@@ -9,7 +9,7 @@ public enum NodeFile {
     Seednodes(InstallDirectory.Node, "seednodes.fref"),
     InstallerWindows(InstallDirectory.Run, "freenet-latest-installer-windows.exe"),
     InstallerNonWindows(InstallDirectory.Run, "freenet-latest-installer-nonwindows.jar"),
-    IPv4ToCountry(InstallDirectory.Run, "IpToCountry.dat");
+    IPv4ToCountry(InstallDirectory.Run, "IpToCountry.zip");
 
     private final InstallDirectory dir;
     private final String filename;
