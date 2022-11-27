@@ -21,6 +21,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.io.FileUtil;
 
 /**
  * ClientGet message.
@@ -128,7 +129,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, null, identifier, global);
 			try {
 				// Check whether we can create a temp file in the target directory.
-			    File temp = File.createTempFile(diskFile.getName(), ".freenet-tmp", diskFile.getParentFile());
+			    File temp = FileUtil.createTempFile(diskFile.getName(), ".freenet-tmp", diskFile.getParentFile());
 			    temp.delete();
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, e.getMessage(), identifier, global);
