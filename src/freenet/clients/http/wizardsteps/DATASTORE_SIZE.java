@@ -3,6 +3,7 @@ package freenet.clients.http.wizardsteps;
 import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.config.Config;
 import freenet.config.ConfigException;
+import freenet.config.InvalidConfigValueException;
 import freenet.config.Option;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
@@ -13,6 +14,9 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.DatastoreUtil;
+
+import java.io.File;
 
 import java.io.File;
 
@@ -100,7 +104,7 @@ public class DATASTORE_SIZE implements Step {
 		if (request.isPartSet("singlestep")) {
 			firsttime = false;
 		}
-		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20), firsttime);
+		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20), firsttime, config, this);
         if (firsttime) {
             return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH.name();
         } else {
@@ -108,9 +112,25 @@ public class DATASTORE_SIZE implements Step {
         }
 	}
 
-	private void _setDatastoreSize(String selectedStoreSize, boolean firsttime) {
+
+	public static void setDatastoreSize(String selectedStoreSize, Config config, Object callback) {
+		_setDatastoreSize(selectedStoreSize, true, config, callback);
+	}
+
+	private static void _setDatastoreSize(
+			String selectedStoreSize,
+			boolean firsttime,
+			Config config,
+			Object callback) {
 		try {
 			long size = Fields.parseLong(selectedStoreSize);
+
+			long maxDatastoreSize = DatastoreUtil.maxDatastoreSize();
+			if (size > maxDatastoreSize) {
+				throw new InvalidConfigValueException("Attempting to set DatastoreSize (" + size
+						+ ") larger than maxDatastoreSize (" + maxDatastoreSize + ")");
+			}
+
 			// client cache: 10% up to 200MB
 			long clientCacheSize = Math.min(size / 10, 200*1024*1024);
 			// recent requests cache / slashdot cache / ULPR cache
@@ -140,9 +160,9 @@ public class DATASTORE_SIZE implements Step {
 			config.get("node").set("slashdotCacheSize", Fields.longToString(slashdotCacheSize, true));
 
 
-			Logger.normal(this, "The storeSize has been set to " + selectedStoreSize);
+			Logger.normal(callback, "The storeSize has been set to " + selectedStoreSize);
 		} catch(ConfigException e) {
-			Logger.error(this, "Should not happen, please report!" + e, e);
+			Logger.error(callback, "Should not happen, please report!" + e, e);
 		}
 	}
 
@@ -180,45 +200,8 @@ public class DATASTORE_SIZE implements Step {
 
 		return maxSize;
 	}
-
-    private long canAutoconfigureDatastoreSize() {
-        if (!config.get("node").getOption("storeSize").isDefault())
-            return -1;
-
-        long freeSpace = core.node.getStoreDir().getUsableSpace();
-
-        if (freeSpace <= 0) {
-            return -1;
-        } else {
-            long shortSize;
-            long oneGiB = 1024 * 1024 * 1024L;
-            // Maximum for Freenet: 256GB. That's a 128MiB bloom filter.
-            long bloomFilter128MiBMax = 256 * oneGiB;
-            // Maximum to suggest to keep Disk I/O managable. This
-            // value might need revisiting when hardware or
-            // filesystems change.
-            long diskIoMax = 100 * oneGiB;
-
-            // Choose a suggested store size based on available free space.
-            if (freeSpace > 50 * oneGiB) {
-                // > 50 GiB: Use 10% free space; minimum 10 GiB. Limited by
-                // bloom filters and disk I/O.
-                shortSize = Math.max(10 * oneGiB,
-                                     Math.min(freeSpace / 10,
-                                              Math.min(diskIoMax,
-                                                       bloomFilter128MiBMax)));
-            } else if (freeSpace > 5 * oneGiB) {
-                // > 5 GiB: Use 20% free space, minimum 2 GiB.
-                shortSize = Math.max(freeSpace / 5, 2 * oneGiB);
-            } else if (freeSpace > 2 * oneGiB) {
-                // > 2 GiB: 512 MiB.
-                shortSize = 512 * (1024 * 1024);
-            } else {
-                // <= 2 GiB: 256 MiB.
-                shortSize = 256 * (1024 * 1024);
-            }
-
-            return shortSize;
-        }
+   
+	private long canAutoconfigureDatastoreSize() {
+		return DatastoreUtil.autodetectDatastoreSize(core, config);
     }
 }

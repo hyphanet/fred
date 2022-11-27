@@ -40,6 +40,7 @@ import java.util.Set;
 import freenet.config.*;
 import freenet.node.diagnostics.*;
 import freenet.node.useralerts.*;
+import freenet.support.io.*;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.FetchContext;
@@ -490,7 +491,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private int storeSaltHashSlotFilterPersistenceTime;
 
 	/** Minimum total datastore size */
-	static final long MIN_STORE_SIZE = 32 * 1024 * 1024;
+	public static final long MIN_STORE_SIZE = 32 * 1024 * 1024;
 	/** Default datastore size (must be at least MIN_STORE_SIZE) */
 	static final long DEFAULT_STORE_SIZE = 32 * 1024 * 1024;
 	/** Minimum client cache size */
@@ -1965,8 +1966,15 @@ public class Node implements TimeSkewDetectorCallback {
 
 					@Override
 					public void set(Long storeSize) throws InvalidConfigValueException {
-						if(storeSize < MIN_STORE_SIZE)
-							throw new InvalidConfigValueException(l10n("invalidStoreSize"));
+						long maxDatastoreSize;
+						if(storeSize < MIN_STORE_SIZE) {
+							throw new InvalidConfigValueException(l10n("invalidMinStoreSize"));
+						}
+						if(storeSize > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize())) {
+							throw new InvalidConfigValueException(
+									l10n("invalidMaxStoreSize", Long.toString(maxDatastoreSize)));
+						}
+
 						long newMaxStoreKeys = storeSize / sizePerKey;
 						if(newMaxStoreKeys == maxTotalKeys) return;
 						// Update each datastore
@@ -3321,6 +3329,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private String l10n(String key) {
 		return NodeL10n.getBase().getString("Node."+key);
+	}
+
+	private String l10n(String key, String replacementValue) {
+		return NodeL10n.getBase().getString("Node."+key, replacementValue);
 	}
 
 	private String l10n(String key, String pattern, String value) {

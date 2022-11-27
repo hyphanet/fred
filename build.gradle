@@ -150,6 +150,7 @@ task copyResourcesToClasses2 {
             include 'freenet/l10n/*properties'
             include 'freenet/l10n/iso-*.tab'
             include 'freenet/clients/http/staticfiles/**'
+            include 'freenet/clients/http/templates/**'
             include '../dependencies.properties'
         }
         copy {
@@ -236,6 +237,10 @@ dependencies {
     compile "net.java.dev.jna:jna:4.5.2"
     compile "net.java.dev.jna:jna-platform:4.5.2"
     compile "org.freenetproject:freenet-ext:29"
+    compile "io.pebbletemplates:pebble:3.1.5"
+    // dependencies of pebble
+    compile "org.unbescape:unbescape:1.1.6.RELEASE"
+    compile "org.slf4j:slf4j-api:1.7.25"
 
     testCompile 'junit:junit:4.12'
     testCompile "org.mockito:mockito-core:1.9.5"
@@ -257,6 +262,10 @@ dependencyVerification {
         'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
         'org.hamcrest:hamcrest-core:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9',
         'org.objenesis:objenesis:c5694b55d92527479382f254199b3c6b1d8780f652ad61e9ca59919887f491a8',
+        'io.pebbletemplates:pebble:d253a6dde59e138698aaaaee546461d2f1f6c8bd2aa38ecdd347df17cf90d6f0',
+        // dependencies of pebble
+        'org.unbescape:unbescape:597cf87d5b1a4f385b9d1cec974b7b483abb3ee85fc5b3f8b62af8e4bec95c2c',
+        'org.slf4j:slf4j-api:18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79'
     ]
 }
 

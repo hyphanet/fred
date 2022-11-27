@@ -31,6 +31,14 @@ public class WELCOME implements Step {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("homepageTitle"));
 		boolean incognito = request.isParameterSet("incognito");
 
+		boolean fProxyJavascriptEnabled = config.get("fproxy").getBoolean("javascriptEnabled");
+		if (fProxyJavascriptEnabled) {
+			contentNode.addChild("script", "type", "text/javascript")
+					.addChild(
+							"%",
+							"window.location.replace(\"" + FirstTimeWizardNewToadlet.TOADLET_URL + " \");");
+		}
+
 		HTMLNode optionsTable = contentNode.addChild("table");
 		HTMLNode tableHeader = optionsTable.addChild("tr");
 		HTMLNode tableRow = optionsTable.addChild("tr");
