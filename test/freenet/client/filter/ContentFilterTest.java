@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.hamcrest.MatcherAssert;
@@ -125,7 +126,16 @@ public class ContentFilterTest {
 
     // From CSS spec
 
-    private static final String CSS_SPEC_EXAMPLE1 = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n<HTML>\n  <HEAD>\n  <TITLE>Bach's home page</TITLE>\n  <STYLE type=\"text/css\">\n    body {\n      font-family: \"Gill Sans\", sans-serif;\n      font-size: 12pt;\n      margin: 3em;\n\n    }\n  </STYLE>\n  </HEAD>\n  <BODY>\n    <H1>Bach's home page</H1>\n    <P>Johann Sebastian Bach was a prolific composer.\n  </BODY>\n</HTML>";
+	private static final String CSS_SPEC_EXAMPLE1 = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n<HTML>\n  <HEAD>\n  <TITLE>Bach's home page</TITLE>\n  <STYLE type=\"text/css\">\n    body {\n      font-family: \"Gill Sans\", sans-serif;\n      font-size: 12pt;\n      margin: 3em;\n\n    }\n  </STYLE>\n  </HEAD>\n  <BODY>\n    <H1>Bach's home page</H1>\n    <P>Johann Sebastian Bach was a prolific composer.\n  </BODY>\n</HTML>";
+	private static final String HTML_START_TO_BODY = "<html><head></head><body>";
+	private static final String HTML_BODY_END = "</body></html>";
+	private static final String HTML_VIDEO_TAG = "<video></video>";
+	private static final String HTML_AUDIO_TAG = "<audio></audio>";
+	private static final List<String> HTML_MEDIA_TAG_COMBINATIONS = Arrays.asList(
+			HTML_VIDEO_TAG,
+			HTML_AUDIO_TAG,
+			HTML_VIDEO_TAG + HTML_AUDIO_TAG,
+			HTML_AUDIO_TAG + HTML_AUDIO_TAG);
 
     @Test
     public void testHTMLFilter() throws Exception {
@@ -187,13 +197,25 @@ public class ContentFilterTest {
         assertEquals(SPAN_WITH_STYLE, htmlFilter(SPAN_WITH_STYLE));
         assertEquals(HTML5_TAGS, htmlFilter(HTML5_TAGS));
 
-        assertEquals(BASE_HREF, htmlFilter(BASE_HREF));
-        assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF));
-        assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF2));
-        assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF3));
-        assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF4));
-        assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF5));
-    }
+		assertEquals(BASE_HREF, HTMLFilter(BASE_HREF));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF2));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF3));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF4));
+		assertEquals(DELETED_BASE_HREF, HTMLFilter(BAD_BASE_HREF5));
+
+		// m3u filter is added when there is a video or audio tag
+		for (String content : HTML_MEDIA_TAG_COMBINATIONS) {
+			String expected = HTML_START_TO_BODY
+					+ content
+					+ HTMLFilter.m3uPlayerScriptTagContent()
+					+ HTML_BODY_END;
+			String unparsed = HTML_START_TO_BODY
+					+ content
+					+ HTML_BODY_END;
+			assertEquals(expected, HTMLFilter(unparsed));
+		}
+	}
 
     private static final String META_TIME_ONLY = "<meta http-equiv=\"refresh\" content=\"5\">";
     private static final String META_TIME_ONLY_WRONG_CASE = "<meta http-equiv=\"RefResH\" content=\"5\">";
