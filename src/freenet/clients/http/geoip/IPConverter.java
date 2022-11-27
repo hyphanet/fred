@@ -1,15 +1,22 @@
 package freenet.clients.http.geoip;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.nio.file.NoSuchFileException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 
 import freenet.clients.http.StaticToadlet;
 import freenet.node.Node;
@@ -17,7 +24,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 
 public class IPConverter {
-	// Regex indicating ipranges start
+	// Regex indicating ipranges start - old IpToCountry.dat format. No longer used.
 	private static final String START = "##start##";
 	final int MAX_ENTRIES = 100;
 	// Local cache
@@ -224,50 +231,110 @@ public class IPConverter {
 	 * @throws IOException
 	 */
 	private Cache readRanges() {
-		RandomAccessFile raf;
-		try {
-			raf = new RandomAccessFile(dbFile, "r");
+		try( ZipFile zf = new ZipFile(dbFile)) {
+			InputStream zis = zf.getInputStream(zf.entries().nextElement());	// there is only one file in it
+			BufferedReader br = new BufferedReader( new InputStreamReader(zis) );
+
+			List<Short> codes = new ArrayList<Short>(180000);	// current IP list is a bit shorter
+			List<Integer> ips = new ArrayList<Integer>(180000);
+
 			String line;
-			do {
-				line = raf.readLine();
-			} while (!line.startsWith(START));
-			// Remove ##start##
-			line = line.substring(START.length());
-			// Count of entries (each being 7 Bytes)
-			int size = line.length() / 7;
-			// Arrays to form a Cache
-			short[] codes = new short[size];
-			int[] ips = new int[size];
-			// Read ips and add it to ip table
-			for (int i = 0, offset = 0; i < size; i++, offset += 7) {
-				// Code
-				String code = line.substring(offset, offset + 2);
-				// Ip
-				String ipcode = line.substring(offset + 2, offset + 7);
-				long ip = decodeBase85(ipcode.getBytes("ISO-8859-1"));
-				try {
-					Country country = Country.valueOf(code);
-					codes[i] = (short) country.ordinal();
-				} catch (IllegalArgumentException e) {
-					// Does not invalidate the whole file, just means the country list is out of date.
-					Logger.error(this, "Country not in list: "+code);
-					codes[i] = (short)-1;
+			while( (line = br.readLine()) != null  ) {
+				if( line.length() != 0 && Character.isDigit(line.charAt(0)) ) {	// ignore comments
+					String[] ipcnt = line.split(",");
+
+					long ip = Long.valueOf(ipcnt[0]);
+					ips.add((int)ip);
+
+					try {
+						Country country = Country.valueOf(ipcnt[1]);
+						codes.add( (short) country.ordinal() );
+					} catch (IllegalArgumentException e) {
+						codes.add( (short)-1);
+						Logger.warning(this, "ERROR unknown ISO 3166 country code: " + ipcnt[1]);
+					}
 				}
-				ips[i] = (int)ip;
 			}
-			raf.close();
-			return new Cache(codes, ips);
-		} catch (FileNotFoundException e) {
+
+			// binary search below wants array sorted in descending order
+			Collections.reverse(ips);
+			Collections.reverse(codes);
+
+			// convert to array of primitives to save ~4 MiB of memory (5 MiB vs 1 MiB for both arrays combined)
+			int[] ipsArray = new int[ips.size()];
+			short[] codesArray = new short[codes.size()];
+
+			for( int i=0; i<ips.size(); i++ ) {
+				ipsArray[i] = ips.get(i).intValue();
+			}
+			for( int i=0; i<codes.size(); i++ ) {
+				codesArray[i] = codes.get(i).shortValue();
+			}
+
+
+			return new Cache(codesArray, ipsArray);
+
+
+		} catch (NoSuchFileException e) {
 			// Not downloaded yet
 			Logger.warning(this, "Database file not found!", e);
+		} catch (ZipException e) {
+			Logger.error(this, e.getMessage());
 		} catch (IOException e) {
 			Logger.error(this, e.getMessage());
-		} catch (IPConverterParseException e) {
-			Logger.error(this, "IP to country datbase file is corrupt: "+e, e);
-			// Don't try again until next restart.
-			// FIXME add a callback to clear the flag when we download a new copy.
-			dbFileCorrupt = true;
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage());
 		}
+
+
+		// Old IpToCountry.dat format
+		//
+
+//		RandomAccessFile raf;
+//		try {
+//			raf = new RandomAccessFile(dbFile, "r");
+//			String line;
+//			do {
+//				line = raf.readLine();
+//			} while (!line.startsWith(START));
+//			// Remove ##start##
+//			line = line.substring(START.length());
+//			// Count of entries (each being 7 Bytes)
+//			int size = line.length() / 7;
+//			// Arrays to form a Cache
+//			short[] codes = new short[size];
+//			int[] ips = new int[size];
+//			// Read ips and add it to ip table
+//			for (int i = 0, offset = 0; i < size; i++, offset += 7) {
+//				// Code
+//				String code = line.substring(offset, offset + 2);
+//				// Ip
+//				String ipcode = line.substring(offset + 2, offset + 7);
+//				long ip = decodeBase85(ipcode.getBytes("ISO-8859-1"));
+//				try {
+//					Country country = Country.valueOf(code);
+//					codes[i] = (short) country.ordinal();
+//				} catch (IllegalArgumentException e) {
+//					// Does not invalidate the whole file, just means the country list is out of date.
+//					Logger.error(this, "Country not in list: "+code);
+//					codes[i] = (short)-1;
+//				}
+//				ips[i] = (int)ip;
+//			}
+//			raf.close();
+//			return new Cache(codes, ips);
+//		} catch (FileNotFoundException e) {
+//			// Not downloaded yet
+//			Logger.warning(this, "Database file not found!", e);
+//		} catch (IOException e) {
+//			Logger.error(this, e.getMessage());
+//		} catch (IPConverterParseException e) {
+//			Logger.error(this, "IP to country datbase file is corrupt: "+e, e);
+//			// Don't try again until next restart.
+//			// FIXME add a callback to clear the flag when we download a new copy.
+//			dbFileCorrupt = true;
+//		}
+
 		return null;
 	}
 
