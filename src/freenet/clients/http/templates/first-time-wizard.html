@@ -2,6 +2,10 @@
     <h1>{{ l10n("homepageTitle") }}</h1>
     <form method="post">
         <input name="formPassword" type="hidden" value="{{ formPassword }}">
+        <div class="infobox infobox-warning"><div class="infobox-content">p
+            {{ l10n("browserImeWarning") }}<br />
+            {{ l10n("browserVoiceRecognitionWarning") }}
+        </div></div>
         <fieldset>
             <legend>{{ l10n("networkSecurityPageTitle") }}</legend>
             <input id="knowSomeone" name="knowSomeone" type="checkbox" {{ knowSomeone }}>
