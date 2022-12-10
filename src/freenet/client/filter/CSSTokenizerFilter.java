@@ -3,9 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 
 package freenet.client.filter;
+
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,11 +27,6 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
-
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
 
 /** Comprehensive CSS2.1 filter. The old jflex-based filter was very far
  * from comprehensive.
@@ -55,6 +55,8 @@ class CSSTokenizerFilter {
 	static {
 		Logger.registerClass(CSSTokenizerFilter.class);
 	}
+
+	private static final List<String> CSS_COMBINATORS = Arrays.asList(">", "+", "~");
 
 	CSSTokenizerFilter(){
 		passedCharset = "UTF-8";
@@ -1708,7 +1710,7 @@ class CSSTokenizerFilter {
 	}
 
 	/*
-	 * This function accepts an HTML element(along with class name, ID, pseudo class and attribute selector) and determines whether it is valid or not.
+	 * This function accepts an HTML element(along with class name, ID, pseudo class or attribute selector or a combinator) and determines whether it is valid or not.
 	 * Returns null on failure (invalid selector), empty string on banned (but otherwise valid) selector.
 	 * @param elementName A selector which may include an HTML element.
 	 * @param isIDSelector True if we only allow an ID selector, which must include an ID, may
@@ -1774,6 +1776,10 @@ class CSSTokenizerFilter {
 
 		}
 		if(isIDSelector && id.isEmpty()) return null; // No ID
+
+		if (CSS_COMBINATORS.contains(elementString)) {
+			return elementString;
+		}
 
 		boolean elementValid =
 		    "*".equals(HTMLelement) ||
