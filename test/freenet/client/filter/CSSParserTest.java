@@ -49,6 +49,7 @@ public class CSSParserTest {
 		CSS1_SELECTOR.put("h1:focus {}" ,"h1:focus");
 		CSS1_SELECTOR.put("h1:first-line {}" ,"h1:first-line");
 		CSS1_SELECTOR.put("h1:first-letter {}" ,"h1:first-letter");
+		CSS1_SELECTOR.put("input:checked {}" ,"input:checked");
 	}
 
 	// FIXME should specify exact output values

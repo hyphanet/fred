@@ -210,6 +210,7 @@ public class ElementInfo {
 			"visited",
 			"hover",
 			"active",
+			"checked",
 			"focus",
 			"focus-within",
 			"lang",
