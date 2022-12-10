@@ -196,6 +196,14 @@ public class ContentFilterTest {
 	private static final String META_TIME_ONLY_BADNUM2 = "<meta http-equiv=\"refresh\" content=\"\">";
 	private static final String META_TIME_ONLY_BADNUM_OUT = "<!-- doesn't parse as number in meta refresh -->";
 
+	private static final String META_CHARSET = "<html><head><!--some comment--><meta charset=\"UTF-8\" />";
+	private static final String META_CHARSET_LOWER = "<!DOCTYPE html>\n"
+			+ "<html lang=\"de\">\n"
+			+ "<head>\n"
+			+ "<!-- 2022-12-08 Do 01:20 -->\n"
+			+ "<meta charset=\"utf-8\" />\n"
+			+ "<title>Some Title</title>";
+
 	private static final String META_VALID_REDIRECT = "<meta http-equiv=\"refresh\" content=\"30; url=/KSK@gpl.txt\">";
 	private static final String META_VALID_REDIRECT_NOSPACE = "<meta http-equiv=\"refresh\" content=\"30;url=/KSK@gpl.txt\">";
 
@@ -256,6 +264,12 @@ public class ContentFilterTest {
 			assertTrue("Head close deleted???: "+s, false);
 		s = s.substring(0, s.length() - "</head>".length());
 		return s;
+	}
+
+	@Test
+	public void testMetaCharset() throws IOException {
+		assertEquals(META_CHARSET, META_CHARSET);
+		assertEquals(META_CHARSET_LOWER, META_CHARSET_LOWER);
 	}
 
 	@Test
