@@ -116,15 +116,12 @@ public class BROWSER_WARNING implements Step {
 	}
 
 	public String infoBoxHeaderText(boolean incognito, boolean isRelativelySafe) {
-		String infoBoxHeader;
 		if(incognito) {
-			infoBoxHeader = WizardL10n.l10n("browserWarningIncognitoShort");
+			return WizardL10n.l10n("browserWarningIncognitoShort");
 		} else if (isRelativelySafe) {
-			infoBoxHeader = WizardL10n.l10n("browserWarningShortRelativelySafe");
-		} else {
-			infoBoxHeader = WizardL10n.l10n("browserWarningShort");
+			return WizardL10n.l10n("browserWarningShortRelativelySafe");
 		}
-		return infoBoxHeader;
+        return WizardL10n.l10n("browserWarningShort");
 	}
 
 	/**
