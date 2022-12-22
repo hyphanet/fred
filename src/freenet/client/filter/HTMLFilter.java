@@ -2968,7 +2968,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		private static final String[] locallyVerifiedAttrs = {
 			"http-equiv",
 			"name",
-			"content"
+			"content",
+            "charset"
 		};
 
 		MetaTagVerifier() {
@@ -3117,10 +3118,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			/* try HTML5 meta charset declaration. */
 			String charset = getHashString(h, "charset");
 			if (charset != null) {
-				if ((pc.detectedCharset != null) && !charset.equals(pc.detectedCharset)) {
+				if ((pc.detectedCharset != null) && !charset.equalsIgnoreCase(pc.detectedCharset)) {
 					throwFilterException(l10n("multipleCharsetsInMeta"));
 				}
 				pc.detectedCharset = charset;
+				hn.put("charset", charset);
 			}
 
 			return hn;
