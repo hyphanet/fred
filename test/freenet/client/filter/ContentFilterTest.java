@@ -196,8 +196,7 @@ public class ContentFilterTest {
 	private static final String META_TIME_ONLY_BADNUM2 = "<meta http-equiv=\"refresh\" content=\"\">";
 	private static final String META_TIME_ONLY_BADNUM_OUT = "<!-- doesn't parse as number in meta refresh -->";
 
-	private static final String META_CHARSET = "<html><head><!--some comment--><meta charset=\"UTF-8\" />";
-	private static final String META_CHARSET_RES = "<html><head><!-- some comment --><meta charset=\"UTF-8\" />";
+	private static final String META_CHARSET = "<html><head><meta charset=\"UTF-8\" />";
 	private static final String META_CHARSET_LOWER = "<!DOCTYPE html>\n"
 			+ "<html lang=\"de\">\n"
 			+ "<head>\n"
@@ -207,7 +206,7 @@ public class ContentFilterTest {
 	private static final String META_CHARSET_LOWER_RES = "<!DOCTYPE html>\n"
 			+ "<html lang=\"de\">\n"
 			+ "<head>\n"
-			+ "<!--  2022-12-08 Do 01:20  -->\n"
+			+ "<!--  2022-12-08 Do 01:20  -->\n" // comment has additional spaces after content filter
 			+ "<meta charset=\"utf-8\" />\n"
 			+ "<title>Some Title</title>";
 
@@ -274,8 +273,8 @@ public class ContentFilterTest {
 	}
 
 	@Test
-	public void testMetaCharset() throws Exception {
-		assertEquals(META_CHARSET_RES, HTMLFilter(META_CHARSET));
+	public void testThatHtml5MetaCharsetIsPreserved() throws Exception {
+		assertEquals(META_CHARSET, HTMLFilter(META_CHARSET));
 		assertEquals(META_CHARSET_LOWER_RES, HTMLFilter(META_CHARSET_LOWER));
 	}
 
