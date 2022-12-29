@@ -32,18 +32,26 @@ codebase, serves as a defense against introducing malicious code, and makes it
 infeasible to pressure people into contributing malicious code. Its goal is
 producing software that is readable, correct, and sufficiently efficient.
 
+# Expensive changes
+
 Breaking API creates an immense amount of work for developers of other projects,
 so it is *not* something to be done lightly. If you feel you must make a change
 that breaks API and cannot maintain backwards compatibility, please first raise
 the issue with the community - the [mailing list](https://emu.freenetproject.org/cgi-bin/mailman/listinfo/devl)
 and [IRC](https://freenetproject.org/irc.html) are good places to contact us.
 
+Changing dependencies must be accompanied with changes in every
+installer and updates to `dependencies.properties` and existing
+`wrapper.conf` files of every node. If you need this, you have to do
+and test all those related changes, too.
+
 # Standards
 
 Before submitting a pull request, please:
 
-* add an entry to the [NEWS](/NEWS.md) file if appropriate
-* ensure modified lines meet the project [coding standards](https://google.github.io/styleguide/javaguide.html)
+* add an entry to the [NEWS](/NEWS.md) file if appropriate.
+* ensure modified lines meet the project [coding standards](https://google.github.io/styleguide/javaguide.html).
+* ensure that your pull request is easy to work with. File additional pull-requests for infrastructure if those are required to release your change.
 * ensure the commit messages meet the standards:
 
 ## Commit messages
