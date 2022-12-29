@@ -334,6 +334,11 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
                 }
             }
 
+            try {
+                config.get("fproxy").set("hasCompletedWizard", true);
+            } catch (ConfigException e) {
+                Logger.error(this, "Should not happen, please report! " + e, e);
+            }
             core.storeConfig();
         }
     }
