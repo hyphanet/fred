@@ -92,6 +92,11 @@ public class LowLevelGetException extends LightweightException {
 		super(getMessage(reason));
 		this.code = reason;
 	}
+
+	public LowLevelGetException(int reason, Throwable t) {
+		super(getMessage(reason), t);
+		this.code = reason;
+	}
 	
 	@Override
 	public String toString() {
