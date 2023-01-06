@@ -209,18 +209,21 @@ public class BaseL10nTest {
         assertEquals("test.nonexistent", value);
     }
 
+    @Test
     public void testGetDefaultString() {
         BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
         String value = l10n.getDefaultString("test.badSubstitutionFallback");
         assertEquals("Fallback ${tag}", value);
     }
 
+    @Test
     public void testGetDefaultStringFallback() {
         BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
         String value = l10n.getDefaultString("test.sanity");
         assertEquals("Sane", value);
     }
 
+    @Test
     public void testGetDefaultStringNonexistent() {
         BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
         String value = l10n.getDefaultString("test.nonexistent");
