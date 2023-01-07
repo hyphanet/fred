@@ -1,14 +1,26 @@
 next:
 
+- 
+
+1496:
+
+- fix keepalive regression — thanks to PlantEater for tracking it down and fixing it!
+    - fix negative maxsize per new fetch override
+    - also override maxTempLength
+    - LowLevelGetException also return the throwable because the error doesnt help, the real gets hidden
+- update translations, thanks to the translators on transifex, especially the Russian ones!
+- add meta charset tests
+- replace unmaintained freemail site by maintained one — thanks to Cynthia!
+- add missing test annotations — thanks to vwoodzell!
+
+
+1495:
+
 - new theme: sky-dark-static
 - m3u-player: skip broken files
 - m3u-player: only inline the m3u player if the page contains media tags
 - new firsttime wizard (single-step joining with clearer defaults)
-- Client getter honor max size argument
-- 
-
-1495:
-
+- Client getter honor max size argument 
 - finally merged the HashingAPI by unixninja92, a GSoC project that had gotten lost in the pull requests. This provides an easy and well-tested way to create and verify different types of Hashes from byte arrays, including Sha256 and TigerTree. https://github.com/freenet/fred/pull/258
 - Add web+freenet and ext+freenet as supported schemas to support extensions. Thanks to TheSeeker
 - upgrade unit tests to junit4, thanks to vwoodzell!
