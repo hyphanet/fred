@@ -20,7 +20,7 @@ apply plugin: 'maven-publish'
 repositories {
     flatDir { dirs uri("${projectDir}/lib") }
     maven { url 'https://mvn.freenetproject.org' }
-    jcenter()
+    mavenCentral()
 }
 
 sourceSets {
