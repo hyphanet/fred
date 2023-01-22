@@ -16,6 +16,7 @@
 
 package freenet.support.compress;
 
+import static freenet.support.compress.Compressor.COMPRESSOR_TYPE.GZIP;
 import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
@@ -23,15 +24,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 
+import freenet.support.io.*;
 import org.junit.Test;
 
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.io.ArrayBucket;
-import freenet.support.io.ArrayBucketFactory;
-import freenet.support.io.Closer;
-import freenet.support.io.NullBucket;
 
 /**
  * Test case for {@link freenet.support.compress.GzipCompressor} class.
@@ -55,17 +54,15 @@ public class GzipCompressorTest {
 	 * test GZIP compressor's identity and functionality
 	 */
 	@Test
-	public void testGzipCompressor() throws IOException {
-		Compressor.COMPRESSOR_TYPE gzipCompressor = Compressor.COMPRESSOR_TYPE.GZIP;
+	public void testGzipCompressor() {
 		Compressor compressorZero = Compressor.COMPRESSOR_TYPE.getCompressorByMetadataID((short)0);
 
 		// check GZIP is the first compressor
-		assertEquals(gzipCompressor, compressorZero);
+		assertEquals(GZIP, compressorZero);
 	}
 
 	@Test
 	public void testCompress() throws IOException {
-
 		// do gzip compression
 		byte[] compressedData = doCompress(UNCOMPRESSED_DATA_1.getBytes());
 
@@ -73,18 +70,13 @@ public class GzipCompressorTest {
 		assertEquals(compressedData.length, COMPRESSED_DATA_1.length);
 
 		// check each byte is exactly as expected
-		for (int i = 0; i < compressedData.length; i++) {
-			assertEquals(COMPRESSED_DATA_1[i], compressedData[i]);
-		}
+		assertArrayEquals(COMPRESSED_DATA_1, compressedData);
 	}
 
 	@Test
 	public void testBucketDecompress() throws IOException {
-
-		byte[] compressedData = COMPRESSED_DATA_1;
-
 		// do gzip decompression with buckets
-		byte[] uncompressedData = doBucketDecompress(compressedData);
+		byte[] uncompressedData = doBucketDecompress(COMPRESSED_DATA_1);
 
 		// is the (round-tripped) uncompressed string the same as the original?
 		String uncompressedString = new String(uncompressedData);
@@ -95,24 +87,18 @@ public class GzipCompressorTest {
 	public void testByteArrayDecompress() throws IOException {
 		// build 5k array
 		byte[] originalUncompressedData = new byte[5 * 1024];
-		for(int i = 0; i < originalUncompressedData.length; i++) {
-			originalUncompressedData[i] = 1;
-		}
+		Arrays.fill(originalUncompressedData, (byte) 1);
 
 		byte[] compressedData = doCompress(originalUncompressedData);
 		byte[] outUncompressedData = new byte[5 * 1024];
 
-		int writtenBytes = 0;
-
-		writtenBytes = Compressor.COMPRESSOR_TYPE.GZIP.decompress(compressedData, 0, compressedData.length, outUncompressedData);
+		int writtenBytes = GZIP.decompress(compressedData, 0, compressedData.length, outUncompressedData);
 
 		assertEquals(writtenBytes, originalUncompressedData.length);
 		assertEquals(originalUncompressedData.length, outUncompressedData.length);
 
 		// check each byte is exactly as expected
-		for (int i = 0; i < outUncompressedData.length; i++) {
-			assertEquals(originalUncompressedData[i], outUncompressedData[i]);
-		}
+		assertArrayEquals(originalUncompressedData, outUncompressedData);
 	}
 
 	@Test
@@ -123,7 +109,7 @@ public class GzipCompressorTest {
 		BucketFactory factory = new ArrayBucketFactory();
 
 		try {
-			Compressor.COMPRESSOR_TYPE.GZIP.compress(inBucket, factory, 32, 32);
+			GZIP.compress(inBucket, factory, 32, 32);
 		} catch (CompressionOutputSizeException e) {
 			// expect this
 			return;
@@ -136,28 +122,22 @@ public class GzipCompressorTest {
 	public void testDecompressException() throws IOException {
 		// build 5k array
 		byte[] uncompressedData = new byte[5 * 1024];
-		for(int i = 0; i < uncompressedData.length; i++) {
-			uncompressedData[i] = 1;
-		}
+		Arrays.fill(uncompressedData, (byte) 1);
 
 		byte[] compressedData = doCompress(uncompressedData);
 
 		Bucket inBucket = new ArrayBucket(compressedData);
 		NullBucket outBucket = new NullBucket();
-		InputStream decompressorInput = null;
-		OutputStream decompressorOutput = null;
-		try {
-			decompressorInput = inBucket.getInputStream();
-			decompressorOutput = outBucket.getOutputStream();
-			Compressor.COMPRESSOR_TYPE.GZIP.decompress(decompressorInput, decompressorOutput, 4096 + 10, 4096 + 20);
-			decompressorInput.close();
-			decompressorOutput.close();
+
+		try (
+			InputStream decompressorInput = inBucket.getInputStream();
+			OutputStream decompressorOutput = outBucket.getOutputStream()
+		) {
+			GZIP.decompress(decompressorInput, decompressorOutput, 4096 + 10, 4096 + 20);
 		} catch (CompressionOutputSizeException e) {
 			// expect this
 			return;
 		} finally {
-			Closer.close(decompressorInput);
-			Closer.close(decompressorOutput);
 			inBucket.free();
 			outBucket.free();
 		}
@@ -165,37 +145,28 @@ public class GzipCompressorTest {
 	}
 
 	private byte[] doBucketDecompress(byte[] compressedData) throws IOException {
-		ByteArrayInputStream decompressorInput = new ByteArrayInputStream(compressedData);
-		ByteArrayOutputStream decompressorOutput = new ByteArrayOutputStream();
-
-		Compressor.COMPRESSOR_TYPE.GZIP.decompress(decompressorInput, decompressorOutput, 32768, 32768 * 2);
-
-		byte[] outBuf = decompressorOutput.toByteArray();
-		try {
-			decompressorInput.close();
-			decompressorOutput.close();
-		} finally {
-			Closer.close(decompressorInput);
-			Closer.close(decompressorOutput);
+		try (
+			ByteArrayInputStream decompressorInput = new ByteArrayInputStream(compressedData);
+			ByteArrayOutputStream decompressorOutput = new ByteArrayOutputStream()
+		) {
+			GZIP.decompress(decompressorInput, decompressorOutput, 32768, 32768 * 2);
+			return decompressorOutput.toByteArray();
 		}
-
-		return outBuf;
 	}
 
 	private byte[] doCompress(byte[] uncompressedData) throws IOException {
 		Bucket inBucket = new ArrayBucket(uncompressedData);
 		BucketFactory factory = new ArrayBucketFactory();
-		Bucket outBucket = null;
 
-		outBucket = Compressor.COMPRESSOR_TYPE.GZIP.compress(inBucket, factory, 32768, 32768);
+		Bucket outBucket = GZIP.compress(inBucket, factory, 32768, 32768);
+		byte[] outBuffer = BucketTools.toByteArray(outBucket);
 
-		InputStream in = null;
-		in = outBucket.getInputStream();
-		long size = outBucket.size();
-		byte[] outBuf = new byte[(int) size];
+		// Newer JVM versions have different OS (Operating System) GZIP member header value
+		// https://www.rfc-editor.org/rfc/rfc1952#section-2.3.1
+		// https://bugs.openjdk.org/browse/JDK-8244706
+		// Set OS byte to zero to produce stable results in this test
+		outBuffer[9] = 0;
 
-		in.read(outBuf);
-
-		return outBuf;
+		return outBuffer;
 	}
 }
