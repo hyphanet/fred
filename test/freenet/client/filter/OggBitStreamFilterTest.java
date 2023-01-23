@@ -1,10 +1,9 @@
 package freenet.client.filter;
 
+import static freenet.client.filter.ResourceFileUtil.testResourceFile;
 import static org.junit.Assert.*;
 
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 
 import org.junit.Test;
@@ -12,44 +11,42 @@ import org.junit.Test;
 public class OggBitStreamFilterTest {
 	@Test
 	public void testGetVorbisBitstreamFilter() throws IOException {
-		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/vorbis_header.ogg"));
-		OggPage page = OggPage.readPage(input);
-		assertEquals(VorbisBitstreamFilter.class, getFilterClass(page));
-		input.close();
+		testResourceFile("./ogg/vorbis_header.ogg", (input) -> {
+			OggPage page = OggPage.readPage(input);
+			assertEquals(VorbisBitstreamFilter.class, getFilterClass(page));
+		});
 	}
 
 	@Test
-	public void testGetTheoraBitStreamFilter() throws IOException { 
-		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/theora_header.ogg"));
-		OggPage page = OggPage.readPage(input);
-		assertEquals(TheoraBitstreamFilter.class, getFilterClass(page));
-		input.close();
+	public void testGetTheoraBitStreamFilter() throws IOException {
+		testResourceFile("./ogg/theora_header.ogg", (input) -> {
+			OggPage page = OggPage.readPage(input);
+			assertEquals(TheoraBitstreamFilter.class, getFilterClass(page));
+		});
 	}
 	@Test
 	public void testGetFilterForInvalidFormat() throws IOException {
-		InputStream input = getClass().getResourceAsStream("./ogg/invalid_header.ogg");
-		DataInputStream dis = new DataInputStream(input);
-		OggPage page = OggPage.readPage(dis);
-		assertEquals(null, getFilterClass(page));
-		input.close();
+		testResourceFile("./ogg/invalid_header.ogg", (input) -> {
+			OggPage page = OggPage.readPage(input);
+			assertNull(getFilterClass(page));
+		});
 	}
 
 	@Test
 	public void testPagesOutOfOrderCausesException() throws IOException {
-		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/pages_out_of_order.ogg"));
-		OggPage page = OggPage.readPage(input);
-		OggBitstreamFilter filter = new OggBitstreamFilter(page);
-		page = OggPage.readPage(input);
-		try {
-			filter.parse(page);
-			fail("Expected exception not caught");
-		} catch(DataFilterException e) {}
-		input.close();
+		testResourceFile("./ogg/pages_out_of_order.ogg", (input) -> {
+			OggPage filterPage = OggPage.readPage(input);
+			OggBitstreamFilter filter = new OggBitstreamFilter(filterPage);
+			OggPage page = OggPage.readPage(input);
+			assertThrows(DataFilterException.class, ()-> filter.parse(page));
+		});
 	}
 
 	private Class<? extends OggBitstreamFilter> getFilterClass(OggPage page) {
 		OggBitstreamFilter filter = OggBitstreamFilter.getBitstreamFilter(page);
-		if(filter != null) return filter.getClass();
+		if(filter != null) {
+			return filter.getClass();
+		}
 		return null;
 	}
 }

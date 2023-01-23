@@ -117,17 +117,16 @@ public class GIFFilterTest {
 
     @Test
     public void testReject() throws IOException {
+        ContentDataFilter filter = new GIFFilter();
         for (String reject : REJECT) {
             try (InputStream inStream = resourceToBucket(reject).getInputStream();
                  NullOutputStream outStream = new NullOutputStream()) {
 
-                ContentDataFilter filter = new GIFFilter();
-                try {
-                    filter.readFilter(inStream, outStream, "", null, null, null);
-                    fail("Filter did not fail on reject sample " + reject);
-                } catch (DataFilterException e) {
-                    // Expected.
-                }
+                assertThrows(
+                    "Filter did not fail on reject sample " + reject,
+                    DataFilterException.class,
+                    () -> filter.readFilter(inStream, outStream, "", null, null, null)
+                );
             }
         }
     }
@@ -180,10 +179,6 @@ public class GIFFilterTest {
      * @throws AssertionError on failure
      */
     private static Bucket resourceToBucket(String filename) throws IOException {
-        InputStream is = GIFFilterTest.class.getResourceAsStream(RESOURCE_PATH + filename);
-        Bucket ab = new ArrayBucket();
-        BucketTools.copyFrom(ab, is, Long.MAX_VALUE);
-
-        return ab;
+        return ResourceFileUtil.resourceToBucket(RESOURCE_PATH + filename);
     }
 }
