@@ -2,10 +2,12 @@ package freenet.client.filter;
 
 import org.junit.Test;
 
+import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 
-import static freenet.client.filter.ResourceFileUtil.testResourceFile;
+import static freenet.client.filter.ResourceFileUtil.resourceToDataInputStream;
+import static freenet.client.filter.ResourceFileUtil.resourceToOggPage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
@@ -13,17 +15,14 @@ public class TheoraBitstreamFilterTest {
 
     @Test
     public void parseIdentificationHeaderTest() throws IOException {
-        testResourceFile("./ogg/theora_header.ogg", (input) -> {
-            OggPage page = OggPage.readPage(input);
-
-            TheoraBitstreamFilter theoraBitstreamFilter = new TheoraBitstreamFilter(page);
-            assertEquals(page.asPackets(), theoraBitstreamFilter.parse(page).asPackets());
-        });
+        OggPage page = resourceToOggPage("./ogg/theora_header.ogg");
+        TheoraBitstreamFilter theoraBitstreamFilter = new TheoraBitstreamFilter(page);
+        assertEquals(page.asPackets(), theoraBitstreamFilter.parse(page).asPackets());
     }
 
     @Test
     public void parseTest() throws IOException {
-        testResourceFile("./ogg/Infinite_Hands-2008-Thusnelda-2009-09-18.ogv", (input) -> {
+        try (DataInputStream input = resourceToDataInputStream("./ogg/Infinite_Hands-2008-Thusnelda-2009-09-18.ogv")) {
             OggPage page = OggPage.readPage(input);
             int pageSerial = page.getSerial();
             TheoraBitstreamFilter theoraBitstreamFilter = new TheoraBitstreamFilter(page);
@@ -39,15 +38,13 @@ public class TheoraBitstreamFilterTest {
                     break;
                 }
             }
-        });
+        }
     }
 
     @Test
     public void parseInvalidHeaderTest() throws IOException {
-        testResourceFile("./ogg/invalid_header.ogg", (input) -> {
-            OggPage page = OggPage.readPage(input);
-            TheoraBitstreamFilter theoraBitstreamFilter = new TheoraBitstreamFilter(page);
-            assertThrows(UnknownContentTypeException.class, () -> theoraBitstreamFilter.parse(page));
-        });
+        OggPage page = resourceToOggPage("./ogg/invalid_header.ogg");
+        TheoraBitstreamFilter theoraBitstreamFilter = new TheoraBitstreamFilter(page);
+        assertThrows(UnknownContentTypeException.class, () -> theoraBitstreamFilter.parse(page));
     }
 }

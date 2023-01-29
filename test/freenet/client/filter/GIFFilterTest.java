@@ -117,11 +117,11 @@ public class GIFFilterTest {
 
     @Test
     public void testReject() throws IOException {
-        ContentDataFilter filter = new GIFFilter();
         for (String reject : REJECT) {
             try (InputStream inStream = resourceToBucket(reject).getInputStream();
                  NullOutputStream outStream = new NullOutputStream()) {
 
+                ContentDataFilter filter = new GIFFilter();
                 assertThrows(
                     "Filter did not fail on reject sample " + reject,
                     DataFilterException.class,

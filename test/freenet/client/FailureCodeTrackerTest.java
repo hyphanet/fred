@@ -32,13 +32,11 @@ public class FailureCodeTrackerTest {
     }
 
     private int getStoredLength(FailureCodeTracker f) throws IOException {
-        try (
-            CountedOutputStream os = new CountedOutputStream(new NullOutputStream());
-            DataOutputStream dos = new DataOutputStream(os)
-        ) {
+        CountedOutputStream os = new CountedOutputStream(new NullOutputStream());
+        try (DataOutputStream dos = new DataOutputStream(os)) {
             f.writeFixedLengthTo(dos);
-            return (int) os.written();
         }
+        return (int) os.written();
     }
 
 }

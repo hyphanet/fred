@@ -1,6 +1,7 @@
 package freenet.client.filter;
 
-import static freenet.client.filter.ResourceFileUtil.testResourceFile;
+import static freenet.client.filter.ResourceFileUtil.resourceToDataInputStream;
+import static freenet.client.filter.ResourceFileUtil.resourceToOggPage;
 import static org.junit.Assert.*;
 
 import java.io.ByteArrayOutputStream;
@@ -12,20 +13,15 @@ import org.junit.Test;
 public class OggPageTest {
 	@Test
 	public void testStripNonsenseInterruption() throws IOException {
-		try (
-			ByteArrayOutputStream actualDataStream = new ByteArrayOutputStream();
-			ByteArrayOutputStream expectedDataStream = new ByteArrayOutputStream()
-		) {
-			testResourceFile(
-				"./ogg/nonsensical_interruption_filtered.ogg",
-				(input) -> readPages(expectedDataStream, input)
-			);
-			testResourceFile(
-				"./ogg/nonsensical_interruption.ogg",
-				(input) -> readPages(actualDataStream, input)
-			);
-			assertArrayEquals(expectedDataStream.toByteArray(), actualDataStream.toByteArray());
+		ByteArrayOutputStream actualDataStream = new ByteArrayOutputStream();
+		ByteArrayOutputStream expectedDataStream = new ByteArrayOutputStream();
+		try (DataInputStream input = resourceToDataInputStream("./ogg/nonsensical_interruption_filtered.ogg")) {
+			readPages(expectedDataStream, input);
 		}
+		try (DataInputStream input = resourceToDataInputStream("./ogg/nonsensical_interruption.ogg")) {
+			readPages(actualDataStream, input);
+		}
+		assertArrayEquals(expectedDataStream.toByteArray(), actualDataStream.toByteArray());
 	}
 
 	private static void readPages(ByteArrayOutputStream output, DataInputStream input) throws IOException {
@@ -41,17 +37,13 @@ public class OggPageTest {
 
 	@Test
 	public void testChecksum() throws IOException {
-		testResourceFile("./ogg/valid_checksum.ogg", (input) -> {
-			OggPage page = OggPage.readPage(input);
-			assertTrue(page.headerValid());
-		});
+		OggPage page = resourceToOggPage("./ogg/valid_checksum.ogg");
+		assertTrue(page.headerValid());
 	}
 
 	@Test
 	public void testInvalidChecksumInvalidates() throws IOException {
-		testResourceFile("./ogg/invalid_checksum.ogg", (input) -> {
-			OggPage page = OggPage.readPage(input);
-			assertFalse(page.headerValid());
-		});
+		OggPage page = resourceToOggPage("./ogg/invalid_checksum.ogg");
+		assertFalse(page.headerValid());
 	}
 }

@@ -11,8 +11,12 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.hamcrest.MatcherAssert;
 import org.junit.Before;
@@ -927,7 +931,7 @@ public class CSSParserTest {
 	}
 
 	private void testBadSelectorFiltering(Set<String> badSelectorSet) throws IOException, URISyntaxException {
-		for(String key : badSelectorSet) {
+		for (String key : badSelectorSet) {
 			assertEquals(
 				"Bad selector filtering should produce empty string: '" + key + "'",
 				"",

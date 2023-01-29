@@ -23,7 +23,7 @@ public class FetchContextTest {
             new ArrayBucketFactory(),
             new SimpleEventProducer()
         );
-        final ArrayBucket bucket = new ArrayBucket();
+        ArrayBucket bucket = new ArrayBucket();
         try {
             try (DataOutputStream dos = new DataOutputStream(bucket.getOutputStream())) {
                 context.writeTo(dos);
