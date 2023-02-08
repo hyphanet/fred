@@ -1,10 +1,11 @@
+import java.security.MessageDigest
+
 buildscript {
     repositories {
         mavenCentral()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:0.9.+'
-        classpath files('gradle/gradle-witness.jar')
     }
 }
 
@@ -13,13 +14,17 @@ configurations {
     compile
 }
 
-apply plugin: 'witness'
 apply plugin: 'java'
 apply plugin: 'maven-publish'
 
 repositories {
     flatDir { dirs uri("${projectDir}/lib") }
-    maven { url 'https://mvn.freenetproject.org' }
+    maven {
+        url 'https://mvn.freenetproject.org'
+        metadataSources {
+            artifact()
+        }
+    }
     jcenter()
 }
 
@@ -28,7 +33,7 @@ sourceSets {
     test.compileClasspath += configurations.provided
 }
 
-def version_buildir = "$projectDir/build/tmp/compileVersion/"
+def version_buildir = file("$projectDir/build/tmp/compileVersion/")
 def version_src = 'freenet/node/Version.java'
 
 sourceSets {
@@ -50,7 +55,7 @@ task buildInfo {
         def cmd = "git describe --always --abbrev=4 --dirty"
         def proc = cmd.execute()
         gitrev = proc.text.trim()
-    } catch (java.io.IOException e) {
+    } catch (IOException ignored) {
         gitrev = "@unknown@"
     }
 }
@@ -69,7 +74,7 @@ tasks.withType(Javadoc) {
 task compileVersion (type: JavaCompile) {
     copy {
         from sourceSets.main.java.srcDirs
-        into "${version_buildir}"
+        into version_buildir
         include "${version_src}"
         filter {
             String line -> line.replaceAll("@custom@","${gitrev}")
@@ -77,14 +82,14 @@ task compileVersion (type: JavaCompile) {
     }
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
-    source = "${version_buildir}"
+    source = version_buildir
     include "${version_src}"
-    classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDir)
-    destinationDir = file("${buildDir}/java/version/")
+    classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDirs)
+    destinationDirectory.set(layout.buildDirectory.dir("java/version/").get())
 }
 compileVersion.dependsOn buildInfo
 compileVersion.dependsOn compileJava
-processResources.dependsOn compileVersion
+//processResources.dependsOn compileVersion
 
 task jar (type: Jar, overwrite: true) {
     from (compileVersion) {
@@ -130,7 +135,7 @@ gradle.addBuildListener(new BuildAdapter() {
     void buildFinished(BuildResult result) {
         if(jars) {
             def hash = {
-                File file -> def sha256 = java.security.MessageDigest.getInstance('SHA-256')
+                File file -> def sha256 = MessageDigest.getInstance('SHA-256')
                 file.eachByte(1024 * 4) { buffer, len -> sha256.update(buffer, 0, len) }
                 println "SHA-256 of ${file.name}: ${sha256.digest().encodeHex().toString()}"
             }
@@ -141,12 +146,12 @@ gradle.addBuildListener(new BuildAdapter() {
 })
 
 task copyResourcesToClasses2 {
-    inputs.dir sourceSets.main.java.srcDirs
-    outputs.dir sourceSets.main.output.classesDir
+    inputs.files sourceSets.main.allSource
+    outputs.dir layout.buildDirectory.dir("classes/java/main/")
     doLast {
         copy {
-            from sourceSets.main.java.srcDirs
-            into sourceSets.main.output.classesDir
+            from sourceSets.main.allSource
+            into layout.buildDirectory.dir("classes/java/main/")
             include 'freenet/l10n/*properties'
             include 'freenet/l10n/iso-*.tab'
             include 'freenet/clients/http/staticfiles/**'
@@ -155,7 +160,7 @@ task copyResourcesToClasses2 {
         }
         copy {
             from "${projectDir}/"
-            into sourceSets.main.output.classesDir
+            into layout.buildDirectory.dir("classes/java/main/")
             include 'dependencies.properties'
         }
     }
@@ -163,12 +168,12 @@ task copyResourcesToClasses2 {
 processResources.dependsOn copyResourcesToClasses2
 
 task copyTestResourcesToClasses2 {
-    inputs.dir sourceSets.test.java.srcDirs
-    outputs.dir sourceSets.test.output.classesDir
+    inputs.files sourceSets.test.allSource
+    outputs.dir layout.buildDirectory.dir("classes/java/test/")
     doLast {
         copy {
-	    from sourceSets.test.java.srcDirs
-	    into sourceSets.test.output.classesDir
+	    from sourceSets.test.allSource
+	    into layout.buildDirectory.dir("classes/java/test/")
             include 'freenet/client/filter/*/**'
             include 'freenet/crypt/ciphers/rijndael-gladman-test-data/**'
             include 'freenet/l10n/*properties'
@@ -189,7 +194,7 @@ test {
     // no inner class
     include 'freenet/**/*Test.class'
     exclude 'freenet/**/*$*Test.class'
-    workingDir = sourceSets.test.output.classesDir
+    workingDir = layout.buildDirectory.dir("classes/java/test/")
     scanForTestClasses = false
     systemProperties += [
         "test.l10npath_test": "freenet/l10n/",
@@ -226,47 +231,27 @@ publishing {
 
 task copyRuntimeLibs(type: Copy) {
     into "${buildDir}/output/"
-    from configurations.runtime
+    from configurations.runtimeClasspath
     from jar
 }
 copyRuntimeLibs.dependsOn jar
 
 // In this section you declare the dependencies for your production and test code
 dependencies {
-    compile "org.bouncycastle:bcprov-jdk15on:1.59"
-    compile "net.java.dev.jna:jna:4.5.2"
-    compile "net.java.dev.jna:jna-platform:4.5.2"
-    compile "org.freenetproject:freenet-ext:29"
-    compile "io.pebbletemplates:pebble:3.1.5"
+    implementation "org.bouncycastle:bcprov-jdk15on:1.59"
+    implementation "net.java.dev.jna:jna:4.5.2"
+    implementation "net.java.dev.jna:jna-platform:4.5.2"
+    implementation "org.freenetproject:freenet-ext:29"
+    implementation "io.pebbletemplates:pebble:3.1.5"
     // dependencies of pebble
-    compile "org.unbescape:unbescape:1.1.6.RELEASE"
-    compile "org.slf4j:slf4j-api:1.7.25"
+    implementation "org.unbescape:unbescape:1.1.6.RELEASE"
+    implementation "org.slf4j:slf4j-api:1.7.25"
 
-    testCompile 'junit:junit:4.12'
-    testCompile "org.mockito:mockito-core:1.9.5"
-    testCompile "org.hamcrest:hamcrest-library:1.3"
-    testCompile "org.hamcrest:hamcrest-core:1.3"
-    testCompile "org.objenesis:objenesis:1.0"
-}
-
-dependencyVerification {
-    // testCompile includes all of compile deps... so let's include only these
-    includedConfigurations = [configurations.testCompile]
-    verify = [
-        'org.bouncycastle:bcprov-jdk15on:1c31e44e331d25e46d293b3e8ee2d07028a67db011e74cb2443285aed1d59c85',
-        'net.java.dev.jna:jna-platform:f1d00c167d8921c6e23c626ef9f1c3ae0be473c95c68ffa012bc7ae55a87e2d6',
-        'net.java.dev.jna:jna:0c8eb7acf67261656d79005191debaba3b6bf5dd60a43735a245429381dbecff',
-        'org.freenetproject:freenet-ext:32f2b3d6beedf54137ea2f9a3ebef67666d769f0966b08cd17fd7db59ba4d79f',
-        'junit:junit:59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a',
-        'org.mockito:mockito-core:f97483ba0944b9fa133aa29638764ddbeadb51ec3dbc02074c58fa2caecd07fa',
-        'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
-        'org.hamcrest:hamcrest-core:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9',
-        'org.objenesis:objenesis:c5694b55d92527479382f254199b3c6b1d8780f652ad61e9ca59919887f491a8',
-        'io.pebbletemplates:pebble:d253a6dde59e138698aaaaee546461d2f1f6c8bd2aa38ecdd347df17cf90d6f0',
-        // dependencies of pebble
-        'org.unbescape:unbescape:597cf87d5b1a4f385b9d1cec974b7b483abb3ee85fc5b3f8b62af8e4bec95c2c',
-        'org.slf4j:slf4j-api:18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79'
-    ]
+    testImplementation 'junit:junit:4.12'
+    testImplementation "org.mockito:mockito-core:1.9.5"
+    testImplementation "org.hamcrest:hamcrest-library:1.3"
+    testImplementation "org.hamcrest:hamcrest-core:1.3"
+    testImplementation "org.objenesis:objenesis:1.0"
 }
 
 task tar(type: Tar) {
@@ -295,6 +280,8 @@ task tar(type: Tar) {
   }
 }
 
-javadoc << {
-    failOnError false
+javadoc {
+    doLast {
+        failOnError false
+    }
 }
