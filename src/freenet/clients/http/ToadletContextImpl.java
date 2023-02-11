@@ -12,16 +12,10 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Locale;
-import java.util.StringJoiner;
-import java.util.TimeZone;
+import java.util.*;
 
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
 import freenet.clients.http.annotation.AllowData;
@@ -54,7 +48,7 @@ import static java.util.concurrent.TimeUnit.DAYS;
  */
 public class ToadletContextImpl implements ToadletContext {
 	
-	private static final Class<?> HANDLE_PARAMETERS[] = new Class<?>[] {
+	private static final Class<?>[] HANDLE_PARAMETERS = new Class<?>[] {
 		URI.class, HTTPRequest.class, ToadletContext.class
 	};
 
@@ -81,7 +75,7 @@ public class ToadletContextImpl implements ToadletContext {
 	/** The unique id of the request*/
 	private final String uniqueId;
 	
-	private URI uri;
+	private final URI uri;
 
         private static volatile boolean logMINOR;
         private static volatile boolean logDEBUG;
@@ -101,7 +95,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private boolean closed;
 	private boolean shouldDisconnect;
 	
-	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container, UserAlertManager userAlertManager, BookmarkManager bookmarkManager, URI uri, long uniqueID) throws IOException {
+	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container, UserAlertManager userAlertManager, BookmarkManager bookmarkManager, URI uri) throws IOException {
 		this.headers = headers;
 		this.cookies = null;
 		this.replyCookies = null;
@@ -117,16 +111,18 @@ public class ToadletContextImpl implements ToadletContext {
 		this.userAlertManager = userAlertManager;
 		this.bookmarkManager = bookmarkManager;
 		//Generate an unique id
-		uniqueId=String.valueOf(Math.random());
+		this.uniqueId = String.valueOf(Math.random());
 	}
 	
 	private void close() {
 		closed = true;
 	}
 	
-	private void sendMethodNotAllowed(String method, boolean shouldDisconnect) throws ToadletContextClosedException, IOException {
-		if(closed) throw new ToadletContextClosedException();
-		MultiValueTable<String,String> mvt = new MultiValueTable<String,String>();
+	private void sendMethodNotAllowed(boolean shouldDisconnect) throws ToadletContextClosedException, IOException {
+		if(closed) {
+			throw new ToadletContextClosedException();
+		}
+		MultiValueTable<String,String> mvt = new MultiValueTable<>();
 		mvt.put("Allow", "GET, PUT");
 		sendError(sockOutputStream, 405, "Method Not Allowed", l10n("methodNotAllowed"), shouldDisconnect, mvt);
 	}
@@ -159,8 +155,10 @@ public class ToadletContextImpl implements ToadletContext {
 	 * @throws IOException If we could not send the error message.
 	 */
 	private static void sendHTMLError(OutputStream os, int code, String httpReason, String htmlMessage, boolean disconnect, MultiValueTable<String,String> mvt) throws IOException {
-		if(mvt == null) mvt = new MultiValueTable<String,String>();
-		byte[] messageBytes = htmlMessage.getBytes("UTF-8");
+		if(mvt == null) {
+			mvt = new MultiValueTable<>();
+		}
+		byte[] messageBytes = htmlMessage.getBytes(StandardCharsets.UTF_8);
 		sendReplyHeaders(os, code, httpReason, mvt, "text/html; charset=UTF-8", messageBytes.length, null, disconnect, false, false);
 		os.write(messageBytes);
 	}
@@ -175,7 +173,7 @@ public class ToadletContextImpl implements ToadletContext {
 		PrintWriter pw = new PrintWriter(sw);
 		e.printStackTrace(pw);
 		pw.close();
-		String message = "<html><head><title>"+l10n("uriParseErrorTitle")+"</title></head><body><p>"+HTMLEncoder.encode(e.getMessage())+"</p><pre>\n"+sw.toString();
+		String message = "<html><head><title>"+l10n("uriParseErrorTitle")+"</title></head><body><p>"+HTMLEncoder.encode(e.getMessage())+"</p><pre>\n" + sw;
 		sendHTMLError(os, 400, "Bad Request", message, shouldDisconnect, null);
 	}
 
@@ -203,14 +201,14 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	@Override
 	public void sendReplyHeadersFProxy(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
-	    boolean enableJavascript = false;
-	    if(container.isFProxyWebPushingEnabled() && container.isFProxyJavascriptEnabled())
-	        enableJavascript = true;
-	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null, false, true, enableJavascript);
+	    boolean enableJavascript = container.isFProxyWebPushingEnabled() && container.isFProxyJavascriptEnabled();
+		sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null, false, true, enableJavascript);
 	}
 	
 	private void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean isOutlinkConfirmationPage, boolean allowFrames, boolean enableJavascript) throws ToadletContextClosedException, IOException {
-		if(closed) throw new ToadletContextClosedException();
+		if(closed) {
+			throw new ToadletContextClosedException();
+		}
 		if(firstReplySendingException != null) {
 			throw new IllegalStateException("Already sent headers!", firstReplySendingException);
 		}
@@ -218,7 +216,7 @@ public class ToadletContextImpl implements ToadletContext {
 		
 		if(replyCookies != null) {
 			if (mvt == null) {
-				mvt = new MultiValueTable<String,String>();
+				mvt = new MultiValueTable<>();
 			}
 			
 			// We do NOT use "set-cookie2" even though we should according though RFC2965 - Firefox 3.0.14 ignores it for me!
@@ -226,8 +224,9 @@ public class ToadletContextImpl implements ToadletContext {
 			for(Cookie cookie : replyCookies) {
 				final String cookieHeader = cookie.encodeToHeaderValue();
 				mvt.put("set-cookie", cookieHeader);
-				if(logMINOR)
+				if(logMINOR) {
 					Logger.minor(this, "set-cookie: " + cookieHeader);
+				}
 			}
 		}
 		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect, enableJavascript, allowFrames);
@@ -253,7 +252,7 @@ public class ToadletContextImpl implements ToadletContext {
 	public boolean checkFormPassword(HTTPRequest request, String redirectTo)
 			throws ToadletContextClosedException, IOException {
 		if (!hasFormPassword(request)) {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+			MultiValueTable<String, String> headers = new MultiValueTable<>();
 			headers.put("Location", redirectTo);
 			sendReplyHeaders(302, "Found", headers, null, 0);
 			return false;
@@ -276,15 +275,18 @@ public class ToadletContextImpl implements ToadletContext {
     }
 	
 	@Override
-	public boolean hasFormPassword(HTTPRequest request) throws IOException {
+	public boolean hasFormPassword(HTTPRequest request) {
 		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		byte[] inputBytes = pass.getBytes("UTF-8");
-		byte[] compareBytes = getFormPassword().getBytes("UTF-8");
+		byte[] inputBytes = pass.getBytes(StandardCharsets.UTF_8);
+		byte[] compareBytes = getFormPassword().getBytes(StandardCharsets.UTF_8);
 		if(!MessageDigest.isEqual(inputBytes, compareBytes)) {
-			if (logMINOR)
+			if (logMINOR) {
 				Logger.minor(this, "Bad formPassword: " + pass);
+			}
 			return false;
-		} else return true;
+		} else {
+			return true;
+		}
 	}
 	
 	@Override
@@ -303,18 +305,23 @@ public class ToadletContextImpl implements ToadletContext {
 	}
 	
 	private void parseCookies() throws ParseException {
-		if(cookies != null)
+		if(cookies != null) {
 			return;
+		}
 		
 		int cookieAmount = headers.countAll("cookie");
 		
-		if(cookieAmount == 0)
+		if(cookieAmount == 0) {
 			return;
+		}
 		
-		cookies = new ArrayList<ReceivedCookie>(cookieAmount + 1);
+		cookies = new ArrayList<>(cookieAmount + 1);
 		
 		for(String cookieHeader : headers.iterateAll("cookie")) {
-			ArrayList<ReceivedCookie> parsedCookies = ReceivedCookie.parseHeader(cookieHeader);
+			if(logMINOR) {
+				Logger.minor(this, "Received HTTP cookie header:" + cookieHeader);
+			}
+			List<ReceivedCookie> parsedCookies = ReceivedCookie.parseHeader(cookieHeader);
 			cookies.addAll(parsedCookies);
 		}
 	}
@@ -328,31 +335,15 @@ public class ToadletContextImpl implements ToadletContext {
 		
 		name = name.toLowerCase();
 		
-		//String stringDomain = domain==null ? null : domain.toString().toLowerCase();
-		//String stringPath = path.toString();
-		
+
 		// RFC2965: Two cookies are equal if name and domain are equal with case-insensitive comparison and path is equal with case-sensitive comparison.
 		//getName() / getDomain() returns lowercase and getPath() returns the original path.
 		
 		// UNFORTUNATELY firefox will ONLY give us the name and the value of the cookie, so we ignore everything else.
 		
 		for(ReceivedCookie cookie : cookies) {
-			try {
-			//if(stringDomain != null) {
-			//	URI cookieDomain = cookie.getDomain();
-			//	
-			//	if(cookieDomain==null || !stringDomain.equals(cookieDomain.toString()))
-			//		continue;
-			//}
-			//
-			//if(cookie.getPath().toString().equals(stringPath) && cookie.getName().equals(name))
-			//	return cookie;
-				
-				if(cookie.getName().equals(name))
-					return cookie;
-			}
-			catch(RuntimeException e) {
-				Logger.error(this, "Error in cookie", e);
+			if(cookie.getName().equalsIgnoreCase(name)) {
+				return cookie;
 			}
 		}
 		
@@ -361,8 +352,9 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	@Override
 	public void setCookie(Cookie newCookie) {
-		if(replyCookies == null)
-			replyCookies = new ArrayList<Cookie>(4);
+		if(replyCookies == null) {
+			replyCookies = new ArrayList<>(4);
+		}
 		
 		replyCookies.add(newCookie);
 	}
@@ -370,31 +362,31 @@ public class ToadletContextImpl implements ToadletContext {
 	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect, boolean allowScripts, boolean allowFrames) throws IOException {
 		
 		// Construct headers
-		if(mvt == null)
-			mvt = new MultiValueTable<String,String>();
-		if(mimeType != null)
-			if(mimeType.equalsIgnoreCase("text/html")){
-				mvt.put("content-type", mimeType+"; charset=UTF-8");
-			}else{
+		if(mvt == null) {
+			mvt = new MultiValueTable<>();
+		}
+		if(mimeType != null) {
+			if (mimeType.equalsIgnoreCase("text/html")) {
+				mvt.put("content-type", mimeType + "; charset=UTF-8");
+			} else {
 				mvt.put("content-type", mimeType);
 			}
-		if(contentLength >= 0)
-			mvt.put("content-length", Long.toString(contentLength));
-
-		boolean allowCaching; // For privacy reasons, only static
-							  // content may be cached
-		if (mTime == null) {
-			allowCaching = false;
-		} else {
-			allowCaching = true;
 		}
+		if(contentLength >= 0) {
+			mvt.put("content-length", Long.toString(contentLength));
+		}
+
+		// For privacy reasons, only static
+		// content may be cached
+		boolean allowCaching = mTime != null;
+
 		String expiresTime;
 		String cacheControl;
 		if (allowCaching) {
 			// use an expiry time of 30 day from now, about the frequency of Freenet releases
 			// Expires is needed for older browsers
 			expiresTime = TimeUtil.makeHTTPDate(System.currentTimeMillis() + DAYS.toMillis(30));
-			cacheControl = "public, max-age=" + String.valueOf(3600 * 24 * 30);
+			cacheControl = "public, max-age=" + 3600 * 24 * 30;
 		} else {
 			expiresTime = "Thu, 01 Jan 1970 00:00:00 GMT";
 			// no-cache for Internet Explorer, no-store for Firefox
@@ -414,10 +406,11 @@ public class ToadletContextImpl implements ToadletContext {
 		
 		mvt.put("last-modified", lastModString);
 		mvt.put("date", nowString);
-		if(disconnect)
+		if(disconnect) {
 			mvt.put("connection", "close");
-		else
+		} else {
 			mvt.put("connection", "keep-alive");
+		}
 		String contentSecurityPolicy = generateCSP(allowScripts, allowFrames);
 		mvt.put("content-security-policy", contentSecurityPolicy);
 		mvt.put("x-content-security-policy", contentSecurityPolicy);
@@ -429,12 +422,12 @@ public class ToadletContextImpl implements ToadletContext {
 		buf.append(' ');
 		buf.append(replyDescription);
 		buf.append("\r\n");
-		for(Enumeration<String> e = mvt.keys();e.hasMoreElements();) {
+		for (Enumeration<String> e = mvt.keys(); e.hasMoreElements(); ) {
 			String key = e.nextElement();
 			Object[] list = mvt.getArray(key);
 			key = fixKey(key);
-			for(int i=0;i<list.length;i++) {
-				String val = (String) list[i];
+			for (Object o : list) {
+				String val = (String) o;
 				buf.append(key);
 				buf.append(": ");
 				buf.append(val);
@@ -442,24 +435,20 @@ public class ToadletContextImpl implements ToadletContext {
 			}
 		}
 		buf.append("\r\n");
-		sockOutputStream.write(buf.toString().getBytes("US-ASCII"));
+		sockOutputStream.write(buf.toString().getBytes(StandardCharsets.US_ASCII));
 	}
 	
 	private static String generateCSP(boolean allowScripts, boolean allowFrames) {
-	    StringBuilder sb = new StringBuilder();
-	    // allow access to blobs, because these are purely local
-	    sb.append("default-src 'self' blob:; script-src ");
-	    // "options inline-script" is old syntax needed for older Firefox's.
-	    sb.append(allowScripts
-					? "'self' 'unsafe-inline'; options inline-script"
-					: generateRestrictedScriptSrc());
-	    sb.append("; frame-src ");
-        sb.append(allowFrames ? "'self'" : "'none'");
-        sb.append("; object-src 'none'");
-        // Always send unsafe-inline for CSS. This is safe given it can't use external stuff anyway.
-        // It's only strictly needed for fproxy.
-        sb.append("; style-src 'self' 'unsafe-inline'");
-        return sb.toString();
+		// allow access to blobs, because these are purely local
+		return "default-src 'self' blob:; script-src "
+			// "options inline-script" is old syntax needed for older Firefox's.
+			+ (allowScripts ? "'self' 'unsafe-inline'; options inline-script" : generateRestrictedScriptSrc())
+			+ "; frame-src "
+			+ (allowFrames ? "'self'" : "'none'")
+			+ "; object-src 'none'"
+			// Always send unsafe-inline for CSS. This is safe given it can't use external stuff anyway.
+			// It's only strictly needed for fproxy.
+			+ "; style-src 'self' 'unsafe-inline'";
     }
 
 	private static String generateRestrictedScriptSrc() {
@@ -467,25 +456,13 @@ public class ToadletContextImpl implements ToadletContext {
 		String[] allowedScriptHashes = new String[] {
 				"sha256-RY9OjosvFxocXEmcUqBJ2v1KByDRdUgnGHYSL3Qx/t8=" // freenet/clients/http/staticfiles/js/m3u-player.js
 		};
-		if (allowedScriptHashes.length == 0) {
-			return "'none'";
-		} else {
-			StringJoiner stringJoiner = new StringJoiner("' '", "'", "'");
-			for (String source : allowedScriptHashes) {
-				stringJoiner.add(source);
-			}
-			return stringJoiner.toString();
+		StringJoiner stringJoiner = new StringJoiner("' '", "'", "'");
+		for (String source : allowedScriptHashes) {
+			stringJoiner.add(source);
 		}
+		return stringJoiner.toString();
 	}
 
-	static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
-
-	public static Date parseHTTPDate(String httpDate) throws java.text.ParseException{
-		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
-		sdf.setTimeZone(TZ_UTC);
-		return sdf.parse(httpDate);
-	}
-	
 	/** Fix key case to be conformant to HTTP expectations.
 	 * Note that HTTP is case insensitive on header names, but we may as well
 	 * send something as close to the spec as possible in case of broken clients... 
@@ -544,7 +521,7 @@ public class ToadletContextImpl implements ToadletContext {
 				}
 				String method = split[0];
 				
-				MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
+				MultiValueTable<String,String> headers = new MultiValueTable<>();
 				
 				while(true) {
 					String line = lis.readLine(32768, 128, false); // ISO-8859 or US-ASCII, not UTF-8
@@ -569,7 +546,7 @@ public class ToadletContextImpl implements ToadletContext {
 				boolean allowPost = container.allowPosts();
 				BucketFactory bf = container.getBucketFactory();
 				
-				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container, userAlertManager, bookmarkManager, uri, container.generateUniqueID());
+				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container, userAlertManager, bookmarkManager, uri);
 				ctx.shouldDisconnect = disconnect;
 				
 				/*
@@ -614,7 +591,7 @@ public class ToadletContextImpl implements ToadletContext {
 					} else {
 						FileUtil.skipFully(is, len);
 						if (method.equals("POST")) {
-							ctx.sendMethodNotAllowed("POST", true);
+							ctx.sendMethodNotAllowed(true);
 						} else {
 							sendError(sock.getOutputStream(), 403, "Forbidden", "Content not allowed in this configuration", true, null);
 						}
@@ -657,7 +634,7 @@ public class ToadletContextImpl implements ToadletContext {
 						// if the Toadlet does not support the method, we don't need to parse the data
 						// also due this pre check a 'NoSuchMethodException' should never appear
 						if (!(t.findSupportedMethods().contains(method))) {
-							ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
+							ctx.sendMethodNotAllowed(ctx.shouldDisconnect);
 							break;
 						}
 
@@ -717,8 +694,8 @@ public class ToadletContextImpl implements ToadletContext {
 				PrintWriter pw = new PrintWriter(sw);
 				t.printStackTrace(pw);
 				pw.flush();
-				msg = msg + sw.toString() + "</pre></body></html>";
-				byte[] messageBytes = msg.getBytes("UTF-8");
+				msg = msg + sw + "</pre></body></html>";
+				byte[] messageBytes = msg.getBytes(StandardCharsets.UTF_8);
 				sendReplyHeaders(sock.getOutputStream(), 500, "Internal failure", null, "text/html; charset=UTF-8", messageBytes.length, null, true, false, false);
 				sock.getOutputStream().write(messageBytes);
 			} catch (IOException e1) {
@@ -761,7 +738,7 @@ public class ToadletContextImpl implements ToadletContext {
 				}
 			}
 			ctx.setActiveToadlet(t);
-			Object arglist[] = new Object[] {uri, req, ctx};
+			Object[] arglist = new Object[] {uri, req, ctx};
 			m.invoke(t, arglist);
 		} catch (InvocationTargetException ite) {
 			throw ite.getCause();
@@ -792,11 +769,7 @@ public class ToadletContextImpl implements ToadletContext {
 			if(connection.equalsIgnoreCase("keep-alive"))
 				return false;
 		}
-		if(isHTTP10 == true)
-			return true;
-		else
-			// HTTP 1.1
-			return false;
+		return isHTTP10; // or else HTTP 1.1
 	}
 	
 	@Override
