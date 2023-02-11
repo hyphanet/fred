@@ -17,7 +17,7 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
-import java.text.ParseException;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,14 +31,9 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.StringTokenizer;
 
-import freenet.clients.http.ToadletContextImpl;
 import freenet.l10n.NodeL10n;
-import freenet.support.HTMLDecoder;
-import freenet.support.HTMLEncoder;
-import freenet.support.Logger;
+import freenet.support.*;
 import freenet.support.Logger.LogLevel;
-import freenet.support.URLDecoder;
-import freenet.support.URLEncodedFormatException;
 import freenet.support.io.NullWriter;
 
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
@@ -3008,13 +3003,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				} else if ((http_equiv != null) && (name == null)) {
 					if (http_equiv.equalsIgnoreCase("Expires")) {
 						try {
-							ToadletContextImpl.parseHTTPDate(content);
-							hn.put("http-equiv", http_equiv);
-							hn.put("content", content);
-						} catch (ParseException e) {
+							TimeUtil.parseHttpDateTime(content);
+						} catch (DateTimeParseException e) {
 							// Delete it.
 							return null;
 						}
+						hn.put("http-equiv", http_equiv);
+						hn.put("content", content);
 					} else if (
 						http_equiv.equalsIgnoreCase("Content-Script-Type")) {
 						// We don't support script at this time.
