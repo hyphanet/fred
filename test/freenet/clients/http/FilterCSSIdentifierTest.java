@@ -14,7 +14,7 @@ import org.junit.Test;
 public class FilterCSSIdentifierTest {
 	@Test
 	public void testKnownValid() {
-		String identifiers[] = { "sample_key-1", "-_", "-k_d", "_testing-key" };
+		String[] identifiers = { "sample_key-1", "-_", "-k_d", "_testing-key" };
 
 		for (String identifier : identifiers) {
 			assertEquals(identifier, PageMaker.filterCSSIdentifier(identifier));
