@@ -1,230 +1,128 @@
 package freenet.support;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.NoSuchElementException;
-import java.util.Vector;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A hashtable that can store several values for each entry.
  *
- * FIXME improve efficiency - map to Object internally and either use a single V or an
- * ArrayList of V. Then take over where we do this in the code e.g. PrioritizedTicker.
- *
  * @author oskar
  */
-
 public class MultiValueTable<K,V> {
-    private Hashtable<K, Vector<V>> table;
-    private int ies;
+    private final Map<K, List<V>> table;
 
     public MultiValueTable() {
-        this(16, 3);
+        table = new ConcurrentHashMap<>();
     }
 
     public MultiValueTable(int initialSize) {
-        this(initialSize, 3);
+        table = new ConcurrentHashMap<>(initialSize);
     }
 
-    public MultiValueTable(int initialSize, int initialEntrySize) {
-        table = new Hashtable<K, Vector<V>>(initialSize);
-        ies = initialEntrySize;
-    }
-
-    public static <K, V> MultiValueTable<K, V> from (K[] keys, V[] values) {
-      if (keys.length != values.length) {
-        throw new IllegalArgumentException(String.format(
-            "keys and values must contain the same number of values, but there are %d keys and %d values",
-            keys.length,
-            values.length));
-      }
-      MultiValueTable<K, V> table = new MultiValueTable<>();
-      for (int i = 0; i < keys.length; i++) {
-        table.put(keys[i], values[i]);
-      }
+    @SafeVarargs
+    public static <K, V> MultiValueTable<K, V> from(K key, V... values) {
+      MultiValueTable<K, V> table = new MultiValueTable<>(1);
+      table.putAll(key, Arrays.asList(values));
       return table;
     }
 
     public void put(K key, V value) {
-        synchronized (table) {
-            Vector<V> v = table.get(key);
-            if (v == null) {
-                v = new Vector<V>(ies);
-                table.put(key, v);
+        this.table.compute(key, (k, list) -> {
+            if (list == null) {
+                list = new CopyOnWriteArrayList<>();
             }
-            v.addElement(value);
-        }
+            list.add(value);
+            return list;
+        });
     }
+
+    public void putAll(K key, Collection<V> elements) {
+        this.table.compute(key, (k, list) -> {
+            if (list == null) {
+                list = new CopyOnWriteArrayList<>();
+            }
+            list.addAll(elements);
+            return list;
+        });
+    }
+
 
     /**
      * Returns the first element for this key.
      */
-    public V get(K key) {
-        synchronized (table) {
-            Vector<V> v = table.get(key);
-            return (v == null ?
-                    null :
-                    v.firstElement());
+    public V getFirst(K key) {
+        List<V> list = this.table.get(key);
+        if (list == null || list.isEmpty()) {
+            return null;
         }
+        return list.get(0);
     }
 
     public boolean containsKey(K key) {
-		synchronized (table) {
-			return table.containsKey(key);
-		}
+		return this.table.containsKey(key);
     }
 
     public boolean containsElement(K key, V value) {
-        synchronized (table) {
-            Vector<V> v = table.get(key);
-            return (v != null) && v.contains(value);
+        List<V> list = this.table.get(key);
+        if (list == null || list.isEmpty()) {
+            return false;
         }
+        return list.contains(value);
     }
 
     /**
-     * Users will have to handle synchronizing.
+     * @param key key
+     * @return list of elements mapped to provided key
      */
-    public Enumeration<V> getAll(K key) {
-    	Vector<V> v;
-		synchronized (table) {
-			v = table.get(key);
-		}
-        return (v == null ?
-                new EmptyEnumeration<V>() :
-                v.elements());
-    }
-
-    /**
-     * To be used in for(x : y).
-     */
-    public Iterable<V> iterateAll(K key) {
-		synchronized (table) {
-			return(table.get(key));
-		}
+    public List<V> getAll(K key) {
+        List<V> list = this.table.get(key);
+        if (list == null || list.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return Collections.unmodifiableList(list);
     }
 
     public int countAll(K key) {
-    	Vector<V> v;
-		synchronized (table) {
-			v = table.get(key);
-		}
-    	if(v != null)
-        	return v.size();
-        else
-        	return 0;
+        return getAll(key).size();
     }
 
-    public Object getSync(K key) {
-		synchronized (table) {
-			return table.get(key);
-		}
-    }
-
-    public Object[] getArray(K key) {
-        synchronized (table) {
-            Vector<V> v = table.get(key);
-            if (v == null)
-                return null;
-            else {
-            	Object[] r = new Object[v.size()];
-                v.copyInto(r);
-                return r;
-            }
-        }
-    }
-
-    public void remove(K key) {
-		synchronized (table) {
-			table.remove(key);
-		}
+    public boolean remove(K key) {
+        List<V> elements = this.table.remove(key);
+        return elements != null;
     }
 
     public boolean isEmpty() {
-		synchronized (table) {
-			return table.isEmpty();
-		}
+        return this.table.isEmpty();
+    }
+
+    public int size() {
+        return this.table.size();
     }
 
     public void clear() {
-		synchronized (table) {
-			table.clear();
-		}
+		this.table.clear();
     }
 
     public boolean removeElement(K key, V value) {
-        synchronized (table) {
-            Vector<V> v = table.get(key);
-            if (v == null)
-                return false;
-            else {
-                boolean b = v.removeElement(value);
-                if (v.isEmpty())
-                    table.remove(key);
-                return b;
+        boolean[] removed = new boolean[1];
+        this.table.computeIfPresent(key, (k, list) -> {
+            removed[0] = list.remove(value);
+            if (list.isEmpty()) {
+                // null result removes element from Map
+                return null;
             }
-        }
+            return list;
+        });
+        return removed[0];
     }
 
-    public Enumeration<K> keys() {
-		synchronized (table) {
-			return table.keys();
-		}
+    public Set<K> keys() {
+        return Collections.unmodifiableSet(this.table.keySet());
     }
 
-    public Enumeration<V> elements() {
-		synchronized (table) {
-			if (table.isEmpty())
-				return new EmptyEnumeration<V>();
-			else
-				return new MultiValueEnumeration();
-		}
+    @Override
+    public String toString() {
+        return "[MultiValueTable table=" + table + "]";
     }
-
-  @Override
-  public String toString() {
-    return "[MultiValueTable table=" + table.toString() + "]";
-  }
-
-
-  private static class EmptyEnumeration<E> implements Enumeration<E> {
-        @Override
-        public final boolean hasMoreElements() {
-            return false;
-        }
-
-        @Override
-        public final E nextElement() {
-            throw new NoSuchElementException();
-        }
-    }
-
-    private class MultiValueEnumeration implements Enumeration<V> {
-        private Enumeration<V> current;
-        private Enumeration< Vector<V>> global;
-        public MultiValueEnumeration() {
-			synchronized (table) {
-				global = table.elements();
-			}
-            current =  global.nextElement().elements();
-            step();
-        }
-
-        public final void step() {
-            while (!current.hasMoreElements() && global.hasMoreElements())
-                current = global.nextElement().elements();
-        }
-
-        @Override
-        public final boolean hasMoreElements() {
-            return global.hasMoreElements(); // || current.hasMoreElements();
-        }
-
-        @Override
-        public final V nextElement() {
-            V o = current.nextElement();
-            step();
-            return o;
-        }
-    }
-
 }

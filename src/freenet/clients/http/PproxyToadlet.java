@@ -112,8 +112,10 @@ public class PproxyToadlet extends Toadlet {
 			catch (DownloadPluginHTTPException e) {
 				// FIXME: maybe it ought to be defined like sendErrorPage : in toadlets
 
-				MultiValueTable<String, String> head = new MultiValueTable<String, String>();
-				head.put("Content-Disposition", "attachment; filename=\"" + e.filename + '"');
+				MultiValueTable<String, String> head = MultiValueTable.from(
+					"Content-Disposition",
+					"attachment; filename=\"" + e.filename + '"'
+				);
 				ctx.sendReplyHeaders(DownloadPluginHTTPException.CODE, "Found", head, e.mimeType, e.data.length);
 				ctx.writeData(e.data);
 			}
@@ -448,8 +450,10 @@ public class PproxyToadlet extends Toadlet {
 		} catch (DownloadPluginHTTPException e) {
 			// FIXME: maybe it ought to be defined like sendErrorPage : in toadlets
 
-			MultiValueTable<String, String> head = new MultiValueTable<String, String>();
-			head.put("Content-Disposition", "attachment; filename=\"" + e.filename + '"');
+			MultiValueTable<String, String> head = MultiValueTable.from(
+				"Content-Disposition",
+				"attachment; filename=\"" + e.filename + '"'
+			);
 			ctx.sendReplyHeaders(DownloadPluginHTTPException.CODE, "Found", head, e.mimeType, e.data.length);
 			ctx.writeData(e.data);
 		} catch(PluginHTTPException e) {

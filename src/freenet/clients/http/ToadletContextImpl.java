@@ -12,16 +12,11 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Locale;
-import java.util.StringJoiner;
-import java.util.TimeZone;
+import java.util.*;
 
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
 import freenet.clients.http.annotation.AllowData;
@@ -126,8 +121,7 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	private void sendMethodNotAllowed(String method, boolean shouldDisconnect) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
-		MultiValueTable<String,String> mvt = new MultiValueTable<String,String>();
-		mvt.put("Allow", "GET, PUT");
+		MultiValueTable<String,String> mvt = MultiValueTable.from("Allow", "GET, PUT");
 		sendError(sockOutputStream, 405, "Method Not Allowed", l10n("methodNotAllowed"), shouldDisconnect, mvt);
 	}
 	
@@ -253,8 +247,7 @@ public class ToadletContextImpl implements ToadletContext {
 	public boolean checkFormPassword(HTTPRequest request, String redirectTo)
 			throws ToadletContextClosedException, IOException {
 		if (!hasFormPassword(request)) {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", redirectTo);
+			MultiValueTable<String, String> headers = MultiValueTable.from("Location", redirectTo);
 			sendReplyHeaders(302, "Found", headers, null, 0);
 			return false;
 		} else {
@@ -311,9 +304,9 @@ public class ToadletContextImpl implements ToadletContext {
 		if(cookieAmount == 0)
 			return;
 		
-		cookies = new ArrayList<ReceivedCookie>(cookieAmount + 1);
+		cookies = new ArrayList<>(cookieAmount + 1);
 		
-		for(String cookieHeader : headers.iterateAll("cookie")) {
+		for(String cookieHeader : headers.getAll("cookie")) {
 			ArrayList<ReceivedCookie> parsedCookies = ReceivedCookie.parseHeader(cookieHeader);
 			cookies.addAll(parsedCookies);
 		}
@@ -366,28 +359,39 @@ public class ToadletContextImpl implements ToadletContext {
 		
 		replyCookies.add(newCookie);
 	}
-	
-	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect, boolean allowScripts, boolean allowFrames) throws IOException {
-		
+
+	static void sendReplyHeaders(
+		OutputStream sockOutputStream,
+		int replyCode,
+		String replyDescription,
+		MultiValueTable<String, String> mvt,
+		String mimeType,
+		long contentLength,
+		Date mTime,
+		boolean disconnect,
+		boolean allowScripts,
+		boolean allowFrames
+	) throws IOException {
+
 		// Construct headers
-		if(mvt == null)
-			mvt = new MultiValueTable<String,String>();
-		if(mimeType != null)
-			if(mimeType.equalsIgnoreCase("text/html")){
-				mvt.put("content-type", mimeType+"; charset=UTF-8");
-			}else{
+		if (mvt == null) {
+			mvt = new MultiValueTable<>();
+		}
+		if (mimeType != null) {
+			if (mimeType.equalsIgnoreCase("text/html")) {
+				mvt.put("content-type", mimeType + "; charset=UTF-8");
+			} else {
 				mvt.put("content-type", mimeType);
 			}
-		if(contentLength >= 0)
-			mvt.put("content-length", Long.toString(contentLength));
-
-		boolean allowCaching; // For privacy reasons, only static
-							  // content may be cached
-		if (mTime == null) {
-			allowCaching = false;
-		} else {
-			allowCaching = true;
 		}
+		if (contentLength >= 0) {
+			mvt.put("content-length", Long.toString(contentLength));
+		}
+
+		// content may be cached
+		// For privacy reasons, only static
+		boolean allowCaching = mTime != null;
+
 		String expiresTime;
 		String cacheControl;
 		if (allowCaching) {
@@ -403,7 +407,7 @@ public class ToadletContextImpl implements ToadletContext {
 		}
 		mvt.put("expires", expiresTime);
 		mvt.put("cache-control", cacheControl);
-		
+
 		String nowString = TimeUtil.makeHTTPDate(System.currentTimeMillis());
 		String lastModString;
 		if (mTime == null) {
@@ -411,38 +415,38 @@ public class ToadletContextImpl implements ToadletContext {
 		} else {
 			lastModString = TimeUtil.makeHTTPDate(mTime.getTime());
 		}
-		
+
 		mvt.put("last-modified", lastModString);
 		mvt.put("date", nowString);
-		if(disconnect)
+		if (disconnect) {
 			mvt.put("connection", "close");
-		else
+		} else {
 			mvt.put("connection", "keep-alive");
+		}
 		String contentSecurityPolicy = generateCSP(allowScripts, allowFrames);
 		mvt.put("content-security-policy", contentSecurityPolicy);
 		mvt.put("x-content-security-policy", contentSecurityPolicy);
 		mvt.put("x-webkit-csp", contentSecurityPolicy);
 		mvt.put("x-frame-options", allowFrames ? "SAMEORIGIN" : "DENY");
+
 		StringBuilder buf = new StringBuilder(1024);
 		buf.append("HTTP/1.1 ");
 		buf.append(replyCode);
 		buf.append(' ');
 		buf.append(replyDescription);
 		buf.append("\r\n");
-		for(Enumeration<String> e = mvt.keys();e.hasMoreElements();) {
-			String key = e.nextElement();
-			Object[] list = mvt.getArray(key);
+		for (String key : mvt.keys()) {
+			List<String> list = mvt.getAll(key);
 			key = fixKey(key);
-			for(int i=0;i<list.length;i++) {
-				String val = (String) list[i];
+			for (String s : list) {
 				buf.append(key);
 				buf.append(": ");
-				buf.append(val);
+				buf.append(s);
 				buf.append("\r\n");
 			}
 		}
 		buf.append("\r\n");
-		sockOutputStream.write(buf.toString().getBytes("US-ASCII"));
+		sockOutputStream.write(buf.toString().getBytes(StandardCharsets.US_ASCII));
 	}
 	
 	private static String generateCSP(boolean allowScripts, boolean allowFrames) {
@@ -544,7 +548,7 @@ public class ToadletContextImpl implements ToadletContext {
 				}
 				String method = split[0];
 				
-				MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
+				MultiValueTable<String,String> headers = new MultiValueTable<>();
 				
 				while(true) {
 					String line = lis.readLine(32768, 128, false); // ISO-8859 or US-ASCII, not UTF-8
@@ -580,7 +584,7 @@ public class ToadletContextImpl implements ToadletContext {
 				Bucket data;
 
 
-				String slen = headers.get("content-length");
+				String slen = headers.getFirst("content-length");
 
 				if (METHODS_MUST_HAVE_DATA.contains(method)) {
 					// <method> must have data
@@ -784,7 +788,7 @@ public class ToadletContextImpl implements ToadletContext {
 	 * @return True if the connection should be closed.
 	 */
 	private static boolean shouldDisconnectAfterHandled(boolean isHTTP10, MultiValueTable<String,String> headers) {
-		String connection = headers.get("connection");
+		String connection = headers.getFirst("connection");
 		if(connection != null) {
 			if(connection.equalsIgnoreCase("close"))
 				return true;

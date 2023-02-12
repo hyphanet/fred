@@ -455,8 +455,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	}
 
 	private void redirectHere(ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", "/friends/");
+		MultiValueTable<String, String> headers = MultiValueTable.from("Location", "/friends/");
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 
@@ -512,9 +511,10 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			if(fs == null) return false;
 			String filename = FileUtil.sanitizeFileNameWithExtras(peernode_name+".fref", "\" ");
 			String content = fs.toString();
-			MultiValueTable<String, String> extraHeaders = new MultiValueTable<String, String>();
-			// Force download to disk
-			extraHeaders.put("Content-Disposition", "attachment; filename="+filename);
+			MultiValueTable<String, String> extraHeaders = MultiValueTable.from(
+				// Force download to disk
+				"Content-Disposition", "attachment; filename="+filename
+			);
 			this.writeReply(ctx, 200, "application/x-freenet-reference", "OK", extraHeaders, content);
 			return true;
 		} else return false;

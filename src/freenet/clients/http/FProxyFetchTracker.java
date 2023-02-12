@@ -1,7 +1,7 @@
 package freenet.clients.http;
 
 import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.List;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -28,7 +28,7 @@ public class FProxyFetchTracker implements Runnable {
 		});
 	}
 	
-	final MultiValueTable<FreenetURI, FProxyFetchInProgress> fetchers;
+	private final MultiValueTable<FreenetURI, FProxyFetchInProgress> fetchers;
 	final ClientContext context;
 	private long fetchIdentifiers;
 	private final FetchContext fctx;
@@ -37,7 +37,7 @@ public class FProxyFetchTracker implements Runnable {
 	private boolean requeue;
 
 	public FProxyFetchTracker(ClientContext context, FetchContext fctx, RequestClient rc) {
-		fetchers = new MultiValueTable<FreenetURI, FProxyFetchInProgress>();
+		this.fetchers = new MultiValueTable<>();
 		this.context = context;
 		this.fctx = fctx;
 		this.rc = rc;
@@ -92,18 +92,25 @@ public class FProxyFetchTracker implements Runnable {
 	 * @return The FetchInProgress if found, null otherwise*/
 	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize, FetchContext fctx){
 		synchronized (fetchers) {
-			Object[] check = fetchers.getArray(key);
+			List<FProxyFetchInProgress> check = fetchers.getAll(key);
 			if(check != null) {
-				for(int i=0;i<check.length;i++) {
-					FProxyFetchInProgress progress = (FProxyFetchInProgress) check[i];
-					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
-							|| progress.hasData()){
-						if(logMINOR) Logger.minor(this, "Found "+progress);
-						if(fctx != null && !progress.fetchContextEquivalent(fctx)) continue;
-						if(logMINOR) Logger.minor(this, "Using "+progress);
+				for (FProxyFetchInProgress progress : check) {
+					if ((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
+						|| progress.hasData()
+					) {
+						if (logMINOR) {
+							Logger.minor(this, "Found " + progress);
+						}
+						if (fctx != null && !progress.fetchContextEquivalent(fctx)) {
+							continue;
+						}
+						if (logMINOR) {
+							Logger.minor(this, "Using " + progress);
+						}
 						return progress;
-					} else
-						if(logMINOR) Logger.minor(this, "Skipping "+progress);
+					} else if (logMINOR) {
+						Logger.minor(this, "Skipping " + progress);
+					}
 				}
 			}
 		}
@@ -135,11 +142,9 @@ public class FProxyFetchTracker implements Runnable {
 				queuedJob = false;
 			}
 			// Horrible hack, FIXME
-			Enumeration<FreenetURI> e = fetchers.keys();
-			while(e.hasMoreElements()) {
-				FreenetURI uri = e.nextElement();
+			for (FreenetURI uri: fetchers.keys()) {
 				// Really horrible hack, FIXME
-				for(FProxyFetchInProgress f : fetchers.iterateAll(uri)) {
+				for(FProxyFetchInProgress f : fetchers.getAll(uri)) {
 					// FIXME remove on the fly, although cancel must wait
 					if(f.canCancel()) {
 						if(toRemove == null) toRemove = new ArrayList<FProxyFetchInProgress>();

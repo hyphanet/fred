@@ -273,12 +273,12 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		}
 		String params = paramsBuilder.toString();
 		if (directorySelector) {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>(
-					1);
 			// params ends in &. Download directory browser starts in default
 			// download directory.
-			headers.put("Location", directoryBrowserPath + params + "path="
-					+ core.getDownloadsDir().getAbsolutePath());
+			MultiValueTable<String, String> headers = MultiValueTable.from(
+				"Location",
+				directoryBrowserPath + params + "path=" + core.getDownloadsDir().getAbsolutePath()
+			);
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}

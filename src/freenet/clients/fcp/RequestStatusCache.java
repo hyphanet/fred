@@ -3,6 +3,7 @@ package freenet.clients.fcp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException.FetchExceptionMode;
@@ -28,16 +29,16 @@ public class RequestStatusCache {
 
 	private final ArrayList<RequestStatus> downloads;
 	private final ArrayList<RequestStatus> uploads;
-	private final HashMap<String, RequestStatus> requestsByIdentifier;
-	private final MultiValueTable<FreenetURI, RequestStatus> downloadsByURI;
+	private final Map<String, RequestStatus> requestsByIdentifier;
+	private final MultiValueTable<FreenetURI, DownloadRequestStatus> downloadsByURI;
 	private final MultiValueTable<FreenetURI, RequestStatus> uploadsByFinalURI;
 	
 	RequestStatusCache() {
-		downloads = new ArrayList<RequestStatus>();
-		uploads = new ArrayList<RequestStatus>();
-		requestsByIdentifier = new HashMap<String, RequestStatus>();
-		downloadsByURI = new MultiValueTable<FreenetURI, RequestStatus>();
-		uploadsByFinalURI = new MultiValueTable<FreenetURI, RequestStatus>();
+		downloads = new ArrayList<>();
+		uploads = new ArrayList<>();
+		requestsByIdentifier = new HashMap<>();
+		downloadsByURI = new MultiValueTable<>();
+		uploadsByFinalURI = new MultiValueTable<>();
 	}
 	
 	synchronized void addDownload(DownloadRequestStatus status) {
@@ -112,7 +113,7 @@ public class RequestStatusCache {
 			downloads.remove(status);
 			FreenetURI uri = status.getURI();
 			assert(uri != null);
-			downloadsByURI.removeElement(uri, status);
+			downloadsByURI.removeElement(uri, (DownloadRequestStatus) status);
 		} else if(status instanceof UploadRequestStatus) {
 			uploads.remove(status);
 			FreenetURI uri = ((UploadRequestStatus) status).getFinalURI();
@@ -192,17 +193,30 @@ public class RequestStatusCache {
 	}
 
 	public synchronized CacheFetchResult getShadowBucket(FreenetURI key, boolean noFilter) {
-		Object[] downloads = downloadsByURI.getArray(key);
-		if(downloads == null) return null;
-		for(Object o : downloads) {
-			DownloadRequestStatus download = (DownloadRequestStatus) o;
+		List<DownloadRequestStatus> downloads = downloadsByURI.getAll(key);
+		if (downloads == null) {
+			return null;
+		}
+		for (DownloadRequestStatus download : downloads) {
 			Bucket data = download.getDataShadow();
-			if(data == null) continue;
-			if(data.size() == 0) continue;
-			if(noFilter && download.filterData) continue;
+			if (data == null) {
+				continue;
+			}
+			if (data.size() == 0) {
+				continue;
+			}
+			if (noFilter && download.filterData) {
+				continue;
+			}
 			// FIXME it probably *is* worth the effort to allow this when it is overridden on the fetcher, since the user changed the type???
-			if(download.overriddenDataType) continue;
-			return new CacheFetchResult(new ClientMetadata(download.getMIMEType()), new NoFreeBucket(data), download.filterData);
+			if (download.overriddenDataType) {
+				continue;
+			}
+			return new CacheFetchResult(
+				new ClientMetadata(download.getMIMEType()),
+				new NoFreeBucket(data),
+				download.filterData
+			);
 		}
 		return null;
 	}
