@@ -21,6 +21,7 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +48,6 @@ import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FileUtil.CPUArchitecture;
@@ -923,26 +923,20 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	                    return false;
 	                }
 	                if(f.length() < SCRIPT_HEAD.length) {
-	                    Logger.error(this, "Found "+toFind+" on path but less than "+SCRIPT_HEAD+" bytes long, so can't check whether it is a script - will the shell try the next match? We can't tell whether it is a script or not ...");
+	                    Logger.error(this, "Found "+toFind+" on path but less than "+SCRIPT_HEAD.length+" bytes long, so can't check whether it is a script - will the shell try the next match? We can't tell whether it is a script or not ...");
 	                    return false; // Weird!
 	                }
-	                try {
-                        FileInputStream fis = new FileInputStream(f);
-                        byte[] buf = new byte[SCRIPT_HEAD.length];
-                        DataInputStream dis = new DataInputStream(fis);
-                        try {
-                            dis.read(buf);
-                            return !Arrays.equals(buf, SCRIPT_HEAD);
-                        } catch (IOException e) {
-                            Logger.error(this, "Unable to read "+f+" to check whether it is a script: "+e+" - disk corruption problems???", e);
-                            return false;
-                        } finally {
-	                        Closer.close(fis);
-	                        Closer.close(dis);
-                        }
-                    } catch (FileNotFoundException e) {
-                        // Impossible.
-                    }
+					byte[] buf = new byte[SCRIPT_HEAD.length];
+					try (
+						FileInputStream fis = new FileInputStream(f);
+						DataInputStream dis = new DataInputStream(fis)
+					) {
+						dis.read(buf);
+						return !Arrays.equals(buf, SCRIPT_HEAD);
+					} catch (IOException e) {
+						Logger.error(this, "Unable to read " + f + " to check whether it is a script: " + e + " - disk corruption problems???", e);
+						return false;
+					}
 	            }
 	        }
 	    }
@@ -1509,22 +1503,18 @@ outer:	for(String propName : props.stringPropertyNames()) {
             File restartFreenet = new File(RESTART_SCRIPT_NAME);
             restartFreenet.delete();
             FileBucket fb = new FileBucket(restartFreenet, false, true, false, false);
-            OutputStream os = null;
-            try {
-                os = new BufferedOutputStream(fb.getOutputStream());
-                OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1"); // Right???
+
+            try (
+				OutputStream os = new BufferedOutputStream(fb.getOutputStream());
+				OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.ISO_8859_1); // Right???
+			){
                 osw.write("#!/bin/sh\n"); // FIXME exec >/dev/null 2>&1 ???? Believed to be portable.
                 //osw.write("trap true PIPE\n"); - should not be necessary
                 osw.write("while kill -0 "+WrapperManager.getWrapperPID()+" > /dev/null 2>&1; do sleep 1; done\n");
                 osw.write("./"+runshNoNice+" start > /dev/null 2>&1\n");
                 osw.write("rm "+RESTART_SCRIPT_NAME+"\n");
                 osw.write("rm "+runshNoNice+"\n");
-                osw.close();
-                osw = null; 
-                os = null;
                 return restartFreenet;
-            } finally {
-                Closer.close(os);
             }
         }
 
@@ -1532,32 +1522,27 @@ outer:	for(String propName : props.stringPropertyNames()) {
          * REDFLAG FIXME TODO Surely we can improve on this? This mechanism is only used for 
          * updating very old wrapper installs - but we'll want to update the wrapper in the future
          * too, and the ability to restart the wrapper fully is likely useful, so maybe we won't 
-         * just get rid of this - in which case maybe we want to improve on this.
-         * @throws IOException */ 
-        private boolean createRunShNoNice(File input, File output) throws IOException {
-            final String charset = "UTF-8";
-            InputStream is = null;
-            OutputStream os = null;
+         * just get rid of this - in which case maybe we want to improve on this.   */
+        private boolean createRunShNoNice(File input, File output) {
             boolean failed = false;
-            try {
-                is = new FileInputStream(input);
-                BufferedReader br = new BufferedReader(new InputStreamReader(new BufferedInputStream(is), charset));
-                os = new FileOutputStream(output);
-                Writer w = new BufferedWriter(new OutputStreamWriter(new BufferedOutputStream(os), charset));
-                boolean writtenPrio = false;
-                String line;
-                while((line = br.readLine()) != null) {
-                    if((!writtenPrio) && line.startsWith("PRIORITY=")) {
-                        writtenPrio = true;
-                        line = "PRIORITY="; // = don't use nice.
-                    }
-                    w.write(line+"\n");
-                }
-                // We want to see exceptions on close() here.
-                br.close();
-                is = new FileInputStream(input);
-                w.close();
-                os = null;
+			try {
+				try (
+					InputStream is = new FileInputStream(input);
+					BufferedReader br = new BufferedReader(new InputStreamReader(new BufferedInputStream(is), StandardCharsets.UTF_8));
+					OutputStream os = new FileOutputStream(output);
+					Writer w = new BufferedWriter(new OutputStreamWriter(new BufferedOutputStream(os), StandardCharsets.UTF_8))
+				) {
+					boolean writtenPrio = false;
+					String line;
+					while ((line = br.readLine()) != null) {
+						if ((!writtenPrio) && line.startsWith("PRIORITY=")) {
+							writtenPrio = true;
+							line = "PRIORITY="; // = don't use nice.
+						}
+						w.write(line + "\n");
+					}
+				}
+
                 if(!(output.setExecutable(true) || output.canExecute())) {
                     failed = true;
                     return false;
@@ -1569,9 +1554,9 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 failed = true;
                 return false;
             } finally {
-                Closer.close(is);
-                Closer.close(os);
-                if(failed) output.delete();
+                if(failed) {
+					output.delete();
+				}
             }
         }
 
@@ -1579,10 +1564,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
 
     public static String getDependencyVersion(File currentFile) {
         // We can't use parseProperties because there are multiple sections.
-    	InputStream is = null;
-        try {
-        	is = new FileInputStream(currentFile);
-        	ZipInputStream zis = new ZipInputStream(is);
+
+        try (
+			InputStream is = new FileInputStream(currentFile);
+			ZipInputStream zis = new ZipInputStream(is)
+		){
         	ZipEntry ze;
         	while(true) {
         		ze = zis.getNextEntry();
@@ -1592,11 +1578,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
         		
         		if(name.equals("META-INF/MANIFEST.MF")) {
         			final String key = "Implementation-Version";
-        			BufferedInputStream bis = new BufferedInputStream(zis);
-        			Manifest m = new Manifest(bis);
-        			bis.close();
-        			bis = null;
-        			Attributes a = m.getMainAttributes();
+					Manifest m;
+					try (BufferedInputStream bis = new BufferedInputStream(zis)) {
+						m = new Manifest(bis);
+					}
+					Attributes a = m.getMainAttributes();
         			if(a != null) {
         				String ver = a.getValue(key);
         				if(ver != null) return ver;
@@ -1610,12 +1596,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
         	}
         	Logger.error(MainJarDependenciesChecker.class, "Unable to get dependency version from "+currentFile);
         	return null;
-        } catch (FileNotFoundException e) {
-        	return null;
         } catch (IOException e) {
         	return null;
-        } finally {
-        	Closer.close(is);
         }
 	}
 
@@ -1670,31 +1652,28 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			System.out.println("File exists while updating but length is wrong ("+filename.length()+" should be "+size+") for "+filename);
 			return false;
 		}
-		FileInputStream fis = null;
 		try {
-			fis = new FileInputStream(filename);
-			MessageDigest md = SHA256.getMessageDigest();
-			SHA256.hash(fis, md);
-			byte[] hash = md.digest();
-			SHA256.returnMessageDigest(md);
-			fis.close();
-			fis = null;
-			if(Arrays.equals(hash, expectedHash)) {
-                if(executable && !filename.canExecute()) {
-                    filename.setExecutable(true);
-                }
-			    return true;
-			} else {
+			byte[] hash;
+			try (FileInputStream fis = new FileInputStream(filename)) {
+				MessageDigest md = SHA256.getMessageDigest();
+				SHA256.hash(fis, md);
+				hash = md.digest();
+				SHA256.returnMessageDigest(md);
+			}
+			if (!Arrays.equals(hash, expectedHash)) {
 			    return false;
 			}
+			if(executable && !filename.canExecute()) {
+				filename.setExecutable(true);
+			}
+			return true;
+
 		} catch (FileNotFoundException e) {
 			Logger.error(MainJarDependencies.class, "File not found: "+filename);
 			return false;
 		} catch (IOException e) {
 			System.err.println("Unable to read "+filename+" for updater");
 			return false;
-		} finally {
-			Closer.close(fis);
 		}
 	}
 

@@ -10,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 import org.junit.Test;
 
@@ -21,7 +22,6 @@ import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
-import freenet.support.io.Closer;
 import freenet.support.io.NullBucket;
 
 /**
@@ -244,33 +244,25 @@ public class OldLZMACompressorTest {
 	}
 
 	@Test
-	public void testDecompressException() throws IOException, CompressionRatioException {
+	public void testDecompressException() throws IOException {
 
 		// build 5k array
 		byte[] uncompressedData = new byte[5 * 1024];
-		for(int i = 0; i < uncompressedData.length; i++) {
-			uncompressedData[i] = 1;
-		}
+		Arrays.fill(uncompressedData, (byte) 1);
 
 		byte[] compressedData = doCompress(uncompressedData);
 
 		Bucket inBucket = new ArrayBucket(compressedData);
 		NullBucket outBucket = new NullBucket();
-		InputStream decompressorInput = null;
-		OutputStream decompressorOutput = null;
-
-		try {
-			decompressorInput = inBucket.getInputStream();
-			decompressorOutput = outBucket.getOutputStream();
+		try (
+			InputStream decompressorInput = inBucket.getInputStream();
+			OutputStream decompressorOutput = outBucket.getOutputStream()
+		) {
 			Compressor.COMPRESSOR_TYPE.LZMA.decompress(decompressorInput, decompressorOutput, 4096 + 10, 4096 + 20);
-			decompressorInput.close();
-			decompressorOutput.close();
 		} catch (CompressionOutputSizeException e) {
 			// expect this
 			return;
 		} finally {
-			Closer.close(decompressorInput);
-			Closer.close(decompressorOutput);
 			inBucket.free();
 			outBucket.free();
 		}
@@ -278,38 +270,30 @@ public class OldLZMACompressorTest {
 		//fail("did not throw expected CompressionOutputSizeException");
 	}
 
-	private byte[] doCompress(byte[] uncompressedData) throws IOException, CompressionRatioException {
+	private byte[] doCompress(byte[] uncompressedData) throws IOException {
 		Bucket inBucket = new ArrayBucket(uncompressedData);
 		BucketFactory factory = new ArrayBucketFactory();
-		Bucket outBucket = null;
 
-		outBucket = Compressor.COMPRESSOR_TYPE.LZMA.compress(inBucket, factory, uncompressedData.length, uncompressedData.length * 2 + 64);
+		Bucket outBucket = COMPRESSOR_TYPE.LZMA.compress(inBucket, factory, uncompressedData.length, uncompressedData.length * 2L + 64);
 
-		InputStream in = null;
-		in = outBucket.getInputStream();
-		long size = outBucket.size();
-		byte[] outBuf = new byte[(int) size];
+		byte[] outBuf;
+		try (InputStream in = outBucket.getInputStream()) {
+			long size = outBucket.size();
+			outBuf = new byte[(int) size];
 
-		in.read(outBuf);
+			in.read(outBuf);
+		}
 
 		return outBuf;
 	}
 
 	private byte[] doBucketDecompress(byte[] compressedData) throws IOException {
-		ByteArrayInputStream decompressorInput = new ByteArrayInputStream(compressedData);
-		ByteArrayOutputStream decompressorOutput = new ByteArrayOutputStream();
-
-		COMPRESSOR_TYPE.LZMA.decompress(decompressorInput, decompressorOutput, 32768, 32768 * 2);
-
-		byte[] outBuf = decompressorOutput.toByteArray();
-		try {
-			decompressorInput.close();
-			decompressorOutput.close();
-		} finally {
-			Closer.close(decompressorInput);
-			Closer.close(decompressorOutput);
+		try (
+			ByteArrayInputStream decompressorInput = new ByteArrayInputStream(compressedData);
+			ByteArrayOutputStream decompressorOutput = new ByteArrayOutputStream();
+		) {
+			COMPRESSOR_TYPE.LZMA.decompress(decompressorInput, decompressorOutput, 32768, 32768 * 2);
+			return decompressorOutput.toByteArray();
 		}
-
-		return outBuf;
 	}
 }

@@ -11,27 +11,18 @@ import java.util.zip.GZIPOutputStream;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 
 public class GzipCompressor extends AbstractCompressor {
 
 	@Override
-	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
-			throws IOException, CompressionOutputSizeException {
+	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException {
 		Bucket output = bf.makeBucket(maxWriteLength);
-		InputStream is = null;
-		OutputStream os = null;
-		try {
-			is = data.getInputStream();
-			os = output.getOutputStream();
+		try (
+			InputStream is = data.getInputStream();
+			OutputStream os = output.getOutputStream()
+		) {
 			compress(is, os, maxReadLength, maxWriteLength);
-			// It is essential that the close()'s throw if there is any problem.
-			is.close(); is = null;
-			os.close(); os = null;
-		} finally {
-			Closer.close(is);
-			Closer.close(os);
 		}
 		return output;
 	}

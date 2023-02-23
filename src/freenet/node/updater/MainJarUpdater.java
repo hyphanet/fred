@@ -33,7 +33,6 @@ import freenet.node.updater.UpdateOverMandatoryManager.UOMDependencyFetcherCallb
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.InsufficientDiskSpaceException;
@@ -326,19 +325,16 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	}
 
 	public void cleanupDependencies() {
-		InputStream is = getClass().getResourceAsStream("/"+DEPENDENCIES_FILE);
-		if(is == null) {
-			System.err.println("Can't find dependencies file. Other nodes will not be able to use Update Over Mandatory through this one.");
-			return;
-		}
 		Properties props = new Properties();
-		try {
+		try (InputStream is = getClass().getResourceAsStream("/"+DEPENDENCIES_FILE)) {
+			if (is == null) {
+				System.err.println("Can't find dependencies file. Other nodes will not be able to use Update Over Mandatory through this one.");
+				return;
+			}
 			props.load(is);
 		} catch (IOException e) {
 			System.err.println("Can't read dependencies file. Other nodes will not be able to use Update Over Mandatory through this one.");
 			return;
-		} finally {
-			Closer.close(is);
 		}
 		dependencies.cleanup(props, this, Version.buildNumber());
 	}

@@ -22,7 +22,6 @@ import freenet.node.updater.MainJarDependenciesChecker.Dependency;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
 import freenet.support.JVMVersion;
 import freenet.support.Logger;
-import freenet.support.io.Closer;
 
 /**
  * Handles the wrapper.conf, essentially.
@@ -371,68 +370,52 @@ public class UpdateDeployContext {
 			}
 		}
 		
-		FileInputStream fis = null;
-		BufferedInputStream bis = null;
-		InputStreamReader isr = null;
-		BufferedReader br = null;
-		FileOutputStream fos = null;
-		OutputStreamWriter osw = null;
-		BufferedWriter bw = null;
+
 		
 		boolean success = false;
-		
-		try {
-		
-		fis = new FileInputStream(oldConfig);
-		bis = new BufferedInputStream(fis);
-		isr = new InputStreamReader(bis);
-		br = new BufferedReader(isr);
-		
-		fos = new FileOutputStream(newConfig);
-		osw = new OutputStreamWriter(fos);
-		bw = new BufferedWriter(osw);
 
-		String line;
-		
-		while((line = br.readLine()) != null) {
-			
-			if(line.equals("#" + markerComment))
-				return CHANGED.ALREADY;
-			
-			if(line.startsWith("wrapper.java.maxmemory=")) {
-				try {
-					int memoryLimit = Integer.parseInt(line.substring("wrapper.java.maxmemory=".length()));
-					int newMemoryLimit = memoryLimit + extraMemoryMB;
-					// There have been some cases where really high limits have caused the JVM to do bad things.
-					if(NodeStarter.isSomething32bits() && newMemoryLimit > 1408) {
-						Logger.error(UpdateDeployContext.class, "We've detected a 32bit JVM so we're refusing to set maxmemory to "+newMemoryLimit);
-						newMemoryLimit = 1408;
+		try (
+			FileInputStream fis = new FileInputStream(oldConfig);
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			InputStreamReader isr = new InputStreamReader(bis);
+			BufferedReader br = new BufferedReader(isr);
+
+			FileOutputStream fos = new FileOutputStream(newConfig);
+			OutputStreamWriter osw = new OutputStreamWriter(fos);
+			BufferedWriter bw = new BufferedWriter(osw)
+		) {
+			String line;
+
+			while ((line = br.readLine()) != null) {
+
+				if (line.equals("#" + markerComment))
+					return CHANGED.ALREADY;
+
+				if (line.startsWith("wrapper.java.maxmemory=")) {
+					try {
+						int memoryLimit = Integer.parseInt(line.substring("wrapper.java.maxmemory=".length()));
+						int newMemoryLimit = memoryLimit + extraMemoryMB;
+						// There have been some cases where really high limits have caused the JVM to do bad things.
+						if (NodeStarter.isSomething32bits() && newMemoryLimit > 1408) {
+							Logger.error(UpdateDeployContext.class, "We've detected a 32bit JVM so we're refusing to set maxmemory to " + newMemoryLimit);
+							newMemoryLimit = 1408;
+						}
+						bw.write('#' + markerComment + '\n');
+						bw.write("wrapper.java.maxmemory=" + newMemoryLimit + '\n');
+						success = true;
+						continue;
+					} catch (NumberFormatException e) {
+						// Grrrrr!
 					}
-					bw.write('#' + markerComment + '\n');
-					bw.write("wrapper.java.maxmemory="+newMemoryLimit+'\n');
-					success = true;
-					continue;
-				} catch (NumberFormatException e) {
-					// Grrrrr!
 				}
+
+				bw.write(line + '\n');
 			}
-			
-			bw.write(line+'\n');
-		}
-		br.close();
-		
+
 		} catch (IOException e) {
 			newConfig.delete();
 			System.err.println("Unable to rewrite wrapper.conf with new memory limit.");
 			return CHANGED.FAIL;
-		} finally {
-			Closer.close(br);
-			Closer.close(isr);
-			Closer.close(bis);
-			Closer.close(fis);
-			Closer.close(bw);
-			Closer.close(osw);
-			Closer.close(fos);
 		}
 		
 		if(success) {

@@ -57,7 +57,6 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.Ticker;
 import freenet.support.WrapperKeepalive;
-import freenet.support.io.Closer;
 import freenet.support.io.Fallocate;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
@@ -1160,65 +1159,62 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			writeConfigFile();
 			return true;
 		} else {
-			try {
+			try (
 				// try to load
-				RandomAccessFile raf = new RandomAccessFile(configFile, "r");
-				try {
-					byte[] salt = new byte[0x10];
-					raf.readFully(salt);
+				RandomAccessFile raf = new RandomAccessFile(configFile, "r")
+			){
+				byte[] salt = new byte[0x10];
+				raf.readFully(salt);
 
-					byte[] diskSalt = salt;
-					if(masterKey != null) {
-						BlockCipher cipher;
-						try {
-							cipher = new Rijndael(256, 128);
-						} catch (UnsupportedCipherException e) {
-							throw new Error("Impossible: no Rijndael(256,128): "+e, e);
-						}
-						cipher.initialize(masterKey);
-						salt = new byte[0x10];
-						cipher.decipher(diskSalt, salt);
-						if(logDEBUG)
-							Logger.debug(this, "Encrypting (new) with "+HexUtil.bytesToHex(salt)+" from "+HexUtil.bytesToHex(diskSalt));
-					}
-
-					cipherManager = new CipherManager(salt, diskSalt);
-
-					storeSize = raf.readLong();
-					if(storeSize <= 0) throw new IOException("Bogus datastore size");
-					prevStoreSize = raf.readLong();
-					keyCount.set(raf.readLong());
-					generation = raf.readInt();
-					flags = raf.readInt();
-
-					if (((flags & FLAG_DIRTY) != 0) && 
-							// FIXME figure out a way to do this consistently!
-							// Not critical as a few blocks wrong is something we can handle.
-							ResizablePersistentIntBuffer.getPersistenceTime() != -1)
-						flags |= FLAG_REBUILD_BLOOM;
-
+				byte[] diskSalt = salt;
+				if(masterKey != null) {
+					BlockCipher cipher;
 					try {
-						raf.readInt(); // bloomFilterK
-						raf.readInt(); // reserved
-						raf.readLong(); // reserved
-						long w = raf.readLong();
-						writes.set(w);
-						initialWrites = w;
-						Logger.normal(this, "Set writes to saved value "+w);
-						hits.set(raf.readLong());
-						initialHits = hits.get();
-						misses.set(raf.readLong());
-						initialMisses = misses.get();
-						bloomFalsePos.set(raf.readLong());
-						initialBloomFalsePos = bloomFalsePos.get();
-					} catch (EOFException e) {
-						// Ignore, back compatibility.
+						cipher = new Rijndael(256, 128);
+					} catch (UnsupportedCipherException e) {
+						throw new Error("Impossible: no Rijndael(256,128): "+e, e);
 					}
-
-					return false;
-				} finally {
-					Closer.close(raf);
+					cipher.initialize(masterKey);
+					salt = new byte[0x10];
+					cipher.decipher(diskSalt, salt);
+					if(logDEBUG)
+						Logger.debug(this, "Encrypting (new) with "+HexUtil.bytesToHex(salt)+" from "+HexUtil.bytesToHex(diskSalt));
 				}
+
+				cipherManager = new CipherManager(salt, diskSalt);
+
+				storeSize = raf.readLong();
+				if(storeSize <= 0) throw new IOException("Bogus datastore size");
+				prevStoreSize = raf.readLong();
+				keyCount.set(raf.readLong());
+				generation = raf.readInt();
+				flags = raf.readInt();
+
+				if (((flags & FLAG_DIRTY) != 0) &&
+						// FIXME figure out a way to do this consistently!
+						// Not critical as a few blocks wrong is something we can handle.
+						ResizablePersistentIntBuffer.getPersistenceTime() != -1)
+					flags |= FLAG_REBUILD_BLOOM;
+
+				try {
+					raf.readInt(); // bloomFilterK
+					raf.readInt(); // reserved
+					raf.readLong(); // reserved
+					long w = raf.readLong();
+					writes.set(w);
+					initialWrites = w;
+					Logger.normal(this, "Set writes to saved value "+w);
+					hits.set(raf.readLong());
+					initialHits = hits.get();
+					misses.set(raf.readLong());
+					initialMisses = misses.get();
+					bloomFalsePos.set(raf.readLong());
+					initialBloomFalsePos = bloomFalsePos.get();
+				} catch (EOFException e) {
+					// Ignore, back compatibility.
+				}
+
+				return false;
 			} catch (IOException e) {
 				// corrupted? delete it and try again
 				Logger.error(this, "config file corrupted, trying to create a new store: " + name, e);

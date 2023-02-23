@@ -64,13 +64,12 @@ import freenet.support.Ticker;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread.PriorityLevel;
 
 public class PluginManager {
 
-	private final HashMap<String, FredPlugin> toadletList = new HashMap<String, FredPlugin>();
+	private final Map<String, FredPlugin> toadletList = new HashMap<>();
 
 	/* All currently starting plugins. */
 	private final OfficialPlugins officialPlugins = new OfficialPlugins();
@@ -1159,18 +1158,14 @@ public class PluginManager {
 	private void downloadPluginFile(PluginDownLoader<?> pluginDownLoader, File pluginDirectory, File pluginFile, PluginProgress pluginProgress) throws IOException, PluginNotFoundException {
 		File tempPluginFile = File.createTempFile("plugin-", ".jar", pluginDirectory);
 		tempPluginFile.deleteOnExit();
-		OutputStream pluginOutputStream = null;
-		InputStream pluginInputStream = null;
-		try {
-			pluginOutputStream = new FileOutputStream(tempPluginFile);
-			pluginInputStream = pluginDownLoader.getInputStream(pluginProgress);
+		try (
+			OutputStream pluginOutputStream = new FileOutputStream(tempPluginFile);
+			InputStream pluginInputStream = pluginDownLoader.getInputStream(pluginProgress)
+		) {
 			FileUtil.copy(pluginInputStream, pluginOutputStream, -1);
 		} catch (IOException ioe1) {
 			tempPluginFile.delete();
 			throw ioe1;
-		} finally {
-			Closer.close(pluginInputStream);
-			Closer.close(pluginOutputStream);
 		}
 		if (tempPluginFile.length() == 0) {
 			throw new PluginNotFoundException("downloaded zero length file");
@@ -1194,9 +1189,7 @@ public class PluginManager {
 	}
 
 	private String verifyJarFileAndGetPluginMainClass(File pluginFile) throws PluginNotFoundException, PluginAlreadyLoaded {
-		JarFile pluginJarFile = null;
-		try {
-			pluginJarFile = new JarFile(pluginFile);
+		try (JarFile pluginJarFile = new JarFile(pluginFile)) {
 			Manifest manifest = pluginJarFile.getManifest();
 			if (manifest == null) {
 				throw new PluginNotFoundException("could not load manifest from plugin file");
@@ -1216,8 +1209,6 @@ public class PluginManager {
 			return pluginMainClassName;
 		} catch (IOException ioe1) {
 			throw new PluginNotFoundException("error procesesing jar file", ioe1);
-		} finally {
-			Closer.close(pluginJarFile);
 		}
 	}
 
@@ -1339,13 +1330,9 @@ public class PluginManager {
 
 	private String getFileDigest(File file, String digest) throws PluginNotFoundException {
 		final int BUFFERSIZE = 4096;
-		MessageDigest hash = null;
-		FileInputStream fis = null;
-		BufferedInputStream bis = null;
 		boolean wasFromDigest256Pool = false;
-		String result;
-
 		try {
+			MessageDigest hash;
 			if ("SHA-256".equals(digest)) {
 				hash = SHA256.getMessageDigest(); // grab digest from pool
 				wasFromDigest256Pool = true;
@@ -1354,23 +1341,24 @@ public class PluginManager {
 			}
 			// We compute the hash
 			// http://java.sun.com/developer/TechTips/1998/tt0915.html#tip2
-			fis = new FileInputStream(file);
-			bis = new BufferedInputStream(fis);
-			int len = 0;
-			byte[] buffer = new byte[BUFFERSIZE];
-			while((len = bis.read(buffer)) > -1) {
-				hash.update(buffer, 0, len);
+			try (
+				FileInputStream fis = new FileInputStream(file);
+				BufferedInputStream bis = new BufferedInputStream(fis)
+			) {
+				byte[] buffer = new byte[BUFFERSIZE];
+				int len;
+				while ((len = bis.read(buffer)) > -1) {
+					hash.update(buffer, 0, len);
+				}
 			}
-			result = HexUtil.bytesToHex(hash.digest());
-			if (wasFromDigest256Pool)
+			String result = HexUtil.bytesToHex(hash.digest());
+			if (wasFromDigest256Pool) {
 				SHA256.returnMessageDigest(hash);
+			}
+			return result;
 		} catch(Exception e) {
 			throw new PluginNotFoundException("Error while computing hash '"+digest+"' of the downloaded plugin: " + e, e);
-		} finally {
-			Closer.close(bis);
-			Closer.close(fis);
 		}
-		return result;
 	}
 
 	Ticker getTicker() {

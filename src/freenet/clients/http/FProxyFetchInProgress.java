@@ -254,17 +254,14 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		} else {
 			// Try to filter it.
 			Bucket output = null;
-			InputStream is = null;
-			OutputStream os = null;
 			try {
 				output = context.tempBucketFactory.makeBucket(-1);
-				is = data.getInputStream();
-				os = output.getOutputStream();
-				ContentFilter.filter(is, os, fullMimeType, uri.toURI("/"), fctx.getSchemeHostAndPort(), null, null, fctx.charset, context.linkFilterExceptionProvider);
-				is.close();
-				is = null;
-				os.close();
-				os = null;
+				try (
+					InputStream is = data.getInputStream();
+					OutputStream os = output.getOutputStream()
+				) {
+					ContentFilter.filter(is, os, fullMimeType, uri.toURI("/"), fctx.getSchemeHostAndPort(), null, null, fctx.charset, context.linkFilterExceptionProvider);
+				}
 				// Since we are not re-using the data bucket, we can happily stay in the FProxyFetchTracker.
 				this.onSuccess(new FetchResult(new ClientMetadata(fullMimeType), output), null);
 				output = null;
@@ -278,8 +275,6 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				Logger.error(this, "Impossible: "+e, e);
 				return false;
 			} finally {
-				Closer.close(is);
-				Closer.close(os);
 				Closer.close(output);
 				Closer.close(data);
 			}

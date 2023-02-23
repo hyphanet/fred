@@ -30,7 +30,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 public class BookmarkManager implements RequestClient {
@@ -359,26 +358,25 @@ public class BookmarkManager implements RequestClient {
 
 	public void storeBookmarks() {
 		Logger.normal(this, "Attempting to save bookmarks to " + bookmarksFile.toString());
-		SimpleFieldSet sfs = null;
+		SimpleFieldSet sfs;
 		synchronized(bookmarks) {
-			if(isSavingBookmarks)
+			if(isSavingBookmarks) {
 				return;
+			}
 			isSavingBookmarks = true;
 
 			sfs = toSimpleFieldSet();
 		}
-		FileOutputStream fos = null;
 		try {
-			fos = new FileOutputStream(backupBookmarksFile);
-			sfs.writeToBigBuffer(fos);
-			fos.close();
-			fos = null;
-			if(!FileUtil.renameTo(backupBookmarksFile, bookmarksFile))
-				Logger.error(this, "Unable to rename " + backupBookmarksFile.toString() + " to " + bookmarksFile.toString());
+			try (FileOutputStream fos = new FileOutputStream(backupBookmarksFile)) {
+				sfs.writeToBigBuffer(fos);
+			}
+			if(!FileUtil.renameTo(backupBookmarksFile, bookmarksFile)) {
+				Logger.error(this, "Unable to rename " + backupBookmarksFile + " to " + bookmarksFile);
+			}
 		} catch(IOException ioe) {
 			Logger.error(this, "An error has occured saving the bookmark file :" + ioe.getMessage(), ioe);
 		} finally {
-			Closer.close(fos);
 			synchronized(bookmarks) {
 				isSavingBookmarks = false;
 			}

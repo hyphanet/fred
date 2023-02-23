@@ -263,7 +263,7 @@ public class ArchiveManager {
 		ctx.removeAllCachedItems(this); // flush cache anyway
 		final long expectedSize = ctx.getLastSize();
 		final long archiveSize = data.size();
-		/** Set if we need to throw a RestartedException rather than returning success,
+		/* Set if we need to throw a RestartedException rather than returning success,
 		 * after we have unpacked everything.
 		 */
 		boolean throwAtExit = false;
@@ -312,31 +312,21 @@ public class ArchiveManager {
 				PipedInputStream pis = new PipedInputStream();
 				PipedOutputStream pos = new PipedOutputStream();
 				pis.connect(pos);
-				final OutputStream os = new BufferedOutputStream(pos);
+
 				wrapper = new ExceptionWrapper();
 				context.mainExecutor.execute(new Runnable() {
-
 					@Override
 					public void run() {
-						InputStream is = null;
-						try {
-							Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(is = data.getInputStream(), os, data.size(), expectedSize);
-						} catch (CompressionOutputSizeException e) {
-							Logger.error(this, "Failed to decompress archive: "+e, e);
-							wrapper.set(e);
+						try (
+							InputStream is = data.getInputStream();
+							OutputStream os = new BufferedOutputStream(pos)
+						){
+							Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(is, os, data.size(), expectedSize);
 						} catch (IOException e) {
 							Logger.error(this, "Failed to decompress archive: "+e, e);
 							wrapper.set(e);
-						} finally {
-							try {
-								os.close();
-							} catch (IOException e) {
-								Logger.error(this, "Failed to close PipedOutputStream: "+e, e);
-							}
-							Closer.close(is);
 						}
 					}
-					
 				});
 				is = pis;
 			} else if(ctype == COMPRESSOR_TYPE.LZMA) {
@@ -347,55 +337,63 @@ public class ArchiveManager {
 				wrapper = null;
 			}
 
-			if(ARCHIVE_TYPE.ZIP == archiveType) {
-				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit, context);
-			} else if(ARCHIVE_TYPE.TAR == archiveType) {
-				 // COMPRESS-449 workaround, see https://freenet.mantishub.io/view.php?id=6921
-				handleTARArchive(ctx, key, new SkipShieldingInputStream(is), element, callback, gotElement, throwAtExit, context);
-			} else {
-				throw new ArchiveFailureException("Unknown or unsupported archive algorithm " + archiveType);
+			try (InputStream archiveInputStream = is) {
+				if (ARCHIVE_TYPE.ZIP == archiveType) {
+					handleZIPArchive(ctx, key, archiveInputStream, element, callback, gotElement, throwAtExit, context);
+				} else if (ARCHIVE_TYPE.TAR == archiveType) {
+					// COMPRESS-449 workaround, see https://freenet.mantishub.io/view.php?id=6921
+					handleTARArchive(ctx, key, new SkipShieldingInputStream(archiveInputStream), element, callback, gotElement, throwAtExit, context);
+				} else {
+					throw new ArchiveFailureException("Unknown or unsupported archive algorithm " + archiveType);
+				}
 			}
-			if(wrapper != null) {
+			if (wrapper != null) {
 				Exception e = wrapper.get();
-				if(e != null) throw new ArchiveFailureException("An exception occured decompressing: "+e.getMessage(), e);
+				if (e != null) {
+					throw new ArchiveFailureException("An exception occurred decompressing: " + e.getMessage(), e);
+				}
 			}
 		} catch (IOException ioe) {
-			throw new ArchiveFailureException("An IOE occured: "+ioe.getMessage(), ioe);
-		} finally {
-			Closer.close(is);
-	}
+			throw new ArchiveFailureException("An IOE occurred: "+ioe.getMessage(), ioe);
+		}
 	}
 
 	private void handleTARArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
-		if(logMINOR) Logger.minor(this, "Handling a TAR Archive");
-		TarArchiveInputStream tarIS = null;
-		try {
-			tarIS = new TarArchiveInputStream(data);
-
+		if(logMINOR) {
+			Logger.minor(this, "Handling a TAR Archive");
+		}
+		try(
+			TarArchiveInputStream tarIS = new TarArchiveInputStream(data);
+		){
 			// MINOR: Assumes the first entry in the tarball is a directory.
 			ArchiveEntry entry;
 
 			byte[] buf = new byte[32768];
-			HashSet<String> names = new HashSet<String>();
+			Set<String> names = new HashSet<>();
 			boolean gotMetadata = false;
 
 outerTAR:		while(true) {
 				try {
-				entry = tarIS.getNextEntry();
+					entry = tarIS.getNextEntry();
 				} catch (IllegalArgumentException e) {
 					// Annoyingly, it can throw this on some corruptions...
 					throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
 				}
-				if(entry == null) break;
-				if(entry.isDirectory()) continue;
+				if(entry == null) {
+					break;
+				}
+				if(entry.isDirectory()) {
+					continue;
+				}
 				String name = stripLeadingSlashes(entry.getName());
 				if(names.contains(name)) {
 					Logger.error(this, "Duplicate key "+name+" in archive "+key);
 					continue;
 				}
 				long size = entry.getSize();
-				if(name.equals(".metadata"))
+				if(name.equals(".metadata")) {
 					gotMetadata = true;
+				}
 				if(size > maxArchivedFileSize && !name.equals(element)) {
 					addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
 				} else {
@@ -417,9 +415,11 @@ outerTAR:		while(true) {
 								continue outerTAR;
 							}
 						}
-						
+
 					} finally {
-						if(out != null) out.close();
+						if(out != null) {
+							out.close();
+						}
 					}
 					if(size <= maxArchivedFileSize) {
 						addStoreElement(ctx, key, name, output, gotElement, element, callback, context);
@@ -439,15 +439,15 @@ outerTAR:		while(true) {
 				generateMetadata(ctx, key, names, gotElement, element, callback, context);
 				trimStoredData();
 			}
-			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
+			if(throwAtExit) {
+				throw new ArchiveRestartException("Archive changed on re-fetch");
+			}
 
-			if((!gotElement.value) && element != null)
+			if((!gotElement.value) && element != null) {
 				callback.notInArchive(context);
-
+			}
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
-		} finally {
-			Closer.close(tarIS);
 		}
 	}
 
@@ -484,7 +484,7 @@ outerZIP:		while(true) {
 					Bucket output = tempBucketFactory.makeBucket(size);
 					OutputStream out = output.getOutputStream();
 					try {
-						
+
 						int readBytes;
 						while((readBytes = zis.read(buf)) > 0) {
 							out.write(buf, 0, readBytes);
@@ -497,7 +497,7 @@ outerZIP:		while(true) {
 								continue outerZIP;
 							}
 						}
-						
+
 					} finally {
 						if(out != null) out.close();
 					}

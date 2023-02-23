@@ -20,7 +20,6 @@ import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
 
 public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
@@ -69,33 +68,28 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	@Override
-	public String getCharset(byte [] input, int length, String charset) throws DataFilterException, IOException {
-		if(logDEBUG)
+	public String getCharset(byte [] input, int length, String charset) throws IOException {
+		if(logDEBUG) {
 			Logger.debug(this, "Fetching charset for CSS with initial charset "+charset);
+		}
 		if(input.length > getCharsetBufferSize() && logMINOR) {
 			Logger.minor(this, "More data than was strictly needed was passed to the charset extractor for extraction");
 		}
-		InputStream strm = new ByteArrayInputStream(input, 0, length);
-		NullWriter w = new NullWriter();
-		InputStreamReader isr;
-		BufferedReader r = null;
-		try {
-			try {
-				isr = new InputStreamReader(strm, charset);
-				r = new BufferedReader(isr, 32768);
+		try (
+			InputStream strm = new ByteArrayInputStream(input, 0, length)
+		) {
+			CSSParser parser;
+			try (
+				InputStreamReader isr = new InputStreamReader(strm, charset);
+				BufferedReader r = new BufferedReader(isr, 32768);
+				NullWriter w = new NullWriter();
+			){
+				parser = new CSSParser(r, w, false, new NullFilterCallback(), null, true, false);
+				parser.parse();
 			} catch(UnsupportedEncodingException e) {
 				throw UnknownCharsetException.create(e, charset);
 			}
-			CSSParser parser = new CSSParser(r, w, false, new NullFilterCallback(), null, true, false);
-			parser.parse();
-			r.close();
-			r = null;
 			return parser.detectedCharset();
-		}
-		finally {
-			Closer.close(strm);
-			Closer.close(r);
-			Closer.close(w);
 		}
 	}
 

@@ -11,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Random;
@@ -22,7 +23,6 @@ import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Fields;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /** Keys read from the master keys file */
@@ -77,15 +77,16 @@ public class MasterKeys {
 		System.err.println("Trying to read master keys file...");
 		if(masterKeysFile != null && masterKeysFile.exists()) {
 			// Try to read the keys
-			FileInputStream fis = null;
+
 			// FIXME move declarations of sensitive data out and clear() in finally {}
 			long len = masterKeysFile.length();
             if(len > 1024) throw new MasterKeysFileSizeException(true);
             if(len < (32 + 32 + 8 + 32)) throw new MasterKeysFileSizeException(false);
 			int length = (int) len;
-			try {
-				fis = new FileInputStream(masterKeysFile);
-				DataInputStream dis = new DataInputStream(fis);
+			try (
+				FileInputStream fis = new FileInputStream(masterKeysFile);
+				DataInputStream dis = new DataInputStream(fis)
+			) {
 				if(len == 140) {
 				    MasterKeys ret = readOldFormat(dis, length, hardRandom, password);
 				    System.out.println("Read old-format master keys file. Writing new format master.keys ...");
@@ -103,7 +104,7 @@ public class MasterKeys {
 				byte[] dataAndHash = new byte[length - salt.length - iv.length - 4 - 8];
 				dis.readFully(dataAndHash);
 //				System.err.println("Data and hash: "+HexUtil.bytesToHex(dataAndHash));
-				byte[] pwd = password.getBytes("UTF-8");
+				byte[] pwd = password.getBytes(StandardCharsets.UTF_8);
 				MessageDigest md = SHA256.getMessageDigest();
 				md.update(pwd);
 				md.update(salt);
@@ -142,32 +143,40 @@ public class MasterKeys {
 				}
 
 				// It matches. Now decode it.
-				ByteArrayInputStream bais = new ByteArrayInputStream(data);
-				dis = new DataInputStream(bais);
-				long flags = dis.readLong();
-				// At the moment there are no interesting flags.
-				// In future the flags will tell us whether the database and the datastore are encrypted.
-				byte[] clientCacheKey = new byte[32];
-				dis.readFully(clientCacheKey);
-				byte[] databaseKey = null;
-				databaseKey = new byte[32];
-				dis.readFully(databaseKey);
-				byte[] tempfilesMasterSecret = new byte[64];
 				boolean mustWrite = false;
-				if(data.length >= 8+32+32+64) {
-				    dis.readFully(tempfilesMasterSecret);
-				} else {
-                    System.err.println("Created new master secret for encrypted tempfiles");
-				    hardRandom.nextBytes(tempfilesMasterSecret);
-				    mustWrite = true;
+				long flags;
+				byte[] clientCacheKey;
+				byte[] databaseKey;
+				byte[] tempfilesMasterSecret;
+				try (
+					ByteArrayInputStream bais = new ByteArrayInputStream(data);
+					DataInputStream dis2 = new DataInputStream(bais);
+				) {
+					flags = dis2.readLong();
+					// At the moment there are no interesting flags.
+					// In future the flags will tell us whether the database and the datastore are encrypted.
+
+					clientCacheKey = new byte[32];
+					dis2.readFully(clientCacheKey);
+					databaseKey = new byte[32];
+					dis2.readFully(databaseKey);
+					tempfilesMasterSecret = new byte[64];
+
+					if (data.length >= 8 + 32 + 32 + 64) {
+						dis2.readFully(tempfilesMasterSecret);
+					} else {
+						System.err.println("Created new master secret for encrypted tempfiles");
+						hardRandom.nextBytes(tempfilesMasterSecret);
+						mustWrite = true;
+					}
 				}
 				MasterKeys ret = new MasterKeys(clientCacheKey, databaseKey, tempfilesMasterSecret, flags);
 				clear(data);
 				clear(hash);
 				SHA256.returnMessageDigest(md);
 				System.err.println("Read old master keys file");
-				if(mustWrite) {
-				    ret.changePassword(masterKeysFile, password, hardRandom);
+				if (mustWrite) {
+					ret.changePassword(masterKeysFile, password, hardRandom);
 				}
 				return ret;
 			} catch (FileNotFoundException e) {
@@ -178,8 +187,6 @@ public class MasterKeys {
 				throw new Error(e);
 			} catch (EOFException e) {
 				throw new MasterKeysFileSizeException(false);
-			} finally {
-				Closer.close(fis);
 			}
 		}
 		System.err.println("Creating new master keys file");
@@ -197,7 +204,7 @@ public class MasterKeys {
         byte[] dataAndHash = new byte[length - salt.length - iv.length];
         dis.readFully(dataAndHash);
 //      System.err.println("Data and hash: "+HexUtil.bytesToHex(dataAndHash));
-        byte[] pwd = password.getBytes("UTF-8");
+        byte[] pwd = password.getBytes(StandardCharsets.UTF_8);
         MessageDigest md = SHA256.getMessageDigest();
         md.update(pwd);
         md.update(salt);
@@ -274,13 +281,8 @@ public class MasterKeys {
 		hardRandom.nextBytes(salt);
 
         byte[] pwd;
-        try {
-            pwd = newPassword.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            // Impossible
-            throw new Error(e);
-        }
-        MessageDigest md = SHA256.getMessageDigest();
+		pwd = newPassword.getBytes(StandardCharsets.UTF_8);
+		MessageDigest md = SHA256.getMessageDigest();
         md.update(pwd);
         md.update(salt);
         byte[] outerKey = md.digest();

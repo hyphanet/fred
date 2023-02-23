@@ -18,7 +18,6 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import freenet.l10n.NodeL10n;
-import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 
 /** Filters Ogg container files. These containers contain one or more
@@ -80,17 +79,21 @@ public class OggFilter implements ContentDataFilter{
 	 * @throws IOException
 	 */
 	private boolean hasValidSubpage(OggPage page, OggPage nextPage) throws IOException {
-		OggPage subpage = null;
+		OggPage subpage;
 		int pageCount = 0;
-		ByteArrayOutputStream data = null;
-		DataInputStream in = null;
-		try{
-			//Populate a byte array with all the data in which a subpage might hide
-			data = new ByteArrayOutputStream();
+
+		//Populate a byte array with all the data in which a subpage might hide
+		byte[] pageData;
+		try (ByteArrayOutputStream data = new ByteArrayOutputStream()) {
 			data.write(page.toArray());
-			if(nextPage != null) data.write(nextPage.toArray());
-			in = new DataInputStream(new ByteArrayInputStream(data.toByteArray()));
-			data.close();
+			if (nextPage != null) {
+				data.write(nextPage.toArray());
+			}
+			pageData = data.toByteArray();
+		}
+		try (
+			DataInputStream in = new DataInputStream(new ByteArrayInputStream(pageData));
+		) {
 			while(true) {
 				OggPage.seekToPage(in);
 				in.mark(65307);
@@ -103,27 +106,21 @@ public class OggFilter implements ContentDataFilter{
 			}
 		} catch(EOFException e) {
 			//We've ran out of data to read. Break.
-			in.close();
-		} finally {
-			Closer.close(data);
-			Closer.close(in);
 		}
 		return (pageCount > 2 || hasValidSubpage(page));
 	}
 
 	private boolean hasValidSubpage(OggPage page) throws IOException {
-		DataInputStream in = new DataInputStream(new ByteArrayInputStream(page.toArray()));
-		in.skip(1); //Break alignment with the first page
-		try {
-			while(true) {
+		try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(page.toArray()))) {
+			in.skip(1); //Break alignment with the first page
+			while (true) {
 				OggPage subpage = OggPage.readPage(in);
-				if(subpage.headerValid()) return true;
+				if (subpage.headerValid()) {
+					return true;
+				}
 			}
-		} catch(EOFException e) {
-			//We've ran out of data to read. Break.
-			in.close();
-		} finally {
-			Closer.close(in);
+		} catch (EOFException e) {
+			//We've ran out of data to read. Break.;
 		}
 		return false;
 	}

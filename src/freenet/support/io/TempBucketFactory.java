@@ -5,12 +5,7 @@ package freenet.support.io;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.ref.WeakReference;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -127,7 +122,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 			this.currentBucket = cur;
 			this.creationTime = now;
 			this.osIndex = 0;
-			this.tbis = new ArrayList<TempBucketInputStream>(1);
+			this.tbis = new ArrayList<>(1);
 			if(logMINOR) Logger.minor(TempBucket.class, "Created "+this, new Exception("debug"));
 		}
 		
@@ -146,7 +141,11 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 							is._maybeResetInputStream();
 						} catch(IOException e) {
 							i.remove();
-							Closer.close(is);
+							try {
+								is.close();
+							} catch (IOException e1) {
+								Logger.error(this, "Caught "+e+" closing "+is);
+							}
 						}
 					}
 			}
@@ -154,7 +153,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 		
 		/** A blocking method to force-migrate from a RAMBucket to a FileBucket */
 		public final boolean migrateToDisk() throws IOException {
-			Bucket toMigrate = null;
+			Bucket toMigrate;
 			long size;
 			synchronized(this) {
 				if(!isRAMBucket() || hasBeenFreed)
@@ -172,11 +171,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 						BucketTools.copyTo(toMigrate, os, size);
 				} else {
 					if(size > 0) {
-						OutputStream temp = tempFB.getOutputStreamUnbuffered();
-						try {
-						BucketTools.copyTo(toMigrate, temp, size);
-						} finally {
-						temp.close();
+						try (OutputStream temp = tempFB.getOutputStreamUnbuffered()) {
+							BucketTools.copyTo(toMigrate, temp, size);
 						}
 					}
 				}
@@ -282,7 +278,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 			}
 			
 			@Override
-			public final void write(byte b[], int off, int len) throws IOException {
+			public final void write(byte[] b, int off, int len) throws IOException {
 				synchronized(TempBucket.this) {
 				    if(hasBeenFreed) throw new IOException("Already freed");
 					long futureSize = currentSize + len;
@@ -351,7 +347,13 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 				if(idx != osIndex)
 					close();
 				else {
-					Closer.close(currentIS);
+					if (currentIS != null) {
+						try {
+							currentIS.close();
+						} catch (IOException e) {
+							Logger.error(this, "Error during close() on "+ currentIS, e);
+						}
+					}
 					currentIS = currentBucket.getInputStreamUnbuffered();
 					long toSkip = index;
 					while(toSkip > 0) {
@@ -372,7 +374,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 			}
 			
 			@Override
-			public int read(byte b[]) throws IOException {
+			public int read(byte[] b) throws IOException {
 				synchronized(TempBucket.this) {
                     if(hasBeenFreed) throw new IOException("Already freed");
 					return read(b, 0, b.length);
@@ -380,7 +382,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 			}
 			
 			@Override
-			public int read(byte b[], int off, int len) throws IOException {
+			public int read(byte[] b, int off, int len) throws IOException {
 				synchronized(TempBucket.this) {
                     if(hasBeenFreed) throw new IOException("Already freed");
 					int toReturn = currentIS.read(b, off, len);
@@ -416,7 +418,13 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 			@Override
 			public final void close() throws IOException {
 				synchronized(TempBucket.this) {
-					Closer.close(currentIS);
+					if (currentIS != null) {
+						try {
+							currentIS.close();
+						} catch (IOException e) {
+							Logger.error(this, "Error during close() on "+ currentIS, e);
+						}
+					}
 					tbis.remove(this);
 				}
 			}
@@ -448,9 +456,15 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 		    synchronized(this) {
 		        if(hasBeenFreed) return;
 		        hasBeenFreed = true;
-		        
-		        Closer.close(os);
-		        closeInputStreams(true);
+
+				if (os != null) {
+					try {
+						os.close();
+					} catch (IOException e) {
+						Logger.error(this, "Error during close() on "+ os, e);
+					}
+				}
+				closeInputStreams(true);
 		        if(isRAMBucket()) {
 		            // If it's in memory we must free before removing from the queue.
 		            currentBucket.free();

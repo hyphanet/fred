@@ -18,7 +18,6 @@
 
 package freenet.support.io;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.zip.ZipFile;
 
@@ -39,21 +38,6 @@ import freenet.support.api.Bucket;
  */
 @Deprecated
 public class Closer {
-	/**
-	 * Closes the given stream.
-	 * 
-	 * @param closable The output stream to close
-	 */
-	public static void close(Closeable closable) {
-		if (closable != null) {
-			try {
-				closable.close();
-			} catch (IOException e) {
-				Logger.error(Closer.class, "Error during close() on "+closable, e);
-			}
-		}
-	}
-	
 	/**
 	 * Frees the given bucket. Notice that you have to do removeFrom() for persistent buckets yourself.
 	 * @param bucket The Bucket to close.

@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -30,7 +31,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.BucketFactory;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 
@@ -797,18 +797,14 @@ public class FCPConnectionHandler implements Closeable {
 			// We don't want to attempt to write before: in case an IOException is raised, we want to inform the
 			// client somehow that the node can't write there... And setting readFile to null means we won't inform
 			// it on the status (as if it hadn't requested us to do the test).
-			FileOutputStream fos = null;
-			BufferedOutputStream bos = null;
-			try {
-				fos = new FileOutputStream(result.readFilename);
-				bos = new BufferedOutputStream(fos);
-				bos.write(result.readContent.getBytes("UTF-8"));
+			try (
+				FileOutputStream fos = new FileOutputStream(result.readFilename);
+				BufferedOutputStream bos = new BufferedOutputStream(fos)
+			) {
+				bos.write(result.readContent.getBytes(StandardCharsets.UTF_8));
 				bos.flush();
 			} catch (IOException e) {
-				Logger.error(this, "Got a IOE while creating the file (" + readFile.toString() + " ! " + e.getMessage());
-			} finally {
-				Closer.close(bos);
-				Closer.close(fos);
+				Logger.error(this, "Got a IOE while creating the file (" + readFile + " ! " + e.getMessage());
 			}
 		}
 		

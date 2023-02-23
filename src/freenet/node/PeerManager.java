@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -1501,39 +1502,23 @@ public class PeerManager {
 	private void writePeersInner(String filename, String sb, int maxBackups, boolean rotateBackups) {
 		assert(maxBackups >= 1);
 		synchronized(writePeerFileSync) {
-			FileOutputStream fos = null;
-			File f;
 			File full = new File(filename).getAbsoluteFile();
+			File f;
 			try {
 				f = File.createTempFile(full.getName()+".", ".tmp", full.getParentFile());
 			} catch (IOException e2) {
 				Logger.error(this, "Cannot write peers to disk: Cannot create temp file - " + e2, e2);
-				Closer.close(fos);
 				return;
 			}
-			try {
-				fos = new FileOutputStream(f);
-			} catch(FileNotFoundException e2) {
-				Logger.error(this, "Cannot write peers to disk: Cannot create " + f + " - " + e2, e2);
-				Closer.close(fos);
-				f.delete();
-				return;
-			}
-			OutputStreamWriter w = null;
-			try {
-				w = new OutputStreamWriter(fos, "UTF-8");
-			} catch(UnsupportedEncodingException e2) {
-				Closer.close(w);
-				f.delete();
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e2, e2);
-			}
-			try {
+			try (
+				FileOutputStream fos = new FileOutputStream(f);
+				OutputStreamWriter w = new OutputStreamWriter(fos, StandardCharsets.UTF_8)
+			) {
 				w.write(sb);
 				w.flush();
 				fos.getFD().sync();
 				w.close();
-				w = null;
-				
+
 				if(rotateBackups) {
 					File prevFile = null;
 					for(int i=maxBackups;i>=0;i--) {
@@ -1551,18 +1536,11 @@ public class PeerManager {
 				} else {
 					FileUtil.renameTo(f, getBackupFilename(filename, 0));
 				}
+			} catch(FileNotFoundException e2) {
+				Logger.error(this, "Cannot write peers to disk: Cannot create " + f + " - " + e2, e2);
 			} catch(IOException e) {
-				try {
-					fos.close();
-				} catch(IOException e1) {
-					Logger.error(this, "Cannot close peers file: " + e, e);
-				}
 				Logger.error(this, "Cannot write file: " + e, e);
-				f.delete();
-				return; // don't overwrite old file!
 			} finally {
-				Closer.close(w);
-				Closer.close(fos);
 				f.delete();
 			}
 		}

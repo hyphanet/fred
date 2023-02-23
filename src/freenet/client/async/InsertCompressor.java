@@ -1,5 +1,6 @@
 package freenet.client.async;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -134,41 +135,48 @@ public class InsertCompressor implements CompressJob {
 						}
 					}
 
-					InputStream is = null;
-					OutputStream os = null;
-					MultiHashInputStream hasher = null;
-					try {
-						is = origData.getInputStream();
-						result = bucketFactory.makeBucket(-1);
-						os = result.getOutputStream();
-						if(first && generateHashes != 0) {
-							if(logMINOR) Logger.minor(this, "Generating hashes: "+generateHashes);
-							is = hasher = new MultiHashInputStream(is, generateHashes);
+					try (InputStream is = origData.getInputStream()){
+						InputStream multiHashInputStream = is;
+						MultiHashInputStream hasher = null;
+						if (first && generateHashes != 0) {
+							if (logMINOR) {
+								Logger.minor(this, "Generating hashes: "+generateHashes);
+							}
+							multiHashInputStream = hasher = new MultiHashInputStream(is, generateHashes);
 						}
-						try {
-							comp.compress(is, os, origSize, bestCompressedDataSize,
-									amountOfDataToCheckCompressionRatio, minimumCompressionPercentage);
-						} catch (CompressionOutputSizeException | CompressionRatioException e) {
-							if(hasher != null) {
-								is.skip(Long.MAX_VALUE);
+						result = bucketFactory.makeBucket(-1);
+						try (
+							InputStream mhis = multiHashInputStream;
+							OutputStream os = result.getOutputStream()
+						){
+							try {
+								comp.compress(
+									mhis,
+									os,
+									origSize,
+									bestCompressedDataSize,
+									amountOfDataToCheckCompressionRatio,
+									minimumCompressionPercentage
+								);
+							} catch (CompressionOutputSizeException | CompressionRatioException e) {
+								if (hasher != null) {
+									mhis.skip(Long.MAX_VALUE);
+									hashes = hasher.getResults();
+									first = false;
+								}
+								continue; // try next compressor type
+							} catch (RuntimeException e) {
+								// ArithmeticException has been seen in bzip2 codec.
+								Logger.error(this, "Compression failed with codec " + comp + " : " + e, e);
+								// Try the next one
+								// RuntimeException is iffy, so lets not try the hasher.
+								continue;
+							}
+							if (hasher != null) {
 								hashes = hasher.getResults();
 								first = false;
 							}
-							continue; // try next compressor type
-						} catch (RuntimeException e) {
-							// ArithmeticException has been seen in bzip2 codec.
-							Logger.error(this, "Compression failed with codec "+comp+" : "+e, e);
-							// Try the next one
-							// RuntimeException is iffy, so lets not try the hasher.
-							continue;
 						}
-						if(hasher != null) {
-							hashes = hasher.getResults();
-							first = false;
-						}
-					} finally {
-						Closer.close(is);
-						Closer.close(os);
 					}
 					long resultSize = result.size();
 					long resultNumberOfBlocks = resultSize/CHKBlock.DATA_LENGTH;
