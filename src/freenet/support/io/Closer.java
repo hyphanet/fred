@@ -51,21 +51,4 @@ public class Closer {
 			}
 		}
 	}
-
-	/**
-	 * Closes the given zip file.
-	 * 
-	 * @param zipFile
-	 *            The zip file to close
-	 */
-	public static void close(ZipFile zipFile) {
-		if (zipFile != null) {
-			try {
-				zipFile.close();
-			} catch (IOException e) {
-				Logger.error(Closer.class, "Error during close().", e);
-			}
-		}
-	}
-
 }
