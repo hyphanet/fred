@@ -211,10 +211,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			ClientGetState state,
 			ClientContext context
 		) {
-			Bucket data = null;
 			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
-			try {
-				data = context.getBucketFactory(false).makeBucket(maxLen);
+			try (
+				Bucket data = context.getBucketFactory(false).makeBucket(maxLen)
+			) {
 				try (OutputStream output = data.getOutputStream()) {
 					if (decompressors != null) {
 						if (logMINOR) {
@@ -254,7 +254,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				if (dbrsFinished) {
 					onDBRsFinished(context);
 				}
-				Closer.close(data);
 			}
 		}
 		private void innerSuccess(Bucket bucket,
