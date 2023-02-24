@@ -48,7 +48,6 @@ import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
-import freenet.support.io.Closer;
 import freenet.support.io.InsufficientDiskSpaceException;
 
 /**

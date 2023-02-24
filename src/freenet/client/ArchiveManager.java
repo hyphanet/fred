@@ -30,11 +30,9 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.MutableBoolean;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
-import freenet.support.io.Closer;
 import freenet.support.io.SkipShieldingInputStream;
 import net.contrapunctus.lzma.LzmaInputStream;
 

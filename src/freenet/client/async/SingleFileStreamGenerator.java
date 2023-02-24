@@ -13,7 +13,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**Writes a <code>Bucket</code> to an output stream.*/

@@ -1,6 +1,5 @@
 package freenet.client.async;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -23,7 +22,6 @@ import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.CompressionRatioException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.compress.InvalidCompressionCodecException;
-import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
 /**

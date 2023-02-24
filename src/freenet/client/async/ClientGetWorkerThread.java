@@ -22,7 +22,6 @@ import freenet.crypt.MultiHashInputStream;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.compress.CompressionOutputSizeException;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**A thread which does postprocessing of decompressed data, in particular,
