@@ -760,8 +760,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		try {
 			noderef = rs.waitForOpennetNoderef();
 		} catch (WaitedTooLongForOpennetNoderefException e) {
+			// Send the timeout info upstream (towards higher HTL)
 			sendTerminal(DMT.createFNPOpennetCompletedTimeout(uid));
-			rs.ackOpennet(rs.successFrom());
 			return;
 		}
 		if(noderef == null) {
