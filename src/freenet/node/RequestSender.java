@@ -1726,6 +1726,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         	
         	if (!node.canWriteDatastoreRequest(origHTL)) {
         	    // Do not path fold at all at high HTL.
+        	    ackOpennet(next);
         	    return false;
         	}
 
