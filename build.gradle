@@ -298,3 +298,10 @@ task tar(type: Tar) {
 javadoc << {
     failOnError false
 }
+
+allprojects {
+    tasks.withType(JavaCompile).configureEach {
+        options.fork = true
+    }
+
+}
