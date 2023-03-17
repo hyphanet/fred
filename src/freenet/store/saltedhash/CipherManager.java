@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.store.saltedhash;
 
-import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -54,8 +53,7 @@ public class CipherManager {
 	/**
 	 * Cache for digested keys
 	 */
-	@SuppressWarnings("serial")
-	private Map<ByteArrayWrapper, byte[]> digestRoutingKeyCache = new LinkedHashMap<ByteArrayWrapper, byte[]>() {
+	private final Map<ByteArrayWrapper, byte[]> digestRoutingKeyCache = new LinkedHashMap<ByteArrayWrapper, byte[]>() {
 		@Override
 		protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, byte[]> eldest) {
 			return size() > 128;
@@ -76,22 +74,17 @@ public class CipherManager {
 				return dk;
 		}
 
-		MessageDigest digest = SHA256.getMessageDigest();
-		try {
-			digest.update(plainKey);
-			digest.update(salt);
+		byte[] hashedRoutingKey = SHA256.digest(md -> {
+			md.update(plainKey);
+			md.update(salt);
+		});
+		assert hashedRoutingKey.length == 0x20;
 
-			byte[] hashedRoutingKey = digest.digest();
-			assert hashedRoutingKey.length == 0x20;
-
-			synchronized (digestRoutingKeyCache) {
-				digestRoutingKeyCache.put(key, hashedRoutingKey);
-			}
-
-			return hashedRoutingKey;
-		} finally {
-			SHA256.returnMessageDigest(digest);
+		synchronized (digestRoutingKeyCache) {
+			digestRoutingKeyCache.put(key, hashedRoutingKey);
 		}
+
+		return hashedRoutingKey;
 	}
 
 	/**

@@ -104,12 +104,10 @@ public class NodeSSK extends Key {
 
 	// routingKey = H( E(H(docname)) + H(pubkey) )
 	private static byte[] makeRoutingKey(byte[] pkHash, byte[] ehDocname) {
-		MessageDigest md256 = SHA256.getMessageDigest();
-		md256.update(ehDocname);
-		md256.update(pkHash);
-		byte[] key = md256.digest();
-		SHA256.returnMessageDigest(md256);
-		return key;
+		return SHA256.digest(md -> {
+			md.update(ehDocname);
+			md.update(pkHash);
+		});
 	}
 	
 	@Override

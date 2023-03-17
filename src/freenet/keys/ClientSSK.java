@@ -5,6 +5,7 @@ package freenet.keys;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
@@ -73,33 +74,26 @@ public class ClientSSK extends ClientKey {
 			throw new MalformedURLException("Pubkey hash wrong length: "+pubKeyHash.length+" should be "+NodeSSK.PUBKEY_HASH_SIZE);
 		if(cryptoKey.length != CRYPTO_KEY_LENGTH)
 			throw new MalformedURLException("Decryption key wrong length: "+cryptoKey.length+" should be "+CRYPTO_KEY_LENGTH);
-		MessageDigest md = SHA256.getMessageDigest();
-		try {
-			if (pubKey != null) {
-				byte[] pubKeyAsBytes = pubKey.asBytes();
-				md.update(pubKeyAsBytes);
-				byte[] otherPubKeyHash = md.digest();
-				if (!Arrays.equals(otherPubKeyHash, pubKeyHash))
-					throw new IllegalArgumentException();
+
+		if (pubKey != null) {
+			byte[] otherPubKeyHash = SHA256.digest(pubKey.asBytes());
+			if (!Arrays.equals(otherPubKeyHash, pubKeyHash)) {
+				throw new IllegalArgumentException();
 			}
-			this.cryptoKey = cryptoKey;
-			try {
-				md.update(docName.getBytes("UTF-8"));
-			} catch (UnsupportedEncodingException e) {
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-			}
-			byte[] buf = md.digest();
-			try {
-				Rijndael aes = new Rijndael(256, 256);
-				aes.initialize(cryptoKey);
-				aes.encipher(buf, buf);
-				ehDocname = buf;
-			} catch (UnsupportedCipherException e) {
-				throw new Error(e);
-			}
-		} finally {
-			SHA256.returnMessageDigest(md);
 		}
+
+		this.cryptoKey = cryptoKey;
+
+		byte[] buf = SHA256.digest(docName.getBytes(StandardCharsets.UTF_8));
+		try {
+			Rijndael aes = new Rijndael(256, 256);
+			aes.initialize(cryptoKey);
+			aes.encipher(buf, buf);
+			ehDocname = buf;
+		} catch (UnsupportedCipherException e) {
+			throw new Error(e);
+		}
+
 		if(ehDocname == null)
 			throw new NullPointerException();
 		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^ Fields.hashCode(ehDocname) ^ docName.hashCode();

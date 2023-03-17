@@ -6,6 +6,7 @@ package freenet.node;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.interfaces.ECPublicKey;
 import java.util.Arrays;
@@ -1766,31 +1767,21 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	}
 
 	private int getInitialMessageID(byte[] identity) {
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(identity);
-		// Similar to JFK keygen, should be safe enough.
-		try {
-			md.update("INITIAL0".getBytes("UTF-8"));
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
-		byte[] hashed = md.digest();
-		SHA256.returnMessageDigest(md);
+		byte[] hashed = SHA256.digest(md -> {
+			md.update(identity);
+			// Similar to JFK keygen, should be safe enough.
+			md.update("INITIAL0".getBytes(StandardCharsets.UTF_8));
+		});
 		return Fields.bytesToInt(hashed, 0);
 	}
 
 	private int getInitialMessageID(byte[] identity, byte[] otherIdentity) {
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(identity);
-		md.update(otherIdentity);
-		// Similar to JFK keygen, should be safe enough.
-		try {
-			md.update("INITIAL1".getBytes("UTF-8"));
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
-		byte[] hashed = md.digest();
-		SHA256.returnMessageDigest(md);
+		byte[] hashed = SHA256.digest(md -> {
+			md.update(identity);
+			md.update(otherIdentity);
+			// Similar to JFK keygen, should be safe enough.
+			md.update("INITIAL1".getBytes(StandardCharsets.UTF_8));
+		});
 		return Fields.bytesToInt(hashed, 0);
 	}
 

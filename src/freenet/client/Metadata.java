@@ -12,7 +12,6 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -748,12 +747,10 @@ public class Metadata implements Cloneable, Serializable {
 	public static byte[] getCryptoKey(byte[] hash) {
 		// This is exactly the same algorithm used by e.g. JFK for generating multiple session keys from a single generated value.
 		// The only difference is we use a constant of more than one byte's length here, to avoid having to keep a registry.
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(hash);
-		md.update(SPLITKEY);
-		byte[] buf = md.digest();
-		SHA256.returnMessageDigest(md);
-		return buf;
+		return SHA256.digest(md -> {
+			md.update(hash);
+			md.update(SPLITKEY);
+		});
 	}
 
 	public static byte[] getCrossSegmentSeed(HashResult[] hashes, byte[] hashThisLayerOnly) {
@@ -769,12 +766,10 @@ public class Metadata implements Cloneable, Serializable {
 	public static byte[] getCrossSegmentSeed(byte[] hash) {
 		// This is exactly the same algorithm used by e.g. JFK for generating multiple session keys from a single generated value.
 		// The only difference is we use a constant of more than one byte's length here, to avoid having to keep a registry.
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(hash);
-		md.update(CROSS_SEGMENT_SEED);
-		byte[] buf = md.digest();
-		SHA256.returnMessageDigest(md);
-		return buf;
+		return SHA256.digest(md -> {
+			md.update(hash);
+			md.update(CROSS_SEGMENT_SEED);
+		});
 	}
 
 	/**

@@ -138,11 +138,10 @@ public class ClientCHKBlock implements ClientKeyBlock {
         // Decipher header first - functions as IV
         pcfb.blockDecipher(hbuf, 0, hbuf.length);
         pcfb.blockDecipher(dbuf, 0, dbuf.length);
-        MessageDigest md256 = SHA256.getMessageDigest();
         byte[] dkey = key.cryptoKey;
         // Check: IV == hash of decryption key
-        byte[] predIV = md256.digest(dkey);
-        SHA256.returnMessageDigest(md256); md256 = null;
+        byte[] predIV = SHA256.digest(dkey);
+
         // Extract the IV
         byte[] iv = Arrays.copyOf(hbuf, 32);
         if(!Arrays.equals(iv, predIV))

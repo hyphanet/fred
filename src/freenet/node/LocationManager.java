@@ -633,10 +633,10 @@ public class LocationManager implements ByteCounter {
             // Now decode it
 
             long[] hisBufLong = Fields.bytesToLongs(hisBuf);
-	    if(hisBufLong.length < 2) {
-		    Logger.error(this, "Bad buffer length (no random, no location)- malicious node? on "+uid);
-		    return;
-	    }
+            if(hisBufLong.length < 2) {
+                Logger.error(this, "Bad buffer length (no random, no location)- malicious node? on "+uid);
+                return;
+            }
 
             long hisRandom = hisBufLong[0];
 
@@ -694,10 +694,10 @@ public class LocationManager implements ByteCounter {
                 node.writeNodeFile();
             }
 
-            SHA256.returnMessageDigest(md);
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {
+            SHA256.returnMessageDigest(md);
             unlock(reachedEnd); // we only count the time taken by our outgoing swap requests
             removeRecentlyForwardedItem(item);
         }

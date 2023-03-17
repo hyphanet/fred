@@ -21,7 +21,6 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.MalformedURLException;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1670,31 +1669,25 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			System.out.println("File exists while updating but length is wrong ("+filename.length()+" should be "+size+") for "+filename);
 			return false;
 		}
-		FileInputStream fis = null;
 		try {
-			fis = new FileInputStream(filename);
-			MessageDigest md = SHA256.getMessageDigest();
-			SHA256.hash(fis, md);
-			byte[] hash = md.digest();
-			SHA256.returnMessageDigest(md);
-			fis.close();
-			fis = null;
-			if(Arrays.equals(hash, expectedHash)) {
-                if(executable && !filename.canExecute()) {
-                    filename.setExecutable(true);
-                }
-			    return true;
-			} else {
+			byte[] hash;
+			try (FileInputStream fis = new FileInputStream(filename)) {
+				hash = SHA256.digest(fis);
+			}
+			if (!Arrays.equals(hash, expectedHash)) {
 			    return false;
 			}
+			if(executable && !filename.canExecute()) {
+				filename.setExecutable(true);
+			}
+			return true;
+
 		} catch (FileNotFoundException e) {
 			Logger.error(MainJarDependencies.class, "File not found: "+filename);
 			return false;
 		} catch (IOException e) {
 			System.err.println("Unable to read "+filename+" for updater");
 			return false;
-		} finally {
-			Closer.close(fis);
 		}
 	}
 

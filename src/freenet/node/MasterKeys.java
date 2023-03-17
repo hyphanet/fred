@@ -11,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Random;
@@ -197,11 +198,12 @@ public class MasterKeys {
         byte[] dataAndHash = new byte[length - salt.length - iv.length];
         dis.readFully(dataAndHash);
 //      System.err.println("Data and hash: "+HexUtil.bytesToHex(dataAndHash));
-        byte[] pwd = password.getBytes("UTF-8");
-        MessageDigest md = SHA256.getMessageDigest();
-        md.update(pwd);
-        md.update(salt);
-        byte[] outerKey = md.digest();
+        byte[] pwd = password.getBytes(StandardCharsets.UTF_8);
+		byte[] outerKey = SHA256.digest(md -> {
+			md.update(pwd);
+			md.update(salt);
+		});
+
         BlockCipher cipher;
         try {
             cipher = new Rijndael(256, 256);
@@ -219,7 +221,7 @@ public class MasterKeys {
 //      System.err.println("Data: "+HexUtil.bytesToHex(data));
 //      System.err.println("Hash: "+HexUtil.bytesToHex(hash));
         clear(dataAndHash);
-        byte[] checkHash = md.digest(data);
+        byte[] checkHash = SHA256.digest(data);
 //      System.err.println("Check hash: "+HexUtil.bytesToHex(checkHash));
         if(!Fields.byteArrayEqual(checkHash, hash, 0, 0, OLD_HASH_LENGTH)) {
             clear(data);
@@ -247,7 +249,6 @@ public class MasterKeys {
         MasterKeys ret = new MasterKeys(clientCacheKey, databaseKey, tempfilesMasterSecret, flags);
         clear(data);
         clear(hash);
-        SHA256.returnMessageDigest(md);
         return ret;
     }
 

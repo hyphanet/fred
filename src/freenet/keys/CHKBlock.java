@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
-import java.security.MessageDigest;
 import java.util.Arrays;
 
 import freenet.crypt.SHA256;
@@ -76,12 +75,12 @@ public class CHKBlock implements KeyBlock {
         // Check the hash
         if(hashIdentifier != HASH_SHA256)
             throw new CHKVerifyException("Hash not SHA-256");
-        MessageDigest md = SHA256.getMessageDigest();
-        
-        md.update(headers);
-        md.update(data);
-        byte[] hash = md.digest();
-        SHA256.returnMessageDigest(md);
+
+        byte[] hash = SHA256.digest(md -> {
+            md.update(headers);
+            md.update(data);
+        });
+
         if(key == null) {
         	chk = new NodeCHK(hash, cryptoAlgorithm);
         } else {

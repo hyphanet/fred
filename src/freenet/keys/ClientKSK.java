@@ -7,6 +7,7 @@ package freenet.keys;
  * requested and inserted. */
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 import freenet.support.math.MersenneTwister;
@@ -43,25 +44,15 @@ public class ClientKSK extends InsertableClientSSK {
 	}
 	
 	public static ClientKSK create(String keyword) {
-		MessageDigest md256 = SHA256.getMessageDigest();
+		byte[] keywordHash = SHA256.digest(keyword.getBytes(StandardCharsets.UTF_8));
+		MersenneTwister mt = new MersenneTwister(keywordHash);
+		DSAPrivateKey privKey = new DSAPrivateKey(Global.DSAgroupBigA, mt);
+		DSAPublicKey pubKey = new DSAPublicKey(Global.DSAgroupBigA, privKey);
+		byte[] pubKeyHash = SHA256.digest(pubKey.asBytes());
 		try {
-			byte[] keywordHash;
-			try {
-				keywordHash = md256.digest(keyword.getBytes("UTF-8"));
-			} catch (UnsupportedEncodingException e) {
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-			}
-			MersenneTwister mt = new MersenneTwister(keywordHash);
-			DSAPrivateKey privKey = new DSAPrivateKey(Global.DSAgroupBigA, mt);
-			DSAPublicKey pubKey = new DSAPublicKey(Global.DSAgroupBigA, privKey);
-			byte[] pubKeyHash = md256.digest(pubKey.asBytes());
-			try {
-				return new ClientKSK(keyword, pubKeyHash, pubKey, privKey, keywordHash);
-			} catch (MalformedURLException e) {
-				throw new Error(e);
-			}
-		} finally {
-			SHA256.returnMessageDigest(md256);
+			return new ClientKSK(keyword, pubKeyHash, pubKey, privKey, keywordHash);
+		} catch (MalformedURLException e) {
+			throw new Error(e);
 		}
 	}
 	

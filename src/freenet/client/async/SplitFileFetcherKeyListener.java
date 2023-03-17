@@ -5,7 +5,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.security.MessageDigest;
 
 import freenet.client.FetchException;
 import freenet.client.FetchException.FetchExceptionMode;
@@ -201,12 +200,10 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     }
 
     private byte[] localSaltKey(Key key) {
-        MessageDigest md = SHA256.getMessageDigest();
-        md.update(key.getRoutingKey());
-        md.update(localSalt);
-        byte[] ret = md.digest();
-        SHA256.returnMessageDigest(md);
-        return ret;
+        return SHA256.digest(md -> {
+            md.update(key.getRoutingKey());
+            md.update(localSalt);
+        });
     }
     
     /** The segment bloom filters should only need to be written ONCE, and can all be written at 

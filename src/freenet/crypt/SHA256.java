@@ -41,6 +41,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -119,10 +120,26 @@ public class SHA256 {
 	}
 
 	public static byte[] digest(byte[] data) {
+		return digest(md -> md.update(data));
+	}
+
+	public static byte[] digest(Consumer<MessageDigest> updater) {
 		MessageDigest md = null;
 		try {
 			md = getMessageDigest();
-			return md.digest(data);
+			updater.accept(md);
+			return md.digest();
+		} finally {
+			returnMessageDigest(md);
+		}
+	}
+
+	public static byte[] digest(InputStream is) throws IOException {
+		MessageDigest md = null;
+		try {
+			md = getMessageDigest();
+			hash(is, md);
+			return md.digest();
 		} finally {
 			returnMessageDigest(md);
 		}
