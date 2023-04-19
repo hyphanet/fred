@@ -563,38 +563,6 @@ public class PproxyToadlet extends Toadlet {
 		
 		p.addChild("#", l10n("loadOfficialPluginText"));
 		
-		// Over Freenet or over HTTP??
-		
-		p.addChild("#", " " + l10n("pluginSourceChoice"));
-		
-		boolean loadFromWeb = pm.loadOfficialPluginsFromWeb();
-		
-		HTMLNode input = addOfficialForm.addChild("input",
-				new String[] { "type", "name", "value", "id" },
-				new String[] { "radio", "pluginSource", "freenet", "pluginSourceFreenet" });
-		if(!loadFromWeb)
-			input.addAttribute("checked", "true");
-		addOfficialForm.addChild("label",
-				new String[] { "for" },
-				new String[] { "pluginSourceFreenet" },
-				l10n("pluginSourceFreenet"));
-		addOfficialForm.addChild("br");
-		input = addOfficialForm.addChild("input",
-				new String[] { "type", "name", "value", "id" },
-				new String[] { "radio", "pluginSource", "https", "pluginSourceHTTPS" });
-		if(loadFromWeb)
-			input.addAttribute("checked", "true");
-		addOfficialForm.addChild("label",
-				new String[] { "for" },
-				new String[] { "pluginSourceHTTPS" },
-				l10n("pluginSourceHTTPS"));
-		addOfficialForm.addChild("#", " ");
-		if(node.getOpennet() == null)
-			addOfficialForm.addChild("b").addChild("font", "color", "red", l10n("pluginSourceHTTPSWarning"));
-		else
-			// FIXME CSS-ize this
-			addOfficialForm.addChild("b", l10n("pluginSourceHTTPSWarning"));
-		
 		p = addOfficialForm.addChild("p");
 		
 		p.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
@@ -627,6 +595,37 @@ public class PproxyToadlet extends Toadlet {
 				option.addChild("#", " - "+pluginDescription.getLocalisedPluginDescription());
 			}
 		}
+
+		// Over Freenet or over HTTP??
+		p.addChild("#", " " + l10n("pluginSourceChoice"));
+
+		boolean loadFromWeb = pm.loadOfficialPluginsFromWeb();
+
+		HTMLNode input = addOfficialForm.addChild("input",
+				new String[] { "type", "name", "value", "id" },
+				new String[] { "radio", "pluginSource", "freenet", "pluginSourceFreenet" });
+		if(!loadFromWeb)
+			input.addAttribute("checked", "true");
+		addOfficialForm.addChild("label",
+				new String[] { "for" },
+				new String[] { "pluginSourceFreenet" },
+				l10n("pluginSourceFreenet"));
+		addOfficialForm.addChild("br");
+		input = addOfficialForm.addChild("input",
+				new String[] { "type", "name", "value", "id" },
+				new String[] { "radio", "pluginSource", "https", "pluginSourceHTTPS" });
+		if(loadFromWeb)
+			input.addAttribute("checked", "true");
+		addOfficialForm.addChild("label",
+				new String[] { "for" },
+				new String[] { "pluginSourceHTTPS" },
+				l10n("pluginSourceHTTPS"));
+		addOfficialForm.addChild("#", " ");
+		if(node.getOpennet() == null)
+			addOfficialForm.addChild("b").addChild("font", "color", "red", l10n("pluginSourceHTTPSWarning"));
+		else
+			// FIXME CSS-ize this
+			addOfficialForm.addChild("b", l10n("pluginSourceHTTPSWarning"));
 		addOfficialForm.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
 	}
 
