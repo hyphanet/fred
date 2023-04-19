@@ -17,6 +17,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Random;
 
 import freenet.io.AddressTracker;
@@ -338,7 +339,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			boolean isLocal = (!IPUtil.isValidAddress(address, false)) && (IPUtil.isValidAddress(address, true));
 			collector.addInfo(address, port, 0, getHeadersLength(address) + blockToSend.length, isLocal);
 			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address+':'+port);
-		} catch (IOException e) {
+		} catch (IOException | UnsupportedAddressTypeException e) {
 			if(packet.getAddress() instanceof Inet6Address) {
 				Logger.normal(this, "Error while sending packet to IPv6 address: "+destination+": "+e);
 			} else {
