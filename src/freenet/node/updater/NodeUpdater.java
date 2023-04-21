@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -341,7 +342,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 						DataInputStream dis = new DataInputStream(zis);
 						dis.readFully(buf);
 						ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-						InputStreamReader isr = new InputStreamReader(bais, "UTF-8");
+						InputStreamReader isr = new InputStreamReader(bais, StandardCharsets.UTF_8);
 						BufferedReader br = new BufferedReader(isr);
 						String line;
 						while((line = br.readLine()) != null) {

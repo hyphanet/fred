@@ -10,7 +10,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Random;
@@ -103,7 +103,7 @@ public class MasterKeys {
 				byte[] dataAndHash = new byte[length - salt.length - iv.length - 4 - 8];
 				dis.readFully(dataAndHash);
 //				System.err.println("Data and hash: "+HexUtil.bytesToHex(dataAndHash));
-				byte[] pwd = password.getBytes("UTF-8");
+				byte[] pwd = password.getBytes(StandardCharsets.UTF_8);
 				MessageDigest md = SHA256.getMessageDigest();
 				md.update(pwd);
 				md.update(salt);
@@ -172,10 +172,6 @@ public class MasterKeys {
 				return ret;
 			} catch (FileNotFoundException e) {
 				// Ok, create a new one.
-			} catch (UnsupportedEncodingException e) {
-				// Impossible
-				System.err.println("JVM doesn't support UTF-8, this should be impossible!");
-				throw new Error(e);
 			} catch (EOFException e) {
 				throw new MasterKeysFileSizeException(false);
 			} finally {
@@ -197,7 +193,7 @@ public class MasterKeys {
         byte[] dataAndHash = new byte[length - salt.length - iv.length];
         dis.readFully(dataAndHash);
 //      System.err.println("Data and hash: "+HexUtil.bytesToHex(dataAndHash));
-        byte[] pwd = password.getBytes("UTF-8");
+        byte[] pwd = password.getBytes(StandardCharsets.UTF_8);
         MessageDigest md = SHA256.getMessageDigest();
         md.update(pwd);
         md.update(salt);
@@ -273,14 +269,8 @@ public class MasterKeys {
 		byte[] salt = new byte[32];
 		hardRandom.nextBytes(salt);
 
-        byte[] pwd;
-        try {
-            pwd = newPassword.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            // Impossible
-            throw new Error(e);
-        }
-        MessageDigest md = SHA256.getMessageDigest();
+		byte[] pwd = newPassword.getBytes(StandardCharsets.UTF_8);
+		MessageDigest md = SHA256.getMessageDigest();
         md.update(pwd);
         md.update(salt);
         byte[] outerKey = md.digest();
@@ -346,8 +336,13 @@ public class MasterKeys {
 		FileUtil.secureDelete(masterKeysFile);
 	}
 
-	public DatabaseKey createDatabaseKey(Random random) {
-	    return new DatabaseKey(databaseKey, random);
+	@Deprecated
+	public DatabaseKey createDatabaseKey(Random unused) {
+	    return new DatabaseKey(databaseKey);
+	}
+
+	public DatabaseKey createDatabaseKey() {
+		return new DatabaseKey(databaseKey);
 	}
 
 	/** Used for creating keys for persistent encrypted tempfiles */

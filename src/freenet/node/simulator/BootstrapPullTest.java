@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 import freenet.support.math.MersenneTwister;
 
@@ -141,7 +142,7 @@ public class BootstrapPullTest {
         InputStream sockIS = sock.getInputStream();
         System.out.println("Connected to node.");
         LineReadingInputStream lis = new LineReadingInputStream(sockIS);
-        OutputStreamWriter osw = new OutputStreamWriter(sockOS, "UTF-8");
+        OutputStreamWriter osw = new OutputStreamWriter(sockOS, StandardCharsets.UTF_8);
         osw.write("ClientHello\nExpectedVersion=0.7\nName=BootstrapPullTest-"+System.currentTimeMillis()+"\nEnd\n");
         osw.flush();
        	String name = lis.readLine(65536, 128, true);

@@ -5,8 +5,8 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import freenet.client.InsertContext;
@@ -152,12 +152,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		if(logMINOR) Logger.minor(this, "Inserted to edition "+edition+" - inserting USK date hints...");
 		USKDateHint hint = USKDateHint.now();
 		MultiPutCompletionCallback m = new MultiPutCompletionCallback(cb, parent, tokenObject, persistent, true);
-		byte[] hintData;
-		try {
-			hintData = hint.getData(edition).getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e); // Impossible
-		}
+		byte[] hintData = hint.getData(edition).getBytes(StandardCharsets.UTF_8);
 		FreenetURI[] hintURIs = hint.getInsertURIs(privUSK);
 		boolean added = false;
 		for(FreenetURI uri : hintURIs) {

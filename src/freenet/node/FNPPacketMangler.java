@@ -4,8 +4,8 @@
 package freenet.node;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.interfaces.ECPublicKey;
 import java.util.Arrays;
@@ -77,19 +77,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 */
 	private final HashMap<ByteArrayWrapper, byte[]> authenticatorCache;
 	/** The following is used in the HMAC calculation of JFK message3 and message4 */
-	private static final byte[] JFK_PREFIX_INITIATOR, JFK_PREFIX_RESPONDER;
-	static {
-		byte[] I,R;
-		try {
-			I = "I".getBytes("UTF-8");
-			R = "R".getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
-
-		JFK_PREFIX_INITIATOR = I;
-		JFK_PREFIX_RESPONDER = R;
-	}
+	private static final byte[] JFK_PREFIX_INITIATOR = "I".getBytes(StandardCharsets.UTF_8);
+	private static final byte[] JFK_PREFIX_RESPONDER = "R".getBytes(StandardCharsets.UTF_8);
 
 	/* How often shall we generate a new exponential and add it to the FIFO? */
 	public final static int DH_GENERATION_INTERVAL = 30000; // 30sec
@@ -1769,11 +1758,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		MessageDigest md = SHA256.getMessageDigest();
 		md.update(identity);
 		// Similar to JFK keygen, should be safe enough.
-		try {
-			md.update("INITIAL0".getBytes("UTF-8"));
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
+		md.update("INITIAL0".getBytes(StandardCharsets.UTF_8));
 		byte[] hashed = md.digest();
 		SHA256.returnMessageDigest(md);
 		return Fields.bytesToInt(hashed, 0);
@@ -1784,11 +1769,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		md.update(identity);
 		md.update(otherIdentity);
 		// Similar to JFK keygen, should be safe enough.
-		try {
-			md.update("INITIAL1".getBytes("UTF-8"));
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
+		md.update("INITIAL1".getBytes(StandardCharsets.UTF_8));
 		byte[] hashed = md.digest();
 		SHA256.returnMessageDigest(md);
 		return Fields.bytesToInt(hashed, 0);
@@ -2192,12 +2173,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private byte[] computeJFKSharedKey(byte[] exponential, byte[] nI, byte[] nR, String what) {
 		assert("0".equals(what) || "1".equals(what) || "2".equals(what) || "3".equals(what)
 				|| "4".equals(what) || "5".equals(what) || "6".equals(what) || "7".equals(what));
-		byte[] number = null;
-		try {
-			number = what.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+
+		byte[] number = what.getBytes(StandardCharsets.UTF_8);
 
 		byte[] toHash = new byte[nI.length + nR.length + number.length];
 		int offset = 0;

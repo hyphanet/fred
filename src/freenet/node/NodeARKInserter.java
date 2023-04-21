@@ -3,8 +3,8 @@
  */
 package freenet.node;
 
-import java.io.UnsupportedEncodingException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -152,14 +152,9 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		//fs.remove("version"); - keep version because of its significance in reconnection
 		
 		String s = fs.toString();
-		
-		byte[] buf;
-		try {
-			buf = s.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
-		
+
+		byte[] buf = s.getBytes(StandardCharsets.UTF_8);
+
 		RandomAccessBucket b = new SimpleReadOnlyArrayBucket(buf);
 		
 		long number = crypto.myARKNumber;

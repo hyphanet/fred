@@ -6,6 +6,7 @@ package freenet.l10n;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Map;
@@ -180,7 +181,7 @@ public final class ISO639_3 {
 			if (in == null)
 				throw new RuntimeException("Could not open the language codes resource");
 			
-			isr = new InputStreamReader(in, "UTF-8");
+			isr = new InputStreamReader(in, StandardCharsets.UTF_8);
 			br = new BufferedReader(isr);
 			
 			{

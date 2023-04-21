@@ -7,8 +7,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Security;
@@ -30,17 +30,8 @@ public class MessageAuthCodeTest{
         Hex.decode("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"),
         Hex.decode("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"),
         Hex.decode("e285000e6080a701a410040f4814470b568d149b821f99d41319e6410094a760")};
-    static private final byte[] hmacMessage;
-    static{
-        byte[] temp = null;
-        try {
-            temp = "Hi There".getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new Error(e);
-        }
-        hmacMessage = temp;
-    }
-    static private byte[][] messages = { hmacMessage, hmacMessage, hmacMessage,
+    static private final byte[] hmacMessage = "Hi There".getBytes(StandardCharsets.UTF_8);
+    static private final byte[][] messages = { hmacMessage, hmacMessage, hmacMessage,
         Hex.decode("66f75c0e0c7a406586")};
     static private final IvParameterSpec[] IVs = 
         { null, null, null, new IvParameterSpec(Hex.decode("166450152e2394835606a9d1dd2cdc8b"))};

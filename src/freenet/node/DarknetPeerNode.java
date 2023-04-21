@@ -14,8 +14,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -517,12 +517,7 @@ public class DarknetPeerNode extends PeerNode {
 			Logger.normal(this, "Extra peer data file not found: "+extraPeerDataFile.getPath());
 			return false;
 		}
-		InputStreamReader isr;
-		try {
-			isr = new InputStreamReader(fis, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+		InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
 		BufferedReader br = new BufferedReader(isr);
 		SimpleFieldSet fs = null;
 		try {
@@ -595,7 +590,7 @@ public class DarknetPeerNode extends PeerNode {
 		} else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NM) {
 			int type = fs.getInt("n2nType");
 			if(isConnected()) {
-				Message n2nm;
+
 				if(fs.get("extraPeerDataType") != null) {
 					fs.removeValue("extraPeerDataType");
 				}
@@ -608,12 +603,7 @@ public class DarknetPeerNode extends PeerNode {
 				}
 				fs.putOverwrite("sentTime", Long.toString(System.currentTimeMillis()));
 
-				try {
-					n2nm = DMT.createNodeToNodeMessage(type, fs.toString().getBytes("UTF-8"));
-				} catch (UnsupportedEncodingException e) {
-					Logger.error(this, "UnsupportedEncodingException processing extraPeerDataType ("+extraPeerDataTypeString+") in file "+extraPeerDataFile.getPath(), e);
-					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-				}
+				Message n2nm = DMT.createNodeToNodeMessage(type, fs.toString().getBytes(StandardCharsets.UTF_8));
 				// the callback ensures that n2ns are only unqueued after being acknowledged
 				UnqueueMessageOnAckCallback cb = new UnqueueMessageOnAckCallback(this, fileNumber);
 				try {
@@ -682,12 +672,7 @@ public class DarknetPeerNode extends PeerNode {
 					+ f + " - " + e2, e2);
 			return -1;
 		}
-		OutputStreamWriter w;
-		try {
-			w = new OutputStreamWriter(fos, "UTF-8");
-		} catch (UnsupportedEncodingException e2) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e2, e2);
-		}
+		OutputStreamWriter w = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
 		BufferedWriter bw = new BufferedWriter(w);
 		try {
 			fs.writeTo(bw);
@@ -780,12 +765,7 @@ public class DarknetPeerNode extends PeerNode {
 					+ f + " - " + e2, e2);
 			return false;
 		}
-		OutputStreamWriter w;
-		try {
-			w = new OutputStreamWriter(fos, "UTF-8");
-		} catch (UnsupportedEncodingException e2) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e2, e2);
-		}
+		OutputStreamWriter w = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
 		BufferedWriter bw = new BufferedWriter(w);
 		try {
 			fs.writeTo(bw);
@@ -1982,14 +1962,7 @@ public class DarknetPeerNode extends PeerNode {
 							InflaterInputStream dis = new InflaterInputStream(bais);
 							SimpleFieldSet fs;
 							try {
-								fs = new SimpleFieldSet(new BufferedReader(new InputStreamReader(dis, "UTF-8")), false, false);
-							} catch (UnsupportedEncodingException e) {
-								synchronized(DarknetPeerNode.this) {
-									receivingFullNoderef = false;
-								}
-								Logger.error(this, "Impossible: "+e, e);
-								e.printStackTrace();
-								return;
+								fs = new SimpleFieldSet(new BufferedReader(new InputStreamReader(dis, StandardCharsets.UTF_8)), false, false);
 							} catch (IOException e) {
 								synchronized(DarknetPeerNode.this) {
 									receivingFullNoderef = false;

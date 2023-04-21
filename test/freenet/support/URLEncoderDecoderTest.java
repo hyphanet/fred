@@ -17,9 +17,9 @@ package freenet.support;
 
 import static org.junit.Assert.*;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
 
@@ -125,21 +125,15 @@ public class URLEncoderDecoderTest {
 	 */
 	@Test
 	public void testEncodeForced() {
-		String toEncode,expectedResult;
-		char eachChar;
-		for(int i=0; i<URLEncoder.safeURLCharacters.length(); i++) {
-			eachChar = URLEncoder.safeURLCharacters.charAt(i);
-			toEncode = String.valueOf(eachChar);
-			try {
-				expectedResult = "%"+ HexUtil.bytesToHex(
-						//since safe chars are only US-ASCII
-						toEncode.getBytes("US-ASCII")); 
-				assertEquals(URLEncoder.encode(toEncode,toEncode,false),
-						expectedResult);
-				assertEquals(URLEncoder.encode(toEncode,toEncode,true),
-						expectedResult);
-			} catch (UnsupportedEncodingException anException) {
-				fail("Not expected exception thrown : " + anException.getMessage()); }
+		for (int i = 0; i < URLEncoder.safeURLCharacters.length(); i++) {
+			char eachChar = URLEncoder.safeURLCharacters.charAt(i);
+			String toEncode = String.valueOf(eachChar);
+			String expectedResult = "%" + HexUtil.bytesToHex(
+				//since safe chars are only US-ASCII
+				toEncode.getBytes(StandardCharsets.US_ASCII)
+			);
+			assertEquals(expectedResult, URLEncoder.encode(toEncode, toEncode, false));
+			assertEquals(expectedResult, URLEncoder.encode(toEncode, toEncode, true));
 		}
 	}
 	

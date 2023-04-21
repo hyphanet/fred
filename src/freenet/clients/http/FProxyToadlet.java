@@ -12,6 +12,7 @@ import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -220,7 +221,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.backToFProxy", new String[] { "link" },
 						new HTMLNode[] { HTMLNode.link("/") });
 
-				byte[] pageBytes = pageNode.generate().getBytes("UTF-8");
+				byte[] pageBytes = pageNode.generate().getBytes(StandardCharsets.UTF_8);
 				context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), "text/html; charset=utf-8", pageBytes.length);
 				context.writeData(pageBytes);
 				return;
@@ -523,7 +524,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		} else if(ks.startsWith("/feed/") || ks.equals("/feed")) {
 			String schemeHostAndPort = getSchemeHostAndPort(ctx);
 			String atom = ctx.getAlertManager().getAtom(schemeHostAndPort);
-			byte[] buf = atom.getBytes("UTF-8");
+			byte[] buf = atom.getBytes(StandardCharsets.UTF_8);
 			ctx.sendReplyHeadersFProxy(200, "OK", null, "application/atom+xml", buf.length);
 			ctx.writeData(buf, 0, buf.length);
 			return;
@@ -1096,8 +1097,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		try{
 			bos.write(random);
-			bos.write(key.toString().getBytes("UTF-8"));
-			bos.write(Long.toString(time / FORCE_GRAIN_INTERVAL).getBytes("UTF-8"));
+			bos.write(key.toString().getBytes(StandardCharsets.UTF_8));
+			bos.write(Long.toString(time / FORCE_GRAIN_INTERVAL).getBytes(StandardCharsets.UTF_8));
 		} catch (IOException e) {
 			throw new Error(e);
 		}

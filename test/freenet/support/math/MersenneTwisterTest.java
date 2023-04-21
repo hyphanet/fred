@@ -4,8 +4,8 @@ import static org.junit.Assert.*;
 
 import freenet.support.Fields;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -75,7 +75,7 @@ public class MersenneTwisterTest {
 	}
 
 	@Test
-	public void testConsistencySeedFromInts() throws NoSuchAlgorithmException, UnsupportedEncodingException {
+	public void testConsistencySeedFromInts() throws NoSuchAlgorithmException {
 		MessageDigest md = MessageDigest.getInstance("SHA-1");
 		MersenneTwister mt = new MersenneTwister(INT_SEED);
 		byte[] bytes = new byte[SEED_SIZE];
@@ -83,11 +83,11 @@ public class MersenneTwisterTest {
 		mt.nextBytes(bytes);
 		md.update(bytes);
 
-		assertEquals(new String(EXPECTED_OUTPUT_MT_INTS, "UTF-8"), new String(md.digest(), "UTF-8"));
+		assertEquals(bytesToString(EXPECTED_OUTPUT_MT_INTS), bytesToString(md.digest()));
 	}
 
 	@Test
-	public void testConsistencySeedFromBytes() throws NoSuchAlgorithmException, UnsupportedEncodingException {
+	public void testConsistencySeedFromBytes() throws NoSuchAlgorithmException {
 		MessageDigest md = MessageDigest.getInstance("SHA-1");
 		MersenneTwister mt = new MersenneTwister(BYTE_SEED);
 		byte[] bytes = new byte[SEED_SIZE];
@@ -95,11 +95,11 @@ public class MersenneTwisterTest {
 		mt.nextBytes(bytes);
 		md.update(bytes);
 
-		assertEquals(new String(EXPECTED_OUTPUT_MT_BYTES, "UTF-8"), new String(md.digest(), "UTF-8"));
+		assertEquals(bytesToString(EXPECTED_OUTPUT_MT_BYTES), bytesToString(md.digest()));
 	}
 
 	@Test
-	public void testConsistencySeedFromInteger() throws NoSuchAlgorithmException, UnsupportedEncodingException {
+	public void testConsistencySeedFromInteger() throws NoSuchAlgorithmException {
 		MessageDigest md = MessageDigest.getInstance("SHA-1");
 		MersenneTwister mt = new MersenneTwister(Integer.MAX_VALUE);
 		byte[] bytes = new byte[SEED_SIZE];
@@ -107,11 +107,11 @@ public class MersenneTwisterTest {
 		mt.nextBytes(bytes);
 		md.update(bytes);
 
-		assertEquals(new String(EXPECTED_OUTPUT_MT_INT, "UTF-8"), new String(md.digest(), "UTF-8"));
+		assertEquals(bytesToString(EXPECTED_OUTPUT_MT_INT), bytesToString(md.digest()));
 	}
 
 	@Test
-	public void testConsistencySeedFromLong() throws NoSuchAlgorithmException, UnsupportedEncodingException {
+	public void testConsistencySeedFromLong() throws NoSuchAlgorithmException {
 		MessageDigest md = MessageDigest.getInstance("SHA-1");
 		MersenneTwister mt = new MersenneTwister(Long.MAX_VALUE);
 		byte[] bytes = new byte[SEED_SIZE];
@@ -119,7 +119,11 @@ public class MersenneTwisterTest {
 		mt.nextBytes(bytes);
 		md.update(bytes);
 
-		assertEquals(new String(EXPECTED_OUTPUT_MT_LONG, "UTF-8"), new String(md.digest(), "UTF-8"));
+		assertEquals(bytesToString(EXPECTED_OUTPUT_MT_LONG), bytesToString(md.digest()));
+	}
+
+	private static String bytesToString(byte[] bytes) {
+		return new String(bytes, StandardCharsets.UTF_8);
 	}
 
 }

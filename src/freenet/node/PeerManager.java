@@ -12,7 +12,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -234,12 +234,7 @@ public class PeerManager {
 			Logger.normal(this, "Peers file not found: " + peersFile);
 			return false;
 		}
-		InputStreamReader ris;
-		try {
-			ris = new InputStreamReader(fis, "UTF-8");
-		} catch(UnsupportedEncodingException e4) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e4, e4);
-		}
+		InputStreamReader ris = new InputStreamReader(fis, StandardCharsets.UTF_8);
 		BufferedReader br = new BufferedReader(ris);
 		File brokenPeersFile = new File(peersFile.getPath() + ".broken");
 		DroppedOldPeersUserAlert droppedOldPeers = new DroppedOldPeersUserAlert(brokenPeersFile);
@@ -1519,14 +1514,7 @@ public class PeerManager {
 				f.delete();
 				return;
 			}
-			OutputStreamWriter w = null;
-			try {
-				w = new OutputStreamWriter(fos, "UTF-8");
-			} catch(UnsupportedEncodingException e2) {
-				Closer.close(w);
-				f.delete();
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e2, e2);
-			}
+			OutputStreamWriter w = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
 			try {
 				w.write(sb);
 				w.flush();

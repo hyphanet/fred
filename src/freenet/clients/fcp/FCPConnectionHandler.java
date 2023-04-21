@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -802,7 +803,7 @@ public class FCPConnectionHandler implements Closeable {
 			try {
 				fos = new FileOutputStream(result.readFilename);
 				bos = new BufferedOutputStream(fos);
-				bos.write(result.readContent.getBytes("UTF-8"));
+				bos.write(result.readContent.getBytes(StandardCharsets.UTF_8));
 				bos.flush();
 			} catch (IOException e) {
 				Logger.error(this, "Got a IOE while creating the file (" + readFile.toString() + " ! " + e.getMessage());

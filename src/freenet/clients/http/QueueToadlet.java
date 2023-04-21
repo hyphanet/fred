@@ -14,10 +14,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2413,7 +2413,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		try {
 			fis = new FileInputStream(file);
 			BufferedInputStream bis = new BufferedInputStream(fis);
-			InputStreamReader isr = new InputStreamReader(bis, "UTF-8");
+			InputStreamReader isr = new InputStreamReader(bis, StandardCharsets.UTF_8);
 			BufferedReader br = new BufferedReader(isr);
 			synchronized(completedRequestIdentifiers) {
 				completedRequestIdentifiers.clear();
@@ -2429,8 +2429,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		} catch (FileNotFoundException e) {
 			// Normal
 			return false;
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		} catch (IOException e) {
 			Logger.error(this, "Could not read completed identifiers list from "+file);
 			return false;
@@ -2450,7 +2448,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			temp = File.createTempFile("completed.list", ".tmp", core.node.getUserDir());
 			temp.deleteOnExit();
 			fos = new FileOutputStream(temp);
-			OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
+			OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
 			bw = new BufferedWriter(osw);
 			String[] identifiers;
 			synchronized(completedRequestIdentifiers) {
