@@ -1721,9 +1721,15 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         	
         	if(ref == null) {
         		ackOpennet(next);
-        		return false;
+        	    return false;
         	}
         	
+        	if (!node.canWriteDatastoreRequest(origHTL)) {
+        	    // Do not path fold at all at high HTL.
+        	    ackOpennet(next);
+        	    return false;
+        	}
+
 			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null) {
 				if(logMINOR) Logger.minor(this, "Don't want noderef on "+this);
 				// If we don't want it let somebody else have it
@@ -1731,20 +1737,25 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 					opennetNoderef = noderef;
 				}
 				// RequestHandler will send a noderef back up, eventually, and will unlockHandler() after that point.
-				// But if this is a local request, we need to send the ack now.
-				// Serious race condition not possible here as we set it.
-                if (source == null) {
-                    long delay = randomDelayFinishOpennetLocal();
-                    if (logMINOR) Logger.minor(this, "Delaying opennet completion for "+TimeUtil.formatTime(delay, 2, true));
-                    node.ticker.queueTimedJob(new Runnable() {
+				// If this is a local request, we must still wait for the noderef
+				// to prevent giving an indication that we are the source.
+				if (source == null) {
+					long delay = randomDelayFinishOpennetLocal();
+					if (logMINOR) {
+						Logger.minor(
+								this,
+								"Delaying opennet completion for " + TimeUtil.formatTime(delay, 2, true));
+					}
+					node.ticker.queueTimedJob(new Runnable() {
 
-                        @Override
-                        public void run() {
-                            ackOpennet(next);
-                        }
+						@Override
+						public void run() {
+							ackOpennet(next);
+						}
 
-                    }, delay);
-                } else if (origTag.shouldStop()) {
+					}, delay);
+
+				} else if (origTag.shouldStop()) {
 					// Can't pass it on.
 					origTag.finishedWaitingForOpennet(next);
 				}
@@ -1783,6 +1794,17 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			synchronized(this) {
 				opennetTimedOut = true;
 				opennetFinished = true;
+				try {
+					next.sendAsync(
+							DMT.createFNPOpennetCompletedTimeout(uid),
+							finishOpennetOnAck(next),
+							this);
+				} catch (NotConnectedException notConnectedException) {
+					if (logMINOR) {
+						Logger.minor(this, "Not connected sending ConnectReply on " + this + " to " + next);
+					}
+					origTag.finishedWaitingForOpennet(next);
+				}
 				notifyAll();
 			}
 			// We need to wait.
