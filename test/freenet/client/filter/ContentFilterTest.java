@@ -9,8 +9,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
 
@@ -288,13 +288,9 @@ public class ContentFilterTest {
 			s += " ";
 		s = s+end;
 		byte[] buf;
-		try {
-			buf = s.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
+		buf = s.getBytes(StandardCharsets.UTF_8);
 		byte[] utf16bom = new byte[] { (byte)0xFE, (byte)0xFF };
-		byte[] bufUTF16 = alt.getBytes("UTF-16");
+		byte[] bufUTF16 = alt.getBytes(StandardCharsets.UTF_16);
 		byte[] total = new byte[buf.length+utf16bom.length+bufUTF16.length];
 		System.arraycopy(utf16bom, 0, total, 0, utf16bom.length);
 		System.arraycopy(buf, 0, total, utf16bom.length, buf.length);
@@ -357,7 +353,7 @@ public class ContentFilterTest {
 		String returnValue;
 		String typeName = "text/html";
 		URI baseURI = new URI(alt ? ALT_BASE_URI : BASE_URI);
-		byte[] dataToFilter = data.getBytes("UTF-8");
+		byte[] dataToFilter = data.getBytes(StandardCharsets.UTF_8);
 		ArrayBucket input = new ArrayBucket(dataToFilter);
 		ArrayBucket output = new ArrayBucket();
 		InputStream inputStream = input.getInputStream();

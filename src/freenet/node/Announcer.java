@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -267,7 +268,7 @@ public class Announcer {
 		try {
 			fis = new FileInputStream(file);
 			BufferedInputStream bis = new BufferedInputStream(fis);
-			InputStreamReader isr = new InputStreamReader(bis, "UTF-8");
+			InputStreamReader isr = new InputStreamReader(bis, StandardCharsets.UTF_8);
 			BufferedReader br = new BufferedReader(isr);
 			while(true) {
 				try {

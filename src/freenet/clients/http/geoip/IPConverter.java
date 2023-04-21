@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -244,7 +245,7 @@ public class IPConverter {
 				String code = line.substring(offset, offset + 2);
 				// Ip
 				String ipcode = line.substring(offset + 2, offset + 7);
-				long ip = decodeBase85(ipcode.getBytes("ISO-8859-1"));
+				long ip = decodeBase85(ipcode.getBytes(StandardCharsets.ISO_8859_1));
 				try {
 					Country country = Country.valueOf(code);
 					codes[i] = (short) country.ordinal();

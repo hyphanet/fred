@@ -14,8 +14,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -946,13 +946,7 @@ public class SimpleFieldSet {
 
 		try {
 			bis = new BufferedInputStream(is);
-			try {
-				isr = new InputStreamReader(bis, "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				Logger.error(SimpleFieldSet.class, "Impossible: "+e, e);
-				is.close();
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-			}
+			isr = new InputStreamReader(bis, StandardCharsets.UTF_8);
 			br = new BufferedReader(isr);
 			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple, shortLived, allowBase64, alwaysBase64);
 			br.close();
@@ -993,13 +987,8 @@ public class SimpleFieldSet {
         BufferedWriter bw = null;
         
         bos = new BufferedOutputStream(os, bufferSize);
-        try {
-            osw = new OutputStreamWriter(bos, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            Logger.error(SimpleFieldSet.class, "Impossible: " + e, e);
-            throw e;
-        }
-        bw = new BufferedWriter(osw);
+		osw = new OutputStreamWriter(bos, StandardCharsets.UTF_8);
+		bw = new BufferedWriter(osw);
         writeTo(bw);
         bw.flush();
     }

@@ -5,8 +5,8 @@ package freenet.keys;
 
 /** A KSK. We know the private key from the keyword, so this can be both 
  * requested and inserted. */
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 import freenet.support.math.MersenneTwister;
@@ -45,12 +45,7 @@ public class ClientKSK extends InsertableClientSSK {
 	public static ClientKSK create(String keyword) {
 		MessageDigest md256 = SHA256.getMessageDigest();
 		try {
-			byte[] keywordHash;
-			try {
-				keywordHash = md256.digest(keyword.getBytes("UTF-8"));
-			} catch (UnsupportedEncodingException e) {
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-			}
+			byte[] keywordHash = md256.digest(keyword.getBytes(StandardCharsets.UTF_8));
 			MersenneTwister mt = new MersenneTwister(keywordHash);
 			DSAPrivateKey privKey = new DSAPrivateKey(Global.DSAgroupBigA, mt);
 			DSAPublicKey pubKey = new DSAPublicKey(Global.DSAgroupBigA, privKey);

@@ -108,19 +108,6 @@ public class Util {
 		return d.digest();
 	}
 
-	/**
-	 * Hashes a string in a consistent manner
-	 */
-	public static byte[] hashString(MessageDigest d, String s) {
-		try {
-			byte[] sbytes = s.getBytes("UTF-8");
-			d.update(sbytes, 0, sbytes.length);
-			return d.digest();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
 
 	public static byte[] xor(byte[] b1, byte[] b2) {
 		int maxl = Math.max(b1.length, b2.length);

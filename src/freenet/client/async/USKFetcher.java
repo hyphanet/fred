@@ -11,9 +11,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -272,10 +272,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			String line;
 			try {
-				line = new String(data, "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				Logger.error(this, "Impossible: "+e, e);
-				return;
+				line = new String(data, StandardCharsets.UTF_8);
 			} catch (Throwable t) {
 				// Something very bad happened, most likely bogus encoding.
 				// Ignore it.

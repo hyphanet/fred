@@ -4,12 +4,12 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -310,14 +310,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	static final long CHECK_FOR_SWAPPED_TRACKERS_INTERVAL = FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL / 30;
 
-	static final byte[] TEST_AS_BYTES;
-	static {
-		try {
-			TEST_AS_BYTES = "test".getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
-	}
+	static final byte[] TEST_AS_BYTES = "test".getBytes(StandardCharsets.UTF_8);
 
 	/** Holds a String-Long pair that shows which message types (as name) have been send to this peer. */
 	private final Hashtable<String, Long> localNodeSentMessageTypes = new Hashtable<String, Long>();
@@ -2404,12 +2397,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		// Now decode it
 		ByteArrayInputStream bais = new ByteArrayInputStream(data, offset, length);
-		InputStreamReader isr;
-		try {
-			isr = new InputStreamReader(bais, "UTF-8");
-		} catch(UnsupportedEncodingException e1) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e1, e1);
-		}
+		InputStreamReader isr = new InputStreamReader(bais, StandardCharsets.UTF_8);
 		BufferedReader br = new BufferedReader(isr);
 		try {
 			SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
@@ -3623,13 +3611,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			return;
 		}
 
-		String ref;
-		try {
-			ref = new String(data, "UTF-8");
-		} catch(UnsupportedEncodingException e) {
-			result.asBucket().free();
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+		String ref = new String(data, StandardCharsets.UTF_8);
 
 		SimpleFieldSet fs;
 		try {
@@ -4032,24 +4014,21 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(includeSentTime) {
 			fs.put("sentTime", now);
 		}
+		Message n2nm = DMT.createNodeToNodeMessage(
+			n2nType,
+			fs.toString().getBytes(StandardCharsets.UTF_8)
+		);
+		UnqueueMessageOnAckCallback cb = null;
+		if (isDarknet() && queueOnNotConnected) {
+			int fileNumber = queueN2NM(fs);
+			cb = new UnqueueMessageOnAckCallback((DarknetPeerNode)this, fileNumber);
+		}
 		try {
-			Message n2nm;
-			n2nm = DMT.createNodeToNodeMessage(
-					n2nType, fs.toString().getBytes("UTF-8"));
-			UnqueueMessageOnAckCallback cb = null;
-			if (isDarknet() && queueOnNotConnected) {
-				int fileNumber = queueN2NM(fs);
-				cb = new UnqueueMessageOnAckCallback((DarknetPeerNode)this, fileNumber);
+			sendAsync(n2nm, cb, node.nodeStats.nodeToNodeCounter);
+		} catch (NotConnectedException e) {
+			if(includeSentTime) {
+				fs.removeValue("sentTime");
 			}
-			try {
-				sendAsync(n2nm, cb, node.nodeStats.nodeToNodeCounter);
-			} catch (NotConnectedException e) {
-				if(includeSentTime) {
-					fs.removeValue("sentTime");
-				}
-			}
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
 	}
 
@@ -5796,9 +5775,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
                 // THEN
                 // verify the signatures
                 fs.removeValue("sig");
-                byte[] toVerifyDSA = fs.toOrderedString().getBytes("UTF-8");
                 fs.removeValue("sigP256");
-                byte[] toVerifyECDSA = fs.toOrderedString().getBytes("UTF-8");
+                byte[] toVerifyECDSA = fs.toOrderedString().getBytes(StandardCharsets.UTF_8);
                 
 
                 boolean isECDSAsigPresent = (signatureP256 != null && peerECDSAPubKey != null);
@@ -5834,10 +5812,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
             } catch(IllegalBase64Exception e) {
                 Logger.error(this, "Invalid reference: " + e, e);
                 throw new ReferenceSignatureVerificationException("The node reference you added is invalid: It does not have a valid ECDSA signature.");
-            } catch(UnsupportedEncodingException e) {
-                throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
             }
-        return !failed;
+		return !failed;
 	}
 	
 	protected final byte[] getPubKeyHash() {

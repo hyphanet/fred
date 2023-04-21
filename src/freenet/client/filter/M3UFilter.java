@@ -8,6 +8,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -106,7 +107,7 @@ public class M3UFilter implements ContentDataFilter {
                         if (fileIndex <= MAX_URI_LENGTH) {
                             boolean lineIsEmpty = fileIndex == 0;
                             if (!lineIsEmpty) {
-                                String uriold = new String(fileUri, 0, fileIndex, "UTF-8");
+                                String uriold = new String(fileUri, 0, fileIndex, StandardCharsets.UTF_8);
                                 // System.out.println(uriold);
                                 // clean up the URL: allow sub-m3us and mp3/ogg/flac (what we can filter)
                                 String filtered;
@@ -156,9 +157,9 @@ public class M3UFilter implements ContentDataFilter {
                                     filtered = badUriReplacement;
                                 }
                                 try {
-                                    dos.write(filtered.getBytes("UTF-8"));
+                                    dos.write(filtered.getBytes(StandardCharsets.UTF_8));
                                 } catch (Exception e) {
-                                    dos.write(badUriReplacement.getBytes("UTF-8"));
+                                    dos.write(badUriReplacement.getBytes(StandardCharsets.UTF_8));
                                 }
                             }
                             // write the newline if we're not at EOF

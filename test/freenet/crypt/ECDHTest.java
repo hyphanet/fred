@@ -2,7 +2,6 @@ package freenet.crypt;
 
 import static org.junit.Assert.*;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -72,9 +71,5 @@ public class ECDHTest {
     
     public static String toHex(byte[] arg) {
         return String.format("%040x", new BigInteger(1,arg));
-    }
-    
-    public static String toHex(String arg) throws UnsupportedEncodingException {
-        return toHex(arg.getBytes("utf-8"));
     }
 }

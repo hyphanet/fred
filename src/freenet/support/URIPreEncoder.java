@@ -1,8 +1,8 @@
 package freenet.support;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Replace any invalid characters in a string (to be converted to a URI) with encoded chars using UTF-8.
@@ -29,16 +29,12 @@ public class URIPreEncoder {
 				output.append(c);
 			} else {
 				String tmp = String.valueOf(c);
-				try {
-					for(byte u: tmp.getBytes("UTF-8")) {
-						int x = u & 0xff;
-						output.append('%');
-						if(x < 16)
-							output.append('0');
-						output.append(Integer.toHexString(x));
-					}
-				} catch (UnsupportedEncodingException e) {
-					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+				for(byte u: tmp.getBytes(StandardCharsets.UTF_8)) {
+					int x = u & 0xff;
+					output.append('%');
+					if(x < 16)
+						output.append('0');
+					output.append(Integer.toHexString(x));
 				}
 			}
 		}

@@ -5,6 +5,7 @@ package freenet.crypt;
 
 import static org.junit.Assert.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.security.SecureRandom;
 import java.security.NoSuchAlgorithmException;
@@ -49,7 +50,7 @@ public class CryptUtilTest {
 		}
 		// SHA1PRNG have repeatable output when seeded
 		try {
-			byte[] seed = "foobar barfoo feedbeef barfeed".getBytes("UTF-8");
+			byte[] seed = "foobar barfoo feedbeef barfeed".getBytes(StandardCharsets.UTF_8);
 			r1.setSeed(seed);
 			r2.setSeed(seed);
 		} catch(Throwable e) {

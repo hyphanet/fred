@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Date;
@@ -231,11 +231,7 @@ public class ClientPut extends ClientPutBase {
 		if(salt != null) {
 			MessageDigest md = SHA256.getMessageDigest();
 			byte[] foundHash;
-			try {
-				md.update(salt.getBytes("UTF-8"));
-			} catch (UnsupportedEncodingException e) {
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-			}
+			md.update(salt.getBytes(StandardCharsets.UTF_8));
 			InputStream is = null;
 			try {
 				is = data.getInputStream();

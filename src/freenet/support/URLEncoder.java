@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Encodes strings for use in URIs. Note that this is <b>NOT</b> the same as java.net.URLEncoder, which
@@ -43,17 +43,13 @@ public class URLEncoder {
 				enc.append(c);
 				
 			} else {
-				try {
-					for (byte b: String.valueOf(c).getBytes("UTF-8")) {
-						int x = b & 0xFF;
-						if (x < 16)
-							enc.append("%0");
-						else
-							enc.append('%');
-						enc.append(Integer.toHexString(x));
-					}
-				} catch (UnsupportedEncodingException e) {
-					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+				for (byte b: String.valueOf(c).getBytes(StandardCharsets.UTF_8)) {
+					int x = b & 0xFF;
+					if (x < 16)
+						enc.append("%0");
+					else
+						enc.append('%');
+					enc.append(Integer.toHexString(x));
 				}
 			}
 		}

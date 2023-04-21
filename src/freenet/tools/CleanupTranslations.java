@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 
 import freenet.support.Logger;
 import freenet.support.LoggerHook;
@@ -31,7 +32,7 @@ public class CleanupTranslations {
 			if(!name.startsWith("freenet.l10n.")) continue;
 			if(name.equals("freenet.1l0n.en.properties")) continue;
 			FileInputStream fis = new FileInputStream(f);
-			InputStreamReader isr = new InputStreamReader(new BufferedInputStream(fis), "UTF-8");
+			InputStreamReader isr = new InputStreamReader(new BufferedInputStream(fis), StandardCharsets.UTF_8);
 			BufferedReader br = new BufferedReader(isr);
 			StringWriter sw = new StringWriter();
 			boolean changed = false;
@@ -71,7 +72,7 @@ public class CleanupTranslations {
 			Closer.close(br);
 			if(!changed) continue;
 			FileOutputStream fos = new FileOutputStream(f);
-			OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
+			OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
 			try {
 				osw.write(sw.toString());
 			} finally {

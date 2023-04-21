@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -309,7 +310,7 @@ public class OpennetManager {
 		BufferedWriter bw = null;
 		try {
 			fos = new FileOutputStream(backup);
-			osr = new OutputStreamWriter(fos, "UTF-8");
+			osr = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
 			bw = new BufferedWriter(osr);
 			fs.writeTo(bw);
 
@@ -325,7 +326,7 @@ public class OpennetManager {
 	private void readFile(File filename) throws IOException {
 		// REDFLAG: Any way to share this code with Node and NodePeer?
 		FileInputStream fis = new FileInputStream(filename);
-		InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+		InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
 		BufferedReader br = new BufferedReader(isr);
 		SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
 		br.close();

@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.Security;
@@ -126,7 +127,7 @@ public class JceLoader {
 				try {
 					// More robust than PrintWriter(file), which can hang on out of disk space.
 					os = new FileOutputStream(nssFile);
-					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
+					OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.ISO_8859_1);
 					BufferedWriter bw = new BufferedWriter(osw);
 					bw.write("name=NSScrypto\n");
 					bw.write("nssDbMode=noDb\n");

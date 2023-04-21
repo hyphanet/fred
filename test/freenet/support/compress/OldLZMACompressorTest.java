@@ -10,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
 
@@ -64,7 +65,7 @@ public class OldLZMACompressorTest {
 				+ UNCOMPRESSED_DATA_1
 				+ UNCOMPRESSED_DATA_1
 				+ UNCOMPRESSED_DATA_1
-				+ UNCOMPRESSED_DATA_1).getBytes("UTF-8");
+				+ UNCOMPRESSED_DATA_1).getBytes(StandardCharsets.UTF_8);
 		// use static inline data, created with the following commented code.
 		// DummyRandomSource random = new DummyRandomSource();
 		// InsertableClientSSK ik = InsertableClientSSK.createRandom(random, "foo");

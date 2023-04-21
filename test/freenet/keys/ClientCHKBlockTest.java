@@ -2,13 +2,11 @@ package freenet.keys;
 
 import static org.junit.Assert.*;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import org.junit.Test;
 
-import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.math.MersenneTwister;
@@ -16,14 +14,14 @@ import freenet.support.math.MersenneTwister;
 public class ClientCHKBlockTest {
 
 	@Test
-	public void testEncodeDecodeEmptyBlock() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {
+	public void testEncodeDecodeEmptyBlock() throws Exception {
 		byte[] buf = new byte[0];
 		checkBlock(buf, false);
 		checkBlock(buf, true);
 	}
 	
 	@Test
-	public void testEncodeDecodeFullBlock() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {
+	public void testEncodeDecodeFullBlock() throws Exception {
 		byte[] fullBlock = new byte[CHKBlock.DATA_LENGTH];
 		MersenneTwister random = new MersenneTwister(42);
 		for(int i=0;i<10;i++) {
@@ -34,16 +32,16 @@ public class ClientCHKBlockTest {
 	}
 
 	@Test
-	public void testEncodeDecodeShortInteger() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {
+	public void testEncodeDecodeShortInteger() throws Exception {
 		for(int i=0;i<100;i++) {
 			String s = Integer.toString(i);
-			checkBlock(s.getBytes("UTF-8"), false);
-			checkBlock(s.getBytes("UTF-8"), true);
+			checkBlock(s.getBytes(StandardCharsets.UTF_8), false);
+			checkBlock(s.getBytes(StandardCharsets.UTF_8), true);
 		}
 	}
 	
 	@Test
-	public void testEncodeDecodeRandomLength() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {	
+	public void testEncodeDecodeRandomLength() throws Exception {
 		MersenneTwister random = new MersenneTwister(42);
 		for(int i=0;i<10;i++) {
 			byte[] buf = new byte[random.nextInt(CHKBlock.DATA_LENGTH+1)];
@@ -54,7 +52,7 @@ public class ClientCHKBlockTest {
 	}
 	
 	@Test
-	public void testEncodeDecodeNearlyFullBlock() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {	
+	public void testEncodeDecodeNearlyFullBlock() throws Exception {
 		MersenneTwister random = new MersenneTwister(68);
 		for(int i=0;i<10;i++) {
 			byte[] buf = new byte[CHKBlock.DATA_LENGTH - i];
@@ -70,7 +68,7 @@ public class ClientCHKBlockTest {
 		}
 	}
 	
-	private void checkBlock(byte[] data, boolean newAlgo) throws CHKEncodeException, InvalidCompressionCodecException, CHKVerifyException, CHKDecodeException, IOException {
+	private void checkBlock(byte[] data, boolean newAlgo) throws Exception {
 		byte cryptoAlgorithm = newAlgo ? Key.ALGO_AES_CTR_256_SHA256 : Key.ALGO_AES_PCFB_256_SHA256;
 		byte[] copyOfData = new byte[data.length];
 		System.arraycopy(data, 0, copyOfData, 0, data.length);

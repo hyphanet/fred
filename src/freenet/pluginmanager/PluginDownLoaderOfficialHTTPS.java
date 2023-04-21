@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -61,7 +62,7 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 				bos.write(buffer, 0, read);
 			}
 			
-			return new String(bos.toByteArray(), "ISO-8859-1").split(" ")[0];
+			return new String(bos.toByteArray(), StandardCharsets.ISO_8859_1).split(" ")[0];
 	
 		} catch (MalformedURLException e) {
 			throw new PluginNotFoundException("impossible: "+e,e);

@@ -2,6 +2,7 @@ package freenet.clients.http.ajaxpush;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.RedirectException;
@@ -39,7 +40,7 @@ public class PushDataToadlet extends Toadlet {
 		if (logMINOR) {
 			Logger.minor(this, "Data got element:" + node.generateChildren());
 		}
-		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS + ":" + Base64.encodeStandard(node.getUpdaterType().getBytes("UTF-8")) + ":" + Base64.encodeStandard(node.generateChildren().getBytes("UTF-8")));
+		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS + ":" + Base64.encodeStandard(node.getUpdaterType().getBytes(StandardCharsets.UTF_8)) + ":" + Base64.encodeStandard(node.generateChildren().getBytes(StandardCharsets.UTF_8)));
 	}
 
 	@Override

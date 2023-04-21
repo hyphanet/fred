@@ -1,6 +1,6 @@
 package freenet.clients.fcp;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 import freenet.keys.FreenetURI;
 import freenet.support.SimpleFieldSet;
@@ -19,13 +19,10 @@ public class URIFeedMessage extends N2NFeedMessage {
 		super(header, shortText, text, priorityClass, updatedTime, sourceNodeName, composed, sent, received);
 		this.URI = URI;
 		final Bucket descriptionBucket;
-		try {
-			if(description != null)
-				descriptionBucket = new ArrayBucket(description.getBytes("UTF-8"));
-			else
-				descriptionBucket = new NullBucket();
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+		if (description != null) {
+			descriptionBucket = new ArrayBucket(description.getBytes(StandardCharsets.UTF_8));
+		} else {
+			descriptionBucket = new NullBucket();
 		}
 		buckets.put("Description", descriptionBucket);
 	}

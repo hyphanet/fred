@@ -7,10 +7,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.PatternSyntaxException;
 
 import freenet.support.FileLoggerHook.IntervalParseException;
@@ -69,14 +69,11 @@ public abstract class Logger {
 			if (procFile.exists()) {
 				try {
 					is = new FileInputStream(procFile);
-					br = new BufferedReader(new InputStreamReader(is, "ISO-8859-1" /* ASCII */));
+					br = new BufferedReader(new InputStreamReader(is, StandardCharsets.ISO_8859_1 /* ASCII */));
 				} catch (FileNotFoundException e1) {
 					logStatic(o, "'/proc/self/stat' not found", logToFileVerbosity);
 					procSelfStatEnabled = false;
 					br = null;
-				} catch (UnsupportedEncodingException e) {
-					// Impossible.
-					throw new Error(e);
 				}
 				if (null != br) {
 					try {

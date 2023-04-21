@@ -5,7 +5,6 @@ package freenet.clients.http;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -36,8 +35,6 @@ public class Cookie {
 	*/
 	public static final HashSet<Character> httpSeparatorCharacters =
 		new HashSet<Character>(Arrays.asList(new Character[] { '(', ')', '<', '>', '@', ',', ';', ':', '\\', '\"', '/', '[', ']', '?', '=', '{', '}', ' ', '\t' }));
-	
-	private static final Charset usasciiCharset = Charset.forName("US-ASCII");
 	
 	
 	protected int version;

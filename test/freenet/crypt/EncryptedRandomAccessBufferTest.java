@@ -13,8 +13,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.Security;
 import java.util.Random;
@@ -37,14 +37,7 @@ import freenet.support.io.StorageFormatException;
 public class EncryptedRandomAccessBufferTest {
     private final static EncryptedRandomAccessBufferType[] types = 
             EncryptedRandomAccessBufferType.values();
-    private final static byte[] message;
-    static {
-        try {
-            message = "message".getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new Error(e);
-        }
-    }
+    private final static byte[] message = "message".getBytes(StandardCharsets.UTF_8);
     private final static MasterSecret secret = new MasterSecret();
     private final static long falseMagic = 0x2c158a6c8882ffd3L;
     

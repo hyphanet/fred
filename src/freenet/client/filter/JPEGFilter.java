@@ -9,9 +9,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 
 import freenet.l10n.NodeL10n;
@@ -321,13 +320,9 @@ public class JPEGFilter implements ContentDataFilter {
 	}
 
 	private void writeNullTerminatedString(ByteArrayOutputStream baos, String type) throws IOException {
-		try {
-			byte[] data = type.getBytes("ISO-8859-1"); // ascii, near enough
-			baos.write(data);
-			baos.write(0);
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support ISO-8859-1: " + e, e);
-		}
+		byte[] data = type.getBytes(StandardCharsets.ISO_8859_1); // ascii, near enough
+		baos.write(data);
+		baos.write(0);
 	}
 
 	private String readNullTerminatedAsciiString(DataInputStream dis) throws IOException {

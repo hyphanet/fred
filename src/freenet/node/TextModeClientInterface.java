@@ -16,13 +16,14 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.HashMap;
 
@@ -78,7 +79,7 @@ public class TextModeClientInterface implements Runnable {
     final File downloadsDir;
     final InputStream in;
     final Writer w;
-    private static final String ENCODING = "UTF-8";
+    private static final Charset ENCODING = StandardCharsets.UTF_8;
 
     private static volatile boolean logMINOR;
     static {
@@ -98,12 +99,8 @@ public class TextModeClientInterface implements Runnable {
         client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true, false);
     	this.downloadsDir = server.downloadsDir;
     	this.in = in;
-        try {
-        	w = new OutputStreamWriter(out, ENCODING);
-			client.addEventHook(new EventDumper(new BufferedWriter(new OutputStreamWriter(out, ENCODING)), false));
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
+		this.w = new OutputStreamWriter(out, ENCODING);
+		client.addEventHook(new EventDumper(new BufferedWriter(new OutputStreamWriter(out, ENCODING)), false));
 	}
 
     public TextModeClientInterface(Node n, NodeClientCore core, HighLevelSimpleClient c, File downloadDir, InputStream in, OutputStream out) {
@@ -113,13 +110,9 @@ public class TextModeClientInterface implements Runnable {
     	this.client = c;
     	this.downloadsDir = downloadDir;
     	this.in = in;
-        try {
-        	w = new OutputStreamWriter(out, ENCODING);
-			client.addEventHook(new EventDumper(new BufferedWriter(new OutputStreamWriter(out, ENCODING)), false));
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
-    }
+		this.w = new OutputStreamWriter(out, ENCODING);
+		client.addEventHook(new EventDumper(new BufferedWriter(new OutputStreamWriter(out, ENCODING)), false));
+	}
 
     @Override
     public void run() {
@@ -440,7 +433,7 @@ public class TextModeClientInterface implements Runnable {
     	outsb.append("Here is the result:\r\n");
 
     	final String content = readLines(reader, false);
-    	final Bucket input = new ArrayBucket(content.getBytes("UTF-8"));
+        final Bucket input = new ArrayBucket(content.getBytes(StandardCharsets.UTF_8));
     	final Bucket output = new ArrayBucket();
     	InputStream inputStream = null;
     	OutputStream outputStream = null;

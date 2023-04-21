@@ -5,6 +5,7 @@ package freenet.node.simulator;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -180,7 +181,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         ClientKey fetchKey;
         ClientKeyBlock block;
         
-    	byte[] buf = dataString.getBytes("UTF-8");
+        byte[] buf = dataString.getBytes(StandardCharsets.UTF_8);
         if(isSSK) {
         	testKey = new FreenetURI("KSK", dataString);
         	
@@ -198,8 +199,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.err.println("Created random test key "+testKey+" = "+fetchKey.getNodeKey(false));
         System.err.println();
         
-        byte[] data = dataString.getBytes("UTF-8");
-        Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(block.memoryDecode(), "UTF-8"));
+        byte[] data = dataString.getBytes(StandardCharsets.UTF_8);
+        Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(block.memoryDecode(), StandardCharsets.UTF_8));
         Logger.normal(RealNodeRequestInsertTest.class,"Insert Key: "+insertKey.getURI());
         Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: "+fetchKey.getURI());
 		try {
