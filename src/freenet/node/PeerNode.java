@@ -858,9 +858,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		// De-dupe
 		HashSet<Peer> ret = new HashSet<Peer>();
-		for(Peer localHandshakeIP: localHandshakeIPs)
-			ret.add(localHandshakeIP);
-		return ret.toArray(new Peer[ret.size()]);
+		Collections.addAll(ret, localHandshakeIPs);
+		return ret.toArray(new Peer[0]);
 	}
 
 	/**
