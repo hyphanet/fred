@@ -442,8 +442,12 @@ public class FreenetInetAddress {
 		} else return this;
 	}
 
+	public boolean hasHostname() {
+		return hostname != null && hostname.length() > 0;
+	}
+
 	public boolean hasHostnameNoIP() {
-		return hostname != null && hostname.length() > 0 && _address == null;
+		return hasHostname() && _address == null;
 	}
 
 	public boolean isIPv6(boolean defaultValue) {
