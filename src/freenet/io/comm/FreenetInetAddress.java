@@ -9,11 +9,13 @@ import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 
 import freenet.io.AddressIdentifier;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.InetAddressIpv6FirstComparator;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.HostnameUtil;
 import freenet.support.transport.ip.IPUtil;
@@ -337,19 +339,21 @@ public class FreenetInetAddress {
 	         * DNS lookup with every packet we send.
 	         */
 	        try {
-	        	InetAddress addr = InetAddress.getByName(hostname);
-	        	if(logMINOR) Logger.minor(this, "Look up got '"+addr+ '\'');
-	        	if( addr != null ) {
-	        		/*
+	        	InetAddress[] addresses = InetAddress.getAllByName(hostname);
+	        	if(logMINOR) Logger.minor(this, "Look up got '"+addresses+ '\'');
+	        	if( addresses.length != 0 ) {
+	        		/* sort by IPv6 first */
+                    Arrays.sort(addresses, InetAddressIpv6FirstComparator.COMPARATOR);
+                    /*
 	        		 * cache the answer since getHandshakeAddress()
 	        		 * doesn't use the cached value, thus
 	        		 * getHandshakeIPs() should always get the
 	        		 * latest value from DNS (minus Java's caching)
 	        		 */
-	        		this._address = InetAddress.getByAddress(addr.getAddress());
+	        		this._address = InetAddress.getByAddress(addresses[0].getAddress());
 	        		if(logMINOR) Logger.minor(this, "Setting address to "+_address);
 	        	}
-	        	return addr;
+	        	return addresses[0];
 	        } catch (UnknownHostException e) {
 	        	if(logMINOR) Logger.minor(this, "DNS said hostname '"+hostname+"' is an unknown host, returning null");
 	            return null;
