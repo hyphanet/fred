@@ -281,7 +281,10 @@ public class FreenetInetAddress {
 		}
 
 		// No hostname, go by address.
-		if(!getHostName(_address).equalsIgnoreCase(getHostName(addr._address))) {
+		String reverseHostNameISee = getHostName(_address);
+		String reverseHostNameTheySee = getHostName(addr._address);
+		if(reverseHostNameISee == null
+				|| !reverseHostNameISee.equalsIgnoreCase(reverseHostNameTheySee)) {
 			//Logger.minor(this, "Addresses do not match: mine="+getHostName(_address)+" his="+getHostName(addr._address));
 			return false;
 		}
