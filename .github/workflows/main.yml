@@ -1,0 +1,74 @@
+# Reference: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-gradle
+
+name: Java CI with Gradle
+
+#on: [push, pull_request]
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
+
+  # Allow running from Actions tab
+  workflow_dispatch:
+
+permissions:
+  # Reference: https://github.blog/changelog/2021-04-20-github-actions-control-permissions-for-github_token/
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        # TODO Fix freenet.client.filter.M3UFilterTest on Windows, enable Windows builds
+        #os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [macos-latest, ubuntu-latest]
+        distribution: [temurin]
+        # TODO What JDK versions are needed?
+        # TODO Fix freenet.support.compress.GzipCompressorTest on Java 16, enable 16 builds
+        #java: [8, 11, 16]
+        java: [8, 11]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: gradle/wrapper-validation-action@v1
+
+    - uses: actions/setup-java@v3
+      with:
+        cache: 'gradle'
+        distribution: '${{ matrix.distribution }}'
+        java-version: '${{ matrix.java }}'
+
+    - name: before_install
+      run: |
+        echo "" > gradle.properties  # Force empty gradle.properties file
+        echo "org.gradle.configureondemand=true" >> gradle.properties
+        echo "org.gradle.jvmargs=-Xms256m -Xmx1024m" >> gradle.properties
+        echo "org.gradle.parallel = true" >> gradle.properties
+        echo "tasks.withType(Test) { maxParallelForks = Runtime.runtime.availableProcessors() }" >> gradle.properties
+        cat gradle.properties
+
+    - name: gradle --warning-mode all
+      run: |
+        echo "Run Gradle in pedantic mode to flush out Gradle upgrade issues"
+        ./gradlew --warning-mode all
+
+    - name: gradle javadoc
+      run: |
+        ./gradlew javadoc
+
+    - name: gradle jar
+      run: |
+        ./gradlew jar
+
+    - name: gradle copyRuntimeLib
+      run: |
+        ./gradlew copyRuntimeLib
+
+    - name: gradle test
+      run: |
+        ./gradlew test
+

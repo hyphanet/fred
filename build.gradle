@@ -295,6 +295,6 @@ task tar(type: Tar) {
   }
 }
 
-javadoc << {
+javadoc {
     failOnError false
 }
