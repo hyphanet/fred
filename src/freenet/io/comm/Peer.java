@@ -27,6 +27,7 @@ import java.net.UnknownHostException;
 import java.util.Comparator;
 
 import freenet.io.WritableToDataOutputStream;
+import freenet.support.io.InetAddressIpv6FirstComparator;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
 
@@ -301,10 +302,9 @@ public class Peer implements WritableToDataOutputStream {
 					return -1;
 				} else if (!isIpv6P0 && isIpv6P1) {
 					return 1;
-				} else if (isIpv6P0) {
-					return 0;
 				}
-				return 0;
+				return InetAddressIpv6FirstComparator.COMPARATOR
+						.compare(p0.getAddress(), p1.getAddress());
 			}
 	}
 }
