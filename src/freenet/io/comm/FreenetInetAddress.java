@@ -344,7 +344,7 @@ public class FreenetInetAddress {
 	        try {
 	        	InetAddress[] addresses = InetAddress.getAllByName(hostname);
 	        	if(logMINOR) Logger.minor(this, "Look up got '"+addresses+ '\'');
-	        	if( addresses.length != 0 ) {
+	        	if( addresses.length > 1 ) {
 	        		/* sort by IPv6 first */
                     Arrays.sort(addresses, InetAddressIpv6FirstComparator.COMPARATOR);
                     /*
