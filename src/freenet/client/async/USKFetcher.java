@@ -1733,8 +1733,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			for(Iterator<Entry<Long,KeyList>> it = fromSubscribers.entrySet().iterator();it.hasNext();) {
 				Entry<Long,KeyList> entry = it.next();
 				long l = entry.getKey() - 1;
-				if(l <= lookedUp)
+				if(l <= lookedUp) {
 					it.remove();
+				}
+				if (l == 0) {
+					// add check for edition 0: this happens if -1 is suggested.
+					// Needed because we cannot set -0 for exhaustive search (-0 == 0 in Java).
+					entry.getValue().getEditionIfNotAlreadyRunning(toFetch, alreadyRunning, l, false);
+				}
 				entry.getValue().getNextEditions(toFetch, toPoll, l-1, alreadyRunning, random);
 			}
 
@@ -1841,60 +1847,60 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			public synchronized void getNextEditions(List<Lookup> toFetch, List<Lookup> toPoll, long lookedUp, List<Lookup> alreadyRunning, Random random) {
 				if(logMINOR) Logger.minor(this, "Getting next editions from "+lookedUp);
 				if(lookedUp < 0) lookedUp = 0;
+				boolean poll = backgroundPoll;
 				for(int i=1;i<=origMinFailures;i++) {
 					long ed = i + lookedUp;
-					Lookup l = new Lookup();
-					l.val = ed;
-					boolean poll = backgroundPoll;
-					if(((!poll) && toFetch.contains(l)) || (poll && toPoll.contains(l))) {
-						if(logDEBUG) Logger.debug(this, "Ignoring "+l);
-						continue;
-					}
-					if(alreadyRunning.remove(l)) {
-						if(logDEBUG) Logger.debug(this, "Ignoring (2): "+l);
-						continue;
-					}
-					ClientSSK key;
-					// FIXME reuse ehDocnames somehow
-					// The problem is we need a ClientSSK for the high level stuff.
-					key = origUSK.getSSK(ed);
-					l.key = key;
-					l.ignoreStore = true;
-					if(poll) {
-						if(!toPoll.contains(l)) {
-							toPoll.add(l);
-						} else {
-							if(logDEBUG) Logger.debug(this, "Ignoring poll (3): "+l);
-						}
+					if (poll) {
+						getEditionIfNotAlreadyRunning(toPoll, alreadyRunning, ed, true);
 					} else {
-						if(!toFetch.contains(l)) {
-							toFetch.add(l);
-						} else {
-							if(logDEBUG) Logger.debug(this, "Ignoring fetch (3): "+l);
-						}
+						getEditionIfNotAlreadyRunning(toFetch, alreadyRunning, ed, true);
 					}
 				}
+			}
+
+			/** @return whether the edition was added. */
+			public boolean getEditionIfNotAlreadyRunning(
+					List<Lookup> lookupList,
+					List<Lookup> alreadyRunning,
+					long ed,
+					boolean ignoreStore) {
+				Lookup l = new Lookup();
+				l.val = ed;
+				if(lookupList.contains(l)) {
+					if(logDEBUG) Logger.debug(this, "Ignoring "+l);
+					return false;
+				}
+				if(alreadyRunning.remove(l)) {
+					if(logDEBUG) Logger.debug(this, "Ignoring (2): "+l);
+					return false;
+				}
+				ClientSSK key;
+				// FIXME reuse ehDocnames somehow
+				// The problem is we need a ClientSSK for the high level stuff.
+				key = origUSK.getSSK(ed);
+				l.key = key;
+				l.ignoreStore = ignoreStore;
+				if(lookupList.contains(l)) {
+					if (logDEBUG) Logger.debug(this, "Ignoring (3): " + l);
+					return false;
+				}
+				return lookupList.add(l);
 			}
 
 			public synchronized void getRandomEditions(List<Lookup> toFetch, long lookedUp, List<Lookup> alreadyRunning, Random random, int allowed) {
 				// Then add a couple of random editions for catch-up.
 				long baseEdition = lookedUp + origMinFailures;
 				for(int i=0;i<allowed;i++) {
-					while(true) {
+					while(true) { // TODO switch to limited for-loop to ensure there can be no infinite loop
 						// Geometric distribution.
 						// 20% chance of mean 100, 80% chance of mean 10. Thanks evanbd.
 						int mean = random.nextInt(5) == 0 ? 100 : 10;
 						long fetch = baseEdition + (long)Math.floor(Math.log(random.nextFloat()) / Math.log(1.0 - 1.0/mean));
 						if(fetch < baseEdition) continue;
-						Lookup l = new Lookup();
-						l.val = fetch;
-						if(toFetch.contains(l)) continue;
-						if(alreadyRunning.contains(l)) continue;
-						l.key = origUSK.getSSK(fetch);
-						l.ignoreStore = !(fetch - lookedUp >= WATCH_KEYS);
-						toFetch.add(l);
 						if(logMINOR) Logger.minor(this, "Trying random future edition "+fetch+" for "+origUSK+" current edition "+lookedUp);
-						break;
+						if (getEditionIfNotAlreadyRunning(toFetch, alreadyRunning, fetch, !(fetch - lookedUp >= WATCH_KEYS))) {
+							break;
+						}
 					}
 				}
 			}
