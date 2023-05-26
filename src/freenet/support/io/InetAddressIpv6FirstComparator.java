@@ -13,7 +13,7 @@ import freenet.support.LRUCache;
 public class InetAddressIpv6FirstComparator implements Comparator<InetAddress> {
 
 	// need a cache for reachability to avoid doing NlogN issReachable checks in worst case.
-	public LRUCache<Integer, Boolean> reachabilityCache = new LRUCache<>(1000, 100000);
+	public LRUCache<Integer, Boolean> reachabilityCache = new LRUCache<>(1000, 300000);
 
 	public static final InetAddressIpv6FirstComparator COMPARATOR =
 		new InetAddressIpv6FirstComparator();
