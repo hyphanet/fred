@@ -23,6 +23,12 @@ public class InetAddressIpv6FirstComparator implements Comparator<InetAddress> {
 	@Override
 	public int compare(InetAddress arg0, InetAddress arg1) {
 		if(arg0 == arg1) return 0;
+		// prefer everything over broadcast
+		if (!arg0.isAnyLocalAddress() && arg1.isAnyLocalAddress()) {
+			return -1;
+		} else if (arg0.isAnyLocalAddress() && !arg1.isAnyLocalAddress()) {
+			return 1;
+		}
 		// prefer everything over loopback / localhost
 		if (!arg0.isLoopbackAddress() && arg1.isLoopbackAddress()) {
 			return -1;
