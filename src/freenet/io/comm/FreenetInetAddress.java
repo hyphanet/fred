@@ -331,7 +331,7 @@ public class FreenetInetAddress {
 	        return _address;
 	    } else {
 	    	if(logMINOR) Logger.minor(this, "Looking up '"+hostname+"' in DNS", new Exception("debug"));
-	        /* 
+	        /*
 	         * Peers are constructed from an address once a
 	         * handshake has been completed, so this lookup
 	         * will only be performed during a handshake
@@ -346,8 +346,8 @@ public class FreenetInetAddress {
 	        	if(logMINOR) Logger.minor(this, "Look up got '"+addresses+ '\'');
 	        	if( addresses.length > 1 ) {
 	        		/* sort by IPv6 first */
-                    Arrays.sort(addresses, InetAddressIpv6FirstComparator.COMPARATOR);
-                    /*
+	        		Arrays.sort(addresses, InetAddressIpv6FirstComparator.COMPARATOR);
+	        		/*
 	        		 * cache the answer since getHandshakeAddress()
 	        		 * doesn't use the cached value, thus
 	        		 * getHandshakeIPs() should always get the
