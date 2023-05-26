@@ -1,5 +1,7 @@
 package freenet.support.io;
 
+import static freenet.node.NodeStats.DEFAULT_MAX_PING_TIME;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Comparator;
@@ -40,7 +42,7 @@ public class InetAddressIpv6FirstComparator implements Comparator<InetAddress> {
 		Boolean reachable1 = reachabilityCache.get(b);
 		if (reachable0 == null) {
 			try {
-				reachable0 = arg0.isReachable(300);
+				reachable0 = arg0.isReachable((int) DEFAULT_MAX_PING_TIME);
 			} catch (IOException e) {
 				reachable0 = false;
 			}
@@ -48,7 +50,7 @@ public class InetAddressIpv6FirstComparator implements Comparator<InetAddress> {
 		}
 		if (reachable1 == null) {
 			try {
-				reachable1 = arg1.isReachable(300);
+				reachable1 = arg1.isReachable((int) DEFAULT_MAX_PING_TIME);
 			} catch (IOException e) {
 				reachable1 = false;
 			}
