@@ -40,7 +40,7 @@ jobs:
 
       - name: Build package
         run: |
-          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-pkg -us -uc --git-ignore-new
+          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=master -us -uc --git-ignore-new
 
       - name: Get package info
         run: |
