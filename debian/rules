@@ -54,3 +54,6 @@ override_jh_installlibs:
 	jh_installlibs $(BUILD_DIR)/output/jna-4.5.2.jar
 	jh_installlibs $(BUILD_DIR)/output/jna-platform-4.5.2.jar
 	jh_installlibs $(BUILD_DIR)/output/bcprov-jdk15on-1.59.jar
+	jh_installlibs $(BUILD_DIR)/output/pebble-3.1.5.jar
+	jh_installlibs $(BUILD_DIR)/output/unbescape-1.1.6.RELEASE.jar
+	jh_installlibs $(BUILD_DIR)/output/slf4j-api-1.7.25.jar
