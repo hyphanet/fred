@@ -6,6 +6,7 @@ next:
 
 - fixed severe path folding vulnerability.
 
+
 1496:
 
 - fix keepalive regression — thanks to PlantEater for tracking it down and fixing it!
