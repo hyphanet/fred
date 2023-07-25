@@ -38,8 +38,8 @@ override_dh_auto_build: build_seed_file
 	sed -e 's/@version@/$(FREENET_VERSION)/' -e 's/@build@/$(FREENET_BUILD)/' $(CURDIR)/debian/freenet.service.params | \
 	 $(WRAPPER_INIT) -q > "$(CURDIR)/debian/freenet.init"
 
-override_dh_builddeb:
-	dh_builddeb -- -Zgzip
+# override_dh_builddeb:
+# 	dh_builddeb -- -Zgzip
 
 override_dh_auto_install:
 	dh_auto_install
