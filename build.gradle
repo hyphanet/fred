@@ -28,7 +28,6 @@ sourceSets {
     test.compileClasspath += configurations.provided
 }
 
-def version_buildir = "$projectDir/build/tmp/compileVersion/"
 def version_src = 'freenet/node/Version.java'
 
 sourceSets {
@@ -69,7 +68,7 @@ tasks.withType(Javadoc) {
 task compileVersion (type: JavaCompile) {
     copy {
         from sourceSets.main.java.srcDirs
-        into "${version_buildir}"
+        into "${buildDir}/build/tmp/compileVersion/"
         include "${version_src}"
         filter {
             String line -> line.replaceAll("@custom@","${gitrev}")
@@ -77,11 +76,12 @@ task compileVersion (type: JavaCompile) {
     }
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
-    source = "${version_buildir}"
+    source = "${buildDir}/build/tmp/compileVersion/"
     include "${version_src}"
     classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDir)
     destinationDir = file("${buildDir}/java/version/")
 }
+
 compileVersion.dependsOn buildInfo
 compileVersion.dependsOn compileJava
 processResources.dependsOn compileVersion
@@ -94,7 +94,7 @@ task jar (type: Jar, overwrite: true) {
         exclude 'freenet/node/Version.class'
         exclude 'freenet/node/Version$1.class'
     }
-    preserveFileTimestamps = false
+    preserveFileTimestamps = true
     reproducibleFileOrder = true
     duplicatesStrategy = "warn"
     archivesBaseName = "freenet"

@@ -1,0 +1,13 @@
+# Defaults for freenet-daemon initscript
+# sourced by /etc/init.d/freenet-daemon
+# installed at /etc/default/freenet-daemon by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# Do you really want to run freenet-daemon(fred)?
+RUN=yes
+
+# Nice level
+NICE=10
