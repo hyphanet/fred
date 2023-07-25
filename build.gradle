@@ -283,7 +283,7 @@ task tar(type: Tar) {
 
   into(baseName)
 
-  preserveFileTimestamps = false
+  preserveFileTimestamps = true
   reproducibleFileOrder = true
 
   // Set destination directory.
