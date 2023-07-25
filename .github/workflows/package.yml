@@ -1,7 +1,7 @@
 name: Build debian package
 on:
   push:
-    branches: [ 'master', 'next', 'debian-pkg' ]
+    branches: [ 'master', 'next', 'debian-package' ]
     tags:
       - build**
       - testing-**
@@ -40,7 +40,7 @@ jobs:
 
       - name: Build package
         run: |
-          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=depian-pkg -us -uc --git-ignore-new
+          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=depian-package -us -uc --git-ignore-new
 
       - name: Get package info
         run: |
