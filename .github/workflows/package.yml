@@ -11,7 +11,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest ]
         distribution: [temurin]
-        java: [8, 11]
+        java: [8]
 
     runs-on: ubuntu-latest
     steps:
@@ -40,7 +40,7 @@ jobs:
 
       - name: Build package
         run: |
-          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=master -us -uc --git-ignore-new
+          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=depian-pkg -us -uc --git-ignore-new
 
       - name: Get package info
         run: |
