@@ -1,6 +1,10 @@
 next:
 
-- 
+- merge debian package build for 1494 (not yet updated for 1497).
+
+1497:
+
+- fixed severe path folding vulnerability.
 
 1496:
 
