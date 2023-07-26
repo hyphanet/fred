@@ -40,7 +40,7 @@ jobs:
 
       - name: Build package
         run: |
-          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-package -us -uc --git-ignore-new || cat /tmp/freenet_0.7.5+*diff*
+          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-package -us -uc --git-ignore-new || sudo cat /tmp/freenet_0.7.5+*diff*
 
       - name: Get package info
         run: |
