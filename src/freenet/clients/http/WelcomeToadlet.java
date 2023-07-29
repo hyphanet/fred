@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import freenet.clients.http.utils.PebbleUtils;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.node.*;
@@ -13,6 +14,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -522,6 +524,9 @@ public class WelcomeToadlet extends Toadlet {
         if (ctx.isAllowedFullAccess()) {
 			contentNode.addChild(ctx.getAlertManager().createSummary());
         }
+
+        page.addCustomStyleSheet("/static/core-operations-interface.css");
+        this.putCoreOperationsInterface(ctx, contentNode);
 		
         if (node.config.get("fproxy").getBoolean("fetchKeyBoxAboveBookmarks")) {
             this.putFetchKeyBox(ctx, contentNode);
@@ -583,7 +588,20 @@ public class WelcomeToadlet extends Toadlet {
         this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
     }
 
-	private void putFetchKeyBox(ToadletContext ctx, HTMLNode contentNode) {
+    private void putCoreOperationsInterface(ToadletContext ctx, HTMLNode contentNode) throws IOException {
+		  HTMLNode coreOperationsBox = ctx.getPageMaker().getInfobox("infobox-normal", l10n("nodeOperationLabel"), contentNode, "node-operation", true);
+      coreOperationsBox.addAttribute("id", "coreNodeOperation");
+
+        HashMap<String, Object> model = new HashMap<>();
+        model.put("formPassword", node.clientCore.getToadletContainer().getFormPassword());
+        PebbleUtils.addChild(
+            coreOperationsBox,
+            "core-operations-interface",
+            model,
+            "WelcomeToadlet");
+    }
+
+    private void putFetchKeyBox(ToadletContext ctx, HTMLNode contentNode) {
 		// Fetch-a-key box
 		HTMLNode fetchKeyContent = ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel"), contentNode, "fetch-key", true);
 		fetchKeyContent.addAttribute("id", "keyfetchbox");
