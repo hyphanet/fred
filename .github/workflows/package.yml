@@ -40,7 +40,7 @@ jobs:
 
       - name: Build package
         run: |
-          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-package -us -uc --git-ignore-new || (EDITOR=true dpkg-source --commit . hack-1 && git format-patch --stdout HEAD^ && sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-package -us -uc --git-ignore-new)
+          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-package -us -uc --git-ignore-new || (EDITOR=true dpkg-source --commit . hack-1 && cat fred/debian/patches/hack-1 && sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-package -us -uc --git-ignore-new)
 
       - name: Get package info
         run: |
