@@ -15,7 +15,7 @@ public class DatastoreUtil {
     public static final long oneMiB = 1024 * 1024;
     public static final long oneGiB = 1024 * 1024 * 1024;
 
-    public static long maxDatastoreSize() {
+    public static long maxDatastoreSize(Config config) {
         long maxDatastoreSize;
 
         // check ram limitations
@@ -38,10 +38,12 @@ public class DatastoreUtil {
 
         // check free disc space
         try {
-            long unallocatedSpace = Files.getFileStore(Paths.get("")).getUnallocatedSpace();
+        	String storeDirPath = config.get("node.install").getString("storeDir");
+            long unallocatedSpace = Files.getFileStore(Paths.get(storeDirPath)).getUnallocatedSpace();
             // TODO: leave some free space
             // probably limit 256GB see comments of the autodetectDatastoreSize method
-            return unallocatedSpace < maxDatastoreSize ? unallocatedSpace : maxDatastoreSize;
+            long currentStoreSize = config.get("node").getLong("storeSize");
+            return unallocatedSpace < maxDatastoreSize ? currentStoreSize + unallocatedSpace : maxDatastoreSize;
         } catch (IOException e) {
             Logger.error(DatastoreUtil.class, "Error querying space", e);
         }
