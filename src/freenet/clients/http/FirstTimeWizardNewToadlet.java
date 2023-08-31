@@ -222,7 +222,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
                 if (storageLimit < MIN_STORAGE_LIMIT) { // min store size + 10% for client cache + 10% for slashdot cache
                     errors.put("storageLimitError", NodeL10n.getBase().getString("Node.invalidMinStoreSizeWithCaches"));
                 } else {
-                    long maxDatastoreSize = DatastoreUtil.maxDatastoreSize();
+                    long maxDatastoreSize = DatastoreUtil.maxDatastoreSize(config);
                     if (storageLimit > maxDatastoreSize) {
                         errors.put("storageLimitError",
                                 NodeL10n.getBase().getString("Node.invalidMaxStoreSize",
