@@ -125,7 +125,7 @@ public class DATASTORE_SIZE implements Step {
 		try {
 			long size = Fields.parseLong(selectedStoreSize);
 
-			long maxDatastoreSize = DatastoreUtil.maxDatastoreSize();
+			long maxDatastoreSize = DatastoreUtil.maxDatastoreSize(config);
 			if (size > maxDatastoreSize) {
 				throw new InvalidConfigValueException("Attempting to set DatastoreSize (" + size
 						+ ") larger than maxDatastoreSize (" + maxDatastoreSize + ")");
