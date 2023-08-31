@@ -1970,7 +1970,7 @@ public class Node implements TimeSkewDetectorCallback {
 						if(storeSize < MIN_STORE_SIZE) {
 							throw new InvalidConfigValueException(l10n("invalidMinStoreSize"));
 						}
-						if(storeSize > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize())) {
+						if(storeSize > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize(config))) {
 							throw new InvalidConfigValueException(
 									l10n("invalidMaxStoreSize", Long.toString(maxDatastoreSize)));
 						}
