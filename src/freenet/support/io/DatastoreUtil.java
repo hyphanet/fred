@@ -38,7 +38,7 @@ public class DatastoreUtil {
 
         // check free disc space
         try {
-        	String storeDirPath = config.get("node.install").getString("storeDir");
+            String storeDirPath = config.get("node.install").getString("storeDir");
             long unallocatedSpace = Files.getFileStore(Paths.get(storeDirPath)).getUnallocatedSpace();
             // TODO: leave some free space
             // probably limit 256GB see comments of the autodetectDatastoreSize method
