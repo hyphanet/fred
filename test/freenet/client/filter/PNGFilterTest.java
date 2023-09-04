@@ -1,16 +1,14 @@
 package freenet.client.filter;
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-import java.io.InputStream;
-
+import freenet.support.api.Bucket;
+import freenet.support.io.NullBucket;
 import org.junit.Test;
 
-import freenet.support.api.Bucket;
-import freenet.support.io.ArrayBucket;
-import freenet.support.io.BucketTools;
-import freenet.support.io.NullBucket;
+import java.io.IOException;
+
+import static freenet.client.filter.ResourceFileUtil.resourceToBucket;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class PNGFilterTest {
 	protected static Object[][] testImages = {
@@ -123,13 +121,5 @@ public class PNGFilterTest {
 				assertFalse(filename + " should " + (valid ? "" : "not ") + "be valid", valid);
 			}
 		}
-	}
-
-	protected Bucket resourceToBucket(String filename) throws IOException {
-		InputStream is = getClass().getResourceAsStream(filename);
-		if (is == null) throw new java.io.FileNotFoundException();
-		ArrayBucket ab = new ArrayBucket();
-		BucketTools.copyFrom(ab, is, Long.MAX_VALUE);
-		return ab;
 	}
 }
