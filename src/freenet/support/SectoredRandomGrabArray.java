@@ -173,7 +173,8 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 				Logger.error(this, "Slot "+x+" is null for client "+grabClients[x]);
 				excluded++;
 				if(excluded > MAX_EXCLUDED) {
-					Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
+					if(logMINOR)
+						Logger.minor(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
 					return null;
 				}
 				continue;
