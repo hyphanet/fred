@@ -1274,11 +1274,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 		@Override
 		public void onFoundEdition(long l, USK newUSK, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
-			if(l < usk.suggestedEdition && datastoreOnly)
+			if(l < usk.suggestedEdition && datastoreOnly) {
 				l = usk.suggestedEdition;
+			}
 			ClientSSK key = usk.getSSK(l);
 			try {
-				if(l == usk.suggestedEdition) {
+				if(l == usk.suggestedEdition || (l == 0 && usk.suggestedEdition == 1)) {
 					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, null, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
 							0, ctx, false, realTimeFlag, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, true, false, (short)0, context, false);
 					if(tag != null) {
