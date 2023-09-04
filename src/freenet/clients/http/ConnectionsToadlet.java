@@ -895,6 +895,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					new HTMLNode[] { HTMLNode.STRONG });
 			referenceInfoboxContent.addChild("pre", "id", "reference", fs.toOrderedStringWithBase64() + '\n');
 		}
+
+		if(!isOpennet()) {
+			HTMLNode myIps = referenceInfoboxContent.addChild("p");
+			myIps.addChild("span", NodeL10n.getBase().getString("DarknetConnectionsToadlet.myIps", "ips", fs.get("physical.udp")));
+		}
+
 	}
 
 	protected abstract String getPageTitle(String titleCountString);
