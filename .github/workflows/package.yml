@@ -5,6 +5,7 @@ on:
     tags:
       - build**
       - testing-**
+  pull-request:
 jobs:
   build-deb:
     strategy:
