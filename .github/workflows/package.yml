@@ -47,9 +47,10 @@ jobs:
         run: |
           dpkg -I ../freenet*.deb
           file ../freenet*.deb
+          cp ../freenet*.deb ./
 
       - name: Provide Debian Package
         uses: actions/upload-artifact@v3
         with:
           name: debian-package
-          path: ../freenet_*.deb
+          path: freenet_*.deb
