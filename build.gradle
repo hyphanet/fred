@@ -172,6 +172,7 @@ task copyTestResourcesToClasses2 {
             include 'freenet/client/filter/*/**'
             include 'freenet/crypt/ciphers/rijndael-gladman-test-data/**'
             include 'freenet/l10n/*properties'
+            include 'freenet/clients/http/templates/**'
         }
     }
 }
