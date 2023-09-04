@@ -41,7 +41,7 @@ jobs:
 
       - name: Build package
         run: |
-          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag="$GITHUB_REF" -us -uc --git-ignore-new || (EDITOR=true dpkg-source --commit . hack-1 && sudo gbp buildpackage --git-ignore-branch --git-upstream-tag="$GITHUB_REF" -us -uc --git-ignore-new)
+          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag="${{ github.head_ref || github.ref }}" -us -uc --git-ignore-new || (EDITOR=true dpkg-source --commit . hack-1 && sudo gbp buildpackage --git-ignore-branch --git-upstream-tag="${{ github.head_ref || github.ref }}" -us -uc --git-ignore-new)
 
       - name: Get package info
         run: |
