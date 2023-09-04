@@ -11,6 +11,7 @@ import static freenet.node.stats.DataStoreType.CACHE;
 import static freenet.node.stats.DataStoreType.CLIENT;
 import static freenet.node.stats.DataStoreType.SLASHDOT;
 import static freenet.node.stats.DataStoreType.STORE;
+import static freenet.support.io.DatastoreUtil.oneGiB;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -1972,7 +1973,7 @@ public class Node implements TimeSkewDetectorCallback {
 						}
 						if(storeSize > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize())) {
 							throw new InvalidConfigValueException(
-									l10n("invalidMaxStoreSize", Long.toString(maxDatastoreSize)));
+									l10n("invalidMaxStoreSize", Long.toString(maxDatastoreSize / oneGiB)));
 						}
 
 						long newMaxStoreKeys = storeSize / sizePerKey;
