@@ -20,7 +20,7 @@ apply plugin: 'maven-publish'
 repositories {
     flatDir { dirs uri("${projectDir}/lib") }
     maven { url 'https://mvn.freenetproject.org' }
-    jcenter()
+    mavenCentral()
 }
 
 sourceSets {
@@ -243,7 +243,7 @@ dependencies {
     compile "org.unbescape:unbescape:1.1.6.RELEASE"
     compile "org.slf4j:slf4j-api:1.7.25"
 
-    testCompile 'junit:junit:4.12'
+    testCompile 'junit:junit:4.13.2'
     testCompile "org.mockito:mockito-core:1.9.5"
     testCompile "org.hamcrest:hamcrest:2.2"
     testCompile "org.objenesis:objenesis:1.0"
@@ -257,7 +257,7 @@ dependencyVerification {
         'net.java.dev.jna:jna-platform:f1d00c167d8921c6e23c626ef9f1c3ae0be473c95c68ffa012bc7ae55a87e2d6',
         'net.java.dev.jna:jna:0c8eb7acf67261656d79005191debaba3b6bf5dd60a43735a245429381dbecff',
         'org.freenetproject:freenet-ext:32f2b3d6beedf54137ea2f9a3ebef67666d769f0966b08cd17fd7db59ba4d79f',
-        'junit:junit:59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a',
+        'junit:junit:8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3',
         'org.mockito:mockito-core:f97483ba0944b9fa133aa29638764ddbeadb51ec3dbc02074c58fa2caecd07fa',
         'org.hamcrest:hamcrest:5e62846a89f05cd78cd9c1a553f340d002458380c320455dd1f8fc5497a8a1c1',
         'org.objenesis:objenesis:c5694b55d92527479382f254199b3c6b1d8780f652ad61e9ca59919887f491a8',
