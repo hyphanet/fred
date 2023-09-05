@@ -113,13 +113,15 @@ public class ContentFilterTest {
 
     private static final String SPAN_WITH_STYLE = "<span style=\"font-family: verdana, sans-serif; color: red;\">";
 
-    private static final String BASE_HREF = "<base href=\"/" + BASE_KEY + "\">";
-    private static final String BAD_BASE_HREF = "<base href=\"/\">";
-    private static final String BAD_BASE_HREF2 = "<base href=\"//www.google.com\">";
-    private static final String BAD_BASE_HREF3 = "<base>";
-    private static final String BAD_BASE_HREF4 = "<base id=\"blah\">";
-    private static final String BAD_BASE_HREF5 = "<base href=\"http://www.google.com/\">";
-    private static final String DELETED_BASE_HREF = "<!-- deleted invalid base href -->";
+	private static final String HTML5_TAGS = "<article><details><summary>TLDR</summary><center>Too Long Di<wbr />dn’t Read</center></details></article>";
+
+	private static final String BASE_HREF = "<base href=\"/"+BASE_KEY+"\">";
+	private static final String BAD_BASE_HREF = "<base href=\"/\">";
+	private static final String BAD_BASE_HREF2 = "<base href=\"//www.google.com\">";
+	private static final String BAD_BASE_HREF3 = "<base>";
+	private static final String BAD_BASE_HREF4 = "<base id=\"blah\">";
+	private static final String BAD_BASE_HREF5 = "<base href=\"http://www.google.com/\">";
+	private static final String DELETED_BASE_HREF = "<!-- deleted invalid base href -->";
 
     // From CSS spec
 
@@ -182,7 +184,8 @@ public class ContentFilterTest {
 
         assertEquals(CSS_SPEC_EXAMPLE1, htmlFilter(CSS_SPEC_EXAMPLE1));
 
-        assertEquals(SPAN_WITH_STYLE, htmlFilter(SPAN_WITH_STYLE));
+		assertEquals(SPAN_WITH_STYLE, HTMLFilter(SPAN_WITH_STYLE));
+		assertEquals(HTML5_TAGS, HTMLFilter(HTML5_TAGS));
 
         assertEquals(BASE_HREF, htmlFilter(BASE_HREF));
         assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF));
