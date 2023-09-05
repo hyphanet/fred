@@ -1776,7 +1776,7 @@ class CSSTokenizerFilter {
 		if(isIDSelector && id.isEmpty()) return null; // No ID
 
 		boolean elementValid =
-		    "*".equals(HTMLelement) || 
+		    "*".equals(HTMLelement) ||
 		    "~".equals(HTMLelement) ||
 		    (ElementInfo.isValidHTMLTag(HTMLelement.toLowerCase())) ||
 		    (HTMLelement.trim().isEmpty() &&
