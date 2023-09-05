@@ -1424,6 +1424,14 @@ body[id*="Sone"] {
   word-break: break-all;
 }
 
+#page-_plugins_ .plugin-group {
+  margin: 1em 0;
+}
+
+#page-_plugins_ .plugin-group-title {
+  font-weight: bold;
+}
+
 #masterPasswordForm label {
   margin: 0 10px 0 0;
 }
