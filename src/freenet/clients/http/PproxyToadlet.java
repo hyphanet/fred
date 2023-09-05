@@ -560,74 +560,42 @@ public class PproxyToadlet extends Toadlet {
 		HTMLNode addOfficialForm = toadletContext.addFormChild(addOfficialPluginContent, ".", "addOfficialPluginForm");
 		
 		HTMLNode p = addOfficialForm.addChild("p");
-		
 		p.addChild("#", l10n("loadOfficialPluginText"));
 		
-		// Over Freenet or over HTTP??
-		
-		p.addChild("#", " " + l10n("pluginSourceChoice"));
-		
-		boolean loadFromWeb = pm.loadOfficialPluginsFromWeb();
-		
-		HTMLNode input = addOfficialForm.addChild("input",
-				new String[] { "type", "name", "value", "id" },
-				new String[] { "radio", "pluginSource", "freenet", "pluginSourceFreenet" });
-		if(!loadFromWeb)
-			input.addAttribute("checked", "true");
-		addOfficialForm.addChild("label",
-				new String[] { "for" },
-				new String[] { "pluginSourceFreenet" },
-				l10n("pluginSourceFreenet"));
-		addOfficialForm.addChild("br");
-		input = addOfficialForm.addChild("input",
-				new String[] { "type", "name", "value", "id" },
-				new String[] { "radio", "pluginSource", "https", "pluginSourceHTTPS" });
-		if(loadFromWeb)
-			input.addAttribute("checked", "true");
-		addOfficialForm.addChild("label",
-				new String[] { "for" },
-				new String[] { "pluginSourceHTTPS" },
-				l10n("pluginSourceHTTPS"));
-		addOfficialForm.addChild("#", " ");
-		if(node.getOpennet() == null)
-			addOfficialForm.addChild("b").addChild("font", "color", "red", l10n("pluginSourceHTTPSWarning"));
-		else
-			// FIXME CSS-ize this
-			addOfficialForm.addChild("b", l10n("pluginSourceHTTPSWarning"));
-		
-		p = addOfficialForm.addChild("p");
-		
-		p.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
 		for (Entry<String, List<OfficialPluginDescription>> groupPlugins : availablePlugins.entrySet()) {
 			List<OfficialPluginDescription> notLoadedPlugins = getNotLoadedPlugins(pm, groupPlugins.getValue());
 			if (notLoadedPlugins.isEmpty()) {
 				continue;
 			}
-			HTMLNode pluginGroupNode = addOfficialForm.addChild("div", "class", "plugin-group");
-			pluginGroupNode.addChild("div", "class", "plugin-group-title", l10n("pluginGroupTitle", "pluginGroup", groupPlugins.getKey()));
-			for (OfficialPluginDescription pluginDescription : notLoadedPlugins) {
-        if (pluginDescription.unsupported) {
-          continue;
-        }
-				HTMLNode pluginNode = pluginGroupNode.addChild("div", "class", "plugin");
-				HTMLNode option = pluginNode.addChild("input",
-					new String[] { "type", "name", "value", "id" },
-					new String[] { "radio", "plugin-name", pluginDescription.name, "radioPlugin" + pluginDescription.name });
-				option.addChild("label",
-					new String[] { "for" },
-					new String[] { "radioPlugin" + pluginDescription.name }
-				).addChild("i", pluginDescription.getLocalisedPluginName());
-				if(pluginDescription.deprecated)
-					option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
-				if(pluginDescription.experimental)
-					option.addChild("b", " ("+l10n("loadLabelExperimental")+")");
-				if (advancedModeEnabled && pluginDescription.minimumVersion >= 0) {
-					option.addChild("#", " ("+l10n("pluginVersion")+" " + pluginDescription.recommendedVersion + ")");
-				}
-				option.addChild("#", " - "+pluginDescription.getLocalisedPluginDescription());
-			}
+			addPluginGroupForLoading(advancedModeEnabled, groupPlugins, addOfficialForm, notLoadedPlugins);
 		}
 		addOfficialForm.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
+	}
+
+	private void addPluginGroupForLoading(boolean advancedModeEnabled, Entry<String, List<OfficialPluginDescription>> groupPlugins, HTMLNode addOfficialForm, List<OfficialPluginDescription> notLoadedPlugins) {
+		HTMLNode pluginGroupNode = addOfficialForm.addChild("div", "class", "plugin-group");
+		pluginGroupNode.addChild("div", "class", "plugin-group-title", l10n("pluginGroupTitle", "pluginGroup", groupPlugins.getKey()));
+		for (OfficialPluginDescription pluginDescription : notLoadedPlugins) {
+			if (pluginDescription.unsupported) {
+				continue;
+			}
+			HTMLNode pluginNode = pluginGroupNode.addChild("div", "class", "plugin");
+			HTMLNode option = pluginNode.addChild("input",
+					new String[] { "type", "name", "value", "id" },
+					new String[] { "radio", "plugin-name", pluginDescription.name, "radioPlugin" + pluginDescription.name });
+			option.addChild("label",
+					new String[] { "for" },
+					new String[] { "radioPlugin" + pluginDescription.name }
+			).addChild("i", pluginDescription.getLocalisedPluginName());
+			if (pluginDescription.deprecated)
+				option.addChild("b", " (" + l10n("loadLabelDeprecated") + ")");
+			if (pluginDescription.experimental)
+				option.addChild("b", " (" + l10n("loadLabelExperimental") + ")");
+			if (advancedModeEnabled && pluginDescription.minimumVersion >= 0) {
+				option.addChild("#", " (" + l10n("pluginVersion") + " " + pluginDescription.recommendedVersion + ")");
+			}
+			option.addChild("#", " - " + pluginDescription.getLocalisedPluginDescription());
+		}
 	}
 
 	private List<OfficialPluginDescription> getNotLoadedPlugins(PluginManager pluginManager, List<OfficialPluginDescription> plugins) {
