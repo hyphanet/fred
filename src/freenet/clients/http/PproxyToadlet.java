@@ -134,12 +134,11 @@ public class PproxyToadlet extends Toadlet {
 			
 			if (request.isPartSet("submit-official")) {
 				final String pluginName = request.getPartAsStringFailsafe("plugin-name", 40);
-				final String pluginSource = request.getPartAsStringFailsafe("pluginSource", 10);
-				
+
 				node.executor.execute(new Runnable() {
 					@Override
 					public void run() {
-						pm.startPluginOfficial(pluginName, true, true, "https".equals(pluginSource));
+						pm.startPluginOfficial(pluginName, true);
 					}
 				});
 				

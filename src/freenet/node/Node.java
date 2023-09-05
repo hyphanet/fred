@@ -99,7 +99,6 @@ import freenet.node.stats.NotAvailNodeStoreStats;
 import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.pluginmanager.ForwardPort;
-import freenet.pluginmanager.PluginDownLoaderOfficialHTTPS;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BlockMetadata;
 import freenet.store.CHKStore;
@@ -956,7 +955,6 @@ public class Node implements TimeSkewDetectorCallback {
 		this.shutdownHook = SemiOrderedShutdownHook.get();
 		// Easy stuff
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision()+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
-		fixCertsFiles();
 		Logger.normal(this, tmp);
 		System.out.println(tmp);
 		collector = new IOStatisticCollector();
@@ -2706,42 +2704,6 @@ public class Node implements TimeSkewDetectorCallback {
 					e.printStackTrace();
 				}
 			}
-		}
-	}
-
-	private void fixCertsFiles() {
-		// Hack to update certificates file to fix update.cmd
-		// startssl.pem: Might be useful for old versions of update.sh too?
-		File certs = new File(PluginDownLoaderOfficialHTTPS.certfileOld);
-		fixCertsFile(certs);
-		if(FileUtil.detectedOS.isWindows) {
-			// updater\startssl.pem: Needed for Windows update.cmd.
-			certs = new File("updater", PluginDownLoaderOfficialHTTPS.certfileOld);
-			fixCertsFile(certs);
-		}
-	}
-
-	private void fixCertsFile(File certs) {
-		long oldLength = certs.exists() ? certs.length() : -1;
-		try {
-			File tmpFile = File.createTempFile(PluginDownLoaderOfficialHTTPS.certfileOld, ".tmp", new File("."));
-			PluginDownLoaderOfficialHTTPS.writeCertsTo(tmpFile);
-			if(FileUtil.renameTo(tmpFile, certs)) {
-				long newLength = certs.length();
-				if(newLength != oldLength)
-					System.err.println("Updated "+certs+" so that update scripts will work");
-			} else {
-				if(certs.length() != tmpFile.length()) {
-					System.err.println("Cannot update "+certs+" : last-resort update scripts (in particular update.cmd on Windows) may not work");
-					File manual = new File(PluginDownLoaderOfficialHTTPS.certfileOld+".new");
-					manual.delete();
-					if(tmpFile.renameTo(manual))
-						System.err.println("Please delete "+certs+" and rename "+manual+" over it");
-					else
-						tmpFile.delete();
-				}
-			}
-		} catch (IOException e) {
 		}
 	}
 

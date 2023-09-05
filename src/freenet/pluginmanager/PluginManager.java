@@ -298,7 +298,7 @@ public class PluginManager {
 
 		OfficialPluginDescription desc;
 		if((desc = isOfficialPlugin(pluginname)) != null) {
-			return startPluginOfficial(pluginname, store, desc, false, false);
+			return startPluginOfficial(pluginname, store, desc);
 		}
 
 		try {
@@ -318,18 +318,13 @@ public class PluginManager {
 		return startPluginURL(pluginname, store);
 	}
 
-	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, boolean force, boolean forceHTTPS) {
-		return startPluginOfficial(pluginname, store, officialPlugins.get(pluginname), force, forceHTTPS);
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store) {
+		return startPluginOfficial(pluginname, store, officialPlugins.get(pluginname));
 	}
 
-	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc, boolean force, boolean forceHTTPS) {
-		if((alwaysLoadOfficialPluginsFromCentralServer && !force)|| force && forceHTTPS) {
-			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store,
-				desc.alwaysFetchLatestVersion);
-		} else {
-			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false),
-				pluginname, store, desc.alwaysFetchLatestVersion);
-		}
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc) {
+		return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false),
+			pluginname, store, desc.alwaysFetchLatestVersion);
 	}
 
 	public PluginInfoWrapper startPluginFile(final String filename, boolean store) {
