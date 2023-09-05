@@ -169,29 +169,8 @@ public class PluginManager {
 			System.err.println("KeyExplorer plugin renamed to KeyUtils");
 		}
 
-		// This should default to false. Even though we use SSL, a wiretapper may be able to tell which
-		// plugin is being loaded, and correlate that with identity creation; plus of course they can see
-		// that somebody is using Freenet.
-		pmconfig.register("alwaysLoadOfficialPluginsFromCentralServer", false, 0, false, false, "PluginManager.alwaysLoadPluginsFromCentralServer", "PluginManager.alwaysLoadPluginsFromCentralServerLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				return alwaysLoadOfficialPluginsFromCentralServer;
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
-				alwaysLoadOfficialPluginsFromCentralServer = val;
-			}
-
-		});
-
-		alwaysLoadOfficialPluginsFromCentralServer = pmconfig.getBoolean("alwaysLoadOfficialPluginsFromCentralServer");
-		if (lastVersion <= 1437) {
-			// Overwrite this setting, since it will have been set by the old callback and then written as it's not default.
-			// FIXME remove back compatibility code.
-			alwaysLoadOfficialPluginsFromCentralServer = false;
-		}
+		// ignore this in config files.
+		pmconfig.registerIgnoredOption("alwaysLoadOfficialPluginsFromCentralServer");
 
 		pmconfig.finishedInitialization();
 
@@ -1580,10 +1559,6 @@ public class PluginManager {
 	@Deprecated
 	public THEME getFProxyTheme() {
 		return fproxyTheme;
-	}
-
-	public boolean loadOfficialPluginsFromWeb() {
-		return alwaysLoadOfficialPluginsFromCentralServer;
 	}
 
 	public void unregisterPlugin(PluginInfoWrapper wrapper, FredPlugin plug, boolean reloading) {
