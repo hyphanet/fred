@@ -1851,6 +1851,7 @@ class CSSTokenizerFilter {
 		            if(!((c>='a' && c<='z') || (c>='A' && c<='Z')))
 		                return null;
 		            for(int i=1;i<attSelectionParts[0].length();i++) {
+		                c=attSelectionParts[0].charAt(i);
 		                if(!((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_' || c=='-'))
 		                    return null;
 		            }
