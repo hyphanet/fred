@@ -35,7 +35,7 @@ public class CSSParserTest {
 
 
 	// FIXME should specify exact output values
-	/** CSS1 Selectors */
+	/** CSS1 Selectors: key is the input value, value is the expected output. */
 	private final static HashMap<String,String> CSS1_SELECTOR= new HashMap<>();
 	static {
 		CSS1_SELECTOR.put("h1 {}","h1");
@@ -53,7 +53,7 @@ public class CSSParserTest {
 	}
 
 	// FIXME should specify exact output values
-	/** CSS2 Selectors */
+	/** CSS2 Selectors: key is the input value, value is the expected output. */
 	private final static HashMap<String,String> CSS2_SELECTOR= new HashMap<>();
 	static {
 		CSS2_SELECTOR.put("* {}","*");
@@ -79,6 +79,7 @@ public class CSSParserTest {
 		CSS2_SELECTOR.put("body > P { line-height: 1.3 }", "body>P { line-height: 1.3 }");
 		CSS2_SELECTOR.put("div ol>li p { color: green;}", "div ol>li p { color: green;}");
 		CSS2_SELECTOR.put("h1 + h2 { margin-top: -5mm }", "h1+h2 { margin-top: -5mm }");
+		CSS2_SELECTOR.put("h1 ~ h2 { margin-top: -5mm }", "h1 ~ h2 { margin-top: -5mm }");
 		CSS2_SELECTOR.put("h1.opener + h2 { margin-top: -5mm }", "h1.opener+h2 { margin-top: -5mm }");
 		CSS2_SELECTOR.put("span[class=example] { color: blue; }", "span[class=example] { color: blue; }");
 		CSS2_SELECTOR.put("span[hello=\"Cleveland\"][goodbye=\"Columbus\"] { color: blue; }", "span[hello=\"Cleveland\"][goodbye=\"Columbus\"] { color: blue; }");
@@ -143,7 +144,7 @@ public class CSSParserTest {
 	}
 
 
-	/** CSS3 Selectors */
+	/** CSS3 Selectors: key is the input value, value is the expected output. */
 	private final static HashMap<String,String> CSS3_SELECTOR= new HashMap<>();
 	static {
 		CSS3_SELECTOR.put("tr:nth-child(odd) { background-color: red; }","tr:nth-child(odd) { background-color: red; }");
