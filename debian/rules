@@ -1,10 +1,10 @@
-#!/usr/bin/make -f
+#!/usr/bin/env -S make -f
 # -*- makefile -*-
 
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=0
 FREENET_VERSION := 0.7.5
-FREENET_BUILD   := 1494
+FREENET_BUILD   := 1497
 WRAPPER_INIT    := /usr/share/wrapper/make-wrapper-init.sh
 
 BUILD_DIR	:= /tmp/fred-build
@@ -38,8 +38,8 @@ override_dh_auto_build: build_seed_file
 	sed -e 's/@version@/$(FREENET_VERSION)/' -e 's/@build@/$(FREENET_BUILD)/' $(CURDIR)/debian/freenet.service.params | \
 	 $(WRAPPER_INIT) -q > "$(CURDIR)/debian/freenet.init"
 
-override_dh_builddeb:
-	dh_builddeb -- -Zgzip
+# override_dh_builddeb:
+# 	dh_builddeb -- -Zgzip
 
 override_dh_auto_install:
 	dh_auto_install
@@ -54,3 +54,6 @@ override_jh_installlibs:
 	jh_installlibs $(BUILD_DIR)/output/jna-4.5.2.jar
 	jh_installlibs $(BUILD_DIR)/output/jna-platform-4.5.2.jar
 	jh_installlibs $(BUILD_DIR)/output/bcprov-jdk15on-1.59.jar
+	jh_installlibs $(BUILD_DIR)/output/pebble-3.1.5.jar
+	jh_installlibs $(BUILD_DIR)/output/unbescape-1.1.6.RELEASE.jar
+	jh_installlibs $(BUILD_DIR)/output/slf4j-api-1.7.25.jar

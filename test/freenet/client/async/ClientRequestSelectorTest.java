@@ -16,7 +16,6 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.SplitFileInserterSegmentStorage.BlockInsert;
-import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
 import freenet.client.async.SplitFileInserterStorage.Status;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.CRCChecksumChecker;
@@ -26,15 +25,7 @@ import freenet.crypt.HashResult;
 import freenet.crypt.HashType;
 import freenet.crypt.MultiHashInputStream;
 import freenet.crypt.RandomSource;
-import freenet.keys.ClientKey;
-import freenet.keys.FreenetURI;
 import freenet.keys.Key;
-import freenet.node.KeysFetchingLocally;
-import freenet.node.LowLevelPutException;
-import freenet.node.RequestClient;
-import freenet.node.SendableInsert;
-import freenet.node.SendableRequestItem;
-import freenet.node.SendableRequestSender;
 import freenet.support.CheatingTicker;
 import freenet.support.DummyJobRunner;
 import freenet.support.MemoryLimitedJobRunner;
@@ -55,12 +46,11 @@ import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.PooledFileRandomAccessBufferFactory;
 import freenet.support.io.RAFInputStream;
 import freenet.support.io.ReadOnlyRandomAccessBuffer;
-import freenet.support.io.ResumeFailedException;
 import freenet.support.io.TempBucketFactory;
 import freenet.support.io.TrivialPersistentFileTracker;
 
 public class ClientRequestSelectorTest {
-    
+
     final LockableRandomAccessBufferFactory smallRAFFactory = new ByteArrayRandomAccessBufferFactory();
     final FilenameGenerator fg;
     final PersistentFileTracker persistentFileTracker;
@@ -76,16 +66,7 @@ public class ClientRequestSelectorTest {
     final ChecksumChecker checker;
     final MemoryLimitedJobRunner memoryLimitedJobRunner;
     final PersistentJobRunner jobRunner;
-    final KeySalter salt = new KeySalter() {
 
-        @Override
-        public byte[] saltKey(Key key) {
-            return key.getRoutingKey();
-        }
-        
-    };
-    private final FreenetURI URI;
-    
     public ClientRequestSelectorTest() throws IOException {
         dir = new File("split-file-inserter-storage-test");
         dir.mkdir();
@@ -101,23 +82,15 @@ public class ClientRequestSelectorTest {
         cryptoKey = new byte[32];
         r.nextBytes(cryptoKey);
         checker = new CRCChecksumChecker();
-        memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 20, executor, NativeThread.JAVA_PRIORITY_RANGE);
+        memoryLimitedJobRunner = new MemoryLimitedJobRunner(9 * 1024 * 1024L, 20, executor, NativeThread.JAVA_PRIORITY_RANGE);
         jobRunner = new DummyJobRunner(executor, null);
-        URI = FreenetURI.generateRandomCHK(r);
     }
-    
-    class MyCallback implements SplitFileInserterStorageCallback {
-        
-        MyCallback(SendableInsert sender) {
-            this.sender = sender;
-        }
-        
+
+    private static class MyCallback implements SplitFileInserterStorageCallback {
+
         private boolean finishedEncode;
-        private boolean hasKeys;
         private boolean succeededInsert;
         private InsertException failed;
-        private Metadata metadata;
-        private final SendableInsert sender;
 
         @Override
         public synchronized void onFinishedEncode() {
@@ -127,33 +100,21 @@ public class ClientRequestSelectorTest {
 
         @Override
         public synchronized void onHasKeys() {
-            hasKeys = true;
             notifyAll();
         }
-        
+
         @Override
         public void encodingProgress() {
             // Ignore.
         }
-        
+
         private void checkFailed() throws InsertException {
-            if(failed != null)
+            if (failed != null)
                 throw failed;
         }
 
         public synchronized void waitForFinishedEncode() throws InsertException {
-            while(!finishedEncode) {
-                checkFailed();
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    // Ignore.
-                }
-            }
-        }
-
-        public synchronized void waitForHasKeys() throws InsertException {
-            while(!hasKeys) {
+            while (!finishedEncode) {
                 checkFailed();
                 try {
                     wait();
@@ -166,12 +127,11 @@ public class ClientRequestSelectorTest {
         @Override
         public synchronized void onSucceeded(Metadata metadata) {
             succeededInsert = true;
-            this.metadata = metadata;
             notifyAll();
         }
-        
-        public synchronized Metadata waitForSucceededInsert() throws InsertException {
-            while(!succeededInsert) {
+
+        public synchronized void waitForSucceededInsert() throws InsertException {
+            while (!succeededInsert) {
                 checkFailed();
                 try {
                     wait();
@@ -179,7 +139,6 @@ public class ClientRequestSelectorTest {
                     // Ignore.
                 }
             }
-            return metadata;
         }
 
         @Override
@@ -198,21 +157,13 @@ public class ClientRequestSelectorTest {
             // Ignore.
         }
 
-        public synchronized boolean hasFailed() {
-            return failed != null;
-        }
-
-        public synchronized boolean hasFinishedEncode() {
-            return finishedEncode;
-        }
-
         @Override
         public short getPriorityClass() {
             return 0;
         }
 
     }
-    
+
     private HashResult[] getHashes(LockableRandomAccessBuffer data) throws IOException {
         InputStream is = new RAFInputStream(data, 0, data.size());
         MultiHashInputStream hashStream = new MultiHashInputStream(is, HashType.SHA256.bitmask);
@@ -222,115 +173,19 @@ public class ClientRequestSelectorTest {
     }
 
     private LockableRandomAccessBuffer generateData(Random random, long size,
-            LockableRandomAccessBufferFactory smallRAFFactory) throws IOException {
+                                                    LockableRandomAccessBufferFactory smallRAFFactory) throws IOException {
         LockableRandomAccessBuffer thing = smallRAFFactory.makeRAF(size);
         BucketTools.fill(thing, random, 0, size);
         return new ReadOnlyRandomAccessBuffer(thing);
     }
-    
-    class NullSendableInsert extends SendableInsert {
 
-        public NullSendableInsert(boolean persistent, boolean realTimeFlag) {
-            super(persistent, realTimeFlag);
-        }
-
-        @Override
-        public void onSuccess(SendableRequestItem keyNum, ClientKey key, ClientContext context) {
-            // Ignore
-        }
-
-        @Override
-        public void onFailure(LowLevelPutException e, SendableRequestItem keyNum,
-                ClientContext context) {
-            // Ignore
-        }
-
-        @Override
-        public boolean canWriteClientCache() {
-            return false;
-        }
-
-        @Override
-        public boolean localRequestOnly() {
-            return false;
-        }
-
-        @Override
-        public boolean forkOnCacheable() {
-            return false;
-        }
-
-        @Override
-        public void onEncode(SendableRequestItem token, ClientKey key, ClientContext context) {
-            // Ignore
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return false;
-        }
-
-        @Override
-        protected void innerOnResume(ClientContext context) throws InsertException,
-                ResumeFailedException {
-            // Ignore
-        }
-
-        @Override
-        public short getPriorityClass() {
-            return 0;
-        }
-
-        @Override
-        public SendableRequestItem chooseKey(KeysFetchingLocally keys, ClientContext context) {
-            return null;
-        }
-
-        @Override
-        public long countAllKeys(ClientContext context) {
-            return 0;
-        }
-
-        @Override
-        public long countSendableKeys(ClientContext context) {
-            return 0;
-        }
-
-        @Override
-        public SendableRequestSender getSender(ClientContext context) {
-            return null;
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-
-        @Override
-        public RequestClient getClient() {
-            return null;
-        }
-
-        @Override
-        public ClientRequester getClientRequest() {
-            return null;
-        }
-
-        @Override
-        public boolean isSSK() {
-            return false;
-        }
-        
-    }
-    
     @Test
-    public void testSmallSplitfileChooseCompletion() throws IOException, InsertException, MissingKeyException {
+    public void testSmallSplitfileChooseCompletion() throws IOException, InsertException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
         LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
         HashResult[] hashes = getHashes(data);
-        NullSendableInsert insert = new NullSendableInsert(false, false);
-        MyCallback cb = new MyCallback(insert);
+        MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
         context.maxInsertRetries = 2;
         ClientRequestSelector keys = new ClientRequestSelector(true, false, false, null);
@@ -348,24 +203,25 @@ public class ClientRequestSelectorTest {
         assertEquals(storage.getStatus(), Status.ENCODED);
         boolean[] chosenBlocks = new boolean[segment.totalBlockCount];
         // Choose and fail all blocks.
-        for(int i=0;i<segment.totalBlockCount;i++) {
+        for (int i = 0; i < segment.totalBlockCount; i++) {
             BlockInsert chosen = segment.chooseBlock();
-            assertTrue(chosen != null);
+            assertNotNull(chosen);
             keys.addRunningInsert(chosen);
             assertFalse(chosenBlocks[chosen.blockNumber]);
             chosenBlocks[chosen.blockNumber] = true;
             segment.onFailure(chosen.blockNumber, new InsertException(InsertExceptionMode.ROUTE_NOT_FOUND));
         }
         BlockInsert chosen = segment.chooseBlock();
-        assertTrue(chosen == null);
-        for(int i=0;i<segment.totalBlockCount;i++)
+        assertNull(chosen);
+        for (int i = 0; i < segment.totalBlockCount; i++) {
             keys.removeRunningInsert(new BlockInsert(segment, i));
+        }
         // Choose and succeed all blocks.
         chosenBlocks = new boolean[segment.totalBlockCount];
-        for(int i=0;i<segment.totalBlockCount;i++) {
+        for (int i = 0; i < segment.totalBlockCount; i++) {
             chosen = segment.chooseBlock();
             keys.addRunningInsert(chosen);
-            assertTrue(chosen != null);
+            assertNotNull(chosen);
             assertFalse(chosenBlocks[chosen.blockNumber]);
             chosenBlocks[chosen.blockNumber] = true;
             segment.onInsertedBlock(chosen.blockNumber, segment.encodeBlock(chosen.blockNumber).getClientKey());
@@ -373,7 +229,4 @@ public class ClientRequestSelectorTest {
         cb.waitForSucceededInsert();
         assertEquals(storage.getStatus(), Status.SUCCEEDED);
     }
-
-
-    
 }

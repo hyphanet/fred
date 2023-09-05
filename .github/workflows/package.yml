@@ -1,7 +1,7 @@
 name: Build debian package
 on:
   push:
-    branches: [ 'master', 'next', 'debian-pkg' ]
+    branches: [ 'master', 'next', 'debian-package' ]
     tags:
       - build**
       - testing-**
@@ -11,7 +11,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest ]
         distribution: [temurin]
-        java: [8, 11]
+        java: [17]
 
     runs-on: ubuntu-latest
     steps:
@@ -40,7 +40,7 @@ jobs:
 
       - name: Build package
         run: |
-          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=master -us -uc --git-ignore-new
+          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-package -us -uc --git-ignore-new || (EDITOR=true dpkg-source --commit . hack-1 && sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-package -us -uc --git-ignore-new)
 
       - name: Get package info
         run: |

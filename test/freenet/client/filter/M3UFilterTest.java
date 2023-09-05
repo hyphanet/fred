@@ -3,17 +3,13 @@ package freenet.client.filter;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.junit.Test;
 
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.BucketTools;
 
 public class M3UFilterTest {
     protected static String[][] testPlaylists = {
@@ -34,30 +30,26 @@ public class M3UFilterTest {
             String correct = test[1];
             Bucket ibo;
             Bucket ibprocessed = new ArrayBucket();
-            Bucket ibc;
-            ibo = resourceToBucket(original);
-            ibc = resourceToBucket(correct);
+            ArrayBucket ibc;
+            ibo = ResourceFileUtil.resourceToBucket(original);
+            ibc = ResourceFileUtil.resourceToBucket(correct);
 
             try {
                 filter.readFilter(ibo.getInputStream(), ibprocessed.getOutputStream(), "UTF-8", null,
                     SCHEME_HOST_PORT, new GenericReadFilterCallback(new URI(BASE_URI), null, null, null));
                 String result = ibprocessed.toString();
 
-                assertTrue(original + " should be filtered as " + correct + " but was filtered as\n" + result + "\ninstead of the correct\n" + bucketToString((ArrayBucket)ibc), result.equals(bucketToString((ArrayBucket)ibc)));
+                assertEquals(
+                    original + " should be filtered as " + correct + " but was filtered as\n" + result + "\ninstead of the correct\n" + bucketToString(ibc),
+                    bucketToString(ibc),
+                    result
+                );
             } catch (DataFilterException dfe) {
-                assertTrue("Filtering " + original + " failed", false);
+                fail("Filtering " + original + " failed");
             } catch (URISyntaxException use) {
-                assertTrue("Creating URI from BASE_URI " + BASE_URI + " failed", false);
+                fail("Creating URI from BASE_URI " + BASE_URI + " failed");
             }
         }
-    }
-
-    protected ArrayBucket resourceToBucket(String filename) throws IOException {
-        InputStream is = getClass().getResourceAsStream(filename);
-        if (is == null) throw new java.io.FileNotFoundException(filename);
-        ArrayBucket ab = new ArrayBucket();
-        BucketTools.copyFrom(ab, is, Long.MAX_VALUE);
-        return ab;
     }
 
     protected String bucketToString(ArrayBucket bucket) throws IOException {
