@@ -378,7 +378,7 @@ public class PluginManager {
 				}
 			}
 			PluginLoadFailedUserAlert newAlert =
-				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), pdl.isOfficialPluginLoader() && pdl.isLoadingFromFreenet(), stillTrying, e);
+				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), stillTrying, e);
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
 			core.alerts.register(newAlert);
 			core.alerts.unregister(oldAlert);
@@ -390,7 +390,7 @@ public class PluginManager {
 			System.err.println("Plugin " + filename + " appears to require a later JVM");
 			Logger.error(this, "Plugin " + filename + " appears to require a later JVM");
 			PluginLoadFailedUserAlert newAlert =
-				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), pdl.isOfficialPluginLoader() && pdl.isLoadingFromFreenet(), false, l10n("pluginReqNewerJVMTitle", "name", filename));
+				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), false, l10n("pluginReqNewerJVMTitle", "name", filename));
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
 			core.alerts.register(newAlert);
 			core.alerts.unregister(oldAlert);
@@ -401,7 +401,7 @@ public class PluginManager {
 			System.err.println("Plugin "+filename+" is broken, but we want to retry after next startup");
 			Logger.error(this, "Plugin "+filename+" is broken, but we want to retry after next startup");
 			PluginLoadFailedUserAlert newAlert =
-				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), pdl.isOfficialPluginLoader() && pdl.isLoadingFromFreenet(), false, e);
+				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), false, e);
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
 			core.alerts.register(newAlert);
 			core.alerts.unregister(oldAlert);
@@ -435,22 +435,20 @@ public class PluginManager {
 		final String message;
 		final StackTraceElement[] stacktrace;
 		final boolean official;
-		final boolean officialFromFreenet;
-		final boolean stillTryingOverFreenet;
+		final boolean stillTrying;
 
-		public PluginLoadFailedUserAlert(String filename, boolean official, boolean officialFromFreenet, boolean stillTryingOverFreenet, String message) {
+		public PluginLoadFailedUserAlert(String filename, boolean official, boolean stillTrying, String message) {
 			this.filename = filename;
 			this.official = official;
 			this.message = message;
 			this.stacktrace = null;
-			this.officialFromFreenet = officialFromFreenet;
-			this.stillTryingOverFreenet = stillTryingOverFreenet;
+			this.stillTrying = stillTrying;
 		}
 
-		public PluginLoadFailedUserAlert(String filename, boolean official, boolean officialFromFreenet, boolean stillTryingOverFreenet, Throwable e) {
+		public PluginLoadFailedUserAlert(String filename, boolean official, boolean stillTrying, Throwable e) {
 			this.filename = filename;
 			this.official = official;
-			this.stillTryingOverFreenet = stillTryingOverFreenet;
+			this.stillTrying = stillTrying;
 			String msg;
 			if(e instanceof PluginNotFoundException) {
 				msg = e.getMessage();
@@ -462,7 +460,6 @@ public class PluginManager {
 			}
 			if(msg == null) msg = e.toString();
 			this.message = msg;
-			this.officialFromFreenet = officialFromFreenet;
 		}
 
 		@Override
@@ -502,28 +499,18 @@ public class PluginManager {
 				}
 			}
 
-			if(stillTryingOverFreenet) {
+			if(stillTrying) {
 				div.addChild("p", l10n("pluginLoadingFailedStillTryingOverFreenet"));
 			}
 
 			if(official) {
 				p = div.addChild("p");
-				if(officialFromFreenet)
-					p.addChild("#", l10n("officialPluginLoadFailedSuggestTryAgainFreenet"));
-				else
-					p.addChild("#", l10n("officialPluginLoadFailedSuggestTryAgainHTTPS"));
+				p.addChild("#", l10n("officialPluginLoadFailedSuggestTryAgain"));
 
-				HTMLNode reloadForm = div.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "plugin-name", filename });
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "pluginSource", "https" });
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("officialPluginLoadFailedTryAgain") });
-
-				if(!stillTryingOverFreenet) {
-					reloadForm = div.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
+				if(!stillTrying) {
+					HTMLNode reloadForm = div.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "plugin-name", filename });
-					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "pluginSource", "freenet" });
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("officialPluginLoadFailedTryAgainFreenet") });
 				}
 			}
