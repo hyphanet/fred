@@ -133,6 +133,8 @@ public class CSSParserTest {
 		CSS2_BAD_SELECTOR.add("h1[foo=\"bar\\] {}");
 		// Unclosed string
 		CSS2_BAD_SELECTOR.add("h1[foo=\"bar] {}");
+		// illegal modifier
+		CSS2_BAD_SELECTOR.add("h1[foo,=bar] {}");
 
 		CSS2_BAD_SELECTOR.add("h1:langblahblah(fr) {}");
 
