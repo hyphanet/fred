@@ -322,9 +322,31 @@ public class PluginManager {
 		return startPluginOfficial(pluginname, store, officialPlugins.get(pluginname));
 	}
 
+	/**
+	 * Use {@link #startPluginOfficial(String, boolean)}.
+	 *
+	 * @param force This parameter is ignored.
+	 * @param forceHTTPS This parameter is ignored.
+	 */
+	@Deprecated
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, boolean force, boolean forceHTTPS) {
+		return startPluginOfficial(pluginname, store);
+	}
+
 	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc) {
 		return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false),
 			pluginname, store, desc.alwaysFetchLatestVersion);
+	}
+
+	/**
+	 * Use {@link #startPluginOfficial(String, boolean, OfficialPluginDescription)}.
+	 *
+	 * @param force This parameter is ignored.
+	 * @param forceHTTPS This parameter is ignored.
+	 */
+	@Deprecated
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription officialPluginDescription, boolean force, boolean forceHTTPS) {
+		return startPluginOfficial(pluginname, store, officialPluginDescription);
 	}
 
 	public PluginInfoWrapper startPluginFile(final String filename, boolean store) {
