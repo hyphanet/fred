@@ -1517,7 +1517,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
        		if(prb != null)
        			current |= WAIT_TRANSFERRING_DATA;
         	
-        	if(status != NOT_FINISHED || sentAbortDownstreamTransfers)
+        	if(status != NOT_FINISHED)
         		current |= WAIT_FINISHED;
         	
         	if(current != mask) return current;
@@ -1721,9 +1721,15 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         	
         	if(ref == null) {
         		ackOpennet(next);
-        		return false;
+        	    return false;
         	}
         	
+        	if (!node.canWriteDatastoreRequest(origHTL)) {
+        	    // Do not path fold at all at high HTL.
+        	    ackOpennet(next);
+        	    return false;
+        	}
+
 			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null) {
 				if(logMINOR) Logger.minor(this, "Don't want noderef on "+this);
 				// If we don't want it let somebody else have it
@@ -1731,20 +1737,25 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 					opennetNoderef = noderef;
 				}
 				// RequestHandler will send a noderef back up, eventually, and will unlockHandler() after that point.
-				// But if this is a local request, we need to send the ack now.
-				// Serious race condition not possible here as we set it.
-                if (source == null) {
-                    long delay = randomDelayFinishOpennetLocal();
-                    if (logMINOR) Logger.minor(this, "Delaying opennet completion for "+TimeUtil.formatTime(delay, 2, true));
-                    node.ticker.queueTimedJob(new Runnable() {
+				// If this is a local request, we must still wait for the noderef
+				// to prevent giving an indication that we are the source.
+				if (source == null) {
+					long delay = randomDelayFinishOpennetLocal();
+					if (logMINOR) {
+						Logger.minor(
+								this,
+								"Delaying opennet completion for " + TimeUtil.formatTime(delay, 2, true));
+					}
+					node.ticker.queueTimedJob(new Runnable() {
 
-                        @Override
-                        public void run() {
-                            ackOpennet(next);
-                        }
+						@Override
+						public void run() {
+							ackOpennet(next);
+						}
 
-                    }, delay);
-                } else if (origTag.shouldStop()) {
+					}, delay);
+
+				} else if (origTag.shouldStop()) {
 					// Can't pass it on.
 					origTag.finishedWaitingForOpennet(next);
 				}
@@ -1783,6 +1794,17 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			synchronized(this) {
 				opennetTimedOut = true;
 				opennetFinished = true;
+				try {
+					next.sendAsync(
+							DMT.createFNPOpennetCompletedTimeout(uid),
+							finishOpennetOnAck(next),
+							this);
+				} catch (NotConnectedException notConnectedException) {
+					if (logMINOR) {
+						Logger.minor(this, "Not connected sending ConnectReply on " + this + " to " + next);
+					}
+					origTag.finishedWaitingForOpennet(next);
+				}
 				notifyAll();
 			}
 			// We need to wait.
@@ -1930,18 +1952,14 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		boolean reject=false;
 		boolean transfer=false;
 		boolean sentFinished;
-		boolean sentTransferCancel = false;
 		boolean sentFinishedFromOfferedKey = false;
 		int status;
 		// LOCKING: We add the new listener. We check each notification.
 		// If it has already been sent when we add the new listener, we need to send it here.
 		// Otherwise we don't, it will be called by the thread processing that event, even if it's already happened.
 		synchronized (listeners) {
-			sentTransferCancel = sentAbortDownstreamTransfers;
-			if(!sentTransferCancel) {
-				listeners.add(l);
-				if(logMINOR) Logger.minor(this, "Added listener "+l+" to "+this);
-			}
+			listeners.add(l);
+			if(logMINOR) Logger.minor(this, "Added listener "+l+" to "+this);
 			reject = sentReceivedRejectOverload;
 			transfer = sentCHKTransferBegins;
 			sentFinished = sentRequestSenderFinished;
@@ -1952,9 +1970,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			l.onReceivedRejectOverload();
 		if (transfer)
 			l.onCHKTransferBegins();
-		if(sentTransferCancel)
-			l.onAbortDownstreamTransfers(abortDownstreamTransfersReason, abortDownstreamTransfersDesc);
-		if(sentFinished) {
+		if (sentFinished) {
 			// At the time when we added the listener, we had sent the status to the others.
 			// Therefore, we need to send it to this one too.
 			synchronized(this) {
@@ -2022,9 +2038,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		}
 	}
 
-	private boolean sentAbortDownstreamTransfers;
-	private int abortDownstreamTransfersReason;
-	private String abortDownstreamTransfersDesc;
 	private boolean receivingAsync;
 	
 	private void reassignToSelfOnTimeout(boolean fromOfferedKey) {
@@ -2050,10 +2063,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 
 	public PeerNode transferringFrom() {
 		return transferringFrom;
-	}
-
-	public synchronized boolean abortedDownstreamTransfers() {
-		return sentAbortDownstreamTransfers;
 	}
 
 	public long fetchTimeout() {

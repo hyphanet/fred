@@ -1,10 +1,12 @@
 package freenet.support;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
 
 import freenet.support.io.NativeThread;
 
-public class MemoryLimitedJobRunnerTest extends TestCase {
+public class MemoryLimitedJobRunnerTest {
     
     final Executor executor = new PooledExecutor();
     
@@ -93,11 +95,13 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
         
     }
 
+    @Test
     public void testQueueingSmallDelayed() throws InterruptedException {
         innerTestQueueingSmallDelayed(1, 10, 20, false);
         innerTestQueueingSmallDelayed(1, 512, 1024, false);
     }
     
+    @Test
     public void testQueueingManySmallDelayed() throws InterruptedException {
         innerTestQueueingSmallDelayed(1, 10, 10, false);
         innerTestQueueingSmallDelayed(1, 20, 10, false);
@@ -287,11 +291,13 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
         
     }
     
+    @Test
     public void testAsyncQueueingSmallDelayed() throws InterruptedException {
         innerTestAsyncQueueingSmallDelayed(1, 10, 20, false);
         innerTestAsyncQueueingSmallDelayed(1, 512, 1024, false);
     }
     
+    @Test
     public void testAsyncQueueingManySmallDelayed() throws InterruptedException {
         innerTestAsyncQueueingSmallDelayed(1, 10, 10, false);
         innerTestAsyncQueueingSmallDelayed(1, 20, 10, false);

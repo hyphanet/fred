@@ -361,22 +361,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		}
 	}
 
-	@Override
-	public void onAbortDownstreamTransfers(int reason, String desc) {
-		if(bt == null) {
-			Logger.error(this, "No downstream transfer to abort! on "+this);
-			return;
-		}
-		if(logMINOR)
-			Logger.minor(this, "Aborting downstream transfer on "+this);
-		tag.onAbortDownstreamTransfers(reason, desc);
-		try {
-			bt.abortSend(reason, desc);
-		} catch (NotConnectedException e) {
-			// Ignore
-		}
-	}
-
 	/** Called when we have the final status and can thus complete as soon as the transfer
 	 * finishes.
 	 * @return True if we have finished the transfer as well and can therefore go to 
@@ -776,8 +760,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		try {
 			noderef = rs.waitForOpennetNoderef();
 		} catch (WaitedTooLongForOpennetNoderefException e) {
+			// Send the timeout info upstream (towards higher HTL)
 			sendTerminal(DMT.createFNPOpennetCompletedTimeout(uid));
-			rs.ackOpennet(rs.successFrom());
 			return;
 		}
 		if(noderef == null) {

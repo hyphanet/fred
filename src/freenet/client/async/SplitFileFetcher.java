@@ -24,6 +24,7 @@ import freenet.support.Logger;
 import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.io.FileUtil;
 import freenet.support.io.InsufficientDiskSpaceException;
 import freenet.support.io.PooledFileRandomAccessBuffer;
 import freenet.support.io.ResumeFailedException;
@@ -130,7 +131,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
                 File targetFile = fileCallback.getCompletionFile();
                 if(targetFile != null) {
                     callbackCompleteViaTruncation = fileCallback;
-                    fileCompleteViaTruncation = File.createTempFile(targetFile.getName(), ".freenet-tmp", targetFile.getParentFile());
+                    fileCompleteViaTruncation = FileUtil.createTempFile(targetFile.getName(), ".freenet-tmp", targetFile.getParentFile());
                     // Storage must actually create the RAF since it knows the length.
                 } else {
                     callbackCompleteViaTruncation = null;

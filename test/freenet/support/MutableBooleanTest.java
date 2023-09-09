@@ -15,15 +15,18 @@
  */
 package freenet.support;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.MutableBoolean} class.
  * 
  * @author stuart martin &lt;wavey@freenetproject.org&gt;
  */
-public class MutableBooleanTest extends TestCase {
+public class MutableBooleanTest {
 
+	@Test
 	public void testMutableBoolean() {
 		
 		MutableBoolean bool = new MutableBoolean();

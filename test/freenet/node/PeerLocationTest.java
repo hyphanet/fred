@@ -1,11 +1,13 @@
 package freenet.node;
 
+import static org.junit.Assert.*;
+
 import java.util.HashSet;
 import java.util.Set;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class PeerLocationTest extends TestCase {
+public class PeerLocationTest {
     private static final double EPSILON = 1e-15;
 
     private static final double[][] PEER_LOCATIONS = new double[][] {
@@ -26,6 +28,7 @@ public class PeerLocationTest extends TestCase {
         0.35, 0.4, 0.45, 0.5, 0.51, 0.9, 0.91, 0.9999, 1 - 1e-12
     };
 
+    @Test
     public void testFindClosestLocation() {
         for (double[] peers : PEER_LOCATIONS) {
             for (double target : TARGET_LOCATIONS) {
@@ -36,6 +39,7 @@ public class PeerLocationTest extends TestCase {
         }
     }
 
+    @Test
     public void testGetClosestPeerLocation() {
         for (double[] peers : PEER_LOCATIONS) {
             PeerLocation pl = new PeerLocation("0.0");

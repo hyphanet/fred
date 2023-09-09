@@ -3,12 +3,15 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
+import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Random;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucket;
@@ -19,13 +22,14 @@ import freenet.support.io.NullBucket;
 /**
  * Test case for {@link freenet.support.compress.Bzip2Compressor} class.
  */
-public class NewLzmaCompressorTest extends TestCase {
+public class NewLzmaCompressorTest {
 
 	private static final String UNCOMPRESSED_DATA_1 = GzipCompressorTest.UNCOMPRESSED_DATA_1;
 
 	/**
 	 * test BZIP2 compressor's identity and functionality
 	 */
+	@Test
 	public void testNewLzmaCompressor() throws IOException {
 		Compressor.COMPRESSOR_TYPE lzcompressor = Compressor.COMPRESSOR_TYPE.LZMA_NEW;
 		Compressor compressorZero = Compressor.COMPRESSOR_TYPE.getCompressorByMetadataID((short)3);
@@ -62,6 +66,7 @@ public class NewLzmaCompressorTest extends TestCase {
 //		assertEquals(uncompressedString, UNCOMPRESSED_DATA_1);
 //	}
 //
+	@Test
 	public void testByteArrayDecompress() throws IOException {
 
         // build 5k array
@@ -86,6 +91,7 @@ public class NewLzmaCompressorTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testRandomByteArrayDecompress() throws IOException {
 
 		Random random = new Random(1234);
@@ -115,6 +121,7 @@ public class NewLzmaCompressorTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testCompressException() throws IOException {
 
 		byte[] uncompressedData = UNCOMPRESSED_DATA_1.getBytes();
@@ -131,6 +138,7 @@ public class NewLzmaCompressorTest extends TestCase {
 		//fail("did not throw expected CompressionOutputSizeException");
 	}
 
+	@Test
 	public void testDecompressException() throws IOException {
 
 		// build 5k array

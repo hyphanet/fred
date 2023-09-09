@@ -1,9 +1,12 @@
 package freenet.client.filter;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-public class FilterUtilsTest extends TestCase {
-	public void testValidLenthUnits() {
+import org.junit.Test;
+
+public class FilterUtilsTest {
+	@Test
+	public void testValidLengthUnits() {
 		// Test all valid length units for CSS and valid values
 		assertTrue(FilterUtils.isLength("1em", false));
 		assertTrue(FilterUtils.isLength("1.12em", false));
@@ -29,6 +32,7 @@ public class FilterUtilsTest extends TestCase {
 		assertTrue(FilterUtils.isLength("1.", true));
 	}
 
+	@Test
 	public void testInvalidLengthUnits() {
 		assertFalse(FilterUtils.isLength("--1.1em", false));
 		assertFalse(FilterUtils.isLength("-1f-1vmax", false));

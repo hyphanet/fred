@@ -1,16 +1,19 @@
 package freenet.client.filter;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
+import org.junit.Test;
+
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 
-public class MP3FilterTest extends TestCase {
+public class MP3FilterTest {
     private static final String RESOURCE_PATH = "mp3/";
 
     /** Known good files, should pass filter unaltered. */
@@ -52,12 +55,14 @@ public class MP3FilterTest extends TestCase {
         }
     };
 
+    @Test
     public void testKnownGood() {
         for (String good : GOOD) {
             assertEqualAfterFilter(good, good);
         }
     }
 
+    @Test
     public void testFilterPairs() {
         for (String[] pair : FILTER_PAIRS) {
             assertEqualAfterFilter(pair[0], pair[1]);
@@ -101,26 +106,13 @@ public class MP3FilterTest extends TestCase {
         ContentDataFilter filter = new MP3Filter();
         Bucket output = new ArrayBucket();
 
-        InputStream inStream;
-        OutputStream outStream;
-        try {
-            inStream = input.getInputStream();
-            outStream = output.getOutputStream();
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
-
-        try {
+        try (
+            InputStream inStream = input.getInputStream();
+            OutputStream outStream = output.getOutputStream();
+        ) {
             filter.readFilter(inStream, outStream, "", null, null, null);
         } catch (Exception e) {
             throw new AssertionError("Unexpected exception in the content filter.", e);
-        }
-
-        try {
-            inStream.close();
-            outStream.close();
-        } catch (IOException e) {
-            throw new AssertionError(e);
         }
 
         return output;
@@ -132,16 +124,10 @@ public class MP3FilterTest extends TestCase {
      * @throws AssertionError on failure
      */
     private static Bucket resourceToBucket(String filename) {
-        InputStream is = MP3FilterTest.class.getResourceAsStream(RESOURCE_PATH + filename);
-        if (is == null) {
-            throw new AssertionError("Test resource could not be opened: " + filename);
-        }
-        Bucket ab = new ArrayBucket();
-        try {
-            BucketTools.copyFrom(ab, is, Long.MAX_VALUE);
-        } catch (Exception e) {
+        try  {
+            return ResourceFileUtil.resourceToBucket(RESOURCE_PATH + filename);
+        } catch (IOException e) {
             throw new AssertionError(e);
         }
-        return ab;
     }
 }

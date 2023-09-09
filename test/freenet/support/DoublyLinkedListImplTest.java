@@ -1,12 +1,15 @@
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
 import freenet.support.DoublyLinkedListImpl.Item;
 
-public class DoublyLinkedListImplTest extends TestCase {
+public class DoublyLinkedListImplTest {
 	private static class T extends Item<T> {
 		int value;
 		boolean isClone;
@@ -50,6 +53,7 @@ public class DoublyLinkedListImplTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testForwardPushPop() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
 		list.push(new T(0));
@@ -79,6 +83,7 @@ public class DoublyLinkedListImplTest extends TestCase {
 		assertNull("pop()", list.pop());
 	}
 
+	@Test
 	public void testForwardShiftUnshift() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
 		list.unshift(new T(0));
@@ -108,6 +113,7 @@ public class DoublyLinkedListImplTest extends TestCase {
 		assertNull("shift()", list.shift());
 	}
 
+	@Test
 	public void testClearSize() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
 		list.unshift(new T(0));
@@ -161,6 +167,7 @@ public class DoublyLinkedListImplTest extends TestCase {
 	//		}
 	//	}
 
+	@Test
 	public void testShiftN() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
 
@@ -187,6 +194,7 @@ public class DoublyLinkedListImplTest extends TestCase {
 		assertTrue("list2.isEmpty()", list2.isEmpty());
 	}
 
+	@Test
 	public void testPopN() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
 
@@ -213,6 +221,7 @@ public class DoublyLinkedListImplTest extends TestCase {
 		assertTrue("list2.isEmpty()", list2.isEmpty());
 	}
 
+	@Test
 	public void testHeadTail() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
 
@@ -242,6 +251,7 @@ public class DoublyLinkedListImplTest extends TestCase {
 		assertNull("tail() == null", list.tail());
 	}
 
+	@Test
 	public void testIternator() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
 		T[] array = new T[5];
@@ -295,6 +305,7 @@ public class DoublyLinkedListImplTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testRandomRemovePush() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
 		T[] array = new T[5];
@@ -322,6 +333,7 @@ public class DoublyLinkedListImplTest extends TestCase {
 		assertNull(list.remove(new T(-1)));
 	}
 
+	@Test
 	public void testRandomShiftPush() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
 		list.push(new T(0));
@@ -339,6 +351,7 @@ public class DoublyLinkedListImplTest extends TestCase {
 		list.shift().assertV(2);
 	}
 
+	@Test
 	public void testRandomInsert() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
 		T[] array = new T[5];

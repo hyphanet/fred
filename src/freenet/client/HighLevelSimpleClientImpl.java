@@ -198,6 +198,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 
 	@Override
 	public ClientGetter fetch(FreenetURI uri, long maxSize, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
+		if (maxSize > 0) {
+			fctx.maxOutputLength = maxSize;
+			fctx.maxTempLength = maxSize;
+		}
+		
 		return fetch(uri, callback, fctx, prio);
 	}
 

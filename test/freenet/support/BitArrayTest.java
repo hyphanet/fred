@@ -14,14 +14,16 @@
  */
 package freenet.support;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.BitArray} class.
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
-public class BitArrayTest extends TestCase {
+public class BitArrayTest {
 
 	private final int sampleBitsNumber = 10;
 	private final int oneByteBits = 8;
@@ -61,6 +63,7 @@ public class BitArrayTest extends TestCase {
 	 * readables and false, and the length
 	 * has to be correct)
 	 */
+	@Test
 	public void testBitArray_int() {
 		BitArray methodBitArray = new BitArray(sampleBitsNumber);
 		for(int i=0;i<sampleBitsNumber;i++)
@@ -72,6 +75,7 @@ public class BitArrayTest extends TestCase {
 	 * Tests toString() method
 	 * creating BitArrays with same value bits.
 	 */
+	@Test
 	public void testToStringAllEquals() {
 		BitArray methodBitArray = createAllEqualsBitArray(sampleBitsNumber,true);
 		String expectedString = createAllOneString(sampleBitsNumber,"1");
@@ -85,6 +89,7 @@ public class BitArrayTest extends TestCase {
 	 * Tests toString() method
 	 * with a BitArray with size zero.
 	 */
+	@Test
 	public void testToStringEmpty() {
 		BitArray methodBitArray = new BitArray(0);
 		assertEquals(methodBitArray.toString().length(),0);
@@ -94,6 +99,7 @@ public class BitArrayTest extends TestCase {
 	 * Tests setBit(int,boolean) method
 	 * trying to set a bit out of bounds
 	 */
+	@Test
 	public void testSetBit_OutOfBounds() {
 		BitArray methodBitArray = new BitArray(sampleBitsNumber);
 		try {
@@ -109,6 +115,7 @@ public class BitArrayTest extends TestCase {
 	 * using getAt(int) to verify if they are
 	 * consistent.
 	 */
+	@Test
 	public void testSetAndGetBit() {
 		BitArray methodBitArray = new BitArray(sampleBitsNumber);
 		//setting true even bits
@@ -127,6 +134,7 @@ public class BitArrayTest extends TestCase {
 	 * trying it correctness for every possible (i.e. 256) 
 	 * byte value
 	 */
+	@Test
 	public void testUnsignedByteToInt() {
 		byte sampleByte;
 		for (int i =0; i<256; i++) {
@@ -137,6 +145,7 @@ public class BitArrayTest extends TestCase {
 	/**
 	 * Tests getSize() method
 	 */
+	@Test
 	public void testGetSize() {
 		BitArray methodBitArray = new BitArray(0);
 		assertEquals(methodBitArray.getSize(),0);
@@ -150,6 +159,7 @@ public class BitArrayTest extends TestCase {
 	 * a BitArray with already all ones
 	 * set.
 	 */
+	@Test
 	public void testSetAllOnes() {
 		BitArray methodBitArray = createAllEqualsBitArray(sampleBitsNumber,true);
 		BitArray methodBitArrayToVerify = new BitArray(sampleBitsNumber);
@@ -163,6 +173,7 @@ public class BitArrayTest extends TestCase {
 	 * in a BitArray with as many bits as in
 	 * a single byte
 	 */
+	@Test
 	public void testFirstOne() {
 		BitArray methodBitArray = new BitArray(oneByteBits);
 		//only one "1"
@@ -181,6 +192,7 @@ public class BitArrayTest extends TestCase {
 		assertEquals(methodBitArray.firstOne(),-1);
 	}
 	
+	@Test
 	public void testLastOne() {
 		BitArray array = new BitArray(16);
 		array.setAllOnes();
@@ -194,6 +206,7 @@ public class BitArrayTest extends TestCase {
 		assert(array.lastOne(0) == -1);
 	}
 	
+	@Test
 	public void testShrinkGrow() {
 		BitArray array = new BitArray(16);
 		array.setAllOnes();

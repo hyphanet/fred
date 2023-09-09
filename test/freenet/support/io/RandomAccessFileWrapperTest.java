@@ -1,6 +1,6 @@
 package freenet.support.io;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -9,6 +9,10 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import freenet.support.api.RandomAccessBuffer;
 
@@ -22,10 +26,12 @@ public class RandomAccessFileWrapperTest extends RandomAccessBufferTestBase {
 
     private File base = new File("tmp.random-access-file-wrapper-test");
     
+    @Before
     public void setUp() {
         base.mkdir();
     }
     
+    @After
     public void tearDown() {
         FileUtil.removeAll(base);
     }
@@ -36,6 +42,7 @@ public class RandomAccessFileWrapperTest extends RandomAccessBufferTestBase {
         return new FileRandomAccessBuffer(f, size, false);
     }
     
+    @Test
     public void testStoreTo() throws IOException, StorageFormatException, ResumeFailedException {
         File tempFile = File.createTempFile("test-storeto", ".tmp", base);
         byte[] buf = new byte[4096];

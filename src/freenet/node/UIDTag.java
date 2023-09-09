@@ -311,7 +311,6 @@ public abstract class UIDTag {
 			}
 			return false;
 		}
-		Logger.normal(this, "Unlocking "+this, new Exception("debug"));
 		hasUnlocked = true;
 		return true;
 	}

@@ -439,7 +439,7 @@ public class NodeUpdateManager {
 			File temp;
 			FileOutputStream fos = null;
 			try {
-				temp = File.createTempFile(filename, ".tmp", directory.dir());
+				temp = FileUtil.createTempFile(filename, ".tmp", directory.dir());
 				temp.deleteOnExit();
 				fos = new FileOutputStream(temp);
 				BucketTools.copyTo(result.asBucket(), fos, -1);

@@ -15,16 +15,18 @@
  */
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.util.Enumeration;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.LRUQueue} class.
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
-public class LRUQueueTest extends TestCase {
+public class LRUQueueTest {
 	
 	private static final int sampleElemsNumber = 100;
 
@@ -97,6 +99,7 @@ public class LRUQueueTest extends TestCase {
 	 * argument (after setting up a sample queue) and verifying if the correct
 	 * exception is raised
 	 */
+	@Test
 	public void testPushNull() {
 		LRUQueue<Object> methodLRUQueue = this.createSampleQueue(sampleElemsNumber);
 		try {
@@ -117,6 +120,7 @@ public class LRUQueueTest extends TestCase {
 	 * Tests {@link LRUQueue#push(Object)} method and verifies the behaviour
 	 * when pushing the same object more than one time.
 	 */
+	@Test
 	public void testPushSameObjTwice() {
 		LRUQueue<Object> methodLRUQueue = this.createSampleQueue(sampleElemsNumber);
 		Object[] sampleObj = {new Object(), new Object()};
@@ -139,6 +143,7 @@ public class LRUQueueTest extends TestCase {
 	/**
 	 * Tests {@link LRUQueue#pushLeast(Object)} method
 	 */
+	@Test
 	public void testPushLeast() {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		Object[] sampleObj = { new Object(), new Object() };
@@ -160,6 +165,7 @@ public class LRUQueueTest extends TestCase {
 	 * Tests{@link LRUQueue#pop()} method pushing and popping objects and
 	 * verifying if they are correctly (in a FIFO manner) fetched and deleted
 	 */
+	@Test
 	public void testPop() {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
@@ -177,6 +183,7 @@ public class LRUQueueTest extends TestCase {
 	 * Tests {@link LRUQueue#size()} method checking size when empty, when
 	 * putting each object and when popping each object.
 	 */
+	@Test
 	public void testSize() {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
@@ -199,6 +206,7 @@ public class LRUQueueTest extends TestCase {
 	 * correctly removed checking the method return value, if the object is
 	 * still contained and the queue size.
 	 */
+	@Test
 	public void testRemove() {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
@@ -216,6 +224,7 @@ public class LRUQueueTest extends TestCase {
 	 * Tests{@link LRUQueue#remove(Object)} providing a null argument and
 	 * trying to remove it after setting up a sample queue.
 	 */
+	@Test
 	public void testRemoveNull() {
 		LRUQueue<Object> methodLRUQueue = createSampleQueue(sampleElemsNumber);
 		try {
@@ -229,6 +238,7 @@ public class LRUQueueTest extends TestCase {
 	 * Tests {@link LRUQueue#remove(Object)} method trying to remove a not
 	 * present object after setting up a sample queue.
 	 */
+	@Test
 	public void testRemoveNotPresent() {
 		LRUQueue<Object> methodLRUQueue = createSampleQueue(sampleElemsNumber);
 		assertFalse(methodLRUQueue.remove(new Object()));
@@ -239,6 +249,7 @@ public class LRUQueueTest extends TestCase {
 	 * present object after setting up a sample queue. Then it search a present
 	 * object.
 	 */
+	@Test
 	public void testContains() {
 		LRUQueue<Object> methodLRUQueue = createSampleQueue(sampleElemsNumber);
 		assertFalse(methodLRUQueue.contains(new Object()));
@@ -252,6 +263,7 @@ public class LRUQueueTest extends TestCase {
 	 * Tests {@link LRUQueue#elements()} method verifying if the Enumeration
 	 * provided is correct
 	 */
+	@Test
 	public void testElements() {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
@@ -270,6 +282,7 @@ public class LRUQueueTest extends TestCase {
 	 * Tests {@link LRUQueue#toArray()} method verifying if the array generated
 	 * has the same object that are put into the created LRUQueue
 	 */
+	@Test
 	public void testToArray() {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
@@ -288,6 +301,7 @@ public class LRUQueueTest extends TestCase {
 	/**
 	 * Tests {@link LRUQueue#toArray(Object[])} method
 	 */
+	@Test
 	public void testToArray2() {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
@@ -307,6 +321,7 @@ public class LRUQueueTest extends TestCase {
 	/**
 	 * Tests {@link LRUQueue#toArrayOrdered()} method
 	 */
+	@Test
 	public void testToArrayOrdered() {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
@@ -325,6 +340,7 @@ public class LRUQueueTest extends TestCase {
 	/**
 	 * Tests <code>toArrayOrdered(Object[])</code> method
 	 */
+	@Test
 	public void testToArrayOrdered2() {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
@@ -346,6 +362,7 @@ public class LRUQueueTest extends TestCase {
 	 * Tests toArray() method
 	 * when the queue is empty
 	 */
+	@Test
 	public void testToArrayEmptyQueue() {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		assertEquals(0, methodLRUQueue.toArray().length);
@@ -356,6 +373,7 @@ public class LRUQueueTest extends TestCase {
 	 * trying it with an empty queue
 	 * and then with a sample queue.
 	 */
+	@Test
 	public void testIsEmpty() {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		assertTrue(methodLRUQueue.isEmpty());

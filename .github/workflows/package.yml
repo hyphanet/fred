@@ -1,0 +1,56 @@
+name: Build debian package
+on:
+  push:
+    branches: [ 'master', 'next', 'debian-package' ]
+    tags:
+      - build**
+      - testing-**
+  pull_request:
+jobs:
+  build-deb:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        distribution: [temurin]
+        java: [17]
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Wrapper validation
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Setup java
+        uses: actions/setup-java@v3
+        with:
+          cache: 'gradle'
+          distribution: '${{ matrix.distribution }}'
+          java-version: '${{ matrix.java }}'
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install build-essential debhelper devscripts equivs -y
+
+      - name: Install package build dependencies
+        run: |
+          install_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
+          sudo mk-build-deps --install -r --tool="${install_tool}" debian/control
+
+      - name: Build package
+        run: |
+          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag="HEAD" -us -uc --git-ignore-new || (EDITOR=true dpkg-source --commit . hack-1 && sudo gbp buildpackage --git-ignore-branch --git-upstream-tag="HEAD" -us -uc --git-ignore-new)
+
+      - name: Get package info
+        run: |
+          dpkg -I ../freenet*.deb
+          file ../freenet*.deb
+          cp ../freenet*.deb ./
+
+      - name: Provide Debian Package
+        uses: actions/upload-artifact@v3
+        with:
+          name: debian-package
+          path: freenet_*.deb

@@ -3,13 +3,16 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
+import static org.junit.Assert.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucket;
@@ -20,7 +23,7 @@ import freenet.support.io.NullBucket;
 /**
  * Test case for {@link freenet.support.compress.Bzip2Compressor} class.
  */
-public class Bzip2CompressorTest extends TestCase {
+public class Bzip2CompressorTest {
 
 	private static final String UNCOMPRESSED_DATA_1 = GzipCompressorTest.UNCOMPRESSED_DATA_1;
 
@@ -40,6 +43,7 @@ public class Bzip2CompressorTest extends TestCase {
 	/**
 	 * test BZIP2 compressor's identity and functionality
 	 */
+	@Test
 	public void testBzip2Compressor() throws IOException {
 		Compressor.COMPRESSOR_TYPE bz2compressor = Compressor.COMPRESSOR_TYPE.BZIP2;
 		Compressor compressorZero = Compressor.COMPRESSOR_TYPE.getCompressorByMetadataID((short)1);
@@ -48,6 +52,7 @@ public class Bzip2CompressorTest extends TestCase {
 		assertEquals(bz2compressor, compressorZero);
 	}
 
+	@Test
 	public void testCompress() throws IOException {
 
 		// do bzip2 compression
@@ -62,6 +67,7 @@ public class Bzip2CompressorTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testBucketDecompress() throws IOException {
 
 		byte[] compressedData = COMPRESSED_DATA_1;
@@ -74,6 +80,7 @@ public class Bzip2CompressorTest extends TestCase {
 		assertEquals(uncompressedString, UNCOMPRESSED_DATA_1);
 	}
 
+	@Test
 	public void testByteArrayDecompress() throws IOException {
 
         // build 5k array
@@ -98,6 +105,7 @@ public class Bzip2CompressorTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testCompressException() throws IOException {
 
 		byte[] uncompressedData = UNCOMPRESSED_DATA_1.getBytes();
@@ -115,6 +123,7 @@ public class Bzip2CompressorTest extends TestCase {
 
 	}
 
+	@Test
 	public void testDecompressException() throws IOException {
 		// build 5k array
 		byte[] uncompressedData = new byte[5 * 1024];

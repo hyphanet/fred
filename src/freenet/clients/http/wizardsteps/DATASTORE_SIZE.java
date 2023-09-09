@@ -1,8 +1,11 @@
 package freenet.clients.http.wizardsteps;
 
+import static freenet.support.io.DatastoreUtil.oneGiB;
+
 import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.config.Config;
 import freenet.config.ConfigException;
+import freenet.config.InvalidConfigValueException;
 import freenet.config.Option;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
@@ -13,6 +16,11 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.DatastoreUtil;
+
+import java.io.File;
+
+import java.io.File;
 
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.
@@ -37,7 +45,7 @@ public class DATASTORE_SIZE implements Step {
 		HTMLNode bandwidthForm = helper.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 		HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
 
-		long maxSize = maxDatastoreSize();
+		long maxSize = maxDatastoreSize(core.node);
 
 		long autodetectedSize = canAutoconfigureDatastoreSize();
 		if(maxSize < autodetectedSize) autodetectedSize = maxSize;
@@ -93,13 +101,38 @@ public class DATASTORE_SIZE implements Step {
 	@Override
 	public String postStep(HTTPRequest request) {
 		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
-		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20));
-		return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH.name();
+		boolean firsttime = true;
+
+		if (request.isPartSet("singlestep")) {
+			firsttime = false;
+		}
+		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20), firsttime, config, this);
+        if (firsttime) {
+            return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH.name();
+        } else {
+            return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
+        }
 	}
 
-	private void _setDatastoreSize(String selectedStoreSize) {
+
+	public static void setDatastoreSize(String selectedStoreSize, Config config, Object callback) {
+		_setDatastoreSize(selectedStoreSize, true, config, callback);
+	}
+
+	private static void _setDatastoreSize(
+			String selectedStoreSize,
+			boolean firsttime,
+			Config config,
+			Object callback) {
 		try {
 			long size = Fields.parseLong(selectedStoreSize);
+
+			long maxDatastoreSize = DatastoreUtil.maxDatastoreSize();
+			if (size > maxDatastoreSize) {
+				throw new InvalidConfigValueException("Attempting to set DatastoreSize (" + size
+						+ ") larger than maxDatastoreSize (" + maxDatastoreSize / oneGiB + " GiB)");
+			}
+
 			// client cache: 10% up to 200MB
 			long clientCacheSize = Math.min(size / 10, 200*1024*1024);
 			// recent requests cache / slashdot cache / ULPR cache
@@ -107,7 +140,7 @@ public class DATASTORE_SIZE implements Step {
 			int downstreamLimit = config.get("node").getInt("inputBandwidthLimit");
 			// is used for remote stuff, so go by the minimum of the two
 			int limit;
-			if(downstreamLimit <= 0) limit = upstreamLimit;
+			if (downstreamLimit <= 0) limit = upstreamLimit;
 			else limit = Math.min(downstreamLimit, upstreamLimit);
 			// 35KB/sec limit has been seen to have 0.5 store writes per second.
 			// So saying we want to have space to cache everything is only doubling that ...
@@ -121,23 +154,21 @@ public class DATASTORE_SIZE implements Step {
 
 			System.out.println("Setting datastore size to "+Fields.longToString(storeSize, true));
 			config.get("node").set("storeSize", Fields.longToString(storeSize, true));
-			if(config.get("node").getString("storeType").equals("ram"))
-				config.get("node").set("storeType", "salt-hash");
+			if (firsttime) config.get("node").set("storeType", "salt-hash");
 			System.out.println("Setting client cache size to "+Fields.longToString(clientCacheSize, true));
 			config.get("node").set("clientCacheSize", Fields.longToString(clientCacheSize, true));
-			if(config.get("node").getString("clientCacheType").equals("ram"))
-				config.get("node").set("clientCacheType", "salt-hash");
+			if (firsttime) config.get("node").set("clientCacheType", "salt-hash");
 			System.out.println("Setting slashdot/ULPR/recent requests cache size to "+Fields.longToString(slashdotCacheSize, true));
 			config.get("node").set("slashdotCacheSize", Fields.longToString(slashdotCacheSize, true));
 
 
-			Logger.normal(this, "The storeSize has been set to " + selectedStoreSize);
+			Logger.normal(callback, "The storeSize has been set to " + selectedStoreSize);
 		} catch(ConfigException e) {
-			Logger.error(this, "Should not happen, please report!" + e, e);
+			Logger.error(callback, "Should not happen, please report!" + e, e);
 		}
 	}
 
-	private long maxDatastoreSize() {
+	public static long maxDatastoreSize(Node node) {
 		long maxMemory = NodeStarter.getMemoryLimitBytes();
 		if(maxMemory == Long.MAX_VALUE) return 1024*1024*1024; // Treat as don't know.
 		if(maxMemory < 128*1024*1024) return 1024*1024*1024; // 1GB default if don't know or very small memory.
@@ -151,47 +182,28 @@ public class DATASTORE_SIZE implements Step {
 		slots /= 3;
 		// We return the total size, so we don't need to worry about cache vs store or even client cache.
 		// One key of all 3 types combined uses Node.sizePerKey bytes on disk. So we get a size.
-		return slots * Node.sizePerKey;
+		long maxSize =slots * Node.sizePerKey;
+
+		// Datastore can never be larger than free disk space, assuming datastore is zero now.
+		File storeDir = node.getStoreDir();
+		long freeSpace = storeDir.getUsableSpace();
+		File[] files = storeDir.listFiles();
+
+		for (int i = 0; i < files.length; i++) {
+			freeSpace += files[i].length();
+		}
+
+		if (freeSpace < maxSize) {
+			maxSize = freeSpace;
+		}
+
+		// Leave some margin.
+		maxSize = maxSize - 1024*1024*1024;
+
+		return maxSize;
 	}
-
-    private long canAutoconfigureDatastoreSize() {
-        if (!config.get("node").getOption("storeSize").isDefault())
-            return -1;
-
-        long freeSpace = core.node.getStoreDir().getUsableSpace();
-
-        if (freeSpace <= 0) {
-            return -1;
-        } else {
-            long shortSize;
-            long oneGiB = 1024 * 1024 * 1024L;
-            // Maximum for Freenet: 256GB. That's a 128MiB bloom filter.
-            long bloomFilter128MiBMax = 256 * oneGiB;
-            // Maximum to suggest to keep Disk I/O managable. This
-            // value might need revisiting when hardware or
-            // filesystems change.
-            long diskIoMax = 100 * oneGiB;
-
-            // Choose a suggested store size based on available free space.
-            if (freeSpace > 50 * oneGiB) {
-                // > 50 GiB: Use 10% free space; minimum 10 GiB. Limited by
-                // bloom filters and disk I/O.
-                shortSize = Math.max(10 * oneGiB,
-                                     Math.min(freeSpace / 10,
-                                              Math.min(diskIoMax,
-                                                       bloomFilter128MiBMax)));
-            } else if (freeSpace > 5 * oneGiB) {
-                // > 5 GiB: Use 20% free space, minimum 2 GiB.
-                shortSize = Math.max(freeSpace / 5, 2 * oneGiB);
-            } else if (freeSpace > 2 * oneGiB) {
-                // > 2 GiB: 512 MiB.
-                shortSize = 512 * (1024 * 1024);
-            } else {
-                // <= 2 GiB: 256 MiB.
-                shortSize = 256 * (1024 * 1024);
-            }
-
-            return shortSize;
-        }
+   
+	private long canAutoconfigureDatastoreSize() {
+		return DatastoreUtil.autodetectDatastoreSize(core, config);
     }
 }

@@ -3,12 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import static org.junit.Assert.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class LineReadingInputStreamTest extends TestCase {
+public class LineReadingInputStreamTest {
 	public static final String BLOCK = "\ntesting1\ntesting2\r\ntesting3\n\n";
 	public static final String[] LINES = new String[] {
 		"",
@@ -26,6 +28,7 @@ public class LineReadingInputStreamTest extends TestCase {
 	public static final int MAX_LENGTH = 128;
 	public static final int BUFFER_SIZE = 128;
 	
+	@Test
 	public void testReadLineWithoutMarking() throws Exception {
 		// try utf8
 		InputStream is = new ByteArrayInputStream(STRESSED_LINE.getBytes("utf-8"));
@@ -67,6 +70,7 @@ public class LineReadingInputStreamTest extends TestCase {
 		assertEquals(NULL_LINE.substring(0, 5), instance.readLineWithoutMarking(BUFFER_SIZE, 1, true));
 	}
 	
+	@Test
 	public void testReadLine() throws Exception {
 		// try utf8
 		InputStream is = new ByteArrayInputStream(STRESSED_LINE.getBytes("utf-8"));
@@ -108,6 +112,7 @@ public class LineReadingInputStreamTest extends TestCase {
 		assertEquals(NULL_LINE.substring(0, 5), instance.readLine(BUFFER_SIZE, 1, true));
 	}
 
+	@Test
 	public void testBothImplementation() throws Exception {
 		ByteArrayInputStream bis1 =  new ByteArrayInputStream(BLOCK.getBytes("ISO-8859-1"));
 		ByteArrayInputStream bis2 =  new ByteArrayInputStream(BLOCK.getBytes("ISO-8859-1"));

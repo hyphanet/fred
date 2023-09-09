@@ -180,18 +180,18 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("caret-color");
 		allelementVerifiers.add("clear");
 		allelementVerifiers.add("clip");
-                allelementVerifiers.add("break-before");
-                allelementVerifiers.add("break-after");
-                allelementVerifiers.add("break-inside");
-                allelementVerifiers.add("column-count");
-                allelementVerifiers.add("column-fill");
-                allelementVerifiers.add("column-gap");
-                allelementVerifiers.add("column-rule-color");
-                allelementVerifiers.add("column-rule-style");
-                allelementVerifiers.add("column-rule-width");
-                allelementVerifiers.add("column-span");
+		allelementVerifiers.add("break-before");
+		allelementVerifiers.add("break-after");
+		allelementVerifiers.add("break-inside");
+		allelementVerifiers.add("column-count");
+		allelementVerifiers.add("column-fill");
+		allelementVerifiers.add("column-gap");
+		allelementVerifiers.add("column-rule-color");
+		allelementVerifiers.add("column-rule-style");
+		allelementVerifiers.add("column-rule-width");
+		allelementVerifiers.add("column-span");
 		allelementVerifiers.add("column-rule");
-                allelementVerifiers.add("column-width");
+		allelementVerifiers.add("column-width");
 		allelementVerifiers.add("columns");
 		allelementVerifiers.add("color");
 		allelementVerifiers.add("color-interpolation");
@@ -306,6 +306,10 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("top");
 		allelementVerifiers.add("transform");
 		allelementVerifiers.add("transform-origin");
+		allelementVerifiers.add("transition-delay");
+		allelementVerifiers.add("transition-duration");
+		allelementVerifiers.add("transition-property");
+		allelementVerifiers.add("transition-timing-function");
 		allelementVerifiers.add("unicode-bidi");
 		allelementVerifiers.add("vertical-align");
 		allelementVerifiers.add("visibility");
@@ -317,7 +321,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("width");
 		allelementVerifiers.add("word-break");
 		allelementVerifiers.add("word-spacing");
-                allelementVerifiers.add("word-wrap");
+		allelementVerifiers.add("word-wrap");
 		allelementVerifiers.add("z-index");
 
 
@@ -327,7 +331,7 @@ class CSSTokenizerFilter {
 	 * Array for storing additional Verifier objects for validating Regular expressions in CSS Property value
 	 * e.g. [ <color> | transparent]{1,4}. It is explained in detail in CSSPropertyVerifier class
 	 */
-	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[145];
+	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[148];
 	static
 	{
 		/*CSSPropertyVerifier(String[] allowedValues,String[] possibleValues,String expression,boolean onlyValueVerifier)*/
@@ -416,6 +420,14 @@ class CSSTokenizerFilter {
 		// used in nav-down, nav-left, nav-right and nav-up
 		auxilaryVerifiers[143] = new CSSPropertyVerifier(null, Arrays.asList("se"), null, null, true);
 		auxilaryVerifiers[144] = new CSSPropertyVerifier(Arrays.asList("current", "root"), Arrays.asList("st"), null, null, true);
+		
+		// <transition-delay> & <transition-duration>
+		auxilaryVerifiers[145]=new CSSPropertyVerifier(null, Arrays.asList("ti"), null, null, true);
+		// <transition-property>
+		auxilaryVerifiers[146]=new CSSPropertyVerifier(null, Arrays.asList("id"), null, null, true);
+		// <transition-timing-function>
+		// TODO: Add function values: steps(...) & cubic-bezier(...) similar to freenet.client.filter.FilterUtils.isCSSTransform(String)
+		auxilaryVerifiers[147]=new CSSPropertyVerifier(Arrays.asList("ease","ease-in","ease-out","ease-in-out","linear","step-start","step-end"), null, null, null, true);
 	}
 	/* This function loads a verifier object in elementVerifiers.
 	 * After the object has been loaded, property name is removed from allelementVerifier.
@@ -1339,7 +1351,7 @@ class CSSTokenizerFilter {
 		}
 		else if("position".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("static","relative","absolute","fixed"),ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("static","relative","absolute","fixed","sticky"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("quotes".equalsIgnoreCase(element))
@@ -1611,6 +1623,26 @@ class CSSTokenizerFilter {
 		else if("z-index".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("in")));
+			allelementVerifiers.remove(element);
+		}
+		else if("transition-delay".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("145<1,65535>"),false,true));
+			allelementVerifiers.remove(element);
+		}
+		else if("transition-duration".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("145<1,65535>"),false,true));
+			allelementVerifiers.remove(element);
+		}
+		else if("transition-property".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("146<1,65535>"),false,true));
+			allelementVerifiers.remove(element);
+		}
+		else if("transition-timing-function".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("147<1,65535>"),false,true));
 			allelementVerifiers.remove(element);
 		}
 	}

@@ -2,7 +2,7 @@ package freenet.client.async;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
-import freenet.client.async.SplitFileFetcherStorage.MyKey;
+import freenet.client.async.SplitFileFetcherStorage.SplitFileFetcherStorageKey;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.KeysFetchingLocally;
@@ -34,7 +34,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
 
     @Override
     public ClientKey getKey(SendableRequestItem token) {
-        MyKey key = (MyKey) token;
+        SplitFileFetcherStorageKey key = (SplitFileFetcherStorage.SplitFileFetcherStorageKey) token;
         if(key.get != storage) throw new IllegalArgumentException();
         return storage.getKey(key);
     }
@@ -60,7 +60,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
             if(logMINOR) Logger.minor(this, "Fatal failure: "+fe+" for "+token);
             parent.fail(fe);
         } else {
-            MyKey key = (MyKey) token;
+            SplitFileFetcherStorage.SplitFileFetcherStorageKey key = (SplitFileFetcherStorageKey) token;
             if(key.get != storage) throw new IllegalArgumentException();
             storage.onFailure(key, fe);
         }
@@ -75,7 +75,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
 
     @Override
     public long getCooldownWakeup(SendableRequestItem token, ClientContext context) {
-        MyKey key = (MyKey) token;
+        SplitFileFetcherStorageKey key = (SplitFileFetcherStorageKey) token;
         return storage.segments[key.segmentNumber].getCooldownTime(key.blockNumber);
     }
 
@@ -166,6 +166,11 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     @Override
     protected ClientGetState getClientGetState() {
         return parent;
+    }
+
+    @Override
+    public byte[] getWantedKey() {
+        return null;
     }
     
 }

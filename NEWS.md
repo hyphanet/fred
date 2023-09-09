@@ -1,6 +1,65 @@
 next:
 
-- 
+- merge debian package build for 1494 (not yet updated for 1497).
+
+1497:
+
+- fixed severe path folding vulnerability.
+
+
+1496:
+
+- fix keepalive regression — thanks to PlantEater for tracking it down and fixing it!
+    - fix negative maxsize per new fetch override
+    - also override maxTempLength
+    - LowLevelGetException also return the throwable because the error doesnt help, the real gets hidden
+- update translations, thanks to the translators on transifex, especially the Russian ones!
+- add meta charset tests
+- replace unmaintained freemail site by maintained one — thanks to Cynthia!
+- add missing test annotations — thanks to vwoodzell!
+
+
+1495:
+
+- new theme: sky-dark-static
+- m3u-player: skip broken files
+- m3u-player: only inline the m3u player if the page contains media tags
+- new firsttime wizard (single-step joining with clearer defaults)
+- Client getter honor max size argument 
+- finally merged the HashingAPI by unixninja92, a GSoC project that had gotten lost in the pull requests. This provides an easy and well-tested way to create and verify different types of Hashes from byte arrays, including Sha256 and TigerTree. https://github.com/freenet/fred/pull/258
+- Add web+freenet and ext+freenet as supported schemas to support extensions. Thanks to TheSeeker
+- upgrade unit tests to junit4, thanks to vwoodzell!
+- Eleriseth pending keys merged (performance)
+- healing size increased (better lifetime for popular files)
+- CSS: enable sticky — thanks to Spider Admin
+- CSS: enable transition and word-wrap — thanks to naejadu, thanks to vwoodzell for the review!
+- re-organize default bookmarks: first section has "starting points", thanks to vwoodzell for the review!
+- old announcement fixes by toad finally merged
+
+1494:
+
+- Show a user alert (once every Freenet update) if the datastore is
+  below 10% of available space with a link to the store size wizard page
+  to make it easy to increase the store ― thanks to Trivuele
+- Do not store blocks in the cache, if they are eligible for the store
+  (should increase usable cache size)   thanks to Trivuele
+- m3u-player: more robust sizes, do not use overlay for audio. This
+  finally enables convenient Samizdat Radio
+- randomize pitch black defense times and wait at least 12 hours
+  between pitch black mitigations to prevent timing attacks
+- bandwidth settings: parse bit suffix correctly
+- improve /imagecreator/   thanks to Oleh from Redwerk
+- Disable write local to datastore functionality when opennet is
+  enabled; it can be useful on a small darknet, but on opennet it
+  makes it easier to find downloaders.   thanks to Trivuele
+- make it easier to build fred without network access   thanks to Trivuele
+- fix build with modern Java: add opens jvmargs on java 17
+- fix: a FOAF mitigation wasn t operational, because it lacked a
+  conversion to percent.   thanks to freedom-of-depression
+- remove Frost on ChatForumsToadlet from non-updated translations
+  (removed 2019 from the original english)
+- fix parts of the German translation
+
 
 1493:
 

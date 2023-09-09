@@ -1,14 +1,17 @@
 package freenet.node.probe;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
 import java.util.HashSet;
+
+import org.junit.Test;
 
 /**
  * Tests conversion from code and code validity.
  */
-public class TypeTest extends TestCase {
+public class TypeTest {
 
+	@Test
 	public void testValidCodes() {
 		for (Type t : Type.values()) {
 			final byte code = t.code;
@@ -27,6 +30,7 @@ public class TypeTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testInvalidCodes() {
 		HashSet<Byte> validCodes = new HashSet<Byte>();
 		for (Type type : Type.values()) {

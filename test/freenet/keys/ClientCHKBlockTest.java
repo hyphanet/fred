@@ -1,24 +1,28 @@
 package freenet.keys;
 
+import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.math.MersenneTwister;
 
-public class ClientCHKBlockTest extends TestCase {
+public class ClientCHKBlockTest {
 
+	@Test
 	public void testEncodeDecodeEmptyBlock() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {
 		byte[] buf = new byte[0];
 		checkBlock(buf, false);
 		checkBlock(buf, true);
 	}
 	
+	@Test
 	public void testEncodeDecodeFullBlock() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {
 		byte[] fullBlock = new byte[CHKBlock.DATA_LENGTH];
 		MersenneTwister random = new MersenneTwister(42);
@@ -29,6 +33,7 @@ public class ClientCHKBlockTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testEncodeDecodeShortInteger() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {
 		for(int i=0;i<100;i++) {
 			String s = Integer.toString(i);
@@ -37,6 +42,7 @@ public class ClientCHKBlockTest extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testEncodeDecodeRandomLength() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {	
 		MersenneTwister random = new MersenneTwister(42);
 		for(int i=0;i<10;i++) {
@@ -47,6 +53,7 @@ public class ClientCHKBlockTest extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testEncodeDecodeNearlyFullBlock() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {	
 		MersenneTwister random = new MersenneTwister(68);
 		for(int i=0;i<10;i++) {

@@ -18,9 +18,9 @@ apply plugin: 'java'
 apply plugin: 'maven-publish'
 
 repositories {
-    mavenLocal() // TODO: use lib/ instead?
+    flatDir { dirs uri("${projectDir}/lib") }
     maven { url 'https://mvn.freenetproject.org' }
-    jcenter()
+    mavenCentral()
 }
 
 sourceSets {
@@ -28,7 +28,6 @@ sourceSets {
     test.compileClasspath += configurations.provided
 }
 
-def version_buildir = "$projectDir/build/tmp/compileVersion/"
 def version_src = 'freenet/node/Version.java'
 
 sourceSets {
@@ -69,7 +68,7 @@ tasks.withType(Javadoc) {
 task compileVersion (type: JavaCompile) {
     copy {
         from sourceSets.main.java.srcDirs
-        into "${version_buildir}"
+        into "${buildDir}/build/tmp/compileVersion/"
         include "${version_src}"
         filter {
             String line -> line.replaceAll("@custom@","${gitrev}")
@@ -77,11 +76,12 @@ task compileVersion (type: JavaCompile) {
     }
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
-    source = "${version_buildir}"
+    source = "${buildDir}/build/tmp/compileVersion/"
     include "${version_src}"
     classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDir)
     destinationDir = file("${buildDir}/java/version/")
 }
+
 compileVersion.dependsOn buildInfo
 compileVersion.dependsOn compileJava
 processResources.dependsOn compileVersion
@@ -94,7 +94,7 @@ task jar (type: Jar, overwrite: true) {
         exclude 'freenet/node/Version.class'
         exclude 'freenet/node/Version$1.class'
     }
-    preserveFileTimestamps = false
+    preserveFileTimestamps = true
     reproducibleFileOrder = true
     duplicatesStrategy = "warn"
     archivesBaseName = "freenet"
@@ -150,6 +150,7 @@ task copyResourcesToClasses2 {
             include 'freenet/l10n/*properties'
             include 'freenet/l10n/iso-*.tab'
             include 'freenet/clients/http/staticfiles/**'
+            include 'freenet/clients/http/templates/**'
             include '../dependencies.properties'
         }
         copy {
@@ -171,6 +172,7 @@ task copyTestResourcesToClasses2 {
             include 'freenet/client/filter/*/**'
             include 'freenet/crypt/ciphers/rijndael-gladman-test-data/**'
             include 'freenet/l10n/*properties'
+            include 'freenet/clients/http/templates/**'
         }
     }
 }
@@ -178,6 +180,11 @@ compileTestJava.dependsOn copyResourcesToClasses2
 compileTestJava.dependsOn copyTestResourcesToClasses2
 
 test {
+    if(JavaVersion.current() >= JavaVersion.VERSION_1_9) {
+        jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
+        jvmArgs '--add-opens=java.base/java.util=ALL-UNNAMED'
+        jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
+    }
     minHeapSize = "128m"
     maxHeapSize = "512m"
     // no inner class
@@ -192,6 +199,10 @@ test {
 //	"test.verbose":
 //	"test.benchmark":
     ]
+}
+
+tasks.withType(Test) {
+    enableAssertions = false
 }
 
 publishing {
@@ -227,10 +238,15 @@ dependencies {
     compile "net.java.dev.jna:jna:4.5.2"
     compile "net.java.dev.jna:jna-platform:4.5.2"
     compile "org.freenetproject:freenet-ext:29"
+    compile "io.pebbletemplates:pebble:3.1.5"
+    // dependencies of pebble
+    compile "org.unbescape:unbescape:1.1.6.RELEASE"
+    compile "org.slf4j:slf4j-api:1.7.25"
 
-    testCompile 'junit:junit:4.12'
+    testCompile 'junit:junit:4.13.2'
     testCompile "org.mockito:mockito-core:1.9.5"
-    testCompile "org.hamcrest:hamcrest-library:1.3"
+    testCompile "org.hamcrest:hamcrest:2.2"
+    testCompile "org.objenesis:objenesis:1.0"
 }
 
 dependencyVerification {
@@ -241,11 +257,14 @@ dependencyVerification {
         'net.java.dev.jna:jna-platform:f1d00c167d8921c6e23c626ef9f1c3ae0be473c95c68ffa012bc7ae55a87e2d6',
         'net.java.dev.jna:jna:0c8eb7acf67261656d79005191debaba3b6bf5dd60a43735a245429381dbecff',
         'org.freenetproject:freenet-ext:32f2b3d6beedf54137ea2f9a3ebef67666d769f0966b08cd17fd7db59ba4d79f',
-        'junit:junit:59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a',
+        'junit:junit:8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3',
         'org.mockito:mockito-core:f97483ba0944b9fa133aa29638764ddbeadb51ec3dbc02074c58fa2caecd07fa',
-        'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
-        'org.hamcrest:hamcrest-core:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9',
+        'org.hamcrest:hamcrest:5e62846a89f05cd78cd9c1a553f340d002458380c320455dd1f8fc5497a8a1c1',
         'org.objenesis:objenesis:c5694b55d92527479382f254199b3c6b1d8780f652ad61e9ca59919887f491a8',
+        'io.pebbletemplates:pebble:d253a6dde59e138698aaaaee546461d2f1f6c8bd2aa38ecdd347df17cf90d6f0',
+        // dependencies of pebble
+        'org.unbescape:unbescape:597cf87d5b1a4f385b9d1cec974b7b483abb3ee85fc5b3f8b62af8e4bec95c2c',
+        'org.slf4j:slf4j-api:18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79'
     ]
 }
 
@@ -263,7 +282,7 @@ task tar(type: Tar) {
 
   into(baseName)
 
-  preserveFileTimestamps = false
+  preserveFileTimestamps = true
   reproducibleFileOrder = true
 
   // Set destination directory.

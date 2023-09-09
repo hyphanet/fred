@@ -3,10 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
+import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.util.ArrayList;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
 import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
 
@@ -27,12 +30,13 @@ import freenet.support.SimpleFieldSet;
  * to be attached by network, not server plugins.<br>
  * See {@link FCPPluginConnectionImpl} for an overview of the architecture. 
  */
-public final class FCPPluginMessageEncodeDecodeTest extends TestCase {
+public final class FCPPluginMessageEncodeDecodeTest {
 
     /**
      * Creates different interesting types of {@link FCPPluginMessage}, whose actual encoding and
      * decoding is then tested using {@link #testEncodeDecode(FCPPluginMessage)}.
      */
+    @Test
     public final void testEncodeDecode() throws MessageInvalidException, IOException, FSParseException {
         ArrayList<FCPPluginMessage> messages = new ArrayList<FCPPluginMessage>();
         

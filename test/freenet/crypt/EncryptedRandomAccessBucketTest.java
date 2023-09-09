@@ -1,6 +1,6 @@
 package freenet.crypt;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -57,6 +57,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         bucket.free();
     }
     
+    @Test
     public void testIrregularWrites() throws IOException {
         Random r = new Random(6032405);
         int length = 1024*64+1;
@@ -83,6 +84,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         bucket.free();
     }
     
+    @Test
     public void testIrregularWritesNotOverlapping() throws IOException {
         Random r = new Random(6032405);
         int length = 1024*64+1;
@@ -109,6 +111,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         bucket.free();
     }
     
+    @Test
     public void testBucketToRAF() throws IOException {
         Random r = new Random(6032405);
         int length = 1024*64+1;

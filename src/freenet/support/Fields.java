@@ -706,7 +706,7 @@ public abstract class Fields {
 		final String lower = limit.toLowerCase();
 		for(String ending :
 			new String[] {
-				"/s", "/sec", "/second", "bps", NodeL10n.getBase().getString("FirstTimeWizardToadlet.bandwidthPerSecond").toLowerCase()
+				"/s", "/sec", "/second", "ps", NodeL10n.getBase().getString("FirstTimeWizardToadlet.bandwidthPerSecond").toLowerCase()
 			}) {
 			if(lower.endsWith(ending)) {
 				return limit.substring(0, limit.length() - ending.length());
@@ -732,11 +732,16 @@ public abstract class Fields {
 
 	/**
 	 * Parse a human-readable string possibly including SI and ICE units into an integer.
+     * 
+     * If it is a size (suffix b für bits or B for bytes), the size is returned as bytes.
+     * 8b = 1, 8B = 8.
 	 * @throws NumberFormatException
 	 *             if the string is not parseable
 	 */
 	public static int parseInt(String s) throws NumberFormatException {
-		s = s.replaceFirst("(i)*B$", "");
+        boolean isSizeInBits = s.endsWith("b");
+        // strip bit/byte suffix
+        s = s.replaceFirst((isSizeInBits ? "(i)*b$" : "(i)*B$"), "");
 		int res = 1;
 		int x = s.length() - 1;
 		int idx;
@@ -750,7 +755,7 @@ public abstract class Fields {
 			res = Integer.MAX_VALUE;
 			throw new NumberFormatException(e.getMessage());
 		}
-		return res;
+		return isSizeInBits ? res / 8 : res;
 	}
 
 	/**
@@ -770,19 +775,28 @@ public abstract class Fields {
 			}
 			String multiplier = s.substring(0, x + 1).trim();
 			if(multiplier.indexOf('.') > -1 || multiplier.indexOf('E') > -1) {
-				res *= Double.parseDouble(multiplier);
+				double m = Double.parseDouble(multiplier);
+				checkLongOverflowWhenMultiply(res, m);
+				res *= m;
 				if(logMINOR)
 					Logger.minor(Fields.class, "Parsed " + multiplier + " of " + s + " as double: " + res);
 			} else {
-				res *= Long.parseLong(multiplier);
+				long m = Long.parseLong(multiplier);
+				checkLongOverflowWhenMultiply(res, m);
+				res *= m;
 				if(logMINOR)
 					Logger.minor(Fields.class, "Parsed " + multiplier + " of " + s + " as long: " + res);
 			}
 		} catch(ArithmeticException e) {
-			res = Long.MAX_VALUE;
 			throw new NumberFormatException(e.getMessage());
 		}
 		return res;
+	}
+
+	private static void checkLongOverflowWhenMultiply(long a, Number b) {
+		if (a != 0 && Math.abs(b.longValue()) > Long.MAX_VALUE / a) {
+			throw new NumberFormatException("Long overflow");
+		}
 	}
 
 	public static String longToString(long val, boolean isSize) {

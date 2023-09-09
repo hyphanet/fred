@@ -55,6 +55,7 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.NodeL10n;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.useralerts.DatastoreTooSmallAlert;
 import freenet.node.useralerts.DiskSpaceUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -92,6 +93,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * The connection between the node and the client layer.
  */
 public class NodeClientCore implements Persistable {
+	// max number of healing inserts. If a 320 MiB file succeeds just barely,
+	// it has about 10.000 blocks eligible for healing (10_000 x 32 kiB).
+	// lifetime of large files is currently 7-14 days, so at 10_000 max keys,
+	// a 320 MiB file stays alive if one person accesses it every 10 days.
+	// a 3GiB file stays alive if it is downloaded by one person per day.
+	// 8k means that up to 250 MiB of memory are needed
+	// when a file of 250MiB or more succeeds just barely.
+	private static final int MAX_RUNNING_HEALING_INSERTS = 8192;
 	private static volatile boolean logMINOR;
 
 	static {
@@ -486,7 +495,7 @@ public class NodeClientCore implements Persistable {
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false,
 						Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0,
 						InsertContext.CompatibilityMode.COMPAT_DEFAULT),
-				RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+				RequestStarter.PREFETCH_PRIORITY_CLASS, MAX_RUNNING_HEALING_INSERTS);
 
 		PooledFileRandomAccessBufferFactory raff =
 				new PooledFileRandomAccessBufferFactory(persistentFilenameGenerator,
@@ -881,6 +890,7 @@ public class NodeClientCore implements Persistable {
 				    });
 		alwaysCommit = nodeConfig.getBoolean("alwaysCommit");
 		alerts.register(new DiskSpaceUserAlert(this));
+		alerts.register(new DatastoreTooSmallAlert(this));
 	}
 
 	protected void updatePersistentRAFSpaceLimit() {
@@ -1156,9 +1166,6 @@ public class NodeClientCore implements Persistable {
 			public void onRequestSenderFinished(int status, boolean fromOfferedKey, RequestSender rs) {
 				tag.unlockHandler();
 
-				if(rs.abortedDownstreamTransfers())
-					status = RequestSender.TRANSFER_FAILED;
-
 				if(status == RequestSender.NOT_FINISHED) {
 					Logger.error(this, "Bogus status in onRequestSenderFinished for "+rs, new Exception("error"));
 					listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
@@ -1260,11 +1267,6 @@ public class NodeClientCore implements Persistable {
 							return;
 					}
 				}
-			}
-
-			@Override
-			public void onAbortDownstreamTransfers(int reason, String desc) {
-				// Ignore, onRequestSenderFinished will also be called.
 			}
 
 			@Override
@@ -1380,9 +1382,6 @@ public class NodeClientCore implements Persistable {
 				}
 
 				int status = rs.getStatus();
-
-				if(rs.abortedDownstreamTransfers())
-					status = RequestSender.TRANSFER_FAILED;
 
 				if(status == RequestSender.NOT_FINISHED)
 					continue;

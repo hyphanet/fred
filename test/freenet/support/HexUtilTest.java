@@ -16,6 +16,8 @@
 
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -25,19 +27,20 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.HexUtil} class.
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
-public class HexUtilTest extends TestCase {
+public class HexUtilTest {
 
 	/**
 	 * Test the bytesToHex(byte[]) method
 	 * against every possible single byte value.
 	 */
+	@Test
 	public void testBytesToHex_byte() {
 		byte[] methodByteArray = new byte[1];
 		String expectedResult;
@@ -57,6 +60,7 @@ public class HexUtilTest extends TestCase {
 	 * every possible single byte.
 	 * The starting offset is always 0.
 	 */
+	@Test
 	public void testHexToBytes_String() {
 		byte[] expectedByteArray = new byte[1];
 		String methodHexString;
@@ -76,6 +80,7 @@ public class HexUtilTest extends TestCase {
 	 * every possible single byte.
 	 * The starting offset is always 0.
 	 */
+	@Test
 	public void testHexToBytes_StringInt() {
 		byte[] expectedByteArray = new byte[1];
 		String methodHexString;
@@ -94,6 +99,7 @@ public class HexUtilTest extends TestCase {
 	 * against the hex representation of
 	 * every possible single byte.
 	 */
+	@Test
 	public void testHexToBytes_StringByteInt() {
 		byte[] expectedByteArray = new byte[1];
 		byte[] outputArray = new byte[1];
@@ -114,6 +120,7 @@ public class HexUtilTest extends TestCase {
 	 * against the bit representation of
 	 * every possible single byte.
 	 */
+	@Test
 	public void testBitsToBytes_BitSetInt() {
 		byte[] expectedByteArray = new byte[1];
 		byte[] outputArray = new byte[1];
@@ -143,6 +150,7 @@ public class HexUtilTest extends TestCase {
 	 * Test countBytesForBits(int) method
 	 * against all possible values until 256 bytes
 	 */
+	@Test
 	public void testCountBytesForBits_int() {
 		//border case
 		assertEquals(HexUtil.countBytesForBits(0),0);
@@ -157,6 +165,7 @@ public class HexUtilTest extends TestCase {
 	 * It uses HexUtil.bitsToBytes() method for the check,
 	 * so be sure that method works correctly!
 	 */
+	@Test
 	public void testBytesToBits_byteBitSetInt() {
 		byte[] methodByteArray = new byte[1];
 		BitSet methodBitSet = new BitSet(8);
@@ -171,6 +180,7 @@ public class HexUtilTest extends TestCase {
 	 * comparing its results to results provided
 	 * by different scientific valid calculators.
 	 */
+	@Test
 	public void testBiToHex_BigInteger() {
 		BigInteger methodBigInteger = new BigInteger("999999999999999");
 		String expectedHexValue = "038d7ea4c67fff";
@@ -188,6 +198,7 @@ public class HexUtilTest extends TestCase {
 	 * comparing its results to results provided
 	 * by different scientific valid calculators.
 	 */
+	@Test
 	public void testBitsToHexString() {
 		BitSet methodBitSet = new BitSet(8);
 		String expectedString = "00";
@@ -203,6 +214,7 @@ public class HexUtilTest extends TestCase {
 	/**
 	 * Tests hexToBits(String,BitSet,int) method
 	 */
+	@Test
 	public void testHexToBits() {
 		String methodStringToStore = "00";
 		BitSet methodBitSet = new BitSet(8);
@@ -227,6 +239,7 @@ public class HexUtilTest extends TestCase {
 	 * BigInteger after writing it to a Stream and
 	 * reading it from the writing result.
 	 */
+	@Test
 	public void testWriteAndReadBigInteger() {
 		BigInteger methodBigInteger = new BigInteger("999999999999999");
 		ByteArrayOutputStream methodByteArrayOutStream = new ByteArrayOutputStream();
@@ -246,6 +259,7 @@ public class HexUtilTest extends TestCase {
 	 * with a too long starting offset. The tested
 	 * method should raise an exception.
 	 */
+	@Test
 	public void testBytesToHex_byteIntInt_WithLongOffset() {
         try {
         	int arrayLength = 3;
@@ -261,6 +275,7 @@ public class HexUtilTest extends TestCase {
 	 * with asking to read too many bytes. The tested
 	 * method should raise an exception.
 	 */
+	@Test
 	public void testBytesToHex_byteIntInt_WithLongReading() {
         try {
         	int arrayLength = 3;
@@ -275,6 +290,7 @@ public class HexUtilTest extends TestCase {
 	 * Test bytesToHex(byte[],int,int) method
 	 * with a 0 length.
 	 */
+	@Test
 	public void testBytesToHex_byteIntInt_WithZeroLength() {
 		int length = 0;
 		byte[] methodBytesArray = {1,2,3};		//a non-zero bytes array
@@ -286,6 +302,7 @@ public class HexUtilTest extends TestCase {
 	 * with a too long offset.
 	 * The method should raise an exception.
 	 */
+	@Test
 	public void testHexToBytes_StringByteInt_WithLongOffset() {
         try {
         	String methodString = "0";
@@ -301,6 +318,7 @@ public class HexUtilTest extends TestCase {
 	 * with a too short byte[] to put the result.
 	 * The method should raise an exception.
 	 */
+	@Test
 	public void testHexToBytes_StringByteInt_WithShortArray() {
         try {
         	String methodString = "0000";
@@ -316,6 +334,7 @@ public class HexUtilTest extends TestCase {
 	 * with a not valid character.
 	 * The method should raise an exception. 
 	 */
+	@Test
 	public void testHexToBytes_WithBadDigit() {
 		String methodString = "00%0";
 		try {
@@ -341,6 +360,7 @@ public class HexUtilTest extends TestCase {
 	 * using a size smaller than the actual number
 	 * of bits in the BitSet.
 	 */
+	@Test
 	public void testBitsToBytes_WithShortSize() {
 		byte[] expectedByteArray = new byte[1];
 		byte[] outputArray = new byte[1];
@@ -371,6 +391,7 @@ public class HexUtilTest extends TestCase {
 
 	/* Checks that offset == array length is allowed, which is needed for
 	 * handling zero length arrays */
+	@Test
 	public void testBytesToHexZeroLength() {
 		assertEquals("", HexUtil.bytesToHex(new byte[0], 0, 0));
 		assertEquals("", HexUtil.bytesToHex(new byte[2], 2, 0));

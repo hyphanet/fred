@@ -1,14 +1,16 @@
 package freenet.support;
 
+import static org.junit.Assert.*;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class BloomFilterTest extends TestCase {
+public class BloomFilterTest {
 	private static final int FILTER_SIZE = 4 * 1024; // MUST be > PASS,
 	private static final int PASS = 2048;
 	private static final int PASS_REMOVE = 4096;
@@ -33,18 +35,21 @@ public class BloomFilterTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testCountingFilterPositive() {
 		int K = BloomFilter.optimialK(FILTER_SIZE, PASS_POS);
 		BloomFilter filter = BloomFilter.createFilter(FILTER_SIZE, K, true);
 		_testFilterPositive(filter);
 	}
 
+	@Test
 	public void testBinaryFilterPositive() {
 		int K = BloomFilter.optimialK(FILTER_SIZE, PASS_POS);
 		BloomFilter filter = BloomFilter.createFilter(FILTER_SIZE, K, false);
 		_testFilterPositive(filter);
 	}
 
+	@Test
 	public void testCountingFilterRemove() {
 		int K = BloomFilter.optimialK(FILTER_SIZE, PASS);
 		BloomFilter filter = BloomFilter.createFilter(FILTER_SIZE, K, true);
@@ -138,12 +143,14 @@ public class BloomFilterTest extends TestCase {
 		assertFalse("false positive, p=" + p + ", actual=" + actual, actual > limit);
 	}
 
+	@Test
 	public void testCountingFilterFalsePositive() {
 		int K = BloomFilter.optimialK(FILTER_SIZE, PASS);
 		BloomFilter filter = BloomFilter.createFilter(FILTER_SIZE, K, true);
 		_testFilterFalsePositive(filter);
 	}
 
+	@Test
 	public void testBinaryFilterFalsePositive() {
 		int K = BloomFilter.optimialK(FILTER_SIZE, PASS);
 		BloomFilter filter = BloomFilter.createFilter(FILTER_SIZE, K, false);

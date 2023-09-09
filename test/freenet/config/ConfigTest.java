@@ -15,33 +15,34 @@
  */
 package freenet.config;
 
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import freenet.test.UTFUtil;
-import junit.framework.TestCase;
 
 /**
  * Test case for the {@link freenet.config.Config} class.
  * 
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
-public class ConfigTest extends TestCase {
+public class ConfigTest {
 	Config conf;
 	SubConfig sc;
 	
-	public ConfigTest(String name) {
-		super(name);
-	}
-	
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setUp() throws Exception {
 		conf = new Config();
 		sc = conf.createSubConfig("testing");
 	}
 	
+	@Test
 	public void testConfig() {
 		assertNotNull(new Config());
 	}
 
+	@Test
 	public void testRegister() {
 		/* test if we can register */
 		StringBuilder sb = new StringBuilder();
@@ -60,6 +61,7 @@ public class ConfigTest extends TestCase {
 		fail();
 	}
 
+	@Test
 	public void testGetConfigs() {
 		assertNotNull(conf.getConfigs());
 		assertFalse(new Config().getConfigs().equals(conf));
@@ -67,6 +69,7 @@ public class ConfigTest extends TestCase {
 		assertSame(sc, conf.getConfigs()[0]);
 	}
 
+	@Test
 	public void testGet() {
 		assertSame(sc, conf.get("testing"));
 	}

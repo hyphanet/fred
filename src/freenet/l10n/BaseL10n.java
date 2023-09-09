@@ -479,6 +479,17 @@ public class BaseL10n {
 	}
 
 	/**
+	 * Get a localized string. Return "" (empty string) if it doesn't exist.
+	 * @param key Key to search for.
+	 * @param replacementValue Replacement value for all ${*}.
+	 * @return String
+	 */
+	public String getString(String key, String replacementValue) {
+		String string = getStrings(key).iterator().next();
+		return string.replaceAll("\\$\\{.*}", replacementValue);
+	}
+
+	/**
 	 * Get a localized string.
 	 * @param key Key to search for.
 	 * @param returnNullIfNotFound If this is true, will return null if the key is not found.
@@ -581,7 +592,7 @@ public class BaseL10n {
 	/**
 	 * Get the default value for a key.
 	 * @param key Key to search for.
-	 * @return String
+	 * @return the matching string in the fallback language (English); the raw key if there is no entry for it in the fallback language.
 	 */
 	public String getDefaultString(String key) {
         return getStrings(key, FallbackState.FALLBACK_LANG).iterator().next();
@@ -590,7 +601,7 @@ public class BaseL10n {
 	/**
 	 * Get the default value for a key.
 	 * @param key Key to search for.
-	 * @return String
+	 * @return the matching string in the fallback language (English); the raw key if there is no entry for it in the fallback language. Patterns are replaced by the matching values.
 	 */
 	public String getDefaultString(String key, String[] patterns, String[] values) {
 		assert (patterns.length == values.length);

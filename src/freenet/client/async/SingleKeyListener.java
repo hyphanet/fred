@@ -57,7 +57,7 @@ public class SingleKeyListener implements KeyListener {
 			fetcher.onGotKey(key, found, context);
 		} catch (Throwable t) {
 			Logger.error(this, "Failed: "+t, t);
-			fetcher.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), null, context);
+			fetcher.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t), null, context);
 		}
 		synchronized(this) {
 			done = true;
@@ -89,6 +89,11 @@ public class SingleKeyListener implements KeyListener {
 	@Override
 	public boolean isSSK() {
 		return key instanceof NodeSSK;
+	}
+
+ 	@Override
+	public byte[] getWantedKey() {
+		return key instanceof NodeSSK ? ((NodeSSK)key).getPubKeyHash() : key.getRoutingKey();
 	}
 
 }

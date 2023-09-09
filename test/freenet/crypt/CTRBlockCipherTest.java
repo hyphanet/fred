@@ -1,5 +1,7 @@
 package freenet.crypt;
 
+import static org.junit.Assert.*;
+
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -13,13 +15,13 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
 import freenet.support.math.MersenneTwister;
 
-public class CTRBlockCipherTest extends TestCase {
+public class CTRBlockCipherTest {
 
 	/** Whether to assume JCA is available, and non-crippled. */
 	public static final boolean TEST_JCA = Rijndael.AesCtrProvider != null;
@@ -123,6 +125,7 @@ public class CTRBlockCipherTest extends TestCase {
 					+ "2b0930daa23de94ce87017ba2d84988d"
 					+ "dfc9c58db67aada613c2dd08457941a6");
 
+	@Test
 	public void testNIST() throws UnsupportedCipherException,
 			NoSuchAlgorithmException, NoSuchPaddingException,
 			InvalidKeyException, InvalidAlgorithmParameterException,
@@ -145,6 +148,7 @@ public class CTRBlockCipherTest extends TestCase {
 				NIST_256_DECRYPT_PLAINTEXT, NIST_256_DECRYPT_CIPHERTEXT);
 	}
 
+	@Test
 	public void testNISTRandomLength() throws UnsupportedCipherException,
 			NoSuchAlgorithmException, NoSuchPaddingException,
 			InvalidKeyException, InvalidAlgorithmParameterException,
@@ -242,6 +246,7 @@ public class CTRBlockCipherTest extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testRandomJCA() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
 		if(!TEST_JCA) return;
 		for(int i=0;i<1024;i++) {
@@ -262,6 +267,7 @@ public class CTRBlockCipherTest extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testRandom() throws UnsupportedCipherException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
 		for(int i=0;i<1024;i++) {
 			byte[] plaintext = new byte[mt.nextInt(4096)+1];

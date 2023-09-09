@@ -1,18 +1,20 @@
 package freenet.client.filter;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
+import org.junit.Test;
+
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NullOutputStream;
 
-public class GIFFilterTest extends TestCase {
+public class GIFFilterTest {
     private static final String RESOURCE_PATH = "gif/";
 
     /** Known good files, should pass filter unaltered. */
@@ -99,30 +101,32 @@ public class GIFFilterTest extends TestCase {
         "share-the-safety-like.truncated.gif"
     };
 
+    @Test
     public void testKnownGood() throws IOException {
         for (String good : GOOD) {
             assertEqualAfterFilter(good, good);
         }
     }
 
+    @Test
     public void testFilterPairs() throws IOException {
         for (String[] pair : FILTER_PAIRS) {
             assertEqualAfterFilter(pair[0], pair[1]);
         }
     }
 
+    @Test
     public void testReject() throws IOException {
         for (String reject : REJECT) {
             try (InputStream inStream = resourceToBucket(reject).getInputStream();
                  NullOutputStream outStream = new NullOutputStream()) {
 
                 ContentDataFilter filter = new GIFFilter();
-                try {
-                    filter.readFilter(inStream, outStream, "", null, null, null);
-                    fail("Filter did not fail on reject sample " + reject);
-                } catch (DataFilterException e) {
-                    // Expected.
-                }
+                assertThrows(
+                    "Filter did not fail on reject sample " + reject,
+                    DataFilterException.class,
+                    () -> filter.readFilter(inStream, outStream, "", null, null, null)
+                );
             }
         }
     }
@@ -175,10 +179,6 @@ public class GIFFilterTest extends TestCase {
      * @throws AssertionError on failure
      */
     private static Bucket resourceToBucket(String filename) throws IOException {
-        InputStream is = GIFFilterTest.class.getResourceAsStream(RESOURCE_PATH + filename);
-        Bucket ab = new ArrayBucket();
-        BucketTools.copyFrom(ab, is, Long.MAX_VALUE);
-
-        return ab;
+        return ResourceFileUtil.resourceToBucket(RESOURCE_PATH + filename);
     }
 }

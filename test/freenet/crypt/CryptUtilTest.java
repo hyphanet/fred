@@ -3,17 +3,20 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import static org.junit.Assert.*;
+
 import java.util.Arrays;
 import java.security.SecureRandom;
 import java.security.NoSuchAlgorithmException;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import freenet.support.math.MersenneTwister;
 import freenet.support.Fields;
 
-public class CryptUtilTest extends TestCase {
+public class CryptUtilTest {
 
+	@Test
 	public void testRandomBytes()
 	{
 		// two predictable pseudo-random sequence
@@ -31,6 +34,7 @@ public class CryptUtilTest extends TestCase {
 			}
 		}
 	}
+	@Test
 	public void testSecureRandomBytes()
 	{
 		SecureRandom r1;

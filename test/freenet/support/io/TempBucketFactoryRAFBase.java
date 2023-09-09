@@ -1,5 +1,7 @@
 package freenet.support.io;
 
+import static org.junit.Assert.*;
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +12,9 @@ import java.util.Arrays;
 import java.util.Random;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import freenet.crypt.EncryptedRandomAccessBucket;
 import freenet.crypt.MasterSecret;
@@ -43,7 +48,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         Security.addProvider(new BouncyCastleProvider());
     }
     
-    @Override
+    @Before
     public void setUp() throws IOException {
         fg = new FilenameGenerator(weakPRNG, true, f, "temp-raf-test-");
         factory = new TempBucketFactory(exec, fg, 4096, 65536, weakPRNG, false, 1024*1024*2, secret);
@@ -54,7 +59,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         assertTrue(f.exists() && f.isDirectory());
     }
     
-    @Override
+    @After
     public void tearDown() {
         assertEquals(factory.getRamUsed(), 0);
         // Everything should have been free()'ed.
@@ -67,6 +72,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         return factory.makeRAF(size);
     }
     
+    @Test
     public void testArrayMigration() throws IOException {
         Random r = new Random(21162506);
         for(int size : TEST_LIST_NOT_MIGRATED)
@@ -92,6 +98,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         raf.free();
     }
     
+    @Test
     public void testBucketToRAFWhileArray() throws IOException {
         int len = 4095;
         Random r = new Random(21162101);
@@ -128,6 +135,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         assertFalse(f.exists());
     }
     
+    @Test
     public void testBucketToRAFCallTwiceArray() throws IOException {
         int len = 4095;
         Random r = new Random(21162101);
@@ -147,6 +155,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         raf.free();
     }
     
+    @Test
     public void testBucketToRAFCallTwiceFile() throws IOException {
         int len = 4095;
         Random r = new Random(21162101);
@@ -167,6 +176,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         raf.free();
     }
     
+    @Test
     public void testBucketToRAFFreeBucketWhileArray() throws IOException {
         int len = 4095;
         Random r = new Random(21162101);
@@ -188,6 +198,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         }
     }        
 
+    @Test
     public void testBucketToRAFFreeWhileArray() throws IOException {
         int len = 4095;
         Random r = new Random(21162101);
@@ -216,6 +227,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         }
     }        
 
+    @Test
     public void testBucketToRAFFreeWhileFile() throws IOException {
         int len = 4095;
         Random r = new Random(21162101);
@@ -251,6 +263,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         }
     }        
 
+    @Test
     public void testBucketToRAFFreeWhileFileFreeRAF() throws IOException {
         int len = 4095;
         Random r = new Random(21162101);
@@ -285,6 +298,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         }
     }        
 
+    @Test
     public void testBucketToRAFFreeWhileFileMigrateFirst() throws IOException {
         int len = 4095;
         Random r = new Random(21162101);
@@ -338,6 +352,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         assertTrue(Arrays.equals(buf, cbuf));
     }
 
+    @Test
     public void testBucketToRAFWhileFile() throws IOException {
         int len = 4095;
         Random r = new Random(21162101);
@@ -373,6 +388,7 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         assertFalse(f.exists());
     }
     
+    @Test
     public void testBucketToRAFFailure() throws IOException {
         int len = 4095;
         Random r = new Random(21162101);

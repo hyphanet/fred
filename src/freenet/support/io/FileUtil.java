@@ -774,6 +774,7 @@ final public class FileUtil {
 	public static File createTempFile(String prefix, String suffix,
 			File directory) throws IOException {
 		if(directory == null) directory = new File(".");
+		if (prefix.length() < 3) prefix += "-TMP"; // File.createTempFile requires the prefix to have at least length 3
 		return File.createTempFile(prefix, suffix, directory);
 	}
 

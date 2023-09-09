@@ -159,7 +159,7 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 	 */
 	protected File getTempfile() throws IOException {
 		File file = getFile();
-		File f = File.createTempFile(file.getName(), ".freenet-tmp", file.getParentFile());
+		File f = FileUtil.createTempFile(file.getName(), ".freenet-tmp", file.getParentFile());
 		if(deleteOnExit()) f.deleteOnExit();
 		return f;
 	}
