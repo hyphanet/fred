@@ -3,22 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Random;
@@ -69,14 +58,26 @@ final public class FileUtil {
 	            lis.readLine(100000, 200, true);
 	        }
 	    } catch (IOException e) {
-	        Closer.close(lis);
-	        Closer.close(fis);
-	        throw e;
+			if (lis != null) {
+				try {
+					lis.close();
+				} catch (IOException e1) {
+					Logger.error(FileUtil.class, "Error during close() on "+ lis, e1);
+				}
+			}
+			if (fis != null) {
+				try {
+					fis.close();
+				} catch (IOException e1) {
+					Logger.error(FileUtil.class, "Error during close() on "+ fis, e1);
+				}
+			}
+			throw e;
 	    }
 	    return lis;
 	}
 
-	public static enum OperatingSystem {
+	public enum OperatingSystem {
 		Unknown(false, false, false), // Special-cased in filename sanitising code.
 		MacOS(false, true, true), // OS/X in that it can run scripts.
 		Linux(false, false, true),
@@ -94,7 +95,7 @@ final public class FileUtil {
 		};
 	};
 	
-	public static enum CPUArchitecture {
+	public enum CPUArchitecture {
 	    Unknown,
 	    X86,
 	    X86_64,
@@ -148,24 +149,29 @@ final public class FileUtil {
 
 			// Please adapt sanitizeFileName when adding new OS.
 
-			if(name.indexOf("win") >= 0)
+			if (name.contains("win")) {
 				return OperatingSystem.Windows;
+			}
 
-			if(name.indexOf("mac") >= 0)
+			if (name.contains("mac")) {
 				return OperatingSystem.MacOS;
+			}
 
-			if(name.indexOf("linux") >= 0)
+			if (name.contains("linux")) {
 				return OperatingSystem.Linux;
-			
-			if(name.indexOf("freebsd") >= 0)
+			}
+
+			if (name.contains("freebsd")) {
 				return OperatingSystem.FreeBSD;
-			
-			if(name.indexOf("unix") >= 0)
+			}
+
+			if (name.contains("unix")) {
 				return OperatingSystem.GenericUnix;
-			else if(File.separatorChar == '/')
+			} else if (File.separatorChar == '/') {
 				return OperatingSystem.GenericUnix;
-			else if(File.separatorChar == '\\')
+			} else if (File.separatorChar == '\\') {
 				return OperatingSystem.Windows;
+			}
 
 			Logger.error(FileUtil.class, "Unknown operating system:" + name);
 		} catch(Throwable t) {
@@ -231,13 +237,10 @@ final public class FileUtil {
 		long blockUsage = roundup_2n(flen, 4096);
 		// Assume 512 byte filename entries, with 100 bytes overhead, for filename overhead (NTFS)
 		String filename = file.getName();
-		int nameLength;
-		try {
-			nameLength = Math.max(filename.getBytes("UTF-16").length, filename.getBytes("UTF-8").length) + 100;
-		} catch (UnsupportedEncodingException e) {
-			// Impossible.
-			throw new RuntimeException("UTF-16 or UTF-8 charset not supported?!");
-		} 
+		int nameLength = 100 + Math.max(
+			filename.getBytes(StandardCharsets.UTF_16).length,
+			filename.getBytes(StandardCharsets.UTF_8).length
+		);
 		long filenameUsage = roundup_2n(nameLength, 512);
 		// Assume 50 bytes per block tree overhead with 1kB blocks (reiser3 worst case)
 		long extra = (roundup_2n(flen, 1024) / 1024) * 50;
@@ -309,27 +312,19 @@ final public class FileUtil {
      */
 	public static StringBuilder readUTF(File file, long offset) throws FileNotFoundException, IOException {
 		StringBuilder result = new StringBuilder();
-		FileInputStream fis = null;
-		BufferedInputStream bis = null;
-		InputStreamReader isr = null;
 
-		try {
-			fis = new FileInputStream(file);
+		try (FileInputStream fis = new FileInputStream(file)){
 			skipFully(fis, offset);
-			bis = new BufferedInputStream(fis);
-			isr = new InputStreamReader(bis, "UTF-8");
-
-			char[] buf = new char[4096];
-			int length = 0;
-
-			while((length = isr.read(buf)) > 0) {
-				result.append(buf, 0, length);
+			try (
+				BufferedInputStream bis = new BufferedInputStream(fis);
+				InputStreamReader isr = new InputStreamReader(bis, StandardCharsets.UTF_8);
+			) {
+				char[] buf = new char[4096];
+				int length;
+				while((length = isr.read(buf)) > 0) {
+					result.append(buf, 0, length);
+				}
 			}
-
-		} finally {
-			Closer.close(isr);
-			Closer.close(bis);
-			Closer.close(fis);
 		}
 		return result;
 	}
@@ -354,16 +349,12 @@ final public class FileUtil {
 	public static StringBuilder readUTF(InputStream stream, long offset) throws IOException {
 	    StringBuilder result = new StringBuilder();
 	    skipFully(stream, offset);
-	    InputStreamReader reader = null;
-	    try {
-	        reader = new InputStreamReader(stream, "UTF-8");
+	    try (InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
 	        char[] buf = new char[4096];
-	        int length = 0;
+	        int length;
 	        while((length = reader.read(buf)) > 0) {
 	            result.append(buf, 0, length);
 	        }
-	    } finally {
-	        Closer.close(reader);
 	    }
 	    return result;
 	}
@@ -380,30 +371,27 @@ final public class FileUtil {
 		}
 	}
 
-	public static boolean writeTo(InputStream input, File target) throws FileNotFoundException, IOException {
-		DataInputStream dis = null;
-		FileOutputStream fos = null;
+	public static boolean writeTo(InputStream input, File target) throws IOException {
+
 		File file = File.createTempFile("temp", ".tmp", target.getParentFile());
-		if(logMINOR)
+		if(logMINOR) {
 			Logger.minor(FileUtil.class, "Writing to "+file+" to be renamed to "+target);
+		}
 
-		try {
-			dis = new DataInputStream(input);
-			fos = new FileOutputStream(file);
-
-			int len = 0;
+		try (
+			DataInputStream dis = new DataInputStream(input);
+			FileOutputStream fos = new FileOutputStream(file)
+		) {
 			byte[] buffer = new byte[4096];
+			int len;
 			while ((len = dis.read(buffer)) > 0) {
 				fos.write(buffer, 0, len);
 			}
-		} finally {
-			if(dis != null) dis.close();
-			if(fos != null) fos.close();
 		}
 
-		if(FileUtil.renameTo(file, target))
+		if(FileUtil.renameTo(file, target)) {
 			return true;
-		else {
+		} else {
 			file.delete();
 			return false;
 		}
@@ -679,25 +667,22 @@ final public class FileUtil {
 	
 	public static void secureDelete(File file) throws IOException {
 		// FIXME somebody who understands these things should have a look at this...
-		if(!file.exists()) return;
+		if(!file.exists()) {
+			return;
+		}
 		long size = file.length();
 		if(size > 0) {
-			RandomAccessFile raf = null;
-			try {
-				System.out.println("Securely deleting "+file+" which is of length "+size+" bytes...");
-				raf = new RandomAccessFile(file, "rw");
+			System.out.println("Securely deleting "+file+" which is of length "+size+" bytes...");
+			try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
 				// Random data first.
 				raf.seek(0);
 				fill(new RandomAccessFileOutputStream(raf), size);
 				raf.getFD().sync();
-				raf.close();
-				raf = null;
-			} finally {
-				Closer.close(raf);
 			}
 		}
-		if((!file.delete()) && file.exists())
+		if((!file.delete()) && file.exists()) {
 			throw new IOException("Unable to delete file "+file);
+		}
 	}
 
 	@Deprecated

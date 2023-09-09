@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Date;
@@ -35,7 +36,6 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
-import freenet.support.io.Closer;
 import freenet.support.io.ResumeFailedException;
 
 public class ClientPut extends ClientPutBase {
@@ -229,27 +229,22 @@ public class ClientPut extends ClientPutBase {
 		
 		// Check the hash : allow it to be null for backward compatibility and if testDDA is allowed
 		if(salt != null) {
-			MessageDigest md = SHA256.getMessageDigest();
 			byte[] foundHash;
+			MessageDigest md = SHA256.getMessageDigest();
 			try {
-				md.update(salt.getBytes("UTF-8"));
-			} catch (UnsupportedEncodingException e) {
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-			}
-			InputStream is = null;
-			try {
-				is = data.getInputStream();
-				SHA256.hash(is, md);
-			} catch (IOException e) {
-				SHA256.returnMessageDigest(md);
-				Logger.error(this, "Got IOE: " + e.getMessage(), e);
-				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_READ_FILE,
+				md.update(salt.getBytes(StandardCharsets.UTF_8));
+
+				try (InputStream is = data.getInputStream()) {
+					SHA256.hash(is, md);
+				} catch (IOException e) {
+					Logger.error(this, "Got IOE: " + e.getMessage(), e);
+					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_READ_FILE,
 						"Unable to access file: " + e, identifier, global);
+				}
+				foundHash = md.digest();
 			} finally {
-				Closer.close(is);
+				SHA256.returnMessageDigest(md);
 			}
-			foundHash = md.digest();
-			SHA256.returnMessageDigest(md);
 
 			if(logMINOR) Logger.minor(this, "FileHash result : we found " + Base64.encode(foundHash) + " and were given " + Base64.encode(saltedHash) + '.');
 

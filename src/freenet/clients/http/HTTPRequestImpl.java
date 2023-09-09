@@ -11,6 +11,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,7 +37,6 @@ import freenet.support.api.HTTPRequest;
 import freenet.support.api.HTTPUploadedFile;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.Closer;
 import freenet.support.io.LineReadingInputStream;
 
 /**
@@ -474,55 +474,61 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * params, whereas if it is multipart/form-data it will be separated into buckets.
 	 */
 	private void parseMultiPartData() throws IOException {
-		InputStream is = null;
-		LineReadingInputStream lis = null;
-		OutputStream bucketos = null;
-
-		try {
-			if(data == null)
-				return;
-			String ctype = this.headers.get("content-type");
-			if(ctype == null)
-				return;
-			if(logMINOR)
-				Logger.minor(this, "Uploaded content-type: " + ctype);
-			String[] ctypeparts = ctype.split(";");
-			if(ctypeparts[0].equalsIgnoreCase("application/x-www-form-urlencoded")) {
-				// Completely different encoding, but easy to handle
-				if(data.size() > 1024 * 1024)
-					throw new IOException("Too big");
-				byte[] buf = BucketTools.toByteArray(data);
-				String s = new String(buf, "us-ascii");
-				parseRequestParameters(s, true, true);
+		if (data == null) {
+			return;
+		}
+		String ctype = this.headers.get("content-type");
+		if (ctype == null) {
+			return;
+		}
+		if (logMINOR) {
+			Logger.minor(this, "Uploaded content-type: " + ctype);
+		}
+		String[] ctypeparts = ctype.split(";");
+		if (ctypeparts[0].equalsIgnoreCase("application/x-www-form-urlencoded")) {
+			// Completely different encoding, but easy to handle
+			if (data.size() > 1024 * 1024) {
+				throw new IOException("Too big");
 			}
-			if(!ctypeparts[0].trim().equalsIgnoreCase("multipart/form-data") || (ctypeparts.length < 2))
-				return;
+			byte[] buf = BucketTools.toByteArray(data);
+			String s = new String(buf, StandardCharsets.US_ASCII);
+			parseRequestParameters(s, true, true);
+		}
+		if (!ctypeparts[0].trim().equalsIgnoreCase("multipart/form-data") || (ctypeparts.length < 2)) {
+			return;
+		}
 
-			String boundary = null;
-			for(String ctypepart: ctypeparts) {
-				String[] subparts = ctypepart.split("=");
-				if((subparts.length == 2) && subparts[0].trim().equalsIgnoreCase("boundary"))
-					boundary = subparts[1];
+		String boundary = null;
+		for (String ctypepart : ctypeparts) {
+			String[] subparts = ctypepart.split("=");
+			if ((subparts.length == 2) && subparts[0].trim().equalsIgnoreCase("boundary")) {
+				boundary = subparts[1];
 			}
+		}
 
-			if((boundary == null) || (boundary.length() == 0))
-				return;
-			if(boundary.charAt(0) == '"')
-				boundary = boundary.substring(1);
-			if(boundary.charAt(boundary.length() - 1) == '"')
-				boundary = boundary.substring(0, boundary.length() - 1);
+		if ((boundary == null) || (boundary.length() == 0)) {
+			return;
+		}
+		if (boundary.charAt(0) == '"') {
+			boundary = boundary.substring(1);
+		}
+		if (boundary.charAt(boundary.length() - 1) == '"') {
+			boundary = boundary.substring(0, boundary.length() - 1);
+		}
 
-			boundary = "--" + boundary;
+		boundary = "--" + boundary;
 
-			if(logMINOR)
-				Logger.minor(this, "Boundary is: " + boundary);
+		if (logMINOR) {
+			Logger.minor(this, "Boundary is: " + boundary);
+		}
 
-			is = this.data.getInputStream();
-			lis = new LineReadingInputStream(is);
-
+		try (
+			InputStream is = this.data.getInputStream();
+			LineReadingInputStream lis = new LineReadingInputStream(is)
+		) {
 			String line;
 			line = lis.readLine(100, 100, false); // really it's US-ASCII, but ISO-8859-1 is close enough.
-			while((is.available() > 0) && !line.equals(boundary)) {
+			while ((is.available() > 0) && !line.equals(boundary)) {
 				line = lis.readLine(100, 100, false);
 			}
 
@@ -533,96 +539,97 @@ public class HTTPRequestImpl implements HTTPRequest {
 			String filename = null;
 			String contentType = null;
 
-			while(is.available() > 0) {
+			while (is.available() > 0) {
 				name = null;
 				filename = null;
 				contentType = null;
 				// chomp headers
-				while((line = lis.readLine(200, 200, true)) /* should be UTF-8 as we told the browser to send UTF-8 */ != null) {
-					if(line.length() == 0)
+				while ((line = lis.readLine(200, 200, true)) /* should be UTF-8 as we told the browser to send UTF-8 */ != null) {
+					if (line.length() == 0) {
 						break;
+					}
 
 					String[] lineparts = line.split(":");
-					if(lineparts == null || lineparts.length == 0)
+					if (lineparts.length == 0) {
 						continue;
+					}
 					String hdrname = lineparts[0].trim();
 
-					if(hdrname.equalsIgnoreCase("Content-Disposition")) {
-						if(lineparts.length < 2)
+					if (hdrname.equalsIgnoreCase("Content-Disposition")) {
+						if (lineparts.length < 2) {
 							continue;
+						}
 						String[] valueparts = lineparts[1].split(";");
 
-						for(int i = 0; i < valueparts.length; i++) {
-							String[] subparts = valueparts[i].split("=");
-							if(subparts.length != 2)
+						for (String valuepart : valueparts) {
+							String[] subparts = valuepart.split("=");
+							if (subparts.length != 2) {
 								continue;
+							}
 							String fieldname = subparts[0].trim();
 							String value = subparts[1].trim();
-							if(value.startsWith("\"") && value.endsWith("\""))
+							if (value.startsWith("\"") && value.endsWith("\"")) {
 								value = value.substring(1, value.length() - 1);
-							if(fieldname.equalsIgnoreCase("name"))
+							}
+							if (fieldname.equalsIgnoreCase("name")) {
 								name = value;
-							else if(fieldname.equalsIgnoreCase("filename"))
+							} else if (fieldname.equalsIgnoreCase("filename")) {
 								filename = value;
+							}
 						}
-					}
-					else if(hdrname.equalsIgnoreCase("Content-Type")) {
+					} else if (hdrname.equalsIgnoreCase("Content-Type")) {
 						contentType = lineparts[1].trim();
-						if(logMINOR)
+						if (logMINOR) {
 							Logger.minor(this, "Parsed type: " + contentType);
-					}
-					else {
-					// Do nothing, irrelevant header
+						}
+					} else {
+						// Do nothing, irrelevant header
 					}
 				}
 
-				if(name == null)
+				if (name == null) {
 					continue;
+				}
 
 				// we should be at the data now. Start reading it in, checking for the
-			// boundary string
+				// boundary string
 
 				// we can only give an upper bound for the size of the bucket
 				filedata = this.bucketfactory.makeBucket(is.available());
-				bucketos = filedata.getOutputStream();
-				// buffer characters that match the boundary so far
-			// FIXME use whatever charset was used
-				byte[] bbound = boundary.getBytes("UTF-8"); // ISO-8859-1? boundary should be in US-ASCII
-				int offset = 0;
-				while((is.available() > 0) && (offset < bbound.length)) {
-					byte b = (byte) is.read();
+				try (OutputStream bucketos = filedata.getOutputStream()) {
+					// buffer characters that match the boundary so far
+					// FIXME use whatever charset was used
+					byte[] bbound = boundary.getBytes(StandardCharsets.UTF_8); // ISO-8859-1? boundary should be in US-ASCII
+					int offset = 0;
+					while ((is.available() > 0) && (offset < bbound.length)) {
+						byte b = (byte) is.read();
 
-					if(b == bbound[offset])
-						offset++;
-					else if((b != bbound[offset]) && (offset > 0)) {
-						// offset bytes matched, but no more
-					// write the bytes that matched, then the non-matching byte
-						bucketos.write(bbound, 0, offset);
-						offset = 0;
-						if(b == bbound[0])
-							offset = 1;
-						else
+						if (b == bbound[offset]) {
+							offset++;
+						} else if ((b != bbound[offset]) && (offset > 0)) {
+							// offset bytes matched, but no more
+							// write the bytes that matched, then the non-matching byte
+							bucketos.write(bbound, 0, offset);
+							offset = 0;
+							if (b == bbound[0]) {
+								offset = 1;
+							} else {
+								bucketos.write(b);
+							}
+						} else {
 							bucketos.write(b);
+						}
 					}
-					else
-						bucketos.write(b);
 				}
-
-				bucketos.close();
-				bucketos = null;
-			
-				parts.put(name, filedata);
-				if(logMINOR)
-					Logger.minor(this, "Name = " + name + " length = " + filedata.size() + " filename = " + filename);
-				if(filename != null)
-					uploadedFiles.put(name, new HTTPUploadedFileImpl(filename, contentType, filedata));
 			}
-		}
-		finally {
-			Closer.close(bucketos);
-			Closer.close(lis);
-			Closer.close(is);
-			Closer.close(is);
+
+			parts.put(name, filedata);
+			if (logMINOR) {
+				Logger.minor(this, "Name = " + name + " length = " + filedata.size() + " filename = " + filename);
+			}
+			if (filename != null) {
+				uploadedFiles.put(name, new HTTPUploadedFileImpl(filename, contentType, filedata));
+			}
 		}
 	}
 	
@@ -700,28 +707,27 @@ public class HTTPRequestImpl implements HTTPRequest {
 	@Override
 	@Deprecated
 	public byte[] getPartAsBytes(String name, int maxlength) {
-		if(freedParts) throw new IllegalStateException("Already freed");
+		if (freedParts) {
+			throw new IllegalStateException("Already freed");
+		}
 		Bucket part = this.parts.get(name);
-		if(part == null) return new byte[0];
-		
-		if (part.size() > maxlength) return new byte[0];
-		
-		InputStream is = null;
-		DataInputStream dis = null;
-		try {
-			is = part.getInputStream();
-			dis = new DataInputStream(is);
-			byte[] buf = new byte[(int)Math.min(part.size(), maxlength)];
+		if(part == null) {
+			return new byte[0];
+		}
+		if (part.size() > maxlength) {
+			return new byte[0];
+		}
+		byte[] buf = new byte[(int)Math.min(part.size(), maxlength)];
+		try (
+			InputStream is = part.getInputStream();
+			DataInputStream dis = new DataInputStream(is);
+		){
 			dis.readFully(buf);
 			return buf;
 		} catch (IOException ioe) {
-	         Logger.error(this, "Caught IOE:" + ioe.getMessage());
-		} finally {
-			Closer.close(dis);
-			if(dis == null) Closer.close(is); // DataInputStream.close() does this for us normally
+			Logger.error(this, "Caught IOE:" + ioe.getMessage());
+			return new byte[0];
 		}
-		
-		return new byte[0];
 	}
 	
 	@Override
@@ -746,20 +752,16 @@ public class HTTPRequestImpl implements HTTPRequest {
 	}
 	
 	private byte[] getPartAsLimitedBytes(Bucket part, int maxLength) {
-		InputStream is = null;
-		DataInputStream dis = null;
-		try {
-			is = part.getInputStream();
-			dis = new DataInputStream(is);
-			byte[] buf = new byte[(int)Math.min(part.size(), maxLength)];
+		byte[] buf = new byte[(int)Math.min(part.size(), maxLength)];
+		try (
+			InputStream is = part.getInputStream();
+			DataInputStream dis = new DataInputStream(is)
+		) {
 			dis.readFully(buf, 0, buf.length);
 			return buf;
 		} catch (IOException ioe) {
 	         Logger.error(this, "Caught IOE:" + ioe.getMessage());
 	         return new byte[0];
-		} finally {
-			Closer.close(dis);
-			if(dis == null) Closer.close(is); // DataInputStream.close() does this for us normally
 		}
 	}
 	

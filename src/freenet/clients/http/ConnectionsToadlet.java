@@ -49,7 +49,6 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /** Base class for DarknetConnectionsToadlet and OpennetConnectionsToadlet */
@@ -664,24 +663,19 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				return;
 			}
 			
-			StringBuilder ref = null;
+			StringBuilder ref;
 			if (urltext.length() > 0) {
 				// fetch reference from a URL
-				BufferedReader in = null;
 				try {
-					try {
-						FreenetURI refUri = new FreenetURI(urltext);
-					  ref = AddPeer.getReferenceFromFreenetURI(refUri, client);
-					} catch (MalformedURLException | FetchException e) {
-						Logger.warning(this, "Url cannot be used as Freenet URI, trying to fetch as URL: " + urltext);
-						URL url = new URL(urltext);
-					  ref = AddPeer.getReferenceFromURL(url);
-					}
+					FreenetURI refUri = new FreenetURI(urltext);
+					ref = AddPeer.getReferenceFromFreenetURI(refUri, client);
+				} catch (MalformedURLException | FetchException e) {
+					Logger.warning(this, "Url cannot be used as Freenet URI, trying to fetch as URL: " + urltext);
+					URL url = new URL(urltext);
+					ref = AddPeer.getReferenceFromURL(url);
 				} catch (IOException e) {
-					this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), NodeL10n.getBase().getString("DarknetConnectionsToadlet.cantFetchNoderefURL", new String[] { "url" }, new String[] { urltext }), !isOpennet());
+					this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), NodeL10n.getBase().getString("DarknetConnectionsToadlet.cantFetchNoderefURL", new String[]{"url"}, new String[]{urltext}), !isOpennet());
 					return;
-				} finally {
-					Closer.close(in);
 				}
 			} else if (reftext.length() > 0) {
 				// read from post data or file upload

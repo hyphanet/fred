@@ -21,7 +21,6 @@ import java.util.Queue;
 
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.io.Closer;
 
 /** Creates and manages decompressor threads. This class is 
  * given all decompressors which should be applied to an
@@ -32,14 +31,13 @@ import freenet.support.io.Closer;
 */
 public class DecompressorThreadManager {
 
-	final Queue<DecompressorThread> threads;
-	PipedInputStream input;
-	PipedOutputStream output = new PipedOutputStream();
-	final long maxLen;
+	private final Queue<DecompressorThread> threads;
+	private final PipedInputStream input;
+	private final PipedOutputStream output;
 	private boolean finished = false;
 	private Throwable error = null;
 
-        private static volatile boolean logMINOR;
+	private static volatile boolean logMINOR;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
@@ -54,22 +52,26 @@ public class DecompressorThreadManager {
 	 * @param maxLen The maximum number of bytes to extract
 	 */
 	public DecompressorThreadManager(PipedInputStream inputStream, List<? extends Compressor> decompressors, long maxLen) throws IOException {
-		threads = new ArrayDeque<DecompressorThread>(decompressors.size());
-		this.maxLen = maxLen;
 		if(inputStream == null) {
 			IOException e = new IOException("Input stream may not be null");
 			onFailure(e);
 			throw e;
 		}
-		input = inputStream;
+		this.threads = new ArrayDeque<>(decompressors.size());
+		PipedOutputStream os = new PipedOutputStream();
+		PipedInputStream is = inputStream;
 		while(!decompressors.isEmpty()) {
 			Compressor compressor = decompressors.remove(decompressors.size()-1);
-			if(logMINOR) Logger.minor(this, "Decompressing with "+compressor);
-			DecompressorThread thread = new DecompressorThread(compressor, this, input, output, maxLen);
+			if (logMINOR) {
+				Logger.minor(this, "Decompressing with "+compressor);
+			}
+			DecompressorThread thread = new DecompressorThread(compressor, this, is, os, maxLen);
 			threads.add(thread);
-			input = new PipedInputStream(output);
-			output = new PipedOutputStream();
+			is = new PipedInputStream(os);
+			os = new PipedOutputStream();
 		}
+		this.input = is;
+		this.output = os;
 	}
 
 	/** Creates and executes a new thread for each decompressor,
@@ -77,36 +79,42 @@ public class DecompressorThreadManager {
 	 * @return An InputStream from which uncompressed data may be read from
 	 */
 	public synchronized PipedInputStream execute() throws Throwable {
-		if(error != null) throw error;
-		if(threads.isEmpty()) {
+		if (error != null) {
+			throw error;
+		}
+		if (threads.isEmpty()) {
 			onFinish();
 			return input;
 		}
 		try {
 			int count = 0;
-			while(!threads.isEmpty()){
-				if(getError() != null) throw getError();
+			while (!threads.isEmpty()) {
+				if (getError() != null) {
+					throw getError();
+				}
 				DecompressorThread threadRunnable = threads.remove();
-				if(threads.isEmpty()) threadRunnable.setLast();
-				Thread t = new Thread(threadRunnable, "DecompressorThread"+count);
+				if (threads.isEmpty()) {
+					threadRunnable.setLast();
+				}
+				Thread t = new Thread(threadRunnable, "DecompressorThread" + count);
 				t.start();
-				if(logMINOR) Logger.minor(this, "Started decompressor thread "+t);
+				if (logMINOR) {
+					Logger.minor(this, "Started decompressor thread " + t);
+				}
 				count++;
 			}
-			output.close();
-		} catch(Throwable t) {
+		} catch (Throwable t) {
 			onFailure(t);
 			throw t;
 		} finally {
-			Closer.close(output);
+			this.output.close();
 		}
 		return input;
-		
 	}
 
 	/** Informs the manager that a nonrecoverable exception has occured in the
 	 * decompression threads
-	 * @param e The thrown exception
+	 * @param t The thrown exception
 	 */
 	public synchronized void onFailure(Throwable t) {
 		error = t;
@@ -151,14 +159,14 @@ public class DecompressorThreadManager {
 	 * <code>DecompressorThreadManager</code>
 	 * @author sajack
 	 */
-	class DecompressorThread implements Runnable {
+	static class DecompressorThread implements Runnable {
 
 		/**The compressor whose decompress method will be invoked*/
 		final Compressor compressor;
 		/**The stream compressed data will be read from*/
-		private InputStream input;
+		private final InputStream input;
 		/**The stream decompressed data will be written*/
-		private OutputStream output;
+		private final OutputStream output;
 		/**A upper limit to how much data may be decompressed. This is passed to the decompressor*/
 		final long maxLen;
 		/**The manager which created the thread*/
@@ -177,23 +185,24 @@ public class DecompressorThreadManager {
 		/**Begins the decompression */
 		@Override
 		public void run() {
-			if(logMINOR) Logger.minor(this, "Decompressing...");
-			try {
+			if(logMINOR) {
+				Logger.minor(this, "Decompressing...");
+			}
+			try (
+				InputStream is = this.input;
+				OutputStream os = this.output;
+			) {
 				if(manager.getError() == null) {
-					compressor.decompress(input, output, maxLen, maxLen * 4);
-					input.close();
-					output.close();
-					// Avoid relatively expensive repeated close on normal completion
-					input = null;
-					output = null;
-					if(isLast) manager.onFinish();
+					compressor.decompress(is, os, maxLen, maxLen * 4);
+					if(isLast) {
+						manager.onFinish();
+					}
 				}
-				if(logMINOR) Logger.minor(this, "Finished decompressing...");
+				if(logMINOR) {
+					Logger.minor(this, "Finished decompressing...");
+				}
 			} catch (Exception e) {
 				manager.onFailure(e);
-			} finally {
-				Closer.close(input);
-				Closer.close(output);
 			}
 		}
 

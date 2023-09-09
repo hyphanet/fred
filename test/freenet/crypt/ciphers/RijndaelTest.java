@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -25,7 +26,6 @@ import org.junit.Test;
 import freenet.crypt.CTRBlockCipherTest;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.support.HexUtil;
-import freenet.support.io.Closer;
 
 /**
  * @author sdiz
@@ -1915,7 +1915,7 @@ public class RijndaelTest {
 //			System.out.println("\t\t\t/* I="+(i+1)+" */");
 //			System.out.println("\t\t\t{ HexUtil.hexToBytes(\""+HexUtil.bytesToHex(TEST_VK256x256[i][0])+"\"),");
 //			System.out.println("\t\t\t\t\tHexUtil.hexToBytes(\""+HexUtil.bytesToHex(cipher)+"\") }, //");
-			assertTrue("ECB_VK KEYSIZE=256 I=" + (i + 1), Arrays.equals(cipher, TEST_VK256x256[i][1]));
+			assertArrayEquals("ECB_VK KEYSIZE=256 I=" + (i + 1), cipher, TEST_VK256x256[i][1]);
 		}
 	}
 
@@ -1938,12 +1938,19 @@ public class RijndaelTest {
 	
 	private void checkGladmanTestVectors(String type) throws UnsupportedCipherException, IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
 		for(int testNumber : GLADMAN_TEST_NUMBERS) {
-			InputStream is = null;
-			try {
-				is = getClass().getResourceAsStream("/freenet/crypt/ciphers/rijndael-gladman-test-data/ecbn"+type+testNumber+".txt");
-				InputStreamReader isr = new InputStreamReader(is, "ISO-8859-1");
-				BufferedReader br = new BufferedReader(isr);
-				for(int i=0;i<7;i++) br.readLine(); // Skip header
+			String fileName = "/freenet/crypt/ciphers/rijndael-gladman-test-data/ecbn" + type + testNumber + ".txt";
+			InputStream is = getClass().getResourceAsStream(fileName);
+			if (is == null) {
+				throw new IllegalStateException("File does not exist: " + fileName);
+			}
+			try (
+				InputStream isToClose = is;
+				InputStreamReader isr = new InputStreamReader(isToClose, StandardCharsets.ISO_8859_1);
+				BufferedReader br = new BufferedReader(isr)
+			){
+				for (int i=0;i<7;i++) {
+					br.readLine(); // Skip header
+				}
 				String line = br.readLine();
 				int blockSize = Integer.parseInt(line.substring("BLOCKSIZE=".length()));
 				line = br.readLine();
@@ -1963,18 +1970,22 @@ public class RijndaelTest {
 						test = Integer.parseInt(line.substring(6));
 					} else {
 						byte[] data = HexUtil.hexToBytes(line.substring(6));
-						if(prefix.equals("PT=   ")) {
-							assertTrue(plaintext == null);
-							plaintext = data;
-							assertEquals(plaintext.length, blockSize/8);
-						} else if(prefix.equals("KEY=  ")) {
-							assertTrue(key == null);
-							key = data;
-							assertEquals(key.length, keySize/8);
-						} else if(prefix.equals("CT=   ")) {
-							assertTrue(ciphertext == null);
-							ciphertext = data;
-							assertEquals(ciphertext.length, blockSize/8);
+						switch (prefix) {
+							case "PT=   ":
+								assertNull(plaintext);
+								plaintext = data;
+								assertEquals(plaintext.length, blockSize / 8);
+								break;
+							case "KEY=  ":
+								assertNull(key);
+								key = data;
+								assertEquals(key.length, keySize / 8);
+								break;
+							case "CT=   ":
+								assertNull(ciphertext);
+								ciphertext = data;
+								assertEquals(ciphertext.length, blockSize / 8);
+								break;
 						}
 						if(plaintext != null && ciphertext != null && key != null) {
 							Rijndael cipher = new Rijndael(keySize, blockSize);
@@ -1983,12 +1994,12 @@ public class RijndaelTest {
 							byte[] copyOfPlaintext = Arrays.copyOf(plaintext, plaintext.length);
 							byte[] output = new byte[blockSize/8];
 							cipher.encipher(copyOfPlaintext, output);
-							assertTrue(Arrays.equals(output, ciphertext));
+							assertArrayEquals(output, ciphertext);
 							// Decrypt
 							byte[] copyOfCiphertext = Arrays.copyOf(ciphertext, ciphertext.length);
 							Arrays.fill(output, (byte)0);
 							cipher.decipher(copyOfCiphertext, output);
-							assertTrue(Arrays.equals(output, plaintext));
+							assertArrayEquals(output, plaintext);
 							if(blockSize == 128) {
 								if(keySize == 128 || CTRBlockCipherTest.TEST_JCA) {
 									// We can test with JCA too.
@@ -1998,12 +2009,12 @@ public class RijndaelTest {
 									Cipher c = Cipher.getInstance("AES/ECB/NOPADDING");
 									c.init(Cipher.ENCRYPT_MODE, k);
 									output = c.doFinal(plaintext);
-									assertTrue(Arrays.equals(output, ciphertext));
+									assertArrayEquals(output, ciphertext);
 									
 									// Decrypt.
 									c.init(Cipher.DECRYPT_MODE, k);
 									output = c.doFinal(ciphertext);
-									assertTrue(Arrays.equals(output, plaintext));
+									assertArrayEquals(output, plaintext);
 								}
 							}
 							// Clear
@@ -2015,8 +2026,6 @@ public class RijndaelTest {
 						}
 					}
 				}
-			} finally {
-				Closer.close(is);
 			}
 		}
 	}

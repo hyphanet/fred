@@ -70,7 +70,6 @@ import freenet.support.api.RandomAccessBucket;
 import freenet.support.api.RandomAccessBuffer;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ByteArrayRandomAccessBuffer;
-import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FileRandomAccessBuffer;
@@ -1926,20 +1925,19 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				public void run() {
 					boolean failed = false;
 					File tmp = null;
-					FileRandomAccessBuffer raf = null;
+
 					try {
 						System.out.println("Fetching "+saveTo+" from "+fetchFrom);
 						long uid = updateManager.node.fastWeakRandom.nextLong();
 						fetchFrom.sendAsync(DMT.createUOMFetchDependency(uid, expectedHash, size), null, updateManager.ctr);
 						tmp = FileUtil.createTempFile(saveTo.getName(), NodeUpdateManager.TEMP_FILE_SUFFIX, saveTo.getParentFile());
-						raf = new FileRandomAccessBuffer(tmp, size, false);
-						PartiallyReceivedBulk prb = 
-							new PartiallyReceivedBulk(updateManager.node.getUSM(), size,
-								Node.PACKET_SIZE, raf, false);
-						BulkReceiver br = new BulkReceiver(prb, fetchFrom, uid, updateManager.ctr);
-						failed = !br.receive();
-						raf.close();
-						raf = null;
+						try (FileRandomAccessBuffer raf = new FileRandomAccessBuffer(tmp, size, false)) {
+							PartiallyReceivedBulk prb =
+								new PartiallyReceivedBulk(updateManager.node.getUSM(), size,
+									Node.PACKET_SIZE, raf, false);
+							BulkReceiver br = new BulkReceiver(prb, fetchFrom, uid, updateManager.ctr);
+							failed = !br.receive();
+						}
 						if(!failed) {
 							// Check the hash.
 							if(MainJarDependenciesChecker.validFile(tmp, expectedHash, size, executable)) {
@@ -1996,7 +1994,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 								peersFailed.add(fetchFrom);
 							peersFetching.remove(fetchFrom);
 						}
-						Closer.close(raf);
 						if(tmp != null) 
 							tmp.delete();
 						if(failed) {

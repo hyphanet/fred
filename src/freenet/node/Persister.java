@@ -10,7 +10,6 @@ import java.io.IOException;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Ticker;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 class Persister implements Runnable {
@@ -65,18 +64,15 @@ class Persister implements Runnable {
 			Logger.minor(this, "Trying to persist throttles...");
 		}
 		SimpleFieldSet fs = persistable.persistThrottlesToFieldSet();
-		FileOutputStream fos = null;
 		try {
-			fos = new FileOutputStream(persistTemp);
-			fs.writeToBigBuffer(fos);
-			fos.close();
+			try (FileOutputStream fos = new FileOutputStream(persistTemp)) {
+				fs.writeToBigBuffer(fos);
+			}
 			FileUtil.renameTo(persistTemp, persistTarget);
 		} catch (FileNotFoundException e) {
 			Logger.error(this, "Could not store throttle data to disk: " + e, e);
 		} catch (IOException e) {
 			persistTemp.delete();
-		} finally {
-			Closer.close(fos);
 		}
 	}
 

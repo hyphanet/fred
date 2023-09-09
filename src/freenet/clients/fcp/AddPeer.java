@@ -31,7 +31,6 @@ import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.MediaType;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.Closer;
 
 public class AddPeer extends FCPMessage {
 
@@ -75,36 +74,32 @@ public class AddPeer extends FCPMessage {
 	}
 	
 	public static StringBuilder getReferenceFromURL(URL url) throws IOException {
-		StringBuilder ref = new StringBuilder(1024);
-		InputStream is = null;
-		try {
-			URLConnection uc = url.openConnection();
-			is = uc.getInputStream();
+		URLConnection uc = url.openConnection();
+		try (
+			InputStream is = uc.getInputStream();
 			BufferedReader in = new BufferedReader(new InputStreamReader(is, MediaType.getCharsetRobustOrUTF(uc.getContentType())));
+		) {
 			String line;
+			StringBuilder ref = new StringBuilder(1024);
 			while ((line = in.readLine()) != null) {
 				ref.append( line ).append('\n');
 			}
 			return ref;
-		} finally {
-			Closer.close(is);
 		}
 	}
 
 	public static StringBuilder getReferenceFromFreenetURI(FreenetURI url, HighLevelSimpleClient client)
 			throws IOException, FetchException {
-		StringBuilder ref = new StringBuilder(1024); // the 1024 is the initial capacity
-		InputStream is = null;
-		try {
-			is = client.fetch(url, 31000).asBucket().getInputStream(); // limit to 31k, which should suffice even if we add many more ipv6 addresses
+		try (
+			InputStream is = client.fetch(url, 31000).asBucket().getInputStream(); // limit to 31k, which should suffice even if we add many more ipv6 addresses
 			BufferedReader in = new BufferedReader(new InputStreamReader(is, MediaType.getCharsetRobustOrUTF("text/plain")));
+		) {
+			StringBuilder ref = new StringBuilder(1024); // the 1024 is the initial capacity
 			String line;
 			while ((line = in.readLine()) != null) {
 				ref.append( line ).append('\n');
 			}
 			return ref;
-		} finally {
-			Closer.close(is);
 		}
 	}
 

@@ -15,6 +15,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.text.DateFormat;
@@ -60,7 +61,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.ShortBuffer;
 import freenet.support.TimeSortedHashtable;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.Closer;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 
 /**
@@ -919,21 +919,18 @@ public class LocationManager implements ByteCounter {
 			@Override
 			public void run() {
 				File locationLog = node.nodeDir().file("location.log.txt");
-				if(locationLog.exists() && locationLog.length() > 1024*1024*10)
-					locationLog.delete();
-				FileOutputStream os = null;
-				try {
-					os = new FileOutputStream(locationLog, true);
-					BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, "ISO-8859-1"));
+				if(locationLog.exists() && locationLog.length() > 1024*1024*10) {
+                    locationLog.delete();
+                }
+				try (
+                    FileOutputStream os = new FileOutputStream(locationLog, true);
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.ISO_8859_1))
+                ) {
 					DateFormat df = DateFormat.getDateTimeInstance();
 					df.setTimeZone(TimeZone.getTimeZone("GMT"));
 					bw.write(""+df.format(new Date())+" : "+getLocation()+(randomReset ? " (random reset"+(fromDupLocation?" from duplicated location" : "")+")" : "")+'\n');
-					bw.close();
-					os = null;
 				} catch (IOException e) {
 					Logger.error(this, "Unable to write changed location to "+locationLog+" : "+e, e);
-				} finally {
-					Closer.close(os);
 				}
 			}
 

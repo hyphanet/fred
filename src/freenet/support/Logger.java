@@ -11,11 +11,10 @@ import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.regex.PatternSyntaxException;
+import java.nio.charset.StandardCharsets;
 
 import freenet.support.FileLoggerHook.IntervalParseException;
 import freenet.support.LoggerHook.InvalidThresholdException;
-import freenet.support.io.Closer;
 
 /**
  * @author Iakin
@@ -56,49 +55,30 @@ public abstract class Logger {
 		 * it's unavailable for some reason.
 		 */
 		public synchronized static String getFieldFromProcSelfStat(int fieldNumber, Object o) {
-			String readLine = null;
-	
 			if (!procSelfStatEnabled) {
 				return null;
 			}
 	
 			// read /proc/self/stat and parse for the specified field
-			InputStream is = null;
-			BufferedReader br = null;
 			File procFile = new File("/proc/self/stat");
 			if (procFile.exists()) {
-				try {
-					is = new FileInputStream(procFile);
-					br = new BufferedReader(new InputStreamReader(is, "ISO-8859-1" /* ASCII */));
+				try (
+					InputStream is = new FileInputStream(procFile);
+					BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.ISO_8859_1 /* ASCII */))
+				){
+					String readLine = br.readLine();
+					if (readLine != null) {
+						String[] procFields = readLine.trim().split(" ");
+						if (4 <= procFields.length) {
+							return procFields[fieldNumber];
+						}
+					}
 				} catch (FileNotFoundException e1) {
 					logStatic(o, "'/proc/self/stat' not found", logToFileVerbosity);
 					procSelfStatEnabled = false;
-					br = null;
-				} catch (UnsupportedEncodingException e) {
-					// Impossible.
-					throw new Error(e);
-				}
-				if (null != br) {
-					try {
-						readLine = br.readLine();
-					} catch (IOException e) {
-						error(o, "Caught IOException in br.readLine() of OSThread.getFieldFromProcSelfStat()", e);
-						readLine = null;
-					} finally {
-						Closer.close(br);
-					}
-					if (null != readLine) {
-						try {
-							String[] procFields = readLine.trim().split(" ");
-							if (4 <= procFields.length) {
-								return procFields[ fieldNumber ];
-							}
-						} catch (PatternSyntaxException e) {
-							error(o, "Caught PatternSyntaxException in readLine.trim().split(\" \") of OSThread.getFieldFromProcSelfStat() while parsing '"+readLine+"'", e);
-						}
-					}
-				} else {
-					Closer.close(is);
+				} catch (IOException e) {
+					error(o, "Caught IOException in OSThread.getFieldFromProcSelfStat()", e);
+					procSelfStatEnabled = false;
 				}
 			}
 			return null;

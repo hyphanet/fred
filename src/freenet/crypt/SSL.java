@@ -42,7 +42,6 @@ import freenet.config.SubConfig;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
-import freenet.support.io.Closer;
 import java.net.ServerSocket;
 
 public class SSL {
@@ -216,9 +215,8 @@ public class SSL {
 		if(enable) {
 			// A keystore is where keys and certificates are kept
 			// Both the keystore and individual private keys should be password protected
-			FileInputStream fis = null;
-			try {
-				fis = new FileInputStream(keyStore);
+
+			try (FileInputStream fis = new FileInputStream(keyStore)){
 				keystore.load(fis, keyStorePass.toCharArray());
 			} catch(FileNotFoundException fnfe) {
 				// If keystore not exist, create keystore and server certificate
@@ -251,25 +249,17 @@ public class SSL {
 					keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
 					storeKeyStore();
 					createSSLContext();
-				} catch (ClassNotFoundException cnfe) {
-					throw new UnsupportedOperationException("The JVM you are using does not support generating strong SSL certificates", cnfe);
-				} catch (NoSuchMethodException nsme) {
-					throw new UnsupportedOperationException("The JVM you are using does not support generating strong SSL certificates", nsme);
+				} catch (ClassNotFoundException | NoSuchMethodException e) {
+					throw new UnsupportedOperationException("The JVM you are using does not support generating strong SSL certificates", e);
 				}
-			} finally {
-				Closer.close(fis);
 			}
 		}
 	}
 
 	private static void storeKeyStore() throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException {
 		if(enable) {
-			FileOutputStream fos = null;
-			try {
-				fos = new FileOutputStream(keyStore);
+			try (FileOutputStream fos = new FileOutputStream(keyStore)){
 				keystore.store(fos, keyStorePass.toCharArray());
-			} finally {
-				Closer.close(fos);
 			}
 		}
 	}

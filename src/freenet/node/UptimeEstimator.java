@@ -18,7 +18,6 @@ import java.text.DecimalFormat;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.Ticker;
-import freenet.support.io.Closer;
 
 /**
  * A class to estimate the node's average uptime. Every 5 minutes (with a fixed offset), we write
@@ -77,10 +76,10 @@ public class UptimeEstimator implements Runnable {
 	}
 
 	private void readData(File file, int base) {
-		FileInputStream fis = null;
-		try {
-			fis = new FileInputStream(file);
-			DataInputStream dis = new DataInputStream(fis);
+		try (
+			FileInputStream fis = new FileInputStream(file);
+			DataInputStream dis = new DataInputStream(fis)
+		) {
 			try {
 				while(true) {
 					int offset = dis.readInt();
@@ -96,13 +95,9 @@ public class UptimeEstimator implements Runnable {
 				}
 			} catch (EOFException e) {
 				// Finished
-			} finally {
-				Closer.close(dis);
 			}
 		} catch (IOException e) {
 			Logger.error(this, "Unable to read old uptime file: "+file+" - we will assume we weren't online during that period");
-		} finally {
-			Closer.close(fis);
 		}
 	}
 
@@ -118,20 +113,17 @@ public class UptimeEstimator implements Runnable {
 			prevFile.delete();
 			logFile.renameTo(prevFile);
 		}
-		FileOutputStream fos = null;
-		DataOutputStream dos = null;
 		int fiveMinutesSinceEpoch = (int)(now / PERIOD);
-		try {
-			fos = new FileOutputStream(logFile, true);
-			dos = new DataOutputStream(fos);
+		try (
+			FileOutputStream fos = new FileOutputStream(logFile, true);
+			DataOutputStream dos = new DataOutputStream(fos)
+		) {
 			dos.writeInt(fiveMinutesSinceEpoch);
 		} catch (FileNotFoundException e) {
 			Logger.error(this, "Unable to create or access "+logFile+" : "+e, e);
 		} catch (IOException e) {
 			Logger.error(this, "Unable to write to uptime estimator log file: "+logFile);
 		} finally {
-			Closer.close(dos);
-			Closer.close(fos);
 			// Schedule next time
 			schedule(now);
 		}

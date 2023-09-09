@@ -21,7 +21,6 @@ import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.HTTPUploadedFile;
-import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 
@@ -322,21 +321,17 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
     }
 
     private FilterStatus applyFilter(Bucket input, Bucket output, String mimeType, FilterOperation operation, NodeClientCore core)
-            throws UnsafeContentTypeException, IOException {
-        InputStream inputStream = null;
-        OutputStream outputStream = null;
-        try {
-            inputStream = input.getInputStream();
-            outputStream = output.getOutputStream();
+            throws IOException {
+        try (
+            InputStream inputStream = input.getInputStream();
+            OutputStream outputStream = output.getOutputStream()
+        ) {
             return applyFilter(inputStream, outputStream, mimeType, operation, core);
-        } finally {
-            Closer.close(inputStream);
-            Closer.close(outputStream);
         }
     }
 
     private FilterStatus applyFilter(InputStream input, OutputStream output, String mimeType, FilterOperation operation, NodeClientCore core)
-            throws UnsafeContentTypeException, IOException {
+            throws IOException {
         URI fakeUri;
         try {
             fakeUri = new URI("http://127.0.0.1:8888/");

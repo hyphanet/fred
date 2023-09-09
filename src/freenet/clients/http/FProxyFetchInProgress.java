@@ -38,7 +38,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.io.Closer;
 
 /**
  * Fetching a page for a browser.
@@ -198,8 +197,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		if(bogusUSK(context)) return false;
 		CacheFetchResult result = context.downloadCache == null ? null : context.downloadCache.lookupInstant(uri, !fctx.filterData, false, null);
 		if(result == null) return false;
-		Bucket data = null;
-		String mimeType = null;
+
+
 		if((!fctx.filterData) && (!result.alreadyFiltered)) {
 			if(fctx.overrideMIME == null || fctx.overrideMIME.equals(result.getMimeType())) {
 				// Works as-is.
@@ -230,44 +229,41 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				return false;
 			}
 		}
-		data = result.asBucket();
-		mimeType = result.getMimeType();
-		if(mimeType == null || mimeType.equals("")) mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
+		Bucket resultData = result.asBucket();
+		String resultMimeType = result.getMimeType();
+		if(resultMimeType == null || resultMimeType.equals("")) resultMimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
 		if(fctx.overrideMIME != null && !result.alreadyFiltered)
-			mimeType = fctx.overrideMIME;
-		else if(fctx.overrideMIME != null && !mimeType.equals(fctx.overrideMIME)) {
+			resultMimeType = fctx.overrideMIME;
+		else if(fctx.overrideMIME != null && !resultMimeType.equals(fctx.overrideMIME)) {
 			// Doesn't work.
 			return false;
 		}
-		String fullMimeType = mimeType;
-		mimeType = ContentFilter.stripMIMEType(mimeType);
-		FilterMIMEType type = ContentFilter.getMIMEType(mimeType);
+		String fullMimeType = resultMimeType;
+		resultMimeType = ContentFilter.stripMIMEType(resultMimeType);
+		FilterMIMEType type = ContentFilter.getMIMEType(resultMimeType);
 		if(type == null || ((!type.safeToRead) && type.readFilter == null)) {
-			UnknownContentTypeException e = new UnknownContentTypeException(mimeType);
-			data.free();
-			onFailure(new FetchException(e.getFetchErrorCode(), data.size(), e, mimeType), null);
+			UnknownContentTypeException e = new UnknownContentTypeException(resultMimeType);
+			resultData.free();
+			onFailure(new FetchException(e.getFetchErrorCode(), resultData.size(), e, resultMimeType), null);
 			return true;
 		} else if(type.safeToRead) {
 			tracker.removeFetcher(this);
-			onSuccess(new FetchResult(new ClientMetadata(mimeType), data), null);
+			onSuccess(new FetchResult(new ClientMetadata(resultMimeType), resultData), null);
 			return true;
 		} else {
 			// Try to filter it.
-			Bucket output = null;
-			InputStream is = null;
-			OutputStream os = null;
-			try {
-				output = context.tempBucketFactory.makeBucket(-1);
-				is = data.getInputStream();
-				os = output.getOutputStream();
-				ContentFilter.filter(is, os, fullMimeType, uri.toURI("/"), fctx.getSchemeHostAndPort(), null, null, fctx.charset, context.linkFilterExceptionProvider);
-				is.close();
-				is = null;
-				os.close();
-				os = null;
+			try (
+				Bucket input = resultData;
+				Bucket output = context.tempBucketFactory.makeBucket(-1);
+			) {
+				try (
+					InputStream is = input.getInputStream();
+					OutputStream os = output.getOutputStream()
+				) {
+					ContentFilter.filter(is, os, fullMimeType, uri.toURI("/"), fctx.getSchemeHostAndPort(), null, null, fctx.charset, context.linkFilterExceptionProvider);
+				}
 				// Since we are not re-using the data bucket, we can happily stay in the FProxyFetchTracker.
 				this.onSuccess(new FetchResult(new ClientMetadata(fullMimeType), output), null);
-				output = null;
 				return true;
 			} catch (IOException e) {
 				Logger.normal(this, "Failed filtering coalesced data in fproxy");
@@ -277,11 +273,6 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			} catch (URISyntaxException e) {
 				Logger.error(this, "Impossible: "+e, e);
 				return false;
-			} finally {
-				Closer.close(is);
-				Closer.close(os);
-				Closer.close(output);
-				Closer.close(data);
 			}
 		}
 	}

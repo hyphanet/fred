@@ -6,12 +6,7 @@ package freenet.client.async;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -57,7 +52,6 @@ import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.BucketTools;
-import freenet.support.io.Closer;
 
 /**
  *
@@ -209,43 +203,46 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(logMINOR) Logger.minor(this, "Created "+this+" with "+fetcher);
 		}
 		@Override
-		public void onSuccess(StreamGenerator streamGenerator,
-				ClientMetadata clientMetadata,
-				List<? extends Compressor> decompressors, ClientGetState state,
-				ClientContext context) {
-			OutputStream output = null;
-			PipedInputStream pipeIn = new PipedInputStream();
-			PipedOutputStream pipeOut = new PipedOutputStream();
-			Bucket data = null;
+		public void onSuccess(
+			StreamGenerator streamGenerator,
+			ClientMetadata clientMetadata,
+			List<? extends Compressor> decompressors,
+			ClientGetState state,
+			ClientContext context
+		) {
 			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
-			try {
-				data = context.getBucketFactory(false).makeBucket(maxLen);
-				output = data.getOutputStream();
-				if(decompressors != null) {
-					if(logMINOR) Logger.minor(this, "decompressing...");
-					pipeOut.connect(pipeIn);
-					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(pipeIn, decompressors, maxLen);
-					pipeIn = decompressorManager.execute();
-					ClientGetWorkerThread worker = new ClientGetWorkerThread(new BufferedInputStream(pipeIn), output, null, null,  ctx.getSchemeHostAndPort(), null, false, null, null, null, context.linkFilterExceptionProvider);
-					worker.start();
-					streamGenerator.writeTo(pipeOut, context);
-					decompressorManager.waitFinished();
-					worker.waitFinished();
-				} else streamGenerator.writeTo(output, context);
-
-				output.close();
-				pipeOut.close();
-				pipeIn.close();
-				output = null;
-				pipeOut = null;
-				pipeIn = null;
+			try (
+				Bucket data = context.getBucketFactory(false).makeBucket(maxLen)
+			) {
+				try (OutputStream output = data.getOutputStream()) {
+					if (decompressors != null) {
+						if (logMINOR) {
+							Logger.minor(this, "decompressing...");
+						}
+						try (
+							PipedInputStream pipeIn = new PipedInputStream();
+							PipedOutputStream pipeOut = new PipedOutputStream()
+						) {
+							pipeOut.connect(pipeIn);
+							DecompressorThreadManager decompressorManager = new DecompressorThreadManager(pipeIn, decompressors, maxLen);
+							try (InputStream pipeInNext = new BufferedInputStream(decompressorManager.execute())) {
+								ClientGetWorkerThread worker = new ClientGetWorkerThread(new BufferedInputStream(pipeInNext), output, null, null, ctx.getSchemeHostAndPort(), null, false, null, null, null, context.linkFilterExceptionProvider);
+								worker.start();
+								streamGenerator.writeTo(pipeOut, context);
+								decompressorManager.waitFinished();
+								worker.waitFinished();
+							}
+						}
+					} else {
+						streamGenerator.writeTo(output, context);
+					}
+				}
 
 				// Run directly - we are running on some thread somewhere, don't worry about it.
 				innerSuccess(data, context);
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new FetchException(FetchExceptionMode.INTERNAL_ERROR, t), state, context);
-				return;
 			} finally {
 				boolean dbrsFinished;
 				synchronized(USKFetcher.this) {
@@ -253,12 +250,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					if(logMINOR) Logger.minor(this, "Remaining DBR attempts: "+dbrAttempts);
 					dbrsFinished = dbrAttempts.isEmpty();
 				}
-				Closer.close(pipeOut);
-				Closer.close(pipeIn);
-				Closer.close(output);
-				if(dbrsFinished)
+				if (dbrsFinished) {
 					onDBRsFinished(context);
-				Closer.close(data);
+				}
 			}
 		}
 		private void innerSuccess(Bucket bucket,

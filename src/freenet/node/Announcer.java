@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -30,7 +31,6 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
-import freenet.support.io.Closer;
 import freenet.support.transport.ip.IPUtil;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -262,13 +262,13 @@ public class Announcer {
 	}
 
 	public static List<SimpleFieldSet> readSeednodes(File file) {
-		List<SimpleFieldSet> list = new ArrayList<SimpleFieldSet>();
-		FileInputStream fis = null;
-		try {
-			fis = new FileInputStream(file);
+		List<SimpleFieldSet> list = new ArrayList<>();
+		try (
+			FileInputStream fis = new FileInputStream(file);
 			BufferedInputStream bis = new BufferedInputStream(fis);
-			InputStreamReader isr = new InputStreamReader(bis, "UTF-8");
+			InputStreamReader isr = new InputStreamReader(bis, StandardCharsets.UTF_8);
 			BufferedReader br = new BufferedReader(isr);
+		){
 			while(true) {
 				try {
 					SimpleFieldSet fs = new SimpleFieldSet(br, false, false, true, false);
@@ -286,8 +286,6 @@ public class Announcer {
 		} catch (IOException e) {
 			Logger.error(Announcer.class, "Unexpected error while reading seednodes from " + file, e);
 			return list;
-		} finally {
-			Closer.close(fis);
 		}
 	}
 

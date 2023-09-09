@@ -3,18 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.io.RandomAccessFile;
-import java.io.Serializable;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -47,7 +36,6 @@ import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
-import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.InsufficientDiskSpaceException;
@@ -299,10 +287,6 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		// nested locking resulting in deadlocks, it also prevents long locks due to
 		// doing massive encrypted I/Os while holding a lock.
 
-		PipedOutputStream dataOutput = new PipedOutputStream();
-		PipedInputStream dataInput = new PipedInputStream();
-		OutputStream output = null;
-
 		DecompressorThreadManager decompressorManager = null;
 		ClientGetWorkerThread worker = null;
 		Bucket finalResult = null;
@@ -321,42 +305,54 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
             maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
         }
 
+
+
 		FetchException ex = null; // set on failure
-		try {
+		try (
+			PipedInputStream pis = new PipedInputStream();
+			PipedOutputStream dataOutput = new PipedOutputStream()
+		) {
 			if(returnBucket == null) finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
 			else finalResult = returnBucket;
 			if(logMINOR) Logger.minor(this, "Writing final data to "+finalResult+" return bucket is "+returnBucket);
-			dataOutput .connect(dataInput);
+			dataOutput.connect(pis);
 			result = new FetchResult(clientMetadata, finalResult);
 
+			PipedInputStream dataInput = pis;
 			// Decompress
 			if(decompressors != null) {
 				if(logMINOR) Logger.minor(this, "Decompressing...");
-				decompressorManager =  new DecompressorThreadManager(dataInput, decompressors, maxLen);
+				decompressorManager =  new DecompressorThreadManager(pis, decompressors, maxLen);
 				dataInput = decompressorManager.execute();
 			}
 
-			output = finalResult.getOutputStream();
-			if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
-			worker = new ClientGetWorkerThread(new BufferedInputStream(dataInput), output, uri, mimeType, ctx.getSchemeHostAndPort(), hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
-			worker.start();
-			try {
-				streamGenerator.writeTo(dataOutput, context);
-			} catch(IOException e) {
-				//Check if the worker thread caught an exception
-				worker.getError();
-				//If not, throw the original error
-				throw e;
+			if (ctx.overrideMIME != null) {
+				mimeType = ctx.overrideMIME;
 			}
+			try (
+				BufferedInputStream bufferedDataInput = new BufferedInputStream(dataInput);
+				OutputStream output = finalResult.getOutputStream()
+			) {
+				worker = new ClientGetWorkerThread(bufferedDataInput, output, uri, mimeType, ctx.getSchemeHostAndPort(), hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
+				worker.start();
+				try {
+					streamGenerator.writeTo(dataOutput, context);
+				} catch (IOException e) {
+					//Check if the worker thread caught an exception
+					worker.getError();
+					//If not, throw the original error
+					throw e;
+				}
 
-			// An error will propagate backwards, so wait for the worker first.
+				// An error will propagate backwards, so wait for the worker first.
 
-			if(logMINOR) Logger.minor(this, "Waiting for hashing, filtration, and writing to finish");
-			worker.waitFinished();
+				if (logMINOR) Logger.minor(this, "Waiting for hashing, filtration, and writing to finish");
+				worker.waitFinished();
 
-			if(decompressorManager != null) {
-				if(logMINOR) Logger.minor(this, "Waiting for decompression to finalize");
-				decompressorManager.waitFinished();
+				if (decompressorManager != null) {
+					if (logMINOR) Logger.minor(this, "Waiting for decompression to finalize");
+					decompressorManager.waitFinished();
+				}
 			}
 
 			if(worker.getClientMetadata() != null) {
@@ -391,11 +387,8 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		} catch(Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			ex = new FetchException(FetchExceptionMode.INTERNAL_ERROR, t);
-		} finally {
-			Closer.close(dataInput);
-			Closer.close(dataOutput);
-			Closer.close(output);
 		}
+
 		if(ex != null) {
 			onFailure(ex, state, context, true);
 			if(finalResult != null && finalResult != returnBucket) {

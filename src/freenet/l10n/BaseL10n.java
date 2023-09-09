@@ -20,7 +20,6 @@ import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**
@@ -335,11 +334,10 @@ public class BaseL10n {
 	 */
 	private SimpleFieldSet loadTranslation(LANGUAGE lang) {
 		SimpleFieldSet result = null;
-		InputStream in = null;
-
-		try {
+		try (
 			// Returns null on lookup failures:
-			in = this.cl.getResourceAsStream(this.getL10nFileName(lang));
+			InputStream in = this.cl.getResourceAsStream(this.getL10nFileName(lang))
+		) {
 			if (in != null) {
 				result = SimpleFieldSet.readFrom(in, false, false);
 			} else {
@@ -348,9 +346,6 @@ public class BaseL10n {
 		} catch (Exception e) {
 			System.err.println("Error while loading the l10n file from " + this.getL10nFileName(lang) + " :" + e.getMessage());
 			e.printStackTrace();
-			result = null;
-		} finally {
-			Closer.close(in);
 		}
 
 		return result;
@@ -420,25 +415,20 @@ public class BaseL10n {
 	 * Save the SimpleFieldSet of overriden keys in a file.
 	 */
 	private void saveTranslationFile() {
-		FileOutputStream fos = null;
 		File finalFile = new File(this.getL10nOverrideFileName(this.lang));
-
 		try {
 			// We don't set deleteOnExit on it : if the save operation fails, we want a backup
 			File tempFile = File.createTempFile(finalFile.getName(), ".bak", finalFile.getParentFile());;
 			Logger.minor(this.getClass(), "The temporary filename is : " + tempFile);
 
-			fos = new FileOutputStream(tempFile);
-			this.translationOverride.writeToBigBuffer(fos);
-			fos.close();
-			fos = null;
+			try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+				this.translationOverride.writeToBigBuffer(fos);
+			}
 
 			FileUtil.renameTo(tempFile, finalFile);
 			Logger.normal(this.getClass(), "Override file saved successfully!");
 		} catch (IOException e) {
 			Logger.error(this.getClass(), "Error while saving the translation override: " + e.getMessage(), e);
-		} finally {
-			Closer.close(fos);
 		}
 	}
 

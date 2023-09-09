@@ -34,7 +34,6 @@ import freenet.support.api.Bucket;
 import freenet.support.api.ManifestElement;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.Closer;
 import freenet.support.io.ResumeFailedException;
 
 /**
@@ -162,30 +161,36 @@ public class ContainerInserter implements ClientPutState, Serializable {
 
 
 	private void start(ClientContext context) {
-		if(logDEBUG) Logger.debug(this, "Atempt to start a container inserter", new Exception("debug"));
-		
-		makeMetadata(context);
-		
-		synchronized(this) {
-			if(finished) return;
+		if (logDEBUG) {
+			Logger.debug(this, "Atempt to start a container inserter", new Exception("debug"));
 		}
-		
+
+		makeMetadata(context);
+
+		synchronized (this) {
+			if (finished) {
+				return;
+			}
+		}
+
 		InsertBlock block;
-		OutputStream os = null;
 		try {
-		    RandomAccessBucket outputBucket = context.getBucketFactory(persistent).makeBucket(-1);
-			os = new BufferedOutputStream(outputBucket.getOutputStream());
-			String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
-				createTarBucket(os) :
-				createZipBucket(os));
-			os = null; // create*Bucket closes os
-			if(logMINOR)
-				Logger.minor(this, "Archive size is "+outputBucket.size());
-			
-			if(logMINOR) Logger.minor(this, "We are using "+archiveType);
-			
+			RandomAccessBucket outputBucket = context.getBucketFactory(persistent).makeBucket(-1);
+			String mimeType;
+			try (OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream())) {
+				if (archiveType == ARCHIVE_TYPE.TAR) {
+					mimeType = createTarBucket(os);
+				} else {
+					mimeType = createZipBucket(os);
+				}
+			}
+			if (logMINOR) {
+				Logger.minor(this, "Archive size is " + outputBucket.size());
+				Logger.minor(this, "We are using " + archiveType);
+			}
+
 			// Now we have to insert the Archive we have generated.
-			
+
 			// Can we just insert it, and not bother with a redirect to it?
 			// Thereby exploiting implicit manifest support, which will pick up on .metadata??
 			// We ought to be able to !!
@@ -193,31 +198,29 @@ public class ContainerInserter implements ClientPutState, Serializable {
 		} catch (IOException e) {
 			fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context);
 			return;
-		} finally {
-			Closer.close(os);
 		}
-		
+
 		boolean dc = dontCompress;
 		if (!dontCompress) {
 			dc = (archiveType == ARCHIVE_TYPE.ZIP);
 		}
-		
+
 		// Treat it as a splitfile for purposes of determining reinsert count.
 		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, realTimeFlag, dc, reportMetadataOnly, token, archiveType, true, null, true, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
-		if(logMINOR)
-			Logger.minor(this, "Inserting container: "+sfi+" for "+this);
+		if (logMINOR) {
+			Logger.minor(this, "Inserting container: " + sfi + " for " + this);
+		}
 		cb.onTransition(this, sfi, context);
 		try {
 			sfi.schedule(context);
 		} catch (InsertException e) {
 			fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context);
-			return;
 		}
 	}
 
 	private void makeMetadata(ClientContext context) {
 
-		Bucket bucket = null;
+		Bucket bucket;
 		int x = 0;
 
 		Metadata md = makeManifest(origMetadata, "");
@@ -281,9 +284,8 @@ public class ContainerInserter implements ClientPutState, Serializable {
 	*/
 	private String createTarBucket(OutputStream os) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
-		
-		TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os);
-		try {
+
+		try (TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os)) {
 			tarOS.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
 			TarArchiveEntry ze;
 
@@ -298,8 +300,6 @@ public class ContainerInserter implements ClientPutState, Serializable {
 				BucketTools.copyTo(ph.data, tarOS, size);
 				tarOS.closeArchiveEntry();
 			}
-		} finally {
-			tarOS.close();
 		}
 		
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
@@ -307,9 +307,8 @@ public class ContainerInserter implements ClientPutState, Serializable {
 	
 	private String createZipBucket(OutputStream os) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a ZIP Bucket");
-		
-		ZipOutputStream zos = new ZipOutputStream(os);
-		try {
+
+		try (ZipOutputStream zos = new ZipOutputStream(os)) {
 			ZipEntry ze;
 
 			for (ContainerElement ph : containerItems) {
@@ -319,8 +318,6 @@ public class ContainerInserter implements ClientPutState, Serializable {
 				BucketTools.copyTo(ph.data, zos, ph.data.size());
 				zos.closeEntry();
 			}
-		} finally {
-			zos.close();
 		}
 
 		return ARCHIVE_TYPE.ZIP.mimeTypes[0];

@@ -27,6 +27,7 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -136,7 +137,6 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.ShortCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.ArrayBucketFactory;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MersenneTwister;
@@ -892,20 +892,14 @@ public class Node implements TimeSkewDetectorCallback {
 	private void writeNodeFile(File orig, File backup) {
 		SimpleFieldSet fs = darknetCrypto.exportPrivateFieldSet();
 
-		if(orig.exists()) backup.delete();
-
-		FileOutputStream fos = null;
-		try {
-			fos = new FileOutputStream(backup);
+		if(orig.exists()) {
+			backup.delete();
+		}
+		try (FileOutputStream fos = new FileOutputStream(backup)){
 			fs.writeTo(fos);
-			fos.close();
-			fos = null;
 			FileUtil.renameTo(backup, orig);
 		} catch (IOException ioe) {
 			Logger.error(this, "IOE :"+ioe.getMessage(), ioe);
-			return;
-		} finally {
-			Closer.close(fos);
 		}
 	}
 
@@ -1221,15 +1215,14 @@ public class Node implements TimeSkewDetectorCallback {
 		File bootIDFile = runDir.file("bootID");
 		int BOOT_FILE_LENGTH = 64 / 4; // A long in padded hex bytes
 		long oldBootID = -1;
-		RandomAccessFile raf = null;
-		try {
-			raf = new RandomAccessFile(bootIDFile, "rw");
+
+		try (RandomAccessFile raf = new RandomAccessFile(bootIDFile, "rw")){
 			if(raf.length() < BOOT_FILE_LENGTH) {
 				oldBootID = -1;
 			} else {
 				byte[] buf = new byte[BOOT_FILE_LENGTH];
 				raf.readFully(buf);
-				String s = new String(buf, "ISO-8859-1");
+				String s = new String(buf, StandardCharsets.ISO_8859_1);
 				try {
 					oldBootID = Fields.bytesToLong(HexUtil.hexToBytes(s));
 				} catch (NumberFormatException e) {
@@ -1238,15 +1231,14 @@ public class Node implements TimeSkewDetectorCallback {
 				raf.seek(0);
 			}
 			String s = HexUtil.bytesToHex(Fields.longToBytes(bootID));
-			byte[] buf = s.getBytes("ISO-8859-1");
-			if(buf.length != BOOT_FILE_LENGTH)
+			byte[] buf = s.getBytes(StandardCharsets.ISO_8859_1);
+			if(buf.length != BOOT_FILE_LENGTH) {
 				System.err.println("Not 16 bytes for boot ID "+bootID+" - WTF??");
+			}
 			raf.write(buf);
 		} catch (IOException e) {
 			oldBootID = -1;
 			// If we have an error in reading, *or in writing*, we don't reliably know the last boot ID.
-		} finally {
-			Closer.close(raf);
 		}
 		lastBootID = oldBootID;
 

@@ -4,11 +4,7 @@
 
 package freenet.client.async;
 
-import java.io.BufferedInputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -26,7 +22,6 @@ import freenet.crypt.MultiHashInputStream;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.compress.CompressionOutputSizeException;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**A thread which does postprocessing of decompressed data, in particular,
@@ -35,7 +30,7 @@ import freenet.support.io.FileUtil;
  * the relevant constructor arguments.*/
 public class ClientGetWorkerThread extends Thread {
 
-	private InputStream input;
+	private final InputStream input;
 	final private String schemeHostAndPort;
 	final private URI uri;
 	final private HashResult[] hashes;
@@ -48,7 +43,7 @@ public class ClientGetWorkerThread extends Thread {
 	private final LinkFilterExceptionProvider linkFilterExceptionProvider;
 
 	final private String mimeType;
-	private OutputStream output;
+	private final OutputStream output;
 	private boolean finished = false;
 	private Throwable error = null;
 	private ClientMetadata clientMetadata = null;
@@ -96,14 +91,21 @@ public class ClientGetWorkerThread extends Thread {
 			String mimeType, String schemeHostAndPort, HashResult[] hashes, boolean filterData, String charset,
 			FoundURICallback prefetchHook, TagReplacerCallback tagReplacer, LinkFilterExceptionProvider linkFilterExceptionProvider) throws URISyntaxException {
 		super("ClientGetWorkerThread-"+counter());
+		if (input == null) {
+			throw new IllegalArgumentException("Input stream is missing");
+		}
+		if (output == null) {
+			throw new IllegalArgumentException("Output stream is missing");
+		}
 		this.input = input;
+		this.output = output;
 		if(uri != null) this.uri = uri.toURI("/");
 		else this.uri = null;
 		if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
 		this.mimeType = mimeType;
 		this.schemeHostAndPort = schemeHostAndPort;
 		this.hashes = hashes;
-		this.output = output;
+
 		this.filterData = filterData;
 		this.charset = charset;
 		this.prefetchHook = prefetchHook;
@@ -114,21 +116,30 @@ public class ClientGetWorkerThread extends Thread {
 
 	@Override
 	public void run() {
-		if(logMINOR) Logger.minor(this, "Starting worker thread for "+uri+" mime type "+mimeType+" filter data = "+filterData+" charset "+charset);
-		try {
+		if (logMINOR) {
+			Logger.minor(this, "Starting worker thread for "+uri+" mime type "+mimeType+" filter data = "+filterData+" charset "+charset);
+		}
+		try (
+			OutputStream outputStream = this.output;
+			InputStream is = this.input
+		){
 			//Validate the hash of the now decompressed data
-			input = new BufferedInputStream(input);
+			InputStream inputStream = new BufferedInputStream(is);
 			MultiHashInputStream hashStream = null;
 			if(hashes != null) {
-				hashStream = new MultiHashInputStream(input, HashResult.makeBitmask(hashes));
-				input = hashStream;
+				hashStream = new MultiHashInputStream(inputStream, HashResult.makeBitmask(hashes));
+				inputStream = hashStream;
 			}
 			//Filter the data, if we are supposed to
 			if(filterData){
-				if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+prefetchHook+" tagReplacer: "+tagReplacer);
-				if(mimeType == null || uri == null || input == null || output == null) throw new IOException("Insufficient arguements to worker thread");
+				if(logMINOR) {
+					Logger.minor(this, "Running content filter... Prefetch hook: "+prefetchHook+" tagReplacer: "+tagReplacer);
+				}
+				if(mimeType == null || uri == null) {
+					throw new IOException("Insufficient arguements to worker thread");
+				}
 				// Send XHTML as HTML because we can't use web-pushing on XHTML.
-				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri,
+				FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, mimeType, uri,
 						schemeHostAndPort, prefetchHook, tagReplacer, charset, linkFilterExceptionProvider);
 
 				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
@@ -138,7 +149,7 @@ public class ClientGetWorkerThread extends Thread {
 			}
 			else {
 				if(logMINOR) Logger.minor(this, "Ignoring content filter. The final result has not been written. Writing now.");
-				FileUtil.copy(input, output, -1);
+				FileUtil.copy(inputStream, outputStream, -1);
 			}
 			// Dump the rest.
 			try {
@@ -147,14 +158,14 @@ public class ClientGetWorkerThread extends Thread {
 				    // Note this is only necessary because we might have an AEADInputStream?
 				    // FIXME get rid - they should check the end anyway?
 				    byte[] buf = new byte[4096];
-				    int r = input.read(buf);
+				    int r = inputStream.read(buf);
 				    if(r < 0) break;
 				}
 			} catch (EOFException e) {
 				// Okay.
 			}
-			input.close();
-			output.close();
+			inputStream.close();
+			outputStream.close();
 			if(hashes != null) {
 				HashResult[] results = hashStream.getResults();
 				if(!HashResult.strictEquals(results, hashes)) {
@@ -170,9 +181,6 @@ public class ClientGetWorkerThread extends Thread {
 			else if(logMINOR)
 				Logger.minor(this, "Exception caught while processing fetch: "+t,t);
 			setError(t);
-		} finally {
-			Closer.close(input);
-			Closer.close(output);
 		}
 	}
 

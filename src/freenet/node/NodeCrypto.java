@@ -29,7 +29,6 @@ import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.Closer;
 
 /**
  * Cryptographic and transport level node identity.
@@ -383,20 +382,16 @@ public class NodeCrypto {
 		SimpleFieldSet fs = exportPublicFieldSet(setup, heavySetup, forARK);
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		DeflaterOutputStream gis;
-		gis = new DeflaterOutputStream(baos);
-		try {
+		try (DeflaterOutputStream gis = new DeflaterOutputStream(baos)) {
 			fs.writeTo(gis);
-                } catch (IOException e) {
-                    Logger.error(this, "IOE :"+e.getMessage(), e);
-		} finally {
-			Closer.close(gis);
-                        Closer.close(baos);
+		} catch (IOException e) {
+			Logger.error(this, "IOE :" + e.getMessage(), e);
 		}
 
 		byte[] buf = baos.toByteArray();
-		if(buf.length >= 4096)
+		if(buf.length >= 4096) {
 			throw new IllegalStateException("We are attempting to send a "+buf.length+" bytes big reference!");
+		}
 		byte[] obuf = new byte[buf.length + 1];
 		int offset = 0;
 		obuf[offset++] = 0x01; // compressed noderef

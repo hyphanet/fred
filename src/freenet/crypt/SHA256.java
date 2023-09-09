@@ -47,7 +47,6 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.support.Logger;
-import freenet.support.io.Closer;
 
 /**
  * @author  Jeroen C. van Gelderen (gelderen@cryptix.org)
@@ -65,16 +64,13 @@ public class SHA256 {
 	 * @throws IOException
 	 */
 	public static void hash(InputStream is, MessageDigest md) throws IOException {
-		try {
+		try (InputStream inputStream = is){
 			byte[] buf = new byte[4096];
-			int readBytes = is.read(buf);
+			int readBytes = inputStream.read(buf);
 			while(readBytes > -1) {
 				md.update(buf, 0, readBytes);
-				readBytes = is.read(buf);
+				readBytes = inputStream.read(buf);
 			}
-			is.close();
-		} finally {
-			Closer.close(is);
 		}
 	}
 
@@ -86,7 +82,7 @@ public class SHA256 {
 	 */
 	public static MessageDigest getMessageDigest() {
 		try {
-			SoftReference<MessageDigest> item = null;
+			SoftReference<MessageDigest> item;
 			while (((item = digests.poll()) != null)) {
 				MessageDigest md = item.get();
 				if (md != null) {
@@ -109,11 +105,13 @@ public class SHA256 {
 	 * Must be SHA-256 !
 	 */
 	public static void returnMessageDigest(MessageDigest md256) {
-		if(md256 == null)
+		if (md256 == null) {
 			return;
+		}
 		String algo = md256.getAlgorithm();
-		if(!(algo.equals("SHA-256") || algo.equals("SHA256")))
+		if (!(algo.equals("SHA-256") || algo.equals("SHA256"))) {
 			throw new IllegalArgumentException("Should be SHA-256 but is " + algo);
+		}
 		md256.reset();
 		digests.add(new SoftReference<>(md256));
 	}

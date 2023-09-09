@@ -18,6 +18,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,7 +87,6 @@ import freenet.support.api.HTTPRequest;
 import freenet.support.api.HTTPUploadedFile;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
@@ -2409,17 +2409,19 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 
 	private boolean readCompletedIdentifiers(File file) {
-		FileInputStream fis = null;
-		try {
-			fis = new FileInputStream(file);
+		try (
+			FileInputStream fis = new FileInputStream(file);
 			BufferedInputStream bis = new BufferedInputStream(fis);
-			InputStreamReader isr = new InputStreamReader(bis, "UTF-8");
-			BufferedReader br = new BufferedReader(isr);
+			InputStreamReader isr = new InputStreamReader(bis, StandardCharsets.UTF_8);
+			BufferedReader br = new BufferedReader(isr)
+		){
 			synchronized(completedRequestIdentifiers) {
 				completedRequestIdentifiers.clear();
 				while(true) {
 					String identifier = br.readLine();
-					if(identifier == null) return true;
+					if(identifier == null) {
+						return true;
+					}
 					completedRequestIdentifiers.add(identifier);
 				}
 			}
@@ -2434,8 +2436,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		} catch (IOException e) {
 			Logger.error(this, "Could not read completed identifiers list from "+file);
 			return false;
-		} finally {
-			Closer.close(fis);
 		}
 	}
 

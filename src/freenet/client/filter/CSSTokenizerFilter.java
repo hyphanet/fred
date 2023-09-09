@@ -20,7 +20,6 @@ import java.util.Set;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
-import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
 import java.io.File;
@@ -4867,18 +4866,15 @@ outer:		for(int i=0;i<value.length;i++) {
         fout.delete();
         final Bucket inputBucket = new FileBucket(fin, true, false, false, false);
         final Bucket outputBucket = new FileBucket(fout, false, true, false, false);
-        InputStream inputStream = null;
-        OutputStream outputStream = null;
-        try {
-            inputStream = inputBucket.getInputStream();
-            outputStream = outputBucket.getOutputStream();
+        try (
+			InputStream inputStream = inputBucket.getInputStream();
+			OutputStream outputStream = outputBucket.getOutputStream()
+		) {
             Logger.setupStdoutLogging(Logger.LogLevel.DEBUG, "");
 
             ContentFilter.filter(inputStream, outputStream, "text/css",
                     new URI("http://127.0.0.1:8888/freenet:USK@ZupQjDFZSc3I4orBpl1iTEAPZKo2733RxCUbZ2Q7iH0,EO8Tuf8SP3lnDjQdAPdCM2ve2RaUEN8m-hod3tQ5oQE,AQACAAE/jFreesite/19/Style/"), null, null, null, null);
         } finally {
-            Closer.close(inputStream);
-            Closer.close(outputStream);
             inputBucket.free();
             outputBucket.free();
         }
