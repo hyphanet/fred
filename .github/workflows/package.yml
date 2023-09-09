@@ -5,6 +5,7 @@ on:
     tags:
       - build**
       - testing-**
+  pull_request:
 jobs:
   build-deb:
     strategy:
@@ -40,10 +41,16 @@ jobs:
 
       - name: Build package
         run: |
-          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-package -us -uc --git-ignore-new || (EDITOR=true dpkg-source --commit . hack-1 && sudo gbp buildpackage --git-ignore-branch --git-upstream-tag=debian-package -us -uc --git-ignore-new)
+          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag="HEAD" -us -uc --git-ignore-new || (EDITOR=true dpkg-source --commit . hack-1 && sudo gbp buildpackage --git-ignore-branch --git-upstream-tag="HEAD" -us -uc --git-ignore-new)
 
       - name: Get package info
         run: |
           dpkg -I ../freenet*.deb
           file ../freenet*.deb
+          cp ../freenet*.deb ./
 
+      - name: Provide Debian Package
+        uses: actions/upload-artifact@v3
+        with:
+          name: debian-package
+          path: freenet_*.deb
