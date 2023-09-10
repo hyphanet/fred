@@ -1802,42 +1802,23 @@ class CSSTokenizerFilter {
 		}
 
 		if(attSelections!=null) {
-		    String[] attSelectionParts;
 
-		    for(String attSelection : attSelections) {
-		        if(attSelection.indexOf("|=")!=-1) {
-		            attSelectionParts=new String[2];
-		            attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("|="));
-		            attSelectionParts[1]=attSelection.substring(attSelection.indexOf("|=")+2,
-		                    attSelection.length());
-		        } else if(attSelection.indexOf("~=")!=-1) {
-		            attSelectionParts=new String[2];
-		            attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("~="));
-		            attSelectionParts[1]=attSelection.substring(attSelection.indexOf("~=")+2,
-		                    attSelection.length());
-		        } else if(attSelection.indexOf("^=")!=-1) {
-		            attSelectionParts=new String[2];
-		            attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("^="));
-		            attSelectionParts[1]=attSelection.substring(attSelection.indexOf("^=")+2,
-		                    attSelection.length());
-		        } else if(attSelection.indexOf("$=")!=-1) {
-		            attSelectionParts=new String[2];
-		            attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("$="));
-		            attSelectionParts[1]=attSelection.substring(attSelection.indexOf("$=")+2,
-		                    attSelection.length());
-		        } else if(attSelection.indexOf("*=")!=-1) {
-		            attSelectionParts=new String[2];
-		            attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("*="));
-		            attSelectionParts[1]=attSelection.substring(attSelection.indexOf("*=")+2,
-		                    attSelection.length());
-		        } else if(attSelection.indexOf('=') != -1){
-		            attSelectionParts=new String[2];
-		            attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf('='));
-		            attSelectionParts[1]=attSelection.substring(attSelection.indexOf('=')+1,
-		                    attSelection.length());
-		        } else {
-		            attSelectionParts=new String[] { attSelection };
-		        }
+			for(String attSelection : attSelections) {
+
+				// set the default
+				String[] attSelectionParts = new String[] { attSelection };;
+
+				List<String> operators = Arrays.asList("|=", "~=", "^=", "$=", "*=", "=");
+				for (String comparisonOperator : operators) {
+						if (attSelection.contains(comparisonOperator)) {
+							attSelectionParts = new String[2];
+							attSelectionParts[0] = attSelection
+									.substring(0, attSelection.indexOf(comparisonOperator));
+							attSelectionParts[1] = attSelection
+									.substring(attSelection.indexOf(comparisonOperator) + comparisonOperator.length());
+							break;
+						}
+					}
 
 		        //Verifying whether each character is alphanumeric or _
 		        if(logDEBUG) Logger.debug(CSSTokenizerFilter.class,
