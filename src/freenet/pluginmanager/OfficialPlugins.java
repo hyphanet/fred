@@ -83,8 +83,7 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@ZiX8yeMHTUtNfJAgxpwH~jLRnnbb41BKEkAxOD~33tY,aBTvD3IoPKPLjnHOCNQ4-iRwqVED5kHgkmD4UhGdITk,AAMC--8/UPnP-10007.jar");
 			addPlugin("UPnP2")
 					.inGroup("connectivity")
-					.loadedFrom("CHK@oFNunyhic~ug3lWas8Jabpwbt3heHhrFzHswN~GhPNc,j~2AHw~ZyZGNMuqW3zmukTJHysDg5lBTvrySerSPxkI,AAMC--8/freenet-UPnP2.jar")
-					.advanced();
+					.loadedFrom("CHK@oFNunyhic~ug3lWas8Jabpwbt3heHhrFzHswN~GhPNc,j~2AHw~ZyZGNMuqW3zmukTJHysDg5lBTvrySerSPxkI,AAMC--8/freenet-UPnP2.jar");
 			addPlugin("XMLLibrarian")
 					.inGroup("index")
 					.minimumVersion(26)
