@@ -95,11 +95,13 @@ public class CryptByteBufferTest {
             byte[] buf = origPlaintext.clone();
             for(int j=0;j<buf.length;j++) {
                 crypt2.encrypt(buf, j, 1);
-                assertEquals(buf[j], origCiphertext[j]);
+                String message = "Encrypted bytes in position " + j + " do not match.";
+                assertEquals(message, buf[j], origCiphertext[j]);
             }
             for(int j=0;j<buf.length;j++) {
                 crypt2.decrypt(buf, j, 1);
-                assertEquals(buf[j], origPlaintext[j]);
+                String message = "Decrypted bytes in position " + j + " do not match.";
+                assertEquals(message, buf[j], origPlaintext[j]);
             }
         }            
     }

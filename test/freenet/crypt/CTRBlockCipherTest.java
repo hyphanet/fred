@@ -226,7 +226,7 @@ public class CTRBlockCipherTest {
 				}
 				c.doFinal(plaintext, 0, plaintext.length - inputPtr, output,
 						outputPtr);
-				assertTrue(Arrays.equals(output, ciphertext));
+				assertArrayEquals(output, ciphertext);
 			}
 
 			Rijndael cipher = new Rijndael(bits, 128);
@@ -242,7 +242,7 @@ public class CTRBlockCipherTest {
 				ctr.processBytes(plaintext, ptr, count, output, ptr);
 				ptr += count;
 			}
-			assertTrue(Arrays.equals(output, ciphertext));
+			assertArrayEquals(output, ciphertext);
 		}
 	}
 	
