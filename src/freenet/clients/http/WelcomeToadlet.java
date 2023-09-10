@@ -590,7 +590,7 @@ public class WelcomeToadlet extends Toadlet {
 
     private void putCoreOperationsInterface(ToadletContext ctx, HTMLNode contentNode) throws IOException {
 		  HTMLNode coreOperationsBox = ctx.getPageMaker().getInfobox("infobox-normal", l10n("nodeOperationLabel"), contentNode, "node-operation", true);
-      coreOperationsBox.addAttribute("id", "coreNodeOperation");
+		  coreOperationsBox.addAttribute("id", "coreNodeOperation");
 
         HashMap<String, Object> model = new HashMap<>();
         model.put("formPassword", node.clientCore.getToadletContainer().getFormPassword());
