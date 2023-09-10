@@ -5,12 +5,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.MessageFormat;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.RandomAccessBucket;
+import freenet.support.api.RandomAccessBuffer;
+import freenet.support.io.ArrayBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 
@@ -19,7 +23,7 @@ public class GzipCompressor extends AbstractCompressor {
 	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
 			throws IOException, CompressionOutputSizeException {
-		Bucket output = bf.makeBucket(maxWriteLength);
+		RandomAccessBucket output = bf.makeBucket(maxWriteLength);
 		InputStream is = null;
 		OutputStream os = null;
 		try {
@@ -32,6 +36,17 @@ public class GzipCompressor extends AbstractCompressor {
 		} finally {
 			Closer.close(is);
 			Closer.close(os);
+		}
+		// force OS byte to 0 regardless of Java version (java 16 changed to setting 255 which would break hashes)
+		if (output instanceof ArrayBucket) {
+			byte[] dataArray = ((ArrayBucket) output).toByteArray();
+			dataArray[9] = 0;
+			return new ArrayBucket(dataArray);
+		} else {
+			Logger.warning(this, MessageFormat.format(
+					"Harmonizing gzip compression over Java versions requires an ArrayBucket, but a {} was created by the BucketFactory {}.", 
+					output.getClass(),
+					bf.getClass()));
 		}
 		return output;
 	}
