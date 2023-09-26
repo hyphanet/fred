@@ -184,8 +184,8 @@ public class ContentFilterTest {
 
         assertEquals(CSS_SPEC_EXAMPLE1, htmlFilter(CSS_SPEC_EXAMPLE1));
 
-        assertEquals(SPAN_WITH_STYLE, HTMLFilter(SPAN_WITH_STYLE));
-        assertEquals(HTML5_TAGS, HTMLFilter(HTML5_TAGS));
+        assertEquals(SPAN_WITH_STYLE, htmlFilter(SPAN_WITH_STYLE));
+        assertEquals(HTML5_TAGS, htmlFilter(HTML5_TAGS));
 
         assertEquals(BASE_HREF, htmlFilter(BASE_HREF));
         assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF));

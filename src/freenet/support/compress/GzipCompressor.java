@@ -43,12 +43,44 @@ public class GzipCompressor extends AbstractCompressor {
 			dataArray[9] = 0;
 			return new ArrayBucket(dataArray);
 		} else {
-			Logger.warning(this, MessageFormat.format(
-					"Harmonizing gzip compression over Java versions requires an ArrayBucket, but a {} was created by the BucketFactory {}.", 
-					output.getClass(),
-					bf.getClass()));
+			// slower fallback
+			return copyBucketPatchingOSByte(bf, maxWriteLength, output);
 		}
-		return output;
+	}
+
+	private static RandomAccessBucket copyBucketPatchingOSByte(
+			BucketFactory bf,
+			long maxWriteLength,
+			RandomAccessBucket output) throws IOException {
+		RandomAccessBucket consistentOutput = bf.makeBucket(maxWriteLength);
+		InputStream inputStream = null;
+		OutputStream consistentOutputStream = null;
+		try {
+			inputStream = output.getInputStream();
+			consistentOutputStream = consistentOutput.getOutputStream();
+			byte[] buf = new byte[8192];
+			int previousRead = 0;
+			int length = inputStream.read(buf);
+			int read = length;
+			while (read < 8 && length != -1) {
+				previousRead = read;
+				consistentOutputStream.write(buf, 0, length);
+				length = inputStream.read(buf);
+				read += length;
+			}
+			// fix OS byte
+			buf[9 - previousRead] = 0;
+			consistentOutputStream.write(buf, 0, length);
+			while ((length = inputStream.read(buf)) != -1) {
+				consistentOutputStream.write(buf, 0, length);
+			}
+			inputStream.close(); inputStream = null;
+			consistentOutputStream.close(); consistentOutputStream = null;
+		} finally {
+			Closer.close(inputStream);
+			Closer.close(consistentOutputStream);
+		}
+		return consistentOutput;
 	}
 
 	@Override
