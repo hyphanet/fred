@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -22,6 +24,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 
 public class CryptByteBufferTest {
@@ -162,10 +165,10 @@ public class CryptByteBufferTest {
             byte[] buffer = Hex.decode(plainText[i]);
             byte[] plaintextCopy = buffer.clone();
             crypt.encrypt(buffer, 0, buffer.length);
-            assertTrue(!Arrays.equals(buffer, plaintextCopy));
+            assertNotEquals(buffer, plaintextCopy);
             crypt.decrypt(buffer, 0, buffer.length);
-            assertArrayEquals("CryptByteBufferType: "+type.name(), 
-                    plaintextCopy, buffer);
+            assertThat("CryptByteBufferType: "+type.name(),
+                    plaintextCopy, equalTo(buffer));
         }
     }
 
@@ -187,7 +190,7 @@ public class CryptByteBufferTest {
             byte[] copyBuffer = buffer.clone();
             System.arraycopy(originalPlaintext, 0, buffer, header, originalPlaintext.length);
             crypt.encrypt(buffer, footer, originalPlaintext.length);
-            assertTrue(!Arrays.equals(buffer, copyBuffer));
+            assertThat(buffer, Matchers.not(equalTo(copyBuffer)));
             crypt.decrypt(buffer, footer, originalPlaintext.length);
             assertArrayEquals("CryptByteBufferType: "+type.name(), 
                     originalPlaintext, Arrays.copyOfRange(buffer, footer, footer+originalPlaintext.length));
@@ -216,10 +219,10 @@ public class CryptByteBufferTest {
             
             byte[] outBuffer = new byte[outHeader + originalPlaintext.length + outFooter];
             crypt.encrypt(buffer, inFooter, originalPlaintext.length, outBuffer, outHeader);
-            assertTrue(Arrays.equals(buffer, copyBuffer));
+            assertThat(buffer, equalTo(copyBuffer));
             copyBuffer = outBuffer.clone();
             crypt.decrypt(outBuffer, outHeader, originalPlaintext.length, buffer, inFooter);
-            assertTrue(Arrays.equals(copyBuffer, outBuffer));
+            assertThat(copyBuffer, equalTo(outBuffer));
             
             assertArrayEquals("CryptByteBufferType: "+type.name(), 
                     originalPlaintext, Arrays.copyOfRange(buffer, inFooter, inFooter+originalPlaintext.length));
@@ -261,14 +264,14 @@ public class CryptByteBufferTest {
                 ByteBuffer decipheredtext1 = crypt.decryptCopy(ciphertext1);
                 ByteBuffer decipheredtext2 = crypt.decryptCopy(ciphertext2);
                 ByteBuffer decipheredtext3 = crypt.decryptCopy(ciphertext3);
-                assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext1));
-                assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext2));
-                assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext3));
+                assertThat("CryptByteBufferType: "+type.name(), plain, equalTo(decipheredtext1));
+                assertThat("CryptByteBufferType: "+type.name(), plain, equalTo(decipheredtext2));
+                assertThat("CryptByteBufferType: "+type.name(), plain, equalTo(decipheredtext3));
             }
     }
     
     private void assertNotEquals(Object o1, Object o2) {
-        assertFalse(o1.equals(o2));
+        assertThat(o1, Matchers.not(equalTo(o2)));
     }
 
     @Test
@@ -291,18 +294,18 @@ public class CryptByteBufferTest {
             }
             ByteBuffer plaintext = ByteBuffer.wrap(buf, header, origPlaintext.length);
             ByteBuffer ciphertext = crypt.encryptCopy(plaintext);
-            assertTrue(Arrays.equals(buf, cloneBuf)); // Plaintext not modified.
+            assertThat(buf, equalTo(cloneBuf)); // Plaintext not modified.
             assertEquals(ciphertext.remaining(), origPlaintext.length);
             byte[] altCiphertext = crypt2.encryptCopy(origPlaintext);
             byte[] ciphertextBytes = new byte[origPlaintext.length];
             ciphertext.get(ciphertextBytes);
             ciphertext.position(0);
-            assertTrue(Arrays.equals(altCiphertext, ciphertextBytes));
+            assertThat(altCiphertext, equalTo(ciphertextBytes));
             ByteBuffer deciphered = crypt.decryptCopy(ciphertext);
-            assertTrue(deciphered.equals(plaintext));
+            assertThat(deciphered, equalTo(plaintext));
             byte[] data = new byte[origPlaintext.length];
             deciphered.get(data);
-            assertTrue(Arrays.equals(data, origPlaintext));
+            assertThat(data, equalTo(origPlaintext));
         }
     }
     
@@ -329,14 +332,14 @@ public class CryptByteBufferTest {
             crypt.encrypt(plaintext, ciphertext);
             assertEquals(plaintext.position(), header+origPlaintext.length);
             assertEquals(ciphertext.position(), header+origPlaintext.length);
-            assertTrue(Arrays.equals(buf, cloneBuf)); // Plaintext not modified.
+            assertThat(buf, equalTo(cloneBuf)); // Plaintext not modified.
             plaintext.position(header);
             ciphertext.position(header);
-            assertTrue(!Arrays.equals(ciphertextBuf, copyCiphertextBuf));
+            assertNotEquals(ciphertextBuf, copyCiphertextBuf);
             Arrays.fill(buf, (byte)0);
-            assertFalse(Arrays.equals(buf, cloneBuf));
+            assertNotEquals(buf, cloneBuf);
             crypt.decrypt(ciphertext, plaintext);
-            assertTrue(Arrays.equals(buf, cloneBuf));
+            assertThat(buf, equalTo(cloneBuf));
         }
     }
 
@@ -391,18 +394,18 @@ public class CryptByteBufferTest {
             }
             ByteBuffer plaintext = ByteBuffer.wrap(buf);
             ByteBuffer ciphertext = crypt.encryptCopy(plaintext);
-            assertTrue(Arrays.equals(buf, origPlaintext)); // Plaintext not modified.
+            assertThat(buf, equalTo(origPlaintext)); // Plaintext not modified.
             assertEquals(ciphertext.remaining(), origPlaintext.length);
             byte[] decryptBuf = new byte[header+origPlaintext.length+footer];
             ciphertext.get(decryptBuf, header, origPlaintext.length);
             byte[] copyOfDecryptBuf = decryptBuf.clone();
             ByteBuffer toDecipher = ByteBuffer.wrap(decryptBuf, header, origPlaintext.length);
             ByteBuffer deciphered = crypt.decryptCopy(toDecipher);
-            assertTrue(Arrays.equals(decryptBuf, copyOfDecryptBuf));
-            assertTrue(deciphered.equals(plaintext));
+            assertThat(decryptBuf, equalTo(copyOfDecryptBuf));
+            assertThat(deciphered, equalTo(plaintext));
             byte[] data = new byte[origPlaintext.length];
             deciphered.get(data);
-            assertTrue(Arrays.equals(data, origPlaintext));
+            assertThat(data, equalTo(origPlaintext));
         }
     }
 
@@ -425,14 +428,14 @@ public class CryptByteBufferTest {
             plaintext.clear();
             byte[] copyPlaintext = new byte[origPlaintext.length];
             plaintext.get(copyPlaintext);
-            assertTrue(Arrays.equals(origPlaintext, copyPlaintext)); // Plaintext not modified.
+            assertThat(origPlaintext, equalTo(copyPlaintext)); // Plaintext not modified.
             plaintext.clear();
             assertEquals(ciphertext.remaining(), origPlaintext.length);
             ByteBuffer deciphered = crypt.decryptCopy(ciphertext);
-            assertTrue(deciphered.equals(plaintext));
+            assertThat(deciphered, equalTo(plaintext));
             byte[] data = new byte[origPlaintext.length];
             deciphered.get(data);
-            assertTrue(Arrays.equals(data, origPlaintext));
+            assertThat(data, equalTo(origPlaintext));
         }
     }
 

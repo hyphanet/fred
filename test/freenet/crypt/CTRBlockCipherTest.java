@@ -1,11 +1,11 @@
 package freenet.crypt;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -183,7 +183,7 @@ public class CTRBlockCipherTest {
 			Cipher c = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
 			c.init(Cipher.ENCRYPT_MODE, k, new IvParameterSpec(iv));
 			byte[] output = c.doFinal(plaintext);
-			assertTrue(Arrays.equals(output, ciphertext));
+			assertThat(output, equalTo(ciphertext));
 		}
 
 		Rijndael cipher = new Rijndael(bits, 128);
@@ -192,7 +192,7 @@ public class CTRBlockCipherTest {
 		ctr.init(iv);
 		byte[] output = new byte[plaintext.length];
 		ctr.processBytes(plaintext, 0, plaintext.length, output, 0);
-		assertTrue(Arrays.equals(output, ciphertext));
+		assertThat(output, equalTo(ciphertext));
 	}
 
 	private void checkNISTRandomLength(int bits, byte[] key, byte[] iv,
@@ -226,7 +226,7 @@ public class CTRBlockCipherTest {
 				}
 				c.doFinal(plaintext, 0, plaintext.length - inputPtr, output,
 						outputPtr);
-				assertArrayEquals(output, ciphertext);
+				assertThat(output, equalTo(ciphertext));
 			}
 
 			Rijndael cipher = new Rijndael(bits, 128);
@@ -242,7 +242,7 @@ public class CTRBlockCipherTest {
 				ctr.processBytes(plaintext, ptr, count, output, ptr);
 				ptr += count;
 			}
-			assertArrayEquals(output, ciphertext);
+			assertThat(output, equalTo(ciphertext));
 		}
 	}
 	
@@ -263,7 +263,7 @@ public class CTRBlockCipherTest {
 			c = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
 			c.init(Cipher.DECRYPT_MODE, k, new IvParameterSpec(iv));
 			byte[] decrypted = c.doFinal(output);
-			assertTrue(Arrays.equals(decrypted, plaintext));
+			assertThat(decrypted, equalTo(plaintext));
 		}
 	}
 	
@@ -288,17 +288,17 @@ public class CTRBlockCipherTest {
 			ctr.init(iv);
 			byte[] finalPlaintext = new byte[plaintext.length];
 			ctr.processBytes(ciphertext, 0, ciphertext.length, finalPlaintext, 0);
-			assertTrue(Arrays.equals(finalPlaintext, plaintext));
+			assertThat(finalPlaintext, equalTo(plaintext));
 			if(TEST_JCA) {
 				SecretKeySpec k = new SecretKeySpec(key, "AES");
 				Cipher c = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
 				c.init(Cipher.ENCRYPT_MODE, k, new IvParameterSpec(iv));
 				byte[] output = c.doFinal(plaintext);
-				assertTrue(Arrays.equals(output, ciphertext));
+				assertThat(output, equalTo(ciphertext));
 				c = Cipher.getInstance("AES/CTR/NOPADDING", Rijndael.AesCtrProvider);
 				c.init(Cipher.DECRYPT_MODE, k, new IvParameterSpec(iv));
 				byte[] decrypted = c.doFinal(output);
-				assertTrue(Arrays.equals(decrypted, plaintext));
+				assertThat(decrypted, equalTo(plaintext));
 			}
 			// Now encrypt again, in random pieces.
 			cipher.initialize(key);
@@ -313,7 +313,7 @@ public class CTRBlockCipherTest {
 				ctr.processBytes(plaintext, ptr, count, output, ptr);
 				ptr += count;
 			}
-			assertTrue(Arrays.equals(output, ciphertext));
+			assertThat(output, equalTo(ciphertext));
 			
 		}
 	}
