@@ -57,6 +57,21 @@ public class SingleOffsetReplacingOutputStreamTest {
 		filterOutputStreamWithOffsetAndReplacementWritingSingleBytes(16384, 4, 65535);
 	}
 
+	@Test
+	public void byteAtStartOfBufferCanBeReplacedWhenWritingHalfBuffers() throws IOException {
+		filterOutputStreamWithOffsetAndReplacementWritingHalfBuffers(4096, 16, 0);
+	}
+
+	@Test
+	public void byteAtMiddleOfBufferCanBeReplacedWhenWritingHalfBuffers() throws IOException {
+		filterOutputStreamWithOffsetAndReplacementWritingHalfBuffers(8192, 8, 12345);
+	}
+
+	@Test
+	public void byteAtEndOfBufferCanBeReplacedWhenWritingHalfBuffers() throws IOException {
+		filterOutputStreamWithOffsetAndReplacementWritingHalfBuffers(16384, 4, 65535);
+	}
+
 	private void filterOutputStreamWithOffsetAndReplacementWritingSingleBytes(int blockSize, int numberOfBlocks, int replacementOffset) throws IOException {
 		filterOutputStreamWithOffsetAndReplacement(blockSize, numberOfBlocks, replacementOffset, (buffer, length, repetitions, outputStream) -> {
 			for (int index = 0; index < length * repetitions; index++) {
@@ -71,6 +86,15 @@ public class SingleOffsetReplacingOutputStreamTest {
 				outputStream.write(buffer, 0, length);
 			}
 		});
+	}
+
+	private void filterOutputStreamWithOffsetAndReplacementWritingHalfBuffers(int blockSize, int numberOfBlocks, int replacementOffset) throws IOException {
+		filterOutputStreamWithOffsetAndReplacement(blockSize, numberOfBlocks, replacementOffset, ((buffer, length, repetitions, outputStream) -> {
+			for (int blockIndex = 0; blockIndex < repetitions; blockIndex++) {
+				outputStream.write(buffer, 0, length / 2);
+				outputStream.write(buffer, length / 2, length - (length / 2));
+			}
+		}));
 	}
 
 	private void filterOutputStreamWithOffsetAndReplacement(int blockSize, int numberOfBlocks, int replacementOffset, BufferToOutputStreamCopierStrategy bufferToOutputStreamCopierStrategy) throws IOException {
