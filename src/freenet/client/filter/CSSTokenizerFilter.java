@@ -1806,7 +1806,7 @@ class CSSTokenizerFilter {
 			for(String attSelection : attSelections) {
 
 				// set the default
-				String[] attSelectionParts = new String[] { attSelection };;
+				String[] attSelectionParts = new String[] { attSelection };
 
 				List<String> operators = Arrays.asList("|=", "~=", "^=", "$=", "*=", "=");
 				for (String comparisonOperator : operators) {
