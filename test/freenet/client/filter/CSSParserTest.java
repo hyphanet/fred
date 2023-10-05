@@ -749,6 +749,8 @@ public class CSSParserTest {
 		propertyTests.put("blockquote { letter-spacing: 0.1em }", "blockquote { letter-spacing: 0.1em }");
 		propertyTests.put("blockquote { letter-spacing: normal }", "blockquote { letter-spacing: normal }");
 		propertyTests.put("h1 { word-spacing: 1em }", "h1 { word-spacing: 1em }");
+		propertyTests.put("h1 { word-wrap: normal } h2 { word-wrap: break-word } h1 { word-wrap: anywhere }",
+                          "h1 { word-wrap: normal } h2 { word-wrap: break-word } h1 { word-wrap: anywhere }");
 		propertyTests.put("h1 { text-transform: uppercase }", "h1 { text-transform: uppercase }");
 		propertyTests.put("pre        { white-space: pre } p          { white-space: normal } td[nowrap] { white-space: nowrap }", "pre { white-space: pre } p { white-space: normal } td[nowrap] { white-space: nowrap }");
 		propertyTests.put("pre[wrap]  { white-space: pre-wrap }", "pre[wrap] { white-space: pre-wrap }");
