@@ -51,7 +51,7 @@ public class MultiValueTable<K,V> {
 
     @SafeVarargs
     public static <K, V> MultiValueTable<K, V> from(K key, V... values) {
-      return from(key, Arrays.asList(values));
+        return from(key, Arrays.asList(values));
     }
 
     public static <K, V> MultiValueTable<K, V> from(K key, Collection<V> values) {
@@ -100,7 +100,7 @@ public class MultiValueTable<K,V> {
     }
 
     public boolean containsKey(K key) {
-		return this.table.containsKey(key);
+        return this.table.containsKey(key);
     }
 
     public boolean containsElement(K key, V value) {
@@ -191,7 +191,7 @@ public class MultiValueTable<K,V> {
     }
 
     public void clear() {
-		this.table.clear();
+        this.table.clear();
     }
 
     public boolean removeElement(K key, V value) {
@@ -217,7 +217,7 @@ public class MultiValueTable<K,V> {
      */
     @Deprecated
     public Enumeration<K> keys() {
-		return Collections.enumeration(keySet());
+        return Collections.enumeration(keySet());
     }
 
     public Set<K> keySet() {
