@@ -1,0 +1,4 @@
+freenet: init.d-script-does-not-implement-required-option etc/init.d/freenet force-reload
+freenet: init.d-script-does-not-implement-required-option etc/init.d/freenet restart
+freenet: init.d-script-does-not-implement-required-option etc/init.d/freenet start
+freenet: init.d-script-does-not-implement-required-option etc/init.d/freenet stop

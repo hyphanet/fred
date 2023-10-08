@@ -11,9 +11,9 @@ start with:
   List only bugs filed against this repository by selecting "Freenet" in the
   "Project" drop-down in the upper right. Do any of these look interesting?
 * Check the [projects](https://wiki.freenetproject.org/Projects) page.
-* Ask the [development mailing list](https://emu.freenetproject.org/cgi-bin/mailman/listinfo/devl)
-  or join us in [IRC](https://freenetproject.org/irc.html) - `#freenet` on
-  `chat.freenode.net`.
+* Ask the [development mailing list](https://freenetproject.org/pages/help.html#mailing-lists)
+  or join us in [IRC](https://web.libera.chat/?nick=Rabbit|?#freenet) - `#freenet` on
+  `irc.libera.chat`.
 
 # Code review
 

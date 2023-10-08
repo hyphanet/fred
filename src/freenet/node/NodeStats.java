@@ -319,8 +319,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public final DecayingKeyspaceAverage avgClientCacheSSKSuccess;
 	public final DecayingKeyspaceAverage avgStoreSSKSuccess;
 	
-	private volatile boolean enableNewLoadManagementRT;
-	private volatile boolean enableNewLoadManagementBulk;
+	private final boolean enableNewLoadManagementRT = false;
+	private final boolean enableNewLoadManagementBulk = false;
 
 	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, int lastVersion) throws NodeInitException {
 		this.node = node;
@@ -509,44 +509,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		});
 		
-		statsConfig.register("enableNewLoadManagementRT", false, sortOrder++, true, false, "Node.enableNewLoadManagementRT", "Node.enableNewLoadManagementRTLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				return enableNewLoadManagementRT;
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException,
-					NodeNeedRestartException {
-				enableNewLoadManagementRT = val;
-			}
-			
-		});
-		enableNewLoadManagementRT = statsConfig.getBoolean("enableNewLoadManagementRT");
-		statsConfig.register("enableNewLoadManagementBulk", false, sortOrder++, true, false, "Node.enableNewLoadManagementBulk", "Node.enableNewLoadManagementBulkLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				return enableNewLoadManagementBulk;
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException,
-					NodeNeedRestartException {
-				enableNewLoadManagementBulk = val;
-			}
-			
-		});
-		enableNewLoadManagementBulk = statsConfig.getBoolean("enableNewLoadManagementBulk");
-		
-        if(node.lastVersion <= 1455 && (enableNewLoadManagementRT || enableNewLoadManagementBulk)) {
-            // FIXME remove
-            enableNewLoadManagementRT = false;
-            enableNewLoadManagementBulk = false;
-            System.err.println("Turning off NLM when upgrading from pre-1455. The load stats messages aren't being sent at the moment so it won't work anyway.");
-            statsConfig.config.store();
-        }
+		statsConfig.registerIgnoredOption("enableNewLoadManagementRT");
+		statsConfig.registerIgnoredOption("enableNewLoadManagementBulk");
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false,
 				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ticker, node.getRunDir());

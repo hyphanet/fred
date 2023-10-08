@@ -936,7 +936,7 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PLUGLOAD")) {
         	if(uline.startsWith("PLUGLOAD:O:")) {
         		String name = line.substring("PLUGLOAD:O:".length()).trim();
-        		n.pluginManager.startPluginOfficial(name, true, false, false);
+        		n.pluginManager.startPluginOfficial(name, true);
         	} else if(uline.startsWith("PLUGLOAD:F:")) {
         		String name = line.substring("PLUGLOAD:F:".length()).trim();
         		n.pluginManager.startPluginFile(name, true);

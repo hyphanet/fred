@@ -1,0 +1,32 @@
+freenet
+Freenet @version@ build @build@ (experimental release)
+Freenet reference daemon
+WRAPPER_CONF /etc/freenet/wrapper.conf
+PRIORITY 10
+RUN_AS_USER freenet
+PIDDIR /var/run/freenet
+
+# do we want to run at all?
+
+if [ "$RUN" != "yes" ]; then echo >&2 "RUN is not yes; abort"; exit 1; fi
+
+# set PRIORITY from /etc/default
+
+if [ -n "$NICE" ]; then PRIORITY="$NICE"; fi
+
+# copy default config files, if necessary
+
+ensure_exists() { if [ ! -f "$1" ]; then cp "$2" "$1"; fi; }
+
+ensure_exists /etc/freenet/wrapper.conf  /usr/share/freenet/wrapper.conf
+ensure_exists /etc/freenet/freenet.ini  /usr/share/freenet/freenet.ini
+ensure_exists /etc/freenet/noderef/seednodes.fref /usr/share/freenet/seednodes.fref
+
+[ -z "$SERVER_USER" ] && SERVER_USER=freenet
+[ -z "$SERVER_GROUP" ] && SERVER_GROUP=freenet
+
+if [ ! -d "$PIDDIR" ]; then
+	mkdir "$PIDDIR" || exit 1
+	chown $SERVER_USER:$SERVER_GROUP "$PIDDIR" || exit 1
+	chmod 2750 "$PIDDIR" || exit 1
+fi

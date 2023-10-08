@@ -1,5 +1,7 @@
 package freenet.clients.http.wizardsteps;
 
+import static freenet.support.io.DatastoreUtil.oneGiB;
+
 import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.config.Config;
 import freenet.config.ConfigException;
@@ -128,7 +130,7 @@ public class DATASTORE_SIZE implements Step {
 			long maxDatastoreSize = DatastoreUtil.maxDatastoreSize();
 			if (size > maxDatastoreSize) {
 				throw new InvalidConfigValueException("Attempting to set DatastoreSize (" + size
-						+ ") larger than maxDatastoreSize (" + maxDatastoreSize + ")");
+						+ ") larger than maxDatastoreSize (" + maxDatastoreSize / oneGiB + " GiB)");
 			}
 
 			// client cache: 10% up to 200MB

@@ -83,8 +83,7 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@ZiX8yeMHTUtNfJAgxpwH~jLRnnbb41BKEkAxOD~33tY,aBTvD3IoPKPLjnHOCNQ4-iRwqVED5kHgkmD4UhGdITk,AAMC--8/UPnP-10007.jar");
 			addPlugin("UPnP2")
 					.inGroup("connectivity")
-					.loadedFrom("CHK@oFNunyhic~ug3lWas8Jabpwbt3heHhrFzHswN~GhPNc,j~2AHw~ZyZGNMuqW3zmukTJHysDg5lBTvrySerSPxkI,AAMC--8/freenet-UPnP2.jar")
-					.advanced();
+					.loadedFrom("CHK@oFNunyhic~ug3lWas8Jabpwbt3heHhrFzHswN~GhPNc,j~2AHw~ZyZGNMuqW3zmukTJHysDg5lBTvrySerSPxkI,AAMC--8/freenet-UPnP2.jar");
 			addPlugin("XMLLibrarian")
 					.inGroup("index")
 					.minimumVersion(26)
@@ -107,7 +106,8 @@ public class OfficialPlugins {
 					.recommendedVersion(37)
 					.minimumVersion(36)
 					.usesXml()
-					.loadedFrom("CHK@RrYmOu8RGoEY44LOgGBBgY9qRxmiev0SFAVxWAbwROI,cfYMrDcBdewk4I7AC4J3mAq0g~NH3TxVpfeSkQ9Xaa8,AAMC--8/Library.jar");
+					.loadedFrom("CHK@RrYmOu8RGoEY44LOgGBBgY9qRxmiev0SFAVxWAbwROI,cfYMrDcBdewk4I7AC4J3mAq0g~NH3TxVpfeSkQ9Xaa8,AAMC--8/Library.jar")
+					.advanced();
 			addPlugin("Spider")
 					.inGroup("index")
 					.minimumVersion(53)
