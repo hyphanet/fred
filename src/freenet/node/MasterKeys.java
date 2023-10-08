@@ -269,8 +269,8 @@ public class MasterKeys {
 		byte[] salt = new byte[32];
 		hardRandom.nextBytes(salt);
 
-		byte[] pwd = newPassword.getBytes(StandardCharsets.UTF_8);
-		MessageDigest md = SHA256.getMessageDigest();
+        byte[] pwd = newPassword.getBytes(StandardCharsets.UTF_8);
+        MessageDigest md = SHA256.getMessageDigest();
         md.update(pwd);
         md.update(salt);
         byte[] outerKey = md.digest();

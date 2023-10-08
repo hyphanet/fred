@@ -1527,7 +1527,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
          * just get rid of this - in which case maybe we want to improve on this.
          * @throws IOException */ 
         private boolean createRunShNoNice(File input, File output) throws IOException {
-			InputStream is = null;
+            InputStream is = null;
             OutputStream os = null;
             boolean failed = false;
             try {

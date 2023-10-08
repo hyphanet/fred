@@ -989,8 +989,8 @@ public class SimpleFieldSet {
         BufferedWriter bw = null;
         
         bos = new BufferedOutputStream(os, bufferSize);
-		osw = new OutputStreamWriter(bos, StandardCharsets.UTF_8);
-		bw = new BufferedWriter(osw);
+        osw = new OutputStreamWriter(bos, StandardCharsets.UTF_8);
+        bw = new BufferedWriter(osw);
         writeTo(bw);
         bw.flush();
     }
