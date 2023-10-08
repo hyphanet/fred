@@ -21,9 +21,10 @@ public class CurrentTimeUTC {
     /**
      * Get the current time in milliseconds.
      *
-     * In the current implementation, this just returns System.currentTimeMilis(). You should however use CurrenTimeUTC.getInMillis() instead because
-     * the JavaDoc of System.currentTimeMilis() does not explicitly state what time zone it returns. Therefore, by using this wrapper function, your code
-     * clearly states that it uses UTC time.
+     * In the current implementation, this just returns {@link System#currentTimeMillis()}.
+     * You should however use CurrentTimeUTC#getInMillis() instead because
+     * the JavaDoc of {@link System#currentTimeMillis()} does not explicitly state what time zone it returns.
+     * Therefore, by using this wrapper function, your code clearly states that it uses UTC time.
      */
     public static long getInMillis() {
         return System.currentTimeMillis();
