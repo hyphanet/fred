@@ -2,6 +2,7 @@ package freenet.clients.http;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -92,7 +93,7 @@ public class FProxyFetchTracker implements Runnable {
 	 * @return The FetchInProgress if found, null otherwise*/
 	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize, FetchContext fctx){
 		synchronized (fetchers) {
-			List<FProxyFetchInProgress> check = fetchers.getAll(key);
+			List<FProxyFetchInProgress> check = fetchers.getAllAsList(key);
 			if(check != null) {
 				for (FProxyFetchInProgress progress : check) {
 					if ((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
@@ -131,8 +132,10 @@ public class FProxyFetchTracker implements Runnable {
 
 	@Override
 	public void run() {
-		if(logMINOR) Logger.minor(this, "Removing old FProxyFetchInProgress's");
-		ArrayList<FProxyFetchInProgress> toRemove = null;
+		if (logMINOR) {
+			Logger.minor(this, "Removing old FProxyFetchInProgress's");
+		}
+		List<FProxyFetchInProgress> toRemove;
 		boolean needRequeue = false;
 		synchronized(fetchers) {
 			if(requeue) {
@@ -142,17 +145,11 @@ public class FProxyFetchTracker implements Runnable {
 				queuedJob = false;
 			}
 			// Horrible hack, FIXME
-			for (FreenetURI uri: fetchers.keys()) {
-				// Really horrible hack, FIXME
-				for(FProxyFetchInProgress f : fetchers.getAll(uri)) {
-					// FIXME remove on the fly, although cancel must wait
-					if(f.canCancel()) {
-						if(toRemove == null) toRemove = new ArrayList<FProxyFetchInProgress>();
-						toRemove.add(f);
-					}
-				}
-			}
-			if(toRemove != null)
+			toRemove = fetchers.values()
+				// FIXME remove on the fly, although cancel must wait
+				.filter(FProxyFetchInProgress::canCancel)
+				.collect(Collectors.toList());
+
 			for(FProxyFetchInProgress r : toRemove) {
 				if(logMINOR){
 					Logger.minor(this,"Removed fetchinprogress:"+r);
@@ -160,14 +157,15 @@ public class FProxyFetchTracker implements Runnable {
 				fetchers.removeElement(r.uri, r);
 			}
 		}
-		if(toRemove != null)
 		for(FProxyFetchInProgress r : toRemove) {
-			if(logMINOR)
+			if (logMINOR) {
 				Logger.minor(this, "Cancelling for "+r);
+			}
 			r.finishCancel();
 		}
-		if(needRequeue)
+		if(needRequeue) {
 			context.ticker.queueTimedJob(this, FProxyFetchInProgress.LIFETIME);
+		}
 	}
 
 	public int makeRandomElementID() {

@@ -306,7 +306,7 @@ public class ToadletContextImpl implements ToadletContext {
 		
 		cookies = new ArrayList<>(cookieAmount + 1);
 		
-		for(String cookieHeader : headers.getAll("cookie")) {
+		for(String cookieHeader : headers.iterateAll("cookie")) {
 			ArrayList<ReceivedCookie> parsedCookies = ReceivedCookie.parseHeader(cookieHeader);
 			cookies.addAll(parsedCookies);
 		}
@@ -435,9 +435,9 @@ public class ToadletContextImpl implements ToadletContext {
 		buf.append(' ');
 		buf.append(replyDescription);
 		buf.append("\r\n");
-		for (String key : mvt.keys()) {
-			List<String> list = mvt.getAll(key);
-			key = fixKey(key);
+		for (Map.Entry<String, List<String>> entry : mvt.entrySet()) {
+			String key = fixKey(entry.getKey());
+			List<String> list = entry.getValue();
 			for (String s : list) {
 				buf.append(key);
 				buf.append(": ");

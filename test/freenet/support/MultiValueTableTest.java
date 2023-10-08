@@ -17,14 +17,8 @@ package freenet.support;
 
 import static org.junit.Assert.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -106,6 +100,39 @@ public class MultiValueTableTest {
         return multiValueTable;
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void fromThrowsExceptionWhenKeysAndValuesArrayParamsHaveDifferentSize() {
+        MultiValueTable.from(
+            new Integer[] {1, 2, 3},
+            new String[] {"one", "two"}
+        );
+    }
+
+    @Test
+    public void testFromMethodWithArrayParams() {
+        Integer[] keys = {1, 2, 3};
+        String[] values = {"one", "two", "three"};
+        MultiValueTable<Integer, String> table = MultiValueTable.from(keys, values);
+        assertEquals(3, table.keySet().size());
+        for (int i = 0; i < keys.length; i++) {
+            assertEquals(values[i], table.get(keys[i]));
+        }
+
+        assertArrayEquals(keys, table.keySet().toArray(new Integer[0]));
+        assertEquals(
+            new HashSet<>(Arrays.asList(values)),
+            table.values().collect(Collectors.toSet())
+        );
+    }
+
+    @Test
+    public void testFromMethodWithVarArgParams() {
+        MultiValueTable<String, Integer> table = MultiValueTable.from("key", 1, 2, 3);
+        assertEquals(1, table.keySet().size());
+        assertEquals("key", table.keySet().iterator().next());
+        assertEquals(Arrays.asList(1, 2, 3), table.getAllAsList("key"));
+    }
+
     @Test
     public void testPut() {
         multiValueTable = new MultiValueTable<>();
@@ -115,9 +142,22 @@ public class MultiValueTableTest {
         multiValueTable.put(4, "four");
         assertEquals(3, multiValueTable.size());
         assertEquals(2, multiValueTable.countAll(1));
-        assertEquals(Arrays.asList("one", "two"), multiValueTable.getAll(1));
-        assertEquals(Collections.singletonList("three"), multiValueTable.getAll(3));
-        assertEquals(Collections.singletonList("four"), multiValueTable.getAll(4));
+        assertEquals(Arrays.asList("one", "two"), multiValueTable.getAllAsList(1));
+        assertEquals(Collections.singletonList("three"), multiValueTable.getAllAsList(3));
+        assertEquals(Collections.singletonList("four"), multiValueTable.getAllAsList(4));
+    }
+
+    @Test
+    public void testPutAll() {
+        multiValueTable = new MultiValueTable<>();
+        multiValueTable.putAll(1, Arrays.asList("one", "two"));
+        multiValueTable.putAll(2, Arrays.asList("three", "four"));
+        multiValueTable.putAll(2, Arrays.asList("five", "six"));
+        multiValueTable.putAll(3, Collections.emptyList());
+
+        assertEquals(Arrays.asList("one", "two"), multiValueTable.getAllAsList(1));
+        assertEquals(Arrays.asList("three", "four", "five", "six"), multiValueTable.getAllAsList(2));
+        assertTrue(multiValueTable.getAllAsList(3).isEmpty());
     }
 
     @Test
@@ -132,6 +172,16 @@ public class MultiValueTableTest {
             assertEquals(
                 entry.getValue().get(0),
                 multiValueTable.getFirst(entry.getKey())
+            );
+        }
+    }
+
+    @Test
+    public void testGet() {
+        for (Map.Entry<Integer, List<Object>> entry : sampleObjects.entrySet()) {
+            assertEquals(
+                entry.getValue().get(0),
+                multiValueTable.get(entry.getKey())
             );
         }
     }
@@ -166,16 +216,59 @@ public class MultiValueTableTest {
     }
 
     @Test
-    public void getAllMethodReturnsEmptyListForNonExistentKey() {
-        List<Object> elements = multiValueTable.getAll(NON_EXISTING_KEY);
+    public void getAllMethodReturnsEmptyEnumerationForNonExistentKey() {
+        Enumeration<Object> elements = multiValueTable.getAll(NON_EXISTING_KEY);
         assertNotNull(elements);
-        assertTrue(elements.isEmpty());
+        assertFalse(elements.hasMoreElements());
     }
 
     @Test
     public void testGetAll() {
         for (Map.Entry<Integer, List<Object>> entry : sampleObjects.entrySet()) {
-            assertEquals(entry.getValue(), multiValueTable.getAll(entry.getKey()));
+            Enumeration<Object> actualElements = multiValueTable.getAll(entry.getKey());
+            for (Object element:  entry.getValue()) {
+                assertTrue(actualElements.hasMoreElements());
+                assertEquals(element, actualElements.nextElement());
+            }
+            assertFalse(actualElements.hasMoreElements());
+        }
+    }
+
+    @Test
+    public void testGetAllAsList() {
+        for (Map.Entry<Integer, List<Object>> entry : sampleObjects.entrySet()) {
+            assertEquals(entry.getValue(), multiValueTable.getAllAsList(entry.getKey()));
+        }
+    }
+
+    @Test
+    public void testGetArray() {
+        for (Map.Entry<Integer, List<Object>> entry : sampleObjects.entrySet()) {
+            assertArrayEquals(
+                entry.getValue().toArray(),
+                multiValueTable.getArray(entry.getKey())
+            );
+        }
+    }
+
+    @Test
+    public void testGetSync() {
+        for (Map.Entry<Integer, List<Object>> entry : sampleObjects.entrySet()) {
+            assertEquals(
+                entry.getValue(),
+                multiValueTable.getSync(entry.getKey())
+            );
+        }
+    }
+
+    @Test
+    public void testGetIterateAll() {
+        for (Map.Entry<Integer, List<Object>> entry : sampleObjects.entrySet()) {
+            int i = 0;
+            for (Object value : multiValueTable.iterateAll(entry.getKey())) {
+                assertEquals(entry.getValue().get(i), value);
+                ++i;
+            }
         }
     }
 
@@ -192,14 +285,29 @@ public class MultiValueTableTest {
     }
 
     @Test
+    public void removeAndGetWorksForNonExistingKey() {
+        assertNull(multiValueTable.removeAndGet(NON_EXISTING_KEY));
+    }
+
+    @Test
     public void removeWorksForNonExistingKey() {
-        assertFalse(multiValueTable.remove(NON_EXISTING_KEY));
+        multiValueTable.remove(NON_EXISTING_KEY);
     }
 
     @Test
     public void testRemove() {
         for (Integer key : sampleObjects.keySet()) {
-            assertTrue(multiValueTable.remove(key));
+            multiValueTable.remove(key);
+        }
+        assertTrue(multiValueTable.isEmpty());
+    }
+
+    @Test
+    public void testRemoveAndGet() {
+        for (Integer key : sampleObjects.keySet()) {
+            List<Object> elements = multiValueTable.removeAndGet(key);
+            assertNotNull(elements);
+            assertFalse(elements.isEmpty());
         }
         assertTrue(multiValueTable.isEmpty());
     }
@@ -261,17 +369,74 @@ public class MultiValueTableTest {
     @Test
     public void keysMethodReturnsEmptyCollectionForEmptyTable() {
         multiValueTable = new MultiValueTable<>();
-        Set<Integer> keys = multiValueTable.keys();
+        Enumeration<Integer> keys = multiValueTable.keys();
+        assertNotNull(keys);
+        assertFalse(keys.hasMoreElements());
+    }
+
+    @Test
+    public void keySetMethodReturnsEmptyCollectionForEmptyTable() {
+        multiValueTable = new MultiValueTable<>();
+        Set<Integer> keys = multiValueTable.keySet();
         assertNotNull(keys);
         assertTrue(keys.isEmpty());
     }
 
     @Test
     public void testKeys() {
+        Enumeration<Integer> keys = multiValueTable.keys();
+        assertNotNull(keys);
+        while (keys.hasMoreElements()) {
+            assertNotNull(
+                sampleObjects.remove(keys.nextElement())
+            );
+        }
+        assertTrue(sampleObjects.isEmpty());
+    }
+
+    @Test
+    public void testKeySet() {
         assertEquals(
             sampleObjects.keySet(),
-            multiValueTable.keys()
+            multiValueTable.keySet()
         );
+    }
+
+
+    @Test
+    public void testElements() {
+        Set<Object> expectedObjects = sampleObjects.values().stream()
+            .flatMap(List::stream)
+            .collect(Collectors.toCollection(HashSet::new));
+        Enumeration<Object> elements = multiValueTable.elements();
+        assertNotNull(elements);
+        while (elements.hasMoreElements()) {
+            assertTrue(
+                expectedObjects.remove(elements.nextElement())
+            );
+        }
+        assertTrue(expectedObjects.isEmpty());
+    }
+
+    @Test
+    public void testValues() {
+        assertEquals(
+            sampleObjects.values().stream().flatMap(List::stream).collect(Collectors.toSet()),
+            multiValueTable.values().collect(Collectors.toSet())
+        );
+    }
+
+    @Test
+    public void testEntrySet() {
+        Set<Integer> keys = new HashSet<>(sampleObjects.size());
+        for (Map.Entry<Integer, List<Object>> entry : multiValueTable.entrySet()) {
+            Integer key = entry.getKey();
+            assertTrue(sampleObjects.containsKey(key));
+            keys.add(key);
+
+            assertEquals(sampleObjects.get(key), entry.getValue());
+        }
+        assertEquals(sampleObjects.keySet(), keys);
     }
 
     /**
@@ -289,10 +454,10 @@ public class MultiValueTableTest {
             methodMVTable.put(new Object(), sampleValue);
         }
 
-        assertEquals(keysCount, methodMVTable.keys().size());
+        assertEquals(keysCount, methodMVTable.keySet().size());
 
         int elementCount = 0;
-        for (Object key : methodMVTable.keys()) {
+        for (Object key : methodMVTable.keySet()) {
             elementCount += methodMVTable.countAll(key);
         }
         assertEquals(2, elementCount);

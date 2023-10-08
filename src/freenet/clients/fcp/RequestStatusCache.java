@@ -193,7 +193,7 @@ public class RequestStatusCache {
 	}
 
 	public synchronized CacheFetchResult getShadowBucket(FreenetURI key, boolean noFilter) {
-		List<DownloadRequestStatus> downloads = downloadsByURI.getAll(key);
+		List<DownloadRequestStatus> downloads = downloadsByURI.getAllAsList(key);
 		if (downloads == null) {
 			return null;
 		}
