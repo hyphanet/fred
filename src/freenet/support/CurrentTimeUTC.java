@@ -3,61 +3,48 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
-import java.util.Calendar;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoField;
 import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
 
 
 /**
- * A wrapper class around a GregorianCalendar which always returns the current time.
- * This is useful for working around the pitfall of class Calendar: It only returns the current time when you first use a get*() function,
- * in any get*() calls after the first call, the time value of the first call is returned. One would have to call Calendar.clear() before each
- * get to obtain the current time and this class takes care of that for you.
- * 
- * Further, this class is synchronized so you do not need to worry about synchronization of a Calendar anymore.
+ * A helper class, which returns the current time and date in UTC timezone.
  */
 public class CurrentTimeUTC {
 
-	private static final GregorianCalendar mCalendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+    public static Date get() {
+        return Date.from(nowUtc().toInstant());
+    }
 
-	public static Date get() {
-		synchronized(mCalendar) {
-			mCalendar.setTimeInMillis(System.currentTimeMillis());
-			return mCalendar.getTime();
-		}
-	}
+    /**
+     * Get the current time in milliseconds.
+     *
+     * In the current implementation, this just returns System.currentTimeMilis(). You should however use CurrenTimeUTC.getInMillis() instead because
+     * the JavaDoc of System.currentTimeMilis() does not explicitly state what time zone it returns. Therefore, by using this wrapper function, your code
+     * clearly states that it uses UTC time.
+     */
+    public static long getInMillis() {
+        return System.currentTimeMillis();
+    }
 
-	/**
-	 * Get the current time in milliseconds. 
-	 * 
-	 * In the current implementation, this just returns System.currentTimeMilis(). You should however use CurrenTimeUTC.getInMillis() instead because
-	 * the JavaDoc of System.currentTimeMilis() does not explicitly state what time zone it returns. Therefore, by using this wrapper function, your code
-	 * clearly states that it uses UTC time. 
-	 */
-	public static long getInMillis() {
-		return System.currentTimeMillis();
-	}
+    public static int getYear() {
+        return nowUtc().get(ChronoField.YEAR);
+    }
 
-	public static int getYear() {
-		synchronized(mCalendar) {
-			mCalendar.setTimeInMillis(System.currentTimeMillis());
-			return mCalendar.get(Calendar.YEAR);
-		}
-	}
+    public static int getMonth() {
+        // Previously, this method used java.util.GregorianCalendar and Calendar.MONTH, which is zero-based.
+        // Newer java.time API returns months values starting with one,
+        // and subtraction is required to preserve backward compatibility.
+        return nowUtc().get(ChronoField.MONTH_OF_YEAR) - 1;
+    }
 
-	public static int getMonth() {
-		synchronized(mCalendar) {
-			mCalendar.setTimeInMillis(System.currentTimeMillis());
-			return mCalendar.get(Calendar.MONTH);
-		}
-	}
+    public static int getDayOfMonth() {
+        return nowUtc().get(ChronoField.DAY_OF_MONTH);
+    }
 
-	public static int getDayOfMonth() {
-		synchronized(mCalendar) {
-			mCalendar.setTimeInMillis(System.currentTimeMillis());
-			return mCalendar.get(Calendar.DAY_OF_MONTH);
-		}
-	}
-
+    private static OffsetDateTime nowUtc() {
+        return OffsetDateTime.now(ZoneOffset.UTC);
+    }
 }
