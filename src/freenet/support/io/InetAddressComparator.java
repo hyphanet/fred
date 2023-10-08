@@ -27,9 +27,9 @@ public class InetAddressComparator implements Comparator<InetAddress> {
 		byte[] bytes1 = arg1.getAddress();
 		// Fields.compareBytes doesn't go first by length, so check it here.
 		if(bytes0.length > bytes1.length)
-			return 1; // IPv6 > IPv4.
+			return -1; // IPv6 < IPv4. => prefer IPv6 over IPv4
 		if(bytes1.length > bytes0.length)
-			return -1; // IPv4 > IPv6.
+			return 1; // IPv4 < IPv6.
 		return Fields.compareBytes(bytes0, bytes1);
 		// Hostnames in InetAddress are merely cached, equals() only operates on the byte[].
 	}

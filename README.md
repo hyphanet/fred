@@ -67,6 +67,13 @@ To override values set in `build.gradle` put them into [the file](https://docs.g
 
 See our [contributor guidelines](CONTRIBUTING.md).
 
+### Get in contact
+
+* Ask the [development mailing list](https://freenetproject.org/pages/help.html#mailing-lists)
+  or join us in [IRC](https://web.libera.chat/?nick=Rabbit|?#freenet) - `#freenet` on
+  `irc.libera.chat`.
+* You can file problems in the [bug tracker](https://bugs.freenetproject.org/my_view_page.php).
+
 ## Add a new dependency
 
 All dependencies must be available via Freenet, so it must be added to

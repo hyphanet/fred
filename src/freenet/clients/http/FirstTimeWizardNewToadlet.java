@@ -293,8 +293,8 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
         private void save() {
             if (knowSomeone.isEmpty()) {
-                // Opennet
-                core.node.securityLevels.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.LOW);
+                // Opennet + Darknet (possible)
+                core.node.securityLevels.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.NORMAL);
             } else {
                 if (connectToStrangers.isEmpty()) {
                     // Darknet

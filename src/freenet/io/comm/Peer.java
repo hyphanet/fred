@@ -24,8 +24,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Comparator;
 
 import freenet.io.WritableToDataOutputStream;
+import freenet.support.io.InetAddressIpv6FirstComparator;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
 
@@ -40,6 +42,8 @@ public class Peer implements WritableToDataOutputStream {
     public static class LocalAddressException extends Exception {
     	private static final long serialVersionUID = -1;
 	}
+
+	public static final PeerComparator PEER_COMPARATOR = new PeerComparator();
 
 	public static final String VERSION = "$Id: Peer.java,v 1.4 2005/08/25 17:28:19 amphibian Exp $";
 
@@ -278,5 +282,29 @@ public class Peer implements WritableToDataOutputStream {
 	public boolean isIPv6(boolean defaultValue) {
 		if(addr == null) return defaultValue;
 		return addr.isIPv6(defaultValue);
+	}
+
+	public static class PeerComparator implements Comparator<Peer> {
+			@Override
+			public int compare(Peer p0, Peer p1) {
+				boolean hasHostnameP0 = p0.getFreenetAddress().hasHostname();
+				boolean hasHostnameP1 = p1.getFreenetAddress().hasHostname();
+				boolean isIpv6P0 = p0.isIPv6(false); // default for "no address yet" 
+				boolean isIpv6P1 = p1.isIPv6(false); // default for "no address yet" 
+				if (hasHostnameP0 && !hasHostnameP1) {
+					return -1;
+				} else if (!hasHostnameP0 && hasHostnameP1) {
+					return 1;
+				} else if (hasHostnameP0) {
+					return 0;
+				}
+				if (isIpv6P0 && !isIpv6P1) {
+					return -1;
+				} else if (!isIpv6P0 && isIpv6P1) {
+					return 1;
+				}
+				return InetAddressIpv6FirstComparator.COMPARATOR
+						.compare(p0.getAddress(), p1.getAddress());
+			}
 	}
 }

@@ -99,7 +99,7 @@ public class MISC implements Step {
 			@Override
 			public void run() {
 				if(enable) {
-					core.node.pluginManager.startPluginOfficial("UPnP", true, false, false);
+					core.node.pluginManager.startPluginOfficial("UPnP", true);
 				} else {
 					core.node.pluginManager.killPluginByClass("plugins.UPnP.UPnP", 5000);
 				}

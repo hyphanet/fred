@@ -169,29 +169,8 @@ public class PluginManager {
 			System.err.println("KeyExplorer plugin renamed to KeyUtils");
 		}
 
-		// This should default to false. Even though we use SSL, a wiretapper may be able to tell which
-		// plugin is being loaded, and correlate that with identity creation; plus of course they can see
-		// that somebody is using Freenet.
-		pmconfig.register("alwaysLoadOfficialPluginsFromCentralServer", false, 0, false, false, "PluginManager.alwaysLoadPluginsFromCentralServer", "PluginManager.alwaysLoadPluginsFromCentralServerLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				return alwaysLoadOfficialPluginsFromCentralServer;
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
-				alwaysLoadOfficialPluginsFromCentralServer = val;
-			}
-
-		});
-
-		alwaysLoadOfficialPluginsFromCentralServer = pmconfig.getBoolean("alwaysLoadOfficialPluginsFromCentralServer");
-		if (lastVersion <= 1437) {
-			// Overwrite this setting, since it will have been set by the old callback and then written as it's not default.
-			// FIXME remove back compatibility code.
-			alwaysLoadOfficialPluginsFromCentralServer = false;
-		}
+		// ignore this in config files.
+		pmconfig.registerIgnoredOption("alwaysLoadOfficialPluginsFromCentralServer");
 
 		pmconfig.finishedInitialization();
 
@@ -319,7 +298,7 @@ public class PluginManager {
 
 		OfficialPluginDescription desc;
 		if((desc = isOfficialPlugin(pluginname)) != null) {
-			return startPluginOfficial(pluginname, store, desc, false, false);
+			return startPluginOfficial(pluginname, store, desc);
 		}
 
 		try {
@@ -339,18 +318,35 @@ public class PluginManager {
 		return startPluginURL(pluginname, store);
 	}
 
-	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, boolean force, boolean forceHTTPS) {
-		return startPluginOfficial(pluginname, store, officialPlugins.get(pluginname), force, forceHTTPS);
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store) {
+		return startPluginOfficial(pluginname, store, officialPlugins.get(pluginname));
 	}
 
-	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc, boolean force, boolean forceHTTPS) {
-		if((alwaysLoadOfficialPluginsFromCentralServer && !force)|| force && forceHTTPS) {
-			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store,
-				desc.alwaysFetchLatestVersion);
-		} else {
-			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false),
-				pluginname, store, desc.alwaysFetchLatestVersion);
-		}
+	/**
+	 * Use {@link #startPluginOfficial(String, boolean)}.
+	 *
+	 * @param force This parameter is ignored.
+	 * @param forceHTTPS This parameter is ignored.
+	 */
+	@Deprecated
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, boolean force, boolean forceHTTPS) {
+		return startPluginOfficial(pluginname, store);
+	}
+
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc) {
+		return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false),
+			pluginname, store, desc.alwaysFetchLatestVersion);
+	}
+
+	/**
+	 * Use {@link #startPluginOfficial(String, boolean, OfficialPluginDescription)}.
+	 *
+	 * @param force This parameter is ignored.
+	 * @param forceHTTPS This parameter is ignored.
+	 */
+	@Deprecated
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription officialPluginDescription, boolean force, boolean forceHTTPS) {
+		return startPluginOfficial(pluginname, store, officialPluginDescription);
 	}
 
 	public PluginInfoWrapper startPluginFile(final String filename, boolean store) {
@@ -404,7 +400,7 @@ public class PluginManager {
 				}
 			}
 			PluginLoadFailedUserAlert newAlert =
-				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), pdl.isOfficialPluginLoader() && pdl.isLoadingFromFreenet(), stillTrying, e);
+				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), stillTrying, e);
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
 			core.alerts.register(newAlert);
 			core.alerts.unregister(oldAlert);
@@ -416,7 +412,7 @@ public class PluginManager {
 			System.err.println("Plugin " + filename + " appears to require a later JVM");
 			Logger.error(this, "Plugin " + filename + " appears to require a later JVM");
 			PluginLoadFailedUserAlert newAlert =
-				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), pdl.isOfficialPluginLoader() && pdl.isLoadingFromFreenet(), false, l10n("pluginReqNewerJVMTitle", "name", filename));
+				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), false, l10n("pluginReqNewerJVMTitle", "name", filename));
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
 			core.alerts.register(newAlert);
 			core.alerts.unregister(oldAlert);
@@ -427,7 +423,7 @@ public class PluginManager {
 			System.err.println("Plugin "+filename+" is broken, but we want to retry after next startup");
 			Logger.error(this, "Plugin "+filename+" is broken, but we want to retry after next startup");
 			PluginLoadFailedUserAlert newAlert =
-				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), pdl.isOfficialPluginLoader() && pdl.isLoadingFromFreenet(), false, e);
+				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), false, e);
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
 			core.alerts.register(newAlert);
 			core.alerts.unregister(oldAlert);
@@ -461,22 +457,20 @@ public class PluginManager {
 		final String message;
 		final StackTraceElement[] stacktrace;
 		final boolean official;
-		final boolean officialFromFreenet;
-		final boolean stillTryingOverFreenet;
+		final boolean stillTrying;
 
-		public PluginLoadFailedUserAlert(String filename, boolean official, boolean officialFromFreenet, boolean stillTryingOverFreenet, String message) {
+		public PluginLoadFailedUserAlert(String filename, boolean official, boolean stillTrying, String message) {
 			this.filename = filename;
 			this.official = official;
 			this.message = message;
 			this.stacktrace = null;
-			this.officialFromFreenet = officialFromFreenet;
-			this.stillTryingOverFreenet = stillTryingOverFreenet;
+			this.stillTrying = stillTrying;
 		}
 
-		public PluginLoadFailedUserAlert(String filename, boolean official, boolean officialFromFreenet, boolean stillTryingOverFreenet, Throwable e) {
+		public PluginLoadFailedUserAlert(String filename, boolean official, boolean stillTrying, Throwable e) {
 			this.filename = filename;
 			this.official = official;
-			this.stillTryingOverFreenet = stillTryingOverFreenet;
+			this.stillTrying = stillTrying;
 			String msg;
 			if(e instanceof PluginNotFoundException) {
 				msg = e.getMessage();
@@ -488,7 +482,6 @@ public class PluginManager {
 			}
 			if(msg == null) msg = e.toString();
 			this.message = msg;
-			this.officialFromFreenet = officialFromFreenet;
 		}
 
 		@Override
@@ -528,28 +521,18 @@ public class PluginManager {
 				}
 			}
 
-			if(stillTryingOverFreenet) {
+			if(stillTrying) {
 				div.addChild("p", l10n("pluginLoadingFailedStillTryingOverFreenet"));
 			}
 
 			if(official) {
 				p = div.addChild("p");
-				if(officialFromFreenet)
-					p.addChild("#", l10n("officialPluginLoadFailedSuggestTryAgainFreenet"));
-				else
-					p.addChild("#", l10n("officialPluginLoadFailedSuggestTryAgainHTTPS"));
+				p.addChild("#", l10n("officialPluginLoadFailedSuggestTryAgain"));
 
-				HTMLNode reloadForm = div.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "plugin-name", filename });
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "pluginSource", "https" });
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("officialPluginLoadFailedTryAgain") });
-
-				if(!stillTryingOverFreenet) {
-					reloadForm = div.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
+				if(!stillTrying) {
+					HTMLNode reloadForm = div.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "plugin-name", filename });
-					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "pluginSource", "freenet" });
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("officialPluginLoadFailedTryAgainFreenet") });
 				}
 			}
@@ -1580,10 +1563,6 @@ public class PluginManager {
 	@Deprecated
 	public THEME getFProxyTheme() {
 		return fproxyTheme;
-	}
-
-	public boolean loadOfficialPluginsFromWeb() {
-		return alwaysLoadOfficialPluginsFromCentralServer;
 	}
 
 	public void unregisterPlugin(PluginInfoWrapper wrapper, FredPlugin plug, boolean reloading) {

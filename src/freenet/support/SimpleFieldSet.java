@@ -31,6 +31,8 @@ import freenet.support.io.Closer;
 import freenet.support.io.LineReader;
 import freenet.support.io.Readers;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * @author amphibian
  *
@@ -802,7 +804,7 @@ public class SimpleFieldSet {
      * @return
      */
     public Map<String, SimpleFieldSet> directSubsets() {
-        return Collections.unmodifiableMap(subsets);
+        return subsets == null ? emptyMap() : Collections.unmodifiableMap(subsets);
     }
 
     /** Tolerant put(); does nothing if fs is empty */

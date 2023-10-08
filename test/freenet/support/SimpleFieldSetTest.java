@@ -16,6 +16,8 @@
 
 package freenet.support;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anEmptyMap;
 import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
@@ -840,4 +842,12 @@ public class SimpleFieldSetTest {
         assertTrue(Arrays.equals(SimpleFieldSet.split(";;blah;1;2;;"), new String[] { "", "", "blah", "1", "2", "", "" }));
         assertTrue(Arrays.equals(SimpleFieldSet.split(";;;"), new String[] { "", "", "" }));
 	}
+
+	// This fixes https://freenet.mantishub.io/view.php?id=7197.
+	@Test
+	public void directSubsetsReturnsEmptyMapWhenSubsetsIsNotInitialized() {
+		SimpleFieldSet simpleFieldSet = new SimpleFieldSet(true);
+		assertThat(simpleFieldSet.directSubsets(), anEmptyMap());
+	}
+
 }
