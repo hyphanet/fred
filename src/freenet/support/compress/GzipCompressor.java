@@ -29,7 +29,9 @@ public class GzipCompressor extends AbstractCompressor {
 		try {
 			is = data.getInputStream();
 			os = output.getOutputStream();
-			compress(is, os, maxReadLength, maxWriteLength);
+			// force OS byte to 0 regardless of Java version (java 16 changed to setting 255 which would break hashes)
+			SingleOffsetReplacingOutputStream osByteFixingOs = new SingleOffsetReplacingOutputStream(os, 9, 0);
+			compress(is, osByteFixingOs, maxReadLength, maxWriteLength);
 			// It is essential that the close()'s throw if there is any problem.
 			is.close(); is = null;
 			os.close(); os = null;
@@ -37,50 +39,7 @@ public class GzipCompressor extends AbstractCompressor {
 			Closer.close(is);
 			Closer.close(os);
 		}
-		// force OS byte to 0 regardless of Java version (java 16 changed to setting 255 which would break hashes)
-		if (output instanceof ArrayBucket) {
-			byte[] dataArray = ((ArrayBucket) output).toByteArray();
-			dataArray[9] = 0;
-			return new ArrayBucket(dataArray);
-		} else {
-			// slower fallback
-			return copyBucketPatchingOSByte(bf, maxWriteLength, output);
-		}
-	}
-
-	private static RandomAccessBucket copyBucketPatchingOSByte(
-			BucketFactory bf,
-			long maxWriteLength,
-			RandomAccessBucket output) throws IOException {
-		RandomAccessBucket consistentOutput = bf.makeBucket(maxWriteLength);
-		InputStream inputStream = null;
-		OutputStream consistentOutputStream = null;
-		try {
-			inputStream = output.getInputStream();
-			consistentOutputStream = consistentOutput.getOutputStream();
-			byte[] buf = new byte[8192];
-			int previousRead = 0;
-			int length = inputStream.read(buf);
-			int read = length;
-			while (read < 8 && length != -1) {
-				previousRead = read;
-				consistentOutputStream.write(buf, 0, length);
-				length = inputStream.read(buf);
-				read += length;
-			}
-			// fix OS byte
-			buf[9 - previousRead] = 0;
-			consistentOutputStream.write(buf, 0, length);
-			while ((length = inputStream.read(buf)) != -1) {
-				consistentOutputStream.write(buf, 0, length);
-			}
-			inputStream.close(); inputStream = null;
-			consistentOutputStream.close(); consistentOutputStream = null;
-		} finally {
-			Closer.close(inputStream);
-			Closer.close(consistentOutputStream);
-		}
-		return consistentOutput;
+		return output;
 	}
 
 	@Override
