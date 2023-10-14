@@ -494,9 +494,6 @@ public class WelcomeToadlet extends Toadlet {
                 addForm.addChild("#", l10n("confirmAddBookmarkWithKey", "key", request.getParam("newbookmark")));
                 addForm.addChild("br");
                 String key = request.getParam("newbookmark");
-                if (key.startsWith("freenet:")) {
-                    key = key.substring(8);
-                }
                 addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "key", key});
                 if(request.isParameterSet("hasAnActivelink")) {
                 	addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden","hasAnActivelink",request.getParam("hasAnActivelink")});
