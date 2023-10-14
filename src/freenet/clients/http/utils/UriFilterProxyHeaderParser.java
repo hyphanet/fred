@@ -75,7 +75,7 @@ public class UriFilterProxyHeaderParser {
         }
     }
 
-    private static Map<String, String> parseForwardedHeader(String forwarded) {
+    static Map<String, String> parseForwardedHeader(String forwarded) {
         if (forwarded == null || forwarded.trim().isEmpty()) {
             return new HashMap<>();
         }
@@ -99,7 +99,7 @@ public class UriFilterProxyHeaderParser {
         for (String field : fields) {
             if (field.indexOf('=') != 1) {
                 String[] keyAndValue = field.split("=");
-                headerParams.put(keyAndValue[0], keyAndValue[1]);
+                headerParams.put(keyAndValue[0].toLowerCase(), keyAndValue[1]);
             }
         }
         return headerParams;
