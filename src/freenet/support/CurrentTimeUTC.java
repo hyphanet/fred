@@ -15,7 +15,7 @@ import java.util.Date;
 public class CurrentTimeUTC {
 
     public static Date get() {
-        return Date.from(nowUtc().toInstant());
+        return new Date();
     }
 
     /**
