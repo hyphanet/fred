@@ -996,13 +996,20 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			else break;
 		}
 
-		logString(sb.toString().getBytes(ENCODING));
+		try {
+			logString(sb.toString().getBytes(ENCODING));
+		} catch (UnsupportedEncodingException e1) {
+			throw new IllegalStateException(
+				"Failed to convert log message to bytes. Unsupported charset encoding: " + ENCODING.name(),
+				e1
+			);
+		}
 	}
 
 	/** Memory allocation overhead (estimated through experimentation with bsh) */
 	private static final int LINE_OVERHEAD = 60;
 	
-	public void logString(byte[] b) {
+	public void logString(byte[] b) throws UnsupportedEncodingException {
 		synchronized (list) {
 			int sz = list.size();
 			if(!list.offer(b)) {
