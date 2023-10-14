@@ -56,7 +56,7 @@ public class OfficialPlugins {
 					.advanced();
 			addPlugin("KeepAlive")
 					.inGroup("file-transfer")
-					.loadedFrom("CHK@bT1sdJ8VC0QT80kcefY95FYHEaqrHLlWVYgMX2bqeHg,AnvF8F7T9nJP8DY4snYsNJwz1np5JG73OaXeHJUqyZw,AAMC--8/plugin-KeepAlive.jar ");
+					.loadedFrom("CHK@mR-kJQNZYRaMRdO0D36NhLv8WnfF1sqsBe1ixKUg5lo,i-HExcBFiue3u4q5jooqRZUzRBGZJ0DSpd~~1T7fW6Q,AAMC--8/plugin-KeepAlive.jar");
 			addPlugin("MDNSDiscovery")
 					.inGroup("connectivity")
 					.minimumVersion(2)
