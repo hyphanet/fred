@@ -17,6 +17,11 @@ public class DatabaseKey {
     
     private final byte[] databaseKey;
 
+    /**
+     * @param key    key material bytes
+     * @param unused randomness source object. Note: this parameter is not used in this object.
+     * @deprecated use other constructor {@link #DatabaseKey(byte[])}
+     */
     @Deprecated
     DatabaseKey(byte[] key, Random unused) {
         this(key);
