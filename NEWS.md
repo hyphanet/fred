@@ -1,6 +1,39 @@
 next:
 
-- merge debian package build for 1494 (not yet updated for 1497).
+- 
+
+
+1498:
+
+- Shorten description of sharesite freesite for english
+- gzip: replace test workaround by fixing the output of the compressor — thanks to Bombe for the SingleOffsetReplacingOutputStream!
+- replace GregorianCalendar with java.time.OffsetDateTime in CurrentTimeUTC — thanks to Veniamin Fernandes
+- CSS: Support word-wrap: anywhere
+- Move UPnP2 to normal plugins. It does not seem broken, but UPnP does
+- Move Library plugin to advanced plugins because new users tend to get lost with it
+- html-filter: allow summary and details html element. Thanks to naejadu
+- 💄 Add a bit of styling to the plugin list (for winterfacey) — thanks to Bombe
+- 🔥 Remove option that to load plugins from central server — thanks to Bombe!
+- fix: invalid max store size showed bytes with GiB suffix
+- polish: show datastore size warning with GiB suffix
+- Refine ClientRequestSelectorTest, PersistentJobRunnerImplTest, SplitFileFetcherStorageTest, and SplitFileInserterStorageTest — thanks to Veniamin Fernandes
+- Change deprecated jcenter() maven repo to mavenCentral() — thanks to Veniamin Fernandes
+- 🐛 Fix JarClassLoader’s ability to work with ServiceLoader — thanks to Bombe!
+- refactor the browser warning wizard page
+- fix the flag size of nepal — thanks to Percept0r@NYZkOs7eQ…!
+- Switch swiss flag to civil and state ensign — thanks to Percept0r@NY
+- bookmarks: Add Opennet SeedNodes stats site
+- Reorder starting bookmarks: FFS → clean spider → Index of Indexes
+- Re-order default software bookmarks by ease of use from fproxy
+- Add generate media site to the default bookmarks
+- Show the noderef in basic-mode: it is now robust enough
+- Added tests for PebbleUtils — thanks to Bombe!
+- 🐛 Fix NPE when subsets are not initialized — thanks to Bombe
+- reduce logging for too many excluded sub-arrays thanks to Hiina
+- disable setting for new-load-management (NLM broke nodes)
+- add utility to disable a config option, thanks to Bombe
+- merge debian package as default build action thanks to DC*/desyncr! This resolves one of our high impact tasks.
+
 
 1497:
 
