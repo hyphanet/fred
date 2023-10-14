@@ -5,12 +5,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.MessageFormat;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.RandomAccessBucket;
+import freenet.support.api.RandomAccessBuffer;
+import freenet.support.io.ArrayBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 
@@ -19,13 +23,15 @@ public class GzipCompressor extends AbstractCompressor {
 	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)
 			throws IOException, CompressionOutputSizeException {
-		Bucket output = bf.makeBucket(maxWriteLength);
+		RandomAccessBucket output = bf.makeBucket(maxWriteLength);
 		InputStream is = null;
 		OutputStream os = null;
 		try {
 			is = data.getInputStream();
 			os = output.getOutputStream();
-			compress(is, os, maxReadLength, maxWriteLength);
+			// force OS byte to 0 regardless of Java version (java 16 changed to setting 255 which would break hashes)
+			SingleOffsetReplacingOutputStream osByteFixingOs = new SingleOffsetReplacingOutputStream(os, 9, 0);
+			compress(is, osByteFixingOs, maxReadLength, maxWriteLength);
 			// It is essential that the close()'s throw if there is any problem.
 			is.close(); is = null;
 			os.close(); os = null;

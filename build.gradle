@@ -184,6 +184,7 @@ test {
         jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
         jvmArgs '--add-opens=java.base/java.util=ALL-UNNAMED'
         jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
+        jvmArgs '--add-opens=java.base/java.util.zip=ALL-UNNAMED'
     }
     minHeapSize = "128m"
     maxHeapSize = "512m"

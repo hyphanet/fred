@@ -161,12 +161,6 @@ public class GzipCompressorTest {
 		Bucket outBucket = GZIP.compress(inBucket, factory, 32768, 32768);
 		byte[] outBuffer = BucketTools.toByteArray(outBucket);
 
-		// Newer JVM versions have different OS (Operating System) GZIP member header value
-		// https://www.rfc-editor.org/rfc/rfc1952#section-2.3.1
-		// https://bugs.openjdk.org/browse/JDK-8244706
-		// Set OS byte to zero to produce stable results in this test
-		outBuffer[9] = 0;
-
 		return outBuffer;
 	}
 }
