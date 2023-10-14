@@ -5,6 +5,7 @@ next:
 
 1498:
 
+- ⚠ The Windows installer is currently not signed!
 - Shorten description of sharesite freesite for english
 - gzip: replace test workaround by fixing the output of the compressor — thanks to Bombe for the SingleOffsetReplacingOutputStream!
 - replace GregorianCalendar with java.time.OffsetDateTime in CurrentTimeUTC — thanks to Veniamin Fernandes
