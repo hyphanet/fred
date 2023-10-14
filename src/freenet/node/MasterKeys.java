@@ -336,9 +336,16 @@ public class MasterKeys {
 		FileUtil.secureDelete(masterKeysFile);
 	}
 
+	/**
+	 * @param unused randomness source object. Note: this parameter is not used in this call,
+	 *               and database key material is generated
+	 *               during or before construction of the {@link MasterKeys} object.
+	 * @return database key object
+	 * @deprecated use other {@link #createDatabaseKey()} method without parameters
+	 */
 	@Deprecated
 	public DatabaseKey createDatabaseKey(Random unused) {
-	    return new DatabaseKey(databaseKey);
+		return createDatabaseKey();
 	}
 
 	public DatabaseKey createDatabaseKey() {
