@@ -3,9 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoField;
 import java.util.Date;
 
 
@@ -31,21 +30,17 @@ public class CurrentTimeUTC {
     }
 
     public static int getYear() {
-        return nowUtc().get(ChronoField.YEAR);
+        return LocalDate.now(ZoneOffset.UTC).getYear();
     }
 
     public static int getMonth() {
         // Previously, this method used java.util.GregorianCalendar and Calendar.MONTH, which is zero-based.
-        // Newer java.time API returns months values starting with one,
+        // Newer java.time API returns months values starting from one,
         // and subtraction is required to preserve backward compatibility.
-        return nowUtc().get(ChronoField.MONTH_OF_YEAR) - 1;
+        return LocalDate.now(ZoneOffset.UTC).getMonthValue() - 1;
     }
 
     public static int getDayOfMonth() {
-        return nowUtc().get(ChronoField.DAY_OF_MONTH);
-    }
-
-    private static OffsetDateTime nowUtc() {
-        return OffsetDateTime.now(ZoneOffset.UTC);
+        return LocalDate.now(ZoneOffset.UTC).getDayOfMonth();
     }
 }
