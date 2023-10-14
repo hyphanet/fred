@@ -1,7 +1,12 @@
 package freenet.clients.http.utils;
 
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import freenet.config.Config;
@@ -271,6 +276,60 @@ public class UriFilterProxyHeaderParserTest {
         "foo:8889",
         MultiValueTable.from(new String[]{ "x-forwarded-host" }, new String[]{ "foo:8889" }),
         "http://127.0.0.1:8888");
+  }
+
+  @Test
+  public void forwardedHeaderProvidesIp() {
+    String forwarded = "for=192.0.2.172";
+    Map<String, String> parsedHeader = UriFilterProxyHeaderParser.parseForwardedHeader(
+        forwarded);
+    assertThat(parsedHeader.keySet(), Matchers.containsInAnyOrder("for"));;
+    assertThat(parsedHeader.values(), Matchers.containsInAnyOrder("192.0.2.172"));
+  }
+
+  @Test
+  public void forwardedHeaderProvidesIpv6AndPort() {
+    String forwarded = "for=[2001:db8:cafe::17]:4711";
+    Map<String, String> parsedHeader = UriFilterProxyHeaderParser.parseForwardedHeader(
+        forwarded);
+    assertThat(parsedHeader.keySet(), Matchers.containsInAnyOrder("for"));;
+    assertThat(parsedHeader.values(), Matchers.containsInAnyOrder("[2001:db8:cafe::17]:4711"));
+  }
+
+  @Test
+  public void forwardedHeaderProvidesIpCaseInsensitive() {
+    String forwarded = "For=192.0.2.172";
+    Map<String, String> parsedHeader = UriFilterProxyHeaderParser.parseForwardedHeader(
+        forwarded);
+    assertThat(parsedHeader.keySet(), Matchers.containsInAnyOrder("for"));;
+    assertThat(parsedHeader.values(), Matchers.containsInAnyOrder("192.0.2.172"));
+  }
+
+  @Test
+  public void forwardedHeaderProvidesIpProtoBy() {
+    String forwarded = "for=192.0.2.60;proto=http;by=203.0.113.43";
+    Map<String, String> parsedHeader = UriFilterProxyHeaderParser.parseForwardedHeader(
+        forwarded);
+    assertThat(parsedHeader.keySet(), Matchers.containsInAnyOrder("for", "proto", "by"));;
+    assertThat(parsedHeader.values(), Matchers.containsInAnyOrder("192.0.2.60", "http", "203.0.113.43"));
+  }
+
+  @Test
+  public void forwardedHeaderProvidesIpProtoByOnlyAllowTheFirst() {
+    String forwarded = "for=192.0.2.60;proto=http;by=203.0.113.43, for=198.51.100.17;proto=http;by=203.0.113.43";
+    Map<String, String> parsedHeader = UriFilterProxyHeaderParser.parseForwardedHeader(
+        forwarded);
+    assertThat(parsedHeader.keySet(), Matchers.containsInAnyOrder("for", "proto", "by"));;
+    assertThat(parsedHeader.values(), Matchers.containsInAnyOrder("192.0.2.60", "http", "203.0.113.43"));
+  }
+
+  @Test
+  public void forwardedHeaderProvidesIpOnlyAllowTheFirst() {
+    String forwarded = "for=192.0.2.60, for=198.51.100.17;proto=http;by=203.0.113.43";
+    Map<String, String> parsedHeader = UriFilterProxyHeaderParser.parseForwardedHeader(
+        forwarded);
+    assertThat(parsedHeader.keySet(), Matchers.containsInAnyOrder("for"));;
+    assertThat(parsedHeader.values(), Matchers.containsInAnyOrder("192.0.2.60"));
   }
 
   private void testUriPrefixMatchesExpected(
