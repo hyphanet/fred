@@ -9,7 +9,7 @@ next:
 - Shorten description of sharesite freesite for english
 - gzip: replace test workaround by fixing the output of the compressor — thanks to Bombe for the SingleOffsetReplacingOutputStream!
 - replace GregorianCalendar with java.time.OffsetDateTime in CurrentTimeUTC — thanks to Veniamin Fernandes
-- CSS: Support word-wrap: anywhere
+- CSS: Support word-wrap: anywhere and CSS selector focus-within.
 - Move UPnP2 to normal plugins. It does not seem broken, but UPnP does
 - Move Library plugin to advanced plugins because new users tend to get lost with it
 - html-filter: allow summary and details html element. Thanks to naejadu
