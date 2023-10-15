@@ -10,37 +10,62 @@ import java.util.Date;
 
 /**
  * A helper class, which returns the current time and date in UTC timezone.
+ *
+ * @deprecated use the Java 8 Date-Time APIs instead
+ * @see java.time.Instant
+ * @see java.time.LocalDate
+ * @see java.time.ZoneOffset#UTC
  */
+@Deprecated
 public class CurrentTimeUTC {
 
+    /**
+     * Get the current date.
+     * @deprecated use {@link Date#Date() new Date()} or {@link java.time.Instant}
+     */
+    @Deprecated
     public static Date get() {
         return new Date();
     }
 
     /**
-     * Get the current time in milliseconds.
-     *
-     * In the current implementation, this just returns {@link System#currentTimeMillis()}.
-     * You should however use CurrentTimeUTC#getInMillis() instead because
-     * the JavaDoc of {@link System#currentTimeMillis()} does not explicitly state what time zone it returns.
-     * Therefore, by using this wrapper function, your code clearly states that it uses UTC time.
+     * Get the current time in milliseconds since epoch.
+     * @return the difference, measured in milliseconds, between the current time and midnight, January 1, 1970 UTC.
+     * @deprecated use {@link System#currentTimeMillis()}
      */
+    @Deprecated
     public static long getInMillis() {
         return System.currentTimeMillis();
     }
 
-    public static int getYear() {
-        return LocalDate.now(ZoneOffset.UTC).getYear();
+    /**
+	 * Get the current calendar year.
+	 * @deprecated use {@link LocalDate#getYear() LocalDate.now(ZoneOffset.UTC).getYear()}
+	 */
+	@Deprecated
+	public static int getYear() {
+		return LocalDate.now(ZoneOffset.UTC).getYear();
     }
 
-    public static int getMonth() {
-        // Previously, this method used java.util.GregorianCalendar and Calendar.MONTH, which is zero-based.
+    /**
+	 * Get the zero-indexed current calendar month.
+	 * @return the zero-indexed month number, where 0 indicates January and 11 indicates December
+	 * @deprecated use {@link LocalDate#getMonthValue() LocalDate.now(ZoneOffset.UTC).getMonthValue() - 1}
+	 */
+	@Deprecated
+	public static int getMonth() {
+		// Previously, this method used java.util.GregorianCalendar and Calendar.MONTH, which is zero-based.
         // Newer java.time API returns months values starting from one,
         // and subtraction is required to preserve backward compatibility.
         return LocalDate.now(ZoneOffset.UTC).getMonthValue() - 1;
     }
 
-    public static int getDayOfMonth() {
-        return LocalDate.now(ZoneOffset.UTC).getDayOfMonth();
+    /**
+	 * Get the current day of the month.
+	 * @deprecated use {@link LocalDate#getDayOfMonth() LocalDate.now(ZoneOffset.UTC).getDayOfMonth()}
+	 */
+	@Deprecated
+	public static int getDayOfMonth() {
+		return LocalDate.now(ZoneOffset.UTC).getDayOfMonth();
     }
 }
