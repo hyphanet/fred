@@ -6,7 +6,6 @@ package freenet.client.events;
 import java.util.Date;
 
 import freenet.client.async.ClientRequester;
-import freenet.support.CurrentTimeUTC;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -61,7 +60,7 @@ public class SplitfileProgressEvent implements ClientEvent {
 	    totalBlocks = 0;
 	    succeedBlocks = 0;
 	    // See ClientRequester.getLatestSuccess() for why this defaults to current time.
-	    latestSuccess = CurrentTimeUTC.get();
+	    latestSuccess = new Date();
 	    failedBlocks = 0;
 	    fatallyFailedBlocks = 0;
 	    latestFailure = null;
