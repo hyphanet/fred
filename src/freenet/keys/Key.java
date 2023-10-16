@@ -8,7 +8,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.MessageDigest;
 import java.util.Arrays;
 
 import freenet.crypt.CryptFormatException;
@@ -126,17 +125,22 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
      * make chosen-key attacks harder.
      */
     public synchronized double toNormalizedDouble() {
-        if(cachedNormalizedDouble > 0) return cachedNormalizedDouble;
-        MessageDigest md = SHA256.getMessageDigest();
-        if(routingKey == null) throw new NullPointerException();
-        md.update(routingKey);
-        int TYPE = getType();
-        md.update((byte)(TYPE >> 8));
-        md.update((byte)TYPE);
-        byte[] digest = md.digest();
-        SHA256.returnMessageDigest(md); md = null;
-			cachedNormalizedDouble = Util.keyDigestAsNormalizedDouble(digest);
+        if (cachedNormalizedDouble > 0) {
 			return cachedNormalizedDouble;
+		}
+		if (routingKey == null) {
+			throw new NullPointerException();
+		}
+
+		byte[] digest = SHA256.digest(md -> {
+			md.update(routingKey);
+			int TYPE = getType();
+			md.update((byte) (TYPE >> 8));
+			md.update((byte) TYPE);
+		});
+
+		cachedNormalizedDouble = Util.keyDigestAsNormalizedDouble(digest);
+		return cachedNormalizedDouble;
     }
 
 	/**

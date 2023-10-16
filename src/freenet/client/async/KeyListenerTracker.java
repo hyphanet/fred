@@ -5,7 +5,6 @@ package freenet.client.async;
 
 import static java.lang.String.format;
 
-import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,7 +19,6 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
 import freenet.node.SendableGet;
-import freenet.node.SendableRequest;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -464,14 +462,13 @@ class KeyListenerTracker implements KeySalter {
 	}
 
 	private byte[] saltKey(byte[] key) {
-		if (isSSKScheduler)
+		if (isSSKScheduler) {
 			return key;
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(key);
-		md.update(globalSalt);
-		byte[] ret = md.digest();
-		SHA256.returnMessageDigest(md);
-		return ret;
+		}
+		return SHA256.digest(md -> {
+			md.update(key);
+			md.update(globalSalt);
+		});
 	}
 	
 	protected void hintGlobalSalt(byte[] globalSalt2) {
