@@ -154,7 +154,7 @@ public class FProxyFetchTracker implements Runnable {
 				queuedJob = false;
 			}
 			// Horrible hack, FIXME
-			toRemove = fetchers.values()
+			toRemove = fetchers.values().stream()
 				// FIXME remove on the fly, although cancel must wait
 				.filter(FProxyFetchInProgress::canCancel)
 				.collect(Collectors.toList());

@@ -1,9 +1,15 @@
 package freenet.support;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Stream;
 
 /**
  * A hashtable that can store several values for each entry.
@@ -226,32 +232,21 @@ public class MultiValueTable<K,V> {
      *
      * <p>
      * <b>Note:</b> this method is deprecated,
-     * please use other {@link #values()} method variant, which provides a {@link Stream} of values.
+     * please use other {@link #values()} method variant, which provides a {@link Collection} of values.
      *
      * @return table values
      */
     @Deprecated
     public Enumeration<V> elements() {
-        Iterator<V> iterator = values().iterator();
-        return new Enumeration<V>() {
-            @Override
-            public boolean hasMoreElements() {
-                return iterator.hasNext();
-            }
-
-            @Override
-            public V nextElement() {
-                return iterator.next();
-            }
-        };
+        return Collections.enumeration(values());
     }
 
-    public Stream<V> values() {
-        return Collections.unmodifiableMap(this.table)
-            .values()
-            .stream()
-            .map(Collections::unmodifiableList)
-            .flatMap(List::stream);
+    public Collection<V> values() {
+        List<V> allValues = new ArrayList<>();
+        for (List<V> entryValues : this.table.values()) {
+            allValues.addAll(entryValues);
+        }
+        return Collections.unmodifiableList(allValues);
     }
 
     public Set<Map.Entry<K, List<V>>> entrySet() {

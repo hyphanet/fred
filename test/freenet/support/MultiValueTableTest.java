@@ -119,10 +119,7 @@ public class MultiValueTableTest {
         }
 
         assertArrayEquals(keys, table.keySet().toArray(new Integer[0]));
-        assertEquals(
-            new HashSet<>(Arrays.asList(values)),
-            table.values().collect(Collectors.toSet())
-        );
+        assertArrayEquals(values, table.values().toArray());
     }
 
     @Test
@@ -406,8 +403,8 @@ public class MultiValueTableTest {
     @Test
     public void testValues() {
         assertEquals(
-            sampleObjects.values().stream().flatMap(List::stream).collect(Collectors.toSet()),
-            multiValueTable.values().collect(Collectors.toSet())
+            sampleObjects.values().stream().flatMap(List::stream).collect(Collectors.toList()),
+            multiValueTable.values()
         );
     }
 
