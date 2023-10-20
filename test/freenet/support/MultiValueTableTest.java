@@ -337,6 +337,11 @@ public class MultiValueTableTest {
     }
 
     @Test
+    public void removeElementCanBeExecutedForEmptyTable() {
+        assertFalse(new MultiValueTable<>().removeElement(1, "one"));
+    }
+
+    @Test
     public void testRemoveElement() {
         for (Map.Entry<Integer, List<Object>> entry : sampleObjects.entrySet()) {
             for (Object element : entry.getValue()) {
@@ -346,6 +351,26 @@ public class MultiValueTableTest {
             }
         }
         assertTrue(multiValueTable.isEmpty());
+    }
+
+    @Test
+    public void removeElementRemovesOnlyFirstElement() {
+        multiValueTable = new MultiValueTable<>();
+        multiValueTable.putAll(1, Arrays.asList("one", "two", "two", "two", "three"));
+        assertTrue(multiValueTable.removeElement(1, "two"));
+        assertEquals(Arrays.asList("one", "two", "two", "three"), multiValueTable.values());
+    }
+
+    @Test
+    public void removeElementDoesNotAffectPreviouslyReturnedValues() {
+        List<String> initialValues = Arrays.asList("one", "two", "three");
+        multiValueTable = new MultiValueTable<>();
+        multiValueTable.putAll(1, initialValues);
+        List<Object> values = multiValueTable.getAllAsList(1);
+
+        multiValueTable.removeElement(1, "two");
+
+        assertEquals(initialValues, values);
     }
 
     @Test

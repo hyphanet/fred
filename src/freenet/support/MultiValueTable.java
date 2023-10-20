@@ -7,9 +7,9 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A hashtable that can store several values for each entry.
@@ -67,23 +67,31 @@ public class MultiValueTable<K,V> {
     }
 
     public void put(K key, V value) {
-        this.table.compute(key, (k, list) -> {
-            if (list == null) {
-                list = new CopyOnWriteArrayList<>();
+        this.table.compute(key, (k, previousList) -> {
+            List<V> result;
+            if (previousList == null) {
+                // FIXME: replace with List.of(v) when Java version baseline becomes >= 11
+                result = new ArrayList<>(1);
+            } else {
+                result = new ArrayList<>(previousList.size() + 1);
+                result.addAll(previousList);
             }
-            list.add(value);
-            return list;
+            result.add(value);
+            return Collections.unmodifiableList(result);
         });
     }
 
     public void putAll(K key, Collection<? extends V> elements) {
-        this.table.compute(key, (k, list) -> {
-            if (list == null) {
-                list = new CopyOnWriteArrayList<>(elements);
+        this.table.compute(key, (k, previousList) -> {
+            List<V> result;
+            if (previousList == null) {
+                result = new ArrayList<>(elements.size());
             } else {
-                list.addAll(elements);
+                result = new ArrayList<>(previousList.size() + elements.size());
+                result.addAll(previousList);
             }
-            return list;
+            result.addAll(elements);
+            return Collections.unmodifiableList(result);
         });
     }
 
@@ -127,20 +135,11 @@ public class MultiValueTable<K,V> {
      */
     @Deprecated
     public Enumeration<V> getAll(K key) {
-        List<V> elements = getAllAsList(key);
-        if (elements.isEmpty()) {
-            return Collections.emptyEnumeration();
-        } else {
-            return Collections.enumeration(elements);
-        }
+        return Collections.enumeration(getAllAsList(key));
     }
 
     public List<V> getAllAsList(K key) {
-        List<V> list = this.table.get(key);
-        if (list == null || list.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return Collections.unmodifiableList(list);
+        return this.table.getOrDefault(key, Collections.emptyList());
     }
 
     /**
@@ -197,13 +196,23 @@ public class MultiValueTable<K,V> {
 
     public boolean removeElement(K key, V value) {
         boolean[] removed = new boolean[1];
-        this.table.computeIfPresent(key, (k, list) -> {
-            removed[0] = list.remove(value);
-            if (list.isEmpty()) {
+        this.table.computeIfPresent(key, (k, previousList) -> {
+            if (!previousList.contains(value)) {
+                return previousList;
+            }
+            List<V> result = new ArrayList<>(previousList.size() - 1);
+            for (V v : previousList) {
+                if (Objects.equals(v, value) && !removed[0]) {
+                    removed[0] = true;
+                } else {
+                    result.add(v);
+                }
+            }
+            if (result.isEmpty()) {
                 // null result removes element from Map
                 return null;
             }
-            return list;
+            return Collections.unmodifiableList(result);
         });
         return removed[0];
     }
