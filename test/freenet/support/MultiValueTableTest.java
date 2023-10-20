@@ -285,11 +285,6 @@ public class MultiValueTableTest {
     }
 
     @Test
-    public void removeAndGetWorksForNonExistingKey() {
-        assertNull(multiValueTable.removeAndGet(NON_EXISTING_KEY));
-    }
-
-    @Test
     public void removeWorksForNonExistingKey() {
         multiValueTable.remove(NON_EXISTING_KEY);
     }
@@ -298,16 +293,6 @@ public class MultiValueTableTest {
     public void testRemove() {
         for (Integer key : sampleObjects.keySet()) {
             multiValueTable.remove(key);
-        }
-        assertTrue(multiValueTable.isEmpty());
-    }
-
-    @Test
-    public void testRemoveAndGet() {
-        for (Integer key : sampleObjects.keySet()) {
-            List<Object> elements = multiValueTable.removeAndGet(key);
-            assertNotNull(elements);
-            assertFalse(elements.isEmpty());
         }
         assertTrue(multiValueTable.isEmpty());
     }

@@ -175,11 +175,7 @@ public class MultiValueTable<K,V> {
     }
 
     public void remove(K key) {
-        removeAndGet(key);
-    }
-
-    public List<V> removeAndGet(K key) {
-        return this.table.remove(key);
+        this.table.remove(key);
     }
 
     public boolean isEmpty() {
