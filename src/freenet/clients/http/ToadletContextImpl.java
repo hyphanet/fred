@@ -388,8 +388,7 @@ public class ToadletContextImpl implements ToadletContext {
 			mvt.put("content-length", Long.toString(contentLength));
 		}
 
-		// content may be cached
-		// For privacy reasons, only static
+		// For privacy reasons, only static content may be cached
 		boolean allowCaching = mTime != null;
 
 		String expiresTime;
