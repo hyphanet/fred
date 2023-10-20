@@ -60,7 +60,7 @@ public class MultiValueTable<K,V> {
         return from(key, Arrays.asList(values));
     }
 
-    public static <K, V> MultiValueTable<K, V> from(K key, Collection<V> values) {
+    public static <K, V> MultiValueTable<K, V> from(K key, Collection<? extends V> values) {
         MultiValueTable<K, V> table = new MultiValueTable<>(1);
         table.putAll(key, values);
         return table;
@@ -76,7 +76,7 @@ public class MultiValueTable<K,V> {
         });
     }
 
-    public void putAll(K key, Collection<V> elements) {
+    public void putAll(K key, Collection<? extends V> elements) {
         this.table.compute(key, (k, list) -> {
             if (list == null) {
                 list = new CopyOnWriteArrayList<>(elements);
