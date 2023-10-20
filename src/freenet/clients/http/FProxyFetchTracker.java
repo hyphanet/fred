@@ -83,33 +83,44 @@ public class FProxyFetchTracker implements Runnable {
 		}
 		return null;
 	}
-	
-	/** Gets an FProxyFetchInProgress identified by the URI and the maxsize. If no such FetchInProgress exists, then returns null.
-	 * @param key - The URI of the fetch
+
+	/**
+	 * Gets an {@link FProxyFetchInProgress} identified by the URI and having provided max size.
+	 * If optional fetch context parameter is specified,
+	 * then fetch context in {@link FProxyFetchInProgress} is compared to provided fetch context.
+	 * If no such FetchInProgress exists, then returns {@code null}.
+	 *
+	 * @param key     - The URI of the fetch
 	 * @param maxSize - The maxSize of the fetch
-	 * @param fctx TODO
-	 * @return The FetchInProgress if found, null otherwise*/
-	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize, FetchContext fctx){
+	 * @param fctx    - Optional {@link FetchContext} with fetch parameters
+	 * @return The FetchInProgress if found, {@code null} otherwise
+	 */
+	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize, FetchContext fctx) {
 		synchronized (fetchers) {
-			List<FProxyFetchInProgress> check = fetchers.getAllAsList(key);
-			if(check != null) {
-				for (FProxyFetchInProgress progress : check) {
-					if ((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
-						|| progress.hasData()
-					) {
-						if (logMINOR) {
-							Logger.minor(this, "Found " + progress);
-						}
-						if (fctx != null && !progress.fetchContextEquivalent(fctx)) {
-							continue;
-						}
-						if (logMINOR) {
-							Logger.minor(this, "Using " + progress);
-						}
-						return progress;
-					} else if (logMINOR) {
-						Logger.minor(this, "Skipping " + progress);
+			List<FProxyFetchInProgress> fetchList = fetchers.getAllAsList(key);
+			if (fetchList == null) {
+				return null;
+			}
+			for (FProxyFetchInProgress fetch : fetchList) {
+				if ((fetch.maxSize == maxSize && fetch.notFinishedOrFatallyFinished())
+					|| fetch.hasData()
+				) {
+					if (logMINOR) {
+						Logger.minor(this, "Found " + fetch);
 					}
+					if (fctx != null && !fetch.fetchContextEquivalent(fctx)) {
+						if (logMINOR) {
+							Logger.minor(this, "Fetch context does not match. Skipping " + fetch);
+						}
+						continue;
+					}
+					if (logMINOR) {
+						Logger.minor(this, "Using " + fetch);
+					}
+					return fetch;
+				}
+				if (logMINOR) {
+					Logger.minor(this, "Skipping " + fetch);
 				}
 			}
 		}
