@@ -1,5 +1,6 @@
 package freenet.clients.http.utils;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -281,15 +282,16 @@ public class UriFilterProxyHeaderParserTest {
       String uriScheme,
       String uriHost,
       MultiValueTable<String, String> headers,
-      String resultUriPrefix) throws Exception {
+      String resultUriPrefix
+  ) throws Exception {
     String schemeHostAndPort = UriFilterProxyHeaderParser.parse(
         fakePortOption(fProxyPort),
         fakeBindToOption(fProxyBindTo),
         uriScheme,
         uriHost,
-        headers)
-        .toString();
-    assertTrue(
+        headers
+    ).toString();
+    assertEquals(
         String.format(
             "schemeHostAndPort %s does not match expected %s; portConfig=\"%s\", bindTo=\"%s\", uriScheme=\"%s\", uriHost=\"%s\", headers=%s, expected=\"%s\"",
             schemeHostAndPort,
@@ -299,8 +301,11 @@ public class UriFilterProxyHeaderParserTest {
             uriScheme,
             uriHost,
             headers,
-            resultUriPrefix),
-        schemeHostAndPort.equals(resultUriPrefix));
+            resultUriPrefix
+        ),
+        schemeHostAndPort,
+        resultUriPrefix
+    );
 
   }
 
@@ -336,7 +341,7 @@ public class UriFilterProxyHeaderParserTest {
     return option;
   }
 
-  private class DummyStringCallback extends StringCallback {
+  private static class DummyStringCallback extends StringCallback {
 
     @Override
     public String get() {

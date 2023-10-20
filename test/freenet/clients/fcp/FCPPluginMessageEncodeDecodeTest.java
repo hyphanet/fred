@@ -5,12 +5,11 @@ package freenet.clients.fcp;
 
 import static org.junit.Assert.*;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Test;
 
-import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -37,8 +36,8 @@ public final class FCPPluginMessageEncodeDecodeTest {
      * decoding is then tested using {@link #testEncodeDecode(FCPPluginMessage)}.
      */
     @Test
-    public final void testEncodeDecode() throws MessageInvalidException, IOException, FSParseException {
-        ArrayList<FCPPluginMessage> messages = new ArrayList<FCPPluginMessage>();
+    public void testEncodeDecode() throws MessageInvalidException {
+        List<FCPPluginMessage> messages = new ArrayList<>();
         
         // Non-reply messages. Can either have a SimpleFieldSet, or a Bucket, or both. We don't use
         // Buckets because the parsing code for those is higher level code, so we only have to use
@@ -87,11 +86,9 @@ public final class FCPPluginMessageEncodeDecodeTest {
     /**
      * @see FCPPluginMessageEncodeDecodeTest Explained at class-level JavaDoc of this class.
      */
-    private final void testEncodeDecode(FCPPluginMessage message)
-            throws MessageInvalidException, IOException, FSParseException {
+    private void testEncodeDecode(FCPPluginMessage message) throws MessageInvalidException {
         
-        SimpleFieldSet encodedMessage
-            = new FCPPluginServerMessage("testPlugin", message).getFieldSet();
+        SimpleFieldSet encodedMessage = new FCPPluginServerMessage("testPlugin", message).getFieldSet();
         
         // The params have a different prefix in FCPPluginServerMessage and FCPPluginClientMessage.
         // So we have to rename them by removing the sub-SimpleFieldSet with the old prefix and
@@ -102,24 +99,23 @@ public final class FCPPluginMessageEncodeDecodeTest {
             encodedMessage.put(FCPPluginClientMessage.PARAM_PREFIX, params);
         }
         
-        FCPPluginMessage decodedMessage
-            = new FCPPluginClientMessage(encodedMessage).constructFCPPluginMessage();
+        FCPPluginMessage decodedMessage = new FCPPluginClientMessage(encodedMessage).constructFCPPluginMessage();
  
         // Permissions are set by the FCPPluginConnectionImpl when the message is actually delivered
-        assertEquals(null, decodedMessage.permissions);
+        assertNull(decodedMessage.permissions);
         
         assertEquals(message.identifier, decodedMessage.identifier);
         
         // SimpleFieldSet offers no equals(). But its designed to be human readable, so we can
         // just encode them into Strings and compare those.
         if(message.params == null) {
-            assertEquals(null, decodedMessage.params);
+            assertNull(decodedMessage.params);
         } else {
             assertEquals(message.params.toOrderedString(), decodedMessage.params.toOrderedString());
         }
         
         if(message.data == null) {
-            assertEquals(null, decodedMessage.data);
+            assertNull(decodedMessage.data);
         } else {
             // Not implemented yet because the parsing of the data is higher level FCP code; i.e.
             // it is not implemented in FCPPluginClientMessage, but one of its parent classes.
