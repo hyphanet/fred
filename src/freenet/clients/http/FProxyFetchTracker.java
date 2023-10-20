@@ -29,7 +29,7 @@ public class FProxyFetchTracker implements Runnable {
 		});
 	}
 	
-	private final MultiValueTable<FreenetURI, FProxyFetchInProgress> fetchers;
+	private final MultiValueTable<FreenetURI, FProxyFetchInProgress> fetchers = new MultiValueTable<>();
 	final ClientContext context;
 	private long fetchIdentifiers;
 	private final FetchContext fctx;
@@ -38,7 +38,6 @@ public class FProxyFetchTracker implements Runnable {
 	private boolean requeue;
 
 	public FProxyFetchTracker(ClientContext context, FetchContext fctx, RequestClient rc) {
-		this.fetchers = new MultiValueTable<>();
 		this.context = context;
 		this.fctx = fctx;
 		this.rc = rc;
