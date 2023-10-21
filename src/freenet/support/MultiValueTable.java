@@ -99,7 +99,9 @@ public class MultiValueTable<K, V> {
 
     /**
      * Returns the first element for this key.
+     * @deprecated use {@link #getFirst(Object)} instead
      */
+    @Deprecated
     public V get(K key) {
         return getFirst(key);
     }
