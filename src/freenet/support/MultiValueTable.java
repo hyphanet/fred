@@ -170,8 +170,7 @@ public class MultiValueTable<K,V> {
     /**
      * Returns mapped value collection as array
      *
-     * <b>Note:</b> this method is deprecated,
-     * please use other {@link #getAllAsList(Object)} method variant, which provides a typed {@link List} collection.
+     * @deprecated use {@link #getAllAsList(Object)} with {@link List#toArray()} to obtain the values as object array
      *
      * @param key key mapping
      */
