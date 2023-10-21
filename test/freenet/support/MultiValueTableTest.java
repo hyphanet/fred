@@ -220,6 +220,23 @@ public class MultiValueTableTest {
     }
 
     @Test
+    public void getAllMethodReturnsImmutableEnumeration() {
+        multiValueTable = new MultiValueTable<>();
+        multiValueTable.putAll(1, Arrays.asList("one", "two"));
+
+        Enumeration<Object> enumeration = multiValueTable.getAll(1);
+
+        multiValueTable.put(1, "three");
+
+        int count = 0;
+        while (enumeration.hasMoreElements()) {
+            enumeration.nextElement();
+            ++count;
+        }
+        assertEquals(2, count);
+    }
+
+    @Test
     public void testGetAll() {
         for (Map.Entry<Integer, List<Object>> entry : sampleObjects.entrySet()) {
             Enumeration<Object> actualElements = multiValueTable.getAll(entry.getKey());
@@ -236,6 +253,21 @@ public class MultiValueTableTest {
         for (Map.Entry<Integer, List<Object>> entry : sampleObjects.entrySet()) {
             assertEquals(entry.getValue(), multiValueTable.getAllAsList(entry.getKey()));
         }
+    }
+
+    @Test
+    public void getAllAsListMethodReturnsImmutableCollection() {
+        multiValueTable = new MultiValueTable<>();
+        multiValueTable.putAll(1, Arrays.asList("one", "two"));
+
+        List<Object> list = multiValueTable.getAllAsList(1);
+
+        multiValueTable.put(1, "three");
+
+        assertEquals(2, list.size());
+
+        assertThrows(UnsupportedOperationException.class, () -> list.add("four"));
+        assertEquals(3, multiValueTable.getAllAsList(1).size());
     }
 
     @Test
@@ -267,6 +299,28 @@ public class MultiValueTableTest {
                 ++i;
             }
         }
+    }
+
+    @Test
+    public void iterateAllMethodReturnsImmutableIterable() {
+        multiValueTable = new MultiValueTable<>();
+        multiValueTable.putAll(1, Arrays.asList("one", "two"));
+
+        Iterable<Object> iterable = multiValueTable.iterateAll(1);
+
+        multiValueTable.put(1, "three");
+
+        int count = 0;
+        for (Object o : iterable) {
+            ++count;
+        }
+        assertEquals(2, count);
+
+        Iterator<Object> iterator = multiValueTable.iterateAll(1).iterator();
+        iterator.next();
+        assertThrows(UnsupportedOperationException.class, iterator::remove);
+
+        assertEquals(3, multiValueTable.getAllAsList(1).size());
     }
 
     @Test
@@ -374,11 +428,29 @@ public class MultiValueTableTest {
     }
 
     @Test
-    public void keysMethodReturnsEmptyCollectionForEmptyTable() {
+    public void keysMethodReturnsEmptyEnumerationForEmptyTable() {
         multiValueTable = new MultiValueTable<>();
         Enumeration<Integer> keys = multiValueTable.keys();
         assertNotNull(keys);
         assertFalse(keys.hasMoreElements());
+    }
+
+    @Test
+    public void keysMethodReturnsImmutableEnumeration() {
+        multiValueTable = new MultiValueTable<>();
+        multiValueTable.put(1, "one");
+        multiValueTable.put(2, "two");
+
+        Enumeration<Integer> enumeration = multiValueTable.keys();
+
+        multiValueTable.put(3, "three");
+
+        int count = 0;
+        while (enumeration.hasMoreElements()) {
+            enumeration.nextElement();
+            ++count;
+        }
+        assertEquals(2, count);
     }
 
     @Test
@@ -409,6 +481,21 @@ public class MultiValueTableTest {
         );
     }
 
+    @Test
+    public void keySetMethodReturnsImmutableSet() {
+        multiValueTable = new MultiValueTable<>();
+        multiValueTable.put(1, "one");
+        multiValueTable.put(2, "two");
+
+        Set<Integer> keys = multiValueTable.keySet();
+
+        multiValueTable.put(3, "three");
+
+        assertEquals(2, keys.size());
+
+        assertThrows(UnsupportedOperationException.class, () -> keys.remove(3));
+        assertEquals(3, multiValueTable.keySet().size());
+    }
 
     @Test
     public void testElements() {
@@ -426,11 +513,43 @@ public class MultiValueTableTest {
     }
 
     @Test
+    public void elementsMethodReturnsImmutableEnumeration() {
+        multiValueTable = new MultiValueTable<>();
+        multiValueTable.putAll(1, Arrays.asList("one", "two"));
+
+        Enumeration<Object> enumeration = multiValueTable.elements();
+
+        multiValueTable.put(3, "three");
+
+        int count = 0;
+        while (enumeration.hasMoreElements()) {
+            enumeration.nextElement();
+            ++count;
+        }
+        assertEquals(2, count);
+    }
+
+    @Test
     public void testValues() {
         assertEquals(
             sampleObjects.values().stream().flatMap(List::stream).collect(Collectors.toList()),
             multiValueTable.values()
         );
+    }
+
+    @Test
+    public void valuesMethodReturnsImmutableCollection() {
+        multiValueTable = new MultiValueTable<>();
+        multiValueTable.putAll(1, Arrays.asList("one", "two"));
+
+        Collection<Object> values = multiValueTable.values();
+
+        multiValueTable.put(3, "three");
+
+        assertEquals(2, values.size());
+
+        assertThrows(UnsupportedOperationException.class, () -> values.remove(1));
+        assertEquals(3, multiValueTable.values().size());
     }
 
     @Test
@@ -444,6 +563,27 @@ public class MultiValueTableTest {
             assertEquals(sampleObjects.get(key), entry.getValue());
         }
         assertEquals(sampleObjects.keySet(), keys);
+    }
+
+    @Test
+    public void entrySetMethodReturnsImmutableCollection() {
+        multiValueTable = new MultiValueTable<>();
+        multiValueTable.putAll(1, Arrays.asList("one", "two"));
+        multiValueTable.putAll(2, Arrays.asList("three", "four"));
+
+        Set<Map.Entry<Integer, List<Object>>> entries = multiValueTable.entrySet();
+
+        multiValueTable.put(3, "three");
+
+        assertEquals(2, entries.size());
+
+        assertThrows(UnsupportedOperationException.class, entries::clear);
+        for (Map.Entry<Integer, List<Object>> entry : entries) {
+            assertThrows(UnsupportedOperationException.class, () -> entry.getValue().remove(0));
+        }
+
+        assertEquals(3, multiValueTable.entrySet().size());
+        assertEquals(5, multiValueTable.values().size());
     }
 
     /**

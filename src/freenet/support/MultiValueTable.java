@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -19,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author oskar
  */
-public class MultiValueTable<K,V> {
+public class MultiValueTable<K, V> {
     private final Map<K, List<V>> table;
 
     public MultiValueTable() {
@@ -32,16 +33,17 @@ public class MultiValueTable<K,V> {
 
     /**
      * Deprecated constructor, please use other variant with only one single size parameter
+     *
      * @param initialSize table initial size
-     * @param unused this parameter was used as initial value collection size, and it is not unused anymore.
-     *               Values collections grow according to Java collection rules.
+     * @param unused      this parameter was used as initial value collection size, and it is not unused anymore.
+     *                    Values collections grow according to Java collection rules.
      */
     @Deprecated
     public MultiValueTable(int initialSize, int unused) {
         this(initialSize);
     }
 
-    public static <K, V> MultiValueTable<K, V> from (K[] keys, V[] values) {
+    public static <K, V> MultiValueTable<K, V> from(K[] keys, V[] values) {
         if (keys.length != values.length) {
             throw new IllegalArgumentException(String.format(
                 "keys and values must contain the same number of values, but there are %d keys and %d values",
@@ -126,24 +128,36 @@ public class MultiValueTable<K,V> {
     }
 
     /**
-     * Returns mapped value collection as {@link Enumeration}
+     * Returns mapped value collection as {@link Enumeration}.
+     * This enumeration is backed by the immutable collection of mapped values,
+     * see more in the description of {@link #getAllAsList(Object)}.
      *
-     * <b>Note:</b> this method is deprecated
-     * please use other {@link #getAllAsList(Object)} method variant, which provides a {@link List}
-     *
+     * @deprecated use other {@link #getAllAsList(Object)} method variant, which provides a {@link List}
      * @param key key mapping
+     * @return mapped value collection as {@link Enumeration}
      */
     @Deprecated
     public Enumeration<V> getAll(K key) {
         return Collections.enumeration(getAllAsList(key));
     }
 
+    /**
+     * Returns mapped value collection as {@link List}.
+     *
+     * @param key key mapping
+     * @return The immutable collection of mapped values.
+     * This {@link List} does not depend on any modifications in the multi-value table.
+     */
     public List<V> getAllAsList(K key) {
         return this.table.getOrDefault(key, Collections.emptyList());
     }
 
     /**
      * To be used in for(x : y).
+     *
+     * @return {@link Iterable} for the mapped value collection.
+     * This {@link Iterable} is backed by the immutable collection of mapped values.
+     * Iteration does not depend on any modifications in the multi-value table.
      */
     public Iterable<V> iterateAll(K key) {
         return getAllAsList(key);
@@ -156,10 +170,9 @@ public class MultiValueTable<K,V> {
     /**
      * Returns mapped value collection as raw {@link Object}
      *
-     * <b>Note:</b> this method is deprecated, this was used in previous {@code synchronized} implementation variant,
-     * please use other {@link #getAllAsList(Object)})} method variant, which provides a typed {@link List} collection.
-     *
      * @param key key mapping
+     * @deprecated this method was used in previous {@code synchronized} implementation variant.
+     * Use other {@link #getAllAsList(Object)})} method variant, which provides a typed {@link List} collection.     *
      */
     @Deprecated
     public Object getSync(K key) {
@@ -169,9 +182,9 @@ public class MultiValueTable<K,V> {
     /**
      * Returns mapped value collection as array
      *
-     * @deprecated use {@link #getAllAsList(Object)} with {@link List#toArray()} to obtain the values as object array
-     *
      * @param key key mapping
+     * @return the new array copy of values mapped to provided key
+     * @deprecated use {@link #getAllAsList(Object)} with {@link List#toArray()} to obtain the values as object array
      */
     @Deprecated
     public Object[] getArray(K key) {
@@ -218,37 +231,47 @@ public class MultiValueTable<K,V> {
     }
 
     /**
-     * Returns table keys as {@link Enumeration}
+     * Returns table keys as {@link Enumeration}.
+     * This enumeration is backed by the immutable copy of keys, see more in the description of {@link #keySet()}.
      *
-     * <b>Note:</b> this method is deprecated,
-     * please use other {@link #keySet()} method variant, which provides a {@link Set} of keys.
-     *
-     * @param key key mapping
+     * @return table keys as {@link Enumeration}
+     * @deprecated use other {@link #keySet()} method variant, which provides a {@link Set} of keys.
      */
     @Deprecated
     public Enumeration<K> keys() {
         return Collections.enumeration(keySet());
     }
 
+    /**
+     * @return The immutable copy of table keys.
+     * This collection result cannot be modified, and therefore it cannot affect any keys in the multi-value table.
+     * Any following changes in the table keys are not reflected in the returned collection.
+     */
     public Set<K> keySet() {
-        return Collections.unmodifiableSet(this.table.keySet());
+        // FIXME: replace with Set.copyOf() when Java version baseline becomes >= 11
+        return Collections.unmodifiableSet(new HashSet<>(this.table.keySet()));
     }
 
     /**
      * Returns table values as {@link Enumeration}.
      * This iterates over value collections mapped to all existing keys.
-     *
-     * <p>
-     * <b>Note:</b> this method is deprecated,
-     * please use other {@link #values()} method variant, which provides a {@link Collection} of values.
+     * This enumeration is backed by the immutable copy of values, see more in the description of {@link #values()}
      *
      * @return table values
+     * @deprecated use other {@link #values()} method variant, which provides a {@link Collection} of values.     *
      */
     @Deprecated
     public Enumeration<V> elements() {
         return Collections.enumeration(values());
     }
 
+    /**
+     * @return The immutable copy of table entries.
+     * This collection result cannot be modified, and therefore it cannot affect any entries in the multi-value table.
+     * Each {@link Map.Entry} in the returned collection is also unmodifiable,
+     * and it cannot be used to update entries in this multi-value table.
+     * Any following changes in the table keys are not reflected in the returned collection.
+     */
     public Collection<V> values() {
         List<V> allValues = new ArrayList<>();
         for (List<V> entryValues : this.table.values()) {
@@ -257,8 +280,20 @@ public class MultiValueTable<K,V> {
         return Collections.unmodifiableList(allValues);
     }
 
+    /**
+     * @return The immutable copy of table entries.
+     * This collection result cannot be modified, and therefore it cannot affect any entries in the multi-value table.
+     * Each {@link Map.Entry} in the returned collection is also unmodifiable,
+     * and it cannot be used to update entries in this multi-value table.
+     * Any following changes of the table keys are not reflected in the returned collection.
+     */
     public Set<Map.Entry<K, List<V>>> entrySet() {
-        return Collections.unmodifiableMap(this.table).entrySet();
+        // FIXME: replace with Set.copyOf() when Java version baseline becomes >= 11
+        return Collections.unmodifiableSet(
+            new HashSet<>(
+                Collections.unmodifiableMap(this.table).entrySet()
+            )
+        );
     }
 
     @Override
