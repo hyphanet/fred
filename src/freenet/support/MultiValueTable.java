@@ -185,12 +185,16 @@ public class MultiValueTable<K, V> {
      * Returns mapped value collection as array
      *
      * @param key key mapping
-     * @return the new array copy of values mapped to provided key
+     * @return the new array copy of values mapped to provided key or {@code null} if key is missing
      * @deprecated use {@link #getAllAsList(Object)} with {@link List#toArray()} to obtain the values as object array
      */
     @Deprecated
     public Object[] getArray(K key) {
-        return getAllAsList(key).toArray();
+        List<V> l = this.table.get(key);
+        if (l == null) {
+            return null;
+        }
+        return l.toArray();
     }
 
     public void remove(K key) {

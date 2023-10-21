@@ -281,6 +281,11 @@ public class MultiValueTableTest {
     }
 
     @Test
+    public void getArrayMethodReturnsNullValueWhenKeyIsMissing() {
+        assertNull(new MultiValueTable<>().getArray(1));
+    }
+
+    @Test
     public void testGetSync() {
         for (Map.Entry<Integer, List<Object>> entry : sampleObjects.entrySet()) {
             assertEquals(
