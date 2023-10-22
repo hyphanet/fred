@@ -228,7 +228,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 
 		if (forceDownload) {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+			MultiValueTable<String, String> headers = new MultiValueTable<>(4);
 			headers.put("Content-Disposition", "attachment; filename=\"" + key.getPreferredFilename() + '"');
 			headers.put("Cache-Control", "private");
 			headers.put("Content-Transfer-Encoding", "binary");
@@ -245,20 +245,20 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			// Send the data, intact
 			MultiValueTable<String, String> hdr = context.getHeaders();
 
-			MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
+
 			/*
 			 * Firefox and its derivatives may use the MIME type implied by the filename extension for
 			 * plain text, unless a Content-Encoding is specified.
 			 *
 			 * See https://developer.mozilla.org/en-US/docs/Mozilla/How_Mozilla_determines_MIME_Types#HTTP
 			 */
-			retHdr.put("Content-Encoding", "identity");
+			MultiValueTable<String, String> retHdr = MultiValueTable.from("Content-Encoding", "identity");
 
-			String rangeStr = hdr.get("range");
+			String rangeStr = hdr.getFirst("range");
 			// was a range request
 			if (rangeStr != null) {
 
-				long range[];
+				long[] range;
 				try {
 					range = parseRange(rangeStr);
 				} catch (HTTPRangeException e) {
@@ -450,8 +450,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		String ks = uri.getPath();
 
 		MultiValueTable<String,String> headers = ctx.getHeaders();
-		final String ua = headers.get("user-agent");
-		final String accept = headers.get("accept");
+		final String ua = headers.getFirst("user-agent");
+		final String accept = headers.getFirst("accept");
 		if(logMINOR) Logger.minor(this, "UA = "+ua+" accept = "+accept);
 		final boolean canSendProgress =
 			isBrowser(ua) && !ctx.disableProgressPage() && (accept == null || accept.indexOf("text/html") > -1) && !httprequest.isParameterSet("forcedownload");
@@ -549,7 +549,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		//first check of httprange before get
 		// only valid number format is checked here
-		String rangeStr = ctx.getHeaders().get("range");
+		String rangeStr = ctx.getHeaders().getFirst("range");
 		if (rangeStr != null) {
 			try {
 				parseRange(rangeStr);
@@ -757,7 +757,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				optionList.addChild("li").addChild("a", new String[] { "href", "title" },
 						new String[] { "/", NodeL10n.getBase().getString("Toadlet.homepage") }, l10n("abortToHomepage"));
 
-				MultiValueTable<String, String> retHeaders = new MultiValueTable<String, String>();
+				MultiValueTable<String, String> retHeaders = new MultiValueTable<>();
 				//retHeaders.put("Refresh", "2; url="+location);
 				writeHTMLReply(ctx, 200, "OK", retHeaders, pageNode.generate());
 				fr.close();
@@ -1067,7 +1067,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	private String sanitizeReferer(ToadletContext ctx) {
 		// FIXME we do something similar in the GenericFilterCallback thingy?
-		String referer = ctx.getHeaders().get("referer");
+		String referer = ctx.getHeaders().getFirst("referer");
 		if(referer != null) {
 			try {
 				URI refererURI = new URI(URIPreEncoder.encode(referer));

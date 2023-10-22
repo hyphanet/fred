@@ -34,14 +34,13 @@ public class ExternalLinkToadlet extends Toadlet {
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String url = request.getPartAsStringFailsafe(magicHTTPEscapeString, MAX_URL_LENGTH);
-		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 		//If the user clicked cancel, or the URL is not defined, return to the main page.
 		//TODO: This will mean the beginning of the first time wizard if it's still in progress.
 		//TODO: Is it worth it to fix that?
 		if (request.getPartAsStringFailsafe("Go", 32).isEmpty() || url.isEmpty()) {
 			url = WelcomeToadlet.PATH;
 		}
-		headers.put("Location", url);
+		MultiValueTable<String, String> headers = MultiValueTable.from("Location", url);
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 
@@ -49,8 +48,7 @@ public class ExternalLinkToadlet extends Toadlet {
 
 		//Unexpected: a URL should have been specified.
 		if (request.getParam(magicHTTPEscapeString).isEmpty()) {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", WelcomeToadlet.PATH);
+			MultiValueTable<String, String> headers = MultiValueTable.from("Location", WelcomeToadlet.PATH);
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}

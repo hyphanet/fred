@@ -292,8 +292,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else {
-				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-				headers.put("Location", "/seclevels/");
+				MultiValueTable<String, String> headers = MultiValueTable.from("Location", "/seclevels/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
@@ -311,8 +310,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 				} catch (AlreadySetPasswordException e) {
 					System.err.println("Already set master password");
 					Logger.error(this, "Already set master password");
-					MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
-					headers.put("Location", "/");
+					MultiValueTable<String,String> headers = MultiValueTable.from("Location", "/");
 					ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 					return;
 				} catch (MasterKeysWrongPasswordException e) {
@@ -322,7 +320,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 					sendPasswordFileCorruptedPage(e.isTooBig(), ctx, false, false);
 					return;
 				}
-				MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
+				MultiValueTable<String,String> headers = new MultiValueTable<>();
 				if(request.isPartSet("redirect")) {
 					String to = request.getPartAsStringFailsafe("redirect", 100);
 					if(to.startsWith("/")) {
@@ -343,8 +341,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			}
 		}
 
-		MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
-		headers.put("Location", "/");
+		MultiValueTable<String,String> headers = MultiValueTable.from("Location", "/");
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 

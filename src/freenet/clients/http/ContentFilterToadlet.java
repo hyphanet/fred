@@ -34,7 +34,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
     /**
      * What to do the the output from the content filter.
      */
-    public static enum ResultHandling {
+    public enum ResultHandling {
         DISPLAY,
         SAVE
     }
@@ -90,17 +90,17 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
                     FilterOperation filterOperation = getFilterOperation(request);
                     ResultHandling resultHandling = getResultHandling(request);
                     String mimeType = request.getPartAsStringFailsafe("mime-type", 100);
-                    MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
-                    responseHeaders.put("Location", LocalFileFilterToadlet.PATH
-                            + "?filter-operation=" + filterOperation
-                            + "&result-handling=" + resultHandling
-                            + "&mime-type=" + mimeType);
+                    String location = LocalFileFilterToadlet.PATH
+                        + "?filter-operation=" + filterOperation
+                        + "&result-handling=" + resultHandling
+                        + "&mime-type=" + mimeType;
+                    MultiValueTable<String, String> responseHeaders = MultiValueTable.from("Location", location);
                     ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
                 } catch (BadRequestException e) {
                     String invalidPart = e.getInvalidRequestPart();
-                    if (invalidPart == "filter-operation") {
+                    if ("filter-operation".equals(invalidPart)) {
                         writeBadRequestError(l10n("errorMustSpecifyFilterOperationTitle"), l10n("errorMustSpecifyFilterOperation"), ctx, true);
-                    } else if (invalidPart == "result-handling") {
+                    } else if ("result-handling".equals(invalidPart)) {
                         writeBadRequestError(l10n("errorMustSpecifyResultHandlingTitle"), l10n("errorMustSpecifyResultHandling"), ctx, true);
                     } else {
                         writeBadRequestError(l10n("errorBadRequestTitle"), l10n("errorBadRequest"), ctx, true);
@@ -243,11 +243,11 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             }
         } catch (BadRequestException e) {
             String invalidPart = e.getInvalidRequestPart();
-            if (invalidPart == "filter-operation") {
+            if ("filter-operation".equals(invalidPart)) {
                 writeBadRequestError(l10n("errorMustSpecifyFilterOperationTitle"), l10n("errorMustSpecifyFilterOperation"), ctx, true);
-            } else if (invalidPart == "result-handling") {
+            } else if ("result-handling".equals(invalidPart)) {
                 writeBadRequestError(l10n("errorMustSpecifyResultHandlingTitle"), l10n("errorMustSpecifyResultHandling"), ctx, true);
-            } else if (invalidPart == "filename") {
+            } else if ("filename".equals(invalidPart)) {
                 writeBadRequestError(l10n("errorNoFileSelectedTitle"), l10n("errorNoFileSelected"), ctx, true);
             } else {
                 writeBadRequestError(l10n("errorBadRequestTitle"), l10n("errorBadRequest"), ctx, true);
@@ -309,7 +309,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
                 ctx.sendReplyHeaders(200, "OK", null, resultMimeType, resultBucket.size());
                 ctx.writeData(resultBucket);
             } else if (resultHandling == ResultHandling.SAVE) {
-                MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+                MultiValueTable<String, String> headers = new MultiValueTable<>();
                 headers.put("Content-Disposition", "attachment; filename=\"" + resultFilename + '"');
                 headers.put("Cache-Control", "private");
                 headers.put("Content-Transfer-Encoding", "binary");

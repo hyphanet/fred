@@ -195,9 +195,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		if(path.endsWith("myref.fref")) {
 			SimpleFieldSet fs = getNoderef();
 			String noderefString = fs.toOrderedStringWithBase64();
-			MultiValueTable<String, String> extraHeaders = new MultiValueTable<String, String>();
-			// Force download to disk
-			extraHeaders.put("Content-Disposition", "attachment; filename=myref.fref");
+			MultiValueTable<String, String> extraHeaders = MultiValueTable.from(
+				// Force download to disk
+				"Content-Disposition", "attachment; filename=myref.fref"
+			);
 			writeReply(ctx, 200, "application/x-freenet-reference", "OK", extraHeaders, noderefString);
 			return;
 		}

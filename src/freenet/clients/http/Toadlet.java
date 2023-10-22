@@ -9,6 +9,7 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -349,8 +350,6 @@ public abstract class Toadlet {
 	 * @throws IOException
 	 */
 	static void writePermanentRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
-		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
-		mvt.put("Location", location);
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
@@ -358,12 +357,9 @@ public abstract class Toadlet {
 			l10n("permRedirectWithReason", "reason", msg)+
 			"</h1><a href=\""+HTMLEncoder.encode(location)+"\">"+l10n("clickHere")+"</a></body></html>";
 		byte[] buf;
-		try {
-			buf = redirDoc.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
-		ctx.sendReplyHeaders(301, "Moved Permanently", mvt, "text/html; charset=UTF-8", buf.length);
+		buf = redirDoc.getBytes(StandardCharsets.UTF_8);
+		MultiValueTable<String, String> headers = MultiValueTable.from("Location", location);
+		ctx.sendReplyHeaders(301, "Moved Permanently", headers, "text/html; charset=UTF-8", buf.length);
 		ctx.writeData(buf, 0, buf.length);
 	}
 
@@ -380,8 +376,6 @@ public abstract class Toadlet {
 	 * @throws IOException
 	 */
 	protected void writeTemporaryRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
-		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
-		mvt.put("Location", location);
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
@@ -390,11 +384,8 @@ public abstract class Toadlet {
 			"</h1><a href=\""+HTMLEncoder.encode(location)+"\">" +
 			l10n("clickHere") + "</a></body></html>";
 		byte[] buf;
-		try {
-			buf = redirDoc.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+		buf = redirDoc.getBytes(StandardCharsets.UTF_8);
+		MultiValueTable<String, String> mvt = MultiValueTable.from("Location", location);
 		ctx.sendReplyHeaders(302, "Found", mvt, "text/html; charset=UTF-8", buf.length);
 		ctx.writeData(buf, 0, buf.length);
 	}

@@ -214,11 +214,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						   l10n("errorMustSpecifyKeyType"), ctx, false, true);
 					return;
 				}
-				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
-				responseHeaders.put("Location", LocalFileInsertToadlet.PATH+"?key="+insertURI.toASCIIString()+
-					"&compress="+String.valueOf(request.getPartAsStringFailsafe("compress", 128).length() > 0)+
-					"&compatibilityMode="+request.getPartAsStringFailsafe("compatibilityMode", 100)+
-					"&overrideSplitfileKey="+request.getPartAsStringFailsafe("overrideSplitfileKey", 65));
+				MultiValueTable<String, String> responseHeaders = MultiValueTable.from(
+					"Location",
+					LocalFileInsertToadlet.PATH
+						+ "?key=" + insertURI.toASCIIString()
+						+ "&compress=" + (request.getPartAsStringFailsafe("compress", 128).length() > 0)
+						+ "&compatibilityMode=" + request.getPartAsStringFailsafe("compatibilityMode", 100)
+						+ "&overrideSplitfileKey=" + request.getPartAsStringFailsafe("overrideSplitfileKey", 65)
+				);
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
 			} else if (request.isPartSet("select-location")) {
@@ -1112,9 +1115,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		if(!(count || keys)) {
 			try {
 				RequestStatus[] reqs = fcp.getGlobalRequests();
-				MultiValueTable<String, String> pageHeaders = new MultiValueTable<String, String>();
 				HTMLNode pageNode = handleGetInner(pageMaker, reqs, core.clientContext, request, ctx);
-				writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", new MultiValueTable<>(), pageNode.generate());
 				return;
 			} catch (PersistenceDisabledException e) {
 				sendPersistenceDisabledError(ctx);
@@ -1191,18 +1193,17 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			}
 		}
 
-		MultiValueTable<String, String> pageHeaders = new MultiValueTable<String, String>();
-		if(pageNode != null)
-			writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
-		else if(plainText != null)
+		if (pageNode != null) {
+			writeHTMLReply(ctx, 200, "OK", new MultiValueTable<>(), pageNode.generate());
+		} else if (plainText != null) {
 			this.writeReply(ctx, 200, "text/plain", "OK", plainText);
-		else {
-			if(core.killedDatabase())
+		} else {
+			if (core.killedDatabase()) {
 				sendPersistenceDisabledError(ctx);
-			else
+			} else {
 				this.writeError("Internal error", "Internal error", ctx);
+			}
 		}
-
 	}
 
 	protected String makeKeysList(ClientContext context, boolean inserts) throws PersistenceDisabledException {

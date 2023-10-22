@@ -49,7 +49,7 @@ public class ImageCreatorToadlet extends Toadlet {
 		if (ctx.getHeaders().containsKey("if-modified-since")) {
 			try {
 				// If the received date is equal to the last modification of this class, then it doesn't need regeneration
-				if (ToadletContextImpl.parseHTTPDate(ctx.getHeaders().get("if-modified-since")).compareTo(LAST_MODIFIED) == 0) {
+				if (ToadletContextImpl.parseHTTPDate(ctx.getHeaders().getFirst("if-modified-since")).compareTo(LAST_MODIFIED) == 0) {
 					// So we just send the NOT_MODIFIED response, and skip the generation
 					ctx.sendReplyHeadersStatic(304, "Not Modified", null, "image/png", 0, LAST_MODIFIED);
 					needsGeneration = false;

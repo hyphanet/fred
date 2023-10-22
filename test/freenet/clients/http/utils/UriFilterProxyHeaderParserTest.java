@@ -5,8 +5,6 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import freenet.config.Config;
-import freenet.config.InvalidConfigValueException;
-import freenet.config.NodeNeedRestartException;
 import freenet.config.StringOption;
 import freenet.support.MultiValueTable;
 import freenet.support.api.StringCallback;
@@ -22,7 +20,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1",
         "",
         "",
-        MultiValueTable.from(new String[]{}, new String[]{}),
+        new MultiValueTable<>(),
         "http://127.0.0.1:8888");
   }
 
@@ -35,7 +33,7 @@ public class UriFilterProxyHeaderParserTest {
         "",
         "",
         "",
-        MultiValueTable.from(new String[]{}, new String[]{}),
+        new MultiValueTable<>(),
         "http://127.0.0.1:8888");
   }
 
@@ -47,7 +45,7 @@ public class UriFilterProxyHeaderParserTest {
         "",
         null,
         null,
-        MultiValueTable.from(new String[]{}, new String[]{}),
+        new MultiValueTable<>(),
         "http://127.0.0.1:8888");
   }
 
@@ -60,7 +58,7 @@ public class UriFilterProxyHeaderParserTest {
         "",
         "",
         "",
-        MultiValueTable.from(new String[]{}, new String[]{}),
+        new MultiValueTable<>(),
         "http://127.0.0.1:8888");
   }
 
@@ -72,7 +70,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1",
         "",
         "",
-        MultiValueTable.from(new String[]{}, new String[]{}),
+        new MultiValueTable<>(),
         "http://127.0.0.1:8888");
   }
 
@@ -85,7 +83,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1,foo",
         "",
         "",
-        MultiValueTable.from(new String[]{ "x-forwarded-host" }, new String[]{ "foo" }),
+        MultiValueTable.from("x-forwarded-host", "foo"),
         "http://foo");
   }
 
@@ -97,7 +95,7 @@ public class UriFilterProxyHeaderParserTest {
         "foo,127.0.0.1",
         "",
         "",
-        MultiValueTable.from(new String[]{ "x-forwarded-host" }, new String[]{ "foo:8888" }),
+        MultiValueTable.from("x-forwarded-host", "foo:8888"),
         "http://foo:8888");
   }
 
@@ -109,7 +107,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1,foo",
         "",
         "",
-        MultiValueTable.from(new String[]{ "x-forwarded-host" }, new String[]{ "foo:8889" }),
+        MultiValueTable.from("x-forwarded-host", "foo:8889"),
         "http://foo:8889");
   }
 
@@ -121,7 +119,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1",
         "",
         "",
-        MultiValueTable.from(new String[]{ "x-forwarded-proto" }, new String[]{ "https" }),
+        MultiValueTable.from("x-forwarded-proto", "https"),
         "https://127.0.0.1:8888");
   }
 
@@ -133,7 +131,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1,foo",
         "",
         "foo",
-        MultiValueTable.from(new String[]{}, new String[]{}),
+        new MultiValueTable<>(),
         "http://foo");
   }
 
@@ -145,7 +143,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1,foo",
         "",
         "foo:8888",
-        MultiValueTable.from(new String[]{}, new String[]{}),
+        new MultiValueTable<>(),
         "http://foo:8888");
   }
 
@@ -157,7 +155,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1,foo",
         "",
         "foo:8889",
-        MultiValueTable.from(new String[]{}, new String[]{}),
+        new MultiValueTable<>(),
         "http://foo:8889");
   }
 
@@ -169,7 +167,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1",
         "https",
         "",
-        MultiValueTable.from(new String[]{}, new String[]{}),
+        new MultiValueTable<>(),
         "https://127.0.0.1:8888");
   }
 
@@ -182,7 +180,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1",
         "",
         "",
-        MultiValueTable.from(new String[]{ "x-forwarded-host" }, new String[]{ "foo" }),
+        MultiValueTable.from("x-forwarded-host", "foo"),
         "http://127.0.0.1:8888");
   }
 
@@ -194,7 +192,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1",
         "",
         "",
-        MultiValueTable.from(new String[]{ "x-forwarded-proto" }, new String[]{ "catchme" }),
+        MultiValueTable.from("x-forwarded-proto", "catchme"),
         "http://127.0.0.1:8888");
   }
 
@@ -206,7 +204,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1",
         "",
         "foo:8888",
-        MultiValueTable.from(new String[]{ "x-forwarded-host" }, new String[]{ "foo:8888" }),
+        MultiValueTable.from("x-forwarded-host", "foo:8888"),
         "http://127.0.0.1:8888");
   }
 
@@ -218,7 +216,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1",
         "",
         "",
-        MultiValueTable.from(new String[]{ "x-forwarded-host" }, new String[]{ "foo:8888" }),
+        MultiValueTable.from("x-forwarded-host", "foo:8888"),
         "http://127.0.0.1:8889");
   }
 
@@ -230,9 +228,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1",
         "",
         "",
-        MultiValueTable.from(
-            new String[]{ "x-forwarded-host" },
-            new String[]{ "127.0.0.1:8888" }),
+        MultiValueTable.from("x-forwarded-host", "127.0.0.1:8888"),
         "http://127.0.0.1:8889");
   }
 
@@ -246,7 +242,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1",
         "",
         "foo",
-        MultiValueTable.from(new String[]{ "x-forwarded-host" }, new String[]{ "foo" }),
+        MultiValueTable.from("x-forwarded-host", "foo"),
         "http://127.0.0.1:8888");
   }
 
@@ -258,7 +254,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1",
         "",
         "foo:8888",
-        MultiValueTable.from(new String[]{ "x-forwarded-host" }, new String[]{ "foo:8888" }),
+        MultiValueTable.from("x-forwarded-host", "foo:8888"),
         "http://127.0.0.1:8888");
   }
 
@@ -271,7 +267,7 @@ public class UriFilterProxyHeaderParserTest {
         "127.0.0.1,foo",
         "",
         "foo:8889",
-        MultiValueTable.from(new String[]{ "x-forwarded-host" }, new String[]{ "foo:8889" }),
+        MultiValueTable.from("x-forwarded-host", "foo:8889"),
         "http://127.0.0.1:8888");
   }
 

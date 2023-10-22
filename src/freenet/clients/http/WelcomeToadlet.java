@@ -59,10 +59,8 @@ public class WelcomeToadlet extends Toadlet {
     }
     
     void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {
-        MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-        headers.put("Location", "/");
+        MultiValueTable<String, String> headers = MultiValueTable.from("Location", "/");
         ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-        return;
     }
 
     private void addCategoryToList(BookmarkCategory cat, HTMLNode list, boolean noActiveLinks, ToadletContext ctx) {
@@ -303,8 +301,10 @@ public class WelcomeToadlet extends Toadlet {
             return;
         } else if (request.isPartSet("shutdownconfirm")) {
         	if(!ctx.checkFormPassword(request)) return;
-            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-            headers.put("Location", "/?terminated&formPassword=" + ctx.getFormPassword());
+            MultiValueTable<String, String> headers = MultiValueTable.from(
+                "Location",
+                "/?terminated&formPassword=" + ctx.getFormPassword()
+            );
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ticker.queueTimedJob(new Runnable() {
 
@@ -327,8 +327,10 @@ public class WelcomeToadlet extends Toadlet {
             return;
         } else if (request.isPartSet("restartconfirm")) {
         	if(!ctx.checkFormPassword(request)) return;
-            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-            headers.put("Location", "/?restarted&formPassword=" + ctx.getFormPassword());
+            MultiValueTable<String, String> headers = MultiValueTable.from(
+                "Location",
+                "/?restarted&formPassword=" + ctx.getFormPassword()
+            );
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ticker.queueTimedJob(new Runnable() {
 
@@ -508,7 +510,7 @@ public class WelcomeToadlet extends Toadlet {
         HTMLNode pageNode = page.outer;
         HTMLNode contentNode = page.content;
 
-        String useragent = ctx.getHeaders().get("user-agent");
+        String useragent = ctx.getHeaders().getFirst("user-agent");
 
         if (useragent != null) {
             useragent = useragent.toLowerCase();

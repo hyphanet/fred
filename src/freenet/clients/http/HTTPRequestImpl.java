@@ -481,7 +481,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		try {
 			if(data == null)
 				return;
-			String ctype = this.headers.get("content-type");
+			String ctype = this.headers.getFirst("content-type");
 			if(ctype == null)
 				return;
 			if(logMINOR)
@@ -867,12 +867,12 @@ public class HTTPRequestImpl implements HTTPRequest {
 	@Override
 	public String getHeader(String name) {
 		assert(name.equals(name.toLowerCase()));
-		return this.headers.get(name.toLowerCase());
+		return this.headers.getFirst(name.toLowerCase());
 	}
 
 	@Override
 	public int getContentLength() {
-		String slen = headers.get("content-length");
+		String slen = headers.getFirst("content-length");
 		if (slen == null)
 			return -1;
 		// it is already parsed, so NumberFormatException can not happens here

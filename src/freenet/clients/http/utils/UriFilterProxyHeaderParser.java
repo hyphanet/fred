@@ -41,11 +41,11 @@ public class UriFilterProxyHeaderParser {
 
         // check uri host and headers
         String protocol = headers.containsKey("x-forwarded-proto")
-            ? headers.get("x-forwarded-proto")
+            ? headers.getFirst("x-forwarded-proto")
             : uriScheme != null && !uriScheme.trim().isEmpty() ? uriScheme : "http";
         String host = headers.containsKey("x-forwarded-host")
-            ? headers.get("x-forwarded-host")
-            : uriHost != null && !uriHost.trim().isEmpty() ? uriHost : headers.get("host");
+            ? headers.getFirst("x-forwarded-host")
+            : uriHost != null && !uriHost.trim().isEmpty() ? uriHost : headers.getFirst("host");
         // check allow list
         if (!safeProtocols.contains(protocol)) {
             protocol = "http";
