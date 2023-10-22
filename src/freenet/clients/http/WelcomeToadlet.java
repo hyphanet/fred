@@ -101,6 +101,7 @@ public class WelcomeToadlet extends Toadlet {
                             else { // If no edition # exists, assume bare SSK and just append the activelink.
                                 key = key + "activelink.png";
                             }
+                            break;
                         Case "CHK": 
                         Case "KSK": // This assumes the activelink is in the root of any one-shot directory upload.
                             Matcher match = PATTERN_CHK_KSK.matcher(key);
@@ -110,8 +111,10 @@ public class WelcomeToadlet extends Toadlet {
                             else { // we append '/' to key at the start if it isn't already there, so this should never be reachable unless the regex is broken.
                                 Logger.minor(this, "Impossible: Regex for CHK/KSK didn't match.  Key: "+ key);
                             }
+                            break;
                         default:
                             Logger.minor(this, "Unknown key type: " + keyType + "!  Activelink regex needs updating.");
+                            break;
                     }
 
                     cell.addChild("div", "style", "height: 36px; width: 108px;").addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "alt", "style", "title"},
