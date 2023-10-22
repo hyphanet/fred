@@ -111,7 +111,7 @@ public class WelcomeToadlet extends Toadlet {
                                 Logger.minor(this, "Impossible: Regex for CHK/KSK didn't match.  Key: "+ key);
                             }
                         default:
-                            Logger.minor(this, "Unknown key type: " + prefix + "!  Activelink regex needs updating.");
+                            Logger.minor(this, "Unknown key type: " + keyType + "!  Activelink regex needs updating.");
                     }
 
                     cell.addChild("div", "style", "height: 36px; width: 108px;").addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "alt", "style", "title"},
