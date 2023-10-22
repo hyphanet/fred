@@ -90,8 +90,8 @@ public class WelcomeToadlet extends Toadlet {
                     String initialKey = item.getKey();
                     // extract the key type
                     String keyType = initialKey.substring(1,3);
-                    String keyType = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/");
-                    Switch prefix {
+                    String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/");
+                    Switch keyType {
                         Case "USK":
                         Case "SSK": 
                             Matcher match = PATTERN_USK_SSK.matcher(key);
