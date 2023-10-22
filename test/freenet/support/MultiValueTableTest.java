@@ -15,9 +15,29 @@
  */
 package freenet.support;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.Vector;
 import java.util.stream.Collectors;
 
 import org.junit.Before;
@@ -293,6 +313,22 @@ public class MultiValueTableTest {
                 multiValueTable.getSync(entry.getKey())
             );
         }
+    }
+
+    @Test
+    public void getSyncMethodReturnsVectorObject() {
+        List<String> values = Arrays.asList("one", "two");
+        multiValueTable = new MultiValueTable<>();
+        multiValueTable.putAll(1, values);
+
+        Object object = multiValueTable.getSync(1);
+        assertThat(object, instanceOf(Vector.class));
+        assertEquals(new Vector<>(values), object);
+    }
+
+    @Test
+    public void getSyncMethodReturnsNullIfKeyIsMissing() {
+        assertNull(new MultiValueTable<>().getSync("notExistingKey"));
     }
 
     @Test

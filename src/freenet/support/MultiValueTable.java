@@ -1,15 +1,6 @@
 package freenet.support;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -173,12 +164,20 @@ public class MultiValueTable<K, V> {
      * Returns mapped value collection as raw {@link Object}
      *
      * @param key key mapping
+     * @return a new {@link Vector} of mapped values.
+     * For compatibility reasons this method returns a raw {@link Object},
+     * and the real type of returned value is {@link Vector}.
+     * The returned value is a new modifiable copy of mapped values.
      * @deprecated this method was used in previous {@code synchronized} implementation variant.
      * Use other {@link #getAllAsList(Object)})} method variant, which provides a typed {@link List} collection.     *
      */
     @Deprecated
     public Object getSync(K key) {
-        return getAllAsList(key);
+        List<V> l = this.table.get(key);
+        if (l == null) {
+            return null;
+        }
+        return new Vector<>(l);
     }
 
     /**
