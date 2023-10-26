@@ -44,9 +44,9 @@ public class WelcomeToadlet extends Toadlet {
 
     // Regex Patterns to use when generating keys for activelinks.
     // For USK and SSK we want to match from the start of the key to the first instance of -#/ or /#/.
-    protected static final Pattern PATTERN_USK_SSK = Pattern.compile("^.*[\/\-][0-9]+\/");
-    // For CHK and KSK we match from the start of the key to the first slash and append the activelink there.
-    protected static final Pattern PATTERN_CHK_KSK = Pattern.compile("^.*\/");
+    protected static final Pattern PATTERN_USK_SSK = Pattern.compile("^[^/]*/[^/]+/?[/-]?[0-9]+/");
+    // For bare SSK, CHK, and KSK we match from the start of the key to the first slash and append the activelink there.
+    protected static final Pattern PATTERN_BARE_SSK_CHK_KSK = Pattern.compile("^[^/]*/");
 
     final Node node;
 
@@ -99,12 +99,18 @@ public class WelcomeToadlet extends Toadlet {
                                 key = match.group(1) + "activelink.png";
                             }
                             else { // If no edition # exists, assume bare SSK and just append the activelink.
-                                key = key + "activelink.png";
+                                match = PATTERN_BARE_SSK_CHK_KSK.matcher(key);
+	                            if match.matches() {
+	                                key = match.group(1) + "activelink.png";
+	                            }
+                                else {
+                                    Logger.minor(this, "Impossible: Regex for USK/SSK didn't match.  Key: "+ key);
+                                }
                             }
                             break;
                         Case "CHK": 
                         Case "KSK": // This assumes the activelink is in the root of any one-shot directory upload.
-                            Matcher match = PATTERN_CHK_KSK.matcher(key);
+                            Matcher match = PATTERN_BARE_SSK_CHK_KSK.matcher(key);
                             if match.matches() {
                                 key = match.group(1) + "activelink.png";
                             }
