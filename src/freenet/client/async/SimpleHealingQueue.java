@@ -12,6 +12,8 @@ import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
+import freenet.node.Location;
+import freenet.node.NodeStarter;
 import freenet.node.RequestClient;
 import freenet.node.RequestClientBuilder;
 import freenet.support.LogThresholdCallback;
@@ -25,6 +27,8 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	final int maxRunning;
 	int counter;
 	InsertContext ctx;
+	private final double nodeLocation;
+	private final boolean opennetEnabled;
 	final Map<Bucket, SingleBlockInserter> runningInserters;
 
         private static volatile boolean logMINOR;
@@ -39,9 +43,11 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 
 	static final RequestClient REQUEST_CLIENT = new RequestClientBuilder().build();
 
-	public SimpleHealingQueue(InsertContext context, short prio, int maxRunning) {
+	public SimpleHealingQueue(InsertContext context, short prio, int maxRunning, double nodeLocation, boolean opennetEnabled) {
 		super(prio, REQUEST_CLIENT);
 		this.ctx = context;
+		this.nodeLocation = nodeLocation;
+		this.opennetEnabled = opennetEnabled;
 		this.runningInserters = new HashMap<Bucket, SingleBlockInserter>();
 		this.maxRunning = maxRunning;
 	}
@@ -60,7 +66,9 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 				Logger.error(this, "Caught trying to insert healing block: "+e, e);
 				return false;
 			}
-			runningInserters.put(data, sbi);
+			if (isHealingThisBlockSimilarToForwarding(context, sbi)) {
+				runningInserters.put(data, sbi);
+			}
 		}
 		try {
 			sbi.schedule(context);
@@ -70,6 +78,57 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		} catch (Throwable e) {
 			Logger.error(this, "Caught trying to insert healing block: "+e, e);
 			return false;
+		}
+	}
+
+	/**
+	 * Specialize Healing to the fraction of the keyspace in which we would receive the inserts
+	 * if we were one of 5 long distance nodes of an actual inserter.
+	 *
+	 * If an opennet node is connected to an attacker, healing traffic could be mistaken for an insert.
+	 * Since opennet cannot be fully secured, this should be avoided.
+	 * As a solution, we specialize healing inserts to the inserts we would send if we were one of 5 
+	 * long distance connections for a node in another part of the keyspace.
+	 *
+	 * As a welcome side effect, specialized healing inserts should take one hop less to reach the
+	 * correct node from which loop detection will stop the insert long before HTL reaches zero.
+	 */
+	private boolean isHealingThisBlockSimilarToForwarding(
+			ClientContext context,
+			SingleBlockInserter sbi) {
+		// pure darknet is safer against sybil attacks, so we can heal fully
+		if (!opennetEnabled) {
+			return true;
+		}
+		// ensure that we have a routing key
+		sbi.tryEncode(context);
+		double keyLocation = sbi.getKeyNoEncode().getNodeKey().toNormalizedDouble();
+		double randomBetweenZeroAndOne = NodeStarter.getGlobalSecureRandom().nextDouble() / Double.MAX_VALUE;
+		return shouldHealBlock(nodeLocation, keyLocation, randomBetweenZeroAndOne);
+	}
+
+	/**
+	 * choose fraction by probabilistic dropping of far away keys.
+	 * only enqueue keys in our 20% of the keyspace: the ones that would reach us if we were one of
+	 * 5 long distance peers of a peer node.
+	 */
+	static boolean shouldHealBlock(
+			double nodeLocation,
+			double keyLocation,
+			double randomBetweenZeroAndOne) {
+		double distanceToNodeLocation = Location.distance(nodeLocation, keyLocation);
+		// accept half the healings in our 20% of the keyspace.
+		// If the key is inside "our" 20% of the keyspace, heal it with 50% probability.
+		if (distanceToNodeLocation < 0.1) {
+			// accept 50%, specialized to our own location (0.5 ** 4 ~ 0.0625). Accept 70% which are going
+			// to our short distance peers (0.32 ** 4 ~ 0.01), 78% of those which could be reached via a 
+			// direct short distance FOAF (distance 0.02).
+			double randomToPower4 = Math.pow(randomBetweenZeroAndOne, 4);
+			return distanceToNodeLocation < randomToPower4;
+		} else {
+			// if the key is a long distance key for us, heal it with 10% probability: it is unlikely that
+			// this would have reached us. Setting this to 0 could amplify a keyspace takeover attack.
+			return 0.9 < randomBetweenZeroAndOne;
 		}
 	}
 
