@@ -22,6 +22,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.BaseSendableGet;
 import freenet.support.Logger;
 import freenet.support.api.LockableRandomAccessBuffer;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
@@ -297,7 +298,10 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
     @Override
     public void queueHeal(byte[] data, byte[] cryptoKey, byte cryptoAlgorithm) {
         try {
-            context.healingQueue.queue(BucketTools.makeImmutableBucket(context.tempBucketFactory, data), cryptoKey, cryptoAlgorithm, context);
+            RandomAccessBucket dataBucket = BucketTools.makeImmutableBucket(
+                context.tempBucketFactory,
+                data);
+            context.healingQueue.queue(dataBucket, cryptoKey, cryptoAlgorithm, context);
         } catch (IOException e) {
             // Nothing to be done, but need to log the error.
             Logger.error(this, "I/O error, failed to queue healing block: "+e, e);
