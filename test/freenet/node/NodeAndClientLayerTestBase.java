@@ -7,8 +7,6 @@ import freenet.client.InsertBlock;
 import freenet.crypt.DummyRandomSource;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
-import freenet.keys.InsertableUSK;
-import freenet.keys.USK;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.api.RandomAccessBucket;
 
