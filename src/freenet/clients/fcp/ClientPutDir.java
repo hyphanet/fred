@@ -26,7 +26,6 @@ import freenet.client.async.TooManyFilesInsertException;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
-import freenet.support.CurrentTimeUTC;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -380,7 +379,7 @@ public class ClientPutDir extends ClientPutBase {
 		
 		int total=0, min=0, fetched=0, fatal=0, failed=0;
 		// See ClientRequester.getLatestSuccess() for why this defaults to current time.
-		Date latestSuccess = CurrentTimeUTC.get();
+		Date latestSuccess = new Date();
 		Date latestFailure = null;
 		boolean totalFinalized = false;
 		

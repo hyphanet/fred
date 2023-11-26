@@ -28,7 +28,6 @@ import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.support.Base64;
-import freenet.support.CurrentTimeUTC;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -525,7 +524,7 @@ public class ClientPut extends ClientPutBase {
 		
 		int total=0, min=0, fetched=0, fatal=0, failed=0;
 		// See ClientRequester.getLatestSuccess() for why this defaults to current time.
-		Date latestSuccess = CurrentTimeUTC.get();
+		Date latestSuccess = new Date();
 		Date latestFailure = null;
 		boolean totalFinalized = false;
 		

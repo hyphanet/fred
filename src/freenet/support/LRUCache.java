@@ -31,7 +31,7 @@ public final class LRUCache<Key extends Comparable<Key>, Value> {
 		
 		public Entry(final Value myValue) {
 			mValue = myValue;
-			mExpirationDate = (mExpirationDelay < Long.MAX_VALUE) ? (CurrentTimeUTC.getInMillis() + mExpirationDelay) : (Long.MAX_VALUE); 
+			mExpirationDate = (mExpirationDelay < Long.MAX_VALUE) ? (System.currentTimeMillis() + mExpirationDelay) : (Long.MAX_VALUE);
 		}
 		
 		public boolean expired(final long time) {
@@ -39,7 +39,7 @@ public final class LRUCache<Key extends Comparable<Key>, Value> {
 		}
 		
 		public boolean expired() {
-			return expired(CurrentTimeUTC.getInMillis());
+			return expired(System.currentTimeMillis());
 		}
 		
 		public Value getValue() {

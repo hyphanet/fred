@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 
-import freenet.support.CurrentTimeUTC;
 import freenet.support.TimeUtil;
 
 /**
@@ -271,7 +270,7 @@ public class Cookie {
 	}
 	
 	public static Date validateExpirationDate(Date expirationDate) {
-		if(CurrentTimeUTC.get().after(expirationDate))
+		if(new Date().after(expirationDate))
 			throw new IllegalArgumentException("Illegal expiration date, is in past: " + expirationDate);
 		
 		return expirationDate;
