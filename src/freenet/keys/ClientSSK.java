@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
@@ -83,11 +83,7 @@ public class ClientSSK extends ClientKey {
 					throw new IllegalArgumentException();
 			}
 			this.cryptoKey = cryptoKey;
-			try {
-				md.update(docName.getBytes("UTF-8"));
-			} catch (UnsupportedEncodingException e) {
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-			}
+			md.update(docName.getBytes(StandardCharsets.UTF_8));
 			byte[] buf = md.digest();
 			try {
 				Rijndael aes = new Rijndael(256, 256);

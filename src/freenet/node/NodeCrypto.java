@@ -5,8 +5,8 @@ package freenet.node;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.zip.DeflaterOutputStream;
@@ -363,20 +363,13 @@ public class NodeCrypto {
 	private String ecdsaSignRef(String mySignedReference) throws NodeInitException {
 	    if(logMINOR) Logger.minor(this, "Signing reference:\n"+mySignedReference);
 
-	    try{
-	        byte[] ref = mySignedReference.getBytes("UTF-8");
-	        // We don't need a padded signature here
-	        byte[] sig = ecdsaP256.sign(ref);
-	        if(logMINOR && !ECDSA.verify(Curves.P256, getECDSAP256Pubkey(), sig, ref))
-	            throw new NodeInitException(NodeInitException.EXIT_EXCEPTION_TO_DEBUG, mySignedReference);
-	        return Base64.encode(sig);
-	    } catch(UnsupportedEncodingException e){
-	        //duh ?
-	        Logger.error(this, "Error while signing the node identity!" + e, e);
-	        System.err.println("Error while signing the node identity!"+e);
-	        e.printStackTrace();
-	        throw new NodeInitException(NodeInitException.EXIT_CRAPPY_JVM, "Impossible: JVM doesn't support UTF-8");
-	    }
+		byte[] ref = mySignedReference.getBytes(StandardCharsets.UTF_8);
+
+		// We don't need a padded signature here
+		byte[] sig = ecdsaP256.sign(ref);
+		if(logMINOR && !ECDSA.verify(Curves.P256, getECDSAP256Pubkey(), sig, ref))
+			throw new NodeInitException(NodeInitException.EXIT_EXCEPTION_TO_DEBUG, mySignedReference);
+		return Base64.encode(sig);
 	}
 
 	private byte[] myCompressedRef(boolean setup, boolean heavySetup, boolean forARK) {

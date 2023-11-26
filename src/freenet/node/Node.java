@@ -24,9 +24,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -800,7 +800,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private void readNodeFile(String filename) throws IOException {
 		// REDFLAG: Any way to share this code with NodePeer?
 		FileInputStream fis = new FileInputStream(filename);
-		InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+		InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
 		BufferedReader br = new BufferedReader(isr);
 		SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
 		br.close();
@@ -1195,7 +1195,7 @@ public class Node implements TimeSkewDetectorCallback {
                 }
                 clientCacheKey = keys.clientCacheMasterKey;
                 persistentSecret = keys.getPersistentMasterSecret();
-                databaseKey = keys.createDatabaseKey(secureRandom);
+                databaseKey = keys.createDatabaseKey();
                 if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
                     System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
                     securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
@@ -1227,7 +1227,7 @@ public class Node implements TimeSkewDetectorCallback {
 			} else {
 				byte[] buf = new byte[BOOT_FILE_LENGTH];
 				raf.readFully(buf);
-				String s = new String(buf, "ISO-8859-1");
+				String s = new String(buf, StandardCharsets.ISO_8859_1);
 				try {
 					oldBootID = Fields.bytesToLong(HexUtil.hexToBytes(s));
 				} catch (NumberFormatException e) {
@@ -1236,7 +1236,7 @@ public class Node implements TimeSkewDetectorCallback {
 				raf.seek(0);
 			}
 			String s = HexUtil.bytesToHex(Fields.longToBytes(bootID));
-			byte[] buf = s.getBytes("ISO-8859-1");
+			byte[] buf = s.getBytes(StandardCharsets.ISO_8859_1);
 			if(buf.length != BOOT_FILE_LENGTH)
 				System.err.println("Not 16 bytes for boot ID "+bootID+" - WTF??");
 			raf.write(buf);
@@ -4075,7 +4075,7 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.normal(this, "Received differential node reference node to node message from "+src.getPeer());
 			SimpleFieldSet fs = null;
 			try {
-				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true, false);
+				fs = new SimpleFieldSet(new String(data, StandardCharsets.UTF_8), false, true, false);
 			} catch (IOException e) {
 				Logger.error(this, "IOException while parsing node to node message data", e);
 				return;
@@ -4105,9 +4105,7 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.normal(this, "Received N2NTM from '"+darkSource.getPeer()+"'");
 			SimpleFieldSet fs = null;
 			try {
-				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true, false);
-			} catch (UnsupportedEncodingException e) {
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+				fs = new SimpleFieldSet(new String(data, StandardCharsets.UTF_8), false, true, false);
 			} catch (IOException e) {
 				Logger.error(this, "IOException while parsing node to node message data", e);
 				return;
@@ -4597,7 +4595,7 @@ public class Node implements TimeSkewDetectorCallback {
 		    if(keys == null) {
 		        // Decrypting.
 		        keys = MasterKeys.read(masterKeysFile, secureRandom, password);
-		        databaseKey = keys.createDatabaseKey(secureRandom);
+		        databaseKey = keys.createDatabaseKey();
 		    } else {
 		        // Setting password when changing to HIGH from another mode.
 		        keys.changePassword(masterKeysFile, password, secureRandom);
@@ -4621,7 +4619,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(wantClientCache)
 			activatePasswordedClientCache(keys);
 		if(wantDatabase)
-			lateSetupDatabase(keys.createDatabaseKey(secureRandom));
+			lateSetupDatabase(keys.createDatabaseKey());
 	}
 
 

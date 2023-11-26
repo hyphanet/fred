@@ -14,6 +14,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -54,7 +56,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	protected int INTERVAL = Calendar.MINUTE;
 	protected int INTERVAL_MULTIPLIER = 5;
 	
-	private static final String ENCODING = "UTF-8";
+	private static final Charset ENCODING = StandardCharsets.UTF_8;
 
         private static volatile boolean logMINOR;
 	static {
@@ -525,15 +527,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		}
 	}
 	
-	private static final byte[] BOM;
-	
-	static {
-		try {
-			BOM = "\uFEFF".getBytes(ENCODING);
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
-	}
+	private static final byte[] BOM = "\uFEFF".getBytes(ENCODING);
 
 	protected int runningCompressors = 0;
 	protected Object runningCompressorsSync = new Object();
@@ -797,9 +791,23 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	public void start() {
 		if(redirectStdOut) {
 			try {
-				System.setOut(new PrintStream(new OutputStreamLogger(LogLevel.NORMAL, "Stdout: ", ENCODING), false, ENCODING));
-				if(redirectStdErr)
-					System.setErr(new PrintStream(new OutputStreamLogger(LogLevel.ERROR, "Stderr: ", ENCODING), false, ENCODING));
+				String encName = ENCODING.name();
+				System.setOut(
+					new PrintStream(
+						new OutputStreamLogger(LogLevel.NORMAL, "Stdout: ", encName),
+						false,
+						encName
+					)
+				);
+				if(redirectStdErr) {
+					System.setErr(
+						new PrintStream(
+							new OutputStreamLogger(LogLevel.ERROR, "Stderr: ", encName),
+							false,
+							encName
+						)
+					);
+				}
 			} catch (UnsupportedEncodingException e) {
 				throw new Error(e);
 			}
@@ -991,7 +999,10 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		try {
 			logString(sb.toString().getBytes(ENCODING));
 		} catch (UnsupportedEncodingException e1) {
-			throw new Error(e1);
+			throw new IllegalStateException(
+				"Failed to convert log message to bytes. Unsupported charset encoding: " + ENCODING.name(),
+				e1
+			);
 		}
 	}
 

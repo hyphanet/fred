@@ -1,6 +1,6 @@
 package freenet.clients.fcp;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
@@ -15,13 +15,10 @@ public class TextFeedMessage extends N2NFeedMessage {
 			String messageText) {
 		super(header, shortText, text, priorityClass, updatedTime, sourceNodeName, composed, sent, received);
 		final Bucket messageTextBucket;
-		try {
-			if(messageText != null)
-				messageTextBucket = new ArrayBucket(messageText.getBytes("UTF-8"));
-			else
-				messageTextBucket = new NullBucket();
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+		if (messageText != null) {
+			messageTextBucket = new ArrayBucket(messageText.getBytes(StandardCharsets.UTF_8));
+		} else {
+			messageTextBucket = new NullBucket();
 		}
 		buckets.put("MessageText", messageTextBucket);
 	}

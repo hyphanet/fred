@@ -14,8 +14,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -790,13 +790,7 @@ public class Yarrow extends RandomSource implements PersistentRandomSource {
 	}
 
 	private void consumeString(String str) {
-		byte[] b;
-		try {
-			b = str.getBytes("UTF-8");
-		} catch(UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
-		consumeBytes(b);
+		consumeBytes(str.getBytes(StandardCharsets.UTF_8));
 	}
 
 	private void consumeBytes(byte[] bytes) {

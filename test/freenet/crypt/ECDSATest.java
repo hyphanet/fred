@@ -2,8 +2,8 @@ package freenet.crypt;
 
 import static org.junit.Assert.*;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 
 import org.junit.Before;
@@ -83,7 +83,7 @@ public class ECDSATest {
         Curves curve = ECDSA.Curves.P256;
         ECDSA ecdsa = new ECDSA(curve);
         String toSign = "test";
-        byte[] signedBytes = toSign.getBytes("utf-8");
+        byte[] signedBytes = toSign.getBytes(StandardCharsets.UTF_8);
         //byte[] sig = ecdsa.sign(signedBytes);
         byte[] sig = ecdsa.signToNetworkFormat(signedBytes);
         System.out.println("Curve in use : " + curve.toString());
@@ -110,10 +110,6 @@ public class ECDSATest {
     
     public static String toHex(byte[] arg) {
         return String.format("%040x", new BigInteger(1,arg));
-    }
-    
-    public static String toHex(String arg) throws UnsupportedEncodingException {
-        return toHex(arg.getBytes("utf-8"));
     }
 
 }

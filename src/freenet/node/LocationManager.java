@@ -15,6 +15,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.text.DateFormat;
@@ -924,7 +925,7 @@ public class LocationManager implements ByteCounter {
 				FileOutputStream os = null;
 				try {
 					os = new FileOutputStream(locationLog, true);
-					BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, "ISO-8859-1"));
+					BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.ISO_8859_1));
 					DateFormat df = DateFormat.getDateTimeInstance();
 					df.setTimeZone(TimeZone.getTimeZone("GMT"));
 					bw.write(""+df.format(new Date())+" : "+getLocation()+(randomReset ? " (random reset"+(fromDupLocation?" from duplicated location" : "")+")" : "")+'\n');

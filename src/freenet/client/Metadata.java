@@ -10,8 +10,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -441,7 +441,7 @@ public class Metadata implements Cloneable, Serializable {
 				byte[] toRead = new byte[len];
 				dis.readFully(toRead);
 				// Use UTF-8 for everything, for simplicity
-				mimeType = new String(toRead, "UTF-8");
+				mimeType = new String(toRead, StandardCharsets.UTF_8);
 				if(logMINOR) Logger.minor(this, "Raw MIME");
 				if(!DefaultMIMETypes.isPlausibleMIMEType(mimeType))
 					throw new MetadataParseException("Does not look like a MIME type: \""+mimeType+"\"");
@@ -688,7 +688,7 @@ public class Metadata implements Cloneable, Serializable {
 				short nameLength = dis.readShort();
 				byte[] buf = new byte[nameLength];
 				dis.readFully(buf);
-				String name = new String(buf, "UTF-8").intern();
+				String name = new String(buf, StandardCharsets.UTF_8).intern();
 				if(logMINOR) Logger.minor(this, "Entry "+i+" name "+name);
 				short len = dis.readShort();
 				if(len < 0)
@@ -708,9 +708,9 @@ public class Metadata implements Cloneable, Serializable {
 			if(logMINOR) Logger.minor(this, "Reading archive internal redirect length "+len);
 			byte[] buf = new byte[len];
 			dis.readFully(buf);
-			targetName = new String(buf, "UTF-8");
+			targetName = new String(buf, StandardCharsets.UTF_8);
 			while(true) {
-				if(targetName.isEmpty()) throw new MetadataParseException("Invalid target name is empty: \""+new String(buf, "UTF-8")+"\"");
+				if(targetName.isEmpty()) throw new MetadataParseException("Invalid target name is empty: \""+new String(buf, StandardCharsets.UTF_8)+"\"");
 				if(targetName.charAt(0) == '/') {
 					targetName = targetName.substring(1);
 					continue;
@@ -720,24 +720,10 @@ public class Metadata implements Cloneable, Serializable {
 		}
 	}
 
-	private static final byte[] SPLITKEY;
-	static {
-		try {
-			SPLITKEY = "SPLITKEY".getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
-	}
-	
-	private static final byte[] CROSS_SEGMENT_SEED;
-	static {
-		try {
-			CROSS_SEGMENT_SEED = "CROSS_SEGMENT_SEED".getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
-	}
-	
+	private static final byte[] SPLITKEY = "SPLITKEY".getBytes(StandardCharsets.UTF_8);
+
+	private static final byte[] CROSS_SEGMENT_SEED = "CROSS_SEGMENT_SEED".getBytes(StandardCharsets.UTF_8);
+
 	public static byte[] getCryptoKey(HashResult[] hashes) {
 		if(hashes == null || hashes.length == 0 || !HashResult.contains(hashes, HashType.SHA256))
 			throw new IllegalArgumentException("No hashes in getCryptoKey - need hashes to generate splitfile key!");
@@ -1527,7 +1513,7 @@ public class Metadata implements Cloneable, Serializable {
 				if(hasCompressedMIMEParams)
 					dos.writeShort(compressedMIMEParams);
 			} else {
-				byte[] data = mimeType.getBytes("UTF-8");
+				byte[] data = mimeType.getBytes(StandardCharsets.UTF_8);
 				if(data.length > 255) throw new Error("MIME type too long: "+data.length+" bytes: "+mimeType);
 				dos.writeByte((byte)data.length);
 				dos.write(data);
@@ -1580,7 +1566,7 @@ public class Metadata implements Cloneable, Serializable {
 			LinkedList<Metadata> unresolvedMetadata = null;
 			for(Map.Entry<String, Metadata> entry: manifestEntries.entrySet()) {
 				String name = entry.getKey();
-				byte[] nameData = name.getBytes("UTF-8");
+				byte[] nameData = name.getBytes(StandardCharsets.UTF_8);
 				if(nameData.length > Short.MAX_VALUE) throw new IllegalArgumentException("Manifest name too long");
 				dos.writeShort(nameData.length);
 				dos.write(nameData);
@@ -1622,7 +1608,7 @@ public class Metadata implements Cloneable, Serializable {
 		}
 
 		if((documentType == DocumentType.ARCHIVE_INTERNAL_REDIRECT) || (documentType == DocumentType.ARCHIVE_METADATA_REDIRECT) || (documentType == DocumentType.SYMBOLIC_SHORTLINK)) {
-			byte[] data = targetName.getBytes("UTF-8");
+			byte[] data = targetName.getBytes(StandardCharsets.UTF_8);
 			if(data.length > Short.MAX_VALUE) throw new IllegalArgumentException("Archive internal redirect name too long");
 			dos.writeShort(data.length);
 			dos.write(data);

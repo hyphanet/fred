@@ -12,13 +12,13 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Locale;
 import java.util.StringJoiner;
 import java.util.TimeZone;
@@ -160,7 +160,7 @@ public class ToadletContextImpl implements ToadletContext {
 	 */
 	private static void sendHTMLError(OutputStream os, int code, String httpReason, String htmlMessage, boolean disconnect, MultiValueTable<String,String> mvt) throws IOException {
 		if(mvt == null) mvt = new MultiValueTable<String,String>();
-		byte[] messageBytes = htmlMessage.getBytes("UTF-8");
+		byte[] messageBytes = htmlMessage.getBytes(StandardCharsets.UTF_8);
 		sendReplyHeaders(os, code, httpReason, mvt, "text/html; charset=UTF-8", messageBytes.length, null, disconnect, false, false);
 		os.write(messageBytes);
 	}
@@ -278,8 +278,8 @@ public class ToadletContextImpl implements ToadletContext {
 	@Override
 	public boolean hasFormPassword(HTTPRequest request) throws IOException {
 		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		byte[] inputBytes = pass.getBytes("UTF-8");
-		byte[] compareBytes = getFormPassword().getBytes("UTF-8");
+		byte[] inputBytes = pass.getBytes(StandardCharsets.UTF_8);
+		byte[] compareBytes = getFormPassword().getBytes(StandardCharsets.UTF_8);
 		if(!MessageDigest.isEqual(inputBytes, compareBytes)) {
 			if (logMINOR)
 				Logger.minor(this, "Bad formPassword: " + pass);
@@ -442,7 +442,7 @@ public class ToadletContextImpl implements ToadletContext {
 			}
 		}
 		buf.append("\r\n");
-		sockOutputStream.write(buf.toString().getBytes("US-ASCII"));
+		sockOutputStream.write(buf.toString().getBytes(StandardCharsets.US_ASCII));
 	}
 	
 	private static String generateCSP(boolean allowScripts, boolean allowFrames) {
@@ -717,8 +717,8 @@ public class ToadletContextImpl implements ToadletContext {
 				PrintWriter pw = new PrintWriter(sw);
 				t.printStackTrace(pw);
 				pw.flush();
-				msg = msg + sw.toString() + "</pre></body></html>";
-				byte[] messageBytes = msg.getBytes("UTF-8");
+				msg = msg + sw + "</pre></body></html>";
+				byte[] messageBytes = msg.getBytes(StandardCharsets.UTF_8);
 				sendReplyHeaders(sock.getOutputStream(), 500, "Internal failure", null, "text/html; charset=UTF-8", messageBytes.length, null, true, false, false);
 				sock.getOutputStream().write(messageBytes);
 			} catch (IOException e1) {

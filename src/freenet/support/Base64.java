@@ -1,6 +1,7 @@
 package freenet.support;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 
 /**
@@ -20,7 +21,7 @@ import java.nio.charset.Charset;
  */
 public class Base64
 {
-  static final Charset UTF8 = Charset.forName("UTF-8");
+  static final Charset UTF8 = StandardCharsets.UTF_8;
 
   private static char[] base64Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~-".toCharArray();
 

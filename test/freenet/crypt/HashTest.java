@@ -7,6 +7,7 @@ import static org.junit.Assert.*;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 import net.i2p.util.NativeBigInteger;
@@ -17,8 +18,8 @@ import org.junit.Test;
 import junit.framework.TestCase;
 
 public class HashTest {
-	static private byte[] helloWorld = "hello world".getBytes(Charset.forName("UTF-8"));
-	static private byte[] nullArray = null;
+	static private final byte[] helloWorld = "hello world".getBytes(StandardCharsets.UTF_8);
+	static private final byte[] nullArray = null;
 	static private final HashType[] types = {HashType.MD5, HashType.ED2K, HashType.SHA1, 
 	    HashType.TTH, HashType.SHA256, HashType.SHA384, HashType.SHA512};
 	static private final String[] trueHashes = {

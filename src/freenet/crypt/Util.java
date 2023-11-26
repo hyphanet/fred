@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.DigestException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -112,14 +113,9 @@ public class Util {
 	 * Hashes a string in a consistent manner
 	 */
 	public static byte[] hashString(MessageDigest d, String s) {
-		try {
-			byte[] sbytes = s.getBytes("UTF-8");
-			d.update(sbytes, 0, sbytes.length);
-			return d.digest();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
+		byte[] sbytes = s.getBytes(StandardCharsets.UTF_8);
+		d.update(sbytes, 0, sbytes.length);
+		return d.digest();
 	}
 
 	public static byte[] xor(byte[] b1, byte[] b2) {
