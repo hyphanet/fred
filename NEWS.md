@@ -5,6 +5,9 @@ next:
 
 1498:
 
+- Support Schema hypha[net]
+- Update Sharesite to 0.5.1
+- Deprecated custom datetime handling class CurrentTimeUTC
 - ⚠ The Windows installer is currently not signed!
 - Shorten description of sharesite freesite for english
 - gzip: replace test workaround by fixing the output of the compressor — thanks to Bombe for the SingleOffsetReplacingOutputStream!
