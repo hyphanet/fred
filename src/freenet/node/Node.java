@@ -283,7 +283,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(get().equals(val)) return;
 			else if(val.length() > 128)
 				throw new InvalidConfigValueException("The given node name is too long ("+val+')');
-			else if("".equals(val))
+			else if(val.isEmpty())
 				val = "~none~";
 			synchronized(this) {
 				myName = val;

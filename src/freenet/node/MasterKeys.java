@@ -275,7 +275,7 @@ public class MasterKeys {
         md.update(salt);
         byte[] outerKey = md.digest();
         long iterations = 0;
-        if(!newPassword.equals("")) {
+        if(!newPassword.isEmpty()) {
             long startTime = System.currentTimeMillis();
             while(System.currentTimeMillis() < startTime + ITERATE_TIME && iterations < MAX_ITERATIONS-20) {
                 for(int i=0;i<10;i++) {
