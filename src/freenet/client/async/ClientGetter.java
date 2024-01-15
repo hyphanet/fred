@@ -529,7 +529,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 				String mime = e.getExpectedMimeType();
 				if(ctx.overrideMIME != null)
 					mime = ctx.overrideMIME;
-				if(mime != null && !"".equals(mime)) {
+				if(mime != null && !mime.isEmpty()) {
 					// Even if it's the default, it is set because we have the final size.
 					UnsafeContentTypeException unsafe = ContentFilter.checkMIMEType(mime);
 					if(unsafe != null) {
@@ -784,7 +784,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 			mime = clientMetadata.getMIMEType();
 		if(ctx.overrideMIME != null)
 			mime = ctx.overrideMIME;
-		if(mime == null || mime.equals("")) return;
+		if(mime == null || mime.isEmpty()) return;
         synchronized(this) {
             expectedMIME = mime;
         }
