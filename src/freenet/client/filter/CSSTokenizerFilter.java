@@ -1804,12 +1804,12 @@ class CSSTokenizerFilter {
 		    String[] attSelectionParts;
 
 		    for(String attSelection : attSelections) {
-		        if(attSelection.indexOf("|=")!=-1) {
+		        if(attSelection.contains("|=")) {
 		            attSelectionParts=new String[2];
 		            attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("|="));
 		            attSelectionParts[1]=attSelection.substring(attSelection.indexOf("|=")+2,
 		                    attSelection.length());
-		        } else if(attSelection.indexOf("~=")!=-1) {
+		        } else if(attSelection.contains("~=")) {
 		            attSelectionParts=new String[2];
 		            attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("~="));
 		            attSelectionParts[1]=attSelection.substring(attSelection.indexOf("~=")+2,
@@ -4624,7 +4624,7 @@ class CSSTokenizerFilter {
 				if(fontSize.checkValidity(word, cb)) continue;
 				if(word instanceof SimpleParsedWord) {
 					String orig = ((SimpleParsedWord)word).original;
-					if(orig.indexOf("/")!=-1)
+					if(orig.contains("/"))
 					{
 						int slashIndex=orig.indexOf("/");
 						String firstPart=orig.substring(0,slashIndex);

@@ -509,7 +509,7 @@ public class WelcomeToadlet extends Toadlet {
 
         if (useragent != null) {
             useragent = useragent.toLowerCase();
-            if ((useragent.indexOf("msie") > -1) && (useragent.indexOf("opera") == -1)) {
+            if ((useragent.contains("msie")) && (!useragent.contains("opera"))) {
             	ctx.getPageMaker().getInfobox("infobox-alert", l10n("ieWarningTitle"), contentNode, "internet-explorer-used", true).
                 	addChild("#", l10n("ieWarning"));
             }

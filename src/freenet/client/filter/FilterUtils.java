@@ -150,14 +150,14 @@ public class FilterUtils {
 	{
 		boolean isValid=true;
 		int index=-1;
-		if(value.indexOf("deg")>-1)
+		if(value.contains("deg"))
 		{
 			index=value.indexOf("deg");
 			String secondpart=value.substring(index,value.length()).trim();
 			if(!("deg".equals(secondpart)))
 				isValid=false;
 		}
-		else if(value.indexOf("grad")>-1)
+		else if(value.contains("grad"))
 		{
 			index=value.indexOf("grad");
 			String secondpart=value.substring(index,value.length()).trim();
@@ -165,7 +165,7 @@ public class FilterUtils {
 			if(!("grad".equals(secondpart)))
 				isValid=false;
 		}
-		else if(value.indexOf("rad")>-1)
+		else if(value.contains("rad"))
 		{
 			index=value.indexOf("rad");
 			String secondpart=value.substring(index,value.length()).trim();
@@ -591,7 +591,7 @@ public class FilterUtils {
 		String firstPart;
 		value=value.trim().toLowerCase();
 		boolean isValidFrequency=true;
-		if(value.indexOf("khz")!=-1)
+		if(value.contains("khz"))
 		{
 			int index=value.indexOf("khz");
 			firstPart=value.substring(0,index).trim();
@@ -601,7 +601,7 @@ public class FilterUtils {
 			}
 
 		}
-		else if(value.indexOf("hz")!=-1)
+		else if(value.contains("hz"))
 		{
 			int index=value.indexOf("hz");
 			firstPart=value.substring(0,index).trim();
@@ -631,7 +631,7 @@ public class FilterUtils {
 	{
 		value=value.toLowerCase();
 		String intValue;
-		if(value.indexOf("ms")>-1 && value.length()>2)
+		if(value.contains("ms") && value.length()>2)
 			intValue=value.substring(0,value.length()-2);
 		else if(value.indexOf('s')>-1 && value.length()>1)
 			intValue=value.substring(0,value.length()-1);
