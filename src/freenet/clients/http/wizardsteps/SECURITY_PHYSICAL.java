@@ -112,78 +112,79 @@ public class SECURITY_PHYSICAL implements Step {
 		SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 		String error = request.getParam("error");
 
-		if (error.equals("pass")) {
-			//Password prompt requested
-			PASSWORD_PROMPT type;
-			try {
-				type = PASSWORD_PROMPT.valueOf(request.getParam("type"));
-			}  catch (IllegalArgumentException e) {
-				//Render the default page if unable to parse password prompt type.
-				return false;
-			}
+        switch (error) {
+            case "pass":
+                //Password prompt requested
+                PASSWORD_PROMPT type;
+                try {
+                    type = PASSWORD_PROMPT.valueOf(request.getParam("type"));
+                } catch (IllegalArgumentException e) {
+                    //Render the default page if unable to parse password prompt type.
+                    return false;
+                }
 
-			final String pageTitleKey;
-			final String infoboxTitleKey;
-			final boolean forDowngrade;
-			final boolean forUpgrade;
-			final boolean wasWrong = type == PASSWORD_PROMPT.DECRYPT_WRONG;
+                final String pageTitleKey;
+                final String infoboxTitleKey;
+                final boolean forDowngrade;
+                final boolean forUpgrade;
+                final boolean wasWrong = type == PASSWORD_PROMPT.DECRYPT_WRONG;
 
-			switch (type) {
-				case SET_BLANK:
-					pageTitleKey = "passwordPageTitle";
-					infoboxTitleKey = "enterPasswordTitle";
-					forDowngrade = false;
-					forUpgrade = true;
-					break;
-				case DECRYPT_WRONG:
-					pageTitleKey ="passwordForDecryptTitle";
-					infoboxTitleKey = "passwordWrongTitle";
-					forDowngrade = false;
-					forUpgrade = false;
-					break;
-				case DECRYPT_BLANK:
-					pageTitleKey = "passwordForDecryptTitle";
-					infoboxTitleKey = "passwordForDecryptTitle";
-					forDowngrade = true;
-					forUpgrade = false;
-					break;
-				case SET_NO_MATCH:
-					pageTitleKey = "passwordPageTitle";
-					infoboxTitleKey = "enterPasswordTitle";
-					forDowngrade = false;
-					forUpgrade = true;
-					break;
-				default:
-					//Unanticipated value for type!
-					return false;
-			}
+                switch (type) {
+                    case SET_BLANK:
+                        pageTitleKey = "passwordPageTitle";
+                        infoboxTitleKey = "enterPasswordTitle";
+                        forDowngrade = false;
+                        forUpgrade = true;
+                        break;
+                    case DECRYPT_WRONG:
+                        pageTitleKey = "passwordForDecryptTitle";
+                        infoboxTitleKey = "passwordWrongTitle";
+                        forDowngrade = false;
+                        forUpgrade = false;
+                        break;
+                    case DECRYPT_BLANK:
+                        pageTitleKey = "passwordForDecryptTitle";
+                        infoboxTitleKey = "passwordForDecryptTitle";
+                        forDowngrade = true;
+                        forUpgrade = false;
+                        break;
+                    case SET_NO_MATCH:
+                        pageTitleKey = "passwordPageTitle";
+                        infoboxTitleKey = "enterPasswordTitle";
+                        forDowngrade = false;
+                        forUpgrade = true;
+                        break;
+                    default:
+                        //Unanticipated value for type!
+                        return false;
+                }
 
-			HTMLNode contentNode = helper.getPageContent(WizardL10n.l10nSec(pageTitleKey));
+                HTMLNode contentNode = helper.getPageContent(WizardL10n.l10nSec(pageTitleKey));
 
-			HTMLNode content = helper.getInfobox("infobox-error", WizardL10n.l10nSec(infoboxTitleKey),
-			        contentNode, null, true);
+                HTMLNode content = helper.getInfobox("infobox-error", WizardL10n.l10nSec(infoboxTitleKey),
+                        contentNode, null, true);
 
-			if (type == PASSWORD_PROMPT.SET_BLANK || type == PASSWORD_PROMPT.DECRYPT_BLANK) {
-				content.addChild("p", WizardL10n.l10nSec("passwordNotZeroLength"));
-			} else if (type == PASSWORD_PROMPT.SET_NO_MATCH) {
-				content.addChild("p", WizardL10n.l10nSec("passwordsDoNotMatch"));
-			}
+                if (type == PASSWORD_PROMPT.SET_BLANK || type == PASSWORD_PROMPT.DECRYPT_BLANK) {
+                    content.addChild("p", WizardL10n.l10nSec("passwordNotZeroLength"));
+                } else if (type == PASSWORD_PROMPT.SET_NO_MATCH) {
+                    content.addChild("p", WizardL10n.l10nSec("passwordsDoNotMatch"));
+                }
 
-			HTMLNode form = helper.addFormChild(content, ".", "masterPasswordForm");
+                HTMLNode form = helper.addFormChild(content, ".", "masterPasswordForm");
 
-			SecurityLevelsToadlet.generatePasswordFormPage(wasWrong, form, content, forDowngrade, forUpgrade,
-			        newThreatLevel.name(), null);
+                SecurityLevelsToadlet.generatePasswordFormPage(wasWrong, form, content, forDowngrade, forUpgrade,
+                        newThreatLevel.name(), null);
 
-			addBackToPhysicalSeclevelsButton(form);
-			return true;
-		} else if (error.equals("corrupt")) {
-			//Password file corrupt
-			SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(helper, core.node.getMasterPasswordFile().getPath());
-			return true;
-		} else if (error.equals("delete")) {
-			SecurityLevelsToadlet.sendCantDeleteMasterKeysFileInner(helper, core.node.getMasterPasswordFile().getPath(), newThreatLevel.name());
-			return true;
-		}
+                addBackToPhysicalSeclevelsButton(form);
+                return true;
+            case "corrupt":
+                //Password file corrupt
+                SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(helper, core.node.getMasterPasswordFile().getPath());
+                return true;
+            case "delete":
+                SecurityLevelsToadlet.sendCantDeleteMasterKeysFileInner(helper, core.node.getMasterPasswordFile().getPath(), newThreatLevel.name());
+                return true;
+        }
 
 		//Error type was not recognized.
 		return false;

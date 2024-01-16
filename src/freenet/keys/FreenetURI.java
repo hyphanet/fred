@@ -940,16 +940,21 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * @throws IOException If an error occurred while writing the key.
 	 */
 	private void writeFullBinaryKey(DataOutputStream dos) throws IOException {
-		if(keyType.equals("CHK"))
-			dos.writeByte(CHK);
-		else if(keyType.equals("SSK"))
-			dos.writeByte(SSK);
-		else if(keyType.equals("KSK"))
-			dos.writeByte(KSK);
-		else if(keyType.equals("USK"))
-			throw new MalformedURLException("Cannot write USKs as binary keys");
-		else
-			throw new MalformedURLException("Cannot write key of type " + keyType + " - do not know how");
+        switch (keyType) {
+            case "CHK":
+                dos.writeByte(CHK);
+                break;
+            case "SSK":
+                dos.writeByte(SSK);
+                break;
+            case "KSK":
+                dos.writeByte(KSK);
+                break;
+            case "USK":
+                throw new MalformedURLException("Cannot write USKs as binary keys");
+            default:
+                throw new MalformedURLException("Cannot write key of type " + keyType + " - do not know how");
+        }
 		if(!keyType.equals("KSK")) {
 			if(routingKey.length != 32)
 				throw new MalformedURLException("Routing key must be of length 32");

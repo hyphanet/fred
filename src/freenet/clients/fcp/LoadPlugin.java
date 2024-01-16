@@ -106,19 +106,24 @@ public class LoadPlugin extends FCPMessage {
 					type = urlType.toLowerCase();
 				}
 				PluginInfoWrapper pi;
-				if (TYPENAME_OFFICIAL.equals(type)) {
-					pi = node.pluginManager.startPluginOfficial(pluginURL, store);
-				} else if (TYPENAME_FILE.equals(type)) {
-					pi = node.pluginManager.startPluginFile(pluginURL, store);
-				} else if (TYPENAME_FREENET.equals(type)) {
-					pi = node.pluginManager.startPluginFreenet(pluginURL, store);
-				} else if (TYPENAME_URL.equals(type)) {
-					pi = node.pluginManager.startPluginURL(pluginURL, store);
-				} else {
-					Logger.error(this, "This should really not happen!", new Exception("FIXME"));
-					handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.INTERNAL_ERROR, false, "This should really not happen! See logs for details.", identifier, false));
-					return;
-				}
+                switch (type) {
+                    case TYPENAME_OFFICIAL:
+                        pi = node.pluginManager.startPluginOfficial(pluginURL, store);
+                        break;
+                    case TYPENAME_FILE:
+                        pi = node.pluginManager.startPluginFile(pluginURL, store);
+                        break;
+                    case TYPENAME_FREENET:
+                        pi = node.pluginManager.startPluginFreenet(pluginURL, store);
+                        break;
+                    case TYPENAME_URL:
+                        pi = node.pluginManager.startPluginURL(pluginURL, store);
+                        break;
+                    default:
+                        Logger.error(this, "This should really not happen!", new Exception("FIXME"));
+                        handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.INTERNAL_ERROR, false, "This should really not happen! See logs for details.", identifier, false));
+                        return;
+                }
 				if (pi == null) {
 					handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ pluginURL + "' does not exist or is not a FCP plugin", identifier, false));
 				} else {
