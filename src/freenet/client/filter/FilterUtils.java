@@ -383,9 +383,9 @@ public class FilterUtils {
 			if(value.length()==4)
 			{
 				try{
-					Integer.valueOf(value.substring(1,2),16).intValue();
-					Integer.valueOf(value.substring(2,3),16).intValue();
-					Integer.valueOf(value.substring(3,4),16).intValue();
+                    Integer.valueOf(value.substring(1, 2), 16);
+                    Integer.valueOf(value.substring(2, 3), 16);
+                    Integer.valueOf(value.substring(3, 4), 16);
 					return true;
 				}
 				catch(Exception e)
@@ -397,9 +397,9 @@ public class FilterUtils {
 			{
 
 				try{
-					Integer.valueOf(value.substring(1,3),16).intValue();
-					Integer.valueOf(value.substring(3,5),16).intValue();
-					Integer.valueOf(value.substring(5,7),16).intValue();
+                    Integer.valueOf(value.substring(1, 3), 16);
+                    Integer.valueOf(value.substring(3, 5), 16);
+                    Integer.valueOf(value.substring(5, 7), 16);
 					return true;
 				}
 				catch(Exception e)

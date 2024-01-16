@@ -597,7 +597,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					break;
 				case BOOLEAN:
 					configItemValueNode.addChild(addBooleanComboBox(
-							Boolean.valueOf(value), fullName,
+							Boolean.parseBoolean(value), fullName,
 							callback.isReadOnly()));
 					break;
 				case DIRECTORY:

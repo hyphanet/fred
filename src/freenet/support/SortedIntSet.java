@@ -221,7 +221,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 
 	@Override
 	public boolean add(Integer arg0) {
-		return push(arg0.intValue());
+		return push(arg0);
 	}
 
 	@Override

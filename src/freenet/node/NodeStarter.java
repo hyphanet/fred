@@ -107,7 +107,7 @@ public class NodeStarter implements WrapperListener {
 		}
 		if(args.length > 1) {
 			System.out.println("Usage: $ java freenet.node.Node <configFile>");
-			return Integer.valueOf(-1);
+			return -1;
 		}
 		String builtWithMessage = "freenet.jar built with freenet-ext.jar Build #" + ExtVersion.buildNumber + " r" + ExtVersion.cvsRevision+" running with ext build "+extBuildNumber+" r" + extRevisionNumber;
 		Logger.normal(this, builtWithMessage);
@@ -131,7 +131,7 @@ public class NodeStarter implements WrapperListener {
 		} catch(IOException e) {
 			System.out.println("Error : " + e);
 			e.printStackTrace();
-			return Integer.valueOf(-1);
+			return -1;
 		}
 
 		// First, set up logging. It is global, and may be shared between several nodes.
@@ -145,7 +145,7 @@ public class NodeStarter implements WrapperListener {
 		} catch(InvalidConfigValueException e) {
 			System.err.println("Error: could not set up logging: " + e.getMessage());
 			e.printStackTrace();
-			return Integer.valueOf(-2);
+			return -2;
 		}
 
 		System.out.println("Starting executor...");
