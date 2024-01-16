@@ -1103,8 +1103,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			throw new Error(e);
 		}
 
-		String f = HexUtil.bytesToHex(SHA256.digest(bos.toByteArray()));
-		return f;
+        return HexUtil.bytesToHex(SHA256.digest(bos.toByteArray()));
 	}
 
 	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config,

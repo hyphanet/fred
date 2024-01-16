@@ -4420,8 +4420,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				countAllocationNotices++;
 				if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+lastSentAllocationInput+" input "+lastSentAllocationOutput+" output.");
 			}
-			Message msg = DMT.createFNPPeerLoadStatus(stats);
-			return msg;
+            return DMT.createFNPPeerLoadStatus(stats);
 		}
 
 		public synchronized boolean grabSendASAP() {

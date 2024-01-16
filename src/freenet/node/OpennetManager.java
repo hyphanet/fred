@@ -116,8 +116,7 @@ public class OpennetManager {
         LONG {
             @Override
             public int getTargetPeers(int target) {
-                int longPeers = (int) (target * LONG_PROPORTION);
-                return longPeers;
+                return (int) (target * LONG_PROPORTION);
             }
         };
         /** Get the target number of peers for this class, given the overall target number of peers */

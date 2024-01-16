@@ -130,8 +130,7 @@ public class ArrayBucket implements Bucket, Serializable, RandomAccessBucket {
     @Override
     public LockableRandomAccessBuffer toRandomAccessBuffer() {
         readOnly = true;
-        LockableRandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(data, 0, data.length, true);
-        return raf;
+        return new ByteArrayRandomAccessBuffer(data, 0, data.length, true);
     }
 
     @Override

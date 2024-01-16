@@ -286,8 +286,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			return null;
 		}
 		short prio = parent.getPriorityClass();
-		KeyListener ret = new SingleKeyListener(newKey, this, prio, persistent);
-		return ret;
+        return new SingleKeyListener(newKey, this, prio, persistent);
 	}
 
 	protected abstract void notFoundInStore(ClientContext context);

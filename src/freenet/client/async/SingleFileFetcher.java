@@ -389,8 +389,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					if(!persistent) {
 						metadata = metadata.getDefaultDocument();
 					} else {
-						Metadata newMeta = metadata.grabDefaultDocument();
-						metadata = newMeta;
+                        metadata = metadata.grabDefaultDocument();
 					}
 					if(metadata == null)
 						throw new FetchException(FetchExceptionMode.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, uri.addMetaStrings(new String[] { "" }));

@@ -104,8 +104,7 @@ public class N2NTMToadlet extends Toadlet {
 		long memory = NodeStarter.getMemoryLimitBytes();
 		if(memory == Long.MAX_VALUE || memory <= 0) return 1024*1024;
 		long maxMem = Math.round(0.05*memory);
-		long limit = Math.max(maxMem, 1024*1024);
-		return limit;
+        return Math.max(maxMem, 1024*1024);
 	}
 
 	private static HTMLNode createPeerInfobox(String infoboxType,

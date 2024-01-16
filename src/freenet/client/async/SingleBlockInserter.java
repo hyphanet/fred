@@ -743,20 +743,17 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	
 	@Override
 	public boolean canWriteClientCache() {
-		boolean retval = ctx.canWriteClientCache;
-		return retval;
+        return ctx.canWriteClientCache;
 	}
 	
 	@Override
 	public boolean localRequestOnly() {
-		boolean retval = ctx.localRequestOnly;
-		return retval;
+        return ctx.localRequestOnly;
 	}
 	
 	@Override
 	public boolean forkOnCacheable() {
-		boolean retval = ctx.forkOnCacheable;
-		return retval;
+        return ctx.forkOnCacheable;
 	}
 	
 	@Override

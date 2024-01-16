@@ -97,8 +97,7 @@ public class ClientSSKBlock implements ClientKeyBlock {
         		return BucketTools.makeImmutableBucket(factory, dataOutput, 2, dataLength - 2);
         }
 
-        Bucket b = Key.decompress(compressionAlgorithm >= 0, dataOutput, dataLength, factory, Math.min(MAX_DECOMPRESSED_DATA_LENGTH, maxLength), compressionAlgorithm, true);
-        return b;
+        return Key.decompress(compressionAlgorithm >= 0, dataOutput, dataLength, factory, Math.min(MAX_DECOMPRESSED_DATA_LENGTH, maxLength), compressionAlgorithm, true);
 	}
 
 	@Override

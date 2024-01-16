@@ -446,8 +446,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 	public RandomGrabArrayItem get(int idx) {
 	    synchronized(root) {
 	        int blockNo = idx / BLOCK_SIZE;
-	        RandomGrabArrayItem item = blocks[blockNo].reqs[idx % BLOCK_SIZE];
-	        return item;
+            return blocks[blockNo].reqs[idx % BLOCK_SIZE];
 	    }
 	}
 	

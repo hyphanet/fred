@@ -1439,8 +1439,7 @@ public class DMT {
 	}};
 	
 	public static Message createFNPVoid() {
-		Message msg = new Message(FNPVoid);
-		return msg;
+        return new Message(FNPVoid);
 	}
 	
 	public static final MessageType FNPDisconnect = new MessageType("FNPDisconnect", PRIORITY_HIGH) {{
