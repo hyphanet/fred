@@ -20,6 +20,8 @@ import freenet.support.MutableBoolean;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class PeerMessageQueue {
+	// TODO: check whether we can use a standard PriorityBlockingQueue (since Java 8)
+	//  instead of our own DoublyLinkedList implementation.
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
