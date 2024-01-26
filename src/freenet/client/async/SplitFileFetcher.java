@@ -21,6 +21,7 @@ import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.node.BaseSendableGet;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -298,7 +299,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
     @Override
     public void queueHeal(byte[] data, byte[] cryptoKey, byte cryptoAlgorithm) {
         try {
-            RandomAccessBucket dataBucket = BucketTools.makeImmutableBucket(
+            Bucket dataBucket = BucketTools.makeImmutableBucket(
                 context.tempBucketFactory,
                 data);
             context.healingQueue.queue(dataBucket, cryptoKey, cryptoAlgorithm, context);
