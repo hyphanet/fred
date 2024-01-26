@@ -103,7 +103,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		// ensure that we have a routing key
 		sbi.tryEncode(context);
 		double keyLocation = sbi.getKeyNoEncode().getNodeKey().toNormalizedDouble();
-		double randomBetweenZeroAndOne = NodeStarter.getGlobalSecureRandom().nextDouble() / Double.MAX_VALUE;
+		double randomBetweenZeroAndOne = NodeStarter.getGlobalSecureRandom().nextDouble();
 		return shouldHealBlock(nodeLocation, keyLocation, randomBetweenZeroAndOne);
 	}
 
