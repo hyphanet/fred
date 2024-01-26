@@ -128,7 +128,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		} else {
 			// if the key is a long distance key for us, heal it with 10% probability: it is unlikely that
 			// this would have reached us. Setting this to 0 could amplify a keyspace takeover attack.
-			return 0.9 < randomBetweenZeroAndOne;
+			return randomBetweenZeroAndOne > 0.9;
 		}
 	}
 
