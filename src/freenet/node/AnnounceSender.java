@@ -184,10 +184,8 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
 				MessageFilter mfOpennetDisabled = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPOpennetDisabled);
 
-				// mfRejectedOverload must be the last thing in the or
-				// So its or pointer remains null
-				// Otherwise we need to recreate it below
-				MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload.or(mfOpennetDisabled)));
+				// the order of these filters is performance critical. The last or-filter is checked first.
+				MessageFilter mf = mfRejectedOverload.or(mfRejectedLoop.or(mfOpennetDisabled.or(mfAccepted)));
 
 				try {
 					msg = node.usm.waitFor(mf, this);
