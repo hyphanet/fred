@@ -65,6 +65,9 @@ public final class MessageFilter {
     }
 
     public static MessageFilter create() {
+			  // TODO: move to a builder so we can get rid of the synchronized(_fields) in match,
+			  //  the most expensive method in all of fred.
+			  // TODO: move source and type into create to get rid of the null-checks in match.
         return new MessageFilter();
     }
 
@@ -178,6 +181,8 @@ public final class MessageFilter {
 	 * Modifies the filter so that it returns true if either it or the filter in the argument returns true.
 	 * Multiple combinations must be nested: such as filter1.or(filter2.or(filter3))).
 	 * filter2 will be checked before filter1, so make sure to add the most common last.
+	 * TODO: change the ordering in match: A.or(B) should first check A, like in A || B.
+	 * TODO: ensure for all usages of or(...) that the most likely package is checked first.
 	 * @return reference to this, the modified filter.
 	 */
 	public MessageFilter or(MessageFilter or) {
@@ -213,8 +218,9 @@ public final class MessageFilter {
 	public MATCHED match(Message m, boolean noTimeout, long now) {
 		if(_or != null) {
 			MATCHED matched = _or.match(m, noTimeout, now);
-			if(matched != MATCHED.NONE)
+			if(matched != MATCHED.NONE) {
 				return matched; // Filter is matched once only. That includes timeouts.
+			}
 		}
 
 		final MATCHED resultNoMatch = _timeout < now ? MATCHED.TIMED_OUT : MATCHED.NONE;
@@ -242,6 +248,10 @@ public final class MessageFilter {
 			if(logMINOR) Logger.minor(this, "Matched but timed out: "+this);
 			return MATCHED.TIMED_OUT_AND_MATCHED;
 		}
+		// debugging output to optimize ordering of or-combined MessageFilters
+		// if (_or != null) {
+		// 	Logger.error(this, "Filter or-match failed: or: " + _or._type.getName() + " this: " + this._type.getName());
+		// }
 		return MATCHED.MATCHED;
 	}
 
