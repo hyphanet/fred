@@ -1727,7 +1727,7 @@ class CSSTokenizerFilter {
 			StringBuilder buf=new StringBuilder(elementString);
 			buf.delete(elementString.indexOf('['), elementString.indexOf(']')+1);
 			elementString=buf.toString();
-			if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "attSelection="+attSelection+"	elementString="+elementString);
+			if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "attSelection="+attSelection+"  elementString="+elementString);
 			if(attSelections == null) attSelections = new ArrayList<String>();
 			attSelections.add(attSelection);
 		}
