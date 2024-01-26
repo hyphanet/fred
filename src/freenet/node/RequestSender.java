@@ -939,10 +939,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedLoop);
 		MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedOverload);
 		
-		// mfRejectedOverload must be the last thing in the or
-		// So its or pointer remains null
-		// Otherwise we need to recreate it below
-		return mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
+		// the order of these filters is performance critical. The last or-filter is checked first.
+		return mfRejectedOverload.or(mfRejectedLoop.or(mfAccepted));
 	}
 
 	private MessageFilter createMessageFilter(int timeout, PeerNode next) {
@@ -951,17 +949,15 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRouteNotFound);
 		MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRejectedOverload);
 		
-		MessageFilter mf = mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload)));
 		if(!isSSK) {
 			MessageFilter mfRealDFCHK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPCHKDataFound);
-			mf = mfRealDFCHK.or(mf);
+			return mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload.or(mfRealDFCHK))));
 		} else {
 			MessageFilter mfPubKey = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPSSKPubKey);
 			MessageFilter mfDFSSKHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPSSKDataFoundHeaders);
 			MessageFilter mfDFSSKData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPSSKDataFoundData);
-			mf = mfPubKey.or(mfDFSSKHeaders.or(mfDFSSKData.or(mf)));
+			return mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload.or(mfPubKey.or(mfDFSSKHeaders.or(mfDFSSKData))))));
 		}
-		return mf;
 	}
 
 	private DO handleMessage(Message msg, boolean wasFork, PeerNode source, MainLoopCallback waiter) {

@@ -177,6 +177,7 @@ public final class MessageFilter {
 	/**
 	 * Modifies the filter so that it returns true if either it or the filter in the argument returns true.
 	 * Multiple combinations must be nested: such as filter1.or(filter2.or(filter3))).
+	 * filter2 will be checked before filter1, so make sure to add the most common last.
 	 * @return reference to this, the modified filter.
 	 */
 	public MessageFilter or(MessageFilter or) {
