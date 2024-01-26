@@ -16,6 +16,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientLayerPersister;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DatastoreChecker;
+import freenet.client.async.HealingDecisionSupplier;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.PersistentStatsPutter;
 import freenet.client.async.SimpleHealingQueue;
@@ -495,7 +496,7 @@ public class NodeClientCore implements Persistable {
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false,
 						Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0,
 						InsertContext.CompatibilityMode.COMPAT_DEFAULT),
-				RequestStarter.PREFETCH_PRIORITY_CLASS, MAX_RUNNING_HEALING_INSERTS, node.getLocation(), node.isOpennetEnabled());
+				RequestStarter.PREFETCH_PRIORITY_CLASS, MAX_RUNNING_HEALING_INSERTS, new HealingDecisionSupplier(node));
 
 		PooledFileRandomAccessBufferFactory raff =
 				new PooledFileRandomAccessBufferFactory(persistentFilenameGenerator,
