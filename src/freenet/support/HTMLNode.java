@@ -319,8 +319,8 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	/**
 	 * Add a tag with several attributes inside/under this node.
 	 * @param nodeName The tag name e.g. "div".
-	 * @param attributeName The name of the attribute, e.g. "class"
-	 * @param attributeValue The value of the attribute.
+	 * @param attributeNames The name of the attribute, e.g. "class"
+	 * @param attributeValues The value of the attribute.
 	 * @return The added node. You can add more tags inside it with addChild(), or add attributes
 	 * with addAttribute() etc. If you render the parent tag with generate(), it will include this 
 	 * tag in its output. 
@@ -418,7 +418,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 			}
 		} else {
 			if (newlineOpen(name)) {
-				tagBuffer.append('\n');
+				tagBuffer.append(System.lineSeparator());
 				tagBuffer.append(indentString(indentDepth+1));
 			}
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
@@ -428,12 +428,12 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 		}
 		/* add a closing tag */
 		if (newlineOpen(name)) {
-			tagBuffer.append('\n');
+			tagBuffer.append(System.lineSeparator());
 			tagBuffer.append(indentString(indentDepth));
 		}
 		tagBuffer.append(CloseTag(name));
 		if (newlineClose(name)) {
-			tagBuffer.append('\n');
+			tagBuffer.append(System.lineSeparator());
 			tagBuffer.append(indentString(indentDepth));
 		}
 		return tagBuffer;

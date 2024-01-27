@@ -87,6 +87,10 @@ public class M3UFilter implements ContentDataFilter {
                 readcount = dis.read(nextbyte);
                 continue;
             }
+            if (isCarriageReturn(nextbyte)) {
+                readcount = dis.read(nextbyte);
+                continue;
+            }
             // read one line as a fileUri
             fileIndex = 0;
             fileUri = new byte[MAX_URI_LENGTH];
@@ -164,7 +168,7 @@ public class M3UFilter implements ContentDataFilter {
                             }
                             // write the newline if we're not at EOF
                             if (readcount != -1){
-                                dos.write(nextbyte);
+                                dos.write(System.lineSeparator().getBytes(StandardCharsets.UTF_8));
                             }
                         }
                     }
