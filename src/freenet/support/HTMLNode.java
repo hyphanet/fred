@@ -418,7 +418,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 			}
 		} else {
 			if (newlineOpen(name)) {
-				tagBuffer.append('\n');
+				tagBuffer.append(System.lineSeparator());
 				tagBuffer.append(indentString(indentDepth+1));
 			}
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
@@ -428,12 +428,12 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 		}
 		/* add a closing tag */
 		if (newlineOpen(name)) {
-			tagBuffer.append('\n');
+			tagBuffer.append(System.lineSeparator());
 			tagBuffer.append(indentString(indentDepth));
 		}
 		tagBuffer.append(CloseTag(name));
 		if (newlineClose(name)) {
-			tagBuffer.append('\n');
+			tagBuffer.append(System.lineSeparator());
 			tagBuffer.append(indentString(indentDepth));
 		}
 		return tagBuffer;
