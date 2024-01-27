@@ -15,7 +15,7 @@ public class PebbleUtilsTest {
 	@Test
 	public void addChildAddsCorrectlyEvaluatedSimpleTemplateToHtmlNode() throws IOException {
 		PebbleUtils.addChild(emptyParentNode, "pebble-utils-test-simple", model, null);
-		assertThat(emptyParentNode.generate(), equalTo("Test!\n"));
+		assertThat(emptyParentNode.generate(), equalTo("Test!" + System.lineSeparator()));
 	}
 
 	@Test
