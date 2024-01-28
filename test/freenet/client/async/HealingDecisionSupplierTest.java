@@ -10,6 +10,20 @@ import org.junit.Test;
 public class HealingDecisionSupplierTest {
 
   @Test
+  public void healingAlwaysTriggersForDarknet() {
+    for (double i : Arrays.asList(1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.00000001)) {
+      HealingDecisionSupplier healingDecisionSupplier = new HealingDecisionSupplier(
+          () -> 0.1,
+          () -> false,
+          () -> i);
+      assertThat(
+          String.format("Healing triggers at random value %g", i),
+          healingDecisionSupplier.shouldHeal(0.5),
+          Matchers.equalTo(true));
+    }
+  }
+
+  @Test
   public void healingAlwaysAcceptsAKeyAtTheNodeLocation() {
     for (double i : Arrays.asList(1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.00000001)) {
       HealingDecisionSupplier healingDecisionSupplier = new HealingDecisionSupplier(
