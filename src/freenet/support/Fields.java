@@ -78,10 +78,10 @@ public abstract class Fields {
 	private static final long[] MULTIPLES = {
 		1000, 1L << 10,
 		1000 * 1000, 1L << 20,
-            1000L * 1000L * 1000L, 1L << 30,
-            1000L * 1000L * 1000L * 1000L, 1L << 40,
-            1000L * 1000L * 1000L * 1000L * 1000, 1L << 50,
-            1000L * 1000L * 1000L * 1000L * 1000L * 1000L, 1L << 60
+		1000L * 1000L * 1000L, 1L << 30,
+		1000L * 1000L * 1000L * 1000L, 1L << 40,
+		1000L * 1000L * 1000L * 1000L * 1000, 1L << 50,
+		1000L * 1000L * 1000L * 1000L * 1000L * 1000L, 1L << 60
 	};
 	private static final String[] MULTIPLES_2 = {
 		"k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E"
