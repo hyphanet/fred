@@ -23,7 +23,6 @@ import freenet.node.BaseSendableGet;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.LockableRandomAccessBuffer;
-import freenet.support.api.RandomAccessBucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
