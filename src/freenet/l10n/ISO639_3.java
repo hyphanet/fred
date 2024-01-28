@@ -66,16 +66,16 @@ public final class ISO639_3 {
 			Special;
 			
 			private static Scope fromTabFile(String abbreviation) {
-                switch (abbreviation) {
-                    case "I":
-                        return Scope.Individual;
-                    case "M":
-                        return Scope.Macrolanguage;
-                    case "S":
-                        return Scope.Special;
-                    default:
-                        throw new IllegalArgumentException("Unknown scope abbreviation: " + abbreviation);
-                }
+				switch (abbreviation) {
+					case "I":
+						return Scope.Individual;
+					case "M":
+						return Scope.Macrolanguage;
+					case "S":
+						return Scope.Special;
+					default:
+						throw new IllegalArgumentException("Unknown scope abbreviation: " + abbreviation);
+				}
 			}
 		};
 		
@@ -93,22 +93,22 @@ public final class ISO639_3 {
 			Special;
 			
 			private static Type fromTabFile(String abbreviation) {
-                switch (abbreviation) {
-                    case "A":
-                        return Type.Ancient;
-                    case "C":
-                        return Type.Constructed;
-                    case "E":
-                        return Type.Extinct;
-                    case "H":
-                        return Type.Historical;
-                    case "L":
-                        return Type.Living;
-                    case "S":
-                        return Type.Special;
-                    default:
-                        throw new IllegalArgumentException("Unknwon type abbreviation: " + abbreviation);
-                }
+				switch (abbreviation) {
+					case "A":
+						return Type.Ancient;
+					case "C":
+						return Type.Constructed;
+					case "E":
+						return Type.Extinct;
+					case "H":
+						return Type.Historical;
+					case "L":
+						return Type.Living;
+					case "S":
+						return Type.Special;
+					default:
+						throw new IllegalArgumentException("Unknwon type abbreviation: " + abbreviation);
+				}
 			}
 		}
 		
