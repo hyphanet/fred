@@ -302,7 +302,7 @@ public class Announcer {
 
 	public int getAnnouncementThreshold() {
 		// First, do we actually need to announce?
-        return Math.min(MIN_OPENNET_CONNECTED_PEERS, om.getNumberOfConnectedPeersToAimIncludingDarknet() / 2);
+		return Math.min(MIN_OPENNET_CONNECTED_PEERS, om.getNumberOfConnectedPeersToAimIncludingDarknet() / 2);
 	}
 
 	private SimpleUserAlert announcementDisabledAlert = 
