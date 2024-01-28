@@ -496,7 +496,8 @@ public class NodeClientCore implements Persistable {
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false,
 						Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0,
 						InsertContext.CompatibilityMode.COMPAT_DEFAULT),
-				RequestStarter.PREFETCH_PRIORITY_CLASS, MAX_RUNNING_HEALING_INSERTS, new HealingDecisionSupplier(node));
+				RequestStarter.PREFETCH_PRIORITY_CLASS, MAX_RUNNING_HEALING_INSERTS,
+				new HealingDecisionSupplier(node::getLocation, node::isOpennetEnabled));
 
 		PooledFileRandomAccessBufferFactory raff =
 				new PooledFileRandomAccessBufferFactory(persistentFilenameGenerator,
