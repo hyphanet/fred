@@ -87,7 +87,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
 	 */
 	public static int convertToBytes(String address) {
 		StringTokenizer addressTokens = new StringTokenizer(address, ".");
-        return Integer.parseInt(addressTokens.nextToken()) << 24 | Integer.parseInt(addressTokens.nextToken()) << 16 | Integer.parseInt(addressTokens.nextToken()) << 8 | Integer.parseInt(addressTokens.nextToken());
+		return Integer.parseInt(addressTokens.nextToken()) << 24 | Integer.parseInt(addressTokens.nextToken()) << 16 | Integer.parseInt(addressTokens.nextToken()) << 8 | Integer.parseInt(addressTokens.nextToken());
 	}
 
 	/**
