@@ -3,7 +3,6 @@ package freenet.client.async;
 import java.util.function.Supplier;
 
 import freenet.node.Location;
-import freenet.node.Node;
 import freenet.node.NodeStarter;
 
     /**
