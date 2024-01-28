@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import java.util.function.Supplier;
+
 import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
@@ -17,19 +19,31 @@ import freenet.node.NodeStarter;
      * correct node from which loop detection will stop the insert long before HTL reaches zero.
      */
 public class HealingDecisionSupplier {
-  private final Node node;
+  private final Supplier<Double> currentNodeLocation;
+  private final Supplier<Boolean> isOpennetEnabled;
+  private final Supplier<Double> randomNumberSupplier;
 
-  public HealingDecisionSupplier(Node node) {
-    this.node = node;
+  public HealingDecisionSupplier(Supplier<Double> currentNodeLocation, Supplier<Boolean> isOpennetEnabled) {
+
+    this.currentNodeLocation = currentNodeLocation;
+    this.isOpennetEnabled = isOpennetEnabled;
+    randomNumberSupplier = NodeStarter.getGlobalSecureRandom()::nextDouble;
+  }
+
+  HealingDecisionSupplier(Supplier<Double> currentNodeLocation, Supplier<Boolean> isOpennetEnabled, Supplier<Double> randomNumberSupplier) {
+
+    this.currentNodeLocation = currentNodeLocation;
+    this.isOpennetEnabled = isOpennetEnabled;
+    this.randomNumberSupplier = randomNumberSupplier;
   }
 
   public boolean shouldHeal(double keyLocation) {
-    if (!node.isOpennetEnabled()) {
+    if (!isOpennetEnabled.get()) {
       // darknet is safer against sybil attack, so we can heal fully
       return true;
     }
-    double randomBetweenZeroAndOne = NodeStarter.getGlobalSecureRandom().nextDouble();
-    return shouldHealBlock(node.getLocation(), keyLocation, randomBetweenZeroAndOne);
+    double randomBetweenZeroAndOne = randomNumberSupplier.get();
+    return shouldHealBlock(currentNodeLocation.get(), keyLocation, randomBetweenZeroAndOne);
   }
 
   /**
@@ -50,7 +64,7 @@ public class HealingDecisionSupplier {
    * 5 long distance peers of a peer node. These are the keys for which we are most likely to be
    * the best next hop when seen from the originator.
    */
-  static boolean shouldHealBlock(
+  private static boolean shouldHealBlock(
       double nodeLocation,
       double keyLocation,
       double randomBetweenZeroAndOne) {
