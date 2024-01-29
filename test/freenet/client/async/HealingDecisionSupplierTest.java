@@ -48,6 +48,15 @@ public class HealingDecisionSupplierTest {
           healingDecisionSupplier.shouldHeal(0.11),
           Matchers.equalTo(true));
     }
+    for (double i : Arrays.asList(0.3, 0.2, 0.1, 0.00000001)) {
+      HealingDecisionSupplier healingDecisionSupplier = new HealingDecisionSupplier(
+          () -> 0.1,
+          () -> true,
+          () -> i);
+      assertThat(String.format("Healing does not trigger at random value %g", i),
+          healingDecisionSupplier.shouldHeal(0.11),
+          Matchers.equalTo(false));
+    }
   }
 
   @Test
@@ -60,6 +69,15 @@ public class HealingDecisionSupplierTest {
       assertThat(String.format("Healing triggers at random value %g", i),
           healingDecisionSupplier.shouldHeal(0.1999),
           Matchers.equalTo(true));
+    }
+    for (double i : Arrays.asList(0.5, 0.4, 0.3, 0.2, 0.1, 0.00000001)) {
+      HealingDecisionSupplier healingDecisionSupplier = new HealingDecisionSupplier(
+          () -> 0.1,
+          () -> true,
+          () -> i);
+      assertThat(String.format("Healing does not trigger random value %g", i),
+          healingDecisionSupplier.shouldHeal(0.1999),
+          Matchers.equalTo(false));
     }
   }
 
