@@ -110,6 +110,57 @@ public class HealingDecisionSupplierTest {
   }
 
   @Test
+  public void healingAccepts50PercentOfKeysAtTheLimitOfLongDistanceAroundZero() {
+    for (double i : Arrays.asList(1.0, 0.9, 0.8, 0.7, 0.6)) {
+      HealingDecisionSupplier healingDecisionSupplier = new HealingDecisionSupplier(
+          () -> 0.0001,
+          () -> true,
+          () -> i);
+      assertThat(String.format("Healing triggers at random value %g", i),
+          healingDecisionSupplier.shouldHeal(0.1),
+          Matchers.equalTo(true));
+      assertThat(String.format("Healing triggers at random value %g", i),
+          healingDecisionSupplier.shouldHeal(0.9002),
+          Matchers.equalTo(true));
+    }    for (double i : Arrays.asList(1.0, 0.9, 0.8, 0.7, 0.6)) {
+      HealingDecisionSupplier healingDecisionSupplier = new HealingDecisionSupplier(
+          () -> 0.9999,
+          () -> true,
+          () -> i);
+      assertThat(String.format("Healing triggers at random value %g", i),
+          healingDecisionSupplier.shouldHeal(0.0998),
+          Matchers.equalTo(true));
+      assertThat(String.format("Healing triggers at random value %g", i),
+          healingDecisionSupplier.shouldHeal(0.9000),
+          Matchers.equalTo(true));
+    }
+    for (double i : Arrays.asList(0.5, 0.4, 0.3, 0.2, 0.1, 0.00000001)) {
+      HealingDecisionSupplier healingDecisionSupplier = new HealingDecisionSupplier(
+          () -> 0.0001,
+          () -> true,
+          () -> i);
+      assertThat(String.format("Healing does not trigger random value %g", i),
+          healingDecisionSupplier.shouldHeal(0.1),
+          Matchers.equalTo(false));
+      assertThat(String.format("Healing does not trigger random value %g", i),
+          healingDecisionSupplier.shouldHeal(0.9002),
+          Matchers.equalTo(false));
+    }
+    for (double i : Arrays.asList(0.5, 0.4, 0.3, 0.2, 0.1, 0.00000001)) {
+      HealingDecisionSupplier healingDecisionSupplier = new HealingDecisionSupplier(
+          () -> 0.9999,
+          () -> true,
+          () -> i);
+      assertThat(String.format("Healing does not trigger random value %g", i),
+          healingDecisionSupplier.shouldHeal(0.0998),
+          Matchers.equalTo(false));
+      assertThat(String.format("Healing does not trigger random value %g", i),
+          healingDecisionSupplier.shouldHeal(0.9000),
+          Matchers.equalTo(false));
+    }
+  }
+
+  @Test
   public void healingAccepts10PercentOfKeysAtLongDistance() {
     for (double i : Arrays.asList(1.0, 0.91)) {
       HealingDecisionSupplier healingDecisionSupplier = new HealingDecisionSupplier(
