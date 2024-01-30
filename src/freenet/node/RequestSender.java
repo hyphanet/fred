@@ -939,7 +939,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedLoop);
 		MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedOverload);
 		
-		// the order of these filters is performance critical. The last or-filter is checked first.
+		// The order of these filters is performance critical. The last or-filter is checked first.
+		// So the last filter in the or-"chain" must be the filter which matches most frequently.
 		return mfRejectedOverload.or(mfRejectedLoop.or(mfAccepted));
 	}
 
