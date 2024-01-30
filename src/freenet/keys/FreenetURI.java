@@ -1003,7 +1003,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		}
 		if(metaStr != null)
 			for(String s : metaStr) {
-				if(s == null || s.equals("")) {
+				if(s == null || s.isEmpty()) {
 					if(logMINOR)
 						Logger.minor(this, "metaString \"" + s + "\": was null or empty");
 					continue;

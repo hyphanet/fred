@@ -310,7 +310,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		boolean filterChecked = !(((threatLevel == PHYSICAL_THREAT_LEVEL.LOW &&
 		        netLevel == NETWORK_THREAT_LEVEL.LOW)) || disableFiltration);
 		if((filterChecked) && mimeType != null && !mimeType.equals("application/octet-stream") &&
-			!mimeType.equals("")) {
+                !mimeType.isEmpty()) {
 			FilterMIMEType type = ContentFilter.getMIMEType(mimeType);
 			if((type == null || (!(type.safeToRead || type.readFilter != null))) &&
 				        !(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH ||
@@ -333,7 +333,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			optionForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "persistence", "forever" });
-			if (mimeType != null && !mimeType.equals("")) {
+			if (mimeType != null && !mimeType.isEmpty()) {
 				optionForm.addChild("input",
 				        new String[] { "type", "name", "value" },
 				        new String[] { "hidden", "type", mimeType });
@@ -392,7 +392,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			optionForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "persistence", "forever" });
-			if (mimeType != null && !mimeType.equals("")) {
+			if (mimeType != null && !mimeType.isEmpty()) {
 				optionForm.addChild("input",
 				        new String[] { "type", "name", "value" },
 				        new String[] { "hidden", "type", mimeType });
@@ -655,7 +655,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		String override = (requestedMimeType == null) ? "" : "?type="+URLEncoder.encode(requestedMimeType,true);
 		String maybeCharset = httprequest.isParameterSet("maybecharset") ? httprequest.getParam("maybecharset", null) : null;
 		fctx.charset = maybeCharset;
-		if(override.equals("") && maybeCharset != null)
+		if(override.isEmpty() && maybeCharset != null)
 			override = "?maybecharset="+URLEncoder.encode(maybeCharset, true);
 		// No point passing ?force= across a redirect, since the key will change.
 		// However, there is every point in passing ?forcedownload.
@@ -1074,7 +1074,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				URI refererURI = new URI(URIPreEncoder.encode(referer));
 				String path = refererURI.getPath();
 				while(path.startsWith("/")) path = path.substring(1);
-				if("".equals(path)) return "/";
+				if(path.isEmpty()) return "/";
 				FreenetURI furi = new FreenetURI(path);
 				HTTPRequest req = new HTTPRequestImpl(refererURI, "GET");
 				String type = req.getParam("type");
