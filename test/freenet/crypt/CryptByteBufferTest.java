@@ -165,7 +165,7 @@ public class CryptByteBufferTest {
             byte[] buffer = Hex.decode(plainText[i]);
             byte[] plaintextCopy = buffer.clone();
             crypt.encrypt(buffer, 0, buffer.length);
-            assertNotEquals(buffer, plaintextCopy);
+            assertThat((Object) buffer, Matchers.not(equalTo(plaintextCopy)));
             crypt.decrypt(buffer, 0, buffer.length);
             assertThat("CryptByteBufferType: "+type.name(),
                     plaintextCopy, equalTo(buffer));
@@ -256,9 +256,9 @@ public class CryptByteBufferTest {
                     // Once we have initialised the cipher, it is treated as a stream.
                     // Repeated encryption of the same data will return different ciphertext, 
                     // as it is treated as a later point in the stream.
-                    assertNotEquals(ciphertext1, ciphertext2);
-                    assertNotEquals(ciphertext1, ciphertext3);
-                    assertNotEquals(ciphertext2, ciphertext3);
+                    assertThat((Object) ciphertext1, Matchers.not(equalTo(ciphertext2)));
+                    assertThat((Object) ciphertext1, Matchers.not(equalTo(ciphertext3)));
+                    assertThat((Object) ciphertext2, Matchers.not(equalTo(ciphertext3)));
                 }
                 
                 ByteBuffer decipheredtext1 = crypt.decryptCopy(ciphertext1);
@@ -268,10 +268,6 @@ public class CryptByteBufferTest {
                 assertThat("CryptByteBufferType: "+type.name(), plain, equalTo(decipheredtext2));
                 assertThat("CryptByteBufferType: "+type.name(), plain, equalTo(decipheredtext3));
             }
-    }
-    
-    private void assertNotEquals(Object o1, Object o2) {
-        assertThat(o1, Matchers.not(equalTo(o2)));
     }
 
     @Test
@@ -335,9 +331,9 @@ public class CryptByteBufferTest {
             assertThat(buf, equalTo(cloneBuf)); // Plaintext not modified.
             plaintext.position(header);
             ciphertext.position(header);
-            assertNotEquals(ciphertextBuf, copyCiphertextBuf);
+            assertThat((Object) ciphertextBuf, Matchers.not(equalTo(copyCiphertextBuf)));
             Arrays.fill(buf, (byte)0);
-            assertNotEquals(buf, cloneBuf);
+            assertThat((Object) buf, Matchers.not(equalTo(cloneBuf)));
             crypt.decrypt(ciphertext, plaintext);
             assertThat(buf, equalTo(cloneBuf));
         }
