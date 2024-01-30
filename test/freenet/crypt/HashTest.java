@@ -10,8 +10,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
-import net.i2p.util.NativeBigInteger;
-
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 
@@ -131,16 +129,6 @@ public class HashTest {
 			String hexHash = hash.genHexHash();
 			assertEquals("HashType: "+types[i].name(), trueHashes[i], hexHash);
 		}
-	}
-
-	@Test
-	public void testGetNativeBigIntegerHashByteArrayArray(){
-		for(int i = 0; i < types.length; i++){
-			Hash hash = new Hash(types[i]);
-			NativeBigInteger abcVector = new NativeBigInteger(1, Hex.decode(trueHashes[i]));
-			NativeBigInteger result = hash.genNativeBigIntegerHash(helloWorld);
-			assertEquals("HashType: "+types[i].name(), abcVector, result);
-		}	
 	}
 
 	@Test
