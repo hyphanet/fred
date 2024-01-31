@@ -1620,7 +1620,7 @@ public class Node implements TimeSkewDetectorCallback {
 			public void set(Integer minimumCompressionPercentage) {
 				synchronized(Node.this) {
 					if (minimumCompressionPercentage < 0 || minimumCompressionPercentage > 100) {
-						Logger.normal(Node.class, "Wrong minimum compression percentage" + minimumCompressionPercentage);
+						Logger.normal(Node.class, "Wrong minimum compression percentage: must be between 0 and 100, but is " + minimumCompressionPercentage);
 						return;
 					}
 
