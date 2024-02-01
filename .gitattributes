@@ -1,0 +1,6 @@
+#Set default line endings to be in accodance with project specs.
+* text=lf
+*.java text
+*.m3u text
+*.gitattributes text=lf
+
