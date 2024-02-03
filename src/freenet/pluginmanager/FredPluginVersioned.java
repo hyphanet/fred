@@ -9,5 +9,5 @@ package freenet.pluginmanager;
  *
  */
 public interface FredPluginVersioned {
-	public String getVersion();
+    public String getVersion();
 }
