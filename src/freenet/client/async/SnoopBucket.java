@@ -7,7 +7,7 @@ import freenet.support.api.Bucket;
 
 public interface SnoopBucket {
 
-	/** Spy on the bucket as a file is being fetched. Return true to cancel the request. */
-	public boolean snoopBucket(Bucket data, boolean isMetadata, ClientContext context);
-	
+    /** Spy on the bucket as a file is being fetched. Return true to cancel the request. */
+    public boolean snoopBucket(Bucket data, boolean isMetadata, ClientContext context);
+    
 }

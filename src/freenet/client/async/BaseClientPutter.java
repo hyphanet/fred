@@ -15,19 +15,19 @@ public abstract class BaseClientPutter extends ClientRequester {
 
     private static final long serialVersionUID = 1L;
 
-	/** Required because {@link Serializable} is implemented by the parent class. */
-	protected BaseClientPutter() {
-	}
+    /** Required because {@link Serializable} is implemented by the parent class. */
+    protected BaseClientPutter() {
+    }
 
-	protected BaseClientPutter(short priorityClass, RequestClient requestClient) {
-		super(priorityClass, requestClient);
-	}
+    protected BaseClientPutter(short priorityClass, RequestClient requestClient) {
+        super(priorityClass, requestClient);
+    }
 
-	public void dump() {
-		// Do nothing
-	}
+    public void dump() {
+        // Do nothing
+    }
 
-	public abstract void onTransition(ClientPutState from, ClientPutState to, ClientContext context);
+    public abstract void onTransition(ClientPutState from, ClientPutState to, ClientContext context);
 
-	public abstract int getMinSuccessFetchBlocks();
+    public abstract int getMinSuccessFetchBlocks();
 }
