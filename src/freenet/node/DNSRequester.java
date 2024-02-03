@@ -36,14 +36,14 @@ public class DNSRequester implements Runnable {
     }
 
     void start() {
-    	Logger.normal(this, "Starting DNSRequester");
-    	System.out.println("Starting DNSRequester");
-    	node.executor.execute(this, "DNSRequester thread for "+node.getDarknetPortNumber());
+        Logger.normal(this, "Starting DNSRequester");
+        System.out.println("Starting DNSRequester");
+        node.executor.execute(this, "DNSRequester thread for "+node.getDarknetPortNumber());
     }
 
     @Override
     public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
+        freenet.support.Logger.OSThread.logPID(this);
         while(true) {
             try {
                 realRun();
@@ -57,8 +57,8 @@ public class DNSRequester implements Runnable {
         PeerNode[] nodes = node.peers.myPeers();
         long now = System.currentTimeMillis();
         if((now - lastLogTime) > 1000) {
-        	if(logMINOR)
-        		Logger.minor(this, "Processing DNS Requests (log rate-limited)");
+            if(logMINOR)
+                Logger.minor(this, "Processing DNS Requests (log rate-limited)");
             lastLogTime = now;
         }
         for(PeerNode pn: nodes) {
@@ -66,7 +66,7 @@ public class DNSRequester implements Runnable {
             if(!pn.isConnected()) {
                 // Not connected
                 // Try new DNS lookup
-            	//Logger.minor(this, "Doing lookup on "+pn+" of "+nodes.length);
+                //Logger.minor(this, "Doing lookup on "+pn+" of "+nodes.length);
                 pn.maybeUpdateHandshakeIPs(false);
             }
         }
@@ -79,9 +79,9 @@ public class DNSRequester implements Runnable {
         }
     }
 
-	public void forceRun() {
-		synchronized(this) {
-			notifyAll();
-		}
-	}
+    public void forceRun() {
+        synchronized(this) {
+            notifyAll();
+        }
+    }
 }

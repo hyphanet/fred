@@ -8,13 +8,13 @@ package freenet.node;
  * hashCode() methods. Should be globally unique, i.e. should not equal the keys for other 
  * requests, so don't just use e.g. an integer on its own. */
 public interface SendableRequestItemKey {
-	
-	/** You must implement this! */
-	@Override
-	public boolean equals(Object o);
-	
-	@Override
-	/** You must implement this! */
-	public int hashCode();
+    
+    /** You must implement this! */
+    @Override
+    public boolean equals(Object o);
+    
+    @Override
+    /** You must implement this! */
+    public int hashCode();
 
 }

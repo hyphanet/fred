@@ -10,5 +10,5 @@ package freenet.node;
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 public interface TimeSkewDetectorCallback {
-	public void setTimeSkewDetectedUserAlert();
+    public void setTimeSkewDetectedUserAlert();
 }
