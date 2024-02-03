@@ -15,22 +15,22 @@ import java.net.URISyntaxException;
  * @author xor <xor@freenetproject.org>
  */
 public class RedirectException extends Exception {
-	private static final long serialVersionUID = -1;
-	final URI newuri;
+    private static final long serialVersionUID = -1;
+    final URI newuri;
 
-	public RedirectException(String newURI) throws URISyntaxException {
-		this.newuri = new URI(newURI);
-	}
-	
-	public RedirectException(URI newURI) {
-		this.newuri = newURI;
-	}
-	
-	/**
-	 * @return The URI to which this Exception shall redirect.
-	 */
-	public URI getTarget() {
-	    return newuri;
-	}
+    public RedirectException(String newURI) throws URISyntaxException {
+        this.newuri = new URI(newURI);
+    }
+    
+    public RedirectException(URI newURI) {
+        this.newuri = newURI;
+    }
+    
+    /**
+     * @return The URI to which this Exception shall redirect.
+     */
+    public URI getTarget() {
+        return newuri;
+    }
 
 }
