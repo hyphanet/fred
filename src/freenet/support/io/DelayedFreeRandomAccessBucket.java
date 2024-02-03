@@ -25,40 +25,40 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
 
     private static final long serialVersionUID = 1L;
     // Only set on construction and on onResume() on startup. So shouldn't need locking.
-	private transient PersistentFileTracker factory;
-	private final RandomAccessBucket bucket;
-	private boolean freed;
-	private transient long createdCommitID;
+    private transient PersistentFileTracker factory;
+    private final RandomAccessBucket bucket;
+    private boolean freed;
+    private transient long createdCommitID;
 
         private static volatile boolean logMINOR;
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
-	
-	@Override
-	public boolean toFree() {
-		return freed;
-	}
-	
-	public DelayedFreeRandomAccessBucket(PersistentFileTracker factory, RandomAccessBucket bucket) {
-		this.factory = factory;
-		this.bucket = bucket;
-		this.createdCommitID = factory.commitID();
-		if(bucket == null) throw new NullPointerException();
-	}
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+            @Override
+            public void shouldUpdate(){
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
+    
+    @Override
+    public boolean toFree() {
+        return freed;
+    }
+    
+    public DelayedFreeRandomAccessBucket(PersistentFileTracker factory, RandomAccessBucket bucket) {
+        this.factory = factory;
+        this.bucket = bucket;
+        this.createdCommitID = factory.commitID();
+        if(bucket == null) throw new NullPointerException();
+    }
 
     @Override
-	public OutputStream getOutputStream() throws IOException {
+    public OutputStream getOutputStream() throws IOException {
         synchronized(this) {
             if(freed) throw new IOException("Already freed");
         }
-		return bucket.getOutputStream();
-	}
+        return bucket.getOutputStream();
+    }
 
     @Override
     public OutputStream getOutputStreamUnbuffered() throws IOException {
@@ -68,13 +68,13 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
         return bucket.getOutputStreamUnbuffered();
     }
 
-	@Override
-	public InputStream getInputStream() throws IOException {
-	    synchronized(this) {
-	        if(freed) throw new IOException("Already freed");
-	    }
-		return bucket.getInputStream();
-	}
+    @Override
+    public InputStream getInputStream() throws IOException {
+        synchronized(this) {
+            if(freed) throw new IOException("Already freed");
+        }
+        return bucket.getInputStream();
+    }
 
     @Override
     public InputStream getInputStreamUnbuffered() throws IOException {
@@ -84,56 +84,56 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
         return bucket.getInputStreamUnbuffered();
     }
 
-	@Override
-	public String getName() {
-		return bucket.getName();
-	}
+    @Override
+    public String getName() {
+        return bucket.getName();
+    }
 
-	@Override
-	public long size() {
-		return bucket.size();
-	}
+    @Override
+    public long size() {
+        return bucket.size();
+    }
 
-	@Override
-	public boolean isReadOnly() {
-		return bucket.isReadOnly();
-	}
+    @Override
+    public boolean isReadOnly() {
+        return bucket.isReadOnly();
+    }
 
-	@Override
-	public void setReadOnly() {
-		bucket.setReadOnly();
-	}
+    @Override
+    public void setReadOnly() {
+        bucket.setReadOnly();
+    }
 
     public synchronized Bucket getUnderlying() {
-		if(freed) return null;
-		return bucket;
-	}
-	
-	@Override
-	public void free() {
-	    synchronized(this) {
-	        if(freed) return;
-	        freed = true;
-	    }
-	    if(logMINOR)
-	        Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
-	    this.factory.delayedFree(this, createdCommitID);
-	}
+        if(freed) return null;
+        return bucket;
+    }
+    
+    @Override
+    public void free() {
+        synchronized(this) {
+            if(freed) return;
+            freed = true;
+        }
+        if(logMINOR)
+            Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
+        this.factory.delayedFree(this, createdCommitID);
+    }
 
-	@Override
-	public String toString() {
-		return super.toString()+":"+bucket;
-	}
-	
-	@Override
-	public RandomAccessBucket createShadow() {
-		return bucket.createShadow();
-	}
+    @Override
+    public String toString() {
+        return super.toString()+":"+bucket;
+    }
+    
+    @Override
+    public RandomAccessBucket createShadow() {
+        return bucket.createShadow();
+    }
 
-	@Override
+    @Override
     public void realFree() {
-		bucket.free();
-	}
+        bucket.free();
+    }
 
     @Override
     public void onResume(ClientContext context) throws ResumeFailedException {

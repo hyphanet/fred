@@ -73,28 +73,28 @@ public interface Bucket {
      * Bucket (haven't called getOutputStream()) for some kinds of Bucket's, as they may have
      * allocated space (e.g. created a temporary file).
      */
-	public void free();
-	
-	/**
-	 * Create a shallow read-only copy of this bucket, using different 
-	 * objects but using the same external storage. If this is not possible, 
-	 * return null. Note that if the underlying bucket is deleted, the copy
-	 * will become invalid and probably throw an IOException on read, or 
-	 * possibly return too-short data etc. In some use cases e.g. on fproxy, 
-	 * this is acceptable.
-	 */
-	public Bucket createShadow();
+    public void free();
+    
+    /**
+     * Create a shallow read-only copy of this bucket, using different 
+     * objects but using the same external storage. If this is not possible, 
+     * return null. Note that if the underlying bucket is deleted, the copy
+     * will become invalid and probably throw an IOException on read, or 
+     * possibly return too-short data etc. In some use cases e.g. on fproxy, 
+     * this is acceptable.
+     */
+    public Bucket createShadow();
 
-	/** Called after restarting. The Bucket should do any necessary housekeeping after resuming,
-	 * e.g. registering itself with the appropriate persistent bucket tracker to avoid being 
-	 * garbage-collected.  May be called twice, so the Bucket may need to track this internally.
-	 * @param context All the necessary runtime support will be on this object. 
-	 * @throws ResumeFailedException */
-	public void onResume(ClientContext context) throws ResumeFailedException;
+    /** Called after restarting. The Bucket should do any necessary housekeeping after resuming,
+     * e.g. registering itself with the appropriate persistent bucket tracker to avoid being 
+     * garbage-collected.  May be called twice, so the Bucket may need to track this internally.
+     * @param context All the necessary runtime support will be on this object. 
+     * @throws ResumeFailedException */
+    public void onResume(ClientContext context) throws ResumeFailedException;
 
-	/** Write enough data to reconstruct the Bucket, or throw UnsupportedOperationException. Used
-	 * for recovering in emergencies, should be versioned if necessary. 
-	 * @throws IOException */
+    /** Write enough data to reconstruct the Bucket, or throw UnsupportedOperationException. Used
+     * for recovering in emergencies, should be versioned if necessary. 
+     * @throws IOException */
     public void storeTo(DataOutputStream dos) throws IOException;
 
 }

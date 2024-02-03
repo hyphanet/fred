@@ -5,8 +5,8 @@ package freenet.support;
 
 public class LogThresholdCallback {
 
-	public LogThresholdCallback() {
-	}
+    public LogThresholdCallback() {
+    }
 
-	public void shouldUpdate(){}; 
+    public void shouldUpdate(){}; 
 }

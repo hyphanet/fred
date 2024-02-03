@@ -16,19 +16,19 @@ public class FileRandomAccessBuffer implements LockableRandomAccessBuffer, Seria
 
     private static final long serialVersionUID = 1L;
     transient RandomAccessFile raf;
-	final File file;
-	private boolean closed = false;
-	private final long length;
-	private final boolean readOnly;
-	private boolean secureDelete;
-	
-	public FileRandomAccessBuffer(RandomAccessFile raf, File filename, boolean readOnly) throws IOException {
-		this.raf = raf;
-		this.file = filename;
-		length = raf.length();
+    final File file;
+    private boolean closed = false;
+    private final long length;
+    private final boolean readOnly;
+    private boolean secureDelete;
+    
+    public FileRandomAccessBuffer(RandomAccessFile raf, File filename, boolean readOnly) throws IOException {
+        this.raf = raf;
+        this.file = filename;
+        length = raf.length();
         this.readOnly = readOnly;
-	}
-	
+    }
+    
     public FileRandomAccessBuffer(File filename, long length, boolean readOnly) throws IOException {
         raf = new RandomAccessFile(filename, readOnly ? "r" : "rw");
         raf.setLength(length);
@@ -45,49 +45,49 @@ public class FileRandomAccessBuffer implements LockableRandomAccessBuffer, Seria
     }
 
     @Override
-	public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
-			throws IOException {
-	    if(fileOffset < 0) throw new IllegalArgumentException();
+    public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
+            throws IOException {
+        if(fileOffset < 0) throw new IllegalArgumentException();
         if(fileOffset + length > this.length)
             throw new IOException("Length limit exceeded reading "+length+" bytes from "+fileOffset+" of "+this.length);
         // FIXME Use NIO (which has proper pread, with concurrency)! This is absurd!
-		synchronized(this) {
-			raf.seek(fileOffset);
-			raf.readFully(buf, bufOffset, length);
-		}
-	}
+        synchronized(this) {
+            raf.seek(fileOffset);
+            raf.readFully(buf, bufOffset, length);
+        }
+    }
 
-	@Override
-	public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
-			throws IOException {
+    @Override
+    public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
+            throws IOException {
         if(fileOffset < 0) throw new IllegalArgumentException();
-	    if(fileOffset + length > this.length)
+        if(fileOffset + length > this.length)
             throw new IOException("Length limit exceeded writing "+length+" bytes from "+fileOffset+" of "+this.length);
-	    if(readOnly) throw new IOException("Read only");
+        if(readOnly) throw new IOException("Read only");
         // FIXME Use NIO (which has proper pwrite, with concurrency)! This is absurd!
-		synchronized(this) {
-			raf.seek(fileOffset);
-			raf.write(buf, bufOffset, length);
-		}
-	}
+        synchronized(this) {
+            raf.seek(fileOffset);
+            raf.write(buf, bufOffset, length);
+        }
+    }
 
-	@Override
-	public long size() {
-	    return length;
-	}
+    @Override
+    public long size() {
+        return length;
+    }
 
-	@Override
-	public void close() {
-		synchronized(this) {
-			if(closed) return;
-			closed = true;
-		}
-		try {
-			raf.close();
-		} catch (IOException e) {
-			Logger.error(this, "Could not close "+raf+" : "+e+" for "+this, e);
-		}
-	}
+    @Override
+    public void close() {
+        synchronized(this) {
+            if(closed) return;
+            closed = true;
+        }
+        try {
+            raf.close();
+        } catch (IOException e) {
+            Logger.error(this, "Could not close "+raf+" : "+e+" for "+this, e);
+        }
+    }
 
     @Override
     public RAFLock lockOpen() {
