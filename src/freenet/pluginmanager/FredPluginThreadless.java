@@ -9,5 +9,5 @@ package freenet.pluginmanager;
  * will either do all its work in callback methods, or will allocate its
  * own threads or schedule jobs on the ticker etc. */
 public interface FredPluginThreadless {
-	
+    
 }

@@ -13,21 +13,21 @@ import freenet.support.io.ResumeFailedException;
  */
 public interface ClientPutState {
 
-	/** Get the BaseClientPutter responsible for this request state. */
-	public abstract BaseClientPutter getParent();
+    /** Get the BaseClientPutter responsible for this request state. */
+    public abstract BaseClientPutter getParent();
 
-	/** Cancel the request. */
-	public abstract void cancel(ClientContext context);
+    /** Cancel the request. */
+    public abstract void cancel(ClientContext context);
 
-	/** Schedule the request. */
-	public abstract void schedule(ClientContext context) throws InsertException;
-	
-	/**
-	 * Get the token, an object which is passed around with the insert and may be
-	 * used by callers.
-	 */
-	public Object getToken();
-	
+    /** Schedule the request. */
+    public abstract void schedule(ClientContext context) throws InsertException;
+    
+    /**
+     * Get the token, an object which is passed around with the insert and may be
+     * used by callers.
+     */
+    public Object getToken();
+    
     /** Called on restarting the node for a persistent request. The request must re-schedule 
      * itself. Caller must ensure that it is safe to call this method more than once, as we recurse
      * through the graph of dependencies.

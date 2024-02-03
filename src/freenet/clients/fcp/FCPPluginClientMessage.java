@@ -58,28 +58,28 @@ import freenet.support.SimpleFieldSet;
  * 
  */
 public class FCPPluginClientMessage extends DataCarryingMessage {
-	
+    
     /**
      * On-network format name of the message.
      * 
      * ATTENTION: This one is different to the class name. For an explanation, see the class-level
      * JavaDoc {@link FCPPluginClientMessage}.
      */
-	public static final String NAME = "FCPPluginMessage";
-	
-	public static final String PARAM_PREFIX = "Param";
+    public static final String NAME = "FCPPluginMessage";
+    
+    public static final String PARAM_PREFIX = "Param";
 
     /** @see FCPPluginMessage#identifier */
-	private final String identifier;
+    private final String identifier;
 
     /** @see PluginManager#getPluginFCPServer(String) */
-	private final String pluginname;
+    private final String pluginname;
 
     /** @see FCPPluginMessage#data */
-	private final long dataLength;
+    private final long dataLength;
 
     /** @see FCPPluginMessage#params */
-	private final SimpleFieldSet plugparams;
+    private final SimpleFieldSet plugparams;
 
     /** @see FCPPluginMessage#success */
     private final Boolean success;
@@ -91,33 +91,33 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
     private final String errorMessage;
 
     FCPPluginClientMessage(SimpleFieldSet fs) throws MessageInvalidException {
-		identifier = fs.get("Identifier");
-		if(identifier == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, NAME + " must contain a Identifier field", null, false);
-		pluginname = fs.get("PluginName");
-		if(pluginname == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, NAME + " must contain a PluginName field", identifier, false);
-		
-		boolean havedata = "Data".equals(fs.getEndMarker());
-		
-		String dataLengthString = fs.get("DataLength");
-		
-		if(!havedata && (dataLengthString != null))
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "A nondata message can't have a DataLength field", identifier, false);
+        identifier = fs.get("Identifier");
+        if(identifier == null)
+            throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, NAME + " must contain a Identifier field", null, false);
+        pluginname = fs.get("PluginName");
+        if(pluginname == null)
+            throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, NAME + " must contain a PluginName field", identifier, false);
+        
+        boolean havedata = "Data".equals(fs.getEndMarker());
+        
+        String dataLengthString = fs.get("DataLength");
+        
+        if(!havedata && (dataLengthString != null))
+            throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "A nondata message can't have a DataLength field", identifier, false);
 
-		if(havedata) {
-			if (dataLengthString == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a Datamessage", identifier, false);
-		
-			try {
-				dataLength = Long.parseLong(dataLengthString, 10);
-			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier, false);
-			}
-		} else {
-			dataLength = -1;
-		}
-		
+        if(havedata) {
+            if (dataLengthString == null)
+                throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a Datamessage", identifier, false);
+        
+            try {
+                dataLength = Long.parseLong(dataLengthString, 10);
+            } catch (NumberFormatException e) {
+                throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier, false);
+            }
+        } else {
+            dataLength = -1;
+        }
+        
         SimpleFieldSet maybePlugparams = fs.subset(PARAM_PREFIX);
         // subset() will return null if the subset is empty. To make server code more robust, we
         // hand out an empty mock SimpleFieldSet in that case.
@@ -140,40 +140,40 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
         } else {
             errorCode = errorMessage = null;
         }
-	}
+    }
 
-	@Override
-	String getIdentifier() {
-		return identifier;
-	}
+    @Override
+    String getIdentifier() {
+        return identifier;
+    }
 
-	@Override
-	boolean isGlobal() {
-		return false;
-	}
+    @Override
+    boolean isGlobal() {
+        return false;
+    }
 
-	@Override
-	long dataLength() {
-		return dataLength;
-	}
+    @Override
+    long dataLength() {
+        return dataLength;
+    }
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		return null;
-	}
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        return null;
+    }
 
-	@Override
-	public String getName() {
-		return NAME;
-	}
+    @Override
+    public String getName() {
+        return NAME;
+    }
 
     protected FCPPluginMessage constructFCPPluginMessage() {
         return FCPPluginMessage.constructRawMessage(null, identifier, plugparams, this.bucket,
             success, errorCode, errorMessage);
     }
 
-	@Override
-	public void run(final FCPConnectionHandler handler, final Node node) throws MessageInvalidException {
+    @Override
+    public void run(final FCPConnectionHandler handler, final Node node) throws MessageInvalidException {
         // There are 2 code paths for deploying plugin messages:
         // 1. The new interface FCPPluginConnection. This is only available if the plugin implements
         //    the new interface FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
@@ -215,15 +215,15 @@ public class FCPPluginClientMessage extends DataCarryingMessage {
         
         // Now follows the legacy code
         
-		PluginTalker pt;
-		try {
-			pt = new PluginTalker(node, handler, pluginname, identifier, handler.hasFullAccess());
-		} catch (PluginNotFoundException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_PLUGIN, pluginname + " not found or is not a FCPPlugin", identifier, false);
-		}
-		
-		pt.send(plugparams, this.bucket);
+        PluginTalker pt;
+        try {
+            pt = new PluginTalker(node, handler, pluginname, identifier, handler.hasFullAccess());
+        } catch (PluginNotFoundException e) {
+            throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_PLUGIN, pluginname + " not found or is not a FCPPlugin", identifier, false);
+        }
+        
+        pt.send(plugparams, this.bucket);
 
-	}
+    }
 
 }

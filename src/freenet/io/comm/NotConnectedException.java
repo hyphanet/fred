@@ -12,7 +12,7 @@ import freenet.support.LightweightException;
  * not currently connected.
  */
 public class NotConnectedException extends LightweightException {
-	private static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -1;
     public NotConnectedException(String string) {
         super(string);
     }
@@ -21,8 +21,8 @@ public class NotConnectedException extends LightweightException {
         super();
     }
 
-	public NotConnectedException(DisconnectedException e) {
-		super(e.toString());
-		initCause(e);
-	}
+    public NotConnectedException(DisconnectedException e) {
+        super(e.toString());
+        initCause(e);
+    }
 }

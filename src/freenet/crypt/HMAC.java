@@ -60,4 +60,4 @@ public enum HMAC {
   public static boolean verifyWithSHA256(byte[] K, byte[] text, byte[] mac) {
     return verify(HMAC.SHA2_256, K, text, mac);
   }
-}	
+}   

@@ -9,42 +9,42 @@ import java.util.ArrayList;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public final class MedianMeanRunningAverage implements RunningAverage, Cloneable {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	final ArrayList<Double> reports;
-	final TrivialRunningAverage mean;
+    final ArrayList<Double> reports;
+    final TrivialRunningAverage mean;
 
         /**
          *
          */
         public MedianMeanRunningAverage() {
-		reports = new ArrayList<Double>();
-		mean = new TrivialRunningAverage();
-	}
+        reports = new ArrayList<Double>();
+        mean = new TrivialRunningAverage();
+    }
 
         /**
          *
          * @param average
          */
         public MedianMeanRunningAverage(MedianMeanRunningAverage average) {
-		this.mean = new TrivialRunningAverage(average.mean);
-		this.reports = new ArrayList<Double>();
-		reports.addAll(average.reports);
-	}
+        this.mean = new TrivialRunningAverage(average.mean);
+        this.reports = new ArrayList<Double>();
+        reports.addAll(average.reports);
+    }
 
-	@Override
-	public MedianMeanRunningAverage clone() {
-		// Override clone() for synchronization.
-		// Implement Cloneable to shut up findbugs.
-		synchronized (this) {
-			return new MedianMeanRunningAverage(this);
-		}
-	}
+    @Override
+    public MedianMeanRunningAverage clone() {
+        // Override clone() for synchronization.
+        // Implement Cloneable to shut up findbugs.
+        synchronized (this) {
+            return new MedianMeanRunningAverage(this);
+        }
+    }
 
-	@Override
-	public synchronized long countReports() {
-		return reports.size();
-	}
+    @Override
+    public synchronized long countReports() {
+        return reports.size();
+    }
 
         /**
          *
@@ -52,11 +52,11 @@ public final class MedianMeanRunningAverage implements RunningAverage, Cloneable
          */
         @Override
         public synchronized double currentValue() {
-		int size = reports.size();
-		int middle = size / 2;
-		java.util.Collections.sort(reports);
-		return reports.get(middle);
-	}
+        int size = reports.size();
+        int middle = size / 2;
+        java.util.Collections.sort(reports);
+        return reports.get(middle);
+    }
 
         /**
          *
@@ -64,9 +64,9 @@ public final class MedianMeanRunningAverage implements RunningAverage, Cloneable
          */
         @Override
         public synchronized void report(double d) {
-		mean.report(d);
-		reports.add(d);
-	}
+        mean.report(d);
+        reports.add(d);
+    }
 
         /**
          *
@@ -74,25 +74,25 @@ public final class MedianMeanRunningAverage implements RunningAverage, Cloneable
          */
         @Override
         public void report(long d) {
-		report((double)d);
-	}
+        report((double)d);
+    }
 
-	@Override
-	public double valueIfReported(double r) {
-		throw new UnsupportedOperationException();
-	}
-	
-	@Override
-	public synchronized String toString() {
-		return "Median "+currentValue()+" mean "+mean.currentValue();
-	}
-	
+    @Override
+    public double valueIfReported(double r) {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public synchronized String toString() {
+        return "Median "+currentValue()+" mean "+mean.currentValue();
+    }
+    
         /**
          *
          * @return
          */
         public synchronized double meanValue() {
-		return mean.currentValue();
-	}
+        return mean.currentValue();
+    }
 
 }

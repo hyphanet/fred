@@ -28,92 +28,92 @@ import freenet.io.AddressIdentifier.AddressType;
  * @version $Id$
  */
 public class Inet6AddressMatcher implements AddressMatcher {
-	public AddressType getAddressType() {
-		return AddressType.IPv6;
-	}
+    public AddressType getAddressType() {
+        return AddressType.IPv6;
+    }
 
-	private static final byte[] FULL_MASK = new byte[16];
-	static {
-		Arrays.fill(FULL_MASK, (byte) 0xff);
-	}
-	
-	private byte[] address;
-	private byte[] netmask;
+    private static final byte[] FULL_MASK = new byte[16];
+    static {
+        Arrays.fill(FULL_MASK, (byte) 0xff);
+    }
+    
+    private byte[] address;
+    private byte[] netmask;
 
-	public Inet6AddressMatcher(String pattern) {
-		if (pattern.indexOf('/') != -1) {
-			address = convertToBytes(pattern.substring(0, pattern.indexOf('/')));
-			String netmaskString = pattern.substring(pattern.indexOf('/') + 1).trim();
-			if (netmaskString.indexOf(':') != -1) {
-				netmask = convertToBytes(netmaskString);
-			} else {
-				netmask = new byte[16];
-				int bits = Integer.parseInt(netmaskString);
-				if (bits > 128 || bits < 0)
-					throw new IllegalArgumentException("Mask bits out of range: " + bits + " (" + netmaskString + ")");
-				for (int index = 0; index < 16; index++) {
-					netmask[index] = (byte) (255 << (8 - Math.min(bits, 8)));
-					bits = Math.max(bits - 8, 0);
-				}
-			}
-			if(Arrays.equals(netmask, FULL_MASK)) netmask = FULL_MASK;
-		} else {
-			address = convertToBytes(pattern);
-			netmask = FULL_MASK;
-		}
-		if (address.length != 16) {
-			throw new IllegalArgumentException("address is not IPv6");
-		}
-	}
+    public Inet6AddressMatcher(String pattern) {
+        if (pattern.indexOf('/') != -1) {
+            address = convertToBytes(pattern.substring(0, pattern.indexOf('/')));
+            String netmaskString = pattern.substring(pattern.indexOf('/') + 1).trim();
+            if (netmaskString.indexOf(':') != -1) {
+                netmask = convertToBytes(netmaskString);
+            } else {
+                netmask = new byte[16];
+                int bits = Integer.parseInt(netmaskString);
+                if (bits > 128 || bits < 0)
+                    throw new IllegalArgumentException("Mask bits out of range: " + bits + " (" + netmaskString + ")");
+                for (int index = 0; index < 16; index++) {
+                    netmask[index] = (byte) (255 << (8 - Math.min(bits, 8)));
+                    bits = Math.max(bits - 8, 0);
+                }
+            }
+            if(Arrays.equals(netmask, FULL_MASK)) netmask = FULL_MASK;
+        } else {
+            address = convertToBytes(pattern);
+            netmask = FULL_MASK;
+        }
+        if (address.length != 16) {
+            throw new IllegalArgumentException("address is not IPv6");
+        }
+    }
 
-	private byte[] convertToBytes(String address) {
-		StringTokenizer addressTokens = new StringTokenizer(address, ":");
-		if (addressTokens.countTokens() != 8) {
-			throw new IllegalArgumentException(address + " is not an IPv6 address.");
-		}
-		byte[] addressBytes = new byte[16];
-		int count = 0;
-		while (addressTokens.hasMoreTokens()) {
-			int addressWord = Integer.parseInt(addressTokens.nextToken(), 16);
-			addressBytes[count * 2] = (byte) ((addressWord >> 8) & 0xff);
-			addressBytes[count * 2 + 1] = (byte) (addressWord & 0xff);
-			count++;
-		}
-		return addressBytes;
-	}
+    private byte[] convertToBytes(String address) {
+        StringTokenizer addressTokens = new StringTokenizer(address, ":");
+        if (addressTokens.countTokens() != 8) {
+            throw new IllegalArgumentException(address + " is not an IPv6 address.");
+        }
+        byte[] addressBytes = new byte[16];
+        int count = 0;
+        while (addressTokens.hasMoreTokens()) {
+            int addressWord = Integer.parseInt(addressTokens.nextToken(), 16);
+            addressBytes[count * 2] = (byte) ((addressWord >> 8) & 0xff);
+            addressBytes[count * 2 + 1] = (byte) (addressWord & 0xff);
+            count++;
+        }
+        return addressBytes;
+    }
 
-	@Override
-	public boolean matches(InetAddress address) {
-		if (!(address instanceof Inet6Address)) return false;
-		byte[] addressBytes = address.getAddress();
-		for (int index = 0; index < 16; index++) {
-			if ((addressBytes[index] & netmask[index]) != (this.address[index] & netmask[index])) {
-				return false;
-			}
-		}
-		return true;
-	}
+    @Override
+    public boolean matches(InetAddress address) {
+        if (!(address instanceof Inet6Address)) return false;
+        byte[] addressBytes = address.getAddress();
+        for (int index = 0; index < 16; index++) {
+            if ((addressBytes[index] & netmask[index]) != (this.address[index] & netmask[index])) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-	public static boolean matches(String pattern, InetAddress address) {
-		return new Inet6AddressMatcher(pattern).matches(address);
-	}
+    public static boolean matches(String pattern, InetAddress address) {
+        return new Inet6AddressMatcher(pattern).matches(address);
+    }
 
-	@Override
-	public String getHumanRepresentation() {
-		if(netmask == FULL_MASK)
-			return convertToString(address);
-		else
-			return convertToString(address)+'/'+convertToString(netmask);
-	}
+    @Override
+    public String getHumanRepresentation() {
+        if(netmask == FULL_MASK)
+            return convertToString(address);
+        else
+            return convertToString(address)+'/'+convertToString(netmask);
+    }
 
-	private String convertToString(byte[] addr) {
-		StringBuilder sb = new StringBuilder(4*8+7);
-		for(int i=0;i<8;i++) {
-			if(i != 0) sb.append(':');
-			int token = ((addr[i*2] & 0xff) << 8) + (addr[i*2+1] & 0xff);
-			sb.append(Integer.toHexString(token));
-		}
-		return sb.toString();
-	}
+    private String convertToString(byte[] addr) {
+        StringBuilder sb = new StringBuilder(4*8+7);
+        for(int i=0;i<8;i++) {
+            if(i != 0) sb.append(':');
+            int token = ((addr[i*2] & 0xff) << 8) + (addr[i*2+1] & 0xff);
+            sb.append(Integer.toHexString(token));
+        }
+        return sb.toString();
+    }
 
 }

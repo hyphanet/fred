@@ -10,58 +10,58 @@ import freenet.node.Node;
 import freenet.support.HTMLNode;
 
 public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
-	private final Node node;
+    private final Node node;
 
-	public MeaningfulNodeNameUserAlert(Node n) {
-		super(true, null, null, null, null, UserAlert.WARNING, true, NodeL10n.getBase().getString("UserAlert.hide"), true, null);
-		this.node = n;
-	}
-	
-	@Override
-	public String getTitle() {
-		return l10n("noNodeNickTitle");
-	}
+    public MeaningfulNodeNameUserAlert(Node n) {
+        super(true, null, null, null, null, UserAlert.WARNING, true, NodeL10n.getBase().getString("UserAlert.hide"), true, null);
+        this.node = n;
+    }
+    
+    @Override
+    public String getTitle() {
+        return l10n("noNodeNickTitle");
+    }
 
-	private String l10n(String key) {
-		return NodeL10n.getBase().getString("MeaningfulNodeNameUserAlert."+key);
-	}
+    private String l10n(String key) {
+        return NodeL10n.getBase().getString("MeaningfulNodeNameUserAlert."+key);
+    }
 
-	@Override
-	public String getText() {
-		return l10n("noNodeNick");
-	}
-	
-	@Override
-	public String getShortText() {
-		return l10n("noNodeNickShort");
-	}
+    @Override
+    public String getText() {
+        return l10n("noNodeNick");
+    }
+    
+    @Override
+    public String getShortText() {
+        return l10n("noNodeNickShort");
+    }
 
-	@Override
-	public HTMLNode getHTMLText() {
-		SubConfig sc = node.config.get("node");
-		Option<?> o = sc.getOption("name");
+    @Override
+    public HTMLNode getHTMLText() {
+        SubConfig sc = node.config.get("node");
+        Option<?> o = sc.getOption("name");
 
-		HTMLNode alertNode = new HTMLNode("div");
-		HTMLNode textNode = alertNode.addChild("div");
-		textNode.addChild("#", l10n("noNodeNick"));
-		HTMLNode formNode = alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/"+sc.getPrefix(), "post" });
-		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
-		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "subconfig", sc.getPrefix() });
-		HTMLNode listNode = formNode.addChild("ul", "class", "config");
-		HTMLNode itemNode = listNode.addChild("li");
-		itemNode.addChild("span", new String[]{ "class", "title", "style" },
-				new String[]{ "configshortdesc", NodeL10n.getBase().getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o.getDefault() }), 
-				"cursor: help;" }).addChild(o.getShortDescNode());
-		itemNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o.getShortDesc(), "node.name", o.getValueDisplayString() });
-		itemNode.addChild("span", "class", "configlongdesc").addChild(o.getLongDescNode());
-		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", NodeL10n.getBase().getString("UserAlert.apply") });
-		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", NodeL10n.getBase().getString("UserAlert.reset") });
+        HTMLNode alertNode = new HTMLNode("div");
+        HTMLNode textNode = alertNode.addChild("div");
+        textNode.addChild("#", l10n("noNodeNick"));
+        HTMLNode formNode = alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/"+sc.getPrefix(), "post" });
+        formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+        formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "subconfig", sc.getPrefix() });
+        HTMLNode listNode = formNode.addChild("ul", "class", "config");
+        HTMLNode itemNode = listNode.addChild("li");
+        itemNode.addChild("span", new String[]{ "class", "title", "style" },
+                new String[]{ "configshortdesc", NodeL10n.getBase().getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o.getDefault() }), 
+                "cursor: help;" }).addChild(o.getShortDescNode());
+        itemNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o.getShortDesc(), "node.name", o.getValueDisplayString() });
+        itemNode.addChild("span", "class", "configlongdesc").addChild(o.getLongDescNode());
+        formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", NodeL10n.getBase().getString("UserAlert.apply") });
+        formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", NodeL10n.getBase().getString("UserAlert.reset") });
 
-		return alertNode;
-	}
+        return alertNode;
+    }
 
-	@Override
-	public boolean isValid() {
-		return node.peers.anyDarknetPeers();
-	}
+    @Override
+    public boolean isValid() {
+        return node.peers.anyDarknetPeers();
+    }
 }

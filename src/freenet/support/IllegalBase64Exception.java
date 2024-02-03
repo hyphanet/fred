@@ -7,8 +7,8 @@ package freenet.support;
 public class IllegalBase64Exception
   extends Exception
 {
-	
-	private static final long serialVersionUID = -1;
+    
+    private static final long serialVersionUID = -1;
   public IllegalBase64Exception(String descr)
   {
     super(descr);

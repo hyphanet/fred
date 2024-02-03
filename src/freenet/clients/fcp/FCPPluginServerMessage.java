@@ -41,28 +41,28 @@ import freenet.support.api.Bucket;
  *     xor (xor@freenetproject.org)
  */
 public class FCPPluginServerMessage extends DataCarryingMessage {
-	
+    
     /**
      * On-network format name of the message.
      * 
      * ATTENTION: This one is different to the class name. For an explanation, see the class-level
      * JavaDoc {@link FCPPluginServerMessage}.
      */
-	private static final String NAME = "FCPPluginReply";
-	
+    private static final String NAME = "FCPPluginReply";
+    
     public static final String PARAM_PREFIX = "Replies";
 
     /** @see FCPPluginMessage#data */
-	private final long dataLength;
+    private final long dataLength;
 
-	/** @see PluginManager#getPluginFCPServer(String) */
-	private final String plugname;
+    /** @see PluginManager#getPluginFCPServer(String) */
+    private final String plugname;
 
     /** @see FCPPluginMessage#identifier */
-	private final String identifier;
+    private final String identifier;
 
     /** @see FCPPluginMessage#params */
-	private final SimpleFieldSet plugparams;
+    private final SimpleFieldSet plugparams;
 
     /** @see FCPPluginMessage#success */
     private final Boolean success;
@@ -126,36 +126,36 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
         this.errorMessage = errorMessage;
     }
 
-	@Override
-	String getIdentifier() {
-		return identifier;
-	}
+    @Override
+    String getIdentifier() {
+        return identifier;
+    }
 
-	@Override
-	boolean isGlobal() {
-		return false;
-	}
+    @Override
+    boolean isGlobal() {
+        return false;
+    }
 
-	@Override
-	long dataLength() {
-		return dataLength;
-	}
-	
-	@Override
-	String getEndString() {
-		if (dataLength() > 0)
-			return "Data";
-		else
-			return "EndMessage";
-	}
+    @Override
+    long dataLength() {
+        return dataLength;
+    }
+    
+    @Override
+    String getEndString() {
+        if (dataLength() > 0)
+            return "Data";
+        else
+            return "EndMessage";
+    }
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.putSingle("PluginName", plugname);
-		sfs.putSingle("Identifier", identifier);
-		if (dataLength() > 0)
-			sfs.put("DataLength", dataLength());
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putSingle("PluginName", plugname);
+        sfs.putSingle("Identifier", identifier);
+        if (dataLength() > 0)
+            sfs.put("DataLength", dataLength());
 
         // The sfs.put() would throw IllegalArgumentException if plugparams.isEmpty() == true.
         if(plugparams != null && !plugparams.isEmpty()) {
@@ -173,17 +173,17 @@ public class FCPPluginServerMessage extends DataCarryingMessage {
                 }
             }
         }
-		return sfs;
-	}
+        return sfs;
+    }
 
-	@Override
-	public String getName() {
-		return NAME;
-	}
+    @Override
+    public String getName() {
+        return NAME;
+    }
 
-	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, NAME + " goes from server to client not the other way around", null, false);
-	}
+    @Override
+    public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+        throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, NAME + " goes from server to client not the other way around", null, false);
+    }
 
 }

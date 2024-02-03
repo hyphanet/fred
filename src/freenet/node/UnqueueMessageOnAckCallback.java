@@ -13,51 +13,51 @@ import freenet.support.Logger.LogLevel;
  * Otherwise do nothing.
  */
 public class UnqueueMessageOnAckCallback implements AsyncMessageCallback {
-	private static volatile boolean logMINOR;
+    private static volatile boolean logMINOR;
 
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+            @Override
+            public void shouldUpdate(){
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
 
     @Override
-	public String toString() {
-	return super.toString() + ": " +dest + ' ' + Integer.toString(extraPeerDataFileNumber);
+    public String toString() {
+    return super.toString() + ": " +dest + ' ' + Integer.toString(extraPeerDataFileNumber);
     }
 
     DarknetPeerNode dest;
     int extraPeerDataFileNumber;
 
     public UnqueueMessageOnAckCallback(DarknetPeerNode pn, int extraPeerDataFileNumber) {
-	this.dest = pn;
-	this.extraPeerDataFileNumber = extraPeerDataFileNumber;
-	if(logMINOR) {
-		Logger.minor(this, "Created "+this);
-	}
+    this.dest = pn;
+    this.extraPeerDataFileNumber = extraPeerDataFileNumber;
+    if(logMINOR) {
+        Logger.minor(this, "Created "+this);
+    }
     }
 
     @Override
     public void sent() {
-	// Ignore
+    // Ignore
     }
 
     @Override
     public void acknowledged() {
-	// the message was received, no need to try again.
-	dest.unqueueN2NM(extraPeerDataFileNumber);
+    // the message was received, no need to try again.
+    dest.unqueueN2NM(extraPeerDataFileNumber);
     }
 
     @Override
     public void disconnected() {
-	// ignore
+    // ignore
     }
 
     @Override
     public void fatalError() {
-	// ignore
+    // ignore
     }
 }

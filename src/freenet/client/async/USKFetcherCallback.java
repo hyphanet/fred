@@ -12,15 +12,15 @@ import freenet.keys.USK;
  */
 public interface USKFetcherCallback extends USKCallback {
 
-	/** Failed to find any edition at all (later than or equal to the specified hint) */
-	void onFailure(ClientContext context);
+    /** Failed to find any edition at all (later than or equal to the specified hint) */
+    void onFailure(ClientContext context);
 
-	void onCancelled(ClientContext context);
-	
-	/** Found the latest edition. **This is terminal for a USKFetcherCallback**. It isn't for a USKCallback subscription.
-	 * @param l The edition number.
-	 * @param key The key. */
-	@Override
-	void onFoundEdition(long l, USK key, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo);
-	
+    void onCancelled(ClientContext context);
+    
+    /** Found the latest edition. **This is terminal for a USKFetcherCallback**. It isn't for a USKCallback subscription.
+     * @param l The edition number.
+     * @param key The key. */
+    @Override
+    void onFoundEdition(long l, USK key, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo);
+    
 }

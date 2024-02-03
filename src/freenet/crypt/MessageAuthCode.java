@@ -81,7 +81,7 @@ public final class MessageAuthCode {
      * @throws InvalidKeyException
      */
     public MessageAuthCode(MACType type, byte[] cryptoKey) throws InvalidKeyException {
-        this(type, KeyGenUtils.getSecretKey(type.keyType, cryptoKey));	
+        this(type, KeyGenUtils.getSecretKey(type.keyType, cryptoKey));  
     }
     
     /**

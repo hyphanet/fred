@@ -45,23 +45,23 @@ public final class KeyGenUtils {
      * from https://github.com/openstreetmap/josm/ , license GPLv2 or later
      */
     private static int getJavaVersion() {
-	String version = System.getProperty("java.version");
-	if (version.startsWith("1.")) {
-	    version = version.substring(2);
-	}
-	// Allow these formats:
-	// 1.8.0_72-ea
-	// 9-ea
-	// 9
-	// 9.0.1
-	int dotPos = version.indexOf('.');
-	int dashPos = version.indexOf('-');
-	return Integer.parseInt(version.substring(0,
-						  dotPos > -1 ? dotPos : dashPos > -1 ? dashPos : 1));
+    String version = System.getProperty("java.version");
+    if (version.startsWith("1.")) {
+        version = version.substring(2);
+    }
+    // Allow these formats:
+    // 1.8.0_72-ea
+    // 9-ea
+    // 9
+    // 9.0.1
+    int dotPos = version.indexOf('.');
+    int dashPos = version.indexOf('-');
+    return Integer.parseInt(version.substring(0,
+                          dotPos > -1 ? dotPos : dashPos > -1 ? dashPos : 1));
     }
 
     private static boolean isJava7() {
-	return getJavaVersion() <= 7;
+    return getJavaVersion() <= 7;
     }
 
     /**
@@ -75,12 +75,12 @@ public final class KeyGenUtils {
             throw new UnsupportedTypeException(type);
         }
         try {
-	    KeyPairGenerator kg;
-	    if (isJava7()) {
+        KeyPairGenerator kg;
+        if (isJava7()) {
                 kg = KeyPairGenerator.getInstance(type.alg, bcProvider);
-	    } else {
+        } else {
                 kg = KeyPairGenerator.getInstance(type.alg);
-	    }
+        }
             kg.initialize(type.spec);
             return kg.generateKeyPair();
         } catch (NoSuchAlgorithmException e) {
@@ -101,12 +101,12 @@ public final class KeyGenUtils {
             throw new UnsupportedTypeException(type);
         }
         try {
-	    KeyFactory kf;
-	    if (isJava7()) {
-		kf = KeyFactory.getInstance(type.alg, bcProvider);
-	    } else {
-		kf = KeyFactory.getInstance(type.alg);
-	    }
+        KeyFactory kf;
+        if (isJava7()) {
+        kf = KeyFactory.getInstance(type.alg, bcProvider);
+        } else {
+        kf = KeyFactory.getInstance(type.alg);
+        }
             X509EncodedKeySpec xks = new X509EncodedKeySpec(pub);
             return kf.generatePublic(xks);
         } catch (NoSuchAlgorithmException e) {
@@ -161,12 +161,12 @@ public final class KeyGenUtils {
             throw new UnsupportedTypeException(type);
         }
         try {
-	    KeyFactory kf;
-	    if (isJava7()) {
-		kf = KeyFactory.getInstance(type.alg, bcProvider);
-	    } else {
-		kf = KeyFactory.getInstance(type.alg);
-	    }
+        KeyFactory kf;
+        if (isJava7()) {
+        kf = KeyFactory.getInstance(type.alg, bcProvider);
+        } else {
+        kf = KeyFactory.getInstance(type.alg);
+        }
 
             PublicKey pubK = getPublicKey(type, pub);
 
@@ -213,12 +213,12 @@ public final class KeyGenUtils {
      */
     public static SecretKey genSecretKey(KeyType type){
         try{
-	    KeyGenerator kg;
-	    if (isJava7()) {
+        KeyGenerator kg;
+        if (isJava7()) {
                 kg = KeyGenerator.getInstance(type.alg, bcProvider);
-	    } else {
+        } else {
                 kg = KeyGenerator.getInstance(type.alg);
-	    }
+        }
             kg.init(type.keySize);
             return kg.generateKey();
         } catch (NoSuchAlgorithmException e) {

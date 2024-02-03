@@ -27,11 +27,11 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
     // Should not be serialized but we need Serializable to save the parent state for PersistentTempFileBucket.
     private static final long serialVersionUID = 1L;
     long filenameID;
-	protected transient FilenameGenerator generator;
-	private boolean readOnly;
-	private final boolean deleteOnFree;
-	private File file;
-	private transient boolean resumed;
+    protected transient FilenameGenerator generator;
+    private boolean readOnly;
+    private final boolean deleteOnFree;
+    private File file;
+    private transient boolean resumed;
 
         private static volatile boolean logMINOR;
         private static volatile boolean logDEBUG;
@@ -46,103 +46,103 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
                 }
             });
         }
-	
-	public TempFileBucket(long id, FilenameGenerator generator) {
-		// deleteOnExit -> files get stuck in a big HashSet, whether or not
-		// they are deleted. This grows without bound, it's a major memory
-		// leak.
-		this(id, generator, true);
-		this.file = generator.getFilename(id);
-	}
-	
-	/**
-	 * Constructor for the TempFileBucket object
-	 * Subclasses can call this constructor.
-	 * @param deleteOnExit Set if you want the bucket deleted on shutdown. Passed to 
-	 * the parent BaseFileBucket. You must also override deleteOnExit() and 
-	 * implement your own createShadow()!
-	 * @param deleteOnFree True for a normal temp bucket, false for a shadow.
-	 */
-	protected TempFileBucket(
-		long id,
-		FilenameGenerator generator, boolean deleteOnFree) {
-		super(generator.getFilename(id), false);
-		this.filenameID = id;
-		this.generator = generator;
-		this.deleteOnFree = deleteOnFree;
-		this.file = generator.getFilename(id);
+    
+    public TempFileBucket(long id, FilenameGenerator generator) {
+        // deleteOnExit -> files get stuck in a big HashSet, whether or not
+        // they are deleted. This grows without bound, it's a major memory
+        // leak.
+        this(id, generator, true);
+        this.file = generator.getFilename(id);
+    }
+    
+    /**
+     * Constructor for the TempFileBucket object
+     * Subclasses can call this constructor.
+     * @param deleteOnExit Set if you want the bucket deleted on shutdown. Passed to 
+     * the parent BaseFileBucket. You must also override deleteOnExit() and 
+     * implement your own createShadow()!
+     * @param deleteOnFree True for a normal temp bucket, false for a shadow.
+     */
+    protected TempFileBucket(
+        long id,
+        FilenameGenerator generator, boolean deleteOnFree) {
+        super(generator.getFilename(id), false);
+        this.filenameID = id;
+        this.generator = generator;
+        this.deleteOnFree = deleteOnFree;
+        this.file = generator.getFilename(id);
 
             if (logDEBUG) {
                 Logger.debug(this,"Initializing TempFileBucket(" + getFile());
             }
-	}
-	
-	protected TempFileBucket() {
-	    // For serialization.
-	    deleteOnFree = false;
-	}
+    }
+    
+    protected TempFileBucket() {
+        // For serialization.
+        deleteOnFree = false;
+    }
 
-	@Override
-	protected boolean createFileOnly() {
-		return false;
-	}
+    @Override
+    protected boolean createFileOnly() {
+        return false;
+    }
 
-	@Override
-	protected boolean deleteOnFree() {
-		return deleteOnFree;
-	}
+    @Override
+    protected boolean deleteOnFree() {
+        return deleteOnFree;
+    }
 
-	@Override
-	public File getFile() {
-	    if(file != null) return file;
-		return generator.getFilename(filenameID);
-	}
+    @Override
+    public File getFile() {
+        if(file != null) return file;
+        return generator.getFilename(filenameID);
+    }
 
-	@Override
-	public boolean isReadOnly() {
-		return readOnly;
-	}
+    @Override
+    public boolean isReadOnly() {
+        return readOnly;
+    }
 
-	@Override
-	public void setReadOnly() {
-		readOnly = true;
-	}
+    @Override
+    public void setReadOnly() {
+        readOnly = true;
+    }
 
-	@Override
-	protected boolean deleteOnExit() {
-		// Temp files will be cleaned up on next restart.
-		// File.deleteOnExit() is a hideous memory leak.
-		// It should NOT be used for temp files.
-		return false;
-	}
+    @Override
+    protected boolean deleteOnExit() {
+        // Temp files will be cleaned up on next restart.
+        // File.deleteOnExit() is a hideous memory leak.
+        // It should NOT be used for temp files.
+        return false;
+    }
 
-	@Override
-	public RandomAccessBucket createShadow() {
-		TempFileBucket ret = new TempFileBucket(filenameID, generator, false);
-		ret.setReadOnly();
-		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
-		return ret;
-	}
-	
-	protected void innerResume(ClientContext context) throws ResumeFailedException {
-	    generator = context.persistentFG;
-	    if(file == null) {
-	        // Migrating from old tempfile, possibly db4o era.
-	        file = generator.getFilename(filenameID);
-	        checkExists(file);
-	    } else {
-	        // File must exist!
-	        if(!file.exists()) {
-	            // Maybe moved after the last checkpoint?
-	            File f = generator.getFilename(filenameID);
-	            if(f.exists()) {
-	                file = f;
-	            }
-	        }
-	        checkExists(file);
-	        file = generator.maybeMove(file, filenameID);
-	    }
-	}
+    @Override
+    public RandomAccessBucket createShadow() {
+        TempFileBucket ret = new TempFileBucket(filenameID, generator, false);
+        ret.setReadOnly();
+        if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
+        return ret;
+    }
+    
+    protected void innerResume(ClientContext context) throws ResumeFailedException {
+        generator = context.persistentFG;
+        if(file == null) {
+            // Migrating from old tempfile, possibly db4o era.
+            file = generator.getFilename(filenameID);
+            checkExists(file);
+        } else {
+            // File must exist!
+            if(!file.exists()) {
+                // Maybe moved after the last checkpoint?
+                File f = generator.getFilename(filenameID);
+                if(f.exists()) {
+                    file = f;
+                }
+            }
+            checkExists(file);
+            file = generator.maybeMove(file, filenameID);
+        }
+    }
 
     @Override
     public final void onResume(ClientContext context) throws ResumeFailedException {

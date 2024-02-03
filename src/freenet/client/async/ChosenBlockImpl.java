@@ -24,32 +24,32 @@ public class ChosenBlockImpl extends ChosenBlock {
         Logger.registerClass(ChosenBlockImpl.class);
     }
 
-	public final SendableRequest request;
-	public final RequestScheduler sched;
-	public final boolean persistent;
+    public final SendableRequest request;
+    public final RequestScheduler sched;
+    public final boolean persistent;
 
-	public ChosenBlockImpl(SendableRequest req, SendableRequestItem token, Key key, ClientKey ckey, 
-			boolean localRequestOnly, boolean ignoreStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean realTimeFlag, RequestScheduler sched, boolean persistent) {
-		super(token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, forkOnCacheable, realTimeFlag, sched);
-		this.request = req;
-		this.sched = sched;
-		this.persistent = persistent;
-		if(logDEBUG) Logger.minor(this, "Created "+this+" for "+(persistent?"persistent":"transient")+" block "+token+" for key "+key, new Exception("debug")); 
-	}
+    public ChosenBlockImpl(SendableRequest req, SendableRequestItem token, Key key, ClientKey ckey, 
+            boolean localRequestOnly, boolean ignoreStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean realTimeFlag, RequestScheduler sched, boolean persistent) {
+        super(token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, forkOnCacheable, realTimeFlag, sched);
+        this.request = req;
+        this.sched = sched;
+        this.persistent = persistent;
+        if(logDEBUG) Logger.minor(this, "Created "+this+" for "+(persistent?"persistent":"transient")+" block "+token+" for key "+key, new Exception("debug")); 
+    }
 
-	@Override
-	public boolean isCancelled() {
-		return request.isCancelled();
-	}
+    @Override
+    public boolean isCancelled() {
+        return request.isCancelled();
+    }
 
-	@Override
-	public boolean isPersistent() {
-		return persistent;
-	}
+    @Override
+    public boolean isPersistent() {
+        return persistent;
+    }
 
-	@Override
-	public void onFailure(final LowLevelPutException e, ClientContext context) {
-	    context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
+    @Override
+    public void onFailure(final LowLevelPutException e, ClientContext context) {
+        context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {
@@ -63,12 +63,12 @@ public class ChosenBlockImpl extends ChosenBlock {
                 sched.wakeStarter();
                 return false;
             }
-	        
-	    });
-	}
+            
+        });
+    }
 
-	@Override
-	public void onInsertSuccess(final ClientKey key, ClientContext context) {
+    @Override
+    public void onInsertSuccess(final ClientKey key, ClientContext context) {
         context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
 
             @Override
@@ -85,10 +85,10 @@ public class ChosenBlockImpl extends ChosenBlock {
             }
             
         });
-	}
+    }
 
-	@Override
-	public void onFailure(final LowLevelGetException e, ClientContext context) {
+    @Override
+    public void onFailure(final LowLevelGetException e, ClientContext context) {
         context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
 
             @Override
@@ -105,11 +105,11 @@ public class ChosenBlockImpl extends ChosenBlock {
             }
 
         });
-	}
+    }
 
-	@Override
-	public void onFetchSuccess(ClientContext context) {
-	    context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
+    @Override
+    public void onFetchSuccess(ClientContext context) {
+        context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {
@@ -123,18 +123,18 @@ public class ChosenBlockImpl extends ChosenBlock {
                 sched.wakeStarter();
                 return false;
             }
-	        
-	    });
-	}
-	
-	@Override
-	public short getPriority() {
-		return request.getPriorityClass();
-	}
+            
+        });
+    }
+    
+    @Override
+    public short getPriority() {
+        return request.getPriorityClass();
+    }
 
-	@Override
-	public SendableRequestSender getSender(ClientContext context) {
-		return request.getSender(context);
-	}
-	
+    @Override
+    public SendableRequestSender getSender(ClientContext context) {
+        return request.getSender(context);
+    }
+    
 }
