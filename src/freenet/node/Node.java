@@ -1604,7 +1604,7 @@ public class Node implements TimeSkewDetectorCallback {
 			public void set(Long amountOfDataToCheckCompressionRatio) {
 				synchronized(Node.this) {
 					if (amountOfDataToCheckCompressionRatio < 0 || amountOfDataToCheckCompressionRatio > 100 * 1024 * 1024) {
-						Logger.normal(Node.class, "Amount of data to check for compression should be less than 100 MiB"
+						Logger.normal(Node.class, "Amount of data to check for compression should be 100 MiB max"
 								+ amountOfDataToCheckCompressionRatio);
 						return;
 					}
