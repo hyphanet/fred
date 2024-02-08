@@ -10,27 +10,27 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.io.FilenameGenerator;
 
-/** Tell the user when there is insufficient disk space for either short term (transient requests, 
+/** Tell the user when there is insufficient disk space for either short term (transient requests,
  * request completion) or long term (starting persistent requests).
  * @author toad
  */
 public class DiskSpaceUserAlert implements UserAlert {
-    
+
     final NodeClientCore core;
     private Status status;
     private long lastCheckedStatus;
     static final int UPDATE_TIME = 100;
-    
+
     enum Status {
         /** Everything is OK. */
         OK,
-        /** Not enough space to start persistent requests: Space on persistent-temp-* < long term 
+        /** Not enough space to start persistent requests: Space on persistent-temp-* < long term
          * limit. */
         PERSISTENT,
-        /** Not enough space to start transient requests, finish persistent requests or do 
+        /** Not enough space to start transient requests, finish persistent requests or do
          * anything much: Space on temp-* < short term limit */
         TRANSIENT,
-        /** Not enough space to complete persistent requests: Space on persistent-temp-* < short 
+        /** Not enough space to complete persistent requests: Space on persistent-temp-* < short
          * term limit. */
         PERSISTENT_COMPLETION;
 
@@ -38,7 +38,7 @@ public class DiskSpaceUserAlert implements UserAlert {
             return l10n("explanation."+toString());
         }
     }
-    
+
     Status evaluate() {
         long shortTermLimit = core.getMinDiskFreeShortTerm();
         long longTermLimit = core.getMinDiskFreeLongTerm();
@@ -56,7 +56,7 @@ public class DiskSpaceUserAlert implements UserAlert {
         }
         return Status.OK;
     }
-    
+
     public DiskSpaceUserAlert(NodeClientCore core) {
         this.core = core;
     }

@@ -35,7 +35,7 @@ import freenet.support.io.FileUtil;
 public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
 
     private static final File dir = new File("test-fetch-pull-single-node");
-    
+
     @Test
     public void testFetchPullSingleNode() throws InvalidThresholdException, NodeInitException, InsertException, FetchException, IOException {
         if(!TestProperty.EXTENSIVE) return;
@@ -43,7 +43,7 @@ public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
         final Executor executor = new PooledExecutor();
         FileUtil.removeAll(dir);
         dir.mkdir();
-        NodeStarter.globalTestInit(dir, false, 
+        NodeStarter.globalTestInit(dir, false,
                 Logger.LogLevel.ERROR, "", true, random);
         TestNodeParameters params = new TestNodeParameters();
         params.random = new DummyRandomSource(253121);
@@ -53,12 +53,12 @@ public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
         params.executor = executor;
         Node node = NodeStarter.createTestNode(params);
         node.start(false);
-        HighLevelSimpleClient client = 
+        HighLevelSimpleClient client =
                 node.clientCore.makeClient((short)0, false, false);
         InsertContext ictx = client.getInsertContext(true);
         ictx.localRequestOnly = true;
         InsertBlock block = generateBlock(random);
-        FreenetURI uri = 
+        FreenetURI uri =
                 client.insert(block, "", (short)0, ictx);
         assertEquals(uri.getKeyType(), "SSK");
         FetchContext ctx = client.getFetchContext(FILE_SIZE*2);
@@ -68,10 +68,10 @@ public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
         FetchResult result = fw.waitForCompletion();
         assertTrue(BucketTools.equalBuckets(result.asBucket(), block.getData()));
     }
-    
+
     @After
     public void cleanUp() {
         FileUtil.removeAll(dir);
     }
-    
+
 }

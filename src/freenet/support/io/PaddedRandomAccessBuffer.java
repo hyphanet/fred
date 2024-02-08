@@ -10,7 +10,7 @@ import freenet.crypt.MasterSecret;
 import freenet.support.api.LockableRandomAccessBuffer;
 
 public class PaddedRandomAccessBuffer implements LockableRandomAccessBuffer, Serializable {
-    
+
     private static final long serialVersionUID = 1L;
     final LockableRandomAccessBuffer raf;
     final long realSize;
@@ -58,7 +58,7 @@ public class PaddedRandomAccessBuffer implements LockableRandomAccessBuffer, Ser
     public void onResume(ClientContext context) throws ResumeFailedException {
         raf.onResume(context);
     }
-    
+
     static final int MAGIC = 0x1eaaf330;
 
     @Override
@@ -67,7 +67,7 @@ public class PaddedRandomAccessBuffer implements LockableRandomAccessBuffer, Ser
         dos.writeLong(realSize);
         raf.storeTo(dos);
     }
-    
+
     public PaddedRandomAccessBuffer(DataInputStream dis, FilenameGenerator fg,
             PersistentFileTracker persistentFileTracker, MasterSecret masterSecret) throws ResumeFailedException, IOException, StorageFormatException {
         realSize = dis.readLong();

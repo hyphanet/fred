@@ -20,7 +20,7 @@ public class SentTimeCache {
     private static class BoundedSentTimeMap extends LinkedHashMap<Integer, Long> {
         private static final long serialVersionUID = 0;
         private final int maxSize;
-        
+
         /**
          * Constructs a map with the given maximum (and initial) size.
          */
@@ -31,7 +31,7 @@ public class SentTimeCache {
             }
             this.maxSize = maxSize;
         }
-        
+
         /**
          * Automatically maintains the maximum size by returning true if the capacity is exceeded,
          * indicating that the eldest entry must be removed.
@@ -41,23 +41,23 @@ public class SentTimeCache {
             return size() > maxSize;
         }
     }
-    
+
     /**
      * The inner cache.
      */
     private BoundedSentTimeMap cache;
-    
+
     /**
      * Constructs a sent time cache with the given maximal capacity.
      */
     public SentTimeCache(int maxSize) {
         cache = new BoundedSentTimeMap(maxSize);
     }
-    
+
     /**
      * Reports the given sequence number as being sent at the given time. If the cache is at full
      * capacity, this will lead to the oldest entry being dropped. If the sequence number was
-     * already in this cache, the given time will be associated with the sequence number, but the 
+     * already in this cache, the given time will be associated with the sequence number, but the
      * order in which sequence numbers are dropped from the cache will not be affected.
      * @param seqnum the sequence number
      * @param time the sent time in milliseconds
@@ -65,7 +65,7 @@ public class SentTimeCache {
     public synchronized void report(int seqnum, long time) {
         cache.put(seqnum, time);
     }
-    
+
     /**
      * Convenience wrapper for {@link #report(int, long)}.
      * Reports the given sequence number as being sent right now. If the cache is at full capacity,
@@ -79,7 +79,7 @@ public class SentTimeCache {
         long time = System.currentTimeMillis();
         report(seqnum, time);
     }
-    
+
     /**
      * Queries the sent time for the given sequence number and removes it from the cache.
      * @param seqnum the sequence number

@@ -6,12 +6,12 @@ import java.util.Deque;
 import freenet.node.PrioRunnable;
 import freenet.support.io.NativeThread;
 
-/** Start jobs as long as there is sufficient memory (or other limited resource) available, then 
+/** Start jobs as long as there is sufficient memory (or other limited resource) available, then
  * queue them. FIXME I bet there is something like this in the standard libraries?
  * @author toad
  */
 public class MemoryLimitedJobRunner {
-    
+
     public static final int THREAD_PRIORITY = NativeThread.LOW_PRIORITY;
     public long capacity;
     /** The amount of some limited resource that is in use */
@@ -22,25 +22,25 @@ public class MemoryLimitedJobRunner {
     private int runningThreads;
     private int maxThreads;
     private boolean shutdown;
-    
+
     private static boolean logMINOR;
     static {
         Logger.registerClass(MemoryLimitedJobRunner.class);
     }
-    
+
     @SuppressWarnings("unchecked")
     public MemoryLimitedJobRunner(long capacity, int maxThreads, Executor executor, int priorities) {
         this.capacity = capacity;
         this.counter = 0;
         this.jobs = (ArrayDeque<MemoryLimitedJob>[])new ArrayDeque<?>[priorities];
-        for(int i=0;i<jobs.length;i++) 
+        for(int i=0;i<jobs.length;i++)
             jobs[i] = new ArrayDeque<MemoryLimitedJob>();
         this.executor = executor;
         this.maxThreads = maxThreads;
-        
+
     }
-    
-    /** Run the job if the counter is below some threshold, otherwise queue it. Will ignore if 
+
+    /** Run the job if the counter is below some threshold, otherwise queue it. Will ignore if
      * shutting down. */
     public synchronized void queueJob(final MemoryLimitedJob job) {
         if(shutdown) return;
@@ -61,7 +61,7 @@ public class MemoryLimitedJobRunner {
         }
         maybeStartJobs();
     }
-    
+
     private synchronized void maybeStartJobs() {
         if(shutdown) return;
         while(true) {
@@ -78,7 +78,7 @@ public class MemoryLimitedJobRunner {
             } else return;
         }
     }
-    
+
     private synchronized void startJob(final MemoryLimitedJob job) {
         counter += job.initialAllocation;
         runningThreads++;
@@ -91,12 +91,12 @@ public class MemoryLimitedJobRunner {
                 if(job.start(chunk))
                     chunk.release();
             }
-            
+
             @Override
             public int getPriority() {
                 return THREAD_PRIORITY;
             }
-            
+
         });
     }
 
@@ -122,11 +122,11 @@ public class MemoryLimitedJobRunner {
         capacity = val;
         maybeStartJobs();
     }
-    
+
     public synchronized void shutdown() {
         shutdown = true;
     }
-    
+
     public synchronized void waitForShutdown() {
         shutdown = true;
         while(runningThreads > 0) {

@@ -23,12 +23,12 @@ import freenet.support.Logger;
 import freenet.support.io.StorageFormatException;
 
 public class SplitFileFetcherKeyListener implements KeyListener {
-    
+
     private static volatile boolean logMINOR;
     static {
         Logger.registerClass(SplitFileFetcherKeyListener.class);
     }
-    
+
     final SplitFileFetcherStorage storage;
     final SplitFileFetcherStorageCallback fetcher;
     /** Salt used in the secondary Bloom filters if the primary matches.
@@ -63,11 +63,11 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     private boolean dirty;
     private transient boolean mustRegenerateMainFilter;
     private transient boolean mustRegenerateSegmentFilters;
-    
+
     /** Create a set of bloom filters for a new download.
      * @throws FetchException */
-    public SplitFileFetcherKeyListener(SplitFileFetcherStorageCallback fetcher, SplitFileFetcherStorage storage, 
-            boolean persistent, byte[] localSalt, int origSize, int segBlocks, int segments) 
+    public SplitFileFetcherKeyListener(SplitFileFetcherStorageCallback fetcher, SplitFileFetcherStorage storage,
+            boolean persistent, byte[] localSalt, int origSize, int segBlocks, int segments)
     throws FetchException {
         if (origSize <= 0) {
             throw new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Cannot listen for non-positive number of blocks: " + origSize);
@@ -108,7 +108,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
             baseBuffer.position(start);
             baseBuffer.limit(end);
             ByteBuffer slice;
-            
+
             slice = baseBuffer.slice();
             segmentFilters[i] = new BinaryBloomFilter(slice, perSegmentBloomFilterSizeBytes * 8, perSegmentK);
             start += perSegmentBloomFilterSizeBytes;
@@ -118,9 +118,9 @@ public class SplitFileFetcherKeyListener implements KeyListener {
         filter = new CountingBloomFilter(mainBloomFilterSizeBytes * 8 / 2, mainBloomK, filterBuffer);
         filter.setWarnOnRemoveFromEmpty();
     }
-    
-    public SplitFileFetcherKeyListener(SplitFileFetcherStorage storage, 
-            SplitFileFetcherStorageCallback callback, DataInputStream dis, boolean persistent, boolean newSalt) 
+
+    public SplitFileFetcherKeyListener(SplitFileFetcherStorage storage,
+            SplitFileFetcherStorageCallback callback, DataInputStream dis, boolean persistent, boolean newSalt)
     throws IOException, StorageFormatException {
         this.storage = storage;
         this.fetcher = callback;
@@ -156,7 +156,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
             baseBuffer.position(start);
             baseBuffer.limit(end);
             ByteBuffer slice;
-            
+
             slice = baseBuffer.slice();
             segmentFilters[i] = new BinaryBloomFilter(slice, perSegmentBloomFilterSizeBytes * 8, perSegmentK);
             start += perSegmentBloomFilterSizeBytes;
@@ -182,7 +182,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
      * @param keys
      */
     synchronized void addKey(Key key, int segNo, KeySalter salter) {
-        if(finishedSetup && !(mustRegenerateMainFilter || mustRegenerateSegmentFilters)) 
+        if(finishedSetup && !(mustRegenerateMainFilter || mustRegenerateSegmentFilters))
             throw new IllegalStateException();
         if(mustRegenerateMainFilter || !finishedSetup) {
             byte[] saltedKey = salter.saltKey(key);
@@ -195,7 +195,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 //      if(!segmentFilters[segNo].checkFilter(localSalted))
 //          Logger.error(this, "Key added but not in filter: "+key+" on "+this);
     }
-    
+
     synchronized void finishedSetup() {
         finishedSetup = true;
     }
@@ -208,8 +208,8 @@ public class SplitFileFetcherKeyListener implements KeyListener {
         SHA256.returnMessageDigest(md);
         return ret;
     }
-    
-    /** The segment bloom filters should only need to be written ONCE, and can all be written at 
+
+    /** The segment bloom filters should only need to be written ONCE, and can all be written at
      * once. Include a checksum. */
     void initialWriteSegmentBloomFilters(long fileOffset) throws IOException {
         OutputStream cos = storage.writeChecksummedTo(fileOffset, totalSegmentBloomFiltersSize());
@@ -218,11 +218,11 @@ public class SplitFileFetcherKeyListener implements KeyListener {
         }
         cos.close();
     }
-    
+
     int totalSegmentBloomFiltersSize() {
         return perSegmentBloomFilterSizeBytes * segmentFilters.length + storage.checksumLength;
     }
-    
+
     void maybeWriteMainBloomFilter(long fileOffset) throws IOException {
         synchronized(this) {
             if(!dirty) return;
@@ -237,7 +237,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
         filter.writeTo(cos);
         cos.close();
     }
-    
+
     public int paddedMainBloomFilterSize() {
         assert(mainBloomFilterSizeBytes == filter.getSizeBytes());
         return mainBloomFilterSizeBytes + storage.checksumLength;

@@ -13,13 +13,13 @@ import freenet.client.async.ClientContext;
 import freenet.crypt.MasterSecret;
 import freenet.support.api.Bucket;
 
-/** Pads a bucket to the next power of 2 file size. 
- * Note that self-terminating formats do not work with AEADCryptBucket; it needs to know the real 
+/** Pads a bucket to the next power of 2 file size.
+ * Note that self-terminating formats do not work with AEADCryptBucket; it needs to know the real
  * length. This pads with FileUtil.fill(), which is reasonably random but is faster than using
  * SecureRandom, and vastly more secure than using a non-secure Random.
  */
 public class PaddedBucket implements Bucket, Serializable {
-    
+
     private static final long serialVersionUID = 1L;
     private final Bucket underlying;
     private long size;
@@ -30,7 +30,7 @@ public class PaddedBucket implements Bucket, Serializable {
     public PaddedBucket(Bucket underlying) {
         this(underlying, 0);
     }
-    
+
     /** Create a PaddedBucket, specifying the actual size of the existing bucket, which we
      * do not store on disk.
      * @param underlying The underlying bucket.
@@ -40,7 +40,7 @@ public class PaddedBucket implements Bucket, Serializable {
         this.underlying = underlying;
         this.size = size;
     }
-    
+
     protected PaddedBucket() {
         // For serialization.
         underlying = null;
@@ -49,7 +49,7 @@ public class PaddedBucket implements Bucket, Serializable {
 
     @Override
     public OutputStream getOutputStream() throws IOException {
-        OutputStream os; 
+        OutputStream os;
         synchronized(this) {
             if(outputStreamOpen) throw new IOException("Already have an OutputStream for "+this);
             os = underlying.getOutputStream();
@@ -58,10 +58,10 @@ public class PaddedBucket implements Bucket, Serializable {
         }
         return new MyOutputStream(os);
     }
-    
+
     @Override
     public OutputStream getOutputStreamUnbuffered() throws IOException {
-        OutputStream os; 
+        OutputStream os;
         synchronized(this) {
             if(outputStreamOpen) throw new IOException("Already have an OutputStream for "+this);
             os = underlying.getOutputStreamUnbuffered();
@@ -70,13 +70,13 @@ public class PaddedBucket implements Bucket, Serializable {
         }
         return new MyOutputStream(os);
     }
-    
+
     private class MyOutputStream extends FilterOutputStream {
-        
+
         MyOutputStream(OutputStream os) {
             super(os);
         }
-        
+
         @Override
         public void write(int b) throws IOException {
             out.write(b);
@@ -84,7 +84,7 @@ public class PaddedBucket implements Bucket, Serializable {
                 size++;
             }
         }
-        
+
         @Override
         public void write(byte[] buf) throws IOException {
             out.write(buf);
@@ -92,7 +92,7 @@ public class PaddedBucket implements Bucket, Serializable {
                 size += buf.length;
             }
         }
-        
+
         @Override
         public void write(byte[] buf, int offset, int length) throws IOException {
             out.write(buf, offset, length);
@@ -100,7 +100,7 @@ public class PaddedBucket implements Bucket, Serializable {
                 size += length;
             }
         }
-        
+
         @Override
         public void close() throws IOException {
             try {
@@ -117,15 +117,15 @@ public class PaddedBucket implements Bucket, Serializable {
                 }
             }
         }
-        
+
         public String toString() {
             return "TrivialPaddedBucketOutputStream:"+out+"("+PaddedBucket.this+")";
         }
 
     }
-    
+
     private static final long MIN_PADDED_SIZE = 1024;
-    
+
     private long paddedLength(long size) {
         if(size < MIN_PADDED_SIZE) size = MIN_PADDED_SIZE;
         if(size == MIN_PADDED_SIZE) return size;
@@ -148,20 +148,20 @@ public class PaddedBucket implements Bucket, Serializable {
     public InputStream getInputStream() throws IOException {
         return new MyInputStream(underlying.getInputStream());
     }
-    
+
     @Override
     public InputStream getInputStreamUnbuffered() throws IOException {
         return new MyInputStream(underlying.getInputStreamUnbuffered());
     }
-    
+
     private class MyInputStream extends FilterInputStream {
 
         private long counter;
-        
+
         public MyInputStream(InputStream is) {
             super(is);
         }
-        
+
         @Override
         public int read() throws IOException {
             synchronized(PaddedBucket.this) {
@@ -173,12 +173,12 @@ public class PaddedBucket implements Bucket, Serializable {
             }
             return ret;
         }
-        
+
         @Override
         public int read(byte[] buf) throws IOException {
             return read(buf, 0, buf.length);
         }
-        
+
         @Override
         public int read(byte[] buf, int offset, int length) throws IOException {
             synchronized(PaddedBucket.this) {
@@ -196,7 +196,7 @@ public class PaddedBucket implements Bucket, Serializable {
             }
             return ret;
         }
-        
+
         public long skip(long length) throws IOException {
             synchronized(PaddedBucket.this) {
                 if(counter >= size) return -1;
@@ -210,7 +210,7 @@ public class PaddedBucket implements Bucket, Serializable {
             }
             return ret;
         }
-        
+
         @Override
         public synchronized int available() throws IOException {
             long max = size - counter;
@@ -219,7 +219,7 @@ public class PaddedBucket implements Bucket, Serializable {
             if(ret < 0) return 0;
             return ret;
         }
-        
+
     }
 
     @Override
@@ -260,7 +260,7 @@ public class PaddedBucket implements Bucket, Serializable {
     public void onResume(ClientContext context) throws ResumeFailedException {
         underlying.onResume(context);
     }
-    
+
     static final int MAGIC = 0xdaff6185;
     static final int VERSION = 1;
 
@@ -272,9 +272,9 @@ public class PaddedBucket implements Bucket, Serializable {
         dos.writeBoolean(readOnly);
         underlying.storeTo(dos);
     }
-    
-    protected PaddedBucket(DataInputStream dis, FilenameGenerator fg, 
-            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+
+    protected PaddedBucket(DataInputStream dis, FilenameGenerator fg,
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey)
     throws IOException, StorageFormatException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
@@ -282,5 +282,5 @@ public class PaddedBucket implements Bucket, Serializable {
         readOnly = dis.readBoolean();
         underlying = BucketTools.restoreFrom(dis, fg, persistentFileTracker, masterKey);
     }
-    
+
 }

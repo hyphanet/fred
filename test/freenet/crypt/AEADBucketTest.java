@@ -7,7 +7,7 @@ import freenet.support.io.BucketTools;
 import junit.framework.TestCase;
 
 public class AEADBucketTest extends TestCase {
-    
+
     public void testCopyBucketNotDivisibleBy16() throws IOException {
         checkCopyBucketNotDivisibleBy16(902);
     }
@@ -25,5 +25,5 @@ public class AEADBucketTest extends TestCase {
         assertEquals(length, copyTo.size());
         assertTrue(BucketTools.equalBuckets(encryptedBucket, copyTo));
     }
-    
+
 }

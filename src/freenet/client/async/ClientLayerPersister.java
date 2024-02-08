@@ -44,47 +44,47 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 /** Top level of persistence mechanism for ClientRequest's (persistent downloads and uploads).
  * Note that we use three different persistence mechanisms here:
- * 1) Splitfile persistence. The downloaded data and all the status for a splitfile is kept in a 
+ * 1) Splitfile persistence. The downloaded data and all the status for a splitfile is kept in a
  * single random access file (technically a LockableRandomAccessBuffer).
- * 2) Java persistence. The overall list of ClientRequest's is stored to client.dat using 
+ * 2) Java persistence. The overall list of ClientRequest's is stored to client.dat using
  * serialization, by this class.
- * 3) A simple binary fallback. For complicated requests this will just record enough information 
+ * 3) A simple binary fallback. For complicated requests this will just record enough information
  * to restart the request, but for simple splitfile downloads, we can resume from (1).
- * 
+ *
  * The reason for this seemingly unnecessary complexity is:
- * 1) Robustness, even against (reasonable) data corruption (e.g. on writing frequently written 
+ * 1) Robustness, even against (reasonable) data corruption (e.g. on writing frequently written
  * parts of files), and against problems in serialization.
- * 2) Minimising disk I/O (particularly disk seeks), especially in splitfile fetches. Decoding a 
- * segment takes effectively a single read and a couple of writes, for example. 
+ * 2) Minimising disk I/O (particularly disk seeks), especially in splitfile fetches. Decoding a
+ * segment takes effectively a single read and a couple of writes, for example.
  * 3) Allowing us to store all the important information about a download, including the downloaded
- * data and the status, in a temporary file close to where the final file will be saved. Then we 
+ * data and the status, in a temporary file close to where the final file will be saved. Then we
  * can (if there is no compression or filtering) simply truncate the file to complete.
- * 
+ *
  * Also, most of the important global structures are kept in RAM and recreated after downloads are
  * read in. Notably ClientRequestScheduler/Selector, which keep a tree of requests to choose from,
  * and a set of Bloom filters to identify which blocks belong to which request (we won't always get
  * a block as the direct result of doing our own requests).
- * 
+ *
  * Please don't shove it all into a database without serious consideration of the performance and
  * reliability implications! One query per block is not feasible on typical end user hardware, and
- * disks aren't reliable. Losing all downloads when there is a one byte data corruption is 
+ * disks aren't reliable. Losing all downloads when there is a one byte data corruption is
  * unacceptable. And blocks should be kept close to where they are supposed to end up...
- * 
- * Note that inserts may be somewhat less robust than requests. This is intentional as inserts 
- * should be relatively short-lived or they won't be much use to anyone as the data will have 
+ *
+ * Note that inserts may be somewhat less robust than requests. This is intentional as inserts
+ * should be relatively short-lived or they won't be much use to anyone as the data will have
  * fallen out.
- * 
- * SCHEMA MIGRATION: Note that changing classes that are Serializable can result in restarting 
+ *
+ * SCHEMA MIGRATION: Note that changing classes that are Serializable can result in restarting
  * downloads or losing uploads.
  * @author toad
  */
 public class ClientLayerPersister extends PersistentJobRunnerImpl {
-    
+
     static final long INTERVAL = MINUTES.toMillis(10);
     private final Node node; // Needed for bandwidth stats putter
     private final NodeClientCore clientCore;
     private final PersistentTempBucketFactory persistentTempFactory;
-    /** Needed for temporary storage when writing objects. Some of them might be big, e.g. site 
+    /** Needed for temporary storage when writing objects. Some of them might be big, e.g. site
      * inserts. */
     private final TempBucketFactory tempBucketFactory;
     private final PersistentStatsPutter bandwidthStatsPutter;
@@ -100,18 +100,18 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     private File otherDeleteAfterSuccessfulWrite;
     private File dir;
     private String baseName;
-    
+
     private static final long MAGIC = 0xd332925f3caf4aedL;
     private static final int VERSION = 1;
-    
+
     private static volatile boolean logMINOR;
     static {
         Logger.registerClass(ClientLayerPersister.class);
     }
-    
+
     /** Load everything.
      * @param persistentTempFactory Only passed in so that we can call its pre- and post- commit
-     * hooks. We don't explicitly save it; it must be populated lazily in onResume() like 
+     * hooks. We don't explicitly save it; it must be populated lazily in onResume() like
      * everything else. */
     public ClientLayerPersister(Executor executor, Ticker ticker, Node node, NodeClientCore core,
             PersistentTempBucketFactory persistentTempFactory, TempBucketFactory tempBucketFactory,
@@ -124,14 +124,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         this.checker = new CRCChecksumChecker();
         this.bandwidthStatsPutter = stats;
     }
-    
+
     /** Set the files to write to and set up encryption
-     * @param noWrite If true, don't write the data to disk at all, and delete existing 
+     * @param noWrite If true, don't write the data to disk at all, and delete existing
      * client.dat*.
-     * @throws MasterKeysWrongPasswordException If we need the encryption key but it has not been 
+     * @throws MasterKeysWrongPasswordException If we need the encryption key but it has not been
      * supplied. */
-    public void setFilesAndLoad(File dir, String baseName, boolean writeEncrypted, boolean noWrite, 
-            DatabaseKey encryptionKey, ClientContext context, RequestStarterGroup requestStarters, 
+    public void setFilesAndLoad(File dir, String baseName, boolean writeEncrypted, boolean noWrite,
+            DatabaseKey encryptionKey, ClientContext context, RequestStarterGroup requestStarters,
             Random random) throws MasterKeysWrongPasswordException {
         if(noWrite)
             super.disableWrite();
@@ -156,11 +156,11 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 // Some serialization failures cause us to fail only at the point of scheduling the request.
                 // So if that happens we need to retry with serialization turned off.
                 // The requests that loaded fine already will not be affected as we check for duplicates.
-                if(innerSetFilesAndLoad(false, dir, baseName, writeEncrypted, encryptionKey, context, 
+                if(innerSetFilesAndLoad(false, dir, baseName, writeEncrypted, encryptionKey, context,
                         requestStarters, random)) {
                     Logger.error(this, "Some requests failed to restart after serializing. Trying to recover/restart ...");
                     System.err.println("Some requests failed to restart after serializing. Trying to recover/restart ...");
-                    innerSetFilesAndLoad(true, dir, baseName, writeEncrypted, encryptionKey, context, 
+                    innerSetFilesAndLoad(true, dir, baseName, writeEncrypted, encryptionKey, context,
                             requestStarters, random);
                 }
                 onStarted(noWrite);
@@ -170,7 +170,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
         }
     }
-    
+
     private void deleteFile(File dir, String baseName, boolean backup, boolean encrypted) {
         File f = makeFilename(dir, baseName, backup, encrypted);
         try {
@@ -204,12 +204,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 return true; // Force a checkpoint ASAP.
                 // This also avoids any possible locking issues.
             }
-            
+
         });
     }
 
-    private boolean innerSetFilesAndLoad(boolean noSerialize, File dir, String baseName, 
-            boolean writeEncrypted, DatabaseKey encryptionKey, ClientContext context, 
+    private boolean innerSetFilesAndLoad(boolean noSerialize, File dir, String baseName,
+            boolean writeEncrypted, DatabaseKey encryptionKey, ClientContext context,
             RequestStarterGroup requestStarters, Random random) throws MasterKeysWrongPasswordException {
         if(writeEncrypted && encryptionKey == null)
             throw new MasterKeysWrongPasswordException();
@@ -239,14 +239,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         if(clientDatBakCryptExists && loaded.needsMore()) {
             innerLoad(loaded, makeBucket(dir, baseName, true, encryptionKey), noSerialize, context, requestStarters, random);
         }
-        
+
         deleteAfterSuccessfulWrite = writeEncrypted ? clientDat : clientDatCrypt;
         otherDeleteAfterSuccessfulWrite = writeEncrypted ? clientDatBak : clientDatBakCrypt;
-        
+
         writeToBucket = makeBucket(dir, baseName, false, writeEncrypted ? encryptionKey : null);
         writeToFilename = makeFilename(dir, baseName, false, writeEncrypted);
         writeToBackupFilename = makeFilename(dir, baseName, true, writeEncrypted);
-        
+
         if(loaded.doneSomething()) {
             if(!noSerialize) {
                 onLoading();
@@ -270,7 +270,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 if(req == null) continue;
                 try {
                     req.onResume(context);
-                    if(partial.status == RequestLoadStatus.RESTORED_FULLY || 
+                    if(partial.status == RequestLoadStatus.RESTORED_FULLY ||
                             partial.status == RequestLoadStatus.RESTORED_RESTARTED) {
                         req.start(context);
                     }
@@ -320,7 +320,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             return false;
         }
     }
-    
+
     /** Create a Bucket for client.dat[.bak][.crypt].
      * @param dir The parent directory.
      * @param baseName The base name, usually "client.dat".
@@ -334,10 +334,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             bucket = encryptionKey.createEncryptedBucketForClientLayer(bucket);
         return bucket;
     }
-    
+
     private File makeFilename(File parent, String baseName, boolean backup, boolean encrypted) {
         return new File(parent, baseName + (backup ? ".bak" : "") + (encrypted ? ".crypt" : ""));
-                
+
     }
 
     private enum RequestLoadStatus {
@@ -347,7 +347,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         RESTORED_RESTARTED,
         FAILED
     }
-    
+
     private class PartiallyLoadedRequest {
         final ClientRequest request;
         final RequestLoadStatus status;
@@ -356,21 +356,21 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             this.status = status;
         }
     }
-    
+
     private class PartialLoad {
-        private final Map<RequestIdentifier, PartiallyLoadedRequest> partiallyLoadedRequests 
+        private final Map<RequestIdentifier, PartiallyLoadedRequest> partiallyLoadedRequests
             = new HashMap<RequestIdentifier, PartiallyLoadedRequest>();
-        
+
         private byte[] salt;
-        
+
         private boolean somethingFailed;
-        
+
         private boolean doneSomething;
-        
-        /** Add a partially loaded request. 
+
+        /** Add a partially loaded request.
          * @param reqID The request identifier. Must be non-null; caller should regenerate it if
          * necessary. */
-        void addPartiallyLoadedRequest(RequestIdentifier reqID, ClientRequest request, 
+        void addPartiallyLoadedRequest(RequestIdentifier reqID, ClientRequest request,
                 RequestLoadStatus status) {
             if(reqID == null) {
                 if(request == null) {
@@ -396,7 +396,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         public void setSomethingFailed() {
             somethingFailed = true;
         }
-        
+
         public void setSalt(byte[] loadedSalt) {
             if(salt == null)
                 salt = loadedSalt;
@@ -406,19 +406,19 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         public byte[] getSalt() {
             return salt;
         }
-        
+
         public boolean doneSomething() {
             return doneSomething;
         }
     }
-    
+
     private void innerLoad(PartialLoad loaded, Bucket bucket, boolean noSerialize,
             ClientContext context, RequestStarterGroup requestStarters, Random random) {
         long length = bucket.size();
         InputStream fis = null;
         try {
             fis = bucket.getInputStream();
-            innerLoad(loaded, fis, length, !noSerialize && !loaded.doneSomething(), context, 
+            innerLoad(loaded, fis, length, !noSerialize && !loaded.doneSomething(), context,
                     requestStarters, random, noSerialize);
         } catch (IOException e) {
             // FIXME tell user more obviously.
@@ -440,8 +440,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
         }
     }
-    
-    private void innerLoad(PartialLoad loaded, InputStream fis, long length, boolean latest, 
+
+    private void innerLoad(PartialLoad loaded, InputStream fis, long length, boolean latest,
             ClientContext context, RequestStarterGroup requestStarters, Random random, boolean noSerialize) throws NodeInitException, IOException {
         ObjectInputStream ois = new ObjectInputStream(fis);
         long magic = ois.readLong();
@@ -496,7 +496,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     if(request == null && restored != null) {
                         request = restored;
                         boolean loadedFully = restored.fullyResumed();
-                        loaded.addPartiallyLoadedRequest(reqID, request, 
+                        loaded.addPartiallyLoadedRequest(reqID, request,
                                 loadedFully ? RequestLoadStatus.RESTORED_FULLY : RequestLoadStatus.RESTORED_RESTARTED);
                     }
                 } catch (ChecksumFailedException e) {
@@ -554,7 +554,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     protected void innerCheckpoint(boolean shutdown) {
         save(shutdown);
     }
-    
+
     protected void save(boolean shutdown) {
         if(writeToFilename == null) return;
         if(writeToFilename.exists()) {
@@ -571,7 +571,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
         }
     }
-    
+
     private boolean innerSave(boolean shutdown) {
         DelayedFree[] buckets = persistentTempFactory.grabBucketsToFree();
         OutputStream fos = null;
@@ -599,7 +599,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 writeRequestIdentifier(oos, req.getRequestIdentifier());
                 // Write the actual request.
                 writeChecksummedObject(oos, req, req.toString());
-                // Write recovery data. This is just enough to restart the request from scratch, 
+                // Write recovery data. This is just enough to restart the request from scratch,
                 // but may support continuing the request in simple cases e.g. if a fetch is now
                 // just a single splitfile.
                 writeRecoveryData(oos, req);
@@ -631,7 +631,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
         }
     }
-    
+
     private void writeRecoveryData(ObjectOutputStream os, ClientRequest req) throws IOException {
         PrependLengthOutputStream oos = checker.checksumWriterWithLength(os, tempBucketFactory);
         DataOutputStream dos = new DataOutputStream(oos);
@@ -648,7 +648,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             if(oos != null) oos.close();
         }
     }
-    
+
     private ClientRequest readRequestFromRecoveryData(ObjectInputStream is, long totalLength, RequestIdentifier reqID) throws IOException, ChecksumFailedException, StorageFormatException {
         InputStream tmp = checker.checksumReaderWithLength(is, this.tempBucketFactory, totalLength);
         try {
@@ -680,7 +680,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             if(oos != null) oos.close();
         }
     }
-    
+
     private Object readChecksummedObject(ObjectInputStream is, long totalLength) throws IOException, ChecksumFailedException, ClassNotFoundException {
         InputStream ois = checker.checksumReaderWithLength(is, this.tempBucketFactory, totalLength);
         try {
@@ -711,7 +711,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     public boolean newSalt() {
         return newSalt;
     }
-    
+
     private RequestIdentifier readRequestIdentifier(DataInput is) throws IOException {
         short length = is.readShort();
         if(length <= 0) return null;
@@ -730,7 +730,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             return null;
         }
     }
-    
+
     private void writeRequestIdentifier(DataOutput os, RequestIdentifier req) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStream oos = checker.checksumWriter(baos);
@@ -750,7 +750,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         killAndWaitForNotWriting();
         deleteAllFiles();
     }
-    
+
     public void deleteAllFiles() {
         synchronized(serializeCheckpoints) {
             deleteFile(dir, baseName, false, false);

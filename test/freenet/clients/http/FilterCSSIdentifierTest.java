@@ -10,20 +10,20 @@ import junit.framework.TestCase;
  * ones are changed as expected.
  */
 public class FilterCSSIdentifierTest extends TestCase {
-	public void testKnownValid() {
-		String identifiers[] = { "sample_key-1", "-_", "-k_d", "_testing-key" };
+    public void testKnownValid() {
+        String identifiers[] = { "sample_key-1", "-_", "-k_d", "_testing-key" };
 
-		for (String identifier : identifiers) {
-			assertEquals(identifier, PageMaker.filterCSSIdentifier(identifier));
-		}
-	}
+        for (String identifier : identifiers) {
+            assertEquals(identifier, PageMaker.filterCSSIdentifier(identifier));
+        }
+    }
 
-	public void testInvalidFirstDash() {
-		assertEquals("-_things", PageMaker.filterCSSIdentifier("-9things"));
-		assertEquals("-_", PageMaker.filterCSSIdentifier("--"));
-	}
+    public void testInvalidFirstDash() {
+        assertEquals("-_things", PageMaker.filterCSSIdentifier("-9things"));
+        assertEquals("-_", PageMaker.filterCSSIdentifier("--"));
+    }
 
-	public void testInvalidChar() {
-		assertEquals("__thing", PageMaker.filterCSSIdentifier("#$thing"));
-	}
+    public void testInvalidChar() {
+        assertEquals("__thing", PageMaker.filterCSSIdentifier("#$thing"));
+    }
 }

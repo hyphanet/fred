@@ -13,19 +13,19 @@ import java.util.Random;
 import freenet.support.api.RandomAccessBuffer;
 
 public class RandomAccessFileWrapperTest extends RandomAccessBufferTestBase {
-    
+
     private static final int[] TEST_LIST = new int[] { 0, 1, 32, 64, 32768, 1024*1024, 1024*1024+1 };
-    
+
     public RandomAccessFileWrapperTest() {
         super(TEST_LIST);
     }
 
     private File base = new File("tmp.random-access-file-wrapper-test");
-    
+
     public void setUp() {
         base.mkdir();
     }
-    
+
     public void tearDown() {
         FileUtil.removeAll(base);
     }
@@ -35,7 +35,7 @@ public class RandomAccessFileWrapperTest extends RandomAccessBufferTestBase {
         File f = File.createTempFile("test", ".tmp", base);
         return new FileRandomAccessBuffer(f, size, false);
     }
-    
+
     public void testStoreTo() throws IOException, StorageFormatException, ResumeFailedException {
         File tempFile = File.createTempFile("test-storeto", ".tmp", base);
         byte[] buf = new byte[4096];

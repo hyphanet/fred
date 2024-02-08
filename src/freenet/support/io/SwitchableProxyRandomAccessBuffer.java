@@ -21,9 +21,9 @@ abstract class SwitchableProxyRandomAccessBuffer implements LockableRandomAccess
     /** Lock we took on the underlying when the first caller called lockOpen(). */
     private RAFLock underlyingLock;
     private boolean closed;
-    /** Read/write lock for the pointer to underlying and lockOpenCount. That is, we take a 
-     * write lock when we want to change the underlying pointer or other mutable fields, e.g. 
-     * during migration or freeing the data, and a read lock for any other operation, hence we 
+    /** Read/write lock for the pointer to underlying and lockOpenCount. That is, we take a
+     * write lock when we want to change the underlying pointer or other mutable fields, e.g.
+     * during migration or freeing the data, and a read lock for any other operation, hence we
      * ensure that there is no other I/O going on during a migration. */
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -32,7 +32,7 @@ abstract class SwitchableProxyRandomAccessBuffer implements LockableRandomAccess
         this.size = size;
         if(underlying.size() < size) throw new IOException("Underlying must be >= size given");
     }
-    
+
     @Override
     public long size() {
         return size;
@@ -83,7 +83,7 @@ abstract class SwitchableProxyRandomAccessBuffer implements LockableRandomAccess
     public void free() {
         innerFree();
     }
-    
+
     /** @return True unless the buffer has already been freed. */
     protected boolean innerFree() {
         try {
@@ -99,7 +99,7 @@ abstract class SwitchableProxyRandomAccessBuffer implements LockableRandomAccess
         afterFreeUnderlying();
         return true;
     }
-    
+
     public boolean hasBeenFreed() {
         try {
             lock.readLock().lock();
@@ -110,7 +110,7 @@ abstract class SwitchableProxyRandomAccessBuffer implements LockableRandomAccess
     }
 
     /** Called after freeing the underlying storage. That includes when migrating, not just when
-     * free() is called! */ 
+     * free() is called! */
     protected void afterFreeUnderlying() {
         // Do nothing.
     }
@@ -126,7 +126,7 @@ abstract class SwitchableProxyRandomAccessBuffer implements LockableRandomAccess
                 protected void innerUnlock() {
                     externalUnlock();
                }
-                
+
             };
             lockOpenCount++;
             if(lockOpenCount == 1) {
@@ -152,7 +152,7 @@ abstract class SwitchableProxyRandomAccessBuffer implements LockableRandomAccess
             lock.writeLock().unlock();
         }
     }
-    
+
     /** Migrate from one underlying LockableRandomAccessBuffer to another. */
     protected final void migrate() throws IOException {
         try {
@@ -182,16 +182,16 @@ abstract class SwitchableProxyRandomAccessBuffer implements LockableRandomAccess
         }
         afterFreeUnderlying();
     }
-    
-    /** Create a new LockableRandomAccessBuffer containing the same data as the current underlying. 
+
+    /** Create a new LockableRandomAccessBuffer containing the same data as the current underlying.
      * @throws IOException If the migrate failed. */
     protected abstract LockableRandomAccessBuffer innerMigrate(LockableRandomAccessBuffer underlying) throws IOException;
-    
+
     /** For unit tests only */
     synchronized LockableRandomAccessBuffer getUnderlying() {
         return underlying;
     }
-    
+
     // Default hashCode() and equals() i.e. comparison by identity are correct for this type.
-    
+
 }
