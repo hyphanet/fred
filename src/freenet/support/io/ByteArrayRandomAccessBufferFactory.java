@@ -20,7 +20,7 @@ public class ByteArrayRandomAccessBufferFactory implements LockableRandomAccessB
     public LockableRandomAccessBuffer makeRAF(byte[] initialContents, int offset, int size, boolean readOnly)
             throws IOException {
         if(size < 0) throw new IllegalArgumentException();
-        return new ByteArrayRandomAccessBuffer(Arrays.copyOfRange(initialContents, offset, 
+        return new ByteArrayRandomAccessBuffer(Arrays.copyOfRange(initialContents, offset,
                 offset+size), 0, size, readOnly);
     }
 

@@ -9,27 +9,27 @@ import junit.framework.TestCase;
 
 /** Base class for testing RandomAccessBuffer's. */
 public abstract class RandomAccessBufferTestBase extends TestCase {
-    
+
     /** Size list for small tests i.e. stuff that definitely fits in RAM */
     protected final int[] sizeList;
     /** Size list for big tests i.e. stuff that might not fit in RAM */
     private final long[] fullSizeList;
-    
+
     protected RandomAccessBufferTestBase(int[] allSmallTests) {
         sizeList = allSmallTests;
         fullSizeList = new long[sizeList.length];
         for(int i=0;i<sizeList.length;i++) fullSizeList[i] = sizeList[i];
     }
-    
+
     protected RandomAccessBufferTestBase(int[] smallTests, long[] bigTests) {
         sizeList = smallTests;
         fullSizeList = bigTests;
     }
-    
-    /** Construct an instance of a given size. 
+
+    /** Construct an instance of a given size.
      * @throws IOException */
     protected abstract RandomAccessBuffer construct(long size) throws IOException;
-    
+
     private void innerTestSize(long sz) throws IOException {
         RandomAccessBuffer raf = construct(sz);
         assertEquals(raf.size(), sz);
@@ -43,9 +43,9 @@ public abstract class RandomAccessBufferTestBase extends TestCase {
         for(long size : fullSizeList)
             innerTestSize(size);
     }
-    
+
     private static final int BUFFER_SIZE = 65536;
-    
+
     public void testFormula() throws IOException {
         Random r = new Random(2126);
         Formula modulo256 = new Formula() {
@@ -54,7 +54,7 @@ public abstract class RandomAccessBufferTestBase extends TestCase {
             public byte getByte(long offset) {
                 return (byte)offset;
             }
-            
+
         };
         Formula modulo57 = new Formula() {
 
@@ -62,18 +62,18 @@ public abstract class RandomAccessBufferTestBase extends TestCase {
             public byte getByte(long offset) {
                 return (byte)(offset % 57);
             }
-            
+
         };
         for(long size : fullSizeList) {
             innerTestFormula(size, r, modulo256);
             innerTestFormula(size, r, modulo57);
         }
     }
-        
+
     protected interface Formula {
         byte getByte(long offset);
     }
-    
+
     /** Write using a given formula in random small writes, then check using random small reads. */
     protected void innerTestFormula(long sz, Random r, Formula f) throws IOException {
         RandomAccessBuffer raf = construct(sz);
@@ -104,7 +104,7 @@ public abstract class RandomAccessBufferTestBase extends TestCase {
         raf.close();
         raf.free();
     }
-    
+
     /** Test that we can't write or read after the size limit */
     public void testWriteOverLimit() throws IOException {
         Random r = new Random(21092506);
@@ -124,7 +124,7 @@ public abstract class RandomAccessBufferTestBase extends TestCase {
             innerTestWriteOverLimit(size, size+1);
         }
     }
-    
+
     private void innerTestWriteOverLimit(long sz, int choppedBytes) throws IOException {
         RandomAccessBuffer raf = construct(sz);
         assertEquals(raf.size(), sz);
@@ -185,7 +185,7 @@ public abstract class RandomAccessBufferTestBase extends TestCase {
         for(long size : fullSizeList)
             innerTestClose(size);
     }
-    
+
     /** Test that after closing a RandomAccessBuffer we cannot read from it or write to it */
     protected void innerTestClose(long sz) throws IOException {
         RandomAccessBuffer raf = construct(sz);
@@ -194,14 +194,14 @@ public abstract class RandomAccessBufferTestBase extends TestCase {
         readWriteMustFail(raf, 0L, buf, 0, buf.length);
         raf.free();
     }
-    
+
     public void testArray() throws IOException {
         Random r = new Random(21162506);
         for(int size : sizeList)
             innerTestArray(size, r, false);
     }
-    
-    /** Create an array, fill it with random numbers, write it sequentially to the 
+
+    /** Create an array, fill it with random numbers, write it sequentially to the
      * RandomAccessBuffer, then read randomly and compare. */
     protected void innerTestArray(int len, Random r, boolean readOnly) throws IOException {
         if(len == 0) return;

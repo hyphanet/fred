@@ -53,9 +53,9 @@ import freenet.support.io.StorageFormatException;
 import junit.framework.TestCase;
 
 public class SplitFileFetcherStorageTest extends TestCase {
-    
+
     // Setup code is considerable. See below for actual tests ...
-    
+
     static DummyRandomSource random;
     static final KeySalter salt = new KeySalter() {
 
@@ -63,7 +63,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public byte[] saltKey(Key key) {
             return key.getRoutingKey();
         }
-        
+
     };
     static BucketFactory bf = new ArrayBucketFactory();
     static LockableRandomAccessBufferFactory rafFactory = new ByteArrayRandomAccessBufferFactory();
@@ -78,13 +78,13 @@ public class SplitFileFetcherStorageTest extends TestCase {
     static final CompatibilityMode COMPATIBILITY_MODE = InsertContext.CompatibilityMode.COMPAT_1416;
     static FreenetURI URI;
     private static final List<COMPRESSOR_TYPE> NO_DECOMPRESSORS = Collections.emptyList();
-    
+
     public void setUp() {
         // Reset RNG for each test (it's static so not reset by junit).
         random = new DummyRandomSource(1234);
         URI = FreenetURI.generateRandomCHK(random);
     }
-    
+
     static class TestSplitfile {
         final Bucket originalData;
         final Metadata metadata;
@@ -98,10 +98,10 @@ public class SplitFileFetcherStorageTest extends TestCase {
         private final int[] segmentCheckBlockCount;
         private final boolean persistent;
         final MyKeysFetchingLocally fetchingKeys;
-        
+
         private TestSplitfile(Bucket data, Metadata m, byte[][] originalDataBlocks,
                 byte[][] originalCheckBlocks, ClientCHK[] dataKeys, ClientCHK[] checkKeys,
-                byte[] cryptoKey, byte cryptoAlgorithm, int[] segmentDataBlockCount, 
+                byte[] cryptoKey, byte cryptoAlgorithm, int[] segmentDataBlockCount,
                 int[] segmentCheckBlockCount, boolean persistent) {
             this.originalData = data;
             this.metadata = m;
@@ -116,7 +116,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             this.persistent = persistent;
             this.fetchingKeys = new MyKeysFetchingLocally();
         }
-        
+
         void free() {
             originalData.free();
         }
@@ -138,9 +138,9 @@ public class SplitFileFetcherStorageTest extends TestCase {
             byte cryptoAlgorithm = Key.ALGO_AES_CTR_256_SHA256;
             ClientCHK[] dataKeys = makeKeys(originalDataBlocks, cryptoKey, cryptoAlgorithm);
             ClientCHK[] checkKeys = makeKeys(originalCheckBlocks, cryptoKey, cryptoAlgorithm);
-            Metadata m = new Metadata(SplitfileAlgorithm.ONION_STANDARD, dataKeys, checkKeys, dataBlocks, 
-                    checkBlocks, 0, cm, size, null, null, size, false, null, null, size, size, dataBlocks, 
-                    dataBlocks + checkBlocks, false, COMPATIBILITY_MODE, 
+            Metadata m = new Metadata(SplitfileAlgorithm.ONION_STANDARD, dataKeys, checkKeys, dataBlocks,
+                    checkBlocks, 0, cm, size, null, null, size, false, null, null, size, size, dataBlocks,
+                    dataBlocks + checkBlocks, false, COMPATIBILITY_MODE,
                     cryptoAlgorithm, cryptoKey, true, 0);
             // Make sure the metadata is reusable.
             // FIXME also necessary as the above constructor doesn't set segments.
@@ -150,19 +150,19 @@ public class SplitFileFetcherStorageTest extends TestCase {
             assertTrue(BucketTools.equalBuckets(metaBucket, copyBucket));
             metaBucket.free();
             copyBucket.free();
-            return new TestSplitfile(data, m1, originalDataBlocks, originalCheckBlocks, dataKeys, checkKeys, 
+            return new TestSplitfile(data, m1, originalDataBlocks, originalCheckBlocks, dataKeys, checkKeys,
                     cryptoKey, cryptoAlgorithm, null, null, persistent);
         }
 
         /**
-         * Create a multi-segment test splitfile. The main complication with multi-segment is that we can't 
+         * Create a multi-segment test splitfile. The main complication with multi-segment is that we can't
          * choose the number of blocks in each segment arbitrarily; that depends on the metadata format; the
          * caller must ensure that the number are consistent.
          * @param size
-         * @param segmentDataBlockCount The actual number of data blocks in each segment. Must be consistent 
+         * @param segmentDataBlockCount The actual number of data blocks in each segment. Must be consistent
          * with the other parameters; this cannot be chosen freely due to the metadata format.
-         * @param segmentCheckBlockCount The actual number of check blocks in each segment. Must be consistent 
-         * with the other parameters; this cannot be chosen freely due to the metadata format. 
+         * @param segmentCheckBlockCount The actual number of check blocks in each segment. Must be consistent
+         * with the other parameters; this cannot be chosen freely due to the metadata format.
          * @param segmentSize The "typical" number of data blocks in a segment.
          * @param checkSegmentSize The "typical" number of check blocks in a segment.
          * @param deductBlocksFromSegments The number of segments from which a single block has been deducted.
@@ -176,9 +176,9 @@ public class SplitFileFetcherStorageTest extends TestCase {
          * @throws MetadataUnresolvedException
          * @throws MetadataParseException
          */
-        static TestSplitfile constructMultipleSegments(long size, int[] segmentDataBlockCount, 
-                int[] segmentCheckBlockCount, int segmentSize, int checkSegmentSize, 
-                int deductBlocksFromSegments, CompatibilityMode topCompatibilityMode, String mime, boolean persistent) 
+        static TestSplitfile constructMultipleSegments(long size, int[] segmentDataBlockCount,
+                int[] segmentCheckBlockCount, int segmentSize, int checkSegmentSize,
+                int deductBlocksFromSegments, CompatibilityMode topCompatibilityMode, String mime, boolean persistent)
         throws IOException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException {
             int dataBlocks = sum(segmentDataBlockCount);
             int checkBlocks = sum(segmentCheckBlockCount);
@@ -204,10 +204,10 @@ public class SplitFileFetcherStorageTest extends TestCase {
             byte cryptoAlgorithm = Key.ALGO_AES_CTR_256_SHA256;
             ClientCHK[] dataKeys = makeKeys(originalDataBlocks, cryptoKey, cryptoAlgorithm);
             ClientCHK[] checkKeys = makeKeys(originalCheckBlocks, cryptoKey, cryptoAlgorithm);
-            Metadata m = new Metadata(SplitfileAlgorithm.ONION_STANDARD, dataKeys, checkKeys, segmentSize, 
-                    checkSegmentSize, deductBlocksFromSegments, cm, size, null, null, size, false, null, null, 
-                    size, size, dataBlocks, dataBlocks + checkBlocks, false, topCompatibilityMode, 
-                    cryptoAlgorithm, cryptoKey, true /* FIXME try older splitfiles pre-single-key?? */, 
+            Metadata m = new Metadata(SplitfileAlgorithm.ONION_STANDARD, dataKeys, checkKeys, segmentSize,
+                    checkSegmentSize, deductBlocksFromSegments, cm, size, null, null, size, false, null, null,
+                    size, size, dataBlocks, dataBlocks + checkBlocks, false, topCompatibilityMode,
+                    cryptoAlgorithm, cryptoKey, true /* FIXME try older splitfiles pre-single-key?? */,
                     0);
             // Make sure the metadata is reusable.
             // FIXME also necessary as the above constructor doesn't set segments.
@@ -217,18 +217,18 @@ public class SplitFileFetcherStorageTest extends TestCase {
             assertTrue(BucketTools.equalBuckets(metaBucket, copyBucket));
             metaBucket.free();
             copyBucket.free();
-            return new TestSplitfile(data, m1, originalDataBlocks, originalCheckBlocks, dataKeys, checkKeys, 
+            return new TestSplitfile(data, m1, originalDataBlocks, originalCheckBlocks, dataKeys, checkKeys,
                     cryptoKey, cryptoAlgorithm, segmentDataBlockCount, segmentCheckBlockCount, persistent);
         }
-        
+
         public CHKBlock encodeDataBlock(int i) throws CHKEncodeException {
             return ClientCHKBlock.encodeSplitfileBlock(dataBlocks[i], cryptoKey, cryptoAlgorithm).getBlock();
         }
-        
+
         public CHKBlock encodeCheckBlock(int i) throws CHKEncodeException {
             return ClientCHKBlock.encodeSplitfileBlock(checkBlocks[i], cryptoKey, cryptoAlgorithm).getBlock();
         }
-        
+
         public CHKBlock encodeBlock(int block) throws CHKEncodeException {
             if(block < dataBlocks.length)
                 return encodeDataBlock(block);
@@ -261,7 +261,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public StorageCallback createStorageCallback() {
             return new StorageCallback(this);
         }
-        
+
         public SplitFileFetcherStorage createStorage(StorageCallback cb) throws FetchException, MetadataParseException, IOException {
             return createStorage(cb, makeFetchContext());
         }
@@ -283,16 +283,16 @@ public class SplitFileFetcherStorageTest extends TestCase {
                     cb.snoopRAF(t);
                     return t;
                 }
-                
+
             };
             return new SplitFileFetcherStorage(metadata, cb, NO_DECOMPRESSORS, metadata.getClientMetadata(), false,
                     (short) COMPATIBILITY_MODE.ordinal(), ctx, false, salt, URI, URI, true, new byte[0], random, bf,
                     f, jobRunner, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), persistent, null, null, fetchingKeys);
         }
 
-        /** Restore a splitfile fetcher from a file. 
-         * @throws StorageFormatException 
-         * @throws IOException 
+        /** Restore a splitfile fetcher from a file.
+         * @throws StorageFormatException
+         * @throws IOException
          * @throws FetchException */
         public SplitFileFetcherStorage createStorage(StorageCallback cb, FetchContext ctx,
                 LockableRandomAccessBuffer raf) throws IOException, StorageFormatException, FetchException {
@@ -301,7 +301,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         }
 
         public FetchContext makeFetchContext() {
-            return HighLevelSimpleClientImpl.makeDefaultFetchContext(Long.MAX_VALUE, Long.MAX_VALUE, 
+            return HighLevelSimpleClientImpl.makeDefaultFetchContext(Long.MAX_VALUE, Long.MAX_VALUE,
                     bf, new SimpleEventProducer());
         }
 
@@ -334,19 +334,19 @@ public class SplitFileFetcherStorageTest extends TestCase {
                 total += segmentCheckBlockCount[i];
                 if(block < total) return i;
             }
-            
+
             return -1;
         }
 
     }
-    
+
     public static ClientCHK[] makeKeys(byte[][] blocks, byte[] cryptoKey, byte cryptoAlgorithm) throws CHKEncodeException {
         ClientCHK[] keys = new ClientCHK[blocks.length];
         for(int i=0;i<blocks.length;i++)
             keys[i] = ClientCHKBlock.encodeSplitfileBlock(blocks[i], cryptoKey, cryptoAlgorithm).getClientKey();
         return keys;
     }
-    
+
     public static int sum(int[] values) {
         int total = 0;
         for(int x : values) total += x;
@@ -354,7 +354,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
     }
 
     static class StorageCallback implements SplitFileFetcherStorageCallback {
-        
+
         final TestSplitfile splitfile;
         final boolean[] encodedBlocks;
         private boolean succeeded;
@@ -371,7 +371,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         synchronized void snoopRAF(LockableRandomAccessBuffer t) {
             this.raf = t;
         }
-        
+
         synchronized LockableRandomAccessBuffer getRAF() {
             return raf;
         }
@@ -441,7 +441,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             }
             assertTrue(progress);
         }
-        
+
         synchronized void markDownloadedBlock(int block) {
             encodedBlocks[block] = true;
         }
@@ -459,7 +459,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
                 }
             }
         }
-        
+
         public synchronized void waitForFailed() {
             while(!(succeeded || failed)) {
                 try {
@@ -470,7 +470,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             }
             assertTrue(failed);
         }
-        
+
         public void waitForFree(SplitFileFetcherStorage storage) {
             synchronized(this) {
                 while(!closed) {
@@ -533,7 +533,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public void clearCooldown() {
             // Ignore.
         }
-        
+
         @Override
         public void reduceCooldown(long wakeupTime) {
             // Ignore.
@@ -561,7 +561,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public void onResume(int succeeded, int failed, ClientMetadata mimeType, long finalSize) {
             // Ignore.
         }
-        
+
     }
 
     public static Bucket makeRandomBucket(long size) throws IOException {
@@ -604,9 +604,9 @@ public class SplitFileFetcherStorageTest extends TestCase {
         for(int i=0;i<n;i++) blocks[i] = new byte[BLOCK_SIZE];
         return blocks;
     }
-    
+
     // Actual tests ...
-    
+
     public void testSingleSegment() throws CHKEncodeException, IOException, FetchException, MetadataParseException, MetadataUnresolvedException {
         // 2 data blocks.
         //testSingleSegment(1, 2, BLOCK_SIZE);
@@ -625,7 +625,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         testSingleSegment(127, 129, BLOCK_SIZE*127);
         testSingleSegment(127, 129, BLOCK_SIZE*127-1);
     }
-    
+
     private void testSingleSegment(int dataBlocks, int checkBlocks, long size) throws CHKEncodeException, IOException, FetchException, MetadataParseException, MetadataUnresolvedException {
         assertTrue(dataBlocks * (long)BLOCK_SIZE >= size);
         TestSplitfile test = TestSplitfile.constructSingleSegment(size, checkBlocks, null, false);
@@ -696,7 +696,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.waitForFree(storage);
         cb.checkFailed();
     }
-    
+
     private void testRandomMixture(TestSplitfile test) throws FetchException, MetadataParseException, IOException, CHKEncodeException {
         StorageCallback cb = test.createStorageCallback();
         SplitFileFetcherStorage storage = test.createStorage(cb);
@@ -732,40 +732,40 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.waitForFree(storage);
         cb.checkFailed();
     }
-    
+
     // FIXME LATER Test cross-segment.
 
     public void testMultiSegment() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException {
-        // We have to be consistent with the format, but we can in fact play with the segment sizes 
+        // We have to be consistent with the format, but we can in fact play with the segment sizes
         // to some degree.
-        
+
         // Simplest case: Same number of blocks in each segment.
         // 2 blocks in each of 2 segments.
-        testMultiSegment(32768*4, new int[] { 2, 2 }, new int[] { 3, 3 }, 2, 3, 0, 
+        testMultiSegment(32768*4, new int[] { 2, 2 }, new int[] { 3, 3 }, 2, 3, 0,
                 InsertContext.CompatibilityMode.COMPAT_1416);
-        testMultiSegment(32768*4-1, new int[] { 2, 2 }, new int[] { 3, 3 }, 2, 3, 0, 
+        testMultiSegment(32768*4-1, new int[] { 2, 2 }, new int[] { 3, 3 }, 2, 3, 0,
                 InsertContext.CompatibilityMode.COMPAT_1416);
-        
+
         // 3 blocks in 3 segments
-        testMultiSegment(32768*9-1, new int[] { 3, 3, 3 }, new int[] { 4, 4, 4 }, 3, 4, 0, 
+        testMultiSegment(32768*9-1, new int[] { 3, 3, 3 }, new int[] { 4, 4, 4 }, 3, 4, 0,
                 InsertContext.CompatibilityMode.COMPAT_1416);
-        
+
         // Deduct blocks. This is how we handle this situation in modern splitfiles.
-        testMultiSegment(32768*7-1, new int[] { 3, 2, 2 }, new int[] { 4, 4, 4 }, 3, 4, 2, 
+        testMultiSegment(32768*7-1, new int[] { 3, 2, 2 }, new int[] { 4, 4, 4 }, 3, 4, 2,
                 InsertContext.CompatibilityMode.COMPAT_1416);
-        
+
         // Sharp truncation. This is how we used to handle non-divisible numbers...
         testMultiSegment(32768*9-1, new int[] { 7, 2 }, new int[] { 7, 2 }, 7, 7, 0,
                 InsertContext.CompatibilityMode.COMPAT_1416);
         // Still COMPAT_1416 because has crypto key etc.
-        
+
         // FIXME test old splitfiles.
         // FIXME test really old splitfiles: last data block not padded
         // FIXME test really old splitfiles: non-redundant support
     }
-    
-    private void testMultiSegment(long size, int[] segmentDataBlockCount, 
-                int[] segmentCheckBlockCount, int segmentSize, int checkSegmentSize, 
+
+    private void testMultiSegment(long size, int[] segmentDataBlockCount,
+                int[] segmentCheckBlockCount, int segmentSize, int checkSegmentSize,
                 int deductBlocksFromSegments, CompatibilityMode topCompatibilityMode) throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException {
         TestSplitfile test = TestSplitfile.constructMultipleSegments(size, segmentDataBlockCount,
                 segmentCheckBlockCount, segmentSize, checkSegmentSize, deductBlocksFromSegments,
@@ -853,7 +853,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             }
         }
     }
-    
+
     static class MyKeysFetchingLocally implements KeysFetchingLocally {
         private final HashSet<Key> keys = new HashSet<Key>();
 
@@ -879,9 +879,9 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public void clear() {
             keys.clear();
         }
-        
+
     }
-    
+
     public void testChooseKeyOneTry() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException {
         int dataBlocks = 3, checkBlocks = 3;
         TestSplitfile test = TestSplitfile.constructSingleSegment(dataBlocks*BLOCK_SIZE, checkBlocks, null, false);
@@ -894,7 +894,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         assertEquals(storage.chooseRandomKey(), null);
         cb.waitForFailed();
     }
-    
+
     private void innerChooseKeyTest(int dataBlocks, int checkBlocks, SplitFileFetcherSegmentStorage storage, boolean[] tried, TestSplitfile test, boolean cooldown) {
         final MyKeysFetchingLocally keys = test.fetchingKeys;
         keys.clear();
@@ -945,7 +945,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         assertEquals(storage.chooseRandomKey(), null);
         cb.waitForFailed();
     }
-    
+
     public void testChooseKeyCooldown() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException, InterruptedException {
         int dataBlocks = 3, checkBlocks = 3;
         int COOLDOWN_TIME = 200;
@@ -977,7 +977,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         // Now it should fail.
         cb.waitForFailed();
     }
-    
+
     public void testWriteReadSegmentKeys() throws FetchException, MetadataParseException, IOException, CHKEncodeException, MetadataUnresolvedException, ChecksumFailedException {
         int dataBlocks = 3, checkBlocks = 3;
         TestSplitfile test = TestSplitfile.constructSingleSegment(dataBlocks*BLOCK_SIZE, checkBlocks, null, true);
@@ -1003,7 +1003,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         storage = test.createStorage(cb, test.makeFetchContext(), cb.getRAF());
         storage.close();
     }
-    
+
     public void testPersistenceReloadThenFetch() throws IOException, StorageFormatException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException, FetchException {
         int dataBlocks = 2;
         int checkBlocks = 3;
@@ -1047,7 +1047,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.waitForFree(storage);
         cb.checkFailed();
     }
-    
+
     public void testPersistenceReloadThenChooseKey() throws IOException, StorageFormatException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException, FetchException {
         int dataBlocks = 2;
         int checkBlocks = 3;
@@ -1068,7 +1068,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         assertEquals(storage.chooseRandomKey(), null);
         cb.waitForFailed();
     }
-    
+
     public void testPersistenceReloadBetweenChooseKey() throws IOException, StorageFormatException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException, FetchException {
         int dataBlocks = 2;
         int checkBlocks = 3;
@@ -1099,7 +1099,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         assertEquals(storage.chooseRandomKey(), null);
         cb.waitForFailed();
     }
-    
+
     public void testPersistenceReloadBetweenFetches() throws IOException, StorageFormatException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException, FetchException {
         int dataBlocks = 2;
         int checkBlocks = 3;
@@ -1150,5 +1150,5 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.waitForFree(storage);
         cb.checkFailed();
     }
-    
+
 }

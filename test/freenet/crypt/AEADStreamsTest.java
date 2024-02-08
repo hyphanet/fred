@@ -16,7 +16,7 @@ import freenet.support.io.FileUtil;
 import freenet.support.io.NoCloseProxyOutputStream;
 
 public class AEADStreamsTest extends TestCase {
-    
+
     public void testSuccessfulRoundTrip() throws IOException {
         Random random = new Random(0x96231307);
         for(int i=0;i<10;i++) {
@@ -27,7 +27,7 @@ public class AEADStreamsTest extends TestCase {
             checkSuccessfulRoundTrip(32, random, input, new ArrayBucket(), new ArrayBucket());
         }
     }
-    
+
     public void testCorruptedRoundTrip() throws IOException {
         Random random = new Random(0x96231307); // Same seed as first test, intentionally.
         for(int i=0;i<10;i++) {
@@ -38,7 +38,7 @@ public class AEADStreamsTest extends TestCase {
             checkFailedCorruptedRoundTrip(32, random, input, new ArrayBucket(), new ArrayBucket());
         }
     }
-    
+
     public void testTruncatedReadsWritesRoundTrip() throws IOException {
         Random random = new Random(0x49ee92f5);
         ArrayBucket input = new ArrayBucket();
@@ -47,7 +47,7 @@ public class AEADStreamsTest extends TestCase {
         checkSuccessfulRoundTripRandomSplits(24, random, input, new ArrayBucket(), new ArrayBucket());
         checkSuccessfulRoundTripRandomSplits(32, random, input, new ArrayBucket(), new ArrayBucket());
     }
-    
+
     public void checkSuccessfulRoundTrip(int keysize, Random random, Bucket input, Bucket output, Bucket decoded) throws IOException {
         byte[] key = new byte[keysize];
         random.nextBytes(key);
@@ -99,8 +99,8 @@ public class AEADStreamsTest extends TestCase {
         assertEquals(decoded.size(), input.size());
         assertTrue(BucketTools.equalBuckets(decoded, input));
     }
-    
-    /** Check whether we can close the stream early. 
+
+    /** Check whether we can close the stream early.
      * @throws IOException */
     public void testCloseEarly() throws IOException {
         ArrayBucket input = new ArrayBucket();
@@ -123,9 +123,9 @@ public class AEADStreamsTest extends TestCase {
         assertTrue(Arrays.equals(first1KReadEncrypted, first1KReadOriginal));
         cis.close();
     }
-    
+
     /** If we close the stream early but there is garbage after that point, it should throw on
-     * close(). 
+     * close().
      * @throws IOException */
     public void testGarbageAfterClose() throws IOException {
         ArrayBucket input = new ArrayBucket();

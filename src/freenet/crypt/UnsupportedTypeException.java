@@ -5,10 +5,10 @@ package freenet.crypt;
 
 /**
  * The UnsupportedTypeException is a subclass of IllegalArgumentException.
- * 
+ *
  * Thrown to indicate that a method has been passed an Enum value from one
  * of the various Type enums in freenet.crypt that is not supported by that
- * method. 
+ * method.
  * @author unixninja92
  *
  */
