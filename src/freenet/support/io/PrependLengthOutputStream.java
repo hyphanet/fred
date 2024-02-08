@@ -8,10 +8,10 @@ import java.io.OutputStream;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
-/** Write to a temporary Bucket. On close, if not abort()'ed, write length and then copy the 
+/** Write to a temporary Bucket. On close, if not abort()'ed, write length and then copy the
  * data. Does not close the underlying Bucket. */
 public class PrependLengthOutputStream extends FilterOutputStream {
-    
+
     private final Bucket temp;
     private final OutputStream origOS;
     private final int offset;
@@ -19,14 +19,14 @@ public class PrependLengthOutputStream extends FilterOutputStream {
     private boolean aborted;
     private boolean closed;
 
-    /** Create a stream which writes to temporary space and then on a non-aborted close() will 
+    /** Create a stream which writes to temporary space and then on a non-aborted close() will
      * write the length (minus the offset) followed by the data. */
     public static PrependLengthOutputStream create(OutputStream out, BucketFactory bf, int offset, boolean closeUnderlying) throws IOException {
         Bucket temp = bf.makeBucket(-1);
         OutputStream os = temp.getOutputStream();
         return new PrependLengthOutputStream(os, temp, out, offset, closeUnderlying);
     }
-    
+
     private PrependLengthOutputStream(OutputStream os, Bucket temp, OutputStream origOS, int offset, boolean closeUnderlying) {
         super(os);
         this.temp = temp;
@@ -40,12 +40,12 @@ public class PrependLengthOutputStream extends FilterOutputStream {
         // Unfortunately this is necessary because FilterOutputStream passes everything through write(int).
         out.write(buf, offset, length);
     }
-    
+
     @Override
     public void write(byte[] buf) throws IOException {
         write(buf, 0, buf.length);
     }
-    
+
     /** Abort the stream. Will write a length of 0 when close()'ed.
      * @return False if the stream has already been closed. */
     public boolean abort() throws IOException {
@@ -53,7 +53,7 @@ public class PrependLengthOutputStream extends FilterOutputStream {
         aborted = true;
         return true;
     }
-    
+
     @Override
     public void close() throws IOException {
         if(closed) return;

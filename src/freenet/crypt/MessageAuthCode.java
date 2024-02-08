@@ -18,7 +18,7 @@ import freenet.support.Fields;
 
 /**
  * The MessageAuthCode class will generate the Message Authentication Code of a given set
- * of bytes using a secret key. It can also verify 
+ * of bytes using a secret key. It can also verify
  * @author unixninja92
  * Suggested MACType to use: Poly1305AES
  */
@@ -29,15 +29,15 @@ public final class MessageAuthCode {
     private IvParameterSpec iv;
 
     /**
-     * Creates an instance of MessageAuthCode that will use the specified algorithm and 
+     * Creates an instance of MessageAuthCode that will use the specified algorithm and
      * key. If that algorithms requires an IV it will generate one or use the passed in IV
      * @param type The MAC algorithm to use
      * @param key The key to use
      * @param genIV Does an IV need to be generated if type requires one
-     * @param iv The iv to be used. Can be null if none provided or required. 
+     * @param iv The iv to be used. Can be null if none provided or required.
      * @throws InvalidKeyException
      */
-    private MessageAuthCode(MACType type, SecretKey key, boolean genIV, IvParameterSpec iv) 
+    private MessageAuthCode(MACType type, SecretKey key, boolean genIV, IvParameterSpec iv)
             throws InvalidKeyException{
         this.type = type;
         mac = type.get();
@@ -61,9 +61,9 @@ public final class MessageAuthCode {
     }
 
     /**
-     * Creates an instance of MessageAuthCode that will use the specified algorithm and 
-     * key. Must not be used on algorithms that require an IV, as a specified key but a random IV 
-     * is probably not useful for an HMAC. 
+     * Creates an instance of MessageAuthCode that will use the specified algorithm and
+     * key. Must not be used on algorithms that require an IV, as a specified key but a random IV
+     * is probably not useful for an HMAC.
      * @param type The MAC algorithm to use
      * @param cryptoKey The key to use
      * @throws InvalidKeyException
@@ -73,33 +73,33 @@ public final class MessageAuthCode {
     }
 
     /**
-     * Creates an instance of MessageAuthCode that will use the specified algorithm and 
-     * key which is converted from a byte[] to a SecretKey. Must not be used on algorithms that 
+     * Creates an instance of MessageAuthCode that will use the specified algorithm and
+     * key which is converted from a byte[] to a SecretKey. Must not be used on algorithms that
      * require an IV, as a specified key but a random IV is probably not useful for an HMAC.
      * @param type The MAC algorithm to use
      * @param cryptoKey The key to use
      * @throws InvalidKeyException
      */
     public MessageAuthCode(MACType type, byte[] cryptoKey) throws InvalidKeyException {
-        this(type, KeyGenUtils.getSecretKey(type.keyType, cryptoKey));	
+        this(type, KeyGenUtils.getSecretKey(type.keyType, cryptoKey));
     }
-    
+
     /**
-     * Creates an instance of MessageAuthCode that will use the specified algorithm and 
-     * key which is converted from a ByteBuffer to a SecretKey. If that algorithms requires 
-     * an IV it will generate one. 
+     * Creates an instance of MessageAuthCode that will use the specified algorithm and
+     * key which is converted from a ByteBuffer to a SecretKey. If that algorithms requires
+     * an IV it will generate one.
      * @param type The MAC algorithm to use
      * @param cryptoKey The key to use
      * @throws InvalidKeyException
      */
     public MessageAuthCode(MACType type, ByteBuffer cryptoKey) throws InvalidKeyException {
-        this(type, Fields.copyToArray(cryptoKey));  
+        this(type, Fields.copyToArray(cryptoKey));
     }
 
     /**
-     * Creates an instance of MessageAuthCode that will use the specified algorithm and 
+     * Creates an instance of MessageAuthCode that will use the specified algorithm and
      * will generate a key (and an IV if necessary).
-     * @param type The MAC algorithm to 
+     * @param type The MAC algorithm to
      * @throws InvalidKeyException
      */
     public MessageAuthCode(MACType type) throws InvalidKeyException{
@@ -107,27 +107,27 @@ public final class MessageAuthCode {
     }
 
     /**
-     * Creates an instance of MessageAuthCode that will use the specified algorithm with 
+     * Creates an instance of MessageAuthCode that will use the specified algorithm with
      * the specified key and iv. The specified algorithm must require an iv.
      * @param key They key to be used
      * @param iv The iv to be used
      * @throws InvalidKeyException
      * @throws InvalidAlgorithmParameterException
      */
-    public MessageAuthCode(MACType type, SecretKey key, IvParameterSpec iv) 
+    public MessageAuthCode(MACType type, SecretKey key, IvParameterSpec iv)
             throws InvalidKeyException, InvalidAlgorithmParameterException{
         this(type, key, false, iv);
     }
 
     /**
-     * Creates an instance of MessageAuthCode that will use the specified algorithm with 
+     * Creates an instance of MessageAuthCode that will use the specified algorithm with
      * the specified key and iv. The specified algorithm must require an iv.
      * @param key They key to be used as a byte[]
      * @param iv The iv to be used
      * @throws InvalidKeyException
      * @throws InvalidAlgorithmParameterException
      */
-    public MessageAuthCode(MACType type, byte[] key, IvParameterSpec iv) 
+    public MessageAuthCode(MACType type, byte[] key, IvParameterSpec iv)
             throws InvalidKeyException, InvalidAlgorithmParameterException{
         this(type, KeyGenUtils.getSecretKey(type.keyType, key), iv);
     }
@@ -165,11 +165,11 @@ public final class MessageAuthCode {
     }
 
     /**
-     * Adds the remaining bytes from a  ByteBuffer to the buffer of bytes 
-     * to be used for MAC generation. The bytes read from the ByteBuffer will be from 
+     * Adds the remaining bytes from a  ByteBuffer to the buffer of bytes
+     * to be used for MAC generation. The bytes read from the ByteBuffer will be from
      * input.position() to input.remaining(). Upon return, the ByteBuffer's
-     * .position() will be equal to .remaining() and .remaining() will 
-     * stay unchanged. 
+     * .position() will be equal to .remaining() and .remaining() will
+     * stay unchanged.
      * @param input The ByteBuffer to be added
      */
     public final void addBytes(ByteBuffer input){
@@ -177,7 +177,7 @@ public final class MessageAuthCode {
     }
 
     /**
-     * Adds the specified portion of the byte[] passed in to the buffer 
+     * Adds the specified portion of the byte[] passed in to the buffer
      * of bytes to be used for MAC generation
      * @param input The byte to add
      * @param offset What byte to start at
@@ -200,12 +200,12 @@ public final class MessageAuthCode {
     public final ByteBuffer genMac(){
         return ByteBuffer.wrap(mac.doFinal());
     }
-    
+
 
     /**
-     * Generates the MAC of only the specified bytes. The buffer is cleared before 
+     * Generates the MAC of only the specified bytes. The buffer is cleared before
      * processing the input to ensure that no extra data is included. Once the MAC
-     * has been generated, the buffer is cleared again. 
+     * has been generated, the buffer is cleared again.
      * @param input
      * @return The Message Authentication Code
      */
@@ -214,11 +214,11 @@ public final class MessageAuthCode {
         addBytes(input);
         return genMac();
     }
-    
+
     /**
-     * Generates the MAC of only the specified bytes. The buffer is cleared before 
+     * Generates the MAC of only the specified bytes. The buffer is cleared before
      * processing the input to ensure that no extra data is included. Once the MAC
-     * has been generated, the buffer is cleared again. 
+     * has been generated, the buffer is cleared again.
      * @param input
      * @return The Message Authentication Code
      */
@@ -249,7 +249,7 @@ public final class MessageAuthCode {
         }
         return MessageDigest.isEqual(mac1, mac2);
     }
-    
+
     /**
      * Verifies that the two MAC addresses passed are equivalent. The two ByteBuffer's will both
      * be emptied.
@@ -264,9 +264,9 @@ public final class MessageAuthCode {
 
     /**
      * Generates the MAC of the byte arrays provided and checks to see if that MAC
-     * is the same as the one passed in. The buffer is cleared before processing the 
-     * input to ensure that no extra data is included. Once the MAC has been 
-     * generated, the buffer is cleared again. 
+     * is the same as the one passed in. The buffer is cleared before processing the
+     * input to ensure that no extra data is included. Once the MAC has been
+     * generated, the buffer is cleared again.
      * @param otherMac The MAC to check
      * @param data The data to check the MAC against
      * @return Returns true if it is a match, otherwise false.
@@ -274,12 +274,12 @@ public final class MessageAuthCode {
     public final boolean verifyData(byte[] otherMac, byte[]... data){
         return verify(Fields.copyToArray(genMac(data)), otherMac);
     }
-    
+
     /**
      * Generates the MAC of the byte arrays provided and checks to see if that MAC
-     * is the same as the one passed in. The buffer is cleared before processing the 
-     * input to ensure that no extra data is included. Once the MAC has been 
-     * generated, the buffer is cleared again. 
+     * is the same as the one passed in. The buffer is cleared before processing the
+     * input to ensure that no extra data is included. Once the MAC has been
+     * generated, the buffer is cleared again.
      * @param otherMac The MAC to check
      * @param data The data to check the MAC against
      * @return Returns true if it is a match, otherwise false.

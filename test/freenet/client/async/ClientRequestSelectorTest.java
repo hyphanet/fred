@@ -190,8 +190,8 @@ public class ClientRequestSelectorTest {
         context.maxInsertRetries = 2;
         ClientRequestSelector keys = new ClientRequestSelector(true, false, false, null);
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
-                new ClientMetadata(), false, null, smallRAFFactory, false, context, 
-                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                new ClientMetadata(), false, null, smallRAFFactory, false, context,
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker,
                 r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();

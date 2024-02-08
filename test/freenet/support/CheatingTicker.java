@@ -1,7 +1,7 @@
 package freenet.support;
 
 public class CheatingTicker implements Ticker {
-    
+
     final Executor underlying;
 
     public CheatingTicker(Executor exec) {
