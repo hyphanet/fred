@@ -23,10 +23,10 @@ import com.sun.jna.platform.win32.WinDef.DWORD;
  * permissions, the above call is simply a no-op.
  *
  */
- 
+
 public class ProcessPriority {
     private static volatile boolean background = false;
-    
+
     /// Windows interface (kernel32.dll) ///
     public interface WindowsHolder extends StdCallLibrary {
         WindowsHolder INSTANCE = (WindowsHolder) Native.loadLibrary("kernel32", WindowsHolder.class);

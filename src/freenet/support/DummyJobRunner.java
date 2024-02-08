@@ -10,12 +10,12 @@ import freenet.support.io.NativeThread;
 /** A PersistentJobRunner that isn't persistent. Convenient for transient requests, code doesn't
  * need messy if(persistent) everywhere. */
 public class DummyJobRunner implements PersistentJobRunner {
-    
+
     private static volatile boolean logMINOR;
     static {
         Logger.registerClass(DummyJobRunner.class);
     }
-    
+
     final Executor executor;
     final ClientContext context;
 
@@ -39,7 +39,7 @@ public class DummyJobRunner implements PersistentJobRunner {
             public int getPriority() {
                 return priority;
             }
-            
+
         });
     }
 
@@ -76,7 +76,7 @@ public class DummyJobRunner implements PersistentJobRunner {
             public void unlock(boolean forceWrite, int threadPriority) {
                 // Do nothing.
             }
-            
+
         };
     }
 

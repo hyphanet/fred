@@ -1,4 +1,4 @@
-/** Copied from Bouncycastle v149/OCBBlockCipher.java. Bouncycastle is MIT X licensed i.e. 
+/** Copied from Bouncycastle v149/OCBBlockCipher.java. Bouncycastle is MIT X licensed i.e.
  * GPL compatible. */
 package freenet.crypt;
 
@@ -28,7 +28,7 @@ import org.bouncycastle.util.Arrays;
  * This is a non-binding summary of a legal document (the link above). The parameters of the license
  * are specified in the license document and that document is controlling. </blockquote>
  */
-@Deprecated 
+@Deprecated
 public class OCBBlockCipher_v149
     implements AEADBlockCipher
 {
@@ -204,7 +204,7 @@ public class OCBBlockCipher_v149
 
         byte[] nonce = new byte[16];
         System.arraycopy(N, 0, nonce, nonce.length - N.length, N.length);
-        
+
         /*
          * TODO There's currently a thread on CFRG
          * (http://www.ietf.org/mail-archive/web/cfrg/current/msg03433.html) debating including

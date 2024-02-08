@@ -4,7 +4,7 @@ import freenet.support.Executor;
 import freenet.support.Ticker;
 
 public class CheatingTicker implements Ticker {
-    
+
     final Executor underlying;
 
     public CheatingTicker(Executor exec) {

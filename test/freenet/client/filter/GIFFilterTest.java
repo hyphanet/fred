@@ -20,7 +20,7 @@ public class GIFFilterTest extends TestCase {
         /*
          * Various samples from Firefox testcases.
          */
-         
+
         // GIF image data, version 87a, 40 x 40
         "animated-gif-finalframe.gif",
         // GIF image data, version 87a, 92 x 129
@@ -33,7 +33,7 @@ public class GIFFilterTest extends TestCase {
         "charing.gif",
         // GIF image data, version 87a, 92 x 140
         "welville.gif",
-        
+
         // GIF image data, version 89a, 100 x 100
         "animated1.gif",
         // GIF image data, version 89a, 40 x 40

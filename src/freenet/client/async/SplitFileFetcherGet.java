@@ -13,11 +13,11 @@ import freenet.node.SendableRequestItem;
 import freenet.support.Logger;
 
 /** Actually does the splitfile fetch. Only one fetcher object for an entire splitfile.
- * 
+ *
  * PERSISTENCE: Not persistent, recreated on startup by SplitFileFetcher. */
 @SuppressWarnings("serial")
 public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
-    
+
     private static volatile boolean logMINOR;
     static {
         Logger.registerClass(SplitFileFetcherGet.class);
@@ -65,7 +65,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
             storage.onFailure(key, fe);
         }
     }
-    
+
     @Override
     public long getWakeupTime(ClientContext context, long now) {
         long wakeTime = storage.getCooldownWakeupTime(now);
@@ -167,5 +167,5 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     protected ClientGetState getClientGetState() {
         return parent;
     }
-    
+
 }

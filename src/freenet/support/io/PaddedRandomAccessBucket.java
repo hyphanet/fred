@@ -15,13 +15,13 @@ import freenet.support.api.Bucket;
 import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 
-/** Pads a bucket to the next power of 2 file size. 
- * Note that self-terminating formats do not work with AEADCryptBucket; it needs to know the real 
+/** Pads a bucket to the next power of 2 file size.
+ * Note that self-terminating formats do not work with AEADCryptBucket; it needs to know the real
  * length. This pads with FileUtil.fill(), which is reasonably random but is faster than using
  * SecureRandom, and vastly more secure than using a non-secure Random.
  */
 public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializable {
-    
+
     private static final long serialVersionUID = 1L;
     private final RandomAccessBucket underlying;
     private long size;
@@ -32,7 +32,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
     public PaddedRandomAccessBucket(RandomAccessBucket underlying) {
         this(underlying, 0);
     }
-    
+
     /** Create a PaddedBucket, specifying the actual size of the existing bucket, which we
      * do not store on disk.
      * @param underlying The underlying bucket.
@@ -42,7 +42,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
         this.underlying = underlying;
         this.size = size;
     }
-    
+
     protected PaddedRandomAccessBucket() {
         // For serialization.
         underlying = null;
@@ -51,7 +51,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
 
     @Override
     public OutputStream getOutputStream() throws IOException {
-        OutputStream os; 
+        OutputStream os;
         synchronized(this) {
             if(outputStreamOpen) throw new IOException("Already have an OutputStream for "+this);
             os = underlying.getOutputStream();
@@ -60,10 +60,10 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
         }
         return new MyOutputStream(os);
     }
-    
+
     @Override
     public OutputStream getOutputStreamUnbuffered() throws IOException {
-        OutputStream os; 
+        OutputStream os;
         synchronized(this) {
             if(outputStreamOpen) throw new IOException("Already have an OutputStream for "+this);
             os = underlying.getOutputStreamUnbuffered();
@@ -72,15 +72,15 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
         }
         return new MyOutputStream(os);
     }
-    
+
     private class MyOutputStream extends FilterOutputStream {
-        
+
         private boolean closed;
-        
+
         MyOutputStream(OutputStream os) {
             super(os);
         }
-        
+
         @Override
         public void write(int b) throws IOException {
             out.write(b);
@@ -88,7 +88,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
                 size++;
             }
         }
-        
+
         @Override
         public void write(byte[] buf) throws IOException {
             out.write(buf);
@@ -97,7 +97,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
                 size += buf.length;
             }
         }
-        
+
         @Override
         public void write(byte[] buf, int offset, int length) throws IOException {
             out.write(buf, offset, length);
@@ -106,7 +106,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
                 size += length;
             }
         }
-        
+
         @Override
         public void close() throws IOException {
             try {
@@ -125,15 +125,15 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
                 }
             }
         }
-        
+
         public String toString() {
             return "TrivialPaddedBucketOutputStream:"+out+"("+PaddedRandomAccessBucket.this+")";
         }
 
     }
-    
+
     private static final long MIN_PADDED_SIZE = 1024;
-    
+
     private long paddedLength(long size) {
         if(size < MIN_PADDED_SIZE) size = MIN_PADDED_SIZE;
         if(size == MIN_PADDED_SIZE) return size;
@@ -156,20 +156,20 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
     public InputStream getInputStream() throws IOException {
         return new MyInputStream(underlying.getInputStream());
     }
-    
+
     @Override
     public InputStream getInputStreamUnbuffered() throws IOException {
         return new MyInputStream(underlying.getInputStreamUnbuffered());
     }
-    
+
     private class MyInputStream extends FilterInputStream {
 
         private long counter;
-        
+
         public MyInputStream(InputStream is) {
             super(is);
         }
-        
+
         @Override
         public int read() throws IOException {
             synchronized(PaddedRandomAccessBucket.this) {
@@ -181,12 +181,12 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
             }
             return ret;
         }
-        
+
         @Override
         public int read(byte[] buf) throws IOException {
             return read(buf, 0, buf.length);
         }
-        
+
         @Override
         public int read(byte[] buf, int offset, int length) throws IOException {
             synchronized(PaddedRandomAccessBucket.this) {
@@ -204,7 +204,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
             }
             return ret;
         }
-        
+
         public long skip(long length) throws IOException {
             synchronized(PaddedRandomAccessBucket.this) {
                 if(counter >= size) return -1;
@@ -218,7 +218,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
             }
             return ret;
         }
-        
+
         @Override
         public synchronized int available() throws IOException {
             long max = size - counter;
@@ -227,7 +227,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
             if(ret < 0) return 0;
             return ret;
         }
-        
+
     }
 
     @Override
@@ -268,7 +268,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
     public void onResume(ClientContext context) throws ResumeFailedException {
         underlying.onResume(context);
     }
-    
+
     static final int MAGIC = 0x95c42e34;
     static final int VERSION = 1;
 
@@ -280,9 +280,9 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
         dos.writeBoolean(readOnly);
         underlying.storeTo(dos);
     }
-    
-    protected PaddedRandomAccessBucket(DataInputStream dis, FilenameGenerator fg, 
-            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+
+    protected PaddedRandomAccessBucket(DataInputStream dis, FilenameGenerator fg,
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey)
     throws IOException, StorageFormatException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
@@ -305,5 +305,5 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
     public RandomAccessBucket getUnderlying() {
         return underlying;
     }
-    
+
 }

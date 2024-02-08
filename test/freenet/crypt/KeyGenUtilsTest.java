@@ -56,7 +56,7 @@ public class KeyGenUtilsTest {
         HexUtil.hexToBytes("f468986cbaeecabd4cf242607ac602b51a1adaf4f9a4fc5b298970cbda0b55c6")
     };
 
-    private static final KeyPairType[] trueKeyPairTypes = {KeyPairType.ECP256, 
+    private static final KeyPairType[] trueKeyPairTypes = {KeyPairType.ECP256,
         KeyPairType.ECP384, KeyPairType.ECP521};
     @SuppressWarnings("deprecation")
     private static final KeyPairType falseKeyPairType = KeyPairType.DSA;
@@ -97,7 +97,7 @@ public class KeyGenUtilsTest {
         KeyFactory kf;
         X509EncodedKeySpec xks;
         PKCS8EncodedKeySpec pks;
-        for(int i = 0; i < trueKeyPairTypes.length; i++){ 
+        for(int i = 0; i < trueKeyPairTypes.length; i++){
             try {
                 type = trueKeyPairTypes[i];
                 kf = KeyFactory.getInstance(type.alg);
@@ -168,7 +168,7 @@ public class KeyGenUtilsTest {
         for(int i = 0; i < trueKeyPairTypes.length; i++){
             KeyPairType type = trueKeyPairTypes[i];
             KeyPair key = KeyGenUtils.getPublicKeyPair(type, truePublicKeys[i]);
-            assertArrayEquals("KeyPairType: "+type.name(), key.getPublic().getEncoded(), 
+            assertArrayEquals("KeyPairType: "+type.name(), key.getPublic().getEncoded(),
                     truePublicKeys[i]);
             assertNull("KeyPairType: "+type.name(), key.getPrivate());
         }
@@ -178,7 +178,7 @@ public class KeyGenUtilsTest {
     public void testGetPublicKeyPairNotNull() {
         for(int i = 0; i < trueKeyPairTypes.length; i++){
             KeyPairType type = trueKeyPairTypes[i];
-            assertNotNull("KeyPairType: "+type.name(), KeyGenUtils.getPublicKey(type, 
+            assertNotNull("KeyPairType: "+type.name(), KeyGenUtils.getPublicKey(type,
                     truePublicKeys[i]));
         }
     }
@@ -204,7 +204,7 @@ public class KeyGenUtilsTest {
     public void testGetKeyPairKeyPairTypeByteArrayByteArray() {
         for(int i = 0; i < trueKeyPairTypes.length; i++){
             KeyPairType type = trueKeyPairTypes[i];
-            assertNotNull("KeyPairType: "+type.name(), 
+            assertNotNull("KeyPairType: "+type.name(),
                     KeyGenUtils.getKeyPair(type, truePublicKeys[i], truePrivateKeys[i]));
         }
     }
@@ -233,7 +233,7 @@ public class KeyGenUtilsTest {
     @Test
     public void testGetKeyPairPublicKeyPrivateKey() {
         for(int i = 0; i < trueKeyPairTypes.length; i++){
-            assertNotNull("KeyPairType: "+trueKeyPairTypes[i].name(), 
+            assertNotNull("KeyPairType: "+trueKeyPairTypes[i].name(),
                     KeyGenUtils.getKeyPair(publicKeys[i], privateKeys[i]));
         }
     }
@@ -242,7 +242,7 @@ public class KeyGenUtilsTest {
     public void testGetKeyPairPublicKeyPrivateKeySamePublic() {
         for(int i = 0; i < trueKeyPairTypes.length; i++){
             KeyPair pair = KeyGenUtils.getKeyPair(publicKeys[i], privateKeys[i]);
-            assertEquals("KeyPairType: "+trueKeyPairTypes[i].name(), 
+            assertEquals("KeyPairType: "+trueKeyPairTypes[i].name(),
                     pair.getPublic(), publicKeys[i]);
         }
     }
@@ -251,7 +251,7 @@ public class KeyGenUtilsTest {
     public void testGetKeyPairPublicKeyPrivateKeySamePrivate() {
         for(int i = 0; i < trueKeyPairTypes.length; i++){
             KeyPair pair = KeyGenUtils.getKeyPair(publicKeys[i], privateKeys[i]);
-            assertEquals("KeyPairType: "+trueKeyPairTypes[i].name(), 
+            assertEquals("KeyPairType: "+trueKeyPairTypes[i].name(),
                     pair.getPrivate(), privateKeys[i]);
         }
     }
@@ -320,7 +320,7 @@ public class KeyGenUtilsTest {
 
     @Test
     public void testGetIvParameterSpecLength() {
-        assertEquals(KeyGenUtils.getIvParameterSpec(new byte[16], 0, trueLength).getIV().length, 
+        assertEquals(KeyGenUtils.getIvParameterSpec(new byte[16], 0, trueLength).getIV().length,
                 trueLength);
     }
 
@@ -338,18 +338,18 @@ public class KeyGenUtilsTest {
     public void testGetIvParameterSpecLengthOutOfBounds() {
         KeyGenUtils.getIvParameterSpec(trueIV, 0, trueIV.length+20);
     }
-    
+
     @Test
     public void testDeriveSecretKey() throws InvalidKeyException{
         SecretKey kdfKey = KeyGenUtils.getSecretKey(KeyType.HMACSHA512, trueLengthSecretKeys[6]);
-        SecretKey buf1 = KeyGenUtils.deriveSecretKey(kdfKey, KeyGenUtils.class, kdfInput, 
+        SecretKey buf1 = KeyGenUtils.deriveSecretKey(kdfKey, KeyGenUtils.class, kdfInput,
                 KeyType.HMACSHA512);
-        SecretKey buf2 = KeyGenUtils.deriveSecretKey(kdfKey, KeyGenUtils.class, kdfInput, 
+        SecretKey buf2 = KeyGenUtils.deriveSecretKey(kdfKey, KeyGenUtils.class, kdfInput,
                 KeyType.HMACSHA512);
         assertNotNull(buf1);
         assertTrue(buf1.equals(buf2));
     }
-    
+
     @Test
     public void testDeriveSecretKeyLength() throws InvalidKeyException{
         for(KeyType type: keyTypes){
@@ -387,21 +387,21 @@ public class KeyGenUtilsTest {
     @Test
     public void testDeriveIvParameterSpec() throws InvalidKeyException{
         SecretKey kdfKey = KeyGenUtils.getSecretKey(KeyType.HMACSHA512, trueLengthSecretKeys[6]);
-        IvParameterSpec buf1 = 
-                KeyGenUtils.deriveIvParameterSpec(kdfKey, KeyGenUtils.class, kdfInput, 
+        IvParameterSpec buf1 =
+                KeyGenUtils.deriveIvParameterSpec(kdfKey, KeyGenUtils.class, kdfInput,
                         KeyType.ChaCha128);
-        IvParameterSpec buf2 = 
-                KeyGenUtils.deriveIvParameterSpec(kdfKey, KeyGenUtils.class, kdfInput, 
+        IvParameterSpec buf2 =
+                KeyGenUtils.deriveIvParameterSpec(kdfKey, KeyGenUtils.class, kdfInput,
                         KeyType.ChaCha128);
         assertNotNull(buf1);
         assertArrayEquals(buf1.getIV(), buf2.getIV());
     }
-    
+
     @Test
     public void testDeriveIvParameterSpecLength() throws InvalidKeyException{
         for(KeyType type: keyTypes){
             SecretKey kdfKey = KeyGenUtils.getSecretKey(KeyType.HMACSHA512, trueLengthSecretKeys[6]);
-            IvParameterSpec buf1 = KeyGenUtils.deriveIvParameterSpec(kdfKey, KeyGenUtils.class, 
+            IvParameterSpec buf1 = KeyGenUtils.deriveIvParameterSpec(kdfKey, KeyGenUtils.class,
                     kdfInput, type);
 
             assertEquals(buf1.getIV().length, type.ivSize >> 3);

@@ -12,41 +12,41 @@ import freenet.support.io.NativeThread;
 
 public class GetRequestStatusMessage extends FCPMessage {
 
-	final String identifier;
-	final boolean global;
-	final boolean onlyData;
-	final static String NAME = "GetRequestStatus";
-	
-	public GetRequestStatusMessage(SimpleFieldSet fs) {
-		this.identifier = fs.get("Identifier");
-		this.global = fs.getBoolean("Global", false);
-		this.onlyData = fs.getBoolean("OnlyData", false);
-	}
+    final String identifier;
+    final boolean global;
+    final boolean onlyData;
+    final static String NAME = "GetRequestStatus";
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.putSingle("Identifier", identifier);
-		return fs;
-	}
+    public GetRequestStatusMessage(SimpleFieldSet fs) {
+        this.identifier = fs.get("Identifier");
+        this.global = fs.getBoolean("Global", false);
+        this.onlyData = fs.getBoolean("OnlyData", false);
+    }
 
-	@Override
-	public String getName() {
-		return NAME;
-	}
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet fs = new SimpleFieldSet(true);
+        fs.putSingle("Identifier", identifier);
+        return fs;
+    }
 
-	@Override
-	public void run(final FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		ClientRequest req = handler.getRebootRequest(global, handler, identifier);
-		if(req == null) {
-			if(node.clientCore.killedDatabase()) {
-				// Ignore.
-				return;
-			}
-			try {
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public void run(final FCPConnectionHandler handler, Node node)
+            throws MessageInvalidException {
+        ClientRequest req = handler.getRebootRequest(global, handler, identifier);
+        if(req == null) {
+            if(node.clientCore.killedDatabase()) {
+                // Ignore.
+                return;
+            }
+            try {
                 node.clientCore.clientContext.jobRunner.queue(new PersistentJob() {
-                    
+
                     @Override
                     public boolean run(ClientContext context) {
                         ClientRequest req = handler.getForeverRequest(global, handler, identifier);
@@ -58,15 +58,15 @@ public class GetRequestStatusMessage extends FCPMessage {
                         }
                         return false;
                     }
-                    
+
                 }, NativeThread.NORM_PRIORITY);
             } catch (PersistenceDisabledException e) {
                 ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
                 handler.outputHandler.queue(msg);
             }
-		} else {
-			req.sendPendingMessages(handler.outputHandler, identifier, true, onlyData);
-		}
-	}
+        } else {
+            req.sendPendingMessages(handler.outputHandler, identifier, true, onlyData);
+        }
+    }
 
 }

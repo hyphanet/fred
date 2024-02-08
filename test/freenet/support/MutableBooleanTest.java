@@ -19,20 +19,20 @@ import junit.framework.TestCase;
 
 /**
  * Test case for {@link freenet.support.MutableBoolean} class.
- * 
+ *
  * @author stuart martin &lt;wavey@freenetproject.org&gt;
  */
 public class MutableBooleanTest extends TestCase {
 
-	public void testMutableBoolean() {
-		
-		MutableBoolean bool = new MutableBoolean();
-		bool.value = false;
-		
-		assertFalse(bool.value);
-		
-		bool.value = true;
-		
-		assertTrue(bool.value);
-	}
+    public void testMutableBoolean() {
+
+        MutableBoolean bool = new MutableBoolean();
+        bool.value = false;
+
+        assertFalse(bool.value);
+
+        bool.value = true;
+
+        assertTrue(bool.value);
+    }
 }

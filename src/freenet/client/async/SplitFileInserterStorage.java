@@ -62,29 +62,29 @@ import freenet.support.math.MersenneTwister;
  * dependencies on the runtime as possible, partly so that it can be tested in
  * isolation. Actual details of inserting the blocks will be kept on
  * SplitFileInserter.
- * 
+ *
  * CONTENTS OF FILE: (for persistent case, transient leaves out most of the below)
- * * Magic, version etc. 
- * * Basic settings. 
- * * Settings for each segment. 
- * * Settings for each cross-segment (including block lists). 
+ * * Magic, version etc.
+ * * Basic settings.
+ * * Settings for each segment.
+ * * Settings for each cross-segment (including block lists).
  * * Padded last block (if necessary)
- * * Global status 
- * * (Padding to a 4096 byte boundary) 
- * * Cross-check blocks (by cross-segment). 
- * * Check blocks 
- * * Segment status 
+ * * Global status
+ * * (Padding to a 4096 byte boundary)
+ * * Cross-check blocks (by cross-segment).
+ * * Check blocks
+ * * Segment status
  * * Segment key list (each key separately stored and checksummed)
- * 
- * Intentionally not as robust (against disk corruption in particular) as SplitFileFetcherStorage: 
+ *
+ * Intentionally not as robust (against disk corruption in particular) as SplitFileFetcherStorage:
  * We encode the block CHKs when we encode the check blocks, and if the block data has changed by
  * the time we insert the data, we fail; there's no way to obtain correct data. Similarly, we fail
  * if the keys are corrupted. However, for most of the duration of the insert neither the data, the
  * check blocks or the keys will be written, so it's still reasonable assuming you only get errrors
  * when writing, and it isn't really possible to improve on this much anyway...
- * 
+ *
  * @author toad
- * 
+ *
  */
 public class SplitFileInserterStorage {
 
@@ -135,7 +135,7 @@ public class SplitFileInserterStorage {
     private final CompatibilityMode cmode;
     private final byte[] hashThisLayerOnly;
     private final ARCHIVE_TYPE archiveType;
-    
+
     // Top level stuff
     private final HashResult[] hashes;
     private final boolean topDontCompress;
@@ -192,8 +192,8 @@ public class SplitFileInserterStorage {
     private final boolean hasPaddedLastBlock;
 
     /** Status. Generally depends on the status of the individual segments...
-     * Not persisted: Can be deduced from the state of the segments, except for the last 3 states, 
-     * which are only used during completion (we don't keep the storage around once we're 
+     * Not persisted: Can be deduced from the state of the segments, except for the last 3 states,
+     * which are only used during completion (we don't keep the storage around once we're
      * finished). */
     enum Status {
         NOT_STARTED, STARTED, ENCODED_CROSS_SEGMENTS, ENCODED, GENERATING_METADATA, SUCCEEDED, FAILED
@@ -202,7 +202,7 @@ public class SplitFileInserterStorage {
     private Status status;
     private final FailureCodeTracker errors;
     private boolean overallStatusDirty;
-    
+
     // Not persisted, only used briefly during completion
     private InsertException failing;
 
@@ -220,13 +220,13 @@ public class SplitFileInserterStorage {
     private final long[] offsetSegmentKeys;
 
     private final int overallStatusLength;
-    
+
     private final Object cooldownLock = new Object();
     private boolean noBlocksToSend;
-    
+
     /**
      * Create a SplitFileInserterStorage.
-     * 
+     *
      * @param originalData
      *            The original data as a RandomAccessBuffer. We need to be able
      *            to read single blocks.
@@ -243,14 +243,14 @@ public class SplitFileInserterStorage {
      */
     public SplitFileInserterStorage(LockableRandomAccessBuffer originalData,
             long decompressedLength, SplitFileInserterStorageCallback callback,
-            COMPRESSOR_TYPE compressionCodec, ClientMetadata meta, boolean isMetadata, 
-            ARCHIVE_TYPE archiveType, LockableRandomAccessBufferFactory rafFactory, 
-            boolean persistent, InsertContext ctx, byte splitfileCryptoAlgorithm, 
-            byte[] splitfileCryptoKey, byte[] hashThisLayerOnly, HashResult[] hashes, 
+            COMPRESSOR_TYPE compressionCodec, ClientMetadata meta, boolean isMetadata,
+            ARCHIVE_TYPE archiveType, LockableRandomAccessBufferFactory rafFactory,
+            boolean persistent, InsertContext ctx, byte splitfileCryptoAlgorithm,
+            byte[] splitfileCryptoKey, byte[] hashThisLayerOnly, HashResult[] hashes,
             BucketFactory bf, ChecksumChecker checker, Random random,
             MemoryLimitedJobRunner memoryLimitedJobRunner, PersistentJobRunner jobRunner,
-            Ticker ticker, KeysFetchingLocally keysFetching, 
-            boolean topDontCompress, int topRequiredBlocks, int topTotalBlocks, 
+            Ticker ticker, KeysFetchingLocally keysFetching,
+            boolean topDontCompress, int topRequiredBlocks, int topTotalBlocks,
             long origDataSize, long origCompressedDataSize) throws IOException, InsertException {
         this.originalData = originalData;
         this.callback = callback;
@@ -420,7 +420,7 @@ public class SplitFileInserterStorage {
         }
 
         // Now set up the RAF.
-        
+
         // Setup offset arrays early so we can compute the length of encodeOffsets().
         if(crossSegments != null) {
             offsetCrossSegmentBlocks = new long[crossSegments.length];
@@ -432,9 +432,9 @@ public class SplitFileInserterStorage {
             offsetCrossSegmentBlocks = null;
             offsetCrossSegmentStatus = null;
         }
-        
+
         offsetSegmentCheckBlocks = new long[segments.length];
-        
+
         offsetSegmentKeys = new long[segments.length];
         if(persistent) {
             offsetSegmentStatus = new long[segments.length];
@@ -454,7 +454,7 @@ public class SplitFileInserterStorage {
         } else {
             this.hasPaddedLastBlock = false;
         }
-        
+
         byte[] header = null;
         Bucket segmentSettings = null, crossSegmentSettings = null;
         int offsetsLength = 0;
@@ -522,7 +522,7 @@ public class SplitFileInserterStorage {
                 }
             }
         }
-        
+
         for (int i = 0; i < segments.length; i++) {
             offsetSegmentKeys[i] = ptr;
             ptr += segments[i].storedKeysLength();
@@ -569,9 +569,9 @@ public class SplitFileInserterStorage {
         }
         // Keys are empty, and invalid.
         status = Status.NOT_STARTED;
-        
-        // Include the cross check blocks in the required blocks. The actual number needed may be 
-        // slightly less, but this is consistent with fetching, and also with pre-1468 metadata. 
+
+        // Include the cross check blocks in the required blocks. The actual number needed may be
+        // slightly less, but this is consistent with fetching, and also with pre-1468 metadata.
         int totalCrossCheckBlocks = crossCheckBlocks * segments.length;
         this.topRequiredBlocks = topRequiredBlocks + totalDataBlocks + totalCrossCheckBlocks;
         this.topTotalBlocks = topTotalBlocks + totalDataBlocks + totalCrossCheckBlocks + totalCheckBlocks;
@@ -589,16 +589,16 @@ public class SplitFileInserterStorage {
      * @param persistentFG
      * @param persistentFileTracker
      * @param masterKey
-     * @throws IOException 
-     * @throws StorageFormatException 
-     * @throws ChecksumFailedException 
-     * @throws ResumeFailedException 
+     * @throws IOException
+     * @throws StorageFormatException
+     * @throws ChecksumFailedException
+     * @throws ResumeFailedException
      */
-    public SplitFileInserterStorage(LockableRandomAccessBuffer raf, 
-            LockableRandomAccessBuffer originalData, SplitFileInserterStorageCallback callback, Random random, 
-            MemoryLimitedJobRunner memoryLimitedJobRunner, PersistentJobRunner jobRunner, 
-            Ticker ticker, KeysFetchingLocally keysFetching, FilenameGenerator persistentFG, 
-            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+    public SplitFileInserterStorage(LockableRandomAccessBuffer raf,
+            LockableRandomAccessBuffer originalData, SplitFileInserterStorageCallback callback, Random random,
+            MemoryLimitedJobRunner memoryLimitedJobRunner, PersistentJobRunner jobRunner,
+            Ticker ticker, KeysFetchingLocally keysFetching, FilenameGenerator persistentFG,
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey)
     throws IOException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
         this.persistent = true;
         this.callback = callback;
@@ -777,7 +777,7 @@ public class SplitFileInserterStorage {
         dis = new DataInputStream(is);
         long blocks = 0;
         for(int i=0;i<segmentCount;i++) {
-            segments[i] = new SplitFileInserterSegmentStorage(this, dis, i, keyLength, 
+            segments[i] = new SplitFileInserterSegmentStorage(this, dis, i, keyLength,
                     splitfileCryptoAlgorithm, splitfileCryptoKey, random, maxRetries, consecutiveRNFsCountAsSuccess, keysFetching);
             underlyingOffsetDataSegments[i] = blocks * CHKBlock.DATA_LENGTH;
             blocks += segments[i].dataBlockCount;
@@ -809,7 +809,7 @@ public class SplitFileInserterStorage {
         }
         computeStatus();
     }
-    
+
     private void computeStatus() {
         status = Status.STARTED;
         if(crossSegments != null) {
@@ -831,7 +831,7 @@ public class SplitFileInserterStorage {
         if(l > rafLength) throw new StorageFormatException("Too big "+error);
         return l;
     }
-    
+
     private void writeOverallStatus(boolean force) throws IOException {
         byte[] buf;
         synchronized(this) {
@@ -958,7 +958,7 @@ public class SplitFileInserterStorage {
             throw new Error(e); // Impossible
         }
     }
-    
+
     /** Encode the offsets. */
     private byte[] encodeOffsets() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -988,7 +988,7 @@ public class SplitFileInserterStorage {
         } catch (IOException e) {
             throw new Error(e); // Impossible
         }
-    }            
+    }
 
     private void allocateCrossDataBlock(SplitFileInserterCrossSegmentStorage segment, Random xsRandom) {
         int x = 0;
@@ -1044,14 +1044,14 @@ public class SplitFileInserterStorage {
 
     private SplitFileInserterSegmentStorage[] makeSegments(int segmentSize, int segCount,
             int dataBlocks, int crossCheckBlocks, int deductBlocksFromSegments, boolean persistent,
-            CompatibilityMode cmode, Random random, KeysFetchingLocally keysFetching, 
+            CompatibilityMode cmode, Random random, KeysFetchingLocally keysFetching,
             int consecutiveRNFsCountAsSuccess) {
         SplitFileInserterSegmentStorage[] segments = new SplitFileInserterSegmentStorage[segCount];
         if (segCount == 1) {
             // Single segment
             int checkBlocks = codec.getCheckBlocks(dataBlocks + crossCheckBlocks, cmode);
             segments[0] = new SplitFileInserterSegmentStorage(this, 0, persistent, dataBlocks,
-                    checkBlocks, crossCheckBlocks, keyLength, splitfileCryptoAlgorithm, splitfileCryptoKey, random, 
+                    checkBlocks, crossCheckBlocks, keyLength, splitfileCryptoAlgorithm, splitfileCryptoKey, random,
                     maxRetries, consecutiveRNFsCountAsSuccess, keysFetching);
         } else {
             int j = 0;
@@ -1070,7 +1070,7 @@ public class SplitFileInserterStorage {
                 }
                 j = i;
                 segments[segNo] = new SplitFileInserterSegmentStorage(this, segNo, persistent,
-                        data, check, crossCheckBlocks, keyLength, splitfileCryptoAlgorithm, splitfileCryptoKey, 
+                        data, check, crossCheckBlocks, keyLength, splitfileCryptoAlgorithm, splitfileCryptoKey,
                         random, maxRetries, consecutiveRNFsCountAsSuccess, keysFetching);
 
                 if (deductBlocksFromSegments != 0)
@@ -1102,7 +1102,7 @@ public class SplitFileInserterStorage {
             }
             if(status == Status.ENCODED_CROSS_SEGMENTS) startSegments = true;
             if(status == Status.ENCODED) return;
-            if(status == Status.FAILED || status == Status.GENERATING_METADATA || 
+            if(status == Status.FAILED || status == Status.GENERATING_METADATA ||
                     status == Status.SUCCEEDED) return;
         }
         for(SplitFileInserterSegmentStorage segment : segments)
@@ -1166,7 +1166,7 @@ public class SplitFileInserterStorage {
                 }
                 return false;
             }
-            
+
         });
     }
 
@@ -1198,7 +1198,7 @@ public class SplitFileInserterStorage {
                 }
                 return false;
             }
-            
+
         });
     }
 
@@ -1234,7 +1234,7 @@ public class SplitFileInserterStorage {
         }
         callback.onFinishedEncode();
     }
-    
+
     public void onHasKeys(SplitFileInserterSegmentStorage splitFileInserterSegmentStorage) {
         for (SplitFileInserterSegmentStorage segment : segments) {
             if (!segment.hasKeys())
@@ -1247,12 +1247,12 @@ public class SplitFileInserterStorage {
     private void onHasKeys() {
         callback.onHasKeys();
     }
-    
+
     /**
      * Create an OutputStream that we can write formatted data to of a specific
      * length. On close(), it checks that the length is as expected, computes
      * the checksum, and writes the data to the specified position in the file.
-     * 
+     *
      * @param fileOffset
      *            The position in the file (raf) of the first byte.
      * @param length
@@ -1293,7 +1293,7 @@ public class SplitFileInserterStorage {
 
     /**
      * Write a cross-check block to disk
-     * 
+     *
      * @throws IOException
      */
     void writeCheckBlock(int segNo, int checkBlockNo, byte[] buf) throws IOException {
@@ -1328,7 +1328,7 @@ public class SplitFileInserterStorage {
     /**
      * Lock the originalData RAF open to avoid the pooled fd being closed when
      * we are doing a major I/O operation involving many reads/writes.
-     * 
+     *
      * @throws IOException
      */
     RAFLock lockUnderlying() throws IOException {
@@ -1360,7 +1360,7 @@ public class SplitFileInserterStorage {
         long offset = offsetSegmentCheckBlocks[segNo] + checkBlockNo * CHKBlock.DATA_LENGTH;
         raf.pwrite(offset, buf, 0, buf.length);
     }
-    
+
     public byte[] readSegmentCheckBlock(int segNo, int checkBlockNo) throws IOException {
         assert (segNo >= 0 && segNo < segments.length);
         assert (checkBlockNo >= 0 && checkBlockNo < segments[segNo].checkBlockCount);
@@ -1369,12 +1369,12 @@ public class SplitFileInserterStorage {
         raf.pread(offset, buf, 0, buf.length);
         return buf;
     }
-    
+
     /** Encode the Metadata. The caller must ensure that all segments have encoded keys first.
      * @throws MissingKeyException This indicates disk corruption or a bug (e.g. not all segments
      * had encoded keys). Since we don't checksum the blocks, there isn't much point in trying to
      * recover from losing a key; but at least we can detect that there was a problem.
-     * 
+     *
      * (Package-visible for unit tests)
      */
     Metadata encodeMetadata() throws IOException, MissingKeyException {
@@ -1393,11 +1393,11 @@ public class SplitFileInserterStorage {
         }
         assert(dataPtr == dataKeys.length);
         assert(checkPtr == checkKeys.length);
-        return new Metadata(splitfileType, dataKeys, checkKeys, segmentSize, checkSegmentSize, 
-                deductBlocksFromSegments, clientMetadata, dataLength, archiveType, compressionCodec, 
-                decompressedLength, isMetadata, hashes, hashThisLayerOnly, origDataSize, 
-                origCompressedDataSize, topRequiredBlocks, topTotalBlocks, topDontCompress, 
-                cmode, splitfileCryptoAlgorithm, splitfileCryptoKey, 
+        return new Metadata(splitfileType, dataKeys, checkKeys, segmentSize, checkSegmentSize,
+                deductBlocksFromSegments, clientMetadata, dataLength, archiveType, compressionCodec,
+                decompressedLength, isMetadata, hashes, hashThisLayerOnly, origDataSize,
+                origCompressedDataSize, topRequiredBlocks, topTotalBlocks, topDontCompress,
+                cmode, splitfileCryptoAlgorithm, splitfileCryptoKey,
                 specifySplitfileKeyInMetadata, crossCheckBlocks);
     }
 
@@ -1409,7 +1409,7 @@ public class SplitFileInserterStorage {
         if(logDEBUG) Logger.debug(this, "Writing key for block "+blockNo+" for segment "+segNo+" of "+this+" to "+fileOffset);
         raf.pwrite(fileOffset, buf, 0, buf.length);
     }
-    
+
     byte[] innerReadSegmentKey(int segNo, int blockNo) throws IOException {
         byte[] buf = new byte[keyLength];
         long fileOffset = this.offsetSegmentKeys[segNo] + keyLength * blockNo;
@@ -1452,7 +1452,7 @@ public class SplitFileInserterStorage {
                         }
                         callback.onFailed(e1);
                     } catch (MissingKeyException e) {
-                        // Fail here too. If we're getting disk corruption on keys, we're probably 
+                        // Fail here too. If we're getting disk corruption on keys, we're probably
                         // getting it on the original data too.
                         InsertException e1 = new InsertException(InsertExceptionMode.BUCKET_ERROR, "Missing keys", null);
                         synchronized(this) {
@@ -1466,7 +1466,7 @@ public class SplitFileInserterStorage {
                 }
                 return true;
             }
-            
+
         });
     }
 
@@ -1523,18 +1523,18 @@ public class SplitFileInserterStorage {
     public void failOnDiskError(IOException e) {
         fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null));
     }
-    
+
     public void failFatalErrorInBlock() {
         fail(new InsertException(InsertExceptionMode.FATAL_ERRORS_IN_BLOCKS, errors, null));
     }
-    
+
     public void failTooManyRetriesInBlock() {
         fail(new InsertException(InsertExceptionMode.TOO_MANY_RETRIES_IN_BLOCKS, errors, null));
     }
-    
+
     void fail(final InsertException e) {
         synchronized(this) {
-            if(this.status == Status.SUCCEEDED || this.status == Status.FAILED || 
+            if(this.status == Status.SUCCEEDED || this.status == Status.FAILED ||
                     this.status == Status.GENERATING_METADATA) {
                 // Not serious but often indicates a problem e.g. we are sending requests after completing.
                 // So log as ERROR for now.
@@ -1576,7 +1576,7 @@ public class SplitFileInserterStorage {
                     return false;
                 }
             }
-            
+
         });
     }
 
@@ -1589,7 +1589,7 @@ public class SplitFileInserterStorage {
     }
 
     static final long LAZY_WRITE_METADATA_DELAY = TimeUnit.MINUTES.toMillis(5);
-    
+
     private final PersistentJob writeMetadataJob = new PersistentJob() {
 
         @Override
@@ -1612,23 +1612,23 @@ public class SplitFileInserterStorage {
                 return false;
             }
         }
-        
+
     };
-    
+
     private final Runnable wrapLazyWriteMetadata = new Runnable() {
 
         @Override
         public void run() {
             jobRunner.queueNormalOrDrop(writeMetadataJob);
         }
-        
+
     };
 
     public synchronized void lazyWriteMetadata() {
         if(!persistent) return;
         if(LAZY_WRITE_METADATA_DELAY != 0) {
             // The Runnable must be the same object for de-duplication.
-            ticker.queueTimedJob(wrapLazyWriteMetadata, "Write metadata for splitfile", 
+            ticker.queueTimedJob(wrapLazyWriteMetadata, "Write metadata for splitfile",
                     LAZY_WRITE_METADATA_DELAY, false, true);
         } else { // Must still be off-thread, multiple segments, possible locking issues...
             jobRunner.queueNormalOrDrop(writeMetadataJob);
@@ -1636,14 +1636,14 @@ public class SplitFileInserterStorage {
     }
 
     protected synchronized boolean isFinishing() {
-        return this.failing != null || status == Status.FAILED || status == Status.SUCCEEDED || 
+        return this.failing != null || status == Status.FAILED || status == Status.SUCCEEDED ||
             status == Status.GENERATING_METADATA;
     }
-    
+
     void onShutdown(ClientContext context) {
         writeMetadataJob.run(context);
     }
-    
+
     void preadChecksummed(long fileOffset, byte[] buf, int offset, int length) throws IOException, ChecksumFailedException {
         byte[] checksumBuf = new byte[checker.checksumLength()];
         RAFLock lock = raf.lockOpen();
@@ -1668,7 +1668,7 @@ public class SplitFileInserterStorage {
         try {
             raf.pread(fileOffset, lengthBuf, 0, lengthBuf.length);
             long len = new DataInputStream(new ByteArrayInputStream(lengthBuf)).readLong();
-            if(len + fileOffset > rafLength || len > Integer.MAX_VALUE || len < 0) 
+            if(len + fileOffset > rafLength || len > Integer.MAX_VALUE || len < 0)
                 throw new StorageFormatException("Bogus length "+len);
             length = (int)len;
             buf = new byte[length];
@@ -1730,13 +1730,13 @@ public class SplitFileInserterStorage {
             return null;
         }
     }
-    
+
     public boolean noBlocksToSend() {
         synchronized(cooldownLock) {
             return noBlocksToSend;
         }
     }
-    
+
     public long countAllKeys() {
         long total = 0;
         for(SplitFileInserterSegmentStorage segment : segments)
@@ -1766,7 +1766,7 @@ public class SplitFileInserterStorage {
     public long getWakeupTime(ClientContext context, long now) {
         // LOCKING: hasFinished() uses (this), separate from cooldownLock.
         // It is safe to use both here (on the request selection thread), one after the other.
-        if (hasFinished()) 
+        if (hasFinished())
             return -1;
         if (noBlocksToSend())
             return Long.MAX_VALUE;

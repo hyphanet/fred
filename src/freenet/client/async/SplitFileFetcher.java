@@ -34,50 +34,50 @@ import freenet.support.io.StorageFormatException;
 
 /** Splitfile fetcher based on keeping as much state as possible, and in particular the downloaded blocks,
  * in a single file.
- * 
+ *
  * The main goals here are:
- * 1) Minimising disk seeks. E.g. in the older versions we abstracted out block storage, this 
- * caused a lot of unnecessary seeking and copying. It's better to keep the downloaded data close 
- * together on disk. 
- * 2) Robustness. This should be robust even against moderate levels of on-disk data corruption. 
- * And it's separate for each splitfile. And it has fixed disk usage, until it completes. Some of 
- * this robustness violates layering e.g. checking blocks against the CHKs they are supposed to 
- * represent. This actually simplifies matters e.g. when decoding a segment, and allows us to not 
- * only recover from almost any error (at least in the parts that change, which are most likely to 
+ * 1) Minimising disk seeks. E.g. in the older versions we abstracted out block storage, this
+ * caused a lot of unnecessary seeking and copying. It's better to keep the downloaded data close
+ * together on disk.
+ * 2) Robustness. This should be robust even against moderate levels of on-disk data corruption.
+ * And it's separate for each splitfile. And it has fixed disk usage, until it completes. Some of
+ * this robustness violates layering e.g. checking blocks against the CHKs they are supposed to
+ * represent. This actually simplifies matters e.g. when decoding a segment, and allows us to not
+ * only recover from almost any error (at least in the parts that change, which are most likely to
  * be corrupted), but also to do so efficiently.
- * 
- * The SplitFileFetcher*Storage classes manage storing the data and FEC decoding. This class deals 
- * with everything else: The interface to the rest of the client layer, selection of keys to fetch, 
+ *
+ * The SplitFileFetcher*Storage classes manage storing the data and FEC decoding. This class deals
+ * with everything else: The interface to the rest of the client layer, selection of keys to fetch,
  * listening for blocks, etc.
- * 
+ *
  * PERSISTENCE ROADMAP:
  * Now: Currently this class does not support persistence.
- * 
+ *
  * Near future goal: Support persistence within the database. Stay in memory, do not deactivate.
- * Store this class in the database but not its *Storage classes. Load the SplitFileFetcherStorage 
+ * Store this class in the database but not its *Storage classes. Load the SplitFileFetcherStorage
  * on loading Freenet, resuming existing downloads.
  * => Significant improvement in reliability and disk I/O. In principle we could resume downloads
  * separately from the database e.g. if it breaks. Too complicated in practice because of other
  * data structures.
  * - Require: Add "persistence", hashCode, force no deactivation, activate where necessary (when
  * dealing with other stuff). Fill in context and load storage when activated on startup.
- * 
+ *
  * Longer term goal: Implement similar code for inserts. Eliminate db4o and persist everything that
  * remains with simple checkpointed serialisation.
- * 
+ *
  * LOCKING: (this) should be taken last, because it is used by e.g. SplitFileFetcherGet.isCancelled().
- * 
+ *
  * @author toad
  */
 public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorageCallback, Serializable {
-    
+
     private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;
     static {
         Logger.registerClass(SplitFileFetcher.class);
     }
 
-    /** Stores the progress of the download, including the actual data, in a separate file. 
+    /** Stores the progress of the download, including the actual data, in a separate file.
      * Created in onResume() or in the constructor, so must be volatile. */
     private transient volatile SplitFileFetcherStorage storage;
     /** Kept here so we can resume from storage */
@@ -95,19 +95,19 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
     final long token;
     /** Storage doesn't have a ClientContext so we need one here. */
     private transient ClientContext context;
-    /** Does the actual requests. 
+    /** Does the actual requests.
      * Created in onResume() or in the constructor, so must be volatile. */
     private transient volatile SplitFileFetcherGet getter;
     private boolean failed;
     private boolean succeeded;
     private final boolean wantBinaryBlob;
     private final boolean persistent;
-    
+
     public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent,
-            FetchContext fetchContext, boolean realTimeFlag, List<COMPRESSOR_TYPE> decompressors, 
-            ClientMetadata clientMetadata, long token, boolean topDontCompress, 
+            FetchContext fetchContext, boolean realTimeFlag, List<COMPRESSOR_TYPE> decompressors,
+            ClientMetadata clientMetadata, long token, boolean topDontCompress,
             short topCompatibilityMode, boolean persistent, FreenetURI thisKey, boolean isFinalFetch,
-            ClientContext context) 
+            ClientContext context)
             throws FetchException, MetadataParseException {
         this.persistent = persistent;
         this.cb = rcb;
@@ -123,10 +123,10 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true, null);
         if(parent.isCancelled())
             throw new FetchException(FetchExceptionMode.CANCELLED);
-        
+
         try {
             // Completion via truncation.
-            if(isFinalFetch && cb instanceof FileGetCompletionCallback && 
+            if(isFinalFetch && cb instanceof FileGetCompletionCallback &&
                     (decompressors == null || decompressors.size() == 0) &&
                     !fetchContext.filterData) {
                 FileGetCompletionCallback fileCallback = ((FileGetCompletionCallback)cb);
@@ -148,14 +148,14 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
             }
             // Construct the storage.
             ChecksumChecker checker = new CRCChecksumChecker();
-            storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
+            storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata,
                     topDontCompress, topCompatibilityMode, fetchContext, realTimeFlag, getSalter(),
-                    thisKey, parent.getURI(), isFinalFetch, parent.getClientDetail(checker), 
-                    context.random, context.tempBucketFactory, 
-                    persistent ? context.persistentRAFFactory : context.tempRAFFactory, 
-                    persistent ? context.jobRunner : context.dummyJobRunner, 
+                    thisKey, parent.getURI(), isFinalFetch, parent.getClientDetail(checker),
+                    context.random, context.tempBucketFactory,
+                    persistent ? context.persistentRAFFactory : context.tempRAFFactory,
+                    persistent ? context.jobRunner : context.dummyJobRunner,
                     context.ticker, context.memoryLimitedJobRunner, checker, persistent,
-                    fileCompleteViaTruncation, context.getFileRandomAccessBufferFactory(persistent), 
+                    fileCompleteViaTruncation, context.getFileRandomAccessBufferFactory(persistent),
                     context.getChkFetchScheduler(realTimeFlag).fetchingKeys());
         } catch (InsufficientDiskSpaceException e) {
             throw new FetchException(FetchExceptionMode.NOT_ENOUGH_DISK_SPACE);
@@ -176,7 +176,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
                     thisKey+" on "+raf+" for "+this);
         lastNotifiedStoreFetch = System.currentTimeMillis();
     }
-    
+
     protected SplitFileFetcher() {
         // For serialization.
         parent = null;
@@ -195,9 +195,9 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         if(storage.start(false))
             getter.schedule(context, false);
     }
-    
-    /** Fail the whole splitfile request when we get an IOException on writing to or reading from 
-     * the on-disk storage. Can be called asynchronously by SplitFileFetcher*Storage if an 
+
+    /** Fail the whole splitfile request when we get an IOException on writing to or reading from
+     * the on-disk storage. Can be called asynchronously by SplitFileFetcher*Storage if an
      * off-thread job (e.g. FEC decoding) breaks, or may be called when SplitFileFetcher*Storage
      * throws.
      * @param e The IOException, generated when accessing the on-disk storage.
@@ -206,15 +206,15 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
     public void failOnDiskError(IOException e) {
         fail(new FetchException(FetchExceptionMode.BUCKET_ERROR));
     }
-    
-    /** Fail the whole splitfile request when we get unrecoverable data corruption, e.g. can't 
-     * read the keys. FIXME ROBUSTNESS in some cases this could actually be recovered by 
+
+    /** Fail the whole splitfile request when we get unrecoverable data corruption, e.g. can't
+     * read the keys. FIXME ROBUSTNESS in some cases this could actually be recovered by
      * restarting from the metadata or the original URI. */
     @Override
     public void failOnDiskError(ChecksumFailedException e) {
         fail(new FetchException(FetchExceptionMode.BUCKET_ERROR));
     }
-    
+
     public void fail(FetchException e) {
         synchronized(this) {
             if(succeeded || failed) return;
@@ -239,7 +239,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         return token;
     }
 
-    /** The splitfile download succeeded. Generate a stream and send it to the 
+    /** The splitfile download succeeded. Generate a stream and send it to the
      * GetCompletionCallback. See bug #6063 for a better way that probably is too much complexity
      * for the benefit. */
     @Override
@@ -266,16 +266,16 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         getter.cancel(context);
         if(this.callbackCompleteViaTruncation != null) {
             long finalLength = storage.finalLength;
-            this.callbackCompleteViaTruncation.onSuccess(fileCompleteViaTruncation, 
+            this.callbackCompleteViaTruncation.onSuccess(fileCompleteViaTruncation,
                     finalLength, storage.clientMetadata, this, context);
             // Don't need to call storage.finishedFetcher().
         } else {
-            cb.onSuccess(storage.streamGenerator(), storage.clientMetadata, storage.decompressors, 
+            cb.onSuccess(storage.streamGenerator(), storage.clientMetadata, storage.decompressors,
                     this, context);
             storage.finishedFetcher();
         }
     }
-    
+
     @Override
     public void onClosed() {
         // Don't need to do anything.
@@ -320,7 +320,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
     public boolean hasFinished() {
         return failed || succeeded;
     }
-    
+
     /** Incremented whenever we fetch a block from the store */
     private int storeFetchCounter;
     /** Time when we last passed through a block fetch from the store */
@@ -355,7 +355,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
     public void onFailedBlock() {
         parent.failedBlock(context);
     }
-    
+
     @Override
     public void onResume(int succeededBlocks, int failedBlocks, ClientMetadata meta, long finalSize) {
         for(int i=0;i<succeededBlocks-1;i++)
@@ -427,11 +427,11 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         try {
             KeySalter salter = getSalter();
             raf.onResume(context);
-            this.storage = new SplitFileFetcherStorage(raf, realTimeFlag, this, blockFetchContext, 
-                    context.random, context.jobRunner, 
-                    context.getChkFetchScheduler(realTimeFlag).fetchingKeys(), context.ticker, 
-                    context.memoryLimitedJobRunner, new CRCChecksumChecker(), 
-                    context.jobRunner.newSalt(), salter, resumed, 
+            this.storage = new SplitFileFetcherStorage(raf, realTimeFlag, this, blockFetchContext,
+                    context.random, context.jobRunner,
+                    context.getChkFetchScheduler(realTimeFlag).fetchingKeys(), context.ticker,
+                    context.memoryLimitedJobRunner, new CRCChecksumChecker(),
+                    context.jobRunner.newSalt(), salter, resumed,
                     callbackCompleteViaTruncation != null);
         } catch (ResumeFailedException e) {
             raf.free();
@@ -484,8 +484,8 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         dos.writeLong(token);
         return true;
     }
-    
-    public SplitFileFetcher(ClientGetter getter, DataInputStream dis, ClientContext context) 
+
+    public SplitFileFetcher(ClientGetter getter, DataInputStream dis, ClientContext context)
     throws StorageFormatException, ResumeFailedException, IOException {
         Logger.normal(this, "Resuming splitfile download for "+this);
         boolean completeViaTruncation = dis.readBoolean();

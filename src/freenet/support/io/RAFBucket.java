@@ -14,7 +14,7 @@ import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 
 public class RAFBucket implements Bucket, RandomAccessBucket {
-    
+
     private final LockableRandomAccessBuffer underlying;
     final long size;
 
@@ -77,7 +77,7 @@ public class RAFBucket implements Bucket, RandomAccessBucket {
     public void onResume(ClientContext context) throws ResumeFailedException {
         underlying.onResume(context);
     }
-    
+
     static final int MAGIC = 0x892a708a;
 
     @Override
@@ -85,9 +85,9 @@ public class RAFBucket implements Bucket, RandomAccessBucket {
         dos.writeInt(MAGIC);
         underlying.storeTo(dos);
     }
-    
-    RAFBucket(DataInputStream dis, FilenameGenerator fg, 
-            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+
+    RAFBucket(DataInputStream dis, FilenameGenerator fg,
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey)
             throws IOException, StorageFormatException, ResumeFailedException {
         underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker, masterKey);
         size = underlying.size();

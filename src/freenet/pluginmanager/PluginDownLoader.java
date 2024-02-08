@@ -9,38 +9,38 @@ import java.io.InputStream;
 import freenet.pluginmanager.PluginManager.PluginProgress;
 
 /**
- * load a plugin from wherever 
+ * load a plugin from wherever
  * @author saces
  *
  */
 public abstract class PluginDownLoader<T> {
-	
-	private T _source;
 
-	public String setSource(String source) throws PluginNotFoundException {
-		this._source = checkSource(source);
-		return getPluginName(source);
-	}
+    private T _source;
 
-	public T getSource() {
-		return _source;
-	}
-	
-	abstract InputStream getInputStream(PluginProgress progress) throws IOException, PluginNotFoundException;
-	
-	abstract T checkSource(String source) throws PluginNotFoundException;
-	
-	abstract String getPluginName(String source) throws PluginNotFoundException;
-	
-	abstract String getSHA1sum() throws PluginNotFoundException;
-	
-	abstract String getSHA256sum() throws PluginNotFoundException;
+    public String setSource(String source) throws PluginNotFoundException {
+        this._source = checkSource(source);
+        return getPluginName(source);
+    }
 
-	/** Cancel the load if possible */
-	abstract void tryCancel();
+    public T getSource() {
+        return _source;
+    }
 
-	public boolean isOfficialPluginLoader() {
-		return false;
-	}
-	
+    abstract InputStream getInputStream(PluginProgress progress) throws IOException, PluginNotFoundException;
+
+    abstract T checkSource(String source) throws PluginNotFoundException;
+
+    abstract String getPluginName(String source) throws PluginNotFoundException;
+
+    abstract String getSHA1sum() throws PluginNotFoundException;
+
+    abstract String getSHA256sum() throws PluginNotFoundException;
+
+    /** Cancel the load if possible */
+    abstract void tryCancel();
+
+    public boolean isOfficialPluginLoader() {
+        return false;
+    }
+
 }

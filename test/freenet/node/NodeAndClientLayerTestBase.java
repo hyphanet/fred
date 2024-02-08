@@ -14,7 +14,7 @@ public class NodeAndClientLayerTestBase {
 
     static final int PORT = 2048;
     static final int FILE_SIZE = 1024*1024;
-    
+
     static RequestClient rc = new RequestClient() {
 
         @Override
@@ -26,9 +26,9 @@ public class NodeAndClientLayerTestBase {
         public boolean realTimeFlag() {
             return false;
         }
-        
+
     };
-    
+
     protected InsertBlock generateBlock(DummyRandomSource random) throws MalformedURLException {
         byte[] data = new byte[FILE_SIZE];
         random.nextBytes(data);
@@ -36,5 +36,5 @@ public class NodeAndClientLayerTestBase {
         FreenetURI uri = InsertableClientSSK.createRandom(random, "test").getInsertURI();
         return new InsertBlock(bucket, new ClientMetadata(null), uri);
     }
-    
+
 }

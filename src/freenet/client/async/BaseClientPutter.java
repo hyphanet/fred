@@ -6,27 +6,27 @@ package freenet.client.async;
 import java.io.Serializable;
 
 /** Base class for inserts, including site inserts, at the level of a ClientRequester.
- * 
- * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ *
+ * WARNING: Changing non-transient members on classes that are Serializable can result in
  * restarting downloads or losing uploads.
  */
 public abstract class BaseClientPutter extends ClientRequester {
 
     private static final long serialVersionUID = 1L;
 
-	/** Required because {@link Serializable} is implemented by the parent class. */
-	protected BaseClientPutter() {
-	}
+    /** Required because {@link Serializable} is implemented by the parent class. */
+    protected BaseClientPutter() {
+    }
 
-	protected BaseClientPutter(short priorityClass, ClientBaseCallback cb) {
-		super(priorityClass, cb);
-	}
+    protected BaseClientPutter(short priorityClass, ClientBaseCallback cb) {
+        super(priorityClass, cb);
+    }
 
-	public void dump() {
-		// Do nothing
-	}
+    public void dump() {
+        // Do nothing
+    }
 
-	public abstract void onTransition(ClientPutState from, ClientPutState to, ClientContext context);
+    public abstract void onTransition(ClientPutState from, ClientPutState to, ClientContext context);
 
-	public abstract int getMinSuccessFetchBlocks();
+    public abstract int getMinSuccessFetchBlocks();
 }

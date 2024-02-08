@@ -20,54 +20,54 @@ import junit.framework.TestCase;
 
 /**
  * Test case for the {@link freenet.config.Config} class.
- * 
+ *
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 public class ConfigTest extends TestCase {
-	Config conf;
-	SubConfig sc;
-	
-	public ConfigTest(String name) {
-		super(name);
-	}
-	
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
-		conf = new Config();
-		sc = conf.createSubConfig("testing");
-	}
-	
-	public void testConfig() {
-		assertNotNull(new Config());
-	}
+    Config conf;
+    SubConfig sc;
 
-	public void testRegister() {
-		/* test if we can register */
-		StringBuilder sb = new StringBuilder();
-		for(int i=0; i< UTFUtil.PRINTABLE_ASCII.length; i++)
-			sb.append(UTFUtil.PRINTABLE_ASCII[i]);
-		for(int i=0; i< UTFUtil.STRESSED_UTF.length; i++)
-			sb.append(UTFUtil.STRESSED_UTF[i]);
-		assertNotNull(conf.createSubConfig(sb.toString()));
+    public ConfigTest(String name) {
+        super(name);
+    }
 
-		/* test if it prevents multiple registrations */
-		try{
-			conf.register(sc);
-		}catch (IllegalArgumentException ie){
-			return;
-		}
-		fail();
-	}
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        conf = new Config();
+        sc = conf.createSubConfig("testing");
+    }
 
-	public void testGetConfigs() {
-		assertNotNull(conf.getConfigs());
-		assertFalse(new Config().getConfigs().equals(conf));
-		assertEquals(1 , conf.getConfigs().length);
-		assertSame(sc, conf.getConfigs()[0]);
-	}
+    public void testConfig() {
+        assertNotNull(new Config());
+    }
 
-	public void testGet() {
-		assertSame(sc, conf.get("testing"));
-	}
+    public void testRegister() {
+        /* test if we can register */
+        StringBuilder sb = new StringBuilder();
+        for(int i=0; i< UTFUtil.PRINTABLE_ASCII.length; i++)
+            sb.append(UTFUtil.PRINTABLE_ASCII[i]);
+        for(int i=0; i< UTFUtil.STRESSED_UTF.length; i++)
+            sb.append(UTFUtil.STRESSED_UTF[i]);
+        assertNotNull(conf.createSubConfig(sb.toString()));
+
+        /* test if it prevents multiple registrations */
+        try{
+            conf.register(sc);
+        }catch (IllegalArgumentException ie){
+            return;
+        }
+        fail();
+    }
+
+    public void testGetConfigs() {
+        assertNotNull(conf.getConfigs());
+        assertFalse(new Config().getConfigs().equals(conf));
+        assertEquals(1 , conf.getConfigs().length);
+        assertSame(sc, conf.getConfigs()[0]);
+    }
+
+    public void testGet() {
+        assertSame(sc, conf.get("testing"));
+    }
 }

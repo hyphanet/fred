@@ -6,16 +6,16 @@ package freenet.client.async;
 import java.io.Serializable;
 
 public abstract class BaseClientGetter extends ClientRequester implements
-		GetCompletionCallback, Serializable {
-	
+        GetCompletionCallback, Serializable {
+
     private static final long serialVersionUID = 1L;
 
     protected BaseClientGetter(short priorityClass, ClientBaseCallback cb) {
-		super(priorityClass, cb);
-	}
-	
-	/** Required because we implement {@link Serializable}. */
-	protected BaseClientGetter() {
-	}
+        super(priorityClass, cb);
+    }
+
+    /** Required because we implement {@link Serializable}. */
+    protected BaseClientGetter() {
+    }
 
 }

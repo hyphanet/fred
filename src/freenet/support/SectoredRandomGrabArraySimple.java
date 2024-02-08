@@ -10,11 +10,11 @@ import freenet.client.async.ClientRequestSelector;
 public class SectoredRandomGrabArraySimple<MyType,ChildType> extends SectoredRandomGrabArrayWithObject<MyType, ChildType, RandomGrabArrayWithObject<ChildType>> {
 
     private static volatile boolean logMINOR;
-    
+
     static {
         Logger.registerClass(SectoredRandomGrabArraySimple.class);
     }
-    
+
     public SectoredRandomGrabArraySimple(MyType object, RemoveRandomParent parent,
             ClientRequestSelector root) {
         super(object, parent, root);

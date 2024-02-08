@@ -16,42 +16,42 @@ import freenet.support.io.NativeThread;
  */
 public class RemovePersistentRequest extends FCPMessage {
 
-	final static String NAME = "RemoveRequest";
-	final static String ALT_NAME = "RemovePersistentRequest";
-	
-	final String identifier;
-	final boolean global;
-	
-	public RemovePersistentRequest(SimpleFieldSet fs) throws MessageInvalidException {
-		this.global = fs.getBoolean("Global", false);
-		this.identifier = fs.get("Identifier");
-		if(identifier == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must have Identifier", null, global);
-	}
+    final static String NAME = "RemoveRequest";
+    final static String ALT_NAME = "RemovePersistentRequest";
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.putSingle("Identifier", identifier);
-		return fs;
-	}
+    final String identifier;
+    final boolean global;
 
-	@Override
-	public String getName() {
-		return NAME;
-	}
+    public RemovePersistentRequest(SimpleFieldSet fs) throws MessageInvalidException {
+        this.global = fs.getBoolean("Global", false);
+        this.identifier = fs.get("Identifier");
+        if(identifier == null)
+            throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must have Identifier", null, global);
+    }
 
-	@Override
-	public void run(final FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		ClientRequest req = handler.removePersistentRebootRequest(global, identifier);
-		if(req == null && !global) {
-			req = handler.removeRequestByIdentifier(identifier, true);
-		}
-		if(req == null) {
-		    try {
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet fs = new SimpleFieldSet(true);
+        fs.putSingle("Identifier", identifier);
+        return fs;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public void run(final FCPConnectionHandler handler, Node node)
+            throws MessageInvalidException {
+        ClientRequest req = handler.removePersistentRebootRequest(global, identifier);
+        if(req == null && !global) {
+            req = handler.removeRequestByIdentifier(identifier, true);
+        }
+        if(req == null) {
+            try {
                 handler.server.core.clientContext.jobRunner.queue(new PersistentJob() {
-                    
+
                     @Override
                     public boolean run(ClientContext context) {
                         try {
@@ -67,13 +67,13 @@ public class RemovePersistentRequest extends FCPMessage {
                             return false;
                         }
                     }
-                    
+
                 }, NativeThread.HIGH_PRIORITY);
             } catch (PersistenceDisabledException e) {
                 FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence disabled and non-persistent request not found", identifier, global);
                 handler.outputHandler.queue(err);
             }
-		}
-	}
+        }
+    }
 
 }
