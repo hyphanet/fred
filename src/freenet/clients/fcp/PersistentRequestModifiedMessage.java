@@ -7,16 +7,16 @@ import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
 /**
- * Node answer message after a ModifyPerPersistentRequest message from client. 
+ * Node answer message after a ModifyPerPersistentRequest message from client.
  */
 public class PersistentRequestModifiedMessage extends FCPMessage {
 
     private final String ident;
     private final boolean global;
-    
+
     private final short priorityClass;
     private final String clientToken;
-    
+
     public PersistentRequestModifiedMessage(String identifier, boolean global, short priorityClass) {
         this(identifier, global, priorityClass, null); // clientToken not set
     }
@@ -33,7 +33,7 @@ public class PersistentRequestModifiedMessage extends FCPMessage {
     }
 
     @Override
-	public SimpleFieldSet getFieldSet() {
+    public SimpleFieldSet getFieldSet() {
         final SimpleFieldSet fs = new SimpleFieldSet(true);
         fs.putSingle("Identifier", ident);
         fs.put("Global", global);
@@ -43,12 +43,12 @@ public class PersistentRequestModifiedMessage extends FCPMessage {
     }
 
     @Override
-	public String getName() {
+    public String getName() {
         return "PersistentRequestModified";
     }
 
     @Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+    public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
         throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PersistentRequestModified goes from server to client not the other way around", ident, global);
     }
 

@@ -16,17 +16,17 @@ import freenet.l10n.BaseL10n.LANGUAGE;
  */
 public interface FredPluginBaseL10n {
 
-	/**
-	 * Called when the plugin should change its language.
-	 * @param newLanguage New language to use.
-	 */
-	public void setLanguage(LANGUAGE newLanguage);
+    /**
+     * Called when the plugin should change its language.
+     * @param newLanguage New language to use.
+     */
+    public void setLanguage(LANGUAGE newLanguage);
 
-	public String getL10nFilesBasePath();
+    public String getL10nFilesBasePath();
 
-	public String getL10nFilesMask();
+    public String getL10nFilesMask();
 
-	public String getL10nOverrideFilesMask();
+    public String getL10nOverrideFilesMask();
 
-	public ClassLoader getPluginClassLoader();
+    public ClassLoader getPluginClassLoader();
 }

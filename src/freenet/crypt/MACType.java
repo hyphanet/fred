@@ -8,9 +8,9 @@ import java.security.NoSuchAlgorithmException;
 import javax.crypto.Mac;
 
 /**
- * Keeps track of properties of different Message Authentication Code 
- * algorithms available to Freenet including key type, name of the 
- * algorithm, and iv length if required. 
+ * Keeps track of properties of different Message Authentication Code
+ * algorithms available to Freenet including key type, name of the
+ * algorithm, and iv length if required.
  * @author unixninja92
  *
  */
@@ -29,7 +29,7 @@ public enum MACType {
     /**
      * Creates the HMACSHA256 enum. Sets the ivlen as -1.
      * @param bitmask
-     * @param mac Name of the algorithm that java uses. 
+     * @param mac Name of the algorithm that java uses.
      * @param type The type of key the alg requires
      */
     private MACType(int bitmask, String mac, KeyType type){
@@ -42,7 +42,7 @@ public enum MACType {
     /**
      * Creates the Poly1305 enum.
      * @param bitmask
-     * @param mac Name of the algorithm that java uses. 
+     * @param mac Name of the algorithm that java uses.
      * @param ivlen Length of the IV
      * @param type The type of key the alg requires
      */
@@ -54,7 +54,7 @@ public enum MACType {
     }
 
     /**
-     * Gets an instance of Mac using the specified algorithm. 
+     * Gets an instance of Mac using the specified algorithm.
      * @return Returns an instance of Mac
      */
     public final Mac get(){

@@ -26,16 +26,16 @@ public enum EncryptedRandomAccessBufferType {
     public final MACType macType;
     public final KeyType macKey;
     public final int macLen;//bytes
-    
+
     /**
-     * Creates the ChaCha enum values. 
+     * Creates the ChaCha enum values.
      * @param bitmask The version number
      * @param magAndVerLen Length of magic value and version
      * @param type Alg to use for encrypting the data
      * @param macType Alg to use for MAC generation
      * @param macLen The length of the MAC output in bytes
      */
-    private EncryptedRandomAccessBufferType(int bitmask, int magAndVerLen, CryptByteBufferType type, 
+    private EncryptedRandomAccessBufferType(int bitmask, int magAndVerLen, CryptByteBufferType type,
             MACType macType, int macLen){
         this.bitmask = bitmask;
         this.encryptType = type;
@@ -54,7 +54,7 @@ public enum EncryptedRandomAccessBufferType {
     }
 
     private static final Map<Integer, EncryptedRandomAccessBufferType> byBitmask;
-    
+
     static {
         byBitmask = new HashMap<Integer, EncryptedRandomAccessBufferType>();
         for(EncryptedRandomAccessBufferType type : values())

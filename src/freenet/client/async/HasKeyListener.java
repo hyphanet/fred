@@ -7,22 +7,22 @@ import java.io.IOException;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public interface HasKeyListener {
-	
-	/**
-	 * Create a KeyListener, a transient object used to determine which keys we
-	 * want, and to handle any blocks found.
-	 * @return Null if the HasKeyListener is finished/cancelled/etc.
-	 * @throws IOException 
-	 */
-	KeyListener makeKeyListener(ClientContext context, boolean onStartup);
 
-	/**
-	 * Is it cancelled?
-	 */
-	boolean isCancelled();
+    /**
+     * Create a KeyListener, a transient object used to determine which keys we
+     * want, and to handle any blocks found.
+     * @return Null if the HasKeyListener is finished/cancelled/etc.
+     * @throws IOException
+     */
+    KeyListener makeKeyListener(ClientContext context, boolean onStartup);
 
-	/**
-	 * @return non-null if only key with (isSSK() ? pubKeyHash : routingKey) wanted.
-	 */
-	public byte[] getWantedKey();
+    /**
+     * Is it cancelled?
+     */
+    boolean isCancelled();
+
+    /**
+     * @return non-null if only key with (isSSK() ? pubKeyHash : routingKey) wanted.
+     */
+    public byte[] getWantedKey();
 }

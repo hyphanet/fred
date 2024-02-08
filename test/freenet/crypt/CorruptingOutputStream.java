@@ -7,7 +7,7 @@ import java.util.Random;
 import java.util.TreeSet;
 
 class CorruptingOutputStream extends OutputStream {
-    
+
     private final OutputStream os;
     /** Bytes to corrupt, in order */
     private final long[] killBytes;
@@ -32,7 +32,7 @@ class CorruptingOutputStream extends OutputStream {
             killBytes[i] = it.next();
         ptr = 0;
     }
-    
+
     public void write(int b) throws IOException {
         if(ptr < killBytes.length && ctr++ == killBytes[ptr]) {
             b ^= (1 << random.nextInt(7));
@@ -40,11 +40,11 @@ class CorruptingOutputStream extends OutputStream {
         }
         os.write(b);
     }
-    
+
     public void close() throws IOException {
         os.close();
     }
-    
+
     public long nextLong(Random random, long range) {
         long maxFair = (Long.MAX_VALUE / range) * range;
         while(true) {
@@ -55,5 +55,5 @@ class CorruptingOutputStream extends OutputStream {
             return r % range;
         }
     }
-    
+
 }

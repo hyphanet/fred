@@ -11,16 +11,16 @@ import freenet.support.api.LockableRandomAccessBufferFactory;
 
 /** Wraps another LockableRandomAccessBufferFactory to enable encryption if currently turned on. */
 public class MaybeEncryptedRandomAccessBufferFactory implements LockableRandomAccessBufferFactory {
-    
+
     public MaybeEncryptedRandomAccessBufferFactory(LockableRandomAccessBufferFactory factory, boolean encrypt) {
         this.factory = factory;
         this.reallyEncrypt = encrypt;
     }
-    
+
     private final LockableRandomAccessBufferFactory factory;
     private volatile boolean reallyEncrypt;
     private MasterSecret secret;
-    
+
     private static volatile boolean logMINOR;
     static {
         Logger.registerClass(MaybeEncryptedRandomAccessBufferFactory.class);
@@ -69,13 +69,13 @@ public class MaybeEncryptedRandomAccessBufferFactory implements LockableRandomAc
             return factory.makeRAF(initialContents, offset, size, readOnly);
         }
     }
-    
+
     public void setMasterSecret(MasterSecret secret) {
         synchronized(this) {
             this.secret = secret;
         }
     }
-    
+
     public void setEncryption(boolean value) {
         synchronized(this) {
             reallyEncrypt = value;
@@ -83,5 +83,5 @@ public class MaybeEncryptedRandomAccessBufferFactory implements LockableRandomAc
         if(factory instanceof PooledFileRandomAccessBufferFactory)
             ((PooledFileRandomAccessBufferFactory)factory).enableCrypto(value);
     }
-    
+
 }

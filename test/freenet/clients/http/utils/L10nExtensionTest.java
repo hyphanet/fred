@@ -16,48 +16,48 @@ import static org.hamcrest.Matchers.nullValue;
 
 public class L10nExtensionTest {
 
-	@Test
-	public void l10nExtensionExposesAnL10nFunction() {
-		assertThat(l10nExtension.getFunctions().keySet(), contains("l10n"));
-	}
+    @Test
+    public void l10nExtensionExposesAnL10nFunction() {
+        assertThat(l10nExtension.getFunctions().keySet(), contains("l10n"));
+    }
 
-	@Test
-	public void l10nFunctionDoesNotHaveArguments() {
-		assertThat(l10nFunction.getArgumentNames(), nullValue());
-	}
+    @Test
+    public void l10nFunctionDoesNotHaveArguments() {
+        assertThat(l10nFunction.getArgumentNames(), nullValue());
+    }
 
-	@Test
-	public void l10nFunctionReturnStringNullIfNotArgumentsAreGiven() {
-		assertThat(l10nFunction.execute(emptyMap(), null, null, 0), equalTo("null"));
-	}
+    @Test
+    public void l10nFunctionReturnStringNullIfNotArgumentsAreGiven() {
+        assertThat(l10nFunction.execute(emptyMap(), null, null, 0), equalTo("null"));
+    }
 
-	@Test
-	public void l10nFunctionRetrievesGivenArgumentWithPrefixFromContextToNodeL10n() {
-		Map<String, Object> arguments = singletonMap("0", "l10nFunctionTest");
-		EvaluationContext context = createEvaluationContext();
-		assertThat(l10nFunction.execute(arguments, null, context, 0), equalTo("Localized Value"));
-	}
+    @Test
+    public void l10nFunctionRetrievesGivenArgumentWithPrefixFromContextToNodeL10n() {
+        Map<String, Object> arguments = singletonMap("0", "l10nFunctionTest");
+        EvaluationContext context = createEvaluationContext();
+        assertThat(l10nFunction.execute(arguments, null, context, 0), equalTo("Localized Value"));
+    }
 
-	private static EvaluationContext createEvaluationContext() {
-		return new EvaluationContext() {
-			@Override
-			public boolean isStrictVariables() {
-				return false;
-			}
+    private static EvaluationContext createEvaluationContext() {
+        return new EvaluationContext() {
+            @Override
+            public boolean isStrictVariables() {
+                return false;
+            }
 
-			@Override
-			public Locale getLocale() {
-				return null;
-			}
+            @Override
+            public Locale getLocale() {
+                return null;
+            }
 
-			@Override
-			public Object getVariable(String key) {
-				return key.equals("l10nPrefix") ? "test." : null;
-			}
-		};
-	}
+            @Override
+            public Object getVariable(String key) {
+                return key.equals("l10nPrefix") ? "test." : null;
+            }
+        };
+    }
 
-	private final L10nExtension l10nExtension = new L10nExtension();
-	private final Function l10nFunction = l10nExtension.getFunctions().get("l10n");
+    private final L10nExtension l10nExtension = new L10nExtension();
+    private final Function l10nFunction = l10nExtension.getFunctions().get("l10n");
 
 }
