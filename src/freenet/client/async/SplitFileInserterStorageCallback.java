@@ -14,12 +14,12 @@ public interface SplitFileInserterStorageCallback {
     void onFinishedEncode();
 
     /** Called after finishing encoding the check blocks and block keys for another segment.
-     * The callback might need to reschedule as there are more blocks available to insert. 
+     * The callback might need to reschedule as there are more blocks available to insert.
      * When this has been called once for each segment we will call onHasKeys(). */
     void encodingProgress();
 
     /** Called when all segments have been encoded. So we have all the check blocks and have a CHK
-     * for every block. The callback must decide whether to complete / start the next insert level, 
+     * for every block. The callback must decide whether to complete / start the next insert level,
      * or whether to wait for all the blocks to insert. */
     void onHasKeys();
 
@@ -32,10 +32,10 @@ public interface SplitFileInserterStorageCallback {
     /** Called when a block is inserted successfully */
     void onInsertedBlock();
 
-    /** Called when a block becomes fetchable (unless because of an encode, in which case we only 
+    /** Called when a block becomes fetchable (unless because of an encode, in which case we only
      * call encodingProgress() ) */
     void clearCooldown();
-    
+
     /** Get request priority class for FEC jobs etc */
     short getPriorityClass();
 

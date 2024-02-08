@@ -15,37 +15,37 @@ import org.bitpedia.collider.core.Ed2Handler;
 */
 public class Ed2MessageDigest extends MessageDigest {
 
-	final protected Ed2Handler handler;
+    final protected Ed2Handler handler;
 
-	public Ed2MessageDigest() {
-		super("ED2K");
-		handler = new Ed2Handler();
-		handler.analyzeInit();
-	}
+    public Ed2MessageDigest() {
+        super("ED2K");
+        handler = new Ed2Handler();
+        handler.analyzeInit();
+    }
 
-	@Override
-	protected byte[] engineDigest() {
-		return handler.analyzeFinal();
-	}
+    @Override
+    protected byte[] engineDigest() {
+        return handler.analyzeFinal();
+    }
 
-	@Override
-	protected void engineReset() {
-		handler.analyzeInit();
-	}
+    @Override
+    protected void engineReset() {
+        handler.analyzeInit();
+    }
 
-	@Override
-	protected void engineUpdate(byte arg0) {
-		engineUpdate(new byte[] { arg0 }, 0, 1);
-	}
+    @Override
+    protected void engineUpdate(byte arg0) {
+        engineUpdate(new byte[] { arg0 }, 0, 1);
+    }
 
-	@Override
-	protected void engineUpdate(byte[] arg0, int arg1, int arg2) {
-		handler.analyzeUpdate(arg0, arg1, arg2);
-	}
+    @Override
+    protected void engineUpdate(byte[] arg0, int arg1, int arg2) {
+        handler.analyzeUpdate(arg0, arg1, arg2);
+    }
 
-	@Override
-	protected int engineGetDigestLength() {
-		return 16;
-	}
+    @Override
+    protected int engineGetDigestLength() {
+        return 16;
+    }
 
 }

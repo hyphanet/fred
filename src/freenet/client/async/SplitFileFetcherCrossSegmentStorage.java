@@ -18,13 +18,13 @@ import freenet.support.MemoryLimitedJob;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.io.StorageFormatException;
 
-/** Cross-segments are "in parallel" with the main segments, an interlaced Reed-Solomon scheme 
+/** Cross-segments are "in parallel" with the main segments, an interlaced Reed-Solomon scheme
  * similar to that used on CD's, allowing us to fill in blocks from other segments. There are 3
  * "cross-check blocks" in each segment, and therefore 3 in each cross-segment; the rest are data
  * blocks.
  */
 public class SplitFileFetcherCrossSegmentStorage {
-    
+
     private static volatile boolean logMINOR;
 
     static {
@@ -33,13 +33,13 @@ public class SplitFileFetcherCrossSegmentStorage {
 
     public final int crossSegmentNumber;
     public final SplitFileFetcherStorage parent;
-    
+
     /** Segment for each block */
     private final SplitFileFetcherSegmentStorage[] segments;
     /** Block number within the segment for each block */
     private final int[] blockNumbers;
     /** Whether each block in the cross-segment has been found. Kept up to date when blocks are
-     * found in the other segments. However, as in a normal segment, these may not be 100% 
+     * found in the other segments. However, as in a normal segment, these may not be 100%
      * accurate! */
     private final boolean[] blocksFound;
     /** Number of data blocks chosen from the various segments. */
@@ -59,7 +59,7 @@ public class SplitFileFetcherCrossSegmentStorage {
     /** Used in assigning blocks */
     private int counter;
 
-    SplitFileFetcherCrossSegmentStorage(int segNo, int blocksPerSegment, int crossCheckBlocks, 
+    SplitFileFetcherCrossSegmentStorage(int segNo, int blocksPerSegment, int crossCheckBlocks,
             SplitFileFetcherStorage parent, FECCodec codec) {
         this.crossSegmentNumber = segNo;
         this.parent = parent;
@@ -72,7 +72,7 @@ public class SplitFileFetcherCrossSegmentStorage {
         blockNumbers = new int[totalBlocks];
         blocksFound = new boolean[totalBlocks];
     }
-    
+
     /** Called when a segment fetches a block that it believes to be relevant to us */
     public void onFetchedRelevantBlock(SplitFileFetcherSegmentStorage segment, int blockNo) {
         short priorityClass = parent.getPriorityClass();
@@ -101,21 +101,21 @@ public class SplitFileFetcherCrossSegmentStorage {
             tryDecodeOrEncode(priorityClass);
         }
     }
-    
+
     private synchronized void tryDecodeOrEncode(final short prio) {
         if(succeeded) return;
         if(tryDecode) return;
         if(cancelled) return;
-        long limit = totalBlocks * CHKBlock.DATA_LENGTH + 
+        long limit = totalBlocks * CHKBlock.DATA_LENGTH +
             Math.max(parent.fecCodec.maxMemoryOverheadDecode(dataBlockCount, crossCheckBlockCount),
                     parent.fecCodec.maxMemoryOverheadEncode(dataBlockCount, crossCheckBlockCount));
         parent.memoryLimitedJobRunner.queueJob(new MemoryLimitedJob(limit) {
-            
+
             @Override
             public int getPriority() {
                 return prio;
             }
-            
+
             @Override
             public boolean start(MemoryLimitedChunk chunk) {
                 boolean shutdown = false;
@@ -132,7 +132,7 @@ public class SplitFileFetcherCrossSegmentStorage {
                     chunk.release();
                     try {
                         if(!shutdown) {
-                            // We do want to call the callback even if we threw something, because we 
+                            // We do want to call the callback even if we threw something, because we
                             // may be waiting to cancel. However we DON'T call it if we are shutting down.
                             synchronized(SplitFileFetcherCrossSegmentStorage.this) {
                                 tryDecode = false;
@@ -146,11 +146,11 @@ public class SplitFileFetcherCrossSegmentStorage {
                 }
                 return true;
             }
-            
+
         });
         tryDecode = true;
     }
-    
+
     /** Attempt FEC decoding. Check blocks before decoding in case there is disk corruption. Check
      * the new decoded blocks afterwards to ensure reproducible behaviour. */
     private void innerDecode(MemoryLimitedChunk chunk) throws IOException {
@@ -165,12 +165,12 @@ public class SplitFileFetcherCrossSegmentStorage {
         if(killed) {
             return;
         }
-        
+
         // readAllBlocks does most of the housekeeping for us, see below...
         byte[][] dataBlocks = readBlocks(false);
         byte[][] checkBlocks = readBlocks(true);
         if(dataBlocks == null || checkBlocks == null) return; // Failed with disk error.
-        
+
         // Original status.
         boolean[] dataBlocksFound = wasNonNullFill(dataBlocks);
         boolean[] checkBlocksFound = wasNonNullFill(checkBlocks);
@@ -178,18 +178,18 @@ public class SplitFileFetcherCrossSegmentStorage {
         int realTotalDataBlocks = count(dataBlocksFound);
         int realTotalCrossCheckBlocks = count(checkBlocksFound);
         int realTotalFound = realTotalDataBlocks + realTotalCrossCheckBlocks;
-        
+
         if(realTotalFound < dataBlockCount) {
             // Not finished yet.
             return;
         }
-        
+
         boolean decoded = false;
         boolean encoded = false;
-        
+
         if(realTotalDataBlocks < dataBlockCount) {
             // Decode.
-            codec.decode(dataBlocks, checkBlocks, dataBlocksFound, checkBlocksFound, 
+            codec.decode(dataBlocks, checkBlocks, dataBlocksFound, checkBlocksFound,
                     CHKBlock.DATA_LENGTH);
             for(int i=0;i<dataBlockCount;i++) {
                 if(!dataBlocksFound[i]) {
@@ -198,7 +198,7 @@ public class SplitFileFetcherCrossSegmentStorage {
                 }
             }
         }
-        
+
         if(realTotalCrossCheckBlocks < crossCheckBlockCount) {
             // Decode.
             codec.encode(dataBlocks, checkBlocks, checkBlocksFound, CHKBlock.DATA_LENGTH);
@@ -208,11 +208,11 @@ public class SplitFileFetcherCrossSegmentStorage {
                 }
             }
         }
-        
+
         synchronized(this) {
             succeeded = true;
         }
-        
+
         if(logMINOR) Logger.minor(this, "Completed a cross-segment: decoded="+decoded+" encoded="+encoded);
     }
 
@@ -243,7 +243,7 @@ public class SplitFileFetcherCrossSegmentStorage {
         }
     }
 
-    private void reportBlockToSegmentOffThread(final int blockNo, final ClientCHK key, 
+    private void reportBlockToSegmentOffThread(final int blockNo, final ClientCHK key,
             final ClientCHKBlock block, final byte[] data) {
         parent.jobRunner.queueNormalOrDrop(new PersistentJob() {
 
@@ -253,7 +253,7 @@ public class SplitFileFetcherCrossSegmentStorage {
                     // FIXME CPU USAGE Add another API to the segment to avoid re-decoding.
                     SplitFileSegmentKeys keys = segments[blockNo].getSegmentKeys();
                     if(keys == null) return false;
-                    boolean success = segments[blockNo].innerOnGotKey(key.getNodeCHK(), block, keys, 
+                    boolean success = segments[blockNo].innerOnGotKey(key.getNodeCHK(), block, keys,
                             blockNumbers[blockNo], data);
                     if(success) {
                         if(logMINOR)
@@ -279,7 +279,7 @@ public class SplitFileFetcherCrossSegmentStorage {
                 parent.fail(e);
                 return true;
             }
-            
+
         });
     }
 
@@ -291,7 +291,7 @@ public class SplitFileFetcherCrossSegmentStorage {
                 parent.failOnDiskError(e);
                 return true;
             }
-            
+
         });
     }
 
@@ -315,9 +315,9 @@ public class SplitFileFetcherCrossSegmentStorage {
      * @param If false, read data blocks, if true, read check blocks. (The FEC code takes separate
      * arrays).
      * @return An array of blocks, in the correct order. Each element is either a valid block or
-     * null if the block is invalid or hasn't been fetched yet. Will tell the ordinary segment if 
+     * null if the block is invalid or hasn't been fetched yet. Will tell the ordinary segment if
      * the block is bogus. Will also update our blocksFound. */
-    
+
     private byte[][] readBlocks(boolean checkBlocks) {
         int start = checkBlocks ? dataBlockCount : 0;
         int end = checkBlocks ? totalBlocks : dataBlockCount;
@@ -342,7 +342,7 @@ public class SplitFileFetcherCrossSegmentStorage {
         }
         return blocks;
     }
-    
+
     private static int count(boolean[] array) {
         int total = 0;
         for(boolean b : array)
@@ -355,7 +355,7 @@ public class SplitFileFetcherCrossSegmentStorage {
         blockNumbers[counter] = blockNum;
         counter++;
     }
-    
+
     public synchronized boolean isDecoding() {
         return tryDecode;
     }
@@ -368,7 +368,7 @@ public class SplitFileFetcherCrossSegmentStorage {
             dos.writeInt(blockNumbers[i]);
         }
     }
-    
+
     public SplitFileFetcherCrossSegmentStorage(SplitFileFetcherStorage parent, int segNo,
             DataInputStream dis) throws IOException, StorageFormatException {
         this.parent = parent;
@@ -393,9 +393,9 @@ public class SplitFileFetcherCrossSegmentStorage {
             segment.resumeCallback(blockNo, this);
         }
     }
-    
-    /** Should be called before scheduling, unlike restart(). Doesn't lock, i.e. part of 
-     * construction. But we must have read metadata on the regular segments first, which won't be 
+
+    /** Should be called before scheduling, unlike restart(). Doesn't lock, i.e. part of
+     * construction. But we must have read metadata on the regular segments first, which won't be
      * true in the constructor. */
     public void checkBlocks() {
         for(int i=0;i<totalBlocks;i++) {
@@ -417,7 +417,7 @@ public class SplitFileFetcherCrossSegmentStorage {
             tryDecodeOrEncode(priorityClass);
         }
     }
-    
+
     public void cancel() {
         synchronized(this) {
             cancelled = true;
@@ -426,14 +426,14 @@ public class SplitFileFetcherCrossSegmentStorage {
         }
         parent.finishedEncoding(this);
     }
-    
+
     int[] getSegmentNumbers() {
         int[] ret = new int[totalBlocks];
         for(int i=0;i<totalBlocks;i++)
             ret[i] = segments[i].segNo;
         return ret;
     }
-    
+
     int[] getBlockNumbers() {
         return blockNumbers.clone();
     }

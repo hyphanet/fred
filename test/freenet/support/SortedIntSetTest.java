@@ -12,7 +12,7 @@ public class SortedIntSetTest extends TestCase {
     private static final int[] NOT_IN_SET = new int[] {
         0, 3, 11, 16
     };
-    
+
     private final Random r = new Random(0);
 
     public void testPush() {

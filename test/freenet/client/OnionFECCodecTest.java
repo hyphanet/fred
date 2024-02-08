@@ -9,10 +9,10 @@ import junit.framework.TestCase;
 
 /** Test the new (post db4o) high level FEC API */
 public class OnionFECCodecTest extends TestCase {
-    
+
     private static final int BLOCK_SIZE = 4096;
     private static final int MAX_SEGMENT_SIZE = 255;
-    
+
     private final OnionFECCodec codec = new OnionFECCodec();
     private byte[][] originalDataBlocks;
     private byte[][] dataBlocks;
@@ -20,7 +20,7 @@ public class OnionFECCodecTest extends TestCase {
     private byte[][] checkBlocks;
     private boolean[] checkBlocksPresent;
     private boolean[] dataBlocksPresent;
-    
+
     public void testDecodeRandomSubset() {
         Random r = new Random(19412106);
         int iterations = TestProperty.EXTENSIVE ? 100 : 10;
@@ -31,7 +31,7 @@ public class OnionFECCodecTest extends TestCase {
         for(int i=0;i<iterations;i++)
             inner(129, 127, r);
     }
-    
+
     public void testEncodeThrowsOnNotPaddedLastBlock() {
         Random r = new Random(21502106);
         int data = 128;
@@ -40,7 +40,7 @@ public class OnionFECCodecTest extends TestCase {
         originalDataBlocks[data-1] = new byte[BLOCK_SIZE/2];
         checkBlocks = setupCheckBlocks(check);
         dataBlocks = copy(originalDataBlocks);
-        
+
         // Encode the check blocks.
         checkBlocksPresent = new boolean[checkBlocks.length];
         try {
@@ -50,7 +50,7 @@ public class OnionFECCodecTest extends TestCase {
             // Expected.
         }
     }
-    
+
     public void testDecodeThrowsOnNotPaddedLastBlock() {
         Random r = new Random(21482106);
         setup(128, 128, r);
@@ -64,7 +64,7 @@ public class OnionFECCodecTest extends TestCase {
             // Ok.
         }
     }
-    
+
     public void testDecodeAlreadyDecoded() {
         Random r = new Random(21482106);
         setup(128, 128, r);
@@ -72,7 +72,7 @@ public class OnionFECCodecTest extends TestCase {
         deleteAllCheckBlocks();
         decode(); // Should be a no-op.
     }
-    
+
     public void testDecodeNoneDecoded() {
         Random r = new Random(21482106);
         setup(128, 128, r);
@@ -80,7 +80,7 @@ public class OnionFECCodecTest extends TestCase {
         deleteAllDataBlocks();
         decode();
     }
-    
+
     public void testManyCheckFewData() {
         Random r = new Random(21582106);
         inner(2, 253, r);
@@ -88,13 +88,13 @@ public class OnionFECCodecTest extends TestCase {
         inner(50, 200, r);
         inner(2, 3, r); // Common case, include it here.
     }
-    
+
     public void testManyDataFewCheck() {
         Random r = new Random(21592106);
         inner(200, 55, r);
         inner(253, 2, r);
     }
-    
+
     public void testRandomDataCheckCounts() {
         Random r = new Random(21602106);
         int iterations = TestProperty.EXTENSIVE ? 100 : 10;
@@ -105,31 +105,31 @@ public class OnionFECCodecTest extends TestCase {
             inner(data, check, r);
         }
     }
-    
+
     protected void inner(int data, int check, Random r) {
         setup(data, check, r);
         // Now delete a random selection of blocks
         deleteRandomBlocks(r);
         decode();
     }
-    
+
     protected void setup(int data, int check, Random r) {
         originalDataBlocks = createOriginalDataBlocks(r, data);
         checkBlocks = setupCheckBlocks(check);
         dataBlocks = copy(originalDataBlocks);
-        
+
         // Encode the check blocks.
         checkBlocksPresent = new boolean[checkBlocks.length];
         codec.encode(dataBlocks, checkBlocks, checkBlocksPresent, BLOCK_SIZE);
         assertEquals(originalDataBlocks, dataBlocks);
         originalCheckBlocks = copy(checkBlocks);
-        
+
         // Initially everything is present...
         dataBlocksPresent = new boolean[dataBlocks.length];
         for(int i=0;i<dataBlocksPresent.length;i++) dataBlocksPresent[i] = true;
         for(int i=0;i<checkBlocksPresent.length;i++) checkBlocksPresent[i] = true;
     }
-    
+
     protected void decode() {
         boolean[] oldDataBlocksPresent = dataBlocksPresent.clone();
         boolean[] oldCheckBlocksPresent = checkBlocksPresent.clone();
@@ -142,7 +142,7 @@ public class OnionFECCodecTest extends TestCase {
         assertEquals(originalCheckBlocks, checkBlocks);
         assertTrue(Arrays.equals(oldCheckBlocksPresent, checkBlocksPresent));
     }
-    
+
     private void deleteRandomBlocks(Random r) {
         int dropped = 0;
         int data = dataBlocks.length;
@@ -175,7 +175,7 @@ public class OnionFECCodecTest extends TestCase {
         }
         return blocks;
     }
-    
+
     protected byte[][] setupCheckBlocks(int count) {
         byte[][] blocks = new byte[count][];
         for(int i=0;i<count;i++) {
@@ -183,7 +183,7 @@ public class OnionFECCodecTest extends TestCase {
         }
         return blocks;
     }
-    
+
     protected byte[][] copy(byte[][] blocks) {
         byte[][] ret = new byte[blocks.length][]; // FIXME would blocks.clone() shallow or deep copy?
         for(int i=0;i<ret.length;i++) {
@@ -191,14 +191,14 @@ public class OnionFECCodecTest extends TestCase {
         }
         return ret;
     }
-    
+
     private void assertEquals(byte[][] blocks1, byte[][] blocks2) {
         assertEquals(blocks1.length, blocks2.length);
         for(int i=0;i<blocks1.length;i++) {
             assertTrue(Arrays.equals(blocks1[i], blocks2[i]));
         }
     }
-    
+
     private void deleteAllDataBlocks() {
         for(int i=0;i<dataBlocks.length;i++) {
             clear(dataBlocks, i);

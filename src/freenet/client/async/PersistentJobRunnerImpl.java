@@ -9,16 +9,16 @@ import freenet.support.Logger;
 import freenet.support.Ticker;
 import freenet.support.io.NativeThread;
 
-/** Runs PersistentJob's and periodically, or on demand, suspends all jobs and calls 
+/** Runs PersistentJob's and periodically, or on demand, suspends all jobs and calls
  * innerCheckpoint(). */
 public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
-    
+
     private static volatile boolean logMINOR;
     private static volatile boolean logDEBUG;
     static {
         Logger.registerClass(PersistentJobRunnerImpl.class);
     }
-    
+
     final Executor executor;
     final Ticker ticker;
     /** The number of jobs actually running. */
@@ -53,7 +53,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         lastCheckpointed = System.currentTimeMillis();
         this.checkpointInterval = interval;
     }
-    
+
     public void start(ClientContext context) {
         synchronized(sync) {
             this.context = context;
@@ -76,7 +76,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             }
         }
     }
-    
+
     @Override
     public void queueInternal(PersistentJob job, int threadPriority) throws PersistenceDisabledException {
         synchronized(sync) {
@@ -96,7 +96,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             }
         }
     }
-    
+
     @Override
     public void queueInternal(PersistentJob job) {
         try {
@@ -106,7 +106,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             Logger.error(this, "Dropping internal job because persistence has been turned off!: "+e, e);
         }
     }
-    
+
     @Override
     public void queueNormalOrDrop(PersistentJob job) {
         try {
@@ -115,9 +115,9 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             return;
         }
     }
-    
+
     private class JobRunnable implements Runnable {
-        
+
         private final int threadPriority;
         private final PersistentJob job;
         private final ClientContext context;
@@ -141,9 +141,9 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 handleCompletion(ret, threadPriority);
             }
         }
-        
+
     }
-    
+
     public void handleCompletion(boolean ret, int threadPriority) {
         synchronized(sync) {
             runningJobs--;
@@ -223,18 +223,18 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
         if(logMINOR) Logger.minor(this, "Completed writing checkpoint");
     }
-    
+
     public void delayedCheckpoint() {
         synchronized(sync) {
             if(killed || !enableCheckpointing) return;
             if(willCheck) return;
             ticker.queueTimedJob(new PrioRunnable() {
-                
+
                 @Override
                 public void run() {
                     synchronized(sync) {
                         willCheck = false;
-                        if(!(mustCheckpoint || 
+                        if(!(mustCheckpoint ||
                                 System.currentTimeMillis() - lastCheckpointed > checkpointInterval))
                             return;
                         if(killed || !enableCheckpointing) return;
@@ -243,12 +243,12 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                     }
                     checkpoint(false);
                 }
-                
+
                 @Override
                 public int getPriority() {
                     return WRITE_AT_PRIORITY;
                 }
-                
+
             }, checkpointInterval);
             willCheck = true;
         }
@@ -273,7 +273,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             public int getPriority() {
                 return WRITE_AT_PRIORITY;
             }
-            
+
         });
     }
 
@@ -285,19 +285,19 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
         checkpointOffThread();
     }
-    
+
     protected void updateLastCheckpointed() {
         lastCheckpointed = System.currentTimeMillis();
     }
 
     protected abstract void innerCheckpoint(boolean shutdown);
-    
+
     protected void onLoading() {
         synchronized(sync) {
             loading = true;
         }
     }
-    
+
     protected void onStarted(boolean noWrite) {
         synchronized(sync) {
             loading = true;
@@ -309,21 +309,21 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
         checkpointOffThread();
     }
-    
+
     public void shutdown() {
         synchronized(sync) {
             killed = true;
         }
     }
-    
+
     @Override
     public boolean shuttingDown() {
         synchronized(sync) {
             return killed;
         }
     }
-    
-    /** Typically called after shutdown() to wait for current jobs to complete. Does not check 
+
+    /** Typically called after shutdown() to wait for current jobs to complete. Does not check
      * killed for this reason. */
     public void waitForIdleAndCheckpoint() {
         synchronized(sync) {
@@ -339,7 +339,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
         checkpoint(true);
     }
-    
+
     /** Wait until a checkpoint has been completed, or if the job runner becomes idle, do it here.
      * @throws PersistenceDisabledException */
     public void waitAndCheckpoint() throws PersistenceDisabledException {
@@ -387,7 +387,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             }
         }
     }
-    
+
     public void waitForNotWriting() {
         synchronized(sync) {
             while(writing) {
@@ -418,17 +418,17 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             return killed || !loaded;
         }
     }
-    
+
     public boolean hasLoaded() {
         synchronized(sync) {
             return loaded;
         }
     }
-    
+
     protected ClientContext getClientContext() {
         return context;
     }
-    
+
     public CheckpointLock lock() throws PersistenceDisabledException {
         synchronized(sync) {
             if(killed) throw new PersistenceDisabledException();
@@ -448,7 +448,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             public void unlock(boolean forceWrite, int threadPriority) {
                 handleCompletion(forceWrite, threadPriority);
             }
-            
+
         };
     }
 
@@ -459,7 +459,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             sync.notifyAll();
         }
     }
-    
+
     boolean mustCheckpoint() {
         synchronized(sync) {
             return mustCheckpoint;

@@ -37,15 +37,15 @@ import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
 public class EncryptedRandomAccessBucketTest extends BucketTestBase {
-    
+
     private final static MasterSecret secret = new MasterSecret();
-    private final static EncryptedRandomAccessBufferType[] types = 
+    private final static EncryptedRandomAccessBufferType[] types =
         EncryptedRandomAccessBufferType.values();
-    
+
     static{
         Security.addProvider(new BouncyCastleProvider());
     }
-    
+
     @Override
     protected Bucket makeBucket(long size) throws IOException {
         ArrayBucket underlying = new ArrayBucket();
@@ -56,7 +56,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
     protected void freeBucket(Bucket bucket) throws IOException {
         bucket.free();
     }
-    
+
     public void testIrregularWrites() throws IOException {
         Random r = new Random(6032405);
         int length = 1024*64+1;
@@ -82,7 +82,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         is.close();
         bucket.free();
     }
-    
+
     public void testIrregularWritesNotOverlapping() throws IOException {
         Random r = new Random(6032405);
         int length = 1024*64+1;
@@ -108,7 +108,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         is.close();
         bucket.free();
     }
-    
+
     public void testBucketToRAF() throws IOException {
         Random r = new Random(6032405);
         int length = 1024*64+1;
@@ -141,14 +141,14 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
             RandomAccessBufferTestBase.checkArraySectionEqualsReadData(data, raf, start, end, true);
         }
     }
-    
+
     private File base = new File("tmp.encrypted-random-access-thing-test");
-    
+
     @Before
     public void setUp() {
         base.mkdir();
     }
-    
+
     @After
     public void tearDown() {
         FileUtil.removeAll(base);
@@ -176,7 +176,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         dos.close();
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(baos.toByteArray()));
         ClientContext context = new ClientContext(0, null, null, null, null, null, null, null, null,
-                null, r, null, null, null, null, null, null, null, null, null, null, null, null, 
+                null, r, null, null, null, null, null, null, null, null, null, null, null, null,
                 null, null, null, null);
         context.setPersistentMasterSecret(secret);
         EncryptedRandomAccessBucket restored = (EncryptedRandomAccessBucket) BucketTools.restoreFrom(dis, context.persistentFG, context.persistentFileTracker, secret);
@@ -189,7 +189,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         is.close();
         restored.free();
     }
-    
+
     @Test
     public void testSerialize() throws IOException, StorageFormatException, ResumeFailedException, GeneralSecurityException, ClassNotFoundException {
         File tempFile = File.createTempFile("test-storeto", ".tmp", base);
@@ -212,7 +212,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         oos.close();
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(baos.toByteArray()));
         ClientContext context = new ClientContext(0, null, null, null, null, null, null, null, null,
-                null, r, null, null, null, null, null, null, null, null, null, null, null, null, 
+                null, r, null, null, null, null, null, null, null, null, null, null, null, null,
                 null, null, null, null);
         context.setPersistentMasterSecret(secret);
         ObjectInputStream ois = new ObjectInputStream(dis);
@@ -227,5 +227,5 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         is.close();
         restored.free();
     }
-    
+
 }
