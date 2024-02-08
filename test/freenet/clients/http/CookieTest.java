@@ -27,336 +27,336 @@ import org.junit.function.ThrowingRunnable;
 
 public class CookieTest {
 
-	private static final String VALID_PATH = "/Freetalk";
-	private static final String VALID_NAME = "SessionID";
-	private static final String VALID_VALUE = "abCd12345";
+    private static final String VALID_PATH = "/Freetalk";
+    private static final String VALID_NAME = "SessionID";
+    private static final String VALID_VALUE = "abCd12345";
 
 
-	/**
-	 * https://www.ietf.org/rfc/rfc2965.html#section-3.2
-	 */
-	private static final Set<String> RESERVED_COOKIE_MEMBERS = Collections.unmodifiableSet(
-		new HashSet<>(
-			Arrays.asList(
-				"Comment",
-				"CommentURL",
-				"Discard",
-				"Domain",
-				"Max-Age",
-				"Path",
-				"Port",
-				"Secure",
-				"Version"
-			)
-		)
-	);
+    /**
+     * https://www.ietf.org/rfc/rfc2965.html#section-3.2
+     */
+    private static final Set<String> RESERVED_COOKIE_MEMBERS = Collections.unmodifiableSet(
+        new HashSet<>(
+            Arrays.asList(
+                "Comment",
+                "CommentURL",
+                "Discard",
+                "Domain",
+                "Max-Age",
+                "Path",
+                "Port",
+                "Secure",
+                "Version"
+            )
+        )
+    );
 
-	/**
-	 * Sample control characters
-	 */
-	private static final Set<Character> SOME_CONTROL_CHARACTERS = Collections.unmodifiableSet(
-		new HashSet<>(
-			Arrays.asList(
-				(char) 127, // DEL
-				(char) 27, // ESC
-				(char) 8, // backspace
-				'\n',
-				'\r',
-				'\t',
-				(char) 0
-			)
-		)
-	);
+    /**
+     * Sample control characters
+     */
+    private static final Set<Character> SOME_CONTROL_CHARACTERS = Collections.unmodifiableSet(
+        new HashSet<>(
+            Arrays.asList(
+                (char) 127, // DEL
+                (char) 27, // ESC
+                (char) 8, // backspace
+                '\n',
+                '\r',
+                '\t',
+                (char) 0
+            )
+        )
+    );
 
-	/**
-	 * https://www.ietf.org/rfc/rfc2396.html#section-2.2
-	 */
-	private static final Set<Character> URI_RESERVED_CHARACTERS = Collections.unmodifiableSet(
-		new HashSet<>(
-			Arrays.asList(
-				';', '/', '?', ':', ':', '@', '&', '=', '+', '$', ','
-			)
-		)
-	);
-	/**
-	 * https://www.ietf.org/rfc/rfc2396.html#section-2.3
-	 */
-	private static final Set<Character> URI_UNRESERVED_CHARACTERS = Collections.unmodifiableSet(
-		new HashSet<>(
-			Arrays.asList(
-				'a', 'A', '7', '-', '_', '.', '!', '~', '*', '\'', '(', ')'
-			)
-		)
-	);
+    /**
+     * https://www.ietf.org/rfc/rfc2396.html#section-2.2
+     */
+    private static final Set<Character> URI_RESERVED_CHARACTERS = Collections.unmodifiableSet(
+        new HashSet<>(
+            Arrays.asList(
+                ';', '/', '?', ':', ':', '@', '&', '=', '+', '$', ','
+            )
+        )
+    );
+    /**
+     * https://www.ietf.org/rfc/rfc2396.html#section-2.3
+     */
+    private static final Set<Character> URI_UNRESERVED_CHARACTERS = Collections.unmodifiableSet(
+        new HashSet<>(
+            Arrays.asList(
+                'a', 'A', '7', '-', '_', '.', '!', '~', '*', '\'', '(', ')'
+            )
+        )
+    );
 
-	private static final Set<String> VALID_TOKENS = Collections.unmodifiableSet(
-		new HashSet<>(
-			Arrays.asList(
-				"my-name",
-				"-name",
-				"name-",
-				"my_name",
-				"_name",
-				"name_",
-				"my+name",
-				"+name",
-				"name+",
-				"my.name",
-				".name",
-				"name.",
-				" name "
-			)
-		)
-	);
+    private static final Set<String> VALID_TOKENS = Collections.unmodifiableSet(
+        new HashSet<>(
+            Arrays.asList(
+                "my-name",
+                "-name",
+                "name-",
+                "my_name",
+                "_name",
+                "name_",
+                "my+name",
+                "+name",
+                "name+",
+                "my.name",
+                ".name",
+                "name.",
+                " name "
+            )
+        )
+    );
 
-	URI validPath;
-	Instant validExpiresTime;
-	
-	Cookie cookie;
-	
-	@Before
-	public void setUp() throws Exception {
-		validPath = new URI(VALID_PATH);
-		validExpiresTime = Instant.now().plusMillis(+60*60*1000);
-		cookie = new Cookie(validPath, VALID_NAME, VALID_VALUE, validExpiresTime);
-	}
+    URI validPath;
+    Instant validExpiresTime;
 
-	@Test
-	public void testCookieURIParameter() throws Exception {
-		assertThrowsIllegalArgumentException(
-			"Constructor allows path to be null",
-			() -> new Cookie(null, VALID_NAME, VALID_VALUE, validExpiresTime)
-		);
-		assertThrowsIllegalArgumentException(
-			"Constructor allows path to be empty",
-			() -> new Cookie(new URI(""), VALID_NAME, VALID_VALUE, validExpiresTime)
-		);
+    Cookie cookie;
 
-		for (Character c : URI_RESERVED_CHARACTERS) {
-			new Cookie(new URI("/my" + c + "/value"), VALID_NAME, VALID_VALUE, validExpiresTime);
-		}
+    @Before
+    public void setUp() throws Exception {
+        validPath = new URI(VALID_PATH);
+        validExpiresTime = Instant.now().plusMillis(+60*60*1000);
+        cookie = new Cookie(validPath, VALID_NAME, VALID_VALUE, validExpiresTime);
+    }
 
-		for (Character c : URI_UNRESERVED_CHARACTERS) {
-			new Cookie(new URI("/my" + c + "/value"), VALID_NAME, VALID_VALUE, validExpiresTime);
-		}
+    @Test
+    public void testCookieURIParameter() throws Exception {
+        assertThrowsIllegalArgumentException(
+            "Constructor allows path to be null",
+            () -> new Cookie(null, VALID_NAME, VALID_VALUE, validExpiresTime)
+        );
+        assertThrowsIllegalArgumentException(
+            "Constructor allows path to be empty",
+            () -> new Cookie(new URI(""), VALID_NAME, VALID_VALUE, validExpiresTime)
+        );
 
-		assertThrowsIllegalArgumentException(
-			"Constructor allows path not starting with /",
-			() -> new Cookie(new URI("my/path"), VALID_NAME, VALID_VALUE, validExpiresTime)
-		);
+        for (Character c : URI_RESERVED_CHARACTERS) {
+            new Cookie(new URI("/my" + c + "/value"), VALID_NAME, VALID_VALUE, validExpiresTime);
+        }
 
-		assertThrowsIllegalArgumentException(
-			"Constructor allows path containing full URI",
-			() -> new Cookie(new URI("http://example.com/my/path"), VALID_NAME, VALID_VALUE, validExpiresTime)
-		);
+        for (Character c : URI_UNRESERVED_CHARACTERS) {
+            new Cookie(new URI("/my" + c + "/value"), VALID_NAME, VALID_VALUE, validExpiresTime);
+        }
 
-		for (String s : Arrays.asList("free%20net", "net%09free")) {
-			new Cookie(new URI("/" + s), VALID_NAME, VALID_VALUE, validExpiresTime);
-		}
-	}
+        assertThrowsIllegalArgumentException(
+            "Constructor allows path not starting with /",
+            () -> new Cookie(new URI("my/path"), VALID_NAME, VALID_VALUE, validExpiresTime)
+        );
 
-	@Test
-	public void testCookieNameParameter() {
-		assertThrowsIllegalArgumentException(
-			"Constructor allows name to be null",
-			() -> cookieForName(null)
-		);
+        assertThrowsIllegalArgumentException(
+            "Constructor allows path containing full URI",
+            () -> new Cookie(new URI("http://example.com/my/path"), VALID_NAME, VALID_VALUE, validExpiresTime)
+        );
 
-		assertThrowsIllegalArgumentException(
-			"Constructor allows name to be empty",
-			() -> cookieForName("")
-		);
+        for (String s : Arrays.asList("free%20net", "net%09free")) {
+            new Cookie(new URI("/" + s), VALID_NAME, VALID_VALUE, validExpiresTime);
+        }
+    }
 
-		assertThrowsIllegalArgumentException(
-			"Constructor allows invalid characters in name",
-			() -> cookieForName("test;")
-		);
+    @Test
+    public void testCookieNameParameter() {
+        assertThrowsIllegalArgumentException(
+            "Constructor allows name to be null",
+            () -> cookieForName(null)
+        );
 
-		for (String reservedName: RESERVED_COOKIE_MEMBERS) {
-			assertInvalidCookieAttributeName(reservedName);
-			assertInvalidCookieAttributeName(reservedName.toLowerCase(Locale.ROOT));
-			assertInvalidCookieAttributeName(reservedName.toUpperCase(Locale.ROOT));
+        assertThrowsIllegalArgumentException(
+            "Constructor allows name to be empty",
+            () -> cookieForName("")
+        );
 
-			for (int i = 0; i < reservedName.length(); i++) {
-				char[] chars = reservedName.toCharArray();
-				char c = chars[i];
-				chars[i] = Character.toString(c).toLowerCase(Locale.ROOT).charAt(0);
+        assertThrowsIllegalArgumentException(
+            "Constructor allows invalid characters in name",
+            () -> cookieForName("test;")
+        );
 
-				String nameWithLowerChar = new String(chars);
-				assertInvalidCookieAttributeName(nameWithLowerChar);
+        for (String reservedName: RESERVED_COOKIE_MEMBERS) {
+            assertInvalidCookieAttributeName(reservedName);
+            assertInvalidCookieAttributeName(reservedName.toLowerCase(Locale.ROOT));
+            assertInvalidCookieAttributeName(reservedName.toUpperCase(Locale.ROOT));
 
-				chars[i] = Character.toString(c).toUpperCase(Locale.ROOT).charAt(0);
-				String nameWithUpperChar = new String(chars);
-				assertInvalidCookieAttributeName(nameWithUpperChar);
-			}
-		}
+            for (int i = 0; i < reservedName.length(); i++) {
+                char[] chars = reservedName.toCharArray();
+                char c = chars[i];
+                chars[i] = Character.toString(c).toLowerCase(Locale.ROOT).charAt(0);
 
-		for (Character c : COOKIE_TOKEN_SEPARATOR_CHARACTERS) {
-			assertInvalidCookieAttributeName("separator" + c + "name");
-		}
-		for (Character c : COOKIE_VALUE_FORBIDDEN_CHARS) {
-			assertInvalidCookieAttributeName("separator" + c + "name");
-		}
-		for (Character c : SOME_CONTROL_CHARACTERS) {
-			assertInvalidCookieAttributeName("control" + c + "name");
-		}
-		// US-ASCII only
-		assertInvalidCookieAttributeName("cöölName");
+                String nameWithLowerChar = new String(chars);
+                assertInvalidCookieAttributeName(nameWithLowerChar);
 
-		for (String validToken : VALID_TOKENS) {
-			cookieForName(validToken);
-		}
-	}
+                chars[i] = Character.toString(c).toUpperCase(Locale.ROOT).charAt(0);
+                String nameWithUpperChar = new String(chars);
+                assertInvalidCookieAttributeName(nameWithUpperChar);
+            }
+        }
 
-	private Cookie cookieForName(String name) {
-		return new Cookie(validPath, name, VALID_VALUE, validExpiresTime);
-	}
+        for (Character c : COOKIE_TOKEN_SEPARATOR_CHARACTERS) {
+            assertInvalidCookieAttributeName("separator" + c + "name");
+        }
+        for (Character c : COOKIE_VALUE_FORBIDDEN_CHARS) {
+            assertInvalidCookieAttributeName("separator" + c + "name");
+        }
+        for (Character c : SOME_CONTROL_CHARACTERS) {
+            assertInvalidCookieAttributeName("control" + c + "name");
+        }
+        // US-ASCII only
+        assertInvalidCookieAttributeName("cöölName");
 
-	private void assertInvalidCookieAttributeName(String name) {
-		assertThrowsIllegalArgumentException(
-			"Constructor allows invalid cookie attribute name: '" + name + "'",
-			() -> cookieForName(name)
-		);
-	}
+        for (String validToken : VALID_TOKENS) {
+            cookieForName(validToken);
+        }
+    }
 
-	@Test
-	public void testCookieValueParameter() {
+    private Cookie cookieForName(String name) {
+        return new Cookie(validPath, name, VALID_VALUE, validExpiresTime);
+    }
 
-		// Empty values are allowed;
-		assertEquals("", cookieForValue(null).getValue());
-		assertEquals("", cookieForValue("").getValue());
+    private void assertInvalidCookieAttributeName(String name) {
+        assertThrowsIllegalArgumentException(
+            "Constructor allows invalid cookie attribute name: '" + name + "'",
+            () -> cookieForName(name)
+        );
+    }
 
-		assertThrowsIllegalArgumentException(
-			"Constructor allows invalid characters in value",
-			() -> cookieForValue("\"")
-		);
+    @Test
+    public void testCookieValueParameter() {
 
-		assertThrowsIllegalArgumentException(
-			"Constructor allows non-US-ASCII characters in value",
-			() -> cookieForValue(VALID_VALUE + "ä")
-		);
+        // Empty values are allowed;
+        assertEquals("", cookieForValue(null).getValue());
+        assertEquals("", cookieForValue("").getValue());
 
-		for (String cookieMember : RESERVED_COOKIE_MEMBERS) {
-			// allow reserved words as values
-			cookieForValue(cookieMember);
-		}
+        assertThrowsIllegalArgumentException(
+            "Constructor allows invalid characters in value",
+            () -> cookieForValue("\"")
+        );
 
-		for (Character c : COOKIE_VALUE_FORBIDDEN_CHARS) {
-			assertInvalidCookieAttributeValue("separator" + c + "value");
-		}
-		for (Character c : SOME_CONTROL_CHARACTERS) {
-			assertInvalidCookieAttributeValue("control" + c + "value");
-		}
-		// US-ASCII only
-		assertInvalidCookieAttributeValue("cöölValue");
+        assertThrowsIllegalArgumentException(
+            "Constructor allows non-US-ASCII characters in value",
+            () -> cookieForValue(VALID_VALUE + "ä")
+        );
 
-		for (String validToken : VALID_TOKENS) {
-			new Cookie(validPath, validToken, VALID_VALUE, validExpiresTime);
-		}
-		for (String validName : Arrays.asList(
-			"my name",
-			" my name "
-		)) {
-			cookieForValue(validName);
-		}
-	}
+        for (String cookieMember : RESERVED_COOKIE_MEMBERS) {
+            // allow reserved words as values
+            cookieForValue(cookieMember);
+        }
 
-	private Cookie cookieForValue(String myValue) {
-		return new Cookie(validPath, VALID_NAME, myValue, validExpiresTime);
-	}
+        for (Character c : COOKIE_VALUE_FORBIDDEN_CHARS) {
+            assertInvalidCookieAttributeValue("separator" + c + "value");
+        }
+        for (Character c : SOME_CONTROL_CHARACTERS) {
+            assertInvalidCookieAttributeValue("control" + c + "value");
+        }
+        // US-ASCII only
+        assertInvalidCookieAttributeValue("cöölValue");
 
-	private void assertInvalidCookieAttributeValue(String value) {
-		assertThrowsIllegalArgumentException(
-			"Constructor allows invalid cookie attribute value: '" + value + "'",
-			() -> cookieForValue(value)
-		);
-	}
+        for (String validToken : VALID_TOKENS) {
+            new Cookie(validPath, validToken, VALID_VALUE, validExpiresTime);
+        }
+        for (String validName : Arrays.asList(
+            "my name",
+            " my name "
+        )) {
+            cookieForValue(validName);
+        }
+    }
 
-	@Test
-	public void testCookieDateParameter() {
-		assertThrowsIllegalArgumentException(
-			"Constructor allows construction with null date.",
-			() -> new Cookie(validPath, VALID_NAME, VALID_VALUE, null)
-		);
+    private Cookie cookieForValue(String myValue) {
+        return new Cookie(validPath, VALID_NAME, myValue, validExpiresTime);
+    }
 
-		new Cookie(validPath, VALID_NAME, VALID_VALUE, Instant.now().minusMillis(-1));
-	}
+    private void assertInvalidCookieAttributeValue(String value) {
+        assertThrowsIllegalArgumentException(
+            "Constructor allows invalid cookie attribute value: '" + value + "'",
+            () -> cookieForValue(value)
+        );
+    }
 
-	@Test
-	public void testEqualsObject() throws URISyntaxException {
-		assertEquals(cookie, cookie);
-		assertEquals(cookie, new Cookie(validPath, VALID_NAME, VALID_VALUE, Instant.now().plusMillis(60*1000)));
-		
-		// Value is not checked in equals().
-		assertEquals(cookie, new Cookie(validPath, VALID_NAME, "", Instant.now().plusMillis(60*1000)));
+    @Test
+    public void testCookieDateParameter() {
+        assertThrowsIllegalArgumentException(
+            "Constructor allows construction with null date.",
+            () -> new Cookie(validPath, VALID_NAME, VALID_VALUE, null)
+        );
 
-		assertNotEquals(cookie, new Cookie(new URI(VALID_PATH.toLowerCase()), VALID_NAME, VALID_VALUE, validExpiresTime));
-		assertEquals(cookie, new Cookie(validPath, VALID_NAME.toLowerCase(), VALID_VALUE, validExpiresTime));
+        new Cookie(validPath, VALID_NAME, VALID_VALUE, Instant.now().minusMillis(-1));
+    }
 
-		assertNotEquals(cookie, new Object());
-		assertNotEquals(cookieForName("first"), cookieForName("second"));
+    @Test
+    public void testEqualsObject() throws URISyntaxException {
+        assertEquals(cookie, cookie);
+        assertEquals(cookie, new Cookie(validPath, VALID_NAME, VALID_VALUE, Instant.now().plusMillis(60*1000)));
 
-		// TODO: Test domain. This is currently done in ReceivedCookieTest
-	}
+        // Value is not checked in equals().
+        assertEquals(cookie, new Cookie(validPath, VALID_NAME, "", Instant.now().plusMillis(60*1000)));
 
-	@Test
-	public void testHashCodeMethod() {
-		MatcherAssert.assertThat(cookie.hashCode(), Matchers.any(Integer.class));
-	}
+        assertNotEquals(cookie, new Cookie(new URI(VALID_PATH.toLowerCase()), VALID_NAME, VALID_VALUE, validExpiresTime));
+        assertEquals(cookie, new Cookie(validPath, VALID_NAME.toLowerCase(), VALID_VALUE, validExpiresTime));
 
-	@Test
-	public void testGetDomain() {
-		assertNull(cookie.getDomain());
-		// TODO: Implement.
-	}
+        assertNotEquals(cookie, new Object());
+        assertNotEquals(cookieForName("first"), cookieForName("second"));
 
-	@Test
-	public void testGetPath() {
-		assertEquals(VALID_PATH, cookie.getPath().toString());
-	}
+        // TODO: Test domain. This is currently done in ReceivedCookieTest
+    }
 
-	@Test
-	public void testGetName() {
-		assertEquals(VALID_NAME.toLowerCase(), cookie.getName());
-	}
+    @Test
+    public void testHashCodeMethod() {
+        MatcherAssert.assertThat(cookie.hashCode(), Matchers.any(Integer.class));
+    }
 
-	@Test
-	public void testGetValue() {
-		assertEquals(VALID_VALUE, cookie.getValue());
-	}
+    @Test
+    public void testGetDomain() {
+        assertNull(cookie.getDomain());
+        // TODO: Implement.
+    }
 
-	@Test
-	public void testGetExpirationDate() {
-		assertEquals(validExpiresTime, cookie.getExpirationTime());
-	}
+    @Test
+    public void testGetPath() {
+        assertEquals(VALID_PATH, cookie.getPath().toString());
+    }
 
-	@Test
-	public void testEncodeToHeaderValue() {
-		String headerValue = cookie.encodeToHeaderValue();
+    @Test
+    public void testGetName() {
+        assertEquals(VALID_NAME.toLowerCase(), cookie.getName());
+    }
 
-		assertNotNull(headerValue);
-		assertFalse(headerValue.isEmpty());
+    @Test
+    public void testGetValue() {
+        assertEquals(VALID_VALUE, cookie.getValue());
+    }
 
-		assertTrue(headerValue.contains(String.format("%s=%s;", VALID_NAME.toLowerCase(), VALID_VALUE)));
-		assertTrue(headerValue.contains("version=1;"));
-		assertTrue(headerValue.contains(String.format("path=%s;", validPath.getRawPath())));
+    @Test
+    public void testGetExpirationDate() {
+        assertEquals(validExpiresTime, cookie.getExpirationTime());
+    }
 
-		String expireTimestampStr = DateTimeFormatter.RFC_1123_DATE_TIME.format(validExpiresTime.atZone(ZoneOffset.UTC));
-		assertTrue(headerValue.contains(String.format("expires=%s;", expireTimestampStr)));
+    @Test
+    public void testEncodeToHeaderValue() {
+        String headerValue = cookie.encodeToHeaderValue();
 
-		assertTrue(headerValue.contains("discard=true;"));
-	}
+        assertNotNull(headerValue);
+        assertFalse(headerValue.isEmpty());
 
-	@Test
-	public void encodeToHeaderValueCanEncodeValueWithSpaces() {
-		String strWithSpace = "test space";
-		Cookie cookie = cookieForValue(strWithSpace);
-		assertEquals(strWithSpace, cookie.getValue());
-		String encoded = cookie.encodeToHeaderValue();
-		assertTrue(encoded.contains(String.format("%s=%s;", VALID_NAME.toLowerCase(), strWithSpace)));
-	}
+        assertTrue(headerValue.contains(String.format("%s=%s;", VALID_NAME.toLowerCase(), VALID_VALUE)));
+        assertTrue(headerValue.contains("version=1;"));
+        assertTrue(headerValue.contains(String.format("path=%s;", validPath.getRawPath())));
 
-	protected static void assertThrowsIllegalArgumentException(String message, ThrowingRunnable runnable) {
-		assertThrows(message, IllegalArgumentException.class, runnable);
-	}
+        String expireTimestampStr = DateTimeFormatter.RFC_1123_DATE_TIME.format(validExpiresTime.atZone(ZoneOffset.UTC));
+        assertTrue(headerValue.contains(String.format("expires=%s;", expireTimestampStr)));
+
+        assertTrue(headerValue.contains("discard=true;"));
+    }
+
+    @Test
+    public void encodeToHeaderValueCanEncodeValueWithSpaces() {
+        String strWithSpace = "test space";
+        Cookie cookie = cookieForValue(strWithSpace);
+        assertEquals(strWithSpace, cookie.getValue());
+        String encoded = cookie.encodeToHeaderValue();
+        assertTrue(encoded.contains(String.format("%s=%s;", VALID_NAME.toLowerCase(), strWithSpace)));
+    }
+
+    protected static void assertThrowsIllegalArgumentException(String message, ThrowingRunnable runnable) {
+        assertThrows(message, IllegalArgumentException.class, runnable);
+    }
 }

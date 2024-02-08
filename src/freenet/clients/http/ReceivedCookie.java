@@ -76,21 +76,21 @@ public final class ReceivedCookie {
                     int keyBeginIndex = i;
 
                     while (i < header.length && header[i] != '=' && header[i] != ';') {
-						++i;
-					}
+                        ++i;
+                    }
 
                     int keyEndIndex = i;
 
-					// Remove trailing whitespace
+                    // Remove trailing whitespace
                     while (Character.isWhitespace(header[keyEndIndex - 1])) {
-						--keyEndIndex;
-					}
+                        --keyEndIndex;
+                    }
 
                     key = new String(header, keyBeginIndex, keyEndIndex - keyBeginIndex);
 
                     if (key.length() == 0) {
-						throw new ParseException("Invalid cookie: Contains an empty key: " + httpHeader, i);
-					}
+                        throw new ParseException("Invalid cookie: Contains an empty key: " + httpHeader, i);
+                    }
 
                     // We're done parsing the key, continue to the next character.
                     ++i;
@@ -98,10 +98,10 @@ public final class ReceivedCookie {
 
                 // Parse value (empty values are allowed).
                 if (i < header.length) {
-					// Skip leading whitespace
+                    // Skip leading whitespace
                     while (Character.isWhitespace(header[i])) {
-						++i;
-					}
+                        ++i;
+                    }
 
                     int valueBeginIndex;
                     char valueEndChar;
@@ -111,25 +111,25 @@ public final class ReceivedCookie {
                         valueBeginIndex = ++i;
 
                         while (header[i] != valueEndChar) {
-							++i;
-						}
+                            ++i;
+                        }
 
                     } else {
                         valueEndChar = ';';
                         valueBeginIndex = i;
 
                         while (i < header.length && header[i] != valueEndChar) {
-							++i;
-						}
+                            ++i;
+                        }
                     }
 
 
                     int valueEndIndex = i;
 
-					// Remove trailing whitespace
+                    // Remove trailing whitespace
                     while (valueEndIndex > valueBeginIndex && Character.isWhitespace(header[valueEndIndex - 1])) {
-						--valueEndIndex;
-					}
+                        --valueEndIndex;
+                    }
 
                     value = new String(header, valueBeginIndex, valueEndIndex - valueBeginIndex);
 
@@ -138,21 +138,21 @@ public final class ReceivedCookie {
 
                     // Skip whitespace between end of quotation and the semicolon following the quotation.
                     if (valueEndChar == '\"') {
-						while (i < header.length && header[i] != ';') {
-							if (!Character.isWhitespace(header[i])) {
-								throw new ParseException("Invalid cookie: Missing terminating semicolon after value quotation: " + httpHeader, i);
-							}
-							++i;
-						}
+                        while (i < header.length && header[i] != ';') {
+                            if (!Character.isWhitespace(header[i])) {
+                                throw new ParseException("Invalid cookie: Missing terminating semicolon after value quotation: " + httpHeader, i);
+                            }
+                            ++i;
+                        }
 
-						// We found the semicolon, skip it
-						++i;
-					}
+                        // We found the semicolon, skip it
+                        ++i;
+                    }
                 }
 
-				cookies.add(new ReceivedCookie(key, value));
-				key = null;
-				value = null;
+                cookies.add(new ReceivedCookie(key, value));
+                key = null;
+                value = null;
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             ParseException p = new ParseException("Index out of bounds (" + e.getMessage() + ") for cookie " + httpHeader, 0);
@@ -185,11 +185,11 @@ public final class ReceivedCookie {
     @Override
     public boolean equals(Object o) {
         if (this == o) {
-			return true;
-		}
+            return true;
+        }
         if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
+            return false;
+        }
         ReceivedCookie that = (ReceivedCookie) o;
         return name.equals(that.name) && Objects.equals(value, that.value);
     }

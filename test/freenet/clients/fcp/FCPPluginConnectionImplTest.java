@@ -32,14 +32,14 @@ public final class FCPPluginConnectionImplTest {
      */
     @Test
     public void testSendSynchronousThreadSafety() throws InterruptedException {
-        // JUnit ignores failures in threads other than the threads which it runs tests from. 
+        // JUnit ignores failures in threads other than the threads which it runs tests from.
         // Thus we pass failures out with this boolean.
         // NOTICE: We also use JUnit assert*() / fail() even though they won't work in threads
         // - to produce logging on stderr so you can tell where the failure happened. When adding
         // more of those, make sure to do failure.set(true) BEFORE the assert*() / fail() as they
         // will throw.
         final AtomicBoolean failure = new AtomicBoolean(false);
-        
+
         // Notice: server must be kept referenced by our local variable for the whole duration of
         // the test, otherwise it would get GCed because the FCPPluginConnectionImpl which we will
         // pass it to only keeps a WeakReference to it.
@@ -70,30 +70,30 @@ public final class FCPPluginConnectionImplTest {
                 throw new UnsupportedOperationException();
             }
         };
-        
+
         final FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForUnitTest(server, client);
-        
+
         final int threadCount = 100;
         final Thread[] threads = new Thread[threadCount];
         final CountDownLatch allThreadsStarted = new CountDownLatch(threadCount);
         final CountDownLatch concurrentStart = new CountDownLatch(1);
-        
+
         for(int i=0; i < threadCount; ++i) {
             final String threadIndex = Integer.toString(i);
-            
+
             final Thread thread = new Thread(new Runnable() {
                 final FCPPluginMessage message;
                 {
                     message = FCPPluginMessage.construct();
                     message.params.putSingle("thread", threadIndex);
                 }
-                
+
                 @Override public void run() {
                     try {
                         awaitConcurrentStart();
                         final FCPPluginMessage reply = connection.sendSynchronous(
                             SendDirection.ToServer, message, TimeUnit.SECONDS.toNanos(10));
-                        
+
                         if(!threadIndex.equals(reply.params.get("replyToThread"))) {
                             failure.set(true);
                         }
@@ -116,10 +116,10 @@ public final class FCPPluginConnectionImplTest {
                     }
                 }
             });
-            
+
             threads[i] = thread;
         }
-        
+
         // Start them in a separate loop, not in the loop where we construct them, to ensure that
         // they are all started at the same time, execute in parallel, and thus have maximal
         // probability of race conditions.
@@ -138,7 +138,7 @@ public final class FCPPluginConnectionImplTest {
         }
 
         assertFalse("JUnit failures cannot be passed out of threads, please check stdout/stderr.", failure.get());
-        
+
         assertEquals("FCPPluginConnectionImpl sendSynchronous() map should not leak",
             0, connection.getSendSynchronousCount());
     }

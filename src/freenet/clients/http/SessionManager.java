@@ -82,9 +82,9 @@ public final class SessionManager {
         }
 
         // FIXME: The new constructor was written at 2010-11-15. Uncomment the following safety check after we gave plugins some time to migrate
-        //	if(myCookiePath.getPath().equals("/"))
-        //		throw new IllegalArgumentException("Illegal cookie path '/'. You should use the constructor which allows the specification" +
-        //			"of a namespace for using the global path.");
+        //  if(myCookiePath.getPath().equals("/"))
+        //      throw new IllegalArgumentException("Illegal cookie path '/'. You should use the constructor which allows the specification" +
+        //          "of a namespace for using the global path.");
 
 
         // TODO: Add further checks.

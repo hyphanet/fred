@@ -16,111 +16,111 @@ import org.junit.Test;
 
 public class ReceivedCookieTest {
 
-	private static final String validEncodedCookie = " SessionID = \"abCd12345\" ;"
-		+ " $Version = 1 ;"
-		+ " $Path = \"/Freetalk\";"
-		+ " $Discard; "
-		+ " $Expires = \"Fri, 25 Oct 2030 15:09:37 GMT\"; "
-		+ " $blah;";
+    private static final String validEncodedCookie = " SessionID = \"abCd12345\" ;"
+        + " $Version = 1 ;"
+        + " $Path = \"/Freetalk\";"
+        + " $Discard; "
+        + " $Expires = \"Fri, 25 Oct 2030 15:09:37 GMT\"; "
+        + " $blah;";
 
-	private static final String VALID_NAME = "SessionID";
-	private static final String VALID_VALUE = "abCd12345";
+    private static final String VALID_NAME = "SessionID";
+    private static final String VALID_VALUE = "abCd12345";
 
-	private ReceivedCookie cookie;
+    private ReceivedCookie cookie;
 
-	@Before
-	public void setUp() throws Exception {
-		cookie = parseHeaderAndGetFirst(validEncodedCookie);
-	}
+    @Before
+    public void setUp() throws Exception {
+        cookie = parseHeaderAndGetFirst(validEncodedCookie);
+    }
 
-	@Test
-	public void testParseHeader() throws ParseException {
-		// The tests for getPath(), getName() etc will be executed using the parsed mCookie and therefore also test parseHeader() for valid values,
-		// we only need to test special cases here.
-		
-		List<ReceivedCookie> cookies;
-		ReceivedCookie cookie;
-		
-		// Plain firefox cookie
+    @Test
+    public void testParseHeader() throws ParseException {
+        // The tests for getPath(), getName() etc will be executed using the parsed mCookie and therefore also test parseHeader() for valid values,
+        // we only need to test special cases here.
 
-		cookie = parseHeaderAndGetFirst("SessionID=abCd12345");
-		assertEquals(VALID_NAME, cookie.getName());
-		assertEquals(VALID_VALUE, cookie.getValue());
-		
-		// Two plain firefox cookies
-		
-		cookies = ReceivedCookie.parseHeader("SessionID=abCd12345;key2=valUe2");
-		cookie = cookies.get(0);
-		assertEquals(VALID_NAME, cookie.getName());
-		assertEquals(VALID_VALUE, cookie.getValue());
+        List<ReceivedCookie> cookies;
+        ReceivedCookie cookie;
 
-		cookie = cookies.get(1);
-		assertEquals("key2", cookie.getName());
-		assertEquals("valUe2", cookie.getValue());
-	}
+        // Plain firefox cookie
 
-	@Test
-	public void canParseKeyOnly() throws ParseException {
-		ReceivedCookie cookie = parseHeaderAndGetFirst("$blah");
-		assertEquals("$blah", cookie.getName());
-		assertNull(cookie.getValue());
-	}
+        cookie = parseHeaderAndGetFirst("SessionID=abCd12345");
+        assertEquals(VALID_NAME, cookie.getName());
+        assertEquals(VALID_VALUE, cookie.getValue());
 
-	@Test
-	public void canParseKeyWithoutValue() throws ParseException {
-		List<ReceivedCookie> cookies = ReceivedCookie.parseHeader(" SessionID = \"abCd12345\" ; $blah;");
-		assertEquals(2, cookies.size());
+        // Two plain firefox cookies
 
-		ReceivedCookie cookie = cookies.get(0);
-		assertEquals(VALID_NAME, cookie.getName());
-		assertEquals(VALID_VALUE, cookie.getValue());
+        cookies = ReceivedCookie.parseHeader("SessionID=abCd12345;key2=valUe2");
+        cookie = cookies.get(0);
+        assertEquals(VALID_NAME, cookie.getName());
+        assertEquals(VALID_VALUE, cookie.getValue());
 
-		cookie = cookies.get(1);
-		assertEquals("$blah", cookie.getName());
-		assertNull(cookie.getValue());
-	}
+        cookie = cookies.get(1);
+        assertEquals("key2", cookie.getName());
+        assertEquals("valUe2", cookie.getValue());
+    }
 
-	@Test
-	public void canParseKeyWithoutValueAndSemicolonAtTheEnd() throws ParseException {
-		List<ReceivedCookie> cookies = ReceivedCookie.parseHeader(" SessionID = \"abCd12345\" ; $blah");
-		assertEquals(2, cookies.size());
-		ReceivedCookie cookie = cookies.get(0);
-		assertEquals(VALID_NAME, cookie.getName());
-		assertEquals(VALID_VALUE, cookie.getValue());
-		cookie = cookies.get(1);
-		assertEquals("$blah", cookie.getName());
-		assertNull(cookie.getValue());
-	}
+    @Test
+    public void canParseKeyOnly() throws ParseException {
+        ReceivedCookie cookie = parseHeaderAndGetFirst("$blah");
+        assertEquals("$blah", cookie.getName());
+        assertNull(cookie.getValue());
+    }
 
-	@Test
-	public void canParseEmptyString() throws ParseException {
-		for (String empty: Arrays.asList(
-			null,
-			"",
-			" ",
-			"\n",
-			"\t",
-			" \t \n"
-		)) {
-			List<ReceivedCookie> cookies = ReceivedCookie.parseHeader(empty);
-			assertNotNull(cookies);
-			assertEquals(0, cookies.size());
-		}
-	}
+    @Test
+    public void canParseKeyWithoutValue() throws ParseException {
+        List<ReceivedCookie> cookies = ReceivedCookie.parseHeader(" SessionID = \"abCd12345\" ; $blah;");
+        assertEquals(2, cookies.size());
 
-	@Test
-	public void testEqualsMethod() throws ParseException {
-		assertEquals(cookie, cookie);
-		assertEquals(parseHeaderAndGetFirst(validEncodedCookie), parseHeaderAndGetFirst(validEncodedCookie));
-		assertEquals(cookie, parseHeaderAndGetFirst(validEncodedCookie));
-	}
+        ReceivedCookie cookie = cookies.get(0);
+        assertEquals(VALID_NAME, cookie.getName());
+        assertEquals(VALID_VALUE, cookie.getValue());
 
-	@Test
-	public void testHashCodeMethod() {
-		MatcherAssert.assertThat(cookie.hashCode(), Matchers.any(Integer.class));
-	}
+        cookie = cookies.get(1);
+        assertEquals("$blah", cookie.getName());
+        assertNull(cookie.getValue());
+    }
 
-	private static ReceivedCookie parseHeaderAndGetFirst(String cookieValue) throws ParseException {
-		return ReceivedCookie.parseHeader(cookieValue).get(0);
-	}
+    @Test
+    public void canParseKeyWithoutValueAndSemicolonAtTheEnd() throws ParseException {
+        List<ReceivedCookie> cookies = ReceivedCookie.parseHeader(" SessionID = \"abCd12345\" ; $blah");
+        assertEquals(2, cookies.size());
+        ReceivedCookie cookie = cookies.get(0);
+        assertEquals(VALID_NAME, cookie.getName());
+        assertEquals(VALID_VALUE, cookie.getValue());
+        cookie = cookies.get(1);
+        assertEquals("$blah", cookie.getName());
+        assertNull(cookie.getValue());
+    }
+
+    @Test
+    public void canParseEmptyString() throws ParseException {
+        for (String empty: Arrays.asList(
+            null,
+            "",
+            " ",
+            "\n",
+            "\t",
+            " \t \n"
+        )) {
+            List<ReceivedCookie> cookies = ReceivedCookie.parseHeader(empty);
+            assertNotNull(cookies);
+            assertEquals(0, cookies.size());
+        }
+    }
+
+    @Test
+    public void testEqualsMethod() throws ParseException {
+        assertEquals(cookie, cookie);
+        assertEquals(parseHeaderAndGetFirst(validEncodedCookie), parseHeaderAndGetFirst(validEncodedCookie));
+        assertEquals(cookie, parseHeaderAndGetFirst(validEncodedCookie));
+    }
+
+    @Test
+    public void testHashCodeMethod() {
+        MatcherAssert.assertThat(cookie.hashCode(), Matchers.any(Integer.class));
+    }
+
+    private static ReceivedCookie parseHeaderAndGetFirst(String cookieValue) throws ParseException {
+        return ReceivedCookie.parseHeader(cookieValue).get(0);
+    }
 }
