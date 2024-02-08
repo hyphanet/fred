@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
-/** A KSK. We know the private key from the keyword, so this can be both 
+/** A KSK. We know the private key from the keyword, so this can be both
  * requested and inserted. */
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -21,39 +21,39 @@ public class ClientKSK extends InsertableClientSSK {
 
     private static final long serialVersionUID = 1L;
     final String keyword;
-	
-	private ClientKSK(String keyword, byte[] pubKeyHash, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] keywordHash) throws MalformedURLException {
-		super(keyword, pubKeyHash, pubKey, privKey, keywordHash, Key.ALGO_AES_PCFB_256_SHA256);
-		this.keyword = keyword;
-	}
-	
-	protected ClientKSK() {
-	    // For serialization.
-	    keyword = null;
-	}
 
-	@Override
-	public FreenetURI getURI() {
-		return new FreenetURI("KSK", keyword);
-	}
-	
-	public static InsertableClientSSK create(FreenetURI uri) {
-		if(!uri.getKeyType().equals("KSK"))
-			throw new IllegalArgumentException();
-		return create(uri.getDocName());
-	}
-	
-	public static ClientKSK create(String keyword) {
-		byte[] keywordHash = SHA256.digest(keyword.getBytes(StandardCharsets.UTF_8));
-		MersenneTwister mt = new MersenneTwister(keywordHash);
-		DSAPrivateKey privKey = new DSAPrivateKey(Global.DSAgroupBigA, mt);
-		DSAPublicKey pubKey = new DSAPublicKey(Global.DSAgroupBigA, privKey);
-		byte[] pubKeyHash = SHA256.digest(pubKey.asBytes());
-		try {
-			return new ClientKSK(keyword, pubKeyHash, pubKey, privKey, keywordHash);
-		} catch (MalformedURLException e) {
-			throw new Error(e);
-		}
-	}
-	
+    private ClientKSK(String keyword, byte[] pubKeyHash, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] keywordHash) throws MalformedURLException {
+        super(keyword, pubKeyHash, pubKey, privKey, keywordHash, Key.ALGO_AES_PCFB_256_SHA256);
+        this.keyword = keyword;
+    }
+
+    protected ClientKSK() {
+        // For serialization.
+        keyword = null;
+    }
+
+    @Override
+    public FreenetURI getURI() {
+        return new FreenetURI("KSK", keyword);
+    }
+
+    public static InsertableClientSSK create(FreenetURI uri) {
+        if(!uri.getKeyType().equals("KSK"))
+            throw new IllegalArgumentException();
+        return create(uri.getDocName());
+    }
+
+    public static ClientKSK create(String keyword) {
+        byte[] keywordHash = SHA256.digest(keyword.getBytes(StandardCharsets.UTF_8));
+        MersenneTwister mt = new MersenneTwister(keywordHash);
+        DSAPrivateKey privKey = new DSAPrivateKey(Global.DSAgroupBigA, mt);
+        DSAPublicKey pubKey = new DSAPublicKey(Global.DSAgroupBigA, privKey);
+        byte[] pubKeyHash = SHA256.digest(pubKey.asBytes());
+        try {
+            return new ClientKSK(keyword, pubKeyHash, pubKey, privKey, keywordHash);
+        } catch (MalformedURLException e) {
+            throw new Error(e);
+        }
+    }
+
 }
