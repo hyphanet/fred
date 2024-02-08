@@ -14,7 +14,7 @@ public class DatabaseKey {
 
     private static final byte[] PLUGIN = "PLUGIN".getBytes(StandardCharsets.UTF_8);
     private static final byte[] CLIENT_LAYER = "CLIENT".getBytes(StandardCharsets.UTF_8);
-    
+
     private final byte[] databaseKey;
 
     /**
@@ -30,7 +30,7 @@ public class DatabaseKey {
     DatabaseKey(byte[] key) {
         this.databaseKey = Arrays.copyOf(key, key.length);
     }
-    
+
     public Bucket createEncryptedBucketForClientLayer(Bucket underlying) {
         return new AEADCryptBucket(underlying, getKeyForClientLayer());
     }
@@ -41,7 +41,7 @@ public class DatabaseKey {
         return new DatabaseKey(databaseKey);
     }
 
-    /** Key Derivation Function for plugin stores: Use the database key as an HMAC key to an HMAC 
+    /** Key Derivation Function for plugin stores: Use the database key as an HMAC key to an HMAC
      * of the key plus some constant plus the storeIdentifier.
      * @param storeIdentifier The classname of the plugin, used as part of a filename.
      * @return An encryption key, as byte[].
@@ -57,8 +57,8 @@ public class DatabaseKey {
         System.arraycopy(id, 0, full, x, id.length);
         return HMAC.macWithSHA256(databaseKey, full);
     }
-    
-    /** Key Derivation Function for client.dat: Use the database key as an HMAC key to an HMAC 
+
+    /** Key Derivation Function for client.dat: Use the database key as an HMAC key to an HMAC
      * of the key plus some constant plus the storeIdentifier.
      * @return An encryption key, as byte[].
      */

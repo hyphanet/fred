@@ -8,15 +8,15 @@ import java.io.IOException;
 import freenet.support.api.Bucket;
 
 public class ArrayBucketTest extends BucketTestBase {
-	public ArrayBucketFactory abf = new ArrayBucketFactory();
+    public ArrayBucketFactory abf = new ArrayBucketFactory();
 
-	@Override
-	protected Bucket makeBucket(long size) throws IOException {
-		return abf.makeBucket(size);
-	}
+    @Override
+    protected Bucket makeBucket(long size) throws IOException {
+        return abf.makeBucket(size);
+    }
 
-	@Override
-	protected void freeBucket(Bucket bucket) throws IOException {
-		bucket.free();
-	}
+    @Override
+    protected void freeBucket(Bucket bucket) throws IOException {
+        bucket.free();
+    }
 }

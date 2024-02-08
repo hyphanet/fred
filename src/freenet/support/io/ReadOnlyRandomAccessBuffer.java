@@ -9,15 +9,15 @@ import freenet.crypt.MasterSecret;
 import freenet.support.api.LockableRandomAccessBuffer;
 
 public class ReadOnlyRandomAccessBuffer implements LockableRandomAccessBuffer {
-    
+
     private final LockableRandomAccessBuffer underlying;
 
     public ReadOnlyRandomAccessBuffer(LockableRandomAccessBuffer underlying) {
         this.underlying = underlying;
     }
 
-    public ReadOnlyRandomAccessBuffer(DataInputStream dis, FilenameGenerator fg, 
-            PersistentFileTracker persistentFileTracker, MasterSecret masterSecret) 
+    public ReadOnlyRandomAccessBuffer(DataInputStream dis, FilenameGenerator fg,
+            PersistentFileTracker persistentFileTracker, MasterSecret masterSecret)
     throws IOException, StorageFormatException, ResumeFailedException {
         // Caller has already read magic
         this.underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker, masterSecret);
@@ -57,7 +57,7 @@ public class ReadOnlyRandomAccessBuffer implements LockableRandomAccessBuffer {
     public void onResume(ClientContext context) throws ResumeFailedException {
         underlying.onResume(context);
     }
-    
+
     final static int MAGIC = 0x648d24da;
 
     @Override

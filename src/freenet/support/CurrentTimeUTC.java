@@ -39,33 +39,33 @@ public class CurrentTimeUTC {
     }
 
     /**
-	 * Get the current calendar year.
-	 * @deprecated use {@link LocalDate#getYear() LocalDate.now(ZoneOffset.UTC).getYear()}
-	 */
-	@Deprecated
-	public static int getYear() {
-		return LocalDate.now(ZoneOffset.UTC).getYear();
+     * Get the current calendar year.
+     * @deprecated use {@link LocalDate#getYear() LocalDate.now(ZoneOffset.UTC).getYear()}
+     */
+    @Deprecated
+    public static int getYear() {
+        return LocalDate.now(ZoneOffset.UTC).getYear();
     }
 
     /**
-	 * Get the zero-indexed current calendar month.
-	 * @return the zero-indexed month number, where 0 indicates January and 11 indicates December
-	 * @deprecated use {@link LocalDate#getMonthValue() LocalDate.now(ZoneOffset.UTC).getMonthValue() - 1}
-	 */
-	@Deprecated
-	public static int getMonth() {
-		// Previously, this method used java.util.GregorianCalendar and Calendar.MONTH, which is zero-based.
+     * Get the zero-indexed current calendar month.
+     * @return the zero-indexed month number, where 0 indicates January and 11 indicates December
+     * @deprecated use {@link LocalDate#getMonthValue() LocalDate.now(ZoneOffset.UTC).getMonthValue() - 1}
+     */
+    @Deprecated
+    public static int getMonth() {
+        // Previously, this method used java.util.GregorianCalendar and Calendar.MONTH, which is zero-based.
         // Newer java.time API returns months values starting from one,
         // and subtraction is required to preserve backward compatibility.
         return LocalDate.now(ZoneOffset.UTC).getMonthValue() - 1;
     }
 
     /**
-	 * Get the current day of the month.
-	 * @deprecated use {@link LocalDate#getDayOfMonth() LocalDate.now(ZoneOffset.UTC).getDayOfMonth()}
-	 */
-	@Deprecated
-	public static int getDayOfMonth() {
-		return LocalDate.now(ZoneOffset.UTC).getDayOfMonth();
+     * Get the current day of the month.
+     * @deprecated use {@link LocalDate#getDayOfMonth() LocalDate.now(ZoneOffset.UTC).getDayOfMonth()}
+     */
+    @Deprecated
+    public static int getDayOfMonth() {
+        return LocalDate.now(ZoneOffset.UTC).getDayOfMonth();
     }
 }

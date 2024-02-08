@@ -1,13 +1,13 @@
 package freenet.support;
 
 public class WaitableExecutor implements Executor {
-    
+
     public WaitableExecutor(Executor exec) {
         this.underlying = exec;
     }
-    
+
     public class Wrapper implements Runnable {
-        
+
         final Runnable job;
 
         public Wrapper(Runnable job) {
@@ -69,7 +69,7 @@ public class WaitableExecutor implements Executor {
     public int getWaitingThreadsCount() {
         return underlying.getWaitingThreadsCount();
     }
-    
+
     public synchronized void waitForIdle() {
         while(count > 0)
             try {

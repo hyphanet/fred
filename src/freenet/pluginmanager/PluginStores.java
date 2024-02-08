@@ -20,13 +20,13 @@ import freenet.support.io.FileUtil;
 import freenet.support.io.PaddedBucket;
 
 public class PluginStores {
-    
+
     final Node node;
     private final ProgramDirectory pluginStoresDir;
-    
+
     public PluginStores(Node node, SubConfig installConfig) throws NodeInitException {
         this.node = node;
-        pluginStoresDir = node.setupProgramDir(installConfig, "pluginStoresDir", "plugin-data", 
+        pluginStoresDir = node.setupProgramDir(installConfig, "pluginStoresDir", "plugin-data",
                 "NodeClientCore.pluginStoresDir", "NodeClientCore.pluginStoresDir", null, null);
         File dir = pluginStoresDir.dir();
         if(!(dir.mkdirs() || (dir.exists() && dir.isDirectory() && dir.canRead() && dir.canWrite()))) {
@@ -45,7 +45,7 @@ public class PluginStores {
             os.close();
         }
     }
-    
+
     private File getPluginStoreFile(String storeIdentifier, boolean encrypted, boolean backup) {
         String filename = storeIdentifier;
         filename += ".data";
@@ -56,7 +56,7 @@ public class PluginStores {
         return pluginStoresDir.file(filename);
     }
 
-    private Bucket makePluginStoreBucket(String storeIdentifier, boolean isEncrypted, boolean backup) 
+    private Bucket makePluginStoreBucket(String storeIdentifier, boolean isEncrypted, boolean backup)
     throws FileNotFoundException {
         File f = getPluginStoreFile(storeIdentifier, isEncrypted, backup);
         Bucket bucket = new FileBucket(f, false, true, false, false);
@@ -71,8 +71,8 @@ public class PluginStores {
         }
         return bucket;
     }
-    
-    private Bucket findPluginStoreBucket(String storeIdentifier, boolean isEncrypted, boolean backup) 
+
+    private Bucket findPluginStoreBucket(String storeIdentifier, boolean isEncrypted, boolean backup)
     throws FileNotFoundException {
         File f = getPluginStoreFile(storeIdentifier, isEncrypted, backup);
         if(!f.exists()) return null;
@@ -101,7 +101,7 @@ public class PluginStores {
         store = loadPluginStore(storeIdentifier, isEncrypted, true);
         return store;
     }
-    
+
     private PluginStore loadPluginStore(String storeIdentifier, boolean isEncrypted, boolean backup) {
         Bucket bucket;
         try {
