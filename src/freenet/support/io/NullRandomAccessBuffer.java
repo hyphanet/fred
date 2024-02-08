@@ -7,7 +7,7 @@ import freenet.client.async.ClientContext;
 import freenet.support.api.LockableRandomAccessBuffer;
 
 public class NullRandomAccessBuffer implements LockableRandomAccessBuffer {
-    
+
     final long length;
 
     public NullRandomAccessBuffer(long length) {
@@ -48,7 +48,7 @@ public class NullRandomAccessBuffer implements LockableRandomAccessBuffer {
             protected void innerUnlock() {
                 // Do nothing.
             }
-            
+
         };
     }
 
@@ -61,12 +61,12 @@ public class NullRandomAccessBuffer implements LockableRandomAccessBuffer {
     public void storeTo(DataOutputStream dos) throws IOException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public int hashCode() {
         return 0;
     }
-    
+
     public boolean equals(Object o) {
         return o.getClass() == getClass();
     }

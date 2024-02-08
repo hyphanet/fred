@@ -3,7 +3,7 @@ package freenet.support.io;
 import java.io.File;
 
 public class TrivialPersistentFileTracker implements PersistentFileTracker {
-    
+
     final File dir;
     final FilenameGenerator fg;
 

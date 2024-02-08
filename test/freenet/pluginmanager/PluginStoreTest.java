@@ -12,7 +12,7 @@ import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;
 
 public class PluginStoreTest {
-    
+
     private void check(PluginStore store) throws IllegalBase64Exception, FSParseException {
         SimpleFieldSet fs = store.exportStoreAsSFS();
         PluginStore copyStore = new PluginStore(fs);
@@ -23,7 +23,7 @@ public class PluginStoreTest {
      * So they ARE allowed in PluginStore's. */
     private String invalidCharsForSFS = "\r\n"+SimpleFieldSet.KEYVALUE_SEPARATOR_CHAR+
         SimpleFieldSet.MULTI_LEVEL_CHAR+SimpleFieldSet.MULTI_VALUE_CHAR;
-    
+
     @Test
     public void testStringsWithInvalidChars() throws IllegalBase64Exception, FSParseException {
         PluginStore store = new PluginStore();
@@ -33,7 +33,7 @@ public class PluginStoreTest {
         }
         check(store);
     }
-    
+
     @Test
     public void testRandom() throws IllegalBase64Exception, FSParseException {
         Random r = new Random(1234);
@@ -41,7 +41,7 @@ public class PluginStoreTest {
         addRandomContent(store, r);
         check(store);
     }
-    
+
     private void addRandomContent(PluginStore store, Random r) {
         for(int i=0;i<20;i++) {
             store.booleans.put(randomKey(r), r.nextBoolean());
@@ -118,7 +118,7 @@ public class PluginStoreTest {
             }
         }
     }
-    
+
     @Test
     public void testWriteStringArrays() throws IllegalBase64Exception, FSParseException {
         String key = "test";

@@ -5,7 +5,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 
 public class RandomAccessFileOutputStream extends OutputStream {
-    
+
     final RandomAccessFile raf;
 
     public RandomAccessFileOutputStream(RandomAccessFile raf) {
@@ -16,17 +16,17 @@ public class RandomAccessFileOutputStream extends OutputStream {
     public void write(int arg0) throws IOException {
         raf.writeByte(arg0);
     }
-    
+
     @Override
     public void write(byte[] buf) throws IOException {
         raf.write(buf);
     }
-    
+
     @Override
     public void write(byte[] buf, int offset, int length) throws IOException {
         raf.write(buf, offset, length);
     }
-    
+
     @Override
     public void close() throws IOException {
         raf.close();

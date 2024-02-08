@@ -13,8 +13,8 @@ import org.junit.Test;
 public class OggBitStreamFilterTest {
     @Test
     public void testGetVorbisBitstreamFilter() throws IOException {
-		OggPage page = resourceToOggPage("./ogg/vorbis_header.ogg");
-		assertEquals(VorbisBitstreamFilter.class, getFilterClass(page));
+        OggPage page = resourceToOggPage("./ogg/vorbis_header.ogg");
+        assertEquals(VorbisBitstreamFilter.class, getFilterClass(page));
     }
 
     @Test

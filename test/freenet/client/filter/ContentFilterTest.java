@@ -271,8 +271,8 @@ public class ContentFilterTest {
             return s;
         }
 
-		MatcherAssert.assertThat(s, startsWith("<head>"));
-		MatcherAssert.assertThat(s, endsWith("</head>"));
+        MatcherAssert.assertThat(s, startsWith("<head>"));
+        MatcherAssert.assertThat(s, endsWith("</head>"));
 
         s = s.substring("<head>".length());
         s = s.substring(0, s.length() - "</head>".length());

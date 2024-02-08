@@ -20,7 +20,7 @@ public class NullBucket implements Bucket, Serializable, RandomAccessBucket {
     public static final InputStream  nullIn  = new NullInputStream();
 
     public final long length;
-    
+
     public NullBucket() {
         this(0);
     }
@@ -28,7 +28,7 @@ public class NullBucket implements Bucket, Serializable, RandomAccessBucket {
     public NullBucket(long length) {
         this.length = length;
     }
-    
+
     /**
      * Returns an OutputStream that is used to put data in this Bucket.
      **/
@@ -59,28 +59,28 @@ public class NullBucket implements Bucket, Serializable, RandomAccessBucket {
     /** Returns the name of this NullBucket. */
     @Override
     public String getName() {
-    	return "President George W. NullBucket";
+        return "President George W. NullBucket";
     }
 
-	@Override
-	public boolean isReadOnly() {
-		return false;
-	}
+    @Override
+    public boolean isReadOnly() {
+        return false;
+    }
 
-	@Override
-	public void setReadOnly() {
-		// Do nothing
-	}
+    @Override
+    public void setReadOnly() {
+        // Do nothing
+    }
 
-	@Override
-	public void free() {
-		// Do nothing
-	}
+    @Override
+    public void free() {
+        // Do nothing
+    }
 
-	@Override
-	public RandomAccessBucket createShadow() {
-		return new NullBucket();
-	}
+    @Override
+    public RandomAccessBucket createShadow() {
+        return new NullBucket();
+    }
 
     @Override
     public void onResume(ClientContext context) {

@@ -11,14 +11,14 @@ import freenet.support.io.StorageFormatException;
 
 /** Tracks retry count and completion status for blocks in an insert segment. */
 public class SplitFileInserterSegmentBlockChooser extends SimpleBlockChooser {
-    
+
     final SplitFileInserterSegmentStorage segment;
     final KeysFetchingLocally keysFetching;
     final int[] consecutiveRNFs;
     /** If positive, this many RNFs count as success. */
     final int consecutiveRNFsCountAsSuccess;
 
-    public SplitFileInserterSegmentBlockChooser(SplitFileInserterSegmentStorage segment, 
+    public SplitFileInserterSegmentBlockChooser(SplitFileInserterSegmentStorage segment,
             int blocks, Random random, int maxRetries, KeysFetchingLocally keysFetching,
             int consecutiveRNFsCountAsSuccess) {
         super(blocks, random, maxRetries);
@@ -30,20 +30,20 @@ public class SplitFileInserterSegmentBlockChooser extends SimpleBlockChooser {
         else
             consecutiveRNFs = null;
     }
-    
+
     protected int getMaxBlockNumber() {
         // Ignore cross-segment: We either send all blocks, if the segment has been encoded, or
         // only the data blocks, if it hasn't (even if the cross-segment blocks have been encoded).
-        if(segment.hasEncoded()) 
+        if(segment.hasEncoded())
             return segment.totalBlockCount;
         else
             return segment.dataBlockCount;
     }
-    
+
     protected void onCompletedAll() {
         segment.onInsertedAllBlocks();
     }
-    
+
     protected boolean checkValid(int chosen) {
         if(!super.checkValid(chosen)) return false;
         return !keysFetching.hasInsert(new BlockInsert(segment, chosen));
@@ -67,7 +67,7 @@ public class SplitFileInserterSegmentBlockChooser extends SimpleBlockChooser {
             if(onNonFatalFailure(blockNo)) return true;
         return false;
     }
-    
+
     public void write(DataOutputStream dos) throws IOException {
         super.write(dos);
         if(consecutiveRNFsCountAsSuccess > 0) {
@@ -75,7 +75,7 @@ public class SplitFileInserterSegmentBlockChooser extends SimpleBlockChooser {
                 dos.writeInt(i);
         }
     }
-    
+
     public void read(DataInputStream dis) throws IOException, StorageFormatException {
         super.read(dis);
         if(consecutiveRNFsCountAsSuccess > 0) {
@@ -83,6 +83,6 @@ public class SplitFileInserterSegmentBlockChooser extends SimpleBlockChooser {
                 consecutiveRNFs[i] = dis.readInt();
             }
         }
-        
+
     }
 }

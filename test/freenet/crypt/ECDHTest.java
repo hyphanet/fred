@@ -17,11 +17,11 @@ import org.junit.Test;
 import freenet.crypt.ECDH.Curves;
 
 public class ECDHTest {
-    
+
     ECDH.Curves curveToTest;
     ECDH alice;
     ECDH bob;
-    
+
     @Before
     public void setUp() throws Exception {
         Security.addProvider(new BouncyCastleProvider());
@@ -45,7 +45,7 @@ public class ECDHTest {
     public void testGetPublicKey() {
         PublicKey aliceP = alice.getPublicKey();
         PublicKey bobP = bob.getPublicKey();
-        
+
         assertNotNull(aliceP);
         assertNotSame(aliceP, bobP);
         assertEquals(aliceP.getEncoded().length, curveToTest.modulusSize);
@@ -55,25 +55,25 @@ public class ECDHTest {
 
     public static void main(String[] args) throws InvalidKeyException, IllegalStateException, NoSuchAlgorithmException {
         Security.addProvider(new BouncyCastleProvider());
-        
+
         ECDH alice = new ECDH(Curves.P256);
         ECDH bob = new ECDH(Curves.P256);
         PublicKey bobP = bob.getPublicKey();
         PublicKey aliceP = alice.getPublicKey();
-        
+
         System.out.println("Alice C: "+alice.curve);
         System.out.println("Bob   C: "+bob.curve);
         System.out.println("Alice P: "+toHex(aliceP.getEncoded()));
         System.out.println("Bob   P: "+toHex(bobP.getEncoded()));
-        
+
         System.out.println("Alice S: "+toHex(alice.getAgreedSecret(bob.getPublicKey())));
         System.out.println("Bob   S: "+toHex(bob.getAgreedSecret(alice.getPublicKey())));
     }
-    
+
     public static String toHex(byte[] arg) {
         return String.format("%040x", new BigInteger(1,arg));
     }
-    
+
     public static String toHex(String arg) throws UnsupportedEncodingException {
         return toHex(arg.getBytes("utf-8"));
     }
