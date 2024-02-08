@@ -27,158 +27,158 @@ public class FetchContext implements Cloneable, Serializable {
 
     private static final long serialVersionUID = 1L;
     public static final int IDENTICAL_MASK = 0;
-	public static final int SPLITFILE_DEFAULT_BLOCK_MASK = 1;
-	public static final int SPLITFILE_DEFAULT_MASK = 2;
-	public static final int SET_RETURN_ARCHIVES = 4;
-	/** Maximum length of the final returned data */
-	public long maxOutputLength;
-	/** Maximum length of data fetched in order to obtain the final data - metadata, containers, etc. */
-	public long maxTempLength;
-	/** 1 = only fetch a single block. 2 = allow one redirect, e.g. metadata
-	 * block pointing to actual data block. Etc. 0 may work sometimes but
-	 * is not recommended. */
-	public int maxRecursionLevel;
-	public int maxArchiveRestarts;
-	/** Maximum number of manifest lookups during a request. A manifest lookup is looking up a part
-	 * of a pathname in a "manifest", which is essentially a directory (folder). Usually manifest
-	 * lookups are inside containers (archives), which are usually tar files, which may or may not
-	 * be compressed (compression occurs transparently on a different level). This is not
-	 * necessarily the same as the number of slashes in the key after the part for the key itself,
-	 * since keys can redirect to other keys. If you are fetching user-uploaded keys, e.g. in
-	 * fproxy, especially freesites, you will want this to be non-zero. However if you are using
-	 * keys only internally, and never upload freesites, you should set this to 0.
-	 * @see ArchiveContext where this is enforced. */
-	public int maxArchiveLevels;
-	public boolean dontEnterImplicitArchives;
-	/** Maximum number of retries (after the original attempt) for a
-	 * splitfile block. -1 = try forever or until success or a fatal error.
-	 * A fatal error is either an internal error (problem with the node) or
-	 * something resulting from the original data being corrupt as inserted.
-	 * So with retries = -1 we will not report Data not found, Route not
-	 * found, All data not found, etc, because these are nonfatal errors and
-	 * we will retry. Note that after every 3 attempts the request is put
-	 * on the cooldown queue for 30 minutes, so the cost of retries = -1 is
-	 * really not that high. */
-	public int maxSplitfileBlockRetries;
-	/** Maximum number of retries (after the original attempt) for a
-	 * non-splitfile block. -1 = try forever or until success or a fatal
-	 * error.. -1 = try forever or until success or a fatal error.
-	 * A fatal error is either an internal error (problem with the node) or
-	 * something resulting from the original data being corrupt as inserted.
-	 * So with retries = -1 we will not report Data not found, Route not
-	 * found, All data not found, etc, because these are nonfatal errors and
-	 * we will retry. Note that after every 3 attempts the request is put
-	 * on the cooldown queue for 30 minutes, so the cost of retries = -1 is
-	 * really not that high. */
-	public int maxNonSplitfileRetries;
-	public final int maxUSKRetries;
-	/** Whether to download splitfiles */
-	public boolean allowSplitfiles;
-	/** Whether to follow simple redirects */
-	public boolean followRedirects;
-	/** If true, only read from the datastore and caches, do not send the request to the network */
-	public boolean localRequestOnly;
-	/** If true, send the request to the network without checking whether the data is in the local store */
-	public boolean ignoreStore;
-	/** Client events will be published to this, you can subscribe to them */
-	public final ClientEventProducer eventProducer;
-	public int maxMetadataSize;
-	/** Maximum number of data blocks per segment for splitfiles */
-	public int maxDataBlocksPerSegment;
-	/** Maximum number of check blocks per segment for splitfiles. */
-	public int maxCheckBlocksPerSegment;
-	/** If true, and we get a ZIP manifest, and we have no meta-strings left, then
-	 * return the manifest contents as data. */
-	public boolean returnZIPManifests;
-	/*If true, filter the fetched data*/
-	public boolean filterData;
-	public final boolean ignoreTooManyPathComponents;
-	/** If set, contains a set of blocks to be consulted before checking the datastore. */
-	public final BlockSet blocks;
-	/** If non-null, the request will be stopped if it has a MIME type that is not one of these,
-	 * or has no MIME type. */
-	public Set<String> allowedMIMETypes;
-	/** If not-null, the request, if it requires a charset for filtration, will be assumed
-	 * to use this charset */
-	public String charset;
-	/** Do we have responsibility for removing the ClientEventProducer from the database? */
-	private final boolean hasOwnEventProducer;
-	/** Can this request write to the client-cache? We don't store all requests in the client cache,
-	 * in particular big stuff usually isn't written to it, to maximise its effectiveness. */
-	public boolean canWriteClientCache;
-	/**Prefetch hook for HTML documents. Only really necessary for FProxy's web-pushing*/
-	public FoundURICallback prefetchHook;
-	/**Callback needed for web-pushing*/
-	public TagReplacerCallback tagReplacer;
-	/**Force the content fiter to use this MIME type*/
-	public String overrideMIME;
-	/** Number of attempts before we go into cooldown. Must be less than or equal to
-	 * RequestScheduler.COOLDOWN_RETRIES. */
-	private int cooldownRetries;
-	/** Time period for which we go into cooldown. Must be NO LESS THAN
-	 * RequestScheduler.COOLDOWN_PERIOD, because ULPRs will ensure rapid success
-	 * with that interval or less. */
-	private long cooldownTime;
+    public static final int SPLITFILE_DEFAULT_BLOCK_MASK = 1;
+    public static final int SPLITFILE_DEFAULT_MASK = 2;
+    public static final int SET_RETURN_ARCHIVES = 4;
+    /** Maximum length of the final returned data */
+    public long maxOutputLength;
+    /** Maximum length of data fetched in order to obtain the final data - metadata, containers, etc. */
+    public long maxTempLength;
+    /** 1 = only fetch a single block. 2 = allow one redirect, e.g. metadata
+     * block pointing to actual data block. Etc. 0 may work sometimes but
+     * is not recommended. */
+    public int maxRecursionLevel;
+    public int maxArchiveRestarts;
+    /** Maximum number of manifest lookups during a request. A manifest lookup is looking up a part
+     * of a pathname in a "manifest", which is essentially a directory (folder). Usually manifest
+     * lookups are inside containers (archives), which are usually tar files, which may or may not
+     * be compressed (compression occurs transparently on a different level). This is not
+     * necessarily the same as the number of slashes in the key after the part for the key itself,
+     * since keys can redirect to other keys. If you are fetching user-uploaded keys, e.g. in
+     * fproxy, especially freesites, you will want this to be non-zero. However if you are using
+     * keys only internally, and never upload freesites, you should set this to 0.
+     * @see ArchiveContext where this is enforced. */
+    public int maxArchiveLevels;
+    public boolean dontEnterImplicitArchives;
+    /** Maximum number of retries (after the original attempt) for a
+     * splitfile block. -1 = try forever or until success or a fatal error.
+     * A fatal error is either an internal error (problem with the node) or
+     * something resulting from the original data being corrupt as inserted.
+     * So with retries = -1 we will not report Data not found, Route not
+     * found, All data not found, etc, because these are nonfatal errors and
+     * we will retry. Note that after every 3 attempts the request is put
+     * on the cooldown queue for 30 minutes, so the cost of retries = -1 is
+     * really not that high. */
+    public int maxSplitfileBlockRetries;
+    /** Maximum number of retries (after the original attempt) for a
+     * non-splitfile block. -1 = try forever or until success or a fatal
+     * error.. -1 = try forever or until success or a fatal error.
+     * A fatal error is either an internal error (problem with the node) or
+     * something resulting from the original data being corrupt as inserted.
+     * So with retries = -1 we will not report Data not found, Route not
+     * found, All data not found, etc, because these are nonfatal errors and
+     * we will retry. Note that after every 3 attempts the request is put
+     * on the cooldown queue for 30 minutes, so the cost of retries = -1 is
+     * really not that high. */
+    public int maxNonSplitfileRetries;
+    public final int maxUSKRetries;
+    /** Whether to download splitfiles */
+    public boolean allowSplitfiles;
+    /** Whether to follow simple redirects */
+    public boolean followRedirects;
+    /** If true, only read from the datastore and caches, do not send the request to the network */
+    public boolean localRequestOnly;
+    /** If true, send the request to the network without checking whether the data is in the local store */
+    public boolean ignoreStore;
+    /** Client events will be published to this, you can subscribe to them */
+    public final ClientEventProducer eventProducer;
+    public int maxMetadataSize;
+    /** Maximum number of data blocks per segment for splitfiles */
+    public int maxDataBlocksPerSegment;
+    /** Maximum number of check blocks per segment for splitfiles. */
+    public int maxCheckBlocksPerSegment;
+    /** If true, and we get a ZIP manifest, and we have no meta-strings left, then
+     * return the manifest contents as data. */
+    public boolean returnZIPManifests;
+    /*If true, filter the fetched data*/
+    public boolean filterData;
+    public final boolean ignoreTooManyPathComponents;
+    /** If set, contains a set of blocks to be consulted before checking the datastore. */
+    public final BlockSet blocks;
+    /** If non-null, the request will be stopped if it has a MIME type that is not one of these,
+     * or has no MIME type. */
+    public Set<String> allowedMIMETypes;
+    /** If not-null, the request, if it requires a charset for filtration, will be assumed
+     * to use this charset */
+    public String charset;
+    /** Do we have responsibility for removing the ClientEventProducer from the database? */
+    private final boolean hasOwnEventProducer;
+    /** Can this request write to the client-cache? We don't store all requests in the client cache,
+     * in particular big stuff usually isn't written to it, to maximise its effectiveness. */
+    public boolean canWriteClientCache;
+    /**Prefetch hook for HTML documents. Only really necessary for FProxy's web-pushing*/
+    public FoundURICallback prefetchHook;
+    /**Callback needed for web-pushing*/
+    public TagReplacerCallback tagReplacer;
+    /**Force the content fiter to use this MIME type*/
+    public String overrideMIME;
+    /** Number of attempts before we go into cooldown. Must be less than or equal to
+     * RequestScheduler.COOLDOWN_RETRIES. */
+    private int cooldownRetries;
+    /** Time period for which we go into cooldown. Must be NO LESS THAN
+     * RequestScheduler.COOLDOWN_PERIOD, because ULPRs will ensure rapid success
+     * with that interval or less. */
+    private long cooldownTime;
 
-	/** Ignore USK DATEHINTs */
-	public boolean ignoreUSKDatehints;
+    /** Ignore USK DATEHINTs */
+    public boolean ignoreUSKDatehints;
 
   /** scheme, host and port: force the prefix of a URI. Example: https://localhost:1234 */
   private final String schemeHostAndPort;
 
   public FetchContext(long curMaxLength,
-			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
-			boolean dontEnterImplicitArchives,
-			int maxSplitfileBlockRetries, int maxNonSplitfileRetries, int maxUSKRetries,
-			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
-			boolean filterData, int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
-			BucketFactory bucketFactory,
-			ClientEventProducer producer,
-			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME,
+            long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
+            boolean dontEnterImplicitArchives,
+            int maxSplitfileBlockRetries, int maxNonSplitfileRetries, int maxUSKRetries,
+            boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
+            boolean filterData, int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
+            BucketFactory bucketFactory,
+            ClientEventProducer producer,
+            boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME,
       String schemeHostAndPort) {
     this.blocks = null;
-		this.maxOutputLength = curMaxLength;
-		if(maxOutputLength < 0) throw new IllegalArgumentException("Bad max output length");
-		this.maxTempLength = curMaxTempLength;
-		if(maxTempLength < 0) throw new IllegalArgumentException("Bad max temp length");
-		this.maxMetadataSize = maxMetadataSize;
+        this.maxOutputLength = curMaxLength;
+        if(maxOutputLength < 0) throw new IllegalArgumentException("Bad max output length");
+        this.maxTempLength = curMaxTempLength;
+        if(maxTempLength < 0) throw new IllegalArgumentException("Bad max temp length");
+        this.maxMetadataSize = maxMetadataSize;
         if(maxMetadataSize < 0) throw new IllegalArgumentException("Bad max metadata size");
-		this.maxRecursionLevel = maxRecursionLevel;
-		if(maxRecursionLevel < 0) throw new IllegalArgumentException("Bad max recursion level");
-		this.maxArchiveRestarts = maxArchiveRestarts;
-		if(maxArchiveRestarts < 0) throw new IllegalArgumentException("Bad max archive restarts");
-		this.maxArchiveLevels = maxArchiveLevels;
-		if(maxArchiveLevels < 0) throw new IllegalArgumentException("Bad max archive levels");
-		this.dontEnterImplicitArchives = dontEnterImplicitArchives;
-		this.maxSplitfileBlockRetries = maxSplitfileBlockRetries;
-		if(maxSplitfileBlockRetries < -1) throw new IllegalArgumentException("Bad max splitfile block retries");
-		this.maxNonSplitfileRetries = maxNonSplitfileRetries;
-		if(maxNonSplitfileRetries < -1) throw new IllegalArgumentException("Bad non-splitfile retries");
-		this.maxUSKRetries = maxUSKRetries;
-		if(maxUSKRetries < -1) throw new IllegalArgumentException("Bad max USK retries");
-		this.allowSplitfiles = allowSplitfiles;
-		this.followRedirects = followRedirects;
-		this.localRequestOnly = localRequestOnly;
-		this.eventProducer = producer;
-		this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
+        this.maxRecursionLevel = maxRecursionLevel;
+        if(maxRecursionLevel < 0) throw new IllegalArgumentException("Bad max recursion level");
+        this.maxArchiveRestarts = maxArchiveRestarts;
+        if(maxArchiveRestarts < 0) throw new IllegalArgumentException("Bad max archive restarts");
+        this.maxArchiveLevels = maxArchiveLevels;
+        if(maxArchiveLevels < 0) throw new IllegalArgumentException("Bad max archive levels");
+        this.dontEnterImplicitArchives = dontEnterImplicitArchives;
+        this.maxSplitfileBlockRetries = maxSplitfileBlockRetries;
+        if(maxSplitfileBlockRetries < -1) throw new IllegalArgumentException("Bad max splitfile block retries");
+        this.maxNonSplitfileRetries = maxNonSplitfileRetries;
+        if(maxNonSplitfileRetries < -1) throw new IllegalArgumentException("Bad non-splitfile retries");
+        this.maxUSKRetries = maxUSKRetries;
+        if(maxUSKRetries < -1) throw new IllegalArgumentException("Bad max USK retries");
+        this.allowSplitfiles = allowSplitfiles;
+        this.followRedirects = followRedirects;
+        this.localRequestOnly = localRequestOnly;
+        this.eventProducer = producer;
+        this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
         if(maxDataBlocksPerSegment < 0 || maxDataBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT)
             throw new IllegalArgumentException("Bad max blocks per segment");
-		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
+        this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
         if(maxCheckBlocksPerSegment < 0 || maxCheckBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT)
             throw new IllegalArgumentException("Bad max blocks per segment");
-		this.filterData = filterData;
-		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
-		this.canWriteClientCache = canWriteClientCache;
-		this.charset = charset;
-		this.overrideMIME = overrideMIME;
-		this.cooldownRetries = RequestScheduler.COOLDOWN_RETRIES;
-		this.cooldownTime = RequestScheduler.COOLDOWN_PERIOD;
-		this.ignoreUSKDatehints = false; // FIXME
-		hasOwnEventProducer = true;
+        this.filterData = filterData;
+        this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
+        this.canWriteClientCache = canWriteClientCache;
+        this.charset = charset;
+        this.overrideMIME = overrideMIME;
+        this.cooldownRetries = RequestScheduler.COOLDOWN_RETRIES;
+        this.cooldownTime = RequestScheduler.COOLDOWN_PERIOD;
+        this.ignoreUSKDatehints = false; // FIXME
+        hasOwnEventProducer = true;
     this.schemeHostAndPort = schemeHostAndPort;
-	}
+    }
 
-	/** Copy a FetchContext, creating a new EventProducer and not changing the blocks list.
+    /** Copy a FetchContext, creating a new EventProducer and not changing the blocks list.
      * @param ctx The old FetchContext to copy.
      * @param maskID Mask mode for the copy operation e.g. SPLITFILE_DEFAULT_BLOCK_MASK.
      */
@@ -186,116 +186,116 @@ public class FetchContext implements Cloneable, Serializable {
         this(ctx, maskID, false, null);
     }
 
-	/** Copy a FetchContext.
-	 * @param ctx The old FetchContext to copy.
-	 * @param maskID Mask mode for the copy operation e.g. SPLITFILE_DEFAULT_BLOCK_MASK.
-	 * @param keepProducer If true, keep the existing EventProducer. Must be false if we are
-	 * creating a new request. Can be true if we are masking the FetchContext within a single
-	 * request, e.g. to download a container. This is important so that we see the progress updates
-	 * for the request and not for other requests sharing the FetchContext, but also it could break
-	 * serialization.
-	 * @param blocks Storing a BlockSet to the database is not supported, see comments on SimpleBlockSet.objectCanNew().
-	 */
-	public FetchContext(FetchContext ctx, int maskID, boolean keepProducer, BlockSet blocks) {
-		if(keepProducer)
-			this.eventProducer = ctx.eventProducer;
-		else
-			this.eventProducer = new SimpleEventProducer();
-		hasOwnEventProducer = !keepProducer;
-		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
-		if(blocks != null)
-			this.blocks = blocks;
-		else
-			this.blocks = ctx.blocks;
+    /** Copy a FetchContext.
+     * @param ctx The old FetchContext to copy.
+     * @param maskID Mask mode for the copy operation e.g. SPLITFILE_DEFAULT_BLOCK_MASK.
+     * @param keepProducer If true, keep the existing EventProducer. Must be false if we are
+     * creating a new request. Can be true if we are masking the FetchContext within a single
+     * request, e.g. to download a container. This is important so that we see the progress updates
+     * for the request and not for other requests sharing the FetchContext, but also it could break
+     * serialization.
+     * @param blocks Storing a BlockSet to the database is not supported, see comments on SimpleBlockSet.objectCanNew().
+     */
+    public FetchContext(FetchContext ctx, int maskID, boolean keepProducer, BlockSet blocks) {
+        if(keepProducer)
+            this.eventProducer = ctx.eventProducer;
+        else
+            this.eventProducer = new SimpleEventProducer();
+        hasOwnEventProducer = !keepProducer;
+        this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
+        if(blocks != null)
+            this.blocks = blocks;
+        else
+            this.blocks = ctx.blocks;
 
-		this.allowedMIMETypes = ctx.allowedMIMETypes;
-		this.maxUSKRetries = ctx.maxUSKRetries;
-		this.localRequestOnly = ctx.localRequestOnly;
-		this.maxArchiveLevels = ctx.maxArchiveLevels;
-		this.maxMetadataSize = ctx.maxMetadataSize;
-		this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
-		this.maxOutputLength = ctx.maxOutputLength;
-		this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
-		this.maxTempLength = ctx.maxTempLength;
-		this.allowSplitfiles = ctx.allowSplitfiles;
-		this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
-		this.followRedirects = ctx.followRedirects;
-		this.maxArchiveRestarts = ctx.maxArchiveRestarts;
-		this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
-		this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
-		this.filterData = ctx.filterData;
-		this.maxRecursionLevel = ctx.maxRecursionLevel;
-		this.returnZIPManifests = ctx.returnZIPManifests;
-		this.canWriteClientCache = ctx.canWriteClientCache;
-		this.prefetchHook = ctx.prefetchHook;
-		this.tagReplacer = ctx.tagReplacer;
-		this.overrideMIME = ctx.overrideMIME;
-		this.cooldownRetries = ctx.cooldownRetries;
-		this.cooldownTime = ctx.cooldownTime;
-		this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
-		this.schemeHostAndPort = ctx.schemeHostAndPort;
+        this.allowedMIMETypes = ctx.allowedMIMETypes;
+        this.maxUSKRetries = ctx.maxUSKRetries;
+        this.localRequestOnly = ctx.localRequestOnly;
+        this.maxArchiveLevels = ctx.maxArchiveLevels;
+        this.maxMetadataSize = ctx.maxMetadataSize;
+        this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
+        this.maxOutputLength = ctx.maxOutputLength;
+        this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
+        this.maxTempLength = ctx.maxTempLength;
+        this.allowSplitfiles = ctx.allowSplitfiles;
+        this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
+        this.followRedirects = ctx.followRedirects;
+        this.maxArchiveRestarts = ctx.maxArchiveRestarts;
+        this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
+        this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
+        this.filterData = ctx.filterData;
+        this.maxRecursionLevel = ctx.maxRecursionLevel;
+        this.returnZIPManifests = ctx.returnZIPManifests;
+        this.canWriteClientCache = ctx.canWriteClientCache;
+        this.prefetchHook = ctx.prefetchHook;
+        this.tagReplacer = ctx.tagReplacer;
+        this.overrideMIME = ctx.overrideMIME;
+        this.cooldownRetries = ctx.cooldownRetries;
+        this.cooldownTime = ctx.cooldownTime;
+        this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
+        this.schemeHostAndPort = ctx.schemeHostAndPort;
 
-		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
-			// DEFAULT
-		} else if(maskID == SPLITFILE_DEFAULT_BLOCK_MASK) {
-			this.maxRecursionLevel = 1;
-			this.maxArchiveRestarts = 0;
-			this.dontEnterImplicitArchives = true;
-			this.allowSplitfiles = false;
-			this.followRedirects = false;
-			this.maxDataBlocksPerSegment = 0;
-			this.maxCheckBlocksPerSegment = 0;
-			this.returnZIPManifests = false;
-		} else if (maskID == SET_RETURN_ARCHIVES) {
-			this.returnZIPManifests = true;
-		}
-		else throw new IllegalArgumentException();
-	}
+        if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
+            // DEFAULT
+        } else if(maskID == SPLITFILE_DEFAULT_BLOCK_MASK) {
+            this.maxRecursionLevel = 1;
+            this.maxArchiveRestarts = 0;
+            this.dontEnterImplicitArchives = true;
+            this.allowSplitfiles = false;
+            this.followRedirects = false;
+            this.maxDataBlocksPerSegment = 0;
+            this.maxCheckBlocksPerSegment = 0;
+            this.returnZIPManifests = false;
+        } else if (maskID == SET_RETURN_ARCHIVES) {
+            this.returnZIPManifests = true;
+        }
+        else throw new IllegalArgumentException();
+    }
 
     /** Make public, but just call parent for a field for field copy */
-	@Override
-	public FetchContext clone() {
-		try {
-			return (FetchContext) super.clone();
-		} catch (CloneNotSupportedException e) {
-			// Impossible
-			throw new Error(e);
-		}
-	}
+    @Override
+    public FetchContext clone() {
+        try {
+            return (FetchContext) super.clone();
+        } catch (CloneNotSupportedException e) {
+            // Impossible
+            throw new Error(e);
+        }
+    }
 
-	public void setCooldownRetries(int cooldownRetries) {
-		if(cooldownRetries < 0)
-			throw new IllegalArgumentException("Bogus negative retries");
-		if(cooldownRetries > RequestScheduler.COOLDOWN_RETRIES)
-			throw new IllegalArgumentException("Invalid COOLDOWN_RETRIES: Must be <= "+RequestScheduler.COOLDOWN_RETRIES+" since the network will not tolerate more than that");
-		this.cooldownRetries = cooldownRetries;
-	}
+    public void setCooldownRetries(int cooldownRetries) {
+        if(cooldownRetries < 0)
+            throw new IllegalArgumentException("Bogus negative retries");
+        if(cooldownRetries > RequestScheduler.COOLDOWN_RETRIES)
+            throw new IllegalArgumentException("Invalid COOLDOWN_RETRIES: Must be <= "+RequestScheduler.COOLDOWN_RETRIES+" since the network will not tolerate more than that");
+        this.cooldownRetries = cooldownRetries;
+    }
 
-	/** Set the cooldown time */
-	public void setCooldownTime(long cooldownTime) {
-	    setCooldownTime(cooldownTime, false);
-	}
+    /** Set the cooldown time */
+    public void setCooldownTime(long cooldownTime) {
+        setCooldownTime(cooldownTime, false);
+    }
 
-	/** Only for tests */
-	public void setCooldownTime(long cooldownTime, boolean force) {
-		if(cooldownTime < 0)
-			throw new IllegalArgumentException("Bogus negative cooldown time");
-		if(cooldownTime < RequestScheduler.COOLDOWN_PERIOD && !force)
-			throw new IllegalArgumentException("Invalid COOLDOWN_PERIOD: Must be >= "+RequestScheduler.COOLDOWN_PERIOD+" since ULPRs will ensure fast response at that level");
-		this.cooldownTime = cooldownTime;
-	}
+    /** Only for tests */
+    public void setCooldownTime(long cooldownTime, boolean force) {
+        if(cooldownTime < 0)
+            throw new IllegalArgumentException("Bogus negative cooldown time");
+        if(cooldownTime < RequestScheduler.COOLDOWN_PERIOD && !force)
+            throw new IllegalArgumentException("Invalid COOLDOWN_PERIOD: Must be >= "+RequestScheduler.COOLDOWN_PERIOD+" since ULPRs will ensure fast response at that level");
+        this.cooldownTime = cooldownTime;
+    }
 
-	public int getCooldownRetries() {
-		return cooldownRetries;
-	}
+    public int getCooldownRetries() {
+        return cooldownRetries;
+    }
 
   public String getSchemeHostAndPort() {
     return schemeHostAndPort;
   }
 
-	public long getCooldownTime() {
-		return cooldownTime;
-	}
+    public long getCooldownTime() {
+        return cooldownTime;
+    }
 
     private static final long CLIENT_DETAIL_MAGIC = 0x5ae53b0ce18dd821L;
     private static final int CLIENT_DETAIL_VERSION = 1;

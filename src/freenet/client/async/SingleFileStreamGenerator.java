@@ -19,46 +19,46 @@ import freenet.support.io.FileUtil;
 /**Writes a <code>Bucket</code> to an output stream.*/
 public class SingleFileStreamGenerator implements StreamGenerator {
 
-	final private Bucket bucket;
-	final private boolean persistent;
+    final private Bucket bucket;
+    final private boolean persistent;
 
         private static volatile boolean logMINOR;
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+            @Override
+            public void shouldUpdate(){
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
 
-	SingleFileStreamGenerator(Bucket bucket, boolean persistent) {
-		this.bucket = bucket;
-		this.persistent = persistent;
-	}
+    SingleFileStreamGenerator(Bucket bucket, boolean persistent) {
+        this.bucket = bucket;
+        this.persistent = persistent;
+    }
 
-	@Override
-	public void writeTo(OutputStream os, ClientContext context) throws IOException {
-		try{
-			if(logMINOR) Logger.minor(this, "Generating Stream", new Exception("debug"));
-			InputStream data = bucket.getInputStream();
-			try {
-			FileUtil.copy(data, os, -1);
-			} finally {
-			data.close();
-			}
-			os.close();
-			bucket.free();
-			if(logMINOR) Logger.minor(this, "Stream completely generated", new Exception("debug"));
-		} finally {
-			Closer.close(bucket);
-			Closer.close(os);
-		}
-	}
+    @Override
+    public void writeTo(OutputStream os, ClientContext context) throws IOException {
+        try{
+            if(logMINOR) Logger.minor(this, "Generating Stream", new Exception("debug"));
+            InputStream data = bucket.getInputStream();
+            try {
+            FileUtil.copy(data, os, -1);
+            } finally {
+            data.close();
+            }
+            os.close();
+            bucket.free();
+            if(logMINOR) Logger.minor(this, "Stream completely generated", new Exception("debug"));
+        } finally {
+            Closer.close(bucket);
+            Closer.close(os);
+        }
+    }
 
-	@Override
-	public long size() {
-		return bucket.size();
-	}
+    @Override
+    public long size() {
+        return bucket.size();
+    }
 
 }
