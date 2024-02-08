@@ -33,17 +33,17 @@ public class CryptByteBufferTest {
 
     private static final String[] plainText =
         { "0123456789abcdef1123456789abcdef2123456789abcdef3123456789abcdef",
-        "0123456789abcdef1123456789abcdef", 
+        "0123456789abcdef1123456789abcdef",
         ivPlainText, ivPlainText, ivPlainText, ivPlainText};
 
-    private static final byte[][] keys = 
+    private static final byte[][] keys =
         { Hex.decode("deadbeefcafebabe0123456789abcdefcafebabedeadbeefcafebabe01234567"),
         Hex.decode("deadbeefcafebabe0123456789abcdefcafebabedeadbeefcafebabe01234567"),
         Hex.decode("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4"),
         Hex.decode("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4"),
         Hex.decode("8c123cffb0297a71ae8388109a6527dd"),
         Hex.decode("a63add96a3d5975e2dad2f904ff584a32920e8aa54263254161362d1fb785790")};
-    private static final byte[][] ivs = 
+    private static final byte[][] ivs =
         { null,
         null,
         Hex.decode("f0f1f2f3f4f5f6f7f8f9fafbfcfdfefff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"),
@@ -67,18 +67,18 @@ public class CryptByteBufferTest {
                 crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
             byte[] decipheredtext = crypt.decryptCopy(crypt.encryptCopy(Hex.decode(plainText[i])));
-            assertArrayEquals("CryptByteBufferType: "+type.name(), 
+            assertArrayEquals("CryptByteBufferType: "+type.name(),
                     Hex.decode(plainText[i]), decipheredtext);
         }
     }
-    
+
     @Test
     public void testRoundOneByte() throws GeneralSecurityException {
         for(int i = 0; i < cipherTypes.length; i++){
             CryptByteBufferType type = cipherTypes[i];
             CryptByteBuffer crypt1;
             CryptByteBuffer crypt2;
-            
+
             if(!type.isStreamCipher) continue;
 
             if(ivs[i] == null){
@@ -88,7 +88,7 @@ public class CryptByteBufferTest {
                 crypt1 = new CryptByteBuffer(type, keys[i], ivs[i]);
                 crypt2 = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
-            
+
             byte[] origPlaintext = Hex.decode(plainText[i]);
             byte[] origCiphertext = crypt1.encryptCopy(origPlaintext);
             // Now encrypt one byte at a time.
@@ -101,7 +101,7 @@ public class CryptByteBufferTest {
                 crypt2.decrypt(buf, j, 1);
                 assertEquals(buf[j], origPlaintext[j]);
             }
-        }            
+        }
     }
 
     @Test
@@ -111,7 +111,7 @@ public class CryptByteBufferTest {
             CryptByteBufferType type = cipherTypes[i];
             CryptByteBuffer crypt1;
             CryptByteBuffer crypt2;
-            
+
             if(!type.isStreamCipher) continue;
 
             if(ivs[i] == null){
@@ -121,10 +121,10 @@ public class CryptByteBufferTest {
                 crypt1 = new CryptByteBuffer(type, keys[i], ivs[i]);
                 crypt2 = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
-            
+
             byte[] origPlaintext = Hex.decode(plainText[i]);
             byte[] origCiphertext = crypt1.encryptCopy(origPlaintext);
-            
+
             // Now encrypt one byte at a time.
             byte[] buf = origPlaintext.clone();
             int j=0;
@@ -143,7 +143,7 @@ public class CryptByteBufferTest {
                 j += copy;
             }
             assertArrayEquals(buf, origPlaintext);
-        }            
+        }
     }
 
     @Test
@@ -162,7 +162,7 @@ public class CryptByteBufferTest {
             crypt.encrypt(buffer, 0, buffer.length);
             assertTrue(!Arrays.equals(buffer, plaintextCopy));
             crypt.decrypt(buffer, 0, buffer.length);
-            assertArrayEquals("CryptByteBufferType: "+type.name(), 
+            assertArrayEquals("CryptByteBufferType: "+type.name(),
                     plaintextCopy, buffer);
         }
     }
@@ -187,7 +187,7 @@ public class CryptByteBufferTest {
             crypt.encrypt(buffer, footer, originalPlaintext.length);
             assertTrue(!Arrays.equals(buffer, copyBuffer));
             crypt.decrypt(buffer, footer, originalPlaintext.length);
-            assertArrayEquals("CryptByteBufferType: "+type.name(), 
+            assertArrayEquals("CryptByteBufferType: "+type.name(),
                     originalPlaintext, Arrays.copyOfRange(buffer, footer, footer+originalPlaintext.length));
         }
     }
@@ -211,15 +211,15 @@ public class CryptByteBufferTest {
             byte[] buffer = new byte[inHeader+originalPlaintext.length+inFooter];
             System.arraycopy(originalPlaintext, 0, buffer, inHeader, originalPlaintext.length);
             byte[] copyBuffer = buffer.clone();
-            
+
             byte[] outBuffer = new byte[outHeader + originalPlaintext.length + outFooter];
             crypt.encrypt(buffer, inFooter, originalPlaintext.length, outBuffer, outHeader);
             assertTrue(Arrays.equals(buffer, copyBuffer));
             copyBuffer = outBuffer.clone();
             crypt.decrypt(outBuffer, outHeader, originalPlaintext.length, buffer, inFooter);
             assertTrue(Arrays.equals(copyBuffer, outBuffer));
-            
-            assertArrayEquals("CryptByteBufferType: "+type.name(), 
+
+            assertArrayEquals("CryptByteBufferType: "+type.name(),
                     originalPlaintext, Arrays.copyOfRange(buffer, inFooter, inFooter+originalPlaintext.length));
         }
     }
@@ -246,16 +246,16 @@ public class CryptByteBufferTest {
                 assertEquals(ciphertext1.remaining(), len);
                 assertEquals(ciphertext2.remaining(), len);
                 assertEquals(ciphertext3.remaining(), len);
-                
+
                 if(type.isStreamCipher) {
                     // Once we have initialised the cipher, it is treated as a stream.
-                    // Repeated encryption of the same data will return different ciphertext, 
+                    // Repeated encryption of the same data will return different ciphertext,
                     // as it is treated as a later point in the stream.
                     assertNotEquals(ciphertext1, ciphertext2);
                     assertNotEquals(ciphertext1, ciphertext3);
                     assertNotEquals(ciphertext2, ciphertext3);
                 }
-                
+
                 ByteBuffer decipheredtext1 = crypt.decryptCopy(ciphertext1);
                 ByteBuffer decipheredtext2 = crypt.decryptCopy(ciphertext2);
                 ByteBuffer decipheredtext3 = crypt.decryptCopy(ciphertext3);
@@ -264,7 +264,7 @@ public class CryptByteBufferTest {
                 assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext3));
             }
     }
-    
+
     private void assertNotEquals(Object o1, Object o2) {
         assertFalse(o1.equals(o2));
     }
@@ -303,7 +303,7 @@ public class CryptByteBufferTest {
             assertTrue(Arrays.equals(data, origPlaintext));
         }
     }
-    
+
     @Test
     public void testEncryptByteBufferToByteBuffer() throws GeneralSecurityException {
         int header = 5;
@@ -448,7 +448,7 @@ public class CryptByteBufferTest {
             byte[] ciphertext = crypt.encryptCopy(plain);
             byte[] ciphertext2 = crypt.encryptCopy(plain);
             byte[] ciphertext3 = crypt.encryptCopy(plain);
-            
+
             if(type.isStreamCipher) {
                 assertFalse(Arrays.equals(ciphertext, ciphertext2));
                 assertFalse(Arrays.equals(ciphertext, ciphertext3));
@@ -544,7 +544,7 @@ public class CryptByteBufferTest {
                         + "NullPointerException");
             }catch(IllegalArgumentException e) {
             }catch(NullPointerException e){}
-        } 
+        }
     }
 
     @Test
@@ -565,7 +565,7 @@ public class CryptByteBufferTest {
             }catch(IllegalArgumentException e) {
             }catch(IndexOutOfBoundsException e){
             }
-        } 
+        }
     }
 
     @Test
@@ -585,7 +585,7 @@ public class CryptByteBufferTest {
                         + "ArrayIndexOutOfBoundsException");
             }catch(IllegalArgumentException e) {
             } catch(IndexOutOfBoundsException e){}
-        } 
+        }
     }
 
     @Test
@@ -646,7 +646,7 @@ public class CryptByteBufferTest {
             }catch(NullPointerException e) {
             } catch(IllegalArgumentException e){
             }
-        } 
+        }
     }
 
     @Test
@@ -667,7 +667,7 @@ public class CryptByteBufferTest {
             }catch(IllegalArgumentException e) {
             } catch (IndexOutOfBoundsException e){
             }
-        } 
+        }
     }
 
     @Test
@@ -688,7 +688,7 @@ public class CryptByteBufferTest {
             }catch(IllegalArgumentException e) {
             } catch (IndexOutOfBoundsException e){
             }
-        } 
+        }
     }
 
     @Test
@@ -699,7 +699,7 @@ public class CryptByteBufferTest {
     }
 
     @Test
-    public void testSetIVIvParameterSpec() 
+    public void testSetIVIvParameterSpec()
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         int i = 4;
         CryptByteBuffer crypt = new CryptByteBuffer(cipherTypes[i], keys[i], ivs[i]);
@@ -708,8 +708,8 @@ public class CryptByteBufferTest {
         assertArrayEquals(ivs[i], crypt.getIV().getIV());
     }
 
-    @Test 
-    public void testSetIVIvParameterSpecNullInput() 
+    @Test
+    public void testSetIVIvParameterSpecNullInput()
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         IvParameterSpec nullInput = null;
         int i = 4;
@@ -749,7 +749,7 @@ public class CryptByteBufferTest {
         crypt.genIV();
         fail("Expected UnsupportedTypeException");
     }
-    
+
     @Test
     public void testOverlappingEncode() throws GeneralSecurityException {
         for(int i = 0; i < cipherTypes.length; i++){

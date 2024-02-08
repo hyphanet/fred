@@ -34,7 +34,7 @@ public class ECDSA {
         P256("secp256r1", "SHA256withECDSA", 91, 72),
         P384("secp384r1", "SHA384withECDSA", 120, 104),
         P521("secp521r1", "SHA512withECDSA", 158, 139);
-        
+
         public final ECGenParameterSpec spec;
         private final KeyPairGenerator keygen;
         /** The hash algorithm used to generate the signature */
@@ -44,9 +44,9 @@ public class ECDSA {
         /** Maximum (padded) size of a DER-encoded signature (network-format) */
         public final int maxSigSize;
 
-		protected final Provider kgProvider;
-		protected final Provider kfProvider;
-		protected final Provider sigProvider;
+        protected final Provider kgProvider;
+        protected final Provider kfProvider;
+        protected final Provider sigProvider;
 
         /** Verify KeyPairGenerator and KeyFactory work correctly */
         static private KeyPair selftest(KeyPairGenerator kg, KeyFactory kf, int modulusSize)
@@ -57,8 +57,8 @@ public class ECDSA {
             PrivateKey pk = key.getPrivate();
             byte [] pubkey = pub.getEncoded();
             byte [] pkey = pk.getEncoded();
-			if(pubkey.length > modulusSize || pubkey.length == 0)
-				throw new Error("Unexpected pubkey length: "+pubkey.length+"!="+modulusSize);
+            if(pubkey.length > modulusSize || pubkey.length == 0)
+                throw new Error("Unexpected pubkey length: "+pubkey.length+"!="+modulusSize);
             PublicKey pub2 = kf.generatePublic(
                     new X509EncodedKeySpec(pubkey)
                     );
@@ -67,61 +67,61 @@ public class ECDSA {
             PrivateKey pk2 = kf.generatePrivate(
                     new PKCS8EncodedKeySpec(pkey)
                     );
-			/*
+            /*
             if(!Arrays.equals(pk2.getEncoded(), pkey))
                 throw new Error("Pubkey encoding mismatch");
-			*/
+            */
             return key;
         }
 
-		static private void selftest_sign(KeyPair key, Signature sig)
-			throws SignatureException, InvalidKeyException
-		{
-			sig.initSign(key.getPrivate());
-			byte[] sign = sig.sign();
-			sig.initVerify(key.getPublic());
-			boolean verified = sig.verify(sign);
-			if (!verified)
-				throw new Error("Verification failed");
-		}
+        static private void selftest_sign(KeyPair key, Signature sig)
+            throws SignatureException, InvalidKeyException
+        {
+            sig.initSign(key.getPrivate());
+            byte[] sign = sig.sign();
+            sig.initVerify(key.getPublic());
+            boolean verified = sig.verify(sign);
+            if (!verified)
+                throw new Error("Verification failed");
+        }
 
         private Curves(String name, String defaultHashAlgorithm, int modulusSize, int maxSigSize) {
             this.spec = new ECGenParameterSpec(name);
-			Signature sig = null;
-			KeyFactory kf = null;
+            Signature sig = null;
+            KeyFactory kf = null;
             KeyPairGenerator kg = null;
-			// Ensure providers loaded
-			JceLoader.BouncyCastle.toString();
-			try {
-				KeyPair key = null;
-				try {
-					/* check if default EC keys work correctly */
-					kg = KeyPairGenerator.getInstance("EC");
-					kf = KeyFactory.getInstance("EC");
-					kg.initialize(this.spec);
-					key = selftest(kg, kf, modulusSize);
-				} catch(Throwable e) {
-					/* we don't care why we fail, just fallback */
-					Logger.warning(this, "default KeyPairGenerator provider ("+(kg != null ? kg.getProvider() : null)+") is broken, falling back to BouncyCastle", e);
-					kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
-					kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
-					kg.initialize(this.spec);
-					key = selftest(kg, kf, modulusSize);
-				}
-				try {
-					/* check default Signature compatible with kf/kg */
-					sig = Signature.getInstance(defaultHashAlgorithm);
-					selftest_sign(key, sig);
-				} catch(Throwable e) {
-					/* we don't care why we fail, just fallback */
-					Logger.warning(this, "default Signature provider ("+(sig != null ? sig.getProvider() : null)+") is broken or incompatible with KeyPairGenerator, falling back to BouncyCastle", e);
-					kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
-					kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
-					kg.initialize(this.spec);
-					key = kg.generateKeyPair();
-					sig = Signature.getInstance(defaultHashAlgorithm, JceLoader.BouncyCastle);
-					selftest_sign(key, sig);
-				}
+            // Ensure providers loaded
+            JceLoader.BouncyCastle.toString();
+            try {
+                KeyPair key = null;
+                try {
+                    /* check if default EC keys work correctly */
+                    kg = KeyPairGenerator.getInstance("EC");
+                    kf = KeyFactory.getInstance("EC");
+                    kg.initialize(this.spec);
+                    key = selftest(kg, kf, modulusSize);
+                } catch(Throwable e) {
+                    /* we don't care why we fail, just fallback */
+                    Logger.warning(this, "default KeyPairGenerator provider ("+(kg != null ? kg.getProvider() : null)+") is broken, falling back to BouncyCastle", e);
+                    kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
+                    kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
+                    kg.initialize(this.spec);
+                    key = selftest(kg, kf, modulusSize);
+                }
+                try {
+                    /* check default Signature compatible with kf/kg */
+                    sig = Signature.getInstance(defaultHashAlgorithm);
+                    selftest_sign(key, sig);
+                } catch(Throwable e) {
+                    /* we don't care why we fail, just fallback */
+                    Logger.warning(this, "default Signature provider ("+(sig != null ? sig.getProvider() : null)+") is broken or incompatible with KeyPairGenerator, falling back to BouncyCastle", e);
+                    kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
+                    kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
+                    kg.initialize(this.spec);
+                    key = kg.generateKeyPair();
+                    sig = Signature.getInstance(defaultHashAlgorithm, JceLoader.BouncyCastle);
+                    selftest_sign(key, sig);
+                }
             } catch (NoSuchAlgorithmException e) {
                 Logger.error(ECDSA.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
                 e.printStackTrace();
@@ -129,15 +129,15 @@ public class ECDSA {
                 Logger.error(ECDSA.class, "InvalidAlgorithmParameterException : "+e.getMessage(),e);
                 e.printStackTrace();
             } catch (InvalidKeyException e) {
-				throw new Error(e);
+                throw new Error(e);
             } catch (InvalidKeySpecException e) {
-				throw new Error(e);
+                throw new Error(e);
             } catch (SignatureException e) {
-				throw new Error(e);
+                throw new Error(e);
             }
-			this.kgProvider = kg.getProvider();
-			this.kfProvider = kf.getProvider();
-			this.sigProvider = sig.getProvider();
+            this.kgProvider = kg.getProvider();
+            this.kfProvider = kf.getProvider();
+            this.sigProvider = sig.getProvider();
             this.keygen = kg;
             this.defaultHashAlgorithm = defaultHashAlgorithm;
             this.modulusSize = modulusSize;
@@ -147,11 +147,11 @@ public class ECDSA {
             Logger.normal(this, name +": using "+sigProvider+" for Signature("+defaultHashAlgorithm+")");
 
         }
-        
+
         public synchronized KeyPair generateKeyPair() {
             return keygen.generateKeyPair();
         }
-        
+
         public SimpleFieldSet getSFS(ECPublicKey pub) {
             SimpleFieldSet ecdsaSFS = new SimpleFieldSet(true);
             SimpleFieldSet curveSFS = new SimpleFieldSet(true);
@@ -159,12 +159,12 @@ public class ECDSA {
             ecdsaSFS.put(name(), curveSFS);
             return ecdsaSFS;
         }
-        
+
         public String toString() {
             return spec.getName();
         }
     }
-    
+
     /**
      * Initialize the ECDSA object: this will draw some entropy
      * @param curve
@@ -173,11 +173,11 @@ public class ECDSA {
         this.curve = curve;
         this.key = curve.keygen.generateKeyPair();
     }
-    
+
     /**
      * Initialize the ECDSA object: from an SFS generated by asFieldSet()
      * @param curve
-     * @throws FSParseException 
+     * @throws FSParseException
      */
     public ECDSA(SimpleFieldSet sfs, Curves curve) throws FSParseException {
         byte[] pub = null;
@@ -199,7 +199,7 @@ public class ECDSA {
         }
         this.curve = curve;
     }
-    
+
     public byte[] sign(byte[]... data) {
         byte[] result = null;
         try {
@@ -209,15 +209,15 @@ public class ECDSA {
                 // will *not* work with a bouncycastle SHA256withECDDSA verifier
                 Signature sig = Signature.getInstance(curve.defaultHashAlgorithm.replace("ECDSA", "ECDDSA"), JceLoader.BouncyCastle);
                 sig.initSign(key.getPrivate());
-    			for(byte[] d: data)
-    				sig.update(d);
+                for(byte[] d: data)
+                    sig.update(d);
                 result = sig.sign();
                 // It's a DER encoded signature, most sigs will fit in N bytes
                 // If it doesn't let's re-sign.
                 if(result.length <= curve.maxSigSize)
-                	break;
+                    break;
                 else
-                	Logger.error(this, "DER encoded signature used "+result.length+" bytes, more than expected "+curve.maxSigSize+" - re-signing...");
+                    Logger.error(this, "DER encoded signature used "+result.length+" bytes, more than expected "+curve.maxSigSize+" - re-signing...");
             }
         } catch (NoSuchAlgorithmException e) {
             Logger.error(this, "NoSuchAlgorithmException : "+e.getMessage(),e);
@@ -229,12 +229,12 @@ public class ECDSA {
             Logger.error(this, "SignatureException : "+e.getMessage(),e);
             e.printStackTrace();
         }
-        
+
         return result;
     }
-    
+
     /**
-     * Sign data and return a fixed size signature. The data does not need to be hashed, the 
+     * Sign data and return a fixed size signature. The data does not need to be hashed, the
      * signing code will handle that for us, using an algorithm appropriate for the keysize.
      * @return A zero padded DER signature (maxSigSize). Space Inefficient but constant-size.
      */
@@ -253,18 +253,18 @@ public class ECDSA {
         }
         return plainsig;
     }
-    
+
     public boolean verify(byte[] signature, byte[]... data) {
         return verify(curve, getPublicKey(), signature, data);
     }
-    
+
     public boolean verify(byte[] signature, int sigoffset, int siglen, byte[]... data) {
         return verify(curve, getPublicKey(), signature, sigoffset, siglen, data);
     }
-    
+
     public static boolean verify(Curves curve, ECPublicKey key, byte[] signature, byte[]... data) {
-		return verify(curve, key, signature, 0, signature.length, data);
-	}
+        return verify(curve, key, signature, 0, signature.length, data);
+    }
 
     /* Calculates the actual signature length based on the encoded length of the DER sequence
      * contained in the signature. If decoding fails, a SignatureException is thrown. */
@@ -325,11 +325,11 @@ public class ECDSA {
         }
         return result;
     }
-    
+
     public ECPublicKey getPublicKey() {
         return (ECPublicKey) key.getPublic();
     }
-    
+
     /**
      * Returns an ECPublicKey from bytes obtained using ECPublicKey.getEncoded()
      * @param data
@@ -341,7 +341,7 @@ public class ECDSA {
             X509EncodedKeySpec ks = new X509EncodedKeySpec(data);
             KeyFactory kf = KeyFactory.getInstance("EC", curve.kfProvider);
             remotePublicKey = (ECPublicKey)kf.generatePublic(ks);
-            
+
         } catch (NoSuchAlgorithmException e) {
             Logger.error(ECDSA.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
             e.printStackTrace();
@@ -349,16 +349,16 @@ public class ECDSA {
             Logger.error(ECDSA.class, "InvalidKeySpecException : "+e.getMessage(), e);
             e.printStackTrace();
         }
-        
+
         return remotePublicKey;
     }
-    
+
     /**
      * Returns an SFS containing:
      *  - the private key
      *  - the public key
      *  - the name of the curve in use
-     *  
+     *
      *  It should only be used in NodeCrypto
      * @param includePrivate - include the (secret) private key
      * @return SimpleFieldSet

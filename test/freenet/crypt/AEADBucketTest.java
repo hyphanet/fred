@@ -10,7 +10,7 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 
 public class AEADBucketTest {
-    
+
     @Test
     public void testCopyBucketNotDivisibleBy16() throws IOException {
         checkCopyBucketNotDivisibleBy16(902);
@@ -29,5 +29,5 @@ public class AEADBucketTest {
         assertEquals(length, copyTo.size());
         assertTrue(BucketTools.equalBuckets(encryptedBucket, copyTo));
     }
-    
+
 }

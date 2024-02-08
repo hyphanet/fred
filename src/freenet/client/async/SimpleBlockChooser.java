@@ -14,7 +14,7 @@ import freenet.support.io.StorageFormatException;
  * @author toad
  */
 public class SimpleBlockChooser {
-    
+
     private static volatile boolean logMINOR;
     private static volatile boolean logDEBUG;
     static {
@@ -27,7 +27,7 @@ public class SimpleBlockChooser {
     private final int[] retries;
     protected final int maxRetries;
     private final Random random;
-    
+
     public SimpleBlockChooser(int blocks, Random random, int maxRetries) {
         this.maxRetries = maxRetries;
         this.blocks = blocks;
@@ -35,7 +35,7 @@ public class SimpleBlockChooser {
         this.completed = new boolean[blocks];
         this.retries = new int[blocks];
     }
-    
+
     /** Choose a key to fetch, taking into account retries */
     public synchronized int chooseKey() {
         int max = getMaxBlockNumber();
@@ -65,7 +65,7 @@ public class SimpleBlockChooser {
     public boolean onNonFatalFailure(int blockNo) {
         return isFatalRetries(innerOnNonFatalFailure(blockNo));
     }
-    
+
     private boolean isFatalRetries(int retries) {
         if(maxRetries == -1) return false;
         return retries > maxRetries;
@@ -78,7 +78,7 @@ public class SimpleBlockChooser {
     protected synchronized int innerOnNonFatalFailure(int blockNo) {
         return ++retries[blockNo];
     }
-    
+
     /** Notify when a block has succeeded. */
     public boolean onSuccess(int blockNo) {
         synchronized(this) {
@@ -93,7 +93,7 @@ public class SimpleBlockChooser {
         onCompletedAll();
         return true;
     }
-    
+
     /** Notify that a block has no longer succeeded. E.g. we downloaded it but now the data is no
      * longer available due to disk corruption.
      * @param blockNo
@@ -103,12 +103,12 @@ public class SimpleBlockChooser {
         completed[blockNo] = false;
         completedCount--;
     }
-    
+
     protected void onCompletedAll() {
         // Do nothing.
     }
 
-    /** Is the proposed block valid? Override to implement custom logic e.g. checking which 
+    /** Is the proposed block valid? Override to implement custom logic e.g. checking which
      * requests are already running. */
     protected boolean checkValid(int chosen) {
         return !completed[chosen];
@@ -122,7 +122,7 @@ public class SimpleBlockChooser {
         return blocks;
     }
 
-    /** Mass replace of success/failure. Used by fetchers when we try to decode and fail, possibly 
+    /** Mass replace of success/failure. Used by fetchers when we try to decode and fail, possibly
      * because of disk corruption.
      * @param used An array of flags indicating whether we have each block.
      * @return The number of blocks in used.
@@ -139,7 +139,7 @@ public class SimpleBlockChooser {
     public synchronized int successCount() {
         return completedCount;
     }
-    
+
     public synchronized int getRetries(int blockNumber) {
         return retries[blockNumber];
     }
@@ -148,7 +148,7 @@ public class SimpleBlockChooser {
     public synchronized int getBlockNumber(SplitFileSegmentKeys keys, NodeCHK key) {
         return keys.getBlockNumber(key, completed);
     }
-    
+
     public synchronized boolean hasSucceeded(int blockNumber) {
         return completed[blockNumber];
     }
@@ -167,10 +167,10 @@ public class SimpleBlockChooser {
         for(int i=0;i<blocks;i++)
             retries[i] = dis.readInt();
     }
-    
+
     static final int VERSION = 1;
 
-    /** Write everything 
+    /** Write everything
      * @throws IOException */
     public void write(DataOutputStream dos) throws IOException {
         dos.writeInt(VERSION);
@@ -179,7 +179,7 @@ public class SimpleBlockChooser {
         dos.writeInt(maxRetries);
         writeRetries(dos);
     }
-    
+
     public void read(DataInputStream dis) throws StorageFormatException, IOException {
         if(dis.readInt() != VERSION) throw new StorageFormatException("Bad version in block chooser");
         for(int i=0;i<completed.length;i++) {
@@ -203,7 +203,7 @@ public class SimpleBlockChooser {
     public synchronized boolean[] copyDownloadedBlocks() {
         return completed.clone();
     }
-    
+
     public synchronized int countFetchable() {
         int x = 0;
         for(int i=0;i<blocks;i++) {
@@ -213,7 +213,7 @@ public class SimpleBlockChooser {
         }
         return x;
     }
-    
+
     public synchronized boolean hasSucceededAll() {
         return completedCount == blocks;
     }

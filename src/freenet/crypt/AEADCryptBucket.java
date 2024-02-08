@@ -19,30 +19,30 @@ import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
-/** Encrypted and authenticated Bucket implementation using AES cipher and OCB mode. Warning: 
- * Avoid using Closer.close() on InputStream's opened on this Bucket. The MAC is only checked when 
+/** Encrypted and authenticated Bucket implementation using AES cipher and OCB mode. Warning:
+ * Avoid using Closer.close() on InputStream's opened on this Bucket. The MAC is only checked when
  * the end of the bucket is reached, which may be in read() or may be in close().
  * @author toad
  */
 public class AEADCryptBucket implements Bucket, Serializable {
-    
+
     private static final long serialVersionUID = 1L;
     private final Bucket underlying;
     private final byte[] key;
     private boolean readOnly;
     static final int OVERHEAD = AEADOutputStream.AES_OVERHEAD;
-    
+
     public AEADCryptBucket(Bucket underlying, byte[] key) {
         this.underlying = underlying;
         this.key = Arrays.copyOf(key, key.length);
     }
-    
+
     protected AEADCryptBucket() {
         // For serialization.
         underlying = null;
         key = null;
     }
-    
+
     @Override
     public OutputStream getOutputStream() throws IOException {
         return new BufferedOutputStream(getOutputStreamUnbuffered());
@@ -57,7 +57,7 @@ public class AEADCryptBucket implements Bucket, Serializable {
         OutputStream os = underlying.getOutputStreamUnbuffered();
         return AEADOutputStream.createAES(os, key, NodeStarter.getGlobalSecureRandom());
     }
-    
+
     public InputStream getInputStream() throws IOException {
         return new BufferedInputStream(getInputStreamUnbuffered());
     }
@@ -105,7 +105,7 @@ public class AEADCryptBucket implements Bucket, Serializable {
     public void onResume(ClientContext context) throws ResumeFailedException {
         underlying.onResume(context);
     }
-    
+
     public static final int MAGIC = 0xb25b32d6;
     static final int VERSION = 1;
 
@@ -119,8 +119,8 @@ public class AEADCryptBucket implements Bucket, Serializable {
         underlying.storeTo(dos);
     }
 
-    public AEADCryptBucket(DataInputStream dis, FilenameGenerator fg, 
-            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+    public AEADCryptBucket(DataInputStream dis, FilenameGenerator fg,
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey)
     throws IOException, StorageFormatException, ResumeFailedException {
         // Magic already read by caller.
         int version = dis.readInt();
