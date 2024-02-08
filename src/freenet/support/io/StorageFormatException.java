@@ -13,5 +13,5 @@ public class StorageFormatException extends Exception {
     public StorageFormatException(String message, IOException e) {
         super(message, e);
     }
-    
+
 }

@@ -21,239 +21,239 @@ import java.util.SortedSet;
 @Deprecated
 public class SortedIntSet extends AbstractCollection<Integer> implements SortedSet<Integer> {
 
-	private final ArrayList<Integer> data;
-	
-	/**
-	 * Default constructor
-	 */
-	public SortedIntSet() {
-		this.data = new ArrayList<Integer>();
-	}
-	
-	public SortedIntSet(int[] input) {
-		assertSorted(input);
-		data = new ArrayList<Integer>(input.length);
-		for (int i : input) {
-			data.add(i);
-		}
-	}
-	
-	@Override
-	public synchronized int size() {
-		return data.size();
-	}
+    private final ArrayList<Integer> data;
 
-	/**
-	 * Get the smallest item on this set
-	 * 
-	 * @return the smallest item, or -1 if the set is empty
-	 */
-	public synchronized int getFirst() {
-		return data.isEmpty() ? -1 : data.get(0);
-	}
+    /**
+     * Default constructor
+     */
+    public SortedIntSet() {
+        this.data = new ArrayList<Integer>();
+    }
 
-	/**
-	 * Get the largest item on this set
-	 * 
-	 * @return the largest item, or -1 if the set is empty
-	 */
-	public synchronized int getLast() {
-		return data.isEmpty() ? -1 : data.get(data.size() - 1);
-	}
+    public SortedIntSet(int[] input) {
+        assertSorted(input);
+        data = new ArrayList<Integer>(input.length);
+        for (int i : input) {
+            data.add(i);
+        }
+    }
 
-	/**
-	 * Check if this set is empty.
-	 * 
-	 * @param num
-	 * @return <code>true</code>, if the set is empty.
-	 */
-	@Override
-	public synchronized boolean isEmpty() {
-		return data.isEmpty();
-	}
+    @Override
+    public synchronized int size() {
+        return data.size();
+    }
 
-	/**
-	 * Check if <code>num</code> exist in this set.
-	 * 
-	 * @param num
-	 * @return <code>true</code>, if <code>num</code> exist.
-	 */
-	public synchronized boolean contains(int num) {
-		int x = binarySearch(num);
-		return x >= 0;
-	}
+    /**
+     * Get the smallest item on this set
+     *
+     * @return the smallest item, or -1 if the set is empty
+     */
+    public synchronized int getFirst() {
+        return data.isEmpty() ? -1 : data.get(0);
+    }
 
-	/**
-	 * Remove an item
-	 * 
-	 * @param item
-	 *            the item to be removed
-	 */
-	public synchronized boolean remove(int item) {
-		int x = binarySearch(item);
-		if(x >= 0) {
-			return data.remove(x) != null;
-		}
-		return false;
-	}
+    /**
+     * Get the largest item on this set
+     *
+     * @return the largest item, or -1 if the set is empty
+     */
+    public synchronized int getLast() {
+        return data.isEmpty() ? -1 : data.get(data.size() - 1);
+    }
 
-	private void assertSorted(int[] input) {
-		if (input.length <= 1) {
-			return;
-		}
-		for (int i = 1; i < input.length; i++) {
-			if (input[i-1] > input[i]) {
-				throw new IllegalStateException("Input must be sorted");
-			}
-		}
-	}
+    /**
+     * Check if this set is empty.
+     *
+     * @param num
+     * @return <code>true</code>, if the set is empty.
+     */
+    @Override
+    public synchronized boolean isEmpty() {
+        return data.isEmpty();
+    }
 
-	/**
-	 * Add the item, if it (or an item of the same number) is not already
-	 * present.
-	 * 
-	 * @return <code>true</code>, if we added the item.
-	 */ 
-	public synchronized boolean push(int num) {
-		int x = binarySearch(num);
-		if(x >= 0) return false;
-		// insertion point
-		x = -x-1;
-		push(num, x);
-		return true;
-	}
+    /**
+     * Check if <code>num</code> exist in this set.
+     *
+     * @param num
+     * @return <code>true</code>, if <code>num</code> exist.
+     */
+    public synchronized boolean contains(int num) {
+        int x = binarySearch(num);
+        return x >= 0;
+    }
 
-	/**
-	 * Add the item.
-	 * 
-	 * @throws {@link IllegalArgumentException}
-	 *             if the item already exist
-	 * @return <code>true</code>, if we added the item.
-	 */ 
-	public synchronized void add(int num) {
-		int x = binarySearch(num);
-		if(x >= 0) {
-			throw new IllegalArgumentException(); // already exists
-		}
-		// insertion point
-		x = -x-1;
-		push(num, x);
-	}
+    /**
+     * Remove an item
+     *
+     * @param item
+     *            the item to be removed
+     */
+    public synchronized boolean remove(int item) {
+        int x = binarySearch(item);
+        if(x >= 0) {
+            return data.remove(x) != null;
+        }
+        return false;
+    }
 
-	private synchronized void push(int num, int x) {
-		data.add(x, num);
-	}
+    private void assertSorted(int[] input) {
+        if (input.length <= 1) {
+            return;
+        }
+        for (int i = 1; i < input.length; i++) {
+            if (input[i-1] > input[i]) {
+                throw new IllegalStateException("Input must be sorted");
+            }
+        }
+    }
 
-	/**
-	 * Remove and return the smallest item
-	 * 
-	 * @return the smallest item
-	 */
-	public int removeFirst() {
-		int val = getFirst();
-		remove(val);
-		return val;
-	}
+    /**
+     * Add the item, if it (or an item of the same number) is not already
+     * present.
+     *
+     * @return <code>true</code>, if we added the item.
+     */
+    public synchronized boolean push(int num) {
+        int x = binarySearch(num);
+        if(x >= 0) return false;
+        // insertion point
+        x = -x-1;
+        push(num, x);
+        return true;
+    }
 
-	/**
-	 * Clear this set
-	 */
-	@Override
-	public synchronized void clear() {
-		data.clear();
-	}
+    /**
+     * Add the item.
+     *
+     * @throws {@link IllegalArgumentException}
+     *             if the item already exist
+     * @return <code>true</code>, if we added the item.
+     */
+    public synchronized void add(int num) {
+        int x = binarySearch(num);
+        if(x >= 0) {
+            throw new IllegalArgumentException(); // already exists
+        }
+        // insertion point
+        x = -x-1;
+        push(num, x);
+    }
 
-	/**
-	 * Get a sorted array of all items
-	 * 
-	 * @return sorted array of all items
-	 */
-	public synchronized int[] toIntArray() {
-		int[] result = new int[data.size()];
-		for (int i = 0; i < result.length; i++) {
-			result[i] = data.get(i);
-		}
-		return result;
-	}
+    private synchronized void push(int num, int x) {
+        data.add(x, num);
+    }
 
-	/**
-	 * Get a sorted array of all items
-	 * 
-	 * @return sorted array of all items
-	 */
-	public synchronized int[] toArrayRaw() {
-		return toIntArray();
-	}
+    /**
+     * Remove and return the smallest item
+     *
+     * @return the smallest item
+     */
+    public int removeFirst() {
+        int val = getFirst();
+        remove(val);
+        return val;
+    }
 
-	private int binarySearch(int key) {
-		return Collections.binarySearch(data, key);
-	}
+    /**
+     * Clear this set
+     */
+    @Override
+    public synchronized void clear() {
+        data.clear();
+    }
 
-	@Override
-	public Comparator<? super Integer> comparator() {
-		return null;
-	}
+    /**
+     * Get a sorted array of all items
+     *
+     * @return sorted array of all items
+     */
+    public synchronized int[] toIntArray() {
+        int[] result = new int[data.size()];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = data.get(i);
+        }
+        return result;
+    }
 
-	@Override
-	public Integer first() {
-		return getFirst();
-	}
+    /**
+     * Get a sorted array of all items
+     *
+     * @return sorted array of all items
+     */
+    public synchronized int[] toArrayRaw() {
+        return toIntArray();
+    }
 
-	@Override
-	public SortedSet<Integer> headSet(Integer arg0) {
-		throw new UnsupportedOperationException(); // FIXME
-	}
+    private int binarySearch(int key) {
+        return Collections.binarySearch(data, key);
+    }
 
-	@Override
-	public Integer last() {
-		return getLast();
-	}
+    @Override
+    public Comparator<? super Integer> comparator() {
+        return null;
+    }
 
-	@Override
-	public SortedSet<Integer> subSet(Integer arg0, Integer arg1) {
-		throw new UnsupportedOperationException(); // FIXME
-	}
+    @Override
+    public Integer first() {
+        return getFirst();
+    }
 
-	@Override
-	public SortedSet<Integer> tailSet(Integer arg0) {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public SortedSet<Integer> headSet(Integer arg0) {
+        throw new UnsupportedOperationException(); // FIXME
+    }
 
-	@Override
-	public boolean add(Integer arg0) {
-		return push(arg0.intValue());
-	}
+    @Override
+    public Integer last() {
+        return getLast();
+    }
 
-	@Override
-	public boolean contains(Object arg0) {
-		if(arg0 instanceof Integer) {
-			int x = (Integer)arg0;
-			return contains(x);
-		}
-		return false;
-	}
+    @Override
+    public SortedSet<Integer> subSet(Integer arg0, Integer arg1) {
+        throw new UnsupportedOperationException(); // FIXME
+    }
 
-	@Override
-	public Iterator<Integer> iterator() {
-		return data.iterator();
-	}
+    @Override
+    public SortedSet<Integer> tailSet(Integer arg0) {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public boolean remove(Object arg0) {
-		if(arg0 instanceof Integer) {
-			return remove(((Integer)arg0).intValue());
-		}
-		return false;
-	}
+    @Override
+    public boolean add(Integer arg0) {
+        return push(arg0.intValue());
+    }
 
-	@Override
-	public boolean removeAll(Collection<?> arg0) {
-		throw new UnsupportedOperationException(); // FIXME
-	}
+    @Override
+    public boolean contains(Object arg0) {
+        if(arg0 instanceof Integer) {
+            int x = (Integer)arg0;
+            return contains(x);
+        }
+        return false;
+    }
 
-	@Override
-	public boolean retainAll(Collection<?> arg0) {
-		throw new UnsupportedOperationException(); // FIXME
-	}
+    @Override
+    public Iterator<Integer> iterator() {
+        return data.iterator();
+    }
+
+    @Override
+    public boolean remove(Object arg0) {
+        if(arg0 instanceof Integer) {
+            return remove(((Integer)arg0).intValue());
+        }
+        return false;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> arg0) {
+        throw new UnsupportedOperationException(); // FIXME
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> arg0) {
+        throw new UnsupportedOperationException(); // FIXME
+    }
 
 }

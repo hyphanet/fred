@@ -7,21 +7,21 @@ import freenet.client.async.ClientContext;
 import freenet.support.api.LockableRandomAccessBuffer;
 
 public class BarrierRandomAccessBuffer implements LockableRandomAccessBuffer {
-    
+
     private final LockableRandomAccessBuffer underlying;
     private boolean proceed;
     private int waiting;
-    
+
     public BarrierRandomAccessBuffer(LockableRandomAccessBuffer underlying) {
         this.underlying = underlying;
         proceed = true;
     }
-    
+
     @Override
     public long size() {
         return underlying.size();
     }
-    
+
     /** Wait until some threads are waiting for the proceed thread. */
     public void waitForWaiting() {
         synchronized(this) {
@@ -52,49 +52,49 @@ public class BarrierRandomAccessBuffer implements LockableRandomAccessBuffer {
             waiting--;
         }
     }
-    
+
     @Override
     public void pread(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException {
         waitForClear();
         underlying.pread(fileOffset, buf, bufOffset, length);
     }
-    
+
     @Override
     public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException {
         waitForClear();
         underlying.pwrite(fileOffset, buf, bufOffset, length);
     }
-    
+
     @Override
     public void close() {
         underlying.close();
     }
-    
+
     @Override
     public void free() {
         underlying.free();
     }
-    
+
     @Override
     public RAFLock lockOpen() throws IOException {
         return underlying.lockOpen();
     }
-    
+
     @Override
     public void onResume(ClientContext context) throws ResumeFailedException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
         throw new UnsupportedOperationException();
     }
-    
+
     public synchronized void proceed() {
         proceed = true;
         notifyAll();
     }
-    
+
     public synchronized void pause() {
         proceed = false;
     }
@@ -118,5 +118,5 @@ public class BarrierRandomAccessBuffer implements LockableRandomAccessBuffer {
         BarrierRandomAccessBuffer other = (BarrierRandomAccessBuffer) obj;
         return underlying.equals(other.underlying);
     }
-    
+
 }

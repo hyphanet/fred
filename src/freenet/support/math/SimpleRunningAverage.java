@@ -13,7 +13,7 @@ import freenet.support.Logger.LogLevel;
  * @author amphibian
  */
 public final class SimpleRunningAverage implements RunningAverage, Cloneable {
-	private static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -1;
     final double[] refs;
     int nextSlotPtr=0;
     int curLen=0;
@@ -23,11 +23,11 @@ public final class SimpleRunningAverage implements RunningAverage, Cloneable {
     private boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 
     @Override
-	public final SimpleRunningAverage clone() {
-    	// Deep copy needed. Implement Cloneable to shut up findbugs.
+    public final SimpleRunningAverage clone() {
+        // Deep copy needed. Implement Cloneable to shut up findbugs.
         return new SimpleRunningAverage(this);
     }
-    
+
     /**
      * Clear the SRA
      */
@@ -38,7 +38,7 @@ public final class SimpleRunningAverage implements RunningAverage, Cloneable {
         total = 0;
         for(int i=0;i<refs.length;i++) refs[i] = 0.0;
     }
-    
+
     /**
      *
      * @param length
@@ -49,7 +49,7 @@ public final class SimpleRunningAverage implements RunningAverage, Cloneable {
         this.initValue = initValue;
         totalReports = 0;
     }
-    
+
     /**
      *
      * @param a
@@ -90,24 +90,24 @@ public final class SimpleRunningAverage implements RunningAverage, Cloneable {
     @Override
     public synchronized void report(double d) {
         totalReports++;
-		if (logDEBUG)
-			Logger.debug(this, "report(" + d + ") on " + this);
-		if (curLen < refs.length)
-			curLen++;
-		else
-			total -= popValue();
-		pushValue(d);
-		total += d;
-	}
+        if (logDEBUG)
+            Logger.debug(this, "report(" + d + ") on " + this);
+        if (curLen < refs.length)
+            curLen++;
+        else
+            total -= popValue();
+        pushValue(d);
+        total += d;
+    }
 
     /**
      *
      * @param value
      */
     protected synchronized void pushValue(double value){
-		refs[nextSlotPtr] = value;
-		nextSlotPtr++;
-		if(nextSlotPtr >= refs.length) nextSlotPtr = 0;
+        refs[nextSlotPtr] = value;
+        nextSlotPtr++;
+        if(nextSlotPtr >= refs.length) nextSlotPtr = 0;
     }
 
     /**
@@ -115,15 +115,15 @@ public final class SimpleRunningAverage implements RunningAverage, Cloneable {
      * @return
      */
     protected synchronized double popValue(){
-		return refs[nextSlotPtr];
-	}
+        return refs[nextSlotPtr];
+    }
 
     @Override
-	public synchronized String toString() {
+    public synchronized String toString() {
         return super.toString() + ": curLen="+curLen+", ptr="+nextSlotPtr+", total="+
-        	total+", average="+total/curLen;
+            total+", average="+total/curLen;
     }
-    
+
     /**
      *
      * @param d
@@ -134,7 +134,7 @@ public final class SimpleRunningAverage implements RunningAverage, Cloneable {
     }
 
     /**
-     * 
+     *
      * @param out
      */
     public void writeDataTo(DataOutputStream out) {
@@ -160,7 +160,7 @@ public final class SimpleRunningAverage implements RunningAverage, Cloneable {
              * => report >= (targetValue - total/(curLen + 1)) * (curLen+1)
              * => report >= targetValue * (curLen + 1) - total
              * EXAMPLE:
-             * Mean (5, 5, 5, 5, 5, X) = 10 
+             * Mean (5, 5, 5, 5, 5, X) = 10
              * X = 10 * 6 - 25 = 35
              * => Mean = (25 + 35) / 6 = 60/6 = 10
              */

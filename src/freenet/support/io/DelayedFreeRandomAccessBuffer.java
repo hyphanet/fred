@@ -10,7 +10,7 @@ import freenet.crypt.MasterSecret;
 import freenet.support.api.LockableRandomAccessBuffer;
 
 public class DelayedFreeRandomAccessBuffer implements LockableRandomAccessBuffer, Serializable, DelayedFree {
-    
+
     private static final long serialVersionUID = 1L;
     final LockableRandomAccessBuffer underlying;
     private boolean freed;
@@ -74,7 +74,7 @@ public class DelayedFreeRandomAccessBuffer implements LockableRandomAccessBuffer
         this.factory = context.persistentBucketFactory;
         underlying.onResume(context);
     }
-    
+
     static final int MAGIC = 0x3fb645de;
 
     @Override
@@ -82,19 +82,19 @@ public class DelayedFreeRandomAccessBuffer implements LockableRandomAccessBuffer
         dos.writeInt(MAGIC);
         underlying.storeTo(dos);
     }
-    
+
     public DelayedFreeRandomAccessBuffer(DataInputStream dis, FilenameGenerator fg,
-            PersistentFileTracker persistentFileTracker, MasterSecret masterSecret) 
+            PersistentFileTracker persistentFileTracker, MasterSecret masterSecret)
     throws IOException, StorageFormatException, ResumeFailedException {
         underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker, masterSecret);
         factory = persistentFileTracker;
     }
-    
+
     @Override
     public boolean toFree() {
         return freed;
     }
-    
+
     public LockableRandomAccessBuffer getUnderlying() {
         if(freed) return null;
         return underlying;
@@ -126,5 +126,5 @@ public class DelayedFreeRandomAccessBuffer implements LockableRandomAccessBuffer
         DelayedFreeRandomAccessBuffer other = (DelayedFreeRandomAccessBuffer) obj;
         return underlying.equals(other.underlying);
     }
-    
+
 }
