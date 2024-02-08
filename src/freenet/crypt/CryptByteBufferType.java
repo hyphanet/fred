@@ -7,8 +7,8 @@ import java.io.Serializable;
 
 /**
  * Keeps track of properties of different symmetric cipher algorithms
- * available to Freenet including key type, name of the algorithm, 
- * block size used, and iv length if required. 
+ * available to Freenet including key type, name of the algorithm,
+ * block size used, and iv length if required.
  * @author unixninja92
  *
  */
@@ -33,7 +33,7 @@ public enum CryptByteBufferType implements Serializable{
     public final boolean isStreamCipher;
 
     /**
-     * Creates the RijndaelECB enum value. iv is null. 
+     * Creates the RijndaelECB enum value. iv is null.
      * @param bitmask
      * @param keyType The type of key the alg requires
      */
@@ -48,8 +48,8 @@ public enum CryptByteBufferType implements Serializable{
     }
 
     /**
-     * Creates the RijndaelECB128 enum value. iv is null. 
-     * and sets the non-standard blocksize. 
+     * Creates the RijndaelECB128 enum value. iv is null.
+     * and sets the non-standard blocksize.
      * @param bitmask
      * @param keyType The type of key the alg requires
      * @param blockSize The blocksize the alg uses
@@ -81,8 +81,8 @@ public enum CryptByteBufferType implements Serializable{
     }
 
     /**
-     * Creates an enum value for the specified algorithm, keytype, and iv size. 
-     * Also stores the name of the alg that java recognizes 
+     * Creates an enum value for the specified algorithm, keytype, and iv size.
+     * Also stores the name of the alg that java recognizes
      * @param bitmask
      * @param ivSize Size of the iv
      * @param algName The name the java provider uses for the alg
@@ -97,7 +97,7 @@ public enum CryptByteBufferType implements Serializable{
         this.keyType = keyType;
         isStreamCipher = true;
     }
-    
+
     /**
      * Returns true if the algorithm supports/requires an IV, otherwise returns false.
      */

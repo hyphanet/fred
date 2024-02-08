@@ -37,13 +37,13 @@ public class OnionFECCodec extends FECCodec {
             blockNumbers[target] = i + dataBlocks.length;
             System.arraycopy(checkBlocks[i], 0, dataBlocks[target], 0, blockLength);
         }
-        
+
         // Now do the decode.
         codec.decode(buffers, blockNumbers);
         // The data blocks are now decoded and in the correct locations.
     }
 
-    /** Cache of PureCode by {k,n}. The memory usage is relatively small so we account for it in 
+    /** Cache of PureCode by {k,n}. The memory usage is relatively small so we account for it in
      * the FEC jobs, see maxMemoryOverheadDecode() etc. */
     private synchronized static PureCode getCodec(int k, int n) {
         CodecKey key = new CodecKey(k, n);
@@ -68,7 +68,7 @@ public class OnionFECCodec extends FECCodec {
         recentlyUsedCodecs.push(key, new SoftReference<PureCode>(code));
         return code;
     }
-    
+
     private static final LRUMap<CodecKey, SoftReference<PureCode>> recentlyUsedCodecs = LRUMap.createSafeMap();
 
     private static class CodecKey implements Comparable<CodecKey> {
@@ -110,7 +110,7 @@ public class OnionFECCodec extends FECCodec {
 
 
     @Override
-    public void encode(byte[][] dataBlocks, byte[][] checkBlocks, boolean[] checkBlocksPresent, 
+    public void encode(byte[][] dataBlocks, byte[][] checkBlocks, boolean[] checkBlocksPresent,
             int blockLength) {
         int k = dataBlocks.length;
         int n = dataBlocks.length + checkBlocks.length;
@@ -154,20 +154,20 @@ public class OnionFECCodec extends FECCodec {
         int matrixSize = n*k*2; // char[] of n*k
         return matrixSize*3; // Very approximately, the last one absorbing some columns and fixed overhead.
     }
-    
+
     @Override
     public int getCheckBlocks(int dataBlocks, CompatibilityMode compatibilityMode) {
         /**
-         * ALCHEMY: What we do know is that redundancy by FEC is much more efficient than 
+         * ALCHEMY: What we do know is that redundancy by FEC is much more efficient than
          * redundancy by simply duplicating blocks, for obvious reasons (see e.g. Wuala). But
          * we have to have some redundancy at the duplicating blocks level because we do use
          * some keys directly etc: we store an insert in 3 nodes. We also cache it on 20 nodes,
          * but generally the key will fall out of the caches within days. So long term, it's 3.
-         * Multiplied by 2 here, makes 6. Used to be 1.5 * 3 = 4.5. Wuala uses 5, but that's 
+         * Multiplied by 2 here, makes 6. Used to be 1.5 * 3 = 4.5. Wuala uses 5, but that's
          * all FEC.
          */
         int checkBlocks = dataBlocks * HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT / HighLevelSimpleClientImpl.SPLITFILE_SCALING_BLOCKS_PER_SEGMENT;
-        if(dataBlocks >= HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT) 
+        if(dataBlocks >= HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT)
             checkBlocks = HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT;
         // An extra block for anything below the limit.
         checkBlocks++;

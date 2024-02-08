@@ -8,7 +8,7 @@ import java.util.zip.Checksum;
 import freenet.support.Fields;
 
 public class ChecksumOutputStream extends FilterOutputStream {
-    
+
     final Checksum crc;
     private boolean closed;
     private final boolean writeChecksum;
@@ -22,7 +22,7 @@ public class ChecksumOutputStream extends FilterOutputStream {
         this.writeChecksum = writeChecksum;
         this.skipPrefix = skipPrefix;
     }
-    
+
     @Override
     public void write(int b) throws IOException {
         if(bytesInsidePrefix >= skipPrefix) {
@@ -30,7 +30,7 @@ public class ChecksumOutputStream extends FilterOutputStream {
         } else bytesInsidePrefix++;
         out.write(b);
     }
-    
+
     @Override
     public void write(byte[] buf, int offset, int length) throws IOException {
         int chop = Math.min(skipPrefix - bytesInsidePrefix, length);
@@ -48,12 +48,12 @@ public class ChecksumOutputStream extends FilterOutputStream {
             out.write(buf, offset, length);
         }
     }
-    
+
     @Override
     public void write(byte[] buf) throws IOException {
         write(buf, 0, buf.length);
     }
-    
+
     @Override
     public void close() throws IOException {
         if(writeChecksum) {
@@ -64,7 +64,7 @@ public class ChecksumOutputStream extends FilterOutputStream {
             out.write(Fields.intToBytes((int)crc.getValue()));
         }
     }
-    
+
     public long getValue() {
         return crc.getValue();
     }

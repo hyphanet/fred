@@ -15,11 +15,11 @@ public class SplitFileFetcherSegmentBlockChooser extends CooldownBlockChooser {
         this.keysFetching = keysFetching;
         this.ignoreLastBlock = ignoreLastBlock;
     }
-    
+
     private final SplitFileFetcherSegmentStorage segment;
     private final KeysFetchingLocally keysFetching;
     private final int ignoreLastBlock;
-    
+
     @Override
     protected boolean checkValid(int chosen) {
         if(!super.checkValid(chosen)) return false;
@@ -31,13 +31,13 @@ public class SplitFileFetcherSegmentBlockChooser extends CooldownBlockChooser {
             return true;
         } catch (final IOException e) {
             segment.parent.jobRunner.queueNormalOrDrop(new PersistentJob() {
-                
+
                 @Override
                 public boolean run(ClientContext context) {
                     segment.parent.failOnDiskError(e);
                     return true;
                 }
-                
+
             });
             return false;
         }

@@ -19,13 +19,13 @@ public class CompatibilityAnalyser implements Serializable {
     byte[] cryptoKey;
     boolean dontCompress;
     boolean definitive;
-    
+
     public CompatibilityAnalyser() {
         this.min = CompatibilityMode.COMPAT_UNKNOWN;
         this.max = CompatibilityMode.COMPAT_UNKNOWN;
         this.dontCompress = true;
     }
-    
+
     public void merge(CompatibilityMode min, CompatibilityMode max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
         if(this.definitive) {
             Logger.warning(this, "merge() after definitive", new Exception("debug"));
@@ -48,7 +48,7 @@ public class CompatibilityAnalyser implements Serializable {
     public CompatibilityMode min() {
         return min;
     }
-    
+
     public CompatibilityMode max() {
         return max;
     }
@@ -68,7 +68,7 @@ public class CompatibilityAnalyser implements Serializable {
     public InsertContext.CompatibilityMode[] getModes() {
         return new InsertContext.CompatibilityMode[] { min(), max() };
     }
-    
+
     static final int VERSION = 2;
 
     public void writeTo(DataOutputStream dos) throws IOException {
@@ -85,7 +85,7 @@ public class CompatibilityAnalyser implements Serializable {
         dos.writeBoolean(dontCompress);
         dos.writeBoolean(definitive);
     }
-    
+
     public CompatibilityAnalyser(DataInputStream dis) throws IOException, StorageFormatException {
         int ver = dis.readInt();
         if(ver != VERSION) throw new StorageFormatException("Unknown version for CompatibilityAnalyser");

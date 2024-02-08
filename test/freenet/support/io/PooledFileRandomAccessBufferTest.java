@@ -17,26 +17,26 @@ import freenet.support.io.PooledFileRandomAccessBuffer.FDTracker;
 public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase {
 
     private static final int[] TEST_LIST = new int[] { 0, 1, 32, 64, 32768, 1024*1024, 1024*1024+1 };
-    
+
     public PooledFileRandomAccessBufferTest() {
         super(TEST_LIST);
     }
 
     private File base = new File("tmp.pooled-random-access-file-wrapper-test");
-    
+
     @Before
     public void setUp() {
         base.mkdir();
     }
-    
+
     @After
     public void tearDown() {
         FileUtil.removeAll(base);
     }
-    
+
     private Random r = new Random(222831072);
     private FDTracker fds = new FDTracker(100);
-    
+
     @Override
     protected PooledFileRandomAccessBuffer construct(long size) throws IOException {
         File f = File.createTempFile("test", ".tmp", base);
@@ -49,7 +49,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         for(int sz : TEST_LIST)
             innerTestSimplePooling(sz);
     }
-    
+
     private void innerTestSimplePooling(int sz) throws IOException {
         fds.setMaxFDs(1);
         PooledFileRandomAccessBuffer a = construct(sz);
@@ -105,7 +105,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         a.free();
         b.free();
     }
-    
+
     /** Thanks bertm */
     @Test
     public void testLocksB() throws IOException {
@@ -121,7 +121,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         assertEquals(fds.getOpenFDs(), 0);
         assertEquals(fds.getClosableFDs(), 0);
     }
-    
+
     @Test
     public void testLockedNotClosable() throws IOException {
         int sz = 1024;
@@ -148,7 +148,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         a.close();
         b.close();
     }
-    
+
     @Test
     public void testLockedNotClosableFromNotOpenFD() throws IOException {
         int sz = 1024;
@@ -178,8 +178,8 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         a.close();
         b.close();
     }
-    
-    /** Test that locking enforces limits and blocks when appropriate. 
+
+    /** Test that locking enforces limits and blocks when appropriate.
      * @throws InterruptedException */
     @Test
     public void testLockBlocking() throws IOException, InterruptedException {
@@ -205,7 +205,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         }
         final Status s = new Status();
         Runnable r = new Runnable() {
-            
+
             @Override
             public void run() {
                 synchronized(s) {
@@ -240,7 +240,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
                     }
                 }
             }
-            
+
         };
         new Thread(r).start();
         // Wait for it to start.
@@ -275,7 +275,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         assertTrue(b.isOpen());
         assertTrue(b.isLocked());
         assertEquals(fds.getOpenFDs(), 1);
-        
+
         // Now let it proceed.
         synchronized(s) {
             s.canFinish = true;
@@ -296,7 +296,7 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         a.free();
         b.free();
     }
-    
+
     // FIXME more tests???
-    
+
 }
