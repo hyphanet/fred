@@ -18,7 +18,7 @@ import freenet.support.io.FileUtil;
 import freenet.support.io.NoCloseProxyOutputStream;
 
 public class AEADStreamsTest {
-    
+
     @Test
     public void testSuccessfulRoundTrip() throws IOException {
         Random random = new Random(0x96231307);
@@ -30,7 +30,7 @@ public class AEADStreamsTest {
             checkSuccessfulRoundTrip(32, random, input, new ArrayBucket(), new ArrayBucket());
         }
     }
-    
+
     @Test
     public void testCorruptedRoundTrip() throws IOException {
         Random random = new Random(0x96231307); // Same seed as first test, intentionally.
@@ -42,7 +42,7 @@ public class AEADStreamsTest {
             checkFailedCorruptedRoundTrip(32, random, input, new ArrayBucket(), new ArrayBucket());
         }
     }
-    
+
     @Test
     public void testTruncatedReadsWritesRoundTrip() throws IOException {
         Random random = new Random(0x49ee92f5);
@@ -52,7 +52,7 @@ public class AEADStreamsTest {
         checkSuccessfulRoundTripRandomSplits(24, random, input, new ArrayBucket(), new ArrayBucket());
         checkSuccessfulRoundTripRandomSplits(32, random, input, new ArrayBucket(), new ArrayBucket());
     }
-    
+
     public void checkSuccessfulRoundTrip(int keysize, Random random, Bucket input, Bucket output, Bucket decoded) throws IOException {
         byte[] key = new byte[keysize];
         random.nextBytes(key);
@@ -104,8 +104,8 @@ public class AEADStreamsTest {
         assertEquals(decoded.size(), input.size());
         assertTrue(BucketTools.equalBuckets(decoded, input));
     }
-    
-    /** Check whether we can close the stream early. 
+
+    /** Check whether we can close the stream early.
      * @throws IOException */
     @Test
     public void testCloseEarly() throws IOException {
@@ -129,9 +129,9 @@ public class AEADStreamsTest {
         assertTrue(Arrays.equals(first1KReadEncrypted, first1KReadOriginal));
         cis.close();
     }
-    
+
     /** If we close the stream early but there is garbage after that point, it should throw on
-     * close(). 
+     * close().
      * @throws IOException */
     @Test
     public void testGarbageAfterClose() throws IOException {

@@ -15,48 +15,48 @@ import freenet.support.SimpleFieldSet;
  */
 public class DisconnectMessage extends FCPMessage {
 
-	/** The name of this message. */
-	public static final String NAME = "Disconnect";
+    /** The name of this message. */
+    public static final String NAME = "Disconnect";
 
-	/**
-	 * Creates a new disconnect message.
-	 *
-	 * @param simpleFieldSet
-	 *            The field set to create the message from
-	 */
-	public DisconnectMessage(SimpleFieldSet simpleFieldSet) {
-		/* do nothing. */
-	}
+    /**
+     * Creates a new disconnect message.
+     *
+     * @param simpleFieldSet
+     *            The field set to create the message from
+     */
+    public DisconnectMessage(SimpleFieldSet simpleFieldSet) {
+        /* do nothing. */
+    }
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @see freenet.clients.fcp.FCPMessage#getFieldSet()
-	 */
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet(true);
-	}
+    /**
+     * {@inheritDoc}
+     *
+     * @see freenet.clients.fcp.FCPMessage#getFieldSet()
+     */
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        return new SimpleFieldSet(true);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @see freenet.clients.fcp.FCPMessage#getName()
-	 */
-	@Override
-	public String getName() {
-		return NAME;
-	}
+    /**
+     * {@inheritDoc}
+     *
+     * @see freenet.clients.fcp.FCPMessage#getName()
+     */
+    @Override
+    public String getName() {
+        return NAME;
+    }
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @see freenet.clients.fcp.FCPMessage#run(freenet.clients.fcp.FCPConnectionHandler,
-	 *      freenet.node.Node)
-	 */
-	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		handler.close();
-	}
+    /**
+     * {@inheritDoc}
+     *
+     * @see freenet.clients.fcp.FCPMessage#run(freenet.clients.fcp.FCPConnectionHandler,
+     *      freenet.node.Node)
+     */
+    @Override
+    public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+        handler.close();
+    }
 
 }

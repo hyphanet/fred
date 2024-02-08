@@ -20,59 +20,59 @@ import freenet.support.Logger.LogLevel;
 public class PersistentRequestRoot {
 
     private static final long serialVersionUID = 1L;
-    
+
     final PersistentRequestClient globalForeverClient;
-	private final Map<String, PersistentRequestClient> clients;
+    private final Map<String, PersistentRequestClient> clients;
 
         private static volatile boolean logMINOR;
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
-	
-	public PersistentRequestRoot() {
-		globalForeverClient = new PersistentRequestClient("Global Queue", null, true, null, Persistence.FOREVER, this);
-		clients = new TreeMap<String, PersistentRequestClient>();
-	}
-	
-	public PersistentRequestClient registerForeverClient(final String name, FCPConnectionHandler handler) {
-		if(logMINOR) Logger.minor(this, "Registering forever-client for "+name);
-		PersistentRequestClient client;
-		synchronized(this) {
-		    client = clients.get(name);
-		    if(client == null)
-		        client = new PersistentRequestClient(name, handler, false, null, Persistence.FOREVER, this);
-		    clients.put(name, client);
-		}
-		if(handler != null)
-		    client.setConnection(handler);
-		return client;
-	}
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+            @Override
+            public void shouldUpdate(){
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
 
-	/** Get the PersistentRequestClient if it exists. 
-	 * @param handler */
-	public PersistentRequestClient getForeverClient(final String name, FCPConnectionHandler handler) {
-	    PersistentRequestClient client;
-	    synchronized(this) {
-	        client = clients.get(name);
-	        if(client == null) return null;
-	    }
-	    if(handler != null)
-	        client.setConnection(handler);
+    public PersistentRequestRoot() {
+        globalForeverClient = new PersistentRequestClient("Global Queue", null, true, null, Persistence.FOREVER, this);
+        clients = new TreeMap<String, PersistentRequestClient>();
+    }
+
+    public PersistentRequestClient registerForeverClient(final String name, FCPConnectionHandler handler) {
+        if(logMINOR) Logger.minor(this, "Registering forever-client for "+name);
+        PersistentRequestClient client;
+        synchronized(this) {
+            client = clients.get(name);
+            if(client == null)
+                client = new PersistentRequestClient(name, handler, false, null, Persistence.FOREVER, this);
+            clients.put(name, client);
+        }
+        if(handler != null)
+            client.setConnection(handler);
         return client;
-	}
+    }
 
-	public void maybeUnregisterClient(PersistentRequestClient client) {
-		if((!client.isGlobalQueue) && !client.hasPersistentRequests()) {
-		    synchronized(this) {
-		        clients.remove(client.name);
-		    }
-		}
-	}
+    /** Get the PersistentRequestClient if it exists.
+     * @param handler */
+    public PersistentRequestClient getForeverClient(final String name, FCPConnectionHandler handler) {
+        PersistentRequestClient client;
+        synchronized(this) {
+            client = clients.get(name);
+            if(client == null) return null;
+        }
+        if(handler != null)
+            client.setConnection(handler);
+        return client;
+    }
+
+    public void maybeUnregisterClient(PersistentRequestClient client) {
+        if((!client.isGlobalQueue) && !client.hasPersistentRequests()) {
+            synchronized(this) {
+                clients.remove(client.name);
+            }
+        }
+    }
 
     public ClientRequest[] getPersistentRequests() {
         List<ClientRequest> requests = new ArrayList<ClientRequest>();
@@ -87,7 +87,7 @@ public class PersistentRequestRoot {
         client.resume(clientRequest);
         return client;
     }
-    
+
     PersistentRequestClient makeClient(boolean global, String clientName) {
         if(global) {
             return globalForeverClient;
@@ -109,5 +109,5 @@ public class PersistentRequestRoot {
     public PersistentRequestClient getGlobalForeverClient() {
         return globalForeverClient;
     }
-	
+
 }

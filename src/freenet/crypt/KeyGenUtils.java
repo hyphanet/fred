@@ -28,7 +28,7 @@ import freenet.node.NodeStarter;
 import freenet.support.Fields;
 
 /**
- * KeyGenUtils offers a set of methods to easily generate Keys and KeyPairs for 
+ * KeyGenUtils offers a set of methods to easily generate Keys and KeyPairs for
  * specific algorithms as well as for generating IVs and nonces. It will also take
  * keys stored in byte arrays and put them in SecretKey or KeyPair instances.
  * @author unixninja92
@@ -45,23 +45,23 @@ public final class KeyGenUtils {
      * from https://github.com/openstreetmap/josm/ , license GPLv2 or later
      */
     private static int getJavaVersion() {
-	String version = System.getProperty("java.version");
-	if (version.startsWith("1.")) {
-	    version = version.substring(2);
-	}
-	// Allow these formats:
-	// 1.8.0_72-ea
-	// 9-ea
-	// 9
-	// 9.0.1
-	int dotPos = version.indexOf('.');
-	int dashPos = version.indexOf('-');
-	return Integer.parseInt(version.substring(0,
-						  dotPos > -1 ? dotPos : dashPos > -1 ? dashPos : 1));
+    String version = System.getProperty("java.version");
+    if (version.startsWith("1.")) {
+        version = version.substring(2);
+    }
+    // Allow these formats:
+    // 1.8.0_72-ea
+    // 9-ea
+    // 9
+    // 9.0.1
+    int dotPos = version.indexOf('.');
+    int dashPos = version.indexOf('-');
+    return Integer.parseInt(version.substring(0,
+                          dotPos > -1 ? dotPos : dashPos > -1 ? dashPos : 1));
     }
 
     private static boolean isJava7() {
-	return getJavaVersion() <= 7;
+    return getJavaVersion() <= 7;
     }
 
     /**
@@ -75,12 +75,12 @@ public final class KeyGenUtils {
             throw new UnsupportedTypeException(type);
         }
         try {
-	    KeyPairGenerator kg;
-	    if (isJava7()) {
+        KeyPairGenerator kg;
+        if (isJava7()) {
                 kg = KeyPairGenerator.getInstance(type.alg, bcProvider);
-	    } else {
+        } else {
                 kg = KeyPairGenerator.getInstance(type.alg);
-	    }
+        }
             kg.initialize(type.spec);
             return kg.generateKeyPair();
         } catch (NoSuchAlgorithmException e) {
@@ -101,12 +101,12 @@ public final class KeyGenUtils {
             throw new UnsupportedTypeException(type);
         }
         try {
-	    KeyFactory kf;
-	    if (isJava7()) {
-		kf = KeyFactory.getInstance(type.alg, bcProvider);
-	    } else {
-		kf = KeyFactory.getInstance(type.alg);
-	    }
+        KeyFactory kf;
+        if (isJava7()) {
+        kf = KeyFactory.getInstance(type.alg, bcProvider);
+        } else {
+        kf = KeyFactory.getInstance(type.alg);
+        }
             X509EncodedKeySpec xks = new X509EncodedKeySpec(pub);
             return kf.generatePublic(xks);
         } catch (NoSuchAlgorithmException e) {
@@ -161,12 +161,12 @@ public final class KeyGenUtils {
             throw new UnsupportedTypeException(type);
         }
         try {
-	    KeyFactory kf;
-	    if (isJava7()) {
-		kf = KeyFactory.getInstance(type.alg, bcProvider);
-	    } else {
-		kf = KeyFactory.getInstance(type.alg);
-	    }
+        KeyFactory kf;
+        if (isJava7()) {
+        kf = KeyFactory.getInstance(type.alg, bcProvider);
+        } else {
+        kf = KeyFactory.getInstance(type.alg);
+        }
 
             PublicKey pubK = getPublicKey(type, pub);
 
@@ -213,12 +213,12 @@ public final class KeyGenUtils {
      */
     public static SecretKey genSecretKey(KeyType type){
         try{
-	    KeyGenerator kg;
-	    if (isJava7()) {
+        KeyGenerator kg;
+        if (isJava7()) {
                 kg = KeyGenerator.getInstance(type.alg, bcProvider);
-	    } else {
+        } else {
                 kg = KeyGenerator.getInstance(type.alg);
-	    }
+        }
             kg.init(type.keySize);
             return kg.generateKey();
         } catch (NoSuchAlgorithmException e) {
@@ -228,7 +228,7 @@ public final class KeyGenUtils {
 
     /**
      * Converts the specified key into a SecretKey for the specified algorithm. Checks the length of
-     * the key to make sure it is correct. HMAC does not have a set key length, so any key is 
+     * the key to make sure it is correct. HMAC does not have a set key length, so any key is
      * acceptable when using a key of this type.
      * @param key The byte[] of the key
      * @param type Type of key
@@ -283,9 +283,9 @@ public final class KeyGenUtils {
     /**
      * Converts an iv in a specified portion of a byte[] and places it in a IvParameterSpec.
      * @param iv The byte[] containing the iv
-     * @param offset Where the iv begins 
+     * @param offset Where the iv begins
      * @param length How long the iv is
-     * @return Returns an IvParameterSpec containing the iv. 
+     * @return Returns an IvParameterSpec containing the iv.
      */
     public static IvParameterSpec getIvParameterSpec(byte[] iv, int offset, int length){
         return new IvParameterSpec(iv, offset, length);
@@ -294,22 +294,22 @@ public final class KeyGenUtils {
     /**
      * Converts an iv in a ByteBuffer and places it in a IvParameterSpec.
      * @param iv The ByteBuffer containing the iv
-     * @return Returns an IvParameterSpec containing the iv. 
+     * @return Returns an IvParameterSpec containing the iv.
      */
     public static IvParameterSpec getIvParameterSpec(ByteBuffer iv){
         return new IvParameterSpec(Fields.copyToArray(iv));
     }
 
     /**
-     * Derives a ByteBuffer that is 512 bits (32 bytes) long from the given key using the provided 
+     * Derives a ByteBuffer that is 512 bits (32 bytes) long from the given key using the provided
      * class name and kdfString
      * @param kdfKey The key to derive from
-     * @param c Class name to use in derivation 
+     * @param c Class name to use in derivation
      * @param kdfString Sting to use in derivation
      * @return A 512 long ByteBuffer
      * @throws InvalidKeyException
      */
-    private static ByteBuffer deriveBytes(SecretKey kdfKey, Class<?> c, String kdfString) 
+    private static ByteBuffer deriveBytes(SecretKey kdfKey, Class<?> c, String kdfString)
             throws InvalidKeyException{
         if(kdfString == null){
             throw new NullPointerException();
@@ -324,16 +324,16 @@ public final class KeyGenUtils {
 
 
     /**
-     * Derives a ByteBuffer of the specified length from the given key using the provided class name 
+     * Derives a ByteBuffer of the specified length from the given key using the provided class name
      * and kdfString
      * @param kdfKey The key to derive from
-     * @param c Class name to use in derivation 
+     * @param c Class name to use in derivation
      * @param kdfString String to use in derivation
-     * @param len How long the new ByteBuffer should be. 
+     * @param len How long the new ByteBuffer should be.
      * @return A ByteBuffer of the specified length
      * @throws InvalidKeyException
      */
-    private static ByteBuffer deriveBytesTruncated(SecretKey kdfKey, Class<?> c, String kdfString, 
+    private static ByteBuffer deriveBytesTruncated(SecretKey kdfKey, Class<?> c, String kdfString,
             int len) throws InvalidKeyException{
         byte[] key = new byte[len];
         deriveBytes(kdfKey, c, kdfString).get(key);
@@ -341,31 +341,31 @@ public final class KeyGenUtils {
     }
 
     /**
-     * Derives a SecretKey of the specified type from the given key using the provided class name 
+     * Derives a SecretKey of the specified type from the given key using the provided class name
      * and kdfString
      * @param kdfKey The key to derive from
-     * @param c Class name to use in derivation 
+     * @param c Class name to use in derivation
      * @param kdfString String to use in derivation
      * @param type The type of key to derive
      * @return The derived key as a SecretKey
      * @throws InvalidKeyException
      */
-    public static SecretKey deriveSecretKey(SecretKey kdfKey, Class<?> c, String kdfString, 
+    public static SecretKey deriveSecretKey(SecretKey kdfKey, Class<?> c, String kdfString,
             KeyType type) throws InvalidKeyException{
         return getSecretKey(type, deriveBytesTruncated(kdfKey, c, kdfString, type.keySize >> 3));
     }
 
     /**
-     * Derives a IvParameterSpec of the specified type from the given key using the provided class 
+     * Derives a IvParameterSpec of the specified type from the given key using the provided class
      * name and kdfString
      * @param kdfKey The key to derive from
-     * @param c Class name to use in derivation 
+     * @param c Class name to use in derivation
      * @param kdfString String to use in derivation
      * @param ivType The type of IV to derive
      * @return The derived IV as an IvParameterSpec
      * @throws InvalidKeyException
      */
-    public static IvParameterSpec deriveIvParameterSpec(SecretKey kdfKey, Class<?> c, 
+    public static IvParameterSpec deriveIvParameterSpec(SecretKey kdfKey, Class<?> c,
             String kdfString, KeyType ivType) throws InvalidKeyException{
         return getIvParameterSpec(deriveBytesTruncated(kdfKey, c, kdfString, ivType.ivSize >> 3));
     }
