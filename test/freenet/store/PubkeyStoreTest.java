@@ -17,30 +17,30 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.math.MersenneTwister;
 
 public class PubkeyStoreTest {
-	
-	@Test
-	public void testSimple() throws IOException {
-		final int keys = 10;
-		PubkeyStore pk = new PubkeyStore();
-		new RAMFreenetStore<DSAPublicKey>(pk, keys);
-		DSAGroup group = Global.DSAgroupBigA;
-		Random random = new MersenneTwister(1010101);
-		HashMap<ByteArrayWrapper, DSAPublicKey> map = new HashMap<ByteArrayWrapper, DSAPublicKey>();
-		for(int i=0;i<keys;i++) {
-			DSAPrivateKey privKey = new DSAPrivateKey(group, random);
-			DSAPublicKey key = new DSAPublicKey(group, privKey);
-			byte[] hash = key.asBytesHash();
-			ByteArrayWrapper w = new ByteArrayWrapper(hash);
-			map.put(w, key.cloneKey());
-			pk.put(hash, key, false);
-			assertTrue(pk.fetch(hash, false, false, null).equals(key));
-		}
-		int x = 0;
-		for(Map.Entry<ByteArrayWrapper, DSAPublicKey> entry : map.entrySet()) {
-			x++;
-			assertTrue(pk.fetch(entry.getKey().get(), false, false, null).equals(entry.getValue()));
-		}
-		assert(x == keys);
-	}
+
+    @Test
+    public void testSimple() throws IOException {
+        final int keys = 10;
+        PubkeyStore pk = new PubkeyStore();
+        new RAMFreenetStore<DSAPublicKey>(pk, keys);
+        DSAGroup group = Global.DSAgroupBigA;
+        Random random = new MersenneTwister(1010101);
+        HashMap<ByteArrayWrapper, DSAPublicKey> map = new HashMap<ByteArrayWrapper, DSAPublicKey>();
+        for(int i=0;i<keys;i++) {
+            DSAPrivateKey privKey = new DSAPrivateKey(group, random);
+            DSAPublicKey key = new DSAPublicKey(group, privKey);
+            byte[] hash = key.asBytesHash();
+            ByteArrayWrapper w = new ByteArrayWrapper(hash);
+            map.put(w, key.cloneKey());
+            pk.put(hash, key, false);
+            assertTrue(pk.fetch(hash, false, false, null).equals(key));
+        }
+        int x = 0;
+        for(Map.Entry<ByteArrayWrapper, DSAPublicKey> entry : map.entrySet()) {
+            x++;
+            assertTrue(pk.fetch(entry.getKey().get(), false, false, null).equals(entry.getValue()));
+        }
+        assert(x == keys);
+    }
 
 }

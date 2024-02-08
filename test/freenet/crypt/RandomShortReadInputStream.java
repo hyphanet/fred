@@ -7,9 +7,9 @@ import java.util.Random;
 
 /** Takes an OutputStream and randomly truncates its reads */
 public class RandomShortReadInputStream extends FilterInputStream {
-    
+
     private final Random random;
-    
+
     RandomShortReadInputStream(InputStream is, Random random) {
         super(is);
         this.random = random;
@@ -19,12 +19,12 @@ public class RandomShortReadInputStream extends FilterInputStream {
     public int read() throws IOException {
         return in.read();
     }
-    
+
     @Override
     public int read(byte[] buf) throws IOException {
         return read(buf, 0, buf.length);
     }
-    
+
     @Override
     public int read(byte[] buf, int offset, int length) throws IOException {
         if(length > 3 && random.nextBoolean()) {

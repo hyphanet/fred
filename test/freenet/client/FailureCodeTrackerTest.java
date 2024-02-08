@@ -18,7 +18,7 @@ public class FailureCodeTrackerTest {
         testSize(false);
         testSize(true);
     }
-    
+
     public void testSize(boolean insert) throws IOException {
         FailureCodeTracker f = new FailureCodeTracker(insert);
         int fixedLength = FailureCodeTracker.getFixedLength(insert);

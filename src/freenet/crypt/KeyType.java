@@ -4,8 +4,8 @@
 package freenet.crypt;
 
 /**
- * Keeps track of keysizes, ivsizes, and names of keygen algorithm names for all of the one-way and 
- * symmetric encryption schemes available to Freenet. 
+ * Keeps track of keysizes, ivsizes, and names of keygen algorithm names for all of the one-way and
+ * symmetric encryption schemes available to Freenet.
  * @author unixninja92
  *
  */

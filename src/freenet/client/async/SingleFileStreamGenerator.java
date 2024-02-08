@@ -18,45 +18,45 @@ import freenet.support.io.FileUtil;
 /**Writes a <code>Bucket</code> to an output stream.*/
 public class SingleFileStreamGenerator implements StreamGenerator {
 
-	final private Bucket bucket;
-	final private boolean persistent;
+    final private Bucket bucket;
+    final private boolean persistent;
 
         private static volatile boolean logMINOR;
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+            @Override
+            public void shouldUpdate(){
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
 
-	SingleFileStreamGenerator(Bucket bucket, boolean persistent) {
-		this.bucket = bucket;
-		this.persistent = persistent;
-	}
+    SingleFileStreamGenerator(Bucket bucket, boolean persistent) {
+        this.bucket = bucket;
+        this.persistent = persistent;
+    }
 
-	@Override
-	public void writeTo(OutputStream os, ClientContext context) throws IOException {
-		try (Bucket b = this.bucket) {
-			if(logMINOR) {
-				Logger.minor(this, "Generating Stream");
-			}
-			try (
-				OutputStream out = os;
-				InputStream data = b.getInputStream()
-			) {
-				FileUtil.copy(data, out, -1);
-			}
-			if(logMINOR) {
-				Logger.minor(this, "Stream completely generated");
-			}
-		}
-	}
+    @Override
+    public void writeTo(OutputStream os, ClientContext context) throws IOException {
+        try (Bucket b = this.bucket) {
+            if(logMINOR) {
+                Logger.minor(this, "Generating Stream");
+            }
+            try (
+                OutputStream out = os;
+                InputStream data = b.getInputStream()
+            ) {
+                FileUtil.copy(data, out, -1);
+            }
+            if(logMINOR) {
+                Logger.minor(this, "Stream completely generated");
+            }
+        }
+    }
 
-	@Override
-	public long size() {
-		return bucket.size();
-	}
+    @Override
+    public long size() {
+        return bucket.size();
+    }
 
 }

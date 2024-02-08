@@ -12,12 +12,12 @@ import freenet.support.WaitableExecutor;
 import freenet.support.io.NativeThread;
 
 public class PersistentJobRunnerImplTest {
-    
+
     final WaitableExecutor exec = new WaitableExecutor(new PooledExecutor());
     final Ticker ticker = new CheatingTicker(exec);
     final JobRunner jobRunner;
     final ClientContext context;
-    
+
     public PersistentJobRunnerImplTest() {
         jobRunner = new JobRunner(exec, ticker, 1000);
         context = new ClientContext(0, null, exec, null, null, null, null, null, null, null, null, ticker, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
@@ -26,7 +26,7 @@ public class PersistentJobRunnerImplTest {
         exec.waitForIdle();
         jobRunner.grabHasCheckpointed();
     }
-    
+
     private class WakeableJob implements PersistentJob {
         private boolean wake;
         private boolean started;
@@ -49,16 +49,16 @@ public class PersistentJobRunnerImplTest {
             }
             return false;
         }
-        
+
         public synchronized void wakeUp() {
             wake = true;
             notifyAll();
         }
-        
+
         public synchronized boolean started() {
             return started;
         }
-        
+
         public synchronized boolean finished() {
             return finished;
         }
@@ -72,11 +72,11 @@ public class PersistentJobRunnerImplTest {
                 }
             }
         }
-        
+
     }
-    
+
     private class JobRunner extends PersistentJobRunnerImpl {
-        
+
         private boolean hasCheckpointed;
 
         public JobRunner(Executor executor, Ticker ticker, long interval) {
@@ -95,7 +95,7 @@ public class PersistentJobRunnerImplTest {
             hasCheckpointed = true;
             notifyAll();
         }
-        
+
         public synchronized boolean grabHasCheckpointed() {
             boolean ret = hasCheckpointed;
             hasCheckpointed = false;
@@ -103,13 +103,13 @@ public class PersistentJobRunnerImplTest {
         }
 
     }
-    
+
     private class WaitAndCheckpoint implements Runnable {
 
         private final JobRunner jobRunner;
         private boolean started;
         private boolean finished;
-        
+
         public WaitAndCheckpoint(JobRunner jobRunner2) {
             jobRunner = jobRunner2;
         }
@@ -136,7 +136,7 @@ public class PersistentJobRunnerImplTest {
         public synchronized boolean hasStarted() {
             return started;
         }
-        
+
         public synchronized void waitForFinished() {
             while(!finished) {
                 try {
@@ -156,9 +156,9 @@ public class PersistentJobRunnerImplTest {
                 }
             }
         }
-        
+
     }
-    
+
     @Test
     public void testWaitForCheckpoint() throws PersistenceDisabledException {
         jobRunner.onLoading();
@@ -172,7 +172,7 @@ public class PersistentJobRunnerImplTest {
         checkpointer.waitForFinished();
         assertTrue(w.finished());
     }
-    
+
     @Test
     public void testDisabledCheckpointing() throws PersistenceDisabledException {
         jobRunner.setCheckpointASAP();
@@ -182,7 +182,7 @@ public class PersistentJobRunnerImplTest {
         assertFalse(jobRunner.mustCheckpoint());
         jobRunner.setCheckpointASAP();
         assertFalse(jobRunner.mustCheckpoint());
-        
+
         // Run a job which will request a checkpoint.
         jobRunner.queue(new PersistentJob() {
 
@@ -190,7 +190,7 @@ public class PersistentJobRunnerImplTest {
             public boolean run(ClientContext context) {
                 return true;
             }
-            
+
         }, NativeThread.NORM_PRIORITY);
         // Wait for the job to complete.
         exec.waitForIdle();

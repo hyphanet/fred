@@ -19,12 +19,12 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
-/** Top level class for a splitfile insert. Note that Storage is not persistent, it will be 
+/** Top level class for a splitfile insert. Note that Storage is not persistent, it will be
  * recreated here on resume, like in splitfile fetches. The actual status is stored in a RAF.
  * @author toad
  */
 public class SplitFileInserter implements ClientPutState, Serializable, SplitFileInserterStorageCallback {
-    
+
     private static volatile boolean logMINOR;
     private static volatile boolean logDEBUG;
     static {
@@ -45,7 +45,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     private final boolean freeData;
     /** The RAF that stores check blocks and status info, used and created by storage. */
     private final LockableRandomAccessBuffer raf;
-    /** Stores the state of the insert and does most of the work. 
+    /** Stores the state of the insert and does most of the work.
      * Created in onResume() or in the constructor, so must be volatile. */
     private transient volatile SplitFileInserterStorage storage;
     /** Actually does the insert.
@@ -60,14 +60,14 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     /** Insert settings */
     final InsertContext ctx;
     private transient boolean resumed;
-    
+
     SplitFileInserter(boolean persistent, BaseClientPutter parent, PutCompletionCallback cb,
-            LockableRandomAccessBuffer originalData, boolean freeData, InsertContext ctx, 
-            ClientContext context, long decompressedLength, COMPRESSOR_TYPE compressionCodec, 
-            ClientMetadata meta, boolean isMetadata, ARCHIVE_TYPE archiveType, 
-            byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, byte[] hashThisLayerOnly, 
-            HashResult[] hashes, boolean topDontCompress, int topRequiredBlocks, 
-            int topTotalBlocks, long origDataSize, long origCompressedDataSize, boolean realTime, 
+            LockableRandomAccessBuffer originalData, boolean freeData, InsertContext ctx,
+            ClientContext context, long decompressedLength, COMPRESSOR_TYPE compressionCodec,
+            ClientMetadata meta, boolean isMetadata, ARCHIVE_TYPE archiveType,
+            byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, byte[] hashThisLayerOnly,
+            HashResult[] hashes, boolean topDontCompress, int topRequiredBlocks,
+            int topTotalBlocks, long origDataSize, long origCompressedDataSize, boolean realTime,
             Object token) throws InsertException {
         this.persistent = persistent;
         this.parent = parent;
@@ -76,14 +76,14 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
         this.context = context;
         this.freeData = freeData;
         try {
-            storage = new SplitFileInserterStorage(originalData, decompressedLength, this, 
-                    compressionCodec, meta, isMetadata, archiveType, 
-                    context.getRandomAccessBufferFactory(persistent), persistent, 
+            storage = new SplitFileInserterStorage(originalData, decompressedLength, this,
+                    compressionCodec, meta, isMetadata, archiveType,
+                    context.getRandomAccessBufferFactory(persistent), persistent,
                     ctx, splitfileCryptoAlgorithm, splitfileCryptoKey, hashThisLayerOnly, hashes,
                     context.tempBucketFactory /* only used for temporaries within constructor */,
                     new CRCChecksumChecker(), context.fastWeakRandom, context.memoryLimitedJobRunner,
-                    context.getJobRunner(persistent), context.ticker, 
-                    context.getChkInsertScheduler(realTime).fetchingKeys(), topDontCompress, 
+                    context.getJobRunner(persistent), context.ticker,
+                    context.getChkInsertScheduler(realTime).fetchingKeys(), topDontCompress,
                     topRequiredBlocks, topTotalBlocks, origDataSize, origCompressedDataSize);
             int mustSucceed = storage.topRequiredBlocks - topRequiredBlocks;
             parent.addMustSucceedBlocks(mustSucceed);
@@ -135,9 +135,9 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
         try {
             raf.onResume(context);
             originalData.onResume(context);
-            this.storage = new SplitFileInserterStorage(raf, originalData, this, context.fastWeakRandom, 
+            this.storage = new SplitFileInserterStorage(raf, originalData, this, context.fastWeakRandom,
                     context.memoryLimitedJobRunner, context.getJobRunner(true), context.ticker,
-                    context.getChkInsertScheduler(realTime).fetchingKeys(), context.persistentFG, 
+                    context.getChkInsertScheduler(realTime).fetchingKeys(), context.persistentFG,
                     context.persistentFileTracker, context.getPersistentMasterSecret());
             storage.onResume(context);
             this.sender = new SplitFileInserterSender(this, storage);
@@ -193,7 +193,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     public void onHasKeys() {
         if(ctx.earlyEncode || ctx.getCHKOnly) {
             context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
-                
+
                 @Override
                 public boolean run(ClientContext context) {
                     try {
@@ -208,7 +208,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
                     }
                     return false;
                 }
-                
+
             });
         }
     }
@@ -232,7 +232,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
                     originalData.free();
                 return true;
             }
-            
+
         });
     }
 
@@ -241,7 +241,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     }
 
     protected void reportMetadata(Metadata metadata) {
-        // Splitfile insert is always reportMetadataOnly, i.e. it always passes the metadata back 
+        // Splitfile insert is always reportMetadataOnly, i.e. it always passes the metadata back
         // to the parent SingleFileInserter, which will write it to a Bucket and probably insert it.
         cb.onMetadata(metadata, this, context);
     }
@@ -272,7 +272,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     public void onInsertedBlock() {
         parent.completedBlock(false, context);
     }
-    
+
     @Override
     public void onShutdown(ClientContext context) {
         storage.onShutdown(context);

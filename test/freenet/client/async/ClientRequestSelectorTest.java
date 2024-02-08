@@ -60,7 +60,7 @@ import freenet.support.io.TempBucketFactory;
 import freenet.support.io.TrivialPersistentFileTracker;
 
 public class ClientRequestSelectorTest {
-    
+
     final LockableRandomAccessBufferFactory smallRAFFactory = new ByteArrayRandomAccessBufferFactory();
     final FilenameGenerator fg;
     final PersistentFileTracker persistentFileTracker;
@@ -82,10 +82,10 @@ public class ClientRequestSelectorTest {
         public byte[] saltKey(Key key) {
             return key.getRoutingKey();
         }
-        
+
     };
     private final FreenetURI URI;
-    
+
     public ClientRequestSelectorTest() throws IOException {
         dir = new File("split-file-inserter-storage-test");
         dir.mkdir();
@@ -105,13 +105,13 @@ public class ClientRequestSelectorTest {
         jobRunner = new DummyJobRunner(executor, null);
         URI = FreenetURI.generateRandomCHK(r);
     }
-    
+
     class MyCallback implements SplitFileInserterStorageCallback {
-        
+
         MyCallback(SendableInsert sender) {
             this.sender = sender;
         }
-        
+
         private boolean finishedEncode;
         private boolean hasKeys;
         private boolean succeededInsert;
@@ -130,12 +130,12 @@ public class ClientRequestSelectorTest {
             hasKeys = true;
             notifyAll();
         }
-        
+
         @Override
         public void encodingProgress() {
             // Ignore.
         }
-        
+
         private void checkFailed() throws InsertException {
             if(failed != null)
                 throw failed;
@@ -169,7 +169,7 @@ public class ClientRequestSelectorTest {
             this.metadata = metadata;
             notifyAll();
         }
-        
+
         public synchronized Metadata waitForSucceededInsert() throws InsertException {
             while(!succeededInsert) {
                 checkFailed();
@@ -212,7 +212,7 @@ public class ClientRequestSelectorTest {
         }
 
     }
-    
+
     private HashResult[] getHashes(LockableRandomAccessBuffer data) throws IOException {
         InputStream is = new RAFInputStream(data, 0, data.size());
         MultiHashInputStream hashStream = new MultiHashInputStream(is, HashType.SHA256.bitmask);
@@ -227,7 +227,7 @@ public class ClientRequestSelectorTest {
         BucketTools.fill(thing, random, 0, size);
         return new ReadOnlyRandomAccessBuffer(thing);
     }
-    
+
     class NullSendableInsert extends SendableInsert {
 
         public NullSendableInsert(boolean persistent, boolean realTimeFlag) {
@@ -320,9 +320,9 @@ public class ClientRequestSelectorTest {
         public boolean isSSK() {
             return false;
         }
-        
+
     }
-    
+
     @Test
     public void testSmallSplitfileChooseCompletion() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
@@ -335,8 +335,8 @@ public class ClientRequestSelectorTest {
         context.maxInsertRetries = 2;
         ClientRequestSelector keys = new ClientRequestSelector(true, false, false, null);
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
-                new ClientMetadata(), false, null, smallRAFFactory, false, context, 
-                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                new ClientMetadata(), false, null, smallRAFFactory, false, context,
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker,
                 r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
@@ -375,5 +375,5 @@ public class ClientRequestSelectorTest {
     }
 
 
-    
+
 }

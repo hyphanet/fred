@@ -42,328 +42,328 @@ import freenet.support.io.ResumeFailedException;
  *
  * TODO persistence
  * TODO add a MAX_SIZE for the final container(file)
- * 
+ *
  * @author saces
- * 
+ *
  */
 public class ContainerInserter implements ClientPutState, Serializable {
 
     private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;
-	private static volatile boolean logDEBUG;
+    private static volatile boolean logDEBUG;
 
-	static {
-		Logger.registerClass(ContainerInserter.class);
-	}
+    static {
+        Logger.registerClass(ContainerInserter.class);
+    }
 
-	private static class ContainerElement {
-		private final Bucket data;
-		private final String targetInArchive;
-		
-		private ContainerElement(Bucket data2, String targetInArchive2) {
-			data = data2;
-			targetInArchive = targetInArchive2;
-		}
-	}
+    private static class ContainerElement {
+        private final Bucket data;
+        private final String targetInArchive;
 
-	private ArrayList<ContainerElement> containerItems;
+        private ContainerElement(Bucket data2, String targetInArchive2) {
+            data = data2;
+            targetInArchive = targetInArchive2;
+        }
+    }
 
-	private final BaseClientPutter parent;
-	private final PutCompletionCallback cb;
-	private boolean cancelled;
-	private boolean finished;
-	private final boolean persistent;
-	/** See ContainerBuilder._rootDir. */
-	private final HashMap<String, Object> origMetadata;
-	private final ARCHIVE_TYPE archiveType;
-	private final FreenetURI targetURI;
-	private final Object token;
-	private final InsertContext ctx;
-	private final boolean reportMetadataOnly;
-	private final boolean dontCompress;
-	final byte[] forceCryptoKey;
-	final byte cryptoAlgorithm;
-	private final boolean realTimeFlag;
+    private ArrayList<ContainerElement> containerItems;
 
-	/**
-	 * Insert a bunch of files as single Archive with .metadata
-	 * 
-	 * @param parent2
-	 * @param cb2
-	 * @param metadata2
-	 * @param targetURI2 The caller need to clone it for persistance
-	 * @param ctx2
-	 * @param dontCompress2
-	 * @param reportMetadataOnly2
-	 * @param token2
-	 * @param archiveType2
-	 * @param freeData
-	 * @param forceCryptoKey
-	 * @param cryptoAlgorithm
-	 * @param realTimeFlag
-	 * 
-	 */
-	public ContainerInserter(
-			BaseClientPutter parent2, 
-			PutCompletionCallback cb2, 
-			HashMap<String, Object> metadata2,
-			FreenetURI targetURI2,
-			InsertContext ctx2,
-			boolean dontCompress2,
-			boolean reportMetadataOnly2,
-			Object token2,
-			ARCHIVE_TYPE archiveType2,
-			boolean freeData,
-			byte[] forceCryptoKey,
-			byte cryptoAlgorithm,
-			boolean realTimeFlag) {
-		parent = parent2;
-		cb = cb2;
-		hashCode = super.hashCode();
-		persistent = parent.persistent();
-		origMetadata = metadata2;
-		archiveType = archiveType2;
-		targetURI = targetURI2;
-		token = token2;
-		ctx = ctx2;
-		dontCompress = dontCompress2;
-		reportMetadataOnly = reportMetadataOnly2;
-		containerItems = new ArrayList<ContainerElement>();
-		this.forceCryptoKey = forceCryptoKey;
-		this.cryptoAlgorithm = cryptoAlgorithm;
-		this.realTimeFlag = realTimeFlag;
-	}
+    private final BaseClientPutter parent;
+    private final PutCompletionCallback cb;
+    private boolean cancelled;
+    private boolean finished;
+    private final boolean persistent;
+    /** See ContainerBuilder._rootDir. */
+    private final HashMap<String, Object> origMetadata;
+    private final ARCHIVE_TYPE archiveType;
+    private final FreenetURI targetURI;
+    private final Object token;
+    private final InsertContext ctx;
+    private final boolean reportMetadataOnly;
+    private final boolean dontCompress;
+    final byte[] forceCryptoKey;
+    final byte cryptoAlgorithm;
+    private final boolean realTimeFlag;
 
-	@Override
-	public void cancel(ClientContext context) {
-		synchronized(this) {
-			if(cancelled) return;
-			cancelled = true;
-		}
-		// Must call onFailure so get removeFrom()'ed
-		cb.onFailure(new InsertException(InsertExceptionMode.CANCELLED), this, context);
-	}
+    /**
+     * Insert a bunch of files as single Archive with .metadata
+     *
+     * @param parent2
+     * @param cb2
+     * @param metadata2
+     * @param targetURI2 The caller need to clone it for persistance
+     * @param ctx2
+     * @param dontCompress2
+     * @param reportMetadataOnly2
+     * @param token2
+     * @param archiveType2
+     * @param freeData
+     * @param forceCryptoKey
+     * @param cryptoAlgorithm
+     * @param realTimeFlag
+     *
+     */
+    public ContainerInserter(
+            BaseClientPutter parent2,
+            PutCompletionCallback cb2,
+            HashMap<String, Object> metadata2,
+            FreenetURI targetURI2,
+            InsertContext ctx2,
+            boolean dontCompress2,
+            boolean reportMetadataOnly2,
+            Object token2,
+            ARCHIVE_TYPE archiveType2,
+            boolean freeData,
+            byte[] forceCryptoKey,
+            byte cryptoAlgorithm,
+            boolean realTimeFlag) {
+        parent = parent2;
+        cb = cb2;
+        hashCode = super.hashCode();
+        persistent = parent.persistent();
+        origMetadata = metadata2;
+        archiveType = archiveType2;
+        targetURI = targetURI2;
+        token = token2;
+        ctx = ctx2;
+        dontCompress = dontCompress2;
+        reportMetadataOnly = reportMetadataOnly2;
+        containerItems = new ArrayList<ContainerElement>();
+        this.forceCryptoKey = forceCryptoKey;
+        this.cryptoAlgorithm = cryptoAlgorithm;
+        this.realTimeFlag = realTimeFlag;
+    }
 
-	@Override
-	public BaseClientPutter getParent() {
-		return parent;
-	}
+    @Override
+    public void cancel(ClientContext context) {
+        synchronized(this) {
+            if(cancelled) return;
+            cancelled = true;
+        }
+        // Must call onFailure so get removeFrom()'ed
+        cb.onFailure(new InsertException(InsertExceptionMode.CANCELLED), this, context);
+    }
 
-	@Override
-	public Object getToken() {
-		return token;
-	}
+    @Override
+    public BaseClientPutter getParent() {
+        return parent;
+    }
 
-	@Override
-	public void schedule(ClientContext context) throws InsertException {
-		start(context);
-	}
+    @Override
+    public Object getToken() {
+        return token;
+    }
+
+    @Override
+    public void schedule(ClientContext context) throws InsertException {
+        start(context);
+    }
 
 
-	private void start(ClientContext context) {
-		if (logDEBUG) {
-			Logger.debug(this, "Atempt to start a container inserter", new Exception("debug"));
-		}
+    private void start(ClientContext context) {
+        if (logDEBUG) {
+            Logger.debug(this, "Atempt to start a container inserter", new Exception("debug"));
+        }
 
-		makeMetadata(context);
+        makeMetadata(context);
 
-		synchronized (this) {
-			if (finished) {
-				return;
-			}
-		}
+        synchronized (this) {
+            if (finished) {
+                return;
+            }
+        }
 
-		InsertBlock block;
-		try {
-			RandomAccessBucket outputBucket = context.getBucketFactory(persistent).makeBucket(-1);
-			String mimeType;
-			try (OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream())) {
-				if (archiveType == ARCHIVE_TYPE.TAR) {
-					mimeType = createTarBucket(os);
-				} else {
-					mimeType = createZipBucket(os);
-				}
-			}
-			if (logMINOR) {
-				Logger.minor(this, "Archive size is " + outputBucket.size());
-				Logger.minor(this, "We are using " + archiveType);
-			}
+        InsertBlock block;
+        try {
+            RandomAccessBucket outputBucket = context.getBucketFactory(persistent).makeBucket(-1);
+            String mimeType;
+            try (OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream())) {
+                if (archiveType == ARCHIVE_TYPE.TAR) {
+                    mimeType = createTarBucket(os);
+                } else {
+                    mimeType = createZipBucket(os);
+                }
+            }
+            if (logMINOR) {
+                Logger.minor(this, "Archive size is " + outputBucket.size());
+                Logger.minor(this, "We are using " + archiveType);
+            }
 
-			// Now we have to insert the Archive we have generated.
+            // Now we have to insert the Archive we have generated.
 
-			// Can we just insert it, and not bother with a redirect to it?
-			// Thereby exploiting implicit manifest support, which will pick up on .metadata??
-			// We ought to be able to !!
-			block = new InsertBlock(outputBucket, new ClientMetadata(mimeType), targetURI);
-		} catch (IOException e) {
-			fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context);
-			return;
-		}
+            // Can we just insert it, and not bother with a redirect to it?
+            // Thereby exploiting implicit manifest support, which will pick up on .metadata??
+            // We ought to be able to !!
+            block = new InsertBlock(outputBucket, new ClientMetadata(mimeType), targetURI);
+        } catch (IOException e) {
+            fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context);
+            return;
+        }
 
-		boolean dc = dontCompress;
-		if (!dontCompress) {
-			dc = (archiveType == ARCHIVE_TYPE.ZIP);
-		}
+        boolean dc = dontCompress;
+        if (!dontCompress) {
+            dc = (archiveType == ARCHIVE_TYPE.ZIP);
+        }
 
-		// Treat it as a splitfile for purposes of determining reinsert count.
-		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, realTimeFlag, dc, reportMetadataOnly, token, archiveType, true, null, true, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
-		if (logMINOR) {
-			Logger.minor(this, "Inserting container: " + sfi + " for " + this);
-		}
-		cb.onTransition(this, sfi, context);
-		try {
-			sfi.schedule(context);
-		} catch (InsertException e) {
-			fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context);
-		}
-	}
+        // Treat it as a splitfile for purposes of determining reinsert count.
+        SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, realTimeFlag, dc, reportMetadataOnly, token, archiveType, true, null, true, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
+        if (logMINOR) {
+            Logger.minor(this, "Inserting container: " + sfi + " for " + this);
+        }
+        cb.onTransition(this, sfi, context);
+        try {
+            sfi.schedule(context);
+        } catch (InsertException e) {
+            fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context);
+        }
+    }
 
-	private void makeMetadata(ClientContext context) {
+    private void makeMetadata(ClientContext context) {
 
-		Bucket bucket;
-		int x = 0;
+        Bucket bucket;
+        int x = 0;
 
-		Metadata md = makeManifest(origMetadata, "");
+        Metadata md = makeManifest(origMetadata, "");
 
-		while(true) {
-			try {
-				bucket = md.toBucket(context.getBucketFactory(persistent));
-				containerItems.add(new ContainerElement(bucket, ".metadata"));
-				return;
-			} catch (MetadataUnresolvedException e) {
-				try {
-					x = resolve(e, x, null, null, context);
-				} catch (IOException e1) {
-					fail(new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null), context);
-					return;
-				}
-			} catch (IOException e) {
-				fail(new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null), context);
-				return;
-			}
-		}
-		
-	}
+        while(true) {
+            try {
+                bucket = md.toBucket(context.getBucketFactory(persistent));
+                containerItems.add(new ContainerElement(bucket, ".metadata"));
+                return;
+            } catch (MetadataUnresolvedException e) {
+                try {
+                    x = resolve(e, x, null, null, context);
+                } catch (IOException e1) {
+                    fail(new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null), context);
+                    return;
+                }
+            } catch (IOException e) {
+                fail(new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null), context);
+                return;
+            }
+        }
 
-	private int resolve(MetadataUnresolvedException e, int x, FreenetURI key, String element2, ClientContext context) throws IOException {
-		Metadata[] metas = e.mustResolve;
-		for(Metadata m: metas) {
-			try {
-				Bucket bucket = m.toBucket(context.getBucketFactory(persistent));
-				String nameInArchive = ".metadata-"+(x++);
-				containerItems.add(new ContainerElement(bucket, nameInArchive));
-				m.resolve(nameInArchive);
-			} catch (MetadataUnresolvedException e1) {
-				x = resolve(e, x, key, element2, context);
-			}
-		}
-		return x;
-	}
+    }
 
-	private void fail(InsertException e, ClientContext context) {
-		// Cancel all, then call the callback
-		synchronized(this) {
-			if(finished) return;
-			finished = true;
-		}
-		cb.onFailure(e, this, context);
-	}
+    private int resolve(MetadataUnresolvedException e, int x, FreenetURI key, String element2, ClientContext context) throws IOException {
+        Metadata[] metas = e.mustResolve;
+        for(Metadata m: metas) {
+            try {
+                Bucket bucket = m.toBucket(context.getBucketFactory(persistent));
+                String nameInArchive = ".metadata-"+(x++);
+                containerItems.add(new ContainerElement(bucket, nameInArchive));
+                m.resolve(nameInArchive);
+            } catch (MetadataUnresolvedException e1) {
+                x = resolve(e, x, key, element2, context);
+            }
+        }
+        return x;
+    }
 
-	// A persistent hashCode is helpful in debugging, and also means we can put
-	// these objects into sets etc when we need to.
-	
-	private final int hashCode;
-	
-	@Override
-	public int hashCode() {
-		return hashCode;
-	}
-	
-	/**
-	** OutputStream os will be close()d if this method returns successfully.
-	*/
-	private String createTarBucket(OutputStream os) throws IOException {
-		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
+    private void fail(InsertException e, ClientContext context) {
+        // Cancel all, then call the callback
+        synchronized(this) {
+            if(finished) return;
+            finished = true;
+        }
+        cb.onFailure(e, this, context);
+    }
 
-		try (TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os)) {
-			tarOS.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
-			TarArchiveEntry ze;
+    // A persistent hashCode is helpful in debugging, and also means we can put
+    // these objects into sets etc when we need to.
 
-			for (ContainerElement ph : containerItems) {
-				if (logMINOR)
-					Logger.minor(this, "Putting into tar: " + ph + " data length " + ph.data.size() + " name " + ph.targetInArchive);
-				ze = new TarArchiveEntry(ph.targetInArchive);
-				ze.setModTime(0);
-				long size = ph.data.size();
-				ze.setSize(size);
-				tarOS.putArchiveEntry(ze);
-				BucketTools.copyTo(ph.data, tarOS, size);
-				tarOS.closeArchiveEntry();
-			}
-		}
-		
-		return ARCHIVE_TYPE.TAR.mimeTypes[0];
-	}
-	
-	private String createZipBucket(OutputStream os) throws IOException {
-		if(logMINOR) Logger.minor(this, "Create a ZIP Bucket");
+    private final int hashCode;
 
-		try (ZipOutputStream zos = new ZipOutputStream(os)) {
-			ZipEntry ze;
+    @Override
+    public int hashCode() {
+        return hashCode;
+    }
 
-			for (ContainerElement ph : containerItems) {
-				ze = new ZipEntry(ph.targetInArchive);
-				ze.setTime(0);
-				zos.putNextEntry(ze);
-				BucketTools.copyTo(ph.data, zos, ph.data.size());
-				zos.closeEntry();
-			}
-		}
+    /**
+    ** OutputStream os will be close()d if this method returns successfully.
+    */
+    private String createTarBucket(OutputStream os) throws IOException {
+        if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 
-		return ARCHIVE_TYPE.ZIP.mimeTypes[0];
-	}
+        try (TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os)) {
+            tarOS.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+            TarArchiveEntry ze;
 
-	private Metadata makeManifest(HashMap<String, Object> manifestElements, String archivePrefix) {
-		SimpleManifestComposer smc = new Metadata.SimpleManifestComposer();
-		for (Map.Entry<String, Object> me : manifestElements.entrySet()) {
-			String name = me.getKey();
-			Object o = me.getValue();
-			if(o instanceof HashMap) {
-				@SuppressWarnings("unchecked")
-				HashMap<String,Object> hm = (HashMap<String, Object>) o;
-				HashMap<String,Object> subMap = new HashMap<String,Object>();
-				//System.out.println("Decompose: "+name+" (SubDir)");
-				smc.addItem(name, makeManifest(hm, archivePrefix+name+ '/'));
-				if(logDEBUG)
-					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+hm.size());
-			} else if (o instanceof Metadata) {
-				//already Metadata, take it as is
-				//System.out.println("Decompose: "+name+" (Metadata)");
-				smc.addItem(name, (Metadata)o);
-			} else {
-				ManifestElement element = (ManifestElement) o;
-				String mimeType = element.getMimeType();
-				ClientMetadata cm;
-				if(mimeType == null || mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
-					cm = null;
-				else
-					cm = new ClientMetadata(mimeType);
-				Metadata m;
-				if(element.targetURI != null) {
-					//System.out.println("Decompose: "+name+" (ManifestElement, Redirect)");
-					m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, element.targetURI, cm);
-				} else {
-					//System.out.println("Decompose: "+name+" (ManifestElement, Data)");
-					containerItems.add(new ContainerElement(element.getData(), archivePrefix+name));
-					m = new Metadata(DocumentType.ARCHIVE_INTERNAL_REDIRECT, null, null, archivePrefix+element.fullName, cm);
-				}
-				smc.addItem(name, m);
-			}
-		}
-		return smc.getMetadata();
-	}
-	
-	private transient boolean resumed = false;
+            for (ContainerElement ph : containerItems) {
+                if (logMINOR)
+                    Logger.minor(this, "Putting into tar: " + ph + " data length " + ph.data.size() + " name " + ph.targetInArchive);
+                ze = new TarArchiveEntry(ph.targetInArchive);
+                ze.setModTime(0);
+                long size = ph.data.size();
+                ze.setSize(size);
+                tarOS.putArchiveEntry(ze);
+                BucketTools.copyTo(ph.data, tarOS, size);
+                tarOS.closeArchiveEntry();
+            }
+        }
+
+        return ARCHIVE_TYPE.TAR.mimeTypes[0];
+    }
+
+    private String createZipBucket(OutputStream os) throws IOException {
+        if(logMINOR) Logger.minor(this, "Create a ZIP Bucket");
+
+        try (ZipOutputStream zos = new ZipOutputStream(os)) {
+            ZipEntry ze;
+
+            for (ContainerElement ph : containerItems) {
+                ze = new ZipEntry(ph.targetInArchive);
+                ze.setTime(0);
+                zos.putNextEntry(ze);
+                BucketTools.copyTo(ph.data, zos, ph.data.size());
+                zos.closeEntry();
+            }
+        }
+
+        return ARCHIVE_TYPE.ZIP.mimeTypes[0];
+    }
+
+    private Metadata makeManifest(HashMap<String, Object> manifestElements, String archivePrefix) {
+        SimpleManifestComposer smc = new Metadata.SimpleManifestComposer();
+        for (Map.Entry<String, Object> me : manifestElements.entrySet()) {
+            String name = me.getKey();
+            Object o = me.getValue();
+            if(o instanceof HashMap) {
+                @SuppressWarnings("unchecked")
+                HashMap<String,Object> hm = (HashMap<String, Object>) o;
+                HashMap<String,Object> subMap = new HashMap<String,Object>();
+                //System.out.println("Decompose: "+name+" (SubDir)");
+                smc.addItem(name, makeManifest(hm, archivePrefix+name+ '/'));
+                if(logDEBUG)
+                    Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+hm.size());
+            } else if (o instanceof Metadata) {
+                //already Metadata, take it as is
+                //System.out.println("Decompose: "+name+" (Metadata)");
+                smc.addItem(name, (Metadata)o);
+            } else {
+                ManifestElement element = (ManifestElement) o;
+                String mimeType = element.getMimeType();
+                ClientMetadata cm;
+                if(mimeType == null || mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
+                    cm = null;
+                else
+                    cm = new ClientMetadata(mimeType);
+                Metadata m;
+                if(element.targetURI != null) {
+                    //System.out.println("Decompose: "+name+" (ManifestElement, Redirect)");
+                    m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, element.targetURI, cm);
+                } else {
+                    //System.out.println("Decompose: "+name+" (ManifestElement, Data)");
+                    containerItems.add(new ContainerElement(element.getData(), archivePrefix+name));
+                    m = new Metadata(DocumentType.ARCHIVE_INTERNAL_REDIRECT, null, null, archivePrefix+element.fullName, cm);
+                }
+                smc.addItem(name, m);
+            }
+        }
+        return smc.getMetadata();
+    }
+
+    private transient boolean resumed = false;
 
     @Override
     public void onResume(ClientContext context) throws InsertException, ResumeFailedException {
@@ -382,7 +382,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
         resumeMetadata(origMetadata, context);
         // Do not call start(). start() immediately transitions to another state.
     }
-    
+
     @SuppressWarnings("unchecked")
     public static void resumeMetadata(Map<String, Object> map, ClientContext context) throws ResumeFailedException {
         Map<String, Object> manifestElements = map;
