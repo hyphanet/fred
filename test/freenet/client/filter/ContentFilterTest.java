@@ -113,15 +113,15 @@ public class ContentFilterTest {
 
     private static final String SPAN_WITH_STYLE = "<span style=\"font-family: verdana, sans-serif; color: red;\">";
 
-	private static final String HTML5_TAGS = "<article><details><summary>TLDR</summary><center>Too Long Di<wbr />dn’t Read</center></details></article>";
+    private static final String HTML5_TAGS = "<article><details><summary>TLDR</summary><center>Too Long Di<wbr />dn’t Read</center></details></article>";
 
-	private static final String BASE_HREF = "<base href=\"/"+BASE_KEY+"\">";
-	private static final String BAD_BASE_HREF = "<base href=\"/\">";
-	private static final String BAD_BASE_HREF2 = "<base href=\"//www.google.com\">";
-	private static final String BAD_BASE_HREF3 = "<base>";
-	private static final String BAD_BASE_HREF4 = "<base id=\"blah\">";
-	private static final String BAD_BASE_HREF5 = "<base href=\"http://www.google.com/\">";
-	private static final String DELETED_BASE_HREF = "<!-- deleted invalid base href -->";
+    private static final String BASE_HREF = "<base href=\"/"+BASE_KEY+"\">";
+    private static final String BAD_BASE_HREF = "<base href=\"/\">";
+    private static final String BAD_BASE_HREF2 = "<base href=\"//www.google.com\">";
+    private static final String BAD_BASE_HREF3 = "<base>";
+    private static final String BAD_BASE_HREF4 = "<base id=\"blah\">";
+    private static final String BAD_BASE_HREF5 = "<base href=\"http://www.google.com/\">";
+    private static final String DELETED_BASE_HREF = "<!-- deleted invalid base href -->";
 
     // From CSS spec
 
@@ -274,8 +274,8 @@ public class ContentFilterTest {
             return s;
         }
 
-		MatcherAssert.assertThat(s, startsWith("<head>"));
-		MatcherAssert.assertThat(s, endsWith("</head>"));
+        MatcherAssert.assertThat(s, startsWith("<head>"));
+        MatcherAssert.assertThat(s, endsWith("</head>"));
 
         s = s.substring("<head>".length());
         s = s.substring(0, s.length() - "</head>".length());

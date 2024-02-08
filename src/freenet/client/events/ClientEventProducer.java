@@ -18,7 +18,7 @@ public interface ClientEventProducer {
      * @param ce  the ClientEvent to raise
      */
     void produceEvent(ClientEvent ce, ClientContext context);
-        
+
     /**
      * Adds an EventListener that will receive all events produced
      * by the implementing object.

@@ -35,18 +35,18 @@ import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
 public class EncryptedRandomAccessBufferTest {
-    private final static EncryptedRandomAccessBufferType[] types = 
+    private final static EncryptedRandomAccessBufferType[] types =
             EncryptedRandomAccessBufferType.values();
     private final static byte[] message = "message".getBytes(StandardCharsets.UTF_8);
     private final static MasterSecret secret = new MasterSecret();
     private final static long falseMagic = 0x2c158a6c8882ffd3L;
-    
+
     static{
         Security.addProvider(new BouncyCastleProvider());
     }
-    
+
     @Rule public ExpectedException thrown= ExpectedException.none();
-    
+
     @Test
     public void testSuccesfulRoundTrip() throws IOException, GeneralSecurityException{
         for(EncryptedRandomAccessBufferType type: types){
@@ -60,7 +60,7 @@ public class EncryptedRandomAccessBufferTest {
             assertArrayEquals(message, result);
         }
     }
-    
+
     @Test
     public void testSuccesfulRoundTripReadHeader() throws IOException, GeneralSecurityException{
         for(EncryptedRandomAccessBufferType type: types){
@@ -77,7 +77,7 @@ public class EncryptedRandomAccessBufferTest {
             assertArrayEquals(message, result);
         }
     }
-    
+
     @Test
     public void testWrongERATType() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
@@ -87,12 +87,12 @@ public class EncryptedRandomAccessBufferTest {
         ByteArrayRandomAccessBuffer barat2 = new ByteArrayRandomAccessBuffer(bytes);
         thrown.expect(IOException.class);
         thrown.expectMessage("This is not an EncryptedRandomAccessBuffer"); // Different header lengths.
-        EncryptedRandomAccessBuffer erat2 = new EncryptedRandomAccessBuffer(types[1], barat2, 
+        EncryptedRandomAccessBuffer erat2 = new EncryptedRandomAccessBuffer(types[1], barat2,
                 secret, false);
     }
-    
+
     @Test
-    public void testUnderlyingRandomAccessThingTooSmall() 
+    public void testUnderlyingRandomAccessThingTooSmall()
             throws GeneralSecurityException, IOException {
         byte[] bytes = new byte[10];
         ByteArrayRandomAccessBuffer barat = new ByteArrayRandomAccessBuffer(bytes);
@@ -101,7 +101,7 @@ public class EncryptedRandomAccessBufferTest {
                 + "footer.");
         EncryptedRandomAccessBuffer erat = new EncryptedRandomAccessBuffer(types[0], barat, secret, true);
     }
-    
+
     @Test
     public void testWrongMagic() throws IOException, GeneralSecurityException{
         byte[] bytes = new byte[100];
@@ -115,7 +115,7 @@ public class EncryptedRandomAccessBufferTest {
         thrown.expectMessage("This is not an EncryptedRandomAccessBuffer!");
         EncryptedRandomAccessBuffer erat2 = new EncryptedRandomAccessBuffer(types[0], barat2, secret, false);
     }
-    
+
     @Test
     public void testWrongMasterSecret() throws IOException, GeneralSecurityException{
         byte[] bytes = new byte[100];
@@ -125,34 +125,34 @@ public class EncryptedRandomAccessBufferTest {
         ByteArrayRandomAccessBuffer barat2 = new ByteArrayRandomAccessBuffer(bytes);
         thrown.expect(GeneralSecurityException.class);
         thrown.expectMessage("MAC is incorrect");
-        EncryptedRandomAccessBuffer erat2 = new EncryptedRandomAccessBuffer(types[0], barat2, 
+        EncryptedRandomAccessBuffer erat2 = new EncryptedRandomAccessBuffer(types[0], barat2,
                 new MasterSecret(), false);
     }
-    
+
     @Test (expected = NullPointerException.class)
-    public void testEncryptedRandomAccessThingNullInput1() 
+    public void testEncryptedRandomAccessThingNullInput1()
             throws GeneralSecurityException, IOException {
         byte[] bytes = new byte[10];
         ByteArrayRandomAccessBuffer barat = new ByteArrayRandomAccessBuffer(bytes);
         EncryptedRandomAccessBuffer erat = new EncryptedRandomAccessBuffer(null, barat, secret, true);
     }
-    
+
     @Test (expected = NullPointerException.class)
-    public void testEncryptedRandomAccessThingNullByteArray() 
+    public void testEncryptedRandomAccessThingNullByteArray()
             throws GeneralSecurityException, IOException {
         ByteArrayRandomAccessBuffer barat = new ByteArrayRandomAccessBuffer(null);
         EncryptedRandomAccessBuffer erat = new EncryptedRandomAccessBuffer(types[0], barat, secret, true);
     }
-    
+
     @Test (expected = NullPointerException.class)
-    public void testEncryptedRandomAccessThingNullBARAT() 
+    public void testEncryptedRandomAccessThingNullBARAT()
             throws GeneralSecurityException, IOException {
         ByteArrayRandomAccessBuffer barat = null;
         EncryptedRandomAccessBuffer erat = new EncryptedRandomAccessBuffer(types[0], barat, secret, true);
     }
-    
+
     @Test (expected = NullPointerException.class)
-    public void testEncryptedRandomAccessThingNullInput3() 
+    public void testEncryptedRandomAccessThingNullInput3()
             throws GeneralSecurityException, IOException {
         byte[] bytes = new byte[10];
         ByteArrayRandomAccessBuffer barat = new ByteArrayRandomAccessBuffer(bytes);
@@ -177,7 +177,7 @@ public class EncryptedRandomAccessBufferTest {
         thrown.expectMessage("Cannot read before zero");
         erat.pread(-1, result, 0, 20);
     }
-    
+
     @Test
     public void testPreadFileOffsetTooBig() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
@@ -191,7 +191,7 @@ public class EncryptedRandomAccessBufferTest {
                 (offset+len)+" on block length "+erat.size());
         erat.pread(offset, result, 0, len);
     }
-    
+
     @Test
     public void testPwriteFileOffsetTooSmall() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
@@ -202,7 +202,7 @@ public class EncryptedRandomAccessBufferTest {
         thrown.expectMessage("Cannot read before zero");
         erat.pwrite(-1, result, 0, 20);
     }
-    
+
     @Test
     public void testPwriteFileOffsetTooBig() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
@@ -251,14 +251,14 @@ public class EncryptedRandomAccessBufferTest {
                     + " be written to.");
         erat.pwrite(0, result, 0, 20);
     }
-    
+
     private File base = new File("tmp.encrypted-random-access-thing-test");
-    
+
     @Before
     public void setUp() {
         base.mkdir();
     }
-    
+
     @After
     public void tearDown() {
         FileUtil.removeAll(base);
@@ -283,7 +283,7 @@ public class EncryptedRandomAccessBufferTest {
         eraf.close();
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(baos.toByteArray()));
         ClientContext context = new ClientContext(0, null, null, null, null, null, null, null, null,
-                null, r, null, null, null, null, null, null, null, null, null, null, null, null, 
+                null, r, null, null, null, null, null, null, null, null, null, null, null, null,
                 null, null, null, null);
         context.setPersistentMasterSecret(secret);
         EncryptedRandomAccessBuffer restored = (EncryptedRandomAccessBuffer) BucketTools.restoreRAFFrom(dis, context.persistentFG, context.persistentFileTracker, secret);
@@ -295,7 +295,7 @@ public class EncryptedRandomAccessBufferTest {
         restored.close();
         restored.free();
     }
-    
+
     @Test
     public void testSerialize() throws IOException, StorageFormatException, ResumeFailedException, GeneralSecurityException, ClassNotFoundException {
         File tempFile = File.createTempFile("test-storeto", ".tmp", base);
@@ -314,7 +314,7 @@ public class EncryptedRandomAccessBufferTest {
         oos.close();
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(baos.toByteArray()));
         ClientContext context = new ClientContext(0, null, null, null, null, null, null, null, null,
-                null, r, null, null, null, null, null, null, null, null, null, null, null, null, 
+                null, r, null, null, null, null, null, null, null, null, null, null, null, null,
                 null, null, null, null);
         context.setPersistentMasterSecret(secret);
         ObjectInputStream ois = new ObjectInputStream(dis);
@@ -328,5 +328,5 @@ public class EncryptedRandomAccessBufferTest {
         restored.close();
         restored.free();
     }
-    
+
 }

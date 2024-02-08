@@ -21,9 +21,9 @@ import freenet.support.api.Bucket;
  * - a fred plugin which provides its services by a FCP server.<br>
  * - a client application which uses those services. The client may be a plugin as well, or be
  *   connected by a networked FCP connection.<br><br>
- * 
+ *
  * <h1>How to use this properly</h1><br>
- * 
+ *
  * You can read the following JavaDoc for a nice overview of how to use this properly from the
  * perspective of your server or client implementation:<br>
  * - {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}<br>
@@ -32,12 +32,12 @@ import freenet.support.api.Bucket;
  * - {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}<br>
  * - {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}<br>
  * - {@link FCPPluginMessage}<br><br>
- * 
+ *
  * <h1>Debugging</h1><br>
- * 
+ *
  * You can configure the {@link Logger} to log "freenet.clients.fcp.FCPPluginConnection:DEBUG" to
  * cause logging of all sent and received messages.<br>
- * This is usually done on the Freenet web interface at Configuration / Logs / Detailed priority 
+ * This is usually done on the Freenet web interface at Configuration / Logs / Detailed priority
  * thresholds.<br>
  * ATTENTION: The log entries will appear at the time when the messages were queued for sending, not
  * when they were delivered. Delivery usually happens in a separate thread. Thus, the relative order
@@ -45,8 +45,8 @@ import freenet.support.api.Bucket;
  * If you need to know the order of arrival, add logging to your message handler. Also don't forget
  * that {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)} will not deliver replies
  * to the message handler but only return them instead.<br><br>
- * 
- * 
+ *
+ *
  * <h1>Connection lifecycle</h1>
  * <h2>Intra-node FCP - server and client both running within the same node as plugin</h2>
  * The client plugin dictates connection and disconnection. Connections are opened by it via
@@ -68,7 +68,7 @@ import freenet.support.api.Bucket;
  * connection must not change during the lifetime of the connection. To ensure a permanent
  * {@link UUID} of a connection, only a single FCPPluginConnection can exist per server plugin per
  * network connection).
- * 
+ *
  * <h2>Persistence</h2>
  * <p>
  * In opposite to a FCP connection to fred itself, which is represented by
@@ -87,13 +87,13 @@ import freenet.support.api.Bucket;
  *   have to be taken to allow it to exist without a network connection - that would even be more
  *   work.<br/>
  * </p>
- * 
+ *
  * <h1>Internals</h1><br>
- * 
+ *
  * If you plan to work on the fred-side implementation of FCP plugin connections, please see the
  * "Internals" section at the implementation {@link FCPPluginConnectionImpl} of this interface.
  * Notably, the said section provides an overview of the flow of messages.<br><br>
- * 
+ *
  * @author xor (xor@freenetproject.org)
  */
 public interface FCPPluginConnection {
@@ -107,7 +107,7 @@ public interface FCPPluginConnection {
     public static enum SendDirection {
         ToServer,
         ToClient;
-        
+
         public final SendDirection invert() {
             return (this == ToServer) ? ToClient : ToServer;
         }
@@ -120,7 +120,7 @@ public interface FCPPluginConnection {
      *   handlePluginFCPMessage(FCPPluginConnection, FCPPluginMessage)}.<br>
      * - or, if existing, a thread waiting for a reply message in
      *   {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)}.<br><br>
-     * 
+     *
      * This is an <b>asynchronous</b>, non-blocking send function.<br>
      * This has the following differences to the blocking send {@link #sendSynchronous(
      * SendDirection, FCPPluginMessage, long)}:<br>
@@ -138,7 +138,7 @@ public interface FCPPluginConnection {
      *   A sendSynchronous() only returns after the message was delivered already, so by calling
      *   it multiple times in a row on the same thread, you would enforce the order of the
      *   messages arriving at the remote side.<br><br>
-     * 
+     *
      * ATTENTION: The consequences of this are:<br>
      * - Even if the function returned without throwing an {@link IOException} you nevertheless must
      *   <b>not</b> assume that the message has been sent.<br>
@@ -151,19 +151,19 @@ public interface FCPPluginConnection {
      * - You <b>can</b> send many messages in parallel by calling this many times in a row.<br>
      *   But you <b>must not</b> call this too often in a row to prevent excessive threads creation.
      *   <br><br>
-     * 
+     *
      * ATTENTION: If you plan to use this inside of message handling functions of your
      * implementations of the interfaces
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} or
      * {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}, be sure to read the JavaDoc
      * of the message handling functions first as it puts additional constraints on the usage
      * of the FCPPluginConnection they receive.
-     * 
+     *
      * @param direction
      *     Whether to send the message to the server or the client message handler.<br>
      *     You <b>can</b> use this to send messages to yourself.<br>
      *     You may use {@link #send(FCPPluginMessage)} to avoid having to specify this.<br><br>
-     * 
+     *
      * @param message
      *     You <b>must not</b> send the same message twice: This can break {@link #sendSynchronous(
      *     SendDirection, FCPPluginMessage, long)}.<br>
@@ -173,12 +173,12 @@ public interface FCPPluginConnection {
      *     TODO: Code quality: Add a flag to FCPPluginMessage which marks the message as sent and
      *     use it to log an error if someone tries to send the same message twice.
      *     <br><br>
-     * 
+     *
      * @throws IOException
      *     If the connection has been closed meanwhile.<br/>
      *     This FCPPluginConnection <b>should be</b> considered as dead once this happens, you
      *     should then discard it and obtain a fresh one.
-     * 
+     *
      *     <p><b>ATTENTION:</b> If this is not thrown, that does NOT mean that the connection is
      *     alive. Messages are sent asynchronously, so it can happen that a closed connection is not
      *     detected before this function returns.<br/>
@@ -199,17 +199,17 @@ public interface FCPPluginConnection {
      * parameter being the default direction.<br>
      * <b>Please do read its JavaDoc as it contains a very precise specification how to use it and
      * thereby also this function.</b><br><br>
-     * 
+     *
      * The default direction is determined automatically depending on whether you are a client or
      * server.<br><br>
-     * 
+     *
      * You are acting as a client, and thus by default send to the server, when you obtain a
      * FCPPluginConnection...:<br>
      * - from the return value of
      *   {@link PluginRespirator#connectToOtherPlugin(String, ClientSideFCPMessageHandler)}.<br>
      * - as parameter to your message handler callback {@link ClientSideFCPMessageHandler#
      *   handlePluginFCPMessage(FCPPluginConnection, FCPPluginMessage)}.<br><br>
-     * 
+     *
      * You are acting as a server, and thus by default send to the client, when you obtain a
      * FCPPluginConnection...:<br>
      * - as parameter to your message handler callback {@link ServerSideFCPMessageHandler#
@@ -225,7 +225,7 @@ public interface FCPPluginConnection {
      * The messages sent by this function will be delivered to the message handler
      * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      * FCPPluginMessage)} of the remote side.<br><br>
-     * 
+     *
      * This has the following differences to a regular non-synchronous
      * {@link #send(SendDirection, FCPPluginMessage)}:<br>
      * - It will <b>wait</b> for a reply message of the remote side before returning.<br>
@@ -243,7 +243,7 @@ public interface FCPPluginConnection {
      *   of the first call guarantees that the first message was delivered already.<br>
      *   Regular send() calls deploy each message in a thread. This means that the order of delivery
      *   can be different than the order of sending.<br><br>
-     * 
+     *
      * ATTENTION: This function can cause the current thread to block for a long time, while
      * bypassing the thread limit. Therefore, only use this if the desired operation at the remote
      * side is expected to execute quickly and the thread which sends the message <b>immediately</b>
@@ -261,14 +261,14 @@ public interface FCPPluginConnection {
      * the code.<br>
      * In addition to only using synchronous calls when absolutely necessary, please make sure to
      * set a timeout parameter which is as small as possible.<br><br>
-     * 
+     *
      * ATTENTION: While remembering that this function can block for a long time, you have to
      * consider that this class will <b>not</b> call {@link Thread#interrupt()} upon pending calls
-     * to this function during shutdown. You <b>must</b> keep track of threads which are executing 
+     * to this function during shutdown. You <b>must</b> keep track of threads which are executing
      * this function on your own, and call {@link Thread#interrupt()} upon them at shutdown of your
      * plugin. The interruption will then cause the function to throw {@link InterruptedException}
      * quickly, which your calling threads should obey by exiting to ensure a fast shutdown.<br><br>
-     * 
+     *
      * ATTENTION: This function can only work properly as long the message which you passed to this
      * function does contain a message identifier which does not collide with one of another
      * message.<br>
@@ -292,37 +292,37 @@ public interface FCPPluginConnection {
      * you with debugging the cause of these events, <b>not</b> to make you change your code
      * to assume that sendSynchronous does not work. For clean code, please write it in a way which
      * assumes that the function works properly.<br><br>
-     * 
+     *
      * ATTENTION: If you plan to use this inside of message handling functions of your
      * implementations of the interfaces
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} or
      * {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}, be sure to read the JavaDoc
      * of the message handling functions first as it puts additional constraints on the usage
      * of the FCPPluginConnection they receive.<br><br>
-     * 
+     *
      * @param direction
      *     Whether to send the message to the server or the client message handler.<br>
      *     You <b>can</b> use this to send messages to yourself.<br>
      *     You may use {@link #sendSynchronous(FCPPluginMessage, long)} to avoid having to specify
      *     this.<br><br>
-     * 
+     *
      * @param message
      *     <b>Must be</b> constructed using {@link FCPPluginMessage#construct(SimpleFieldSet,
      *     Bucket)} or one of its shortcuts.<br><br>
-     * 
+     *
      *     Must <b>not</b> be a reply message: This function needs determine when the remote side
      *     has finished processing the message so it knows when to return. That requires the remote
      *     side to send a reply to indicate that the FCP call is finished. Replies to replies are
      *     not allowed though (to prevent infinite bouncing).<br><br>
-     * 
+     *
      * @param timeoutNanoSeconds
      *     The function will wait for a reply to arrive for this amount of time.<br>
      *     Must be greater than 0 and below or equal to 1 minute.<br><br>
-     * 
+     *
      *     If the timeout expires, an {@link IOException} is thrown.<br>
      *     This FCPPluginConnection <b>should be</b> considered as dead once this happens, you
      *     should then discard it and obtain a fresh one.<br><br>
-     * 
+     *
      *     ATTENTION: The sending of the message is not affected by this timeout, it only affects
      *     how long we wait for a reply. The sending is done in another thread, so if your message
      *     is very large, and takes longer to transfer than the timeout grants, this function will
@@ -331,20 +331,20 @@ public interface FCPPluginConnection {
      *     before it was fully transferred. Thus, the message can arrive at the remote side even if
      *     this function has thrown, and you might receive an off-thread reply to the message in the
      *     {@link FredPluginFCPMessageHandler}.<br><br>
-     *     
+     *
      *     Notice: For convenience, use class {@link TimeUnit} to easily convert seconds,
      *     milliseconds, etc. to nanoseconds.<br><br>
-     * 
+     *
      * @return
      *     The reply {@link FCPPluginMessage} which the remote partner sent to your message.<br><br>
-     * 
+     *
      *     <b>ATTENTION</b>: Even if this function did not throw, the reply might indicate an error
      *     with the field {link FCPPluginMessage#success}: This can happen if the message was
      *     delivered but the remote message handler indicated that the FCP operation you initiated
      *     failed.<br>
      *     The fields {@link FCPPluginMessage#errorCode} and {@link FCPPluginMessage#errorMessage}
      *     might indicate the type of the error.<br><br>
-     * 
+     *
      *     This can be used to decide to retry certain operations. A practical example would be a
      *     user trying to create an account at an FCP server application:<br>
      *     - Your UI would use this function to try to create the account by FCP.<br>
@@ -382,7 +382,7 @@ public interface FCPPluginConnection {
      * {@link SendDirection} parameter being the default direction.<br>
      * <b>Please do read its JavaDoc as it contains a very precise specification how to use it and
      * thereby also this function.</b><br><br>
-     * 
+     *
      * For an explanation of how the default send direction is determined, see
      * {@link #send(FCPPluginMessage)}.
      */

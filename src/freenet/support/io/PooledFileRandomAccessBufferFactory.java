@@ -9,7 +9,7 @@ import freenet.support.api.LockableRandomAccessBufferFactory;
 
 /** Creates temporary RAFs using a FilenameGenerator. */
 public class PooledFileRandomAccessBufferFactory implements LockableRandomAccessBufferFactory {
-    
+
     private final FilenameGenerator fg;
     private final Random seedRandom;
     private volatile boolean enableCrypto;
@@ -18,7 +18,7 @@ public class PooledFileRandomAccessBufferFactory implements LockableRandomAccess
         fg = filenameGenerator;
         this.seedRandom = seedRandom;
     }
-    
+
     public void enableCrypto(boolean enable) {
         this.enableCrypto = enable;
     }

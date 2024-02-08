@@ -27,7 +27,7 @@ public final class FCPPluginMessage {
          *  nevertheless shipping this information to you as it is available anyway. */
         ACCESS_DIRECT
     };
-    
+
     /**
      * The permissions of the client which sent the messages. Null for server-to-client and
      * outgoing messages.<br>
@@ -35,20 +35,20 @@ public final class FCPPluginMessage {
      * can pass null for this in all constructors.
      */
     public final ClientPermissions permissions;
-    
+
     /**
      * The unique identifier of the message.<br>
      * Can be used by server and client to track the progress of messages.<br>
      * This especially applies to {@link FCPPluginConnection#sendSynchronous(SendDirection,
      * FCPPluginMessage, long)} which will wait for a reply with the same identifier as the
      * original message until it returns.<br><br>
-     * 
+     *
      * For reply messages, this shall be the same as the identifier of the message to which this
      * is a reply.<br>
-     * For non-reply message, this shall be a sufficiently random {@link String} to prevent 
+     * For non-reply message, this shall be a sufficiently random {@link String} to prevent
      * collisions with any previous message identifiers. The default is a random {@link UUID}, and
      * alternate implementations are recommended to use a random {@link UUID} as well.<br><br>
-     * 
+     *
      * <b>Notice:</b> Custom client implementations can chose the identifier freely when sending
      * messages, and thus violate these rules. This is highly discouraged though, as non-unique
      * identifiers make tracking messages impossible. But if a client does violate the rules and
@@ -60,24 +60,24 @@ public final class FCPPluginMessage {
      * will do so as well.
      */
     public final String identifier;
-    
+
     /**
      * Part 1 of the actual message: Human-readable parameters. Shall be small amount of data.<br>
      * Can be null for data-only or success-indicator messages.
      */
     public final SimpleFieldSet params;
-    
+
     /**
      * Part 2 of the actual message: Non-human readable, large size bulk data.<br>
      * Can be null if no large amount of data is to be transfered.
      */
     public final Bucket data;
-    
+
     /**
      * For messages which are a reply to another message, this is always non-null. It then
      * is true if the operation to which this is a reply succeeded, false if it failed.<br>
      * For non-reply messages, this is always null.<br><br>
-     * 
+     *
      * Notice: Whether this is null or non-null is used to determine the return value of
      * {@link #isReplyMessage()} - a reply message has success != null, a non-reply message has
      * success == null.
@@ -89,7 +89,7 @@ public final class FCPPluginMessage {
      * which identifies a reason for the failure in a standardized representation which software
      * can parse easily. May also be null in that case, but please try to not do that.<br>
      * For {@link #success} == null or true, this must be null.<br><br>
-     * 
+     *
      * The String shall be for programming purposes and thus <b>must</b> be alpha-numeric.<br>
      * For unclassified errors, such as Exceptions which you do not expect, use "InternalError".
      */
@@ -100,14 +100,14 @@ public final class FCPPluginMessage {
      * the problem in a human-readable, user-friendly manner. May also be null in that case, but
      * please try to not do that.<br>
      * For {@link #errorCode} == null, this must be null.<br><br>
-     * 
+     *
      * You are encouraged to provide it translated to the configured language already.<br>
      * The String shall not be used for identifying problems in programming.<br>
      * There, use {@link #errorCode}.
      * For Exceptions which you do not expect, {@link Exception#toString()} will return a
      * sufficient errorMessage (containing the name of the Exception and the localized error
      * message, or non-localized if there is no translation).<br><br>
-     * 
+     *
      * (Notice: This may only be non-null if {@link #errorCode} is non-null instead of just
      * if {@link #success} == false to ensure that a developer-friendly error signaling is
      * implemented: errorCode is designed to be easy to parse, errorMessage is designed
@@ -125,7 +125,7 @@ public final class FCPPluginMessage {
     public boolean isReplyMessage() {
         return success != null;
     }
-    
+
     /**
      * See the JavaDoc of the member variables with the same name as the parameters for an
      * explanation of the parameters.
@@ -133,27 +133,27 @@ public final class FCPPluginMessage {
     private FCPPluginMessage(ClientPermissions permissions, String identifier,
             SimpleFieldSet params, Bucket data, Boolean success, String errorCode,
             String errorMessage) {
-        
+
         // See JavaDoc of member variables with the same name for reasons of the requirements
         assert(permissions != null || permissions == null);
         assert(identifier != null);
         assert(params != null || params == null);
         assert(data != null || data == null);
         assert(success != null || success == null);
-        
+
         assert(params != null || data != null || success != null)
             : "Messages should not be empty";
-        
+
         assert(errorCode == null || (success != null && success == false))
             : "errorCode should only be provided for reply messages which indicate failure.";
-        
+
         assert(errorCode == null ||
                StringValidityChecker.isLatinLettersAndNumbersOnly(errorCode))
             : "errorCode should be alpha-numeric";
-        
+
         assert(errorMessage == null || errorCode != null)
             : "errorCode should always be provided if there is an errorMessage";
-        
+
         this.permissions = permissions;
         this.identifier = identifier;
         this.params = params;
@@ -162,22 +162,22 @@ public final class FCPPluginMessage {
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
     }
-    
+
     /**
      * For being used by server or client to construct outgoing messages.<br>
      * Those can then be passed to the send functions of {@link FCPPluginConnection} or returned in
      * the message handlers of {@link FredPluginFCPMessageHandler}.<br><br>
-     * 
-     * <b>ATTENTION</b>: Messages constructed with this constructor here are <b>not</b> reply 
+     *
+     * <b>ATTENTION</b>: Messages constructed with this constructor here are <b>not</b> reply
      * messages.<br>
      * If you are replying to a message, notably when returning a message in the message handler
      * interface implementation, you must use {@link #constructReplyMessage(FCPPluginMessage,
      * SimpleFieldSet, Bucket, boolean, String, String)} (or one of its shortcuts) instead.<br>
      * <br>
-     * 
+     *
      * See the JavaDoc of the member variables with the same name as the parameters for an
      * explanation of the parameters.<br><br>
-     * 
+     *
      * There is a shortcut to this constructor for typical choice of parameters:<br>
      * {@link #construct()}.
      */
@@ -199,7 +199,7 @@ public final class FCPPluginMessage {
      * Same as {@link #construct(SimpleFieldSet, Bucket)} with the missing parameters being:<br>
      * <code>SimpleFieldSet params = new SimpleFieldSet(shortLived = true);<br>
      * Bucket data = null;</code><br><br>
-     * 
+     *
      * <b>ATTENTION</b>: Messages constructed with this constructor here are <b>not</b> reply
      * messages.<br>
      * If you are replying to a message, notably when returning a message in the message handler
@@ -216,14 +216,14 @@ public final class FCPPluginMessage {
      * Those then can be returned from the message handler
      * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      * FCPPluginMessage)}.<br><br>
-     * 
+     *
      * See the JavaDoc of the member variables with the same name as the parameters for an
      * explanation of the parameters.<br><br>
-     * 
+     *
      * There are shortcuts to this constructor for typical choice of parameters:<br>
      * {@link #constructSuccessReply(FCPPluginMessage)}.<br>
      * {@link #constructErrorReply(FCPPluginMessage, String, String)}.<br>
-     * 
+     *
      * @throws IllegalStateException
      *     If the original message was a reply message already.<br>
      *     Replies often shall only indicate success / failure instead of triggering actual
@@ -237,12 +237,12 @@ public final class FCPPluginMessage {
     public static FCPPluginMessage constructReplyMessage(FCPPluginMessage originalMessage,
             SimpleFieldSet params, Bucket data, boolean success, String errorCode,
             String errorMessage) {
-        
+
         if(originalMessage.isReplyMessage()) {
             throw new IllegalStateException("Constructing a reply message for a message which "
                 + "was a reply message already not allowed.");
         }
-        
+
         return new FCPPluginMessage(null, originalMessage.identifier,
             params, data, success, errorCode, errorMessage);
     }
@@ -274,29 +274,29 @@ public final class FCPPluginMessage {
      */
     public static FCPPluginMessage constructErrorReply(FCPPluginMessage originalMessage,
             String errorCode, String errorMessage) {
-        
+
         return constructReplyMessage(
             originalMessage, new SimpleFieldSet(true), null, false, errorCode, errorMessage);
     }
 
     /**
      * ATTENTION: Only for being used by internal network code.<br><br>
-     * 
+     *
      * You <b>must not</b> use this for constructing outgoing messages in server or client
      * implementations.<br>
-     * 
+     *
      * This function is typically to construct incoming messages for passing them to the message
      * handling function
      * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginConnection,
      * FCPPluginMessage)}.<br><br>
-     * 
+     *
      * See the JavaDoc of the member variables with the same name as the parameters for an
      * explanation of the parameters.<br>
      */
     static FCPPluginMessage constructRawMessage(ClientPermissions permissions,
             String identifier, SimpleFieldSet params, Bucket data, Boolean success,
             String errorCode, String errorMessage) {
-        
+
         return new FCPPluginMessage(permissions, identifier, params, data, success,
             errorCode, errorMessage);
     }
@@ -309,7 +309,7 @@ public final class FCPPluginMessage {
             "; data: " + data +
             "; success: " + success +
             "; errorCode: " + errorCode +
-            "; errorMessage: " + errorMessage + 
+            "; errorMessage: " + errorMessage +
             // At the end because a SimpleFieldSet usually contains multiple line breaks.
             "; params: " + '\n' + (params != null ? params.toOrderedString() : null);
     }
