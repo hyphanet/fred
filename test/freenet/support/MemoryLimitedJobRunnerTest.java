@@ -7,17 +7,17 @@ import org.junit.Test;
 import freenet.support.io.NativeThread;
 
 public class MemoryLimitedJobRunnerTest {
-    
+
     final Executor executor = new PooledExecutor();
-    
+
     class SynchronousJob extends MemoryLimitedJob {
-        
+
         private boolean canStart;
         private boolean isStarted;
         private boolean canFinish;
         private boolean isFinished;
         private final Object completionSemaphore;
-        
+
         SynchronousJob(long size, boolean canStart, Object semaphore) {
             super(size);
             this.canStart = canStart;
@@ -74,25 +74,25 @@ public class MemoryLimitedJobRunnerTest {
                 return isFinished;
             }
         }
-        
+
         public boolean isStarted() {
             synchronized(completionSemaphore) {
                 return isStarted;
             }
         }
-        
+
         public synchronized void setCanStart() {
             if(canStart) throw new IllegalStateException();
             canStart = true;
             notify();
         }
-        
+
         public synchronized void setCanFinish() {
             if(canFinish) throw new IllegalStateException();
             canFinish = true;
             notify();
         }
-        
+
     }
 
     @Test
@@ -100,7 +100,7 @@ public class MemoryLimitedJobRunnerTest {
         innerTestQueueingSmallDelayed(1, 10, 20, false);
         innerTestQueueingSmallDelayed(1, 512, 1024, false);
     }
-    
+
     @Test
     public void testQueueingManySmallDelayed() throws InterruptedException {
         innerTestQueueingSmallDelayed(1, 10, 10, false);
@@ -109,7 +109,7 @@ public class MemoryLimitedJobRunnerTest {
         innerTestQueueingSmallDelayed(1, 1024, 512, false);
         innerTestQueueingSmallDelayed(1, 20, 1, false);
     }
-    
+
     private void innerTestQueueingSmallDelayed(int JOB_SIZE, int JOB_COUNT, int JOB_LIMIT,
             boolean startLive) throws InterruptedException {
         SynchronousJob[] jobs = new SynchronousJob[JOB_COUNT];
@@ -133,7 +133,7 @@ public class MemoryLimitedJobRunnerTest {
         waitForAllFinished(jobs, completion);
         waitForZero(runner);
     }
-    
+
     private void waitForZero(MemoryLimitedJobRunner runner) {
         while(runner.used() > 0) {
             try {
@@ -146,7 +146,7 @@ public class MemoryLimitedJobRunnerTest {
     }
 
     // FIXME start the executor immediately.
-    
+
     private void waitForAllFinished(SynchronousJob[] jobs, Object semaphore) {
         synchronized(semaphore) {
             while(true) {
@@ -195,13 +195,13 @@ public class MemoryLimitedJobRunnerTest {
     }
 
     class AsynchronousJob extends MemoryLimitedJob {
-        
+
         private boolean canStart;
         private boolean isStarted;
         private boolean canFinish;
         private boolean isFinished;
         private final Object completionSemaphore;
-        
+
         AsynchronousJob(long size, boolean canStart, Object semaphore) {
             super(size);
             this.canStart = canStart;
@@ -241,7 +241,7 @@ public class MemoryLimitedJobRunnerTest {
                     assertEquals(chunk.release(), 0);
                     checkRunner(runner);
                 }
-                
+
             });
             t.start();
             return false;
@@ -270,33 +270,33 @@ public class MemoryLimitedJobRunnerTest {
                 return isFinished;
             }
         }
-        
+
         public boolean isStarted() {
             synchronized(completionSemaphore) {
                 return isStarted;
             }
         }
-        
+
         public synchronized void setCanStart() {
             if(canStart) throw new IllegalStateException();
             canStart = true;
             notify();
         }
-        
+
         public synchronized void setCanFinish() {
             if(canFinish) throw new IllegalStateException();
             canFinish = true;
             notify();
         }
-        
+
     }
-    
+
     @Test
     public void testAsyncQueueingSmallDelayed() throws InterruptedException {
         innerTestAsyncQueueingSmallDelayed(1, 10, 20, false);
         innerTestAsyncQueueingSmallDelayed(1, 512, 1024, false);
     }
-    
+
     @Test
     public void testAsyncQueueingManySmallDelayed() throws InterruptedException {
         innerTestAsyncQueueingSmallDelayed(1, 10, 10, false);
@@ -305,7 +305,7 @@ public class MemoryLimitedJobRunnerTest {
         innerTestAsyncQueueingSmallDelayed(1, 1024, 512, false);
         innerTestAsyncQueueingSmallDelayed(1, 20, 1, false);
     }
-    
+
     private void innerTestAsyncQueueingSmallDelayed(int JOB_SIZE, int JOB_COUNT, int JOB_LIMIT,
             boolean startLive) throws InterruptedException {
         SynchronousJob[] jobs = new SynchronousJob[JOB_COUNT];

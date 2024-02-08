@@ -765,7 +765,7 @@ public class SplitFileFetcherStorageTest {
 
     @Test
     public void testMultiSegment() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException {
-        // We have to be consistent with the format, but we can in fact play with the segment sizes 
+        // We have to be consistent with the format, but we can in fact play with the segment sizes
         // to some degree.
 
         // Simplest case: Same number of blocks in each segment.

@@ -8,11 +8,11 @@ package freenet.node;
  * functionality, but it is not currently enabled in the node.
  */
 public class OpennetDisabledException extends Exception {
-	private static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -1;
     public OpennetDisabledException(Exception e) {
         super(e);
     }
-    
+
     public OpennetDisabledException(String msg) {
         super(msg);
     }

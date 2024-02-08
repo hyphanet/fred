@@ -14,31 +14,31 @@ import freenet.crypt.MasterSecret;
 import freenet.support.io.FileUtil;
 
 public class MasterKeysTest {
-    
+
     private File base = new File("tmp.master-keys-test");
-    
+
     @Before
     public void setUp() {
         FileUtil.removeAll(base);
         base.mkdir();
         MasterKeys.ITERATE_TIME = 100; // Speed up test.
     }
-    
+
     @After
     public void tearDown() {
         FileUtil.removeAll(base);
     }
-    
+
     @Test
     public void testRestartNoPassword() throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
         testRestart("");
     }
-    
+
     @Test
     public void testRestartWithPassword() throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
         testRestart("password");
     }
-    
+
     private void testRestart(String password) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
         File keysFile = new File(base, "test.master.keys");
         DummyRandomSource random = new DummyRandomSource(77391);
@@ -51,27 +51,27 @@ public class MasterKeysTest {
         assertEquals(dkey,restored.createDatabaseKey());
         assertEquals(tempfileMasterSecret, restored.getPersistentMasterSecret());
     }
-    
+
     @Test
     public void testChangePasswordEmptyToSomething() throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
         testChangePassword("", "password");
     }
-    
+
     @Test
     public void testChangePasswordEmptyToEmpty() throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
         testChangePassword("", "");
     }
-    
+
     @Test
     public void testChangePasswordSomethingToEmpty() throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
         testChangePassword("password", "");
     }
-    
+
     @Test
     public void testChangePasswordSomethingToSomething() throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
         testChangePassword("password", "new password");
     }
-    
+
     private void testChangePassword(String oldPassword, String newPassword) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
         File keysFile = new File(base, "test.master.keys");
         DummyRandomSource random = new DummyRandomSource(77391);

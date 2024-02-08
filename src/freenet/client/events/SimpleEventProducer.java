@@ -11,7 +11,7 @@ import freenet.client.async.ClientContext;
 /**
  * Event handeling for clients. SimpleEventProducer is a simple
  * ClientEventProducer implementation that can be used for others.
- * 
+ *
  * @author oskar
  **/
 public class SimpleEventProducer implements ClientEventProducer, Serializable {
@@ -21,7 +21,7 @@ public class SimpleEventProducer implements ClientEventProducer, Serializable {
 
     /**
      * Create a new SimpleEventProducer
-     * 
+     *
      **/
     public SimpleEventProducer() {
         listeners = new ArrayList<ClientEventListener>();
@@ -51,11 +51,11 @@ public class SimpleEventProducer implements ClientEventProducer, Serializable {
 
     /**
      * Sends the ClientEvent to all registered listeners of this object.
-     * 
+     *
      * Please do not change SimpleEventProducer to always produce events off-thread, it
-     * is better to run the client layer method that produces the event off-thread, because events 
+     * is better to run the client layer method that produces the event off-thread, because events
      * could be re-ordered, which matters for some events notably SimpleProgressEvent.
-     * See e.g. ClientGetter.innerNotifyClients()),  
+     * See e.g. ClientGetter.innerNotifyClients()),
      **/
     @Override
     public void produceEvent(ClientEvent ce, ClientContext context) {

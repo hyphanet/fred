@@ -23,13 +23,13 @@ import freenet.support.io.ResumeFailedException;
 
 /**
  * Interface to the low level insertion code for inserting a splitfile.
- * 
+ *
  * PERSISTENCE: Not persisted, recreated on resume by SplitFileInserter.
  * @author toad
  */
 @SuppressWarnings("serial") // Not persisted.
 public class SplitFileInserterSender extends SendableInsert {
-    
+
     final SplitFileInserter parent;
     final SplitFileInserterStorage storage;
 
@@ -114,9 +114,9 @@ public class SplitFileInserterSender extends SendableInsert {
     public long countSendableKeys(ClientContext context) {
         return storage.countSendableKeys();
     }
-    
+
     class MySendableRequestSender implements SendableRequestSender {
-        
+
         @Override
         public boolean send(NodeClientCore node, final RequestScheduler sched, ClientContext context,
                 final ChosenBlock request) {
@@ -126,13 +126,13 @@ public class SplitFileInserterSender extends SendableInsert {
                 CHKBlock block = clientBlock.getBlock();
                 final ClientCHK key = clientBlock.getClientKey();
                 context.getJobRunner(request.isPersistent()).queueNormalOrDrop(new PersistentJob() {
-                    
+
                     @Override
                     public boolean run(ClientContext context) {
                         onEncode(token, key, context);
                         return false;
                     }
-                    
+
                 });
                 if(request.localRequestOnly) {
                     try {
@@ -150,7 +150,7 @@ public class SplitFileInserterSender extends SendableInsert {
                 return true;
             } catch (final IOException e) {
                 context.getJobRunner(request.isPersistent()).queueNormalOrDrop(new PersistentJob() {
-                    
+
                     @Override
                     public boolean run(ClientContext context) {
                         try {
@@ -175,11 +175,11 @@ public class SplitFileInserterSender extends SendableInsert {
         public boolean sendIsBlocking() {
             return true;
         }
-        
+
     }
-    
+
     final MySendableRequestSender sender = new MySendableRequestSender();
-    
+
     @Override
     public SendableRequestSender getSender(ClientContext context) {
         return sender;
@@ -209,7 +209,7 @@ public class SplitFileInserterSender extends SendableInsert {
         if(getParentGrabArray() != null) return; // If change priority will unregister first.
         context.getChkInsertScheduler(parent.realTime).registerInsert(this, persistent);
     }
-    
+
     @Override
     public long getWakeupTime(ClientContext context, long now) {
         return storage.getWakeupTime(context, now);
