@@ -14,76 +14,76 @@ class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
     private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;
 
-	static {
-		Logger.registerClass(ArchiveHandlerImpl.class);
-	}
+    static {
+        Logger.registerClass(ArchiveHandlerImpl.class);
+    }
 
-	private final FreenetURI key;
-	private boolean forceRefetchArchive;
-	ARCHIVE_TYPE archiveType;
-	COMPRESSOR_TYPE compressorType;
+    private final FreenetURI key;
+    private boolean forceRefetchArchive;
+    ARCHIVE_TYPE archiveType;
+    COMPRESSOR_TYPE compressorType;
 
-	ArchiveHandlerImpl(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean forceRefetchArchive) {
-		this.key = key;
-		this.archiveType = archiveType;
-		this.compressorType = ctype;
-		this.forceRefetchArchive = forceRefetchArchive;
-	}
+    ArchiveHandlerImpl(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean forceRefetchArchive) {
+        this.key = key;
+        this.archiveType = archiveType;
+        this.compressorType = ctype;
+        this.forceRefetchArchive = forceRefetchArchive;
+    }
 
-	@Override
-	public Bucket get(String internalName, ArchiveContext archiveContext,
-			ArchiveManager manager)
-			throws ArchiveFailureException, ArchiveRestartException,
-			MetadataParseException, FetchException {
+    @Override
+    public Bucket get(String internalName, ArchiveContext archiveContext,
+            ArchiveManager manager)
+            throws ArchiveFailureException, ArchiveRestartException,
+            MetadataParseException, FetchException {
 
-		if(forceRefetchArchive) return null;
+        if(forceRefetchArchive) return null;
 
-		Bucket data;
+        Bucket data;
 
-		// Fetch from cache
-		if(logMINOR)
-			Logger.minor(this, "Checking cache: "+key+ ' ' +internalName);
-		if((data = manager.getCached(key, internalName)) != null) {
-			return data;
-		}
+        // Fetch from cache
+        if(logMINOR)
+            Logger.minor(this, "Checking cache: "+key+ ' ' +internalName);
+        if((data = manager.getCached(key, internalName)) != null) {
+            return data;
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	@Override
-	public Bucket getMetadata(ArchiveContext archiveContext,
-			ArchiveManager manager) throws ArchiveFailureException,
-			ArchiveRestartException, MetadataParseException, FetchException {
-		return get(".metadata", archiveContext, manager);
-	}
+    @Override
+    public Bucket getMetadata(ArchiveContext archiveContext,
+            ArchiveManager manager) throws ArchiveFailureException,
+            ArchiveRestartException, MetadataParseException, FetchException {
+        return get(".metadata", archiveContext, manager);
+    }
 
-	@Override
-	public void extractToCache(Bucket bucket, ArchiveContext actx,
-			String element, ArchiveExtractCallback callback,
-			ArchiveManager manager, ClientContext context) throws ArchiveFailureException,
-			ArchiveRestartException {
-		forceRefetchArchive = false; // now we don't need to force refetch any more
-		ArchiveStoreContext ctx = manager.makeContext(key, archiveType, compressorType, false);
-		manager.extractToCache(key, archiveType, compressorType, bucket, actx, ctx, element, callback, context);
-	}
+    @Override
+    public void extractToCache(Bucket bucket, ArchiveContext actx,
+            String element, ArchiveExtractCallback callback,
+            ArchiveManager manager, ClientContext context) throws ArchiveFailureException,
+            ArchiveRestartException {
+        forceRefetchArchive = false; // now we don't need to force refetch any more
+        ArchiveStoreContext ctx = manager.makeContext(key, archiveType, compressorType, false);
+        manager.extractToCache(key, archiveType, compressorType, bucket, actx, ctx, element, callback, context);
+    }
 
-	@Override
-	public ARCHIVE_TYPE getArchiveType() {
-		return archiveType;
-	}
+    @Override
+    public ARCHIVE_TYPE getArchiveType() {
+        return archiveType;
+    }
 
-	public COMPRESSOR_TYPE getCompressorType() {
-		return compressorType;
-	}
+    public COMPRESSOR_TYPE getCompressorType() {
+        return compressorType;
+    }
 
-	@Override
-	public FreenetURI getKey() {
-		return key;
-	}
+    @Override
+    public FreenetURI getKey() {
+        return key;
+    }
 
-	@Override
-	public ArchiveHandler cloneHandler() {
-		return new ArchiveHandlerImpl(key, archiveType, compressorType, forceRefetchArchive);
-	}
+    @Override
+    public ArchiveHandler cloneHandler() {
+        return new ArchiveHandlerImpl(key, archiveType, compressorType, forceRefetchArchive);
+    }
 
 }

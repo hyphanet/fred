@@ -7,7 +7,7 @@ package freenet.io.comm;
  * Callback interface for async message sending.
  */
 public interface AsyncMessageCallback {
-    
+
     /** Called when the packet actually leaves the node.
      * This DOES NOT MEAN that it has been successfully recieved
      * by the partner node (on a lossy transport).
@@ -25,7 +25,7 @@ public interface AsyncMessageCallback {
      * queued, or after it has been sent. Terminal.
      */
     public void disconnected();
-    
+
     /** Called if the packet is lost due to an internal error. */
     public void fatalError();
 }

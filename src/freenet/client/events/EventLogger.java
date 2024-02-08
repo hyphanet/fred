@@ -14,22 +14,22 @@ import freenet.support.Logger.LogLevel;
  */
 public class EventLogger implements ClientEventListener {
 
-	final LogLevel logPrio;
-	final boolean removeWithProducer;
-	
-	public EventLogger(LogLevel prio, boolean removeWithProducer) {
-		logPrio = prio;
-		this.removeWithProducer = removeWithProducer;
-	}
-	
+    final LogLevel logPrio;
+    final boolean removeWithProducer;
+
+    public EventLogger(LogLevel prio, boolean removeWithProducer) {
+        logPrio = prio;
+        this.removeWithProducer = removeWithProducer;
+    }
+
     /**
      * Logs an event
-     * 
+     *
      * @param ce
      *            The event that occured
      */
-	@Override
+    @Override
     public void receive(ClientEvent ce, ClientContext context) {
-    	Logger.logStatic(ce, ce.getDescription(), logPrio);
+        Logger.logStatic(ce, ce.getDescription(), logPrio);
     }
 }
