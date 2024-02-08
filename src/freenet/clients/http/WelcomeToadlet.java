@@ -91,25 +91,25 @@ public class WelcomeToadlet extends Toadlet {
                     // extract the key type
                     String keyType = initialKey.substring(1,3);
                     String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/");
-					Matcher match = null;
+                    Matcher match = null;
                     switch (keyType) {
                         case "USK":
-                        case "SSK": 
+                        case "SSK":
                             match = PATTERN_USK_SSK.matcher(key);
                             if (match.matches()) {
                                 key = match.group(1) + "activelink.png";
                             }
                             else { // If no edition # exists, assume bare SSK and just append the activelink.
                                 match = PATTERN_BARE_SSK_CHK_KSK.matcher(key);
-	                            if (match.matches()) {
-	                                key = match.group(1) + "activelink.png";
-	                            }
+                                if (match.matches()) {
+                                    key = match.group(1) + "activelink.png";
+                                }
                                 else {
                                     Logger.minor(this, "Impossible: Regex for USK/SSK didn't match.  Key: "+ key);
                                 }
                             }
                             break;
-                        case "CHK": 
+                        case "CHK":
                         case "KSK": // This assumes the activelink is in the root of any one-shot directory upload.
                             match = PATTERN_BARE_SSK_CHK_KSK.matcher(key);
                             if (match.matches()) {
