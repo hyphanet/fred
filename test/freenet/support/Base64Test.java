@@ -152,7 +152,7 @@ public class Base64Test {
 	 */
 	@Test
 	public void testIllegalBaseCharacter() {
-//		TODO: check many other possibile cases!
+//		TODO: check many other possible cases!
 		String illegalCharString = "abcd=fghilmn";
 		try {
 			Base64.decode(illegalCharString);

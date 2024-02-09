@@ -438,7 +438,7 @@ public class BucketTools {
 	 * @param bf
 	 * @param length
 	 * 
-	 * @return the paded bucket
+	 * @return the padded bucket
 	 */
 	public static Bucket pad(Bucket oldBucket, int blockLength, BucketFactory bf, int length) throws IOException {
 		byte[] hash = BucketTools.hash(oldBucket);

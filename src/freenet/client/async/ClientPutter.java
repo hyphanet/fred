@@ -54,7 +54,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	/** The final URI for the data. */
 	private FreenetURI uri;
 	private final byte[] overrideSplitfileCrypto;
-	/** Random or overriden splitfile cryptokey. Valid after start(). */
+	/** Random or overridden splitfile cryptokey. Valid after start(). */
 	private byte[] cryptoKey;
 	/** When positive, means we will return metadata rather than a URI, once the
 	 * metadata is under this length. If it is too short it is still possible to
@@ -84,7 +84,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param isMetadata
 	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
 	 * @param binaryBlob
-	 * @param context The client object for purposs of round-robin client balancing.
+	 * @param context The client object for purposes of round-robin client balancing.
 	 * @param overrideSplitfileCrypto
 	 * @param metadataThreshold
 	 */

@@ -50,7 +50,7 @@ public class CachingFreenetStoreTracker {
 		this.ticker = ticker;
 	}
 
-	/** register a CachingFreenetStore to be called when we get full or to flush all after a setted period. */
+	/** register a CachingFreenetStore to be called when we get full or to flush all after a set period. */
 	public void registerCachingFS(CachingFreenetStore<?> fs) {
 		synchronized (cachingStores) {
 			cachingStores.add(fs);
