@@ -2,489 +2,506 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
- 
-import java.net.InetAddress;
-import java.util.Map;
 
 import freenet.clients.http.DarknetConnectionsToadlet;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.xfer.PacketThrottle;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
+import java.net.InetAddress;
+import java.util.Map;
 
 /**
- * Contains various status information for a {@link PeerNode}. Used e.g. in
- * {@link DarknetConnectionsToadlet} to reduce race-conditions while creating
- * the page.
- * 
+ * Contains various status information for a {@link PeerNode}. Used e.g. in {@link
+ * DarknetConnectionsToadlet} to reduce race-conditions while creating the page.
+ *
  * @author David 'Bombe' Roden &lt;bombe@freenetproject.org&gt;
  * @version $Id$
  */
 public class PeerNodeStatus {
 
-    /** This is the preferred string form of the address. */
-    private final String peerAddress;
-    /** This one is always an IP address or null. */
-    private final String peerAddressNumerical;
-    /** This one is always an IP address or null. */
-    private final byte[] peerAddressBytes;
+  /** This is the preferred string form of the address. */
+  private final String peerAddress;
 
-    private final int peerPort;
+  /** This one is always an IP address or null. */
+  private final String peerAddressNumerical;
 
-    private final int statusValue;
+  /** This one is always an IP address or null. */
+  private final byte[] peerAddressBytes;
 
-    private final String statusName;
+  private final int peerPort;
 
-    private final String statusCSSName;
+  private final int statusValue;
 
-    private final double location;
-    private final double[] peersLocation;
+  private final String statusName;
 
-    private final String version;
+  private final String statusCSSName;
 
-    private final int simpleVersion;
+  private final double location;
+  private final double[] peersLocation;
 
-    private final long routingBackoffLengthRT;
-    private final long routingBackoffLengthBulk;
+  private final String version;
 
-    private final long routingBackedOffUntilRT;
-    private final long routingBackedOffUntilBulk;
+  private final int simpleVersion;
 
-    private final boolean connected;
+  private final long routingBackoffLengthRT;
+  private final long routingBackoffLengthBulk;
 
-    private final boolean routable;
+  private final long routingBackedOffUntilRT;
+  private final long routingBackedOffUntilBulk;
 
-    private final boolean isFetchingARK;
+  private final boolean connected;
 
-    private final boolean isOpennet;
+  private final boolean routable;
 
-    private final double averagePingTime;
-    private final double averagePingTimeCorrected;
+  private final boolean isFetchingARK;
 
-    private final boolean publicInvalidVersion;
+  private final boolean isOpennet;
 
-    private final boolean publicReverseInvalidVersion;
+  private final double averagePingTime;
+  private final double averagePingTimeCorrected;
 
-    private final double backedOffPercentRT;
-    private final double backedOffPercentBulk;
+  private final boolean publicInvalidVersion;
 
-    private String lastBackoffReasonRT;
-    private String lastBackoffReasonBulk;
+  private final boolean publicReverseInvalidVersion;
 
-    private long timeLastRoutable;
+  private final double backedOffPercentRT;
+  private final double backedOffPercentBulk;
 
-    private long timeLastConnectionCompleted;
+  private String lastBackoffReasonRT;
+  private String lastBackoffReasonBulk;
 
-    private long peerAddedTime;
+  private long timeLastRoutable;
 
-    private Map<String,Long> localMessagesReceived;
+  private long timeLastConnectionCompleted;
 
-    private Map<String,Long> localMessagesSent;
-    
-    private final int hashCode;
-    
-    private final double pReject;
+  private long peerAddedTime;
 
-    private long totalBytesIn;
-    
-    private long totalBytesOut;
+  private Map<String, Long> localMessagesReceived;
 
-    private long totalBytesInSinceStartup;
-        
-    private long totalBytesOutSinceStartup;
-    
-    private double percentTimeRoutableConnection;
-    
-    private PacketThrottle throttle;
-    
-    private long clockDelta;
-    
-    private final boolean recordStatus;
-    
-    private final boolean isSeedServer;
-    
-    private final boolean isSeedClient;
-    
-    private final boolean isSearchable;
-    
-    private final long resendBytesSent;
-    
-    private final int reportedUptimePercentage;
-    
-    private final double selectionRate;
+  private Map<String, Long> localMessagesSent;
 
-    private final long messageQueueLengthBytes;
-    
-    private final long messageQueueLengthTime;
-    // int's because that's what they are transferred as
-    
-    public final IncomingLoadSummaryStats incomingLoadStatsRealTime;
+  private final int hashCode;
 
-    public final IncomingLoadSummaryStats incomingLoadStatsBulk;
-    
-    public final boolean hasFullNoderef;
+  private final double pReject;
 
-    PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
-        Peer p = peerNode.getPeer();
-        if(p == null) {
-            peerAddress = null;
-            peerAddressNumerical = null;
-            peerAddressBytes = null;
-            peerPort = -1;
-        } else {
-            FreenetInetAddress a = p.getFreenetAddress();
-            peerAddress = a.toString();
-            InetAddress i = a.getAddress(false);
-            if(i != null) {
-                peerAddressNumerical = i.getHostAddress();
-                peerAddressBytes = i.getAddress();
-            } else {
-                peerAddressNumerical = null;
-                peerAddressBytes = null;
-            }
-            peerPort = p.getPort();
-        }
-        this.selectionRate = peerNode.selectionRate();
-        this.statusValue = peerNode.getPeerNodeStatus();
-        this.statusName = peerNode.getPeerNodeStatusString();
-        this.statusCSSName = peerNode.getPeerNodeStatusCSSClassName();
-        this.location = peerNode.getLocation();
-        this.peersLocation = peerNode.getPeersLocationArray();
-        this.version = peerNode.getVersion();
-        this.simpleVersion = peerNode.getSimpleVersion();
-        this.routingBackoffLengthRT = peerNode.getRoutingBackoffLength(true);
-        this.routingBackoffLengthBulk = peerNode.getRoutingBackoffLength(false);
-        this.routingBackedOffUntilRT = peerNode.getRoutingBackedOffUntil(true);
-        this.routingBackedOffUntilBulk = peerNode.getRoutingBackedOffUntil(false);
-        this.connected = peerNode.isConnected();
-        this.routable = peerNode.isRoutable();
-        this.isFetchingARK = peerNode.isFetchingARK();
-        this.isOpennet = peerNode.isOpennet();
-        this.averagePingTime = peerNode.averagePingTime();
-        this.averagePingTimeCorrected = peerNode.averagePingTimeCorrected();
-        this.publicInvalidVersion = peerNode.publicInvalidVersion();
-        this.publicReverseInvalidVersion = peerNode.publicReverseInvalidVersion();
-        this.backedOffPercentRT = peerNode.backedOffPercentRT.currentValue();
-        this.backedOffPercentBulk = peerNode.backedOffPercentBulk.currentValue();
-        this.lastBackoffReasonRT = peerNode.getLastBackoffReason(true);
-        this.lastBackoffReasonBulk = peerNode.getLastBackoffReason(false);
-        this.timeLastRoutable = peerNode.timeLastRoutable();
-        this.timeLastConnectionCompleted = peerNode.timeLastConnectionCompleted();
-        this.peerAddedTime = peerNode.getPeerAddedTime();
-        if(!noHeavy) {
-            this.localMessagesReceived = peerNode.getLocalNodeReceivedMessagesFromStatistic();
-            this.localMessagesSent = peerNode.getLocalNodeSentMessagesToStatistic();
-        } else {
-            this.localMessagesReceived = null;
-            this.localMessagesSent = null;
-        }
-        this.hashCode = peerNode.hashCode;
-        this.pReject = peerNode.getPRejected();
-        this.totalBytesIn = peerNode.getTotalInputBytes();
-        this.totalBytesOut = peerNode.getTotalOutputBytes();
-        this.totalBytesInSinceStartup = peerNode.getTotalInputSinceStartup();
-        this.totalBytesOutSinceStartup = peerNode.getTotalOutputSinceStartup();
-        this.percentTimeRoutableConnection = peerNode.getPercentTimeRoutableConnection();
-        this.throttle = peerNode.getThrottle();
-        this.clockDelta = peerNode.getClockDelta();
-        this.recordStatus = peerNode.recordStatus();
-        this.isSeedClient = peerNode instanceof SeedClientPeerNode;
-        this.isSeedServer = peerNode instanceof SeedServerPeerNode;
-        this.isSearchable = peerNode.isRealConnection();
-        this.resendBytesSent = peerNode.getResendBytesSent();
-        this.reportedUptimePercentage = peerNode.getUptime();
-        messageQueueLengthBytes = peerNode.getMessageQueueLengthBytes();
-        messageQueueLengthTime = peerNode.getProbableSendQueueTime();
-        incomingLoadStatsRealTime = peerNode.getIncomingLoadStats(true);
-        incomingLoadStatsBulk = peerNode.getIncomingLoadStats(false);
-        hasFullNoderef = peerNode.hasFullNoderef();
+  private long totalBytesIn;
+
+  private long totalBytesOut;
+
+  private long totalBytesInSinceStartup;
+
+  private long totalBytesOutSinceStartup;
+
+  private double percentTimeRoutableConnection;
+
+  private PacketThrottle throttle;
+
+  private long clockDelta;
+
+  private final boolean recordStatus;
+
+  private final boolean isSeedServer;
+
+  private final boolean isSeedClient;
+
+  private final boolean isSearchable;
+
+  private final long resendBytesSent;
+
+  private final int reportedUptimePercentage;
+
+  private final double selectionRate;
+
+  private final long messageQueueLengthBytes;
+
+  private final long messageQueueLengthTime;
+  // int's because that's what they are transferred as
+
+  public final IncomingLoadSummaryStats incomingLoadStatsRealTime;
+
+  public final IncomingLoadSummaryStats incomingLoadStatsBulk;
+
+  public final boolean hasFullNoderef;
+
+  PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
+    Peer p = peerNode.getPeer();
+    if (p == null) {
+      peerAddress = null;
+      peerAddressNumerical = null;
+      peerAddressBytes = null;
+      peerPort = -1;
+    } else {
+      FreenetInetAddress a = p.getFreenetAddress();
+      peerAddress = a.toString();
+      InetAddress i = a.getAddress(false);
+      if (i != null) {
+        peerAddressNumerical = i.getHostAddress();
+        peerAddressBytes = i.getAddress();
+      } else {
+        peerAddressNumerical = null;
+        peerAddressBytes = null;
+      }
+      peerPort = p.getPort();
     }
-    
-    public long getMessageQueueLengthBytes() {
-        return messageQueueLengthBytes;
+    this.selectionRate = peerNode.selectionRate();
+    this.statusValue = peerNode.getPeerNodeStatus();
+    this.statusName = peerNode.getPeerNodeStatusString();
+    this.statusCSSName = peerNode.getPeerNodeStatusCSSClassName();
+    this.location = peerNode.getLocation();
+    this.peersLocation = peerNode.getPeersLocationArray();
+    this.version = peerNode.getVersion();
+    this.simpleVersion = peerNode.getSimpleVersion();
+    this.routingBackoffLengthRT = peerNode.getRoutingBackoffLength(true);
+    this.routingBackoffLengthBulk = peerNode.getRoutingBackoffLength(false);
+    this.routingBackedOffUntilRT = peerNode.getRoutingBackedOffUntil(true);
+    this.routingBackedOffUntilBulk = peerNode.getRoutingBackedOffUntil(false);
+    this.connected = peerNode.isConnected();
+    this.routable = peerNode.isRoutable();
+    this.isFetchingARK = peerNode.isFetchingARK();
+    this.isOpennet = peerNode.isOpennet();
+    this.averagePingTime = peerNode.averagePingTime();
+    this.averagePingTimeCorrected = peerNode.averagePingTimeCorrected();
+    this.publicInvalidVersion = peerNode.publicInvalidVersion();
+    this.publicReverseInvalidVersion = peerNode.publicReverseInvalidVersion();
+    this.backedOffPercentRT = peerNode.backedOffPercentRT.currentValue();
+    this.backedOffPercentBulk = peerNode.backedOffPercentBulk.currentValue();
+    this.lastBackoffReasonRT = peerNode.getLastBackoffReason(true);
+    this.lastBackoffReasonBulk = peerNode.getLastBackoffReason(false);
+    this.timeLastRoutable = peerNode.timeLastRoutable();
+    this.timeLastConnectionCompleted = peerNode.timeLastConnectionCompleted();
+    this.peerAddedTime = peerNode.getPeerAddedTime();
+    if (!noHeavy) {
+      this.localMessagesReceived = peerNode.getLocalNodeReceivedMessagesFromStatistic();
+      this.localMessagesSent = peerNode.getLocalNodeSentMessagesToStatistic();
+    } else {
+      this.localMessagesReceived = null;
+      this.localMessagesSent = null;
     }
-    
-    public long getMessageQueueLengthTime() {
-        return messageQueueLengthTime;
-    }
+    this.hashCode = peerNode.hashCode;
+    this.pReject = peerNode.getPRejected();
+    this.totalBytesIn = peerNode.getTotalInputBytes();
+    this.totalBytesOut = peerNode.getTotalOutputBytes();
+    this.totalBytesInSinceStartup = peerNode.getTotalInputSinceStartup();
+    this.totalBytesOutSinceStartup = peerNode.getTotalOutputSinceStartup();
+    this.percentTimeRoutableConnection = peerNode.getPercentTimeRoutableConnection();
+    this.throttle = peerNode.getThrottle();
+    this.clockDelta = peerNode.getClockDelta();
+    this.recordStatus = peerNode.recordStatus();
+    this.isSeedClient = peerNode instanceof SeedClientPeerNode;
+    this.isSeedServer = peerNode instanceof SeedServerPeerNode;
+    this.isSearchable = peerNode.isRealConnection();
+    this.resendBytesSent = peerNode.getResendBytesSent();
+    this.reportedUptimePercentage = peerNode.getUptime();
+    messageQueueLengthBytes = peerNode.getMessageQueueLengthBytes();
+    messageQueueLengthTime = peerNode.getProbableSendQueueTime();
+    incomingLoadStatsRealTime = peerNode.getIncomingLoadStats(true);
+    incomingLoadStatsBulk = peerNode.getIncomingLoadStats(false);
+    hasFullNoderef = peerNode.hasFullNoderef();
+  }
 
-    /**
-     * @return the localMessagesReceived
-     */
-    public Map<String, Long> getLocalMessagesReceived() {
-        return localMessagesReceived;
-    }
+  public long getMessageQueueLengthBytes() {
+    return messageQueueLengthBytes;
+  }
 
-    /**
-     * @return the localMessagesSent
-     */
-    public Map<String, Long> getLocalMessagesSent() {
-        return localMessagesSent;
-    }
+  public long getMessageQueueLengthTime() {
+    return messageQueueLengthTime;
+  }
 
-    /**
-     * @return the peerAddedTime
-     */
-    public long getPeerAddedTime() {
-        return peerAddedTime;
-    }
+  /**
+   * @return the localMessagesReceived
+   */
+  public Map<String, Long> getLocalMessagesReceived() {
+    return localMessagesReceived;
+  }
 
-    /**
-     * Counts the peers in <code>peerNodes</code> that have the specified
-     * status.
-     * @param peerNodeStatuses The peer nodes' statuses
-     * @param status The status to count
-     * @return The number of peers that have the specified status.
-     */
-    public static int getPeerStatusCount(PeerNodeStatus[] peerNodeStatuses, int status) {
-        int count = 0;
-        for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
-            if (peerNodeStatus.getStatusValue() == status) {
-                count++;
-            }
-        }
-        return count;
-    }
+  /**
+   * @return the localMessagesSent
+   */
+  public Map<String, Long> getLocalMessagesSent() {
+    return localMessagesSent;
+  }
 
-    /**
-     * @return the timeLastConnectionCompleted
-     */
-    public long getTimeLastConnectionCompleted() {
-        return timeLastConnectionCompleted;
-    }
+  /**
+   * @return the peerAddedTime
+   */
+  public long getPeerAddedTime() {
+    return peerAddedTime;
+  }
 
-    /**
-     * @return the backedOffPercent
-     */
-    public double getBackedOffPercent(boolean realTime) {
-        return realTime ? backedOffPercentRT : backedOffPercentBulk;
+  /**
+   * Counts the peers in <code>peerNodes</code> that have the specified status.
+   *
+   * @param peerNodeStatuses The peer nodes' statuses
+   * @param status The status to count
+   * @return The number of peers that have the specified status.
+   */
+  public static int getPeerStatusCount(PeerNodeStatus[] peerNodeStatuses, int status) {
+    int count = 0;
+    for (PeerNodeStatus peerNodeStatus : peerNodeStatuses) {
+      if (peerNodeStatus.getStatusValue() == status) {
+        count++;
+      }
     }
+    return count;
+  }
 
-    /**
-     * @return the lastBackoffReason
-     */
-    public String getLastBackoffReason(boolean realTime) {
-        return realTime ? lastBackoffReasonRT : lastBackoffReasonBulk;
-    }
+  /**
+   * @return the timeLastConnectionCompleted
+   */
+  public long getTimeLastConnectionCompleted() {
+    return timeLastConnectionCompleted;
+  }
 
-    /**
-     * @return the timeLastRoutable
-     */
-    public long getTimeLastRoutable() {
-        return timeLastRoutable;
-    }
+  /**
+   * @return the backedOffPercent
+   */
+  public double getBackedOffPercent(boolean realTime) {
+    return realTime ? backedOffPercentRT : backedOffPercentBulk;
+  }
 
-    /**
-     * @return the publicInvalidVersion
-     */
-    public boolean isPublicInvalidVersion() {
-        return publicInvalidVersion;
-    }
+  /**
+   * @return the lastBackoffReason
+   */
+  public String getLastBackoffReason(boolean realTime) {
+    return realTime ? lastBackoffReasonRT : lastBackoffReasonBulk;
+  }
 
-    /**
-     * @return the publicReverseInvalidVersion
-     */
-    public boolean isPublicReverseInvalidVersion() {
-        return publicReverseInvalidVersion;
-    }
+  /**
+   * @return the timeLastRoutable
+   */
+  public long getTimeLastRoutable() {
+    return timeLastRoutable;
+  }
 
-    /**
-     * @return the averagePingTime
-     */
-    public double getAveragePingTime() {
-        return averagePingTime;
-    }
-    
-    /**
-     * @return The ping time for purposes of retransmissions.
-     */
-    public double getAveragePingTimeCorrected() {
-        return averagePingTimeCorrected;
-    }
+  /**
+   * @return the publicInvalidVersion
+   */
+  public boolean isPublicInvalidVersion() {
+    return publicInvalidVersion;
+  }
 
-    /**
-     * @return the getRoutingBackedOffUntil
-     */
-    public long getRoutingBackedOffUntil(boolean realTime) {
-        return realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk;
-    }
+  /**
+   * @return the publicReverseInvalidVersion
+   */
+  public boolean isPublicReverseInvalidVersion() {
+    return publicReverseInvalidVersion;
+  }
 
-    /**
-     * @return the location
-     */
-    public double getLocation() {
-        return location;
-    }
+  /**
+   * @return the averagePingTime
+   */
+  public double getAveragePingTime() {
+    return averagePingTime;
+  }
 
-    public double[] getPeersLocation() {
-        return peersLocation;
-    }
-    
-    /**
-     * @return the peerAddress, in its preferred string format.
-     */
-    public String getPeerAddress() {
-        return peerAddress;
-    }
+  /**
+   * @return The ping time for purposes of retransmissions.
+   */
+  public double getAveragePingTimeCorrected() {
+    return averagePingTimeCorrected;
+  }
 
-    /**
-     * @return the peer address, in numerical form, or null if not known.
-     */
-    public String getPeerAddressNumerical() {
-        return peerAddressNumerical;
-    }
+  /**
+   * @return the getRoutingBackedOffUntil
+   */
+  public long getRoutingBackedOffUntil(boolean realTime) {
+    return realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk;
+  }
 
-    /**
-     * @return the peer address, as raw bytes, or null if not known.
-     */
-    public byte[] getPeerAddressBytes() {
-        return peerAddressBytes;
-    }
+  /**
+   * @return the location
+   */
+  public double getLocation() {
+    return location;
+  }
 
-    /**
-     * @return the peerPort
-     */
-    public int getPeerPort() {
-        return peerPort;
-    }
+  public double[] getPeersLocation() {
+    return peersLocation;
+  }
 
-    /**
-     * @return the routingBackoffLength
-     */
-    public long getRoutingBackoffLength(boolean realTime) {
-        return realTime ? routingBackoffLengthRT : routingBackoffLengthBulk;
-    }
+  /**
+   * @return the peerAddress, in its preferred string format.
+   */
+  public String getPeerAddress() {
+    return peerAddress;
+  }
 
-    /**
-     * @return the statusCSSName
-     */
-    public String getStatusCSSName() {
-        return statusCSSName;
-    }
+  /**
+   * @return the peer address, in numerical form, or null if not known.
+   */
+  public String getPeerAddressNumerical() {
+    return peerAddressNumerical;
+  }
 
-    /**
-     * @return the statusName
-     */
-    public String getStatusName() {
-        return statusName;
-    }
+  /**
+   * @return the peer address, as raw bytes, or null if not known.
+   */
+  public byte[] getPeerAddressBytes() {
+    return peerAddressBytes;
+  }
 
-    /**
-     * @return the statusValue
-     */
-    public int getStatusValue() {
-        return statusValue;
-    }
+  /**
+   * @return the peerPort
+   */
+  public int getPeerPort() {
+    return peerPort;
+  }
 
-    /**
-     * @return the version
-     */
-    public String getVersion() {
-        return version;
-    }
+  /**
+   * @return the routingBackoffLength
+   */
+  public long getRoutingBackoffLength(boolean realTime) {
+    return realTime ? routingBackoffLengthRT : routingBackoffLengthBulk;
+  }
 
-    /**
-     * @return the connected
-     */
-    public boolean isConnected() {
-        return connected;
-    }
+  /**
+   * @return the statusCSSName
+   */
+  public String getStatusCSSName() {
+    return statusCSSName;
+  }
 
-    /**
-     * @return the routable
-     */
-    public boolean isRoutable() {
-        return routable;
-    }
+  /**
+   * @return the statusName
+   */
+  public String getStatusName() {
+    return statusName;
+  }
 
-    /**
-     * @return the isFetchingARK
-     */
-    public boolean isFetchingARK() {
-        return isFetchingARK;
-    }
+  /**
+   * @return the statusValue
+   */
+  public int getStatusValue() {
+    return statusValue;
+  }
 
-    /**
-     * @return the isOpennet
-     */
-    public boolean isOpennet() {
-        return isOpennet;
-    }
+  /**
+   * @return the version
+   */
+  public String getVersion() {
+    return version;
+  }
 
-    /**
-     * @return the simpleVersion
-     */
-    public int getSimpleVersion() {
-        return simpleVersion;
-    }
+  /**
+   * @return the connected
+   */
+  public boolean isConnected() {
+    return connected;
+  }
 
-    @Override
-    public String toString() {
-        return statusName + ' ' + peerAddress + ':' + peerPort + ' ' + location + ' ' + version + " RT backoff: " + routingBackoffLengthRT + " (" + (Math.max(routingBackedOffUntilRT - System.currentTimeMillis(), 0)) + " ) bulk backoff: " + routingBackoffLengthBulk + " (" + (Math.max(routingBackedOffUntilBulk - System.currentTimeMillis(), 0)) + ')';
-    }
+  /**
+   * @return the routable
+   */
+  public boolean isRoutable() {
+    return routable;
+  }
 
-    @Override
-    public int hashCode() {
-        return hashCode;
-    }
+  /**
+   * @return the isFetchingARK
+   */
+  public boolean isFetchingARK() {
+    return isFetchingARK;
+  }
 
-    public double getPReject() {
-        return pReject;
-    }
+  /**
+   * @return the isOpennet
+   */
+  public boolean isOpennet() {
+    return isOpennet;
+  }
 
-    public long getTotalInputBytes() {
-        return totalBytesIn;
-    }
-    
-    public long getTotalOutputBytes() {
-        return totalBytesOut;
-    }
+  /**
+   * @return the simpleVersion
+   */
+  public int getSimpleVersion() {
+    return simpleVersion;
+  }
 
-    public long getTotalInputSinceStartup() {
-        return totalBytesInSinceStartup;
-    }
-    
-    public long getTotalOutputSinceStartup() {
-        return totalBytesOutSinceStartup;
-    }
-    
-    public double getPercentTimeRoutableConnection() {
-        return percentTimeRoutableConnection;
-    }
+  @Override
+  public String toString() {
+    return statusName
+        + ' '
+        + peerAddress
+        + ':'
+        + peerPort
+        + ' '
+        + location
+        + ' '
+        + version
+        + " RT backoff: "
+        + routingBackoffLengthRT
+        + " ("
+        + (Math.max(routingBackedOffUntilRT - System.currentTimeMillis(), 0))
+        + " ) bulk backoff: "
+        + routingBackoffLengthBulk
+        + " ("
+        + (Math.max(routingBackedOffUntilBulk - System.currentTimeMillis(), 0))
+        + ')';
+  }
 
-    public PacketThrottle getThrottle() {
-        return throttle;
-    }
+  @Override
+  public int hashCode() {
+    return hashCode;
+  }
 
-    public long getClockDelta() {
-        return clockDelta;
-    }
-    
-    public boolean recordStatus() {
-        return recordStatus;
-    }
+  public double getPReject() {
+    return pReject;
+  }
 
-    public boolean isSeedServer() {
-        return isSeedServer;
-    }
+  public long getTotalInputBytes() {
+    return totalBytesIn;
+  }
 
-    public boolean isSeedClient() {
-        return isSeedClient;
-    }
-    
-    public boolean isSearchable() {
-        return isSearchable;
-    }
-    
-    public long getResendBytesSent() {
-        return resendBytesSent;
-    }
-    
-    public int getReportedUptimePercentage() {
-        return reportedUptimePercentage;
-    }
+  public long getTotalOutputBytes() {
+    return totalBytesOut;
+  }
 
-    public double getSelectionRate() {
-        return selectionRate;
-    }
+  public long getTotalInputSinceStartup() {
+    return totalBytesInSinceStartup;
+  }
+
+  public long getTotalOutputSinceStartup() {
+    return totalBytesOutSinceStartup;
+  }
+
+  public double getPercentTimeRoutableConnection() {
+    return percentTimeRoutableConnection;
+  }
+
+  public PacketThrottle getThrottle() {
+    return throttle;
+  }
+
+  public long getClockDelta() {
+    return clockDelta;
+  }
+
+  public boolean recordStatus() {
+    return recordStatus;
+  }
+
+  public boolean isSeedServer() {
+    return isSeedServer;
+  }
+
+  public boolean isSeedClient() {
+    return isSeedClient;
+  }
+
+  public boolean isSearchable() {
+    return isSearchable;
+  }
+
+  public long getResendBytesSent() {
+    return resendBytesSent;
+  }
+
+  public int getReportedUptimePercentage() {
+    return reportedUptimePercentage;
+  }
+
+  public double getSelectionRate() {
+    return selectionRate;
+  }
 }

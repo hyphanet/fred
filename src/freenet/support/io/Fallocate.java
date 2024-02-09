@@ -2,25 +2,24 @@ package freenet.support.io;
 
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
-
+import freenet.support.Logger;
+import freenet.support.math.MersenneTwister;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import freenet.support.Logger;
-import freenet.support.math.MersenneTwister;
-
 /**
- * Provides access to operating system-specific {@code fallocate} and
- * {@code posix_fallocate} functions.
+ * Provides access to operating system-specific {@code fallocate} and {@code posix_fallocate}
+ * functions.
  * https://stackoverflow.com/questions/18031841/pre-allocating-drive-space-for-file-storage
  */
 public final class Fallocate {
 
   private static final boolean IS_LINUX = Platform.isLinux();
-  private static final boolean IS_POSIX = !Platform.isWindows() && !Platform.isMac() && !Platform.isOpenBSD();
+  private static final boolean IS_POSIX =
+      !Platform.isWindows() && !Platform.isMac() && !Platform.isOpenBSD();
   private static final boolean IS_ANDROID = Platform.isAndroid();
 
   private static final int FALLOC_FL_KEEP_SIZE = 0x01;
@@ -46,7 +45,7 @@ public final class Fallocate {
   }
 
   public Fallocate fromOffset(long offset) {
-    if(offset < 0 || offset > final_filesize) throw new IllegalArgumentException();
+    if (offset < 0 || offset > final_filesize) throw new IllegalArgumentException();
     this.offset = offset;
     return this;
   }
@@ -71,16 +70,16 @@ public final class Fallocate {
     int errno = 0;
     boolean isUnsupported = false;
     if (IS_LINUX) {
-      final int result = FallocateHolder.fallocate(fd, mode, offset, final_filesize-offset);
+      final int result = FallocateHolder.fallocate(fd, mode, offset, final_filesize - offset);
       errno = result == 0 ? 0 : Native.getLastError();
     } else if (IS_POSIX) {
-      errno = FallocateHolderPOSIX.posix_fallocate(fd, offset, final_filesize-offset);
+      errno = FallocateHolderPOSIX.posix_fallocate(fd, offset, final_filesize - offset);
     } else {
       isUnsupported = true;
     }
 
     if (isUnsupported || errno != 0) {
-      Logger.normal(this, "fallocate() failed; using legacy method; errno="+errno);
+      Logger.normal(this, "fallocate() failed; using legacy method; errno=" + errno);
       legacyFill(channel, final_filesize, offset);
     }
   }

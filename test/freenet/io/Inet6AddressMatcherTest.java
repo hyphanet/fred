@@ -1,5 +1,5 @@
 /*
- * freenet0.7 - 
+ * freenet0.7 -
  * Copyright (C) 2006 David Roden
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,46 +22,44 @@ package freenet.io;
 import static org.junit.Assert.*;
 
 import java.net.InetAddress;
-
 import org.junit.Test;
 
 /**
- * Test case for the {@link freenet.io.Inet6AddressMatcher} class. Contains some
- * very basic tests. Feel free to add more complicated tests!
- * 
+ * Test case for the {@link freenet.io.Inet6AddressMatcher} class. Contains some very basic tests.
+ * Feel free to add more complicated tests!
+ *
  * @author David Roden &lt;droden@gmail.com&gt;
  * @version $Id: Inet6AddressMatcherTest.java 10490 2006-09-20 00:07:46Z toad $
  */
 public class Inet6AddressMatcherTest {
 
-    @Test
-    public void test() throws Exception {
-        Inet6AddressMatcher matcher = new Inet6AddressMatcher("0:0:0:0:0:0:0:0/0");
-        assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:203:dff:fe22:420f")));
+  @Test
+  public void test() throws Exception {
+    Inet6AddressMatcher matcher = new Inet6AddressMatcher("0:0:0:0:0:0:0:0/0");
+    assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:203:dff:fe22:420f")));
 
-        matcher = new Inet6AddressMatcher("fe80:0:0:0:203:dff:fe22:420f/64");
-        assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:203:dff:fe22:420f")));
-        assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0203:0dff:fe22:420f")));
-        assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0204:0dff:fe22:420f")));
-        assertEquals(false, matcher.matches(InetAddress.getByName("fe81:0:0:0:0203:0dff:fe22:420f")));
-        assertEquals(false, matcher.matches(InetAddress.getByName("0:0:0:0:0:0:0:1")));
-        assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0:0:0:1")));
+    matcher = new Inet6AddressMatcher("fe80:0:0:0:203:dff:fe22:420f/64");
+    assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:203:dff:fe22:420f")));
+    assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0203:0dff:fe22:420f")));
+    assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0204:0dff:fe22:420f")));
+    assertEquals(false, matcher.matches(InetAddress.getByName("fe81:0:0:0:0203:0dff:fe22:420f")));
+    assertEquals(false, matcher.matches(InetAddress.getByName("0:0:0:0:0:0:0:1")));
+    assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0:0:0:1")));
 
-        matcher = new Inet6AddressMatcher("fe80:0:0:0:203:dff:fe22:420f/ffff:ffff:ffff:ffff:0:0:0:0");
-        assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:203:dff:fe22:420f")));
-        assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0203:0dff:fe22:420f")));
-        assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0204:0dff:fe22:420f")));
-        assertEquals(false, matcher.matches(InetAddress.getByName("fe81:0:0:0:0203:0dff:fe22:420f")));
-        assertEquals(false, matcher.matches(InetAddress.getByName("0:0:0:0:0:0:0:1")));
-        assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0:0:0:1")));
+    matcher = new Inet6AddressMatcher("fe80:0:0:0:203:dff:fe22:420f/ffff:ffff:ffff:ffff:0:0:0:0");
+    assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:203:dff:fe22:420f")));
+    assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0203:0dff:fe22:420f")));
+    assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0204:0dff:fe22:420f")));
+    assertEquals(false, matcher.matches(InetAddress.getByName("fe81:0:0:0:0203:0dff:fe22:420f")));
+    assertEquals(false, matcher.matches(InetAddress.getByName("0:0:0:0:0:0:0:1")));
+    assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0:0:0:1")));
 
-        matcher = new Inet6AddressMatcher("fe80:0:0:0:203:dff:fe22:420f/128");
-        assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:203:dff:fe22:420f")));
-        assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0203:0dff:fe22:420f")));
-        assertEquals(false, matcher.matches(InetAddress.getByName("fe80:0:0:0:0204:0dff:fe22:420f")));
-        assertEquals(false, matcher.matches(InetAddress.getByName("fe81:0:0:0:0203:0dff:fe22:420f")));
-        assertEquals(false, matcher.matches(InetAddress.getByName("0:0:0:0:0:0:0:1")));
-        assertEquals(false, matcher.matches(InetAddress.getByName("fe80:0:0:0:0:0:0:1")));
-    }
-
+    matcher = new Inet6AddressMatcher("fe80:0:0:0:203:dff:fe22:420f/128");
+    assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:203:dff:fe22:420f")));
+    assertEquals(true, matcher.matches(InetAddress.getByName("fe80:0:0:0:0203:0dff:fe22:420f")));
+    assertEquals(false, matcher.matches(InetAddress.getByName("fe80:0:0:0:0204:0dff:fe22:420f")));
+    assertEquals(false, matcher.matches(InetAddress.getByName("fe81:0:0:0:0203:0dff:fe22:420f")));
+    assertEquals(false, matcher.matches(InetAddress.getByName("0:0:0:0:0:0:0:1")));
+    assertEquals(false, matcher.matches(InetAddress.getByName("fe80:0:0:0:0:0:0:1")));
+  }
 }

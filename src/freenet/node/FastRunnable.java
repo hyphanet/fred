@@ -3,9 +3,5 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-/**
- * Runnable which can be executed in-line on the PacketSender.
- */
-public interface FastRunnable extends Runnable {
-
-}
+/** Runnable which can be executed in-line on the PacketSender. */
+public interface FastRunnable extends Runnable {}

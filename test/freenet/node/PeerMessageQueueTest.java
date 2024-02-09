@@ -8,83 +8,99 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 public class PeerMessageQueueTest {
-    @Test
-    public void testUrgentTimeEmpty() {
-        PeerMessageQueue pmq = new PeerMessageQueue();
-        assertEquals(Long.MAX_VALUE, pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis()));
+  @Test
+  public void testUrgentTimeEmpty() {
+    PeerMessageQueue pmq = new PeerMessageQueue();
+    assertEquals(Long.MAX_VALUE, pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis()));
+  }
+
+  @Test
+  public void testUrgentTime() {
+    PeerMessageQueue pmq = new PeerMessageQueue();
+
+    // Constructor might take some time, so grab a range
+    long start = System.currentTimeMillis();
+    MessageItem item = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+    long end = System.currentTimeMillis();
+
+    pmq.queueAndEstimateSize(item, 1024);
+
+    // The timeout for item should be within (start + 100) and (end + 100)
+    long urgentTime = pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis());
+    if (!((urgentTime >= (start + 100)) && (urgentTime <= (end + 100)))) {
+      fail(
+          "Timeout not in expected range. Expected: "
+              + (start + 100)
+              + "->"
+              + (end + 100)
+              + ", actual: "
+              + urgentTime);
+    }
+  }
+
+  /* Test that getNextUrgentTime() returns the correct value, even when the items on the queue
+   * aren't ordered by their timeout value, eg. when an item was readded because we couldn't send
+   * it. */
+  @Test
+  public void testUrgentTimeQueuedWrong() {
+    PeerMessageQueue pmq = new PeerMessageQueue();
+
+    // Constructor might take some time, so grab a range
+    long start = System.currentTimeMillis();
+    MessageItem itemUrgent =
+        new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+    long end = System.currentTimeMillis();
+
+    // Sleep for a little while to get a later timeout
+    try {
+      Thread.sleep(1);
+    } catch (InterruptedException e) {
+
     }
 
-    @Test
-    public void testUrgentTime() {
-        PeerMessageQueue pmq = new PeerMessageQueue();
+    MessageItem itemNonUrgent =
+        new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
 
-        //Constructor might take some time, so grab a range
-        long start = System.currentTimeMillis();
-        MessageItem item = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
-        long end = System.currentTimeMillis();
+    // Queue the least urgent item first to get the wrong order
+    pmq.queueAndEstimateSize(itemNonUrgent, 1024);
+    pmq.queueAndEstimateSize(itemUrgent, 1024);
 
-        pmq.queueAndEstimateSize(item, 1024);
+    // getNextUrgentTime() should return the timeout of itemUrgent, which is within (start + 100)
+    // and (end + 100)
+    long urgentTime = pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis());
+    if (!((urgentTime >= (start + 100)) && (urgentTime <= (end + 100)))) {
+      fail(
+          "Timeout not in expected range. Expected: "
+              + (start + 100)
+              + "->"
+              + (end + 100)
+              + ", actual: "
+              + urgentTime);
+    }
+  }
 
-        //The timeout for item should be within (start + 100) and (end + 100)
-        long urgentTime = pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis());
-        if(!((urgentTime >= (start + 100)) && (urgentTime <= (end + 100)))) {
-            fail("Timeout not in expected range. Expected: " + (start + 100) + "->" + (end + 100) + ", actual: " + urgentTime);
-        }
+  @Test
+  public void testGrabQueuedMessageItem() {
+    PeerMessageQueue pmq = new PeerMessageQueue();
+
+    MessageItem itemUrgent =
+        new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+
+    // Sleep for a little while to get a later timeout
+    try {
+      Thread.sleep(1);
+    } catch (InterruptedException e) {
+
     }
 
-    /* Test that getNextUrgentTime() returns the correct value, even when the items on the queue
-     * aren't ordered by their timeout value, eg. when an item was readded because we couldn't send
-     * it. */
-    @Test
-    public void testUrgentTimeQueuedWrong() {
-        PeerMessageQueue pmq = new PeerMessageQueue();
+    MessageItem itemNonUrgent =
+        new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
 
-        //Constructor might take some time, so grab a range
-        long start = System.currentTimeMillis();
-        MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
-        long end = System.currentTimeMillis();
+    // Queue the least urgent item first to get the wrong order
+    pmq.queueAndEstimateSize(itemNonUrgent, 1024);
+    pmq.queueAndEstimateSize(itemUrgent, 1024);
 
-        //Sleep for a little while to get a later timeout
-        try {
-            Thread.sleep(1);
-        } catch (InterruptedException e) {
-
-        }
-
-        MessageItem itemNonUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
-
-        //Queue the least urgent item first to get the wrong order
-        pmq.queueAndEstimateSize(itemNonUrgent, 1024);
-        pmq.queueAndEstimateSize(itemUrgent, 1024);
-
-        //getNextUrgentTime() should return the timeout of itemUrgent, which is within (start + 100)
-        //and (end + 100)
-        long urgentTime = pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis());
-        if(!((urgentTime >= (start + 100)) && (urgentTime <= (end + 100)))) {
-            fail("Timeout not in expected range. Expected: " + (start + 100) + "->" + (end + 100) + ", actual: " + urgentTime);
-        }
-    }
-
-    @Test
-    public void testGrabQueuedMessageItem() {
-        PeerMessageQueue pmq = new PeerMessageQueue();
-
-        MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
-
-        //Sleep for a little while to get a later timeout
-        try {
-            Thread.sleep(1);
-        } catch (InterruptedException e) {
-
-        }
-
-        MessageItem itemNonUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
-
-        //Queue the least urgent item first to get the wrong order
-        pmq.queueAndEstimateSize(itemNonUrgent, 1024);
-        pmq.queueAndEstimateSize(itemUrgent, 1024);
-
-        //grabQueuedMessageItem() should return the most urgent item, even though it was queued last
-        assertSame(itemUrgent, pmq.grabQueuedMessageItem(0));
-    }
+    // grabQueuedMessageItem() should return the most urgent item, even though it was queued last
+    assertSame(itemUrgent, pmq.grabQueuedMessageItem(0));
+  }
 }

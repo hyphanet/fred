@@ -9,5 +9,8 @@ package freenet.node.stats;
  * @author nikotyan
  */
 public enum DataStoreType {
-    STORE, CACHE, SLASHDOT, CLIENT
+  STORE,
+  CACHE,
+  SLASHDOT,
+  CLIENT
 }

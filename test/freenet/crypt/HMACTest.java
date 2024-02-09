@@ -2,6 +2,10 @@ package freenet.crypt;
 
 import static org.junit.Assert.*;
 
+import freenet.support.TestProperty;
+import freenet.support.TimeUtil;
+import java.security.Security;
+import java.util.Random;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -10,22 +14,14 @@ import org.bouncycastle.util.encoders.Hex;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.security.Security;
-import java.util.Random;
-
-import freenet.support.TestProperty;
-import freenet.support.TimeUtil;
-
 public class HMACTest {
 
   Random random;
   // RFC4868 2.7.2.1 SHA256 Authentication Test Vector
   static byte[] plaintext = "Hi There".getBytes();
-  static byte[]
-      knownKey =
+  static byte[] knownKey =
       Hex.decode("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b");
-  static byte[]
-      knownSHA256 =
+  static byte[] knownSHA256 =
       Hex.decode("198a607eb44bfbc69903a0f1cf2bbdc5ba0aa3f3d9ae3c1c7a3b1696a0b68cf7");
 
   @Before
@@ -88,10 +84,10 @@ public class HMACTest {
     System.out.println("We're getting ready to benchmark HMACs");
     Random r = new Random(0xBBBBBBBB);
     for (int len = 8; len <= 32768; len *= 4) {
-      byte [] plaintext = new byte[len];
+      byte[] plaintext = new byte[len];
       r.nextBytes(plaintext);
-      System.out.println("plaintext len "+len);
-      int ITERATIONS = 10000000/len;
+      System.out.println("plaintext len " + len);
+      int ITERATIONS = 10000000 / len;
       long t1 = System.currentTimeMillis();
       for (int i = 0; i < ITERATIONS; i++) {
         byte[] r1 = HMAC_legacy.macWithSHA256(knownKey, plaintext, 32);

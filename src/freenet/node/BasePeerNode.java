@@ -1,85 +1,91 @@
 package freenet.node;
 
-import java.util.Random;
-
 import freenet.io.comm.Message;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.comm.PeerContext;
+import java.util.Random;
 
-/** Base interface for PeerNode, for purposes of the transport layer. Will be overridden
- * for unit tests to simplify testing. 
+/**
+ * Base interface for PeerNode, for purposes of the transport layer. Will be overridden for unit
+ * tests to simplify testing.
+ *
  * @author toad
  */
 public interface BasePeerNode extends PeerContext {
 
-    SessionKey getCurrentKeyTracker();
+  SessionKey getCurrentKeyTracker();
 
-    SessionKey getPreviousKeyTracker();
+  SessionKey getPreviousKeyTracker();
 
-    SessionKey getUnverifiedKeyTracker();
+  SessionKey getUnverifiedKeyTracker();
 
-    void receivedPacket(boolean dontLog, boolean dataPacket);
+  void receivedPacket(boolean dontLog, boolean dataPacket);
 
-    void verified(SessionKey s);
+  void verified(SessionKey s);
 
-    void startRekeying();
+  void startRekeying();
 
-    void maybeRekey();
+  void maybeRekey();
 
-    void reportIncomingBytes(int length);
+  void reportIncomingBytes(int length);
 
-    void reportOutgoingBytes(int length);
-    
-    DecodingMessageGroup startProcessingDecryptedMessages(int count);
-    
-    void reportPing(long rt);
+  void reportOutgoingBytes(int length);
 
-    double averagePingTime();
+  DecodingMessageGroup startProcessingDecryptedMessages(int count);
 
-    void wakeUpSender();
+  void reportPing(long rt);
 
-    int getMaxPacketSize();
+  double averagePingTime();
 
-    PeerMessageQueue getMessageQueue();
+  void wakeUpSender();
 
-    boolean shouldPadDataPackets();
+  int getMaxPacketSize();
 
-    void sendEncryptedPacket(byte[] data) throws LocalAddressException;
+  PeerMessageQueue getMessageQueue();
 
-    void sentPacket();
+  boolean shouldPadDataPackets();
 
-    boolean shouldThrottle();
+  void sendEncryptedPacket(byte[] data) throws LocalAddressException;
 
-    void sentThrottledBytes(int length);
+  void sentPacket();
 
-    void onNotificationOnlyPacketSent(int length);
+  boolean shouldThrottle();
 
-    void resentBytes(int bytesToResend);
+  void sentThrottledBytes(int length);
 
-    Random paddingGen();
+  void onNotificationOnlyPacketSent(int length);
 
-    void handleMessage(Message msg);
+  void resentBytes(int bytesToResend);
 
-    /** Make a load stats message.
-     * @param realtime True for the realtime load stats, false for the bulk load stats.
-     * @param highPriority If true, boost the priority so it gets sent fast.
-     * @param noRemember If true, generating it for a lossy message in a packet; don't 
-     * remember that we sent it, since it might be lost, and generate it even if the last 
-     * one was the same, since the last one might be delayed. */
-    MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember);
-    
-    boolean grabSendLoadStatsASAP(boolean realtime);
+  Random paddingGen();
 
-    /** Set the load stats to be sent asap. E.g. if we grabbed it and can't actually 
-     * execute the send for some reason. */
-    void setSendLoadStatsASAP(boolean realtime);
+  void handleMessage(Message msg);
 
-    /** Average ping time incorporating variance, calculated like TCP SRTT, as with RFC 2988. */
-    double averagePingTimeCorrected();
+  /**
+   * Make a load stats message.
+   *
+   * @param realtime True for the realtime load stats, false for the bulk load stats.
+   * @param highPriority If true, boost the priority so it gets sent fast.
+   * @param noRemember If true, generating it for a lossy message in a packet; don't remember that
+   *     we sent it, since it might be lost, and generate it even if the last one was the same,
+   *     since the last one might be delayed.
+   */
+  MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember);
 
-    /** Double the RTT when we resend a packet. */
-    void backoffOnResend();
+  boolean grabSendLoadStatsASAP(boolean realtime);
 
-    /** Report when a packet was acked. */
-    void receivedAck(long currentTimeMillis);
+  /**
+   * Set the load stats to be sent asap. E.g. if we grabbed it and can't actually execute the send
+   * for some reason.
+   */
+  void setSendLoadStatsASAP(boolean realtime);
+
+  /** Average ping time incorporating variance, calculated like TCP SRTT, as with RFC 2988. */
+  double averagePingTimeCorrected();
+
+  /** Double the RTT when we resend a packet. */
+  void backoffOnResend();
+
+  /** Report when a packet was acked. */
+  void receivedAck(long currentTimeMillis);
 }

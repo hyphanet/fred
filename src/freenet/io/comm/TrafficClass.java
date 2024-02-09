@@ -2,10 +2,10 @@ package freenet.io.comm;
 
 /**
  * Represents the Traffic Class as set in @see Socket.setTrafficClass(int)
+ *
  * @see https://en.wikipedia.org/wiki/Differentiated_services
  */
 public enum TrafficClass {
-
   BEST_EFFORT(0),
   DSCP_CRITICAL(0xB8),
   DSCP_AF11(0x28),
@@ -48,7 +48,7 @@ public enum TrafficClass {
     int tcParsed = -1;
     try {
       tcParsed = Integer.parseInt(tcName);
-    } catch (NumberFormatException e){
+    } catch (NumberFormatException e) {
       // it's fine; we might have a name here
     }
 

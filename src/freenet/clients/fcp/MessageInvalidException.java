@@ -4,23 +4,21 @@
 package freenet.clients.fcp;
 
 /**
- * Thrown when an FCP message is invalid. This is after we have a
- * SimpleFieldSet; one example is if the fields necessary do not exist.
- * This is a catch-all error; it corresponds to MESSAGE_PARSE_ERROR on
- * ProtocolError.
+ * Thrown when an FCP message is invalid. This is after we have a SimpleFieldSet; one example is if
+ * the fields necessary do not exist. This is a catch-all error; it corresponds to
+ * MESSAGE_PARSE_ERROR on ProtocolError.
  */
 public class MessageInvalidException extends Exception {
-    private static final long serialVersionUID = -1;
+  private static final long serialVersionUID = -1;
 
-    final int protocolCode;
-    public final String ident;
-    public final boolean global;
-    
-    public MessageInvalidException(int protocolCode, String extra, String ident, boolean global) {
-        super(extra);
-        this.protocolCode = protocolCode;
-        this.ident = ident;
-        this.global = global;
-    }
+  final int protocolCode;
+  public final String ident;
+  public final boolean global;
 
+  public MessageInvalidException(int protocolCode, String extra, String ident, boolean global) {
+    super(extra);
+    this.protocolCode = protocolCode;
+    this.ident = ident;
+    this.global = global;
+  }
 }

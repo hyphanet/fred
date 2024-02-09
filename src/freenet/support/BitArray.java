@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -19,162 +19,162 @@
 
 package freenet.support;
 
+import freenet.io.WritableToDataOutputStream;
 import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import freenet.io.WritableToDataOutputStream;
-
 public class BitArray implements WritableToDataOutputStream {
 
-    private int size;
-    private final BitSet bits;
+  private int size;
+  private final BitSet bits;
 
-    public BitArray(byte[] data) {
-        this.bits = BitSet.valueOf(data);
-        this.size = data.length * 8;
-    }
-    
-    public BitArray copy() {
-        return new BitArray(this);
-    }
-    
-    /**
-     * This constructor does not check for unacceptable sizes, and should only be used on trusted data.
-     */
-    public BitArray(DataInput dis) throws IOException {
-        this(dis, Integer.MAX_VALUE);
-    }
-    
-    public BitArray(DataInput dis, int maxSize) throws IOException {
-        this.size = dis.readInt();
-        if (size <= 0 || size > maxSize) {
-            throw new IOException("Unacceptable bitarray size: " + size);
-        }
-        byte[] inputBits = new byte[getByteSize()];
-        dis.readFully(inputBits);
-        this.bits = BitSet.valueOf(inputBits);
-        trimToSize();
-    }
+  public BitArray(byte[] data) {
+    this.bits = BitSet.valueOf(data);
+    this.size = data.length * 8;
+  }
 
-    public BitArray(int size) {
-        this.size = size;
-        this.bits = new BitSet(size);
-    }
+  public BitArray copy() {
+    return new BitArray(this);
+  }
 
-    public BitArray(BitArray src) {
-        this.size = src.size;
-        this.bits = (BitSet)src.bits.clone();
-    }
+  /**
+   * This constructor does not check for unacceptable sizes, and should only be used on trusted
+   * data.
+   */
+  public BitArray(DataInput dis) throws IOException {
+    this(dis, Integer.MAX_VALUE);
+  }
 
-    public void setBit(int pos, boolean f) {
-        checkPos(pos);
-        bits.set(pos, f);
+  public BitArray(DataInput dis, int maxSize) throws IOException {
+    this.size = dis.readInt();
+    if (size <= 0 || size > maxSize) {
+      throw new IOException("Unacceptable bitarray size: " + size);
     }
+    byte[] inputBits = new byte[getByteSize()];
+    dis.readFully(inputBits);
+    this.bits = BitSet.valueOf(inputBits);
+    trimToSize();
+  }
 
-    public boolean bitAt(int pos) {
-        checkPos(pos);
-        return bits.get(pos);
-    }
+  public BitArray(int size) {
+    this.size = size;
+    this.bits = new BitSet(size);
+  }
 
-    static int unsignedByteToInt(byte b) {
-        return b & 0xFF;
-    }
+  public BitArray(BitArray src) {
+    this.size = src.size;
+    this.bits = (BitSet) src.bits.clone();
+  }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder(this.size);
-        for (int x = 0; x < size; x++) {
-            if (bitAt(x)) {
-                sb.append('1');
-            } else {
-                sb.append('0');
-            }
-        }
-        return sb.toString();
-    }
+  public void setBit(int pos, boolean f) {
+    checkPos(pos);
+    bits.set(pos, f);
+  }
 
-    @Override
-    public void writeToDataOutputStream(DataOutputStream dos) throws IOException {
-        dos.writeInt(size);
-        byte[] outputBits = bits.toByteArray();
-        if (outputBits.length != getByteSize()) {
-            outputBits = Arrays.copyOf(outputBits, getByteSize());
-        }
-        dos.write(outputBits);
-    }
+  public boolean bitAt(int pos) {
+    checkPos(pos);
+    return bits.get(pos);
+  }
 
-    public static int serializedLength(int size) {
-        return toByteSize(size) + 4;
-    }
+  static int unsignedByteToInt(byte b) {
+    return b & 0xFF;
+  }
 
-    public int getSize() {
-        return size;
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder(this.size);
+    for (int x = 0; x < size; x++) {
+      if (bitAt(x)) {
+        sb.append('1');
+      } else {
+        sb.append('0');
+      }
     }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof BitArray)) {
-            return false;
-        }
-        BitArray ba = (BitArray) o;
-        if (ba.getSize() != getSize()) {
-            return false;
-        }
-        return bits.equals(ba.bits);
-    }
-    
-    @Override
-    public int hashCode() {
-        return bits.hashCode() ^ size;
-    }
+    return sb.toString();
+  }
 
-    public void setAllOnes() {
-        bits.set(0, size);
+  @Override
+  public void writeToDataOutputStream(DataOutputStream dos) throws IOException {
+    dos.writeInt(size);
+    byte[] outputBits = bits.toByteArray();
+    if (outputBits.length != getByteSize()) {
+      outputBits = Arrays.copyOf(outputBits, getByteSize());
     }
+    dos.write(outputBits);
+  }
 
-    public int firstOne(int start) {
-        return bits.nextSetBit(start);
-    }
-    
-    public int firstOne() {
-        return firstOne(0);
-    }
+  public static int serializedLength(int size) {
+    return toByteSize(size) + 4;
+  }
 
-    public int firstZero(int start) {
-        int result = bits.nextClearBit(start);
-        if (result >= size) {
-            return -1;
-        }
-        return result;
-    }
+  public int getSize() {
+    return size;
+  }
 
-    public void setSize(int size) {
-        this.size = size;
-        trimToSize();
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof BitArray)) {
+      return false;
     }
+    BitArray ba = (BitArray) o;
+    if (ba.getSize() != getSize()) {
+      return false;
+    }
+    return bits.equals(ba.bits);
+  }
 
-    public int lastOne(int start) {
-        return bits.previousSetBit(start);
-    }
+  @Override
+  public int hashCode() {
+    return bits.hashCode() ^ size;
+  }
 
-    private void trimToSize() {
-        bits.clear(size, Integer.MAX_VALUE);
-    }
+  public void setAllOnes() {
+    bits.set(0, size);
+  }
 
-    private int getByteSize() {
-        return toByteSize(size);
-    }
+  public int firstOne(int start) {
+    return bits.nextSetBit(start);
+  }
 
-    private static int toByteSize(int bitSize) {
-        return (bitSize + 7) / 8;
-    }
+  public int firstOne() {
+    return firstOne(0);
+  }
 
-    private void checkPos(int pos) {
-        if (pos > size || pos < 0) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+  public int firstZero(int start) {
+    int result = bits.nextClearBit(start);
+    if (result >= size) {
+      return -1;
     }
+    return result;
+  }
+
+  public void setSize(int size) {
+    this.size = size;
+    trimToSize();
+  }
+
+  public int lastOne(int start) {
+    return bits.previousSetBit(start);
+  }
+
+  private void trimToSize() {
+    bits.clear(size, Integer.MAX_VALUE);
+  }
+
+  private int getByteSize() {
+    return toByteSize(size);
+  }
+
+  private static int toByteSize(int bitSize) {
+    return (bitSize + 7) / 8;
+  }
+
+  private void checkPos(int pos) {
+    if (pos > size || pos < 0) {
+      throw new ArrayIndexOutOfBoundsException();
+    }
+  }
 }

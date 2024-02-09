@@ -5,11 +5,10 @@ package freenet.support;
 
 /**
  * Freely modifiable boolean wrapper.
- * @author toad
  *
+ * @author toad
  */
 public class MutableBoolean {
 
-    public boolean value;
-    
+  public boolean value;
 }

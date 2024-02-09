@@ -5,7 +5,6 @@ package freenet.client.events;
 
 import freenet.client.async.ClientContext;
 
-
 /**
  * Event handling for clients.
  *
@@ -13,26 +12,25 @@ import freenet.client.async.ClientContext;
  */
 public interface ClientEventProducer {
 
-    /**
-     * Sends the event to all registered EventListeners.
-     * @param ce  the ClientEvent to raise
-     */
-    void produceEvent(ClientEvent ce, ClientContext context);
-        
-    /**
-     * Adds an EventListener that will receive all events produced
-     * by the implementing object.
-     * @param cel The ClientEventListener to add.
-     */
-    void addEventListener(ClientEventListener cel);
+  /**
+   * Sends the event to all registered EventListeners.
+   *
+   * @param ce the ClientEvent to raise
+   */
+  void produceEvent(ClientEvent ce, ClientContext context);
 
-    /**
-     * Removes an EventListener that will no loger receive events
-     * produced by the implementing object.
-     * @param cel  The ClientEventListener to remove.
-     * @return     true if a Listener was removed, false otherwise.
-     */
-    boolean removeEventListener(ClientEventListener cel);
+  /**
+   * Adds an EventListener that will receive all events produced by the implementing object.
+   *
+   * @param cel The ClientEventListener to add.
+   */
+  void addEventListener(ClientEventListener cel);
+
+  /**
+   * Removes an EventListener that will no loger receive events produced by the implementing object.
+   *
+   * @param cel The ClientEventListener to remove.
+   * @return true if a Listener was removed, false otherwise.
+   */
+  boolean removeEventListener(ClientEventListener cel);
 }
-
-

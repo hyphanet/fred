@@ -3,61 +3,60 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import freenet.pluginmanager.PluginManager.PluginProgress;
 import java.io.IOException;
 import java.io.InputStream;
 
-import freenet.pluginmanager.PluginManager.PluginProgress;
-
 /**
- * load a plugin from wherever 
- * @author saces
+ * load a plugin from wherever
  *
+ * @author saces
  */
 public abstract class PluginDownLoader<T> {
-    
-    private T _source;
 
-    public String setSource(String source) throws PluginNotFoundException {
-        this._source = checkSource(source);
-        return getPluginName(source);
-    }
+  private T _source;
 
-    public T getSource() {
-        return _source;
-    }
-    
-    abstract InputStream getInputStream(PluginProgress progress) throws IOException, PluginNotFoundException;
-    
-    abstract T checkSource(String source) throws PluginNotFoundException;
-    
-    abstract String getPluginName(String source) throws PluginNotFoundException;
-    
-    abstract String getSHA1sum() throws PluginNotFoundException;
+  public String setSource(String source) throws PluginNotFoundException {
+    this._source = checkSource(source);
+    return getPluginName(source);
+  }
 
-    /** Cancel the load if possible */
-    abstract void tryCancel();
+  public T getSource() {
+    return _source;
+  }
 
-    public boolean isCachingProhibited() {
-        return false;
-    }
+  abstract InputStream getInputStream(PluginProgress progress)
+      throws IOException, PluginNotFoundException;
 
-    public boolean isOfficialPluginLoader() {
-        return false;
-    }
+  abstract T checkSource(String source) throws PluginNotFoundException;
 
-    public boolean isLoadingFromFreenet() {
-        return false;
-    }
+  abstract String getPluginName(String source) throws PluginNotFoundException;
 
-    /**
-     * Returns a {@link PluginDownLoader} that can be used to restart a plugin download. This
-     * default implementation assumes that the current downloader is stateless so it simply returns
-     * {@code this}.
-     *
-     * @return A plugin downloader suitable for restarting the download
-     */
-    public PluginDownLoader<T> getRetryDownloader() {
-        return this;
-    }
+  abstract String getSHA1sum() throws PluginNotFoundException;
 
+  /** Cancel the load if possible */
+  abstract void tryCancel();
+
+  public boolean isCachingProhibited() {
+    return false;
+  }
+
+  public boolean isOfficialPluginLoader() {
+    return false;
+  }
+
+  public boolean isLoadingFromFreenet() {
+    return false;
+  }
+
+  /**
+   * Returns a {@link PluginDownLoader} that can be used to restart a plugin download. This default
+   * implementation assumes that the current downloader is stateless so it simply returns {@code
+   * this}.
+   *
+   * @return A plugin downloader suitable for restarting the download
+   */
+  public PluginDownLoader<T> getRetryDownloader() {
+    return this;
+  }
 }

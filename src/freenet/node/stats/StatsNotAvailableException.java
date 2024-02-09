@@ -8,20 +8,19 @@ package freenet.node.stats;
  */
 public class StatsNotAvailableException extends Exception {
 
-    final private static long serialVersionUID = -7349859507599514672L;
+  private static final long serialVersionUID = -7349859507599514672L;
 
-    public StatsNotAvailableException() {
-    }
+  public StatsNotAvailableException() {}
 
-    public StatsNotAvailableException(String s) {
-        super(s);
-    }
+  public StatsNotAvailableException(String s) {
+    super(s);
+  }
 
-    public StatsNotAvailableException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
+  public StatsNotAvailableException(String s, Throwable throwable) {
+    super(s, throwable);
+  }
 
-    public StatsNotAvailableException(Throwable throwable) {
-        super(throwable);
-    }
+  public StatsNotAvailableException(Throwable throwable) {
+    super(throwable);
+  }
 }

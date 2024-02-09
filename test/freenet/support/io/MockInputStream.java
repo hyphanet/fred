@@ -7,16 +7,15 @@ import java.io.InputStream;
 
 public class MockInputStream extends InputStream {
 
-    public MockInputStream() {
-    }
+  public MockInputStream() {}
 
-    @Override
-    public int read() {
-        return -1;
-    }
+  @Override
+  public int read() {
+    return -1;
+  }
 
-    @Override
-    public int read(byte[] data, int offset, int len) {
-        return len;
-    }
+  @Override
+  public int read(byte[] data, int offset, int len) {
+    return len;
+  }
 }

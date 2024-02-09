@@ -6,179 +6,179 @@ package freenet.support;
 import static org.junit.Assert.*;
 
 import java.util.Iterator;
-
 import org.junit.Test;
 
 public class SparseBitmapTest {
-    @Test
-    public void testAdd() {
+  @Test
+  public void testAdd() {
+    SparseBitmap s = new SparseBitmap();
+
+    s.add(0, 1);
+    assertTrue("Didn't contain 0->1 after adding range 0->1", s.contains(0, 1));
+    assertFalse("Contained 2 after adding range 0->1", s.contains(2, 2));
+
+    s.add(3, 3);
+    assertFalse(s.contains(2, 2));
+    assertTrue(s.contains(3, 3));
+    assertFalse(s.contains(4, 4));
+
+    s.add(0, 5);
+    assertTrue(s.contains(0, 5));
+
+    s.add(10, 15);
+    assertTrue(s.contains(0, 5));
+    assertTrue(s.contains(10, 15));
+
+    try {
+      s.add(5, 0);
+      fail("Didn't throw when adding range 5->0");
+    } catch (IllegalArgumentException e) {
+    }
+
+    assertTrue(s.contains(0, 5));
+    assertTrue(s.contains(10, 15));
+  }
+
+  @Test
+  public void testClear() {
+    SparseBitmap s = new SparseBitmap();
+    s.add(0, 2);
+    assertTrue(s.contains(1, 1));
+    s.clear();
+    assertFalse(s.contains(1, 1));
+  }
+
+  @Test
+  public void testRemove() {
+    SparseBitmap s = new SparseBitmap();
+
+    s.add(0, 4);
+    s.add(10, 14);
+    assertTrue(s.contains(0, 4));
+    assertFalse(s.contains(5, 9));
+    assertTrue(s.contains(10, 14));
+
+    // Remove begining of one range
+    s.remove(10, 11);
+    assertTrue(s.contains(0, 4));
+    assertFalse(s.contains(5, 11));
+    assertTrue(s.contains(12, 14));
+
+    // Remove end of one range
+    s.remove(4, 4);
+    assertTrue(s.contains(0, 3));
+    assertFalse(s.contains(4, 11));
+    assertTrue(s.contains(12, 14));
+
+    // Remove empty range
+    s.remove(4, 11);
+    assertTrue(s.contains(0, 3));
+    assertFalse(s.contains(4, 11));
+    assertTrue(s.contains(12, 14));
+
+    // Remove from two ranges
+    s.remove(3, 12);
+    assertTrue(s.contains(0, 2));
+    assertFalse(s.contains(3, 12));
+    assertTrue(s.contains(13, 14));
+  }
+
+  @Test
+  public void testNotOverlapping() {
+    for (int a = 0; a <= 20; a++) {
+      for (int b = a; b <= 20; b++) {
         SparseBitmap s = new SparseBitmap();
+        s.add(-10, -1);
+        s.add(3, 10);
+        s.add(12, 12);
+        s.add(14, 16);
+        s.add(17, 17);
+        s.add(19, 22);
 
-        s.add(0, 1);
-        assertTrue("Didn't contain 0->1 after adding range 0->1", s.contains(0, 1));
-        assertFalse("Contained 2 after adding range 0->1", s.contains(2, 2));
-
-        s.add(3,3);
-        assertFalse(s.contains(2, 2));
-        assertTrue(s.contains(3, 3));
-        assertFalse(s.contains(4, 4));
-
-        s.add(0, 5);
-        assertTrue(s.contains(0, 5));
-
-        s.add(10, 15);
-        assertTrue(s.contains(0, 5));
-        assertTrue(s.contains(10, 15));
-
-        try {
-            s.add(5, 0);
-            fail("Didn't throw when adding range 5->0");
-        } catch (IllegalArgumentException e) {}
-
-        assertTrue(s.contains(0, 5));
-        assertTrue(s.contains(10, 15));
+        assertEquals(6, s.notOverlapping(-10, 22));
+        final int notOverlapping = s.notOverlapping(a, b);
+        final int width = b - a + 1;
+        final int overlapping = width - notOverlapping;
+        assertTrue((notOverlapping == 0) == s.contains(a, b));
+        s.remove(a, b);
+        assertFalse(s.contains(a, b));
+        assertEquals(width, s.notOverlapping(a, b));
+        assertEquals(6 + overlapping, s.notOverlapping(-10, 22));
+        s.remove(a, b);
+        assertFalse(s.contains(a, b));
+        assertEquals(width, s.notOverlapping(a, b));
+        assertEquals(6 + overlapping, s.notOverlapping(-10, 22));
+        s.add(a, b);
+        assertTrue(s.contains(a, b));
+        assertEquals(0, s.notOverlapping(a, b));
+        assertEquals(6 - notOverlapping, s.notOverlapping(-10, 22));
+        s.add(a, b);
+        assertTrue(s.contains(a, b));
+        assertEquals(0, s.notOverlapping(a, b));
+        assertEquals(6 - notOverlapping, s.notOverlapping(-10, 22));
+      }
     }
+  }
 
-    @Test
-    public void testClear() {
-        SparseBitmap s = new SparseBitmap();
-        s.add(0, 2);
-        assertTrue(s.contains(1, 1));
-        s.clear();
-        assertFalse(s.contains(1, 1));
+  @Test
+  public void testContainsThrowsOnBadRange() {
+    SparseBitmap s = new SparseBitmap();
+    try {
+      s.contains(2, 1);
+      fail();
+    } catch (IllegalArgumentException e) {
+      // Expected
     }
+  }
 
-    @Test
-    public void testRemove() {
-        SparseBitmap s = new SparseBitmap();
+  @Test
+  public void testCombineBackwards() {
+    SparseBitmap s = new SparseBitmap();
+    s.add(5, 10);
+    s.add(0, 5);
 
-        s.add(0,4);
-        s.add(10, 14);
-        assertTrue(s.contains(0, 4));
-        assertFalse(s.contains(5, 9));
-        assertTrue(s.contains(10, 14));
+    Iterator<int[]> it = s.iterator();
+    assertTrue(it.hasNext());
+    int[] range = it.next();
+    assertEquals(0, range[0]);
+    assertEquals(10, range[1]);
+    assertFalse(it.hasNext());
+  }
 
-        //Remove begining of one range
-        s.remove(10, 11);
-        assertTrue(s.contains(0, 4));
-        assertFalse(s.contains(5, 11));
-        assertTrue(s.contains(12, 14));
+  @Test
+  public void testCombineMiddle() {
+    SparseBitmap s = new SparseBitmap();
+    s.add(10, 15);
+    s.add(0, 5);
+    s.add(5, 10);
 
-        //Remove end of one range
-        s.remove(4, 4);
-        assertTrue(s.contains(0, 3));
-        assertFalse(s.contains(4, 11));
-        assertTrue(s.contains(12, 14));
+    Iterator<int[]> it = s.iterator();
+    assertTrue(it.hasNext());
+    int[] range = it.next();
+    assertEquals(0, range[0]);
+    assertEquals(15, range[1]);
+    assertFalse(it.hasNext());
+  }
 
-        //Remove empty range
-        s.remove(4,11);
-        assertTrue(s.contains(0, 3));
-        assertFalse(s.contains(4, 11));
-        assertTrue(s.contains(12, 14));
+  @Test
+  public void testCombineAdjacent() {
+    SparseBitmap s = new SparseBitmap();
+    s.add(10, 14);
+    s.add(0, 4);
+    s.add(5, 9);
 
-        //Remove from two ranges
-        s.remove(3,12);
-        assertTrue(s.contains(0, 2));
-        assertFalse(s.contains(3, 12));
-        assertTrue(s.contains(13, 14));
-    }
+    Iterator<int[]> it = s.iterator();
+    assertTrue(it.hasNext());
+    int[] range = it.next();
+    assertEquals(0, range[0]);
+    assertEquals(14, range[1]);
+    assertFalse(it.hasNext());
+  }
 
-    @Test
-    public void testNotOverlapping() {
-        for (int a = 0; a <= 20; a++) {
-            for (int b = a; b <= 20; b++) {
-                SparseBitmap s = new SparseBitmap();
-                s.add(-10, -1);
-                s.add(3, 10);
-                s.add(12, 12);
-                s.add(14, 16);
-                s.add(17, 17);
-                s.add(19, 22);
-
-                assertEquals(6, s.notOverlapping(-10, 22));
-                final int notOverlapping = s.notOverlapping(a, b);
-                final int width = b - a + 1;
-                final int overlapping = width - notOverlapping;
-                assertTrue((notOverlapping == 0) == s.contains(a, b));
-                s.remove(a, b);
-                assertFalse(s.contains(a, b));
-                assertEquals(width, s.notOverlapping(a, b));
-                assertEquals(6 + overlapping, s.notOverlapping(-10, 22));
-                s.remove(a, b);
-                assertFalse(s.contains(a, b));
-                assertEquals(width, s.notOverlapping(a, b));
-                assertEquals(6 + overlapping, s.notOverlapping(-10, 22));
-                s.add(a, b);
-                assertTrue(s.contains(a, b));
-                assertEquals(0, s.notOverlapping(a, b));
-                assertEquals(6 - notOverlapping, s.notOverlapping(-10, 22));
-                s.add(a, b);
-                assertTrue(s.contains(a, b));
-                assertEquals(0, s.notOverlapping(a, b));
-                assertEquals(6 - notOverlapping, s.notOverlapping(-10, 22));
-            }
-        }
-    }
-
-    @Test
-    public void testContainsThrowsOnBadRange() {
-        SparseBitmap s = new SparseBitmap();
-        try {
-            s.contains(2, 1);
-            fail();
-        } catch (IllegalArgumentException e) {
-            //Expected
-        }
-    }
-
-    @Test
-    public void testCombineBackwards() {
-        SparseBitmap s = new SparseBitmap();
-        s.add(5, 10);
-        s.add(0, 5);
-
-        Iterator<int[]> it = s.iterator();
-        assertTrue(it.hasNext());
-        int[] range = it.next();
-        assertEquals(0, range[0]);
-        assertEquals(10, range[1]);
-        assertFalse(it.hasNext());
-    }
-
-    @Test
-    public void testCombineMiddle() {
-        SparseBitmap s = new SparseBitmap();
-        s.add(10, 15);
-        s.add(0, 5);
-        s.add(5, 10);
-
-        Iterator<int[]> it = s.iterator();
-        assertTrue(it.hasNext());
-        int[] range = it.next();
-        assertEquals(0, range[0]);
-        assertEquals(15, range[1]);
-        assertFalse(it.hasNext());
-    }
-
-    @Test
-    public void testCombineAdjacent() {
-        SparseBitmap s = new SparseBitmap();
-        s.add(10, 14);
-        s.add(0, 4);
-        s.add(5, 9);
-
-        Iterator<int[]> it = s.iterator();
-        assertTrue(it.hasNext());
-        int[] range = it.next();
-        assertEquals(0, range[0]);
-        assertEquals(14, range[1]);
-        assertFalse(it.hasNext());
-    }
-
-    @Test
-    public void testIteratorDoubleRemove() {
-        SparseBitmap s = new SparseBitmap();
-        s.add(1, 2);
-        s.remove(0, 3);
-    }
+  @Test
+  public void testIteratorDoubleRemove() {
+    SparseBitmap s = new SparseBitmap();
+    s.add(1, 2);
+    s.remove(0, 3);
+  }
 }
