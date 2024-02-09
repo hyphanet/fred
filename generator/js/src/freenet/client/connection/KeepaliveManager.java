@@ -20,57 +20,57 @@ import freenet.client.tools.QueryParameter;
  */
 public class KeepaliveManager implements IConnectionManager {
 
-	/** The timer that schedules the periodic message */
-	private KeepaliveTimer	timer			= new KeepaliveTimer();
+    /** The timer that schedules the periodic message */
+    private KeepaliveTimer  timer           = new KeepaliveTimer();
 
-	/** Is it cancelled already? */
-	private boolean			cancelled		= false;
+    /** Is it cancelled already? */
+    private boolean         cancelled       = false;
 
-	/** Does the first keepalive succeded? */
-	private boolean			firstSuccess	= false;
+    /** Does the first keepalive succeded? */
+    private boolean         firstSuccess    = false;
 
-	@Override
-	public void closeConnection() {
-		timer.cancel();
-		// If it wasn't cancelled, then we show a message about pushing cancelled. It makes sure that this message shows only once
-		if (cancelled == false) {
-			if (FreenetJs.isPushingCancelledExpected == false) {
-				MessageManager.get().addMessage(new Message(L10n.get("pushingCancelled"), Priority.ERROR, null, true));
-			}
-			cancelled = true;
-		}
-	}
+    @Override
+    public void closeConnection() {
+        timer.cancel();
+        // If it wasn't cancelled, then we show a message about pushing cancelled. It makes sure that this message shows only once
+        if (cancelled == false) {
+            if (FreenetJs.isPushingCancelledExpected == false) {
+                MessageManager.get().addMessage(new Message(L10n.get("pushingCancelled"), Priority.ERROR, null, true));
+            }
+            cancelled = true;
+        }
+    }
 
-	@Override
-	public void openConnection() {
-		timer.run();
-		timer.scheduleRepeating(UpdaterConstants.KEEPALIVE_INTERVAL_SECONDS * 1000);
-	}
+    @Override
+    public void openConnection() {
+        timer.run();
+        timer.scheduleRepeating(UpdaterConstants.KEEPALIVE_INTERVAL_SECONDS * 1000);
+    }
 
-	/** This class is a Timer that sends a keepalive message periodically */
-	private class KeepaliveTimer extends Timer {
-		@Override
-		public void run() {
-			FreenetRequest.sendRequest(UpdaterConstants.keepalivePath, new QueryParameter("requestId", FreenetJs.requestId), new RequestCallback() {
-				@Override
-				public void onResponseReceived(Request request, Response response) {
-					// If not success, then close the connection
-					if (response.getText().compareTo(UpdaterConstants.SUCCESS) != 0) {
-						if (firstSuccess == false) {
-							FreenetJs.isPushingCancelledExpected = true;
-						}
-						closeConnection();
-					} else {
-						firstSuccess = true;
-					}
-				}
+    /** This class is a Timer that sends a keepalive message periodically */
+    private class KeepaliveTimer extends Timer {
+        @Override
+        public void run() {
+            FreenetRequest.sendRequest(UpdaterConstants.keepalivePath, new QueryParameter("requestId", FreenetJs.requestId), new RequestCallback() {
+                @Override
+                public void onResponseReceived(Request request, Response response) {
+                    // If not success, then close the connection
+                    if (response.getText().compareTo(UpdaterConstants.SUCCESS) != 0) {
+                        if (firstSuccess == false) {
+                            FreenetJs.isPushingCancelledExpected = true;
+                        }
+                        closeConnection();
+                    } else {
+                        firstSuccess = true;
+                    }
+                }
 
-				@Override
-				public void onError(Request request, Throwable exception) {
-					// If the server responded with error, close the connection
-					closeConnection();
-				}
-			});
-		}
-	}
+                @Override
+                public void onError(Request request, Throwable exception) {
+                    // If the server responded with error, close the connection
+                    closeConnection();
+                }
+            });
+        }
+    }
 }

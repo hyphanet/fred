@@ -9,10 +9,10 @@ package freenet.support.compress;
  */
 public class InvalidCompressionCodecException extends Exception {
 
-	private static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -1;
 
-	public InvalidCompressionCodecException(String message) {
-		super(message);
-	}
+    public InvalidCompressionCodecException(String message) {
+        super(message);
+    }
 
 }

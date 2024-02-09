@@ -39,49 +39,49 @@ import freenet.support.api.Bucket;
  */
 @Deprecated
 public class Closer {
-	/**
-	 * Closes the given stream.
-	 * 
-	 * @param closable The output stream to close
-	 */
-	public static void close(Closeable closable) {
-		if (closable != null) {
-			try {
-				closable.close();
-			} catch (IOException e) {
-				Logger.error(Closer.class, "Error during close() on "+closable, e);
-			}
-		}
-	}
-	
-	/**
-	 * Frees the given bucket. Notice that you have to do removeFrom() for persistent buckets yourself.
-	 * @param bucket The Bucket to close.
-	 */
-	public static void close(Bucket bucket) {
-		if (bucket != null) {
-			try { 
-				bucket.free();
-			} catch(RuntimeException e) {
-				Logger.error(Closer.class, "Error during free().", e);
-			}
-		}
-	}
+    /**
+     * Closes the given stream.
+     * 
+     * @param closable The output stream to close
+     */
+    public static void close(Closeable closable) {
+        if (closable != null) {
+            try {
+                closable.close();
+            } catch (IOException e) {
+                Logger.error(Closer.class, "Error during close() on "+closable, e);
+            }
+        }
+    }
+    
+    /**
+     * Frees the given bucket. Notice that you have to do removeFrom() for persistent buckets yourself.
+     * @param bucket The Bucket to close.
+     */
+    public static void close(Bucket bucket) {
+        if (bucket != null) {
+            try { 
+                bucket.free();
+            } catch(RuntimeException e) {
+                Logger.error(Closer.class, "Error during free().", e);
+            }
+        }
+    }
 
-	/**
-	 * Closes the given zip file.
-	 * 
-	 * @param zipFile
-	 *            The zip file to close
-	 */
-	public static void close(ZipFile zipFile) {
-		if (zipFile != null) {
-			try {
-				zipFile.close();
-			} catch (IOException e) {
-				Logger.error(Closer.class, "Error during close().", e);
-			}
-		}
-	}
+    /**
+     * Closes the given zip file.
+     * 
+     * @param zipFile
+     *            The zip file to close
+     */
+    public static void close(ZipFile zipFile) {
+        if (zipFile != null) {
+            try {
+                zipFile.close();
+            } catch (IOException e) {
+                Logger.error(Closer.class, "Error during close().", e);
+            }
+        }
+    }
 
 }

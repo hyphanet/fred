@@ -107,38 +107,38 @@ public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBu
         long magic = ByteBuffer.wrap(header, offset, 8).getLong();
 
         if(!newFile && END_MAGIC != magic) {
-        	throw new IOException("This is not an EncryptedRandomAccessBuffer!");
+            throw new IOException("This is not an EncryptedRandomAccessBuffer!");
         }
 
         version = type.bitmask;
         if(newFile) {
             this.headerEncIV = KeyGenUtils.genIV(type.encryptType.ivSize).getIV();
             this.unencryptedBaseKey = KeyGenUtils.genSecretKey(type.encryptKey);
-        	writeHeader();
+            writeHeader();
         } else {
-        	if(readVersion != version){
-        		throw new IOException("Version of the underlying RandomAccessBuffer is "
-        				+ "incompatible with this ERATType");
-        	}
+            if(readVersion != version){
+                throw new IOException("Version of the underlying RandomAccessBuffer is "
+                        + "incompatible with this ERATType");
+            }
 
-        	if(!verifyHeader()){
-        		throw new GeneralSecurityException("MAC is incorrect");
-        	}
+            if(!verifyHeader()){
+                throw new GeneralSecurityException("MAC is incorrect");
+            }
         }
         ParametersWithIV tempPram = null;
         try{
             KeyParameter cipherKey = new KeyParameter(KeyGenUtils.deriveSecretKey(unencryptedBaseKey, 
-        			getClass(), kdfInput.underlyingKey.input, 
-        			type.encryptKey).getEncoded());
+                    getClass(), kdfInput.underlyingKey.input, 
+                    type.encryptKey).getEncoded());
             tempPram = new ParametersWithIV(cipherKey, 
-        			KeyGenUtils.deriveIvParameterSpec(unencryptedBaseKey, getClass(), 
-        					kdfInput.underlyingIV.input, type.encryptKey).getIV());
+                    KeyGenUtils.deriveIvParameterSpec(unencryptedBaseKey, getClass(), 
+                            kdfInput.underlyingIV.input, type.encryptKey).getIV());
         } catch(InvalidKeyException e) {
             throw new IllegalStateException(e); // Must be a bug.
         }
         this.cipherParams = tempPram;
-    	cipherRead.init(false, cipherParams);
-    	cipherWrite.init(true, cipherParams);
+        cipherRead.init(false, cipherParams);
+        cipherWrite.init(true, cipherParams);
     }
 
     @Override

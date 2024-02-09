@@ -20,35 +20,35 @@ public class PersistentStatsPutter implements Serializable {
 
     public static final int OFFSET = 60000;
 
-	private long latestNodeBytesOut = 0;
-	private long latestNodeBytesIn = 0;
-	private long latestUptimeVal = 0;
-	private BandwidthStatsContainer latestBW = new BandwidthStatsContainer();
-	private UptimeContainer latestUptime = new UptimeContainer();
+    private long latestNodeBytesOut = 0;
+    private long latestNodeBytesIn = 0;
+    private long latestUptimeVal = 0;
+    private BandwidthStatsContainer latestBW = new BandwidthStatsContainer();
+    private UptimeContainer latestUptime = new UptimeContainer();
 
-	public BandwidthStatsContainer getLatestBWData() {
-		return this.latestBW;
-	}
+    public BandwidthStatsContainer getLatestBWData() {
+        return this.latestBW;
+    }
 
-	public UptimeContainer getLatestUptimeData() {
-		return this.latestUptime;
-	}
+    public UptimeContainer getLatestUptimeData() {
+        return this.latestUptime;
+    }
 
-	public void updateData(Node n) {
-		// Update our values
-		// 0 : total bytes out, 1 : total bytes in
-		final long[] nodeBW = n.collector.getTotalIO();
-		this.latestBW.totalBytesOut += nodeBW[0] - this.latestNodeBytesOut;
-		this.latestBW.totalBytesIn += nodeBW[1] - this.latestNodeBytesIn;
-		this.latestBW.creationTime = System.currentTimeMillis();
-		this.latestNodeBytesOut = nodeBW[0];
-		this.latestNodeBytesIn = nodeBW[1];
-		
-		final long uptime = n.getUptime();
-		this.latestUptime.totalUptime += uptime - this.latestUptimeVal;
-		this.latestUptime.creationTime = System.currentTimeMillis();
-		this.latestUptimeVal = uptime;
-	}
+    public void updateData(Node n) {
+        // Update our values
+        // 0 : total bytes out, 1 : total bytes in
+        final long[] nodeBW = n.collector.getTotalIO();
+        this.latestBW.totalBytesOut += nodeBW[0] - this.latestNodeBytesOut;
+        this.latestBW.totalBytesIn += nodeBW[1] - this.latestNodeBytesIn;
+        this.latestBW.creationTime = System.currentTimeMillis();
+        this.latestNodeBytesOut = nodeBW[0];
+        this.latestNodeBytesIn = nodeBW[1];
+        
+        final long uptime = n.getUptime();
+        this.latestUptime.totalUptime += uptime - this.latestUptimeVal;
+        this.latestUptime.creationTime = System.currentTimeMillis();
+        this.latestUptimeVal = uptime;
+    }
 
     public void addFrom(PersistentStatsPutter stored) {
         this.latestBW.addFrom(stored.latestBW);

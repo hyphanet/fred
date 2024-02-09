@@ -18,56 +18,56 @@ import freenet.io.comm.SocketHandler;
  */
 public interface OutgoingPacketMangler {
 
-	/**
-	 * Send a handshake, if possible, to the node.
-	 * @param pn
-	 */
-	public void sendHandshake(PeerNode pn, boolean notRegistered);
+    /**
+     * Send a handshake, if possible, to the node.
+     * @param pn
+     */
+    public void sendHandshake(PeerNode pn, boolean notRegistered);
 
-	/**
-	 * Is a peer disconnected?
-	 */
-	public boolean isDisconnected(PeerContext context);
-	
-	/**
-	 * List of supported negotiation types in preference order (best last)
-	 */
-	public int[] supportedNegTypes(boolean forPublic);
-	
-	/**
-	 * The SocketHandler we are connected to.
-	 */
-	public SocketHandler getSocketHandler();
+    /**
+     * Is a peer disconnected?
+     */
+    public boolean isDisconnected(PeerContext context);
+    
+    /**
+     * List of supported negotiation types in preference order (best last)
+     */
+    public int[] supportedNegTypes(boolean forPublic);
+    
+    /**
+     * The SocketHandler we are connected to.
+     */
+    public SocketHandler getSocketHandler();
 
-	/**
-	 * Get our addresses, as peers.
-	 */
-	public Peer[] getPrimaryIPAddress();
+    /**
+     * Get our addresses, as peers.
+     */
+    public Peer[] getPrimaryIPAddress();
 
-	/**
-	 * Get our compressed noderef
-	 */
-	public byte[] getCompressedNoderef();
-	
-	/**
-	 * Always allow local addresses?
-	 */
-	public boolean alwaysAllowLocalAddresses();
+    /**
+     * Get our compressed noderef
+     */
+    public byte[] getCompressedNoderef();
+    
+    /**
+     * Always allow local addresses?
+     */
+    public boolean alwaysAllowLocalAddresses();
 
-	/**
-	 * Port forwarding status.
-	 * @return A status code from AddressTracker. FIXME make this more generic when we need to.
-	 */
-	public Status getConnectivityStatus();
+    /**
+     * Port forwarding status.
+     * @return A status code from AddressTracker. FIXME make this more generic when we need to.
+     */
+    public Status getConnectivityStatus();
 
-	/**
-	 * Is there any reason not to allow this connection? E.g. limits on the number of nodes on
-	 * a specific IP address?
-	 */
-	public boolean allowConnection(PeerNode node, FreenetInetAddress addr);
+    /**
+     * Is there any reason not to allow this connection? E.g. limits on the number of nodes on
+     * a specific IP address?
+     */
+    public boolean allowConnection(PeerNode node, FreenetInetAddress addr);
 
-	/**
-	 * If the lower level code detects the port forwarding is broken, it will call this method.
-	 */
-	public void setPortForwardingBroken();
+    /**
+     * If the lower level code detects the port forwarding is broken, it will call this method.
+     */
+    public void setPortForwardingBroken();
 }

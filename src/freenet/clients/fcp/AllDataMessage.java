@@ -16,66 +16,66 @@ public class AllDataMessage extends DataCarryingMessage {
 
     private static final long serialVersionUID = 1L;
     final long dataLength;
-	final boolean global;
-	final String identifier;
-	final long startupTime, completionTime;
-	final String mimeType;
-	
-	public AllDataMessage(Bucket bucket, String identifier, boolean global, long startupTime, long completionTime, String mimeType) {
-		this.bucket = bucket;
-		this.dataLength = bucket.size();
-		this.identifier = identifier;
-		this.global = global;
-		this.startupTime = startupTime;
-		this.completionTime = completionTime;
-		this.mimeType = mimeType;
-	}
-	
-	protected AllDataMessage() {
-	    // For serialization.
-	    dataLength = 0;
-	    global = false;
-	    identifier = null;
-	    startupTime = 0;
-	    completionTime = 0;
-	    mimeType = null;
-	}
+    final boolean global;
+    final String identifier;
+    final long startupTime, completionTime;
+    final String mimeType;
+    
+    public AllDataMessage(Bucket bucket, String identifier, boolean global, long startupTime, long completionTime, String mimeType) {
+        this.bucket = bucket;
+        this.dataLength = bucket.size();
+        this.identifier = identifier;
+        this.global = global;
+        this.startupTime = startupTime;
+        this.completionTime = completionTime;
+        this.mimeType = mimeType;
+    }
+    
+    protected AllDataMessage() {
+        // For serialization.
+        dataLength = 0;
+        global = false;
+        identifier = null;
+        startupTime = 0;
+        completionTime = 0;
+        mimeType = null;
+    }
 
-	@Override
-	long dataLength() {
-		return dataLength;
-	}
+    @Override
+    long dataLength() {
+        return dataLength;
+    }
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("DataLength", dataLength);
-		fs.putSingle("Identifier", identifier);
-		fs.put("Global", global);
-		fs.put("StartupTime", startupTime);
-		fs.put("CompletionTime", completionTime);
-		if(mimeType!=null) fs.putSingle("Metadata.ContentType", mimeType);
-		return fs;
-	}
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet fs = new SimpleFieldSet(true);
+        fs.put("DataLength", dataLength);
+        fs.putSingle("Identifier", identifier);
+        fs.put("Global", global);
+        fs.put("StartupTime", startupTime);
+        fs.put("CompletionTime", completionTime);
+        if(mimeType!=null) fs.putSingle("Metadata.ContentType", mimeType);
+        return fs;
+    }
 
-	@Override
-	public String getName() {
-		return "AllData";
-	}
+    @Override
+    public String getName() {
+        return "AllData";
+    }
 
-	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "AllData goes from server to client not the other way around", identifier, global);
-	}
+    @Override
+    public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+        throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "AllData goes from server to client not the other way around", identifier, global);
+    }
 
-	@Override
-	String getIdentifier() {
-		return identifier;
-	}
+    @Override
+    String getIdentifier() {
+        return identifier;
+    }
 
-	@Override
-	boolean isGlobal() {
-		return global;
-	}
+    @Override
+    boolean isGlobal() {
+        return global;
+    }
 
 }

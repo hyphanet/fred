@@ -40,14 +40,14 @@ public class ECDHLightContext extends KeyAgreementSchemeContext {
         if (logMINOR) {
             Logger.minor(this, "Curve in use: " + ecdh.curve.toString());
             if(logDEBUG) {
-            	Logger.debug(this,
-            			"My exponential: " + HexUtil.bytesToHex(ecdh.getPublicKey().getEncoded()));
-            	Logger.debug(
-            			this,
-            			"Peer's exponential: "
-            			+ HexUtil.bytesToHex(peerExponential.getEncoded()));
-            	Logger.debug(this,
-            			"SharedSecret = " + HexUtil.bytesToHex(sharedKey));
+                Logger.debug(this,
+                        "My exponential: " + HexUtil.bytesToHex(ecdh.getPublicKey().getEncoded()));
+                Logger.debug(
+                        this,
+                        "Peer's exponential: "
+                        + HexUtil.bytesToHex(peerExponential.getEncoded()));
+                Logger.debug(this,
+                        "SharedSecret = " + HexUtil.bytesToHex(sharedKey));
             }
         }
 

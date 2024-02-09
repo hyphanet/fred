@@ -26,16 +26,16 @@ import org.junit.Test;
  */
 public class MutableBooleanTest {
 
-	@Test
-	public void testMutableBoolean() {
-		
-		MutableBoolean bool = new MutableBoolean();
-		bool.value = false;
-		
-		assertFalse(bool.value);
-		
-		bool.value = true;
-		
-		assertTrue(bool.value);
-	}
+    @Test
+    public void testMutableBoolean() {
+        
+        MutableBoolean bool = new MutableBoolean();
+        bool.value = false;
+        
+        assertFalse(bool.value);
+        
+        bool.value = true;
+        
+        assertTrue(bool.value);
+    }
 }

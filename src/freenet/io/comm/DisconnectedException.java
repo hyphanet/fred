@@ -11,5 +11,5 @@ import freenet.support.LightweightException;
  * NotConnectedException.
  */
 public class DisconnectedException extends LightweightException {
-	private static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -1;
 }

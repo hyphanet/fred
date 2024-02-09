@@ -8,16 +8,16 @@ import org.junit.Test;
 import freenet.node.FastRunnable;
 
 public class PrioritizedTickerTest {
-	
-	private WaitableExecutor realExec;
-	
-	private MyTicker ticker;
-	
-	private class MyTicker extends PrioritizedTicker {
+    
+    private WaitableExecutor realExec;
+    
+    private MyTicker ticker;
+    
+    private class MyTicker extends PrioritizedTicker {
 
-	    private boolean sleeping;
-	    private Object sleepSync = new Object();
-	    
+        private boolean sleeping;
+        private Object sleepSync = new Object();
+        
         public MyTicker(Executor executor, int portNumber) {
             super(executor, portNumber);
         }
@@ -53,29 +53,29 @@ public class PrioritizedTickerTest {
             // Wait until the jobs have actually been started off thread or completed on thread.
             waitForSleeping();
         }
-	    
-	}
+        
+    }
 
-	@Before
-	public void setUp() throws Exception {
-		realExec = new WaitableExecutor(new PooledExecutor());
-		ticker = new MyTicker(realExec, 0);
-		ticker.start();
-	}
+    @Before
+    public void setUp() throws Exception {
+        realExec = new WaitableExecutor(new PooledExecutor());
+        ticker = new MyTicker(realExec, 0);
+        ticker.start();
+    }
 
-	private int runCount = 0;
-	
-	Runnable simpleRunnable = new Runnable() {
-		
-		@Override
-		public void run() {
-			synchronized(PrioritizedTickerTest.this) {
-				runCount++;
-			}
-		}
-		
-	};
-	
+    private int runCount = 0;
+    
+    Runnable simpleRunnable = new Runnable() {
+        
+        @Override
+        public void run() {
+            synchronized(PrioritizedTickerTest.this) {
+                runCount++;
+            }
+        }
+        
+    };
+    
     Runnable simpleRunnable2 = new Runnable() {
         
         @Override
@@ -223,51 +223,51 @@ public class PrioritizedTickerTest {
         }
     }
 
-	@Test
-	public void testDeduping() throws InterruptedException {
-	    synchronized(PrioritizedTickerTest.this) {
-			runCount = 0;
-		}
-		assert(ticker.queuedJobs() == 0);
+    @Test
+    public void testDeduping() throws InterruptedException {
+        synchronized(PrioritizedTickerTest.this) {
+            runCount = 0;
+        }
+        assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
         BlockTickerJob blocker = new BlockTickerJob();
         ticker.queueTimedJob(blocker, "Block the ticker", 0, true, false);
         blocker.waitForBlocking();
         long runAt = System.currentTimeMillis();
-		ticker.queueTimedJobAbsolute(simpleRunnable, "De-dupe test", runAt, true, true);
-		assert(ticker.queuedJobs() == 1);
+        ticker.queueTimedJobAbsolute(simpleRunnable, "De-dupe test", runAt, true, true);
+        assert(ticker.queuedJobs() == 1);
         assert(ticker.queuedJobsUniqueTimes() == 1);
-		ticker.queueTimedJobAbsolute(simpleRunnable, "De-dupe test", runAt+1, true, true);
-		assert(ticker.queuedJobs() == 1);
+        ticker.queueTimedJobAbsolute(simpleRunnable, "De-dupe test", runAt+1, true, true);
+        assert(ticker.queuedJobs() == 1);
         assert(ticker.queuedJobsUniqueTimes() == 1);
         blocker.unblockAndWait();
         ticker.waitForIdle();
         realExec.waitForIdle();
-		synchronized(PrioritizedTickerTest.this) {
-		    assertEquals(runCount, 1);
-		}
-		assert(ticker.queuedJobs() == 0);
+        synchronized(PrioritizedTickerTest.this) {
+            assertEquals(runCount, 1);
+        }
+        assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
-		// Now backwards
+        // Now backwards
         blocker = new BlockTickerJob();
         ticker.queueTimedJob(blocker, "Block the ticker", 0, true, false);
         blocker.waitForBlocking();
         runAt = System.currentTimeMillis();
         // Note that these will actually be run on the Ticker, and therefore be de-duped.
-		ticker.queueTimedJobAbsolute(simpleRunnable, "De-dupe test", runAt+1, false, true);
-		assert(ticker.queuedJobs() == 1);
+        ticker.queueTimedJobAbsolute(simpleRunnable, "De-dupe test", runAt+1, false, true);
+        assert(ticker.queuedJobs() == 1);
         assert(ticker.queuedJobsUniqueTimes() == 1);
-		ticker.queueTimedJobAbsolute(simpleRunnable, "De-dupe test", runAt, false, true);
-		assert(ticker.queuedJobs() == 1);
+        ticker.queueTimedJobAbsolute(simpleRunnable, "De-dupe test", runAt, false, true);
+        assert(ticker.queuedJobs() == 1);
         assert(ticker.queuedJobsUniqueTimes() == 1);
         blocker.unblockAndWait();
         ticker.waitForIdle();
         realExec.waitForIdle();
         assert(ticker.queuedJobs() == 0);
         assert(ticker.queuedJobsUniqueTimes() == 0);
-		synchronized(PrioritizedTickerTest.this) {
-		    assertEquals(runCount, 2);
-		}
-	}
+        synchronized(PrioritizedTickerTest.this) {
+            assertEquals(runCount, 2);
+        }
+    }
 
 }
