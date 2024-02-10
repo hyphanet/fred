@@ -224,7 +224,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
             	Logger.minor(this, "Received "+m1);
             if ((m1 != null) && m1.getSpec().equals(DMT.sendAborted)) {
 				String desc=m1.getString(DMT.DESCRIPTION);
-				if (desc.indexOf("Upstream")<0)
+				if (!desc.contains("Upstream"))
 					desc="Upstream transmit error: "+desc;
 				_prb.abort(m1.getInt(DMT.REASON), desc, false);
 				synchronized(BlockReceiver.this) {

@@ -458,7 +458,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			String path = uri.getPath();
 			if(path.startsWith(PLUGINS_PREFIX)) {
 				String after = path.substring(PLUGINS_PREFIX.length());
-				if(after.indexOf("../") > -1)
+				if(after.contains("../"))
 					throw new CommentException(l10n("invalidFormURIAttemptToEscape"));
 				if(after.matches("[A-Za-z0-9\\.]+"))
 					return uri.toASCIIString();

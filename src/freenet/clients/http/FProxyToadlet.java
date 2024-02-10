@@ -455,7 +455,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		final String accept = headers.get("accept");
 		if(logMINOR) Logger.minor(this, "UA = "+ua+" accept = "+accept);
 		final boolean canSendProgress =
-			isBrowser(ua) && !ctx.disableProgressPage() && (accept == null || accept.indexOf("text/html") > -1) && !httprequest.isParameterSet("forcedownload");
+			isBrowser(ua) && !ctx.disableProgressPage() && (accept == null || accept.contains("text/html")) && !httprequest.isParameterSet("forcedownload");
 
 		long defaultMaxSize = canSendProgress ? MAX_LENGTH_WITH_PROGRESS : MAX_LENGTH_NO_PROGRESS;
 

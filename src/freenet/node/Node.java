@@ -2128,7 +2128,7 @@ public class Node implements TimeSkewDetectorCallback {
 		);
 		storePreallocate = nodeConfig.getBoolean("storePreallocate");
 
-		if(File.separatorChar == '/' && System.getProperty("os.name").toLowerCase().indexOf("mac os") < 0) {
+		if(File.separatorChar == '/' && !System.getProperty("os.name").toLowerCase().contains("mac os")) {
 			securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<SecurityLevels.PHYSICAL_THREAT_LEVEL>() {
 
 				@Override
@@ -3248,7 +3248,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(is150 || is160) {
 				String[] split = javaVersion.split("_");
 				String secondPart = split[1];
-				if(secondPart.indexOf("-") != -1) {
+				if(secondPart.contains("-")) {
 					split = secondPart.split("-");
 					secondPart = split[0];
 				}
