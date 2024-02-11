@@ -189,7 +189,7 @@ function updateSrc(mediaTag, callback) {
     }
     const height = mediaTag.getBoundingClientRect().height.toString() + 'px';
     const width = mediaTag.getBoundingClientRect().width.toString() + 'px';
-    // switch to the next segment
+    // swich to the next segment
     mediaTag.setAttribute("src", url);
     mediaTag.oncanplaythrough = () => {
       if (!isNaN(mediaTag.duration)) { // already loaded a valid file
