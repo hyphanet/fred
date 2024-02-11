@@ -113,38 +113,42 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 
 		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy2) {
-			if(sortBy.equals("address")){
-				return firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
-			}else if(sortBy.equals("location")){
-				return compareLocations(firstNode, secondNode);
-			}else if(sortBy.equals("version")){
-				return Version.getArbitraryBuildNumber(firstNode.getVersion(), -1) - Version.getArbitraryBuildNumber(secondNode.getVersion(), -1);
-			}else if(sortBy.equals("backoffRT")){
-				return Double.compare(firstNode.getBackedOffPercent(true), secondNode.getBackedOffPercent(true));
-			}else if(sortBy.equals("backoffBulk")){
-				return Double.compare(firstNode.getBackedOffPercent(false), secondNode.getBackedOffPercent(false));
-			}else if(sortBy.equals(("overload_p"))){
-				return Double.compare(firstNode.getPReject(), secondNode.getPReject());
-			}else if(sortBy.equals(("idle"))){
-				return compareLongs(firstNode.getTimeLastConnectionCompleted(), secondNode.getTimeLastConnectionCompleted());
-			}else if(sortBy.equals("time_routable")){
-				return Double.compare(firstNode.getPercentTimeRoutableConnection(), secondNode.getPercentTimeRoutableConnection());
-			}else if(sortBy.equals("total_traffic")){
-				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalOutputBytes();
-				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputBytes();
-				return compareLongs(total1, total2);
-				}else if(sortBy.equals("total_traffic_since_startup")){
-					long total1 = firstNode.getTotalInputSinceStartup()+firstNode.getTotalOutputSinceStartup();
-					long total2 = secondNode.getTotalInputSinceStartup()+secondNode.getTotalOutputSinceStartup();
+			switch (sortBy) {
+				case "address":
+					return firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
+				case "location":
+					return compareLocations(firstNode, secondNode);
+				case "version":
+					return Version.getArbitraryBuildNumber(firstNode.getVersion(), -1) - Version.getArbitraryBuildNumber(secondNode.getVersion(), -1);
+				case "backoffRT":
+					return Double.compare(firstNode.getBackedOffPercent(true), secondNode.getBackedOffPercent(true));
+				case "backoffBulk":
+					return Double.compare(firstNode.getBackedOffPercent(false), secondNode.getBackedOffPercent(false));
+				case ("overload_p"):
+					return Double.compare(firstNode.getPReject(), secondNode.getPReject());
+				case ("idle"):
+					return compareLongs(firstNode.getTimeLastConnectionCompleted(), secondNode.getTimeLastConnectionCompleted());
+				case "time_routable":
+					return Double.compare(firstNode.getPercentTimeRoutableConnection(), secondNode.getPercentTimeRoutableConnection());
+				case "total_traffic": {
+					long total1 = firstNode.getTotalInputBytes() + firstNode.getTotalOutputBytes();
+					long total2 = secondNode.getTotalInputBytes() + secondNode.getTotalOutputBytes();
 					return compareLongs(total1, total2);
-			}else if(sortBy.equals("selection_percentage")){
-				return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
-			}else if(sortBy.equals("time_delta")){
-				return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());
-			}else if(sortBy.equals(("uptime"))){
-				return compareInts(firstNode.getReportedUptimePercentage(), secondNode.getReportedUptimePercentage());
-			}else
-				return 0;
+				}
+				case "total_traffic_since_startup": {
+					long total1 = firstNode.getTotalInputSinceStartup() + firstNode.getTotalOutputSinceStartup();
+					long total2 = secondNode.getTotalInputSinceStartup() + secondNode.getTotalOutputSinceStartup();
+					return compareLongs(total1, total2);
+				}
+				case "selection_percentage":
+					return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
+				case "time_delta":
+					return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());
+				case ("uptime"):
+					return compareInts(firstNode.getReportedUptimePercentage(), secondNode.getReportedUptimePercentage());
+				default:
+					return 0;
+			}
 		}
 
 		private int compareLocations(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {

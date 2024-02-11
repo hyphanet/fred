@@ -231,14 +231,20 @@ public class BookmarkEditorToadlet extends Toadlet {
 				} else if("edit".equals(action) || "addItem".equals(action) || "addCat".equals(action) || "share".equals(action)) {
 					boolean isNew = "addItem".equals(action) || "addCat".equals(action);
 					String header;
-					if("edit".equals(action))
-						header = NodeL10n.getBase().getString("BookmarkEditorToadlet.edit" + ((bookmark instanceof BookmarkItem) ? "Bookmark" : "Category") + "Title");
-					else if("addItem".equals(action))
-						header = NodeL10n.getBase().getString("BookmarkEditorToadlet.addNewBookmark");
-					else if("share".equals(action))
-						header = NodeL10n.getBase().getString("BookmarkEditorToadlet.share");
-					else
-						header = NodeL10n.getBase().getString("BookmarkEditorToadlet.addNewCategory");
+					switch (action) {
+						case "edit":
+							header = NodeL10n.getBase().getString("BookmarkEditorToadlet.edit" + ((bookmark instanceof BookmarkItem) ? "Bookmark" : "Category") + "Title");
+							break;
+						case "addItem":
+							header = NodeL10n.getBase().getString("BookmarkEditorToadlet.addNewBookmark");
+							break;
+						case "share":
+							header = NodeL10n.getBase().getString("BookmarkEditorToadlet.share");
+							break;
+						default:
+							header = NodeL10n.getBase().getString("BookmarkEditorToadlet.addNewCategory");
+							break;
+					}
 
 					HTMLNode actionBoxContent = pageMaker.getInfobox("infobox-query", header, content, "bookmark-action", false);
 
