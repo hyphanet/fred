@@ -13,7 +13,7 @@ import freenet.support.Ticker;
 public interface FreenetStore<T extends StorableBlock> extends Closeable {
 	public enum StoreType {
 		CHK, PUBKEY, SSK
-	};
+	}
 
 	/**
 	 * Retrieve a block. Use the StoreCallback to convert it to the appropriate type of block.

@@ -48,7 +48,7 @@ public class AddressIdentifier {
 	}
 	
 	public enum AddressType {
-		OTHER, IPv4, IPv6;
+		OTHER, IPv4, IPv6
 	}
 
 	/**

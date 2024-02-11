@@ -425,7 +425,7 @@ public class BaseL10n {
 
 		try {
 			// We don't set deleteOnExit on it : if the save operation fails, we want a backup
-			File tempFile = File.createTempFile(finalFile.getName(), ".bak", finalFile.getParentFile());;
+			File tempFile = File.createTempFile(finalFile.getName(), ".bak", finalFile.getParentFile());
 			Logger.minor(this.getClass(), "The temporary filename is : " + tempFile);
 
 			fos = new FileOutputStream(tempFile);

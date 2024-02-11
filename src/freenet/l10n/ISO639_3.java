@@ -71,8 +71,8 @@ public final class ISO639_3 {
 				else if(abbreviation.equals("S")) return Scope.Special;
 				else throw new IllegalArgumentException("Unknown scope abbreviation: " + abbreviation);
 			}
-		};
-		
+		}
+
 		/**
 		 * The scope of the language, never null.
 		 */

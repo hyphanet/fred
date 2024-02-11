@@ -415,7 +415,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			refilterPolicy = REFILTER_POLICY.valueOf(val);
 		}
 		
-	};
+	}
 
 	public void createFproxy() {
 		NodeClientCore core = this.core;

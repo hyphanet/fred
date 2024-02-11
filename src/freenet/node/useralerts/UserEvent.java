@@ -22,7 +22,7 @@ public interface UserEvent extends UserAlert {
 		public boolean unregisterIndefinitely() {
 			return unregisterIndefinitely;
 		}
-	};
+	}
 
 	/**
 	 *

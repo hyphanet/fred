@@ -91,9 +91,9 @@ final public class FileUtil {
 			this.isWindows = win;
 			this.isMac = mac;
 			this.isUnix = unix;
-		};
-	};
-	
+		}
+	}
+
 	public static enum CPUArchitecture {
 	    Unknown,
 	    X86,
