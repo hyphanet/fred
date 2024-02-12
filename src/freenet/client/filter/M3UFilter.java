@@ -51,7 +51,7 @@ public class M3UFilter implements ContentDataFilter {
         { (byte)'\r' };
     static final int MAX_URI_LENGTH = 16384;
     static final String badUriReplacement = "#bad-uri-removed";
-    private final long MAX_LENGTH_NO_PROGRESS = (100*1024*1024 * 11) / 10; // 100MiB: playlists are a different usecase, and we want to allow transparent pass-through for most files accessed via a playlist, likely through an external palyer. See FProxyToadlet.MAX_LENGTH_NO_PROGRESS for the default. This value must be synchronized with the test data!
+    private final long MAX_LENGTH_NO_PROGRESS = (200L*1024*1024 * 11) / 10; // 200MiB: playlists are a different usecase, and we want to allow transparent pass-through for most files accessed via a playlist, likely through an external palyer. See FProxyToadlet.MAX_LENGTH_NO_PROGRESS for the default. This value must be synchronized with the test data!
     // TODO: Add parsing of ext-comments to allow for gapless playback.
     // static final int COMMENT_EXT_SIZE = 4;
     // static final byte[] COMMENT_EXT_START =
