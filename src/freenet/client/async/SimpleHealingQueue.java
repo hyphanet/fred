@@ -25,6 +25,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	final int maxRunning;
 	int counter;
 	InsertContext ctx;
+	private final HealingDecisionSupplier healingDecisionSupplier;
 	final Map<Bucket, SingleBlockInserter> runningInserters;
 
         private static volatile boolean logMINOR;
@@ -39,9 +40,10 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 
 	static final RequestClient REQUEST_CLIENT = new RequestClientBuilder().build();
 
-	public SimpleHealingQueue(InsertContext context, short prio, int maxRunning) {
+	public SimpleHealingQueue(InsertContext context, short prio, int maxRunning, HealingDecisionSupplier healingDecisionSupplier) {
 		super(prio, REQUEST_CLIENT);
 		this.ctx = context;
+		this.healingDecisionSupplier = healingDecisionSupplier;
 		this.runningInserters = new HashMap<Bucket, SingleBlockInserter>();
 		this.maxRunning = maxRunning;
 	}
@@ -60,7 +62,9 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 				Logger.error(this, "Caught trying to insert healing block: "+e, e);
 				return false;
 			}
-			runningInserters.put(data, sbi);
+			if (isHealingThisBlockSimilarToForwarding(context, sbi)) {
+				runningInserters.put(data, sbi);
+			}
 		}
 		try {
 			sbi.schedule(context);
@@ -71,6 +75,15 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			Logger.error(this, "Caught trying to insert healing block: "+e, e);
 			return false;
 		}
+	}
+
+	private boolean isHealingThisBlockSimilarToForwarding(
+			ClientContext context,
+			SingleBlockInserter sbi) {
+		// ensure that we have a routing key
+		sbi.tryEncode(context);
+		double keyLocation = sbi.getKeyNoEncode().getNodeKey().toNormalizedDouble();
+		return healingDecisionSupplier.shouldHeal(keyLocation);
 	}
 
 	@Override

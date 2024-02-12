@@ -484,7 +484,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(timeout).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
 		MessageFilter mfAllSent = MessageFilter.create().setTimeout(timeout).setType(DMT.allSent).setField(DMT.UID, _uid).setSource(_sender);
 		MessageFilter mfSendAborted = MessageFilter.create().setTimeout(timeout).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
-		return mfPacketTransmit.or(mfAllSent.or(mfSendAborted));
+		return mfSendAborted.or(mfAllSent.or(mfPacketTransmit));
 	}
 
 	PartiallyReceivedBlock.PacketReceivedListener myListener;
