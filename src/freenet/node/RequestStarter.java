@@ -61,7 +61,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > PAUSED_PRIORITY_CLASS));
 	}
 	
-	final BaseRequestThrottle throttle;
 	final RunningAverage averageInputBytesPerRequest;
 	final RunningAverage averageOutputBytesPerRequest;
 	RequestScheduler sched;
@@ -72,12 +71,16 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	final boolean realTime;
 	
 	static final int MAX_WAITING_FOR_SLOTS = 50;
-	
-	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, 
-			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK, boolean realTime) {
+
+	/** Throttle speed at which local requests are started */
+	private final long DELAY_MS_PER_PEER = 5400; // 655 MB/hour if 30 peers
+
+	public RequestStarter(NodeClientCore node, String name,
+			RunningAverage averageOutputBytesPerRequest,
+			RunningAverage averageInputBytesPerRequest,
+			boolean isInsert, boolean isSSK, boolean realTime) {
 		this.core = node;
 		this.stats = core.nodeStats;
-		this.throttle = throttle;
 		this.name = name + (realTime ? " (realtime)" : " (bulk)");
 		this.averageOutputBytesPerRequest = averageOutputBytesPerRequest;
 		this.averageInputBytesPerRequest = averageInputBytesPerRequest;
@@ -127,9 +130,10 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(logMINOR) Logger.minor(this, "Running "+req+" priority "+req.getPriority());
 				if(!req.localRequestOnly) {
 					// Wait
-					long delay;
-					delay = throttle.getDelay();
-					if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
+					long numPeers = core.node.peers.countNonBackedOffPeers(realTime);
+					if (numPeers < 1) numPeers = 1;
+					long delay = DELAY_MS_PER_PEER / numPeers;
+					if(logMINOR) Logger.minor(this, "Delay="+delay);
 					long sleepUntil = cycleTime + delay;
 					long now;
 					do {
