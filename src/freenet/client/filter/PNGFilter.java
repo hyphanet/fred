@@ -256,8 +256,10 @@ public class PNGFilter implements ContentDataFilter {
 
 				if (!validChunkType) {
 					for (int i = 0; i < HARMLESS_CHUNK_TYPES.length; i++) {
-						if (HARMLESS_CHUNK_TYPES[i].equals(chunkTypeString))
+						if (HARMLESS_CHUNK_TYPES[i].equals(chunkTypeString)) {
 							validChunkType = true;
+							break;
+						}
 					}
 				}
 
