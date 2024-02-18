@@ -525,7 +525,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			}
 			
 			innerRouteRequests(next, thisTag);
-			return;
+
 		}
 	}
 
