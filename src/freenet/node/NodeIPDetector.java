@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
@@ -29,6 +30,7 @@ import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
@@ -60,6 +62,8 @@ public class NodeIPDetector {
 	FreenetInetAddress overrideIPAddress;
 	/** Explicit forced IP address in string form because we want to keep it even if it's invalid and therefore unused */
 	String overrideIPAddressString;
+	/** config: allow bindTo localhost? */
+	boolean allowBindToLocalhost;
 	/** IP address from last time */
 	FreenetInetAddress oldIPAddress;
 	/** Detected IP's and their NAT status from plugins */
@@ -147,7 +151,7 @@ public class NodeIPDetector {
 			// If the IP is overridden and the override is valid, the override has to be the first element.
 			// overrideIPAddress will be null if the override is invalid
 			addresses.add(overrideIPAddress);
-			if(overrideIPAddress.isRealInternetAddress(false, true, false))
+			if(overrideIPAddress.isRealInternetAddress(false, true, allowBindToLocalhost))
 				addedValidIP = true;
 		}
 		
@@ -526,6 +530,27 @@ public class NodeIPDetector {
 				oldIPAddress = null;
 			}
 		}
+
+		// allow binding to localhost, 127.0.0.1, ...?
+
+		nodeConfig.register("allowBindToLocalhost", false, sortOrder++, true, false, "Node.allowBindToLocalhost", "Node.allowBindToLocalhostLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return allowBindToLocalhost;
+			}
+
+			@Override
+			public void set(Boolean val) throws NodeNeedRestartException {
+				if (allowBindToLocalhost != val) {
+					synchronized(this) {
+						allowBindToLocalhost = val;
+					}
+					throw new NodeNeedRestartException("allowBindToLocalhost needs a restart");
+				}
+			}
+		});
+		allowBindToLocalhost = nodeConfig.getBoolean("allowBindToLocalhost");
 		
 		return sortOrder;
 	}
