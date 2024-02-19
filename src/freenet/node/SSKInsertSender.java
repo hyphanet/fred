@@ -208,7 +208,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
             if(forkedRequestTag == null) thisTag = origTag;
             
             innerRouteRequests(next, thisTag);
-            return;
+
         }            
     }
     

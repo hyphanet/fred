@@ -393,7 +393,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             
             innerRouteRequests(next, origTag);
             // Will either chain back to routeRequests(), or call onAccepted().
-           	return;
+
         }
 	}
 
