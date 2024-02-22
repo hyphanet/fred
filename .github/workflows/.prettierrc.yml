@@ -1,4 +1,6 @@
 # Prettier configuration
+plugins:
+  - prettier-plugin-java
 overrides:
   - files:
       - "*.java"
