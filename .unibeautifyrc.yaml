@@ -1,0 +1,11 @@
+Java:
+  beautifiers:
+    - Pretty Diff
+  align_assignments: !<tag:yaml.org,2002:js/undefined> ''
+  break_chained_methods: true
+  indent_comments: true
+  indent_size: 1
+  indent_style: tab
+  multiline_ternary: never
+  quotes: !<tag:yaml.org,2002:js/undefined> ''
+  wrap_line_length: 80
