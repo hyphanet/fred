@@ -1,0 +1,25 @@
+name: Format Java Code with Prettier
+
+on:
+  pull_request:
+    branches:
+      - next  # Update with your main branch name or the branch you want to target
+
+jobs:
+  prettier:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'  # Update with your desired Node.js version
+
+      - name: Install dependencies
+        run: npm install prettier prettier-plugin-java
+
+      - name: Run Prettier
+        run: npx prettier --write "**/*.java"
