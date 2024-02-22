@@ -32,7 +32,7 @@ import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.FSParseException;
 import freenet.node.Node;
-import freenet.node.NodeClientCore;
+		import freenet.node.NodeClientCore;
 import freenet.node.NodeFile;
 import freenet.node.NodeStats;
 import freenet.node.PeerManager;
@@ -77,7 +77,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			
 			if(!isSet){
 				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
-				if (statusDifference != 0) 
+		  		if (statusDifference != 0) 
 					result = (statusDifference < 0 ? -1 : 1);
 				else
 					result = lastResortCompare(firstNode, secondNode);
@@ -96,7 +96,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
 		// xor: check why we do not just return the result of (long1-long2)
 		// j16sdiz: (Long.MAX_VALUE - (-1) ) would overflow and become negative
-		private int compareLongs(long long1, long long2) {
+private int compareLongs(long long1, long long2) {
 			int diff = Long.valueOf(long1).compareTo(long2);
 			if(diff == 0)
 				return 0;
