@@ -17,7 +17,8 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: '17'  # Update with your desired Java version
-
+          distribution: 'temurin'
+    
       - name: Install Node.js
         uses: actions/setup-node@v2
         with:
