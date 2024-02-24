@@ -1,48 +1,43 @@
-name: JavaFormat
-on:
-  push:
-    branches: [ 'master', 'next', 'debian-package' ]
-    tags:
-      - build**
-      - testing-**
-  pull_request:
-    branches: []
-jobs:
-  build-deb:
-    strategy:
-      matrix:
-        os: [ ubuntu-latest ]
-        distribution: [temurin]
-        java: [17]
+name: Google Java Format
 
+on:
+  pull_request:
+    branches:
+      - main  # Update with your main branch name or the branch you want to target
+
+jobs:
+  format:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Check out code
         uses: actions/checkout@v2
 
-      - name: Wrapper validation
-        uses: gradle/wrapper-validation-action@v1
-
-      - name: Setup java
-        uses: actions/setup-java@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v2
         with:
-          cache: 'gradle'
-          distribution: '${{ matrix.distribution }}'
-          java-version: '${{ matrix.java }}'
+          java-version: '17'  # Update with your desired Java version
 
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install build-essential debhelper devscripts equivs -y
+      - name: Install Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'  # Update with Node.js 20 or the desired version
 
-      - name: Install package build dependencies
-        run: |
-          install_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
-          sudo mk-build-deps --install -r --tool="${install_tool}" debian/control
+      - name: Install Google Java Format
+        run: npm install -g google-java-format
 
-      - name: Google Java Format
-        uses:  axel-op/googlejavaformat-action@v3.6.0
-                       
-   
-          
+      - name: Run Google Java Format
+        run: google-java-format .
 
+      - name: Create Notification
+        uses: actions/github-script@5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueComment = `Hello! Google Java Format has formatted the code in this pull request. Please review the changes.`;
+            await github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: issueComment
+            });
