@@ -3,7 +3,7 @@ name: Google Java Format
 on:
   pull_request:
     branches:
-      - main  # Update with your main branch name or the branch you want to target
+      - next  # Update with your main branch name or the branch you want to target
 
 jobs:
   format:
