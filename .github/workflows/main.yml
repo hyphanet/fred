@@ -25,10 +25,10 @@ jobs:
           node-version: '20'  # Update with Node.js 20 or the desired version
 
       - name: Install Prettier Java Format
-        run: npm install -g prettier@v3.2.5 prettier-plugin-java
-
+        run: npm install -g prettier-plugin-java prettier@v3.2.5
+    
       - name: Run Prettier Plugin Java
-        run: npx prettier --write "**/*.java"
+        run: prettier --write "**/*.java"
         
       - name: Create Notification
         uses: actions/github-script@v7
