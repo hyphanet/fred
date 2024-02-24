@@ -186,7 +186,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 
 				// The order of these filters is performance critical. The last or-filter is checked first.
 				// So the last filter in the or-"chain" must be the filter which matches most frequently.
-				MessageFilter mf = mfRejectedOverload.or(mfRejectedLoop.or(mfOpennetDisabled.or(mfAccepted)));
+				  MessageFilter mf = mfRejectedOverload.or(mfRejectedLoop.or(mfOpennetDisabled.or(mfAccepted)));
 
 				try {
 					msg = node.usm.waitFor(mf, this);
