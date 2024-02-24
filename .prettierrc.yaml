@@ -1,8 +1,7 @@
-plugins: "prettier-plugin-java"
-trailingComma: "none"
+plugins:
+  - prettier-plugin-java
 useTabs: true
 tabWidth: 4
 semi: true
 singleQuote: false
 printWidth: 80
-arrowParens: "avoid"
