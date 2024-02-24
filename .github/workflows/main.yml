@@ -1,4 +1,4 @@
-name: Google Java Format
+name: Java Codestyle Format
 
 on:
   pull_request:
