@@ -28,7 +28,7 @@ jobs:
         run: npm install -g google-java-format
 
       - name: Run Google Java Format
-        run: google-java-format --replace *
+        run: google-java-format --replace /src/*
 
       - name: Create Notification
         uses: actions/github-script@v7
