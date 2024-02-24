@@ -25,7 +25,7 @@ jobs:
           node-version: '20'  # Update with Node.js 20 or the desired version
 
       - name: Install Prettier Java Format
-        run: npm install prettier-plugin-java prettier@v3.2.5
+        run: npm install -g prettier@v3.2.5 prettier-plugin-java@2.5.0
     
       - name: Run Prettier Plugin Java
         run: prettier --write "**/*.java"
