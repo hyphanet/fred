@@ -1,5 +1,5 @@
 plugins:
-  - prettier-plugin-java
+"prettier-plugin-java"
 trailingComma: "none"
 useTabs: true
 tabWidth: 4
