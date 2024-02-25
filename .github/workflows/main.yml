@@ -30,7 +30,7 @@ jobs:
         run: npm install --save-dev --save-exact prettier@v3.2.5 prettier-plugin-java@v2.6.0
     
       - name: Run Prettier Plugin Java
-        run: npx prettier --check **/*.java
+        run: npx prettier --write **/*.java
         
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v5.0.0
