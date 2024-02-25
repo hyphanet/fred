@@ -71,6 +71,12 @@ public class FCPServer implements Runnable, DownloadCache {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final NodeClientCore core;
+
+	/**
+	 * @deprecated Use {@link #getNode()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final Node node;
 	final int port;
 	private static boolean ssl = false;
@@ -1208,6 +1214,10 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	public NodeClientCore getCore() {
 		return core;
+	}
+
+	public Node getNode() {
+		return node;
 	}
 
 }

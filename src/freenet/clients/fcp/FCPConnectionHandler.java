@@ -165,7 +165,7 @@ public class FCPConnectionHandler implements Closeable {
 		this.outputHandler = new FCPConnectionOutputHandler(this);
 		
 		byte[] identifier = new byte[16];
-		server.node.random.nextBytes(identifier);
+		server.getNode().random.nextBytes(identifier);
 		this.connectionIdentifier = HexUtil.bytesToHex(identifier);
 		
         // The random 16-byte identifier was used before we added the UUID. Luckily, UUIDs are also
@@ -794,7 +794,7 @@ public class FCPConnectionHandler implements Closeable {
 		if(job != null)
 			throw new IllegalArgumentException("There is already a TestDDA going on for that directory!");
 		
-		File writeFile = (write ? new File(path, "DDACheck-" + server.node.fastWeakRandom.nextInt() + ".tmp") : null);
+		File writeFile = (write ? new File(path, "DDACheck-" + server.getNode().fastWeakRandom.nextInt() + ".tmp") : null);
 		File readFile = null;
 		if(read) {
 			try {
@@ -806,7 +806,7 @@ public class FCPConnectionHandler implements Closeable {
 			}
 		}
 
-		DDACheckJob result = new DDACheckJob(server.node.fastWeakRandom, directory, readFile, writeFile);
+		DDACheckJob result = new DDACheckJob(server.getNode().fastWeakRandom, directory, readFile, writeFile);
 		synchronized (inTestDirectories) {
 			inTestDirectories.put(directory, result);
 		}

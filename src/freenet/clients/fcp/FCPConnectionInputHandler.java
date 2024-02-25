@@ -40,7 +40,7 @@ public class FCPConnectionInputHandler implements Runnable {
 	void start() {
 		if (handler.getSocket() == null)
 			return;
-		handler.getServer().node.executor.execute(this, "FCP input handler for "+handler.getSocket().getRemoteSocketAddress());
+		handler.getServer().getNode().executor.execute(this, "FCP input handler for "+handler.getSocket().getRemoteSocketAddress());
 	}
 
 	@Override
@@ -136,7 +136,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			try {
 				if(logDEBUG)
 					Logger.debug(this, "Parsed message: "+msg+" for "+handler);
-				msg.run(handler, handler.getServer().node);
+				msg.run(handler, handler.getServer().getNode());
 			} catch (MessageInvalidException e) {
 				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
 				handler.send(err);
