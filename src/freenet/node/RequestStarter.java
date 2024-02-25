@@ -76,7 +76,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, 
 			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK, boolean realTime) {
 		this.core = node;
-		this.stats = core.nodeStats;
+		this.stats = core.getNodeStats();
 		this.throttle = throttle;
 		this.name = name + (realTime ? " (realtime)" : " (bulk)");
 		this.averageOutputBytesPerRequest = averageOutputBytesPerRequest;

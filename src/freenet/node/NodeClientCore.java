@@ -201,6 +201,12 @@ public class NodeClientCore implements Persistable {
 	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final Node node;
 	public final RequestTracker tracker;
+
+	/**
+	 * @deprecated Use {@link #getNodeStats()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	final NodeStats nodeStats;
 	public final RandomSource random;
 	final ProgramDirectory tempDir;	// Persistent temporary buckets
@@ -2225,6 +2231,10 @@ public class NodeClientCore implements Persistable {
 
     public Node getNode() {
         return node;
+    }
+
+    public NodeStats getNodeStats() {
+        return nodeStats;
     }
 
 }
