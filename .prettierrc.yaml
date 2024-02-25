@@ -2,3 +2,5 @@ plugins:
   - prettier-plugin-java
 useTabs: true
 tabWidth: 4
+semi: true
+printWidth: 80
