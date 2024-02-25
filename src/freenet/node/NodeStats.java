@@ -776,7 +776,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			boolean ignoreLocalVsRemote = ignoreLocalVsRemoteBandwidthLiability();
 			
-			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node.tracker, peer, false, ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
+			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node.getTracker(), peer, false, ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
 			
 			int peers = node.peers.countConnectedPeers();
 			
@@ -802,7 +802,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			this.averageTransfersOutPerInsert = transfersPerInsert;
 			
-			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node.tracker, ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
+			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node.getTracker(), ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
 			expectedTransfersInCHK = runningGlobal.expectedTransfersInCHK - runningLocal.expectedTransfersInCHK;
 			expectedTransfersInSSK = runningGlobal.expectedTransfersInSSK - runningLocal.expectedTransfersInSSK;
 			expectedTransfersOutCHK = runningGlobal.expectedTransfersOutCHK - runningLocal.expectedTransfersOutCHK;
@@ -1206,7 +1206,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		int transfersPerInsert = outwardTransfersPerInsert();
 		
 		/** Requests running, globally */
-		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node.tracker, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
+		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node.getTracker(), ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
 		
 		// Don't need to decrement because it won't be counted until setAccepted() below.
 
@@ -1237,7 +1237,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		 * which are not included in the count, and are decremented from the peer limit
 		 * before it is used and sent to the peer. This ensures that the peer
 		 * doesn't use more than it should after a restart. */
-		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node.tracker, source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
+		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node.getTracker(), source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
 		if(logMINOR)
 			peerRequestsSnapshot.log(source);
 		
@@ -1993,11 +1993,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("numberOfSimpleConnected", numberOfSimpleConnected);
 		fs.put("numberOfNotConnected", numberOfNotConnected);
 
-		fs.put("numberOfTransferringRequestSenders", node.tracker.getNumTransferringRequestSenders());
+		fs.put("numberOfTransferringRequestSenders", node.getTracker().getNumTransferringRequestSenders());
 		fs.put("numberOfARKFetchers", node.getNumARKFetchers());
 		fs.put("bandwidthLiabilityUsageOutputBulk", node.getNodeStats().getBandwidthLiabilityUsage());
 		
-		RequestTracker tracker = node.tracker;
+		RequestTracker tracker = node.getTracker();
 
 		fs.put("numberOfLocalCHKInserts", tracker.getNumLocalCHKInserts());
 		fs.put("numberOfRemoteCHKInserts", tracker.getNumRemoteCHKInserts());
@@ -2007,7 +2007,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("numberOfRemoteCHKRequests", tracker.getNumRemoteCHKRequests());
 		fs.put("numberOfLocalSSKRequests", tracker.getNumLocalSSKRequests());
 		fs.put("numberOfRemoteSSKRequests", tracker.getNumRemoteSSKRequests());
-		fs.put("numberOfTransferringRequestHandlers", node.tracker.getNumTransferringRequestHandlers());
+		fs.put("numberOfTransferringRequestHandlers", node.getTracker().getNumTransferringRequestHandlers());
 		fs.put("numberOfCHKOfferReplys", tracker.getNumCHKOfferReplies());
 		fs.put("numberOfSSKOfferReplys", tracker.getNumSSKOfferReplies());
 
@@ -3565,7 +3565,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode, int transfersPerInsert, boolean realTimeFlag) {
-		return new RunningRequestsSnapshot(node.tracker, peerNode, true, false, outwardTransfersPerInsert(), realTimeFlag);
+		return new RunningRequestsSnapshot(node.getTracker(), peerNode, true, false, outwardTransfersPerInsert(), realTimeFlag);
 	}
 	
 	public boolean ignoreLocalVsRemoteBandwidthLiability() {
@@ -3672,7 +3672,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public void drawNewLoadManagementDelayTimes(HTMLNode content) {
-		WaitingForSlots waitingSlots = node.tracker.countRequestsWaitingForSlots();
+		WaitingForSlots waitingSlots = node.getTracker().countRequestsWaitingForSlots();
 		content.addChild("p").addChild("#", l10n("slotsWaiting", new String[] { "local", "remote" }, new String[] { Integer.toString(waitingSlots.local), Integer.toString(waitingSlots.remote) }));
 		HTMLNode table = content.addChild("table", "border", "0");
 		HTMLNode header = table.addChild("tr");
@@ -3813,7 +3813,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		long now = System.currentTimeMillis();
 		long limit = getLimitSeconds(false);
 		int transfersPerInsert = outwardTransfersPerInsert();
-		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node.tracker, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, false);
+		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node.getTracker(), ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, false);
 		double usedBytes = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, false);
 		double nonOverheadFraction = getNonOverheadFraction(now);
 		double upperLimit = getOutputBandwidthUpperLimit(limit, nonOverheadFraction);

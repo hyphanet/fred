@@ -85,7 +85,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 
 	NodeDispatcher(Node node) {
 		this.node = node;
-		this.tracker = node.tracker;
+		this.tracker = node.getTracker();
 		this.nodeStats = node.getNodeStats();
 		node.getTicker().queueTimedJob(this, STALE_CONTEXT_CHECK);
 		this.probe = new Probe(node);

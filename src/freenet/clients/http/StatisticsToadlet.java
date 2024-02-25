@@ -1152,7 +1152,7 @@ public class StatisticsToadlet extends Toadlet {
 	}
 
 	static HTMLNode drawActivity(HTMLNode activityInfoboxContent, Node node) {
-		RequestTracker tracker = node.tracker;
+		RequestTracker tracker = node.getTracker();
 		int numLocalCHKInserts = tracker.getNumLocalCHKInserts();
 		int numRemoteCHKInserts = tracker.getNumRemoteCHKInserts();
 		int numLocalSSKInserts = tracker.getNumLocalSSKInserts();

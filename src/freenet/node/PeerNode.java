@@ -1233,7 +1233,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			Logger.minor(this, "Disconnected "+this, new Exception("debug"));
 		node.usm.onDisconnect(this);
 		if(dumpMessageQueue)
-			node.tracker.onRestartOrDisconnect(this);
+			node.getTracker().onRestartOrDisconnect(this);
 		node.failureTable.onDisconnect(this);
 		node.peers.disconnected(this);
 		node.nodeUpdater.disconnected(this);
@@ -2140,7 +2140,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(bootIDChanged) {
 			node.lm.lostOrRestartedNode(this);
 			node.usm.onRestart(this);
-			node.tracker.onRestartOrDisconnect(this);
+			node.getTracker().onRestartOrDisconnect(this);
 		}
 		if(oldPrev != null) oldPrev.disconnected();
 		if(oldCur != null) oldCur.disconnected();

@@ -616,8 +616,13 @@ public class Node implements TimeSkewDetectorCallback {
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	boolean disableProbabilisticHTLs;
 
+	/**
+	 * @deprecated Use {@link #getTracker()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RequestTracker tracker;
-	
+
 	/** Semi-unique ID for swap requests. Used to identify us so that the
 	 * topology can be reconstructed. */
 	public long swapIdentifier;
@@ -4968,6 +4973,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public boolean isDisableProbabilisticHTLs() {
         return disableProbabilisticHTLs;
+    }
+
+    public RequestTracker getTracker() {
+        return tracker;
     }
 
 }

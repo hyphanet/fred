@@ -160,7 +160,7 @@ public class DiagnosticToadlet extends Toadlet {
 
 		// drawActivity
 		textBuilder.append("Activity:\n");
-		RequestTracker tracker = node.tracker;
+		RequestTracker tracker = node.getTracker();
 		int numLocalCHKInserts = tracker.getNumLocalCHKInserts();
 		int numRemoteCHKInserts = tracker.getNumRemoteCHKInserts();
 		int numLocalSSKInserts = tracker.getNumLocalSSKInserts();

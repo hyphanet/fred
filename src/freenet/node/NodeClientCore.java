@@ -276,7 +276,7 @@ public class NodeClientCore implements Persistable {
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, DatabaseKey databaseKey, MasterSecret persistentSecret) throws NodeInitException {
 		this.node = node;
-		this.tracker = node.tracker;
+		this.tracker = node.getTracker();
 		this.nodeStats = node.getNodeStats();
 		this.random = node.random;
 		this.pluginStores = new PluginStores(node, installConfig);
