@@ -543,7 +543,7 @@ public class StatisticsToadlet extends Toadlet {
 		
 		loadStatsInfobox.addChild("div", "class", "infobox-header", "Load limiting "+(realTime ? "RealTime" : "Bulk"));
 		HTMLNode loadStatsContent = loadStatsInfobox.addChild("div", "class", "infobox-content");
-		RequestStarterGroup starters = core.requestStarters;
+		RequestStarterGroup starters = core.getRequestStarters();
 		double window = starters.getWindow(realTime);
 		double realWindow = starters.getRealWindow(realTime);
 		HTMLNode loadStatsList = loadStatsContent.addChild("ul");

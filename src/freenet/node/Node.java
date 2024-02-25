@@ -3393,13 +3393,13 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if (kb != null) {
 			// Probably somebody waiting for it. Trip it.
-			if (clientCore != null && clientCore.requestStarters != null) {
+			if (clientCore != null && clientCore.getRequestStarters() != null) {
 				if (kb instanceof CHKBlock) {
-					clientCore.requestStarters.chkFetchSchedulerBulk.tripPendingKey(kb);
-					clientCore.requestStarters.chkFetchSchedulerRT.tripPendingKey(kb);
+					clientCore.getRequestStarters().chkFetchSchedulerBulk.tripPendingKey(kb);
+					clientCore.getRequestStarters().chkFetchSchedulerRT.tripPendingKey(kb);
 				} else {
-					clientCore.requestStarters.sskFetchSchedulerBulk.tripPendingKey(kb);
-					clientCore.requestStarters.sskFetchSchedulerRT.tripPendingKey(kb);
+					clientCore.getRequestStarters().sskFetchSchedulerBulk.tripPendingKey(kb);
+					clientCore.getRequestStarters().sskFetchSchedulerRT.tripPendingKey(kb);
 				}
 			}
 			failureTable.onFound(kb);
@@ -3756,9 +3756,9 @@ public class Node implements TimeSkewDetectorCallback {
 			t.printStackTrace();
 			Logger.error(this, "Caught "+t+" storing data", t);
 		}
-		if(clientCore != null && clientCore.requestStarters != null) {
-			clientCore.requestStarters.chkFetchSchedulerBulk.tripPendingKey(block);
-			clientCore.requestStarters.chkFetchSchedulerRT.tripPendingKey(block);
+		if(clientCore != null && clientCore.getRequestStarters() != null) {
+			clientCore.getRequestStarters().chkFetchSchedulerBulk.tripPendingKey(block);
+			clientCore.getRequestStarters().chkFetchSchedulerRT.tripPendingKey(block);
 		}
 	}
 
@@ -3807,9 +3807,9 @@ public class Node implements TimeSkewDetectorCallback {
 			t.printStackTrace();
 			Logger.error(this, "Caught "+t+" storing data", t);
 		}
-		if(clientCore != null && clientCore.requestStarters != null) {
-			clientCore.requestStarters.sskFetchSchedulerBulk.tripPendingKey(block);
-			clientCore.requestStarters.sskFetchSchedulerRT.tripPendingKey(block);
+		if(clientCore != null && clientCore.getRequestStarters() != null) {
+			clientCore.getRequestStarters().sskFetchSchedulerBulk.tripPendingKey(block);
+			clientCore.getRequestStarters().sskFetchSchedulerRT.tripPendingKey(block);
 		}
 	}
 

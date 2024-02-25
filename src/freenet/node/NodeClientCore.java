@@ -122,6 +122,12 @@ public class NodeClientCore implements Persistable {
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final USKManager uskManager;
 	public final ArchiveManager archiveManager;
+
+	/**
+	 * @deprecated Use {@link #getRequestStarters()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RequestStarterGroup requestStarters;
 	private final HealingQueue healingQueue;
 	public final MemoryLimitedJobRunner memoryLimitedJobRunner;
@@ -2149,6 +2155,10 @@ public class NodeClientCore implements Persistable {
 
     public USKManager getUskManager() {
         return uskManager;
+    }
+
+    public RequestStarterGroup getRequestStarters() {
+        return requestStarters;
     }
 
 }
