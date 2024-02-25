@@ -70,7 +70,7 @@ public class DiagnosticToadlet extends Toadlet {
 		this.core = core;
 		this.fcp = fcp;
 		stats = node.getNodeStats();
-		peers = node.peers;
+		peers = node.getPeers();
 		/* copied from NodeL10n constructor. */
 		baseL10n = new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties", new File(".").getPath()+File.separator+"freenet.l10n.${lang}.override.properties", BaseL10n.LANGUAGE.ENGLISH);
 	}

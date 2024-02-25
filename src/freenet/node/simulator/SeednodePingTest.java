@@ -91,7 +91,7 @@ public class SeednodePingTest extends RealNodeTest {
 	long deadline = System.currentTimeMillis() + MINUTES.toMillis(2);
 	while(System.currentTimeMillis() < deadline) {
 		int countConnectedSeednodes = 0;
-		for(SeedServerPeerNode seednode : node.peers.getConnectedSeedServerPeersVector(null)) {
+		for(SeedServerPeerNode seednode : node.getPeers().getConnectedSeedServerPeersVector(null)) {
 			try {
 				double pingTime = seednode.averagePingTime();
 				int uptime = seednode.getUptime();
@@ -128,7 +128,7 @@ public class SeednodePingTest extends RealNodeTest {
 		for (Entry<FATE, Integer> fateEntry : totals.entrySet()) {
 			System.out.println(fateEntry.getKey() + " : " + fateEntry.getValue());
 		}
-		System.out.println("################## ("+node.peers.countConnectedPeers()+") "+countConnectedSeednodes+'/'+node.peers.countSeednodes());
+		System.out.println("################## ("+node.getPeers().countConnectedPeers()+") "+countConnectedSeednodes+'/'+node.getPeers().countSeednodes());
 		Thread.sleep(SECONDS.toMillis(5));
 	}
 	Map<FATE, Integer> totals = new EnumMap<FATE, Integer>(SeedServerTestPeerNode.FATE.class);

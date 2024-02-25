@@ -459,7 +459,7 @@ public class LocationManager implements ByteCounter {
                             try {
                                 boolean myFlag = false;
                                 double myLoc = getLocation();
-                                for(PeerNode pn: node.peers.connectedPeers()) {
+                                for(PeerNode pn: node.getPeers().connectedPeers()) {
                                 	PeerLocation l = pn.location;
                                     if(pn.isRoutable()) {
                                     	synchronized(l) {
@@ -582,7 +582,7 @@ public class LocationManager implements ByteCounter {
 
             long random = r.nextLong();
             double myLoc = getLocation();
-            double[] friendLocs = node.peers.getPeerLocationDoubles(false);
+            double[] friendLocs = node.getPeers().getPeerLocationDoubles(false);
             long[] myValueLong = new long[1+1+friendLocs.length];
             myValueLong[0] = random;
             myValueLong[1] = Double.doubleToLongBits(myLoc);
@@ -728,7 +728,7 @@ public class LocationManager implements ByteCounter {
                 // pretend that they're locked
                 long random = r.nextLong();
                 double myLoc = getLocation();
-                double[] friendLocs = node.peers.getPeerLocationDoubles(false);
+                double[] friendLocs = node.getPeers().getPeerLocationDoubles(false);
                 long[] myValueLong = new long[1+1+friendLocs.length];
                 myValueLong[0] = random;
                 myValueLong[1] = Double.doubleToLongBits(myLoc);
@@ -740,7 +740,7 @@ public class LocationManager implements ByteCounter {
 
                 Message m = DMT.createFNPSwapRequest(uid, myHash, SWAP_MAX_HTL);
 
-                PeerNode pn = node.peers.getRandomPeer();
+                PeerNode pn = node.getPeers().getRandomPeer();
                 if(pn == null) {
                     // Nowhere to send
                     return;
@@ -908,8 +908,8 @@ public class LocationManager implements ByteCounter {
     }
 
     private void announceLocChange(boolean log, boolean randomReset, boolean fromDupLocation) {
-        Message msg = DMT.createFNPLocChangeNotificationNew(getLocation(), node.peers.getPeerLocationDoubles(true));
-        node.peers.localBroadcast(msg, false, true, this);
+        Message msg = DMT.createFNPLocChangeNotificationNew(getLocation(), node.getPeers().getPeerLocationDoubles(true));
+        node.getPeers().localBroadcast(msg, false, true, this);
 	if(log)
 		recordLocChange(randomReset, fromDupLocation);
     }
@@ -1219,7 +1219,7 @@ public class LocationManager implements ByteCounter {
             if(logMINOR) Logger.minor(this, "Forwarding... "+oldID);
             while(true) {
                 // Forward
-                PeerNode randomPeer = node.peers.getRandomPeer(pn);
+                PeerNode randomPeer = node.getPeers().getRandomPeer(pn);
                 if(randomPeer == null) {
                 	if(logMINOR) Logger.minor(this, "Late reject "+oldID);
                     Message reject = DMT.createFNPSwapRejected(oldID);

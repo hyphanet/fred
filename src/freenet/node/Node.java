@@ -634,7 +634,13 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final LocationManager lm;
-	/** My peers */
+
+	/**
+	 * My peers
+	 * @deprecated Use {@link #getPeers()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PeerManager peers;
 	/** Node-reference directory (node identity, peers, etc) */
 	final ProgramDirectory nodeDir;
@@ -4983,6 +4989,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public RequestTracker getTracker() {
         return tracker;
+    }
+
+    public PeerManager getPeers() {
+        return peers;
     }
 
 }

@@ -576,7 +576,7 @@ public class NodeUpdateManager {
 			broadcastUOMAnnouncesOld = true;
 			msg = getOldUOMAnnouncement();
 		}
-		node.peers.localBroadcast(msg, true, true, ctr, 0, TRANSITION_VERSION-1);
+		node.getPeers().localBroadcast(msg, true, true, ctr, 0, TRANSITION_VERSION-1);
 	}
 
 	void broadcastUOMAnnouncesNew() {
@@ -590,7 +590,7 @@ public class NodeUpdateManager {
 			msg = getNewUOMAnnouncement(size);
 		}
 		if(logMINOR) Logger.minor(this, "Broadcasting UOM announcements (new)");
-		node.peers.localBroadcast(msg, true, true, ctr, TRANSITION_VERSION, Integer.MAX_VALUE);
+		node.getPeers().localBroadcast(msg, true, true, ctr, TRANSITION_VERSION, Integer.MAX_VALUE);
 	}
 
 	/** Return the length of the data fetched for the current version, or -1. */
@@ -1890,7 +1890,7 @@ public class NodeUpdateManager {
 			// Normally this means we won't send UOM.
 			// However, if something breaks severely, we need an escape route.
 			if (node.getUptime() > MINUTES.toMillis(5)
-					&& node.peers.countCompatibleRealPeers() == 0)
+					&& node.getPeers().countCompatibleRealPeers() == 0)
 				return false;
 			return true;
 		}

@@ -456,11 +456,11 @@ public class NodeCrypto {
 	}
 
 	public PeerNode[] getPeerNodes() {
-		if(node.peers == null) return null;
+		if(node.getPeers() == null) return null;
 		if(isOpennet)
-			return node.peers.getOpennetAndSeedServerPeers();
+			return node.getPeers().getOpennetAndSeedServerPeers();
 		else
-			return node.peers.getDarknetPeers();
+			return node.getPeers().getDarknetPeers();
 	}
 
 	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {
@@ -468,7 +468,7 @@ public class NodeCrypto {
     		// Disallow multiple connections to the same address
 			// TODO: this is inadequate for IPv6, should be replaced by
 			// check for "same /64 subnet" [configurable] instead of exact match
-    		if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)
+    		if(node.getPeers().anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)
     				&& addr.isRealInternetAddress(false, false, false)) {
     			Logger.normal(this, "Not sending handshake packets to "+addr+" for "+pn+" : Same IP address as another node");
     			return false;
@@ -486,7 +486,7 @@ public class NodeCrypto {
 			FreenetInetAddress address) {
 		if(detector.includes(address)) return;
 		if(!address.isRealInternetAddress(false, false, false)) return;
-		ArrayList<PeerNode> possibleMatches = node.peers.getAllConnectedByAddress(address, true);
+		ArrayList<PeerNode> possibleMatches = node.getPeers().getAllConnectedByAddress(address, true);
 		if(possibleMatches == null) return;
 		for(PeerNode pn : possibleMatches) {
 			if(pn == peerNode) continue;
@@ -503,7 +503,7 @@ public class NodeCrypto {
 					Logger.error(this, "Dropping peer "+pn+" because don't want connection due to others on the same IP address!");
 					System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)pn).getName()+"\" because your friend \""+((DarknetPeerNode)peerNode).getName()+"\" is using the same IP address "+address+"!");
 				}
-				node.peers.disconnectAndRemove(pn, true, true, pn.isOpennet());
+				node.getPeers().disconnectAndRemove(pn, true, true, pn.isOpennet());
 			}
 		}
 	}
@@ -517,7 +517,7 @@ public class NodeCrypto {
 
 	public PeerNode[] getAnonSetupPeerNodes() {
 		ArrayList<PeerNode> v = new ArrayList<PeerNode>();
-		for(PeerNode pn: node.peers.myPeers()) {
+		for(PeerNode pn: node.getPeers().myPeers()) {
 			if(pn.handshakeUnknownInitiator() && pn.getOutgoingMangler() == packetMangler)
 				v.add(pn);
 		}

@@ -1312,7 +1312,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 					c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, newTrackerID, newTrackerID == trackerID);
 
 			if(dontWant) {
-				node.peers.disconnectAndRemove(pn, true, true, true); // Let it connect then tell it to remove it.
+				node.getPeers().disconnectAndRemove(pn, true, true, true); // Let it connect then tell it to remove it.
 			} else {
 				pn.maybeSendInitialMessages();
 			}
@@ -1364,7 +1364,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				Logger.normal(this, "Already connected to seednode");
 				return pn;
 			}
-			node.peers.addPeer(seed);
+			node.getPeers().addPeer(seed);
 			return seed;
 		} else {
 			Logger.error(this, "Unknown setup type");
@@ -1546,7 +1546,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				pn.theirInitialMsgID);
 		if(newTrackerID >= 0) {
 			if(dontWant) {
-				node.peers.disconnectAndRemove(pn, true, true, true);
+				node.getPeers().disconnectAndRemove(pn, true, true, true);
 			} else {
 				pn.maybeSendInitialMessages();
 			}

@@ -431,7 +431,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		this.node = node2;
 		this.crypto = crypto;
 		assert(crypto.isOpennet == isOpennetForNoderef());
-		this.peers = node.peers;
+		this.peers = node.getPeers();
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
@@ -1235,7 +1235,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(dumpMessageQueue)
 			node.getTracker().onRestartOrDisconnect(this);
 		node.failureTable.onDisconnect(this);
-		node.peers.disconnected(this);
+		node.getPeers().disconnected(this);
 		node.nodeUpdater.disconnected(this);
 		boolean ret;
 		SessionKey cur, prev, unv;
@@ -1741,7 +1741,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	public void updateLocation(double newLoc, double[] newLocs) {
 		boolean anythingChanged = location.updateLocation(newLoc, newLocs);
-		node.peers.updatePMUserAlert();
+		node.getPeers().updatePMUserAlert();
 		if(anythingChanged)
 		    writePeers();
 		setPeerNodeStatus(System.currentTimeMillis());
@@ -1982,7 +1982,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				isConnected.set(false, now);
 			}
 			Logger.error(this, "Failed to parse new noderef for " + this + ": " + e1, e1);
-			node.peers.disconnected(this);
+			node.getPeers().disconnected(this);
 			return -1;
 		}
 		boolean routable = true;
@@ -2162,9 +2162,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		setPeerNodeStatus(now);
 
 		if(newer || older || !isConnected())
-			node.peers.disconnected(this);
+			node.getPeers().disconnected(this);
 		else if(!wasARekey) {
-			node.peers.addConnectedPeer(this);
+			node.getPeers().addConnectedPeer(this);
 			maybeOnConnect();
 		}
 		
@@ -2255,7 +2255,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	protected void sendInitialMessages() {
 		loadSender(true).setSendASAP();
 		loadSender(false).setSendASAP();
-		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.getLocationManager().getLocation(), node.peers.getPeerLocationDoubles(true));
+		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.getLocationManager().getLocation(), node.getPeers().getPeerLocationDoubles(true));
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
 		Message dRoutingMsg = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
@@ -2310,7 +2310,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		maybeSendInitialMessages();
 		setPeerNodeStatus(now);
-		node.peers.addConnectedPeer(this);
+		node.getPeers().addConnectedPeer(this);
 		maybeOnConnect();
 		if(completelyDeprecatedTracker != null) {
 			completelyDeprecatedTracker.disconnected();
@@ -2625,7 +2625,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 				@Override
 				public void run() {
-					node.peers.updatePMUserAlert();
+					node.getPeers().updatePMUserAlert();
 				}
 				
 			});
@@ -5565,7 +5565,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		node.getNodeStats().routingMissDistanceOverall.report(distance);
 		(isLocal ? node.getNodeStats().routingMissDistanceLocal : node.getNodeStats().routingMissDistanceRemote).report(distance);
 		(realTime ? node.getNodeStats().routingMissDistanceRT : node.getNodeStats().routingMissDistanceBulk).report(distance);
-		node.peers.incrementSelectionSamples(System.currentTimeMillis(), this);
+		node.getPeers().incrementSelectionSamples(System.currentTimeMillis(), this);
 	}
 
 	private long maxPeerPingTime() {

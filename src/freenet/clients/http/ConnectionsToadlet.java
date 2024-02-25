@@ -173,7 +173,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		this.node = n;
 		this.core = core;
 		this.stats = n.getNodeStats();
-		this.peers = n.peers;
+		this.peers = n.getPeers();
 	    REF_LINK = HTMLNode.link(path()+"myref.fref").setReadOnly();
 	    REFTEXT_LINK = HTMLNode.link(path()+"myref.txt").setReadOnly();
 	}
@@ -468,7 +468,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 				double totalSelectionRate = 0.0;
 				//calculate the total selection rate using all peers, not just the peers for the current mode,
-				PeerNodeStatus[] allPeerNodeStatuses = node.peers.getPeerNodeStatuses(true);
+				PeerNodeStatus[] allPeerNodeStatuses = node.getPeers().getPeerNodeStatuses(true);
 				for(PeerNodeStatus status : allPeerNodeStatuses) {
 					totalSelectionRate += status.getSelectionRate();
 				}

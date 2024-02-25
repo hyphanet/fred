@@ -403,7 +403,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// Otherwise just dump all current connection state and keep trying to connect.
 		boolean remove = m.getBoolean(DMT.REMOVE);
 		if(remove) {
-			node.peers.disconnectAndRemove(source, false, false, false);
+			node.getPeers().disconnectAndRemove(source, false, false, false);
 			if(source instanceof DarknetPeerNode)
 				// FIXME remove, dirty logs.
 				// FIXME add a useralert?
@@ -951,13 +951,13 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// Forward
 		m = preForward(m, htl);
 		while(true) {
-			PeerNode next = node.peers.getByPubKeyHash(targetIdentity);
+			PeerNode next = node.getPeers().getByPubKeyHash(targetIdentity);
 			if(next != null && !next.isConnected()) {
 				Logger.error(this, "Found target but disconnected!: "+next);
 				next = null;
 			}
 			if(next == null)
-			next = node.peers.closerPeer(pn, ctx.routedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+			next = node.getPeers().closerPeer(pn, ctx.routedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
 				        null, htl, 0, pn == null, false, false);
 			if(logMINOR) Logger.minor(this, "Next: "+next+" message: "+m);
 			if(next != null) {

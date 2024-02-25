@@ -296,7 +296,7 @@ public class OpennetPeerNode extends PeerNode {
 
     @Override
     protected void writePeers() {
-        node.peers.writePeers(true);
+        node.getPeers().writePeers(true);
     }
 
 }

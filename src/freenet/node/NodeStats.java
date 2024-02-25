@@ -324,7 +324,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, int lastVersion) throws NodeInitException {
 		this.node = node;
-		this.peers = node.peers;
+		this.peers = node.getPeers();
 		this.hardRandom = node.random;
 		this.routingMissDistanceLocal = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.routingMissDistanceRemote = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
@@ -778,7 +778,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node.getTracker(), peer, false, ignoreLocalVsRemote, transfersPerInsert, realTimeFlag);
 			
-			int peers = node.peers.countConnectedPeers();
+			int peers = node.getPeers().countConnectedPeers();
 			
 			// Peer limits are adjusted to deduct any requests already allocated by sourceRestarted() requests.
 			// I.e. requests which were sent before the peer restarted, which it doesn't know about or failed for when the bootID changed.
@@ -1222,7 +1222,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(logMINOR) Logger.minor(this, "Maybe accepting extra request due to it being in datastore (limit now "+limit+"s)...");
 		}
 		
-		int peers = node.peers.countConnectedPeers() + 2 * node.peers.countConnectedDarknetPeers();;
+		int peers = node.getPeers().countConnectedPeers() + 2 * node.getPeers().countConnectedDarknetPeers();;
 		
 		// These limits are by transfers.
 		// We limit the total number of transfers running in parallel to ensure
@@ -1420,7 +1420,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			RunningRequestsSnapshot requestsSnapshot, RunningRequestsSnapshot peerRequestsSnapshot, boolean input, long limit,
 			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag, int maxOutputTransfers, int maxOutputTransfersPeerLimit, UIDTag tag) {
 		String name = input ? "Input" : "Output";
-		int peers = node.peers.countConnectedPeers() + 2 * node.peers.countConnectedDarknetPeers();
+		int peers = node.getPeers().countConnectedPeers() + 2 * node.getPeers().countConnectedDarknetPeers();
 		
 		double bandwidthAvailableOutputLowerLimit = getLowerLimit(bandwidthAvailableOutputUpperLimit, peers);
 		

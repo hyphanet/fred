@@ -91,7 +91,7 @@ public class PacketSender implements Runnable {
 					if (logMINOR)
 						Logger.minor(PacketSender.class,
 								"Starting shedulePeriodicJob() at " + now);
-					PeerManager pm = node.peers;
+					PeerManager pm = node.getPeers();
 					pm.maybeLogPeerNodeStatusSummary(now);
 					pm.maybeUpdateOldestNeverConnectedDarknetPeerAge(now);
 					stats.maybeUpdatePeerManagerUserAlertStats(now);
@@ -150,7 +150,7 @@ public class PacketSender implements Runnable {
                 PeerManager pm;
 		PeerNode[] nodes;
 
-        pm = node.peers;
+        pm = node.getPeers();
         nodes = pm.myPeers();
 
 		long nextActionTime = Long.MAX_VALUE;
@@ -205,7 +205,7 @@ public class PacketSender implements Runnable {
 			pn.maybeOnConnect();
 			if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
 				// Might as well do it properly.
-				node.peers.disconnectAndRemove(pn, true, true, false);
+				node.getPeers().disconnectAndRemove(pn, true, true, false);
 			}
 
 			if(pn.isConnected()) {
@@ -227,7 +227,7 @@ public class PacketSender implements Runnable {
 					// Do it properly.
 					// There appears to be connectivity from them to us but not from us to them.
 					// So it is helpful for them to know that we are disconnecting.
-					node.peers.disconnect(pn, true, true, false, true, false, SECONDS.toMillis(5));
+					node.getPeers().disconnect(pn, true, true, false, true, false, SECONDS.toMillis(5));
 					continue;
 				} else if(pn.isRoutable() && pn.noLongerRoutable()) {
 					/*

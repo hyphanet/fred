@@ -80,7 +80,7 @@ public class StatisticsToadlet extends Toadlet {
 		this.node = n;
 		this.core = core;
 		stats = node.getNodeStats();
-		peers = node.peers;
+		peers = node.getPeers();
 	}
 
 	/**
