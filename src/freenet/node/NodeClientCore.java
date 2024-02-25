@@ -114,6 +114,12 @@ public class NodeClientCore implements Persistable {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PersistentStatsPutter bandwidthStatsPutter;
+
+	/**
+	 * @deprecated Use {@link #getUskManager()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final USKManager uskManager;
 	public final ArchiveManager archiveManager;
 	public final RequestStarterGroup requestStarters;
@@ -2139,6 +2145,10 @@ public class NodeClientCore implements Persistable {
 
     public PersistentStatsPutter getBandwidthStatsPutter() {
         return bandwidthStatsPutter;
+    }
+
+    public USKManager getUskManager() {
+        return uskManager;
     }
 
 }
