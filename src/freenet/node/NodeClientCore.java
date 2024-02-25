@@ -208,6 +208,12 @@ public class NodeClientCore implements Persistable {
 	@Deprecated
 	/* It’s not the field that is deprecated but directly accessing it is. */
 	final NodeStats nodeStats;
+
+	/**
+	 * @deprecated Use {@link #getRandom()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final RandomSource random;
 	final ProgramDirectory tempDir;	// Persistent temporary buckets
 	final ProgramDirectory persistentTempDir;
@@ -2235,6 +2241,10 @@ public class NodeClientCore implements Persistable {
 
     public NodeStats getNodeStats() {
         return nodeStats;
+    }
+
+    public RandomSource getRandom() {
+        return random;
     }
 
 }

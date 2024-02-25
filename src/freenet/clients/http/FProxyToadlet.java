@@ -1115,7 +1115,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true, true);
 
 		random = new byte[32];
-		core.random.nextBytes(random);
+		core.getRandom().nextBytes(random);
 
 		FProxyFetchTracker fetchTracker = new FProxyFetchTracker(core.clientContext, client.getFetchContext(),
 				new RequestClientBuilder().realTime().build());

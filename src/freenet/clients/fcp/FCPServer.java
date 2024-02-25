@@ -895,7 +895,7 @@ public class FCPServer implements Runnable, DownloadCache {
 						while(true) {
 							byte[] buf = new byte[8];
 							try {
-								core.random.nextBytes(buf);
+								core.getRandom().nextBytes(buf);
 								String id = "FProxy:"+Base64.encode(buf);
 								innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, id, returnFilename, realTimeFlag);
 								return;
