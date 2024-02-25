@@ -87,7 +87,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	public void run() {
 		try {
 			realRun();
-			node.nodeStats.reportAnnounceForwarded(forwardedRefs, source);
+			node.getNodeStats().reportAnnounceForwarded(forwardedRefs, source);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t+" announcing "+uid+" from "+source, t);
 		} finally {
@@ -97,7 +97,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			node.tracker.completed(uid);
 			if(cb != null)
 				cb.completed();
-			node.nodeStats.endAnnouncement(uid);
+			node.getNodeStats().endAnnouncement(uid);
 		}
 	}
 
@@ -574,17 +574,17 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 
 	@Override
 	public void sentBytes(int x) {
-		node.nodeStats.announceByteCounter.sentBytes(x);
+		node.getNodeStats().announceByteCounter.sentBytes(x);
 	}
 
 	@Override
 	public void receivedBytes(int x) {
-		node.nodeStats.announceByteCounter.receivedBytes(x);
+		node.getNodeStats().announceByteCounter.receivedBytes(x);
 	}
 
 	@Override
 	public void sentPayload(int x) {
-		node.nodeStats.announceByteCounter.sentPayload(x);
+		node.getNodeStats().announceByteCounter.sentPayload(x);
 		// Doesn't count.
 	}
 

@@ -277,7 +277,7 @@ public class NodeClientCore implements Persistable {
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, DatabaseKey databaseKey, MasterSecret persistentSecret) throws NodeInitException {
 		this.node = node;
 		this.tracker = node.tracker;
-		this.nodeStats = node.nodeStats;
+		this.nodeStats = node.getNodeStats();
 		this.random = node.random;
 		this.pluginStores = new PluginStores(node, installConfig);
 
@@ -613,7 +613,7 @@ public class NodeClientCore implements Persistable {
 				/ 2; // Some disk I/O ... tunable REDFLAG
 		maxMemoryLimitedJobThreads =
 				Math.min(maxMemoryLimitedJobThreads,
-					 node.nodeStats.getThreadLimit() / 20);
+					 node.getNodeStats().getThreadLimit() / 20);
 		maxMemoryLimitedJobThreads = Math.max(1, maxMemoryLimitedJobThreads);
 		// FIXME review thread limits. This isn't just memory, it's CPU and disk as well, so we don't want it too big??
 		// FIXME l10n the errors?
@@ -1291,9 +1291,9 @@ public class NodeClientCore implements Persistable {
 						long rtt = System.currentTimeMillis() - startTime;
 						double targetLocation=key.toNormalizedDouble();
 						if(isSSK) {
-							node.nodeStats.reportSSKOutcome(rtt, false, realTimeFlag);
+							node.getNodeStats().reportSSKOutcome(rtt, false, realTimeFlag);
 						} else {
-							node.nodeStats.reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
+							node.getNodeStats().reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
 						}
 					}
 				} else
@@ -1311,9 +1311,9 @@ public class NodeClientCore implements Persistable {
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.getThrottle(isSSK, false, realTimeFlag).successfulCompletion(rtt);
 						if(isSSK) {
-							node.nodeStats.reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
+							node.getNodeStats().reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
 						} else {
-							node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
+							node.getNodeStats().reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
 						}
 						if(status == RequestSender.SUCCESS) {
 							Logger.minor(this, "Successful " + (isSSK ? "SSK" : "CHK") + " fetch took "+rtt);
@@ -1497,7 +1497,7 @@ public class NodeClientCore implements Persistable {
 						rejectedOverload = true;
 						long rtt = System.currentTimeMillis() - startTime;
 						double targetLocation=key.getNodeCHK().toNormalizedDouble();
-						node.nodeStats.reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
+						node.getNodeStats().reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
 					}
 				} else
 					if(rs.hasForwarded() &&
@@ -1513,7 +1513,7 @@ public class NodeClientCore implements Persistable {
 							requestStarters.requestCompleted(false, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.getThrottle(false, false, realTimeFlag).successfulCompletion(rtt);
-						node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
+						node.getNodeStats().reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
 						if(status == RequestSender.SUCCESS) {
 							Logger.minor(this, "Successful CHK fetch took "+rtt);
 						}
@@ -1620,7 +1620,7 @@ public class NodeClientCore implements Persistable {
 						requestStarters.rejectedOverload(true, false, realTimeFlag);
 						rejectedOverload = true;
 					}
-					node.nodeStats.reportSSKOutcome(rtt, false, realTimeFlag);
+					node.getNodeStats().reportSSKOutcome(rtt, false, realTimeFlag);
 				} else
 					if(rs.hasForwarded() &&
 						((status == RequestSender.DATA_NOT_FOUND) ||
@@ -1634,7 +1634,7 @@ public class NodeClientCore implements Persistable {
 							requestStarters.requestCompleted(true, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.getThrottle(true, false, realTimeFlag).successfulCompletion(rtt);
-						node.nodeStats.reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
+						node.getNodeStats().reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
 					}
 
 				if(rs.getStatus() == RequestSender.SUCCESS)

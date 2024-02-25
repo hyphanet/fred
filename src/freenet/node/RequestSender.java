@@ -860,7 +860,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	                		if(logMINOR) Logger.minor(this, "Received data from offer reply");
                 			verifyAndCommit(finalHeaders, data);
 	                		finish(SUCCESS, pn, true);
-	                		node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
+	                		node.getNodeStats().successfulBlockReceive(realTimeFlag, source == null);
                 		} catch (KeyVerifyException e1) {
                 			Logger.normal(this, "Got data but verify failed: "+e1, e1);
                 			if(offers != null) {
@@ -900,7 +900,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 								offers.deleteLastOffer();
 							}
 		    				if(!prb.abortedLocally())
-		    					node.nodeStats.failedBlockReceive(false, false, realTimeFlag, source == null);
+		    					node.getNodeStats().failedBlockReceive(false, false, realTimeFlag, source == null);
                 		} catch (Throwable t) {
                 			Logger.error(this, "Failed on "+this, t);
                 			if(offers != null) {
@@ -1147,7 +1147,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     					origTag.senderTransferEnds((NodeCHK)key, RequestSender.this);
    					next.transferSuccess(realTimeFlag);
     				next.successNotOverload(realTimeFlag);
-   					node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
+   					node.getNodeStats().successfulBlockReceive(realTimeFlag, source == null);
     				if(logMINOR) Logger.minor(this, "Received data");
     				// Received data
     				try {
@@ -1211,7 +1211,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     					node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
     				}
     				if(!prb.abortedLocally())
-    					node.nodeStats.failedBlockReceive(true, timeout, realTimeFlag, source == null);
+    					node.getNodeStats().failedBlockReceive(true, timeout, realTimeFlag, source == null);
     			} catch (Throwable t) {
         			Logger.error(this, "Failed on "+this, t);
         			if(!wasFork)
@@ -1595,7 +1595,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         		next.onSuccess(false, isSSK);
         	}
         	// FIXME should this be called when fromOfferedKey??
-       		node.nodeStats.requestCompleted(true, source != null, isSSK);
+       		node.getNodeStats().requestCompleted(true, source != null, isSSK);
         	
        		fireRequestSenderFinished(code, fromOfferedKey);
        		
@@ -1604,7 +1604,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
        				shouldUnlock = false;
        		}
         } else {
-        	node.nodeStats.requestCompleted(false, source != null, isSSK);
+        	node.getNodeStats().requestCompleted(false, source != null, isSSK);
 			fireRequestSenderFinished(code, fromOfferedKey);
 		}
         
@@ -1679,8 +1679,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     private long randomDelayFinishOpennetLocal() {
         double pingTime =
                 // Noderefs are sent as real-time
-                node.nodeStats.getBwlimitDelayTimeRT() +
-                node.nodeStats.nodePinger.averagePingTime();
+                node.getNodeStats().getBwlimitDelayTimeRT() +
+                node.getNodeStats().nodePinger.averagePingTime();
         pingTime = Math.min(pingTime, MAX_PING_TIME);
         double delay =
                 ((node.random.nextGaussian() * PINGS_STDDEV) + PINGS) * pingTime;
@@ -1898,7 +1898,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			totalBytesSent += x;
 		}
 		if(logMINOR) Logger.minor(this, "Sent bytes: "+x+" for "+this+" isSSK="+isSSK, new Exception("debug"));
-		node.nodeStats.requestSentBytes(isSSK, x);
+		node.getNodeStats().requestSentBytes(isSSK, x);
 	}
 	
 	public int getTotalSentBytes() {
@@ -1914,7 +1914,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
 		}
-		node.nodeStats.requestReceivedBytes(isSSK, x);
+		node.getNodeStats().requestReceivedBytes(isSSK, x);
 	}
 	
 	public int getTotalReceivedBytes() {
@@ -1930,7 +1930,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	@Override
 	public void sentPayload(int x) {
 		node.sentPayload(x);
-		node.nodeStats.requestSentBytes(isSSK, -x);
+		node.getNodeStats().requestSentBytes(isSSK, -x);
 	}
 	
 	private int recentlyFailedTimeLeft;

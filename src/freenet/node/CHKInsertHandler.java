@@ -510,13 +510,13 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         		totalReceived += sender.getTotalReceivedBytes();
         	}
         	if(logMINOR) Logger.minor(this, "Remote CHK insert cost "+totalSent+ '/' +totalReceived+" bytes ("+code+ ") receive failed = "+receiveFailed());
-        	node.nodeStats.remoteChkInsertBytesSentAverage.report(totalSent);
-        	node.nodeStats.remoteChkInsertBytesReceivedAverage.report(totalReceived);
+        	node.getNodeStats().remoteChkInsertBytesSentAverage.report(totalSent);
+        	node.getNodeStats().remoteChkInsertBytesReceivedAverage.report(totalReceived);
         	if(code == CHKInsertSender.SUCCESS) {
         		// Report both sent and received because we have both a Handler and a Sender
         		if(sender != null && sender.startedSendingData())
-        			node.nodeStats.successfulChkInsertBytesSentAverage.report(totalSent);
-        		node.nodeStats.successfulChkInsertBytesReceivedAverage.report(totalReceived);
+        			node.getNodeStats().successfulChkInsertBytesSentAverage.report(totalSent);
+        		node.getNodeStats().successfulChkInsertBytesReceivedAverage.report(totalReceived);
         	}
         }
     }
@@ -585,7 +585,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				receiveCompleted = true;
         				CHKInsertHandler.this.notifyAll();
         			}
-   					node.nodeStats.successfulBlockReceive(realTimeFlag, false);
+   					node.getNodeStats().successfulBlockReceive(realTimeFlag, false);
         		}
 
         		@Override
@@ -616,7 +616,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" for "+CHKInsertHandler.this, e);
         			
         			if(!prb.abortedLocally())
-        				node.nodeStats.failedBlockReceive(false, false, realTimeFlag, false);
+        				node.getNodeStats().failedBlockReceive(false, false, realTimeFlag, false);
         			return;
         		}
         		
@@ -648,7 +648,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		synchronized(totalSync) {
 			totalSentBytes += x;
 		}
-		node.nodeStats.insertSentBytes(false, x);
+		node.getNodeStats().insertSentBytes(false, x);
 	}
 
 	@Override
@@ -656,7 +656,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		synchronized(totalSync) {
 			totalReceivedBytes += x;
 		}
-		node.nodeStats.insertReceivedBytes(false, x);
+		node.getNodeStats().insertReceivedBytes(false, x);
 	}
 
 	public int getTotalSentBytes() {
@@ -670,7 +670,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 	@Override
 	public void sentPayload(int x) {
 		node.sentPayload(x);
-		node.nodeStats.insertSentBytes(false, -x);
+		node.getNodeStats().insertSentBytes(false, -x);
 	}
 
 	@Override

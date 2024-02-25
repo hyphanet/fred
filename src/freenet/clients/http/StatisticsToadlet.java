@@ -79,7 +79,7 @@ public class StatisticsToadlet extends Toadlet {
 		super(client);
 		this.node = n;
 		this.core = core;
-		stats = node.nodeStats;
+		stats = node.getNodeStats();
 		peers = node.peers;
 	}
 
@@ -560,12 +560,12 @@ public class StatisticsToadlet extends Toadlet {
 	private void drawNewLoadManagementBox(HTMLNode infobox) {
 		infobox.addChild("div", "class", "infobox-header", l10n("newLoadManagementTitle"));
 		HTMLNode content = infobox.addChild("div", "class", "infobox-content");
-		node.nodeStats.drawNewLoadManagementDelayTimes(content);
+		node.getNodeStats().drawNewLoadManagementDelayTimes(content);
 	}
 
 	private void drawRejectReasonsBox(HTMLNode nextTableCell, boolean local) {
 		HTMLNode rejectReasonsTable = new HTMLNode("table");
-		NodeStats stats = node.nodeStats;
+		NodeStats stats = node.getNodeStats();
 		boolean success = local ? stats.getLocalRejectReasonsTable(rejectReasonsTable) :
 			stats.getRejectReasonsTable(rejectReasonsTable);
 		if(!success)
@@ -1057,7 +1057,7 @@ public class StatisticsToadlet extends Toadlet {
 				activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 			activityList.addChild("li", "BackgroundFetcherByUSKSize:\u00a0" + node.clientCore.getUskManager().getBackgroundFetcherByUSKSize());
 			activityList.addChild("li", "temporaryBackgroundFetchersLRUSize:\u00a0" + node.clientCore.getUskManager().getTemporaryBackgroundFetchersLRU());
-			activityList.addChild("li", "outputBandwidthLiabilityUsage:\u00a0" + this.fix3p1pct.format(node.nodeStats.getBandwidthLiabilityUsage()));
+			activityList.addChild("li", "outputBandwidthLiabilityUsage:\u00a0" + this.fix3p1pct.format(node.getNodeStats().getBandwidthLiabilityUsage()));
 		}
 		
 	}
@@ -1076,7 +1076,7 @@ public class StatisticsToadlet extends Toadlet {
 		long overall_total_out = stats.totalBytesOut;
 		long overall_total_in = stats.totalBytesIn;
 		int percent = (int) (100 * totalPayload / total[0]);
-		long[] rate = node.nodeStats.getNodeIOStats();
+		long[] rate = node.getNodeStats().getNodeIOStats();
 		long delta = (rate[5] - rate[2]) / 1000;
 		if(delta > 0) {
 			long output_rate = (rate[3] - rate[0]) / delta;
@@ -1096,30 +1096,30 @@ public class StatisticsToadlet extends Toadlet {
 		activityList.addChild("li", l10n("totalInput", new String[] { "total" }, new String[] { SizeUtil.formatSize(overall_total_in, true) }));
 		activityList.addChild("li", l10n("totalOutput", new String[] { "total" }, new String[] { SizeUtil.formatSize(overall_total_out, true) } ));
 		if(isAdvancedModeEnabled) {
-			long totalBytesSentCHKRequests = node.nodeStats.getCHKRequestTotalBytesSent();
-			long totalBytesSentSSKRequests = node.nodeStats.getSSKRequestTotalBytesSent();
-			long totalBytesSentCHKInserts = node.nodeStats.getCHKInsertTotalBytesSent();
-			long totalBytesSentSSKInserts = node.nodeStats.getSSKInsertTotalBytesSent();
-			long totalBytesSentOfferedKeys = node.nodeStats.getOfferedKeysTotalBytesSent();
-			long totalBytesSendOffers = node.nodeStats.getOffersSentBytesSent();
-			long totalBytesSentSwapOutput = node.nodeStats.getSwappingTotalBytesSent();
-			long totalBytesSentAuth = node.nodeStats.getTotalAuthBytesSent();
-			long totalBytesSentAckOnly = node.nodeStats.getNotificationOnlyPacketsSentBytes();
-			long totalBytesSentResends = node.nodeStats.getResendBytesSent();
-			long totalBytesSentUOM = node.nodeStats.getUOMBytesSent();
-			long totalBytesSentAnnounce = node.nodeStats.getAnnounceBytesSent();
-			long totalBytesSentAnnouncePayload = node.nodeStats.getAnnounceBytesPayloadSent();
-			long totalBytesSentRoutingStatus = node.nodeStats.getRoutingStatusBytes();
-			long totalBytesSentNetworkColoring = node.nodeStats.getNetworkColoringSentBytes();
-			long totalBytesSentPing = node.nodeStats.getPingSentBytes();
-			long totalBytesSentProbeRequest = node.nodeStats.getProbeRequestSentBytes();
-			long totalBytesSentRouted = node.nodeStats.getRoutedMessageSentBytes();
-			long totalBytesSentDisconn = node.nodeStats.getDisconnBytesSent();
-			long totalBytesSentInitial = node.nodeStats.getInitialMessagesBytesSent();
-			long totalBytesSentChangedIP = node.nodeStats.getChangedIPBytesSent();
-			long totalBytesSentNodeToNode = node.nodeStats.getNodeToNodeBytesSent();
-			long totalBytesSentAllocationNotices = node.nodeStats.getAllocationNoticesBytesSent();
-			long totalBytesSentFOAF = node.nodeStats.getFOAFBytesSent();
+			long totalBytesSentCHKRequests = node.getNodeStats().getCHKRequestTotalBytesSent();
+			long totalBytesSentSSKRequests = node.getNodeStats().getSSKRequestTotalBytesSent();
+			long totalBytesSentCHKInserts = node.getNodeStats().getCHKInsertTotalBytesSent();
+			long totalBytesSentSSKInserts = node.getNodeStats().getSSKInsertTotalBytesSent();
+			long totalBytesSentOfferedKeys = node.getNodeStats().getOfferedKeysTotalBytesSent();
+			long totalBytesSendOffers = node.getNodeStats().getOffersSentBytesSent();
+			long totalBytesSentSwapOutput = node.getNodeStats().getSwappingTotalBytesSent();
+			long totalBytesSentAuth = node.getNodeStats().getTotalAuthBytesSent();
+			long totalBytesSentAckOnly = node.getNodeStats().getNotificationOnlyPacketsSentBytes();
+			long totalBytesSentResends = node.getNodeStats().getResendBytesSent();
+			long totalBytesSentUOM = node.getNodeStats().getUOMBytesSent();
+			long totalBytesSentAnnounce = node.getNodeStats().getAnnounceBytesSent();
+			long totalBytesSentAnnouncePayload = node.getNodeStats().getAnnounceBytesPayloadSent();
+			long totalBytesSentRoutingStatus = node.getNodeStats().getRoutingStatusBytes();
+			long totalBytesSentNetworkColoring = node.getNodeStats().getNetworkColoringSentBytes();
+			long totalBytesSentPing = node.getNodeStats().getPingSentBytes();
+			long totalBytesSentProbeRequest = node.getNodeStats().getProbeRequestSentBytes();
+			long totalBytesSentRouted = node.getNodeStats().getRoutedMessageSentBytes();
+			long totalBytesSentDisconn = node.getNodeStats().getDisconnBytesSent();
+			long totalBytesSentInitial = node.getNodeStats().getInitialMessagesBytesSent();
+			long totalBytesSentChangedIP = node.getNodeStats().getChangedIPBytesSent();
+			long totalBytesSentNodeToNode = node.getNodeStats().getNodeToNodeBytesSent();
+			long totalBytesSentAllocationNotices = node.getNodeStats().getAllocationNoticesBytesSent();
+			long totalBytesSentFOAF = node.getNodeStats().getFOAFBytesSent();
 			long totalBytesSentRemaining = total[0] - 
 				(totalPayload + totalBytesSentCHKRequests + totalBytesSentSSKRequests +
 				totalBytesSentCHKInserts + totalBytesSentSSKInserts +
@@ -1145,7 +1145,7 @@ public class StatisticsToadlet extends Toadlet {
 			activityList.addChild("li", l10n("foafBytes", "total", SizeUtil.formatSize(totalBytesSentFOAF, true)));
 			activityList.addChild("li", l10n("unaccountedBytes", new String[] { "total", "percent" },
 					new String[] { SizeUtil.formatSize(totalBytesSentRemaining, true), Integer.toString((int)(totalBytesSentRemaining*100 / total[0])) }));
-			double sentOverheadPerSecond = node.nodeStats.getSentOverheadPerSecond();
+			double sentOverheadPerSecond = node.getNodeStats().getSentOverheadPerSecond();
 			activityList.addChild("li", l10n("totalOverhead", new String[] { "rate", "percent" }, 
 					new String[] { SizeUtil.formatSize((long)sentOverheadPerSecond), Integer.toString((int)((100 * sentOverheadPerSecond) / total_output_rate)) }));
 		}

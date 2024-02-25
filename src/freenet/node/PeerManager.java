@@ -730,12 +730,12 @@ public class PeerManager {
 
 		@Override
 		public void receivedBytes(int x) {
-			node.nodeStats.disconnBytesReceived(x);
+			node.getNodeStats().disconnBytesReceived(x);
 		}
 
 		@Override
 		public void sentBytes(int x) {
-			node.nodeStats.disconnBytesSent(x);
+			node.getNodeStats().disconnBytesSent(x);
 		}
 
 		@Override
@@ -1222,7 +1222,7 @@ public class PeerManager {
 				int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false);
 				int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
 				if(numberOfRoutingBackedOff + numberOfConnected > 0)
-					node.nodeStats.backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
+					node.getNodeStats().backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
 			}
 			//racy... getLocation() could have changed
 			if(addUnpickedLocsTo != null)
@@ -1650,7 +1650,7 @@ public class PeerManager {
 	}
 
 	public void start() {
-		ua = new PeerManagerUserAlert(node.nodeStats, node.nodeUpdater);
+		ua = new PeerManagerUserAlert(node.getNodeStats(), node.nodeUpdater);
 		updatePMUserAlert();
 		node.clientCore.getAlerts().register(ua);
 		node.getTicker().queueTimedJob(writePeersRunnable, 0);

@@ -88,7 +88,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 					}
 				}
 				
-			}, realTimeFlag, node.nodeStats);
+			}, realTimeFlag, node.getNodeStats());
 		}
 		
 		/** Start waiting for an acknowledgement or timeout. Caller must ensure
@@ -1043,7 +1043,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
 		}
-		node.nodeStats.insertSentBytes(false, x);
+		node.getNodeStats().insertSentBytes(false, x);
 	}
 	
 	public int getTotalSentBytes() {
@@ -1059,7 +1059,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
 		}
-		node.nodeStats.insertReceivedBytes(false, x);
+		node.getNodeStats().insertReceivedBytes(false, x);
 	}
 	
 	public int getTotalReceivedBytes() {
@@ -1071,7 +1071,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	@Override
 	public void sentPayload(int x) {
 		node.sentPayload(x);
-		node.nodeStats.insertSentBytes(false, -x);
+		node.getNodeStats().insertSentBytes(false, -x);
 	}
 
 	public boolean failedReceive() {

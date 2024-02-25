@@ -1663,12 +1663,12 @@ public class LocationManager implements ByteCounter {
 
 	@Override
 	public void receivedBytes(int x) {
-		node.nodeStats.swappingReceivedBytes(x);
+		node.getNodeStats().swappingReceivedBytes(x);
 	}
 
 	@Override
 	public void sentBytes(int x) {
-		node.nodeStats.swappingSentBytes(x);
+		node.getNodeStats().swappingSentBytes(x);
 	}
 
 	@Override

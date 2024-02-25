@@ -172,7 +172,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		super(client);
 		this.node = n;
 		this.core = core;
-		this.stats = n.nodeStats;
+		this.stats = n.getNodeStats();
 		this.peers = n.peers;
 	    REF_LINK = HTMLNode.link(path()+"myref.fref").setReadOnly();
 	    REFTEXT_LINK = HTMLNode.link(path()+"myref.txt").setReadOnly();

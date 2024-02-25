@@ -140,7 +140,7 @@ public class Probe implements ByteCounter {
 	 * @return Value +/- Gaussian percentage.
 	 */
 	private final double randomNoise(final double input, final double sigma) {
-		return node.nodeStats.randomNoise(input, sigma);
+		return node.getNodeStats().randomNoise(input, sigma);
 	}
 
 	/**
@@ -149,7 +149,7 @@ public class Probe implements ByteCounter {
 	 */
 	@Override
 	public void sentBytes(int bytes) {
-		node.nodeStats.probeRequestCtr.sentBytes(bytes);
+		node.getNodeStats().probeRequestCtr.sentBytes(bytes);
 	}
 
 	/**
@@ -158,7 +158,7 @@ public class Probe implements ByteCounter {
 	 */
 	@Override
 	public void receivedBytes(int bytes) {
-		node.nodeStats.probeRequestCtr.receivedBytes(bytes);
+		node.getNodeStats().probeRequestCtr.receivedBytes(bytes);
 	}
 
 	/**
@@ -678,14 +678,14 @@ public class Probe implements ByteCounter {
 			listener.onUptime((float)randomNoise(100*node.uptime.getUptimeWeek(), 0.03));
 			break;
 		case REJECT_STATS:
-			byte[] stats = node.nodeStats.getNoisyRejectStats();
+			byte[] stats = node.getNodeStats().getNoisyRejectStats();
 			listener.onRejectStats(stats);
 			break;
 		case OVERALL_BULK_OUTPUT_CAPACITY_USAGE:
 			byte bandwidthClass = 
 				DMT.bandwidthClassForCapacityUsage(node.getOutputBandwidthLimit());
 			listener.onOverallBulkOutputCapacity(bandwidthClass, 
-					(float)randomNoise(node.nodeStats.getBandwidthLiabilityUsage(), 0.1));
+					(float)randomNoise(node.getNodeStats().getBandwidthLiabilityUsage(), 0.1));
 			break;
 		default:
 			throw new UnsupportedOperationException("Missing response for " + type.name());

@@ -382,12 +382,12 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         		totalReceived += sender.getTotalReceivedBytes();
         	}
         	if(logMINOR) Logger.minor(this, "Remote SSK insert cost "+totalSent+ '/' +totalReceived+" bytes ("+code+ ')');
-        	node.nodeStats.remoteSskInsertBytesSentAverage.report(totalSent);
-        	node.nodeStats.remoteSskInsertBytesReceivedAverage.report(totalReceived);
+        	node.getNodeStats().remoteSskInsertBytesSentAverage.report(totalSent);
+        	node.getNodeStats().remoteSskInsertBytesReceivedAverage.report(totalReceived);
         	if(code == SSKInsertSender.SUCCESS) {
         		// Can report both sides
-        		node.nodeStats.successfulSskInsertBytesSentAverage.report(totalSent);
-        		node.nodeStats.successfulSskInsertBytesReceivedAverage.report(totalReceived);
+        		node.getNodeStats().successfulSskInsertBytesSentAverage.report(totalSent);
+        		node.getNodeStats().successfulSskInsertBytesReceivedAverage.report(totalReceived);
         	}
         }
 
@@ -410,7 +410,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
 		}
-		node.nodeStats.insertSentBytes(true, x);
+		node.getNodeStats().insertSentBytes(true, x);
 	}
 
 	@Override
@@ -418,7 +418,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
 		}
-		node.nodeStats.insertReceivedBytes(true, x);
+		node.getNodeStats().insertReceivedBytes(true, x);
 	}
 	
 	public int getTotalSentBytes() {
@@ -432,7 +432,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 	@Override
 	public void sentPayload(int x) {
 		node.sentPayload(x);
-		node.nodeStats.insertSentBytes(true, -x);
+		node.getNodeStats().insertSentBytes(true, -x);
 	}
 
 	@Override

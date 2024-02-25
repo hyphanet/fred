@@ -554,7 +554,7 @@ public class FailureTable {
 						tag.unlockHandler();
 					}
 					
-				}, realTimeFlag, node.nodeStats);
+				}, realTimeFlag, node.getNodeStats());
         	node.executor.execute(new PrioRunnable() {
 
 				@Override
@@ -577,18 +577,18 @@ public class FailureTable {
 
 		@Override
 		public void receivedBytes(int x) {
-			node.nodeStats.offeredKeysSenderReceivedBytes(x);
+			node.getNodeStats().offeredKeysSenderReceivedBytes(x);
 		}
 
 		@Override
 		public void sentBytes(int x) {
-			node.nodeStats.offeredKeysSenderSentBytes(x);
+			node.getNodeStats().offeredKeysSenderSentBytes(x);
 		}
 
 		@Override
 		public void sentPayload(int x) {
 			node.sentPayload(x);
-			node.nodeStats.offeredKeysSenderSentBytes(-x);
+			node.getNodeStats().offeredKeysSenderSentBytes(-x);
 		}
 		
 	}

@@ -138,22 +138,22 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		if(key instanceof NodeSSK) {
 			if(logMINOR)
 				Logger.minor(this, "Remote SSK fetch cost " + sent + '/' + rcvd + " bytes (" + status + ')');
-			node.nodeStats.remoteSskFetchBytesSentAverage.report(sent);
-			node.nodeStats.remoteSskFetchBytesReceivedAverage.report(rcvd);
+			node.getNodeStats().remoteSskFetchBytesSentAverage.report(sent);
+			node.getNodeStats().remoteSskFetchBytesReceivedAverage.report(rcvd);
 			if(status == RequestSender.SUCCESS) {
 				// Can report both parts, because we had both a Handler and a Sender
-				node.nodeStats.successfulSskFetchBytesSentAverage.report(sent);
-				node.nodeStats.successfulSskFetchBytesReceivedAverage.report(rcvd);
+				node.getNodeStats().successfulSskFetchBytesSentAverage.report(sent);
+				node.getNodeStats().successfulSskFetchBytesReceivedAverage.report(rcvd);
 			}
 		} else {
 			if(logMINOR)
 				Logger.minor(this, "Remote CHK fetch cost " + sent + '/' + rcvd + " bytes (" + status + ')');
-			node.nodeStats.remoteChkFetchBytesSentAverage.report(sent);
-			node.nodeStats.remoteChkFetchBytesReceivedAverage.report(rcvd);
+			node.getNodeStats().remoteChkFetchBytesSentAverage.report(sent);
+			node.getNodeStats().remoteChkFetchBytesReceivedAverage.report(rcvd);
 			if(status == RequestSender.SUCCESS) {
 				// Can report both parts, because we had both a Handler and a Sender
-				node.nodeStats.successfulChkFetchBytesSentAverage.report(sent);
-				node.nodeStats.successfulChkFetchBytesReceivedAverage.report(rcvd);
+				node.getNodeStats().successfulChkFetchBytesSentAverage.report(sent);
+				node.getNodeStats().successfulChkFetchBytesReceivedAverage.report(rcvd);
 			}
 		}
 	}
@@ -187,7 +187,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			status = RequestSender.DATA_NOT_FOUND; // for byte logging
 			node.failureTable.onFinalFailure(key, null, htl, htl, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
 			sendTerminal(dnf);
-			node.nodeStats.remoteRequest(key instanceof NodeSSK, false, false, htl, key.toNormalizedDouble(), realTimeFlag, false);
+			node.getNodeStats().remoteRequest(key instanceof NodeSSK, false, false, htl, key.toNormalizedDouble(), realTimeFlag, false);
 			return;
 		} else {
 			long queueTime = source.getProbableSendQueueTime();
@@ -305,7 +305,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 						transferFinished(success);
 					}
 					
-				}, realTimeFlag, node.nodeStats);
+				}, realTimeFlag, node.getNodeStats());
 			tag.handlerTransferBegins();
 			bt.sendAsync();
 		} catch(NotConnectedException e) {
@@ -401,7 +401,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			tooLate = responseDeadline > 0 && now > responseDeadline;
 		}
 		
-		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble(), realTimeFlag, fromOfferedKey);
+		node.getNodeStats().remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble(), realTimeFlag, fromOfferedKey);
 
 		if(tooLate) {
 			if(logMINOR) Logger.minor(this, "Too late");
@@ -583,7 +583,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			sendSSK(block.getRawHeaders(), block.getRawData(), needsPubKey, ((SSKBlock) block).getPubKey());
 			status = RequestSender.SUCCESS; // for byte logging
 			// Assume local SSK sending will succeed?
-			node.nodeStats.remoteRequest(true, true, true, htl, key.toNormalizedDouble(), realTimeFlag, false);
+			node.getNodeStats().remoteRequest(true, true, true, htl, key.toNormalizedDouble(), realTimeFlag, false);
 		} else if(block instanceof CHKBlock) {
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
 			PartiallyReceivedBlock prb =
@@ -611,10 +611,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 							applyByteCounts();
 							unregisterRequestHandlerWithNode();
 						}
-						node.nodeStats.remoteRequest(false, success, true, htl, key.toNormalizedDouble(), realTimeFlag, false);
+						node.getNodeStats().remoteRequest(false, success, true, htl, key.toNormalizedDouble(), realTimeFlag, false);
 					}
 					
-				}, realTimeFlag, node.nodeStats);
+				}, realTimeFlag, node.getNodeStats());
 			tag.handlerTransferBegins();
 			source.sendAsync(df, null, this);
 			bt.sendAsync();
@@ -978,7 +978,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		synchronized(bytesSync) {
 			sentBytes += x;
 		}
-		node.nodeStats.requestSentBytes(key instanceof NodeSSK, x);
+		node.getNodeStats().requestSentBytes(key instanceof NodeSSK, x);
 		if(logMINOR)
 			Logger.minor(this, "sentBytes(" + x + ") on " + this);
 	}
@@ -988,7 +988,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		synchronized(bytesSync) {
 			receivedBytes += x;
 		}
-		node.nodeStats.requestReceivedBytes(key instanceof NodeSSK, x);
+		node.getNodeStats().requestReceivedBytes(key instanceof NodeSSK, x);
 	}
 
 	@Override
@@ -999,7 +999,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		 * for the bandwidth throttle.
 		 */
 		node.sentPayload(x);
-		node.nodeStats.requestSentBytes(key instanceof NodeSSK, -x);
+		node.getNodeStats().requestSentBytes(key instanceof NodeSSK, -x);
 		if(logMINOR)
 			Logger.minor(this, "sentPayload(" + x + ") on " + this);
 	}

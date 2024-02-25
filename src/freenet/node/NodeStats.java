@@ -1995,7 +1995,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		fs.put("numberOfTransferringRequestSenders", node.tracker.getNumTransferringRequestSenders());
 		fs.put("numberOfARKFetchers", node.getNumARKFetchers());
-		fs.put("bandwidthLiabilityUsageOutputBulk", node.nodeStats.getBandwidthLiabilityUsage());
+		fs.put("bandwidthLiabilityUsageOutputBulk", node.getNodeStats().getBandwidthLiabilityUsage());
 		
 		RequestTracker tracker = node.tracker;
 

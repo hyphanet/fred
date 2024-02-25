@@ -593,7 +593,7 @@ loadWaiterLoop:
         	Logger.warning(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));            	
         else if(logMINOR && (waitedForLoadManagement || retriedForLoadManagement))
         	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)")+((source == null)?" (local)":" (remote)"));
-        node.nodeStats.reportNLMDelay(delta, realTimeFlag, source == null);
+        node.getNodeStats().reportNLMDelay(delta, realTimeFlag, source == null);
 	}
 	
 	private int rejectedLoops;

@@ -631,7 +631,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
 		}
-		node.nodeStats.insertSentBytes(true, x);
+		node.getNodeStats().insertSentBytes(true, x);
 	}
 	
 	public int getTotalSentBytes() {
@@ -647,7 +647,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
 		}
-		node.nodeStats.insertReceivedBytes(true, x);
+		node.getNodeStats().insertReceivedBytes(true, x);
 	}
 	
 	public int getTotalReceivedBytes() {
@@ -659,7 +659,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 	@Override
 	public void sentPayload(int x) {
 		node.sentPayload(x);
-		node.nodeStats.insertSentBytes(true, -x);
+		node.getNodeStats().insertSentBytes(true, -x);
 	}
 
 	@Override

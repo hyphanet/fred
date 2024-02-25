@@ -625,8 +625,8 @@ public class NodeUpdateManager {
                 .getRevocationDNFCounter(), revocationChecker
                 .getBlobSize(),
                 mainJarAvailable ? transitionMainJarFetcher.getBlobSize() : -1,
-                (int) node.nodeStats.getNodeAveragePingTime(),
-                (int) node.nodeStats.getBwlimitDelayTime());
+                (int) node.getNodeStats().getNodeAveragePingTime(),
+                (int) node.getNodeStats().getBwlimitDelayTime());
 	}
 
 	private Message getNewUOMAnnouncement(long blobSize) {
@@ -638,8 +638,8 @@ public class NodeUpdateManager {
 						.getRevocationDNFCounter(), revocationChecker
 						.getBlobSize(),
 				blobSize,
-				(int) node.nodeStats.getNodeAveragePingTime(),
-				(int) node.nodeStats.getBwlimitDelayTime());
+				(int) node.getNodeStats().getNodeAveragePingTime(),
+				(int) node.getNodeStats().getBwlimitDelayTime());
 	}
 
 	public void maybeSendUOMAnnounce(PeerNode peer) {
@@ -1835,7 +1835,7 @@ public class NodeUpdateManager {
 
 		@Override
 		public void sentBytes(int x) {
-			node.nodeStats.reportUOMBytesSent(x);
+			node.getNodeStats().reportUOMBytesSent(x);
 		}
 
 		@Override

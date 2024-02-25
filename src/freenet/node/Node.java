@@ -433,7 +433,12 @@ public class Node implements TimeSkewDetectorCallback {
 	 * and they're all used elsewhere anyway, so there's no point trying not to keep them in memory. */
 	private MasterKeys keys;
 
-	/** Stats */
+	/**
+	 * Stats
+	 * @deprecated Use {@link #getNodeStats()} instead of accessing this directly.
+	 **/
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final NodeStats nodeStats;
 
 	/** Config object for the whole node. */
@@ -4923,4 +4928,9 @@ public class Node implements TimeSkewDetectorCallback {
     public boolean isNodeDiagnosticsEnabled() {
         return enableNodeDiagnostics;
     }
+
+    public NodeStats getNodeStats() {
+        return nodeStats;
+    }
+
 }
