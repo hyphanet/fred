@@ -1363,7 +1363,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
 			node.storeShallow(block, canWriteClientCache, canWriteDatastore, false);
-			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
+			if(node.getRandom().nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
 			synchronized(this) {
 				finalHeaders = headers;
@@ -1407,7 +1407,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				finalSskData = sskData;
 			}
 			node.storeShallow(block, canWriteClientCache, canWriteDatastore, tryOffersOnly);
-			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
+			if(node.getRandom().nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
 			finish(SUCCESS, next, true);
 			return true;
@@ -1443,7 +1443,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     		// store; simulations it is best to only include data from requests
     		// which go all the way i.e. inserts.
     		node.storeShallow(block, canWriteClientCache, canWriteDatastore, tryOffersOnly);
-			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
+			if(node.getRandom().nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
     	} else /*if (key instanceof NodeSSK)*/ {
     		synchronized(this) {
@@ -1683,7 +1683,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
                 node.getNodeStats().nodePinger.averagePingTime();
         pingTime = Math.min(pingTime, MAX_PING_TIME);
         double delay =
-                ((node.random.nextGaussian() * PINGS_STDDEV) + PINGS) * pingTime;
+                ((node.getRandom().nextGaussian() * PINGS_STDDEV) + PINGS) * pingTime;
         return Math.max((long) delay, 0L);
     }
 

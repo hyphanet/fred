@@ -68,7 +68,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 
 	public AnnounceSender(double target, OpennetManager om, Node node, AnnouncementCallback cb, PeerNode onlyNode) {
 		source = null;
-		this.uid = node.random.nextLong();
+		this.uid = node.getRandom().nextLong();
 		// Prevent it being routed back to us.
 		node.getTracker().completed(uid);
 		this.om = om;

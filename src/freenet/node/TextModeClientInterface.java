@@ -105,7 +105,7 @@ public class TextModeClientInterface implements Runnable {
 
     public TextModeClientInterface(Node n, NodeClientCore core, HighLevelSimpleClient c, File downloadDir, InputStream in, OutputStream out) {
     	this.n = n;
-    	this.r = n.random;
+    	this.r = n.getRandom();
     	this.core = core;
     	this.client = c;
     	this.downloadsDir = downloadDir;
@@ -960,7 +960,7 @@ public class TextModeClientInterface implements Runnable {
         	if(uline.charAt(0) == ':') {
         		target = Double.parseDouble(uline.substring(1));
         	} else {
-        		target = n.random.nextDouble();
+        		target = n.getRandom().nextDouble();
         	}
         	om.announce(target, new AnnouncementCallback() {
         		private void write(String msg) {

@@ -263,7 +263,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	private void tryFetchRevocation(final PeerNode source) throws NotConnectedException {
 		// Try to transfer it.
 
-		Message msg = DMT.createUOMRequestRevocation(updateManager.node.random.nextLong());
+		Message msg = DMT.createUOMRequestRevocation(updateManager.node.getRandom().nextLong());
 		source.sendAsync(msg, new AsyncMessageCallback() {
 
 			@Override
@@ -447,7 +447,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			this.updateManager.onStartFetchingUOM();
 
 		Message msg = 
-			DMT.createUOMRequestMainJar(updateManager.node.random.nextLong());
+			DMT.createUOMRequestMainJar(updateManager.node.getRandom().nextLong());
 
 		try {
 			System.err.println("Fetching "+lname+" jar from " + source.userToString());

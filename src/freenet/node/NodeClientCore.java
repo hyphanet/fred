@@ -278,7 +278,7 @@ public class NodeClientCore implements Persistable {
 		this.node = node;
 		this.tracker = node.getTracker();
 		this.nodeStats = node.getNodeStats();
-		this.random = node.random;
+		this.random = node.getRandom();
 		this.pluginStores = new PluginStores(node, installConfig);
 
 		nodeConfig.register("lazyStartDatastoreChecker", false, sortOrder++, true, false,
@@ -404,7 +404,7 @@ public class NodeClientCore implements Persistable {
 			this.persistentTempBucketFactory =
 					new PersistentTempBucketFactory(persistentTempDir.dir(),
 									"freenet-temp-",
-									node.random,
+									node.getRandom(),
 									node.fastWeakRandom,
 									nodeConfig.getBoolean(
 											"encryptPersistentTempBuckets"));

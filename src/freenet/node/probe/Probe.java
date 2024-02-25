@@ -310,7 +310,7 @@ public class Probe implements ByteCounter {
 			public void set(Long val) {
 				probeIdentifier = val;
 				//-1 is reserved for picking a random value; don't pick it randomly.
-				while(probeIdentifier == -1) probeIdentifier = node.random.nextLong();
+				while(probeIdentifier == -1) probeIdentifier = node.getRandom().nextLong();
 			}
 		}, false);
 		probeIdentifier = nodeConfig.getLong("identifier");
@@ -448,7 +448,7 @@ public class Probe implements ByteCounter {
 		htl = probabilisticDecrement(htl);
 		if (htl == 0 || !route(type, uid, htl, listener)) {
 			long wait = WAIT_MAX;
-			while (wait >= WAIT_MAX) wait = (long)(-Math.log(node.random.nextDouble()) * WAIT_BASE / Math.E);
+			while (wait >= WAIT_MAX) wait = (long)(-Math.log(node.getRandom().nextDouble()) * WAIT_BASE / Math.E);
 			timer.schedule(new TimerTask() {
 				@Override
 				public void run() {
@@ -490,7 +490,7 @@ public class Probe implements ByteCounter {
 				return true;
 			}
 
-			candidate = peers[node.random.nextInt(degree)];
+			candidate = peers[node.getRandom().nextInt(degree)];
 
 			if (candidate.isConnected()) {
 				//acceptProbability is the MH correction.
@@ -503,7 +503,7 @@ public class Probe implements ByteCounter {
 				else acceptProbability = (float)degree / candidateDegree;
 
 				if (logDEBUG) Logger.debug(Probe.class, "acceptProbability is " + acceptProbability);
-				if (node.random.nextFloat() < acceptProbability) {
+				if (node.getRandom().nextFloat() < acceptProbability) {
 					if (logDEBUG) Logger.debug(Probe.class, "Accepted candidate.");
 					//Filter for response to this probe with requested result type.
 					final MessageFilter filter = createResponseFilter(type, candidate, uid, htl);
@@ -717,7 +717,7 @@ public class Probe implements ByteCounter {
 	private byte probabilisticDecrement(byte htl) {
 		assert htl > 0;
 		if (htl == 1) {
-			if (node.random.nextFloat() < DECREMENT_PROBABILITY) return 0;
+			if (node.getRandom().nextFloat() < DECREMENT_PROBABILITY) return 0;
 			return 1;
 		}
 		return (byte)(htl - 1);

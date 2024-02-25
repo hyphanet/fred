@@ -483,7 +483,7 @@ public class LocationManager implements ByteCounter {
                                     }
                                 }
                                 if(myFlag) {
-                                    setLocation(node.random.nextDouble());
+                                    setLocation(node.getRandom().nextDouble());
                                     announceLocChange(true, true, true);
                                     node.writeNodeFile();
                                 }
@@ -689,8 +689,8 @@ public class LocationManager implements ByteCounter {
             reachedEnd = true;
 
             // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
-            if(node.random.nextInt(SWAP_RESET) == 0) {
-                setLocation(node.random.nextDouble());
+            if(node.getRandom().nextInt(SWAP_RESET) == 0) {
+                setLocation(node.getRandom().nextDouble());
                 announceLocChange(true, true, false);
                 node.writeNodeFile();
             }
@@ -883,8 +883,8 @@ public class LocationManager implements ByteCounter {
                 reachedEnd = true;
 
                 // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
-                if(node.random.nextInt(SWAP_RESET) == 0) {
-                    setLocation(node.random.nextDouble());
+                if(node.getRandom().nextInt(SWAP_RESET) == 0) {
+                    setLocation(node.getRandom().nextDouble());
                     announceLocChange(true, true, false);
                     node.writeNodeFile();
                 }

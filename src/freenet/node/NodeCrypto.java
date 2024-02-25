@@ -84,7 +84,7 @@ public class NodeCrypto {
 
 		this.node = node;
 		this.config = config;
-		random = node.random;
+		random = node.getRandom();
 		this.isOpennet = isOpennet;
 
 		config.starting(this);
@@ -239,7 +239,7 @@ public class NodeCrypto {
 			}
 		} else {
 			clientNonce = new byte[32];
-			node.random.nextBytes(clientNonce);
+			node.getRandom().nextBytes(clientNonce);
 		}
 
 	}
@@ -253,9 +253,9 @@ public class NodeCrypto {
 		myARK = InsertableClientSSK.createRandom(random, "ark");
 		myARKNumber = 0;
 		clientNonce = new byte[32];
-		node.random.nextBytes(clientNonce);
+		node.getRandom().nextBytes(clientNonce);
 		myIdentity = new byte[IDENTITY_LENGTH];
-		node.random.nextBytes(myIdentity);
+		node.getRandom().nextBytes(myIdentity);
 		identityHash = SHA256.digest(myIdentity);
 		identityHashHash = SHA256.digest(identityHash);
 		anonSetupCipher.initialize(identityHash);

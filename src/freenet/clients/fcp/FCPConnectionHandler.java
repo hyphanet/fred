@@ -165,7 +165,7 @@ public class FCPConnectionHandler implements Closeable {
 		this.outputHandler = new FCPConnectionOutputHandler(this);
 		
 		byte[] identifier = new byte[16];
-		server.getNode().random.nextBytes(identifier);
+		server.getNode().getRandom().nextBytes(identifier);
 		this.connectionIdentifier = HexUtil.bytesToHex(identifier);
 		
         // The random 16-byte identifier was used before we added the UUID. Luckily, UUIDs are also

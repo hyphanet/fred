@@ -779,7 +779,7 @@ public class PeerManager {
 		if(connectedPeers.length == 0)
 			return null;
 		for(int i = 0; i < 5; i++) {
-			PeerNode pn = connectedPeers[node.random.nextInt(connectedPeers.length)];
+			PeerNode pn = connectedPeers[node.getRandom().nextInt(connectedPeers.length)];
 			if(pn == exclude)
 				continue;
 			if(pn.isRoutable())
@@ -809,7 +809,7 @@ public class PeerManager {
 		connectedPeers = newConnectedPeers;
 		if(lengthWithoutExcluded == 0)
 			return null;
-		return connectedPeers[node.random.nextInt(lengthWithoutExcluded)];
+		return connectedPeers[node.getRandom().nextInt(lengthWithoutExcluded)];
 	}
 
 	public void localBroadcast(Message msg, boolean ignoreRoutability, 

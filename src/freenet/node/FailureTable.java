@@ -94,7 +94,7 @@ public class FailureTable {
 		blockOfferListByKey = LRUMap.createSafeMap();
 		this.node = node;
 		offerAuthenticatorKey = new byte[32];
-		node.random.nextBytes(offerAuthenticatorKey);
+		node.getRandom().nextBytes(offerAuthenticatorKey);
 		offerExecutor = new SerialExecutor(NativeThread.HIGH_PRIORITY);
 		node.ticker.queueTimedJob(new FailureTableCleaner(), CLEANUP_PERIOD);
 	}
@@ -623,10 +623,10 @@ public class FailureTable {
 				throw new IllegalStateException("Last offer not dealt with");
 			}
 			if(!recentOffers.isEmpty()) {
-				return lastOffer = ListUtils.removeRandomBySwapLastSimple(node.random, recentOffers);
+				return lastOffer = ListUtils.removeRandomBySwapLastSimple(node.getRandom(), recentOffers);
 			}
 			if(!expiredOffers.isEmpty()) {
-				return lastOffer = ListUtils.removeRandomBySwapLastSimple(node.random, expiredOffers);
+				return lastOffer = ListUtils.removeRandomBySwapLastSimple(node.getRandom(), expiredOffers);
 			}
 			// No more offers.
 			return null;

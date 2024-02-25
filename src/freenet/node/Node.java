@@ -664,7 +664,13 @@ public class Node implements TimeSkewDetectorCallback {
 	/** Directory to put extra peer data into */
 	final File extraPeerDataDir;
 	private volatile boolean hasPanicked;
-	/** Strong RNG */
+
+	/**
+	 * Strong RNG
+	 * @deprecated Use {@link #getRandom()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RandomSource random;
 	/** JCA-compliant strong RNG. WARNING: DO NOT CALL THIS ON THE MAIN NETWORK
 	 * HANDLING THREADS! In some configurations it can block, potentially 
@@ -4999,6 +5005,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public PeerManager getPeers() {
         return peers;
+    }
+
+    public RandomSource getRandom() {
+        return random;
     }
 
 }

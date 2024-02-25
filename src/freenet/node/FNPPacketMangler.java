@@ -832,7 +832,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int offset = 0;
 		byte[] nonce = new byte[nonceSize];
 		byte[] myExponential = ctx.getPublicKeyNetworkFormat();
-		node.random.nextBytes(nonce);
+		node.getRandom().nextBytes(nonce);
 
 		synchronized (pn.jfkNoncesSent) {
 			pn.jfkNoncesSent.add(nonce);
@@ -881,7 +881,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		
 		// Nr
 		byte[] myNonce = new byte[nonceSize];
-		node.random.nextBytes(myNonce);
+		node.getRandom().nextBytes(myNonce);
 		byte[] myExponential = ctx.getPublicKeyNetworkFormat();
 		// Neg type 9 and later use ECDSA signature.
 		byte[] sig = ctx.ecdsaSig;
@@ -1697,7 +1697,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		c.initialize(pn.jfkKe);
 		int ivLength = PCFBMode.lengthIV(c);
 		byte[] iv = new byte[ivLength];
-		node.random.nextBytes(iv);
+		node.getRandom().nextBytes(iv);
 		PCFBMode pcfb = PCFBMode.create(c, iv);
 		int cleartextOffset = 0;
 		byte[] cleartext = new byte[JFK_PREFIX_INITIATOR.length + ivLength + sig.length + data.length];
@@ -1810,7 +1810,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		int ivLength = PCFBMode.lengthIV(c);
 		byte[] iv=new byte[ivLength];
-		node.random.nextBytes(iv);
+		node.getRandom().nextBytes(iv);
 		PCFBMode pk=PCFBMode.create(c, iv);
 		// Don't include the last bit
 		int dataLength = data.length - hisRef.length;
@@ -1907,7 +1907,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			throw new IllegalStateException("Cannot send auth packet: too long: "+length);
 		}
 		byte[] iv = new byte[PCFBMode.lengthIV(cipher)];
-		node.random.nextBytes(iv);
+		node.getRandom().nextBytes(iv);
 		byte[] hash = SHA256.digest(output);
 		if(logDEBUG) Logger.debug(this, "Data hash: "+HexUtil.bytesToHex(hash));
 		int prePaddingLength = iv.length + hash.length + 2 /* length */ + output.length;
@@ -1975,7 +1975,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(negType == -1) {
 			// Pick a random negType from what I do support
 			int[] negTypes = supportedNegTypes(true);
-			negType = negTypes[node.random.nextInt(negTypes.length)];
+			negType = negTypes[node.getRandom().nextInt(negTypes.length)];
 			Logger.normal(this, "Cannot send handshake to "+pn+" because no common negTypes, choosing random negType of "+negType);
 		}
 		if(logMINOR) Logger.minor(this, "Possibly sending handshake to "+pn+" negotiation type "+negType);
@@ -2223,7 +2223,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 			timeLastReset = now;
 
-			node.random.nextBytes(transientKey);
+			node.getRandom().nextBytes(transientKey);
 
 			// reset the authenticator cache
 			authenticatorCache.clear();

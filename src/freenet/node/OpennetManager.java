@@ -972,7 +972,7 @@ public class OpennetManager {
 	OpennetPeerNode randomOldOpennetNode() {
 		OpennetPeerNode[] nodes = getUnsortedOldPeers();
 		if(nodes.length == 0) return null;
-		return nodes[node.random.nextInt(nodes.length)];
+		return nodes[node.getRandom().nextInt(nodes.length)];
 	}
 
 	public synchronized void purgeOldOpennetPeer(OpennetPeerNode source) {
@@ -1063,7 +1063,7 @@ public class OpennetManager {
 		}
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
 		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length-noderef.length);
-		long xferUID = node.random.nextLong();
+		long xferUID = node.getRandom().nextLong();
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
 		peer.sendAsync(msg2, null, ctr);
@@ -1095,7 +1095,7 @@ public class OpennetManager {
 
 	public long startSendAnnouncementRequest(long uid, PeerNode peer, byte[] noderef, ByteCounter ctr,
 			double target, short htl) throws NotConnectedException {
-		long xferUID = node.random.nextLong();
+		long xferUID = node.getRandom().nextLong();
 		Message msg = DMT.createFNPOpennetAnnounceRequest(uid, xferUID, noderef.length,
 				paddedSize(noderef.length), target, htl);
 		peer.sendAsync(msg, null, ctr);
@@ -1126,7 +1126,7 @@ public class OpennetManager {
 			return;
 		}
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
-		long xferUID = node.random.nextLong();
+		long xferUID = node.getRandom().nextLong();
 		Message msg = DMT.createFNPOpennetAnnounceReply(uid, xferUID, noderef.length,
 				padded.length);
 		peer.sendAsync(msg, null, ctr);

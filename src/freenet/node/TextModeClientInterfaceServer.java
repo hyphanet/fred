@@ -40,7 +40,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     TextModeClientInterfaceServer(Node node, NodeClientCore core, int port, String bindTo, String allowedHosts) throws IOException {
     	this.n = node;
     	this.core = n.clientCore;
-        this.r = n.random;
+        this.r = n.getRandom();
         this.downloadsDir = core.getDownloadsDir();
         this.port=port;
         this.bindTo=bindTo;

@@ -1551,7 +1551,7 @@ public class NodeUpdateManager {
 			public void run() {
 				revocationChecker.start(false);
 			}
-		}, node.random.nextInt((int) DAYS.toMillis(1)));
+		}, node.getRandom().nextInt((int) DAYS.toMillis(1)));
 	}
 
 	private void deployPluginUpdates() {

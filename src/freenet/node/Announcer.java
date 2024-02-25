@@ -220,7 +220,7 @@ public class Announcer {
 		int count = 0;
 		while(count < CONNECT_AT_ONCE) {
 			if(seeds.isEmpty()) break;
-			SimpleFieldSet fs = ListUtils.removeRandomBySwapLastSimple(node.random, seeds);
+			SimpleFieldSet fs = ListUtils.removeRandomBySwapLastSimple(node.getRandom(), seeds);
 			try {
 				SeedServerPeerNode seed =
 					new SeedServerPeerNode(fs, node, om.crypto, false);
@@ -525,7 +525,7 @@ public class Announcer {
 						Logger.minor(this, "No more seednodes, announcedTo = "+announcedToIdentities.size());
 					break;
 				}
-				final SeedServerPeerNode seed = ListUtils.removeRandomBySwapLastSimple(node.random, seeds);
+				final SeedServerPeerNode seed = ListUtils.removeRandomBySwapLastSimple(node.getRandom(), seeds);
 				InetAddress[] addrs = seed.getInetAddresses();
 				if(!newAnnouncedIPs(addrs)) {
 					if(logMINOR)

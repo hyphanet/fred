@@ -769,7 +769,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			finishOpennetNoRelayInner(om);
 			return;
 		}
-		if(noderef != null && node.random.nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0) {
+		if(noderef != null && node.getRandom().nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0) {
 			
 			// Check whether it is actually the noderef of the peer.
 			// If so, we need to relay it anyway.

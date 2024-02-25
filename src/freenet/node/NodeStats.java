@@ -325,7 +325,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, int lastVersion) throws NodeInitException {
 		this.node = node;
 		this.peers = node.getPeers();
-		this.hardRandom = node.random;
+		this.hardRandom = node.getRandom();
 		this.routingMissDistanceLocal = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.routingMissDistanceRemote = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.routingMissDistanceOverall = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
@@ -3797,7 +3797,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * @return Value +/- Gaussian percentage.
 	 */
 	public final double randomNoise(final double input, final double sigma) {
-		double multiplier = (node.random.nextGaussian() * sigma) + 1.0;
+		double multiplier = (node.getRandom().nextGaussian() * sigma) + 1.0;
 
 		/*
 		 * Cap noise to [0.5, 1.5]. Such amounts are very rare (5 sigma at 10%) and serve only to throw off the
