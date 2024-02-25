@@ -74,6 +74,12 @@ public class FCPConnectionHandler implements Closeable {
 	@Deprecated
 	/* it’s not actually the field that is deprecated but accessing it directly is. */
 	final FCPServer server;
+
+	/**
+	 * @deprecated Use {@link #getSocket()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* it’s not actually the field that is deprecated but accessing it directly is. */
 	final Socket sock;
 	final FCPConnectionInputHandler inputHandler;
 	final Map<String, SubscribeUSK> uskSubscriptions;
@@ -922,6 +928,10 @@ public class FCPConnectionHandler implements Closeable {
 
 	public FCPServer getServer() {
 		return server;
+	}
+
+	public Socket getSocket() {
+		return sock;
 	}
 
 }

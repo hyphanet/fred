@@ -38,9 +38,9 @@ public class FCPConnectionInputHandler implements Runnable {
 	}
 
 	void start() {
-		if (handler.sock == null)
+		if (handler.getSocket() == null)
 			return;
-		handler.getServer().node.executor.execute(this, "FCP input handler for "+handler.sock.getRemoteSocketAddress());
+		handler.getServer().node.executor.execute(this, "FCP input handler for "+handler.getSocket().getRemoteSocketAddress());
 	}
 
 	@Override
@@ -62,7 +62,7 @@ public class FCPConnectionInputHandler implements Runnable {
 	}
 
 	public void realRun() throws IOException {
-		InputStream is = new BufferedInputStream(handler.sock.getInputStream(), 4096);
+		InputStream is = new BufferedInputStream(handler.getSocket().getInputStream(), 4096);
 		LineReadingInputStream lis = new LineReadingInputStream(is);
 
 		boolean firstMessage = true;
