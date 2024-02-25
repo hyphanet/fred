@@ -128,7 +128,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		client.setMaxLength(MAX_LENGTH_NO_PROGRESS);
 		client.setMaxIntermediateLength(MAX_LENGTH_NO_PROGRESS);
 		this.core = core;
-		this.context = core.clientContext;
+		this.context = core.getClientContext();
 		fetchTracker = tracker;
 	}
 
@@ -1117,7 +1117,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		random = new byte[32];
 		core.getRandom().nextBytes(random);
 
-		FProxyFetchTracker fetchTracker = new FProxyFetchTracker(core.clientContext, client.getFetchContext(),
+		FProxyFetchTracker fetchTracker = new FProxyFetchTracker(core.getClientContext(), client.getFetchContext(),
 				new RequestClientBuilder().realTime().build());
 
 

@@ -421,7 +421,7 @@ public class NodeUpdateManager {
 			ClientGetter get = new ClientGetter(this, freenetURI, context,
 					priority, null, null, null);
 			try {
-				node.clientCore.clientContext.start(get);
+				node.clientCore.getClientContext().start(get);
 			} catch (PersistenceDisabledException e) {
 				// Impossible
 			} catch (FetchException e) {

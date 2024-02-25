@@ -148,9 +148,9 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				}
 			}
 			if(toCancel != null)
-				toCancel.cancel(core.clientContext);
+				toCancel.cancel(core.getClientContext());
 			if(cg != null) {
-				core.clientContext.start(cg);
+				core.getClientContext().start(cg);
 				if(logMINOR) Logger.minor(this, "Started revocation fetcher");
 			}
 			return wasRunning;
@@ -337,7 +337,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 
 	public void kill() {
 		if(revocationGetter != null)
-			revocationGetter.cancel(core.clientContext);
+			revocationGetter.cancel(core.getClientContext());
 	}
 
 	public long getBlobSize() {

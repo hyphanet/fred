@@ -55,7 +55,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		dependencyCtx.dontEnterImplicitArchives = false;
 		dependencyCtx.maxNonSplitfileRetries = -1;
 		dependencyCtx.maxSplitfileBlockRetries = -1;
-		clientContext = core.clientContext;
+		clientContext = core.getClientContext();
 		dependencies = new MainJarDependenciesChecker(this, manager.node.executor);
 	}
 

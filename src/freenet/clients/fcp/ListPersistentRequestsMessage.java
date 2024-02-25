@@ -138,7 +138,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		
 		PersistentRequestClient rebootClient = handler.getRebootClient();
 
-		TransientListJob job = new TransientListJob(rebootClient, handler.getOutputHandler(), node.clientCore.clientContext, identifier) {
+		TransientListJob job = new TransientListJob(rebootClient, handler.getOutputHandler(), node.clientCore.getClientContext(), identifier) {
 
 			@Override
 			void complete(ClientContext context) {

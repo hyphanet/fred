@@ -1113,7 +1113,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			try {
 				RequestStatus[] reqs = fcp.getGlobalRequests();
 				MultiValueTable<String, String> pageHeaders = new MultiValueTable<String, String>();
-				HTMLNode pageNode = handleGetInner(pageMaker, reqs, core.clientContext, request, ctx);
+				HTMLNode pageNode = handleGetInner(pageMaker, reqs, core.getClientContext(), request, ctx);
 				writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
 				return;
 			} catch (PersistenceDisabledException e) {
@@ -1123,7 +1123,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 
 		try {
-			core.clientContext.jobRunner.queue(new PersistentJob() {
+			core.getClientContext().jobRunner.queue(new PersistentJob() {
 
 				@Override
 				public String toString() {
@@ -2376,7 +2376,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		} else
 			oldCompletedIdentifiersList.delete();
 		final boolean writeAnyway = migrated;
-		core.clientContext.jobRunner.queue(new PersistentJob() {
+		core.getClientContext().jobRunner.queue(new PersistentJob() {
 
 			@Override
 			public String toString() {

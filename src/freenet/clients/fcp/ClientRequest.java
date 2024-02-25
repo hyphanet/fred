@@ -334,7 +334,7 @@ public abstract class ClientRequest implements Serializable {
 		if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
 			this.priorityClass = newPriorityClass;
 			ClientRequester r = getClientRequest();
-			r.setPriorityClass(priorityClass, server.getCore().clientContext);
+			r.setPriorityClass(priorityClass, server.getCore().getClientContext());
 			priorityClassChanged = true;
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
@@ -348,7 +348,7 @@ public abstract class ClientRequest implements Serializable {
 			return; // quick return, nothing was changed
 		}
 		
-		server.getCore().clientContext.jobRunner.setCheckpointASAP();
+		server.getCore().getClientContext().jobRunner.setCheckpointASAP();
 		
 		// this could become too complex with more parameters, but for now its ok
 		final PersistentRequestModifiedMessage modifiedMsg;
@@ -375,7 +375,7 @@ public abstract class ClientRequest implements Serializable {
 			}
 		}
 		if(persistence == Persistence.FOREVER) {
-		server.getCore().clientContext.jobRunner.queue(new PersistentJob() {
+		server.getCore().getClientContext().jobRunner.queue(new PersistentJob() {
 
 			@Override
 			public boolean run(ClientContext context) {
@@ -399,7 +399,7 @@ public abstract class ClientRequest implements Serializable {
 				@Override
 				public void run() {
 				    try {
-                        restart(server.getCore().clientContext, disableFilterData);
+                        restart(server.getCore().getClientContext(), disableFilterData);
                     } catch (PersistenceDisabledException e) {
                         // Impossible
                     }

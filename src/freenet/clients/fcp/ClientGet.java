@@ -154,7 +154,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				prioClass,
 				(persistRebootOnly ? Persistence.REBOOT : Persistence.FOREVER), realTimeFlag, null, true);
 
-		fctx = core.clientContext.getDefaultPersistentFetchContext();
+		fctx = core.getClientContext().getDefaultPersistentFetchContext();
 		fctx.eventProducer.addEventListener(this);
 		fctx.localRequestOnly = dsOnly;
 		fctx.ignoreStore = ignoreDS;
@@ -213,7 +213,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				message.priorityClass, message.persistence, message.realTimeFlag, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
-		fctx = core.clientContext.getDefaultPersistentFetchContext();
+		fctx = core.getClientContext().getDefaultPersistentFetchContext();
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = message.dsOnly;
@@ -280,7 +280,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
     private ClientGetter makeGetter(NodeClientCore core, Bucket ret) throws IOException {
         if (binaryBlob && ret == null) {
-            ret = core.clientContext.getBucketFactory(persistence == Persistence.FOREVER).makeBucket(fctx.maxOutputLength);
+            ret = core.getClientContext().getBucketFactory(persistence == Persistence.FOREVER).makeBucket(fctx.maxOutputLength);
         }
 
 	    return new ClientGetter(this,

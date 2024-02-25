@@ -1088,7 +1088,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			updateManager.getRevocationURI(), tempContext, (short) 0, null, new BinaryBlobWriter(cleanedBlob), null);
 
 		try {
-			updateManager.node.clientCore.clientContext.start(cg);
+			updateManager.node.clientCore.getClientContext().start(cg);
 		} catch(FetchException e1) {
 			System.err.println("Failed to decode UOM blob: " + e1);
 			e1.printStackTrace();
@@ -1145,9 +1145,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false).getInsertContext(true);
 		ClientPutter putter = new ClientPutter(callback, bucket,
 			FreenetURI.EMPTY_CHK_URI, null, ctx,
-			priority, false, null, true, updateManager.node.clientCore.clientContext, null, -1);
+			priority, false, null, true, updateManager.node.clientCore.getClientContext(), null, -1);
 		try {
-			updateManager.node.clientCore.clientContext.start(putter);
+			updateManager.node.clientCore.getClientContext().start(putter);
 		} catch(InsertException e1) {
 			Logger.error(this, "Failed to start insert of "+type+" binary blob: " + e1, e1);
 		} catch (PersistenceDisabledException e) {
@@ -1547,7 +1547,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			uri, tempContext, (short) 0, null, new BinaryBlobWriter(cleanedBlob), null);
 
 		try {
-			updateManager.node.clientCore.clientContext.start(cg);
+			updateManager.node.clientCore.getClientContext().start(cg);
 		} catch(FetchException e1) {
 			myCallback.onFailure(e1, cg);
 		} catch (PersistenceDisabledException e) {

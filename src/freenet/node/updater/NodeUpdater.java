@@ -232,7 +232,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		}
 		if(toStart != null)
 			try {
-				node.clientCore.clientContext.start(toStart);
+				node.clientCore.getClientContext().start(toStart);
 			} catch(FetchException e) {
 				Logger.error(this, "Error while starting the fetching: " + e, e);
 				synchronized(this) {
@@ -242,7 +242,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				// Impossible
 			}
 		if(cancelled != null)
-			cancelled.cancel(core.clientContext);
+			cancelled.cancel(core.getClientContext());
 	}
 
 	final File getBlobFile(int availableVersion) {
@@ -494,7 +494,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				c = cg;
 				cg = null;
 			}
-			c.cancel(core.clientContext);
+			c.cancel(core.getClientContext());
 		} catch(Exception e) {
 			Logger.minor(this, "Cannot kill NodeUpdater", e);
 		}

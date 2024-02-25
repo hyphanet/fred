@@ -77,7 +77,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	private void notifySubscribers(final UserAlert alert) {
 		// Run off-thread, because of locking, and because client
 		// callbacks may take some time
-		core.clientContext.mainExecutor.execute(new Runnable() {
+		core.getClientContext().mainExecutor.execute(new Runnable() {
 			@Override
 			public void run() {
 				for (FCPConnectionHandler subscriber : subscribers)
@@ -387,7 +387,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		subscribers.add(subscriber);
 		// Run off-thread, because of locking, and because client
 		// callbacks may take some time
-		core.clientContext.mainExecutor.execute(new Runnable() {
+		core.getClientContext().mainExecutor.execute(new Runnable() {
 			@Override
 			public void run() {
 				for (UserAlert alert : getAlerts())

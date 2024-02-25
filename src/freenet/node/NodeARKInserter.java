@@ -167,11 +167,11 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		inserter = new ClientPutter(this, b, uri,
 					null, // Modern ARKs easily fit inside 1KB so should be pure SSKs => no MIME type; this improves fetchability considerably
 					ctx,
-					RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, null, false, node.clientCore.clientContext, null, -1);
+					RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, null, false, node.clientCore.getClientContext(), null, -1);
 		
 		try {
 			
-			node.clientCore.clientContext.start(inserter);
+			node.clientCore.getClientContext().start(inserter);
 			
 			synchronized (this) {
 				if(fs.get("physical.udp") == null)

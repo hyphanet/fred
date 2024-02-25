@@ -654,10 +654,10 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	public boolean removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException, PersistenceDisabledException {
-		if(!globalRebootClient.removeByIdentifier(identifier, true, this, core.clientContext)) {
+		if(!globalRebootClient.removeByIdentifier(identifier, true, this, core.getClientContext())) {
 			final CountDownLatch done = new CountDownLatch(1);
 			final AtomicBoolean success = new AtomicBoolean();
-			core.clientContext.jobRunner.queue(new PersistentJob() {
+			core.getClientContext().jobRunner.queue(new PersistentJob() {
 
 				@Override
 				public String toString() {
@@ -668,7 +668,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				public boolean run(ClientContext context) {
 					boolean succeeded = false;
 					try {
-						succeeded = globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, core.clientContext);
+						succeeded = globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, core.getClientContext());
 					} catch (Throwable t) {
 						Logger.error(this, "Caught removing identifier "+identifier+": "+t, t);
 					} finally {
@@ -691,10 +691,10 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	public boolean removeAllGlobalRequestsBlocking() throws PersistenceDisabledException {
-		globalRebootClient.removeAll(core.clientContext);
+		globalRebootClient.removeAll(core.getClientContext());
 		final CountDownLatch done = new CountDownLatch(1);
 		final AtomicBoolean success = new AtomicBoolean();
-		core.clientContext.jobRunner.queue(new PersistentJob() {
+		core.getClientContext().jobRunner.queue(new PersistentJob() {
 
 			@Override
 			public String toString() {
@@ -705,7 +705,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			public boolean run(ClientContext context) {
 				boolean succeeded = false;
 				try {
-					globalForeverClient.removeAll(core.clientContext);
+					globalForeverClient.removeAll(core.getClientContext());
 					succeeded = true;
 				} catch (Throwable t) {
 					Logger.error(this, "Caught while processing panic: "+t, t);
@@ -741,7 +741,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 
 		final OutputWrapper ow = new OutputWrapper();
-		core.clientContext.jobRunner.queue(new PersistentJob() {
+		core.getClientContext().jobRunner.queue(new PersistentJob() {
 
 			@Override
 			public String toString() {
@@ -807,7 +807,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				boolean done;
 			}
 			final OutputWrapper ow = new OutputWrapper();
-			core.clientContext.jobRunner.queue(new PersistentJob() {
+			core.getClientContext().jobRunner.queue(new PersistentJob() {
 
 				@Override
 				public String toString() {
@@ -934,14 +934,14 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	private void innerMakePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, boolean persistRebootOnly, ReturnType returnType, String id, File returnFilename,
 			boolean realTimeFlag) throws IdentifierCollisionException, NotAllowedException, IOException {
-	    FetchContext defaultFetchContext = core.clientContext.getDefaultPersistentFetchContext();
+	    FetchContext defaultFetchContext = core.getClientContext().getDefaultPersistentFetchContext();
 		final ClientGet cg =
 			new ClientGet(persistRebootOnly ? globalRebootClient : globalForeverClient, fetchURI, defaultFetchContext.localRequestOnly,
 					defaultFetchContext.ignoreStore, filterData, QUEUE_MAX_RETRIES,
 					QUEUE_MAX_RETRIES, QUEUE_MAX_DATA_SIZE, returnType, persistRebootOnly, id,
 					Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, null, false, realTimeFlag, false, core);
 		cg.register(false);
-		cg.start(core.clientContext);
+		cg.start(core.getClientContext());
 	}
 
 	/**
@@ -988,14 +988,14 @@ public class FCPServer implements Runnable, DownloadCache {
 	 */
 	public void startBlocking(final ClientRequest req, ClientContext context) throws IdentifierCollisionException, PersistenceDisabledException {
 		if(req.persistence == Persistence.REBOOT) {
-			req.start(core.clientContext);
+			req.start(core.getClientContext());
 		} else {
 			class OutputWrapper {
 				boolean done;
 				IdentifierCollisionException collided;
 			}
 			final OutputWrapper ow = new OutputWrapper();
-			core.clientContext.jobRunner.queue(new PersistentJob() {
+			core.getClientContext().jobRunner.queue(new PersistentJob() {
 
 				@Override
 				public String toString() {
@@ -1042,7 +1042,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	public boolean restartBlocking(final String identifier, final boolean disableFilterData) throws PersistenceDisabledException {
 		ClientRequest req = globalRebootClient.getRequest(identifier);
 		if(req != null) {
-			req.restart(core.clientContext, disableFilterData);
+			req.restart(core.getClientContext(), disableFilterData);
 			return true;
 		} else {
 			class OutputWrapper {
@@ -1051,7 +1051,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			}
 			final OutputWrapper ow = new OutputWrapper();
             if(logMINOR) Logger.minor(this, "Queueing restart of "+identifier);
-			core.clientContext.jobRunner.queue(new PersistentJob() {
+			core.getClientContext().jobRunner.queue(new PersistentJob() {
 
 				@Override
 				public String toString() {
@@ -1116,7 +1116,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 		final OutputWrapper ow = new OutputWrapper();
 
-		core.clientContext.jobRunner.queue(new PersistentJob() {
+		core.getClientContext().jobRunner.queue(new PersistentJob() {
 
 			@Override
 			public String toString() {

@@ -57,7 +57,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	public TransferThread(Node myNode, HighLevelSimpleClient myClient, String myName) {
 		mNode = myNode;
 		mClient = myClient;
-		mClientContext = mNode.clientCore.clientContext;
+		mClientContext = mNode.clientCore.getClientContext();
 		mTBF = mNode.clientCore.getTempBucketFactory();
 		mName = myName;
 		
@@ -115,7 +115,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 			int fcounter = 0;
 			for(ClientGetter fetch : fetches) {
 				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
-				fetch.cancel(mNode.clientCore.clientContext);
+				fetch.cancel(mNode.clientCore.getClientContext());
 				++fcounter;
 			}
 			
@@ -130,7 +130,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 			int icounter = 0;
 			for(BaseClientPutter insert : inserts) {
 				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
-				insert.cancel(mNode.clientCore.clientContext);
+				insert.cancel(mNode.clientCore.getClientContext());
 				++icounter;
 			}
 			Logger.debug(this, "Stopped " + icounter + " current inserts.");

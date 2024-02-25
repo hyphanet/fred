@@ -254,6 +254,11 @@ public class NodeClientCore implements Persistable {
 	private long minDiskFreeShortTerm;
 	private final MasterSecret cryptoSecretTransient;
 
+	/**
+	 * @deprecated Use {@link #getClientContext()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public transient final ClientContext clientContext;
 
 	private static int maxBackgroundUSKFetchers;	// Client stuff that needs to be configged - FIXME
@@ -2271,6 +2276,10 @@ public class NodeClientCore implements Persistable {
 
     public DatastoreChecker getStoreChecker() {
         return storeChecker;
+    }
+
+    public ClientContext getClientContext() {
+        return clientContext;
     }
 
 }

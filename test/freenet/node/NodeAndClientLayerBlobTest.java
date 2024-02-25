@@ -76,7 +76,7 @@ public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
         Bucket blobBucket = node.clientCore.getTempBucketFactory().makeBucket(FILE_SIZE*3);
         BinaryBlobWriter bbw = new BinaryBlobWriter(blobBucket);
         ClientGetter getter = new ClientGetter(fw, uri, ctx, (short) 0, null, bbw, false, null, null);
-        getter.start(node.clientCore.clientContext);
+        getter.start(node.clientCore.getClientContext());
         fw.waitForCompletion();
         assertTrue(blobBucket.size() > 0);
         // Now bootstrap a second node, and fetch using the blob on that node.

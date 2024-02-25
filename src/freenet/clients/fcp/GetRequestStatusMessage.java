@@ -45,7 +45,7 @@ public class GetRequestStatusMessage extends FCPMessage {
 				return;
 			}
 			try {
-                node.clientCore.clientContext.jobRunner.queue(new PersistentJob() {
+                node.clientCore.getClientContext().jobRunner.queue(new PersistentJob() {
                     
                     @Override
                     public boolean run(ClientContext context) {
