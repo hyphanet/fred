@@ -173,7 +173,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
                         			@Override
                         			void complete(ClientContext context) {
                         				if(handler.getRebootClient().watchGlobal) {
-                        					PersistentRequestClient globalForeverClient = handler.getServer().globalForeverClient;
+                        					PersistentRequestClient globalForeverClient = handler.getServer().getGlobalForeverClient();
                         					PersistentListJob job = new PersistentListJob(globalForeverClient, outputHandler, context, listRequestIdentifier) {
 
                         						@Override

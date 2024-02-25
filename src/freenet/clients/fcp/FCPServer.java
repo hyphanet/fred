@@ -101,6 +101,12 @@ public class FCPServer implements Runnable, DownloadCache {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	final PersistentRequestClient globalRebootClient;
+
+	/**
+	 * @deprecated Use {@link #getGlobalForeverClient()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	PersistentRequestClient globalForeverClient;
 	public static final int QUEUE_MAX_RETRIES = -1;
 	public static final long QUEUE_MAX_DATA_SIZE = Long.MAX_VALUE;

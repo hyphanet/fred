@@ -341,20 +341,20 @@ public class PersistentRequestClient {
 			Logger.error(this, "Set watch global on global queue!: "+this, new Exception("debug"));
 			return false;
 		}
-		if(server.globalForeverClient == null) return false;
+		if(server.getGlobalForeverClient() == null) return false;
 		if(watchGlobal && !enabled) {
 			server.getGlobalRebootClient().unwatch(this);
-			server.globalForeverClient.unwatch(this);
+			server.getGlobalForeverClient().unwatch(this);
 			watchGlobal = false;
 		} else if(enabled && !watchGlobal) {
 			server.getGlobalRebootClient().watch(this);
-			server.globalForeverClient.watch(this);
+			server.getGlobalForeverClient().watch(this);
 			FCPConnectionHandler connHandler = getConnection();
 			if(connHandler != null) {
 				if(persistence == Persistence.REBOOT)
 					server.getGlobalRebootClient().queuePendingMessagesOnConnectionRestartAsync(connHandler.getOutputHandler(), server.getCore().clientContext);
 				else
-					server.globalForeverClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.getOutputHandler(), server.getCore().clientContext);
+					server.getGlobalForeverClient().queuePendingMessagesOnConnectionRestartAsync(connHandler.getOutputHandler(), server.getCore().clientContext);
 			}
 			watchGlobal = true;
 		}

@@ -884,7 +884,7 @@ public class FCPConnectionHandler implements Closeable {
 	
 	ClientRequest getForeverRequest(boolean global, FCPConnectionHandler handler, String identifier) {
 		if(global)
-			return handler.server.globalForeverClient.getRequest(identifier);
+			return handler.server.getGlobalForeverClient().getRequest(identifier);
 		else
 			return handler.getForeverClient().getRequest(identifier);
 	}
@@ -902,7 +902,7 @@ public class FCPConnectionHandler implements Closeable {
 	
 	ClientRequest removePersistentForeverRequest(boolean global, String identifier) throws MessageInvalidException {
 		PersistentRequestClient client =
-			global ? server.globalForeverClient :
+			global ? server.getGlobalForeverClient() :
 			getForeverClient();
 		ClientRequest req = client.getRequest(identifier);
 		if(req != null) {
