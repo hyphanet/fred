@@ -87,7 +87,7 @@ public class ModifyPersistentRequest extends FCPMessage {
                             handler.send(msg);
                             return false;
                         } else {
-                            req.modifyRequest(clientToken, priorityClass, handler.server);
+                            req.modifyRequest(clientToken, priorityClass, handler.getServer());
                         }
                         return true;
                     }

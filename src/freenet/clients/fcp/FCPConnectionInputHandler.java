@@ -40,7 +40,7 @@ public class FCPConnectionInputHandler implements Runnable {
 	void start() {
 		if (handler.sock == null)
 			return;
-		handler.server.node.executor.execute(this, "FCP input handler for "+handler.sock.getRemoteSocketAddress());
+		handler.getServer().node.executor.execute(this, "FCP input handler for "+handler.sock.getRemoteSocketAddress());
 	}
 
 	@Override
@@ -96,7 +96,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			try {
 				if(logDEBUG)
 					Logger.debug(this, "Incoming FCP message:\n"+messageType+'\n'+fs.toString());
-				msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.core.persistentTempBucketFactory);
+				msg = FCPMessage.create(messageType, fs, handler.bf, handler.getServer().core.persistentTempBucketFactory);
 				if(msg == null) continue;
 			} catch (MessageInvalidException e) {
 				if(firstMessage) {
@@ -121,7 +121,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			if(msg instanceof BaseDataCarryingMessage) {
 				// FIXME tidy up - coalesce with above and below try { } catch (MIE) {}'s?
 				try {
-					((BaseDataCarryingMessage)msg).readFrom(lis, handler.bf, handler.server);
+					((BaseDataCarryingMessage)msg).readFrom(lis, handler.bf, handler.getServer());
 				} catch (MessageInvalidException e) {
 					FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
 					handler.send(err);
@@ -136,7 +136,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			try {
 				if(logDEBUG)
 					Logger.debug(this, "Parsed message: "+msg+" for "+handler);
-				msg.run(handler, handler.server.node);
+				msg.run(handler, handler.getServer().node);
 			} catch (MessageInvalidException e) {
 				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
 				handler.send(err);

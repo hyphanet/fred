@@ -140,7 +140,7 @@ public abstract class ClientRequest implements Serializable {
 		} else {
 			origHandler = null;
 			if(global) {
-				client = persistence == Persistence.FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
+				client = persistence == Persistence.FOREVER ? handler.getServer().globalForeverClient : handler.getServer().globalRebootClient;
 	            this.verbosity = Integer.MAX_VALUE;
 	            clientName = null;
 			} else {

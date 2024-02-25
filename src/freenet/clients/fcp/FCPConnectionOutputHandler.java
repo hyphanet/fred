@@ -41,7 +41,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 	void start() {
 		if (handler.sock == null)
 			return;
-		handler.server.node.executor.execute(this, "FCP output handler for "+handler.sock.getRemoteSocketAddress()+ ':' +handler.sock.getPort());
+		handler.getServer().node.executor.execute(this, "FCP output handler for "+handler.sock.getRemoteSocketAddress()+ ':' +handler.sock.getPort());
 	}
 	
 	@Override
@@ -137,8 +137,8 @@ public class FCPConnectionOutputHandler implements Runnable {
 		if(logDEBUG)
 			Logger.debug(this, "Queueing "+msg, new Exception("debug"));
 		if(msg == null) throw new NullPointerException();
-		boolean neverDropAMessage = handler.server.neverDropAMessage();
-		int MAX_QUEUE_LENGTH = handler.server.maxMessageQueueLength();
+		boolean neverDropAMessage = handler.getServer().neverDropAMessage();
+		int MAX_QUEUE_LENGTH = handler.getServer().maxMessageQueueLength();
 		synchronized(outQueue) {
 			if(closedOutputQueue) {
 				Logger.error(this, "Closed already: "+this+" queueing message "+msg);
@@ -176,7 +176,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 	}
 
 	public boolean isQueueHalfFull() {
-		int MAX_QUEUE_LENGTH = handler.server.maxMessageQueueLength();
+		int MAX_QUEUE_LENGTH = handler.getServer().maxMessageQueueLength();
 		synchronized(outQueue) {
 			return outQueue.size() > MAX_QUEUE_LENGTH / 2;
 		}

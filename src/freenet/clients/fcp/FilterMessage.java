@@ -176,7 +176,7 @@ public class FilterMessage extends DataCarryingMessage {
 		try {
 			input = bucket.getInputStream();
 			output = resultBucket.getOutputStream();
-			FilterStatus status = applyFilter(input, output, handler.server.core.clientContext);
+			FilterStatus status = applyFilter(input, output, handler.getServer().core.clientContext);
 			resultCharset = status.charset;
 			resultMimeType = status.mimeType;
 		} catch (UnsafeContentTypeException e) {

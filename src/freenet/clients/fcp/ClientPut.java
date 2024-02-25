@@ -162,7 +162,7 @@ public class ClientPut extends ClientPutBase {
 		binaryBlob = message.binaryBlob;
 		
 		if(message.uploadFromType == UploadFrom.DISK) {
-			if(!handler.server.core.allowUploadFrom(message.origFilename))
+			if(!handler.getServer().core.allowUploadFrom(message.origFilename))
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename, identifier, global);
 
 			if(message.fileHash != null) {

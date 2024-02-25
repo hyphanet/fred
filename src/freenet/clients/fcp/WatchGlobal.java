@@ -47,7 +47,7 @@ public class WatchGlobal extends FCPMessage {
 		}
 		PersistentRequestClient client = handler.getForeverClient();
 		if(client != null)
-		    client.setWatchGlobal(enabled, verbosityMask, handler.server);
+		    client.setWatchGlobal(enabled, verbosityMask, handler.getServer());
 	}
 
 }
