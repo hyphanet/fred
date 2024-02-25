@@ -595,7 +595,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				BucketTools.copy(file.getData(), copiedBucket);
 				final CountDownLatch done = new CountDownLatch(1);
 				try {
-					core.clientLayerPersister.queue(new PersistentJob() {
+					core.getClientLayerPersister().queue(new PersistentJob() {
 
 						@Override
 						public String toString() {
@@ -702,7 +702,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					target = file.getName();
 				final CountDownLatch done = new CountDownLatch(1);
 				try {
-					core.clientLayerPersister.queue(new PersistentJob() {
+					core.getClientLayerPersister().queue(new PersistentJob() {
 
 						@Override
 						public String toString() {
@@ -797,7 +797,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				final CountDownLatch done = new CountDownLatch(1);
 				try {
-					core.clientLayerPersister.queue(new PersistentJob() {
+					core.getClientLayerPersister().queue(new PersistentJob() {
 
 						@Override
 						public String toString() {

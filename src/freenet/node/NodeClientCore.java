@@ -186,6 +186,12 @@ public class NodeClientCore implements Persistable {
 	public final PersistentTempBucketFactory persistentTempBucketFactory;
 	private final DiskSpaceCheckingRandomAccessBufferFactory persistentDiskChecker;
 	public final MaybeEncryptedRandomAccessBufferFactory persistentRAFFactory;
+
+	/**
+	 * @deprecated Use {@link #getClientLayerPersister()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final ClientLayerPersister clientLayerPersister;
 	public final Node node;
 	public final RequestTracker tracker;
@@ -2205,6 +2211,10 @@ public class NodeClientCore implements Persistable {
 
     public PersistentTempBucketFactory getPersistentTempBucketFactory() {
         return persistentTempBucketFactory;
+    }
+
+    public ClientLayerPersister getClientLayerPersister() {
+        return clientLayerPersister;
     }
 
 }

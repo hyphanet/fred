@@ -2158,9 +2158,9 @@ public class Node implements TimeSkewDetectorCallback {
 						}
 						try {
                             killMasterKeysFile();
-						    clientCore.clientLayerPersister.disableWrite();
-						    clientCore.clientLayerPersister.waitForNotWriting();
-                            clientCore.clientLayerPersister.deleteAllFiles();
+						    clientCore.getClientLayerPersister().disableWrite();
+						    clientCore.getClientLayerPersister().waitForNotWriting();
+                            clientCore.getClientLayerPersister().deleteAllFiles();
 						} catch (IOException e) {
 							masterKeysFile.delete();
 							Logger.error(this, "Unable to securely delete "+masterKeysFile);
@@ -4685,8 +4685,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public void panic() {
 		hasPanicked = true;
-		clientCore.clientLayerPersister.panic();
-		clientCore.clientLayerPersister.killAndWaitForNotRunning();
+		clientCore.getClientLayerPersister().panic();
+		clientCore.getClientLayerPersister().killAndWaitForNotRunning();
 		try {
 			MasterKeys.killMasterKeys(getMasterPasswordFile());
 		} catch (IOException e) {
@@ -4718,14 +4718,14 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public boolean hasDatabase() {
-	    return !clientCore.clientLayerPersister.isKilledOrNotLoaded();
+	    return !clientCore.getClientLayerPersister().isKilledOrNotLoaded();
 	}
 
         /**
          * @return canonical path of the database file in use.
          */
         public String getDatabasePath() throws IOException {
-            return clientCore.clientLayerPersister.getWriteFilename().toString();
+            return clientCore.getClientLayerPersister().getWriteFilename().toString();
         }
 
 	/** Should we commit the block to the store rather than the cache?
