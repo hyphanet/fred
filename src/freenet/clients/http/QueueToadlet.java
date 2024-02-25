@@ -1073,7 +1073,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	throws ToadletContextClosedException, IOException, RedirectException {
 
 		// We ensure that we have a FCP server running
-		if(!fcp.enabled){
+		if(!fcp.isEnabled()){
 			writeError(l10n("fcpIsMissing"), l10n("pleaseEnableFCP"), ctx, false, false);
 			return;
 		}

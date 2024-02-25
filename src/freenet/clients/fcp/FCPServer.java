@@ -80,6 +80,12 @@ public class FCPServer implements Runnable, DownloadCache {
 	final Node node;
 	final int port;
 	private static boolean ssl = false;
+
+	/**
+	 * @deprecated Use {@link #isEnabled()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final boolean enabled;
 	String bindTo;
 	private String allowedHosts;
@@ -1218,6 +1224,10 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	public Node getNode() {
 		return node;
+	}
+
+	public boolean isEnabled() {
+		return enabled;
 	}
 
 }
