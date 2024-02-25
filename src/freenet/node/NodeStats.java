@@ -1695,9 +1695,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public int getOpennetSizeEstimate(long timestamp) {
-		if (node.opennet == null)
+		if (node.getOpennet() == null)
 			return 0;
-		return node.opennet.getNetworkSizeEstimate(timestamp);
+		return node.getOpennet().getNetworkSizeEstimate(timestamp);
 	}
 	public int getDarknetSizeEstimate(long timestamp) {
 		return node.getLocationManager().getNetworkSizeEstimate( timestamp );

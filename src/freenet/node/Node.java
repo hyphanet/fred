@@ -712,6 +712,12 @@ public class Node implements TimeSkewDetectorCallback {
 	// Opennet stuff
 
 	private final NodeCryptoConfig opennetCryptoConfig;
+
+	/**
+	 * @deprecated Use {@link #getOpennet()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	OpennetManager opennet;
 	private volatile boolean isAllowedToConnectToSeednodes;
 	private int maxOpennetPeers;
