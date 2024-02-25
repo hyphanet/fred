@@ -42,7 +42,7 @@ public class DiskSpaceUserAlert implements UserAlert {
     Status evaluate() {
         long shortTermLimit = core.getMinDiskFreeShortTerm();
         long longTermLimit = core.getMinDiskFreeLongTerm();
-        File tempDir = core.tempFilenameGenerator.getDir();
+        File tempDir = core.getTempFilenameGenerator().getDir();
         if(tempDir.getUsableSpace() < shortTermLimit)
             return Status.TRANSIENT; // Takes precedence.
         FilenameGenerator fg = core.persistentFilenameGenerator;
@@ -100,7 +100,7 @@ public class DiskSpaceUserAlert implements UserAlert {
                 return fg.getDir();
             }
         }
-        return core.tempFilenameGenerator.getDir();
+        return core.getTempFilenameGenerator().getDir();
     }
 
     private synchronized Status getStatus() {

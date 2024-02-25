@@ -156,6 +156,12 @@ public class NodeClientCore implements Persistable {
 	private boolean downloadDisabled;
 	private File[] uploadAllowedDirs;
 	private boolean uploadAllowedEverywhere;
+
+	/**
+	 * @deprecated Use {@link #getTempFilenameGenerator()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final FilenameGenerator tempFilenameGenerator;
 	public final FilenameGenerator persistentFilenameGenerator;
 	public final TempBucketFactory tempBucketFactory;
@@ -2165,6 +2171,10 @@ public class NodeClientCore implements Persistable {
 
     public String getFormPassword() {
         return formPassword;
+    }
+
+    public FilenameGenerator getTempFilenameGenerator() {
+        return tempFilenameGenerator;
     }
 
 }
