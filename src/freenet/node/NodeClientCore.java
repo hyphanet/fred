@@ -1063,7 +1063,7 @@ public class NodeClientCore implements Persistable {
 	 * @throws MasterKeysWrongPasswordException If it needs an encryption key.
 	 */
 	private void initStorage(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException {
-	    clientLayerPersister.setFilesAndLoad(node.nodeDir.dir(), "client.dat",
+	    clientLayerPersister.setFilesAndLoad(node.getNodeDir(), "client.dat",
 	            node.wantEncryptedDatabase(), node.wantNoPersistentDatabase(), databaseKey, clientContext, requestStarters, random);
 	}
 

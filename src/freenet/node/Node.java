@@ -642,7 +642,13 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PeerManager peers;
-	/** Node-reference directory (node identity, peers, etc) */
+
+	/**
+	 * Node-reference directory (node identity, peers, etc)
+	 * @deprecated Use {@link #getNodeDir()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final ProgramDirectory nodeDir;
 	/** Config directory (l10n overrides, etc) */
 	final ProgramDirectory cfgDir;
