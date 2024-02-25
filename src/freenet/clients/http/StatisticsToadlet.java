@@ -133,7 +133,7 @@ public class StatisticsToadlet extends Toadlet {
 			}
 		}
 
-		node.clientCore.bandwidthStatsPutter.updateData(node);
+		node.clientCore.getBandwidthStatsPutter().updateData(node);
 
 		HTMLNode pageNode;
 		
@@ -271,7 +271,7 @@ public class StatisticsToadlet extends Toadlet {
 			/* node status overview box */
 			if(advancedMode) {
 				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
-				drawOverviewBox(overviewInfobox, nodeUptimeSeconds, node.clientCore.bandwidthStatsPutter.getLatestUptimeData().totalUptime, now, swaps, noSwaps);
+				drawOverviewBox(overviewInfobox, nodeUptimeSeconds, node.clientCore.getBandwidthStatsPutter().getLatestUptimeData().totalUptime, now, swaps, noSwaps);
 			}
 
 			// Peer statistics box
@@ -753,7 +753,7 @@ public class StatisticsToadlet extends Toadlet {
 				// FIXME this is not necessarily the same as the datastore's uptime if we've switched.
 				// Ideally we'd track uptime there too.
 				totalUptimeSeconds = 
-					node.clientCore.bandwidthStatsPutter.getLatestUptimeData().totalUptime;
+					node.clientCore.getBandwidthStatsPutter().getLatestUptimeData().totalUptime;
 			} catch (StatsNotAvailableException e) {
 				totalAccess = null;
 			}
@@ -1071,7 +1071,7 @@ public class StatisticsToadlet extends Toadlet {
 		long totalPayload = node.getTotalPayloadSent();
 		long total_payload_rate = totalPayload / nodeUptimeSeconds;
 		if(node.clientCore == null) throw new NullPointerException();
-		BandwidthStatsContainer stats = node.clientCore.bandwidthStatsPutter.getLatestBWData();
+		BandwidthStatsContainer stats = node.clientCore.getBandwidthStatsPutter().getLatestBWData();
 		if(stats == null) throw new NullPointerException();
 		long overall_total_out = stats.totalBytesOut;
 		long overall_total_in = stats.totalBytesIn;

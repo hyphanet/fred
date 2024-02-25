@@ -108,6 +108,11 @@ public class NodeClientCore implements Persistable {
 		Logger.registerClass(NodeClientCore.class);
 	}
 
+	/**
+	 * @deprecated Use {@link #getBandwidthStatsPutter()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PersistentStatsPutter bandwidthStatsPutter;
 	public final USKManager uskManager;
 	public final ArchiveManager archiveManager;
@@ -2130,6 +2135,10 @@ public class NodeClientCore implements Persistable {
 
     public boolean loadedDatabase() {
         return clientLayerPersister.hasLoaded();
+    }
+
+    public PersistentStatsPutter getBandwidthStatsPutter() {
+        return bandwidthStatsPutter;
     }
 
 }
