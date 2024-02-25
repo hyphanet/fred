@@ -589,6 +589,11 @@ public class Node implements TimeSkewDetectorCallback {
 	 * sharing purposes. */
 	private boolean writeLocalToDatastore;
 
+	/**
+	 * @deprecated Use {@link #getGetPubKey()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final NodeGetPubkey getPubKey;
 
 	/** FetchContext for ARKs */
@@ -4940,6 +4945,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public PersistentConfig getConfig() {
         return config;
+    }
+
+    public NodeGetPubkey getGetPubKey() {
+        return getPubKey;
     }
 
 }
