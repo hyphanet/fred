@@ -1,4 +1,4 @@
-name: Java Codestyle Format
+name: Java Code Style Format
 
 on:
   pull_request:
