@@ -32,15 +32,8 @@ jobs:
       - name: Run Prettier Plugin Java
         run: npx prettier --check **/*.java
         
-      - name: Create Notification
-        uses: actions/github-script@v7
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5.0.0
         with:
-          #github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const issueComment = `Hello! Prettier Java Format has formatted the code in this pull request. Please review the changes.`;
-            await github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: issueComment
-            });
+          commit_message: Apply formatting changes
+          branch: ${{ github.head_ref }}
