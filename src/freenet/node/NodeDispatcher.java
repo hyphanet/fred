@@ -238,15 +238,15 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 
 		if(spec == DMT.FNPSwapRequest) {
-			return node.lm.handleSwapRequest(m, source);
+			return node.getLocationManager().handleSwapRequest(m, source);
 		} else if(spec == DMT.FNPSwapReply) {
-			return node.lm.handleSwapReply(m, source);
+			return node.getLocationManager().handleSwapReply(m, source);
 		} else if(spec == DMT.FNPSwapRejected) {
-			return node.lm.handleSwapRejected(m, source);
+			return node.getLocationManager().handleSwapRejected(m, source);
 		} else if(spec == DMT.FNPSwapCommit) {
-			return node.lm.handleSwapCommit(m, source);
+			return node.getLocationManager().handleSwapCommit(m, source);
 		} else if(spec == DMT.FNPSwapComplete) {
-			return node.lm.handleSwapComplete(m, source);
+			return node.getLocationManager().handleSwapComplete(m, source);
 		} else if(spec == DMT.FNPCHKDataRequest) {
 			handleDataRequest(m, source, false);
 			return true;
@@ -907,7 +907,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// source == null => originated locally, keep full htl
 		double target = m.getDouble(DMT.TARGET_LOCATION);
 		if(logMINOR) Logger.minor(this, "id "+id+" from "+source+" htl "+htl+" target "+target);
-		if(Math.abs(node.lm.getLocation() - target) <= Double.MIN_VALUE) {
+		if(Math.abs(node.getLocationManager().getLocation() - target) <= Double.MIN_VALUE) {
 			if(logMINOR) Logger.minor(this, "Dispatching "+m.getSpec()+" on "+node.getDarknetPortNumber());
 			// Handle locally
 			// Message type specific processing

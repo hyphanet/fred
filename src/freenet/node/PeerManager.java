@@ -476,7 +476,7 @@ public class PeerManager {
 		}
                 if(!pn.isSeed())
                     updatePMUserAlert();
-		node.lm.announceLocChange();
+		node.getLocationManager().announceLocChange();
 		return true;
 	}
 	long timeFirstAnyConnections = 0;
@@ -528,7 +528,7 @@ public class PeerManager {
 		}
 		if(!pn.isSeed())
                     updatePMUserAlert();
-		node.lm.announceLocChange();
+		node.getLocationManager().announceLocChange();
 	}
 //    NodePeer route(double targetLocation, RoutingContext ctx) {
 //        double minDist = 1.1;

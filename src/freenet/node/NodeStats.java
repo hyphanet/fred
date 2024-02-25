@@ -576,7 +576,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		chkSuccessRatesByLocation = new Histogram2(10, 1.0);
 
-		double nodeLoc=node.lm.getLocation();
+		double nodeLoc=node.getLocationManager().getLocation();
 		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
 		this.avgStoreCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreCHKLocation"));
 		this.avgSlashdotCacheCHKLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageSlashdotCacheCHKLocation"));
@@ -1700,11 +1700,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return node.opennet.getNetworkSizeEstimate(timestamp);
 	}
 	public int getDarknetSizeEstimate(long timestamp) {
-		return node.lm.getNetworkSizeEstimate( timestamp );
+		return node.getLocationManager().getNetworkSizeEstimate( timestamp );
 	}
 
 	public Object[] getKnownLocations(long timestamp) {
-		return node.lm.getKnownLocations( timestamp );
+		return node.getLocationManager().getKnownLocations( timestamp );
 	}
 
 	public double pRejectIncomingInstantly() {
@@ -3167,7 +3167,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3201,7 +3201,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3235,7 +3235,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3269,7 +3269,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3303,7 +3303,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3337,7 +3337,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3371,7 +3371,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override
@@ -3405,7 +3405,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(node.lm.getLocation(), avgLocation());
+				return Location.distance(node.getLocationManager().getLocation(), avgLocation());
 			}
 
 			@Override

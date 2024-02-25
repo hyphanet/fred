@@ -306,7 +306,7 @@ public class NodeCrypto {
 		if(!(forARK || forSetup || forAnonInitiator)) {
 		    // We *do* need the location on noderefs exchanged via path folding and announcement.
 		    // This is necessary so we can take the location into account in OpennetManager.wantPeer().
-		    fs.put("location", node.lm.getLocation());
+		    fs.put("location", node.getLocationManager().getLocation());
 		}
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		if(!forAnonInitiator)

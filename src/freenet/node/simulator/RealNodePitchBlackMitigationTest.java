@@ -165,7 +165,7 @@ public class RealNodePitchBlackMitigationTest extends RealNodeTest {
 		Logger.globalSetThreshold(LogLevel.WARNING);
 
 		// set the time to yesterday to have pitch black information
-		nodes[0].lm.setClockForTesting(Clock.offset(Clock.systemDefaultZone(), Duration.ofDays(-1)));
+		nodes[0].getLocationManager().setClockForTesting(Clock.offset(Clock.systemDefaultZone(), Duration.ofDays(-1)));
 		// shift forward one day per 5 minutes
 		Runnable dayIncrementingJob = new Runnable() {
 			@Override
@@ -173,8 +173,8 @@ public class RealNodePitchBlackMitigationTest extends RealNodeTest {
 				nodes[0].ticker.queueTimedJob(
 						this,
 						PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY);
-				nodes[0].lm.setClockForTesting(Clock.offset(
-						nodes[0].lm.getClockForTesting(),
+				nodes[0].getLocationManager().setClockForTesting(Clock.offset(
+						nodes[0].getLocationManager().getClockForTesting(),
 						Duration.ofDays(1)));
 			}
 		};
@@ -183,8 +183,8 @@ public class RealNodePitchBlackMitigationTest extends RealNodeTest {
 				PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY);
 
 		// start the nodes and adjust mitigation times
-		nodes[0].lm.PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY = PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY;
-		nodes[0].lm.PITCH_BLACK_MITIGATION_STARTUP_DELAY = PITCH_BLACK_MITIGATION_STARTUP_DELAY;
+		nodes[0].getLocationManager().PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY = PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY;
+		nodes[0].getLocationManager().PITCH_BLACK_MITIGATION_STARTUP_DELAY = PITCH_BLACK_MITIGATION_STARTUP_DELAY;
 		for (int i = 0; i < NUMBER_OF_NODES; i++) {
 			System.err.println("Starting node " + i);
 			nodes[i].start(false);
@@ -291,8 +291,8 @@ public class RealNodePitchBlackMitigationTest extends RealNodeTest {
 			double totalSwapInterval = 0.0;
 			double totalSwapTime = 0.0;
 			for (int i = 0; i < nodes.length; i++) {
-				totalSwapInterval += nodes[i].lm.getSendSwapInterval();
-				totalSwapTime += nodes[i].lm.getAverageSwapTime();
+				totalSwapInterval += nodes[i].getLocationManager().getSendSwapInterval();
+				totalSwapTime += nodes[i].getLocationManager().getAverageSwapTime();
 			}
 			System.err.println("Average swap time: " + (totalSwapTime / nodes.length));
 			System.err.println("Average swap sender interval: " + (totalSwapInterval / nodes.length));

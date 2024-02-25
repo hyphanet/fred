@@ -1292,7 +1292,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(unv != null) unv.disconnected();
 		if(_lastThrottle != null)
 			_lastThrottle.maybeDisconnected();
-		node.lm.lostOrRestartedNode(this);
+		node.getLocationManager().lostOrRestartedNode(this);
 		if(peers.havePeer(this))
 			setPeerNodeStatus(now);
 		if(!dumpMessageQueue) {
@@ -2138,7 +2138,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 
 		if(bootIDChanged) {
-			node.lm.lostOrRestartedNode(this);
+			node.getLocationManager().lostOrRestartedNode(this);
 			node.usm.onRestart(this);
 			node.getTracker().onRestartOrDisconnect(this);
 		}
@@ -2255,7 +2255,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	protected void sendInitialMessages() {
 		loadSender(true).setSendASAP();
 		loadSender(false).setSendASAP();
-		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocationDoubles(true));
+		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.getLocationManager().getLocation(), node.peers.getPeerLocationDoubles(true));
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
 		Message dRoutingMsg = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);

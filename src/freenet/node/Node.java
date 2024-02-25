@@ -627,6 +627,12 @@ public class Node implements TimeSkewDetectorCallback {
 	 * topology can be reconstructed. */
 	public long swapIdentifier;
 	private String myName;
+
+	/**
+	 * @deprecated Use {@link #getLocationManager()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final LocationManager lm;
 	/** My peers */
 	public final PeerManager peers;
